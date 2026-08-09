@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -94,15 +96,23 @@ export function PublicMapCategoryFilter({
   compact?: boolean
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
 }) {
+  const [hasScrolledCategories, setHasScrolledCategories] = useState(false)
+
   return (
     <div
       className={cn(
         "-mx-1 flex min-w-0 gap-1 overflow-x-auto px-1 pb-0.5",
-        "scroll-fade-effect-x [--mask-width:1.25rem] [--scroll-buffer:1rem]",
+        hasScrolledCategories &&
+          "scroll-fade-effect-x [--mask-width:1.25rem] [--scroll-buffer:1rem]",
         "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         compact ? "pt-0.5" : "pt-1"
       )}
       aria-label="Filter resources by category"
+      onScroll={(event) => {
+        if (!hasScrolledCategories && event.currentTarget.scrollLeft > 0) {
+          setHasScrolledCategories(true)
+        }
+      }}
     >
       {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
         const count = counts[key]
@@ -120,7 +130,7 @@ export function PublicMapCategoryFilter({
             aria-pressed={selected}
             disabled={disabled}
             className={cn(
-              "group border-input bg-input/30 h-7 shrink-0 gap-1.5 rounded-full border px-2.5 text-[11px] leading-none shadow-sm backdrop-blur",
+              "group border-input bg-input/30 h-7 shrink-0 gap-1.5 rounded-full border px-2.5 text-[11px] leading-none backdrop-blur",
               "text-muted-foreground transition-[background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
               "focus-visible:!bg-input/50 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
               "disabled:pointer-events-none disabled:opacity-35 motion-reduce:transition-none",
@@ -131,19 +141,15 @@ export function PublicMapCategoryFilter({
             onClick={() => onActiveGroupChange(key)}
           >
             <span
-              className={cn(
-                "inline-flex size-4 items-center justify-center rounded-full",
-                selected ? "bg-background/85 dark:bg-background/18" : "bg-muted"
-              )}
+              data-public-map-category-filter-icon=""
+              className="inline-flex size-4 items-center justify-center"
               aria-hidden
             >
               {key === "all" ? (
                 <PublicMapAllCategoryIcon
                   className={cn(
                     "size-3",
-                    selected
-                      ? "text-foreground dark:text-background"
-                      : "text-muted-foreground"
+                    selected ? "text-foreground" : "text-muted-foreground"
                   )}
                   style={selected ? undefined : { color: accent }}
                 />
@@ -152,9 +158,7 @@ export function PublicMapCategoryFilter({
                   category={key}
                   className={cn(
                     "size-3",
-                    selected
-                      ? "text-foreground dark:text-background"
-                      : "text-muted-foreground"
+                    selected ? "text-foreground" : "text-muted-foreground"
                   )}
                   style={selected ? undefined : { color: accent }}
                 />

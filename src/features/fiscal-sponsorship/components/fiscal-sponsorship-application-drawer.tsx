@@ -37,8 +37,6 @@ import {
   submitFiscalSponsorshipApplication,
 } from "../actions"
 import type { FiscalSponsorshipProjectWorkbenchData } from "../types"
-import { FiscalSponsorshipApplicationEditorActions } from "./fiscal-sponsorship-application-editor-actions"
-import { FiscalSponsorshipApplicationReviewNote } from "./fiscal-sponsorship-application-review-note"
 import { FiscalSponsorshipApplicationEditorFields } from "./fiscal-sponsorship-application-editor-fields"
 
 type FiscalSponsorshipApplicationDrawerProps = {
@@ -110,7 +108,6 @@ export function FiscalSponsorshipApplicationEditor({
   const [isSubmitting, startSubmitTransition] = React.useTransition()
   const isBusy = isSaving || isSubmitting
   const applicationReady = Boolean(data.workflowSummary?.applicationId)
-  const canEditApplication = data.workflowSummary?.canEditApplication ?? true
   const sourceActivityTitle =
     data.applicationPrefill?.sourceActivityTitle ??
     data.applicationPrefill?.projectName ??
@@ -204,18 +201,17 @@ export function FiscalSponsorshipApplicationEditor({
       field: Key,
       value: FiscalSponsorshipApplicationDraft[Key]
     ) => {
-      if (!canEditApplication) return
       setDraft((currentDraft) => ({
         ...currentDraft,
         [field]: value,
       }))
     },
-    [canEditApplication]
+    []
   )
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (isBusy || !canEditApplication) return
+    if (isBusy) return
 
     setSaveError(null)
     startSaveTransition(async () => {
@@ -240,7 +236,7 @@ export function FiscalSponsorshipApplicationEditor({
   }
 
   function handleSubmitForReview() {
-    if (isBusy || !canEditApplication) return
+    if (isBusy) return
 
     setSaveError(null)
     startSubmitTransition(async () => {
@@ -277,21 +273,6 @@ export function FiscalSponsorshipApplicationEditor({
 
   const editorContent = (
     <div className="flex flex-col gap-4">
-      <FiscalSponsorshipApplicationReviewNote
-        notes={data.workflowSummary?.reviewNotes}
-        status={data.workflowSummary?.applicationStatus}
-      />
-      {!canEditApplication ? (
-        <Alert>
-          <AlertTitle>Application is read-only</AlertTitle>
-          <AlertDescription>
-            {data.workflowSummary?.applicationStatus === "submitted" ||
-            data.workflowSummary?.applicationStatus === "in_review"
-              ? "Coach House is reviewing this application. Editing reopens only if more information is requested."
-              : "Only an organization editor or assigned Coach House reviewer can update this application."}
-          </AlertDescription>
-        </Alert>
-      ) : null}
       {loadingDraft ? (
         <Alert>
           <Loader2Icon
@@ -353,14 +334,48 @@ export function FiscalSponsorshipApplicationEditor({
     </div>
   )
   const editorActions = (
-    <FiscalSponsorshipApplicationEditorActions
-      canEdit={canEditApplication}
-      isBusy={isBusy}
-      isSaving={isSaving}
-      isSubmitting={isSubmitting}
-      onClose={requestClose}
-      onSubmitForReview={handleSubmitForReview}
-    />
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={requestClose}
+        disabled={isBusy}
+      >
+        Cancel
+      </Button>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={isBusy}
+          aria-busy={isSaving}
+        >
+          {isSaving ? (
+            <Loader2Icon
+              data-icon="inline-start"
+              className="animate-spin"
+              aria-hidden
+            />
+          ) : null}
+          {isSaving ? "Saving…" : "Save draft"}
+        </Button>
+        <Button
+          type="button"
+          disabled={isBusy}
+          aria-busy={isSubmitting}
+          onClick={handleSubmitForReview}
+        >
+          {isSubmitting ? (
+            <Loader2Icon
+              data-icon="inline-start"
+              className="animate-spin"
+              aria-hidden
+            />
+          ) : null}
+          {isSubmitting ? "Submitting…" : "Submit for review"}
+        </Button>
+      </div>
+    </>
   )
   const discardDialog = (
     <DiscardApplicationChangesDialog

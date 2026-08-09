@@ -10,6 +10,8 @@ import {
 import { PublicMapOrganizationDetail } from "@/components/public/public-map-index/organization-detail"
 import { OrganizationDetailResourceLinksSection } from "@/components/public/public-map-index/organization-detail-resource-links-section"
 import {
+  PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME,
+  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
 } from "@/components/public/public-map-index/sidebar-theme"
@@ -71,18 +73,41 @@ function buildOrganization(
 }
 
 describe("public map detail section chrome", () => {
-  it("does not apply a drop shadow to detail section surfaces", () => {
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).toContain(
-      "rounded-xl border border-border/70 bg-background/75"
+  it("matches detail header controls to the drawer glass surface", () => {
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
+      "!bg-input/35"
     )
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).not.toContain("shadow")
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).toContain(
-      "rounded-xl border border-border/70 bg-background/85"
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
+      "hover:!bg-input/50"
     )
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).not.toContain("shadow")
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
+      "border-input"
+    )
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
+      "backdrop-blur-xl"
+    )
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).not.toContain(
+      "bg-zinc"
+    )
+    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).not.toContain(
+      "bg-white"
+    )
   })
 
-  it("renders brand kit content without the visible parent container chrome", () => {
+  it("keeps detail content on solid blurred section surfaces", () => {
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).toContain(
+      "rounded-2xl border border-border/75 bg-background/90"
+    )
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).toContain("backdrop-blur-md")
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).toContain(
+      "rounded-xl border border-border/75 bg-background/95"
+    )
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).toContain(
+      "backdrop-blur-sm"
+    )
+  })
+
+  it("renders brand kit content on the shared profile section surface", () => {
     const organization = buildOrganization({
       brandKitAvailable: true,
       logoUrl: "https://example.org/logo.png",
@@ -106,11 +131,12 @@ describe("public map detail section chrome", () => {
       })
     )
 
-    expect(sectionMarkup).toContain('<section class="p-2.5">')
-    expect(sectionMarkup).not.toContain(
-      `p-2.5 ${PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME}`
+    expect(sectionMarkup).toContain(
+      `<section class="${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
     )
-    expect(markup).toContain('<p class="text-sm font-medium">Brand kit</p>')
+    expect(markup).toContain(
+      '<h3 class="text-base font-semibold">Brand kit</h3>'
+    )
     expect(markup).toContain(">Download<")
     expect(markup).toContain("Primary logo")
     expect(markup).toContain("Logo mark")
@@ -119,7 +145,7 @@ describe("public map detail section chrome", () => {
 })
 
 describe("OrganizationDetailOriginSection", () => {
-  it('renders the section title as "About"', () => {
+  it('renders the section title as "Organization story"', () => {
     const markup = renderToStaticMarkup(
       React.createElement(OrganizationDetailOriginSection, {
         storyFields: [
@@ -133,7 +159,7 @@ describe("OrganizationDetailOriginSection", () => {
       })
     )
 
-    expect(markup).toContain(">About<")
+    expect(markup).toContain(">Organization story<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
   })

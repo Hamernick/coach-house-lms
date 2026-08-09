@@ -13,41 +13,14 @@ import {
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
-import {
-  assignAllOrganizationCoachesAction,
-  loadOrganizationCoachAssignmentData,
-  setOrganizationCoachScopeEnabledAction,
-  updateOrganizationCoachAssignmentAction,
-} from "@/features/organization-coach-assignments"
-import {
-  loadOrganizationKanbanVisibility,
-  updateOrganizationKanbanVisibilityAction,
-} from "@/features/organization-kanban-visibility"
 
 export default async function OrganizationsPage() {
-  const staff = await requirePlatformCapability("organizations", {
+  await requirePlatformCapability("organizations", {
     loginRedirect: "/organizations",
   })
 
-  const [pageData, kanbanVisibilityData] = await Promise.all([
-    loadMemberWorkspaceProjectsPage(),
-    loadOrganizationKanbanVisibility({
-      supabase: staff.supabase,
-      userId: staff.userId,
-    }),
-  ])
-  const coachAssignmentData = await loadOrganizationCoachAssignmentData({
-    organizationIds: pageData.organizationOptions.map(({ orgId }) => orgId),
-  })
-  const projects = pageData.projects.map((project) => ({
-    ...project,
-    organizationCoachAssignments: project.organizationId
-      ? (coachAssignmentData.assignmentsByOrganizationId.get(
-          project.organizationId
-        ) ?? [])
-      : [],
-  }))
   const {
+    projects,
     storageMode,
     canResetStarterData,
     starterProjectCount,
@@ -56,7 +29,7 @@ export default async function OrganizationsPage() {
     organizationOptions,
     assigneeOptions,
     workstreamCategories,
-  } = pageData
+  } = await loadMemberWorkspaceProjectsPage()
 
   return (
     <MemberWorkspaceProjectsPage
@@ -83,38 +56,6 @@ export default async function OrganizationsPage() {
       scope={scope}
       organizationOptions={organizationOptions}
       assigneeOptions={assigneeOptions}
-      coachOptions={coachAssignmentData.coachOptions}
-      canManageCoachAssignments={
-        coachAssignmentData.available && staff.accessLevel === "developer"
-      }
-      updateCoachAssignmentAction={
-        coachAssignmentData.available && staff.accessLevel === "developer"
-          ? updateOrganizationCoachAssignmentAction
-          : undefined
-      }
-      assignAllCoachesAction={
-        coachAssignmentData.available && staff.accessLevel === "developer"
-          ? assignAllOrganizationCoachesAction
-          : undefined
-      }
-      coachScopeStatus={coachAssignmentData.scopeStatus}
-      setCoachScopeAction={
-        staff.accessLevel === "developer"
-          ? setOrganizationCoachScopeEnabledAction
-          : undefined
-      }
-      showAssignedOrganizationsEmpty={
-        staff.accessLevel === "coach" &&
-        coachAssignmentData.scopeStatus.assignedOnlyEnabled &&
-        organizationOptions.length === 0
-      }
-      kanbanVisibilityAvailable={kanbanVisibilityData.available}
-      hiddenOrganizationIds={kanbanVisibilityData.hiddenOrganizationIds}
-      updateOrganizationKanbanVisibilityAction={
-        kanbanVisibilityData.available
-          ? updateOrganizationKanbanVisibilityAction
-          : undefined
-      }
       workstreamCategories={workstreamCategories}
       createWorkstreamCategoryAction={
         createPlatformAdminWorkstreamCategoryAction

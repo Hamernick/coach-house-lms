@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest"
 
 import { MemberWorkspaceProjectActivityTimeline } from "@/features/member-workspace/components/projects/member-workspace-project-activity-timeline"
 import { MemberWorkspaceProjectOrganizationCard } from "@/features/member-workspace/components/projects/member-workspace-project-organization-card"
-import { buildAdminMemberCompleteness } from "@/features/member-workspace/server/admin-member-completeness"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import type { MemberWorkspaceAdminOrganizationSummary } from "@/features/member-workspace/types"
 
@@ -60,7 +59,24 @@ const organizationSummary: MemberWorkspaceAdminOrganizationSummary = {
       profileMissingFields: ["headline", "profile photo"],
     },
   ],
-  setupItems: [],
+  setupItems: [
+    { id: "website", label: "Add website", complete: false },
+    { id: "w9", label: "Upload W-9", complete: false },
+    {
+      id: "funding-goal",
+      label: "Set a program funding goal",
+      complete: false,
+    },
+    { id: "name", label: "Add organization name", complete: true },
+    { id: "tagline", label: "Add tagline", complete: true },
+    { id: "mission", label: "Add mission statement", complete: true },
+    { id: "need", label: "Describe the community need", complete: true },
+    { id: "values", label: "Add organizational values", complete: true },
+    { id: "city", label: "Add city", complete: true },
+    { id: "state", label: "Add state", complete: true },
+    { id: "logo", label: "Upload organization logo", complete: true },
+    { id: "program", label: "Add a program", complete: true },
+  ],
   programs: [
     {
       id: "program-1",
@@ -75,31 +91,6 @@ const organizationSummary: MemberWorkspaceAdminOrganizationSummary = {
 }
 
 describe("member workspace admin operations", () => {
-  it("measures name completeness from the stored profile full name", () => {
-    expect(
-      buildAdminMemberCompleteness({
-        avatarUrl: null,
-        email: "member@example.com",
-        fullName: null,
-        headline: null,
-      })
-    ).toEqual({
-      profileCompletenessPercent: 25,
-      profileCompletedCount: 1,
-      profileTotalCount: 4,
-      profileMissingFields: ["name", "headline", "profile photo"],
-    })
-
-    expect(
-      buildAdminMemberCompleteness({
-        avatarUrl: null,
-        email: "member@example.com",
-        fullName: "Alex Rivera",
-        headline: null,
-      }).profileMissingFields
-    ).not.toContain("name")
-  })
-
   it("stores per-admin workstream categories and immutable system activity", () => {
     expect(migration).toContain(
       "create table if not exists public.platform_admin_workstream_categories"
@@ -172,6 +163,11 @@ describe("member workspace admin operations", () => {
     expect(source).toContain("Delete category")
     expect(source).toContain("Restore defaults")
     expect(source).toContain("Restore default categories?")
+    expect(source).toContain("Hide category")
+    expect(source).toContain("Hidden categories")
+    expect(source).toContain("Show all categories")
+    expect(source).toContain("hiddenWorkstreamCategoryKeys")
+    expect(source).toContain("onHiddenWorkstreamCategoryKeysChange")
     expect(source).toContain(
       "Default categories can be renamed but cannot be deleted."
     )
@@ -215,9 +211,8 @@ describe("member workspace admin operations", () => {
       ),
       "utf8"
     )
-    expect(loaderSource).toContain(
-      "loadPlatformAdminWorkstreamConfiguration({\n        actor,"
-    )
+    expect(loaderSource).toContain("loadPlatformAdminWorkstreamConfiguration({")
+    expect(loaderSource).toContain("workstreamConfiguration")
   })
 
   it("keeps operational project fields while synchronizing real readiness", () => {
@@ -253,7 +248,31 @@ describe("member workspace admin operations", () => {
     expect(markup).toContain("Organization setup")
     expect(markup).toContain("75%")
     expect(markup).toContain("9 of 12 setup items complete")
+    expect(markup).toContain('data-slot="hover-card-trigger"')
+    expect(markup).toContain(
+      'data-react-grab-owner-component="MemberWorkspaceProjectOrganizationCard"'
+    )
+    expect(markup).toContain(
+      'aria-describedby="organization-setup-description-org-1"'
+    )
+    expect(markup).toContain("cursor-pointer")
+    expect(markup).not.toContain("cursor-help")
+    expect(markup).toContain(
+      "Incomplete: Add website, Upload W-9, Set a program funding goal."
+    )
+    expect(markup).toContain("Complete: Add organization name")
     expect(markup).toContain("User completeness")
+    expect(markup).toContain('aria-expanded="false"')
+    expect(markup).toContain(
+      'data-react-grab-owner-slot="user-completeness-trigger"'
+    )
+    expect(markup).toContain('data-slot="hover-card-trigger"')
+    expect(markup).toContain(
+      'data-react-grab-surface-slot="user-completeness-details"'
+    )
+    expect(markup).toContain(
+      'data-react-grab-owner-slot="user-completeness-member"'
+    )
     expect(markup).toContain("Missing headline, profile photo")
   })
 

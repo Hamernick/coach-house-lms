@@ -1,11 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  CaretDown,
-  DotsSixVertical,
-  Plus,
-} from "@phosphor-icons/react/dist/ssr"
+import { CaretDown, DotsSixVertical, Plus } from "@phosphor-icons/react/dist/ssr"
 import {
   DndContext,
   type DragEndEvent,
@@ -27,22 +23,10 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { toast } from "sonner"
 
-import type {
-  WorkstreamGroup,
-  WorkstreamTask,
-} from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/features/platform-admin-dashboard/upstream/components/ui/accordion"
+import type { WorkstreamGroup, WorkstreamTask } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/features/platform-admin-dashboard/upstream/components/ui/accordion"
 import { Button } from "@/features/platform-admin-dashboard/upstream/components/ui/button"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/features/platform-admin-dashboard/upstream/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/features/platform-admin-dashboard/upstream/components/ui/avatar"
 import { Separator } from "@/features/platform-admin-dashboard/upstream/components/ui/separator"
 import { ProgressCircle } from "@/features/platform-admin-dashboard/upstream/components/progress-circle"
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils"
@@ -56,7 +40,7 @@ type WorkstreamTabProps = {
   onCreateTask?: (context?: CreateTaskContext) => void
   onUpdateTaskStatus?: (
     taskId: string,
-    nextStatus: WorkstreamTask["status"]
+    nextStatus: WorkstreamTask["status"],
   ) => Promise<
     | { ok: true; taskId: string; status: WorkstreamTask["status"] }
     | { error: string }
@@ -72,18 +56,16 @@ export function WorkstreamTab({
 }: WorkstreamTabProps) {
   const [state, setState] = useState<WorkstreamGroup[]>(() => workstreams ?? [])
   const [openValues, setOpenValues] = useState<string[]>(() =>
-    workstreams && workstreams.length ? [workstreams[0].id] : []
+    workstreams && workstreams.length ? [workstreams[0].id] : [],
   )
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [overTaskId, setOverTaskId] = useState<string | null>(null)
-  const [pendingTaskIds, setPendingTaskIds] = useState<Set<string>>(
-    () => new Set()
-  )
+  const [pendingTaskIds, setPendingTaskIds] = useState<Set<string>>(() => new Set())
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
-    })
+    }),
   )
 
   const allIds = useMemo(() => state.map((group) => group.id), [state])
@@ -116,13 +98,13 @@ export function WorkstreamTab({
         currentGroups.map((group) =>
           group.id === groupId
             ? {
-                ...group,
-                tasks: group.tasks.map((task) =>
-                  task.id === taskId ? { ...task, status } : task
-                ),
-              }
-            : group
-        )
+              ...group,
+              tasks: group.tasks.map((task) =>
+                task.id === taskId ? { ...task, status } : task,
+              ),
+            }
+            : group,
+        ),
       )
     }
 
@@ -216,11 +198,7 @@ export function WorkstreamTab({
 
       // Reorder within the same workstream
       if (sourceGroupIndex === targetGroupIndex) {
-        const reordered = arrayMove(
-          sourceGroup.tasks,
-          sourceTaskIndex,
-          targetTaskIndex
-        )
+        const reordered = arrayMove(sourceGroup.tasks, sourceTaskIndex, targetTaskIndex)
         next[sourceGroupIndex] = { ...sourceGroup, tasks: reordered }
         return next
       }
@@ -248,10 +226,10 @@ export function WorkstreamTab({
   if (!state.length) {
     return (
       <section>
-        <h2 className="text-foreground text-sm font-semibold tracking-normal uppercase">
+        <h2 className="text-sm font-semibold tracking-normal text-foreground uppercase">
           WORKSTREAM BREAKDOWN
         </h2>
-        <div className="border-border/70 text-muted-foreground mt-4 rounded-lg border border-dashed p-6 text-sm">
+        <div className="mt-4 rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
           No workstreams defined yet.
         </div>
       </section>
@@ -261,12 +239,12 @@ export function WorkstreamTab({
   const canCreateTask = Boolean(onCreateTask)
 
   return (
-    <section className="border-border bg-muted space-y-3 rounded-2xl border p-3 shadow-[var(--shadow-workstream)]">
+    <section className="rounded-2xl border border-border bg-muted shadow-[var(--shadow-workstream)] p-3 space-y-3">
       <div className="flex items-center justify-between gap-3 px-2">
-        <h2 className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold tracking-normal uppercase">
+        <h2 className="flex-1 min-w-0 truncate text-sm font-semibold tracking-normal text-foreground uppercase">
           WORKSTREAM BREAKDOWN
         </h2>
-        <div className="flex shrink-0 items-center gap-1 opacity-60">
+        <div className="flex items-center gap-1 opacity-60 shrink-0">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -303,37 +281,27 @@ export function WorkstreamTab({
             type="multiple"
             value={openValues}
             onValueChange={(values) =>
-              setOpenValues(
-                Array.isArray(values) ? values : values ? [values] : []
-              )
+              setOpenValues(Array.isArray(values) ? values : values ? [values] : [])
             }
           >
             {state.map((group) => (
               <AccordionItem
                 key={group.id}
                 value={group.id}
-                className="border-border bg-background mb-2 overflow-hidden rounded-xl border last:mb-0"
+                className="mb-2 overflow-hidden rounded-xl border border-border bg-background last:mb-0"
               >
                 <AccordionTrigger className="bg-background">
                   <div className="flex w-full items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <CaretDown
-                        className="text-muted-foreground h-4 w-4 hover:cursor-pointer"
-                        aria-hidden="true"
-                      />
-                      <span className="text-foreground flex-1 truncate text-left text-sm font-medium hover:cursor-pointer">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CaretDown className="h-4 w-4 text-muted-foreground hover:cursor-pointer" aria-hidden="true" />
+                      <span className="flex-1 truncate text-left text-sm font-medium text-foreground hover:cursor-pointer">
                         {group.name}
                       </span>
                     </div>
-                    <div className="text-muted-foreground hidden shrink-0 items-center gap-2 text-xs sm:flex">
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                       {canCreateTask ? (
                         <>
-                          <Button
-                            asChild
-                            size="icon-sm"
-                            variant="ghost"
-                            className="size-6 rounded-md"
-                          >
+                          <Button asChild size="icon-sm" variant="ghost" className="size-6 rounded-md">
                             <span
                               role="button"
                               aria-label="Add task"
@@ -371,10 +339,8 @@ export function WorkstreamTab({
 
           <DragOverlay>
             {activeTask ? (
-              <div className="bg-background flex items-center gap-3 rounded-lg px-3 py-2 text-sm shadow-md">
-                <span className="flex-1 truncate text-left">
-                  {activeTask.name}
-                </span>
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm bg-background shadow-md">
+                <span className="flex-1 truncate text-left">{activeTask.name}</span>
               </div>
             ) : null}
           </DragOverlay>
@@ -396,7 +362,7 @@ function GroupSummary({ group }: GroupSummaryProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-muted-foreground text-xs">
+      <span className="text-xs text-muted-foreground">
         {done}/{total}
       </span>
       <ProgressCircle progress={percent} color={color} size={18} />
@@ -433,11 +399,8 @@ function WorkstreamTasks({
   const { setNodeRef } = useDroppable({ id: `group:${group.id}` })
 
   return (
-    <AccordionContent className="border-border bg-background/60 border-t px-1.5">
-      <SortableContext
-        items={group.tasks.map((task) => task.id)}
-        strategy={verticalListSortingStrategy}
-      >
+    <AccordionContent className="border-t border-border bg-background/60 px-1.5">
+      <SortableContext items={group.tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         <div ref={setNodeRef} className="space-y-1 py-2">
           {group.tasks.map((task) => (
             <TaskRow
@@ -475,15 +438,7 @@ function TaskRow({
 }: TaskRowProps) {
   const isDone = task.status === "done"
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    isOver,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id: task.id,
     disabled: !canReorder,
   })
@@ -497,7 +452,7 @@ function TaskRow({
 
   return (
     <div ref={setNodeRef} style={style} className="space-y-1">
-      {showDropLine && <div className="bg-primary h-px w-full rounded-full" />}
+      {showDropLine && <div className="h-px w-full rounded-full bg-primary" />}
       <TaskRowBase
         checked={isDone}
         disabled={!canToggle}
@@ -511,7 +466,7 @@ function TaskRow({
                 className={cn(
                   "text-muted-foreground",
                   task.dueTone === "danger" && "text-red-500",
-                  task.dueTone === "warning" && "text-amber-500"
+                  task.dueTone === "warning" && "text-amber-500",
                 )}
               >
                 {task.dueLabel}
@@ -520,14 +475,9 @@ function TaskRow({
             {task.assignee && (
               <Avatar className="size-6">
                 {task.assignee.avatarUrl && (
-                  <AvatarImage
-                    src={task.assignee.avatarUrl}
-                    alt={task.assignee.name}
-                  />
+                  <AvatarImage src={task.assignee.avatarUrl} alt={task.assignee.name} />
                 )}
-                <AvatarFallback>
-                  {task.assignee.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{task.assignee.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             )}
             {canReorder ? (
@@ -535,7 +485,7 @@ function TaskRow({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                className="text-muted-foreground size-7 cursor-grab rounded-md active:cursor-grabbing"
+                className="size-7 rounded-md text-muted-foreground cursor-grab active:cursor-grabbing"
                 aria-label="Reorder task"
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}

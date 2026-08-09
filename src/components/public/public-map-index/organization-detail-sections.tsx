@@ -23,10 +23,12 @@ import {
   type OrganizationDetailStoryField,
 } from "./organization-detail-helpers"
 import {
+  PUBLIC_MAP_DETAIL_BODY_CLASSNAME,
+  PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_MEDIA_SURFACE_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME,
-  PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
 } from "./sidebar-theme"
 
 type DetailBrandKitProps = {
@@ -62,16 +64,16 @@ export function OrganizationDetailBrandKitSection({
   if (!brandKitDownloadHref && logoCards.length === 0) return null
 
   return (
-    <section className="p-2.5">
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Brand kit</p>
+        <h3 className="text-base font-semibold">Brand kit</h3>
         {brandKitDownloadHref ? (
           <Button
             asChild
             variant="ghost"
             size="sm"
             className={cn(
-              "h-7 rounded-md px-2 text-[11px]",
+              "min-h-11 rounded-lg px-3 text-sm",
               PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
             )}
           >
@@ -114,8 +116,8 @@ function OrganizationDetailLogoCard({
   alt: string
 }) {
   return (
-    <div className={cn("p-2", PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME)}>
-      <p className="text-muted-foreground text-[11px]">{label}</p>
+    <div className={cn("p-3", PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME)}>
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
       <PublicMapMediaImage
         src={imageUrl}
         alt={alt}
@@ -135,8 +137,8 @@ export function OrganizationDetailOriginSection({
   onToggleField,
 }: DetailOriginProps) {
   return (
-    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
-      <p className="text-sm font-medium">About</p>
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+      <h3 className="text-base font-semibold">Organization story</h3>
       <Accordion type="single" collapsible className="mt-1 w-full">
         {storyFields.map((field) => {
           const hasCopy = field.value.length > 0
@@ -190,12 +192,12 @@ export function OrganizationDetailContactSection({
   contactRows: OrganizationDetailContactRow[]
 }) {
   return (
-    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
-      <p className="text-sm font-medium">Contact</p>
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+      <h3 className="text-base font-semibold">Contact</h3>
       {contactRows.length > 0 ? (
-        <div className="mt-1.5 space-y-1.5">
+        <div className="mt-2 space-y-2">
           {contactRows.map((row) => (
-            <p key={row.label} className="text-foreground text-xs">
+            <p key={row.label} className="text-foreground text-sm leading-5">
               <span className="text-muted-foreground font-medium">
                 {row.label}:
               </span>{" "}
@@ -204,7 +206,7 @@ export function OrganizationDetailContactSection({
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
           No contact details listed.
         </p>
       )}
@@ -220,10 +222,10 @@ export function OrganizationDetailFormationSection({
   if (!formationStatus) return null
 
   return (
-    <div className="mr-auto w-full max-w-[22.5rem] space-y-1.5">
-      <p className="text-sm font-medium">Formation status</p>
+    <section className={cn("space-y-2", PUBLIC_MAP_DETAIL_SECTION_CLASSNAME)}>
+      <h3 className="text-base font-semibold">Formation status</h3>
       <OrganizationFormationStatusSummary formationStatus={formationStatus} />
-    </div>
+    </section>
   )
 }
 
@@ -241,35 +243,35 @@ export function OrganizationDetailAddressSection({
     : null
 
   return (
-    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
-      <p className="text-sm font-medium">Address</p>
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+      <h3 className="text-base font-semibold">Address</h3>
       {isOnlineOnly ? (
-        <div className="mt-1.5 space-y-2">
+        <div className="mt-2 space-y-2">
           {resourceHref && webAddress ? (
             <a
               href={resourceHref}
               target="_blank"
               rel="noreferrer"
-              className="text-foreground block text-xs break-all underline-offset-4 hover:underline"
+              className="text-foreground block text-sm leading-5 break-all underline-offset-4 hover:underline"
             >
               {webAddress}
             </a>
           ) : (
-            <p className="text-muted-foreground text-xs">
+            <p className={PUBLIC_MAP_DETAIL_BODY_CLASSNAME}>
               No web address listed yet.
             </p>
           )}
         </div>
       ) : addressLines.length > 0 ? (
-        <ul className="mt-1.5 space-y-0.5">
+        <ul className="mt-2 space-y-1">
           {addressLines.map((line) => (
-            <li key={line} className="text-foreground text-xs">
+            <li key={line} className="text-foreground text-sm leading-5">
               {line}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
           No address listed yet. This profile can still appear on `/find`, but
           it will not render a map marker until an address is added.
         </p>
@@ -286,10 +288,10 @@ export function OrganizationDetailActivitiesSection({
   if (activities.length === 0) return null
 
   return (
-    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Activity</p>
-        <span className="text-muted-foreground text-[11px] tabular-nums">
+        <h3 className="text-base font-semibold">Activity</h3>
+        <span className="text-muted-foreground text-xs tabular-nums">
           {activities.length}
         </span>
       </div>
@@ -298,17 +300,17 @@ export function OrganizationDetailActivitiesSection({
           <article
             key={activity.id}
             className={cn(
-              "rounded-lg px-2 py-1.5",
+              "rounded-xl px-3 py-2.5",
               PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME
             )}
           >
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-foreground line-clamp-1 text-xs font-medium">
+                <p className="text-foreground line-clamp-2 text-sm font-medium">
                   {activity.title}
                 </p>
                 {activity.description || activity.subtitle ? (
-                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px]">
+                  <p className="text-muted-foreground mt-1 line-clamp-3 text-sm leading-5">
                     {activity.description || activity.subtitle}
                   </p>
                 ) : null}
@@ -319,7 +321,8 @@ export function OrganizationDetailActivitiesSection({
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "text-muted-foreground hover:text-foreground h-7 w-7 shrink-0 rounded-full",
+                    "text-muted-foreground hover:text-foreground shrink-0",
+                    PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
                     PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
                   )}
                 >
@@ -341,20 +344,20 @@ export function OrganizationDetailActivitiesSection({
                 .map((chip) => (
                   <span
                     key={chip}
-                    className="bg-muted text-muted-foreground inline-flex h-5 max-w-full items-center rounded-full px-1.5 text-[10px] leading-none"
+                    className="bg-muted text-muted-foreground inline-flex min-h-6 max-w-full items-center rounded-full px-2 text-xs leading-none"
                   >
                     <span className="truncate">{chip}</span>
                   </span>
                 ))}
               {activity.locationType ? (
-                <span className="text-muted-foreground inline-flex h-5 items-center gap-1 text-[10px] leading-none">
+                <span className="text-muted-foreground inline-flex min-h-6 items-center gap-1 text-xs leading-none">
                   <MapPinIcon className="size-3" aria-hidden />
                   {activity.locationType === "online" ? "Online" : "In person"}
                 </span>
               ) : null}
             </div>
             {activity.chips.length > 2 ? (
-              <p className="text-muted-foreground/80 mt-1 line-clamp-1 text-[10px]">
+              <p className="text-muted-foreground/80 mt-1.5 line-clamp-2 text-xs leading-4">
                 {activity.chips.slice(2, 5).join(" · ")}
               </p>
             ) : null}

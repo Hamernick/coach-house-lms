@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { SidebarClass } from "@/lib/academy"
 import { fetchSidebarTree } from "@/lib/academy"
+import { isNonProductAcceleratorClass } from "@/lib/accelerator/class-visibility"
 import {
   parseAssignmentCompletionMode,
   parseAssignmentFields,
@@ -54,15 +55,6 @@ type ProgressOptions = {
   isAdmin?: boolean
   classes?: SidebarClass[]
   basePath?: string
-}
-
-const LEGACY_CLASS_TITLES = new Set(["published class"])
-const LEGACY_CLASS_SLUGS = new Set(["published-class"])
-
-function isLegacyClass(klass: SidebarClass): boolean {
-  const title = klass.title.trim().toLowerCase()
-  const slug = klass.slug.trim().toLowerCase()
-  return LEGACY_CLASS_TITLES.has(title) || LEGACY_CLASS_SLUGS.has(slug)
 }
 
 function normalizeClassesForProgress(
@@ -219,7 +211,7 @@ export async function fetchAcceleratorProgressTotalsByUserId({
     Boolean(isAdmin)
   )
   const filteredClasses = normalizedClasses.filter(
-    (klass) => !isLegacyClass(klass)
+    (klass) => !isNonProductAcceleratorClass(klass)
   )
   const moduleIds = filteredClasses.flatMap((klass) =>
     klass.modules.map((module) => module.id)
@@ -442,7 +434,7 @@ export async function fetchAcceleratorProgressSummary({
     Boolean(resolvedIsAdmin)
   )
   const filteredClasses = normalizedClasses.filter(
-    (klass) => !isLegacyClass(klass)
+    (klass) => !isNonProductAcceleratorClass(klass)
   )
   const moduleIds = filteredClasses.flatMap((klass) =>
     klass.modules.map((module) => module.id)

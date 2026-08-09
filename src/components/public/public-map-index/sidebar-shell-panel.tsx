@@ -116,7 +116,6 @@ export function PublicMapShellSidebarPanel({
       <PublicMapRailSearchPanel
         query={query}
         searchContext={searchContext}
-        favorites={favorites}
         items={items}
         organizations={organizations}
         selectedItemId={selectedItemId}

@@ -1,25 +1,28 @@
 "use client"
 
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { SidebarContent } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
 } from "./category-filter"
-import { PublicMapDirectoryStatusHeader } from "./directory-status-pill"
-import { PublicMapOrganizationDetail } from "./organization-detail"
 import { PublicMapOrganizationList } from "./organization-list"
-import { PublicMapResourceDetail } from "./resource-detail"
-import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
-import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import { PublicMapSearchCard } from "./search-card"
 import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapListItem } from "./map-items-state"
+import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
+
+export {
+  PublicMapDrawerDetailPanel,
+  PublicMapRailDetailPanel,
+  PublicMapResourceDrawerDetailPanel,
+  PublicMapResourceRailDetailPanel,
+} from "./sidebar-detail-panels"
 
 export type PublicMapSidebarSearchContext = {
   title: string
@@ -27,6 +30,8 @@ export type PublicMapSidebarSearchContext = {
   items: PublicMapListItem[]
   onClear: () => void
 }
+
+const noopPublicMapSearchAction = () => undefined
 
 function PublicMapSearchContextCard({
   context,
@@ -67,27 +72,37 @@ function PublicMapSearchContextCard({
 }
 
 type PublicMapOrganizationsStackProps = {
-  favorites: string[]
   items: PublicMapListItem[]
   organizations: PublicMapOrganization[]
   selectedItemId: string | null
   selectedOrgId?: string | null
   query: string
+  activeGroup: PublicMapGroupFilterKey
+  resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
+  resourceItemsLoadError?: string | null
   constrainedLayout?: boolean
   className?: string
+  onClearCategory: () => void
+  onClearQuery: () => void
+  onRetryResourceItems: () => void
   onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
 }
 
 function PublicMapOrganizationsStack({
-  favorites,
   items,
   organizations,
   selectedItemId,
   selectedOrgId = null,
   query,
+  activeGroup,
+  resourceItemsLoadStatus,
+  resourceItemsLoadError = null,
   constrainedLayout = false,
   className,
+  onClearCategory,
+  onClearQuery,
+  onRetryResourceItems,
   onSelectItem,
   onOpenDetails,
 }: PublicMapOrganizationsStackProps) {
@@ -97,14 +112,19 @@ function PublicMapOrganizationsStack({
       className={cn("flex w-full max-w-full min-w-0 flex-col gap-3", className)}
     >
       <PublicMapOrganizationList
-        favorites={favorites}
         items={items}
         organizations={organizations}
         selectedItemId={selectedItemId}
         selectedOrgId={selectedOrgId}
         query={query}
+        activeGroup={activeGroup}
+        loadStatus={resourceItemsLoadStatus}
+        loadError={resourceItemsLoadError}
         constrainedLayout={constrainedLayout}
         incrementalLoading
+        onClearCategory={onClearCategory}
+        onClearQuery={onClearQuery}
+        onRetryLoad={onRetryResourceItems}
         onSelectItem={onSelectItem}
         onSelectOrg={() => undefined}
         onOpenDetails={onOpenDetails}
@@ -113,10 +133,73 @@ function PublicMapOrganizationsStack({
   )
 }
 
+function PublicMapSearchResultsStatus({
+  resourceItemsLoadStatus,
+  resultCount,
+  searchPending,
+}: {
+  resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
+  resultCount: number
+  searchPending: boolean
+}) {
+  const formattedCount = resultCount.toLocaleString()
+  const resultLabel = `${formattedCount} ${resultCount === 1 ? "result" : "results"}`
+  const statusLabel = searchPending
+    ? `${resultLabel} · Updating map…`
+    : resourceItemsLoadStatus === "loading"
+      ? resultCount > 0
+        ? `${formattedCount} available · Loading full directory…`
+        : "Loading full directory…"
+      : resultLabel
+
+  return (
+    <div
+      data-public-map-search-results-status="true"
+      data-public-map-directory-status-header="true"
+      className="flex h-8 min-w-0 shrink-0 items-center justify-between gap-3 px-1"
+    >
+      <p className="text-muted-foreground text-xs font-medium">Resources</p>
+      <p
+        className="text-muted-foreground min-w-0 truncate text-right text-xs tabular-nums"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {statusLabel}
+      </p>
+    </div>
+  )
+}
+
+function PublicMapResourceItemsErrorNotice({
+  error,
+  onRetry,
+}: {
+  error: string | null
+  onRetry: () => void
+}) {
+  if (!error) return null
+
+  return (
+    <Alert className="border-destructive/30 bg-background/45 py-2.5">
+      <AlertDescription className="col-start-1 flex w-full flex-row items-center justify-between gap-3">
+        <span className="text-pretty">{error}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 rounded-full"
+          onClick={onRetry}
+        >
+          Try again
+        </Button>
+      </AlertDescription>
+    </Alert>
+  )
+}
+
 type PublicMapRailSearchPanelProps = {
   query: string
   searchContext?: PublicMapSidebarSearchContext | null
-  favorites: string[]
   items: PublicMapListItem[]
   organizations: PublicMapOrganization[]
   selectedItemId: string | null
@@ -124,9 +207,14 @@ type PublicMapRailSearchPanelProps = {
   constrainedLayout: boolean
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts
+  resourceItemsLoadStatus?: PublicMapResourceItemsLoadStatus
+  resourceItemsLoadError?: string | null
+  searchPending?: boolean
   onQueryChange: (value: string) => void
+  onSearchEngage?: () => void
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
   onHidePanel: () => void
+  onRetryResourceItems?: () => void
   onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
 }
@@ -134,7 +222,6 @@ type PublicMapRailSearchPanelProps = {
 export function PublicMapRailSearchPanel({
   query,
   searchContext = null,
-  favorites,
   items,
   organizations,
   selectedItemId,
@@ -142,9 +229,14 @@ export function PublicMapRailSearchPanel({
   constrainedLayout,
   activeGroup,
   groupCounts,
+  resourceItemsLoadStatus = "ready",
+  resourceItemsLoadError = null,
+  searchPending = false,
   onQueryChange,
+  onSearchEngage,
   onActiveGroupChange,
   onHidePanel,
+  onRetryResourceItems = noopPublicMapSearchAction,
   onSelectItem,
   onOpenDetails,
 }: PublicMapRailSearchPanelProps) {
@@ -157,10 +249,12 @@ export function PublicMapRailSearchPanel({
         <PublicMapSearchCard
           query={query}
           onQueryChange={onQueryChange}
+          onSearchEngage={onSearchEngage}
           onHidePanel={onHidePanel}
           activeGroup={activeGroup}
           groupCounts={groupCounts}
           onActiveGroupChange={onActiveGroupChange}
+          searchPending={searchPending}
         />
       </div>
       <section
@@ -171,11 +265,23 @@ export function PublicMapRailSearchPanel({
           data-public-map-sidebar-section="rail-status-header"
           className="shrink-0 pb-1.5"
         >
-          <PublicMapDirectoryStatusHeader count={items.length} />
+          <PublicMapSearchResultsStatus
+            resourceItemsLoadStatus={resourceItemsLoadStatus}
+            resultCount={items.length}
+            searchPending={searchPending}
+          />
         </div>
         {searchContext ? (
           <div className="shrink-0 pb-2">
             <PublicMapSearchContextCard context={searchContext} />
+          </div>
+        ) : null}
+        {resourceItemsLoadStatus === "error" && items.length > 0 ? (
+          <div className="shrink-0 pb-2">
+            <PublicMapResourceItemsErrorNotice
+              error={resourceItemsLoadError}
+              onRetry={onRetryResourceItems}
+            />
           </div>
         ) : null}
         <ScrollArea
@@ -185,13 +291,18 @@ export function PublicMapRailSearchPanel({
           contentClassName="px-1 pt-1 pb-4"
         >
           <PublicMapOrganizationsStack
-            favorites={favorites}
             items={items}
             organizations={organizations}
             selectedItemId={selectedItemId}
             selectedOrgId={selectedOrgId}
             query={query}
+            activeGroup={activeGroup}
+            resourceItemsLoadStatus={resourceItemsLoadStatus}
+            resourceItemsLoadError={resourceItemsLoadError}
             constrainedLayout={constrainedLayout}
+            onClearCategory={() => onActiveGroupChange("all")}
+            onClearQuery={() => onQueryChange("")}
+            onRetryResourceItems={onRetryResourceItems}
             onSelectItem={onSelectItem}
             onOpenDetails={onOpenDetails}
           />
@@ -201,105 +312,45 @@ export function PublicMapRailSearchPanel({
   )
 }
 
-type PublicMapRailDetailPanelProps = {
-  canManageResourceMap?: boolean
-  organizationCurationAction?: PublicMapOrganizationCurationAction
-  organization: PublicMapOrganization
-  favorites: string[]
-  onBack: () => void
-  onToggleFavorite: (orgId: string) => void
-}
-
-export function PublicMapRailDetailPanel({
-  canManageResourceMap = false,
-  organizationCurationAction,
-  organization,
-  favorites,
-  onBack,
-  onToggleFavorite,
-}: PublicMapRailDetailPanelProps) {
-  return (
-    <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
-      <ScrollArea
-        data-public-map-sidebar-section="rail-detail-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
-        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-        contentClassName="pb-3 pr-1"
-      >
-        <PublicMapOrganizationDetail
-          canManageResourceMap={canManageResourceMap}
-          organizationCurationAction={organizationCurationAction}
-          organization={organization}
-          favorites={favorites}
-          onBack={onBack}
-          onToggleFavorite={onToggleFavorite}
-        />
-      </ScrollArea>
-    </SidebarContent>
-  )
-}
-
-export function PublicMapResourceRailDetailPanel({
-  canManageResourceMap = false,
-  item,
-  onBack,
-  resourceMapCurationAction,
-}: {
-  canManageResourceMap?: boolean
-  item: ExternalResourceMapItem
-  onBack: () => void
-  resourceMapCurationAction?: PublicMapResourceCurationAction
-}) {
-  return (
-    <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
-      <ScrollArea
-        data-public-map-sidebar-section="rail-detail-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
-        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-        contentClassName="pb-3 pr-1"
-      >
-        <PublicMapResourceDetail
-          canManageResourceMap={canManageResourceMap}
-          item={item}
-          onBack={onBack}
-          resourceMapCurationAction={resourceMapCurationAction}
-        />
-      </ScrollArea>
-    </SidebarContent>
-  )
-}
-
 type PublicMapDrawerSearchPanelProps = {
   query: string
   searchContext?: PublicMapSidebarSearchContext | null
-  favorites: string[]
   items: PublicMapListItem[]
   organizations: PublicMapOrganization[]
   selectedItemId: string | null
   selectedOrgId?: string | null
-  drawerBodyScrollable: boolean
+  drawerBodyScrollable?: boolean
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts
+  resourceItemsLoadStatus?: PublicMapResourceItemsLoadStatus
+  resourceItemsLoadError?: string | null
+  searchPending?: boolean
   onQueryChange: (value: string) => void
+  onSearchEngage?: () => void
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
   onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
+  onRetryResourceItems?: () => void
 }
 
 export function PublicMapDrawerSearchPanel({
   query,
   searchContext = null,
-  favorites,
   items,
   organizations,
   selectedItemId,
   selectedOrgId = null,
   activeGroup,
   groupCounts,
+  resourceItemsLoadStatus = "ready",
+  resourceItemsLoadError = null,
+  searchPending = false,
   onQueryChange,
+  onSearchEngage,
   onActiveGroupChange,
   onSelectItem,
   onOpenDetails,
+  onRetryResourceItems = noopPublicMapSearchAction,
 }: PublicMapDrawerSearchPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-transparent">
@@ -307,16 +358,31 @@ export function PublicMapDrawerSearchPanel({
         <PublicMapSearchCard
           query={query}
           onQueryChange={onQueryChange}
+          onSearchEngage={onSearchEngage}
           activeGroup={activeGroup}
           groupCounts={groupCounts}
           onActiveGroupChange={onActiveGroupChange}
           compact
+          searchPending={searchPending}
         />
       </div>
       <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2")}>
+        <PublicMapSearchResultsStatus
+          resourceItemsLoadStatus={resourceItemsLoadStatus}
+          resultCount={items.length}
+          searchPending={searchPending}
+        />
         {searchContext ? (
           <div className="shrink-0 pt-2 pb-2">
             <PublicMapSearchContextCard context={searchContext} />
+          </div>
+        ) : null}
+        {resourceItemsLoadStatus === "error" && items.length > 0 ? (
+          <div className="shrink-0 pb-2">
+            <PublicMapResourceItemsErrorNotice
+              error={resourceItemsLoadError}
+              onRetry={onRetryResourceItems}
+            />
           </div>
         ) : null}
         <div
@@ -326,90 +392,23 @@ export function PublicMapDrawerSearchPanel({
           )}
         >
           <PublicMapOrganizationsStack
-            favorites={favorites}
             items={items}
             organizations={organizations}
             selectedItemId={selectedItemId}
             selectedOrgId={selectedOrgId}
             query={query}
+            activeGroup={activeGroup}
+            resourceItemsLoadStatus={resourceItemsLoadStatus}
+            resourceItemsLoadError={resourceItemsLoadError}
             className="pt-2 pb-1"
+            onClearCategory={() => onActiveGroupChange("all")}
+            onClearQuery={() => onQueryChange("")}
+            onRetryResourceItems={onRetryResourceItems}
             onSelectItem={onSelectItem}
             onOpenDetails={onOpenDetails}
           />
         </div>
       </div>
     </div>
-  )
-}
-
-type PublicMapDrawerDetailPanelProps = {
-  canManageResourceMap?: boolean
-  organizationCurationAction?: PublicMapOrganizationCurationAction
-  organization: PublicMapOrganization
-  favorites: string[]
-  drawerBodyScrollable: boolean
-  onBack: () => void
-  onToggleFavorite: (orgId: string) => void
-}
-
-export function PublicMapDrawerDetailPanel({
-  canManageResourceMap = false,
-  organizationCurationAction,
-  organization,
-  favorites,
-  onBack,
-  onToggleFavorite,
-}: PublicMapDrawerDetailPanelProps) {
-  return (
-    <ScrollArea
-      data-public-map-sidebar-section="drawer-detail-scroll"
-      className="h-full min-h-0 flex-1 overflow-hidden px-1"
-      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-      contentClassName="pb-[max(env(safe-area-inset-bottom),0.75rem)]"
-    >
-      <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
-        <PublicMapOrganizationDetail
-          canManageResourceMap={canManageResourceMap}
-          organizationCurationAction={organizationCurationAction}
-          organization={organization}
-          favorites={favorites}
-          onBack={onBack}
-          onToggleFavorite={onToggleFavorite}
-          compact
-        />
-      </div>
-    </ScrollArea>
-  )
-}
-
-export function PublicMapResourceDrawerDetailPanel({
-  canManageResourceMap = false,
-  item,
-  onBack,
-  resourceMapCurationAction,
-}: {
-  canManageResourceMap?: boolean
-  item: ExternalResourceMapItem
-  drawerBodyScrollable: boolean
-  onBack: () => void
-  resourceMapCurationAction?: PublicMapResourceCurationAction
-}) {
-  return (
-    <ScrollArea
-      data-public-map-sidebar-section="drawer-detail-scroll"
-      className="h-full min-h-0 flex-1 overflow-hidden px-1"
-      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-      contentClassName="pb-[max(env(safe-area-inset-bottom),0.75rem)]"
-    >
-      <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
-        <PublicMapResourceDetail
-          canManageResourceMap={canManageResourceMap}
-          item={item}
-          onBack={onBack}
-          resourceMapCurationAction={resourceMapCurationAction}
-          compact
-        />
-      </div>
-    </ScrollArea>
   )
 }

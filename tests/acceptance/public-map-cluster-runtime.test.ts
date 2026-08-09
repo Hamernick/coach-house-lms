@@ -791,7 +791,7 @@ describe("syncClusterSourceAndLayers", () => {
         paint: expect.objectContaining({
           "text-halo-blur": 0.16,
           "text-halo-color": "rgba(255, 255, 255, 0.9)",
-          "text-halo-width": 0.85,
+          "text-halo-width": 0.65,
         }),
       })
     )
@@ -834,7 +834,7 @@ describe("syncClusterSourceAndLayers", () => {
         paint: expect.objectContaining({
           "text-halo-blur": 0.16,
           "text-halo-color": "rgba(255, 255, 255, 0.9)",
-          "text-halo-width": 0.9,
+          "text-halo-width": 0.7,
         }),
       })
     )
@@ -907,7 +907,7 @@ describe("syncClusterSourceAndLayers", () => {
         "text-ignore-placement": true,
       }),
       paint: expect.objectContaining({
-        "text-halo-width": 0.9,
+        "text-halo-width": 0.7,
         "text-opacity": 1,
         "text-opacity-transition": PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
       }),

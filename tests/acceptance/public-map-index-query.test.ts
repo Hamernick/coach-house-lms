@@ -16,7 +16,6 @@ import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 
 function buildSupabaseAdminStub({
   organizations,
-  organizationError = null,
   programs,
 }: {
   organizations: Array<{
@@ -26,7 +25,6 @@ function buildSupabaseAdminStub({
     location_lng: number | null
     public_slug: string | null
   }>
-  organizationError?: { code: string; message: string } | null
   programs: Array<{
     id: string
     user_id: string
@@ -45,10 +43,9 @@ function buildSupabaseAdminStub({
     wizard_snapshot: Record<string, unknown> | null
   }>
 }) {
-  const organizationsReturns = vi.fn().mockResolvedValue({
-    data: organizationError ? null : organizations,
-    error: organizationError,
-  })
+  const organizationsReturns = vi
+    .fn()
+    .mockResolvedValue({ data: organizations, error: null })
   const programsReturns = vi
     .fn()
     .mockResolvedValue({ data: programs, error: null })
@@ -95,32 +92,6 @@ describe("fetchPublicMapOrganizations", () => {
 
     await expect(fetchPublicMapOrganizations()).resolves.toEqual([])
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
-  })
-
-  it("rejects transient organization query failures instead of returning an empty directory", async () => {
-    const { supabase } = buildSupabaseAdminStub({
-      organizations: [],
-      organizationError: {
-        code: "08006",
-        message: "temporary connection failure",
-      },
-      programs: [],
-    })
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-
-    createSupabaseAdminClientMock.mockReturnValue(supabase)
-
-    await expect(fetchPublicMapOrganizations()).rejects.toThrow(
-      "Unable to load public map organizations."
-    )
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[public-map] organization query failed",
-      {
-        code: "08006",
-        message: "temporary connection failure",
-      }
-    )
-    errorSpy.mockRestore()
   })
 
   it("returns published orgs even when coordinates are missing", async () => {

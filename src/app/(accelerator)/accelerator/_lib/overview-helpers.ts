@@ -1,3 +1,4 @@
+import { isNonProductAcceleratorClass } from "@/lib/accelerator/class-visibility"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 
@@ -64,11 +65,9 @@ export function buildVisibleAcceleratorGroups<
   hasAcceleratorAccess: boolean
   ownedElectiveModuleSlugSet: Set<string>
 }) {
-  const baseGroups = groups.filter((group) => {
-    const title = group.title.trim().toLowerCase()
-    const slug = group.slug.trim().toLowerCase()
-    return title !== "published class" && slug !== "published-class"
-  })
+  const baseGroups = groups.filter(
+    (group) => !isNonProductAcceleratorClass(group)
+  )
 
   const transformed: TGroup[] = []
   let formationTrack: TGroup | null = null
@@ -78,7 +77,9 @@ export function buildVisibleAcceleratorGroups<
     const normalizedSlug = group.slug.trim().toLowerCase()
     const normalizedTitle = group.title.trim().toLowerCase()
     const isFormationSource =
-      normalizedSlug === "electives" || normalizedSlug === "formation" || normalizedTitle === "formation"
+      normalizedSlug === "electives" ||
+      normalizedSlug === "formation" ||
+      normalizedTitle === "formation"
 
     if (!isFormationSource) {
       if (hasAcceleratorAccess) {
@@ -87,8 +88,12 @@ export function buildVisibleAcceleratorGroups<
       continue
     }
 
-    const formationModules = group.modules.filter((module) => !isElectiveAddOnModule(module))
-    const electiveModules = group.modules.filter((module) => isElectiveAddOnModule(module))
+    const formationModules = group.modules.filter(
+      (module) => !isElectiveAddOnModule(module)
+    )
+    const electiveModules = group.modules.filter((module) =>
+      isElectiveAddOnModule(module)
+    )
 
     if (formationModules.length > 0) {
       const seed: TGroup =
@@ -108,7 +113,9 @@ export function buildVisibleAcceleratorGroups<
 
     const accessibleElectiveModules = hasAcceleratorAccess
       ? electiveModules
-      : electiveModules.filter((module) => ownedElectiveModuleSlugSet.has(module.slug.trim().toLowerCase()))
+      : electiveModules.filter((module) =>
+          ownedElectiveModuleSlugSet.has(module.slug.trim().toLowerCase())
+        )
 
     if (accessibleElectiveModules.length > 0) {
       const seed: TGroup =
@@ -130,14 +137,18 @@ export function buildVisibleAcceleratorGroups<
   if (formationTrack) {
     formationTrack = {
       ...formationTrack,
-      modules: sortAcceleratorModules(dedupeModulesById(formationTrack.modules)),
+      modules: sortAcceleratorModules(
+        dedupeModulesById(formationTrack.modules)
+      ),
     }
   }
 
   if (electivesTrack) {
     electivesTrack = {
       ...electivesTrack,
-      modules: sortAcceleratorModules(dedupeModulesById(electivesTrack.modules)),
+      modules: sortAcceleratorModules(
+        dedupeModulesById(electivesTrack.modules)
+      ),
     }
   }
 

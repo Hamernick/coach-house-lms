@@ -4,13 +4,18 @@ import { useEffect, useRef, type RefObject } from "react"
 import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { MAP_STYLE, applyPublicMapSpaceFog } from "./constants"
+import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
+import {
+  applyPublicMapBasemapConfig,
+  applyPublicMapSpaceFog,
+  resolvePublicMapBasemapConfig,
+  resolvePublicMapStyleForTheme,
+} from "./constants"
 import { organizationHasMapLocation, type PublicMapBounds } from "./helpers"
 import { observePublicMapContainer, resolveMapBounds } from "./layout-sync"
 import {
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
-  focusChicagoFallback,
   focusOrganizationOnMap,
   resolvePublicMapCameraPadding,
 } from "./map-view-helpers"
@@ -18,7 +23,6 @@ import {
   isRecoverablePublicMapTileError,
   resolvePublicMapRuntimeErrorMessage,
 } from "./public-map-runtime-errors"
-import type { UserLocationStatus } from "./user-location"
 
 export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
@@ -113,17 +117,12 @@ export function useSyncSidebarCameraPadding({
 }
 
 function markInitialViewportResolved({
-  status,
   hasResolvedInitialViewportRef,
-  setUserLocationStatus,
   setInitialViewportResolved,
 }: {
-  status: UserLocationStatus
   hasResolvedInitialViewportRef: RefObject<boolean>
-  setUserLocationStatus: (status: UserLocationStatus) => void
   setInitialViewportResolved: (resolved: boolean) => void
 }) {
-  setUserLocationStatus(status)
   hasResolvedInitialViewportRef.current = true
   setInitialViewportResolved(true)
 }
@@ -134,7 +133,6 @@ export function useResolveInitialPublicMapViewport({
   hasResolvedInitialViewportRef,
   initialOrganization,
   preferNationalFallback = false,
-  setUserLocationStatus,
   setInitialViewportResolved,
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
@@ -142,7 +140,6 @@ export function useResolveInitialPublicMapViewport({
   hasResolvedInitialViewportRef: RefObject<boolean>
   initialOrganization: PublicMapOrganization | null
   preferNationalFallback?: boolean
-  setUserLocationStatus: (status: UserLocationStatus) => void
   setInitialViewportResolved: (resolved: boolean) => void
 }) {
   useEffect(() => {
@@ -161,9 +158,7 @@ export function useResolveInitialPublicMapViewport({
     ) {
       focusOrganizationOnMap({ map, organization: initialOrganization })
       markInitialViewportResolved({
-        status: "idle",
         hasResolvedInitialViewportRef,
-        setUserLocationStatus,
         setInitialViewportResolved,
       })
       return
@@ -176,60 +171,16 @@ export function useResolveInitialPublicMapViewport({
         duration: 0,
       })
       markInitialViewportResolved({
-        status: "idle",
         hasResolvedInitialViewportRef,
-        setUserLocationStatus,
         setInitialViewportResolved,
       })
       return
     }
 
-    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
-      focusChicagoFallback({ map })
-      markInitialViewportResolved({
-        status: "unavailable",
-        hasResolvedInitialViewportRef,
-        setUserLocationStatus,
-        setInitialViewportResolved,
-      })
-      return
-    }
-
-    setUserLocationStatus("requesting")
-    window.navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        activeMap.flyTo({
-          center: [position.coords.longitude, position.coords.latitude],
-          zoom: 9.25,
-          duration: 900,
-          essential: true,
-        })
-        markInitialViewportResolved({
-          status: "centered",
-          hasResolvedInitialViewportRef,
-          setUserLocationStatus,
-          setInitialViewportResolved,
-        })
-      },
-      (error) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        focusChicagoFallback({ map: activeMap })
-        markInitialViewportResolved({
-          status: error.code === 1 ? "denied" : "error",
-          hasResolvedInitialViewportRef,
-          setUserLocationStatus,
-          setInitialViewportResolved,
-        })
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 7000,
-        maximumAge: 60_000,
-      }
-    )
+    markInitialViewportResolved({
+      hasResolvedInitialViewportRef,
+      setInitialViewportResolved,
+    })
   }, [
     hasResolvedInitialViewportRef,
     initialOrganization,
@@ -237,7 +188,6 @@ export function useResolveInitialPublicMapViewport({
     mapRef,
     preferNationalFallback,
     setInitialViewportResolved,
-    setUserLocationStatus,
   ])
 }
 
@@ -253,6 +203,7 @@ export function useInitializePublicMap({
   setMapLoadVersion,
   setMapError,
   setAppliedBounds,
+  theme,
 }: {
   token: string
   tokenAvailable: boolean
@@ -265,7 +216,17 @@ export function useInitializePublicMap({
   setMapLoadVersion: (value: number | ((current: number) => number)) => void
   setMapError: (value: string | null) => void
   setAppliedBounds: (value: PublicMapBounds | null) => void
+  theme: PublicMapTheme
 }) {
+  const themeRef = useRef(theme)
+  themeRef.current = theme
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoadedRef.current) return
+    applyPublicMapBasemapConfig(map, theme)
+  }, [mapLoadedRef, mapRef, theme])
+
   useEffect(() => {
     if (!tokenAvailable) return
     if (!containerRef.current) return
@@ -291,11 +252,15 @@ export function useInitializePublicMap({
 
         const map = new mapboxgl.Map({
           container: containerRef.current,
-          style: MAP_STYLE,
+          style: resolvePublicMapStyleForTheme(themeRef.current),
+          config: {
+            basemap: resolvePublicMapBasemapConfig(themeRef.current),
+          },
           center: FALLBACK_CENTER,
           zoom: FALLBACK_ZOOM,
           projection: "globe",
           cooperativeGestures: false,
+          attributionControl: false,
         })
         mapRef.current = map
 
@@ -336,6 +301,7 @@ export function useInitializePublicMap({
         })
 
         map.on("style.load", () => {
+          applyPublicMapBasemapConfig(map, themeRef.current)
           applyPublicMapGlobePresentation(map)
           markMapReady()
         })

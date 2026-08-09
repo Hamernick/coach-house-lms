@@ -1,0 +1,17 @@
+id: com.coachhouse.finance
+version: 0.1.0
+name: Coach House Finance
+icon: public/coach-house-logo-dark.png
+declarations:
+  distribution_type: public
+  sandbox_install_compatible: true
+  stripe_api_access_type: platform
+  allowed_redirect_uris:
+    - https://coachhouse.app/api/account/finance-connections/stripe/callback
+  stripe_api_access:
+    permissions:
+      - permission: balance_read
+        purpose: Read balance transactions selected by an organization for its private Finance history.
+ui_extension:
+  views: []
+extensions: []

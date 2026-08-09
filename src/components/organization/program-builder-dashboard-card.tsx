@@ -23,9 +23,9 @@ import {
   locationSummary,
 } from "@/components/organization/org-profile-card/utils"
 import {
-  isOrganizationPrimaryObjectKind,
   ORGANIZATION_ACTIVITY_KIND_DEFINITIONS,
   ORGANIZATION_ACTIVITY_KIND_SUMMARY,
+  isOrganizationPrimaryObjectKind,
   resolveOrganizationPrimaryObjectKind,
 } from "@/lib/organization/primary-objects"
 import { cn } from "@/lib/utils"
@@ -367,7 +367,7 @@ export function ProgramBuilderDashboardCard({
                       </ul>
                     ) : (
                       <p className="text-muted-foreground mt-2 text-sm">
-                        Add outcomes in the primary object builder Step 3.
+                        Add outcomes in the activity builder Step 3.
                       </p>
                     )}
                   </div>

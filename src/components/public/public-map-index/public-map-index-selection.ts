@@ -117,6 +117,7 @@ export function usePublicMapListItemSelection({
   const handleSelectMapMarker = useCallback(
     (selectableId: string) => {
       const item = selectableMapItemById.get(selectableId)
+      focusMapItemOnMap(selectableId)
       if (item?.itemType === "external_resource") {
         setSameLocationSelection(null)
         setSelectedOrgId(null)
@@ -133,6 +134,7 @@ export function usePublicMapListItemSelection({
       })
     },
     [
+      focusMapItemOnMap,
       handleSelectOrganization,
       selectableMapItemById,
       setSameLocationSelection,
@@ -149,12 +151,14 @@ export function usePublicMapListItemSelection({
       )
       if (selectableIds.length === 0) return
 
+      focusMapItemOnMap(selectableIds[0])
       setSelectedOrgId(null)
       setSelectedListItemId(null)
       setSameLocationSelection({ ...group, organizationIds: selectableIds })
       setSidebarMode("search")
     },
     [
+      focusMapItemOnMap,
       selectableMapItemById,
       setSameLocationSelection,
       setSelectedListItemId,

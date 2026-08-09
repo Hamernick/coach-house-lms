@@ -54,18 +54,10 @@ describe("organization switching", () => {
 
     const activeOrg = await resolveActiveOrganization(
       createSupabase([
-        {
-          org_id: "org-staff",
-          role: "staff",
-          created_at: "2026-01-02T00:00:00.000Z",
-        },
-        {
-          org_id: "org-board",
-          role: "board",
-          created_at: "2026-01-01T00:00:00.000Z",
-        },
+        { org_id: "org-staff", role: "staff", created_at: "2026-01-02T00:00:00.000Z" },
+        { org_id: "org-board", role: "board", created_at: "2026-01-01T00:00:00.000Z" },
       ]) as never,
-      "user-cookie-preference"
+      "user-cookie-preference",
     )
 
     expect(activeOrg).toEqual({ orgId: "org-board", role: "board" })
@@ -77,19 +69,11 @@ describe("organization switching", () => {
 
     const activeOrg = await resolveActiveOrganization(
       createSupabase([
-        {
-          org_id: "org-staff",
-          role: "staff",
-          created_at: "2026-01-02T00:00:00.000Z",
-        },
-        {
-          org_id: "org-board",
-          role: "board",
-          created_at: "2026-01-01T00:00:00.000Z",
-        },
+        { org_id: "org-staff", role: "staff", created_at: "2026-01-02T00:00:00.000Z" },
+        { org_id: "org-board", role: "board", created_at: "2026-01-01T00:00:00.000Z" },
       ]) as never,
       "user-explicit-default",
-      { preferredOrgId: null }
+      { preferredOrgId: null },
     )
 
     expect(activeOrg).toEqual({ orgId: "org-staff", role: "staff" })
@@ -98,46 +82,35 @@ describe("organization switching", () => {
 
   it("keeps the workspace page and switcher wired to the cookie-backed active org", () => {
     const pageSource = readSource(
-      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx",
     )
     const adminLayoutSource = readSource("src/app/(admin)/layout.tsx")
     const switcherSource = readSource(
-      "src/features/member-workspace/components/shell/member-workspace-org-switcher.tsx"
+      "src/features/member-workspace/components/shell/member-workspace-org-switcher.tsx",
     )
     const workspaceViewSource = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-workspace-view.tsx"
+      "src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-workspace-view.tsx",
     )
-    const actionSource = readSource(
-      "src/features/member-workspace/server/actions.ts"
-    )
-    const appShellSource = readSource(
-      "src/components/app-shell/app-shell-inner.tsx"
-    )
+    const actionSource = readSource("src/features/member-workspace/server/actions.ts")
+    const appShellSource = readSource("src/components/app-shell/app-shell-inner.tsx")
 
     expect(pageSource).toContain("resolveOptionalAuthenticatedAppContext")
-    expect(pageSource).not.toContain(
-      "resolveActiveOrganization(supabase, user.id)"
-    )
+    expect(pageSource).not.toContain("resolveActiveOrganization(supabase, user.id)")
     expect(adminLayoutSource).toContain("resolveDashboardLayoutState")
     expect(adminLayoutSource).toContain("MemberWorkspaceSidebarHeader")
-    expect(adminLayoutSource).toContain(
-      "showMemberWorkspace={state.showMemberWorkspace}"
-    )
+    expect(adminLayoutSource).toContain("showMemberWorkspace={state.showMemberWorkspace}")
     expect(appShellSource).not.toContain("(!isAdminContext || isAdmin)")
     expect(switcherSource).toContain("defaultValue={activeOrganization.orgId}")
     expect(switcherSource).toContain("value={organization.orgId}")
+    expect(switcherSource).toContain("keywords={[organization.name, organization.role]}")
+    expect(switcherSource).toContain('aria-current={isActive ? "true" : undefined}')
     expect(switcherSource).toContain(
-      "keywords={[organization.name, organization.role]}"
-    )
-    expect(switcherSource).toContain(
-      'aria-current={isActive ? "true" : undefined}'
+      'className="[&_[cmdk-group-items]]:space-y-1"',
     )
     expect(switcherSource).toContain("Workspace, Admin, and Documents")
-    expect(workspaceViewSource).toContain("min-w-0 flex-1 flex-col")
+    expect(switcherSource).toContain("window.location.reload()")
+    expect(switcherSource).not.toContain("router.refresh()")
     expect(workspaceViewSource).toContain("key={seed.orgId}")
-    expect(workspaceViewSource).toContain(
-      "initialFocusCardId={initialFocusCardId}"
-    )
     expect(actionSource).toContain('revalidatePath("/admin")')
     expect(actionSource).toContain('revalidatePath("/workspace")')
     expect(actionSource).toContain('revalidatePath("/organization/documents")')

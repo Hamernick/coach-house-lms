@@ -266,7 +266,10 @@ export async function updateProgramAction(
     }
   }
 
-  /* Keep asset cleanup after the guarded write. */
+  /*
+   * Keep media cleanup after the guarded write. A conflicting request must not
+   * delete assets that still belong to the winning program version.
+   */
   if (imageTouched) {
     const cleanupPath = resolveProgramMediaCleanupPath({
       previousUrl: previousImageUrl,

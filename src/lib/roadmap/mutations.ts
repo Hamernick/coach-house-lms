@@ -1,4 +1,5 @@
 import { SECTION_MAP } from "./definitions"
+import { normalizeRoadmapBudgetRows } from "./budget"
 import {
   buildRoadmapSection,
   ensureUniqueSlugs,
@@ -9,6 +10,7 @@ import {
 } from "./helpers"
 import { resolveRoadmapSections } from "./sections"
 import type { RoadmapSection, RoadmapSectionStatus } from "./types"
+import type { BudgetTableRow } from "@/lib/modules"
 
 export function updateRoadmapSection(
   profile: Record<string, unknown> | null | undefined,
@@ -17,13 +19,14 @@ export function updateRoadmapSection(
     title?: string
     subtitle?: string
     content?: string
+    budgetRows?: BudgetTableRow[]
     imageUrl?: string | null
     isPublic?: boolean
     layout?: RoadmapSection["layout"]
     status?: RoadmapSectionStatus
     ctaLabel?: string
     ctaUrl?: string
-  },
+  }
 ): { nextProfile: Record<string, unknown>; section: RoadmapSection } {
   const nextProfile = isRecord(profile) ? { ...profile } : {}
   const roadmapRecord = isRecord(nextProfile.roadmap)
@@ -61,6 +64,10 @@ export function updateRoadmapSection(
 
     const nextContent =
       typeof updates.content === "string" ? updates.content : current.content
+    const nextBudgetRows =
+      updates.budgetRows === undefined
+        ? (current.budgetRows ?? [])
+        : normalizeRoadmapBudgetRows(updates.budgetRows)
     const nextImageUrlRaw =
       typeof updates.imageUrl === "string"
         ? updates.imageUrl.trim()
@@ -70,7 +77,9 @@ export function updateRoadmapSection(
     const nextImageUrl =
       nextImageUrlRaw.length > 0 ? nextImageUrlRaw : undefined
     const nextIsPublic =
-      typeof updates.isPublic === "boolean" ? updates.isPublic : current.isPublic
+      typeof updates.isPublic === "boolean"
+        ? updates.isPublic
+        : current.isPublic
     const nextLayout = updates.layout ?? current.layout
     const nextStatus = updates.status ?? current.status ?? "not_started"
     const nextCtaLabel =
@@ -87,6 +96,7 @@ export function updateRoadmapSection(
       title: nextTitle,
       subtitle: nextSubtitle,
       content: nextContent,
+      budgetRows: nextBudgetRows,
       imageUrl: nextImageUrl,
       isPublic: nextIsPublic,
       layout: nextLayout,
@@ -103,13 +113,15 @@ export function updateRoadmapSection(
     }
 
     nextSections = resolved.map((section, index) =>
-      index === existingIndex ? nextSection : section,
+      index === existingIndex ? nextSection : section
     )
   } else {
     const base = SECTION_MAP.get(targetId) ?? null
     const nextTitle = normalizeText(updates.title) || base?.title || ""
     const nextSubtitle = normalizeText(updates.subtitle) || base?.subtitle || ""
-    const nextContent = typeof updates.content === "string" ? updates.content : ""
+    const nextContent =
+      typeof updates.content === "string" ? updates.content : ""
+    const nextBudgetRows = normalizeRoadmapBudgetRows(updates.budgetRows)
     const nextImageUrlRaw =
       typeof updates.imageUrl === "string"
         ? updates.imageUrl.trim()
@@ -142,6 +154,7 @@ export function updateRoadmapSection(
           subtitle: nextSubtitle,
           slug: nextSlug,
           content: nextContent,
+          budgetRows: nextBudgetRows,
           imageUrl: nextImageUrl,
           isPublic: nextIsPublic,
           layout: nextLayout,
@@ -151,7 +164,7 @@ export function updateRoadmapSection(
           lastUpdated: now,
         },
         base,
-        resolved.length,
+        resolved.length
       ),
       lastUpdated: now,
     }
@@ -174,7 +187,7 @@ export function updateRoadmapSection(
 
 export function removeRoadmapSection(
   profile: Record<string, unknown> | null | undefined,
-  sectionId: string | null | undefined,
+  sectionId: string | null | undefined
 ): {
   nextProfile: Record<string, unknown>
   sections: RoadmapSection[]

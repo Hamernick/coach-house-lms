@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { loadOrganizationWorkspaceFinanceInput } from "@/actions/workspace-finance-helpers"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import { measureServerStep } from "@/lib/performance/server-timing"
@@ -61,23 +62,6 @@ export default async function MyOrganizationPage({
   searchParams?: Promise<MyOrganizationSearchParams>
 }) {
   const searchState = await resolveMyOrganizationPageSearchState(searchParams)
-  const {
-    resolvedSearchParams,
-    viewParam,
-    modeParam,
-    tabParam,
-    programIdParam,
-    focusParam,
-    initialWorkspaceFocusCardId,
-    drawerParam,
-    acceleratorGroupParam,
-    acceleratorModuleParam,
-    acceleratorStepParam,
-    roadmapSectionParam,
-    monthParam,
-    onboardingFlowRequested,
-    onboardingStageOverride,
-  } = searchState
   const requestContext = await resolveOptionalAuthenticatedAppContext()
   if (!requestContext) redirect("/login?redirect=/organization")
   const { supabase, user, profileAudience, activeOrg } = requestContext
@@ -98,11 +82,11 @@ export default async function MyOrganizationPage({
   })
   if (legacyDestination) redirect(legacyDestination)
   if (workspaceFoundationEnabled) {
-    redirectLegacyMyOrganizationTab(tabParam)
+    redirectLegacyMyOrganizationTab(searchState.tabParam)
   }
-  const acceleratorViewRequested = viewParam === "accelerator"
+  const acceleratorViewRequested = searchState.viewParam === "accelerator"
   const presentationMode =
-    modeParam === "present" || modeParam === "presentation"
+    searchState.modeParam === "present" || searchState.modeParam === "presentation"
   const { orgRow, profile, initialProfile, roadmapSections } =
     await measureServerStep(
       "workspace.content.load_profile_context",
@@ -179,8 +163,8 @@ export default async function MyOrganizationPage({
       orgRow?.public_slug
     )
   const calendarView = buildMyOrganizationCalendarView({
-    monthParam,
-    searchParams: resolvedSearchParams,
+    monthParam: searchState.monthParam,
+    searchParams: searchState.resolvedSearchParams,
     upcomingEvents,
   })
   const {
@@ -227,8 +211,8 @@ export default async function MyOrganizationPage({
     return renderMyOrganizationEditorView({
       canEdit,
       initialProfile,
-      initialProgramId: programIdParam || null,
-      initialTab: resolveLegacyEditorTab(tabParam),
+      initialProgramId: searchState.programIdParam || null,
+      initialTab: resolveLegacyEditorTab(searchState.tabParam),
       peopleNormalized,
       programs: programsResult,
     })
@@ -305,9 +289,9 @@ export default async function MyOrganizationPage({
     return (
       <MyOrganizationAcceleratorView
         seed={acceleratorSeed}
-        initialStepId={acceleratorStepParam}
-        initialModuleId={acceleratorModuleParam}
-        initialLessonGroupKey={acceleratorGroupParam}
+        initialStepId={searchState.acceleratorStepParam}
+        initialModuleId={searchState.acceleratorModuleParam}
+        initialLessonGroupKey={searchState.acceleratorGroupParam}
         programFundingTargets={programRows}
         onWorkspaceOnboardingSubmit={completeOnboardingAction}
       />
@@ -354,7 +338,7 @@ export default async function MyOrganizationPage({
   )
   const workspaceSeedForRender = applyWorkspaceOnboardingStageToSeed(
     hydratedWorkspaceSeed,
-    onboardingStageOverride
+    searchState.onboardingStageOverride
   )
   const workspaceSeedWithTutorial = applyWorkspaceTutorialActivationToSeed(
     workspaceSeedForRender,
@@ -362,7 +346,8 @@ export default async function MyOrganizationPage({
       initialOnboardingRequired: needsInitialOnboarding,
       workspaceOnboardingActive: userMeta?.workspace_onboarding_active === true,
       workspaceTutorialRequested:
-        onboardingFlowRequested || onboardingStageOverride !== null,
+        searchState.onboardingFlowRequested ||
+        searchState.onboardingStageOverride !== null,
       workspaceOnboardingCompletedAt:
         typeof userMeta?.workspace_onboarding_completed_at === "string"
           ? userMeta.workspace_onboarding_completed_at
@@ -397,15 +382,21 @@ export default async function MyOrganizationPage({
       }),
     { thresholdMs: 1_000 }
   )
+  const financeInput = await loadOrganizationWorkspaceFinanceInput({
+    orgId,
+    programs: organizationEditorData.programs,
+    supabase,
+  })
   const { MyOrganizationWorkspaceView } =
     await import("../_components/workspace-board/my-organization-workspace-view")
 
   return (
     <MyOrganizationWorkspaceView
-      initialFocusCardId={initialWorkspaceFocusCardId}
+      initialFocusCardId={searchState.initialWorkspaceFocusCardId}
       seed={workspaceSeedWithTutorial}
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}
+      financeInput={financeInput}
       workspaceFoundationEnabled={workspaceFoundationEnabled}
     />
   )

@@ -5,11 +5,14 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
+  buildResourceMapReviewSummary,
   normalizeCanonicalEditInput,
   normalizeCanonicalStateInput,
   normalizeImportReviewInput,
   normalizePromotionInput,
+  safeResourceMapExternalUrl,
   normalizeVisibilityInput,
+  type ResourceMapAdminImportRecordDetailRow,
 } from "@/features/resource-map-admin"
 
 const ROOT = process.cwd()
@@ -89,6 +92,71 @@ describe("resource-map-admin feature contract", () => {
     })
   })
 
+  it("blocks approval until source-grounded enrichment is complete", () => {
+    const record = {
+      confidence_score: 92,
+      source_url: "https://example.org/resource",
+      quality_flags: [],
+      reason_codes: [],
+      raw_snapshot: { serviceTitle: "Community Food Pickup" },
+      extracted_fields: {
+        serviceTitle: "Community Food Pickup",
+        description:
+          "Weekly grocery pickup with pantry staples and fresh food for local households.",
+        eligibility:
+          "Open to residents; the source lists no income requirement.",
+        accessInstructions: "Call or use the intake form before arriving.",
+        phone: "312-555-0100",
+        address: "100 Main Street, Chicago, IL",
+        enrichment: {
+          sourceComparisonCount: 2,
+          draft: {
+            citations: [
+              {
+                claimPaths: ["serviceTitle", "description"],
+                evidenceSnippet: "Weekly community food pickup.",
+                sourceUrl: "https://example.org/resource",
+              },
+            ],
+          },
+          verification: {
+            status: "approved",
+            contradictions: [],
+            unsupportedClaims: [],
+          },
+        },
+      },
+    } as unknown as ResourceMapAdminImportRecordDetailRow
+
+    const summary = buildResourceMapReviewSummary({
+      record,
+      evidence: [],
+      enrichmentRuns: [],
+    })
+
+    expect(summary.readyForHumanApproval).toBe(true)
+    expect(summary.blockers).toEqual([])
+    expect(summary.citations).toHaveLength(1)
+
+    const blocked = buildResourceMapReviewSummary({
+      record: {
+        ...record,
+        extracted_fields: {
+          ...record.extracted_fields,
+          eligibility: "",
+        },
+      },
+      evidence: [],
+      enrichmentRuns: [],
+    })
+    expect(blocked.readyForHumanApproval).toBe(false)
+    expect(blocked.blockers).toContain("Missing: Eligibility")
+    expect(safeResourceMapExternalUrl("javascript:alert(1)")).toBeNull()
+    expect(safeResourceMapExternalUrl("https://example.org/resource")).toBe(
+      "https://example.org/resource"
+    )
+  })
+
   it("keeps resource-map admin mutations server-only, audited, and admin-gated", () => {
     const actions = readSource(
       "src/features/resource-map-admin/server/actions.ts"
@@ -98,6 +166,9 @@ describe("resource-map-admin feature contract", () => {
     )
     const loaders = readSource(
       "src/features/resource-map-admin/server/loaders.ts"
+    )
+    const approvalReadiness = readSource(
+      "src/features/resource-map-admin/server/approval-readiness.ts"
     )
 
     expect(actions).toContain('"use server"')
@@ -110,6 +181,7 @@ describe("resource-map-admin feature contract", () => {
     expect(actions).toContain("setResourceMapPublicVisibilityAction")
     expect(actions).toContain("reviewResourceMapImportMatchAction")
     expect(actions).toContain("markResourceMapImportPromotedAction")
+    expect(actions).toContain("assertResourceMapImportReadyForApproval")
     expect(actions).toContain('revalidatePath("/find")')
     expect(actions).toContain('action: "promote"')
     expect(actions).toContain('"contact_visibility"')
@@ -125,6 +197,9 @@ describe("resource-map-admin feature contract", () => {
     expect(loaders).toContain("visibilityContacts")
     expect(loaders).toContain("visibilityLinks")
     expect(loaders).toContain("resource_map_curation_events")
+    expect(approvalReadiness).toContain("buildResourceMapReviewSummary")
+    expect(approvalReadiness).toContain("resource_map_enrichment_runs")
+    expect(approvalReadiness).toContain("pending or accepted duplicate matches")
 
     expect(formActions).toContain('"use server"')
     expect(formActions).toContain("reviewResourceMapImportRecordFormAction")
@@ -155,15 +230,6 @@ describe("resource-map-admin feature contract", () => {
     const organizationChrome = readSource(
       "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
     )
-    const sidebarPanels = readSource(
-      "src/components/public/public-map-index/sidebar-panels.tsx"
-    )
-    const sidebar = readSource(
-      "src/components/public/public-map-index/sidebar.tsx"
-    )
-    const sidebarShellPanel = readSource(
-      "src/components/public/public-map-index/sidebar-shell-panel.tsx"
-    )
     const organizationAdminActions = readSource(
       "src/components/public/public-map-index/organization-detail-admin-actions.tsx"
     )
@@ -184,24 +250,6 @@ describe("resource-map-admin feature contract", () => {
     expect(organizationChrome).toContain("PublicMapOrganizationAdminActions")
     expect(organizationChrome).toContain(
       "canManageResourceMap && organizationCurationAction"
-    )
-    expect(sidebarPanels).toContain("PublicMapRailDetailPanel")
-    expect(sidebarPanels).toContain("PublicMapDrawerDetailPanel")
-    expect(sidebarPanels).toContain("canManageResourceMap = false")
-    expect(sidebarPanels).toContain(
-      "organizationCurationAction={organizationCurationAction}"
-    )
-    expect(sidebar).toContain("canManageResourceMap = false")
-    expect(sidebar).toContain("canManageResourceMap={canManageResourceMap}")
-    expect(sidebar).toContain(
-      "organizationCurationAction={organizationCurationAction}"
-    )
-    expect(sidebarShellPanel).toContain("canManageResourceMap = false")
-    expect(sidebarShellPanel).toContain(
-      "canManageResourceMap={canManageResourceMap}"
-    )
-    expect(sidebarShellPanel).toContain(
-      "organizationCurationAction={organizationCurationAction}"
     )
 
     expect(resourceAdminActions).toContain('"use client"')
@@ -256,6 +304,9 @@ describe("resource-map-admin feature contract", () => {
     )
     const dataEnginePatch = readSource(
       "supabase/migrations/20260628162000_resource_map_data_engine_contract.sql"
+    )
+    const atomicPromotionPatch = readSource(
+      "supabase/migrations/20260714201500_resource_map_atomic_promotion.sql"
     )
     const setupSqlOutput = execFileSync(
       process.execPath,
@@ -471,15 +522,20 @@ describe("resource-map-admin feature contract", () => {
     expect(reviewImportsScript).not.toContain("resource_map_public_items")
 
     expect(promoteScript).toContain('review_status", "approved"')
-    expect(promoteScript).toContain('promotion_status: "promoted"')
-    expect(promoteScript).toContain('promotion_status: "blocked"')
-    expect(promoteScript).toContain("resource_map_curation_events")
     expect(promoteScript).toContain("fetchAcceptedDuplicateMatch")
     expect(promoteScript).toContain("accepted duplicate matches")
-    expect(promoteScript).toContain("merge_duplicate")
-    expect(promoteScript).toContain("insertPromotionChildren")
-    expect(promoteScript).toContain("insertPromotedFieldEvidenceRows")
+    expect(promoteScript).toContain("promote_resource_map_import_record")
+    expect(promoteScript).not.toContain("insertPromotionChildren")
     expect(promoteScript).toContain("--publish")
+    expect(atomicPromotionPatch).toContain(
+      "create or replace function public.promote_resource_map_import_record"
+    )
+    expect(atomicPromotionPatch).toContain("promotion_status = 'promoted'")
+    expect(atomicPromotionPatch).toContain("promotion_status = 'blocked'")
+    expect(atomicPromotionPatch).toContain(
+      "insert into public.resource_map_curation_events"
+    )
+    expect(atomicPromotionPatch).toContain("'merge_duplicate'")
     expect(promotionPayloads).toContain("resource_map_locations")
     expect(promotionPayloads).toContain("resource_map_contacts")
     expect(promotionPayloads).toContain("resource_map_links")
@@ -519,9 +575,33 @@ describe("resource-map-admin feature contract", () => {
     expect(resourceMapRls.split(/\r?\n/).length).toBeLessThanOrEqual(450)
   })
 
-  it("keeps the visible super-admin curation surface on /find profiles only", () => {
+  it("adds an evidence-first admin review surface without removing /find curation", () => {
     const featureIndex = readSource("src/features/resource-map-admin/index.ts")
     const routeApi = readSource("src/features/resource-map-admin/route-api.ts")
+    const reviewRoute = readSource(
+      "src/app/(admin)/admin/platform/resource-map/page.tsx"
+    )
+    const reviewPage = readSource(
+      "src/features/resource-map-admin/components/resource-map-admin-review-page.tsx"
+    )
+    const reviewRecord = readSource(
+      "src/features/resource-map-admin/components/resource-map-review-record.tsx"
+    )
+    const reviewEvidence = readSource(
+      "src/features/resource-map-admin/components/resource-map-review-evidence.tsx"
+    )
+    const reviewAiEvidence = readSource(
+      "src/features/resource-map-admin/components/resource-map-review-ai-evidence.tsx"
+    )
+    const reviewVisibility = readSource(
+      "src/features/resource-map-admin/components/resource-map-review-visibility.tsx"
+    )
+    const reviewActions = readSource(
+      "src/features/resource-map-admin/components/resource-map-review-actions.tsx"
+    )
+    const loaders = readSource(
+      "src/features/resource-map-admin/server/loaders.ts"
+    )
     const findPage = readSource("src/app/(public)/find/page.tsx")
     const findSlugPage = readSource("src/app/(public)/find/[slug]/page.tsx")
 
@@ -529,7 +609,7 @@ describe("resource-map-admin feature contract", () => {
       existsSync(
         join(ROOT, "src/app/(admin)/admin/platform/resource-map/page.tsx")
       )
-    ).toBe(false)
+    ).toBe(true)
     expect(
       existsSync(
         join(
@@ -537,7 +617,7 @@ describe("resource-map-admin feature contract", () => {
           "src/app/(admin)/@breadcrumbs/admin/platform/resource-map/page.tsx"
         )
       )
-    ).toBe(false)
+    ).toBe(true)
     expect(
       existsSync(
         join(
@@ -545,14 +625,38 @@ describe("resource-map-admin feature contract", () => {
           "src/features/resource-map-admin/components/resource-map-admin-review-page.tsx"
         )
       )
-    ).toBe(false)
+    ).toBe(true)
 
-    expect(featureIndex).not.toContain("ResourceMapAdminReviewPage")
+    expect(featureIndex).toContain("ResourceMapAdminReviewPage")
     expect(featureIndex).not.toContain("ResourceMapAdminPanel")
-    expect(featureIndex).not.toContain("loadResourceMapAdminReviewQueue")
+    expect(featureIndex).toContain("loadResourceMapAdminReviewQueue")
+    expect(featureIndex).toContain("loadResourceMapAdminReviewRecord")
+    expect(reviewRoute).toContain("ResourceMapAdminReviewPage")
+    expect(reviewRoute).toContain("redirect(")
+    expect(reviewRoute).toContain("offset: (page - 1) * pageSize")
+    expect(reviewPage).toContain("Evidence-First Review")
+    expect(reviewPage).toContain("Resource Map Review")
+    expect(reviewPage).toContain("Previous Page")
+    expect(reviewPage).toContain("Next Page")
+    expect(reviewRecord).toContain("Reviewing as")
+    expect(reviewRecord).toContain("Duplicate Review Blocks Approval")
+    expect(reviewEvidence).toContain("Source Vs Extracted Values")
+    expect(reviewAiEvidence).toContain("AI Draft And Citations")
+    expect(reviewAiEvidence).toContain("Verification Passes")
+    expect(reviewVisibility).toContain("Private By Default")
+    expect(reviewActions).toContain("Make Public")
+    expect(reviewActions).toContain("Keep Private")
+    expect(reviewActions).toContain("useActionState")
+    expect(reviewActions).toContain("beforeunload")
+    expect(reviewActions).toContain("onNavigate")
+    expect(loaders).toContain("resource_map_field_evidence")
+    expect(loaders).toContain("resource_map_enrichment_runs")
+    expect(loaders).toContain("isMissingEnrichmentLedgerError")
+    expect(loaders).toContain('{ count: "exact" }')
+    expect(loaders).toContain(".range(normalizedOffset")
     expect(routeApi).toContain("updateResourceMapCanonicalStateAction")
-    expect(routeApi).not.toContain("FormAction")
-    expect(routeApi).not.toContain("loadResourceMapAdminReviewQueue")
+    expect(routeApi).toContain("FormAction")
+    expect(routeApi).toContain("loadResourceMapAdminReviewQueue")
 
     expect(findPage).toContain("canManageResourceMap={shellState.isAdmin}")
     expect(findSlugPage).toContain("canManageResourceMap={shellState.isAdmin}")

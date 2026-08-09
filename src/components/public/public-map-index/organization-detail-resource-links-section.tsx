@@ -11,7 +11,10 @@ import type {
 } from "@/lib/public-map/resource-links"
 import { cn } from "@/lib/utils"
 
-import { PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME } from "./sidebar-theme"
+import {
+  PUBLIC_MAP_DETAIL_BODY_CLASSNAME,
+  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
+} from "./sidebar-theme"
 
 const RESOURCE_KIND_ICON_MAP = {
   online_resource: LinkIcon,
@@ -26,14 +29,14 @@ export function OrganizationDetailResourceLinksSection({
   if (resources.length === 0) return null
 
   return (
-    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Links from activities</p>
-        <span className="text-muted-foreground text-[11px] tabular-nums">
+        <h3 className="text-base font-semibold">Links from activities</h3>
+        <span className="text-muted-foreground text-xs tabular-nums">
           {resources.length}
         </span>
       </div>
-      <p className="text-muted-foreground mt-1 text-[11px] leading-4">
+      <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
         Links attached to published programs, events, services, and web
         resources from this organization.
       </p>
@@ -47,13 +50,13 @@ export function OrganizationDetailResourceLinksSection({
               target="_blank"
               rel="noreferrer"
               className={cn(
-                "group flex min-w-0 items-start gap-2.5 rounded-lg px-2 py-2 text-left transition-[background-color,color]",
+                "group flex min-h-12 min-w-0 items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-[background-color,color]",
                 "hover:bg-muted/55 focus-visible:bg-muted/55 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
                 "motion-reduce:transition-none"
               )}
             >
               <span
-                className="bg-muted text-muted-foreground mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg"
+                className="bg-muted text-muted-foreground mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-lg"
                 aria-hidden
               >
                 <ResourceIcon className="size-3.5" />
@@ -61,13 +64,13 @@ export function OrganizationDetailResourceLinksSection({
               <span className="min-w-0 flex-1">
                 <span className="flex min-w-0 items-start justify-between gap-2">
                   <span className="min-w-0">
-                    <span className="text-foreground block truncate text-xs font-medium">
+                    <span className="text-foreground block truncate text-sm font-medium">
                       {resource.label}
                     </span>
-                    <span className="text-muted-foreground block truncate text-[11px]">
+                    <span className="text-muted-foreground block truncate text-xs">
                       {resource.domain}
                     </span>
-                    <span className="text-muted-foreground/80 block truncate text-[10px]">
+                    <span className="text-muted-foreground/80 block truncate text-xs">
                       {resource.note}
                     </span>
                   </span>
@@ -79,7 +82,7 @@ export function OrganizationDetailResourceLinksSection({
                 <span className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
                   <Badge
                     variant="secondary"
-                    className="h-5 rounded-full border-transparent px-1.5 py-0 text-[10px] leading-none"
+                    className="min-h-6 rounded-full border-transparent px-2 py-1 text-xs leading-none"
                   >
                     {resource.kindLabel}
                   </Badge>

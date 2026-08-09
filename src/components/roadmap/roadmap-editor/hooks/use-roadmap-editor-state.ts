@@ -18,7 +18,10 @@ import {
 import { toast } from "@/lib/toast"
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
 import {
-  WORKSPACE_PATH,
+  hasMeaningfulRoadmapBudgetRows,
+  roadmapBudgetRowsEqual,
+} from "@/lib/roadmap/budget"
+import {
   WORKSPACE_ROADMAP_PATH,
   getWorkspaceRoadmapSectionPath,
 } from "@/lib/workspace/routes"
@@ -76,11 +79,6 @@ export function useRoadmapEditorState({
   const activeIdRef = useRef(activeId)
   const pathname = usePathname()
   const basePath = useMemo(() => resolveRoadmapBasePath(pathname), [pathname])
-  const isWorkspaceRoadmapView = basePath === WORKSPACE_ROADMAP_PATH
-  const roadmapReturnHref = isWorkspaceRoadmapView ? WORKSPACE_PATH : null
-  const roadmapReturnLabel = isWorkspaceRoadmapView
-    ? "Return To Workspace"
-    : null
   const getSectionHref = useCallback(
     (slug: string) =>
       basePath === WORKSPACE_ROADMAP_PATH
@@ -106,6 +104,15 @@ export function useRoadmapEditorState({
     setDrafts(() => loadRoadmapDraftsFromStorage(storageKey, initialSections))
     setActiveId((prev) => prev || initialSections[0]?.id || "")
   }, [initialSections, storageKey])
+
+  const initialActiveIdRef = useRef(initialActiveId)
+
+  useEffect(() => {
+    if (!initialActiveId) return
+    if (initialActiveIdRef.current === initialActiveId) return
+    initialActiveIdRef.current = initialActiveId
+    setActiveId(initialActiveId)
+  }, [initialActiveId])
 
   useEffect(() => {
     setIsHydrated(true)
@@ -146,6 +153,7 @@ export function useRoadmapEditorState({
     editorPlaceholder,
     status,
     isCalendarSection,
+    isBudgetSection,
     contentMaxWidth,
   } = useMemo(
     () => deriveRoadmapEditorSectionUi({ sections, activeId, drafts }),
@@ -185,6 +193,7 @@ export function useRoadmapEditorState({
       const shouldMarkInProgress =
         section.status === "not_started" &&
         (draft.content.trim().length > 0 ||
+          hasMeaningfulRoadmapBudgetRows(draft.budgetRows) ||
           draft.title.trim().length > 0 ||
           draft.subtitle.trim().length > 0)
 
@@ -197,6 +206,7 @@ export function useRoadmapEditorState({
             title: draft.title,
             subtitle: draft.subtitle,
             content: draft.content,
+            budgetRows: section.id === "budget" ? draft.budgetRows : undefined,
             imageUrl: draft.imageUrl,
             status: shouldMarkInProgress ? "in_progress" : undefined,
           })
@@ -269,6 +279,7 @@ export function useRoadmapEditorState({
     const baseline = getRoadmapSectionBaseline(activeSection)
     return (
       activeDraft.content !== baseline.content ||
+      !roadmapBudgetRowsEqual(activeDraft.budgetRows, baseline.budgetRows) ||
       activeDraft.imageUrl !== baseline.imageUrl
     )
   }, [activeDraft, activeSection])
@@ -359,8 +370,6 @@ export function useRoadmapEditorState({
     drafts,
     handleSectionSelect,
     roadmapBasePath: basePath,
-    roadmapReturnHref,
-    roadmapReturnLabel,
     headerTitle,
     headerSubtitle,
     showSectionHeader,
@@ -370,6 +379,7 @@ export function useRoadmapEditorState({
     statusSelectDisabled: isPending,
     isHydrated,
     isCalendarSection,
+    isBudgetSection,
     contentMaxWidth,
     editorPlaceholder,
     handleDraftChange,

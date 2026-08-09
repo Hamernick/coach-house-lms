@@ -200,12 +200,14 @@ export async function completeFiscalSponsorshipW9(
       },
       expectedUpdatedAt: loaded.application.updated_at,
     })
-    if (transition.ok !== true) {
+    if ("error" in transition) {
       await admin.storage
         .from(FISCAL_SPONSORSHIP_SIGNING_BUCKET)
         .remove([storagePath])
       uploadedPath = null
-      return { error: transition.error }
+      return {
+        error: transition.error ?? "Unable to save the signed W-9 record.",
+      }
     }
 
     await notifyFiscalDocumentConnected({
@@ -217,7 +219,7 @@ export async function completeFiscalSponsorshipW9(
 
     revalidatePath("/workspace")
     revalidatePath("/my-organization")
-    revalidatePath(`/organizations/${loaded.application.project_id}`)
+    revalidatePath(`/organizations/${loaded.application.org_id}`)
     revalidatePath(`/fiscal-sponsorship/w9/${loaded.application.project_id}`)
     return {
       ok: true,

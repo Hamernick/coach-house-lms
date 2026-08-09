@@ -141,20 +141,14 @@ describe("public home canvas", () => {
     expect(markerSource).not.toContain("resource-categories")
   })
 
-  it("keeps public fiscal sponsorship actions as real signup links", () => {
-    const panelSource = readSource(
+  it("keeps public fiscal sponsorship actions active", () => {
+    const source = readSource(
       "src/components/public/home-canvas-product-panels.tsx"
     )
-    const surfaceSource = readSource(
-      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-surface.tsx"
-    )
 
-    expect(panelSource).toContain('openFlowHref="/?section=signup&intent=fund"')
-    expect(panelSource).not.toContain("useRouter")
-    expect(panelSource).not.toContain("router.push")
-    expect(surfaceSource).toContain("openFlowHref?: string")
-    expect(surfaceSource).toContain("href={openFlowHref}")
-    expect(surfaceSource).toContain("<Button asChild")
+    expect(source).toContain(
+      'openFlowHref="/?section=signup&intent=fund"'
+    )
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {

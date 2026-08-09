@@ -1,4 +1,5 @@
 import type { WorkspaceBoardToggleContext } from "../../workspace-board-debug"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardState,
@@ -22,6 +23,7 @@ export type WorkspaceCanvasSurfaceV2Props = {
   presentationMode: boolean
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   workspaceFoundationEnabled: boolean
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number

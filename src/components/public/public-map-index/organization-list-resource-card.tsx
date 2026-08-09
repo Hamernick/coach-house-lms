@@ -4,7 +4,10 @@ import {
   resolvePublicMapItemSelectableId,
   type ExternalResourceMapItem,
 } from "@/lib/public-map/resource-map-items"
-import { resolvePublicMapResourceCategoryColor } from "@/lib/public-map/resource-categories"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
+  resolvePublicMapResourceCategoryColor,
+} from "@/lib/public-map/resource-categories"
 import { cn } from "@/lib/utils"
 import {
   buildPublicMapOrganizationListCardOwnerId,
@@ -49,6 +52,8 @@ export function PublicMapResourceListCard({
   const markerColor = resolvePublicMapResourceCategoryColor(
     item.primaryResourceCategory
   )
+  const cardTitle =
+    PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory]
   const subtitle = resolveResourceListCardSubtitle(item)
   const openResourceDetails = () => onSelectItem?.(selectableItemId)
 
@@ -57,8 +62,7 @@ export function PublicMapResourceListCard({
       key={item.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
-        "focus-within:border-border/80 focus-within:bg-accent focus-within:text-accent-foreground dark:focus-within:bg-accent/50",
+        "group text-foreground relative h-full w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
         "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
         "motion-reduce:transition-none",
         selected
@@ -84,8 +88,8 @@ export function PublicMapResourceListCard({
     >
       <div
         className={cn(
-          "relative z-10 flex min-w-0 flex-col",
-          constrainedLayout ? "gap-2.5 p-2.5" : "gap-3 p-3"
+          "relative z-10 flex h-full min-w-0 flex-col",
+          constrainedLayout ? "gap-3 p-3" : "gap-4 p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -97,7 +101,7 @@ export function PublicMapResourceListCard({
         <div
           className={cn(
             "flex min-w-0 items-center",
-            constrainedLayout ? "gap-2.5" : "gap-3"
+            constrainedLayout ? "gap-3" : "gap-4"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
             ownerId,
@@ -107,7 +111,10 @@ export function PublicMapResourceListCard({
           })}
         >
           <span
-            className="border-border/60 bg-background/85 mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl border"
+            className={cn(
+              "border-border/60 bg-background/85 mt-0.5 inline-flex shrink-0 items-center justify-center rounded-xl border",
+              constrainedLayout ? "size-11" : "size-12"
+            )}
             {...buildPublicMapOrganizationListCardSurfaceProps({
               ownerId,
               slot: "avatar",
@@ -116,28 +123,29 @@ export function PublicMapResourceListCard({
             })}
           >
             <span
-              className="inline-flex size-7 items-center justify-center rounded-full shadow-sm"
+              className="inline-flex size-8 items-center justify-center rounded-full shadow-sm"
               style={{ backgroundColor: markerColor }}
               aria-hidden
             >
               <PublicMapResourceCategoryIcon
                 category={item.primaryResourceCategory}
-                className="size-4 text-white"
+                className="size-5 text-white"
               />
             </span>
           </span>
           <div className="min-w-0 flex-1 pt-0.5">
             <p
-              className="text-foreground line-clamp-2 text-[15px] leading-tight font-semibold"
+              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
-                notes: "Resource name text block.",
+                notes: "Primary resource category text block.",
               })}
             >
-              {item.title}
+              {cardTitle}
             </p>
             <PublicMapListMetadataStrip
+              className="mt-1"
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."
@@ -151,7 +159,7 @@ export function PublicMapResourceListCard({
           />
         </div>
         {subtitle ? (
-          <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+          <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed text-pretty">
             {subtitle}
           </p>
         ) : null}

@@ -1,22 +1,14 @@
+import { isNonProductAcceleratorClass } from "@/lib/accelerator/class-visibility"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import type { SidebarClass } from "@/lib/academy"
 
 import { type StepStatus } from "./module-stepper"
-
-const LEGACY_CLASS_TITLES = new Set(["published class"])
-const LEGACY_CLASS_SLUGS = new Set(["published-class"])
 
 export type SidebarTrack = SidebarClass & {
   trackKey: string
   routeSlug: string
   displayTitle: string
   lockState: "open" | "requires_paid"
-}
-
-function isLegacyClass(klass: SidebarClass): boolean {
-  const title = klass.title.trim().toLowerCase()
-  const slug = klass.slug.trim().toLowerCase()
-  return LEGACY_CLASS_TITLES.has(title) || LEGACY_CLASS_SLUGS.has(slug)
 }
 
 function formatClassTitle(title: string) {
@@ -68,7 +60,10 @@ export function getActiveTrackKey({
       if (pathname.startsWith(marker)) {
         const nextPart = pathname.slice(marker.length).split("/")[0]
         const moduleIndex = Number.parseInt(nextPart ?? "", 10)
-        if (Number.isFinite(moduleIndex) && track.modules.some((module) => module.index === moduleIndex)) {
+        if (
+          Number.isFinite(moduleIndex) &&
+          track.modules.some((module) => module.index === moduleIndex)
+        ) {
           return track.trackKey
         }
       }
@@ -80,12 +75,14 @@ export function getActiveTrackKey({
 
 export function buildVisibleTracks(classes: SidebarClass[]) {
   const baseClasses = classes
-    .filter((klass) => klass.published && !isLegacyClass(klass))
+    .filter((klass) => klass.published && !isNonProductAcceleratorClass(klass))
     .sort((a, b) => {
       if (a.slug === "electives") return -1
       if (b.slug === "electives") return 1
-      const pa = typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
-      const pb = typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
+      const pa =
+        typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
+      const pb =
+        typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
       return pa - pb
     })
 
@@ -102,8 +99,12 @@ export function buildVisibleTracks(classes: SidebarClass[]) {
       continue
     }
 
-    const formationModules = klass.modules.filter((module) => !isElectiveAddOnModule(module))
-    const electiveModules = klass.modules.filter((module) => isElectiveAddOnModule(module))
+    const formationModules = klass.modules.filter(
+      (module) => !isElectiveAddOnModule(module)
+    )
+    const electiveModules = klass.modules.filter((module) =>
+      isElectiveAddOnModule(module)
+    )
 
     tracks.push({
       ...klass,

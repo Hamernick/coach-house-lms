@@ -80,7 +80,6 @@ describe("member workspace task transitions", () => {
     expect(sql).toContain("update public.organization_projects")
     expect(sql).toContain("select count(*)::integer")
     expect(sql).toContain('"organization_tasks_insert"')
-    expect(sql).toContain('"organization_task_assignees_insert"')
     expect(sql).toContain("from public, anon, authenticated")
     expect(sql).toContain("to service_role;")
   })
@@ -151,10 +150,22 @@ describe("member workspace task transitions", () => {
     expect(sql).toContain("update public.organization_projects project")
     expect(sql).toContain("select count(*)::integer")
     expect(sql).toContain('"organization_tasks_update"')
-    expect(sql).toContain('"organization_task_assignees_update"')
-    expect(sql).toContain('"organization_task_assignees_delete"')
     expect(sql).toContain("from public, anon, authenticated")
     expect(sql).toContain("to service_role;")
+  })
+
+  it("removes legacy direct assignee writes in a forward migration", () => {
+    const sql = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20260809110500_harden_organization_task_assignee_writes.sql"
+      ),
+      "utf8"
+    )
+
+    expect(sql).toContain('"organization_task_assignees_insert"')
+    expect(sql).toContain('"organization_task_assignees_update"')
+    expect(sql).toContain('"organization_task_assignees_delete"')
   })
 
   it("deletes the task and repairs its project count through one RPC", async () => {

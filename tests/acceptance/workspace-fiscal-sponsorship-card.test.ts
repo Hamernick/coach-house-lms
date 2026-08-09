@@ -97,7 +97,19 @@ describe("workspace fiscal sponsorship card", () => {
     )
     expect(activityAction).toContain("FiscalSponsorshipMark")
     expect(activityAction).toContain("CheckCircle2Icon")
-    expect(activityAction).toContain("Signals only. Coach House reviews.")
+    expect(activityAction).toContain(
+      'className="nodrag nopan hover:bg-background hover:text-foreground dark:hover:bg-background relative"'
+    )
+    expect(activityAction).toContain(
+      'className="text-foreground size-7 rounded-md bg-transparent text-xs shadow-none ring-0"'
+    )
+    expect(activityAction).not.toContain(
+      'className="h-8 w-8 rounded-lg p-0 hover:bg-transparent"'
+    )
+    expect(activityAction).not.toContain("Signals only. Coach House reviews.")
+    expect(activityAction).not.toContain(
+      'className="text-muted-foreground truncate text-[10px]"'
+    )
     expect(activityAction).toContain(
       '<div className="flex min-w-0 items-center gap-1.5">'
     )
@@ -114,9 +126,6 @@ describe("workspace fiscal sponsorship card", () => {
       'className="size-4 rounded-[0.35rem] text-[7px]"',
       tooltipTitleGroupIndex
     )
-    const tooltipSubtitleIndex = activityAction.indexOf(
-      "Signals only. Coach House reviews."
-    )
     const tooltipBadgeIndex = activityAction.indexOf(
       "<Badge",
       tooltipTitleGroupIndex
@@ -124,12 +133,12 @@ describe("workspace fiscal sponsorship card", () => {
 
     expect(tooltipTitleGroupIndex).toBeGreaterThan(-1)
     expect(tooltipTitleMarkIndex).toBeGreaterThan(tooltipTitleGroupIndex)
-    expect(tooltipTitleMarkIndex).toBeLessThan(tooltipSubtitleIndex)
-    expect(tooltipSubtitleIndex).toBeLessThan(tooltipBadgeIndex)
+    expect(tooltipTitleMarkIndex).toBeLessThan(tooltipBadgeIndex)
     expect(activityAction).toContain("Request review")
     expect(activityAction).toContain("Update info")
     expect(activityAction).toContain("onUpdateInfo(criterion.id)")
-    expect(activityAction).toContain("onUpdateInfo(nextUnmetCriterion.id)")
+    expect(activityAction).toContain("const firstMissingCriterion")
+    expect(activityAction).toContain("onUpdateInfo(firstMissingCriterion.id)")
     expect(activityAction).not.toContain("String(criterion.met)")
   })
 
@@ -208,7 +217,7 @@ describe("workspace fiscal sponsorship card", () => {
     const myOrganizationPage = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
     )
-    const myOrganizationFiscal = readSource(
+    const myOrganizationFiscalSupport = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-fiscal.ts"
     )
 
@@ -397,12 +406,14 @@ describe("workspace fiscal sponsorship card", () => {
     expect(myOrganizationPage).toContain(
       "resolveFiscalApplicantPrefillIdentity"
     )
-    expect(myOrganizationFiscal).toContain("applicantEmail: user.email ?? null")
-    expect(myOrganizationFiscal).toContain("applicantFullName:")
-    expect(myOrganizationFiscal).toContain(
+    expect(myOrganizationFiscalSupport).toContain(
+      "applicantEmail: user.email ?? null"
+    )
+    expect(myOrganizationFiscalSupport).toContain("applicantFullName:")
+    expect(myOrganizationFiscalSupport).toContain(
       "loadFiscalSponsorshipProjectWorkflowSummary"
     )
-    expect(myOrganizationFiscal).toContain(
+    expect(myOrganizationFiscalSupport).toContain(
       'project_kind", "organization_admin"'
     )
   })
@@ -644,17 +655,32 @@ describe("workspace fiscal sponsorship card", () => {
       "onUpdateInfo={onUpdateFiscalSponsorshipInfo}"
     )
     expect(programsRenderer).toContain(
-      "useWorkspaceCanvasOverlayDrawerRequest"
+      "FISCAL_SPONSORSHIP_PROGRAM_STEP_BY_CRITERION"
     )
-    expect(programsRenderer).toContain(
-      "resolveFiscalSponsorshipUpdateRequest"
-    )
-    expect(programsRenderer).toContain(
-      "openWorkspaceDataDrawer("
-    )
+    expect(programsRenderer).toContain('"impact-narrative": 3')
+    expect(programsRenderer).toContain('"us-operations": 5')
+    expect(programsRenderer).toContain('"funding-use": 6')
+    expect(programsRenderer).toContain('"mission-fit": 2')
+    expect(programsRenderer).toContain('organizationTab: "programs"')
     expect(programsRenderer).toContain("organizationProgramStep:")
     expect(programsRenderer).toContain(
+      'organizationFocus: organizationEin?.trim() ? "address" : "ein"'
+    )
+    expect(programsRenderer).toContain("openWorkspaceDataDrawer(")
+    expect(programsRenderer).toContain("onProgramsCreateOpenChange(true)")
+    expect(programsRenderer).toContain('aria-label="Add program"')
+    expect(programsRenderer).toContain(
+      'className="nodrag nopan hover:bg-background hover:text-foreground dark:hover:bg-background relative"'
+    )
+    expect(programsRenderer).toContain('variant="ghost"')
+    expect(programsRenderer).toContain('size="icon"')
+    expect(programsRenderer).toContain("<PlusIcon aria-hidden />")
+    expect(programsRenderer).not.toContain("buildWorkspaceProgramEditorHref")
+    expect(programsRenderer).toContain(
       "eligibility: fiscalSponsorshipEligibility"
+    )
+    expect(programsRenderer).not.toContain(
+      "router.push(updateFiscalSponsorshipInfoHref)"
     )
     expect(programsRenderer).not.toContain(
       'FiscalSponsorshipMark className="size-5 rounded-lg text-[10px]"'

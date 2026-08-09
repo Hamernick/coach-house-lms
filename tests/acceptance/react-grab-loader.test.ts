@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import reactGrabPackage from "react-grab/package.json"
 
 import {
+  buildReactGrabRuntimeSrc,
   createReactGrabClipboardTransformer,
   createReactGrabSemanticSelectionHandler,
   resolveReactGrabSemanticTarget,
@@ -46,6 +48,12 @@ afterEach(() => {
 })
 
 describe("react grab loader", () => {
+  it("loads the browser runtime matching the installed package", () => {
+    expect(buildReactGrabRuntimeSrc()).toBe(
+      `https://unpkg.com/react-grab@${reactGrabPackage.version}/dist/index.global.js`,
+    )
+  })
+
   it("falls through synchronously when no semantic redirect target exists", () => {
     const element = createMockElement()
     const copyElement = vi.fn()

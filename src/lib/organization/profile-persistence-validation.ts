@@ -92,7 +92,7 @@ export const organizationProfilePersistencePatchSchema = z
     brandVoiceAvoid: organizationProfileBrandVoiceLongFormSchema
       .nullable()
       .optional(),
-    brandPrimary: organizationProfileHexColorInputSchema.nullable().optional(),
+    brandPrimary: organizationProfileHexColorInputSchema.nullable(),
     brandColors: z
       .array(organizationProfileHexColorInputSchema)
       .max(

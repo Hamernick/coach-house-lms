@@ -1,6 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 
 import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 
@@ -29,20 +36,24 @@ import {
 } from "./search-index"
 
 const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
-  "h-7 w-full min-w-0 justify-start self-start p-0 sm:w-auto"
+  "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
 
 const PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME =
-  "h-7 min-w-0 flex-1 rounded-none bg-transparent px-2 py-1 text-left text-xs leading-none text-muted-foreground shadow-none transition-[color] hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent sm:flex-none"
+  "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
 
 type PublicMapMemberRailProps = {
+  activeTab?: PublicMapMemberTab
   directoryRail?: ReactNode
   directoryMode?: PublicMapDirectoryRailMode | null
   guides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
+  onActiveTabChange?: (tab: PublicMapMemberTab) => void
   onGuideSelect?: (guideId: string) => void
   onSelectOrganization: (organizationId: string) => void
   onToggleFavorite: (organizationId: string) => void
 }
+
+export type PublicMapMemberTab = "directory" | "guides" | "saved"
 
 export function filterPublicMapSavedOrganizations({
   activeGroup,
@@ -81,22 +92,33 @@ export function filterPublicMapSavedOrganizations({
 }
 
 export function PublicMapMemberRail({
+  activeTab: controlledActiveTab,
   directoryRail = null,
   directoryMode = null,
   guides = [],
   savedOrganizations,
+  onActiveTabChange,
   onGuideSelect,
   onSelectOrganization,
   onToggleFavorite,
 }: PublicMapMemberRailProps) {
   const hasDirectoryRail = Boolean(directoryRail)
   const hasGuides = Boolean(onGuideSelect)
-  const defaultTab = hasDirectoryRail
+  const defaultTab: PublicMapMemberTab = hasDirectoryRail
     ? "directory"
     : hasGuides
       ? "guides"
       : "saved"
-  const [activeTab, setActiveTab] = useState(defaultTab)
+  const [uncontrolledActiveTab, setUncontrolledActiveTab] =
+    useState<PublicMapMemberTab>(defaultTab)
+  const activeTab = controlledActiveTab ?? uncontrolledActiveTab
+  const setActiveTab = useCallback(
+    (nextTab: PublicMapMemberTab) => {
+      setUncontrolledActiveTab(nextTab)
+      onActiveTabChange?.(nextTab)
+    },
+    [onActiveTabChange]
+  )
   const [savedQuery, setSavedQuery] = useState("")
   const [savedActiveGroup, setSavedActiveGroup] =
     useState<PublicMapGroupFilterKey>("all")
@@ -133,7 +155,7 @@ export function PublicMapMemberRail({
     if (didAddDirectoryRail || directoryMode === "details") {
       setActiveTab("directory")
     }
-  }, [directoryMode, hasDirectoryRail, hasGuides])
+  }, [directoryMode, hasDirectoryRail, hasGuides, setActiveTab])
 
   useEffect(() => {
     if (
@@ -166,7 +188,7 @@ export function PublicMapMemberRail({
     >
       <Tabs
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={(value) => setActiveTab(value as PublicMapMemberTab)}
         className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
       >
         <TabsList
@@ -229,7 +251,7 @@ export function PublicMapMemberRail({
           >
             <div
               data-public-map-member-rail-section="saved-search-controls"
-              className="shrink-0"
+              className="shrink-0 px-2.5"
             >
               <PublicMapSearchCard
                 query={savedQuery}
@@ -260,7 +282,7 @@ export function PublicMapMemberRail({
                   ? "Try a different search or category filter."
                   : "Tap the heart on any organization to keep it here."
               }
-              className="min-h-0 flex-1"
+              className="mx-2 min-h-0 flex-1 bg-transparent"
               onSelectOrganization={handleSelectOrganization}
               onToggleFavorite={onToggleFavorite}
               removable

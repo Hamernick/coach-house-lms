@@ -3,6 +3,7 @@ import { useMemo } from "react"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import {
   buildPublicMapItems,
+  publicMapItemMatchesGroupFilter,
   type ExternalResourceMapItem,
 } from "@/lib/public-map/resource-map-items"
 import {
@@ -29,30 +30,25 @@ export function usePublicMapOrganizationById(
   )
 }
 
-export function usePublicMapOrganizationFilterState({
-  query,
+export function usePublicMapFilteredOrganizations({
+  deferredQuery,
   favorites,
-  includeSeedResources,
   organizationById,
   organizations,
-  resourceItems,
 }: {
-  activeGroup: PublicMapGroupFilterKey
-  query: string
+  deferredQuery: string
   favorites: string[]
-  includeSeedResources: boolean
   organizationById: Map<string, PublicMapOrganization>
   organizations: PublicMapOrganization[]
-  resourceItems?: ExternalResourceMapItem[]
 }) {
   const searchIndex = useMemo(
     () => buildPublicMapSearchIndex(organizations),
     [organizations]
   )
-  const queryMatchedOrganizations = useMemo(() => {
+  return useMemo(() => {
     const filteredIds = filterPublicMapOrganizationIds({
       searchIndex,
-      query,
+      query: deferredQuery,
       appliedBounds: null,
       favorites,
       activeGroup: "all",
@@ -62,7 +58,32 @@ export function usePublicMapOrganizationFilterState({
       .filter((organization): organization is PublicMapOrganization =>
         Boolean(organization)
       )
-  }, [favorites, organizationById, query, searchIndex])
+  }, [deferredQuery, favorites, organizationById, searchIndex])
+}
+
+export function usePublicMapOrganizationFilterState({
+  activeGroup,
+  deferredQuery,
+  favorites,
+  includeSeedResources,
+  organizationById,
+  organizations,
+  resourceItems,
+}: {
+  activeGroup: PublicMapGroupFilterKey
+  deferredQuery: string
+  favorites: string[]
+  includeSeedResources: boolean
+  organizationById: Map<string, PublicMapOrganization>
+  organizations: PublicMapOrganization[]
+  resourceItems?: ExternalResourceMapItem[]
+}) {
+  const queryMatchedOrganizations = usePublicMapFilteredOrganizations({
+    deferredQuery,
+    favorites,
+    organizationById,
+    organizations,
+  })
   const countItems = useMemo(
     () =>
       buildPublicMapItems({
@@ -70,15 +91,27 @@ export function usePublicMapOrganizationFilterState({
         includeSeedItems: includeSeedResources,
         resourceItems,
       }).filter((item) =>
-        publicMapListItemMatchesQuery({ item, query })
+        publicMapListItemMatchesQuery({ item, query: deferredQuery })
       ),
-    [includeSeedResources, query, queryMatchedOrganizations, resourceItems]
+    [
+      deferredQuery,
+      includeSeedResources,
+      queryMatchedOrganizations,
+      resourceItems,
+    ]
   )
   const groupCounts = useMemo(
     () => buildPublicMapGroupFilterCounts(countItems),
     [countItems]
   )
+  const filteredItems = useMemo(
+    () =>
+      countItems.filter((item) =>
+        publicMapItemMatchesGroupFilter({ activeGroup, item })
+      ),
+    [activeGroup, countItems]
+  )
   const filteredOrganizations = queryMatchedOrganizations
 
-  return { filteredOrganizations, groupCounts }
+  return { filteredItems, filteredOrganizations, groupCounts }
 }

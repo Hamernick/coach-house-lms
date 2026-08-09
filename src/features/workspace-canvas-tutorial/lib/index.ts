@@ -13,7 +13,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "overview",
     title: "Welcome to Workspace",
     message:
-      "This canvas keeps your organization, roadmap, programs, accelerator, and calendar in one place.",
+      "This canvas connects your organization, people, finances, documents, programs, roadmap, and accelerator in one place.",
     targetCardId: null,
     targetLabel: "Workspace",
     revealedCardIds: [],
@@ -55,9 +55,9 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   {
     id: "tool-buttons",
     sceneId: "overview",
-    title: "Tool controls",
+    title: "Workspace drawer",
     message:
-      "Use the workspace tool controls to open different tools that help you plan and build your org. On desktop they live in the left rail, and on smaller screens they move into the cards drawer.",
+      "Use the drawer to move between Organization, Finance, People, Documents, and Accelerator. On desktop its controls live in the left rail; on smaller screens they move into the drawer.",
     targetCardId: null,
     targetLabel: "Tool controls",
     revealedCardIds: ["organization-overview"],
@@ -167,7 +167,7 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] =
   WORKSPACE_MAP_FEATURE_ENABLED
     ? WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS
     : WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS.filter(
-        (step) => step.id !== "map-button" && step.id !== "map-card",
+        (step) => step.id !== "map-button" && step.id !== "map-card"
       )
 
 export function resolveWorkspaceCanvasTutorialStepCount() {
@@ -190,12 +190,12 @@ export function resolveWorkspaceCanvasTutorialStep(stepIndex: number) {
 
 export function resolveWorkspaceCanvasTutorialProgressPercent(
   stepIndex: number,
-  stepCount: number,
+  stepCount: number
 ) {
   const safeStepCount = Math.max(Math.trunc(stepCount), 1)
   const currentStep = Math.min(
     Math.max(Math.trunc(stepIndex) + 1, 1),
-    safeStepCount,
+    safeStepCount
   )
 
   return Math.round((currentStep / safeStepCount) * 100)
@@ -214,11 +214,15 @@ export const WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS = [
   "communications",
 ] as const satisfies readonly WorkspaceCanvasTutorialCardId[]
 
-function resolveTutorialStepIdSet(stepIds: WorkspaceCanvasTutorialStepId[] = []) {
+function resolveTutorialStepIdSet(
+  stepIds: WorkspaceCanvasTutorialStepId[] = []
+) {
   return new Set<WorkspaceCanvasTutorialStepId>(stepIds)
 }
 
-function resolveWorkspaceCanvasTutorialStepOrder(stepId: WorkspaceCanvasTutorialStepId) {
+function resolveWorkspaceCanvasTutorialStepOrder(
+  stepId: WorkspaceCanvasTutorialStepId
+) {
   return WORKSPACE_CANVAS_TUTORIAL_STEPS.findIndex((step) => step.id === stepId)
 }
 
@@ -227,14 +231,14 @@ function isTutorialShortcutStep(step: WorkspaceCanvasTutorialStep) {
 }
 
 export function isWorkspaceCanvasTutorialGatedStep(
-  step: WorkspaceCanvasTutorialStep,
+  step: WorkspaceCanvasTutorialStep
 ) {
   return step.continueMode === "shortcut" || step.continueMode === "action"
 }
 
 export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
   stepIndex: number,
-  stepIds: WorkspaceCanvasTutorialStepId[] = [],
+  stepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const clampedStepIndex = clampWorkspaceCanvasTutorialStepIndex(stepIndex)
   return stepIds.filter((stepId) => {
@@ -245,17 +249,17 @@ export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
 
 export function isWorkspaceCanvasTutorialStepOpened(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   return resolveTutorialStepIdSet(
-    resolveWorkspaceCanvasTutorialTrimmedStepIds(stepIndex, openedStepIds),
+    resolveWorkspaceCanvasTutorialTrimmedStepIds(stepIndex, openedStepIds)
   ).has(step.id)
 }
 
 export function isWorkspaceCanvasTutorialStepAcknowledged(
   stepIndex: number,
-  acknowledgedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  acknowledgedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   return resolveTutorialStepIdSet(acknowledgedStepIds).has(step.id)
@@ -263,7 +267,7 @@ export function isWorkspaceCanvasTutorialStepAcknowledged(
 
 export function resolveWorkspaceCanvasTutorialContinueMode(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   if (isWorkspaceCanvasTutorialGatedStep(step)) {
@@ -275,20 +279,20 @@ export function resolveWorkspaceCanvasTutorialContinueMode(
 }
 
 export function shouldWorkspaceCanvasTutorialBlockPanelNext(
-  _continueMode: "next" | "shortcut" | "action" | undefined,
+  _continueMode: "next" | "shortcut" | "action" | undefined
 ) {
   return false
 }
 
 export function resolveWorkspaceCanvasTutorialVisibleCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const clampedStepIndex = clampWorkspaceCanvasTutorialStepIndex(stepIndex)
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   const openedCurrentStep = isWorkspaceCanvasTutorialStepOpened(
     clampedStepIndex,
-    openedStepIds,
+    openedStepIds
   )
   if (isTutorialShortcutStep(step) && openedCurrentStep && step.targetCardId) {
     return [step.targetCardId]
@@ -299,20 +303,23 @@ export function resolveWorkspaceCanvasTutorialVisibleCardIds(
 
 export function resolveWorkspaceCanvasTutorialActiveVisibleCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   return resolveWorkspaceCanvasTutorialVisibleCardIds(stepIndex, openedStepIds)
 }
 
 export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
-  const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
+  const callout = resolveWorkspaceCanvasTutorialCallout(
+    stepIndex,
+    openedStepIds
+  )
   if (
     !callout ||
-    callout.kind !== "shortcut-button" &&
-    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
+    (callout.kind !== "shortcut-button" &&
+      (callout.kind !== "calendar-viewport-button" || !callout.requiresAction))
   ) {
     return null
   }
@@ -321,9 +328,12 @@ export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
 
 export function resolveWorkspaceCanvasTutorialSelectedCardId(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
-  if (resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) === "shortcut") {
+  if (
+    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
+    "shortcut"
+  ) {
     return null
   }
 
@@ -332,7 +342,7 @@ export function resolveWorkspaceCanvasTutorialSelectedCardId(
 
 export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
 
@@ -342,7 +352,7 @@ export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
 
   const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
     stepIndex,
-    openedStepIds,
+    openedStepIds
   )
 
   if (continueMode === "shortcut") {
@@ -365,13 +375,16 @@ export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
 
 export function resolveWorkspaceCanvasTutorialShortcutInstruction(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ) {
-  const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
+  const callout = resolveWorkspaceCanvasTutorialCallout(
+    stepIndex,
+    openedStepIds
+  )
   if (
     !callout ||
-    callout.kind !== "shortcut-button" &&
-    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
+    (callout.kind !== "shortcut-button" &&
+      (callout.kind !== "calendar-viewport-button" || !callout.requiresAction))
   ) {
     return null
   }
@@ -380,7 +393,7 @@ export function resolveWorkspaceCanvasTutorialShortcutInstruction(
 
 export function resolveWorkspaceCanvasTutorialCallout(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
 ): WorkspaceCanvasTutorialCallout | null {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   const label = step.targetLabel ?? step.title
@@ -412,7 +425,7 @@ export function resolveWorkspaceCanvasTutorialCallout(
 
   const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
     stepIndex,
-    openedStepIds,
+    openedStepIds
   )
 
   if (
@@ -469,7 +482,7 @@ export function resolveWorkspaceCanvasTutorialCallout(
 }
 
 export function resolveWorkspaceCanvasTutorialHighlightShortcutButtons(
-  stepIndex: number,
+  stepIndex: number
 ) {
   return (
     resolveWorkspaceCanvasTutorialStep(stepIndex).highlightShortcutButtons ??

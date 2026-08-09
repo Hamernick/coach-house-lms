@@ -158,10 +158,6 @@ $$;
 
 drop policy if exists "organization_tasks_update"
   on public.organization_tasks;
-drop policy if exists "organization_task_assignees_update"
-  on public.organization_task_assignees;
-drop policy if exists "organization_task_assignees_delete"
-  on public.organization_task_assignees;
 
 revoke all on function public.update_organization_task_transition(
   uuid,

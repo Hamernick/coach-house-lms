@@ -5,6 +5,10 @@ import {
   WORKSPACE_ROADMAP_PATH,
   getWorkspaceRoadmapSectionPath,
 } from "@/lib/workspace/routes"
+import {
+  hasMeaningfulRoadmapBudgetRows,
+  normalizeRoadmapBudgetRows,
+} from "./budget"
 import type {
   RoadmapSection,
   RoadmapSectionDefinition,
@@ -16,15 +20,6 @@ import type {
 const TEST_SECTION_TITLES = new Set(["test", "testing", "foundations"])
 const DEPRECATED_SECTION_IDS = new Set(["strategic_roadmap"])
 const DEPRECATED_SECTION_SLUGS = new Set(["strategic-roadmap"])
-const LEGACY_TEMPLATE_TITLES = new Map([
-  ["mission_vision_values", new Set(["Mission, Vision, Values"])],
-])
-const LEGACY_TEMPLATE_SUBTITLES = new Map([
-  [
-    "mission_vision_values",
-    new Set(["Your guiding statements and principles."]),
-  ],
-])
 const ROADMAP_SECTION_LAYOUTS = new Set<RoadmapSection["layout"]>([
   "square",
   "vertical",
@@ -35,12 +30,22 @@ const ROADMAP_SECTION_STATUSES = new Set<RoadmapSectionStatus>([
   "in_progress",
   "complete",
 ])
+const LEGACY_TEMPLATE_TITLES = new Map([
+  ["mission_vision_values", new Set(["Mission, Vision, Values"])],
+])
+const LEGACY_TEMPLATE_SUBTITLES = new Map([
+  [
+    "mission_vision_values",
+    new Set(["Your guiding statements and principles."]),
+  ],
+])
 const STORED_SECTION_KEYS = new Set([
   "id",
   "title",
   "subtitle",
   "slug",
   "content",
+  "budgetRows",
   "imageUrl",
   "lastUpdated",
   "isPublic",
@@ -50,16 +55,14 @@ const STORED_SECTION_KEYS = new Set([
   "ctaUrl",
 ])
 
-export const isRecord = (
-  value: unknown,
-): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
 export const normalizeText = (value: unknown): string =>
   typeof value === "string" ? value.trim() : ""
 
 function normalizeRoadmapSectionStatus(
-  value: unknown,
+  value: unknown
 ): RoadmapSectionStatus | null {
   if (value === "completed") return "complete"
   return typeof value === "string" &&
@@ -75,7 +78,7 @@ export function isTestSectionValue(value: unknown): boolean {
 
 export function shouldRemoveTestSection(
   entry: StoredSection | null | undefined,
-  key?: string,
+  key?: string
 ): boolean {
   if (isTestSectionValue(key)) return true
   const keyNormalized = normalizeText(key).toLowerCase()
@@ -93,7 +96,7 @@ export function shouldRemoveTestSection(
 }
 
 export function getStoredRoadmap(
-  profile: Record<string, unknown> | null | undefined,
+  profile: Record<string, unknown> | null | undefined
 ): StoredRoadmap {
   const roadmap = isRecord(profile?.roadmap)
     ? (profile.roadmap as Record<string, unknown>)
@@ -111,7 +114,7 @@ export function slugify(value: string): string {
 export function buildRoadmapSection(
   stored: StoredSection | null | undefined,
   fallback: RoadmapSectionDefinition | null,
-  index: number,
+  index: number
 ): RoadmapSection {
   const fallbackId = fallback?.id ?? `section-${index + 1}`
   const id = normalizeText(stored?.id) || fallbackId
@@ -135,13 +138,15 @@ export function buildRoadmapSection(
   const subtitleIsTemplate =
     effectiveStoredSubtitle.length === 0 && templateSubtitle.length > 0
   const content = typeof stored?.content === "string" ? stored.content : ""
+  const budgetRows = normalizeRoadmapBudgetRows(stored?.budgetRows)
   const imageUrlRaw = normalizeText(stored?.imageUrl)
   const imageUrl = imageUrlRaw.length > 0 ? imageUrlRaw : undefined
   const lastUpdated =
     typeof stored?.lastUpdated === "string" || stored?.lastUpdated === null
       ? (stored?.lastUpdated ?? null)
       : null
-  const isPublic = typeof stored?.isPublic === "boolean" ? stored.isPublic : false
+  const isPublic =
+    typeof stored?.isPublic === "boolean" ? stored.isPublic : false
   const layout =
     typeof stored?.layout === "string" &&
     ROADMAP_SECTION_LAYOUTS.has(stored.layout as RoadmapSection["layout"])
@@ -160,6 +165,11 @@ export function buildRoadmapSection(
       : undefined
   const slugRaw = normalizeText(stored?.slug)
   const slug = slugRaw || fallback?.slug || slugify(title) || fallbackId
+  const storageExtras = stored
+    ? Object.fromEntries(
+        Object.entries(stored).filter(([key]) => !STORED_SECTION_KEYS.has(key))
+      )
+    : {}
   const prompt =
     fallback?.prompt ??
     fallback?.placeholder ??
@@ -175,11 +185,6 @@ export function buildRoadmapSection(
       : storedTitle.length > 0
         ? `Write about ${storedTitle}.`
         : "Start writing...")
-  const storageExtras = stored
-    ? Object.fromEntries(
-        Object.entries(stored).filter(([key]) => !STORED_SECTION_KEYS.has(key)),
-      )
-    : {}
 
   return {
     id,
@@ -191,6 +196,8 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
+    budgetRows,
+    storageExtras,
     imageUrl,
     lastUpdated,
     isPublic,
@@ -202,12 +209,11 @@ export function buildRoadmapSection(
     templateSubtitle,
     titleIsTemplate,
     subtitleIsTemplate,
-    storageExtras,
   }
 }
 
 export function resolveRoadmapSectionDerivedStatus(
-  section: RoadmapSection,
+  section: RoadmapSection
 ): RoadmapSectionStatus {
   if (section.status === "complete") return "complete"
   if (section.status === "in_progress") return "in_progress"
@@ -215,7 +221,8 @@ export function resolveRoadmapSectionDerivedStatus(
   if (section.homework?.status === "complete") return "complete"
   if (
     section.homework?.status === "in_progress" ||
-    section.content.trim().length > 0
+    section.content.trim().length > 0 ||
+    hasMeaningfulRoadmapBudgetRows(section.budgetRows ?? [])
   ) {
     return "in_progress"
   }
@@ -247,7 +254,9 @@ export function getRoadmapWorkspaceRevalidationPaths({
   return paths
 }
 
-export function ensureUniqueSlugs(sections: RoadmapSection[]): RoadmapSection[] {
+export function ensureUniqueSlugs(
+  sections: RoadmapSection[]
+): RoadmapSection[] {
   const used = new Set<string>()
   return sections.map((section, index) => {
     const base =
@@ -272,6 +281,9 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
+    ...(section.id === "budget" || (section.budgetRows?.length ?? 0) > 0
+      ? { budgetRows: section.budgetRows ?? [] }
+      : {}),
     imageUrl: section.imageUrl,
     lastUpdated: section.lastUpdated,
     isPublic: section.isPublic,
@@ -284,6 +296,6 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
 
 export function defaultRoadmapSections() {
   return SECTION_DEFINITIONS.map((definition, index) =>
-    buildRoadmapSection(null, definition, index),
+    buildRoadmapSection(null, definition, index)
   )
 }

@@ -257,6 +257,11 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
           {
             id: "applicant-signature",
             title: "Applicant signature",
+            actionLabel: "Sign",
+            complete: Boolean(
+              signaturePacketStatus &&
+              ["applicant_signed", "completed"].includes(signaturePacketStatus)
+            ),
             description:
               signaturePacket.applicantSignerEmail ??
               "Applicant signs securely in Coach House",
@@ -270,10 +275,17 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
                 {
                   id: "coach-signature",
                   title: "Coach House countersignature",
+                  actionLabel: coachCanSign ? "Countersign" : "Preview",
+                  complete: Boolean(
+                    signaturePacketStatus &&
+                    ["coach_signed", "completed"].includes(
+                      signaturePacketStatus
+                    )
+                  ),
                   description:
                     signaturePacket.coachSignerEmail ??
                     "Available after the applicant signs",
-                  href: coachCanSign ? signaturePacket.coachSigningHref : null,
+                  href: signaturePacket.coachSigningHref,
                   statusLabel: resolveCoachSigningStatus(signaturePacketStatus),
                 },
               ]
@@ -326,6 +338,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
       hasCloseoutReport,
       hasGrantRequestSupport,
       hasReportSupport,
+      hasAcceptedCompletedW9: hasAcceptedW9,
       hasAcceptedW9,
       signaturePacketStatus,
     }),

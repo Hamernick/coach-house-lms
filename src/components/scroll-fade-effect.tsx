@@ -1,6 +1,14 @@
-import { forwardRef, type ComponentPropsWithoutRef } from "react"
+"use client"
+
+import {
+  forwardRef,
+  useCallback,
+  type ComponentPropsWithoutRef,
+  type ForwardedRef,
+} from "react"
 
 import { cn } from "@/lib/utils"
+import { useScrollFadeEffect } from "@/lib/scroll-fade-effect"
 
 export type ScrollFadeEffectProps = ComponentPropsWithoutRef<"div"> & {
   /**
@@ -15,25 +23,41 @@ export type ScrollFadeEffectProps = ComponentPropsWithoutRef<"div"> & {
   orientation?: "horizontal" | "vertical"
 }
 
-export const ScrollFadeEffect = forwardRef<HTMLDivElement, ScrollFadeEffectProps>(function ScrollFadeEffect(
-  {
-    className,
-    enabled = true,
-    orientation = "vertical",
-    ...props
-  },
-  ref,
+function assignRef<T>(ref: ForwardedRef<T>, value: T | null) {
+  if (typeof ref === "function") {
+    ref(value)
+    return
+  }
+
+  if (ref) ref.current = value
+}
+
+export const ScrollFadeEffect = forwardRef<
+  HTMLDivElement,
+  ScrollFadeEffectProps
+>(function ScrollFadeEffect(
+  { className, enabled = true, orientation = "vertical", ...props },
+  forwardedRef
 ) {
+  const scrollFadeRef = useScrollFadeEffect(enabled, orientation)
+  const mergedRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      scrollFadeRef(element)
+      assignRef(forwardedRef, element)
+    },
+    [forwardedRef, scrollFadeRef]
+  )
+
   return (
     <div
-      ref={ref}
+      ref={mergedRef}
       data-orientation={orientation}
       className={cn(
         enabled &&
           "data-[orientation=horizontal]:overflow-x-auto data-[orientation=vertical]:overflow-y-auto",
         enabled &&
           "data-[orientation=horizontal]:scroll-fade-effect-x data-[orientation=vertical]:scroll-fade-effect-y",
-        className,
+        className
       )}
       {...props}
     />

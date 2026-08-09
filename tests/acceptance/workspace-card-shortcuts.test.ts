@@ -41,7 +41,8 @@ describe("workspace card shortcuts", () => {
       onFocusCard: vi.fn(),
     })
 
-    expect(items.map((item) => item.id)).toEqual(["accelerator", "programs"])
+    expect(items.map((item) => item.id)).toEqual(["programs"])
+    expect(items.some((item) => item.id === "accelerator")).toBe(false)
     expect(items.some((item) => item.id === "roadmap")).toBe(false)
   })
 
@@ -115,6 +116,7 @@ describe("workspace card shortcuts", () => {
 
     const acceleratorItem = items.find((item) => item.id === "accelerator")
 
+    expect(acceleratorItem).toBeDefined()
     acceleratorItem?.onPress()
 
     expect(onToggle).not.toHaveBeenCalled()
@@ -122,7 +124,7 @@ describe("workspace card shortcuts", () => {
     expect(onTutorialAdvance).toHaveBeenCalledTimes(1)
   })
 
-  it("focuses the accelerator instead of toggling it closed from the shortcut rail", () => {
+  it("keeps the accelerator off the live shortcut rail", () => {
     const onToggle = vi.fn()
     const onFocusCard = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
@@ -135,10 +137,9 @@ describe("workspace card shortcuts", () => {
 
     const acceleratorItem = items.find((item) => item.id === "accelerator")
 
-    acceleratorItem?.onPress()
-
+    expect(acceleratorItem).toBeUndefined()
     expect(onToggle).not.toHaveBeenCalled()
-    expect(onFocusCard).toHaveBeenCalledWith("accelerator")
+    expect(onFocusCard).not.toHaveBeenCalled()
   })
 
   it("focuses visible programs instead of toggling them closed from the shortcut rail", () => {
@@ -176,7 +177,7 @@ describe("workspace card shortcuts", () => {
     expect(onFocusCard).not.toHaveBeenCalled()
   })
 
-  it("opens the accelerator before focusing it when a legacy hidden state still exists", () => {
+  it("does not restore the accelerator shortcut from legacy hidden state", () => {
     const onToggle = vi.fn()
     const onFocusCard = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
@@ -189,10 +190,9 @@ describe("workspace card shortcuts", () => {
 
     const acceleratorItem = items.find((item) => item.id === "accelerator")
 
-    acceleratorItem?.onPress()
-
-    expect(onToggle).toHaveBeenCalledWith("accelerator", { source: "dock" })
-    expect(onFocusCard).toHaveBeenCalledWith("accelerator")
+    expect(acceleratorItem).toBeUndefined()
+    expect(onToggle).not.toHaveBeenCalled()
+    expect(onFocusCard).not.toHaveBeenCalled()
   })
 
   it("opens hidden programs before focusing them from the shortcut rail", () => {

@@ -33,11 +33,56 @@ function normalizePublicMapListSearchText(value: string | null | undefined) {
 }
 
 function buildPublicMapResourceCategorySearchText(
-  categories: PublicMapResourceCategoryKey[]
+  categories: PublicMapResourceCategoryKey[] | null | undefined
 ) {
-  return categories
+  return (categories ?? [])
     .map((category) => PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category])
     .join(" ")
+}
+
+function normalizePublicMapListEnumSearchText(
+  value: string | null | undefined
+) {
+  return normalizePublicMapListSearchText(value?.replaceAll("_", " "))
+}
+
+const publicMapListItemSearchTextCache = new WeakMap<
+  ExternalResourceMapItem,
+  string
+>()
+
+function buildPublicMapExternalResourceSearchText(
+  item: ExternalResourceMapItem
+) {
+  const cached = publicMapListItemSearchTextCache.get(item)
+  if (cached !== undefined) return cached
+
+  const searchText = [
+    item.title,
+    item.subtitle,
+    item.description,
+    item.address,
+    item.city,
+    item.state,
+    item.country,
+    item.sourceLabel,
+    normalizePublicMapListEnumSearchText(item.verificationStatus),
+    normalizePublicMapListEnumSearchText(item.visibility),
+    buildPublicMapResourceCategorySearchText(item.resourceCategories),
+  ]
+    .map(normalizePublicMapListSearchText)
+    .join("\n")
+
+  publicMapListItemSearchTextCache.set(item, searchText)
+  return searchText
+}
+
+export function warmPublicMapListItemSearchCache(
+  items: ExternalResourceMapItem[]
+) {
+  for (const item of items) {
+    buildPublicMapExternalResourceSearchText(item)
+  }
 }
 
 export function publicMapListItemMatchesQuery({
@@ -51,21 +96,9 @@ export function publicMapListItemMatchesQuery({
   if (!normalizedQuery) return true
   if (item.itemType === "platform_organization") return true
 
-  return [
-    item.title,
-    item.subtitle,
-    item.description,
-    item.address,
-    item.city,
-    item.state,
-    item.country,
-    item.sourceLabel,
-    item.verificationStatus.replaceAll("_", " "),
-    item.visibility.replaceAll("_", " "),
-    buildPublicMapResourceCategorySearchText(item.resourceCategories),
-  ]
-    .map(normalizePublicMapListSearchText)
-    .some((text) => text.includes(normalizedQuery))
+  return buildPublicMapExternalResourceSearchText(item).includes(
+    normalizedQuery
+  )
 }
 
 export function buildPublicMapListItems({

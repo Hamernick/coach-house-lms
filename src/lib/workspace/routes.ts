@@ -7,6 +7,7 @@ export const ORGANIZATION_DOCUMENTS_PATH = "/organization/documents"
 
 export const WORKSPACE_DRAWER_TABS = [
   "organization",
+  WORKSPACE_FINANCE_DRAWER_TAB,
   "people",
   "documents",
   "accelerator",

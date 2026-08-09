@@ -340,14 +340,12 @@ function buildGuideItems({
 export function buildPublicMapResourceGuides(
   items: PublicMapItem[]
 ): PublicMapResourceGuide[] {
-  const guides: PublicMapResourceGuide[] = []
-
-  for (const definition of PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS) {
+  return PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.flatMap((definition) => {
     const guideItems = buildGuideItems({ definition, items })
     const minItems = definition.minItems ?? 1
-    if (guideItems.length < minItems) continue
+    if (guideItems.length < minItems) return []
 
-    guides.push({
+    return [{
       id: definition.id,
       title: definition.title,
       subtitle: definition.subtitle,
@@ -357,8 +355,6 @@ export function buildPublicMapResourceGuides(
       primaryResourceCategory:
         definition.primaryResourceCategory ?? "emergency_cooling_centers",
       visualVariant: definition.visualVariant,
-    })
-  }
-
-  return guides
+    } satisfies PublicMapResourceGuide]
+  })
 }

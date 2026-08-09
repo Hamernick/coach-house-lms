@@ -5,6 +5,7 @@ export {
   WorkspaceAcceleratorHeaderSummary,
 } from "./public-components"
 export { WorkspaceAcceleratorCardPanel as WorkspaceAcceleratorCardPanelComponent } from "./components/workspace-accelerator-card-panel"
+export { WorkspaceAcceleratorBanner } from "./components/workspace-accelerator-banner"
 export { WorkspaceAcceleratorCardProgressSummary } from "./components/workspace-accelerator-card-progress-strip"
 export { WorkspaceAcceleratorStepNodeCard as WorkspaceAcceleratorStepNodeCardComponent } from "./components/workspace-accelerator-step-node-card"
 export { WorkspaceAcceleratorHeaderPicker as WorkspaceAcceleratorHeaderPickerComponent } from "./components/workspace-accelerator-header-picker"

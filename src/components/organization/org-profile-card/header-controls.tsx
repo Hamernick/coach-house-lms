@@ -45,7 +45,7 @@ export function OrgProfileHeaderBannerControls({
 
   return (
     <>
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <div className="absolute right-4 top-4 flex items-center gap-2">
         <input
           id={headerInputId}
           type="file"
@@ -78,19 +78,11 @@ export function OrgProfileHeaderBannerControls({
                 Adjust banner
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                asChild
-                disabled={headerBusy}
-                className="cursor-pointer"
-              >
-                <label
-                  htmlFor={headerInputId}
-                  className="flex w-full cursor-pointer items-center gap-2"
-                >
+              <DropdownMenuItem asChild disabled={headerBusy} className="cursor-pointer">
+                <label htmlFor={headerInputId} className="flex w-full cursor-pointer items-center gap-2">
                   {isUploadingHeader ? (
                     <>
-                      <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
-                      Uploading…
+                      <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
                     </>
                   ) : (
                     "Replace banner"
@@ -99,9 +91,8 @@ export function OrgProfileHeaderBannerControls({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled className="opacity-100">
-                <span className="text-muted-foreground text-xs">
-                  Banner: {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px (
-                  {ORG_BANNER_ASPECT_LABEL})
+                <span className="text-xs text-muted-foreground">
+                  Banner: {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px ({ORG_BANNER_ASPECT_LABEL})
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -119,8 +110,7 @@ export function OrgProfileHeaderBannerControls({
             <label htmlFor={headerInputId} className="cursor-pointer">
               {isUploadingHeader ? (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
-                  Uploading…
+                  <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
                 </span>
               ) : (
                 "Upload banner"
@@ -129,9 +119,8 @@ export function OrgProfileHeaderBannerControls({
           </Button>
         )}
       </div>
-      <div className="border-border/60 bg-background/85 text-muted-foreground absolute top-14 right-4 rounded-md border px-2 py-1 text-[10px] backdrop-blur-sm">
-        Banner {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px (
-        {ORG_BANNER_ASPECT_LABEL}) recommended · min{" "}
+      <div className="absolute right-4 top-14 rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm">
+        Banner {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px ({ORG_BANNER_ASPECT_LABEL}) recommended · min{" "}
         {ORG_BANNER_MIN_DIMENSIONS_LABEL}px
       </div>
     </>
@@ -188,19 +177,11 @@ export function OrgProfileHeaderLogoControls({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              asChild
-              disabled={logoBusy}
-              className="cursor-pointer"
-            >
-              <label
-                htmlFor={logoInputId}
-                className="flex w-full cursor-pointer items-center gap-2"
-              >
+            <DropdownMenuItem asChild disabled={logoBusy} className="cursor-pointer">
+              <label htmlFor={logoInputId} className="flex w-full cursor-pointer items-center gap-2">
                 {isUploadingLogo ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
-                    Uploading…
+                    <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
                   </>
                 ) : (
                   "Replace logo"
@@ -222,8 +203,7 @@ export function OrgProfileHeaderLogoControls({
           <label htmlFor={logoInputId} className="cursor-pointer">
             {isUploadingLogo ? (
               <span className="inline-flex items-center gap-2">
-                <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
-                Uploading…
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
               </span>
             ) : (
               "Upload"
@@ -266,12 +246,7 @@ export function OrgProfileHeaderActions({
       {canEdit ? (
         editMode ? (
           <>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onCancelEdit}
-              disabled={isSaving}
-            >
+            <Button size="sm" variant="ghost" onClick={onCancelEdit} disabled={isSaving}>
               Cancel
             </Button>
             <Button size="sm" onClick={onSave} disabled={isSaving || !isDirty}>

@@ -31,8 +31,8 @@ export function TaskRowBase({
   return (
     <div
       className={cn(
-        "hover:bg-muted/60 flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
-        className
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted/60",
+        className,
       )}
     >
       <Checkbox
@@ -42,14 +42,14 @@ export function TaskRowBase({
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
         aria-label={titleAriaLabel ?? title}
-        className="border-border bg-background rounded-full enabled:hover:cursor-pointer data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600"
+        className="rounded-full border-border bg-background data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600 enabled:hover:cursor-pointer"
       />
-      <div className="min-w-0 flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "max-w-[60vw] flex-1 truncate text-left sm:max-w-none",
-              checked && "text-muted-foreground line-through"
+              "flex-1 truncate text-left max-w-[60vw] sm:max-w-none",
+              checked && "line-through text-muted-foreground",
             )}
           >
             {title}
@@ -59,15 +59,15 @@ export function TaskRowBase({
         {subtitle && (
           <div
             className={cn(
-              "text-muted-foreground mt-0.5 truncate text-xs",
-              checked && "line-through opacity-70"
+              "mt-0.5 text-xs text-muted-foreground truncate",
+              checked && "line-through opacity-70",
             )}
           >
             {subtitle}
           </div>
         )}
       </div>
-      <div className="ml-2 flex shrink-0 items-center gap-3 text-xs">
+      <div className="flex items-center gap-3 text-xs shrink-0 ml-2">
         {meta}
       </div>
     </div>

@@ -45,6 +45,7 @@ async function loadAdminStandardOrganizationProjects({
     .in("org_id", orgIds)
     .eq("project_kind", "standard")
     .neq("created_source", "system")
+    .neq("created_source", "starter_seed")
     .order("start_date", { ascending: true })
     .order("created_at", { ascending: true })
     .returns<OrganizationProjectRecord[]>()

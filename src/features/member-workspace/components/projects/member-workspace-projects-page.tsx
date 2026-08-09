@@ -295,9 +295,8 @@ export function MemberWorkspaceProjectsPage(
         filters,
         projects: kanbanVisibleProjects,
         viewOptions,
-        workstreamCategories,
       }),
-    [filters, kanbanVisibleProjects, viewOptions, workstreamCategories]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
 
   const counts = useMemo(
@@ -306,9 +305,8 @@ export function MemberWorkspaceProjectsPage(
         filters,
         projects: kanbanVisibleProjects,
         viewOptions,
-        workstreamCategories,
       }),
-    [filters, kanbanVisibleProjects, viewOptions, workstreamCategories]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
   const hasActiveFilters =
     filters.length > 0 ||

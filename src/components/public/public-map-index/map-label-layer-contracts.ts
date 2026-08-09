@@ -50,11 +50,11 @@ function resolvePublicMapLabelPaint(theme: PublicMapTheme) {
     clusterColor: "rgba(15, 23, 42, 0.82)",
     clusterHaloColor: "rgba(255, 255, 255, 0.9)",
     clusterHaloBlur: 0.16,
-    clusterHaloWidth: 0.85,
+    clusterHaloWidth: 0.65,
     pointColor: "rgba(15, 23, 42, 0.86)",
     pointHaloColor: "rgba(255, 255, 255, 0.9)",
     pointHaloBlur: 0.16,
-    pointHaloWidth: 0.9,
+    pointHaloWidth: 0.7,
   }
 }
 

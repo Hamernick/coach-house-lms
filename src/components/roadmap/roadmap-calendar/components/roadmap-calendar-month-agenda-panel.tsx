@@ -103,6 +103,10 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             </Badge>
           </div>
           <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+            <RoadmapCalendarAddEventMenu
+              disabled={!canManageCalendar}
+              onOpenCreate={onOpenCreate}
+            />
             {showTodayButton ? (
               <Button
                 type="button"
@@ -212,13 +216,6 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
                 </p>
               )}
             </RoadmapCalendarAgendaScroll>
-
-            <div className="border-border/40 mt-3 shrink-0 border-t pt-3">
-              <RoadmapCalendarAddEventMenu
-                disabled={!canManageCalendar}
-                onOpenCreate={onOpenCreate}
-              />
-            </div>
           </div>
         </div>
       </section>

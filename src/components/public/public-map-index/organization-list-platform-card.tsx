@@ -60,8 +60,7 @@ export function PublicMapPlatformOrganizationListCard({
       key={org.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
-        "focus-within:border-border/80 focus-within:bg-accent focus-within:text-accent-foreground dark:focus-within:bg-accent/50",
+        "group text-foreground relative h-full w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
         "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
         "motion-reduce:transition-none",
         selected
@@ -87,8 +86,8 @@ export function PublicMapPlatformOrganizationListCard({
     >
       <div
         className={cn(
-          "relative z-10 flex min-w-0 flex-col",
-          constrainedLayout ? "gap-2.5 p-2.5" : "gap-3 p-3"
+          "relative z-10 flex h-full min-w-0 flex-col",
+          constrainedLayout ? "gap-3 p-3" : "gap-4 p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -101,7 +100,7 @@ export function PublicMapPlatformOrganizationListCard({
         <div
           className={cn(
             "flex min-w-0 items-center",
-            constrainedLayout ? "gap-2.5" : "gap-3"
+            constrainedLayout ? "gap-3" : "gap-4"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
             ownerId,
@@ -111,7 +110,8 @@ export function PublicMapPlatformOrganizationListCard({
         >
           <Avatar
             className={cn(
-              "border-border/60 mt-0.5 size-10 rounded-xl border",
+              "border-border/60 mt-0.5 rounded-xl border",
+              constrainedLayout ? "size-11" : "size-12",
               hasLogoImage && "bg-white"
             )}
             {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -127,13 +127,13 @@ export function PublicMapPlatformOrganizationListCard({
                 hasLogoImage ? "object-contain p-1.5" : "object-cover"
               )}
             />
-            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-[11px] font-semibold">
+            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-xs font-semibold">
               {fallbackInitials}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1 pt-0.5">
             <p
-              className="text-foreground line-clamp-2 text-[15px] leading-tight font-semibold"
+              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",

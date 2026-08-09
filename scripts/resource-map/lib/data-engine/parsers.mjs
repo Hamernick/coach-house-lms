@@ -904,19 +904,38 @@ function readExcelBuffer(rawText, rawRecord) {
 function readXlsxSharedStrings(entries) {
   const text = entries.get("xl/sharedStrings.xml")
   if (!text) return []
-  return [...text.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/giu)].map((match) =>
-    stripTags(match[1])
-  )
+  return [
+    ...text.matchAll(
+      /<(?:[\w.-]+:)?si\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?si>/giu
+    ),
+  ].map((match) => readExcelText(match[1]))
+}
+
+function readExcelText(value) {
+  return String(value ?? "")
+    .replace(/<[^>]*>/gu, "")
+    .replace(/&nbsp;/giu, " ")
+    .replace(/&amp;/giu, "&")
+    .replace(/&quot;/giu, '"')
+    .replace(/&#39;/giu, "'")
+    .replace(/\r\n?/gu, "\n")
+    .trim()
 }
 
 function readExcelCellValue(cellXml, sharedStrings) {
   const type = cellXml.match(/\bt=["']([^"']+)["']/iu)?.[1]
   if (type === "inlineStr") {
-    return stripTags(cellXml.match(/<is\b[^>]*>([\s\S]*?)<\/is>/iu)?.[1] ?? "")
+    return readExcelText(
+      cellXml.match(
+        /<(?:[\w.-]+:)?is\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?is>/iu
+      )?.[1] ?? ""
+    )
   }
 
-  const rawValue = stripTags(
-    cellXml.match(/<v\b[^>]*>([\s\S]*?)<\/v>/iu)?.[1] ?? ""
+  const rawValue = readExcelText(
+    cellXml.match(
+      /<(?:[\w.-]+:)?v\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?v>/iu
+    )?.[1] ?? ""
   )
   if (type === "s") return sharedStrings[Number.parseInt(rawValue, 10)] ?? ""
   return rawValue
@@ -933,7 +952,19 @@ function readCellIndex(cellRef, fallbackIndex) {
   )
 }
 
-function parseExcelRows(rawText, rawRecord) {
+function readExcelHeaderRow(source) {
+  const metadata = readSourceMetadata(source)
+  const value =
+    source?.headerRow ??
+    source?.header_row ??
+    metadata.headerRow ??
+    metadata.header_row
+  if (value === null || value === undefined || value === "") return null
+  const parsed = Number.parseInt(String(value), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+export function parseExcelRows(rawText, rawRecord, source = {}) {
   const buffer = readExcelBuffer(rawText, rawRecord)
   if (buffer.subarray(0, 2).toString("utf8") !== "PK") {
     return parseCsvRows(rawText)
@@ -948,31 +979,49 @@ function parseExcelRows(rawText, rawRecord) {
   if (!sheet) throw new Error("xlsx_sheet_missing")
 
   const sharedStrings = readXlsxSharedStrings(entries)
-  const rawRows = [...sheet.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/giu)]
-    .map((rowMatch) => {
+  const rawRows = [
+    ...sheet.matchAll(
+      /<(?:[\w.-]+:)?row\b([^>]*)>([\s\S]*?)<\/(?:[\w.-]+:)?row>/giu
+    ),
+  ]
+    .map((rowMatch, rowIndex) => {
       const values = []
       let fallbackIndex = 0
-      for (const cellMatch of rowMatch[1].matchAll(
-        /<c\b([^>]*)>([\s\S]*?)<\/c>/giu
+      for (const cellMatch of rowMatch[2].matchAll(
+        /<(?:[\w.-]+:)?c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:[\w.-]+:)?c>)/giu
       )) {
         const cellRef = cellMatch[1].match(/\br=["']([^"']+)["']/iu)?.[1]
         const index = readCellIndex(cellRef, fallbackIndex)
         values[index] = readExcelCellValue(cellMatch[0], sharedStrings)
         fallbackIndex = index + 1
       }
-      return values
+      const explicitRow = Number.parseInt(
+        rowMatch[1].match(/\br=["'](\d+)["']/iu)?.[1] ?? "",
+        10
+      )
+      return {
+        rowNumber: Number.isFinite(explicitRow) ? explicitRow : rowIndex + 1,
+        values,
+      }
     })
-    .filter((row) => row.some((value) => readString(value)))
+    .filter((row) => row.values.some((value) => readString(value)))
 
   if (rawRows.length === 0) return []
-  const headers = rawRows[0].map((header, index) =>
+  const requestedHeaderRow = readExcelHeaderRow(source)
+  const headerIndex = requestedHeaderRow
+    ? rawRows.findIndex((row) => row.rowNumber === requestedHeaderRow)
+    : 0
+  if (headerIndex < 0) {
+    throw new Error(`xlsx_header_row_missing:${requestedHeaderRow}`)
+  }
+  const headers = rawRows[headerIndex].values.map((header, index) =>
     readString(header, `column_${index + 1}`)
   )
   return rawRows
-    .slice(1)
+    .slice(headerIndex + 1)
     .map((row) =>
       Object.fromEntries(
-        headers.map((header, index) => [header, row[index] ?? ""])
+        headers.map((header, index) => [header, row.values[index] ?? ""])
       )
     )
 }
@@ -1269,7 +1318,7 @@ export function parseRawPayload(rawRecord, source) {
       contentType.includes("spreadsheetml") ||
       contentType.includes("application/vnd.ms-excel")
     ) {
-      rows = parseExcelRows(rawText, rawRecord)
+      rows = parseExcelRows(rawText, rawRecord, source)
     } else if (connectorType === "csv" || contentType.includes("csv")) {
       rows = parseCsvRows(rawText)
     } else if (

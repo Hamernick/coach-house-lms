@@ -1,6 +1,7 @@
 export {
   connectFiscalSponsorshipDocumentAsset,
   buildFiscalSponsorshipSigningPreview,
+  canManageFiscalSponsorshipForOrganization,
   generateFiscalSponsorshipAgreement,
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,
@@ -14,7 +15,6 @@ export {
   sendFiscalSponsorshipAgreementForSignature,
   submitFiscalSponsorshipApplication,
 } from "./actions"
-export { canManageFiscalSponsorshipForOrganization } from "./lib/authorization"
 export {
   FiscalSponsorshipApplicationDrawer,
   FiscalSponsorshipApplicationEditor,

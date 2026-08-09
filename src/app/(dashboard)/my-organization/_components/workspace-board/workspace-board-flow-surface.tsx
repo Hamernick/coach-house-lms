@@ -2,6 +2,7 @@
 
 import { memo } from "react"
 
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import { WorkspaceCanvasSurfaceV2 } from "./workspace-canvas-v2"
 import { WorkspaceRealtimeCursorsOverlay } from "./workspace-board-flow-surface-cursors"
 
@@ -25,6 +26,7 @@ import type {
 export type WorkspaceBoardFlowSurfaceProps = {
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   workspaceFoundationEnabled: boolean
   boardState: WorkspaceBoardState
   allowEditing: boolean
@@ -76,6 +78,7 @@ export const WorkspaceBoardFlowSurface = memo(
           presentationMode={props.presentationMode}
           seed={props.seed}
           organizationEditorData={props.organizationEditorData}
+          financeInput={props.financeInput}
           workspaceFoundationEnabled={props.workspaceFoundationEnabled}
           layoutFitRequestKey={props.layoutFitRequestKey}
           acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}

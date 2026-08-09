@@ -60,6 +60,8 @@ type ProjectDetailOverviewContentProps = {
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
   fiscalSponsorshipWorkbench?: ReactNode
   isEditing: boolean
+  onCreateTask?: (context?: CreateTaskContext) => void
+  organizationSummary: MemberWorkspaceAdminOrganizationSummary
   project: ProjectDetails
   onChangeDraftField: (
     field: keyof MemberWorkspaceProjectDetailDraft,
@@ -72,6 +74,8 @@ function ProjectDetailOverviewContent({
   fiscalSponsorshipWorkflowSummary,
   fiscalSponsorshipWorkbench,
   isEditing,
+  onCreateTask,
+  organizationSummary,
   project,
   onChangeDraftField,
 }: ProjectDetailOverviewContentProps) {
@@ -88,11 +92,20 @@ function ProjectDetailOverviewContent({
               Timeline
             </h2>
             <p className="text-muted-foreground text-sm leading-6">
-              Timeline stays task-driven for now. Edit dates in the project
-              header or update individual tasks in the tasks tab.
+              Tasks, programs, and recorded organization activity share this
+              calendar.
             </p>
           </div>
-          <TimelineGantt tasks={project.timelineTasks} />
+          <TimelineGantt
+            activity={project.activity}
+            programs={organizationSummary.programs}
+            tasks={project.timelineTasks}
+            onCreateTask={
+              onCreateTask
+                ? () => onCreateTask({ projectId: project.id })
+                : undefined
+            }
+          />
         </section>
         {fiscalSponsorshipWorkbench}
       </div>
@@ -102,7 +115,16 @@ function ProjectDetailOverviewContent({
   return (
     <div className="space-y-10">
       <MemberWorkspaceProjectOverviewDocument project={project} />
-      <TimelineGantt tasks={project.timelineTasks} />
+      <TimelineGantt
+        activity={project.activity}
+        programs={organizationSummary.programs}
+        tasks={project.timelineTasks}
+        onCreateTask={
+          onCreateTask
+            ? () => onCreateTask({ projectId: project.id })
+            : undefined
+        }
+      />
       {fiscalSponsorshipWorkbench}
     </div>
   )
@@ -261,6 +283,8 @@ export function MemberWorkspaceProjectDetailTabs({
           draft={draft}
           fiscalSponsorshipWorkbench={resolvedFiscalSponsorshipWorkbench}
           isEditing={isEditing}
+          onCreateTask={onCreateTask}
+          organizationSummary={organizationSummary}
           project={project}
           onChangeDraftField={onChangeDraftField}
         />

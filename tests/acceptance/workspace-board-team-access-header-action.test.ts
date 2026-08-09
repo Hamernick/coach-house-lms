@@ -94,6 +94,7 @@ describe("WorkspaceBoardTeamAccessHeaderAction", () => {
     expect(markup).toContain("max-w-[13rem]")
     expect(markup).toContain("min-w-0")
     expect(markup).toContain("rounded-full")
+    expect(markup).not.toContain("shadow-xs")
     expect(source).toContain('<HeaderActionsPortal slot="right">')
     expect(source).toContain(
       'ownerId: "workspace-board:team-access-header-action"'

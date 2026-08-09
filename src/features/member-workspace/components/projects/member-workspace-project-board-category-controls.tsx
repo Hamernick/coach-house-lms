@@ -6,6 +6,8 @@ import {
   ArrowCounterClockwise,
   CircleNotch,
   DotsThreeVertical,
+  Eye,
+  EyeSlash,
   PencilSimple,
   Plus,
   TrashSimple,
@@ -35,13 +37,24 @@ type CategoryMutationAction = (
   categoryId: string
 ) => Promise<{ ok: true; id: string } | { error: string }>
 
+type HiddenCategory = {
+  key: string
+  name: string
+}
+
 export function MemberWorkspaceProjectBoardCategoryToolbar({
   createCategoryAction,
+  hiddenCategories,
+  onShowAllCategories,
+  onShowCategory,
   restoreDefaultsAction,
 }: {
   createCategoryAction?: (
     name: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
+  hiddenCategories: HiddenCategory[]
+  onShowAllCategories: () => void
+  onShowCategory: (categoryKey: string) => void
   restoreDefaultsAction?: () => Promise<{ ok: true } | { error: string }>
 }) {
   const router = useRouter()
@@ -90,6 +103,54 @@ export function MemberWorkspaceProjectBoardCategoryToolbar({
           Your workstream categories
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          {hiddenCategories.length > 0 ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                  <EyeSlash className="h-4 w-4" aria-hidden />
+                  {hiddenCategories.length} hidden
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 space-y-3" align="end">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Hidden categories</p>
+                  <p className="text-muted-foreground text-xs">
+                    Show protected categories on this board again.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  {hiddenCategories.map((category) => (
+                    <Button
+                      key={category.key}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between"
+                      onClick={() => onShowCategory(category.key)}
+                    >
+                      <span className="min-w-0 truncate">{category.name}</span>
+                      <span className="text-muted-foreground inline-flex shrink-0 items-center gap-1">
+                        <Eye className="h-4 w-4" aria-hidden />
+                        Show
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+                {hiddenCategories.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={onShowAllCategories}
+                  >
+                    <Eye className="h-4 w-4" aria-hidden />
+                    Show all categories
+                  </Button>
+                ) : null}
+              </PopoverContent>
+            </Popover>
+          ) : null}
           {restoreDefaultsAction ? (
             <Button
               type="button"
@@ -180,10 +241,12 @@ export function MemberWorkspaceProjectBoardCategoryToolbar({
 export function MemberWorkspaceProjectBoardCategoryMenu({
   category,
   deleteCategoryAction,
+  onHideCategory,
   updateCategoryAction,
 }: {
   category: MemberWorkspaceWorkstreamCategory
   deleteCategoryAction?: CategoryMutationAction
+  onHideCategory?: () => void
   updateCategoryAction: (
     categoryId: string,
     name: string
@@ -262,11 +325,24 @@ export function MemberWorkspaceProjectBoardCategoryMenu({
               if (event.key === "Enter") handleRename()
             }}
           />
+          {isDefaultCategory ? (
+            <p className="text-muted-foreground text-xs">Cannot be deleted</p>
+          ) : null}
           <div className="flex items-center justify-between gap-2">
             {isDefaultCategory ? (
-              <span className="text-muted-foreground text-xs">
-                Cannot be deleted
-              </span>
+              onHideCategory ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onHideCategory}
+                >
+                  <EyeSlash className="h-4 w-4" aria-hidden />
+                  Hide category
+                </Button>
+              ) : (
+                <span />
+              )
             ) : deleteCategoryAction ? (
               <Button
                 type="button"

@@ -15,10 +15,6 @@ import type {
   PublicMapResourceLinkType,
   PublicMapVerificationStatus,
 } from "./resource-map-items"
-import {
-  formatPublicMapResourceLinkDomain,
-  normalizePublicMapResourceLinkHref,
-} from "./resource-links"
 import { shouldShowPublicMapResourceLink } from "./resource-link-visibility"
 
 type ResourceMapPublicItemRow = ResourceMapPublicItemsView["Row"]
@@ -97,7 +93,7 @@ function normalizeResourceCategories(
   row: ResourceMapPublicItemRow
 ): PublicMapResourceCategoryKey[] {
   const categories = row.resource_categories
-    .flatMap((value): PublicMapResourceCategoryKey[] => {
+    .flatMap((value) => {
       const category = resolvePublicMapResourceCategoryInputKey(value)
       return category && isResourceCategoryKey(category) ? [category] : []
     })
@@ -222,68 +218,6 @@ function normalizePublicResourceLinks(value: unknown): PublicMapResourceLink[] {
     .filter(shouldShowPublicMapResourceLink)
 }
 
-function buildPublicResourceLinkFallback({
-  id,
-  isPrimary = false,
-  label,
-  type,
-  value,
-}: {
-  id: string
-  isPrimary?: boolean
-  label: string
-  type: PublicMapResourceLinkType
-  value: unknown
-}): PublicMapResourceLink | null {
-  const url = normalizePublicMapResourceLinkHref(readStringOrNull(value))
-  if (!url) return null
-
-  try {
-    const parsed = new URL(url)
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null
-    const link = {
-      id,
-      label,
-      url,
-      type,
-      domain: formatPublicMapResourceLinkDomain(url),
-      isPrimary,
-    }
-    return shouldShowPublicMapResourceLink(link) ? link : null
-  } catch {
-    return null
-  }
-}
-
-function buildPublicResourceLinks(
-  row: ResourceMapPublicItemRow
-): PublicMapResourceLink[] {
-  const explicitLinks = normalizePublicResourceLinks(row.public_links)
-  const fallbackLinks = [
-    buildPublicResourceLinkFallback({
-      id: `${row.organization_id}:website`,
-      isPrimary: true,
-      label: "Website",
-      type: "website",
-      value: row.website_url,
-    }),
-    buildPublicResourceLinkFallback({
-      id: `${row.organization_id}:donate`,
-      label: "Donate",
-      type: "donate",
-      value: row.donate_url,
-    }),
-  ].filter((link): link is PublicMapResourceLink => link !== null)
-
-  return [
-    ...fallbackLinks.filter(
-      (fallback) =>
-        !explicitLinks.some((explicit) => explicit.url === fallback.url)
-    ),
-    ...explicitLinks,
-  ]
-}
-
 function normalizePublicResourceContacts(
   value: unknown
 ): PublicMapResourceContact[] {
@@ -295,16 +229,13 @@ function normalizePublicResourceContacts(
     const id = readString(record["id"])
     const contactValue = readString(record["value"])
     if (!id || !contactValue) return []
-    const type = normalizeContactType(record["type"])
 
     return [
       {
         id,
-        label:
-          readStringOrNull(record["label"]) ??
-          (type === "email" ? "Email" : type === "phone" ? "Phone" : "Contact"),
+        label: readStringOrNull(record["label"]),
         value: contactValue,
-        type,
+        type: normalizeContactType(record["type"]),
         url: readStringOrNull(record["url"]),
         isPrimary: record["isPrimary"] === true,
       },
@@ -323,7 +254,7 @@ export function buildExternalResourceMapItemFromPublicRow(
   const primaryResourceCategory = resourceCategories[0] ?? "community"
   const { address, addressStreet } = buildResourceAddress(row)
   const deliveryModes = normalizeDeliveryModes(row.delivery_modes)
-  const links = buildPublicResourceLinks(row)
+  const links = normalizePublicResourceLinks(row.public_links)
   const contacts = normalizePublicResourceContacts(row.public_contacts)
   const serviceArea = readStringArray(row.coverage_area)
   const languages = readStringArray(row.languages)

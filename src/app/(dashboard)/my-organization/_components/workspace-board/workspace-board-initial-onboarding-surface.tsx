@@ -61,7 +61,7 @@ export function WorkspaceBoardInitialOnboardingSurface({
     <WorkspaceCanvasErrorBoundary>
       <div
         ref={surfaceRef}
-        className="workspace-layout-surface relative min-h-[min(820px,calc(100svh-9.5rem))] flex-1 overflow-hidden bg-zinc-100 dark:bg-zinc-800"
+        className="workspace-layout-surface relative min-h-[min(820px,calc(100svh-9.5rem))] flex-1 overflow-hidden bg-[#fcfcfc] dark:bg-zinc-800"
       >
         <ReactFlow
           nodes={[]}

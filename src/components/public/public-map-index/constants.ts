@@ -2,8 +2,19 @@ import type mapboxgl from "mapbox-gl"
 import type { FogSpecification } from "mapbox-gl"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 
-export const PUBLIC_MAP_SATELLITE_STYLE = "mapbox://styles/mapbox/satellite-v9"
-export const MAP_STYLE = PUBLIC_MAP_SATELLITE_STYLE
+export const PUBLIC_MAP_STANDARD_STYLE = "mapbox://styles/mapbox/standard"
+export const MAP_STYLE = PUBLIC_MAP_STANDARD_STYLE
+export const PUBLIC_MAP_BASEMAP_VISIBILITY = {
+  show3dObjects: false,
+  showAdminBoundaries: false,
+  showLandmarkIconLabels: false,
+  showLandmarkIcons: false,
+  showPedestrianRoads: true,
+  showPlaceLabels: false,
+  showPointOfInterestLabels: false,
+  showRoadLabels: true,
+  showTransitLabels: false,
+} as const
 export const PUBLIC_MAP_SPACE_FOG = {
   range: [0.8, 8],
   color: "rgba(18, 22, 30, 0.78)",
@@ -23,6 +34,23 @@ export type SidebarMode = "search" | "details" | "hidden"
 
 export function resolvePublicMapStyleForTheme(_theme: PublicMapTheme) {
   return MAP_STYLE
+}
+
+export function resolvePublicMapBasemapConfig(theme: PublicMapTheme) {
+  return {
+    ...PUBLIC_MAP_BASEMAP_VISIBILITY,
+    lightPreset: theme === "dark" ? "night" : "day",
+  } as const
+}
+
+export function applyPublicMapBasemapConfig(
+  map: Pick<mapboxgl.Map, "setConfigProperty">,
+  theme: PublicMapTheme
+) {
+  const config = resolvePublicMapBasemapConfig(theme)
+  for (const [property, value] of Object.entries(config)) {
+    map.setConfigProperty("basemap", property, value)
+  }
 }
 
 export function applyPublicMapSpaceFog(map: Pick<mapboxgl.Map, "setFog">) {

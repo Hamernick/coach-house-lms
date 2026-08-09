@@ -4,8 +4,8 @@
 
 - Pure validation and state helpers: `src/features/resource-map-admin/lib/**`
 - Admin server actions and loaders: `src/features/resource-map-admin/server/**`
-- Visible super-admin curation surface: `/find` profile hide/delete buttons only.
-- No standalone `/admin/platform/resource-map` review UI is currently exposed.
+- Evidence-first review surface: `/admin/platform/resource-map`.
+- Public-profile curation surface: `/find` profile hide/delete buttons.
 - Acceptance coverage: `tests/acceptance/resource-map-admin.test.ts`
 
 ## Safety Rules
@@ -15,6 +15,10 @@
 - Local scraped-data preview can render on `/find` through `RESOURCE_MAP_LOCAL_PREVIEW_FILE` without Supabase upload.
 - Production `/find` data comes from promoted canonical records, not raw import records.
 - Contacts and links stay private until explicit visibility actions mark them public.
+- The review queue is URL-paginated and loads compact summaries; raw snapshots, field evidence, AI passes, and visibility controls load only for the URL-selected record.
+- Approval remains disabled until completeness, citations, two comparison passes, independent verification, conflict, and duplicate checks pass.
+- Review decisions record the current administrator identity and audit reason where required.
+- The review surface never promotes or publishes data. Promotion remains a separate explicit operation.
 - Hide/suppress/delete flows must insert `resource_map_curation_events`.
 - Platform organization profile hide/delete must insert `public_map_organization_curation_events`.
 - Canonical public-field edits must insert `resource_map_curation_events`.
@@ -22,7 +26,6 @@
 - Promotion marks approved imports as canonical records; default promotion scripts create non-public draft records unless `--publish` is explicitly passed.
 - Promotion can carry category, location, contact, and link data into canonical review tables, but promoted contacts and links stay private until explicit visibility approval.
 - Promotion blocks approved imports with accepted duplicate matches instead of creating duplicate canonical resources.
-- Do not add a manual review page unless product scope changes; keep visible admin-only controls on the public profile surface.
 
 ## Tooling
 
@@ -45,5 +48,8 @@ Local scrape/search dump path: `data/resource-map/*.jsonl`
 - `pnpm resource-map:review-imports -- --id <uuid> --status approved --reason "Reviewed source evidence" --apply`
 - `pnpm resource-map:promote -- --apply`
 - `pnpm resource-map:source-freshness -- --stale-days 90`
+- `pnpm resource-map:collect-evidence -- --input records.jsonl`
+- `pnpm resource-map:enrich -- --input records.jsonl --evidence source-evidence.jsonl`
+- `pnpm resource-map:audit-enrichment -- --input enriched.jsonl --require-publishable`
 
-Apply the migration to the target Supabase project, then run the read-only schema status check. If the status check reports missing `geo_point`, the sanitized public view/RPC, `public_map_organization_curation_events`, availability columns, taxonomy rows, ingestion-run/raw-ingestion tables, staged quality columns, or field-evidence metadata columns, apply the relevant migrations intentionally in Supabase, or print the current connected-DB patch bundle with `resource-map:schema-setup-sql`, then re-run the strict status check. Scrape or collect data into local JSON/JSONL, validate it, preview it on `/find`, then upload the same confirmed file to Supabase staging with `resource-map:import`. After upload, use scripts/server actions for staging, dedupe, promotion, and public-field curation; the only visible super-admin controls on `/find` are profile hide/delete buttons.
+Apply migrations intentionally to the target Supabase project, then run the read-only schema status check. The review page degrades safely when the pending enrichment-run ledger is unavailable and shows that gap as a blocker. Collect and validate data locally, upload confirmed files to Supabase staging, then use `/admin/platform/resource-map` for source, AI, verification, identity, duplicate, and visibility review. Promotion and publication remain separate explicit commands after review.

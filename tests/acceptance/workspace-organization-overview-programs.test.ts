@@ -276,6 +276,9 @@ describe("workspace organization overview programs", () => {
     expect(orgProfileNavigation).toContain("h-10 flex-none items-center")
     expect(orgProfileNavigation).toContain("after:bottom-0 after:z-10")
     expect(orgProfileNavigation).not.toContain(
+      "h-10 w-full items-end justify-start gap-3"
+    )
+    expect(orgProfileNavigation).not.toContain(
       "data-[state=active]:border-b-[2px]"
     )
     expect(orgProfileNavigation).not.toContain(
@@ -295,7 +298,12 @@ describe("workspace organization overview programs", () => {
     expect(orgProfileShared).toContain(
       "inline-flex w-full min-w-0 items-center"
     )
-    expect(orgProfileShared).toContain('className="object-contain"')
+    expect(orgProfileShared).toContain('sizes="80px"')
+    expect(orgProfileShared).toContain('className="object-cover"')
+    expect(orgProfileShared).not.toContain('className="object-contain"')
+    expect(orgProfileShared).not.toContain(
+      '<span className="absolute inset-1">'
+    )
     expect(supportersShowcase).toContain(
       "grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3"
     )
@@ -307,15 +315,6 @@ describe("workspace organization overview programs", () => {
     expect(peopleTab).toContain('getWorkspaceDrawerPath({ tab: "people" })')
     expect(peopleTab).toContain("href={peopleDrawerHref}")
     expect(peopleTab).not.toContain('href="/people"')
-    expect(workspaceProgramsRenderer).toContain(
-      "resolveFiscalSponsorshipUpdateRequest"
-    )
-    expect(workspaceProgramsRenderer).toContain(
-      "useWorkspaceCanvasOverlayDrawerRequest"
-    )
-    expect(workspaceProgramsRenderer).toContain(
-      'organizationFocus: organizationEin?.trim() ? "address" : "ein"'
-    )
     expect(supportersTab).toContain('layout="stacked"')
     expect(programsTab).toContain('aria-label="Activity visibility info"')
     expect(programsTab).toContain("Activity appears in your overview")

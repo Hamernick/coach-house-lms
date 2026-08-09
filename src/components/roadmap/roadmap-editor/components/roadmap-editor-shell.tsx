@@ -3,6 +3,7 @@ import type { ComponentType, RefObject } from "react"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { RoadmapRightRailSection } from "@/components/roadmap/roadmap-right-rail-section"
 import { Button } from "@/components/ui/button"
+import { RoadmapBudgetTableEditor } from "@/components/roadmap/roadmap-budget-table-editor"
 import { RoadmapCalendar } from "@/components/roadmap/roadmap-calendar"
 import { RoadmapSectionPanel } from "@/components/roadmap/roadmap-section-panel"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
@@ -28,6 +29,7 @@ type RoadmapEditorShellProps = {
   statusSelectDisabled: boolean
   isHydrated: boolean
   isCalendarSection: boolean
+  isBudgetSection: boolean
   contentMaxWidth: string
   activeDraft: RoadmapDraft
   editorPlaceholder: string
@@ -57,6 +59,7 @@ export function RoadmapEditorShell({
   statusSelectDisabled,
   isHydrated,
   isCalendarSection,
+  isBudgetSection,
   contentMaxWidth,
   activeDraft,
   editorPlaceholder,
@@ -95,10 +98,27 @@ export function RoadmapEditorShell({
           headerIconSize={headerIconSize}
           headerTextRef={headerTextRef}
           contentMaxWidth={contentMaxWidth}
-          toolbarSlotId={!isCalendarSection ? ROADMAP_TOOLBAR_ID : undefined}
-          body={isCalendarSection ? <RoadmapCalendar /> : undefined}
+          toolbarSlotId={
+            !isCalendarSection && !isBudgetSection
+              ? ROADMAP_TOOLBAR_ID
+              : undefined
+          }
+          body={
+            isCalendarSection ? (
+              <RoadmapCalendar />
+            ) : isBudgetSection ? (
+              <RoadmapBudgetTableEditor
+                rows={activeDraft.budgetRows}
+                canEdit={canEdit}
+                isDirty={isDirty}
+                isSaving={savingId === activeSection.id}
+                onRowsChange={(budgetRows) => onDraftChange({ budgetRows })}
+                onSave={onSave}
+              />
+            ) : undefined
+          }
           editorProps={
-            isCalendarSection
+            isCalendarSection || isBudgetSection
               ? undefined
               : {
                   value: activeDraft.content,

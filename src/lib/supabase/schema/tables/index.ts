@@ -5,6 +5,7 @@ import type { AssignmentSubmissionsTable } from "./assignment_submissions"
 import type { AttachmentsTable } from "./attachments"
 import type { EnrollmentInvitesTable } from "./enrollment_invites"
 import type { ProfilesTable } from "./profiles"
+import type { ProgramsTable } from "./programs"
 import type { ClassesTable } from "./classes"
 import type { ModulesTable } from "./modules"
 import type { EnrollmentsTable } from "./enrollments"
@@ -19,10 +20,10 @@ import type { RoadmapCalendarInternalEventsTable } from "./roadmap_calendar_inte
 import type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_feeds"
 import type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 import type { SearchEventsTable } from "./search_events"
-import type { ProgramsTable } from "./programs"
 import type { ResourceMapSourcesTable } from "./resource_map_sources"
 import type { ResourceMapImportBatchesTable } from "./resource_map_import_batches"
 import type { ResourceMapIngestionRunsTable } from "./resource_map_ingestion_runs"
+import type { ResourceMapEnrichmentRunsTable } from "./resource_map_enrichment_runs"
 import type { ResourceMapRawIngestionRecordsTable } from "./resource_map_raw_ingestion_records"
 import type { ResourceMapImportRecordsTable } from "./resource_map_import_records"
 import type { ResourceMapCategoriesTable } from "./resource_map_categories"
@@ -39,10 +40,26 @@ import type { PublicMapOrganizationCurationEventsTable } from "./public_map_orga
 import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
+import type { OrganizationFinanceAccessTable } from "./organization_finance_access"
+import type { FinanceOpportunityScanRunsTable } from "./finance_opportunity_scan_runs"
+import type { FinanceOpportunitySourcesTable } from "./finance_opportunity_sources"
+import type { OrganizationFinanceEngagementEventsTable } from "./organization_finance_engagement_events"
+import type { OrganizationFinanceOpportunitiesTable } from "./organization_finance_opportunities"
+import type { OrganizationFinanceRecordCorrectionsTable } from "./organization_finance_record_corrections"
+import type { OrganizationFinanceRecordEvidenceTable } from "./organization_finance_record_evidence"
+import type { OrganizationFinanceRecordEventsTable } from "./organization_finance_record_events"
+import type { OrganizationFinanceRecordProviderEvidenceTable } from "./organization_finance_record_provider_evidence"
+import type { OrganizationFinanceRecordsTable } from "./organization_finance_records"
+import type { OrganizationFinanceStripeConnectionsTable } from "./organization_finance_stripe_connections"
+import type { OrganizationFinanceStripeInstallIntentsTable } from "./organization_finance_stripe_install_intents"
 import type { OrganizationPeopleSegmentMembersTable } from "./organization_people_segment_members"
 import type { OrganizationPeopleSegmentsTable } from "./organization_people_segments"
 import type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
 import type { OrganizationPeopleTagsTable } from "./organization_people_tags"
+import type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+import type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+import type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
+import type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -57,10 +74,6 @@ import type { OrganizationTasksTable } from "./organization_tasks"
 import type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
 import type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 import type { PlatformStaffMembersTable } from "./platform_staff_members"
-import type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
-import type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
-import type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
-import type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -104,6 +117,7 @@ export type { AssignmentSubmissionsTable } from "./assignment_submissions"
 export type { AttachmentsTable } from "./attachments"
 export type { EnrollmentInvitesTable } from "./enrollment_invites"
 export type { ProfilesTable } from "./profiles"
+export type { ProgramsTable } from "./programs"
 export type { ClassesTable } from "./classes"
 export type { ModulesTable } from "./modules"
 export type { EnrollmentsTable } from "./enrollments"
@@ -118,10 +132,10 @@ export type { RoadmapCalendarInternalEventsTable } from "./roadmap_calendar_inte
 export type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_feeds"
 export type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 export type { SearchEventsTable } from "./search_events"
-export type { ProgramsTable } from "./programs"
 export type { ResourceMapSourcesTable } from "./resource_map_sources"
 export type { ResourceMapImportBatchesTable } from "./resource_map_import_batches"
 export type { ResourceMapIngestionRunsTable } from "./resource_map_ingestion_runs"
+export type { ResourceMapEnrichmentRunsTable } from "./resource_map_enrichment_runs"
 export type { ResourceMapRawIngestionRecordsTable } from "./resource_map_raw_ingestion_records"
 export type { ResourceMapImportRecordsTable } from "./resource_map_import_records"
 export type { ResourceMapCategoriesTable } from "./resource_map_categories"
@@ -138,10 +152,26 @@ export type { PublicMapOrganizationCurationEventsTable } from "./public_map_orga
 export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
+export type { OrganizationFinanceAccessTable } from "./organization_finance_access"
+export type { FinanceOpportunityScanRunsTable } from "./finance_opportunity_scan_runs"
+export type { FinanceOpportunitySourcesTable } from "./finance_opportunity_sources"
+export type { OrganizationFinanceEngagementEventsTable } from "./organization_finance_engagement_events"
+export type { OrganizationFinanceOpportunitiesTable } from "./organization_finance_opportunities"
+export type { OrganizationFinanceRecordCorrectionsTable } from "./organization_finance_record_corrections"
+export type { OrganizationFinanceRecordEvidenceTable } from "./organization_finance_record_evidence"
+export type { OrganizationFinanceRecordEventsTable } from "./organization_finance_record_events"
+export type { OrganizationFinanceRecordProviderEvidenceTable } from "./organization_finance_record_provider_evidence"
+export type { OrganizationFinanceRecordsTable } from "./organization_finance_records"
+export type { OrganizationFinanceStripeConnectionsTable } from "./organization_finance_stripe_connections"
+export type { OrganizationFinanceStripeInstallIntentsTable } from "./organization_finance_stripe_install_intents"
 export type { OrganizationPeopleSegmentMembersTable } from "./organization_people_segment_members"
 export type { OrganizationPeopleSegmentsTable } from "./organization_people_segments"
 export type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
 export type { OrganizationPeopleTagsTable } from "./organization_people_tags"
+export type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+export type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+export type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
+export type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -156,10 +186,6 @@ export type { OrganizationTasksTable } from "./organization_tasks"
 export type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
 export type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 export type { PlatformStaffMembersTable } from "./platform_staff_members"
-export type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
-export type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
-export type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
-export type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -204,6 +230,7 @@ export type PublicTables = {
   attachments: AttachmentsTable
   enrollment_invites: EnrollmentInvitesTable
   profiles: ProfilesTable
+  programs: ProgramsTable
   classes: ClassesTable
   modules: ModulesTable
   enrollments: EnrollmentsTable
@@ -218,10 +245,10 @@ export type PublicTables = {
   roadmap_calendar_public_feeds: RoadmapCalendarPublicFeedsTable
   roadmap_calendar_internal_feeds: RoadmapCalendarInternalFeedsTable
   search_events: SearchEventsTable
-  programs: ProgramsTable
   resource_map_sources: ResourceMapSourcesTable
   resource_map_import_batches: ResourceMapImportBatchesTable
   resource_map_ingestion_runs: ResourceMapIngestionRunsTable
+  resource_map_enrichment_runs: ResourceMapEnrichmentRunsTable
   resource_map_raw_ingestion_records: ResourceMapRawIngestionRecordsTable
   resource_map_import_records: ResourceMapImportRecordsTable
   resource_map_categories: ResourceMapCategoriesTable
@@ -238,10 +265,26 @@ export type PublicTables = {
   accelerator_purchases: AcceleratorPurchasesTable
   elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable
+  organization_finance_access: OrganizationFinanceAccessTable
+  finance_opportunity_scan_runs: FinanceOpportunityScanRunsTable
+  finance_opportunity_sources: FinanceOpportunitySourcesTable
+  organization_finance_engagement_events: OrganizationFinanceEngagementEventsTable
+  organization_finance_opportunities: OrganizationFinanceOpportunitiesTable
+  organization_finance_record_corrections: OrganizationFinanceRecordCorrectionsTable
+  organization_finance_record_evidence: OrganizationFinanceRecordEvidenceTable
+  organization_finance_record_events: OrganizationFinanceRecordEventsTable
+  organization_finance_record_provider_evidence: OrganizationFinanceRecordProviderEvidenceTable
+  organization_finance_records: OrganizationFinanceRecordsTable
+  organization_finance_stripe_connections: OrganizationFinanceStripeConnectionsTable
+  organization_finance_stripe_install_intents: OrganizationFinanceStripeInstallIntentsTable
   organization_people_segment_members: OrganizationPeopleSegmentMembersTable
   organization_people_segments: OrganizationPeopleSegmentsTable
   organization_people_tag_members: OrganizationPeopleTagMembersTable
   organization_people_tags: OrganizationPeopleTagsTable
+  organization_coach_assignments: OrganizationCoachAssignmentsTable
+  organization_coach_scope_events: OrganizationCoachScopeEventsTable
+  organization_coach_scope_settings: OrganizationCoachScopeSettingsTable
+  organization_staff_kanban_preferences: OrganizationStaffKanbanPreferencesTable
   organization_invites: OrganizationInvitesTable
   organization_access_requests: OrganizationAccessRequestsTable
   organization_access_settings: OrganizationAccessSettingsTable
@@ -256,10 +299,6 @@ export type PublicTables = {
   platform_admin_project_workstream_states: PlatformAdminProjectWorkstreamStatesTable
   platform_admin_workstream_categories: PlatformAdminWorkstreamCategoriesTable
   platform_staff_members: PlatformStaffMembersTable
-  organization_coach_assignments: OrganizationCoachAssignmentsTable
-  organization_coach_scope_events: OrganizationCoachScopeEventsTable
-  organization_coach_scope_settings: OrganizationCoachScopeSettingsTable
-  organization_staff_kanban_preferences: OrganizationStaffKanbanPreferencesTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
   organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable

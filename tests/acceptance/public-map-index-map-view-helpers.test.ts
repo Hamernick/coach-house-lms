@@ -77,8 +77,8 @@ describe("resolvePublicMapSidebarWidth", () => {
 })
 
 describe("resolvePublicMapPanelPresentation", () => {
-  it("uses the rail presentation when the rail can stay comfortably wide", () => {
-    expect(resolvePublicMapPanelPresentation(700)).toBe("rail")
+  it("uses the drawer presentation on wide surfaces", () => {
+    expect(resolvePublicMapPanelPresentation(700)).toBe("drawer")
   })
 
   it("switches to the drawer presentation once the rail would become cramped", () => {
@@ -111,7 +111,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
     })
   })
 
-  it("keeps rail presentation ready immediately on wider surfaces", () => {
+  it("keeps drawer presentation pending its portal on wider surfaces", () => {
     expect(
       resolvePublicMapSurfacePanelState({
         surfaceWidth: 720,
@@ -120,9 +120,9 @@ describe("resolvePublicMapSurfacePanelState", () => {
         portalContainerReady: false,
       })
     ).toEqual({
-      panelPresentation: "rail",
-      panelReady: true,
-      sidebarWidth: 374,
+      panelPresentation: "drawer",
+      panelReady: false,
+      sidebarWidth: 0,
     })
   })
 })

@@ -242,10 +242,16 @@ Preview:
 RESOURCE_MAP_LOCAL_PREVIEW_FILE=./data/resource-map/<batch>.jsonl pnpm dev
 ```
 
-When `data/resource-map/.engine/candidate-records.jsonl` exists, `/find`
-automatically uses that local engine output before falling back to seed preview
-resources. `RESOURCE_MAP_LOCAL_PREVIEW_FILE` still overrides the default when
-you want to inspect a specific batch.
+For an explicit local review of discovery-only rows that remain excluded from
+public results, also set
+`RESOURCE_MAP_LOCAL_PREVIEW_INCLUDE_DISCOVERY=true`. These rows retain
+`superadmin_preview` visibility and are never enabled implicitly.
+
+`/find` never selects `data/resource-map/.engine/candidate-records.jsonl`
+automatically. Review a specific curated file through
+`RESOURCE_MAP_LOCAL_PREVIEW_FILE`. Discovery-only rows also require the explicit
+`RESOURCE_MAP_LOCAL_PREVIEW_INCLUDE_DISCOVERY=true` review flag and remain
+`superadmin_preview`; they are never public output.
 
 The data engine upserts normalized candidates by source plus `sourceRecordId`.
 Source retries and partial refreshes update matching records while preserving

@@ -2,6 +2,8 @@
 
 import type * as React from "react"
 
+import { AudioVisualizerPlayerPrototype } from "./audio-visualizer-player-prototype"
+import { FinanceReleasePlanCanvas } from "./finance"
 import type { PrototypeLabInput } from "../types"
 
 function PrototypeCanvas({
@@ -47,6 +49,22 @@ function PrototypeCanvas({
     return (
       <div className="h-full min-h-0 flex-1 overflow-hidden">
         {pageHealthMonitorPrototype}
+      </div>
+    )
+  }
+
+  if (entryId === "audio-visualizer-player") {
+    return (
+      <div className="flex min-h-full flex-1 items-center justify-center px-3 py-6 md:px-8 md:py-10">
+        <AudioVisualizerPlayerPrototype />
+      </div>
+    )
+  }
+
+  if (entryId === "finance-release-plan") {
+    return (
+      <div className="h-full min-h-0 flex-1 overflow-hidden">
+        <FinanceReleasePlanCanvas />
       </div>
     )
   }

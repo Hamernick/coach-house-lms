@@ -91,4 +91,19 @@ describe("app shell sidebar state", () => {
       "document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`"
     )
   })
+
+  it("keeps coaching available as a mini item when the desktop sidebar collapses", () => {
+    const sidebarSource = readSource("src/components/app-sidebar.tsx")
+    const coachingItemSource = readSource(
+      "src/components/coaching/coach-scheduling-sidebar-item.tsx"
+    )
+
+    expect(sidebarSource).toContain("<CoachSchedulingCard />")
+    expect(sidebarSource).toContain("<CoachSchedulingSidebarItem />")
+    expect(sidebarSource).toContain(
+      "[@media(min-height:56rem)]:hidden group-data-[collapsible=icon]:!block"
+    )
+    expect(coachingItemSource).toContain("SidebarMenuButton")
+    expect(coachingItemSource).toContain('tooltip={buildAppSidebarTooltipProps({')
+  })
 })

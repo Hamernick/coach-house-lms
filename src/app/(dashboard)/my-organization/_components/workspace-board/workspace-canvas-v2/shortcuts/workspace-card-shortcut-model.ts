@@ -91,7 +91,11 @@ export function buildWorkspaceCardShortcutItemModels({
   onTutorialAdvance?: (() => void) | null
 }): WorkspaceCardShortcutItemModel[] {
   return resolveWorkspaceCanvasRailCardOrder()
-    .filter((cardId) => shouldRenderWorkspaceShortcutCard(cardId))
+    .filter(
+      (cardId) =>
+        shouldRenderWorkspaceShortcutCard(cardId) &&
+        (cardId !== "accelerator" || tutorialTargetCardId === "accelerator")
+    )
     .map((cardId) => {
       const boardVisible = !hiddenCardIds.includes(cardId)
       const visible = visibleCardIds

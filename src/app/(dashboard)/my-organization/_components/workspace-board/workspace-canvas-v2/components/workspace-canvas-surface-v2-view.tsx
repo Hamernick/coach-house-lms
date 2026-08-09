@@ -1,6 +1,11 @@
 "use client"
 
-import { useCallback, useMemo, useState, type DragEvent } from "react"
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type DragEvent,
+} from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
   Background,
@@ -58,19 +63,6 @@ function useWorkspaceTutorialRestartAccountMenuAction({
   )
 }
 
-function useWorkspaceCanvasPeopleDragOver(enabled: boolean) {
-  return useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      if (!hasWorkspaceCanvasPersonDragPayload(event.dataTransfer)) return
-      if (!enabled) return
-
-      event.preventDefault()
-      event.dataTransfer.dropEffect = "copy"
-    },
-    [enabled]
-  )
-}
-
 export function WorkspaceCanvasSurfaceV2View({
   nodes,
   edges,
@@ -86,6 +78,7 @@ export function WorkspaceCanvasSurfaceV2View({
   placedWorkspacePersonIds,
   workspaceDataDrawerViewerId,
   workspaceDataDrawerOrganization,
+  workspaceDataDrawerFinance,
   workspaceDataDrawerDocuments,
   workspaceAcceleratorDrawerInput,
   workspaceAcceleratorDrawerRoadmapSections,
@@ -141,8 +134,15 @@ export function WorkspaceCanvasSurfaceV2View({
       showTutorialRestart,
       onTutorialRestart,
     })
-  const handleCanvasDragOver = useWorkspaceCanvasPeopleDragOver(
-    peopleCanvasInteractionEnabled
+  const handleCanvasDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!hasWorkspaceCanvasPersonDragPayload(event.dataTransfer)) return
+      if (!peopleCanvasInteractionEnabled) return
+
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "copy"
+    },
+    [peopleCanvasInteractionEnabled]
   )
   const handleCanvasDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
@@ -222,6 +222,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     placedPersonIds={placedWorkspacePersonIds}
                     viewerId={workspaceDataDrawerViewerId}
                     organizationEditorData={workspaceDataDrawerOrganization}
+                    financeInput={workspaceDataDrawerFinance}
                     documentsTab={workspaceDataDrawerDocuments}
                     acceleratorInput={workspaceAcceleratorDrawerInput}
                     acceleratorRoadmapSections={

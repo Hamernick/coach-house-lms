@@ -14,6 +14,11 @@ import {
 import { buildQualityImportFields } from "./lib/import-quality-fields.mjs"
 import { readResourceMapRecords } from "./lib/read-records.mjs"
 
+const LOOKUP_CHUNK_SIZE = 100
+const RECORD_WRITE_CHUNK_SIZE = 10
+const EVIDENCE_WRITE_CHUNK_SIZE = 200
+const TRANSIENT_FETCH_ATTEMPTS = 3
+
 function parseArgs(argv) {
   const args = new Map()
   for (let i = 0; i < argv.length; i += 1) {
@@ -31,6 +36,48 @@ function parseArgs(argv) {
   return args
 }
 
+export function chunkValues(values, size) {
+  const chunks = []
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size))
+  }
+  return chunks
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
+async function retryTransientFetch(operation) {
+  for (let attempt = 1; attempt <= TRANSIENT_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation()
+    } catch (error) {
+      const isTransientFetchFailure =
+        error instanceof TypeError && /fetch failed/iu.test(error.message)
+      if (!isTransientFetchFailure || attempt === TRANSIENT_FETCH_ATTEMPTS) {
+        throw error
+      }
+      await wait(attempt * 250)
+    }
+  }
+  throw new Error("Transient fetch retry loop ended unexpectedly.")
+}
+
+async function insertRowsInChunks({ admin, rows, select, size, table }) {
+  const insertedRows = []
+  for (const chunk of chunkValues(rows, size)) {
+    const { data, error } = await retryTransientFetch(async () => {
+      let query = admin.from(table).insert(chunk)
+      if (select) query = query.select(select)
+      return query
+    })
+    if (error) throw error
+    if (data) insertedRows.push(...data)
+  }
+  return insertedRows
+}
+
 async function upsertSource(admin, args) {
   const slug = String(args.get("source-slug") ?? "").trim()
   const name = String(args.get("source-name") ?? slug).trim()
@@ -38,26 +85,52 @@ async function upsertSource(admin, args) {
     throw new Error("--source-slug and --source-name are required.")
   }
 
-  const { data, error } = await admin
-    .from("resource_map_sources")
-    .upsert(
-      {
-        slug,
-        name,
-        homepage_url: args.get("source-homepage") || null,
-        source_type: args.get("source-type") || "manual",
-        license_label: args.get("license-label") || null,
-        license_url: args.get("license-url") || null,
-        attribution: args.get("attribution") || null,
-        trust_level: args.get("trust-level") || "unverified",
-        metadata: {
-          importedBy: "scripts/resource-map/import-records.mjs",
-        },
-      },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .maybeSingle()
+  const optionalFields = [
+    ["source-homepage", "homepage_url"],
+    ["source-type", "source_type"],
+    ["license-label", "license_label"],
+    ["license-url", "license_url"],
+    ["attribution", "attribution"],
+    ["trust-level", "trust_level"],
+  ]
+  const payload = { name, slug }
+  for (const [argument, field] of optionalFields) {
+    if (args.has(argument)) payload[field] = args.get(argument) || null
+  }
+
+  const { data: existing, error: existingError } = await retryTransientFetch(
+    () =>
+      admin
+        .from("resource_map_sources")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle()
+  )
+  if (existingError) throw existingError
+
+  const { data, error } = existing
+    ? await retryTransientFetch(() =>
+        admin
+          .from("resource_map_sources")
+          .update(payload)
+          .eq("id", existing.id)
+          .select("id")
+          .maybeSingle()
+      )
+    : await retryTransientFetch(() =>
+        admin
+          .from("resource_map_sources")
+          .insert({
+            metadata: {
+              importedBy: "scripts/resource-map/import-records.mjs",
+            },
+            source_type: "manual",
+            trust_level: "unverified",
+            ...payload,
+          })
+          .select("id")
+          .maybeSingle()
+      )
 
   if (error) throw error
   if (!data) throw new Error("Unable to upsert resource map source.")
@@ -100,6 +173,8 @@ export function buildImportRecord(
   rawIngestionRecordId
 ) {
   const extractedFields = resolveExtractedFields(record)
+  const enrichment = readObject(extractedFields.enrichment)
+  const verification = readObject(enrichment.verification)
   const normalized = buildNormalizedImportFields(record)
   const quality = buildQualityImportFields(record, extractedFields)
   const dedupe = extractedFields.dedupe ?? extractedFields.duplicate ?? {}
@@ -139,6 +214,12 @@ export function buildImportRecord(
       record.lastScrapedAt ??
       record.last_scraped_at ??
       new Date().toISOString(),
+    last_verified_at:
+      record.lastVerifiedAt ??
+      record.last_verified_at ??
+      (verification.status === "approved"
+        ? (record.lastEnrichedAt ?? record.last_enriched_at ?? null)
+        : null),
   }
 }
 
@@ -190,6 +271,19 @@ function readEvidenceArray(record) {
   return Array.isArray(value) ? value : []
 }
 
+export function resolveEvidenceFieldValue(record, fieldPath) {
+  const segments = String(fieldPath ?? "")
+    .replace(/^(?:extractedFields|extracted_fields)\./u, "")
+    .split(".")
+    .filter(Boolean)
+  let value = resolveExtractedFields(record)
+  for (const segment of segments) {
+    if (!value || typeof value !== "object" || !(segment in value)) return null
+    value = value[segment]
+  }
+  return value ?? null
+}
+
 function normalizeEvidenceEntry({
   evidence,
   fieldPath,
@@ -207,16 +301,20 @@ function normalizeEvidenceEntry({
   const derivedFrom = readStringArray(
     evidence?.derivedFrom ?? evidence?.derived_from
   )
+  const normalizedFieldValue =
+    evidence?.fieldValue ??
+    evidence?.field_value ??
+    evidence?.value ??
+    fieldValue
+  if (normalizedFieldValue === null || normalizedFieldValue === undefined) {
+    return null
+  }
 
   return {
     import_record_id: importRecord.id,
     source_id: sourceId,
     field_path: normalizedPath,
-    field_value:
-      evidence?.fieldValue ??
-      evidence?.field_value ??
-      evidence?.value ??
-      fieldValue,
+    field_value: normalizedFieldValue,
     confidence_score:
       evidence?.confidenceScore ??
       evidence?.confidence_score ??
@@ -248,7 +346,7 @@ function normalizeEvidenceEntry({
   }
 }
 
-function buildFieldEvidenceRecords(record, importRecord, sourceId) {
+export function buildFieldEvidenceRecords(record, importRecord, sourceId) {
   const explicitEvidence = readEvidenceArray(record)
   const fieldConfidence =
     record.fieldConfidence ?? record.field_confidence ?? record.confidence ?? {}
@@ -261,16 +359,18 @@ function buildFieldEvidenceRecords(record, importRecord, sourceId) {
 
   if (explicitEvidence.length > 0) {
     return explicitEvidence
-      .map((evidence) =>
-        normalizeEvidenceEntry({
+      .map((evidence) => {
+        const fieldPath =
+          evidence?.fieldPath ?? evidence?.field_path ?? evidence?.path
+        return normalizeEvidenceEntry({
           evidence,
           importRecord,
           sourceId,
           observedAt,
-          fieldValue: null,
+          fieldValue: resolveEvidenceFieldValue(record, fieldPath),
           confidenceScore: null,
         })
-      )
+      })
       .filter(Boolean)
   }
 
@@ -379,32 +479,35 @@ async function upsertRawIngestionRecords(admin, rawRows) {
 
   const sourceId = rawRows[0].source_id
   const checksums = [...new Set(rawRows.map((row) => row.checksum))]
-  const { data: existingRows, error: existingError } = await admin
-    .from("resource_map_raw_ingestion_records")
-    .select("id,source_id,checksum")
-    .eq("source_id", sourceId)
-    .in("checksum", checksums)
-
-  if (existingError) throw existingError
+  const existingRows = []
+  for (const checksumChunk of chunkValues(checksums, LOOKUP_CHUNK_SIZE)) {
+    const { data, error } = await retryTransientFetch(() =>
+      admin
+        .from("resource_map_raw_ingestion_records")
+        .select("id,source_id,checksum")
+        .eq("source_id", sourceId)
+        .in("checksum", checksumChunk)
+    )
+    if (error) throw error
+    existingRows.push(...(data ?? []))
+  }
 
   const byKey = new Map(
-    (existingRows ?? []).map((row) => [
-      `${row.source_id}:${row.checksum}`,
-      row.id,
-    ])
+    existingRows.map((row) => [`${row.source_id}:${row.checksum}`, row.id])
   )
   const missingRows = rawRows.filter(
     (row) => !byKey.has(`${row.source_id}:${row.checksum}`)
   )
 
   if (missingRows.length > 0) {
-    const { data: insertedRows, error: insertError } = await admin
-      .from("resource_map_raw_ingestion_records")
-      .insert(missingRows)
-      .select("id,source_id,checksum")
-
-    if (insertError) throw insertError
-    for (const row of insertedRows ?? []) {
+    const insertedRows = await insertRowsInChunks({
+      admin,
+      rows: missingRows,
+      select: "id,source_id,checksum",
+      size: RECORD_WRITE_CHUNK_SIZE,
+      table: "resource_map_raw_ingestion_records",
+    })
+    for (const row of insertedRows) {
       byKey.set(`${row.source_id}:${row.checksum}`, row.id)
     }
   }
@@ -412,14 +515,181 @@ async function upsertRawIngestionRecords(admin, rawRows) {
   return byKey
 }
 
+async function fetchExistingImportRecords(
+  admin,
+  sourceId,
+  payload,
+  refreshExisting
+) {
+  const select =
+    "id,source_record_id,source_url,batch_id,promotion_status,review_status,extracted_fields"
+  if (refreshExisting) {
+    const { data, error } = await retryTransientFetch(() =>
+      admin
+        .from("resource_map_import_records")
+        .select(select)
+        .eq("source_id", sourceId)
+        .limit(5000)
+    )
+    if (error) throw error
+    return data ?? []
+  }
+  const sourceRecordIds = [
+    ...new Set(payload.map((row) => row.source_record_id).filter(Boolean)),
+  ]
+  const existingRows = []
+  for (const idChunk of chunkValues(sourceRecordIds, LOOKUP_CHUNK_SIZE)) {
+    const { data, error } = await retryTransientFetch(() =>
+      admin
+        .from("resource_map_import_records")
+        .select(select)
+        .eq("source_id", sourceId)
+        .in("source_record_id", idChunk)
+        .order("updated_at", { ascending: false })
+    )
+    if (error) throw error
+    existingRows.push(...(data ?? []))
+  }
+  return existingRows
+}
+
+function normalizedWebsiteKey(record) {
+  const fields = readObject(record.extracted_fields)
+  const value = readStringValue(
+    fields.websiteUrl,
+    fields.website_url,
+    fields.website
+  )
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    if (!["http:", "https:"].includes(url.protocol)) return null
+    url.hash = ""
+    return url.toString().replace(/\/$/u, "").toLocaleLowerCase("en-US")
+  } catch {
+    return null
+  }
+}
+
+export function resolveExistingAssignments(
+  existingRecords,
+  payload,
+  refreshExisting
+) {
+  const bySourceRecordId = new Map()
+  const byWebsite = new Map()
+  for (const record of existingRecords) {
+    if (
+      record.source_record_id &&
+      !bySourceRecordId.has(record.source_record_id)
+    ) {
+      bySourceRecordId.set(record.source_record_id, record)
+    }
+    if (refreshExisting && record.promotion_status !== "promoted") {
+      const websiteKey = normalizedWebsiteKey(record)
+      if (websiteKey) {
+        const matches = byWebsite.get(websiteKey) ?? []
+        matches.push(record)
+        byWebsite.set(websiteKey, matches)
+      }
+    }
+  }
+  return payload.map((candidate) => {
+    const exact = candidate.source_record_id
+      ? bySourceRecordId.get(candidate.source_record_id)
+      : null
+    if (exact) return { record: exact, reconciled: false }
+    if (!refreshExisting) return null
+    const websiteKey = normalizedWebsiteKey(candidate)
+    const websiteMatches = websiteKey ? (byWebsite.get(websiteKey) ?? []) : []
+    return websiteMatches.length === 1
+      ? { record: websiteMatches[0], reconciled: true }
+      : null
+  })
+}
+
+async function refreshExistingAssignments(admin, assignments, payload) {
+  let refreshed = 0
+  let reconciled = 0
+  for (let index = 0; index < assignments.length; index += 1) {
+    const assignment = assignments[index]
+    if (!assignment) continue
+    if (
+      assignment.record.promotion_status === "promoted" ||
+      assignment.record.promotion_status === "ready" ||
+      assignment.record.review_status === "approved"
+    ) {
+      continue
+    }
+    const {
+      promotion_status: _promotionStatus,
+      review_status: _reviewStatus,
+      ...patch
+    } = payload[index]
+    const { data, error } = await retryTransientFetch(() =>
+      admin
+        .from("resource_map_import_records")
+        .update(patch)
+        .eq("id", assignment.record.id)
+        .eq("promotion_status", "not_promoted")
+        .neq("review_status", "approved")
+        .select("id")
+        .maybeSingle()
+    )
+    if (error) throw error
+    if (!data) continue
+    refreshed += 1
+    if (assignment.reconciled) reconciled += 1
+  }
+  return { reconciled, refreshed }
+}
+
+function evidenceIdentity(row) {
+  let fieldValue
+  try {
+    fieldValue = JSON.stringify(row.field_value)
+  } catch {
+    fieldValue = String(row.field_value ?? "")
+  }
+  return [
+    row.import_record_id,
+    row.field_path,
+    row.source_url ?? "",
+    row.transformation ?? "",
+    fieldValue,
+  ].join("\u0000")
+}
+
+async function filterMissingEvidence(admin, evidenceRows) {
+  if (evidenceRows.length === 0) return []
+  const importRecordIds = [
+    ...new Set(evidenceRows.map((row) => row.import_record_id)),
+  ]
+  const existingKeys = new Set()
+  for (const idChunk of chunkValues(importRecordIds, LOOKUP_CHUNK_SIZE)) {
+    const { data, error } = await retryTransientFetch(() =>
+      admin
+        .from("resource_map_field_evidence")
+        .select(
+          "import_record_id,field_path,field_value,source_url,transformation"
+        )
+        .in("import_record_id", idChunk)
+    )
+    if (error) throw error
+    for (const row of data ?? []) existingKeys.add(evidenceIdentity(row))
+  }
+  return evidenceRows.filter((row) => !existingKeys.has(evidenceIdentity(row)))
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const input = args.get("input")
   const dryRun = Boolean(args.get("dry-run"))
+  const refreshExisting = Boolean(args.get("refresh-existing"))
 
   if (!input) {
     throw new Error(
-      "Usage: pnpm resource-map:import -- --input records.jsonl|records.json --source-slug source --source-name 'Source Name' [--dry-run]"
+      "Usage: pnpm resource-map:import -- --input records.jsonl|records.json --source-slug source --source-name 'Source Name' [--refresh-existing] [--dry-run]"
     )
   }
 
@@ -496,38 +766,103 @@ async function main() {
       row.quality_flags.length > 0 ||
       (row.confidence_score !== null && row.confidence_score < 70)
   ).length
-  const { data: insertedRecords, error: insertError } = await admin
-    .from("resource_map_import_records")
-    .insert(payload)
-    .select("id,source_record_id,source_url")
-
-  if (insertError) {
-    await markBatchFailed(admin, batch.id, insertError.message, rows.length)
+  let importRecords
+  let insertedRecordCount = 0
+  let refreshedRecordCount = 0
+  let reconciledRecordCount = 0
+  try {
+    const existingRecords = await fetchExistingImportRecords(
+      admin,
+      sourceId,
+      payload,
+      refreshExisting
+    )
+    const assignments = resolveExistingAssignments(
+      existingRecords,
+      payload,
+      refreshExisting
+    )
+    if (refreshExisting) {
+      const refreshed = await refreshExistingAssignments(
+        admin,
+        assignments,
+        payload
+      )
+      refreshedRecordCount = refreshed.refreshed
+      reconciledRecordCount = refreshed.reconciled
+    }
+    const missingIndexes = assignments.flatMap((assignment, index) =>
+      assignment ? [] : [index]
+    )
+    const missingPayload = missingIndexes.map((index) => payload[index])
+    const insertedRecords = await insertRowsInChunks({
+      admin,
+      rows: missingPayload,
+      select: "id,source_record_id,source_url,batch_id",
+      size: RECORD_WRITE_CHUNK_SIZE,
+      table: "resource_map_import_records",
+    })
+    insertedRecordCount = insertedRecords.length
+    const insertedBySourceRecordId = new Map()
+    for (const record of insertedRecords) {
+      if (record.source_record_id) {
+        insertedBySourceRecordId.set(record.source_record_id, record)
+      }
+    }
+    const insertedWithoutSourceId = insertedRecords.filter(
+      (record) => !record.source_record_id
+    )
+    importRecords = payload.map((record, index) => {
+      if (assignments[index]) return assignments[index].record
+      if (record.source_record_id) {
+        return insertedBySourceRecordId.get(record.source_record_id)
+      }
+      return insertedWithoutSourceId.shift()
+    })
+    if (importRecords.some((record) => !record)) {
+      throw new Error("Unable to resolve every staged import record.")
+    }
+  } catch (error) {
+    await markBatchFailed(admin, batch.id, error.message, rows.length)
     await finishIngestionRun(admin, ingestionRun.id, {
       status: "failed",
-      errors: [{ message: insertError.message }],
+      errors: [{ message: error.message }],
     })
-    throw insertError
+    throw error
   }
 
-  const evidencePayload = (insertedRecords ?? []).flatMap(
-    (importRecord, index) =>
-      buildFieldEvidenceRecords(rows[index] ?? {}, importRecord, sourceId)
+  const desiredEvidencePayload = importRecords.flatMap((importRecord, index) =>
+    buildFieldEvidenceRecords(rows[index] ?? {}, importRecord, sourceId)
   )
+  let evidencePayload
+  try {
+    evidencePayload = await filterMissingEvidence(admin, desiredEvidencePayload)
+  } catch (error) {
+    await markBatchFailed(admin, batch.id, error.message, rows.length)
+    await finishIngestionRun(admin, ingestionRun.id, {
+      status: "failed",
+      errors: [{ message: error.message }],
+    })
+    throw error
+  }
 
   if (evidencePayload.length > 0) {
-    const { error: evidenceError } = await admin
-      .from("resource_map_field_evidence")
-      .insert(evidencePayload)
-
-    if (evidenceError) {
+    try {
+      await insertRowsInChunks({
+        admin,
+        rows: evidencePayload,
+        select: null,
+        size: EVIDENCE_WRITE_CHUNK_SIZE,
+        table: "resource_map_field_evidence",
+      })
+    } catch (error) {
       await admin
         .from("resource_map_import_batches")
         .update({
           status: "completed_with_errors",
           imported_count: payload.length,
           error_count: evidencePayload.length,
-          error_log: [{ message: evidenceError.message }],
+          error_log: [{ message: error.message }],
           completed_at: new Date().toISOString(),
         })
         .eq("id", batch.id)
@@ -537,9 +872,9 @@ async function main() {
         parsed_count: rows.length,
         normalized_count: payload.length,
         classified_count: payload.length,
-        errors: [{ message: evidenceError.message }],
+        errors: [{ message: error.message }],
       })
-      throw evidenceError
+      throw error
     }
   }
 
@@ -553,6 +888,7 @@ async function main() {
         flaggedCount,
         rawIngestionRecordCount: rawPlan.rawRows.length,
         rawIngestionDuplicateCount: rows.length - rawPlan.rawRows.length,
+        resumedImportRecordCount: payload.length - insertedRecordCount,
       },
       completed_at: new Date().toISOString(),
     })
@@ -564,12 +900,13 @@ async function main() {
     parsed_count: rows.length,
     normalized_count: payload.length,
     classified_count: payload.length,
+    deduped_count: payload.length - insertedRecordCount,
     flagged_count: flaggedCount,
     errors: [],
   })
 
   console.log(
-    `Imported ${payload.length} staged resource records, ${rawPlan.rawRows.length} raw payloads, and ${evidencePayload.length} field evidence rows.`
+    `Staged ${payload.length} resource records (${insertedRecordCount} new, ${payload.length - insertedRecordCount} resumed, ${refreshedRecordCount} refreshed, ${reconciledRecordCount} reconciled by provider URL), preserved ${rawPlan.rawRows.length} raw payloads, and added ${evidencePayload.length} field evidence rows.`
   )
 }
 

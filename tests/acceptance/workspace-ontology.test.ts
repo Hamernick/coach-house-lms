@@ -977,7 +977,9 @@ describe("workspace ontology integration contract", () => {
     expect(surfaceSource).toContain(
       "const WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED = false"
     )
-    expect(surfaceSource).toContain("!bootstrap.tutorialActiveFromBoard")
+    expect(surfaceSource).toContain(
+      "enabled: WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED && !tutorialActiveFromBoard"
+    )
     expect(surfaceSource).toContain("ontologyRootControls: undefined")
     expect(surfaceSource).toContain(
       "WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED ? ontology.edges : []"

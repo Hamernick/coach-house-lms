@@ -5,8 +5,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   MAP_STYLE,
-  PUBLIC_MAP_SATELLITE_STYLE,
+  PUBLIC_MAP_BASEMAP_VISIBILITY,
   PUBLIC_MAP_SPACE_FOG,
+  PUBLIC_MAP_STANDARD_STYLE,
+  resolvePublicMapBasemapConfig,
   resolvePublicMapStyleForTheme,
 } from "@/components/public/public-map-index/constants"
 
@@ -17,17 +19,34 @@ function readRoute(relativePath: string) {
 }
 
 describe("public find routes", () => {
-  it("uses the satellite Mapbox style for every public map theme", () => {
-    expect(PUBLIC_MAP_SATELLITE_STYLE).toBe(
-      "mapbox://styles/mapbox/satellite-v9"
-    )
-    expect(MAP_STYLE).toBe(PUBLIC_MAP_SATELLITE_STYLE)
+  it("uses the Mapbox Standard day and night basemap with streets", () => {
+    expect(PUBLIC_MAP_STANDARD_STYLE).toBe("mapbox://styles/mapbox/standard")
+    expect(MAP_STYLE).toBe(PUBLIC_MAP_STANDARD_STYLE)
     expect(resolvePublicMapStyleForTheme("light")).toBe(
-      PUBLIC_MAP_SATELLITE_STYLE
+      PUBLIC_MAP_STANDARD_STYLE
     )
     expect(resolvePublicMapStyleForTheme("dark")).toBe(
-      PUBLIC_MAP_SATELLITE_STYLE
+      PUBLIC_MAP_STANDARD_STYLE
     )
+    expect(resolvePublicMapBasemapConfig("light")).toEqual({
+      ...PUBLIC_MAP_BASEMAP_VISIBILITY,
+      lightPreset: "day",
+    })
+    expect(resolvePublicMapBasemapConfig("dark")).toEqual({
+      ...PUBLIC_MAP_BASEMAP_VISIBILITY,
+      lightPreset: "night",
+    })
+    expect(PUBLIC_MAP_BASEMAP_VISIBILITY).toMatchObject({
+      show3dObjects: false,
+      showPedestrianRoads: true,
+      showPlaceLabels: false,
+      showPointOfInterestLabels: false,
+      showRoadLabels: true,
+      showTransitLabels: false,
+    })
+    expect(PUBLIC_MAP_BASEMAP_VISIBILITY).not.toHaveProperty("colorMotorways")
+    expect(PUBLIC_MAP_BASEMAP_VISIBILITY).not.toHaveProperty("colorRoads")
+    expect(PUBLIC_MAP_BASEMAP_VISIBILITY).not.toHaveProperty("colorTrunks")
     expect(PUBLIC_MAP_SPACE_FOG["space-color"]).toBe("#05070d")
     expect(PUBLIC_MAP_SPACE_FOG["star-intensity"]).toBeGreaterThan(0)
     expect(PUBLIC_MAP_SPACE_FOG.range).toEqual([0.8, 8])
@@ -39,15 +58,18 @@ describe("public find routes", () => {
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
     expect(constantsSource).not.toContain("cmm8y8rq600o201s5ctyi8y27")
-    expect(constantsSource).not.toContain("dark-v11")
-    expect(constantsSource).not.toContain("standard-satellite")
-    expect(constantsSource).not.toContain("PUBLIC_MAP_DARK_BASEMAP_CONFIG")
+    expect(constantsSource).not.toContain("satellite-v9")
+    expect(constantsSource).not.toContain("streets-v12")
     expect(constantsSource).toContain("PUBLIC_MAP_SPACE_FOG")
     expect(constantsSource).toContain("map.setFog(PUBLIC_MAP_SPACE_FOG)")
     expect(runtimeSource).toContain("applyPublicMapSpaceFog(map)")
     expect(runtimeSource).toContain("applyPublicMapGlobePresentation(map)")
     expect(runtimeSource).not.toContain("setStyle(")
-    expect(runtimeSource).not.toContain("setConfigProperty")
+    expect(runtimeSource).toContain("resolvePublicMapBasemapConfig")
+    expect(runtimeSource).toContain("themeRef.current = theme")
+    expect(runtimeSource).toContain(
+      "applyPublicMapBasemapConfig(map, themeRef.current)"
+    )
   })
 
   it("does not render the workspace onboarding card on the map", () => {
@@ -77,6 +99,9 @@ describe("public find routes", () => {
     const overlaySource = readRoute(
       "src/components/public/public-map-index/member-onboarding-overlay.tsx"
     )
+    const mapSurfaceSource = readRoute(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
 
     for (const routeFile of routeFiles) {
       const source = readRoute(routeFile)
@@ -87,10 +112,18 @@ describe("public find routes", () => {
 
     expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
     expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
+    expect(mapSurfaceSource).toContain('data-public-map-overlay-layer=""')
+    expect(mapSurfaceSource).toContain(
+      'className="pointer-events-none absolute inset-0"'
+    )
+    expect(mapSurfaceSource.match(/{mapOverlay}/g)).toHaveLength(1)
     expect(previewControlsSource).toContain("PublicMapMemberOnboardingOverlay")
+    expect(previewControlsSource).toContain("left-1/2 z-30 -translate-x-1/2")
+    expect(overlaySource).toContain("absolute inset-0 z-50")
     expect(overlaySource).not.toContain("OnboardingWorkspaceCard")
     expect(overlaySource).toContain("Welcome to Find")
-    expect(overlaySource).toContain("Search the directory")
+    expect(overlaySource).toContain("Search resources")
+    expect(overlaySource).toContain("Search by organization")
     expect(overlaySource).toContain("Save locations")
     expect(overlaySource).toContain("Notifications")
   })
@@ -124,6 +157,7 @@ describe("public find routes", () => {
       "PublicMapMemberOnboardingPreviewToggle"
     )
     expect(previewControlsSource).toContain("Welcome")
+    expect(previewControlsSource).toContain("[html.light_&]:!text-zinc-950")
     expect(previewControlsSource).toContain("Hide welcome")
     expect(previewControlsSource).toContain(
       "onDismiss={() => handleToggleAdminOnboardingPreview(false)}"
@@ -141,6 +175,17 @@ describe("public find routes", () => {
     expect(source).toContain("AuthenticatedFindShell")
     expect(source).toContain('presentationMode="app-shell"')
     expect(source).not.toContain("/workspace/find")
+  })
+
+  it("never mixes synthetic resource seeds into live find routes", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+
+    for (const routeFile of routeFiles) {
+      expect(readRoute(routeFile)).not.toContain("includeSeedResources")
+    }
   })
 
   it("preserves selected organization detail wiring on slug routes", () => {
@@ -176,22 +221,13 @@ describe("public find routes", () => {
     const sidebarSource = readRoute(
       "src/components/public/public-map-index/sidebar.tsx"
     )
-    const chromeSource = readRoute(
-      "src/components/public/public-map-index/public-map-index-chrome.tsx"
-    )
-    const directoryRailSource = readRoute(
-      "src/components/public/public-map-index/directory-rail.tsx"
-    )
-
     expect(publicMapSelectionSource).toContain(
       "const handleBackToSearch = useCallback"
     )
     expect(publicMapSelectionSource).toContain("setSelectedOrgId(null)")
     expect(publicMapSource).toContain("onBackToSearch={handleBackToSearch}")
     expect(mapSurfaceSource).toContain("onBackToSearch")
-    expect(chromeSource).toContain("onBackToSearch={onBackToSearch}")
     expect(sidebarSource).toContain("onBack={onBackToSearch}")
-    expect(directoryRailSource).toContain("onBack={onBackToSearch}")
   })
 
   it("restores the saved sidebar preference in authenticated find", () => {
@@ -234,11 +270,14 @@ describe("public find routes", () => {
     const publicMapSource = readRoute(
       "src/components/public/public-map-index.tsx"
     )
-    const publicMapSelectionSource = readRoute(
-      "src/components/public/public-map-index/public-map-index-selection.ts"
-    )
     const publicMapChromeSource = readRoute(
       "src/components/public/public-map-index/public-map-index-chrome.tsx"
+    )
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const mapViewHelpersSource = readRoute(
+      "src/components/public/public-map-index/map-view-helpers.ts"
     )
     const appShellSource = readRoute(
       "src/components/app-shell/app-shell-inner.tsx"
@@ -255,37 +294,19 @@ describe("public find routes", () => {
 
     expect(shellSource).toContain('contentPresentation="full-bleed"')
     expect(mapSurfaceSource).toContain("h-full min-h-0 w-full min-w-0 flex-1")
-    expect(publicMapSource).toContain("resolvePublicMapPresentationFlags")
-    expect(publicMapSelectionSource).toContain(
-      'const useAppShellRightRailDirectory = presentationMode === "app-shell"'
-    )
-    expect(publicMapSelectionSource).toContain("renderMapOverlaySidebar:")
-    expect(publicMapSelectionSource).toContain(
-      "renderDesktopSidebar && !useAppShellRightRailDirectory"
-    )
-    expect(publicMapChromeSource).toContain("PublicMapDirectoryRail")
-    expect(publicMapChromeSource).toContain("directoryRail={directoryRail}")
-    expect(publicMapChromeSource).toContain("useAppShellRightRailDirectory ?")
-    expect(publicMapChromeSource).not.toContain(
-      "useAppShellRightRailDirectory && panelPresentation"
-    )
-    expect(publicMapChromeSource).not.toContain(
-      'useAppShellRightRailDirectory && panelPresentation === "rail"'
-    )
+    expect(publicMapSource).not.toContain("resolvePublicMapPresentationFlags")
+    expect(publicMapChromeSource).not.toContain("PublicMapDirectoryRail")
+    expect(publicMapChromeSource).not.toContain("PublicMapRightRail")
+    expect(mapViewHelpersSource).toContain('return "drawer"')
+    expect(sidebarSource).toContain("dismissible={false}")
+    expect(sidebarSource).toContain("<PublicMapMemberRail")
     expect(shellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain(
       "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
-    expect(appShellSource).not.toContain(
-      "!isMobile && hasRightRail && resizableRightRail"
-    )
     expect(appShellSource).not.toContain('derivedContext !== "public"')
-    expect(publicMapSource).toContain(
-      "renderDesktopSidebar={flags.renderMapOverlaySidebar}"
-    )
-    expect(publicMapSource).toContain(
-      "renderMobileDrawer={!flags.useHomeCanvasSidebarSlot || isMobile}"
-    )
+    expect(publicMapSource).toContain("guides={resourceGuides}")
+    expect(publicMapSource).toContain("savedOrganizations={savedOrganizations}")
     expect(publicMapSource).not.toContain("w-[23rem]")
     expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
     expect(shellMainContentSource).toContain("data-shell-mode={")
@@ -312,29 +333,67 @@ describe("public find routes", () => {
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })
 
-  it("uses the same Find, Guides, and Saved rail for public and authenticated find", () => {
+  it("uses the same Find, Guides, and Saved drawer for public and authenticated find", () => {
     const chromeSource = readRoute(
       "src/components/public/public-map-index/public-map-index-chrome.tsx"
     )
     const memberRailSource = readRoute(
       "src/components/public/public-map-index/member-rail.tsx"
     )
-    const rightRailSource = readRoute(
-      "src/components/public/public-map-index/right-rail.tsx"
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const sidebarThemeSource = readRoute(
+      "src/components/public/public-map-index/sidebar-theme.ts"
+    )
+    const statusPillSource = readRoute(
+      "src/components/public/public-map-index/directory-status-pill.tsx"
+    )
+    const welcomeControlSource = readRoute(
+      "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
+    )
+    const mapSurfaceSource = readRoute(
+      "src/components/public/public-map-index/map-surface.tsx"
     )
 
-    expect(chromeSource).toContain(
-      "useAppShellRightRailDirectory || useHomeCanvasSidebarSlot"
+    expect(chromeSource).not.toContain("HomeCanvasSidebarSlot")
+    expect(chromeSource).not.toContain("PublicMapRightRail")
+    expect(sidebarSource).toContain("<PublicMapMemberRail")
+    expect(sidebarSource).toContain("directoryRail={drawerDirectoryPanel}")
+    expect(sidebarSource).toContain("dismissible={false}")
+    expect(sidebarSource).toContain('setDrawerTab("directory")')
+    expect(sidebarSource).toContain("resolvePublicMapDrawerSnapPointIndex({")
+    expect(sidebarSource).not.toContain("snapPoints.findIndex")
+    expect(sidebarThemeSource).toContain(
+      '"dark border-input bg-input/35 text-foreground backdrop-blur-xl"'
     )
-    expect(chromeSource).toContain(
-      'data-public-map-tabbed-rail-placement="home-canvas"'
+    expect(sidebarSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(statusPillSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(welcomeControlSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(mapSurfaceSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(mapSurfaceSource).toContain(
+      "pointer-events-none absolute inset-0 z-50 transform-gpu overflow-hidden"
     )
-    expect(chromeSource).toContain("<PublicMapMemberRail")
-    expect(chromeSource).toContain("directoryRail={directoryRail}")
-    expect(chromeSource).not.toContain("PublicMapShellSidebarPanel")
-    expect(chromeSource).toContain("{useHomeCanvasSidebarSlot ? (")
-    expect(chromeSource).toContain("{useAppShellRightRailDirectory ? (")
-    expect(rightRailSource).toContain("<PublicMapMemberRail")
+    expect(sidebarSource).not.toContain("bg-card/92")
+    expect(sidebarSource).not.toContain("dark:bg-input/30")
+    expect(sidebarSource).toContain(
+      "data-[vaul-drawer-direction=bottom]:rounded-t-[28px]"
+    )
+    expect(sidebarSource).toContain("data-public-map-drawer-mode={")
+    expect(sidebarSource).toContain(
+      'drawerIsFullscreen ? "fullscreen" : "floating"'
+    )
+    expect(sidebarSource).toContain(
+      'data-public-map-drawer-content-viewport=""'
+    )
+    expect(sidebarSource).toContain("style={{ height: drawerViewportHeight }}")
+    expect(sidebarSource).toContain('height: "100%"')
+    expect(sidebarSource).not.toContain(
+      "data-[vaul-drawer-direction=bottom]:rounded-t-none"
+    )
+    expect(sidebarSource).not.toContain("bg-background/95")
+    expect(sidebarSource).not.toContain("backdrop-blur-2xl")
+    expect(sidebarThemeSource).toContain("backdrop-blur-xl")
     expect(memberRailSource).toContain('data-public-map-tabbed-rail=""')
     expect(memberRailSource).toContain('data-public-map-tab-list=""')
     expect(memberRailSource).toContain(
@@ -382,16 +441,19 @@ describe("public find routes", () => {
     expect(filterUrlHookSource).toContain("buildPublicMapFilterHref")
     expect(filterUrlHookSource).toContain("const pathname = usePathname()")
     expect(filterUrlHookSource).toContain("filterStateRef")
-    expect(filterUrlHookSource).toContain(
-      "router.replace(nextHref, { scroll: false })"
-    )
+    expect(filterUrlHookSource).toContain("window.history.replaceState")
+    expect(filterUrlHookSource).toContain("PUBLIC_MAP_FILTER_URL_SYNC_DELAY_MS")
+    expect(filterUrlHookSource).not.toContain("useRouter")
     expect(filterUrlHookSource).toContain(
       "const [query, setQuery] = useState(initialFilterState.query)"
     )
     expect(filterUrlHookSource).toContain("initialFilterState.activeGroup")
     expect(filterStateSource).toContain("buildPublicMapGroupFilterCounts")
     expect(filterStateSource).toContain("buildPublicMapItems")
-    expect(publicMapSource).toContain("organizations: filteredOrganizations")
+    expect(publicMapSource).toContain("organizations: mapFilteredOrganizations")
+    expect(publicMapSource).toContain(
+      "filteredOrganizations={filteredOrganizations}"
+    )
     expect(searchCardSource).toContain("PublicMapCategoryFilter")
     expect(categoryFilterSource).toContain(
       'aria-label="Filter resources by category"'
@@ -399,11 +461,15 @@ describe("public find routes", () => {
     expect(categoryFilterSource).toContain("PUBLIC_MAP_RESOURCE_CATEGORY_ORDER")
     expect(categoryFilterSource).toContain("PublicMapResourceCategoryIcon")
     expect(categoryFilterSource).toContain("PublicMapAllCategoryIcon")
+    expect(categoryFilterSource).toContain(
+      'data-public-map-category-filter-icon=""'
+    )
     expect(categoryFilterSource).toContain("aria-pressed={selected}")
     expect(categoryFilterSource).toContain("resolvePublicMapGroupFilterParam")
     expect(categoryFilterSource).toContain("border-input bg-input/30")
     expect(categoryFilterSource).toContain("rounded-full border px-2.5")
-    expect(categoryFilterSource).toContain("shadow-sm backdrop-blur")
+    expect(categoryFilterSource).toContain("backdrop-blur")
+    expect(categoryFilterSource).not.toContain("shadow-sm backdrop-blur")
     expect(categoryFilterSource).toContain("!bg-input/50 text-foreground")
     expect(categoryFilterSource).toContain('selected ? "text-foreground"')
     expect(categoryFilterSource).not.toContain("hover:text-white")
@@ -413,6 +479,8 @@ describe("public find routes", () => {
       "transition-[background-color,border-color,color,opacity]"
     )
     expect(categoryFilterSource).not.toContain("dark:bg-foreground")
+    expect(categoryFilterSource).not.toContain("dark:bg-background/18")
+    expect(categoryFilterSource).not.toContain("dark:text-background")
     expect(categoryFilterSource).not.toContain(
       "bg-foreground text-background hover:bg-foreground"
     )
@@ -430,6 +498,50 @@ describe("public find routes", () => {
       'PUBLIC_MAP_CATEGORY_PARAM = "category"'
     )
     expect(filterUrlStateSource).toContain("buildPublicMapFilterHref")
+  })
+
+  it("expands search into a responsive, stateful drawer experience", () => {
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const searchCardSource = readRoute(
+      "src/components/public/public-map-index/search-card.tsx"
+    )
+    const sidebarPanelsSource = readRoute(
+      "src/components/public/public-map-index/sidebar-panels.tsx"
+    )
+    const organizationListSource = readRoute(
+      "src/components/public/public-map-index/organization-list.tsx"
+    )
+    const resourceItemsSource = readRoute(
+      "src/components/public/public-map-index/use-resource-map-items.ts"
+    )
+
+    expect(sidebarSource).toContain("handleDrawerSearchEngage")
+    expect(sidebarSource).toContain(
+      "data-public-map-drawer-snap-index={activeSnapIndex}"
+    )
+    expect(sidebarSource).toContain(
+      "setActiveSnapIndex((current) => (current === 0 ? 1 : current))"
+    )
+    expect(searchCardSource).toContain('aria-label="Clear search"')
+    expect(searchCardSource).toContain("onFocus={onSearchEngage}")
+    expect(searchCardSource).toContain("aria-busy={searchPending}")
+    expect(sidebarPanelsSource).toContain(
+      'data-public-map-search-results-status="true"'
+    )
+    expect(sidebarPanelsSource).toContain("Loading full directory…")
+    expect(organizationListSource).toContain(
+      'data-public-map-search-loading="true"'
+    )
+    expect(organizationListSource).toContain(
+      'data-public-map-search-empty="true"'
+    )
+    expect(organizationListSource).toContain("No matches for")
+    expect(resourceItemsSource).toContain("resourceItemsLoadByEndpoint")
+    expect(resourceItemsSource).toContain(
+      "warmPublicMapListItemSearchCache(resourceItems)"
+    )
   })
 
   it("wires resource marker selection into the shared list and detail surfaces", () => {
@@ -458,7 +570,7 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain(
       "preferNationalFallback: includeSeedResources && !initialPublicSlug"
     )
-    expect(publicMapSource).toContain("directoryItems={directoryListItems}")
+    expect(publicMapSource).toContain("filteredItems={directoryListItems}")
     expect(publicMapSource).toContain("selectedItemId={selectedListItemId}")
     expect(publicMapSource).toContain(
       "selectedResourceItem={selectedResourceItem}"
@@ -478,29 +590,23 @@ describe("public find routes", () => {
     expect(mapItemsStateSource).not.toContain("PreviewPopover")
   })
 
-  it("falls back to organization markers when the resource map adapter is empty", () => {
-    const clusteredMarkersSource = readRoute(
-      "src/components/public/public-map-index/use-public-map-clustered-markers.ts"
+  it("renders unclustered organization markers when the resource adapter is empty", () => {
+    const markerSource = readRoute(
+      "src/components/public/public-map-index/use-public-map-markers.ts"
     )
 
-    expect(clusteredMarkersSource).toContain(
-      "const resolvedMapItems = mapItems ?? []"
-    )
-    expect(clusteredMarkersSource).toContain(
+    expect(markerSource).toContain("const resolvedMapItems = mapItems ?? []")
+    expect(markerSource).toContain(
       "const shouldUseMapItems = resolvedMapItems.length > 0"
     )
-    expect(clusteredMarkersSource).toContain("currentMapItems.length > 0")
-    expect(clusteredMarkersSource).toContain(
+    expect(markerSource).toContain("currentMapItems.length > 0")
+    expect(markerSource).toContain(
       "buildPublicMapPointFeatures(organizationsRef.current, {"
     )
-    expect(clusteredMarkersSource).toContain("markerTheme,")
-    expect(clusteredMarkersSource).toContain("PUBLIC_MAP_FULL_WORLD_BBOX")
-    expect(clusteredMarkersSource).toContain("let clusterIndexReady = false")
-    expect(clusteredMarkersSource).toContain("if (!clusterIndexReady) return")
-    expect(clusteredMarkersSource).toContain("clusterIndexReady = true")
-    expect(clusteredMarkersSource).toContain(
-      'viewportQueryState.lastViewportKey = ""'
-    )
+    expect(markerSource).toContain("features: pointFeatures")
+    expect(markerSource).toContain("setPublicMapMarkerSourceData")
+    expect(markerSource).not.toContain("createPublicMapClusterClient")
+    expect(markerSource).not.toContain("getClusters")
   })
 
   it("does not render the member profile card in public or authenticated find rails", () => {

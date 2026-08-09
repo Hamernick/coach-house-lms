@@ -46,8 +46,6 @@ type FiscalDocuSealCompletionNotificationInput = {
 }
 
 const FISCAL_NOTIFICATION_ORG_ROLES = new Set(["owner", "admin", "staff"])
-const FISCAL_APPLICANT_WORKBENCH_HREF =
-  "/my-organization?focus=fiscal-sponsorship"
 
 function getFiscalNotificationClient() {
   try {
@@ -134,21 +132,19 @@ async function loadFiscalReviewerRecipientIds({
 }
 
 async function loadOrganizationEditorRecipientIds({
-  application,
   excludeUserId,
   orgId,
   supabase,
 }: {
-  application: FiscalApplicationRow
   excludeUserId?: string | null
   orgId: string
   supabase: Pick<FiscalNotificationClient, "from">
 }) {
   const { data, error } = await supabase
     .from("organization_memberships")
-    .select("member_email, member_id, role")
+    .select("member_id, role")
     .eq("org_id", orgId)
-    .returns<Array<{ member_email: string; member_id: string; role: string }>>()
+    .returns<Array<{ member_id: string; role: string }>>()
 
   if (error) {
     console.error(
@@ -158,19 +154,11 @@ async function loadOrganizationEditorRecipientIds({
     return uniqueUserIds([orgId]).filter((userId) => userId !== excludeUserId)
   }
 
-  const primaryApplicantEmail = application.primary_email?.trim().toLowerCase()
-
   return uniqueUserIds([
     orgId,
     ...(data ?? [])
-      .filter(
-        (membership) =>
-          FISCAL_NOTIFICATION_ORG_ROLES.has(membership.role) ||
-          Boolean(
-            primaryApplicantEmail &&
-            membership.member_email.trim().toLowerCase() ===
-              primaryApplicantEmail
-          )
+      .filter((membership) =>
+        FISCAL_NOTIFICATION_ORG_ROLES.has(membership.role)
       )
       .map((membership) => membership.member_id),
   ]).filter((userId) => userId !== excludeUserId)
@@ -233,7 +221,6 @@ async function notifyOrganizationEditors(payload: FiscalNotificationPayload) {
   if (!supabase) return
 
   const recipientIds = await loadOrganizationEditorRecipientIds({
-    application: payload.application,
     excludeUserId: payload.actorId,
     orgId: payload.application.org_id,
     supabase,
@@ -349,7 +336,7 @@ export async function notifyFiscalApplicationReviewed({
   await notifyOrganizationEditors({
     actorId,
     application,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: { decision },
     type: `fiscal_sponsorship_application_${decision}`,
     ...copy,
@@ -399,7 +386,7 @@ export async function notifyFiscalDocumentReviewed({
   await notifyOrganizationEditors({
     actorId,
     application,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: { decision, documentId, documentKey },
     type: `fiscal_sponsorship_document_${decision}`,
     ...copy,
@@ -421,7 +408,7 @@ export async function notifyFiscalAgreementGenerated({
     description: `Coach House prepared the fiscal sponsorship agreement for ${getFiscalProjectName(
       application
     )}.`,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: { documentId },
     title: "Fiscal agreement prepared",
     tone: "info",
@@ -450,7 +437,7 @@ export async function notifyFiscalAgreementSent({
     description: `The fiscal sponsorship agreement for ${getFiscalProjectName(
       application
     )} was sent for signature.`,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: { packetId, providerSubmissionId },
     title: "Fiscal agreement sent for signature",
     tone: "info",
@@ -557,7 +544,7 @@ export async function notifyFiscalDocuSealCompleted({
     actorId,
     application,
     description: `DocuSeal completed signing for ${projectName?.trim() || "the fiscal sponsorship agreement"}. Final files are ready.`,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: {
       auditDocumentId,
       executedDocumentId,
@@ -605,7 +592,7 @@ export async function notifyFiscalNativeAgreementCompleted({
       project_name: projectName,
     } as FiscalApplicationRow,
     description: `Signing is complete for ${projectName}. Final files are ready.`,
-    href: FISCAL_APPLICANT_WORKBENCH_HREF,
+    href: "/my-organization",
     metadata: { auditDocumentId, executedDocumentId, packetId },
     title: "Fiscal agreement fully signed",
     tone: "success",

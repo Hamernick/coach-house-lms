@@ -50,7 +50,7 @@ export const RESOURCE_CATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
+    ["health_sexual_reproductive_health", "Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],

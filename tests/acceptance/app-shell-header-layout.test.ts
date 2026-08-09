@@ -68,7 +68,6 @@ describe("app shell header layout", () => {
     expect(appShellSource).toContain(
       "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
-    expect(appShellSource).not.toContain("{rightOpen ? (")
     expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(appShellTypesSource).toContain("resizableRightRail?: boolean")
     expect(authenticatedFindShellSource).toContain("resizableRightRail")

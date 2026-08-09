@@ -63,7 +63,6 @@ export default async function PublicFindPage() {
             resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
             mapboxToken={publicToken}
             viewer={viewerState.viewer}
-            includeSeedResources={shellState.isAdmin}
             canManageResourceMap={shellState.isAdmin}
             organizationCurationAction={
               shellState.isAdmin

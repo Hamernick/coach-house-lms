@@ -1,4 +1,5 @@
 import { PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES } from "./resource-category-subcategory-overrides"
+import { publicMapTextContainsCategoryAlias } from "./resource-category-alias-matching"
 
 export const PUBLIC_MAP_RESOURCE_CATEGORY_ORDER = [
   "health",
@@ -34,7 +35,7 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
+    ["health_sexual_reproductive_health", "Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],
@@ -135,7 +136,7 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["family_seniors", "Seniors"],
     ["family_veterans", "Veterans"],
     ["family_lgbtq", "LGBTQ+"],
-    ["family_domestic_violence", "Domestic Violence"],
+    ["family_domestic_violence", "Domestic Violence Support"],
     ["family_foster_care", "Foster Care"],
     ["family_adoption", "Adoption"],
     ["family_family_support", "Family Support"],
@@ -261,9 +262,9 @@ export const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS = [
     key: "food",
     label: "Food",
     parentKey: null,
-    markerColor: "#e11d48",
-    tailwindToken: "rose-600",
-    iconName: "bread",
+    markerColor: "#2563eb",
+    tailwindToken: "blue-600",
+    iconName: "shopping-cart",
     aliases: ["food", "meal", "meals", "pantry", "groceries", "nutrition"],
     description: "Food access, groceries, meals, nutrition, and water support.",
   },
@@ -427,7 +428,7 @@ const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_BY_KEY = Object.fromEntries(
 const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ICON_OVERRIDES: Partial<
   Record<PublicMapResourceSubcategoryKey, string>
 > = {
-  food_community_fridges: "bread",
+  food_community_fridges: "shopping-basket",
   community_libraries: "book-open",
   community_community_centers: "building-2",
   community_transportation: "bus",
@@ -598,7 +599,9 @@ export function resolvePublicMapResourceCategoryInputKey(
 
   const words = raw.toLowerCase()
   const aliasMatch = PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS.find((category) =>
-    category.aliases.some((alias) => words.includes(alias))
+    category.aliases.some((alias) =>
+      publicMapTextContainsCategoryAlias({ alias, text: words })
+    )
   )
   return aliasMatch?.key ?? null
 }
@@ -606,11 +609,10 @@ export function resolvePublicMapResourceCategoryInputKey(
 export function resolvePublicMapResourceTopLevelCategory(
   key: PublicMapResourceCategoryKey
 ): PublicMapResourceTopLevelCategoryKey {
-  const parentKey = PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key]
-  if (parentKey) return parentKey
-  if (isPublicMapResourceTopLevelCategoryKey(key)) return key
-
-  return "community"
+  return (
+    PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key] ??
+    (key as PublicMapResourceTopLevelCategoryKey)
+  )
 }
 
 export function publicMapResourceCategoryMatchesTopLevel({

@@ -132,6 +132,9 @@ describe("fiscal sponsorship W-9 completion", () => {
     expect(agreementActions).toContain(
       "Accept the applicant’s completed W-9 before preparing an agreement."
     )
+    expect(agreementActions).toContain(
+      "The accepted file is not a completed W-9."
+    )
     expect(migration).toContain("reject_executed_fiscal_tax_form_mutation")
     expect(migration).toContain("Executed fiscal tax forms are immutable")
     expect(migration).toContain("om.role in ('owner', 'admin', 'staff')")
@@ -196,6 +199,7 @@ describe("fiscal sponsorship W-9 completion", () => {
       "isFiscalSponsorshipAgreementFileName"
     )
   })
+
   it("offers the assigned applicant direct W-9 completion in the workbench", () => {
     const summary = readFileSync(
       "src/features/fiscal-sponsorship/server/workflow-summary.ts",
@@ -205,11 +209,43 @@ describe("fiscal sponsorship W-9 completion", () => {
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench-required-documents.tsx",
       "utf8"
     )
+    const userUploadPanel = readFileSync(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-documents-upload-panel.tsx",
+      "utf8"
+    )
+    const workflowDrawer = readFileSync(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workflow-drawer.tsx",
+      "utf8"
+    )
 
     expect(summary).toContain("canCompleteW9")
     expect(summary).toContain("application.primary_email")
     expect(workbench).toContain("Complete W-9")
     expect(workbench).toContain("New W-9")
+    expect(workbench).toContain("Replace PDF")
     expect(workbench).toContain("/fiscal-sponsorship/w9/${projectId}")
+    expect(userUploadPanel).toContain("Complete W-9")
+    expect(userUploadPanel).toContain("Complete new W-9")
+    expect(userUploadPanel).toContain("/fiscal-sponsorship/w9/${projectId}")
+    expect(userUploadPanel).not.toContain(
+      "isFiscalSponsorshipAgreementFileName"
+    )
+    expect(workflowDrawer).toContain(
+      "canCompleteW9={data.workflowSummary?.canCompleteW9 ?? false}"
+    )
+  })
+
+  it("restores human-reviewed test documents without deleting evidence", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20260730223800_restore_human_reviewed_fiscal_documents.sql",
+      "utf8"
+    )
+
+    expect(migration).toContain("review_status = 'accepted'")
+    expect(migration).toContain("document_key = 'tax_id_confirmation'")
+    expect(migration).toContain("kind = 'tax_form'")
+    expect(migration).toContain("status = 'executed'")
+    expect(migration).toContain("review_notes = null")
+    expect(migration).not.toContain("delete from")
   })
 })

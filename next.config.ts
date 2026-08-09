@@ -15,6 +15,19 @@ const supabaseImageHosts = Array.from(
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/find/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "geolocation=(self)",
+          },
+        ],
+      },
+    ]
+  },
   turbopack: {
     root: __dirname, // ensure Turbopack resolves Next from the repo root
   },

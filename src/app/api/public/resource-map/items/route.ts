@@ -9,16 +9,6 @@ export const revalidate = 300
 const PUBLIC_RESOURCE_MAP_ITEMS_CACHE_CONTROL =
   "public, s-maxage=300, stale-while-revalidate=600"
 
-type SerializedPublicResourceMapItem = Omit<
-  ExternalResourceMapItem,
-  "aliases" | "availability" | "deliveryModes" | "markerImageUrl"
-> & {
-  aliases?: ExternalResourceMapItem["aliases"]
-  availability?: ExternalResourceMapItem["availability"]
-  deliveryModes?: ExternalResourceMapItem["deliveryModes"]
-  markerImageUrl?: string
-}
-
 function serializePublicResourceAvailability(
   availability: ExternalResourceMapItem["availability"]
 ) {
@@ -37,9 +27,36 @@ function serializePublicResourceAvailability(
   return availability
 }
 
+function serializePublicResourceServices(
+  services: ExternalResourceMapItem["services"],
+  itemDescription: string | null
+) {
+  return (services ?? []).flatMap((service) => {
+    const description =
+      service.description === itemDescription ? null : service.description
+    const hasUsefulDetails = Boolean(
+      description ||
+      service.whoItHelps ||
+      service.eligibility ||
+      service.cost ||
+      service.languages?.length ||
+      service.intakeUrl ||
+      service.appointmentInfo ||
+      service.documentsNeeded?.length ||
+      service.accessibilityNotes ||
+      service.urgentAvailability ||
+      service.ageRange ||
+      service.serviceArea?.length
+    )
+    if (!hasUsefulDetails) return []
+
+    return [{ ...service, description }]
+  })
+}
+
 export function serializePublicResourceMapItem(
   item: ExternalResourceMapItem
-): SerializedPublicResourceMapItem {
+): ExternalResourceMapItem {
   const {
     aliases,
     availability,
@@ -55,6 +72,10 @@ export function serializePublicResourceMapItem(
     ...rest
   } = item
   const publicAvailability = serializePublicResourceAvailability(availability)
+  const publicServices = serializePublicResourceServices(
+    services,
+    rest.description
+  )
   const publicSourceUrl =
     sourceUrl && isPublicMapTechnicalSourceUrl(sourceUrl) ? null : sourceUrl
 
@@ -64,6 +85,7 @@ export function serializePublicResourceMapItem(
     ...(publicAvailability ? { availability: publicAvailability } : null),
     ...(deliveryModes?.length ? { deliveryModes } : null),
     ...(markerImageUrl ? { markerImageUrl } : null),
+    ...(publicServices.length ? { services: publicServices } : null),
     sourceUrl: publicSourceUrl,
   }
 }

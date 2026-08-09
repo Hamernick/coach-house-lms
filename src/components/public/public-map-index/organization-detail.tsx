@@ -39,6 +39,7 @@ import {
   OrganizationDetailSocialsSection,
 } from "./organization-detail-shell-sections"
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
+import { PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME } from "./sidebar-theme"
 
 type PublicMapOrganizationDetailProps = {
   canManageResourceMap?: boolean
@@ -94,11 +95,10 @@ export function PublicMapOrganizationDetail({
 
   return (
     <div
+      data-public-map-profile="organization"
       className={cn(
-        "border-border/60 text-card-foreground space-y-3 border-b bg-transparent pt-3",
-        compact
-          ? "px-1.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
-          : "px-2 pb-3"
+        PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME,
+        compact ? "mb-[max(env(safe-area-inset-bottom),0.75rem)]" : "mb-3"
       )}
     >
       <OrganizationDetailPanelChrome

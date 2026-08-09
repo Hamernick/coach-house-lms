@@ -106,6 +106,12 @@ describe("program wizard activity flow", () => {
     )
     expect(scheduleLocationSource).toContain("Resource URL")
     expect(wizardTypesSource).toContain("portalContainer?: HTMLElement | null")
+    expect(wizardTypesSource).toContain("initialStep?: number | null")
+    expect(wizardSource).toContain("normalizeProgramWizardStep")
+    expect(wizardSource).toContain(
+      "const initialStepIndex = normalizeProgramWizardStep(initialStep)"
+    )
+    expect(wizardSource).toContain("setCurrentStep(initialStepIndex)")
     expect(dialogSource).toContain("portalContainer")
     expect(dialogSource).toContain("container={portalContainer}")
   })

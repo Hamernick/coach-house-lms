@@ -4,6 +4,16 @@ const DEFAULT_ENTRY_ID = "fiscal-sponsorship-flow"
 
 const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
   {
+    id: "finance-release-plan",
+    projectId: "finance",
+    folderLabel: "Roadmaps",
+    title: "Finance release plan",
+    description:
+      "React Flow roadmap of approvals, research, seven merge batches, gates, and production cutover.",
+    kind: "flow",
+    statusLabel: "Prototype",
+  },
+  {
     id: "fiscal-sponsorship-flow",
     projectId: "fiscal-sponsorship",
     folderLabel: "Flows",
@@ -52,6 +62,15 @@ const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
       "Live readout of telemetry events, activation checkpoints, stuck paths, and coverage.",
     kind: "ops",
     statusLabel: "Live",
+  },
+  {
+    id: "audio-visualizer-player",
+    projectId: "audio-lab",
+    folderLabel: "Controls",
+    title: "Audio visualizer player",
+    description: "Centered audio transport prototype with timeline and bars.",
+    kind: "ops",
+    statusLabel: "Prototype",
   },
   {
     id: "page-health-monitor",

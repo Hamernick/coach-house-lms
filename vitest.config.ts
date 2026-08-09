@@ -7,6 +7,7 @@ const config: ViteUserConfig = {
     environment: "node",
     setupFiles: ["./tests/acceptance/test-utils.ts"],
     globals: true,
+    maxWorkers: 8,
   },
   resolve: {
     alias: {

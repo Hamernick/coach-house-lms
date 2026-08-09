@@ -8,11 +8,9 @@ import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import type { MemberWorkspaceCreateProjectFormInput } from "../../types"
 
 export const MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS = [
-  { value: "backlog", label: "Backlog" },
-  { value: "planned", label: "Planned" },
+  { value: "planned", label: "Onboarding" },
   { value: "active", label: "Active" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "cancelled", label: "Archived" },
 ] as const satisfies ReadonlyArray<{
   value: PlatformAdminDashboardLabStatus
   label: string
@@ -186,20 +184,24 @@ function normalizeProjectStatus(
   project: ProjectDetails
 ): PlatformAdminDashboardLabStatus {
   if (project.source?.status) {
-    return project.source.status
+    if (project.source.status === "active") return "active"
+    if (
+      project.source.status === "completed" ||
+      project.source.status === "cancelled"
+    ) {
+      return "cancelled"
+    }
+    return "planned"
   }
 
   switch (project.backlog.statusLabel) {
     case "Active":
       return "active"
-    case "Planned":
-      return "planned"
     case "Completed":
-      return "completed"
     case "Cancelled":
       return "cancelled"
     default:
-      return "backlog"
+      return "planned"
   }
 }
 

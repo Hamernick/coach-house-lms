@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: Geist
-description: Vercel's Geist design system, Light theme (the Dark theme is documented at docs/design.dark.md).
+description: Vercel’s Geist design system, Light theme (the Dark theme is documented at /design.dark.md).
 colors:
   primary: "#171717"
   secondary: "#4d4d4d"
@@ -408,13 +408,13 @@ components:
 
 ## Overview
 
-Geist is Vercel's design system for building consistent, developer-focused interfaces. The aesthetic is minimal and high-contrast: plenty of whitespace, restrained color, and content set on near-neutral surfaces. Prioritize readability and accessibility, and use color to signal state or hierarchy rather than decoration.
+Geist is Vercel’s design system for building consistent, developer-focused interfaces. The aesthetic is minimal and high-contrast: plenty of whitespace, restrained color, and content set on near-neutral surfaces. Prioritize readability and accessibility, and use color to signal state or hierarchy rather than decoration.
 
-This is the Light theme. The Dark theme uses the same token names with different values and lives at `docs/design.dark.md`. Colors are sRGB hex with Display P3 equivalents.
+This is the Light theme. The Dark theme uses the same token names with different values and lives at `/design.dark.md`. Colors are sRGB hex with Display P3 equivalents.
 
 ## Colors
 
-Each non-background scale runs 10 steps (`100`-`1000`), and the step encodes intent, not just lightness:
+Each non-background scale runs 10 steps (`100`–`1000`), and the step encodes intent, not just lightness:
 
 - `100` default background
 - `200` hover background
@@ -427,7 +427,7 @@ Each non-background scale runs 10 steps (`100`-`1000`), and the step encodes int
 - `900` secondary text and icons
 - `1000` primary text and icons
 
-`background-100` is the primary page and card surface; `background-200` is a secondary surface for subtle separation. The `gray-alpha-*` tokens are translucent, so they layer over any background; use them for borders, dividers, overlays, and hover states. Solid `gray-*` holds its contrast on any surface, so use it for text and opaque fills. Accent scales carry meaning: `blue` for success, links, and focus; `red` for errors; `amber` for warnings; plus `green`, `teal`, `purple`, and `pink`. Use the hex tokens everywhere; each accent scale also ships a `*-p3` wide-gamut value in `oklch()` for Display P3 screens. The Dark theme redefines the same names at `docs/design.dark.md`.
+`background-100` is the primary page and card surface; `background-200` is a secondary surface for subtle separation. The `gray-alpha-*` tokens are translucent, so they layer over any background; use them for borders, dividers, overlays, and hover states. Solid `gray-*` holds its contrast on any surface, so use it for text and opaque fills. Accent scales carry meaning: `blue` for success, links, and focus; `red` for errors; `amber` for warnings; plus `green`, `teal`, `purple`, and `pink`. Use the hex tokens everywhere; each accent scale also ships a `*-p3` wide-gamut value in `oklch()` for Display P3 screens. The Dark theme redefines the same names at `/design.dark.md`.
 
 ## Typography
 
@@ -442,7 +442,7 @@ Geist Sans sets UI and prose; Geist Mono sets code, data, and tabular figures. B
 
 ## Layout
 
-Spacing follows a 4px scale: 4, 8, 12, 16, 24, 32, 40, 64, 96px. Keep a three-step rhythm: 8px inside a group, 16px between groups, 32-40px between sections. Cards use 24px padding, 16px when compact and 32px for hero areas. Center content in a 1200px column with side padding that grows at wider breakpoints, and make every layout work on mobile and desktop. Breakpoints are `sm` 401px, `md` 601px, `lg` 961px, `xl` 1200px, and `2xl` 1400px.
+Spacing follows a 4px scale: 4, 8, 12, 16, 24, 32, 40, 64, 96px. Keep a three-step rhythm: 8px inside a group, 16px between groups, 32–40px between sections. Cards use 24px padding, 16px when compact and 32px for hero areas. Center content in a 1200px column with side padding that grows at wider breakpoints, and make every layout work on mobile and desktop. Breakpoints are `sm` 401px, `md` 601px, `lg` 961px, `xl` 1200px, and `2xl` 1400px.
 
 ## Elevation & Depth
 
@@ -483,8 +483,8 @@ Copy is part of the design; keep it precise and free of filler.
 - Write errors as what happened plus what to do next: `Build failed. Bundle exceeds 50 MB. Reduce it or raise the limit.`
 - Toasts name the specific thing that changed, drop the trailing period, and never say `successfully`: `Project deleted`, not `Successfully deleted the project.`
 - Empty states point to the first action: `No deployments yet. Push to your Git repository to create one.`
-- Use the present participle with three periods for in-progress states: `Deploying...`, `Saving...`.
-- Use numerals (`3 projects`), straight quotes, and plain ASCII punctuation; skip `please` and marketing superlatives.
+- Use the present participle with an ellipsis for in-progress states: `Deploying…`, `Saving…`.
+- Use numerals (`3 projects`), curly quotes, and the ellipsis character; skip `please` and marketing superlatives.
 
 ## Do's and Don'ts
 
@@ -493,7 +493,7 @@ Copy is part of the design; keep it precise and free of filler.
 - Hold WCAG AA contrast (4.5:1 for body text).
 - Show the focus ring on every interactive element at `:focus-visible`, and never remove an outline without a visible replacement.
 - Apply the typography tokens instead of setting font size, line height, or weight by hand.
-- Do not signal state with color alone; pair it with an icon or text label.
-- Do not use `background-200` as a general fill; it is for subtle separation only.
-- Do not mix rounded and sharp corners, or more than two font weights, in one view.
-- Do not swap `gray-*` for `background-*`; they are separate scales.
+- Don’t signal state with color alone; pair it with an icon or text label.
+- Don’t use `background-200` as a general fill; it is for subtle separation only.
+- Don’t mix rounded and sharp corners, or more than two font weights, in one view.
+- Don’t swap `gray-*` for `background-*`; they are separate scales.

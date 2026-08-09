@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
-import { PUBLIC_MAP_RESOURCE_CATEGORY_LABELS } from "@/lib/public-map/resource-categories"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
@@ -60,14 +59,11 @@ export function buildResourceMetadataItems({
     state: item.state,
     country: item.country,
   })
-  const categories = item.resourceCategories
-    .map((category) => PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category])
-    .join(", ")
   const availabilityStatus =
     item.availability && item.availability.status !== "unknown"
       ? item.availability.statusLabel
       : null
-  const items = [location, categories, availabilityStatus].filter(
+  const items = [item.title, location, availabilityStatus].filter(
     (entry): entry is string => Boolean(entry && entry.trim().length > 0)
   )
 
@@ -75,11 +71,13 @@ export function buildResourceMetadataItems({
 }
 
 export function PublicMapListMetadataStrip({
+  className,
   itemKeyPrefix,
   items,
   notes,
   ownerId,
 }: {
+  className?: string
   itemKeyPrefix: string
   items: string[]
   notes: string
@@ -87,7 +85,10 @@ export function PublicMapListMetadataStrip({
 }) {
   return (
     <div
-      className="text-muted-foreground mt-1.5 flex max-w-full items-center gap-2 text-xs"
+      className={cn(
+        "text-muted-foreground mt-1.5 flex max-w-full items-center gap-2 text-sm leading-relaxed",
+        className
+      )}
       {...buildPublicMapOrganizationListCardSurfaceProps({
         ownerId,
         slot: "meta-row",
@@ -95,7 +96,7 @@ export function PublicMapListMetadataStrip({
       })}
     >
       <div
-        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5"
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0"
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
           slot: "location",
@@ -144,7 +145,7 @@ export function PublicMapListViewButton({
       type="button"
       variant="link"
       className={cn(
-        "pointer-events-auto relative z-20 ml-auto h-8 min-w-8 shrink-0 justify-end self-center px-0 py-0 text-right text-[12px] font-medium text-[#06c] no-underline shadow-none",
+        "pointer-events-auto relative z-20 ml-auto h-11 min-w-11 shrink-0 justify-end self-center px-0 py-0 text-right text-sm font-medium text-[#06c] no-underline shadow-none",
         "transition-colors duration-150 ease-out motion-reduce:transition-none",
         "group-focus-within:text-[#0077ed] group-hover:text-[#0077ed]",
         "hover:bg-transparent hover:text-[#0077ed] hover:no-underline",

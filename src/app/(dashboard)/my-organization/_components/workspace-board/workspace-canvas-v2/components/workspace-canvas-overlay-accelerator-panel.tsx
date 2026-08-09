@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { WorkspaceAcceleratorBanner } from "@/features/workspace-accelerator-card"
 import type {
   WorkspaceAcceleratorCardInput,
+  WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorOpenStepRequest,
 } from "@/features/workspace-accelerator-card"
 import type { RoadmapSection } from "@/lib/roadmap"
@@ -60,6 +62,15 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
         : input,
     [input, openStepRequest]
   )
+  const [isModuleViewerOpen, setIsModuleViewerOpen] = useState(false)
+  const handleRuntimeChange = useCallback(
+    (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => {
+      setIsModuleViewerOpen(Boolean(snapshot.isModuleViewerOpen))
+    },
+    []
+  )
+  const showBanner = !requestedModuleId && !isModuleViewerOpen
+
   return (
     <div
       data-workspace-accelerator-drawer-panel="true"
@@ -95,7 +106,11 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
             initialOpenModuleId={requestedModuleId}
             openStepRequest={openStepRequest}
             onOpenStepRequestHandled={onRequestHandled}
+            onRuntimeChange={handleRuntimeChange}
             showEmbeddedClassPicker
+            workspaceDrawerHeader={
+              showBanner ? <WorkspaceAcceleratorBanner /> : null
+            }
           />
         </div>
       )}

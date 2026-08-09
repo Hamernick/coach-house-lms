@@ -15,27 +15,9 @@ import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
+import { RESERVED_PUBLIC_ORGANIZATION_SLUGS } from "@/lib/organization/reserved-public-slugs"
 import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
-
-const RESERVED_SLUGS = new Set([
-  "admin",
-  "api",
-  "login",
-  "signup",
-  "pricing",
-  "billing",
-  "class",
-  "dashboard",
-  "people",
-  "organization",
-  "my-organization",
-  "roadmap",
-  "_next",
-  "public",
-  "favicon",
-  "assets",
-])
 
 function buildOnboardingErrorRedirect({
   intentFocus,
@@ -196,7 +178,7 @@ export async function completeOnboardingAction(form: FormData) {
           })
         )
       }
-      if (RESERVED_SLUGS.has(normalizedSlug)) {
+      if (RESERVED_PUBLIC_ORGANIZATION_SLUGS.has(normalizedSlug)) {
         redirect(
           buildOnboardingErrorRedirect({
             intentFocus,
@@ -291,11 +273,17 @@ export async function completeOnboardingAction(form: FormData) {
     }
   }
 
-  // Update user metadata with onboarding + preference fields.
+  const builderAccessSelectionOnly =
+    intentFocus === "build" && onboardingMode === "post_signup_access"
+  const onboardingUpdatedAt = new Date().toISOString()
+
+  // Builder access selection precedes required organization and account setup.
   const { error: updateUserError } = await supabase.auth.updateUser({
     data: {
-      onboarding_completed: true,
-      onboarding_completed_at: new Date().toISOString(),
+      onboarding_completed: !builderAccessSelectionOnly,
+      onboarding_completed_at: builderAccessSelectionOnly
+        ? null
+        : onboardingUpdatedAt,
       full_name: fullName || null,
       first_name: first || null,
       last_name: last || null,
@@ -305,14 +293,21 @@ export async function completeOnboardingAction(form: FormData) {
       ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       onboarding_intent_focus: intentFocus,
       onboarding_role_interest: roleInterest,
-      ...(intentFocus === "build"
+      ...(intentFocus === "build" && !builderAccessSelectionOnly
         ? {
             workspace_onboarding_stage: 2,
             workspace_onboarding_active: true,
-            workspace_onboarding_started_at: new Date().toISOString(),
+            workspace_onboarding_started_at: onboardingUpdatedAt,
             workspace_onboarding_completed_at: null,
           }
-        : {}),
+        : builderAccessSelectionOnly
+          ? {
+              workspace_onboarding_stage: 2,
+              workspace_onboarding_active: false,
+              workspace_onboarding_started_at: null,
+              workspace_onboarding_completed_at: null,
+            }
+          : {}),
     },
   })
 
@@ -335,12 +330,16 @@ export async function completeOnboardingAction(form: FormData) {
     await trackUserJourneyMilestone({
       userId: user.id,
       orgId: targetOrgId,
-      eventName: "onboarding_completed",
+      eventName: builderAccessSelectionOnly
+        ? "workspace_onboarding_started"
+        : "onboarding_completed",
       journey: "builder_onboarding",
       source: "onboarding_action",
       surface: "onboarding",
       planTier: builderPlanTier,
-      checkpoint: "account_onboarding_completed",
+      checkpoint: builderAccessSelectionOnly
+        ? "workspace_onboarding_started"
+        : "account_onboarding_completed",
       metadata: {
         intentFocus,
         onboardingMode,
@@ -350,6 +349,9 @@ export async function completeOnboardingAction(form: FormData) {
         roleInterest,
       },
     })
+    if (builderAccessSelectionOnly) {
+      redirect("/workspace?source=onboarding_setup")
+    }
     redirect(
       "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
     )

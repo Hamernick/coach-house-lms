@@ -155,6 +155,10 @@ describe("People profile write concurrency", () => {
     const invites = readSource(
       "src/app/actions/organization-access/invites-helpers.ts"
     )
+    const memberDirectory = readSource(
+      "src/features/member-workspace/server/loaders.ts"
+    )
+
     expect(onboarding).toContain("writeOnboardingOrganizationProfile({")
     expect(onboardingWriter).toContain("commitPeopleProfileMutation({")
     expect(onboardingWriter).toContain('.eq("updated_at", snapshot.revision)')
@@ -162,5 +166,10 @@ describe("People profile write concurrency", () => {
       ".upsert(\n        {\n          user_id: targetOrgId"
     )
     expect(invites).toContain("mutateOrganizationPeopleProfile<")
+    expect(memberDirectory).toContain("mutateOrganizationPeopleProfile<")
+    expect(memberDirectory).toContain("...selfExisting")
+    expect(memberDirectory).not.toContain(
+      ".upsert({ user_id: orgId, profile: nextProfile }"
+    )
   })
 })

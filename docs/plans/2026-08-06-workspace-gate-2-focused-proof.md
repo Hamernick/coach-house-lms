@@ -1,7 +1,7 @@
 # Workspace Gate 2 Focused Proof
 
 Date: 2026-08-06
-Status: Isolated candidate locally verified; connected preview proof pending
+Status: Gate 2 proven locally
 Scope: canonical Organization, People, workspace canvas, drawer, persistence,
 future Finance identity, and optimistic rollback contracts
 Non-goals: production writes, full dirty-tree quality approval, Finance UI,
@@ -9,15 +9,15 @@ Non-goals: production writes, full dirty-tree quality approval, Finance UI,
 
 ## Result
 
-The isolated candidate passes full acceptance: `1,695/1,695` executed tests
-across `337/337` files, including every focused file listed below. The passive
-Accelerator autosave regression set separately passes `39/39`:
+The exact focused suite passed `195/195` tests across `35/35` files on the
+current worktree. This verifies Gate 2 evidence item 2:
 
 > Focused Organization, People, canvas, drawer, and optimistic rollback tests
 
 The separate browser matrix is verified in
 [`2026-08-06-workspace-gate-2-browser-proof.md`](./2026-08-06-workspace-gate-2-browser-proof.md).
-Gate 2 remains open for connected RLS and authenticated preview proof.
+Gate 2 is proven. Its focused test set, authenticated browser matrix, and full
+required guardrail set pass on the current worktree.
 
 ## Guardrail Closure
 
@@ -37,7 +37,8 @@ All required Gate 2 checks pass:
 
 The structure, route, and feature failures were resolved through composition
 and responsibility splits. No threshold, allowlist, route limit, or feature
-contract was weakened. Full candidate acceptance passed after those splits.
+contract was weakened. The exact `195/195` focused suite passed again after
+those splits.
 
 ## Coverage
 
@@ -118,5 +119,6 @@ contract was weakened. Full candidate acceptance passed after those splits.
 
 ## Evidence Boundary
 
-This proves the isolated local artifact and required guardrails. It does not
-prove connected RLS, authenticated preview persistence, or production.
+This proof is current-worktree evidence. It proves Gate 2 only; it does not
+prove production, a clean release artifact, or the repository-wide release
+quality gate.

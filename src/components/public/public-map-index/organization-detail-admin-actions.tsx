@@ -22,7 +22,10 @@ import { toast } from "@/lib/toast"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
 
-import { PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME } from "./sidebar-theme"
+import {
+  PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
+} from "./sidebar-theme"
 
 type OrganizationMapProfileAction = "hide" | "delete"
 
@@ -83,7 +86,7 @@ function OrganizationMapAdminActionDialog({
           size="icon"
           disabled={isPending}
           className={cn(
-            "h-8 w-8 rounded-full",
+            PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
             PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
             isDelete && "text-destructive hover:text-destructive"
           )}

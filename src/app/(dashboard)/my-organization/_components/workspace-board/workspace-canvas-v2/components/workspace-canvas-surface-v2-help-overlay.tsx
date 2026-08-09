@@ -35,8 +35,7 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: FocusIcon,
     label: "Focus a card",
-    description:
-      "Double-click a card to center it and fit it in the workspace.",
+    description: "Double-click a card to center it and fit it in the workspace.",
   },
   {
     icon: GripIcon,
@@ -52,7 +51,8 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: ZoomInIcon,
     label: "Zoom",
-    description: "Pinch to zoom, or hold Meta or Control while scrolling.",
+    description:
+      "Pinch to zoom, or hold Meta or Control while scrolling.",
   },
   {
     icon: PanelLeftOpenIcon,

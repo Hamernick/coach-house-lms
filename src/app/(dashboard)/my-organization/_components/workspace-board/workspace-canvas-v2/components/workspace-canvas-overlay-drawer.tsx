@@ -20,6 +20,7 @@ import type { DocumentsTabData } from "@/components/organization/org-profile-car
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { Button } from "@/components/ui/button"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import {
   Drawer,
   DrawerContent,
@@ -64,6 +65,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     placedPersonIds,
     viewerId,
     organizationEditorData,
+    financeInput,
     documentsTab,
     acceleratorInput,
     acceleratorRoadmapSections,
@@ -78,6 +80,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     placedPersonIds: ReadonlySet<string>
     viewerId: string
     organizationEditorData: WorkspaceOrganizationEditorData
+    financeInput: WorkspaceFinanceInput
     documentsTab: DocumentsTabData
     acceleratorInput: WorkspaceAcceleratorCardInput
     acceleratorRoadmapSections: RoadmapSection[]
@@ -359,12 +362,15 @@ export const WorkspaceCanvasOverlayDrawer = memo(
               </Toggle>
             </div>
             <DrawerDescription className="sr-only">
-              Switch between your organization profile, people, documents, and
-              Accelerator.
+              Switch between your organization profile, people, documents,
+              Finance, and Accelerator.
             </DrawerDescription>
             <div
               data-workspace-data-drawer-content-viewport="true"
-              className="flex min-h-0 flex-none flex-col overflow-hidden"
+              className={cn(
+                "flex min-h-0 flex-none flex-col",
+                drawerCollapsed ? "overflow-visible" : "overflow-hidden"
+              )}
               style={{ height: drawerViewportHeight }}
             >
               <WorkspaceDrawerTabs
@@ -382,6 +388,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
                 handleTabChange={handleTabChange}
                 peopleCanvasActions={peopleCanvasActions}
                 organizationEditorData={organizationEditorData}
+                financeInput={financeInput}
                 pendingAcceleratorRequest={pendingAcceleratorRequest}
                 people={people}
                 placedPersonIds={placedPersonIds}

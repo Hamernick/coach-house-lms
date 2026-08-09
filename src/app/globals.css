@@ -976,3 +976,34 @@
     calc(100% - var(--scroll-buffer)) 100%;
   animation-fill-mode: both;
 }
+
+.scroll-fade-effect-y[data-scroll-fade-managed="true"],
+.scroll-fade-effect-x[data-scroll-fade-managed="true"] {
+  animation: none;
+}
+
+.scroll-fade-effect-y[data-scroll-fade-managed="true"] {
+  --top-mask-height: 0px;
+  --bottom-mask-height: 0px;
+}
+
+.scroll-fade-effect-y[data-scroll-fade-start="visible"] {
+  --top-mask-height: var(--mask-height);
+}
+
+.scroll-fade-effect-y[data-scroll-fade-end="visible"] {
+  --bottom-mask-height: var(--mask-height);
+}
+
+.scroll-fade-effect-x[data-scroll-fade-managed="true"] {
+  --left-mask-width: 0px;
+  --right-mask-width: 0px;
+}
+
+.scroll-fade-effect-x[data-scroll-fade-start="visible"] {
+  --left-mask-width: var(--mask-width);
+}
+
+.scroll-fade-effect-x[data-scroll-fade-end="visible"] {
+  --right-mask-width: var(--mask-width);
+}

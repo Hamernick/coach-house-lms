@@ -7,6 +7,10 @@ import type { DocumentsTabData } from "@/components/organization/org-profile-car
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
+import {
+  WorkspaceFinancePanel,
+  type WorkspaceFinanceInput,
+} from "@/features/workspace-finance"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
@@ -56,6 +60,7 @@ export function WorkspaceDrawerTabs({
   handleTabChange,
   peopleCanvasActions,
   organizationEditorData,
+  financeInput,
   pendingAcceleratorRequest,
   people,
   placedPersonIds,
@@ -79,6 +84,7 @@ export function WorkspaceDrawerTabs({
   handleTabChange: (value: string) => void
   peopleCanvasActions: WorkspacePeopleCanvasActions
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   pendingAcceleratorRequest: WorkspaceDataDrawerRequest | null
   people: OrgPersonWithImage[]
   placedPersonIds: ReadonlySet<string>
@@ -116,6 +122,9 @@ export function WorkspaceDrawerTabs({
             onOpen={handleTabOpen}
           >
             Organization
+          </WorkspaceDrawerTabTrigger>
+          <WorkspaceDrawerTabTrigger value="finance" onOpen={handleTabOpen}>
+            Finance
           </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="people" onOpen={handleTabOpen}>
             People
@@ -225,6 +234,14 @@ export function WorkspaceDrawerTabs({
                 }
               />
             </div>
+          ) : null}
+        </TabsContent>
+        <TabsContent
+          value="finance"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+        >
+          {tab === "finance" ? (
+            <WorkspaceFinancePanel input={financeInput} />
           ) : null}
         </TabsContent>
       </div>

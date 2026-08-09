@@ -17,11 +17,7 @@ import {
 } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
 import { toast } from "@/lib/toast"
-import {
-  deletePersonAction,
-  refreshPersonLinkedInImageAction,
-  upsertPersonAction,
-} from "@/actions/people"
+import { deletePersonAction, upsertPersonAction } from "@/actions/people"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { CreatePersonDialog } from "@/components/people/create-person-dialog"
 import { buildPeopleTableColumns } from "@/components/people/people-table-columns"
@@ -148,20 +144,6 @@ function PeopleTableComponent({
     [router]
   )
 
-  const handleRefreshLinkedInPhoto = useCallback(
-    async (person: PersonRow) => {
-      const toastId = toast.loading("Refreshing photo…")
-      const result = await refreshPersonLinkedInImageAction(person.id)
-      if ("error" in result) {
-        toast.error(result.error, { id: toastId })
-      } else {
-        toast.success("Photo updated", { id: toastId })
-        router.refresh()
-      }
-    },
-    [router]
-  )
-
   const columns = useMemo(
     () =>
       buildPeopleTableColumns({
@@ -169,17 +151,9 @@ function PeopleTableComponent({
         people,
         onEditPerson: handleEditPerson,
         onManagerChange: handleManagerChange,
-        onRefreshLinkedInPhoto: handleRefreshLinkedInPhoto,
         onDeletePerson: handleDeletePerson,
       }),
-    [
-      canEdit,
-      handleDeletePerson,
-      handleEditPerson,
-      handleManagerChange,
-      handleRefreshLinkedInPhoto,
-      people,
-    ]
+    [canEdit, handleDeletePerson, handleEditPerson, handleManagerChange, people]
   )
 
   const table = useReactTable({

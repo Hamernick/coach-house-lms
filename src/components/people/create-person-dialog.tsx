@@ -68,10 +68,7 @@ export function CreatePersonDialog({
   const isEditing = Boolean(initial?.id)
   const primaryLabel = isEditing ? "Save changes" : "Add person"
   const submittingLabel = isEditing ? "Saving…" : "Adding…"
-  const submittedSocialLinks = extendedSocialLinksEnabled
-    ? socialLinks
-    : { linkedin: socialLinks.linkedin }
-  const socialLinkError = findPersonSocialLinkError(submittedSocialLinks)
+  const socialLinkError = findPersonSocialLinkError(socialLinks)
   const canSubmit =
     !readOnly &&
     Boolean(name.trim()) &&
@@ -124,7 +121,9 @@ export function CreatePersonDialog({
         name: name.trim(),
         title: title.trim(),
         email: email.trim(),
-        ...submittedSocialLinks,
+        ...(extendedSocialLinksEnabled
+          ? socialLinks
+          : { linkedin: socialLinks.linkedin }),
         category,
         image,
         reportsToId: reportsToId || null,
@@ -186,6 +185,7 @@ export function CreatePersonDialog({
               title={title}
               email={email}
               socialLinks={socialLinks}
+              extendedSocialLinksEnabled={extendedSocialLinksEnabled}
               category={category}
               image={image}
               reportsToId={reportsToId}
@@ -205,7 +205,6 @@ export function CreatePersonDialog({
               onImageChange={setImage}
               onReportsToChange={setReportsToId}
               readOnly={readOnly}
-              extendedSocialLinksEnabled={extendedSocialLinksEnabled}
             />
           </div>
 

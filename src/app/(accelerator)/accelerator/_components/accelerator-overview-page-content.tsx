@@ -2,6 +2,10 @@ import { Empty } from "@/components/ui/empty"
 import { AcceleratorOrgSnapshotStrip } from "@/components/accelerator/accelerator-org-snapshot-strip"
 import { AcceleratorWelcomeBanner } from "@/components/accelerator/accelerator-welcome-banner"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
+import {
+  applyOrganizationSetupAcceleratorProgressOverride,
+  hasSavedOrganizationSetup,
+} from "@/lib/accelerator/organization-setup"
 import { RoadmapOutlineCard } from "@/components/roadmap/roadmap-outline-card"
 import { AcceleratorOverviewRightRail } from "@/components/accelerator/accelerator-overview-right-rail"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -75,7 +79,17 @@ export async function AcceleratorOverviewPageContent() {
       .returns<Array<{ id: string; goal_cents: number | null }>>(),
   ])
 
-  const { groups } = progressSummary
+  const orgProfile = isRecord(orgResult.data?.profile)
+    ? orgResult.data.profile
+    : {}
+  const { groups } = applyOrganizationSetupAcceleratorProgressOverride(
+    progressSummary,
+    hasSavedOrganizationSetup({
+      organizationName:
+        typeof orgProfile["name"] === "string" ? orgProfile["name"] : null,
+      publicSlug: orgResult.data?.public_slug,
+    })
+  )
   const roadmapSections = resolveRoadmapSections(
     orgResult.data?.profile ?? null
   ).map((section) => ({
@@ -99,9 +113,6 @@ export async function AcceleratorOverviewPageContent() {
       sequence: groupIndex * 1000 + moduleIndex,
     }))
   )
-  const orgProfile = isRecord(orgResult.data?.profile)
-    ? orgResult.data.profile
-    : {}
   const organizationTitle = String(orgProfile["name"] ?? "").trim()
   const city = String(orgProfile["address_city"] ?? "").trim()
   const state = String(orgProfile["address_state"] ?? "").trim()

@@ -44,7 +44,7 @@ export function OrganizationListActivityPreview({
         >
           <div className="flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] leading-none">
+              <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-1.5 text-xs leading-none">
                 <span className="font-medium">
                   {programPreview.activityKind}
                 </span>
@@ -57,11 +57,11 @@ export function OrganizationListActivityPreview({
                   </>
                 ) : null}
               </div>
-              <p className="text-foreground mt-1 line-clamp-1 text-xs font-medium">
+              <p className="text-foreground mt-1 line-clamp-1 text-sm font-medium">
                 {programPreview.title}
               </p>
               {programPreview.description || programPreview.subtitle ? (
-                <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                   {programPreview.description || programPreview.subtitle}
                 </p>
               ) : null}
@@ -88,7 +88,7 @@ export function OrganizationListActivityPreview({
               {programPreview.chips.slice(0, 3).map((chip) => (
                 <span
                   key={chip}
-                  className="bg-muted/75 text-muted-foreground inline-flex h-5 max-w-full items-center rounded-full px-1.5 text-[10px] leading-none"
+                  className="bg-muted/75 text-muted-foreground inline-flex h-6 max-w-full items-center rounded-full px-2 text-xs leading-none"
                 >
                   <span className="truncate">{chip}</span>
                 </span>
@@ -133,7 +133,7 @@ export function OrganizationListActivityPreview({
                 )}
               />
               <div className="px-2 py-1.5">
-                <p className="text-foreground line-clamp-1 text-[11px] font-medium">
+                <p className="text-foreground line-clamp-1 text-xs font-medium">
                   {program.title}
                 </p>
               </div>

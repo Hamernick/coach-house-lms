@@ -204,7 +204,7 @@ export function PublicMapDirectoryRail({
           data-public-map-right-rail-section="directory-status-header"
           className="shrink-0"
         >
-          <PublicMapDirectoryStatusHeader count={items.length} />
+          <PublicMapDirectoryStatusHeader />
         </div>
         {searchContext ? (
           <div className="shrink-0">
@@ -219,7 +219,6 @@ export function PublicMapDirectoryRail({
         >
           <div className="flex min-w-0 flex-col gap-3">
             <PublicMapOrganizationList
-              favorites={favorites}
               items={items}
               organizations={organizations}
               selectedItemId={selectedItemId}

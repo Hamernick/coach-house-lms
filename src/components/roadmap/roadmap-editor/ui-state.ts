@@ -1,7 +1,11 @@
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
 
 import { DEFAULT_PLACEHOLDER } from "./constants"
-import { createDraft, isFrameworkSection, resolveRoadmapSectionStatus } from "./helpers"
+import {
+  createDraft,
+  isFrameworkSection,
+  resolveRoadmapSectionStatus,
+} from "./helpers"
 import { type RoadmapDraft } from "./types"
 
 type DeriveRoadmapEditorSectionUiArgs = {
@@ -10,22 +14,38 @@ type DeriveRoadmapEditorSectionUiArgs = {
   drafts: Record<string, RoadmapDraft>
 }
 
-export function deriveRoadmapEditorSectionUi({ sections, activeId, drafts }: DeriveRoadmapEditorSectionUiArgs) {
-  const activeSection = sections.find((section) => section.id === activeId) ?? sections[0]
-  const activeDraft = activeSection ? drafts[activeSection.id] ?? createDraft(activeSection) : null
-  const headerTitle = activeSection ? (isFrameworkSection(activeSection) ? activeSection.templateTitle : activeSection.title) : ""
+export function deriveRoadmapEditorSectionUi({
+  sections,
+  activeId,
+  drafts,
+}: DeriveRoadmapEditorSectionUiArgs) {
+  const activeSection =
+    sections.find((section) => section.id === activeId) ?? sections[0]
+  const activeDraft = activeSection
+    ? (drafts[activeSection.id] ?? createDraft(activeSection))
+    : null
+  const headerTitle = activeSection
+    ? isFrameworkSection(activeSection)
+      ? activeSection.templateTitle
+      : activeSection.title
+    : ""
   const headerSubtitle = activeSection
     ? isFrameworkSection(activeSection)
       ? activeSection.templateSubtitle
       : activeSection.subtitle
     : ""
   const showSectionHeader = Boolean(headerTitle || headerSubtitle)
-  const editorPlaceholder = activeSection?.placeholder ?? activeSection?.subtitleExample ?? DEFAULT_PLACEHOLDER
+  const editorPlaceholder =
+    activeSection?.placeholder ??
+    activeSection?.subtitleExample ??
+    DEFAULT_PLACEHOLDER
   const status: RoadmapSectionStatus = activeSection
     ? resolveRoadmapSectionStatus(activeSection, activeDraft)
     : "not_started"
   const isCalendarSection = activeSection?.id === "board_calendar"
-  const contentMaxWidth = isCalendarSection ? "max-w-none" : "max-w-3xl"
+  const isBudgetSection = activeSection?.id === "budget"
+  const contentMaxWidth =
+    isCalendarSection || isBudgetSection ? "max-w-none" : "max-w-3xl"
 
   return {
     activeSection,
@@ -36,6 +56,7 @@ export function deriveRoadmapEditorSectionUi({ sections, activeId, drafts }: Der
     editorPlaceholder,
     status,
     isCalendarSection,
+    isBudgetSection,
     contentMaxWidth,
   }
 }

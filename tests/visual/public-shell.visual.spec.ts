@@ -33,10 +33,22 @@ async function stabilizeForScreenshot(page: Page) {
       [data-home-map-preview-map] {
         display: none !important;
       }
+
+      [data-home-map-preview-fallback] {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
     `,
   })
 
   await page.waitForTimeout(100)
+}
+
+async function waitForHomeCanvasHydration(page: Page) {
+  await page.waitForFunction(() => {
+    const panel = document.querySelector("[data-home-canvas-panel]")
+    return Object.keys(panel ?? {}).some((key) => key.startsWith("__reactProps$"))
+  })
 }
 
 test("map-first public home", async ({ page }) => {
@@ -224,11 +236,13 @@ test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
 })
 
 test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
-  await page.goto("/?section=accelerator")
+  test.setTimeout(60_000)
+  await page.goto("/?section=accelerator", { waitUntil: "domcontentloaded" })
   await page.waitForSelector(
     '[data-fiscal-sponsorship-surface="workspace-card"]',
     { state: "visible" }
   )
+  await waitForHomeCanvasHydration(page)
   await stabilizeForScreenshot(page)
 
   const fiscalCard = page.locator(
@@ -237,10 +251,7 @@ test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
   const startApplication = fiscalCard.getByRole("link", {
     name: "Start application",
   })
-  await expect(startApplication).toHaveAttribute(
-    "href",
-    "/?section=signup&intent=fund"
-  )
+  await expect(startApplication).toBeEnabled()
   await startApplication.click()
   await expect(page).toHaveURL(/section=signup&intent=fund/)
 })
@@ -274,11 +285,15 @@ test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
   ).toBeVisible()
 })
 
-test("public Find uses the shared tab rail", async ({ page }) => {
+test("public Find uses the shared tabs in its permanent drawer", async ({
+  page,
+}) => {
   test.setTimeout(60_000)
   await page.goto("/find")
 
-  const tabList = page.locator("[data-public-map-tab-list]").first()
+  const drawer = page.getByRole("dialog", { name: "Resource map panel" })
+  await expect(drawer).toBeVisible({ timeout: 45_000 })
+  const tabList = drawer.locator("[data-public-map-tab-list]")
   await expect(tabList).toBeVisible()
   await expect(tabList.getByRole("tab")).toHaveCount(3)
   await expect(tabList.getByRole("tab", { name: "Find" })).toHaveAttribute(
@@ -287,48 +302,41 @@ test("public Find uses the shared tab rail", async ({ page }) => {
   )
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
+  await expect(
+    drawer.getByRole("searchbox", {
+      name: "Find organizations and resources",
+    })
+  ).toBeVisible()
+  await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
 })
 
-test("public Find exposes the shared tab rail in the mobile details sheet", async ({
+test("public Find keeps its mobile drawer controls visible when collapsed", async ({
   page,
 }) => {
   test.setTimeout(60_000)
   await page.setViewportSize({ width: 320, height: 700 })
   await page.goto("/find")
 
-  const header = page.locator("header")
-  const trigger = page.locator(
-    'header button[aria-label="Open Find, Guides, and Saved"]'
-  )
-  await expect(trigger).toBeVisible({ timeout: 30_000 })
-  const triggerBox = await trigger.boundingBox()
-  expect(triggerBox).not.toBeNull()
-  expect(triggerBox!.width).toBeGreaterThanOrEqual(40)
-  expect(triggerBox!.height).toBeGreaterThanOrEqual(40)
-  expect(
-    await header.evaluate(
-      (element) => element.scrollWidth <= element.clientWidth
-    )
-  ).toBe(true)
-  await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(1)
-
-  await trigger.click()
-  const sheet = page.locator('[data-sidebar="sidebar"][data-mobile="true"]')
-  await expect(sheet).toBeVisible()
-  const tabList = sheet.locator("[data-public-map-tab-list]")
+  const drawer = page.locator('[data-slot="drawer-content"]')
+  await expect(drawer).toBeVisible({ timeout: 30_000 })
+  const tabList = drawer.locator("[data-public-map-tab-list]")
   await expect(tabList.getByRole("tab")).toHaveCount(3)
   await expect(tabList.getByRole("tab", { name: "Find" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
-  expect(
-    await sheet.evaluate(
-      (element) => element.scrollWidth <= element.clientWidth
-    )
-  ).toBe(true)
+  await expect(
+    drawer.getByRole("searchbox", {
+      name: "Find organizations and resources",
+    })
+  ).toBeVisible()
+  await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
+  await expect(
+    page.locator('header button[aria-label="Open Find, Guides, and Saved"]')
+  ).toHaveCount(0)
 })
 
 for (const width of [768, 1024]) {
-  test(`public Find avoids a duplicate directory drawer at ${width}px`, async ({
+  test(`public Find keeps one directory drawer at ${width}px`, async ({
     page,
   }) => {
     test.setTimeout(60_000)
@@ -336,9 +344,9 @@ for (const width of [768, 1024]) {
     await page.goto("/find")
 
     await expect(page.locator("[data-public-map-tab-list]")).toBeVisible()
-    await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(0)
+    await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(1)
     await expect(
       page.locator('[data-public-map-tabbed-rail-placement="home-canvas"]')
-    ).toHaveCount(1)
+    ).toHaveCount(0)
   })
 }

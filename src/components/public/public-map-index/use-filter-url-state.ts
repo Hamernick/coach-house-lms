@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 import { type PublicMapGroupFilterKey } from "./category-filter"
 import {
@@ -9,13 +9,14 @@ import {
   resolvePublicMapFilterUrlState,
 } from "./filter-url-state"
 
+const PUBLIC_MAP_FILTER_URL_SYNC_DELAY_MS = 150
+
 export function usePublicMapFilterUrlState({
   onFilterChange,
 }: {
   onFilterChange: () => void
 }) {
   const pathname = usePathname()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const initialFilterState = resolvePublicMapFilterUrlState(
     new URLSearchParams(searchParams.toString())
@@ -25,6 +26,9 @@ export function usePublicMapFilterUrlState({
     initialFilterState.activeGroup
   )
   const filterStateRef = useRef(initialFilterState)
+  const filterUrlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
 
   useEffect(() => {
     const nextFilterState = resolvePublicMapFilterUrlState(
@@ -42,7 +46,16 @@ export function usePublicMapFilterUrlState({
     setActiveGroup(nextFilterState.activeGroup)
   }, [onFilterChange, searchParams])
 
-  const replaceFilterUrl = useCallback(
+  useEffect(
+    () => () => {
+      if (filterUrlSyncTimerRef.current) {
+        clearTimeout(filterUrlSyncTimerRef.current)
+      }
+    },
+    []
+  )
+
+  const replaceFilterHistory = useCallback(
     ({
       nextActiveGroup,
       nextQuery,
@@ -56,33 +69,50 @@ export function usePublicMapFilterUrlState({
         query: nextQuery,
         searchParams: new URLSearchParams(searchParams.toString()),
       })
-      router.replace(nextHref, { scroll: false })
+      filterStateRef.current = resolvePublicMapFilterUrlState(
+        new URL(nextHref, window.location.origin).searchParams
+      )
+      window.history.replaceState(window.history.state, "", nextHref)
     },
-    [pathname, router, searchParams]
+    [pathname, searchParams]
+  )
+
+  const scheduleFilterHistoryReplace = useCallback(
+    (nextQuery: string, nextActiveGroup: PublicMapGroupFilterKey) => {
+      if (filterUrlSyncTimerRef.current) {
+        clearTimeout(filterUrlSyncTimerRef.current)
+      }
+      filterUrlSyncTimerRef.current = setTimeout(() => {
+        filterUrlSyncTimerRef.current = null
+        replaceFilterHistory({ nextActiveGroup, nextQuery })
+      }, PUBLIC_MAP_FILTER_URL_SYNC_DELAY_MS)
+    },
+    [replaceFilterHistory]
   )
 
   const handleQueryChange = useCallback(
     (value: string) => {
       onFilterChange()
       setQuery(value)
-      replaceFilterUrl({
-        nextActiveGroup: activeGroup,
-        nextQuery: value,
-      })
+      scheduleFilterHistoryReplace(value, activeGroup)
     },
-    [activeGroup, onFilterChange, replaceFilterUrl]
+    [activeGroup, onFilterChange, scheduleFilterHistoryReplace]
   )
 
   const handleActiveGroupChange = useCallback(
     (value: PublicMapGroupFilterKey) => {
       onFilterChange()
       setActiveGroup(value)
-      replaceFilterUrl({
+      if (filterUrlSyncTimerRef.current) {
+        clearTimeout(filterUrlSyncTimerRef.current)
+        filterUrlSyncTimerRef.current = null
+      }
+      replaceFilterHistory({
         nextActiveGroup: value,
         nextQuery: query,
       })
     },
-    [onFilterChange, query, replaceFilterUrl]
+    [onFilterChange, query, replaceFilterHistory]
   )
 
   return {

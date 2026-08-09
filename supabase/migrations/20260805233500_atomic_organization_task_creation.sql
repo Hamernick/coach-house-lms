@@ -146,8 +146,6 @@ $$;
 
 drop policy if exists "organization_tasks_insert"
   on public.organization_tasks;
-drop policy if exists "organization_task_assignees_insert"
-  on public.organization_task_assignees;
 
 revoke all on function public.create_organization_task_transition(
   uuid,

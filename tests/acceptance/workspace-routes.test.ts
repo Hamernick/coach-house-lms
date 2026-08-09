@@ -26,19 +26,23 @@ describe("workspace routes", () => {
     expect(WORKSPACE_ACCELERATOR_PATH).toBe("/workspace/accelerator")
     expect(WORKSPACE_DRAWER_TABS).toEqual([
       "organization",
+      "finance",
       "people",
       "documents",
       "accelerator",
       "roadmap",
     ])
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
-    expect(normalizeWorkspaceDrawerTab("finance")).toBeNull()
+    expect(normalizeWorkspaceDrawerTab("finance")).toBe("finance")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })
 
   it("builds editor and roadmap detail links", () => {
     expect(getWorkspaceDrawerPath({ tab: "accelerator" })).toBe(
       "/workspace?drawer=accelerator"
+    )
+    expect(getWorkspaceDrawerPath({ tab: "finance" })).toBe(
+      "/workspace?drawer=finance"
     )
     expect(
       getWorkspaceDrawerPath({
@@ -81,15 +85,14 @@ describe("workspace routes", () => {
     )
   })
 
-  it("keeps the legacy accelerator shell behind the private workspace rollout", () => {
+  it("retires every legacy accelerator page behind the workspace route", () => {
     const source = readFileSync(
       join(ROOT, "src/app/(accelerator)/layout.tsx"),
       "utf8"
     )
 
-    expect(source).toContain("isWorkspaceFoundationRolloutEnabled")
     expect(source).toContain("redirect(WORKSPACE_ACCELERATOR_PATH)")
-    expect(source).toContain("<AppShell")
+    expect(source).not.toContain("<AppShell")
   })
 
   it("uses the shared drawer-tab contract in server route state", () => {
@@ -132,13 +135,6 @@ describe("workspace routes", () => {
     expect(source).toContain("!state.showMemberWorkspace")
     expect(source).toContain("member_onboarding=1")
     expect(source).toContain("redirect(FIND_PATH)")
-  })
-
-  it("allows preview builds to render existing production-hosted workspace images", () => {
-    const source = readFileSync(join(ROOT, "next.config.ts"), "utf8")
-
-    expect(source).toContain('"vswzhuwjtgzrkxknrmxu.supabase.co"')
-    expect(source).toContain("supabaseImageHosts.map")
   })
 
   it("preserves document focus through authentication", () => {

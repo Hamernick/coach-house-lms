@@ -1,12 +1,35 @@
 # Finance, Fundraising, Find, And Safe Release Plan
 
-Status: design review; implementation blocked pending approval
+Status: approved product boundary; staged implementation in progress
 
 Created: 2026-08-04
 
-Last reviewed: 2026-08-04
+Last reviewed: 2026-08-07
 
 Primary owners: product, platform engineering, fiscal sponsorship operations
+
+### 2026-08-07 Current Product Override
+
+The current Finance implementation is one existing workspace drawer with only
+`Activity` and `History`. It has no campaigns, public fundraising pages, new
+Finance pages, payment processing, custody, disbursement, transfers, payouts,
+or in-app money movement.
+
+Activity contains one Raised metric, a compact source-composition rail, and one
+paginated feed combining transactions with Opportunities. History contains the
+complete table of views, clicks, conversions, donations, and imported external
+finance records. Stripe, if separately approved, is read-only external data for
+display; every imported income record requires explicit classification.
+
+Raised is not an opportunity pipeline total. Connected records make it the sum
+of non-draft, explicitly categorized USD inbound funding; until that provider
+is released, existing program `raised_cents` values are the fallback estimate.
+Opportunities, engagement events, outbound records, and other currencies never
+inflate it. The source rail and Activity feed reuse those same read models.
+
+This override controls implementation wherever older sections below describe
+four Finance views, campaigns, public fundraising, Payment Links, Connect
+provisioning, or transaction execution.
 
 ## Decision Summary
 
@@ -24,12 +47,12 @@ The recommended product architecture is:
   rename, or replace `economic-engine`.
 - Add Finance to the existing workspace drawer with Overview, Opportunities,
   Fundraising, and Reporting views.
-- Give independent organizations full-dashboard Stripe connected accounts.
-  Their connected account owns every Product, Price, Payment Link, charge,
-  fee, refund, dispute, balance, and payout.
-- Keep sponsor-held money in an append-only restricted-fund ledger isolated by
-  organization and fiscal project. It remains backend financial truth and does
-  not dictate Finance navigation, visual design, or workflow.
+- Treat Finance as a records and workflow system. Money moves only through
+  external bank and accounting processes; the application never initiates,
+  receives, transfers, refunds, or disburses funds.
+- Store signed documents, requests, approvals, manually entered or imported
+  external transaction records, reconciliation status, and reporting evidence.
+  Every financial value identifies its source and verification state.
 - Keep `/find/[slug]` as the canonical organization profile. Extend it with
   public programs and campaigns instead of creating a second profile system.
 - Keep anonymous map context mounted during signup, replay the pending action
@@ -39,36 +62,30 @@ The recommended product architecture is:
 - Grow public resources in verified cohorts. Never publish raw candidates,
   generated previews, or incomplete records to reach a numeric target.
 
-## Approval Required Before Implementation
+## Approved Scope Boundary
 
-1. Confirm that fiscal-sponsorship grant funds are legally received by Coach
-   House and allocated to the approved organization and project internally.
-2. Confirm Coach House as the fiscal sponsor legal entity and merchant of
-   record before sponsor-held payments work begins.
-3. Confirm that the 7% fee applies only to fiscally sponsored grant allocations
-   and is recorded as a sponsor-ledger effect. It never applies to ordinary
-   fundraising and is never a Stripe application fee.
-4. Complete the visual-reference review before final Finance UI implementation.
-   The current drawer tabs and naming may remain in the meantime.
+The product owner confirmed on 2026-08-07 that counsel approved the current
+fiscal sponsorship document. That approved document remains the canonical legal
+source and is not rewritten by this plan.
 
-Draft 1 of the source-backed counsel and operations packet is
-[`2026-08-06-fiscal-sponsorship-policy-approval-packet.md`](./2026-08-06-fiscal-sponsorship-policy-approval-packet.md).
-It records the current handbook conflict, replacement copy, open fee mechanics,
-ledger examples, and the required sign-off evidence. It is not legal approval.
+The application is limited to:
 
-### Fiscal custody options
+1. applications, documents, signatures, reviews, and immutable audit evidence;
+2. grant requests, approval decisions, and supporting documentation;
+3. staff-recorded external deposits, fees, payments, corrections, and status;
+4. source-labeled summaries, exports, and reporting; and
+5. public campaign or program information that does not imply the application
+   processed a payment.
 
-| Option                       | Behavior                                                                               | Tradeoff                                                                                      |
-| ---------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| A. Sponsor connected account | Sponsor legal entity owns the direct charge; project receives a restricted-fund credit | Recommended; matches fiscal custody, receipts, fee, grants, and reporting                     |
-| B. Project connected account | Project owns the charge and payout                                                     | Satisfies no sponsor custody, but contradicts the current Model C fiscal workflow             |
-| C. Defer sponsored donations | Independent organizations launch first; sponsored campaigns remain disabled            | Safest if legal ownership is unresolved, but leaves the fiscal fundraising journey incomplete |
+The application does not connect bank accounts, create charges, accept
+donations, issue refunds, move money, calculate bank balances, or execute grant
+payments. “Disbursement” in older planning material means an external bank
+payment recorded by authorized staff after it occurs.
 
-If Coach House is the sponsor, Option A uses a sponsor-entity connected account,
-not the platform subscription account. The platform software still never holds
-or transfers the funds; the sponsor legal entity receives them as merchant of
-record. Legal and accounting review must confirm that distinction and the
-grant-only 7% treatment.
+Any later section that describes Stripe Connect, Payment Links, payment
+webhooks, merchant-of-record configuration, custody-account implementation, or
+in-app transfers is superseded by this boundary and retained only as rejected
+historical research. It is not active implementation scope.
 
 ## Visual Reference Protocol
 
@@ -135,12 +152,10 @@ rule, so an admin bypass remains a human risk and must not be used here.
 - The workspace drawer currently exposes Organization, People, Documents, and
   Accelerator. Roadmap exists as a routable drawer state.
 - Existing Fundraising totals are user-editable values on programs. They are
-  not verified donation totals and must not be mixed with a Stripe ledger.
-- Existing Stripe code handles Coach House subscriptions and billing only.
-  There is no Connect account, connected Payment Link, donation ledger,
-  reconciliation, allocation, grant, or finance reporting implementation.
-- Existing Stripe webhook persistence is not a true concurrent claim lock. A
-  separate atomic Connect event inbox is required.
+  not verified bank totals and must remain visibly distinct from reconciled
+  external records.
+- Existing Stripe code handles Coach House subscriptions and billing only. It
+  is not part of the Finance records workflow.
 - Fiscal sponsorship already has applications, budgets, documents, signing,
   reviews, tasks, and audit events. It does not have restricted-fund or grant
   disbursement accounting.
@@ -171,10 +186,10 @@ This belongs in the first small release batch, not inside Finance.
 
 1. Give organizations a truthful, minimal view of money in, money out, funding
    readiness, opportunities, fundraising progress, and reporting work.
-2. Let eligible organizations create a Stripe connected account and accept
-   direct donations without Coach House holding independent-organization funds.
-3. Give fiscally sponsored projects a restricted-fund and grant workflow that
-   matches the sponsor's legal custody.
+2. Let organizations record and report fundraising activity processed through
+   their existing external bank and accounting systems.
+3. Give fiscally sponsored projects a request, approval, external-payment
+   record, and reporting workflow that matches the approved document.
 4. Turn public profiles into useful, shareable program and campaign pages while
    protecting private contacts and preserving map context.
 5. Make `/find` fast, relevant, location-aware, weather-aware, and scalable to
@@ -184,24 +199,26 @@ This belongs in the first small release batch, not inside Finance.
 
 ## Non-Goals
 
-- No platform application fees, destination charges, separate charges and
-  transfers, `transfer_data`, `on_behalf_of`, or platform payout management.
-- No OAuth-based Connect flow.
-- No general ledger, bank reconciliation, payroll, accounts payable, tax
+- No payment processing, Stripe Connect, Payment Links, bank-account linking,
+  transfers, payouts, refunds, or automated disbursement.
+- No storage of routing numbers, full bank account numbers, or online-banking
+  credentials.
+- No general ledger, automated bank reconciliation, payroll, accounts payable, tax
   filing, or replacement for an accounting system in the first release.
 - No AI-dependent public resource publication.
 - No automated grant application submission without human review.
 - No public donor identities by default.
 - No exact user-location storage by default.
 - No raw discovery candidate, synthetic seed, or local preview on `/find`.
-- No generic ledger/accounting UI. The restricted-fund ledger cannot determine
+- No generic ledger/accounting UI. External activity records cannot determine
   Finance tabs, naming, layout, or workflow.
 - No hCaptcha.
 
 ## Product Principles
 
-- Verified money and manual estimates are visibly separate.
-- The legal recipient owns the Stripe account and charge.
+- Reconciled external records and manual estimates are visibly separate.
+- Every amount identifies its external source, as-of time, and verification
+  state; the application never claims to be the money source.
 - Public aggregates are derived projections; donor details stay private.
 - One concept has one canonical route, data model, and saved canvas identity.
 - Finance starts empty and useful at `$0.00`; it does not fabricate activity.
@@ -215,20 +232,20 @@ This belongs in the first small release batch, not inside Finance.
 
 | Persona                              | Finance access                                                    |
 | ------------------------------------ | ----------------------------------------------------------------- |
-| Organization owner                   | Connect Stripe, manage finance roles, campaigns, reports          |
-| Organization admin with finance role | Manage campaigns, ledger views, exports                           |
-| Organization editor                  | Edit public program content; no banking controls                  |
+| Organization owner                   | Manage finance roles, records, campaigns, and reports             |
+| Organization admin with finance role | Manage campaigns, external records, and exports                   |
+| Organization editor                  | Edit public program content; no financial-record controls         |
 | Board or member                      | Read only when explicitly granted                                 |
-| Coach                                | Read assigned-project progress, not donor PII or banking settings |
-| Fiscal sponsor operator              | Manage restricted funds, grants, reporting, disbursements         |
-| Platform admin                       | Operational support; no implicit banking authority                |
-| Anonymous visitor                    | Public profile, public aggregate, donation link                   |
+| Coach                                | Read assigned-project progress, not donor PII or bank references  |
+| Fiscal sponsor operator              | Manage requests, approvals, external-payment records, and reports |
+| Platform admin                       | Operational support; no implicit finance authority                |
+| Anonymous visitor                    | Public profile and approved campaign information                  |
 | Signed-in map member                 | Saves, lists, notes, gated contact actions                        |
 
-`canEditOrganization` is too broad for financial controls. Add explicit
-capabilities such as `finance_view`, `finance_manage`, `finance_connect`, and
-`fiscal_disburse`. Owner status alone may grant `finance_connect`; platform and
-coach roles must not inherit it.
+`canEditOrganization` is too broad for financial records. Add explicit
+capabilities such as `finance_view`, `finance_manage`, and
+`fiscal_record_external_payment`. Platform and coach roles must not inherit
+write authority.
 
 ## Recommended Information Architecture
 
@@ -240,49 +257,48 @@ and shortcuts continue to resolve unchanged.
 
 The compact canvas card shows:
 
-- a large `$0.00` or verified available total;
+- a large source-labeled recorded total;
 - two quiet statistics: Money in and Money out;
 - a small 30-day activity line when real data exists;
-- Stripe readiness as a small status pill;
+- reconciliation status as a small status pill;
 - up to three next actions; and
-- one primary action: Connect Stripe, Create campaign, or Review report.
+- one primary action: Add record, Create campaign, or Review report.
 
-No chart renders for an empty ledger. Disconnected and loading states never
-show `$0.00`; zero is reserved for a freshly verified zero. A stale state shows
-the last verified amount and timestamp.
+No chart renders without recorded activity. Empty and loading states never
+fabricate `$0.00`. A reconciled zero includes its source and as-of time; a stale
+state shows the last reconciled amount and timestamp.
 
-Direct organization balance and sponsored restricted funds are separate
-ownership buckets. They must never be added into one “Available” number. The
-card defaults to Organization Stripe balance; a sponsored-funds section shows
-the sponsor holder and restricted amount distinctly.
+Organization records and sponsored-project records are separate reporting
+buckets. They must never be added into one “Available” number. The card defaults
+to the active organization’s recorded activity; a sponsored-project section
+shows its separately reconciled external amount and source.
 
-The ledger is not a UI specification. Finance surfaces may read approved,
-role-scoped aggregates from it, but the ledger cannot add tabs, change the
-approved visual hierarchy, or expose raw accounting rows by default.
+Storage is not a UI specification. Finance surfaces may read approved,
+role-scoped summaries, but database rows cannot add tabs, change the approved
+visual hierarchy, or expose raw accounting details by default.
 
 The workspace drawer adds Finance and uses four nested views:
 
-| View          | Responsibility                                                                           |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| Overview      | Verified direct balance, separate sponsored funds, activity, Stripe status, next actions |
-| Opportunities | Matches, saved opportunities, applications, deadlines                                    |
-| Fundraising   | Programs, campaigns, source composition, public visibility                               |
-| Reporting     | Transactions, restricted funds, fiscal requests, exports                                 |
+| View          | Responsibility                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| Overview      | Source-labeled totals, separate sponsored records, activity, reconciliation, next actions |
+| Opportunities | Matches, saved opportunities, applications, deadlines                                     |
+| Fundraising   | Programs, campaigns, source composition, public visibility                                |
+| Reporting     | External transaction records, fiscal requests, approvals, exports                         |
 
-Transactions are a section and drill-down inside Overview and Reporting, not a
-fifth top-level tab. Stripe settings live behind the status/action menu.
+External records are a section and drill-down inside Overview and Reporting,
+not a fifth top-level tab. There is no bank setup or payment control.
 
-The connection control is a single restrained Stripe-branded button, not a bank
-form. Copy progresses through Set up Stripe, Continue Stripe setup, Stripe
-connected, and Review Stripe requirements. Stripe-hosted onboarding collects
-the bank account. A public-visibility switch appears once per campaign or
-approved aggregate, beside its preview; the same switch is not repeated on the
-card, Overview, and public profile.
+The record control supports manual entry and approved file import. It records
+the external source, effective date, amount, type, reference, reconciliation
+state, and evidence without collecting bank credentials. A public-visibility
+switch appears once per campaign or approved summary, beside its preview; the
+same switch is not repeated on the card, Overview, and public profile.
 
 Next-action rows use compact status pills for blocked, ready, due soon, in
 progress, and complete. Clicking an opportunity action opens the reusable
-opportunity node. Clicking a Stripe requirement resumes hosted onboarding.
-Clicking a fiscal request deep-links to its existing fiscal workflow. The UI
+opportunity node. Clicking a fiscal request deep-links to its existing fiscal
+workflow. Recording an external payment opens a source-and-evidence form. The UI
 does not turn inferred next actions into saved tasks unless the user explicitly
 assigns or creates one.
 
@@ -324,9 +340,10 @@ separate application-stage record instead of creating a second finder schema.
   authentication, verify authorization, replay the pending action once, and
   return to the same profile, zoom, bounds, filters, and drawer state.
 
-Public program pages include description, location/service area, goal,
-Stripe-verified raised aggregate, source composition, progress, updates, and a
-Donate action when the campaign is active. They never include donor PII.
+Public program pages include description, location/service area, goal, an
+approved source-labeled aggregate, source composition, progress, updates, and
+an optional externally managed campaign link. They never include donor PII or
+imply that Coach House processed a payment.
 
 The guest avatar opens the fast in-map sign-in/signup overlay. The signed-in
 avatar opens a compact private My Map profile with Lists, Saved, recent items,
@@ -356,12 +373,12 @@ flowchart LR
   Workspace --> FinanceAPI[Finance server actions and APIs]
   Find --> PublicProjection[Public aggregate projection]
   FinanceAPI --> Postgres[(Supabase Postgres and RLS)]
-  FinanceAPI --> StripeConnect[Stripe Connect]
-  StripeConnect --> ConnectedAccount[Legal recipient connected account]
-  StripeConnect --> ConnectWebhook[Dedicated Connect webhook]
-  ConnectWebhook --> Inbox[Atomic event inbox]
-  Inbox --> Ledger[Immutable donation ledger]
-  Ledger --> Aggregates[Campaign and finance aggregates]
+  Bank[External bank and accounting systems] --> Evidence[Statement, receipt, or reference]
+  Evidence --> Entry[Authorized entry or file import]
+  Entry --> FinanceAPI
+  Entry --> Review[Validation and review]
+  Review --> Records[(Finance activity records)]
+  Records --> Aggregates[Source-labeled finance summaries]
   Aggregates --> PublicProjection
   NWS[NWS weather API] --> WeatherCache[Coarse weather cache]
   WeatherCache --> Relevance[Map relevance, never publication]
@@ -369,114 +386,66 @@ flowchart LR
   Relevance --> Find
 ```
 
-### Payment ownership
+### External record flow
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f4f4f5", "primaryTextColor": "#18181b", "primaryBorderColor": "#a1a1aa", "lineColor": "#71717a", "secondaryColor": "#fafafa", "tertiaryColor": "#ffffff", "fontFamily": "Geist, ui-sans-serif, system-ui"}}}%%
-flowchart TD
-  Campaign{Campaign type}
-  Campaign -->|Independent organization| OrgAccount[Organization connected account]
-  Campaign -->|Fiscally sponsored project| SponsorAccount[Sponsor connected account]
-  OrgAccount --> DirectCharge[Connected-account direct charge]
-  SponsorAccount --> SponsorCharge[Connected-account direct charge]
-  DirectCharge --> OrgLedger[Organization donation ledger]
-  SponsorCharge --> RestrictedLedger[Project restricted-fund ledger]
-  RestrictedLedger --> GrantRequest[Grant request]
-  GrantRequest --> Approval[Sponsor approval]
-  Approval --> Disbursement[Recorded grant disbursement]
+flowchart LR
+  External[External bank or accounting activity] --> Evidence[Source evidence]
+  Evidence --> Record[Authorized finance record]
+  Record --> Review[Reconciliation review]
+  Review --> Summary[Private reporting summary]
+  Summary --> Public[Optional approved public projection]
+  Request[Grant request] --> Approval[Sponsor approval]
+  Approval --> BankPayment[External bank payment]
+  BankPayment --> PaymentRecord[Recorded external payment]
+  PaymentRecord --> Summary
 ```
 
-Coach House platform billing remains isolated from Connect donations. Use a
-separate route, secret, event inbox, database namespace, monitoring, and replay
-tool. Never infer donation state from the existing subscription webhook.
+Existing Coach House subscription billing stays isolated from Finance. No
+subscription webhook or payment object supplies Finance activity.
 
-## Stripe Connect Design
+## Finance Records Design
 
-### Account creation
-
-Use Accounts v1 controller properties supported by the installed Stripe SDK:
-
-- `controller.fees.payer = account`
-- `controller.losses.payments = stripe`
-- `controller.requirement_collection = stripe`
-- `controller.stripe_dashboard.type = full`
-
-Do not set mixed legacy account `type`. Product copy must say that Coach House
-creates a full-dashboard connected account; it must not claim to link an
-arbitrary existing Stripe account.
-
-The source-backed request, webhook, country, environment, and upgrade contract
-is [`2026-08-06-stripe-connect-contract-and-environments.md`](./2026-08-06-stripe-connect-contract-and-environments.md).
-The installed SDK can express this request, but it must be upgraded in an
-isolated compatibility slice before Connect implementation. Accounts v2 is not
-required for the first release.
-
-Prefill only safe organization name, website, support email, and country after
-user confirmation. Request only the payment capabilities supported for that
-country and the campaign's payment methods; never hardcode a capability set
-across unsupported countries.
-
-Only an authenticated owner with `finance_connect` can provision or resume
-onboarding. Provisioning is idempotent per organization, environment, and legal
-recipient. Account Link URLs are single-use secrets and are never stored,
-logged, emailed, or placed in analytics.
-
-Use configured HTTPS application URLs for `return_url` and `refresh_url`; never
-trust an incoming Host header. On return, retrieve the account and inspect its
-requirements, `details_submitted`, `charges_enabled`, and `payouts_enabled`.
-Stripe states that returning from onboarding is not proof of completion.
-Persist only sanitized readiness: capability status, currently/eventually due
-field names, disabled reason, mode, and last synchronization time. Do not store
-identity documents or bank details.
+```mermaid
+sequenceDiagram
+  participant Staff as Authorized staff or importer
+  participant Source as Source evidence
+  participant External as External bank or accounting system
+  participant Entry as Record entry or import
+  participant Review as Review queue
+  participant Record as Reconciled finance record
+  participant Summary as Finance and approved public summary
+  Staff->>Source: Attach evidence
+  External->>Source: Supply external activity reference
+  Source->>Entry: Enter or import
+  Entry->>Review: Validate and stage
+  Review-->>Entry: Request correction
+  Review-->>Staff: Return review result
+  Review->>Record: Approve and reconcile
+  Record->>Summary: Aggregate and invalidate
+```
 
 ### Planned server contracts
 
-Paths may become authenticated server actions where repository conventions make
-that safer, but the same inputs, authorization, idempotency, and response states
-remain required.
+Use authenticated server actions that repeat organization, role, and project
+authorization. Browser clients never write authoritative summaries directly.
 
-| Contract                                        | Responsibility                                             | Authorization                    |
-| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------- |
-| `POST /api/stripe/connect/account`              | Idempotently create the legal recipient account            | `finance_connect`                |
-| `POST /api/stripe/connect/onboarding`           | Create one single-use Account Link                         | `finance_connect`                |
-| `GET /api/stripe/connect/return`                | Retrieve Stripe state and redirect to trusted Finance UI   | authenticated owner/admin        |
-| `POST /api/stripe/connect/refresh`              | Replace an expired/visited onboarding link                 | `finance_connect`                |
-| `GET /api/stripe/connect/status`                | Return sanitized readiness and requirements category       | `finance_view`                   |
-| `POST /api/stripe/connect/payment-links`        | Create Product, Price, and Payment Link in account context | `finance_manage`                 |
-| `GET /api/stripe/connect/payment-links`         | List only tracked or eligible connected-account links      | `finance_manage`                 |
-| `POST /api/stripe/connect/payment-links/select` | Verify and assign an existing link                         | `finance_manage`                 |
-| `POST /api/stripe/connect/reconcile`            | Queue one scoped reconciliation                            | `finance_manage` plus rate limit |
-| `POST /api/stripe/connect/webhook`              | Verify and ingest Connect events                           | Stripe signature only            |
+| Contract                       | Responsibility                                              | Authorization                              |
+| ------------------------------ | ----------------------------------------------------------- | ------------------------------------------ |
+| `createFinanceRecordAction`    | Record one external activity item and its source            | `finance_manage`                           |
+| `importFinanceRecordsAction`   | Validate and stage an approved CSV import                   | `finance_manage`                           |
+| `reviewFinanceImportAction`    | Approve or reject a staged import                           | `finance_manage` plus separation of duties |
+| `reconcileFinanceRecordAction` | Mark a record reconciled with evidence and as-of time       | `finance_manage`                           |
+| `createGrantRequestAction`     | Submit a documented request without moving funds            | authorized fiscal applicant                |
+| `decideGrantRequestAction`     | Approve, modify, defer, or deny a request                   | authorized sponsor operator                |
+| `recordExternalPaymentAction`  | Record an externally executed bank payment and reference    | authorized sponsor operator                |
+| `publishFinanceSummaryAction`  | Publish an approved aggregate without private record detail | `finance_manage`                           |
 
-All organization IDs come from validated input and active membership, never a
-client-trusted cookie alone. Mutations use stable error codes, structured
-sanitized logs, and idempotency keys. No route returns secret account fields,
-donor payment details, or a reusable onboarding URL.
-
-### Campaign and Payment Link creation
-
-Every campaign Product, custom-unit Price, and Payment Link is created using
-the connected-account request context. Payment Links use donation presentation
-and connected-account branding. Store stable Stripe object IDs, not the account
-link onboarding URL.
-
-Campaign activation requires:
-
-- an active, matching connected account and live/test environment;
-- `details_submitted`, charges enabled, and payouts enabled;
-- a public eligible program or project;
-- valid title, currency, goal, and public copy;
-- successful Product, Price, and Payment Link creation; and
-- a durable local campaign record.
-
-No Connect application fee is created. The connected account pays Stripe fees,
-refunds, and disputes under direct-charge behavior.
-
-For a direct organization campaign, the organization is merchant of record and
-controls refunds, disputes, payout settings, and payouts in its full Stripe
-Dashboard. For a sponsored campaign, those responsibilities belong to the
-sponsor legal entity. Coach House software exposes status and reconciliation;
-it does not initiate platform refunds, transfers, or payouts.
+All organization and project IDs come from validated input and active access,
+never a client-trusted cookie alone. Mutations use expected revisions, stable
+error codes, structured sanitized logs, and immutable audit events. No route
+returns bank credentials, full account numbers, or private supporting evidence.
 
 ### Campaign contract
 
@@ -485,126 +454,50 @@ fiscal project, one currency, one funding model, and one legal recipient.
 
 Required fields and rules:
 
-| Field           | Rule                                                                           |
-| --------------- | ------------------------------------------------------------------------------ |
-| Title and slug  | Nonempty; slug unique within organization                                      |
-| Budget          | Integer minor units, zero or greater                                           |
-| Goal            | Integer minor units, greater than zero                                         |
-| Currency        | Supported ISO currency; immutable after money is received                      |
-| Dates           | Start is not after end; timezone-independent date semantics                    |
-| Visibility      | Draft, private, unlisted, or public                                            |
-| Status          | Draft, setup, active, paused, ended, funded, or archived                       |
-| Donation bounds | Minimum greater than zero; maximum not below minimum; suggestion within bounds |
-| Amount mode     | Fixed presets or donor-selected only where the account/currency supports it    |
-| Stripe IDs      | Immutable once financial history exists; replacements are versioned            |
+| Field          | Rule                                                                              |
+| -------------- | --------------------------------------------------------------------------------- |
+| Title and slug | Nonempty; slug unique within organization                                         |
+| Budget         | Integer minor units, zero or greater                                              |
+| Goal           | Integer minor units, greater than zero                                            |
+| Currency       | Supported ISO currency; immutable after activity is recorded                      |
+| Dates          | Start is not after end; timezone-independent date semantics                       |
+| Visibility     | Draft, private, unlisted, or public                                               |
+| Status         | Draft, setup, active, paused, ended, funded, or archived                          |
+| External link  | Optional approved URL managed outside Coach House; never treated as payment proof |
 
-Store Product, Price, Payment Link, campaign, connected-account, environment,
-and schema-version correlation. Never trust metadata by itself: cross-check the
-event account, tracked link, campaign mapping, currency, mode, and Stripe object
-ownership.
+Store campaign identity, organization/project scope, public state, goal, external
+link, and schema version. Raised, refunded, fee, net, and as-of values come only
+from authorized external records. They are never inferred from a link or edited
+as unsourced campaign totals. Visual progress clamps at 100%, while text can show
+over-goal activity accurately.
 
-Raised, refunded, disputed, net, donor count, and last-sync values are derived
-read-model fields. They are not client-editable campaign columns. Visual
-progress clamps at 100% but text continues to show overfunding accurately.
+## Fiscal Sponsorship Records
 
-An authorized owner may select an existing Payment Link from the connected
-account. Retrieve it using connected-account context and verify it is active,
-supported, same currency/mode, not assigned incompatibly, and owned by that
-account. Never accept a pasted URL as proof. Archive campaigns without deleting
-financial history; deactivate or replace links through an explicit versioned
-workflow.
+The application extends the approved signing workflow without moving money:
 
-### Webhook and ledger
-
-Create a Connect-scoped webhook. Each connected event includes the originating
-account. Validate its ID and `livemode` against a persisted connection before
-processing.
-
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f4f4f5", "primaryTextColor": "#18181b", "primaryBorderColor": "#a1a1aa", "lineColor": "#71717a", "secondaryColor": "#fafafa", "tertiaryColor": "#ffffff", "fontFamily": "Geist, ui-sans-serif, system-ui"}}}%%
-sequenceDiagram
-  participant Donor
-  participant Link as Connected Payment Link
-  participant Stripe
-  participant Hook as Connect webhook
-  participant Inbox as Atomic event inbox
-  participant Ledger as Donation ledger
-  participant UI as Finance and public aggregate
-
-  Donor->>Link: Donate
-  Link->>Stripe: Direct charge on connected account
-  Stripe-->>Donor: Receipt and result
-  Stripe->>Hook: Signed connected-account event
-  Hook->>Inbox: Insert and atomically claim event
-  Inbox->>Ledger: Apply idempotent effect
-  Ledger->>UI: Recompute aggregate and invalidate tags
-  Hook-->>Stripe: 2xx after durable handling
-```
-
-The event inbox supports `pending`, `processing`, `processed`, and `failed`,
-with attempts, locked time, processed time, last error, connected account,
-environment, and event creation time. An RPC or transaction atomically claims
-work. Effects have unique keys so duplicates, replays, and out-of-order events
-cannot double-count.
-
-Listen for account status, payment success, refunds, disputes, and Payment Link
-changes. Store append-only ledger effects; derive aggregates from the ledger.
-Never rewrite a successful donation row to represent a refund.
-
-Subscribe only to event types the processor uses. The initial matrix covers:
-
-| Event family                                     | Purpose                                              |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `account.updated`, deauthorization where emitted | Readiness, requirements, disabled state              |
-| `payment_link.updated`                           | Active/inactive link state                           |
-| Checkout completion and async success/failure    | Correlation and delayed methods                      |
-| `payment_intent.succeeded` and failure           | Canonical donation status                            |
-| Charge and refund events                         | Charge identity, partial/multiple/full refunds       |
-| Dispute create/update/close                      | Open, won, and lost dispute effects                  |
-| `payout.failed`                                  | Connected-account remediation; not campaign spending |
-
-The canonical donation identity is connected account plus PaymentIntent. Charge,
-Checkout Session, refund, dispute, and event IDs have their own composite unique
-constraints and enrich that donation without creating duplicates.
-
-Nightly reconciliation reads only tracked campaign objects in tracked connected
-accounts. It never imports unrelated revenue from the account.
-Also queue a scoped run after assigning an existing Payment Link, a recoverable
-webhook failure, an authorized operator request, or a detected stale sync.
-Paginate, respect Stripe limits, upsert idempotently, retain run/findings, and
-never replace newer verified state with an older response.
-
-## Fiscal Sponsorship Accounting
-
-The recommended model extends the existing Model C workflow:
-
-1. Sponsor owns the Stripe campaign and charge.
-2. Webhook posts a gross restricted-fund credit for the project.
-3. Stripe fee, refund, and dispute effects post separately.
-4. For a fiscally sponsored grant award only, the contractual 7% fee posts as a
-   separate sponsor-ledger effect. Ordinary fundraising posts no 7% effect.
-5. The project submits a grant request with amount, purpose, budget lines, and
+1. Staff records an externally received contribution or award with source
+   evidence.
+2. Corrections, fees, and reversals are separate records; history is never
+   rewritten.
+3. The project submits a grant request with amount, purpose, budget lines, and
    supporting documents.
-6. Sponsor staff reviews eligibility and available restricted balance.
-7. Approval records the decision; disbursement records the external payment
-   reference. Coach House does not simulate the bank transfer in v1.
-8. Project reporting links expenditures and outcomes to the grant period.
+4. Sponsor staff approves, modifies, defers, or denies the request.
+5. Authorized staff records the external bank payment only after it occurs,
+   including date, amount, method, reference, evidence, and reconciliation state.
+6. Project reporting links expenditures and outcomes to the approved period.
 
-Available restricted funds are calculated, never manually typed:
-
-`gross restricted credits - refunds - disputes - Stripe fees - applicable grant-allocation fees - approved disbursements`
-
-All corrections are compensating entries. Every allocation, request, approval,
-rejection, and disbursement emits a fiscal audit event.
+The application may calculate a display summary from reconciled records, but it
+must label the source and as-of time and must never present that summary as a
+bank balance. Every request, decision, external-payment record, correction, and
+reporting event emits an immutable audit event.
 
 Finance metrics are explicit:
 
-- Available: Stripe's connected-account available balance for direct campaigns
-  only.
-- In: succeeded mapped campaign payments for the selected period, labeled gross
-  or net of refunds.
-- Out: only the explicitly selected category, such as refunds, connected-account
-  payouts, or recorded sponsored disbursements.
+- Recorded total: source-labeled external activity through the selected as-of
+  time; never called a bank or available balance.
+- In: reconciled external inflow records for the selected period.
+- Out: reconciled external fee, reversal, or payment records for the selected
+  period.
 - Source composition: direct donations, grants, earned revenue, and other. It
   reuses the accessible segmented visual primitive, not Accelerator completion
   meaning.
@@ -614,20 +507,20 @@ Finance metrics are explicit:
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f4f4f5", "primaryTextColor": "#18181b", "primaryBorderColor": "#a1a1aa", "lineColor": "#71717a", "secondaryColor": "#fafafa", "tertiaryColor": "#ffffff", "fontFamily": "Geist, ui-sans-serif, system-ui"}}}%%
 erDiagram
-  ORGANIZATIONS ||--o| ORGANIZATION_STRIPE_ACCOUNTS : owns
   ORGANIZATIONS ||--o{ FUNDRAISING_CAMPAIGNS : creates
+  ORGANIZATIONS ||--o{ FINANCE_RECORD_SOURCES : defines
   PROGRAMS ||--o{ FUNDRAISING_CAMPAIGNS : funds
-  ORGANIZATION_STRIPE_ACCOUNTS ||--o{ FUNDRAISING_CAMPAIGNS : processes
-  FUNDRAISING_CAMPAIGNS ||--o{ DONATION_LEDGER_ENTRIES : receives
+  ORGANIZATIONS ||--o{ FINANCE_RECORDS : records
+  FINANCE_RECORD_SOURCES ||--o{ FINANCE_RECORDS : labels
+  FUNDRAISING_CAMPAIGNS ||--o{ FINANCE_RECORDS : categorizes
   FUNDRAISING_CAMPAIGNS ||--o| PUBLIC_CAMPAIGN_AGGREGATES : projects
-  DONATION_LEDGER_ENTRIES }o--o| PRIVATE_DONORS : references
   ORGANIZATIONS ||--o{ FINANCE_IMPORT_BATCHES : imports
-  FINANCE_IMPORT_BATCHES ||--o{ EXTERNAL_FINANCE_ENTRIES : contains
-  FISCAL_SPONSORSHIP_PROJECTS ||--o| RESTRICTED_FUNDS : owns
-  ORGANIZATIONS ||--o{ RESTRICTED_FUNDS : isolates
-  RESTRICTED_FUNDS ||--o{ RESTRICTED_FUND_ENTRIES : records
+  FINANCE_IMPORT_BATCHES ||--o{ FINANCE_RECORDS : contains
+  FINANCE_RECORDS ||--o{ FINANCE_RECORD_EVIDENCE : supports
+  FINANCE_RECORDS ||--o{ PRIVATE_DONORS : references
+  FISCAL_SPONSORSHIP_PROJECTS ||--o{ FINANCE_RECORDS : scopes
   FISCAL_SPONSORSHIP_PROJECTS ||--o{ GRANT_REQUESTS : requests
-  GRANT_REQUESTS ||--o{ DISBURSEMENT_RECORDS : produces
+  GRANT_REQUESTS ||--o{ EXTERNAL_PAYMENT_RECORDS : documents
   GRANT_REQUESTS ||--o{ REPORTING_PERIODS : requires
   ORGANIZATIONS ||--o{ ORGANIZATION_OPPORTUNITY_MATCHES : receives
   OPPORTUNITIES ||--o{ ORGANIZATION_OPPORTUNITY_MATCHES : creates
@@ -638,24 +531,19 @@ erDiagram
 
 Recommended private tables:
 
-- `organization_stripe_accounts`
 - `fundraising_campaigns`
-- `stripe_connect_events`
-- `donation_ledger_entries`
-- `private_donors`
-- `reconciliation_runs` and `reconciliation_findings`
-- `finance_import_batches` and `external_finance_entries`
+- `finance_records` and `finance_record_evidence`
+- `finance_import_batches`, `reconciliation_runs`, and
+  `reconciliation_findings`
 - `program_budget_versions` and `program_budget_lines`
-- `restricted_funds` and `restricted_fund_entries`
-- `fund_allocations`
-- `grant_requests` and `disbursement_records`
+- `grant_requests` and `external_payment_records`
 - `reporting_periods` and `reporting_submissions`
 - the existing planned `opportunities` and `organization_opportunity_matches`,
   plus a separate application-stage table
 - `map_lists` and `map_list_items`
 
-Every `restricted_funds` and `restricted_fund_entries` row carries immutable
-`organization_id` and `fiscal_sponsorship_project_id` ownership. Composite
+Every fiscal `finance_records` and `external_payment_records` row carries
+immutable `organization_id` and `fiscal_sponsorship_project_id` ownership. Composite
 foreign keys ensure the project belongs to that organization; the ownership
 columns and every RLS lookup foreign key are indexed. Organization members can
 read only their permitted organization aggregates or rows. Direct browser
@@ -663,72 +551,72 @@ writes are denied. Only explicitly authorized sponsor operators may cross an
 organization boundary, and every mutation is audited.
 
 Create a deliberately narrow public campaign view or security-definer RPC with
-title, slug, description, verified gross/net aggregate chosen for display,
-goal, progress, image, public update, and active Payment Link URL. It must not
-expose connected-account IDs, donor IDs, email, phone, fees, disputes, internal
-notes, account requirements, or grant records.
+title, slug, description, approved source-labeled aggregate, goal, progress,
+image, public update, and optional externally managed campaign URL. It must not
+expose record evidence, donor identity, email, phone, fees, internal notes,
+references, or grant records.
 
 All monetary columns are integer minor units with an ISO currency. All event
-times are UTC `TIMESTAMPTZ`. Uniqueness includes environment and connected
-account where Stripe IDs can overlap between modes or accounts.
+times are UTC `TIMESTAMPTZ`. Import fingerprints prevent duplicate external
+records within an organization, source, and reporting period.
 Foreign keys restrict deletion once financial history exists. Organizations,
-programs, campaigns, connections, donations, imports, and fiscal funds archive
-or detach display relationships without cascading away ledger evidence. Stripe
-identity fields become immutable after creation.
+programs, campaigns, imports, finance records, and fiscal records archive or
+detach display relationships without cascading away audit evidence. Source,
+scope, amount, currency, and effective-date fields become immutable after
+reconciliation; corrections use linked replacement records.
 
 Existing `programs.raised_cents` remains explicitly manual/legacy until retired.
-Verified UI reads only ledger-derived aggregates.
+Reconciled UI reads only source-labeled record aggregates.
 
 ### Financial truth layers
 
-The user may combine app donations with grants, earned revenue, and other data,
+The user may combine external donations with grants, earned revenue, and other data,
 but the provenance stays visible:
 
-| Layer                       | Source                                       | Editable                      | May count as Stripe-verified donations |
-| --------------------------- | -------------------------------------------- | ----------------------------- | -------------------------------------- |
-| Stripe donation ledger      | Signed events and scoped reconciliation      | No; compensating entries only | Yes                                    |
-| Sponsored-fund ledger       | Sponsor campaign and approved fiscal effects | No; compensating entries only | Shown separately                       |
-| External finance entries    | Manual entry or validated CSV import         | Yes with audit history        | No                                     |
-| Legacy program raised value | Existing editable program field              | Yes                           | No; migrate or retire                  |
+| Layer                       | Source                                   | Editable                               | Display treatment                  |
+| --------------------------- | ---------------------------------------- | -------------------------------------- | ---------------------------------- |
+| Reconciled finance records  | External evidence plus authorized review | Corrections use linked records         | Source and as-of time required     |
+| Sponsored-project records   | External evidence plus sponsor review    | Corrections use linked records         | Shown separately by project        |
+| Draft/imported records      | Manual entry or validated CSV import     | Yes until reconciled, with audit trail | Never labeled reconciled           |
+| Legacy program raised value | Existing editable program field          | Yes                                    | Manual estimate; migrate or retire |
 
 CSV imports require a preview, column mapping, currency/date validation,
 duplicate fingerprinting, source label, import batch, actor, and rollback before
-commit. Imported rows never alter the Stripe donation aggregate. Public source
+commit. Imported rows never become reconciled without authorized review. Public source
 composition is a derived aggregate with per-source visibility controls; a
 single organization-level switch may publish the approved composition and
 campaign total, but never private rows, donors, grant notes, or bank data.
 
-Donation net raised is derived as successful mapped payments minus successful
-refunds, open disputes, and lost disputes; a won dispute restores the amount.
-Failed, canceled, unpaid, unrelated-link, wrong-currency, duplicate, and
-wrong-environment activity never counts.
+Recorded net activity is derived from reconciled inflow, fee, reversal, and
+external-payment records in one currency and period. Draft, rejected, duplicate,
+unsupported-currency, missing-source, or out-of-period records never count.
 
 ## Security, Privacy, And RLS
 
 - Enable RLS on every table in its creating migration.
 - Anonymous users read only the public campaign projection and approved public
   resource fields.
-- Organization finance viewers read aggregates and allowed ledger columns.
-- Restricted-fund tables enforce indexed organization/project ownership with
-  RLS; no organization member can read or mutate another organization's funds.
+- Organization finance viewers read approved summaries and allowed record fields.
+- Fiscal finance records enforce indexed organization/project ownership with
+  RLS; no organization member can read or mutate another organization's records.
 - Donor PII requires a separate permission and is never available to coaches by
   default.
-- Only finance owners/admins create accounts, campaigns, exports, and reports.
-- Only sponsor operators approve grants or record disbursements.
+- Only finance owners/admins create finance records, campaigns, exports, and reports.
+- Only sponsor operators approve grants or record external payments.
 - Server actions repeat authorization; UI visibility is not authorization.
-- Browser clients cannot insert events/donations, mutate Stripe identity or
-  aggregate fields, assign accounts, or write reconciliation results.
-- Service-role financial writes are confined to verified webhook,
-  reconciliation, and narrowly authorized server paths.
+- Browser clients cannot mark records reconciled, mutate summaries, cross
+  organization/project scope, or write review results directly.
+- Service-role financial writes are confined to authorized import,
+  reconciliation, summary, and audit paths.
 - Membership RLS prevents self-assignment, role escalation, cross-organization
-  account assignment, and connected-account reuse.
-- Connect secrets remain server-only. Verify webhook signatures against the raw
-  body and the dedicated Connect secret.
-- Enforce trusted origins/CSRF protection for browser mutations and validate
-  Stripe ID formats before connected-account requests.
-- Retain a payload checksum and minimal replay-safe fields rather than complete
-  webhook payloads or payment details.
-- Rate-limit signup, contact reveal, save replay, donation-link creation, and
+  record assignment, and cross-project reuse.
+- Bank credentials are never collected; evidence access remains server-authorized
+  and private.
+- Enforce trusted origins and CSRF protection; validate currency, dates,
+  references, evidence, and scope before writes.
+- Retain file hashes and minimal source metadata rather than bank credentials or
+  complete statements when narrower evidence is sufficient.
+- Rate-limit signup, contact reveal, save replay, record imports, and
   exports by user and IP risk signal.
 - Redact protected contact data before public JSON serialization. CSS hiding is
   not protection.
@@ -882,19 +770,18 @@ results through pagination, so marker relevance never hides discoverability.
 | Data                         | Strategy                                               |
 | ---------------------------- | ------------------------------------------------------ |
 | Auth and finance permissions | `no-store`; never shared cache                         |
-| Stripe account readiness     | fresh retrieve for mutations; short private read cache |
-| Finance aggregates           | tagged server cache after ledger commit                |
+| Finance record details       | `no-store` for writes and sensitive evidence           |
+| Finance summaries            | tagged server cache after record/review commit         |
 | Public organization/profile  | tagged cache invalidated after approved save           |
-| Public campaign aggregate    | tagged cache invalidated after ledger effect           |
+| Public campaign aggregate    | tagged cache invalidated after approved summary change |
 | Map spatial index            | short public cache with ETag/stale-while-revalidate    |
 | Resource details             | longer tagged cache, invalidated on promotion/update   |
 | NWS point metadata           | coarse-area cache, longer TTL                          |
 | NWS alerts/forecast          | short TTL and stale-if-error                           |
 
-Do not invalidate public tags until the database transaction commits. Webhook
-processing writes event state, ledger effects, and aggregate changes atomically,
-then invalidates affected organization, campaign, and Finance tags. Reconciliation
-uses compensating entries and the same invalidation path.
+Do not invalidate public tags until the database transaction commits. Record,
+review, correction, and summary changes commit atomically before invalidating
+affected organization, campaign, and Finance tags.
 
 ## Opportunity Data And Future AI
 
@@ -906,26 +793,27 @@ dismiss each match.
 Future AI may summarize requirements, explain fit, compare saved organization
 evidence, and draft application sections. It runs asynchronously behind a job
 boundary, cites source text, records model/version/cost, and requires human
-approval. Public resource publication and Stripe state never depend on a model.
+approval. Public resource publication and finance-record truth never depend on a
+model.
 
 ## Failure And Empty States
 
-- Not connected: show Set up Stripe, never `$0.00`.
-- Creating account: disable repeat submission and show durable progress.
-- Onboarding required/incomplete: show Continue Stripe setup.
-- Requirements overdue, charges disabled, or payouts disabled: show the exact
-  status category and Stripe-hosted remediation.
-- Connected and freshly verified zero: show `$0.00` with verification time.
-- Payment Link missing/inactive: keep Donate disabled and show repair action.
+- No records: show Add record or Import records, never a fabricated `$0.00`.
+- Importing records: disable repeat submission and show durable progress.
+- Missing source or evidence: keep the record in Draft or Needs review.
+- Review overdue or evidence invalid: show the exact issue and recovery action.
+- Reconciled zero: show `$0.00` with source and as-of time.
+- External campaign URL missing/inactive: omit the public action and show an
+  internal repair action.
 - Campaign active, ended, funded, paused, or archived: show distinct public and
   private states.
-- Stripe unavailable or connection deauthorized: retain the last-known state
-  without claiming readiness.
+- Import source unavailable: retain the last reconciled state without claiming
+  freshness.
 - No transactions: show campaign readiness, not an empty chart.
 - No opportunities: explain filters and profile fields that improve matching.
-- Webhook delayed: show “Updating” with last successful sync, not a false zero.
-- Reconciliation mismatch: freeze affected aggregate, flag operators, retain
-  previous verified display with timestamp.
+- Import delayed: show “Updating” with last successful import, not a false zero.
+- Reconciliation mismatch: freeze the affected summary, flag operators, and
+  retain the previous reconciled display with timestamp.
 - Weather unavailable: keep centers normally ranked and show no weather claim.
 - Public detail failure: retain list/map context with Retry.
 - Auth replay failure: keep the user signed in and present Retry without losing
@@ -948,23 +836,23 @@ approval. Public resource publication and Stripe state never depend on a model.
 
 Track:
 
-- Connect accounts by readiness state and environment;
-- onboarding returns versus accounts actually ready;
+- finance records by draft, review, reconciled, corrected, and rejected state;
+- import batches by validation and review state;
 - campaigns by activation state;
-- webhook delivery latency, duplicate rate, retries, failures, and lock age;
-- ledger-to-Stripe reconciliation differences;
+- import validation latency, duplicate rate, failures, and review age;
+- external-source reconciliation differences;
 - public aggregate age;
-- donations, refunds, disputes, and payout-disabled accounts;
-- grant request age and restricted balance;
+- recorded inflows, fees, reversals, external payments, and corrections;
+- grant request age and last reconciled project summary;
 - auth overlay conversion and pending-action replay success;
 - map index/detail payload size, latency, cache hit rate, and marker count;
 - location prompt, grant, denial, and error rate without storing coordinates;
 - NWS latency/failure/stale-cache use; and
 - resource counts at every verification gate.
 
-Alert on invalid signatures, unknown connected accounts, live/test mismatches,
-stuck event claims, aggregate drift, payout or charge disablement, stale public
-fundraising totals, and safety-resource publication failures.
+Alert on invalid imports, cross-organization references, stuck reviews,
+aggregate drift, stale public fundraising totals, and safety-resource
+publication failures.
 
 The provisional Research 7 SLOs, alert thresholds, cohort sequence, owner and
 support matrix, drills, rollback order, public-cache limit, and approval record
@@ -972,7 +860,8 @@ are defined in the
 [`2026-08-06-finance-operations-cutover-contract.md`](./2026-08-06-finance-operations-cutover-contract.md).
 This is an unsigned implementation contract, not evidence that monitoring,
 owners, drills, or production readiness already exist. Screenshot research and
-product-facing `/find`/Finance UI remain blocked on the user’s references.
+product-facing `/find` proof remains open. Finance UI may use the existing Coach
+House design system while reference-driven polish remains optional.
 
 ## Planned Repository Ownership
 
@@ -1008,7 +897,7 @@ The dirty branch remains a donor, not a merge target.
 | RLS                                          | Append-only migrations for each organization-scoped table                                                      | Enforce organization and fiscal-project isolation in SQL; service-role use never replaces authorization     |
 | People persistence                           | Typed People tables/actions and their RLS                                                                      | Board JSON contains placement only, not People records, segments, or tags                                   |
 | Public organization projection               | `organization.ts`, `public-map-index.ts`, and the `public-map-organizations` cache tag                         | Publish approved projections only; never expose private Finance or donor rows                               |
-| Finance domain                               | New `src/features/finance/**` feature                                                                          | Own capabilities, Stripe, campaigns, ledger, reconciliation, and aggregates independently of workspace UI   |
+| Finance domain                               | New `src/features/finance/**` feature                                                                          | Own capabilities, campaigns, external records, reconciliation, and summaries independently of workspace UI  |
 
 #### Saved-state migration and rollback matrix
 
@@ -1740,7 +1629,14 @@ Vercel-instance memory. Prefer a small Supabase RPC-backed limit keyed by a
 one-way IP risk hash plus user/action, with short retention, explicit bypass for
 signed Stripe webhooks, and observable deny reasons.
 
-## Stripe Dashboard, Environment, And Local Setup Plan
+## Rejected Payment-Rail Research
+
+The material in this section records the discarded Stripe Connect approach for
+historical traceability only. Do not implement its routes, environment
+variables, account setup, webhooks, or tests under the approved records-only
+scope.
+
+### Former Stripe dashboard, environment, and local setup plan
 
 ### Environment contract
 
@@ -1814,29 +1710,28 @@ lives in the Research 6 contract linked above.
 
 | Area             | Required cases                                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Provisioning     | Retry, double-click, concurrent admins, Stripe success/database failure, database success/response retry                 |
-| Account Links    | Expired, reused, abandoned, Save for later, incomplete return, new requirements, unsafe redirect                         |
-| Readiness        | Details incomplete, charges disabled, payouts disabled, overdue requirements, deauthorized/deleted account               |
-| Campaigns        | Invalid goal/budget/dates/bounds/currency, fixed/custom amount support, link inactive/replaced/assigned twice            |
-| Events           | Invalid signature, duplicate, out of order, timeout, partial database failure, unknown account, wrong mode/currency/link |
-| Donations        | Immediate/delayed success, failure, anonymous preference, above-goal donation, unrelated account revenue                 |
-| Refunds          | Partial, multiple, full, pending/succeeded/failed transitions                                                            |
-| Disputes         | Open, updated, won, lost, amount restoration, replay                                                                     |
-| Reconciliation   | Pagination, rate limits, missing event repair, stale Stripe result, unrelated revenue exclusion                          |
-| Fiscal funds     | Sponsor ownership, fee, allocation, over-request, approval, rejection, correction, disbursement, reporting               |
+| Record entry     | Retry, double-click, concurrent editors, stale revision, missing source, invalid reference, and partial failure          |
+| Imports          | Preview, mapping, duplicate rows, mixed currencies, invalid dates, oversized files, and rollback                         |
+| Review           | Approve, reject, correct, stale decision, separation of duties, and cross-organization denial                            |
+| Campaigns        | Invalid goal/budget/dates/currency, external link inactive/replaced, and public-summary approval                         |
+| Validation       | Invalid source, duplicate, out of period, timeout, partial database failure, wrong organization/project/currency         |
+| Finance records  | Draft, needs review, reconciled, rejected, corrected, above-goal, and unrelated external activity                        |
+| Corrections      | Partial, multiple, full reversal, replacement, and immutable history                                                     |
+| Evidence         | Missing, replaced, hash mismatch, unauthorized download, and retention                                                   |
+| Reconciliation   | Pagination, duplicate reference, missing evidence, stale source, mixed period/currency, and unrelated activity exclusion |
+| Fiscal funds     | Project scope, allocation, over-request, approval, rejection, correction, external-payment record, and reporting         |
 | Imports/exports  | Mapping, duplicate rows, mixed currencies, invalid dates, rollback, formula injection, role denial                       |
 | Public data      | Draft leakage, donor/contact PII, stale aggregate, disabled link, cache invalidation, social metadata                    |
 | Signup/map       | Context preservation, one-time replay, expired intent, denied action, guest-save merge, rate limit                       |
 | Location/weather | Permission prompt/deny/revoke/error, NWS timeout/stale data, alert start/end, coarse-cache privacy                       |
 | Resource scale   | Bbox/cursor correctness, selected/saved override, exact publication counts, payload/performance budgets                  |
-| Resilience       | Stripe, Supabase, NWS, and Vercel failures; safe retry; no false zero or lost financial history                          |
+| Resilience       | Import, Supabase, NWS, and Vercel failures; safe retry; no false zero or lost financial history                          |
 
-Tests cover validation and aggregate units, route authorization, final-schema
-RLS, webhook signatures, concurrent idempotency, Stripe object scoping,
-reconciliation, refund/dispute accounting, Playwright journeys, accessibility,
-visual states, build, and performance. Mocks preserve the real Stripe ownership
-and event contracts. Sandbox end-to-end tests prove the integration before a
-live canary.
+Tests cover validation and summary units, route authorization, final-schema RLS,
+concurrent idempotency, import scoping, reconciliation, correction history,
+Playwright journeys, accessibility, visual states, build, and performance.
+Fixtures contain synthetic external records only; they never require live bank
+or payment-provider access.
 
 ## Exactly Seven Merge Batches
 
@@ -1899,9 +1794,8 @@ Scope:
 - retain the released fiscal review and native signing behavior from main;
 - integrate remaining applicant, coach, project, budget, document, task, Form B,
   W-9, review, and audit work;
-- resolve legal copy about custody, the grant-only 7% fee, grant approval, and
-  disbursement;
-- add no Stripe or restricted-fund behavior yet.
+- retain the counsel-approved document and records-only operating boundary;
+- obtain non-author review and merge PR #120.
 
 Gates:
 
@@ -1909,7 +1803,8 @@ Gates:
 - final-schema RLS;
 - PDF render/hash/download verification;
 - applicant, assigned-coach, sponsor-operator, and denied-role browser journeys;
-- counsel and operations sign-off on final flow and copy.
+- product confirmation that the counsel-approved document remains canonical and
+  the application does not move money.
 
 Rollback: disable new fiscal entry points while retaining signed artifacts and
 audit events.
@@ -1959,62 +1854,65 @@ Gates:
 Rollback: disable weather promotion and auth replay independently; preserve
 normal map search and existing saves until migration is verified.
 
-### Batch 6: Finance Foundation And Stripe Connect
+### Batch 6: Finance Records And Reporting Foundation
 
 Scope:
 
 - finance capabilities and RLS;
-- connected-account persistence and idempotent provisioning;
-- trusted Account Link resume/return flow and readiness checks;
-- campaign, custom-unit Price, and connected Payment Link creation;
-- dedicated Connect webhook, atomic inbox, immutable donation ledger,
-  aggregates, reconciliation, donor privacy, and public projection;
-- independent-organization direct charges only until sponsor custody is approved.
+- campaign, finance-record, source-evidence, and import persistence;
+- grant requests, decisions, and externally executed payment records;
+- review, correction, reconciliation, summaries, donor privacy, and public
+  projections;
+- no bank credentials, payment processing, transfers, refunds, or automated
+  disbursement.
 
 Gates:
 
-- exact controller properties and explicit forbidden-field tests;
-- every Stripe request verified in connected-account context;
-- owner/admin allow and all other roles deny;
-- concurrent provisioning, duplicate webhook, replay, out-of-order, refund,
-  dispute, live/test, unknown-account, and reconciliation tests;
-- Stripe sandbox end-to-end donation and account-requirement tests;
+- source, amount, date, currency, reference, evidence, organization/project scope, and
+  forbidden bank-field tests;
+- owner/admin/operator allow and all other roles deny;
+- concurrent edit, duplicate import, stale review, correction, cross-project,
+  mixed-currency, and reconciliation tests;
+- end-to-end manual entry, CSV import, grant request, approval, external-payment
+  record, correction, and reporting journeys;
+- no bank credentials, payment processing, transfers, refunds, or automated
+  disbursement paths;
 - final-schema RLS and security review.
 
-Rollback: deactivate new Payment Links and Finance entry points; continue event
-ingestion and reconciliation until all in-flight events settle.
+Rollback: disable Finance entry points and new mutations while retaining every
+record, source artifact, decision, correction, and audit event.
 
-### Batch 7: Finance Experience, Fiscal Funds, And Production Cutover
+### Batch 7: Finance Experience, External Records, And Production Cutover
 
 Scope:
 
 - create Finance as its own card without changing `economic-engine`;
 - add Finance drawer Overview, Opportunities, Fundraising, and Reporting;
-- add campaigns, verified progress, source composition, public toggle, exports,
+- add campaigns, source-labeled progress, source composition, public toggle, exports,
   and rich public sharing;
 - add opportunity source/match/workflow and reusable opportunity detail node;
-- after legal approval, add an organization/project-isolated backend
-  restricted-fund ledger, grant requests, approvals, disbursement records, and
-  reporting periods without letting storage dictate UI;
-- run production backfills, canary accounts/campaigns, monitoring, support
+- add organization/project-isolated finance records, grant requests, approvals,
+  recorded external payments, and reporting periods without letting storage
+  dictate UI;
+- run production backfills, canary records/campaigns, monitoring, support
   playbook, and final integrated release verification.
 
 Gates:
 
-- empty, connected, active, delayed, refunded, disputed, and reconciliation
+- empty, draft, importing, needs-review, reconciled, corrected, rejected, and
   mismatch UI states;
 - Finance role matrix and donor-PII isolation;
-- fiscal allocation arithmetic and compensating-entry tests;
+- fiscal request, decision, external-payment record, and correction-history
+  tests;
 - public aggregate and cache invalidation tests;
 - opportunity progression persistence and reduced-motion visuals;
 - CSV formula-neutralization tests;
 - full `pnpm check:quality` from a clean release artifact;
-- production canary with one internal test connected account, then one approved
-  real organization, followed by monitored gradual enablement.
+- production canary with one internal organization, then one approved real
+  organization, followed by monitored gradual enablement.
 
-Rollback: deactivate campaign creation and public Finance UI, keep webhook and
-ledger processing live, deactivate affected Payment Links, and restore the
-previous public/profile presentation. Financial rows are never deleted.
+Rollback: deactivate record/campaign creation and public Finance UI, preserve
+all recorded history, and restore the previous public/profile presentation.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f4f4f5", "primaryTextColor": "#18181b", "primaryBorderColor": "#a1a1aa", "lineColor": "#71717a", "secondaryColor": "#fafafa", "tertiaryColor": "#ffffff", "fontFamily": "Geist, ui-sans-serif, system-ui"}}}%%
@@ -2024,7 +1922,7 @@ flowchart LR
   B1 --> B4[4 Resource pipeline]
   B2 --> B5[5 Public Find and signup]
   B4 --> B5
-  B1 --> B6[6 Finance and Connect]
+  B1 --> B6[6 Finance records foundation]
   B2 --> B7[7 Finance experience and cutover]
   B3 --> B7
   B5 --> B7
@@ -2038,46 +1936,45 @@ flowchart LR
 - Never alter an already-applied migration; add a new corrective migration.
 - Use a clean worktree and clean release artifact for every PR.
 - Keep environment changes additive until rollback is proven.
-- Create sandbox and live Connect webhook endpoints separately and verify
-  `livemode` on every event.
+- Validate record imports in preview fixtures before any production import.
 - Apply migrations before code only when the old code safely tolerates the new
   schema. Remove old paths only after the new path is verified.
 - Run staff canary, one approved organization canary, gradual enablement, then
   broader release.
 - Do not claim production success until CI, preview, deployment, database,
-  Stripe, browser, monitoring, and rollback checks are all verified.
+  browser, monitoring, and rollback checks are all verified.
 
 ## Objective Traceability
 
-| Requested outcome                       | Planned evidence                                                             |
-| --------------------------------------- | ---------------------------------------------------------------------------- |
-| Talk before acting                      | Design-review status; implementation blocked on approvals                    |
-| Seven clean merges                      | Exactly seven batches with dependencies, gates, and rollback                 |
-| Explain hard-push damage                | Current-state Git, migration, cache, feature, and test audit                 |
-| Improve onboarding                      | Batch 1 durable completion, reconciliation, backfill, browser proof          |
-| Finance drawer and canvas node          | Separate Finance card plus the approved Finance drawer architecture          |
-| Minimal `$0.00`, In/Out, graph          | Explicit disconnected/loading/verified/stale states and metric definitions   |
-| To-do/status pills and opportunity node | Derived next actions plus one reusable progression node                      |
-| Stripe bank setup                       | Full-dashboard connected account and hosted onboarding; no manual bank form  |
-| App transaction tracking                | Connect event inbox, canonical donation ledger, scoped reconciliation        |
-| Fundraiser profile, progress, Donate    | Canonical public campaign route and sanitized aggregate projection           |
-| Reporting plus other data               | Separate Stripe, sponsored, and imported truth layers with CSV               |
-| Segmented source bar and public switch  | Source composition with one contextual visibility control                    |
-| Finance subtabs without clutter         | Overview, Opportunities, Fundraising, Reporting                              |
-| Images revisited                        | Three-pass visual protocol; currently blocked because none were attached     |
-| Scalable backend and stale-cache safety | Transactional ledger, tagged invalidation, bbox/index/detail split           |
-| Future AI funding matches               | Deterministic first, cited async AI later, human review                      |
-| Weather-aware cooling centers           | NWS coarse cache; weather changes relevance only                             |
-| Circle profile button and map signup    | Left-side avatar, in-map auth overlay, one-time action replay                |
-| Sensitive-contact protection            | Server payload redaction, auth, rate limit, audit, no false guarantees       |
-| Member collections and light progress   | Typed saves/lists, private profile, explicit sharing, ethical milestones     |
-| Rich social/text previews               | Canonical routes and server-rendered branded Open Graph metadata             |
-| Location permission repair              | Browser permission state machine and no default exact-location storage       |
-| Path to 5,000 public resources          | Verified source cohorts and exact gate counts; no raw candidates             |
-| Fiscal sponsorship journey              | Legal custody decision, restricted funds, requests, grants, reporting        |
-| Allocation tracking and coach/user CSV  | Ledger-linked allocations, role-scoped exports, formula neutralization       |
-| Full logic and loose-end scan           | Routes, schema, RLS, security, failure states, observability, setup, cutover |
-| Shadcn-style Mermaid PRD                | Neutral Geist Mermaid theme and seven architecture/journey diagrams          |
+| Requested outcome                       | Planned evidence                                                                   |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| Talk before acting                      | Approved scope recorded before implementation                                      |
+| Seven clean merges                      | Exactly seven batches with dependencies, gates, and rollback                       |
+| Explain hard-push damage                | Current-state Git, migration, cache, feature, and test audit                       |
+| Improve onboarding                      | Batch 1 durable completion, reconciliation, backfill, browser proof                |
+| Finance drawer and canvas node          | Separate Finance card plus the approved Finance drawer architecture                |
+| Minimal `$0.00`, In/Out, graph          | Explicit disconnected/loading/verified/stale states and metric definitions         |
+| To-do/status pills and opportunity node | Derived next actions plus one reusable progression node                            |
+| External banking boundary               | No bank setup or money movement in the application; external records only          |
+| App transaction tracking                | Source-labeled external records, review, corrections, and reconciliation           |
+| Fundraiser profile, progress, Donate    | Canonical public campaign route and sanitized aggregate projection                 |
+| Reporting plus other data               | Separate reconciled, sponsored-project, draft/imported, and legacy layers with CSV |
+| Segmented source bar and public switch  | Source composition with one contextual visibility control                          |
+| Finance subtabs without clutter         | Overview, Opportunities, Fundraising, Reporting                                    |
+| Images revisited                        | Three-pass visual protocol; currently blocked because none were attached           |
+| Scalable backend and stale-cache safety | Transactional ledger, tagged invalidation, bbox/index/detail split                 |
+| Future AI funding matches               | Deterministic first, cited async AI later, human review                            |
+| Weather-aware cooling centers           | NWS coarse cache; weather changes relevance only                                   |
+| Circle profile button and map signup    | Left-side avatar, in-map auth overlay, one-time action replay                      |
+| Sensitive-contact protection            | Server payload redaction, auth, rate limit, audit, no false guarantees             |
+| Member collections and light progress   | Typed saves/lists, private profile, explicit sharing, ethical milestones           |
+| Rich social/text previews               | Canonical routes and server-rendered branded Open Graph metadata                   |
+| Location permission repair              | Browser permission state machine and no default exact-location storage             |
+| Path to 5,000 public resources          | Verified source cohorts and exact gate counts; no raw candidates                   |
+| Fiscal sponsorship journey              | Approved document, requests, decisions, external-payment records, reporting        |
+| Allocation tracking and coach/user CSV  | Record-linked allocations, role-scoped exports, formula neutralization             |
+| Full logic and loose-end scan           | Routes, schema, RLS, security, failure states, observability, setup, cutover       |
+| Shadcn-style Mermaid PRD                | Neutral Geist Mermaid theme and seven architecture/journey diagrams                |
 
 Anything marked awaiting approval is not silently assumed during implementation.
 If images arrive, their review becomes an additional evidence gate rather than
@@ -2089,12 +1986,12 @@ an excuse to expand the product beyond this traceability table.
 - Seven PRs merge in the stated order without force-pushes.
 - Karissa and a second preexisting affected user advance past organization setup
   without losing organization data.
-- Independent organization donations are direct connected-account charges.
-- Verified finance aggregates reconcile to tracked Stripe campaign objects.
+- The application never moves money or stores bank credentials.
+- Finance summaries reconcile to source-labeled external records.
 - No donor PII or private contact data appears in anonymous responses.
-- Sponsor custody, grant-only 7% fee, allocation, and grant behavior matches
-  signed policy; restricted funds remain isolated by organization/project, and
-  ledger storage never dictates or expands the approved Finance UI.
+- The counsel-approved document remains canonical; fiscal records, requests,
+  decisions, and externally executed payments remain isolated by
+  organization/project and never imply in-app disbursement.
 - Finance is useful and truthful at zero and under delayed/error states.
 - Map auth preserves context and replays one authorized pending action.
 - Cooling centers stay searchable and weather only adjusts relevance.
@@ -2109,10 +2006,10 @@ an excuse to expand the product beyond this traceability table.
 | 2026-08-04 | Do not hard-push the staged tree                                   | Recommended                                 |
 | 2026-08-05 | Create a separate Finance card; do not reuse `economic-engine`     | Approved                                    |
 | 2026-08-05 | Keep four Finance drawer views for now                             | Approved                                    |
-| 2026-08-04 | Independent organizations use connected direct charges             | Required by brief                           |
+| 2026-08-07 | Money movement stays in external bank and accounting systems       | Approved product boundary                   |
 | 2026-08-05 | Keep restricted funds organization/project isolated and UI-neutral | Approved boundary                           |
-| 2026-08-05 | Apply 7% only to fiscally sponsored grant allocations              | Policy confirmed; legal review pending      |
-| 2026-08-06 | Prepare source-backed fiscal policy and copy packet                | Draft ready; counsel and operations pending |
+| 2026-08-07 | Keep the counsel-approved fiscal document canonical                | Counsel approval confirmed by product owner |
+| 2026-08-07 | Record external payments; never execute disbursement in the app    | Approved product boundary                   |
 | 2026-08-05 | Do not use hCaptcha                                                | Approved                                    |
 | 2026-08-04 | Keep `/find/[slug]` canonical                                      | Recommended                                 |
 | 2026-08-04 | Weather promotes but never hides cooling centers                   | Recommended                                 |

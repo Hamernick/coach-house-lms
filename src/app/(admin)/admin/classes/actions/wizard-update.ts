@@ -91,7 +91,7 @@ async function updateClassFromLessonWizardPayload(classId: string, payloadRaw: s
   const nextSlug = slugBase.length > 0 ? await ensureUniqueClassSlug(supabase, slugBase, classId) : originalSlug ?? `class-${classId.slice(0, 8)}`
   const description = htmlToMarkdown(payload.body ?? "")
 
-  const classUpdatePayload: Database["public"]["Tables"]["classes"]["Update"] & Record<string, unknown> = {
+  const classUpdatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
     title: normalizedTitle,
     description,
     subtitle: normalizedSubtitle || null,

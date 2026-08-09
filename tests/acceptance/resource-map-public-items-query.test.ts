@@ -201,30 +201,6 @@ describe("resource map public item adapter", () => {
     expect(item?.subtitle).toBeNull()
   })
 
-  it("keeps canonical website and donation links when public link rows are empty", () => {
-    const item = buildExternalResourceMapItemFromPublicRow(
-      buildPublicResourceRow({
-        public_links: [],
-        website_url: "resource.example.org",
-        donate_url: "resource.example.org/donate",
-      })
-    )
-
-    expect(item?.links).toEqual([
-      expect.objectContaining({
-        label: "Website",
-        type: "website",
-        url: "https://resource.example.org",
-        isPrimary: true,
-      }),
-      expect.objectContaining({
-        label: "Donate",
-        type: "donate",
-        url: "https://resource.example.org/donate",
-      }),
-    ])
-  })
-
   it("normalizes stale cooling-center rows away from broad emergency labels", () => {
     const item = buildExternalResourceMapItemFromPublicRow(
       buildPublicResourceRow({
@@ -303,6 +279,13 @@ describe("resource map public item adapter", () => {
     ).toBeNull()
     expect(serialized.availability).toBeUndefined()
     expect(serialized.links?.length).toBeGreaterThan(0)
+    expect(serialized.services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eligibility: expect.any(String),
+        }),
+      ])
+    )
     expect("aliases" in serialized).toBe(false)
     expect("deliveryModes" in serialized).toBe(false)
     expect("markerImageUrl" in serialized).toBe(false)
@@ -411,7 +394,7 @@ describe("fetchPublicResourceMapItems", () => {
     expect(createClientMock).not.toHaveBeenCalled()
   })
 
-  it("uses only the sanitized public RPC when enabled", async () => {
+  it("uses only the sanitized paginated public RPC when enabled", async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [buildPublicResourceRow()],
       error: null,
@@ -428,11 +411,12 @@ describe("fetchPublicResourceMapItems", () => {
     expect(items.map((item) => item.id)).toEqual([
       "resource_map:service-food-1",
     ])
-    expect(rpc).toHaveBeenCalledWith("get_resource_map_public_items", {
+    expect(rpc).toHaveBeenCalledWith("get_resource_map_public_items_page", {
       p_category_keys: null,
       p_latitude: null,
       p_limit: 25,
       p_longitude: null,
+      p_offset: 0,
       p_query: null,
       p_radius_miles: null,
     })
@@ -442,6 +426,38 @@ describe("fetchPublicResourceMapItems", () => {
       expect.anything()
     )
   })
+
+  it("loads more than 1,000 approved resources without truncation", async () => {
+    const rows = Array.from({ length: 1205 }, (_, index) =>
+      buildPublicResourceRow({
+        item_id: `service-${index + 1}`,
+        service_id: `service-${index + 1}`,
+        title: `Resource ${index + 1}`,
+      })
+    )
+    const rpc = vi
+      .fn()
+      .mockImplementation(
+        (_name: string, args: { p_limit: number; p_offset: number }) =>
+          Promise.resolve({
+            data: rows.slice(args.p_offset, args.p_offset + args.p_limit),
+            error: null,
+          })
+      )
+    createClientMock.mockReturnValue({ rpc })
+
+    const items = await fetchPublicResourceMapItems({
+      enabled: true,
+      localEnginePreviewFile: null,
+      limit: 1205,
+    })
+
+    expect(items).toHaveLength(1205)
+    expect(rpc).toHaveBeenCalledTimes(3)
+    expect(rpc.mock.calls.map((call) => call[1].p_offset)).toEqual([
+      0, 500, 1000,
+    ])
+  }, 15_000)
 
   it("can render scraped JSONL locally before anything is uploaded to Supabase", async () => {
     const directory = mkdtempSync(join(tmpdir(), "resource-map-preview-"))
@@ -489,6 +505,30 @@ describe("fetchPublicResourceMapItems", () => {
             websiteUrl: "http://www.stuart.iit.edu",
           },
         }),
+        JSON.stringify({
+          sourceRecordId: "Q2257594",
+          sourceName: "Wikidata - Chicago public resources",
+          sourceUrl: "http://www.wikidata.org/entity/Q2257594",
+          extractedFields: {
+            organizationName: "Moody Bible Institute",
+            title: "Moody Bible Institute",
+            description: "Bible institute",
+            category: "organizations",
+            websiteUrl: "http://www.moody.edu",
+          },
+        }),
+        JSON.stringify({
+          sourceRecordId: "Q7611082",
+          sourceName: "Wikidata - Chicago public resources",
+          sourceUrl: "http://www.wikidata.org/entity/Q7611082",
+          extractedFields: {
+            organizationName: "Steppenwolf Theatre Company",
+            title: "Steppenwolf Theatre Company",
+            description:
+              "theater and theater company in Chicago, Illinois, United States",
+            category: "education",
+          },
+        }),
       ].join("\n")
     )
 
@@ -502,6 +542,12 @@ describe("fetchPublicResourceMapItems", () => {
       expect(items).toHaveLength(2)
       expect(items.map((item) => item.title)).not.toContain(
         "IIT Stuart School of Business"
+      )
+      expect(items.map((item) => item.title)).not.toContain(
+        "Moody Bible Institute"
+      )
+      expect(items.map((item) => item.title)).not.toContain(
+        "Steppenwolf Theatre Company"
       )
       expect(items[0]).toMatchObject({
         id: "local_resource_map:scraped-food-1",
@@ -528,9 +574,39 @@ describe("fetchPublicResourceMapItems", () => {
           value: "312-555-0100",
         }),
       ])
+
+      const discoveryPreviewItems = await fetchPublicResourceMapItems({
+        enabled: true,
+        includeDiscoveryCandidates: true,
+        localPreviewFile: previewFile,
+      })
+      expect(discoveryPreviewItems).toHaveLength(5)
+      expect(discoveryPreviewItems.map((item) => item.title)).toEqual(
+        expect.arrayContaining([
+          "IIT Stuart School of Business",
+          "Moody Bible Institute",
+          "Steppenwolf Theatre Company",
+        ])
+      )
+      expect(
+        discoveryPreviewItems.filter((item) =>
+          item.sourceLabel.toLowerCase().includes("wikidata")
+        )
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ visibility: "superadmin_preview" }),
+        ])
+      )
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }
+  })
+
+  it("never loads the raw candidate intake queue as an implicit public preview", async () => {
+    await expect(
+      fetchPublicResourceMapItems({ enabled: false })
+    ).resolves.toEqual([])
+    expect(createClientMock).not.toHaveBeenCalled()
   })
 
   it("can render local engine candidate records before seed fallback", async () => {

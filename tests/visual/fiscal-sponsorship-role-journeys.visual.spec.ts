@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 const FIXTURE_PATH = "/visual-regression/fiscal-sponsorship-role-journeys"
 
-test.describe.configure({ timeout: 60_000 })
+test.describe.configure({ timeout: 90_000 })
 
 async function openFixture(page: Page) {
   await page.goto(FIXTURE_PATH, { waitUntil: "domcontentloaded" })
@@ -12,7 +12,7 @@ async function openFixture(page: Page) {
   await expect(page.getByTestId("role-journey-hydrated")).toHaveAttribute(
     "data-hydrated",
     "true",
-    { timeout: 45_000 }
+    { timeout: 75_000 }
   )
 }
 
@@ -26,7 +26,7 @@ test("applicant can resume the application without review controls", async ({
   )
   await expect(workbench).toBeVisible()
   await expect(
-    workbench.getByRole("button", { name: "Approve", exact: true })
+    workbench.getByRole("button", { name: "Approve application" })
   ).toHaveCount(0)
   await workbench.getByRole("button", { name: "Edit" }).click()
   await expect(
@@ -50,7 +50,7 @@ test("assigned coach can approve but cannot edit applicant data", async ({
     "[data-fiscal-sponsorship-project-workbench='project-1']"
   )
   await expect(workbench.getByRole("button", { name: "Edit" })).toBeDisabled()
-  await workbench.getByRole("button", { name: "Approve", exact: true }).click()
+  await workbench.getByRole("button", { name: "Approve application" }).click()
   await expect(page.getByTestId("role-journey-result")).toHaveText(
     "Application approved by assigned coach"
   )

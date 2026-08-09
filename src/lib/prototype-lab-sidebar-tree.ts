@@ -22,6 +22,26 @@ const PROTOTYPE_LAB_BASE_PATH = "/admin/platform/prototypes"
 
 const PROTOTYPE_LAB_SIDEBAR_TREE: PrototypeLabSidebarTreeNode[] = [
   {
+    id: "finance",
+    label: "Finance",
+    kind: "folder",
+    children: [
+      {
+        id: "finance:roadmaps",
+        label: "Roadmaps",
+        kind: "folder",
+        children: [
+          {
+            id: "finance-release-plan",
+            label: "Finance release plan",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=finance-release-plan`,
+            kind: "entry",
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "fiscal-sponsorship",
     label: "Fiscal Sponsorship",
     kind: "folder",
@@ -169,6 +189,26 @@ const PROTOTYPE_LAB_SIDEBAR_TREE: PrototypeLabSidebarTreeNode[] = [
             id: "supabase-reauthentication",
             label: "Reauthentication",
             href: `${PROTOTYPE_LAB_BASE_PATH}?entry=supabase-reauthentication`,
+            kind: "entry",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "audio-lab",
+    label: "Audio Lab",
+    kind: "folder",
+    children: [
+      {
+        id: "audio-lab:controls",
+        label: "Controls",
+        kind: "folder",
+        children: [
+          {
+            id: "audio-visualizer-player",
+            label: "Audio visualizer player",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=audio-visualizer-player`,
             kind: "entry",
           },
         ],

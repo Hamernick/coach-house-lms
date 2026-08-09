@@ -24,6 +24,9 @@ describe("people actions access", () => {
     expect(source).toContain("export async function updatePersonCategoryAction")
     expect(source).toContain("export async function updatePersonTagsAction")
     expect(source).toContain("export async function deletePersonAction")
+    expect(source).toContain(
+      "export async function refreshPersonLinkedInImageAction"
+    )
     expect(source).toContain("normalizePersonTags(existingPerson?.tags)")
     expect(source).toContain('revalidatePath("/my-organization")')
     expect(source).not.toContain(

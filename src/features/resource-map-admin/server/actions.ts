@@ -24,6 +24,7 @@ import type {
   ResourceMapAdminPromotionInput,
   ResourceMapAdminVisibilityInput,
 } from "../types"
+import { assertResourceMapImportReadyForApproval } from "./approval-readiness"
 
 type ResourceMapAdminClient = ReturnType<typeof createSupabaseAdminClient>
 type CanonicalTable = "resource_map_organizations" | "resource_map_services"
@@ -34,12 +35,6 @@ type ResourceMapAdminTable =
   | "resource_map_import_records"
   | "resource_map_import_record_matches"
 type ResourceMapRow = Record<string, unknown>
-type ResourceMapAdminQuery = {
-  select(columns: string): ResourceMapAdminQuery
-  update(values: Record<string, unknown>): ResourceMapAdminQuery
-  eq(column: string, value: string): ResourceMapAdminQuery
-  maybeSingle(): Promise<{ data: unknown; error: unknown }>
-}
 
 function formatResourceMapAdminError(error: unknown) {
   if (error instanceof Error) return error.message
@@ -66,17 +61,6 @@ function visibilityTableForKind(
   kind: ResourceMapAdminVisibilityInput["kind"]
 ): VisibilityTable {
   return kind === "contact" ? "resource_map_contacts" : "resource_map_links"
-}
-
-function fromResourceMapAdminTable(
-  admin: ResourceMapAdminClient,
-  table: ResourceMapAdminTable
-) {
-  return (
-    admin as unknown as {
-      from(relation: ResourceMapAdminTable): ResourceMapAdminQuery
-    }
-  ).from(table)
 }
 
 function curationEventActionForCanonicalAction(
@@ -171,7 +155,8 @@ async function loadRowById(
   table: ResourceMapAdminTable,
   id: string
 ) {
-  const { data, error } = await fromResourceMapAdminTable(admin, table)
+  const { data, error } = await admin
+    .from(table)
     .select("*")
     .eq("id", id)
     .maybeSingle()
@@ -233,6 +218,7 @@ async function insertCurationEvent({
 function revalidateResourceMapAdminPaths() {
   revalidatePath("/find")
   revalidatePath("/admin")
+  revalidatePath("/admin/platform/resource-map")
   revalidatePath("/internal")
 }
 
@@ -261,10 +247,8 @@ export async function updateResourceMapCanonicalStateAction(
       row: current,
     })
 
-    const { data: updated, error } = await fromResourceMapAdminTable(
-      admin,
-      table
-    )
+    const { data: updated, error } = await admin
+      .from(table)
       .update(update)
       .eq("id", normalized.id)
       .select("*")
@@ -306,10 +290,8 @@ export async function updateResourceMapCanonicalFieldsAction(
     const table = canonicalTableForTarget(normalized.target)
     const current = await loadRowById(admin, table, normalized.id)
 
-    const { data: updated, error } = await fromResourceMapAdminTable(
-      admin,
-      table
-    )
+    const { data: updated, error } = await admin
+      .from(table)
       .update({
         ...normalized.fields,
         updated_by: userId,
@@ -357,6 +339,9 @@ export async function reviewResourceMapImportRecordAction(
       normalized.importRecordId
     )
     const now = new Date().toISOString()
+    if (normalized.status === "approved") {
+      await assertResourceMapImportReadyForApproval({ admin, record: current })
+    }
     const promotionStatus =
       normalized.status === "approved"
         ? "ready"
@@ -420,10 +405,8 @@ export async function setResourceMapPublicVisibilityAction(
     const table = visibilityTableForKind(normalized.kind)
     const current = await loadRowById(admin, table, normalized.id)
 
-    const { data: updated, error } = await fromResourceMapAdminTable(
-      admin,
-      table
-    )
+    const { data: updated, error } = await admin
+      .from(table)
       .update({ is_public: normalized.isPublic })
       .eq("id", normalized.id)
       .select("*")

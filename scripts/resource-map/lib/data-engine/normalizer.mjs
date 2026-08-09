@@ -180,9 +180,38 @@ function normalizeTime(value, role = "open", pairedValue = null) {
   const plainHour = compact.match(/^(\d{1,2})$/u)
   if (plainHour) {
     let hour = Number.parseInt(plainHour[1], 10)
-    const paired = readString(pairedValue)?.toLowerCase() ?? ""
+    const paired = readString(pairedValue)
+      ?.toLowerCase()
+      .replace(/\./g, "")
+      .replace(/\s+/g, "")
+    const pairedPlainHour = paired?.match(/^(\d{1,2})$/u)?.[1]
+    const pairedHour = pairedPlainHour
+      ? Number.parseInt(pairedPlainHour, 10)
+      : null
+
+    if (
+      role === "open" &&
+      hour <= 7 &&
+      pairedHour !== null &&
+      pairedHour > hour
+    ) {
+      hour += 12
+    }
+    if (
+      role === "open" &&
+      (paired?.includes("pm") || paired === "noon") &&
+      hour < 12
+    ) {
+      hour += 12
+    }
     if (role === "close" && hour <= 7) hour += 12
-    if (role === "close" && paired.includes("pm") && hour < 12) hour += 12
+    if (
+      role === "close" &&
+      (paired?.includes("pm") || paired === "noon") &&
+      hour < 12
+    ) {
+      hour += 12
+    }
     if (hour > 23) return null
     return `${String(hour).padStart(2, "0")}:00`
   }
@@ -320,13 +349,20 @@ function normalizeHours(hours, warnings) {
   }
   if (typeof hours !== "object" || Array.isArray(hours)) return {}
 
-  const weekly = readArray(hours.weekly)
-    .map((entry) => ({
-      days: normalizeDays(entry.days),
-      opensAt: normalizeTime(entry.opensAt ?? entry.opens_at),
-      closesAt: normalizeTime(entry.closesAt ?? entry.closes_at, "close"),
-    }))
-    .filter((entry) => entry.days.length && entry.opensAt && entry.closesAt)
+  const label = readString(hours.label)
+  const weeklyFromLabel = label ? parseHoursLabel(label) : []
+  const weekly =
+    weeklyFromLabel.length > 0
+      ? weeklyFromLabel
+      : readArray(hours.weekly)
+          .map((entry) => ({
+            days: normalizeDays(entry.days),
+            opensAt: normalizeTime(entry.opensAt ?? entry.opens_at),
+            closesAt: normalizeTime(entry.closesAt ?? entry.closes_at, "close"),
+          }))
+          .filter(
+            (entry) => entry.days.length && entry.opensAt && entry.closesAt
+          )
 
   if (readArray(hours.weekly).length && weekly.length === 0) {
     warnings.push("hours_unparseable")
@@ -334,7 +370,7 @@ function normalizeHours(hours, warnings) {
 
   return {
     schemaVersion: Number(hours.schemaVersion ?? hours.schema_version ?? 1),
-    label: readString(hours.label) ?? undefined,
+    label: label ?? undefined,
     weekly,
     exceptions: readArray(hours.exceptions),
   }

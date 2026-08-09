@@ -32,7 +32,11 @@ import {
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -78,11 +82,7 @@ const TASK_PRIORITY_OPTIONS = [
 ] as const
 
 function initialsFor(name: string) {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
+  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2)
 
   if (parts.length === 0) return "?"
 
@@ -92,7 +92,10 @@ function initialsFor(name: string) {
 function formatAssigneeMeta(option?: MemberWorkspacePersonOption | null) {
   if (!option) return "No one assigned yet"
 
-  return [option.roleLabel, option.email].filter(Boolean).join(" · ") || "Assignable teammate"
+  return (
+    [option.roleLabel, option.email].filter(Boolean).join(" · ") ||
+    "Assignable teammate"
+  )
 }
 
 function groupAssigneeOptions(options: MemberWorkspacePersonOption[]) {
@@ -128,7 +131,9 @@ function groupAssigneeOptions(options: MemberWorkspacePersonOption[]) {
 }
 
 function toDateValue(date?: Date) {
-  return date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
+  return date
+    ? date.toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
 }
 
 export function formatTaskDateLabel(date?: Date) {
@@ -160,7 +165,8 @@ export function buildTaskDraft({
   context?: CreateTaskContext
 }): TaskDraft {
   const startDate = task?.startDate ?? project.source?.startDate ?? new Date()
-  const endDate = task?.endDate ?? task?.startDate ?? project.source?.endDate ?? startDate
+  const endDate =
+    task?.endDate ?? task?.startDate ?? project.source?.endDate ?? startDate
 
   return {
     title: task?.name ?? "",
@@ -199,7 +205,11 @@ export function buildTaskInput({
   }
 }
 
-export function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number) {
+export function moveArrayItem<T>(
+  items: T[],
+  fromIndex: number,
+  toIndex: number
+) {
   const next = [...items]
   const [moved] = next.splice(fromIndex, 1)
   if (!moved) {
@@ -238,21 +248,21 @@ function TaskAssigneeOptionRow({
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
-      <Avatar className="size-9 border border-border/60">
+      <Avatar className="border-border/60 size-9 border">
         <AvatarImage src={option?.avatarUrl ?? undefined} alt={label} />
         <AvatarFallback className="text-[11px] font-semibold">
           {initialsFor(label)}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{label}</p>
-        <p className="truncate text-xs text-muted-foreground">{meta}</p>
+        <p className="text-foreground truncate text-sm font-medium">{label}</p>
+        <p className="text-muted-foreground truncate text-xs">{meta}</p>
       </div>
       <CheckIcon
         aria-hidden
         className={cn(
-          "size-4 shrink-0 text-foreground transition-opacity",
-          selected ? "opacity-100" : "opacity-0",
+          "text-foreground size-4 shrink-0 transition-opacity",
+          selected ? "opacity-100" : "opacity-0"
         )}
       />
     </div>
@@ -288,10 +298,10 @@ function TaskAssigneePicker({
       className="min-h-11 w-full justify-between gap-3 rounded-xl px-3 text-left font-normal"
     >
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm text-foreground">
+        <span className="text-foreground block truncate text-sm">
           {selectedOption?.name ?? "Unassigned"}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="text-muted-foreground block truncate text-xs">
           {formatAssigneeMeta(selectedOption)}
         </span>
       </span>
@@ -316,9 +326,7 @@ function TaskAssigneePicker({
             }}
             className="min-h-12 px-3 py-3"
           >
-            <TaskAssigneeOptionRow
-              selected={selectedOption == null}
-            />
+            <TaskAssigneeOptionRow selected={selectedOption == null} />
           </CommandItem>
         </CommandGroup>
         {groupedOptions.map((group) => (
@@ -368,7 +376,7 @@ function TaskAssigneePicker({
                 Search teammates and choose who owns the next step.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="border-t border-border/60 px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="border-border/60 border-t px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
               {command}
             </div>
           </DrawerContent>
@@ -376,7 +384,10 @@ function TaskAssigneePicker({
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-          <PopoverContent align="start" className="w-[min(420px,calc(100vw-2rem))] rounded-2xl p-0">
+          <PopoverContent
+            align="start"
+            className="w-[min(420px,calc(100vw-2rem))] rounded-2xl p-0"
+          >
             {command}
           </PopoverContent>
         </Popover>
@@ -411,7 +422,7 @@ export function TaskInlineForm({
   workstreamSuggestions,
 }: TaskInlineFormProps) {
   return (
-    <div className="border-border/70 mt-4 rounded-2xl border bg-background/70 p-4">
+    <div className="border-border/70 bg-background/70 mt-4 rounded-2xl border p-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="space-y-2 md:col-span-2 xl:col-span-3">
           <Label htmlFor={`${formId}-title`}>Task title</Label>
@@ -419,7 +430,9 @@ export function TaskInlineForm({
             id={`${formId}-title`}
             value={draft.title}
             placeholder="Write the task title"
-            onChange={(event) => onChangeDraftField("title", event.currentTarget.value)}
+            onChange={(event) =>
+              onChangeDraftField("title", event.currentTarget.value)
+            }
           />
         </div>
 
@@ -487,7 +500,9 @@ export function TaskInlineForm({
             id={`${formId}-start-date`}
             type="date"
             value={draft.startDate}
-            onChange={(event) => onChangeDraftField("startDate", event.currentTarget.value)}
+            onChange={(event) =>
+              onChangeDraftField("startDate", event.currentTarget.value)
+            }
           />
         </div>
 
@@ -497,7 +512,9 @@ export function TaskInlineForm({
             id={`${formId}-end-date`}
             type="date"
             value={draft.endDate}
-            onChange={(event) => onChangeDraftField("endDate", event.currentTarget.value)}
+            onChange={(event) =>
+              onChangeDraftField("endDate", event.currentTarget.value)
+            }
           />
         </div>
 
@@ -527,7 +544,9 @@ export function TaskInlineForm({
             id={`${formId}-tag`}
             value={draft.tagLabel}
             placeholder="feature, bug, internal"
-            onChange={(event) => onChangeDraftField("tagLabel", event.currentTarget.value)}
+            onChange={(event) =>
+              onChangeDraftField("tagLabel", event.currentTarget.value)
+            }
           />
         </div>
       </div>
@@ -540,7 +559,12 @@ export function TaskInlineForm({
           Cancel
         </Button>
         {!isNewTask && onDelete ? (
-          <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={onDelete}
+          >
             Delete task
           </Button>
         ) : null}

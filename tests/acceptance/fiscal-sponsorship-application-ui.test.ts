@@ -25,6 +25,7 @@ describe("fiscal sponsorship application UI", () => {
     const applicationDrawer = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
     )
+
     expect(actionFacade.startsWith('"use server"')).toBe(true)
     expect(actionFacade).not.toContain("export {")
     expect(actionFacade).toContain(
@@ -44,9 +45,6 @@ describe("fiscal sponsorship application UI", () => {
     const applicationDrawer = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
     )
-    const applicationEditorActions = readSource(
-      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-editor-actions.tsx"
-    )
 
     expect(applicationDrawer).toContain("FiscalSponsorshipApplicationDrawer")
     expect(applicationDrawer).toContain("FiscalSponsorshipApplicationEditor")
@@ -61,13 +59,9 @@ describe("fiscal sponsorship application UI", () => {
     expect(applicationDrawer).toContain(
       "buildFiscalSponsorshipApplicationInput"
     )
-    expect(applicationDrawer).toContain(
-      "FiscalSponsorshipApplicationEditorActions"
-    )
-    expect(applicationEditorActions).toContain("Save draft")
-    expect(applicationEditorActions).toContain("Submit for review")
-    expect(applicationEditorActions).toContain("Submitting…")
-    expect(applicationEditorActions).toContain('{canEdit ? "Cancel" : "Close"}')
+    expect(applicationDrawer).toContain("Save draft")
+    expect(applicationDrawer).toContain("Submit for review")
+    expect(applicationDrawer).toContain("Submitting…")
     expect(applicationDrawer).toContain('status: "draft"')
     expect(applicationDrawer).toContain("data.workflowSummary?.applicationId")
     expect(applicationDrawer).toContain("projectId={data.projectId}")

@@ -580,6 +580,21 @@ async function loadPlatformAdminProjectDetailPage({
   })
 }
 
+export async function loadPlatformAdminOrganizationProjectDetailPage({
+  projectId,
+  userId,
+}: {
+  projectId: string
+  userId: string
+}): Promise<MemberWorkspaceProjectDetailLoadResult> {
+  const actor = await resolveMemberWorkspaceActorContext()
+  if (actor.userId !== userId || !actorCanAccessOrganizations(actor)) {
+    return { state: "not-found" }
+  }
+
+  return loadPlatformAdminProjectDetailPage({ actor, projectId })
+}
+
 export async function loadMemberWorkspaceProjectDetailPage(
   projectId: string
 ): Promise<MemberWorkspaceProjectDetailLoadResult> {

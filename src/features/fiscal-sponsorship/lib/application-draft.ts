@@ -178,7 +178,9 @@ export function buildFiscalSponsorshipApplicationDraft({
   )
   const selectedActivityId = prefill?.sourceActivityId?.trim() || null
   const sourceActivityChanged = Boolean(
-    selectedActivityId && selectedActivityId !== savedBudgetActivityId
+    selectedActivityId &&
+    savedBudgetActivityId &&
+    selectedActivityId !== savedBudgetActivityId
   )
   const prefillBudgetRows = normalizeFiscalSponsorshipBudgetRows(
     prefill?.budgetRows

@@ -43,10 +43,10 @@ export async function GET(
     supabase,
     userId: user.id,
   })
-  const admin = createSupabaseAdminClient()
-  const staffOrAdmin =
+  const documentClient =
     profileAudience.isPlatformStaff || profileAudience.isAdmin
-  const documentClient = staffOrAdmin ? admin : supabase
+      ? createSupabaseAdminClient()
+      : supabase
   const { data: document, error } = await documentClient
     .from("fiscal_sponsorship_documents")
     .select("file_sha256, mime, org_id, storage_bucket, storage_path, title")
@@ -67,6 +67,7 @@ export async function GET(
     return NextResponse.json({ error: "Document not found." }, { status: 404 })
   }
 
+  const admin = createSupabaseAdminClient()
   const { data, error: downloadError } = await admin.storage
     .from(document.storage_bucket)
     .download(document.storage_path)

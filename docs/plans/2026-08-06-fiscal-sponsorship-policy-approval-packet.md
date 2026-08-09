@@ -1,26 +1,42 @@
 # Fiscal Sponsorship Policy And Copy Approval Packet
 
-Status: draft for counsel and fiscal-operations approval; not approved for
-production use
+Status: superseded as a release blocker; counsel-approved document remains
+canonical
 
 Prepared: 2026-08-06
 
-Applies to: Batch 3 legal copy and the Batch 7 sponsor-held-funds dependency
+Updated: 2026-08-07
+
+Applies to: historical policy research only
+
+## 2026-08-07 Scope Resolution
+
+The product owner confirmed that counsel approved the current fiscal
+sponsorship document. This plan does not replace or reinterpret that document.
+
+The application does not receive, hold, transfer, refund, or disburse money. It
+manages applications, signatures, documents, requests, approvals, external
+payment records, and reporting. External banks and accounting processes remain
+the money-moving systems.
+
+Accordingly, merchant-of-record configuration, custody-account implementation,
+Stripe Connect, Payment Links, payment webhooks, and automated fee or
+disbursement behavior are outside the current product scope. The remaining
+research below is retained for historical traceability and does not block Batch
+3, Finance UI work, or records-only implementation.
 
 ## Release Boundary
 
-This packet prepares decisions and replacement copy. It does not authorize:
+This historical packet does not authorize:
 
 - changing the signed Form B template or public handbook;
 - accepting sponsor-held online payments;
 - adding Stripe or restricted-fund behavior;
 - representing the sponsor legal entity, tax status, or merchant of record as
   confirmed; or
-- merging or deploying Batch 3.
+- changing the approved document without a new review.
 
-Independent-organization Stripe Connect work may continue later under its own
-approved direct-charge model. Sponsored fundraising stays disabled until every
-approval in this packet is recorded.
+Any future in-app payment feature requires a separate product plan and approval.
 
 ## Product Direction Already Confirmed
 
@@ -212,31 +228,28 @@ Amounts are variables until the fee decisions are approved.
 No project may read another project's restricted fund. Sponsor operators receive
 only the scoped access required for review, reconciliation, and audit.
 
-## Go/No-Go Evidence
+## Current Go/No-Go Evidence
 
-- [ ] Counsel signed the exact agreement and copy version.
-- [ ] Sponsor legal entity, EIN, tax status, donee, merchant of record, and
-      custody account are verified.
-- [ ] Fiscal operations approved fee mechanics, grant authority, reporting,
-      support ownership, and closeout.
-- [ ] Accounting approved illustrative entries and reconciliation.
-- [ ] Public, applicant, agreement, receipt, grant, and closeout copy share one
-      versioned source.
-- [ ] Existing signed artifacts remain immutable; new wording creates a new
-      template version.
-- [ ] Batch 3 acceptance, final-schema RLS, PDF integrity, and authenticated role
-      journeys remain green.
-- [ ] Sponsored Stripe and restricted-fund behavior remain disabled until Batch
-      7's separate implementation and release gates pass.
+- [x] Product owner confirmed counsel approval of the current document.
+- [x] The approved document remains canonical and unchanged by this plan.
+- [x] Existing signed artifacts remain immutable; future wording requires a new
+      reviewed template version.
+- [x] Batch 3 acceptance, final-schema RLS, PDF integrity, and authenticated role
+      journeys are green in the Batch 3 release candidate.
+- [x] Money movement, bank-account handling, Stripe Connect, Payment Links,
+      payment webhooks, and automated disbursement are outside scope.
+- [ ] Record the counsel name, approved document version/hash, and approval date
+      in the controlled legal-document register when available. This metadata
+      task does not block records-only UI implementation.
 
 ## Sign-Off Record
 
-| Role               | Name | Decision | Version | UTC date | Notes |
-| ------------------ | ---- | -------- | ------- | -------- | ----- |
-| Legal counsel      |      | Pending  | Draft 1 |          |       |
-| Fiscal operations  |      | Pending  | Draft 1 |          |       |
-| Finance/accounting |      | Pending  | Draft 1 |          |       |
-| Product owner      |      | Pending  | Draft 1 |          |       |
+| Role               | Name | Decision                            | Version            | UTC date   | Notes                    |
+| ------------------ | ---- | ----------------------------------- | ------------------ | ---------- | ------------------------ |
+| Legal counsel      |      | Approved; metadata pending          | Current document   |            | Product-owner confirmed  |
+| Fiscal operations  |      | Not required for app money movement | Records-only scope |            | External banking         |
+| Finance/accounting |      | Not required for app money movement | Records-only scope |            | External banking         |
+| Product owner      |      | Approved                            | 2026-08-07 scope   | 2026-08-07 | No in-app money movement |
 
 ## Primary Sources
 

@@ -187,6 +187,8 @@ export function applyWorkspaceTutorialActivationToSeed<
     workspaceOnboardingCompletedAt: string | null
   }
 ) {
+  if (initialOnboardingRequired) return workspaceSeed
+
   if (workspaceOnboardingCompletedAt) {
     if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) {
       return workspaceSeed
@@ -200,14 +202,11 @@ export function applyWorkspaceTutorialActivationToSeed<
     }
   }
   const shouldActivateTutorial =
-    initialOnboardingRequired ||
-    workspaceOnboardingActive ||
-    workspaceTutorialRequested
+    workspaceOnboardingActive || workspaceTutorialRequested
 
   if (!shouldActivateTutorial) return workspaceSeed
 
-  const shouldRestartCompletedTutorial =
-    initialOnboardingRequired || workspaceOnboardingActive
+  const shouldRestartCompletedTutorial = workspaceOnboardingActive
 
   if (
     hasCompletedWorkspaceTutorial(workspaceSeed.boardState) &&

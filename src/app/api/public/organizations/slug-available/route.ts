@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { RESERVED_PUBLIC_ORGANIZATION_SLUGS } from "@/lib/organization/reserved-public-slugs"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 function slugify(input: string): string {
@@ -21,29 +22,17 @@ export async function GET(request: NextRequest) {
   if (!raw) return NextResponse.json({ error: "Missing slug" }, { status: 400 })
   const normalized = slugify(raw)
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) {
-    return NextResponse.json({ available: false, slug: normalized, error: "Invalid format" }, { status: 200 })
+    return NextResponse.json(
+      { available: false, slug: normalized, error: "Invalid format" },
+      { status: 200 }
+    )
   }
 
-  const reserved = new Set([
-    "admin",
-    "api",
-    "login",
-    "signup",
-    "pricing",
-    "billing",
-    "class",
-    "dashboard",
-    "people",
-    "organization",
-    "my-organization",
-    "roadmap",
-    "_next",
-    "public",
-    "favicon",
-    "assets",
-  ])
-  if (reserved.has(normalized)) {
-    return NextResponse.json({ available: false, slug: normalized, error: "Reserved URL" }, { status: 200 })
+  if (RESERVED_PUBLIC_ORGANIZATION_SLUGS.has(normalized)) {
+    return NextResponse.json(
+      { available: false, slug: normalized, error: "Reserved URL" },
+      { status: 200 }
+    )
   }
 
   const {

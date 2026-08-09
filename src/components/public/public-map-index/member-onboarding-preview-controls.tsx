@@ -6,11 +6,13 @@ import BookOpenCheckIcon from "lucide-react/dist/esm/icons/book-open-check"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { PublicMapMemberOnboardingOverlay } from "./member-onboarding-overlay"
 import {
   buildPublicMapMemberOnboardingPreviewHref,
   isPublicMapMemberOnboardingPreviewActive,
 } from "./member-onboarding-preview"
+import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 
 export type PublicMapMemberOnboardingConfig = {
   enabled: boolean
@@ -24,6 +26,11 @@ export type PublicMapAdminOnboardingPreviewConfig = {
   hasOrganizationSwitcher: boolean
 }
 
+export type PublicMapMemberOnboardingMapOverlayState = {
+  isOpen: boolean
+  overlay: ReactNode
+}
+
 export function usePublicMapMemberOnboardingMapOverlay({
   isAuthenticated,
   memberOnboarding,
@@ -32,7 +39,7 @@ export function usePublicMapMemberOnboardingMapOverlay({
   isAuthenticated: boolean
   memberOnboarding?: PublicMapMemberOnboardingConfig
   adminOnboardingPreview?: PublicMapAdminOnboardingPreviewConfig
-}): ReactNode {
+}): PublicMapMemberOnboardingMapOverlayState {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -85,12 +92,16 @@ export function usePublicMapMemberOnboardingMapOverlay({
     ) : null
   ) : null
 
-  return adminPreviewToggle || memberOnboardingOverlay ? (
-    <>
-      {adminPreviewToggle}
-      {memberOnboardingOverlay}
-    </>
-  ) : null
+  return {
+    isOpen: showMemberOnboardingOverlay,
+    overlay:
+      adminPreviewToggle || memberOnboardingOverlay ? (
+        <>
+          {adminPreviewToggle}
+          {memberOnboardingOverlay}
+        </>
+      ) : null,
+  }
 }
 
 function PublicMapMemberOnboardingPreviewToggle({
@@ -101,13 +112,16 @@ function PublicMapMemberOnboardingPreviewToggle({
   onToggle: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-30">
+    <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-30 -translate-x-1/2">
       <Button
         type="button"
         variant="outline"
         size="sm"
         aria-pressed={active}
-        className="border-border/70 bg-card/92 pointer-events-auto rounded-xl shadow-sm backdrop-blur"
+        className={cn(
+          "pointer-events-auto rounded-xl shadow-sm backdrop-blur [html.light_&]:!text-zinc-950",
+          PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME
+        )}
         onClick={onToggle}
       >
         {active ? (

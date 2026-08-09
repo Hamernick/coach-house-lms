@@ -48,6 +48,7 @@ type PersonProfileFormFieldsProps = {
   title: string
   email: string
   socialLinks: PersonSocialLinks
+  extendedSocialLinksEnabled?: boolean
   category: OrgPerson["category"]
   image: string | null
   reportsToId: string | null
@@ -59,7 +60,6 @@ type PersonProfileFormFieldsProps = {
   onImageChange: (value: string | null) => void
   onReportsToChange: (value: string | null) => void
   readOnly?: boolean
-  extendedSocialLinksEnabled?: boolean
 }
 
 function canAssignManager(_category: OrgPerson["category"]) {
@@ -82,6 +82,7 @@ export function PersonProfileFormFields({
   title,
   email,
   socialLinks,
+  extendedSocialLinksEnabled = false,
   category,
   image,
   reportsToId,
@@ -93,14 +94,8 @@ export function PersonProfileFormFields({
   onImageChange,
   onReportsToChange,
   readOnly = false,
-  extendedSocialLinksEnabled = false,
 }: PersonProfileFormFieldsProps) {
   const categoryMeta = PERSON_CATEGORY_META[category]
-  const linkedInHref = resolvePersonSocialHref("linkedin", socialLinks.linkedin)
-  const linkedInError = getPersonSocialLinkError(
-    "linkedin",
-    socialLinks.linkedin
-  )
   function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -287,124 +282,82 @@ export function PersonProfileFormFields({
               </FieldDescription>
             </FieldControl>
           </Field>
-          {!extendedSocialLinksEnabled ? (
-            <Field orientation="responsive">
-              <FieldLabel htmlFor={`${formId}-linkedin`}>LinkedIn</FieldLabel>
-              <FieldControl>
-                <InputGroup>
-                  <InputGroupInput
-                    id={`${formId}-linkedin`}
-                    name="linkedin"
-                    value={socialLinks.linkedin}
-                    onChange={(event) =>
-                      onSocialLinkChange("linkedin", event.target.value)
-                    }
-                    placeholder="https://linkedin.com/in/username"
-                    autoComplete="url"
-                    aria-invalid={Boolean(linkedInError)}
-                    readOnly={readOnly}
-                  />
-                  <InputGroupAddon>
-                    <InputGroupButton
-                      type="button"
-                      disabled={!linkedInHref}
-                      onClick={() =>
-                        window.open(linkedInHref, "_blank", "noopener")
-                      }
-                    >
-                      Open
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-                {linkedInError ? (
-                  <FieldDescription className="text-destructive mt-2">
-                    {linkedInError}
-                  </FieldDescription>
-                ) : (
-                  <FieldDescription className="mt-2">
-                    Used for their profile link and photo refresh.
-                  </FieldDescription>
-                )}
-              </FieldControl>
-            </Field>
-          ) : null}
         </FieldGroup>
       </section>
 
-      {extendedSocialLinksEnabled ? (
-        <section
-          className="space-y-4"
-          aria-labelledby={`${formId}-social-media-heading`}
-        >
-          <div>
-            <h3
-              id={`${formId}-social-media-heading`}
-              className="text-sm font-semibold text-balance"
-            >
-              Social media
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs text-pretty">
-              Add the profiles that should appear in People.
-            </p>
-          </div>
-          <FieldGroup className="gap-4">
-            {PERSON_SOCIAL_PLATFORMS.map((platform) => {
-              const href = resolvePersonSocialHref(
-                platform.key,
-                socialLinks[platform.key]
-              )
-              const linkError = getPersonSocialLinkError(
-                platform.key,
-                socialLinks[platform.key]
-              )
-              return (
-                <Field key={platform.key} orientation="responsive">
-                  <FieldLabel htmlFor={`${formId}-${platform.key}`}>
-                    <PersonSocialBrandIcon
-                      platform={platform.key}
-                      className="size-4 shrink-0"
-                      aria-hidden
+      <section
+        className="space-y-4"
+        aria-labelledby={`${formId}-social-media-heading`}
+      >
+        <div>
+          <h3
+            id={`${formId}-social-media-heading`}
+            className="text-sm font-semibold text-balance"
+          >
+            Social media
+          </h3>
+          <p className="text-muted-foreground mt-1 text-xs text-pretty">
+            Add the profiles that should appear in People.
+          </p>
+        </div>
+        <FieldGroup className="gap-4">
+          {PERSON_SOCIAL_PLATFORMS.filter(
+            (platform) =>
+              extendedSocialLinksEnabled || platform.key === "linkedin"
+          ).map((platform) => {
+            const href = resolvePersonSocialHref(
+              platform.key,
+              socialLinks[platform.key]
+            )
+            const linkError = getPersonSocialLinkError(
+              platform.key,
+              socialLinks[platform.key]
+            )
+            return (
+              <Field key={platform.key} orientation="responsive">
+                <FieldLabel htmlFor={`${formId}-${platform.key}`}>
+                  <PersonSocialBrandIcon
+                    platform={platform.key}
+                    className="size-4 shrink-0"
+                    aria-hidden
+                  />
+                  {platform.label}
+                </FieldLabel>
+                <FieldControl>
+                  <InputGroup>
+                    <InputGroupInput
+                      id={`${formId}-${platform.key}`}
+                      name={platform.key}
+                      value={socialLinks[platform.key]}
+                      onChange={(event) =>
+                        onSocialLinkChange(platform.key, event.target.value)
+                      }
+                      placeholder={platform.placeholder}
+                      autoComplete="url"
+                      aria-invalid={Boolean(linkError)}
+                      readOnly={readOnly}
                     />
-                    {platform.label}
-                  </FieldLabel>
-                  <FieldControl>
-                    <InputGroup>
-                      <InputGroupInput
-                        id={`${formId}-${platform.key}`}
-                        name={platform.key}
-                        value={socialLinks[platform.key]}
-                        onChange={(event) =>
-                          onSocialLinkChange(platform.key, event.target.value)
-                        }
-                        placeholder={platform.placeholder}
-                        autoComplete="url"
-                        aria-invalid={Boolean(linkError)}
-                        readOnly={readOnly}
-                      />
-                      <InputGroupAddon>
-                        <InputGroupButton
-                          type="button"
-                          disabled={!href}
-                          onClick={() =>
-                            window.open(href, "_blank", "noopener")
-                          }
-                        >
-                          Open
-                        </InputGroupButton>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    {linkError ? (
-                      <FieldDescription className="text-destructive mt-2">
-                        {linkError}
-                      </FieldDescription>
-                    ) : null}
-                  </FieldControl>
-                </Field>
-              )
-            })}
-          </FieldGroup>
-        </section>
-      ) : null}
+                    <InputGroupAddon>
+                      <InputGroupButton
+                        type="button"
+                        disabled={!href}
+                        onClick={() => window.open(href, "_blank", "noopener")}
+                      >
+                        Open
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {linkError ? (
+                    <FieldDescription className="text-destructive mt-2">
+                      {linkError}
+                    </FieldDescription>
+                  ) : null}
+                </FieldControl>
+              </Field>
+            )
+          })}
+        </FieldGroup>
+      </section>
     </div>
   )
 }

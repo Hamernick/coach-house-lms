@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
@@ -383,12 +384,12 @@ export async function loadLatestAgreementDocument({
   if (error) {
     return isMissingFiscalWorkflowTableError(error)
       ? buildWorkflowTableError()
-      : { error: "Unable to load the prepared agreement." }
+      : { error: "Unable to load the generated agreement." }
   }
 
   if (!data) {
     return {
-      error: "Prepare the fiscal sponsorship agreement before sending it.",
+      error: "Generate the fiscal sponsorship agreement before sending.",
     }
   }
 

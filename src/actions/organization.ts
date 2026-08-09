@@ -158,9 +158,8 @@ export async function updateOrganizationProfileAction(
     const normalized = normalizeOrganizationNarrativeHtml(
       typeof value === "string" ? value : ""
     )
-    if (normalized !== currentNarratives[key]) {
+    if (normalized !== currentNarratives[key])
       narrativeUpdates[key] = normalized
-    }
   }
   const narrativeConflict = findOrganizationNarrativeRevisionConflict({
     profile: current,
@@ -189,12 +188,8 @@ export async function updateOrganizationProfileAction(
   ])
 
   for (const [k, v] of Object.entries(payload)) {
-    if (k === "narrativeRevisions") {
-      continue
-    }
-    if (k === "mission" || k === "vision" || k === "values") {
-      continue
-    }
+    if (k === "narrativeRevisions") continue
+    if (k === "mission" || k === "vision" || k === "values") continue
     // Store EIN in both the column and profile for now (column is canonical)
     if (k === "ein") {
       next[k] = v ?? null

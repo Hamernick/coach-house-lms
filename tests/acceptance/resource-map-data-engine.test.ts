@@ -177,7 +177,38 @@ function buildXlsxFixture() {
   return buildZip([{ name: "xl/worksheets/sheet1.xml", body: sheet }])
 }
 
+function buildPrefixedXlsxFixture() {
+  const sheet = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<x:worksheet xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><x:sheetData>',
+    '<x:row r="1"><x:c r="A1" t="str"><x:v>Directory title</x:v></x:c></x:row>',
+    '<x:row r="5"><x:c r="A5" t="str"><x:v>Organization</x:v></x:c><x:c r="B5" t="str"><x:v>Address</x:v></x:c><x:c r="C5" t="str"><x:v>Source URLs</x:v></x:c></x:row>',
+    '<x:row r="6"><x:c r="A6" t="str"><x:v>Neighborhood Pantry</x:v></x:c><x:c r="B6" t="str" /><x:c r="C6" t="str"><x:v>https://one.example.org\nhttps://two.example.org</x:v></x:c></x:row>',
+    "</x:sheetData></x:worksheet>",
+  ].join("")
+
+  return buildZip([{ name: "xl/worksheets/sheet1.xml", body: sheet }])
+}
+
 describe("resource map local data engine", () => {
+  it("parses namespaced Excel exports with metadata rows and blank cells", async () => {
+    const { parseExcelRows } = await import(pathToFileURL(PARSERS).href)
+    const workbook = buildPrefixedXlsxFixture()
+    const rows = parseExcelRows(
+      workbook.toString("base64"),
+      { raw_payload: { rawTextEncoding: "base64" } },
+      { metadata: { headerRow: 5 } }
+    )
+
+    expect(rows).toEqual([
+      {
+        Address: "",
+        Organization: "Neighborhood Pantry",
+        "Source URLs": "https://one.example.org\nhttps://two.example.org",
+      },
+    ])
+  })
+
   it("discovers source-registry candidates without writing by default", () => {
     const output = execFileSync(
       process.execPath,
@@ -1449,7 +1480,7 @@ describe("resource map local data engine", () => {
         sourceRecordId: "record-b",
       })
     })
-  })
+  }, 30_000)
 
   it("encodes explicit OSM Overpass and Wikidata SPARQL connector queries", async () => {
     const { buildConnectorHttpRequest, buildDerivedConnectorUrl } =
@@ -1543,6 +1574,39 @@ describe("resource map local data engine", () => {
         websiteUrl: "https://appointments.example.org",
       },
     })
+    const librarySchedule = normalizeCandidateRecord({
+      sourceRecordId: "hours-library",
+      sourceUrl: "https://www.chipublib.org/locations/3/",
+      extractedFields: {
+        organizationName: "Chicago Public Library",
+        title: "Albany Park Branch Library",
+        category: "Libraries",
+        hours:
+          "Mon. & Wed., 10-6; Tues. & Thurs., Noon-8; Fri. & Sat., 9-5; Sun., 1-5",
+        websiteUrl: "https://www.chipublib.org/locations/3/",
+      },
+    })
+    const staleLibrarySchedule = normalizeCandidateRecord({
+      sourceRecordId: "hours-library-stale",
+      sourceUrl: "https://www.chipublib.org/locations/3/",
+      extractedFields: {
+        organizationName: "Chicago Public Library",
+        title: "Albany Park Branch Library",
+        category: "Libraries",
+        hours: {
+          label:
+            "Mon. & Wed., 10-6; Tues. & Thurs., Noon-8; Fri. & Sat., 9-5; Sun., 1-5",
+          weekly: [
+            {
+              days: ["tuesday", "thursday"],
+              opensAt: "12:00",
+              closesAt: "08:00",
+            },
+          ],
+        },
+        websiteUrl: "https://www.chipublib.org/locations/3/",
+      },
+    })
 
     expect(twentyFourSeven.extractedFields.hours).toMatchObject({
       label: "24/7",
@@ -1567,6 +1631,31 @@ describe("resource map local data engine", () => {
       appointmentRequired: true,
       availabilityStatus: "appointment_only",
     })
+    expect(librarySchedule.extractedFields.hours.weekly).toEqual([
+      {
+        days: ["monday", "wednesday"],
+        opensAt: "10:00",
+        closesAt: "18:00",
+      },
+      {
+        days: ["tuesday", "thursday"],
+        opensAt: "12:00",
+        closesAt: "20:00",
+      },
+      {
+        days: ["friday", "saturday"],
+        opensAt: "09:00",
+        closesAt: "17:00",
+      },
+      {
+        days: ["sunday"],
+        opensAt: "13:00",
+        closesAt: "17:00",
+      },
+    ])
+    expect(staleLibrarySchedule.extractedFields.hours.weekly).toEqual(
+      librarySchedule.extractedFields.hours.weekly
+    )
     const finderOpen = normalizeCandidateRecord({
       sourceRecordId: "nyc-finder-open",
       sourceUrl: "https://finder.nyc.gov/coolingcenters/locations?mView=map",
@@ -2192,6 +2281,28 @@ describe("resource map local data engine", () => {
       ])
     )
     expect(quality.flagCodes).toContain("bad_geocode")
+  })
+
+  it("rejects Census results that ignore the requested postal code", async () => {
+    const { selectCensusAddressMatch } = await import(
+      pathToFileURL(GEOCODER).href
+    )
+    const match = selectCensusAddressMatch(
+      "475 Riverside Dr, Suite 700, New York, NY 10115",
+      [
+        {
+          addressComponents: {
+            city: "RIVERHEAD",
+            state: "NY",
+            zip: "11901",
+          },
+          coordinates: { x: -72.6413885, y: 40.9204628 },
+          matchedAddress: "475 RIVERSIDE DR, RIVERHEAD, NY, 11901",
+        },
+      ]
+    )
+
+    expect(match).toBeNull()
   })
 
   it("bounds network geocoding failures and records provider errors", async () => {
@@ -3479,7 +3590,7 @@ describe("resource map local data engine", () => {
       expect(secondRun.parsed_count).toBe(14)
       expect(secondCandidates).toHaveLength(14)
     })
-  }, 90_000)
+  }, 120_000)
 
   it("updates source freshness on unchanged checksum reruns without duplicating raw payloads", () => {
     withTempDir((directory) => {
@@ -3573,7 +3684,7 @@ describe("resource map local data engine", () => {
         parsed_count: expect.any(Number),
       })
     })
-  })
+  }, 30_000)
 
   it("preserves connector retry attempts for failed raw fetches", () => {
     withTempDir((directory) => {

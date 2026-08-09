@@ -510,9 +510,9 @@ describe("public map WebGL data", () => {
 
     expect(signature.visibleCategoryKeys).toEqual(["food", "health", "food"])
     expect(signature.visibleCategoryColors).toEqual([
-      "#e11d48",
+      "#2563eb",
       "#059669",
-      "#e11d48",
+      "#2563eb",
     ])
     expect(signature.signature).toBe(
       `layout:${PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION}|theme:light|tier:medium|count:12|categories:food,health,food`

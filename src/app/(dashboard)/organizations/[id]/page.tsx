@@ -2,6 +2,13 @@ import { notFound } from "next/navigation"
 
 import { Empty } from "@/components/ui/empty"
 import {
+  AdminOrganizationBillingPanel,
+  changeAdminOrganizationBillingPlanAction,
+  loadAdminOrganizationBilling,
+  refundLatestAdminOrganizationPaymentAction,
+} from "@/features/admin-organization-billing"
+import {
+  canManageFiscalSponsorshipForOrganization,
   connectFiscalSponsorshipDocumentAsset,
   generateFiscalSponsorshipAgreement,
   loadFiscalSponsorshipProjectWorkflowSummary,
@@ -17,7 +24,7 @@ import {
   deleteMemberWorkspaceTaskAction,
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
-  loadMemberWorkspaceProjectDetailPage,
+  loadPlatformAdminOrganizationProjectDetailPage,
   MemberWorkspaceProjectDetailPage,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectNoteAction,
@@ -28,10 +35,6 @@ import {
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import type { ProjectDetails } from "@/features/platform-admin-dashboard"
-import {
-  loadOrganizationCoachAssignmentData,
-  updateOrganizationCoachAssignmentAction,
-} from "@/features/organization-coach-assignments"
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -56,7 +59,10 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
   })
 
   const { id } = await params
-  const result = await loadMemberWorkspaceProjectDetailPage(id)
+  const result = await loadPlatformAdminOrganizationProjectDetailPage({
+    projectId: id,
+    userId: staff.userId,
+  })
 
   if (result.state === "not-found") {
     notFound()
@@ -80,52 +86,47 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     result.scope === "organization" || result.scope === "platform-admin"
   const canEditProjectDetails =
     result.scope === "organization" || result.scope === "platform-admin"
+  const canManageFiscalSponsorship =
+    result.scope === "platform-admin" &&
+    (await canManageFiscalSponsorshipForOrganization({
+      accessLevel: staff.accessLevel,
+      organizationId: result.organizationSummary.orgId,
+      supabase: staff.supabase,
+      userId: staff.userId,
+    }))
   const projectKind = getOrganizationAdminProjectKind(result.project.source)
   const canManageProjectTasks =
     result.scope === "organization" || result.scope === "platform-admin"
   const canDeleteProject =
     canEditProjectDetails && projectKind !== "organization_admin"
-  const [fiscalSponsorshipWorkflowSummary, coachAssignmentData] =
-    await Promise.all([
-      loadFiscalSponsorshipProjectWorkflowSummary(result.project.id),
-      loadOrganizationCoachAssignmentData({
-        organizationIds: [result.organizationSummary.orgId],
-      }),
-    ])
+  const fiscalSponsorshipWorkflowSummary =
+    await loadFiscalSponsorshipProjectWorkflowSummary(result.project.id)
   const fiscalSponsorshipWorkflowData =
     "error" in fiscalSponsorshipWorkflowSummary
       ? null
       : fiscalSponsorshipWorkflowSummary
-  const organizationCoachAssignments =
-    coachAssignmentData.assignmentsByOrganizationId.get(
-      result.organizationSummary.orgId
-    ) ?? []
-  const canManageFiscalSponsorship =
-    result.scope === "platform-admin" &&
-    (staff.accessLevel === "developer" ||
-      organizationCoachAssignments.some(
-        (assignment) => assignment.coach.id === staff.userId
-      ))
+  const adminBilling =
+    staff.accessLevel === "developer"
+      ? await loadAdminOrganizationBilling(result.organizationSummary.orgId)
+      : null
 
   return (
     <MemberWorkspaceProjectDetailPage
+      adminBilling={
+        adminBilling ? (
+          <AdminOrganizationBillingPanel
+            billing={adminBilling}
+            changePlanAction={changeAdminOrganizationBillingPlanAction}
+            refundLatestPaymentAction={
+              refundLatestAdminOrganizationPaymentAction
+            }
+          />
+        ) : undefined
+      }
       project={result.project}
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
       organizationSummary={result.organizationSummary}
-      coachAssignments={organizationCoachAssignments}
-      coachOptions={coachAssignmentData.coachOptions}
-      canManageCoachAssignment={
-        coachAssignmentData.available && staff.accessLevel === "developer"
-      }
-      updateCoachAssignmentAction={
-        coachAssignmentData.available && staff.accessLevel === "developer"
-          ? updateOrganizationCoachAssignmentAction
-          : undefined
-      }
-      canUnassignCoachAssignment={
-        !coachAssignmentData.scopeStatus.assignedOnlyEnabled
-      }
       fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowData}
       canManageProject={canManageProject}
       canManageProjectAssets={canManageProjectAssets}

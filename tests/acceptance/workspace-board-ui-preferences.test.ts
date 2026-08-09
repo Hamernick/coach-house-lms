@@ -135,9 +135,6 @@ describe("workspace board UI preferences", () => {
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
     )
-    const bootstrapSource = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-canvas-surface-v2-bootstrap.ts"
-    )
     const viewportPreferencesSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-viewport-preferences.ts"
     )
@@ -154,18 +151,14 @@ describe("workspace board UI preferences", () => {
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
 
-    expect(bootstrapSource).toContain("useWorkspaceCanvasViewportPreferences")
-    expect(surfaceSource).toContain(
-      "suppressInitialFit: viewport.suppressInitialFit"
-    )
-    expect(surfaceSource).toContain("onMoveEnd: viewport.handleCanvasMoveEnd")
+    expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
+    expect(surfaceSource).toContain("suppressInitialFit")
+    expect(surfaceSource).toContain("onMoveEnd: handleCanvasMoveEnd")
     expect(viewportPreferencesSource).toContain(
       "setViewportZoom(viewport.zoom)"
     )
     expect(viewportPreferencesSource).toContain("viewportZoom,")
-    expect(surfaceSource).toContain(
-      "uiPreferencesScope: viewport.uiPreferencesScope"
-    )
+    expect(surfaceSource).toContain("uiPreferencesScope,")
     expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
       "readWorkspaceBoardUiPreferences"

@@ -21,7 +21,6 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type { PublicMapGroupFilterKey } from "./category-filter"
 import type { SidebarMode } from "./constants"
-import { usePublicMapListItems } from "./map-items-state"
 import {
   buildPublicMapResourceGuides,
   type PublicMapResourceGuide,
@@ -88,10 +87,6 @@ export function usePublicMapResourceGuideState({
     [activeGuideId, resourceGuides]
   )
   const visibleMapItems = activeGuide?.items ?? filteredMapItems
-  const filteredListItems = usePublicMapListItems({
-    items: visibleMapItems,
-    query: activeGuide ? "" : deferredQuery,
-  })
   const clearActiveGuide = useCallback(() => {
     setActiveGuideId(null)
     setSelectedListItemId(null)
@@ -131,7 +126,6 @@ export function usePublicMapResourceGuideState({
   return {
     activeGuideSearchContext,
     clearActiveGuide,
-    filteredListItems,
     handleGuideSelect,
     resourceGuides,
     visibleMapItems,
@@ -139,7 +133,7 @@ export function usePublicMapResourceGuideState({
 }
 
 const PUBLIC_MAP_RESOURCE_GUIDE_CARD_CLASSNAME =
-  "group relative aspect-[0.82] h-auto min-w-0 items-stretch justify-start overflow-hidden rounded-xl border border-input bg-input/30 p-0 text-left whitespace-normal text-foreground shadow-sm backdrop-blur transition-[background-color,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-input hover:bg-input/50 hover:text-foreground hover:shadow-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
+  "group relative aspect-[0.82] h-auto min-w-0 items-stretch justify-start overflow-hidden rounded-xl border border-input bg-input/55 p-0 text-left whitespace-normal text-foreground shadow-sm backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-input hover:bg-input/70 hover:text-foreground hover:shadow-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none dark:border-input dark:bg-input/55 dark:hover:bg-input/70"
 
 function PublicMapResourceGuidesHeader({ guideCount }: { guideCount: number }) {
   return (
@@ -148,11 +142,11 @@ function PublicMapResourceGuidesHeader({ guideCount }: { guideCount: number }) {
         <p className="text-foreground text-base leading-none font-semibold">
           Guides
         </p>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-muted-foreground mt-1 text-sm text-pretty">
           Cooling centers and heat relief groups
         </p>
       </div>
-      <p className="text-muted-foreground shrink-0 text-[11px] tabular-nums">
+      <p className="text-muted-foreground shrink-0 text-xs tabular-nums">
         {guideCount.toLocaleString()}
       </p>
     </div>
@@ -179,7 +173,10 @@ export function PublicMapResourceGuides({
       {showHeader ? (
         <PublicMapResourceGuidesHeader guideCount={guides.length} />
       ) : null}
-      <div className="grid min-w-0 grid-cols-2 gap-2">
+      <div
+        data-public-map-resource-guides-grid="true"
+        className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-stretch gap-3"
+      >
         {guides.map((guide) => (
           <Button
             key={guide.id}
@@ -205,15 +202,15 @@ export function PublicMapResourceGuides({
                 />
               </>
             ) : null}
-            <span className="relative flex h-full min-w-0 flex-col justify-end p-3">
+            <span className="relative flex h-full min-w-0 flex-col justify-end p-4">
               <span className="min-w-0">
-                <span className="text-muted-foreground block text-[10px] leading-none font-semibold tracking-normal">
+                <span className="text-muted-foreground block text-xs leading-none font-semibold tracking-normal">
                   {guide.kicker}
                 </span>
-                <span className="text-foreground mt-1.5 line-clamp-3 block text-[18px] leading-[1.05] font-bold">
+                <span className="text-foreground mt-2 line-clamp-3 block text-xl leading-tight font-bold text-pretty">
                   {guide.title}
                 </span>
-                <span className="text-muted-foreground mt-1 block text-[11px] leading-tight font-medium">
+                <span className="text-muted-foreground mt-1.5 block text-sm leading-tight font-medium">
                   {guide.itemCount.toLocaleString()} places
                 </span>
               </span>
@@ -235,7 +232,7 @@ export function PublicMapGuidesRail({
   return (
     <div
       data-public-map-member-rail-section="guides-panel"
-      className="flex h-full min-h-0 flex-col gap-2 overflow-hidden"
+      className="flex h-full min-h-0 flex-col gap-3 overflow-hidden px-3"
     >
       <div
         data-public-map-member-rail-section="guides-header"
@@ -245,9 +242,9 @@ export function PublicMapGuidesRail({
       </div>
       <ScrollArea
         data-public-map-member-rail-section="guides-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden pr-2"
+        className="h-full min-h-0 flex-1 overflow-hidden pr-1"
         viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-        contentClassName="pb-2"
+        contentClassName="pb-3"
       >
         {guides.length > 0 ? (
           <PublicMapResourceGuides

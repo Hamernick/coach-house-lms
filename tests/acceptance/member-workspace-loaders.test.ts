@@ -26,6 +26,10 @@ const { ensureStarterTasksForOrgMock } = vi.hoisted(() => ({
   ensureStarterTasksForOrgMock: vi.fn(),
 }))
 
+const { loadFiscalSponsorshipProjectListStatusesMock } = vi.hoisted(() => ({
+  loadFiscalSponsorshipProjectListStatusesMock: vi.fn(),
+}))
+
 vi.mock(
   "@/features/member-workspace/server/member-workspace-actor-context",
   () => ({
@@ -130,6 +134,14 @@ vi.mock("@/features/member-workspace/server/person-options", () => ({
 vi.mock("@/features/member-workspace/server/task-persistence", () => ({
   ensureStarterTasksForOrg: ensureStarterTasksForOrgMock,
 }))
+
+vi.mock(
+  "@/features/member-workspace/server/fiscal-sponsorship-project-list-status",
+  () => ({
+    loadFiscalSponsorshipProjectListStatuses:
+      loadFiscalSponsorshipProjectListStatusesMock,
+  })
+)
 
 import { loadMemberWorkspaceProjectsPage } from "@/features/member-workspace/server/project-loaders"
 import { loadMemberWorkspaceTasksPage } from "@/features/member-workspace/server/task-loaders"
@@ -251,6 +263,8 @@ describe("member workspace loaders", () => {
     loadMemberWorkspacePersonOptionsForOrganizationsMock.mockResolvedValue([])
     ensureStarterTasksForOrgMock.mockReset()
     ensureStarterTasksForOrgMock.mockResolvedValue(undefined)
+    loadFiscalSponsorshipProjectListStatusesMock.mockReset()
+    loadFiscalSponsorshipProjectListStatusesMock.mockResolvedValue(new Map())
   })
 
   it("returns an empty projects state when member workspace project tables are missing", async () => {
@@ -397,6 +411,10 @@ describe("member workspace loaders", () => {
         }),
       ],
     })
+    expect(standardProjectsQuery.neq).toHaveBeenCalledWith(
+      "created_source",
+      "starter_seed"
+    )
   })
 
   it("returns manageable platform-admin task views for real projects", async () => {

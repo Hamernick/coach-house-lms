@@ -1,29 +1,45 @@
-import type { ComponentType, SVGProps } from "react"
-import FacebookIcon from "lucide-react/dist/esm/icons/facebook"
-import InstagramIcon from "lucide-react/dist/esm/icons/instagram"
+import type { SVGProps } from "react"
 import LinkedinIcon from "lucide-react/dist/esm/icons/linkedin"
-import Music2Icon from "lucide-react/dist/esm/icons/music-2"
-import TwitterIcon from "lucide-react/dist/esm/icons/twitter"
-import YoutubeIcon from "lucide-react/dist/esm/icons/youtube"
+import {
+  siFacebook,
+  siInstagram,
+  siTiktok,
+  siX,
+  siYoutube,
+  type SimpleIcon,
+} from "simple-icons"
 
 import type { PersonSocialPlatform } from "@/lib/people/social-links"
 
-const SOCIAL_ICONS: Record<
-  PersonSocialPlatform,
-  ComponentType<SVGProps<SVGSVGElement>>
+const SIMPLE_SOCIAL_ICONS: Record<
+  Exclude<PersonSocialPlatform, "linkedin">,
+  SimpleIcon
 > = {
-  facebook: FacebookIcon,
-  instagram: InstagramIcon,
-  linkedin: LinkedinIcon,
-  tiktok: Music2Icon,
-  twitter: TwitterIcon,
-  youtube: YoutubeIcon,
+  facebook: siFacebook,
+  instagram: siInstagram,
+  tiktok: siTiktok,
+  twitter: siX,
+  youtube: siYoutube,
 }
 
 export function PersonSocialBrandIcon({
   platform,
   ...props
 }: SVGProps<SVGSVGElement> & { platform: PersonSocialPlatform }) {
-  const Icon = SOCIAL_ICONS[platform]
-  return <Icon {...props} />
+  if (platform === "linkedin") {
+    return <LinkedinIcon {...props} />
+  }
+
+  const icon = SIMPLE_SOCIAL_ICONS[platform]
+  return (
+    <svg
+      role="img"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      focusable="false"
+      {...props}
+    >
+      <path d={icon.path} />
+    </svg>
+  )
 }

@@ -107,6 +107,20 @@ export const PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS: Record<
   string,
   readonly string[]
 > = {
+  "shopping-basket": [
+    "m15 11-1 9",
+    "m19 11-4-7",
+    "M2 11h20",
+    "m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4",
+    "M4.5 15.5h15",
+    "m5 11 4-7",
+    "m9 11 1 9",
+  ],
+  "shopping-cart": [
+    "M8 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2",
+    "M19 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2",
+    "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12",
+  ],
   wind: [
     "M12.8 19.6A2 2 0 1 0 14 16H2",
     "M17.5 8a2.5 2.5 0 1 1 2 4H2",

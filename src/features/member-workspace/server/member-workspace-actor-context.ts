@@ -1,10 +1,10 @@
 import { cache } from "react"
 
 import { hasPlatformCapability } from "@/features/platform-access"
-import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 import { canEditOrganization } from "@/lib/organization/active-org"
+import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 const resolveMemberWorkspaceActorContextCached = cache(async () => {
@@ -35,19 +35,17 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
     profileAudience.isPlatformStaff || profileAudience.isAdmin
   const adminSupabase = createSupabaseAdminClient()
   const dataSupabase = isPlatformStaff ? adminSupabase : supabase
-  const organizationCoachScope = isPlatformStaff
-    ? await loadOrganizationCoachActorScope({
-        accessLevel: profileAudience.platformAccessLevel,
-        supabase: adminSupabase,
-        userId: user.id,
-      })
-    : { mode: "all" as const }
   const paidAccess = isPlatformStaff
     ? { hasPaidTeamAccess: true }
     : await resolvePaidTeamAccessForOrgSubscription({
         supabase: adminSupabase,
         orgId: activeOrg.orgId,
       })
+  const organizationCoachScope = await loadOrganizationCoachActorScope({
+    accessLevel: profileAudience.platformAccessLevel,
+    supabase: adminSupabase,
+    userId: user.id,
+  })
 
   return {
     supabase: dataSupabase,
@@ -55,11 +53,11 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
     isAdmin: profileAudience.isAdmin,
     isPlatformStaff,
     platformAccessLevel: profileAudience.platformAccessLevel,
-    organizationCoachScope,
     canAccessOrganizations: hasPlatformCapability(
       profileAudience.platformAccessLevel,
       "organizations"
     ),
+    organizationCoachScope,
     activeOrg,
     canEdit: canEditOrganization(activeOrg.role),
     hasMemberWorkspaceAccess:

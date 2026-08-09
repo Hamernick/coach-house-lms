@@ -1,16 +1,27 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import { warmPublicMapListItemSearchCache } from "./map-items-state"
 
 export const EMPTY_PUBLIC_MAP_RESOURCE_ITEMS: ExternalResourceMapItem[] = []
 export const PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+export type PublicMapResourceItemsLoadStatus = "loading" | "ready" | "error"
 
 const resourceItemsLoadByEndpoint = new Map<
   string,
   Promise<ExternalResourceMapItem[]>
 >()
+
+export function clearPublicMapResourceItemsCache(endpoint?: string) {
+  if (endpoint) {
+    resourceItemsLoadByEndpoint.delete(endpoint)
+    return
+  }
+
+  resourceItemsLoadByEndpoint.clear()
+}
 
 export function loadPublicMapResourceItems(endpoint: string) {
   const cached = resourceItemsLoadByEndpoint.get(endpoint)
@@ -27,9 +38,11 @@ export function loadPublicMapResourceItems(endpoint: string) {
     const payload = (await response.json()) as {
       resourceItems?: unknown
     }
-    return Array.isArray(payload.resourceItems)
+    const resourceItems = Array.isArray(payload.resourceItems)
       ? (payload.resourceItems as ExternalResourceMapItem[])
       : EMPTY_PUBLIC_MAP_RESOURCE_ITEMS
+    warmPublicMapListItemSearchCache(resourceItems)
+    return resourceItems
   })
 
   resourceItemsLoadByEndpoint.set(endpoint, load)
@@ -50,10 +63,17 @@ export function usePublicMapResourceItems({
   resourceItemsEndpoint?: string
 }) {
   const [resourceItems, setResourceItems] = useState(initialResourceItems)
+  const [status, setStatus] = useState<PublicMapResourceItemsLoadStatus>(
+    resourceItemsEndpoint ? "loading" : "ready"
+  )
+  const [error, setError] = useState<string | null>(null)
+  const [loadRequestId, setLoadRequestId] = useState(0)
 
   useEffect(() => {
     if (resourceItemsEndpoint) return
     setResourceItems(initialResourceItems)
+    setStatus("ready")
+    setError(null)
   }, [initialResourceItems, resourceItemsEndpoint])
 
   useEffect(() => {
@@ -63,12 +83,17 @@ export function usePublicMapResourceItems({
     let cancelled = false
 
     async function loadResourceItems() {
+      setStatus("loading")
+      setError(null)
       try {
         const payload = await loadPublicMapResourceItems(endpoint)
         if (cancelled) return
         setResourceItems(payload)
+        setStatus("ready")
       } catch (error) {
         if (cancelled) return
+        setStatus("error")
+        setError("The full resource directory could not load.")
         console.warn("[public-map] resource items unavailable", {
           message: error instanceof Error ? error.message : String(error),
         })
@@ -96,7 +121,13 @@ export function usePublicMapResourceItems({
         refreshVisibleResourceItems
       )
     }
+  }, [loadRequestId, resourceItemsEndpoint])
+
+  const retry = useCallback(() => {
+    if (!resourceItemsEndpoint) return
+    clearPublicMapResourceItemsCache(resourceItemsEndpoint)
+    setLoadRequestId((current) => current + 1)
   }, [resourceItemsEndpoint])
 
-  return resourceItems
+  return { error, resourceItems, retry, status }
 }

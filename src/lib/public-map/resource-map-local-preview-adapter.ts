@@ -274,7 +274,7 @@ function buildLinks(
       id: `${id}:website`,
       label: "Website",
       url: websiteUrl,
-      type: "website" as const,
+      type: "website",
       domain: readDomain(websiteUrl),
       isPrimary: true,
     },
@@ -282,11 +282,7 @@ function buildLinks(
   ]
 }
 
-function buildContacts(
-  fields: JsonRecord,
-  record: JsonRecord,
-  id: string
-): PublicMapResourceContact[] {
+function buildContacts(fields: JsonRecord, record: JsonRecord, id: string) {
   const explicitContacts = [
     ...readArray(fields["contacts"]),
     ...readArray(fields["public_contacts"]),
@@ -307,9 +303,7 @@ function buildContacts(
     return [
       {
         id: readFirstString(contact["id"], `${id}:contact:${index}`)!,
-        label:
-          readFirstString(contact["label"], contact["name"]) ??
-          (type === "email" ? "Email" : type === "phone" ? "Phone" : "Contact"),
+        label: readFirstString(contact["label"], contact["name"]),
         value,
         type,
         url: normalizeUrl(contact["url"]),

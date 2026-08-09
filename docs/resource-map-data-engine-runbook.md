@@ -34,6 +34,22 @@ runs.jsonl
 geocode-cache.jsonl
 ```
 
+Before review or release, compare provider-directory rows with their human-facing
+provider pages:
+
+```bash
+pnpm resource-map:verify-provider-pages -- --input <records.jsonl> --output <provider-verified.jsonl> --network true --write
+```
+
+The comparison validates public HTTP(S) destinations, rejects private-network targets,
+follows bounded redirects, limits retained response size, records content hashes and
+match signals, and removes dead or unrelated redirect links. A successful fetch alone
+does not count as a second comparison; provider identity must match.
+
+Use `--only-needs-comparison` to avoid refetching records that already have two source
+comparisons. Use `--output-checked-only` when the resulting file should contain only the
+records that needed this pass.
+
 Override that path with:
 
 ```bash
@@ -361,11 +377,12 @@ Stage existing local candidates through the current import dry-run:
 pnpm data:ingest -- --input data/resource-map/.engine/candidate-records.jsonl --stage --dry-run
 ```
 
-When `data/resource-map/.engine/candidate-records.jsonl` exists, `/find`
-loads it as the default local preview source before trying the public Supabase
-RPC or admin seed fallback. Explicit `RESOURCE_MAP_LOCAL_PREVIEW_FILE` still
-wins when set. Seed preview resources are treated as empty-state scaffolding and
-are not mixed into the map once real resource items are available.
+`data/resource-map/.engine/candidate-records.jsonl` is an intake queue and is
+never loaded implicitly by `/find`. To preview a reviewed cohort locally, set
+`RESOURCE_MAP_LOCAL_PREVIEW_FILE` to that curated JSONL file before starting the
+development server. Without an explicit preview file, `/find` uses only the
+sanitized public Supabase RPC when enabled. Raw candidates and synthetic seeds
+must not be mixed into the public map.
 
 Check collected source, website, and intake links without network requests:
 

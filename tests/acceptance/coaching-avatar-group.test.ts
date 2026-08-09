@@ -21,5 +21,18 @@ describe("coaching avatar group", () => {
     )
     expect(source).not.toContain('id: "placeholder"')
     expect(source).not.toContain("Coach slot available")
+    expect(source).toContain("visibleAvatars.map")
+    expect(source).toContain("showStatus && index === 0")
+    expect(source).toContain("bg-emerald-500")
+  })
+
+  it("uses one available coach avatar in the compact sidebar item", () => {
+    const source = readSource(
+      "src/components/coaching/coach-scheduling-sidebar-item.tsx"
+    )
+
+    expect(source).toContain('label="Coach available"')
+    expect(source).toContain("limit={1}")
+    expect(source).toContain("showStatus")
   })
 })

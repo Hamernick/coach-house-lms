@@ -44,27 +44,6 @@ describe("person social links", () => {
       instagram: "new-profile",
       linkedin: "existing-profile",
     })
-
-    expect(
-      normalizePersonSocialLinks(
-        { linkedin: "updated-linkedin" },
-        {
-          facebook: "hidden-facebook",
-          instagram: "hidden-instagram",
-          linkedin: "old-linkedin",
-          tiktok: "hidden-tiktok",
-          twitter: "hidden-twitter",
-          youtube: "hidden-youtube",
-        }
-      )
-    ).toEqual({
-      facebook: "hidden-facebook",
-      instagram: "hidden-instagram",
-      linkedin: "updated-linkedin",
-      tiktok: "hidden-tiktok",
-      twitter: "hidden-twitter",
-      youtube: "hidden-youtube",
-    })
   })
 
   it("resolves full URLs and platform handles", () => {
@@ -113,26 +92,20 @@ describe("person social links", () => {
       "src/components/people/person-profile-form-fields.tsx"
     )
     const tableSource = readSource("src/components/people/people-table.tsx")
-    const tableColumnsSource = readSource(
-      "src/components/people/people-table-columns.tsx"
+    const workspaceCellsSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-cells.tsx"
     )
+
     expect(actionSource).toContain("findPersonSocialLinkError(person)")
     expect(
       actionSource.indexOf("findPersonSocialLinkError(person)")
     ).toBeLessThan(actionSource.indexOf('requireServerSession("/people")'))
     expect(dialogSource).toContain("!socialLinkError")
-    expect(dialogSource).toContain("extendedSocialLinksEnabled = false")
-    expect(dialogSource).toContain(": { linkedin: socialLinks.linkedin }")
     expect(fieldsSource).toContain("aria-invalid={Boolean(linkError)}")
     expect(fieldsSource).toContain("{linkError ? (")
-    expect(fieldsSource).toContain("{extendedSocialLinksEnabled ? (")
-    expect(fieldsSource).toContain("{!extendedSocialLinksEnabled ? (")
-    expect(actionSource).toContain("EXTENDED_PERSON_SOCIAL_PLATFORMS")
-    expect(actionSource).toContain("extendedSocialWriteRequested &&")
+    expect(workspaceCellsSource).toContain(
+      "resolvePersonSocialHref(platform.key, socialLinks[platform.key])"
+    )
     expect(tableSource).not.toContain("linkedin: person.linkedin ?? null")
-    expect(tableSource).toContain("refreshPersonLinkedInImageAction")
-    expect(tableColumnsSource).toContain("Refresh LinkedIn photo")
-    expect(actionSource).toContain("fetchLinkedInProfileImage(person.linkedin)")
-    expect(actionSource).not.toContain("async function fetchLinkedInImage(")
   })
 })

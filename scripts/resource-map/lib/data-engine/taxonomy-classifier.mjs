@@ -252,7 +252,7 @@ const SUBCATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
+    ["health_sexual_reproductive_health", "Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],
@@ -868,6 +868,31 @@ function shouldKeepWeatherReliefMatch({ fields, input, match, record }) {
   return hasWeatherReliefServiceIntent(record, fields, pattern)
 }
 
+const ANIMAL_CATEGORY_PATTERN = /^animals(?:_|$)/u
+const EXPLICIT_ANIMAL_SERVICE_PATTERN =
+  /\b(animal|animals|cat|cats|dog|dogs|pet|pets|veterinary|veterinarian|wildlife)\b/u
+
+function shouldKeepAnimalMatch({ fields, match }) {
+  if (!ANIMAL_CATEGORY_PATTERN.test(match.key)) return true
+  const serviceText = normalizeTerm(
+    [
+      fields.sourceCategoryText,
+      fields.category,
+      fields.subcategory,
+      fields.serviceName,
+      fields.serviceTitle,
+      fields.title,
+      fields.organizationName,
+      fields.description,
+      fields.eligibility,
+    ]
+      .map((value) => readString(value))
+      .filter(Boolean)
+      .join(" ")
+  )
+  return EXPLICIT_ANIMAL_SERVICE_PATTERN.test(serviceText)
+}
+
 function boostWeatherReliefCategory(categories, fields, record, pattern, key) {
   if (!hasWeatherReliefServiceIntent(record, fields, pattern)) return
   const rawTerm = readString(fields.sourceCategoryText)
@@ -993,7 +1018,10 @@ export function classifyResourceTaxonomy(record) {
         match.score >= 65 &&
         (match.score >= best.score - 3 || match.score >= 90)
       if (!scoreSelected) return false
-      return shouldKeepWeatherReliefMatch({ fields, input, match, record })
+      return (
+        shouldKeepWeatherReliefMatch({ fields, input, match, record }) &&
+        shouldKeepAnimalMatch({ fields, match })
+      )
     })
     if (selectedMatches.length > 0) {
       for (const match of selectedMatches) addCategory(categories, match)

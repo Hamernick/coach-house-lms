@@ -123,35 +123,4 @@ describe("organization workspace deep links", () => {
 
     expect(results[0]?.image).toBe("https://example.com/logo.svg")
   })
-
-  it("wires organization field and document focus targets", () => {
-    const fieldSources = [
-      "src/components/organization/org-profile-card/tabs/company-tab/edit-sections/address.tsx",
-      "src/components/organization/org-profile-card/tabs/company-tab/edit-sections/contact.tsx",
-      "src/components/organization/org-profile-card/tabs/company-tab/edit-sections/identity.tsx",
-      "src/components/organization/org-profile-card/tabs/company-tab/edit-sections/story.tsx",
-    ].map(readSource)
-    const mobileDocuments = readSource(
-      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-results-mobile.tsx"
-    )
-    const tableDocuments = readSource(
-      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-results-table-row.tsx"
-    )
-    const documentFocus = readSource(
-      "src/components/organization/org-profile-card/tabs/documents-tab/components/document-row-focus.ts"
-    )
-
-    for (const source of fieldSources) {
-      expect(source).toContain("focusKey=")
-    }
-    expect(mobileDocuments).toContain(
-      "getOrganizationFocusTargetProps(getDocumentRowFocusKey(row))"
-    )
-    expect(tableDocuments).toContain(
-      "getOrganizationFocusTargetProps(getDocumentRowFocusKey(row))"
-    )
-    expect(documentFocus).toContain(
-      'row.source === "upload" ? row.definition.key : row.id'
-    )
-  })
 })

@@ -61,7 +61,7 @@ export type ResourceMapAdminPromotionInput = {
 
 export type ResourceMapAdminImportRecordRow = {
   id: string
-  source_id: string | null
+  source_id: string
   source_record_id: string | null
   source_url: string | null
   source_type: string | null
@@ -86,6 +86,85 @@ export type ResourceMapAdminImportRecordRow = {
   reviewed_at: string | null
   created_at: string
   updated_at: string
+}
+
+export type ResourceMapAdminImportRecordDetailRow =
+  ResourceMapAdminImportRecordRow & {
+    raw_ingestion_record_id: string | null
+    raw_snapshot: Record<string, unknown>
+    extracted_fields: Record<string, unknown>
+    field_confidence: Record<string, unknown>
+    trust_score: number | null
+    freshness_score: number | null
+    quality_flags: unknown[]
+    reason_codes: string[]
+    needs_review: boolean
+    license_notes: string | null
+    attribution: string | null
+    terms_notes: string | null
+  }
+
+export type ResourceMapAdminSourceRow = {
+  id: string
+  name: string
+  slug: string
+  homepage_url: string | null
+  source_type: string
+  trust_level: string
+  license_label: string | null
+  license_url: string | null
+  attribution: string | null
+}
+
+export type ResourceMapAdminRawIngestionRow = {
+  id: string
+  raw_url: string
+  raw_payload: Record<string, unknown>
+  content_type: string | null
+  checksum: string
+  fetched_at: string
+  parser_version: string
+  connector_version: string
+  fetch_status: string
+  error_message: string | null
+}
+
+export type ResourceMapAdminFieldEvidenceRow = {
+  id: string
+  import_record_id: string | null
+  field_path: string
+  field_value: unknown
+  confidence_score: number | null
+  source_url: string | null
+  evidence_type: string
+  derived_from: string[]
+  transformation: string | null
+  evidence_metadata: Record<string, unknown>
+  observed_at: string
+}
+
+export type ResourceMapAdminEnrichmentRunRow = {
+  id: string
+  import_record_id: string
+  pass_type: string
+  pass_number: number
+  status: string
+  provider: string | null
+  model: string | null
+  prompt_version: string
+  source_urls: string[]
+  structured_result: Record<string, unknown>
+  issues: unknown[]
+  error_message: string | null
+  actor_id: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export type ResourceMapAdminReviewerProfile = {
+  id: string
+  full_name: string | null
+  email: string | null
 }
 
 export type ResourceMapAdminImportMatchRow = {
@@ -189,6 +268,9 @@ export type ResourceMapAdminVisibilityLinkRow = {
 }
 
 export type ResourceMapAdminReviewQueue = {
+  page: number
+  pageSize: number
+  totalImports: number
   imports: ResourceMapAdminImportRecordRow[]
   matches: ResourceMapAdminImportMatchRow[]
   canonicalOrganizations: ResourceMapAdminCanonicalOrganizationRow[]
@@ -196,6 +278,20 @@ export type ResourceMapAdminReviewQueue = {
   visibilityContacts: ResourceMapAdminVisibilityContactRow[]
   visibilityLinks: ResourceMapAdminVisibilityLinkRow[]
   curationEvents: ResourceMapAdminCurationEventRow[]
+}
+
+export type ResourceMapAdminReviewRecord = {
+  record: ResourceMapAdminImportRecordDetailRow
+  source: ResourceMapAdminSourceRow | null
+  rawIngestion: ResourceMapAdminRawIngestionRow | null
+  fieldEvidence: ResourceMapAdminFieldEvidenceRow[]
+  enrichmentRuns: ResourceMapAdminEnrichmentRunRow[]
+  enrichmentLedgerAvailable: boolean
+  matches: ResourceMapAdminImportMatchRow[]
+  visibilityContacts: ResourceMapAdminVisibilityContactRow[]
+  visibilityLinks: ResourceMapAdminVisibilityLinkRow[]
+  reviewerProfiles: ResourceMapAdminReviewerProfile[]
+  currentReviewerId: string
 }
 
 export type ResourceMapAdminReviewFormActions = {

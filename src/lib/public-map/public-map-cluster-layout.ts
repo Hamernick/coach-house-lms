@@ -1,6 +1,6 @@
 export const PUBLIC_MAP_CLUSTER_LAYOUT_BASE_SIZE = 48
 export const PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION =
-  "packed-circle-v37-solid-color-center-marker"
+  "packed-circle-v39-shopping-basket-community-fridges"
 
 export type PublicMapClusterVisibleDotCount = 1 | 2 | 3 | 4 | 5 | 6 | 7
 

@@ -164,8 +164,12 @@ describe("roadmap calendar month agenda", () => {
     )
     expect(agendaPanelParts).toContain("pt-1 pr-1 pb-4")
     expect(agendaPanel).not.toContain("mt-3 flex min-h-0 flex-1")
-    expect(scrollFadeEffect).toContain("forwardRef<HTMLDivElement")
-    expect(scrollFadeEffect).toContain("ref={ref}")
+    expect(scrollFadeEffect).toContain(
+      "export const ScrollFadeEffect = forwardRef<"
+    )
+    expect(scrollFadeEffect).toContain("HTMLDivElement,")
+    expect(scrollFadeEffect).toContain("const mergedRef = useCallback(")
+    expect(scrollFadeEffect).toContain("ref={mergedRef}")
     expect(popover).toContain("forceMount,")
     expect(popover).toContain(
       "<PopoverPrimitive.Portal forceMount={forceMount}>"
@@ -176,7 +180,7 @@ describe("roadmap calendar month agenda", () => {
       '<DrawerPortal data-slot="drawer-portal" forceMount={forceMount}>'
     )
     expect(drawer).toContain("forceMount={forceMount}")
-    expect(drawer).toContain("modal={open === false ? false : modal}")
+    expect(drawer).not.toContain("open === false ? false : modal")
     expect(drawer).toContain("data-[state=closed]:pointer-events-none")
     expect(drawer).toContain("data-[state=closed]:invisible")
     expect(agendaScrollContainers).toHaveLength(1)
@@ -295,7 +299,7 @@ describe("roadmap calendar month agenda", () => {
     expect(agendaPanel).toContain('primitiveImport: "@/components/ui/calendar"')
   })
 
-  it("keeps the add-event menu in the visible agenda footer without letting the list push it away", () => {
+  it("keeps one add-event menu visible in the month header", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
@@ -304,17 +308,12 @@ describe("roadmap calendar month agenda", () => {
     )
     const menuUsages = agendaPanel.match(/<RoadmapCalendarAddEventMenu/g) ?? []
     const addMenuIndex = agendaPanel.indexOf("<RoadmapCalendarAddEventMenu")
-    const agendaScrollIndex = agendaPanel.indexOf(
-      "<RoadmapCalendarAgendaScroll"
-    )
+    const calendarGridIndex = agendaPanel.indexOf("<Calendar")
 
     expect(menuUsages).toHaveLength(1)
     expect(addMenuIndex).toBeGreaterThan(-1)
-    expect(agendaScrollIndex).toBeGreaterThan(-1)
-    expect(addMenuIndex).toBeGreaterThan(agendaScrollIndex)
-    expect(agendaPanel).toContain(
-      "border-border/40 mt-3 shrink-0 border-t pt-3"
-    )
+    expect(calendarGridIndex).toBeGreaterThan(-1)
+    expect(addMenuIndex).toBeLessThan(calendarGridIndex)
     expect(agendaPanelParts).toContain(
       "mt-3 flex max-h-[clamp(6.5rem,30dvh,15rem)] min-h-0 flex-col"
     )
@@ -325,6 +324,9 @@ describe("roadmap calendar month agenda", () => {
       'className="flex min-h-0 flex-1 flex-col rounded-[24px]'
     )
     expect(agendaPanel).not.toContain("min-h-[7.5rem]")
+    expect(agendaPanel).not.toContain(
+      "border-border/40 mt-3 shrink-0 border-t pt-3"
+    )
     expect(agendaPanel).toContain("disabled={!canManageCalendar}")
     expect(agendaPanelParts).toContain('variant="outline"')
   })

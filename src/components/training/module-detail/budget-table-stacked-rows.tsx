@@ -26,6 +26,11 @@ type BudgetTableStackedRowsProps = {
   formatMoney: (value: number) => string
   onUpdateRow: (rowIndex: number, patch: Partial<BudgetTableRow>) => void
   onRemoveRow: (rowIndex: number) => void
+  onCategoryInputMount?: (
+    rowIndex: number,
+    input: HTMLInputElement | null
+  ) => void
+  readOnly?: boolean
 }
 
 function fieldId(
@@ -46,6 +51,8 @@ export function BudgetTableStackedRows({
   formatMoney,
   onUpdateRow,
   onRemoveRow,
+  onCategoryInputMount,
+  readOnly = false,
 }: BudgetTableStackedRowsProps) {
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col gap-3 overflow-x-hidden">
@@ -81,7 +88,7 @@ export function BudgetTableStackedRows({
                 className="text-muted-foreground hover:text-foreground size-8 rounded-lg"
                 onClick={() => onRemoveRow(rowIndex)}
                 aria-label={`Remove budget line ${rowNumber}`}
-                disabled={rows.length <= 1}
+                disabled={readOnly || rows.length <= 1}
               >
                 <Trash2Icon aria-hidden />
               </Button>
@@ -96,9 +103,13 @@ export function BudgetTableStackedRows({
                   Category
                 </Label>
                 <Input
+                  ref={(input) => {
+                    onCategoryInputMount?.(rowIndex, input)
+                  }}
                   id={categoryId}
                   value={row.category}
                   placeholder="Expense category"
+                  readOnly={readOnly}
                   onChange={(event) =>
                     onUpdateRow(rowIndex, {
                       category: event.currentTarget.value,
@@ -116,6 +127,7 @@ export function BudgetTableStackedRows({
                 </Label>
                 <Select
                   value={row.costType || undefined}
+                  disabled={readOnly}
                   onValueChange={(next) =>
                     onUpdateRow(rowIndex, { costType: next })
                   }
@@ -153,6 +165,7 @@ export function BudgetTableStackedRows({
                 id={descriptionId}
                 value={row.description}
                 placeholder="What this pays for"
+                readOnly={readOnly}
                 rows={2}
                 className="min-h-20 max-w-full min-w-0 resize-y"
                 onChange={(event) =>
@@ -175,6 +188,7 @@ export function BudgetTableStackedRows({
                   id={unitId}
                   value={row.unit}
                   placeholder="Unit"
+                  readOnly={readOnly}
                   list={unitListId}
                   onChange={(event) =>
                     onUpdateRow(rowIndex, { unit: event.currentTarget.value })
@@ -198,6 +212,7 @@ export function BudgetTableStackedRows({
                   min={0}
                   step={1}
                   className="tabular-nums"
+                  readOnly={readOnly}
                   onChange={(event) =>
                     onUpdateRow(rowIndex, {
                       units: event.currentTarget.value,
@@ -226,6 +241,7 @@ export function BudgetTableStackedRows({
                     min={0}
                     step={0.01}
                     className="pl-7 tabular-nums"
+                    readOnly={readOnly}
                     onChange={(event) =>
                       onUpdateRow(rowIndex, {
                         costPerUnit: event.currentTarget.value,

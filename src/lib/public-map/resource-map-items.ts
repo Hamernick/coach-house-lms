@@ -1,6 +1,7 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type { PublicMapResourceAvailability } from "./resource-availability"
+import { publicMapTextContainsCategoryAlias } from "./resource-category-alias-matching"
 import type { PublicMapGroupKey } from "./groups"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS,
@@ -60,7 +61,7 @@ export type PublicMapResourceLink = {
 
 export type PublicMapResourceContact = {
   id: string
-  label: string
+  label: string | null
   value: string
   type: PublicMapResourceContactType
   url: string | null
@@ -107,7 +108,7 @@ type PublicMapBaseItem = {
   sourceUrl: string | null
   lastVerifiedAt: string | null
   visibility: PublicMapItemVisibility
-  markerImageUrl: string | null
+  markerImageUrl?: string | null
   logoUrl?: string | null
   faviconUrl?: string | null
   mission?: string | null
@@ -194,7 +195,11 @@ export function inferPublicMapResourceCategoriesForOrganization(
   const corpus = buildOrganizationResourceCorpus(organization)
 
   for (const category of PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS) {
-    if (category.aliases.some((alias) => corpus.includes(alias))) {
+    if (
+      category.aliases.some((alias) =>
+        publicMapTextContainsCategoryAlias({ alias, text: corpus })
+      )
+    ) {
       detected.add(category.key)
       detected.add(resolvePublicMapResourceTopLevelCategory(category.key))
     }

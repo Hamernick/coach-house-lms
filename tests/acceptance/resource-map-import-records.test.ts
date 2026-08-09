@@ -30,6 +30,10 @@ const PROMOTION_PAYLOADS = join(
   ROOT,
   "scripts/resource-map/lib/promotion-payloads.mjs"
 )
+const VERIFY_AND_PUBLISH_SOURCE = join(
+  ROOT,
+  "scripts/resource-map/verify-and-publish-source-records.mjs"
+)
 
 function withTempFile(
   fileName: string,
@@ -151,6 +155,70 @@ describe("resource map import records", () => {
         expect(output).toContain("would preserve 2 raw payloads")
       }
     )
+  })
+
+  it("reconciles corrected staged titles by an unchanged provider URL", () => {
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `
+          import { resolveExistingAssignments } from ${JSON.stringify(pathToFileURL(SCRIPT).href)}
+          const existing = [{
+            id: "staged-1",
+            source_record_id: "old-title-hash",
+            promotion_status: "not_promoted",
+            review_status: "needs_review",
+            extracted_fields: { websiteUrl: "https://provider.example/help" }
+          }]
+          const payload = [{
+            source_record_id: "corrected-title-hash",
+            extracted_fields: { websiteUrl: "https://provider.example/help/" }
+          }]
+          process.stdout.write(JSON.stringify(
+            resolveExistingAssignments(existing, payload, true)
+          ))
+        `,
+      ],
+      { cwd: ROOT, encoding: "utf8" }
+    )
+    const assignments = JSON.parse(output)
+
+    expect(assignments).toEqual([
+      expect.objectContaining({
+        reconciled: true,
+        record: expect.objectContaining({ id: "staged-1" }),
+      }),
+    ])
+  })
+
+  it("drops explicit evidence whose refreshed field was removed", () => {
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `
+          import { buildFieldEvidenceRecords } from ${JSON.stringify(pathToFileURL(SCRIPT).href)}
+          const rows = buildFieldEvidenceRecords(
+            {
+              extractedFields: { title: "Provider" },
+              fieldEvidence: [{
+                fieldPath: "extractedFields.websiteUrl",
+                sourceUrl: "https://example.org/directory"
+              }]
+            },
+            { id: "import-1", source_url: "https://example.org/directory" },
+            "source-1"
+          )
+          process.stdout.write(JSON.stringify(rows))
+        `,
+      ],
+      { cwd: ROOT, encoding: "utf8" }
+    )
+
+    expect(JSON.parse(output)).toEqual([])
   })
 
   it("dedupes raw ingestion rows by checksum before staging import", () => {
@@ -289,12 +357,78 @@ describe("resource map import records", () => {
       "batch-id",
       null
     )
+    const verifiedRecord = buildImportRecord(
+      {
+        lastEnrichedAt: "2026-07-14T19:00:00.000Z",
+        extractedFields: {
+          title: "Verified resource",
+          organizationName: "Verified provider",
+          enrichment: { verification: { status: "approved" } },
+        },
+      },
+      "source-id",
+      "batch-id",
+      null
+    )
 
     expect(record).toMatchObject({
       source_type: "website",
       duplicate_match_status: "candidate",
     })
     expect(excelRecord.source_type).toBe("manual")
+    expect(verifiedRecord.last_verified_at).toBe("2026-07-14T19:00:00.000Z")
+  })
+
+  it("chunks large production imports into bounded database requests", async () => {
+    const { chunkValues, resolveEvidenceFieldValue } = await import(
+      pathToFileURL(SCRIPT).href
+    )
+
+    expect(chunkValues([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
+    expect(
+      resolveEvidenceFieldValue(
+        { extractedFields: { organizationName: "Neighborhood Pantry" } },
+        "extractedFields.organizationName"
+      )
+    ).toBe("Neighborhood Pantry")
+
+    const source = readFileSync(SCRIPT, "utf8")
+    expect(source).toContain("const RECORD_WRITE_CHUNK_SIZE = 10")
+    expect(source).toContain("const EVIDENCE_WRITE_CHUNK_SIZE = 200")
+    expect(source).toContain("retryTransientFetch")
+    expect(source).toContain("fetchExistingImportRecords")
+    expect(source).toContain("filterMissingEvidence")
+    expect(source).toContain("resumedImportRecordCount")
+    expect(source).toContain("insertRowsInChunks")
+  })
+
+  it("keeps official-source publication gated and auditable", async () => {
+    const source = readFileSync(VERIFY_AND_PUBLISH_SOURCE, "utf8")
+    const { buildVerifiedRecord } = await import(
+      pathToFileURL(VERIFY_AND_PUBLISH_SOURCE).href
+    )
+    const verified = buildVerifiedRecord(
+      {
+        extracted_fields: {
+          enrichment: {
+            sourceComparisonCount: 2,
+            verification: { status: "needs_review" },
+          },
+        },
+      },
+      "2026-07-15T15:00:00.000Z"
+    )
+
+    expect(verified.extracted_fields.enrichment.verification.status).toBe(
+      "approved"
+    )
+    expect(verified.last_verified_at).toBe("2026-07-15T15:00:00.000Z")
+    expect(source).toContain('source.trust_level !== "official"')
+    expect(source).toContain('actor.role !== "admin"')
+    expect(source).toContain("analyzeResourceEnrichmentReadiness")
+    expect(source).toContain("promote_resource_map_import_record")
+    expect(source).toContain('pass_type: "verification"')
+    expect(source).toContain("resource_map_curation_events")
   })
 
   it("links staged imports to raw ingestion records in the DB write path", () => {
@@ -455,6 +589,17 @@ describe("resource map import records", () => {
               links: [{ type: "intake", url: "https://example.org/intake" }]
             }
           }, false)
+          const published = buildCanonicalPayload({
+            id: "import-verified",
+            source_id: "source-1",
+            source_record_id: "record-verified",
+            reviewed_by: "11111111-1111-4111-8111-111111111111",
+            last_verified_at: "2026-07-14T19:00:00.000Z",
+            extracted_fields: {
+              organizationName: "Verified Provider",
+              title: "Verified Service"
+            }
+          }, true)
           process.stdout.write(JSON.stringify({
             organization: payload.organization,
             service: payload.service,
@@ -462,7 +607,8 @@ describe("resource map import records", () => {
             categoryConfidenceByKey: payload.categoryConfidenceByKey,
             location: payload.location,
             contacts: payload.contacts,
-            links: payload.links
+            links: payload.links,
+            published
           }))
         `,
       ],
@@ -519,6 +665,14 @@ describe("resource map import records", () => {
         }),
       ])
     )
+    expect(payload.published.organization).toMatchObject({
+      approved_by: "11111111-1111-4111-8111-111111111111",
+      last_verified_at: "2026-07-14T19:00:00.000Z",
+    })
+    expect(payload.published.service).toMatchObject({
+      approved_by: "11111111-1111-4111-8111-111111111111",
+      last_verified_at: "2026-07-14T19:00:00.000Z",
+    })
   })
 
   it("relinks staged field evidence to promoted canonical rows", () => {
@@ -639,164 +793,6 @@ describe("resource map import records", () => {
         organizationId: "org-1",
         serviceId: "service-1",
       },
-    })
-  })
-
-  it("reconciles dropped promotion evidence responses before retrying", () => {
-    const helper = join(
-      ROOT,
-      "scripts/resource-map/lib/promotion-evidence-writes.mjs"
-    )
-    const output = execFileSync(
-      process.execPath,
-      [
-        "--input-type=module",
-        "--eval",
-        `
-          import { insertPromotedFieldEvidenceRows } from ${JSON.stringify(pathToFileURL(helper).href)}
-
-          function buildAdmin({ committedCount, commitAfterCount = false }) {
-            let insertAttempts = 0
-            let firstRows = []
-            const insertedIds = new Set()
-            const unrelatedIds = new Set()
-            let requestedIds = []
-            const query = {
-              select() { return this },
-              in(column, ids) {
-                if (column !== "id") throw new Error("Expected evidence ID lookup")
-                requestedIds = ids
-                return this
-              },
-              then(resolve, reject) {
-                const count = requestedIds.filter((id) => insertedIds.has(id)).length
-                if (commitAfterCount) {
-                  firstRows.forEach((row) => insertedIds.add(row.id))
-                }
-                return Promise.resolve({ count, error: null }).then(resolve, reject)
-              }
-            }
-            return {
-              addUnrelated(count) {
-                for (let index = 0; index < count; index += 1) {
-                  unrelatedIds.add("unrelated-" + index)
-                }
-              },
-              getState: () => ({
-                insertAttempts,
-                insertedCount: insertedIds.size,
-                unrelatedCount: unrelatedIds.size
-              }),
-              from() {
-                return {
-                  upsert(rows, options) {
-                    if (options.onConflict !== "id" || !options.ignoreDuplicates) {
-                      throw new Error("Expected conflict-safe evidence upsert")
-                    }
-                    insertAttempts += 1
-                    if (insertAttempts === 1) {
-                      firstRows = rows
-                      rows.slice(0, committedCount).forEach((row) => {
-                        insertedIds.add(row.id)
-                      })
-                      return Promise.resolve({
-                        error: {
-                          message: "TypeError: fetch failed",
-                          details: "SocketError: other side closed (UND_ERR_SOCKET)",
-                          hint: "",
-                          code: ""
-                        }
-                      })
-                    }
-                    rows.forEach((row) => insertedIds.add(row.id))
-                    return Promise.resolve({ error: null })
-                  },
-                  select() { return query.select() }
-                }
-              }
-            }
-          }
-
-          const rows = [{ field_path: "name" }, { field_path: "address" }]
-          const committed = buildAdmin({ committedCount: rows.length })
-          const notCommitted = buildAdmin({ committedCount: 0 })
-          const delayedCommit = buildAdmin({
-            committedCount: 0,
-            commitAfterCount: true
-          })
-          const partial = buildAdmin({ committedCount: 1 })
-          const unrelated = buildAdmin({ committedCount: 0 })
-          unrelated.addUnrelated(rows.length)
-          await insertPromotedFieldEvidenceRows({
-            admin: committed,
-            rows,
-            retryDelayMs: 0
-          })
-          await insertPromotedFieldEvidenceRows({
-            admin: notCommitted,
-            rows,
-            retryDelayMs: 0
-          })
-          await insertPromotedFieldEvidenceRows({
-            admin: delayedCommit,
-            rows,
-            retryDelayMs: 0
-          })
-          await insertPromotedFieldEvidenceRows({
-            admin: unrelated,
-            rows,
-            retryDelayMs: 0
-          })
-          let partialError = null
-          try {
-            await insertPromotedFieldEvidenceRows({
-              admin: partial,
-              rows,
-              retryDelayMs: 0
-            })
-          } catch (error) {
-            partialError = error.message
-          }
-          process.stdout.write(JSON.stringify({
-            committed: committed.getState(),
-            notCommitted: notCommitted.getState(),
-            delayedCommit: delayedCommit.getState(),
-            unrelated: unrelated.getState(),
-            partial: partial.getState(),
-            partialError
-          }))
-        `,
-      ],
-      { cwd: ROOT, encoding: "utf8" }
-    )
-
-    expect(JSON.parse(output)).toEqual({
-      committed: {
-        insertAttempts: 1,
-        insertedCount: 2,
-        unrelatedCount: 0,
-      },
-      notCommitted: {
-        insertAttempts: 2,
-        insertedCount: 2,
-        unrelatedCount: 0,
-      },
-      delayedCommit: {
-        insertAttempts: 2,
-        insertedCount: 2,
-        unrelatedCount: 0,
-      },
-      unrelated: {
-        insertAttempts: 2,
-        insertedCount: 2,
-        unrelatedCount: 2,
-      },
-      partial: {
-        insertAttempts: 1,
-        insertedCount: 1,
-        unrelatedCount: 0,
-      },
-      partialError: "Promotion evidence insert left 1 of 2 rows.",
     })
   })
 

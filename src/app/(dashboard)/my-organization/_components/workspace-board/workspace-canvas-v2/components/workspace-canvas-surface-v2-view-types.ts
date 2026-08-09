@@ -12,25 +12,22 @@ import type { DocumentsTabData } from "@/components/organization/org-profile-car
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import type { WorkspaceReactFlowErrorHandler } from "@/components/workspace/workspace-reactflow-error-bootstrap"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type { RoadmapSection } from "@/lib/roadmap"
 import type { WorkspaceBoardUiPreferenceScope } from "../../workspace-board-ui-preferences"
 import type { WorkspaceOrganizationEditorData } from "../../workspace-board-types"
-import type { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
 import type { WorkspaceCardShortcutItemModel } from "../shortcuts/workspace-card-shortcut-model"
+import type { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
+import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 import type {
   WorkspaceCanvasPeopleAddRequest,
   WorkspaceCanvasPersonDropRequest,
 } from "./workspace-canvas-people-dnd"
-import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 import type { WorkspaceCanvasNode } from "./workspace-canvas-surface-v2-helpers"
-
-type WorkspaceCanvasConnectionsController = ReturnType<
-  typeof useWorkspaceCanvasConnectionsController
->
 
 export type WorkspaceCanvasSurfaceV2ViewProps = {
   nodes: WorkspaceCanvasNode[]
-  edges: WorkspaceCanvasConnectionsController["edges"]
+  edges: ReturnType<typeof useWorkspaceCanvasConnectionsController>["edges"]
   allowEditing: boolean
   peopleCanvasInteractionEnabled: boolean
   workspaceDataDrawerCanEdit: boolean
@@ -43,6 +40,7 @@ export type WorkspaceCanvasSurfaceV2ViewProps = {
   placedWorkspacePersonIds: ReadonlySet<string>
   workspaceDataDrawerViewerId: string
   workspaceDataDrawerOrganization: WorkspaceOrganizationEditorData
+  workspaceDataDrawerFinance: WorkspaceFinanceInput
   workspaceDataDrawerDocuments: DocumentsTabData
   workspaceAcceleratorDrawerInput: WorkspaceAcceleratorCardInput
   workspaceAcceleratorDrawerRoadmapSections: RoadmapSection[]
@@ -50,7 +48,9 @@ export type WorkspaceCanvasSurfaceV2ViewProps = {
   workspaceAcceleratorDrawerPaywallHref: string
   workspaceDataDrawerRequest: WorkspaceDataDrawerRequest | null
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
-  edgeContextMenuState: WorkspaceCanvasConnectionsController["edgeContextMenuState"]
+  edgeContextMenuState: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["edgeContextMenuState"]
   shortcutItems: WorkspaceCardShortcutItemModel[]
   tutorialCalendarButtonCallout?: { title: string; instruction: string } | null
   emptyStateMessage?: string | null
@@ -63,10 +63,18 @@ export type WorkspaceCanvasSurfaceV2ViewProps = {
   onSelectionDragStop: SelectionDragHandler
   onMoveStart: () => void
   onMoveEnd: OnMoveEnd
-  onConnect: WorkspaceCanvasConnectionsController["handleConnect"]
-  isValidConnection: WorkspaceCanvasConnectionsController["handleIsValidConnection"]
-  onEdgeDoubleClick: WorkspaceCanvasConnectionsController["handleEdgeDoubleClick"]
-  onEdgeContextMenu: WorkspaceCanvasConnectionsController["handleEdgeContextMenu"]
+  onConnect: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleConnect"]
+  isValidConnection: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleIsValidConnection"]
+  onEdgeDoubleClick: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleEdgeDoubleClick"]
+  onEdgeContextMenu: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleEdgeContextMenu"]
   onError: WorkspaceReactFlowErrorHandler
   onInit: (instance: ReactFlowInstance) => void
   onTutorialRestart: () => void
@@ -84,9 +92,19 @@ export type WorkspaceCanvasSurfaceV2ViewProps = {
   onOpenWorkspaceDataDrawer: (
     request: Omit<WorkspaceDataDrawerRequest, "id">
   ) => void
-  onCloseEdgeContextMenu: WorkspaceCanvasConnectionsController["closeEdgeContextMenu"]
-  onDisconnectEdge: WorkspaceCanvasConnectionsController["handleContextDisconnectEdge"]
-  onDisconnectFromSource: WorkspaceCanvasConnectionsController["handleContextDisconnectFromSource"]
-  onDisconnectToTarget: WorkspaceCanvasConnectionsController["handleContextDisconnectToTarget"]
-  onDisconnectAll: WorkspaceCanvasConnectionsController["handleContextDisconnectAll"]
+  onCloseEdgeContextMenu: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["closeEdgeContextMenu"]
+  onDisconnectEdge: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectEdge"]
+  onDisconnectFromSource: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectFromSource"]
+  onDisconnectToTarget: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectToTarget"]
+  onDisconnectAll: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectAll"]
 }

@@ -48,14 +48,10 @@ function statusBadgeClasses(status: string) {
   switch (status) {
     case "Active":
       return "bg-blue-100 text-blue-700 border-none dark:bg-blue-500/15 dark:text-blue-50"
-    case "Planned":
-      return "bg-zinc-100 text-zinc-800 border-none dark:bg-zinc-600/20 dark:text-zinc-50"
-    case "Backlog":
+    case "Onboarding":
       return "bg-orange-100 text-orange-700 border-none dark:bg-orange-500/15 dark:text-orange-100"
-    case "Completed":
-      return "bg-emerald-100 text-emerald-700 border-none dark:bg-emerald-500/15 dark:text-emerald-100"
-    case "Cancelled":
-      return "bg-rose-100 text-rose-700 border-none dark:bg-rose-500/15 dark:text-rose-100"
+    case "Archived":
+      return "bg-zinc-100 text-zinc-700 border-none dark:bg-zinc-600/20 dark:text-zinc-100"
     default:
       return "bg-muted text-muted-foreground border-none"
   }
@@ -67,15 +63,20 @@ function formatStatusLabel(
   switch (status) {
     case "active":
       return "Active"
-    case "planned":
-      return "Planned"
     case "completed":
-      return "Completed"
     case "cancelled":
-      return "Cancelled"
+      return "Archived"
     default:
-      return "Backlog"
+      return "Onboarding"
   }
+}
+
+function formatBacklogStatusLabel(
+  status: ProjectDetails["backlog"]["statusLabel"]
+) {
+  if (status === "Active") return "Active"
+  if (status === "Completed" || status === "Cancelled") return "Archived"
+  return "Onboarding"
 }
 
 type MemberWorkspaceProjectDetailHeaderProps = {
@@ -154,7 +155,7 @@ export function MemberWorkspaceProjectDetailHeader({
   const statusLabel =
     isEditing && draft
       ? formatStatusLabel(draft.status)
-      : project.backlog.statusLabel
+      : formatBacklogStatusLabel(project.backlog.statusLabel)
   const metaItems = [
     { label: "ID", value: `#${project.id}`, icon: null },
     {

@@ -76,11 +76,11 @@ export function AppSidebar({
       email: user?.email ?? null,
       avatar: user?.avatar ?? null,
     }),
-    [user?.avatar, user?.email, user?.name, user?.title],
+    [user?.avatar, user?.email, user?.name, user?.title]
   )
 
   return (
-    <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-0 pt-0 md:flex md:flex-col md:gap-6">
+    <aside className="border-border/70 bg-sidebar hidden h-full w-72 shrink-0 border-r px-3 pt-0 pb-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
         platformAccessLevel={platformAccessLevel}
@@ -162,7 +162,8 @@ export function SidebarBody({
   showMemberWorkspace,
 }: SidebarBodyProps) {
   const isCoach = platformAccessLevel === "coach"
-  const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
+  const shouldShowAccelerator =
+    !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const showMemberWorkspaceNav =
     !onboardingLocked &&
@@ -214,7 +215,7 @@ export function SidebarBody({
                 <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
                   <CoachSchedulingCard />
                 </div>
-                <div className="[@media(min-height:56rem)]:hidden">
+                <div className="[@media(min-height:56rem)]:hidden group-data-[collapsible=icon]:!block">
                   <CoachSchedulingSidebarItem />
                 </div>
               </>

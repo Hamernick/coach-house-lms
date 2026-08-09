@@ -1,5 +1,4 @@
 import { type PublicMapResourceCategoryKey } from "./resource-categories"
-import { publicMapMarkerColorToRgba } from "./public-map-marker-fallback"
 import { drawPublicMapResourceCategoryMarkerIcon } from "./public-map-marker-icons"
 import {
   PUBLIC_MAP_MARKER_CANVAS_BACKING_SCALE,
@@ -9,7 +8,10 @@ import {
   PUBLIC_MAP_SPECIAL_MARKER_IMAGE_BACKING_WIDTH,
 } from "./public-map-marker-canvas-constants"
 import { drawPublicMapRoundedRect } from "./public-map-marker-canvas-shapes"
-import { type PublicMapTheme } from "./public-map-theme"
+import {
+  PUBLIC_MAP_DARK_INPUT_BORDER,
+  type PublicMapTheme,
+} from "./public-map-theme"
 
 type SpecialMarkerCanvasContext =
   | CanvasRenderingContext2D
@@ -35,10 +37,11 @@ export type PublicMapSpecialPillMarkerChromeGeometry = {
 
 export type PublicMapSpecialPillMarkerChromePalette = {
   iconBadgeFill: string
-  iconBadgeStroke: string
+  iconBadgeShadowColor: string
   iconColor: string
   iconGlowColor: string
   shadowColor: string
+  surfaceBackdropFill: string
   surfaceFill: string
   surfaceStroke: string
   textColor: string
@@ -75,71 +78,96 @@ function getSpecialMarkerCanvasContext(
 }
 
 export function resolvePublicMapSpecialPillMarkerChromeGeometry(
-  selected: boolean
+  selected: boolean,
+  labelWidth = 77
 ): PublicMapSpecialPillMarkerChromeGeometry {
   const canvasWidth = PUBLIC_MAP_SPECIAL_MARKER_CANVAS_WIDTH
   const canvasHeight = PUBLIC_MAP_SPECIAL_MARKER_CANVAS_HEIGHT
-  const outerWidth = selected ? 234 : 224
-  const outerHeight = selected ? 56 : 52
+  const outerHeight = selected ? 46 : 42
+  const leadingPadding = selected ? 9 : 8
+  const trailingPadding = selected ? 13 : 12
+  const labelGap = selected ? 11 : 10.5
+  const boundedLabelWidth = Math.max(
+    1,
+    Math.min(labelWidth, selected ? 124 : 120)
+  )
+  const iconBadgeRadius = selected ? 17 : 15.5
+  const outerWidth =
+    leadingPadding +
+    trailingPadding +
+    iconBadgeRadius * 2 +
+    labelGap +
+    boundedLabelWidth
   const outerX = (canvasWidth - outerWidth) / 2
   const outerY = (canvasHeight - outerHeight) / 2
-  const iconBadgeRadius = selected ? 20.5 : 19
-  const iconCenterX = outerX + iconBadgeRadius + (selected ? 12 : 11)
+  const iconCenterX = outerX + leadingPadding + iconBadgeRadius
   const iconCenterY = canvasHeight / 2
-  const labelX = iconCenterX + iconBadgeRadius + (selected ? 14 : 13)
+  const labelX = iconCenterX + iconBadgeRadius + labelGap
 
   return {
     canvasHeight,
     canvasWidth,
-    contentRadius: selected ? 14.2 : 13.4,
+    contentRadius: selected ? 11.8 : 11.1,
     iconBadgeRadius,
     iconCenterX,
     iconCenterY,
-    labelMaxWidth: outerX + outerWidth - labelX - (selected ? 20 : 18),
+    labelMaxWidth: boundedLabelWidth,
     labelX,
-    labelY: iconCenterY + 0.35,
+    labelY: iconCenterY + 0.3,
     outerHeight,
     outerRadius: outerHeight / 2,
     outerWidth,
     outerX,
     outerY,
-    surfaceStrokeWidth: selected ? 0.8 : 0.66,
+    surfaceStrokeWidth: selected ? 0.76 : 0.62,
   }
 }
 
 export function resolvePublicMapSpecialPillMarkerChromePalette(
   _theme: PublicMapTheme,
   selected: boolean,
-  surfaceColor?: string | null
+  _surfaceColor?: string | null
 ): PublicMapSpecialPillMarkerChromePalette {
-  const normalizedSurfaceColor = surfaceColor?.trim() || "#0284c7"
-
   return {
-    iconBadgeFill: selected
-      ? "rgba(255, 255, 255, 0.64)"
-      : "rgba(255, 255, 255, 0.54)",
-    iconBadgeStroke: publicMapMarkerColorToRgba(
-      normalizedSurfaceColor,
-      selected ? 0.5 : 0.42
-    ),
-    iconColor: "#075985",
-    iconGlowColor: publicMapMarkerColorToRgba(
-      normalizedSurfaceColor,
-      selected ? 0.32 : 0.24
-    ),
-    shadowColor: publicMapMarkerColorToRgba(
-      normalizedSurfaceColor,
-      selected ? 0.32 : 0.22
-    ),
+    iconBadgeFill: "#FFFFFF",
+    iconBadgeShadowColor: selected
+      ? "rgba(0, 0, 0, 0.28)"
+      : "rgba(0, 0, 0, 0.22)",
+    iconColor: "#38BDF8",
+    iconGlowColor: selected
+      ? "rgba(56, 189, 248, 0.36)"
+      : "rgba(56, 189, 248, 0.28)",
+    shadowColor: selected ? "rgba(0, 0, 0, 0.42)" : "rgba(0, 0, 0, 0.34)",
+    surfaceBackdropFill: selected
+      ? "rgba(24, 24, 27, 0.48)"
+      : "rgba(24, 24, 27, 0.42)",
     surfaceFill: selected
-      ? "rgba(186, 230, 253, 0.98)"
-      : "rgba(224, 242, 254, 0.96)",
-    surfaceStroke: publicMapMarkerColorToRgba(
-      normalizedSurfaceColor,
-      selected ? 0.58 : 0.48
-    ),
-    textColor: "#0C4A6E",
+      ? "rgba(255, 255, 255, 0.15)"
+      : "rgba(255, 255, 255, 0.1)",
+    surfaceStroke: PUBLIC_MAP_DARK_INPUT_BORDER,
+    textColor: "#FAFAFA",
   }
+}
+
+function drawSpecialPillMarkerCapsule({
+  context,
+  geometry,
+}: {
+  context: SpecialMarkerCanvasContext
+  geometry: PublicMapSpecialPillMarkerChromeGeometry
+}) {
+  const radius = geometry.outerHeight / 2
+  const centerY = geometry.outerY + radius
+  const leftCenterX = geometry.outerX + radius
+  const rightCenterX = geometry.outerX + geometry.outerWidth - radius
+
+  context.beginPath()
+  context.moveTo(leftCenterX, geometry.outerY)
+  context.lineTo(rightCenterX, geometry.outerY)
+  context.arc(rightCenterX, centerY, radius, -Math.PI / 2, Math.PI / 2)
+  context.lineTo(leftCenterX, geometry.outerY + geometry.outerHeight)
+  context.arc(leftCenterX, centerY, radius, Math.PI / 2, (Math.PI * 3) / 2)
+  context.closePath()
 }
 
 function drawSpecialPillMarkerIconBadge({
@@ -154,8 +182,8 @@ function drawSpecialPillMarkerIconBadge({
   selected: boolean
 }) {
   context.save()
-  context.shadowColor = palette.iconGlowColor
-  context.shadowBlur = selected ? 6 : 4
+  context.shadowColor = palette.iconBadgeShadowColor
+  context.shadowBlur = selected ? 5 : 3
   context.shadowOffsetY = 0
   context.fillStyle = palette.iconBadgeFill
   context.beginPath()
@@ -167,20 +195,6 @@ function drawSpecialPillMarkerIconBadge({
     Math.PI * 2
   )
   context.fill()
-  context.restore()
-
-  context.save()
-  context.strokeStyle = palette.iconBadgeStroke
-  context.lineWidth = selected ? 0.86 : 0.72
-  context.beginPath()
-  context.arc(
-    geometry.iconCenterX,
-    geometry.iconCenterY,
-    geometry.iconBadgeRadius,
-    0,
-    Math.PI * 2
-  )
-  context.stroke()
   context.restore()
 }
 
@@ -199,7 +213,7 @@ function drawSpecialPillMarkerIcon({
 }) {
   context.save()
   context.shadowColor = palette.iconGlowColor
-  context.shadowBlur = selected ? 5 : 4
+  context.shadowBlur = selected ? 4 : 3
   context.shadowOffsetY = 0
   drawPublicMapResourceCategoryMarkerIcon({
     category: resourceCategory,
@@ -210,7 +224,7 @@ function drawSpecialPillMarkerIcon({
       centerY: geometry.iconCenterY,
       contentRadius: geometry.contentRadius,
     },
-    iconScale: selected ? 1.18 : 1.12,
+    iconScale: selected ? 1.1 : 1.05,
     selected,
   })
   context.restore()
@@ -218,16 +232,21 @@ function drawSpecialPillMarkerIcon({
 
 function drawSpecialPillMarkerChrome({
   context,
+  labelWidth,
   selected,
   surfaceColor,
   theme,
 }: {
   context: SpecialMarkerCanvasContext
+  labelWidth: number
   selected: boolean
   surfaceColor?: string | null
   theme: PublicMapTheme
 }) {
-  const geometry = resolvePublicMapSpecialPillMarkerChromeGeometry(selected)
+  const geometry = resolvePublicMapSpecialPillMarkerChromeGeometry(
+    selected,
+    labelWidth
+  )
   const palette = resolvePublicMapSpecialPillMarkerChromePalette(
     theme,
     selected,
@@ -237,29 +256,21 @@ function drawSpecialPillMarkerChrome({
   context.clearRect(0, 0, geometry.canvasWidth, geometry.canvasHeight)
   context.save()
   context.shadowColor = palette.shadowColor
-  context.shadowBlur = selected ? 8 : 5
+  context.shadowBlur = selected ? 6 : 4
   context.shadowOffsetY = selected ? 2 : 1
-  drawPublicMapRoundedRect({
-    context,
-    x: geometry.outerX,
-    y: geometry.outerY,
-    width: geometry.outerWidth,
-    height: geometry.outerHeight,
-    radius: geometry.outerRadius,
-  })
+  drawSpecialPillMarkerCapsule({ context, geometry })
+  context.fillStyle = palette.surfaceBackdropFill
+  context.fill()
+  context.restore()
+
+  context.save()
+  drawSpecialPillMarkerCapsule({ context, geometry })
   context.fillStyle = palette.surfaceFill
   context.fill()
   context.restore()
 
   context.save()
-  drawPublicMapRoundedRect({
-    context,
-    x: geometry.outerX,
-    y: geometry.outerY,
-    width: geometry.outerWidth,
-    height: geometry.outerHeight,
-    radius: geometry.outerRadius,
-  })
+  drawSpecialPillMarkerCapsule({ context, geometry })
   context.strokeStyle = palette.surfaceStroke
   context.lineWidth = geometry.surfaceStrokeWidth
   context.stroke()
@@ -320,9 +331,7 @@ function drawSpecialPillMarkerLabel({
   selected: boolean
 }) {
   context.save()
-  context.font = `${
-    selected ? "800 19.4px" : "800 18.3px"
-  } -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
+  context.font = resolveSpecialPillMarkerLabelFont(selected)
   context.fillStyle = palette.textColor
   context.textAlign = "left"
   context.textBaseline = "middle"
@@ -336,6 +345,12 @@ function drawSpecialPillMarkerLabel({
     geometry.labelY
   )
   context.restore()
+}
+
+function resolveSpecialPillMarkerLabelFont(selected: boolean) {
+  return `${
+    selected ? "800 16.8px" : "800 16px"
+  } -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
 }
 
 function drawSameLocationBadge({
@@ -358,7 +373,7 @@ function drawSameLocationBadge({
   if (normalizedCount <= 1) return
 
   const label = normalizedCount > 99 ? "99+" : normalizedCount.toString()
-  const height = selected ? 16 : 14
+  const height = selected ? 15 : 13
   const width = Math.max(height, 8 + label.length * 6)
   const x = geometry.outerX + geometry.outerWidth - width + 3
   const y = geometry.outerY - 3
@@ -369,12 +384,12 @@ function drawSameLocationBadge({
 
   context.save()
   drawPublicMapRoundedRect({ context, x, y, width, height, radius: height / 2 })
-  context.fillStyle = "rgba(255, 255, 255, 0.96)"
+  context.fillStyle = "rgba(39, 39, 42, 0.96)"
   context.fill()
   context.strokeStyle = badgePalette.surfaceStroke
   context.lineWidth = 1
   context.stroke()
-  context.fillStyle = "#0C4A6E"
+  context.fillStyle = "#FAFAFA"
   context.font =
     "700 8.25px -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
   context.textAlign = "center"
@@ -401,10 +416,13 @@ export function createPublicMapSpecialPillMarkerImage({
   const canvas = createSpecialMarkerCanvas()
   const context = getSpecialMarkerCanvasContext(canvas)
   if (!context) return null
-  const markerLabel = "Cooling center"
+  const markerLabel = "Cooling Center"
+  context.font = resolveSpecialPillMarkerLabelFont(selected)
+  const labelWidth = measureMarkerTextWidth(context, markerLabel)
 
   const { geometry, palette } = drawSpecialPillMarkerChrome({
     context,
+    labelWidth,
     selected,
     surfaceColor,
     theme,

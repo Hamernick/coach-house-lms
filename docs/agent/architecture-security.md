@@ -3,6 +3,8 @@
 ## Architecture
 
 - Stack: Next.js App Router (RSC-first) + Supabase + Stripe webhooks.
+- Cost control and self-hosting plan:
+  `docs/plans/2026-08-02-infrastructure-cost-control-and-self-hosting.md`.
 - Runtime split:
   - Node runtime for Stripe/webhook handlers.
   - Edge/ISR for static/public surfaces where appropriate.

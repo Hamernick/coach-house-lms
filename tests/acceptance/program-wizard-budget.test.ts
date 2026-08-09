@@ -150,7 +150,7 @@ describe("program wizard budget flow", () => {
     expect(payload.wizardSnapshot?.budgetRows).toHaveLength(4)
   })
 
-  it("uses the stacked budget layout in the wizard instead of a horizontal table scroller", () => {
+  it("uses the compact TanStack budget grid and a responsive summary row", () => {
     const budgetStepSource = readSource(
       "src/components/programs/program-wizard/components/step-budget-feasibility.tsx"
     )
@@ -163,8 +163,12 @@ describe("program wizard budget flow", () => {
     const stackedRowsSource = readSource(
       "src/components/training/module-detail/budget-table-stacked-rows.tsx"
     )
+    const columnsSource = readSource(
+      "src/components/training/module-detail/budget-table-columns.tsx"
+    )
 
-    expect(budgetStepSource).toContain('layout="stacked"')
+    expect(budgetStepSource).toContain('layout="grid"')
+    expect(budgetStepSource).toContain("sm:grid-cols-3")
     expect(budgetStepSource).toContain(
       'className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden"'
     )
@@ -176,8 +180,6 @@ describe("program wizard budget flow", () => {
       budgetStepSource.indexOf("<AssignmentBudgetTableField")
     )
     expect(budgetStepSource).not.toContain("lg:grid-cols-[1.2fr_0.8fr]")
-    expect(budgetStepSource).not.toContain("grid gap-3 sm:grid-cols-3")
-    expect(budgetStepSource).not.toContain("sm:grid-cols-3")
     expect(budgetStepSource).not.toContain("sm:grid-cols-2")
     expect(budgetStepSource).not.toContain('from "@/components/ui/separator"')
     expect(budgetStepSource).not.toContain("<Separator")
@@ -185,12 +187,30 @@ describe("program wizard budget flow", () => {
     expect(fieldSource).toContain("layout={layout}")
     expect(fieldSource).toContain('layout === "grid" && isStepper')
     expect(fieldSource).toContain("overflow-x-hidden")
+    expect(fieldSource).toContain(
+      "pendingAddedRowIndexRef.current = ensureRows.length"
+    )
+    expect(fieldSource).toContain(
+      'input.scrollIntoView({ block: "nearest", inline: "nearest" })'
+    )
+    expect(fieldSource).toContain("requestAnimationFrame(() =>")
+    expect(fieldSource).toContain("if (!input.isConnected) return")
+    expect(fieldSource).toContain("input.focus({ preventScroll: true })")
+    expect(fieldSource).toContain(
+      "onCategoryInputMount={handleCategoryInputMount}"
+    )
     expect(fieldSource).not.toContain("sm:flex-row")
     expect(fieldSource).not.toContain("sm:w-auto")
     expect(tableSource).toContain('layout?: "grid" | "stacked"')
     expect(tableSource).toContain('layout = "grid"')
     expect(tableSource).toContain('layout === "stacked"')
+    expect(tableSource).toContain("useReactTable({")
+    expect(tableSource).toContain("<BudgetTableGrid")
     expect(tableSource).toContain("<BudgetTableStackedRows")
+    expect(tableSource).toContain("const onUpdateRowRef = useRef(onUpdateRow)")
+    expect(tableSource).toContain("onUpdateRowRef.current(rowIndex, patch)")
+    expect(tableSource).toContain("getRowTotal,")
+    expect(columnsSource).toContain("getRowTotal(row.index)")
     expect(stackedRowsSource).toContain("BudgetTableStackedRows")
     expect(stackedRowsSource).toContain(
       "flex w-full max-w-full min-w-0 flex-col gap-3 overflow-x-hidden"
@@ -198,5 +218,9 @@ describe("program wizard budget flow", () => {
     expect(stackedRowsSource).not.toContain("overflow-auto")
     expect(stackedRowsSource).not.toContain("minWidth: BUDGET_TABLE_MIN_WIDTH")
     expect(stackedRowsSource).not.toContain("md:grid-cols")
+    expect(stackedRowsSource).toContain(
+      "onCategoryInputMount?.(rowIndex, input)"
+    )
+    expect(columnsSource).toContain("onCategoryInputMount?.(rowIndex, input)")
   })
 })

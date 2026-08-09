@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
@@ -36,11 +37,9 @@ import type {
   FiscalSponsorshipProjectWorkbenchPhase,
 } from "../types"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
-import { FiscalSponsorshipApplicationReviewNote } from "./fiscal-sponsorship-application-review-note"
 import { FiscalSponsorshipProjectWorkbenchAdminActions } from "./fiscal-sponsorship-project-workbench-admin-actions"
 import { FiscalSponsorshipProjectWorkbenchDocuments } from "./fiscal-sponsorship-project-workbench-documents"
 import { FiscalSponsorshipProjectWorkbenchRequiredDocuments } from "./fiscal-sponsorship-project-workbench-required-documents"
-import { FiscalSponsorshipWorkflowTimeline } from "./fiscal-sponsorship-workflow-timeline"
 
 function WorkbenchItemRow({
   item,
@@ -98,6 +97,7 @@ function WorkbenchPhaseRow({
   onExpandedChange,
   onOpenApplication,
   onOpenAssets,
+  phaseRef,
 }: {
   applicationEditor?: React.ReactNode
   expanded: boolean
@@ -105,6 +105,7 @@ function WorkbenchPhaseRow({
   onExpandedChange: (expanded: boolean) => void
   onOpenApplication?: () => void
   onOpenAssets?: () => void
+  phaseRef?: React.Ref<HTMLDivElement>
 }) {
   const complete = item.complete
   const canOpenApplication =
@@ -134,6 +135,8 @@ function WorkbenchPhaseRow({
       className="py-1.5"
     >
       <div
+        ref={phaseRef}
+        id={`fiscal-sponsorship-${item.id}`}
         data-fiscal-sponsorship-workbench-phase={item.id}
         data-state={expanded ? "open" : "closed"}
         className={cn(
@@ -204,13 +207,17 @@ function WorkbenchPhaseRow({
                       className="h-8 rounded-full px-3"
                       data-fiscal-sponsorship-phase-action={item.actionType}
                     >
-                      <a
-                        href={item.href ?? "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {buttonContent}
-                      </a>
+                      {item.actionType === "signature" ? (
+                        <Link href={item.href ?? "#"}>{buttonContent}</Link>
+                      ) : (
+                        <a
+                          href={item.href ?? "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {buttonContent}
+                        </a>
+                      )}
                     </Button>
                   ) : (
                     <Button
@@ -242,6 +249,7 @@ function WorkbenchPhaseRow({
 }
 
 function WorkbenchPhaseTimeline({
+  applicationPhaseRef,
   applicationEditor,
   expandedPhaseId,
   items,
@@ -249,6 +257,7 @@ function WorkbenchPhaseTimeline({
   onOpenApplication,
   onOpenAssets,
 }: {
+  applicationPhaseRef?: React.Ref<HTMLDivElement>
   applicationEditor?: React.ReactNode
   expandedPhaseId: string | null
   items: FiscalSponsorshipProjectWorkbenchPhase[]
@@ -286,6 +295,11 @@ function WorkbenchPhaseTimeline({
             }
             onOpenApplication={onOpenApplication}
             onOpenAssets={onOpenAssets}
+            phaseRef={
+              item.actionType === "application"
+                ? applicationPhaseRef
+                : undefined
+            }
           />
         ))}
       </RadioGroup>
@@ -324,6 +338,7 @@ export function FiscalSponsorshipProjectWorkbench({
   const [expandedPhaseId, setExpandedPhaseId] = React.useState<string | null>(
     null
   )
+  const applicationPhaseRef = React.useRef<HTMLDivElement>(null)
   const applicationOpen = expandedPhaseId === "application-intake"
   const handleApplicationOpenChange = React.useCallback((open: boolean) => {
     setExpandedPhaseId(open ? "application-intake" : null)
@@ -332,6 +347,12 @@ export function FiscalSponsorshipProjectWorkbench({
     if (editApplicationDisabled) return
     setExpandedPhaseId("application-intake")
     onEditApplication?.()
+    window.requestAnimationFrame(() => {
+      applicationPhaseRef.current?.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+      })
+    })
   }, [editApplicationDisabled, onEditApplication])
   const applicationEditor =
     !editApplicationDisabled && renderApplicationEditor
@@ -343,6 +364,7 @@ export function FiscalSponsorshipProjectWorkbench({
 
   return (
     <Card
+      id="fiscal-sponsorship-project-workbench"
       data-fiscal-sponsorship-project-workbench={data.projectId}
       className={cn(
         "text-card-foreground border-border/60 bg-muted flex w-full max-w-[42rem] flex-col rounded-[2rem] border p-3 shadow-sm",
@@ -403,6 +425,7 @@ export function FiscalSponsorshipProjectWorkbench({
         <Separator className="my-3 border-t border-dashed bg-transparent" />
 
         <WorkbenchPhaseTimeline
+          applicationPhaseRef={applicationPhaseRef}
           applicationEditor={applicationEditor}
           expandedPhaseId={expandedPhaseId}
           items={data.phases}
@@ -414,20 +437,6 @@ export function FiscalSponsorshipProjectWorkbench({
           }
           onOpenAssets={onOpenAssets}
         />
-
-        <Separator className="my-3 border-t border-dashed bg-transparent" />
-
-        {data.workflowSummary?.reviewNotes ? (
-          <>
-            <FiscalSponsorshipApplicationReviewNote
-              notes={data.workflowSummary.reviewNotes}
-              status={data.workflowSummary.applicationStatus}
-            />
-            <Separator className="my-3 border-t border-dashed bg-transparent" />
-          </>
-        ) : null}
-
-        <FiscalSponsorshipWorkflowTimeline events={data.timelineEvents} />
 
         <Separator className="my-3 border-t border-dashed bg-transparent" />
 

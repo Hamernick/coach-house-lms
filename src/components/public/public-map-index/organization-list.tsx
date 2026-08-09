@@ -1,7 +1,10 @@
 "use client"
 
-import { memo, useMemo } from "react"
+import { memo } from "react"
 
+import { Button } from "@/components/ui/button"
+import { Empty } from "@/components/ui/empty"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   buildPlatformOrganizationMapItem,
   resolvePublicMapItemSelectableId,
@@ -18,30 +21,53 @@ import {
   usePublicMapOrganizationListPagination,
 } from "./organization-list-pagination"
 import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
+import type { PublicMapGroupFilterKey } from "./category-filter"
+import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 function buildPublicMapListItems({
-  favoriteIds,
   items,
   organizations,
 }: {
-  favoriteIds: Set<string>
   items?: PublicMapItem[]
   organizations: PublicMapOrganization[]
 }) {
-  if (items) return items
+  return items ?? organizations.map(buildPlatformOrganizationMapItem)
+}
 
-  return organizations
-    .map(buildPlatformOrganizationMapItem)
-    .sort((left, right) => {
-      const leftFavorite = favoriteIds.has(left.organization.id)
-      const rightFavorite = favoriteIds.has(right.organization.id)
-      if (leftFavorite === rightFavorite) return 0
-      return leftFavorite ? -1 : 1
-    })
+function PublicMapOrganizationListSkeleton() {
+  return (
+    <div
+      data-public-map-search-loading="true"
+      className="flex min-w-0 flex-col gap-3"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="text-muted-foreground px-1 text-xs">
+        Loading the full resource directory…
+      </p>
+      <div className="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-3">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="border-border/50 flex min-h-28 flex-col gap-4 rounded-2xl border p-4"
+            aria-hidden="true"
+          >
+            <div className="flex items-center gap-4">
+              <Skeleton className="size-12 shrink-0 animate-none rounded-xl" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <Skeleton className="h-4 w-3/5 animate-none" />
+                <Skeleton className="h-3 w-2/5 animate-none" />
+              </div>
+            </div>
+            <Skeleton className="h-3 w-4/5 animate-none" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function PublicMapOrganizationListComponent({
-  favorites = [],
   items,
   organizations,
   selectedItemId,
@@ -51,11 +77,16 @@ function PublicMapOrganizationListComponent({
   incrementalLoading = false,
   initialVisibleCount = PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
   pageSize = PUBLIC_MAP_LIST_PAGE_SIZE,
+  activeGroup = "all",
+  loadStatus = "ready",
+  loadError = null,
+  onClearCategory,
+  onClearQuery,
+  onRetryLoad,
   onSelectItem,
   onSelectOrg,
   onOpenDetails,
 }: {
-  favorites?: string[]
   items?: PublicMapItem[]
   organizations: PublicMapOrganization[]
   selectedItemId?: string | null
@@ -65,15 +96,17 @@ function PublicMapOrganizationListComponent({
   incrementalLoading?: boolean
   initialVisibleCount?: number
   pageSize?: number
+  activeGroup?: PublicMapGroupFilterKey
+  loadStatus?: PublicMapResourceItemsLoadStatus
+  loadError?: string | null
+  onClearCategory?: () => void
+  onClearQuery?: () => void
+  onRetryLoad?: () => void
   onSelectItem?: (id: string) => void
   onSelectOrg: (id: string) => void
   onOpenDetails?: (id: string) => void
 }) {
-  const favoriteIds = useMemo(() => new Set(favorites), [favorites])
-  const listItems = useMemo(
-    () => buildPublicMapListItems({ favoriteIds, items, organizations }),
-    [favoriteIds, items, organizations]
-  )
+  const listItems = buildPublicMapListItems({ items, organizations })
   const resolvedSelectedItemId = selectedItemId ?? selectedOrgId
   const {
     hasMoreOrganizations,
@@ -92,57 +125,108 @@ function PublicMapOrganizationListComponent({
     pageSize,
   })
 
+  if (listItems.length === 0 && loadStatus === "loading") {
+    return <PublicMapOrganizationListSkeleton />
+  }
+
   if (listItems.length === 0) {
-    const hasSearchQuery = Boolean(query?.trim().length)
+    const normalizedQuery = query?.trim() ?? ""
+    const hasSearchQuery = normalizedQuery.length > 0
+    const hasCategoryFilter = activeGroup !== "all"
+    const loadFailed = loadStatus === "error"
+    const title = loadFailed
+      ? "Resource directory unavailable"
+      : hasSearchQuery
+        ? `No matches for “${normalizedQuery}”`
+        : hasCategoryFilter
+          ? "No resources in this category"
+          : "No resources available"
+    const description = loadFailed
+      ? (loadError ?? "The full resource directory could not load.")
+      : hasSearchQuery
+        ? "Try a shorter term or clear the search to browse every resource."
+        : hasCategoryFilter
+          ? "Show all categories or choose another category."
+          : "Try loading the directory again."
+    const action = loadFailed
+      ? onRetryLoad
+        ? { label: "Try again", onClick: onRetryLoad }
+        : null
+      : hasSearchQuery
+        ? onClearQuery
+          ? { label: "Clear search", onClick: onClearQuery }
+          : null
+        : hasCategoryFilter
+          ? onClearCategory
+            ? { label: "Show all", onClick: onClearCategory }
+            : null
+          : onRetryLoad
+            ? { label: "Try again", onClick: onRetryLoad }
+            : null
+
     return (
-      <div
-        className={cn(
-          "flex flex-col gap-1 px-4 py-6 text-center",
-          PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME
-        )}
-      >
-        <p className="text-foreground text-sm font-medium">No resources yet</p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          {hasSearchQuery
-            ? "No results matched your search."
-            : "Public organizations and reviewed resources will appear here once they are ready. Map markers appear when a location is available."}
-        </p>
-      </div>
+      <Empty
+        data-public-map-search-empty="true"
+        variant="subtle"
+        size="sm"
+        className={cn("h-auto min-h-48", PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME)}
+        title={<span className="text-balance">{title}</span>}
+        description={<span className="text-pretty">{description}</span>}
+        actions={
+          action ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={action.onClick}
+            >
+              {action.label}
+            </Button>
+          ) : null
+        }
+      />
     )
   }
 
   return (
     <div
       data-public-map-organization-list-section="list-stack"
+      aria-busy={loadStatus === "loading"}
       className="flex w-full max-w-full min-w-0 flex-col gap-2"
     >
-      {visibleItems.map((item) => {
-        const selectableItemId = resolvePublicMapItemSelectableId(item)
-        const selected = resolvedSelectedItemId === selectableItemId
+      <div
+        data-public-map-organization-list-section="card-grid"
+        className="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-stretch gap-3"
+      >
+        {visibleItems.map((item) => {
+          const selectableItemId = resolvePublicMapItemSelectableId(item)
+          const selected = resolvedSelectedItemId === selectableItemId
 
-        if (item.itemType === "external_resource") {
+          if (item.itemType === "external_resource") {
+            return (
+              <PublicMapResourceListCard
+                key={item.id}
+                item={item}
+                selected={selected}
+                constrainedLayout={constrainedLayout}
+                onSelectItem={onSelectItem}
+              />
+            )
+          }
+
           return (
-            <PublicMapResourceListCard
+            <PublicMapPlatformOrganizationListCard
               key={item.id}
               item={item}
               selected={selected}
               constrainedLayout={constrainedLayout}
-              onSelectItem={onSelectItem}
+              onSelectOrg={onSelectOrg}
+              onOpenDetails={onOpenDetails}
             />
           )
-        }
-
-        return (
-          <PublicMapPlatformOrganizationListCard
-            key={item.id}
-            item={item}
-            selected={selected}
-            constrainedLayout={constrainedLayout}
-            onSelectOrg={onSelectOrg}
-            onOpenDetails={onOpenDetails}
-          />
-        )
-      })}
+        })}
+      </div>
       <PublicMapOrganizationListPaginationFooter
         hasMoreOrganizations={hasMoreOrganizations}
         loadMoreSentinelRef={loadMoreSentinelRef}

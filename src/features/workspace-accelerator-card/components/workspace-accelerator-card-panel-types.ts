@@ -1,3 +1,5 @@
+import type { ReactNode } from "react"
+
 import type { RoadmapSection } from "@/lib/roadmap"
 
 import type {
@@ -32,6 +34,7 @@ export type WorkspaceAcceleratorCardPanelProps = {
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   tutorialMode?: "module-preview" | null
   showEmbeddedClassPicker?: boolean
+  workspaceDrawerHeader?: ReactNode
   onTutorialActionComplete?: (
     mode?: "complete" | "complete-and-advance"
   ) => void

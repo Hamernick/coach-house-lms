@@ -5,16 +5,30 @@ import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import type { BudgetTableRow } from "@/lib/modules"
-import { COLUMN_DEFAULTS, COLUMN_MINS, COLUMN_ORDER, HEADER_LABELS } from "./budget-table-column-config"
+import {
+  COLUMN_DEFAULTS,
+  COLUMN_MINS,
+  COLUMN_ORDER,
+  HEADER_LABELS,
+} from "./budget-table-column-config"
 
 export const BUDGET_TABLE_CELL_CLASSES = {
-  tableCellClass: "relative min-h-11 p-0 align-middle whitespace-normal break-words bg-transparent",
-  tableCellFillClass: "absolute inset-0 flex h-full w-full items-center bg-transparent dark:bg-transparent",
-  tableCellFillStretchClass: "flex h-full w-full items-stretch bg-transparent dark:bg-transparent",
+  tableCellClass:
+    "relative min-h-11 p-0 align-middle whitespace-normal break-words bg-transparent",
+  tableCellFillClass:
+    "absolute inset-0 flex h-full w-full items-center bg-transparent dark:bg-transparent",
+  tableCellFillStretchClass:
+    "flex h-full w-full items-stretch bg-transparent dark:bg-transparent",
   tableCellFillCenterClass:
     "absolute inset-0 flex h-full w-full items-center justify-center bg-transparent dark:bg-transparent",
   tableInputClass:
@@ -29,14 +43,20 @@ export const BUDGET_TABLE_CELL_CLASSES = {
     "min-h-11 h-full w-full min-w-0 resize-none overflow-hidden rounded-none border-0 border-b border-transparent bg-transparent dark:bg-transparent px-2 py-2 text-xs leading-snug shadow-none focus-visible:border-border/60 focus-visible:outline-none focus-visible:ring-0",
 } as const
 
-export function fitBudgetTableColumnSizes(containerWidth: number): ColumnSizingState {
+export function fitBudgetTableColumnSizes(
+  containerWidth: number
+): ColumnSizingState {
   if (!containerWidth || containerWidth <= 0) {
-    return Object.fromEntries(COLUMN_ORDER.map((id) => [id, COLUMN_MINS[id]])) as ColumnSizingState
+    return Object.fromEntries(
+      COLUMN_ORDER.map((id) => [id, COLUMN_MINS[id]])
+    ) as ColumnSizingState
   }
 
   const minTotal = COLUMN_ORDER.reduce((sum, id) => sum + COLUMN_MINS[id], 0)
   if (containerWidth <= minTotal) {
-    return Object.fromEntries(COLUMN_ORDER.map((id) => [id, COLUMN_MINS[id]])) as ColumnSizingState
+    return Object.fromEntries(
+      COLUMN_ORDER.map((id) => [id, COLUMN_MINS[id]])
+    ) as ColumnSizingState
   }
 
   const base = COLUMN_ORDER.map((id) => COLUMN_DEFAULTS[id])
@@ -63,7 +83,10 @@ export function fitBudgetTableColumnSizes(containerWidth: number): ColumnSizingS
     })
     if (!changed) {
       remainingIndexes.forEach((idx) => {
-        widths[idx] = Math.max(mins[idx], Math.floor((base[idx] / baseSum) * remaining))
+        widths[idx] = Math.max(
+          mins[idx],
+          Math.floor((base[idx] / baseSum) * remaining)
+        )
       })
       break
     }
@@ -71,30 +94,43 @@ export function fitBudgetTableColumnSizes(containerWidth: number): ColumnSizingS
   }
 
   return Object.fromEntries(
-    COLUMN_ORDER.map((id, idx) => [id, Math.max(mins[idx], widths[idx] || mins[idx])]),
+    COLUMN_ORDER.map((id, idx) => [
+      id,
+      Math.max(mins[idx], widths[idx] || mins[idx]),
+    ])
   ) as ColumnSizingState
 }
 
 type BuildBudgetTableColumnsArgs = {
   costTypeOptions: string[]
   unitListId: string
-  totals: number[]
+  getRowTotal: (rowIndex: number) => number
   formatMoney: (value: number) => string
   rowsLength: number
   onUpdateRow: (rowIndex: number, patch: Partial<BudgetTableRow>) => void
   onRemoveRow: (rowIndex: number) => void
-  onRowDragStart: (rowIndex: number, event: DragEvent<HTMLButtonElement>) => void
+  onCategoryInputMount?: (
+    rowIndex: number,
+    input: HTMLInputElement | null
+  ) => void
+  onRowDragStart: (
+    rowIndex: number,
+    event: DragEvent<HTMLButtonElement>
+  ) => void
+  readOnly?: boolean
 }
 
 export function buildBudgetTableColumns({
   costTypeOptions,
   unitListId,
-  totals,
+  getRowTotal,
   formatMoney,
   rowsLength,
   onUpdateRow,
   onRemoveRow,
+  onCategoryInputMount,
   onRowDragStart,
+  readOnly = false,
 }: BuildBudgetTableColumnsArgs): ColumnDef<BudgetTableRow>[] {
   return [
     {
@@ -105,23 +141,35 @@ export function buildBudgetTableColumns({
       cell: ({ row }) => {
         const rowIndex = row.index
         return (
-          <div className={cn(BUDGET_TABLE_CELL_CLASSES.tableCellFillClass, "gap-2 px-2")}>
+          <div
+            className={cn(
+              BUDGET_TABLE_CELL_CLASSES.tableCellFillClass,
+              "gap-2 px-2"
+            )}
+          >
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-full w-6 cursor-grab text-muted-foreground hover:text-foreground"
-              draggable
+              className="text-muted-foreground hover:text-foreground h-full w-6 cursor-grab"
+              draggable={!readOnly}
+              disabled={readOnly}
               onDragStart={(event) => onRowDragStart(rowIndex, event)}
               aria-label="Reorder row"
             >
               <GripVertical className="h-4 w-4" />
             </Button>
             <Input
+              ref={(input) => {
+                onCategoryInputMount?.(rowIndex, input)
+              }}
               value={row.original.category}
               placeholder="Expense category"
               className={BUDGET_TABLE_CELL_CLASSES.tableInputClass}
-              onChange={(event) => onUpdateRow(rowIndex, { category: event.currentTarget.value })}
+              readOnly={readOnly}
+              onChange={(event) =>
+                onUpdateRow(rowIndex, { category: event.currentTarget.value })
+              }
             />
           </div>
         )
@@ -141,11 +189,19 @@ export function buildBudgetTableColumns({
               placeholder="Description"
               rows={1}
               className={BUDGET_TABLE_CELL_CLASSES.tableTextareaClass}
-              onChange={(event) => onUpdateRow(rowIndex, { description: event.currentTarget.value })}
+              readOnly={readOnly}
+              onChange={(event) =>
+                onUpdateRow(rowIndex, {
+                  description: event.currentTarget.value,
+                })
+              }
               onInput={(event) => {
                 const target = event.currentTarget
                 target.style.height = "0px"
-                const minHeight = Number.parseFloat(getComputedStyle(target).minHeight || "0") || 44
+                const minHeight =
+                  Number.parseFloat(
+                    getComputedStyle(target).minHeight || "0"
+                  ) || 44
                 const nextHeight = Math.max(target.scrollHeight, minHeight)
                 target.style.height = `${nextHeight}px`
               }}
@@ -165,9 +221,14 @@ export function buildBudgetTableColumns({
           <div className={BUDGET_TABLE_CELL_CLASSES.tableCellFillClass}>
             <Select
               value={row.original.costType || undefined}
-              onValueChange={(next) => onUpdateRow(rowIndex, { costType: next })}
+              disabled={readOnly}
+              onValueChange={(next) =>
+                onUpdateRow(rowIndex, { costType: next })
+              }
             >
-              <SelectTrigger className={BUDGET_TABLE_CELL_CLASSES.tableSelectClass}>
+              <SelectTrigger
+                className={BUDGET_TABLE_CELL_CLASSES.tableSelectClass}
+              >
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
@@ -196,7 +257,10 @@ export function buildBudgetTableColumns({
               placeholder="Unit"
               list={unitListId}
               className={BUDGET_TABLE_CELL_CLASSES.tableInputClass}
-              onChange={(event) => onUpdateRow(rowIndex, { unit: event.currentTarget.value })}
+              readOnly={readOnly}
+              onChange={(event) =>
+                onUpdateRow(rowIndex, { unit: event.currentTarget.value })
+              }
             />
           </div>
         )
@@ -219,7 +283,10 @@ export function buildBudgetTableColumns({
               min={0}
               step={1}
               className={BUDGET_TABLE_CELL_CLASSES.tableNumberClass}
-              onChange={(event) => onUpdateRow(rowIndex, { units: event.currentTarget.value })}
+              readOnly={readOnly}
+              onChange={(event) =>
+                onUpdateRow(rowIndex, { units: event.currentTarget.value })
+              }
             />
           </div>
         )
@@ -235,7 +302,7 @@ export function buildBudgetTableColumns({
         return (
           <div className={BUDGET_TABLE_CELL_CLASSES.tableCellFillClass}>
             <div className="relative h-full w-full min-w-0">
-              <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-1.5 -translate-y-1/2 text-[10px]">
                 $
               </span>
               <Input
@@ -246,7 +313,12 @@ export function buildBudgetTableColumns({
                 min={0}
                 step={0.01}
                 className={BUDGET_TABLE_CELL_CLASSES.tableMoneyClass}
-                onChange={(event) => onUpdateRow(rowIndex, { costPerUnit: event.currentTarget.value })}
+                readOnly={readOnly}
+                onChange={(event) =>
+                  onUpdateRow(rowIndex, {
+                    costPerUnit: event.currentTarget.value,
+                  })
+                }
               />
             </div>
           </div>
@@ -260,17 +332,20 @@ export function buildBudgetTableColumns({
       minSize: COLUMN_MINS.totalCost,
       enableResizing: true,
       cell: ({ row }) => {
-        const total = totals[row.index] ?? 0
+        const total = getRowTotal(row.index)
         return (
           <div className={BUDGET_TABLE_CELL_CLASSES.tableCellFillClass}>
             <div className="relative h-full w-full min-w-0">
-              <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-1.5 -translate-y-1/2 text-[10px]">
                 $
               </span>
               <Input
                 value={formatMoney(total)}
                 readOnly
-                className={cn(BUDGET_TABLE_CELL_CLASSES.tableMoneyClass, "font-semibold")}
+                className={cn(
+                  BUDGET_TABLE_CELL_CLASSES.tableMoneyClass,
+                  "font-semibold"
+                )}
               />
             </div>
           </div>
@@ -295,7 +370,7 @@ export function buildBudgetTableColumns({
               className="h-9 w-9"
               onClick={() => onRemoveRow(rowIndex)}
               aria-label="Remove row"
-              disabled={rowsLength <= 1}
+              disabled={readOnly || rowsLength <= 1}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

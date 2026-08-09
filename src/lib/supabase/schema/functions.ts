@@ -2,6 +2,80 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  set_organization_coach_assignments: {
+    Args: {
+      p_organization_id: string
+      p_coach_user_ids: string[]
+    }
+    Returns: Json
+  }
+  assign_all_coaches_to_all_organizations: {
+    Args: Record<PropertyKey, never>
+    Returns: Json
+  }
+  set_organization_coach_scope_enabled: {
+    Args: {
+      p_enabled: boolean
+    }
+    Returns: Json
+  }
+  complete_organization_finance_stripe_install: {
+    Args: {
+      p_state_sha256: string
+      p_user_id: string
+      p_stripe_account_id: string
+      p_stripe_user_id: string
+      p_livemode: boolean
+    }
+    Returns: Json
+  }
+  import_organization_finance_stripe_records: {
+    Args: {
+      p_actor_id: string
+      p_org_id: string
+      p_stripe_account_id: string
+      p_records: Json
+    }
+    Returns: Json
+  }
+  correct_organization_finance_record: {
+    Args: {
+      p_actor_id: string
+      p_org_id: string
+      p_original_record_id: string
+      p_replacement_record_id: string
+      p_program_id: string | null
+      p_effective_at: string
+      p_record_type: string
+      p_direction: string
+      p_source_kind: string | null
+      p_source_label: string
+      p_amount_cents: number
+      p_currency_code: string
+      p_reason: string
+      p_external_reference: string
+      p_storage_path: string
+      p_file_name: string
+      p_mime_type: string
+      p_size_bytes: number
+      p_file_sha256: string
+    }
+    Returns: Json
+  }
+  reconcile_organization_finance_record: {
+    Args: {
+      p_actor_id: string
+      p_org_id: string
+      p_record_id: string
+      p_external_reference: string
+      p_storage_path: string
+      p_file_name: string
+      p_mime_type: string
+      p_size_bytes: number
+      p_file_sha256: string
+    }
+    Returns: Json
+  }
   complete_fiscal_sponsorship_w9_transition: {
     Args: {
       p_actor_id: string
@@ -214,6 +288,12 @@ export type PublicFunctions = {
     }
     Returns: Json
   }
+  can_view_organization_finance: {
+    Args: {
+      target_org_id: string
+    }
+    Returns: boolean
+  }
   is_admin: {
     Args: Record<string, never>
     Returns: boolean
@@ -225,23 +305,6 @@ export type PublicFunctions = {
   current_platform_access_level: {
     Args: Record<string, never>
     Returns: string | null
-  }
-  set_organization_coach_scope_enabled: {
-    Args: {
-      p_enabled: boolean
-    }
-    Returns: Json
-  }
-  set_organization_coach_assignments: {
-    Args: {
-      p_organization_id: string
-      p_coach_user_ids: string[]
-    }
-    Returns: Json
-  }
-  assign_all_coaches_to_all_organizations: {
-    Args: Record<string, never>
-    Returns: Json
   }
   handle_updated_at: {
     Args: Record<string, never>
@@ -296,5 +359,33 @@ export type PublicFunctions = {
       p_radius_miles?: number | null
     }
     Returns: ResourceMapPublicItemsView["Row"][]
+  }
+  get_resource_map_public_items_page: {
+    Args: {
+      p_query?: string | null
+      p_category_keys?: string[] | null
+      p_limit?: number | null
+      p_offset?: number | null
+      p_latitude?: number | null
+      p_longitude?: number | null
+      p_radius_miles?: number | null
+    }
+    Returns: ResourceMapPublicItemsView["Row"][]
+  }
+  promote_resource_map_import_record: {
+    Args: {
+      p_import_record_id: string
+      p_payload: Json
+      p_publish?: boolean
+    }
+    Returns: {
+      promotion_result: string
+      organization_id: string | null
+      service_id: string | null
+      location_id: string | null
+      contact_count: number
+      link_count: number
+      field_evidence_count: number
+    }[]
   }
 }

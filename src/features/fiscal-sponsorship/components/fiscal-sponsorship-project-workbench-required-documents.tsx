@@ -13,7 +13,6 @@ import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 import XCircleIcon from "lucide-react/dist/esm/icons/x-circle"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
@@ -36,7 +35,7 @@ import type {
 import {
   buildDocumentLookup,
   formatReviewStatus,
-  getStatusTone,
+  RequiredDocumentReviewBadge,
   RequiredDocumentLinkButton,
   reviewDecisionRequiresNote,
 } from "./fiscal-sponsorship-project-workbench-required-documents-support"
@@ -150,7 +149,11 @@ export function FiscalSponsorshipProjectWorkbenchRequiredDocuments({
   }
 
   return (
-    <section data-fiscal-sponsorship-required-documents="" className="min-w-0">
+    <section
+      id="fiscal-sponsorship-required-documents"
+      data-fiscal-sponsorship-required-documents=""
+      className="min-w-0"
+    >
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-sm font-semibold">Required documents</p>
         <p className="text-muted-foreground text-xs leading-snug">
@@ -196,14 +199,7 @@ export function FiscalSponsorshipProjectWorkbenchRequiredDocuments({
                         <p className="text-foreground truncate text-xs font-medium">
                           {requirement.label}
                         </p>
-                        <Badge
-                          className={cn(
-                            "h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none",
-                            getStatusTone(document?.reviewStatus)
-                          )}
-                        >
-                          {formatReviewStatus(document?.reviewStatus)}
-                        </Badge>
+                        <RequiredDocumentReviewBadge document={document} />
                       </div>
                       <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px] leading-snug">
                         {document?.title || requirement.description}
@@ -240,6 +236,26 @@ export function FiscalSponsorshipProjectWorkbenchRequiredDocuments({
                             New W-9
                           </a>
                         </Button>
+                      ) : null}
+                      {isW9 &&
+                      canConnectUploadedAssets &&
+                      connectFiscalSponsorshipDocumentAssetAction ? (
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="group h-8 shrink-0 rounded-full px-3"
+                          >
+                            <FileUpIcon data-icon="inline-start" aria-hidden />
+                            Replace PDF
+                            <ChevronDownIcon
+                              data-icon="inline-end"
+                              className="transition-transform duration-200 group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+                              aria-hidden
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
                       ) : null}
                     </div>
                   ) : canConnectDocuments || (isW9 && canCompleteW9) ? (
@@ -284,7 +300,7 @@ export function FiscalSponsorshipProjectWorkbenchRequiredDocuments({
                   ) : null}
                 </div>
 
-                {!document &&
+                {(!document || isW9) &&
                 canConnectUploadedAssets &&
                 connectFiscalSponsorshipDocumentAssetAction ? (
                   <CollapsibleContent

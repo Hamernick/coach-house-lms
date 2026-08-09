@@ -5,15 +5,16 @@ import { revalidatePath } from "next/cache"
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
+import type { BudgetTableRow } from "@/lib/modules"
 import {
-  getOrganizationNarrativeKeyForSectionId,
-  normalizeOrganizationNarrativeHtml,
   ROADMAP_SECTION_LIMIT,
+  getOrganizationNarrativeKeyForSectionId,
   getRoadmapWorkspaceRevalidationPaths,
+  normalizeOrganizationNarrativeHtml,
   removeRoadmapSection,
   resolveRoadmapSections,
-  updateOrganizationNarrativeSection,
   updateRoadmapSection,
+  updateOrganizationNarrativeSection,
   type RoadmapSection,
 } from "@/lib/roadmap"
 import { publicSharingEnabled } from "@/lib/feature-flags"
@@ -33,6 +34,7 @@ type SaveInput = {
   title?: string
   subtitle?: string
   content?: string
+  budgetRows?: BudgetTableRow[]
   imageUrl?: string | null
   isPublic?: boolean
   layout?: "square" | "vertical" | "wide"
@@ -68,6 +70,7 @@ export async function saveRoadmapSectionAction({
   title,
   subtitle,
   content,
+  budgetRows,
   imageUrl,
   isPublic,
   layout,
@@ -122,8 +125,7 @@ export async function saveRoadmapSectionAction({
     previousSection.lastUpdated !== expectedLastUpdated
   ) {
     return {
-      error:
-        "This roadmap section was updated elsewhere. Reload before saving.",
+      error: "This roadmap section was updated elsewhere. Reload before saving.",
     }
   }
 
@@ -145,6 +147,7 @@ export async function saveRoadmapSectionAction({
     title,
     subtitle,
     content: sanitizedContent,
+    budgetRows,
     imageUrl,
     isPublic: allowPublicSharing ? isPublic : false,
     layout,

@@ -289,7 +289,7 @@ export function PublicMapMemberOnboardingOverlay({
   )
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex items-end justify-center px-4 py-5 sm:items-center sm:p-6">
+    <div className="pointer-events-none absolute inset-0 z-50 flex items-end justify-center px-4 py-5 sm:items-center sm:p-6">
       <Card
         role="dialog"
         aria-modal="false"

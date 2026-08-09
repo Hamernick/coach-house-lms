@@ -9,6 +9,8 @@ type CoachingAvatarGroupProps = {
   className?: string
   size?: AvatarSize
   label?: string
+  limit?: number
+  showStatus?: boolean
 }
 
 const COACHING_TEAM_AVATARS: Array<{
@@ -49,8 +51,14 @@ export function CoachingAvatarGroup({
   className,
   size = "sm",
   label = "Coach House coaching team",
+  limit,
+  showStatus = false,
 }: CoachingAvatarGroupProps) {
   const styles = SIZE_STYLES[size]
+  const visibleAvatars = COACHING_TEAM_AVATARS.slice(
+    0,
+    limit ?? COACHING_TEAM_AVATARS.length
+  )
 
   return (
     <div className={cn("inline-flex items-center", className)}>
@@ -62,30 +70,35 @@ export function CoachingAvatarGroup({
           size === "xs" ? "-space-x-1.5" : "-space-x-2"
         )}
       >
-        {COACHING_TEAM_AVATARS.map((avatar) => (
+        {visibleAvatars.map((avatar, index) => (
           <li
             key={avatar.id}
-            className={cn(
-              "border-background ring-border/70 relative overflow-hidden rounded-full border-2 ring-1",
-              styles.avatar
-            )}
+            className={cn("relative shrink-0", styles.avatar)}
           >
-            {avatar.imageUrl ? (
-              <Image
-                src={avatar.imageUrl}
-                alt={avatar.name}
-                fill
-                sizes={styles.sizes}
-                className="object-cover"
-              />
-            ) : (
+            <span className="border-background ring-border/70 absolute inset-0 overflow-hidden rounded-full border-2 ring-1">
+              {avatar.imageUrl ? (
+                <Image
+                  src={avatar.imageUrl}
+                  alt={avatar.name}
+                  fill
+                  sizes={styles.sizes}
+                  className="object-cover"
+                />
+              ) : (
+                <span
+                  className="bg-muted text-muted-foreground inline-flex size-full items-center justify-center"
+                  aria-label={avatar.name}
+                >
+                  <UserRoundIcon className={styles.icon} aria-hidden />
+                </span>
+              )}
+            </span>
+            {showStatus && index === 0 ? (
               <span
-                className="bg-muted text-muted-foreground inline-flex h-full w-full items-center justify-center"
-                aria-label={avatar.name}
-              >
-                <UserRoundIcon className={styles.icon} aria-hidden />
-              </span>
-            )}
+                className="border-background absolute right-0 bottom-0 z-10 size-2.5 rounded-full border-2 bg-emerald-500"
+                aria-hidden
+              />
+            ) : null}
           </li>
         ))}
       </ul>

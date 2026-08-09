@@ -14,6 +14,12 @@ export type PlatformAdminDashboardLabStatus =
   | "cancelled"
   | "completed"
 
+export type PlatformAdminDashboardLabFiscalSponsorshipStatus =
+  | "not_eligible"
+  | "eligible"
+  | "in_progress"
+  | "active"
+
 export type PlatformAdminDashboardLabPriority =
   | "urgent"
   | "high"
@@ -35,11 +41,24 @@ export type PlatformAdminDashboardLabTask = {
   endDate: Date
 }
 
+export type PlatformAdminDashboardLabOrganizationCoachAssignment = {
+  organizationId: string
+  coach: {
+    id: string
+    name: string
+    email: string | null
+    avatarUrl: string | null
+  }
+  assignedBy: string | null
+  updatedAt: string
+}
+
 export type PlatformAdminDashboardLabProject = {
   id: string
   organizationId?: string
   projectKind?: "standard" | "organization_admin"
   workstreamCategoryId?: string
+  fiscalSponsorshipStatus?: PlatformAdminDashboardLabFiscalSponsorshipStatus
   name: string
   description?: string
   taskCount: number
@@ -52,17 +71,7 @@ export type PlatformAdminDashboardLabProject = {
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
-  organizationCoachAssignments?: Array<{
-    organizationId: string
-    coach: {
-      id: string
-      name: string
-      email: string | null
-      avatarUrl: string | null
-    }
-    assignedBy: string | null
-    updatedAt: string
-  }>
+  organizationCoachAssignments?: PlatformAdminDashboardLabOrganizationCoachAssignment[]
   client?: string
   typeLabel?: string
   durationLabel?: string

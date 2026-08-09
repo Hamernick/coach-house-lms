@@ -75,6 +75,7 @@ export function WorkspaceAcceleratorCardPanel({
   tutorialInteractionPolicy = null,
   tutorialMode = null,
   showEmbeddedClassPicker = true,
+  workspaceDrawerHeader = null,
   onTutorialActionComplete,
 }: WorkspaceAcceleratorCardPanelProps) {
   const router = useRouter()
@@ -546,6 +547,7 @@ export function WorkspaceAcceleratorCardPanel({
               workspaceDrawerEmbedded && isModuleViewerOpen && "hidden"
             )}
           >
+            {workspaceDrawerEmbedded ? workspaceDrawerHeader : null}
             <WorkspaceAcceleratorCardSidebar
               {...sidebarProps}
               showProgressSummary={false}

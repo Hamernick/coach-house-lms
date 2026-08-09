@@ -62,7 +62,7 @@ export function OrgProfilePublicAboutSection({
         {need.trim().length > 0 ? (
           <div className="space-y-1">
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
-              Need statement
+              Need
             </p>
             <FieldText text={need} multiline />
           </div>

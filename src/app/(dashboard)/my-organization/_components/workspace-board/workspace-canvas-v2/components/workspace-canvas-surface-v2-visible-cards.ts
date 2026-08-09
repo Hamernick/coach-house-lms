@@ -4,7 +4,6 @@ import type { WorkspaceCanvasV2CardId } from "./workspace-canvas-surface-v2-help
 const WORKSPACE_LIVE_CANVAS_CARD_IDS = [
   "organization-overview",
   "programs",
-  "accelerator",
   "brand-kit",
   "economic-engine",
   "communications",

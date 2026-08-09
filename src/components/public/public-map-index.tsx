@@ -14,8 +14,6 @@ import { useTheme } from "next-themes"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
-import { useIsMobile } from "@/hooks/use-mobile"
-
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import {
@@ -44,13 +42,9 @@ import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import { usePublicMapMemberOnboardingMapOverlay } from "./public-map-index/member-onboarding-preview-controls"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
-import {
-  buildLocationFeedback,
-  type UserLocationStatus,
-} from "./public-map-index/user-location"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import { usePublicMapClusteredMarkers } from "./public-map-index/use-public-map-clustered-markers"
+import { usePublicMapMarkers } from "./public-map-index/use-public-map-markers"
 import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import {
@@ -60,6 +54,7 @@ import {
 } from "./public-map-index/map-items-state"
 import { usePublicMapSameLocationSearchContext } from "./public-map-index/same-location-state"
 import {
+  usePublicMapFilteredOrganizations,
   usePublicMapOrganizationById,
   usePublicMapOrganizationFilterState,
 } from "./public-map-index/public-map-index-filter-state"
@@ -67,7 +62,6 @@ import { usePublicMapResourceGuideState } from "./public-map-index/resource-guid
 import type { PublicMapIndexProps } from "./public-map-index/public-map-index-types"
 import {
   resolveInitialCameraTarget,
-  resolvePublicMapPresentationFlags,
   usePublicMapIndexNavigationHandlers,
   usePublicMapListItemSelection,
   useSyncPublicMapSelectedListItem,
@@ -77,6 +71,7 @@ import {
   EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
   usePublicMapResourceItems,
 } from "./public-map-index/use-resource-map-items"
+import { usePublicMapUserLocation } from "./public-map-index/use-public-map-user-location"
 
 function useFocusPublicMapCameraTarget(
   mapRef: RefObject<mapboxgl.Map | null>,
@@ -103,12 +98,10 @@ export function PublicMapIndex({
   canManageResourceMap = false,
   organizationCurationAction,
   resourceMapCurationAction,
-  presentationMode = "home-canvas",
   memberOnboarding = undefined,
   adminOnboardingPreview = undefined,
 }: PublicMapIndexProps) {
   const router = useRouter()
-  const isMobile = useIsMobile()
   const mapTheme = normalizePublicMapTheme(useTheme().resolvedTheme)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -133,8 +126,6 @@ export function PublicMapIndex({
     useState<PublicMapCameraTarget | null>(
       resolveInitialCameraTarget(initialOrganization)
     )
-  const [userLocationStatus, setUserLocationStatus] =
-    useState<UserLocationStatus>("idle")
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
@@ -158,42 +149,57 @@ export function PublicMapIndex({
   } = usePublicMapFilterUrlState({
     onFilterChange: clearMapTransientSelection,
   })
-  const resourceItems = usePublicMapResourceItems({
-    initialResourceItems,
-    resourceItemsEndpoint,
-  })
+  const {
+    error: resourceItemsLoadError,
+    resourceItems,
+    retry: retryResourceItems,
+    status: resourceItemsLoadStatus,
+  } = usePublicMapResourceItems({ initialResourceItems, resourceItemsEndpoint })
   const deferredQuery = useDeferredValue(query)
+  const searchPending = deferredQuery !== query
   const {
     favorites,
-    isSavingPreferences,
     preferencesSaveError,
     viewer,
     setFavorites,
     setRecentOrganizationIds,
   } = usePublicMapPreferences({ initialViewer })
   const isAuthenticated = Boolean(viewer ?? initialViewer)
-  const locationFeedback = buildLocationFeedback(userLocationStatus)
-  const organizationById = usePublicMapOrganizationById(organizations)
-  const { filteredOrganizations, groupCounts } =
-    usePublicMapOrganizationFilterState({
-      activeGroup,
-      query: deferredQuery,
-      favorites,
-      includeSeedResources,
-      organizationById,
-      organizations,
-      resourceItems,
+  const { isOpen: memberOnboardingOpen, overlay: memberOnboardingMapOverlay } =
+    usePublicMapMemberOnboardingMapOverlay({
+      isAuthenticated,
+      memberOnboarding,
+      adminOnboardingPreview,
     })
+  const organizationById = usePublicMapOrganizationById(organizations)
+  const {
+    filteredItems: filteredDirectoryListItems,
+    filteredOrganizations,
+    groupCounts,
+  } = usePublicMapOrganizationFilterState({
+    activeGroup,
+    deferredQuery: query,
+    favorites,
+    includeSeedResources,
+    organizationById,
+    organizations,
+    resourceItems,
+  })
+  const mapFilteredOrganizations = usePublicMapFilteredOrganizations({
+    deferredQuery,
+    favorites,
+    organizationById,
+    organizations,
+  })
   const filteredMapItems = useFilteredPublicMapItems({
     activeGroup,
-    filteredOrganizations,
+    filteredOrganizations: mapFilteredOrganizations,
     includeSeedResources,
     resourceItems,
   })
   const {
     activeGuideSearchContext,
     clearActiveGuide,
-    filteredListItems,
     handleGuideSelect,
     resourceGuides,
     visibleMapItems,
@@ -201,7 +207,7 @@ export function PublicMapIndex({
     activeGroup,
     deferredQuery,
     filteredMapItems,
-    filteredOrganizations,
+    filteredOrganizations: mapFilteredOrganizations,
     includeSeedResources,
     resourceItems,
     setSameLocationSelection,
@@ -331,17 +337,29 @@ export function PublicMapIndex({
     setMapLoadVersion,
     setMapError,
     setAppliedBounds,
+    theme: mapTheme,
   })
 
-  usePublicMapClusteredMarkers({
+  const locationControl = usePublicMapUserLocation({
     mapRef,
     mapLoadedRef,
-    organizations: filteredOrganizations,
+    mapLoadVersion,
+    suppressAutomaticEntrance:
+      Boolean(initialPublicSlug) || includeSeedResources,
+    welcomeOpen: memberOnboardingOpen,
+  })
+
+  usePublicMapMarkers({
+    favorites,
+    mapRef,
+    mapLoadedRef,
+    organizations: mapFilteredOrganizations,
     mapItems: visibleMapItems,
     mapLoadVersion,
     markerTheme: mapTheme,
     selectedOrganizationId:
       selectedListItemId ?? selectedOrganization?.id ?? null,
+    userCoordinates: locationControl.coordinates,
     activeSameLocationGroupKey: sameLocationSelection?.key ?? null,
     onSelectOrganization: handleSelectMapMarker,
     onOpenSameLocationGroup: handleOpenSameLocationGroup,
@@ -353,7 +371,6 @@ export function PublicMapIndex({
     hasResolvedInitialViewportRef,
     initialOrganization,
     preferNationalFallback: includeSeedResources && !initialPublicSlug,
-    setUserLocationStatus,
     setInitialViewportResolved,
   })
 
@@ -366,13 +383,8 @@ export function PublicMapIndex({
 
   useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
 
-  const directoryListItems = activeSearchContext?.items ?? filteredListItems
-  const flags = resolvePublicMapPresentationFlags(presentationMode)
-  const memberOnboardingMapOverlay = usePublicMapMemberOnboardingMapOverlay({
-    isAuthenticated,
-    memberOnboarding,
-    adminOnboardingPreview,
-  })
+  const directoryListItems =
+    activeSearchContext?.items ?? filteredDirectoryListItems
   const mapSurface = (
     <PublicMapSurface
       containerRef={containerRef}
@@ -386,63 +398,36 @@ export function PublicMapIndex({
       organizationCurationAction={organizationCurationAction}
       resourceMapCurationAction={resourceMapCurationAction}
       favorites={favorites}
+      guides={resourceGuides}
+      savedOrganizations={savedOrganizations}
       query={query}
       activeGroup={activeGroup}
       groupCounts={groupCounts}
+      resourceItemsLoadStatus={resourceItemsLoadStatus}
+      resourceItemsLoadError={resourceItemsLoadError}
+      searchPending={searchPending}
       searchContext={activeSearchContext}
       tokenAvailable={tokenAvailable}
       mapError={mapError}
-      locationFeedback={locationFeedback}
+      locationControl={locationControl}
       preferencesSaveError={preferencesSaveError}
-      isSavingPreferences={isSavingPreferences}
       authSheetOpen={authSheetOpen}
       authRedirectTo={authRedirectTo}
       onQueryChange={handleQueryChange}
       onActiveGroupChange={handleActiveGroupChange}
+      onRetryResourceItems={retryResourceItems}
       onToggleFavorite={toggleFavorite}
+      onGuideSelect={handleGuideSelect}
+      onSelectOrganization={handleRailSelectOrganization}
       onSelectItem={handleSelectListItem}
       onOpenOrgDetails={handleOpenDetails}
       onBackToSearch={handleBackToSearch}
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
-      renderDesktopSidebar={flags.renderMapOverlaySidebar}
-      renderMobileDrawer={!flags.useHomeCanvasSidebarSlot || isMobile}
       mapOverlay={memberOnboardingMapOverlay}
     />
   )
 
-  return (
-    <PublicMapIndexChrome
-      directoryItems={directoryListItems}
-      directoryOrganizations={filteredOrganizations}
-      favorites={favorites}
-      isAuthenticated={isAuthenticated}
-      mapSurface={mapSurface}
-      canManageResourceMap={canManageResourceMap}
-      organizationCurationAction={organizationCurationAction}
-      resourceMapCurationAction={resourceMapCurationAction}
-      activeGroup={activeGroup}
-      groupCounts={groupCounts}
-      onActiveGroupChange={handleActiveGroupChange}
-      guides={resourceGuides}
-      onGuideSelect={handleGuideSelect}
-      onSelectItem={handleSelectListItem}
-      onOpenDetails={handleOpenDetails}
-      onQueryChange={handleQueryChange}
-      onSelectOrganization={handleRailSelectOrganization}
-      onToggleFavorite={toggleFavorite}
-      onBackToSearch={handleBackToSearch}
-      query={query}
-      savedOrganizations={savedOrganizations}
-      searchContext={activeSearchContext}
-      selectedItemId={selectedListItemId}
-      selectedOrganization={selectedOrganization}
-      selectedResourceItem={selectedResourceItem}
-      setSidebarMode={setSidebarMode}
-      sidebarMode={sidebarMode}
-      useAppShellRightRailDirectory={flags.useAppShellRightRailDirectory}
-      useHomeCanvasSidebarSlot={flags.useHomeCanvasSidebarSlot}
-    />
-  )
+  return <PublicMapIndexChrome mapSurface={mapSurface} />
 }

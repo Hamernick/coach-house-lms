@@ -64,7 +64,9 @@ describe("workspace canvas v2 viewport controls", () => {
     expect(surfaceSource).toContain(
       "onNodeDoubleClick: flowState.handleNodeDoubleClick"
     )
-    expect(flowStateSource).toContain("executeWorkspaceCanvasViewportCommand({")
+    expect(flowStateSource).toContain(
+      "executeWorkspaceCanvasViewportCommand({"
+    )
     expect(flowStateSource).toContain(
       'command: { kind: "focus-card", cardId: node.id }'
     )

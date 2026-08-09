@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 import { createResourceMapAdminClient } from "./lib/env.mjs"
-import {
-  buildCanonicalPayload,
-  buildPromotedFieldEvidenceRows,
-  insertPromotionChildren,
-} from "./lib/promotion-payloads.mjs"
-import { insertPromotedFieldEvidenceRows } from "./lib/promotion-evidence-writes.mjs"
+import { analyzeResourceEnrichmentReadiness } from "./lib/enrichment-quality.mjs"
+import { buildCanonicalPayload } from "./lib/promotion-payloads.mjs"
 
 function parseArgs(argv) {
   const args = new Map()
@@ -28,6 +24,27 @@ function normalizeLimit(value) {
   const parsed = Number.parseInt(String(value ?? "25"), 10)
   if (!Number.isFinite(parsed)) return 25
   return Math.min(Math.max(parsed, 1), 100)
+}
+
+function assertRecordsReadyForPublication(records) {
+  const blocked = records
+    .map((record) => analyzeResourceEnrichmentReadiness(record))
+    .filter((result) => !result.publishable)
+
+  if (blocked.length === 0) return
+
+  const samples = blocked
+    .slice(0, 5)
+    .map(
+      (result) =>
+        `${result.recordId ?? result.title ?? "unknown"} (${result.blockingGaps
+          .map((gap) => gap.code)
+          .join(", ")})`
+    )
+    .join("; ")
+  throw new Error(
+    `${blocked.length} approved import records do not meet the source-verified promotion contract. Run resource-map:audit-enrichment and complete draft, verification, and admin review before promotion. ${samples}`
+  )
 }
 
 async function fetchPromotionRecords(admin, limit) {
@@ -59,162 +76,25 @@ async function fetchAcceptedDuplicateMatch(admin, importRecordId) {
   return data
 }
 
-async function insertCanonicalResource(admin, payload) {
-  const { data: organization, error: orgError } = await admin
-    .from("resource_map_organizations")
-    .insert(payload.organization)
-    .select("id")
-    .maybeSingle()
-  if (orgError) throw orgError
-  if (!organization) throw new Error("Organization promotion insert failed.")
-
-  const { data: service, error: serviceError } = await admin
-    .from("resource_map_services")
-    .insert({ ...payload.service, organization_id: organization.id })
-    .select("id")
-    .maybeSingle()
-  if (serviceError) throw serviceError
-  if (!service) throw new Error("Service promotion insert failed.")
-
-  const children = await insertPromotionChildren(
-    admin,
-    payload,
-    organization,
-    service
-  )
-  return { organization, service, children }
-}
-
-async function fetchStagedFieldEvidence(admin, importRecordId) {
-  const { data, error } = await admin
-    .from("resource_map_field_evidence")
-    .select(
-      "id,import_record_id,source_id,field_path,field_value,confidence_score,source_url,evidence_type,derived_from,transformation,evidence_metadata,observed_at"
-    )
-    .eq("import_record_id", importRecordId)
-    .is("organization_id", null)
-    .is("service_id", null)
-    .is("location_id", null)
-    .is("contact_id", null)
-    .is("link_id", null)
-
-  if (error) throw error
-  return data ?? []
-}
-
-async function insertPromotedFieldEvidence(admin, record, canonical) {
-  const stagedEvidence = await fetchStagedFieldEvidence(admin, record.id)
-  const evidencePayload = buildPromotedFieldEvidenceRows(
-    stagedEvidence,
-    canonical,
-    canonical.children
-  )
-
-  if (evidencePayload.length === 0) {
-    return { inserted: 0, available: stagedEvidence.length }
-  }
-
-  await insertPromotedFieldEvidenceRows({
-    admin,
-    rows: evidencePayload,
-  })
-
-  return { inserted: evidencePayload.length, available: stagedEvidence.length }
-}
-
-async function markPromoted(admin, record, canonical) {
-  const { error } = await admin
-    .from("resource_map_import_records")
-    .update({
-      promotion_status: "promoted",
-      promoted_organization_id: canonical.organization.id,
-      promoted_service_id: canonical.service.id,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", record.id)
-  if (error) throw error
-}
-
-async function blockDuplicatePromotion(admin, record, acceptedMatch) {
-  const { error: updateError } = await admin
-    .from("resource_map_import_records")
-    .update({ promotion_status: "blocked" })
-    .eq("id", record.id)
-  if (updateError) throw updateError
-
-  const { error: eventError } = await admin
-    .from("resource_map_curation_events")
-    .insert({
-      action: "merge_duplicate",
-      organization_id: acceptedMatch.organization_id,
-      service_id: acceptedMatch.service_id,
-      import_record_id: record.id,
-      reason:
-        "Blocked promotion because an accepted duplicate match exists. Merge manually before creating a new canonical resource.",
-      before_state: record,
-      after_state: { blocked: true, acceptedMatch },
-    })
-  if (eventError) throw eventError
-}
-
-async function insertPromotionEvent(
-  admin,
-  record,
-  canonical,
-  payload,
-  publish,
-  evidenceSummary
-) {
-  const { error } = await admin.from("resource_map_curation_events").insert({
-    action: "promote",
-    organization_id: canonical.organization.id,
-    service_id: canonical.service.id,
-    import_record_id: record.id,
-    reason: publish
-      ? "Promoted approved import as published canonical resource."
-      : "Promoted approved import as draft canonical resource.",
-    before_state: record,
-    after_state: {
-      organization: canonical.organization,
-      service: canonical.service,
-      location: payload.location
-        ? { created: true, isPrimary: payload.location.is_primary }
-        : null,
-      categoryKeys: payload.categoryKeys,
-      privateContactCount: payload.contacts.length,
-      privateLinkCount: payload.links.length,
-      fieldEvidencePromotedCount: evidenceSummary.inserted,
-      stagedFieldEvidenceCount: evidenceSummary.available,
-      visibility: payload.service.visibility,
-    },
-  })
-  if (error) throw error
-}
-
 async function promoteRecord(admin, record, publish) {
-  const acceptedMatch = await fetchAcceptedDuplicateMatch(admin, record.id)
-  if (acceptedMatch) {
-    await blockDuplicatePromotion(admin, record, acceptedMatch)
-    return "blocked"
-  }
-
   const payload = buildCanonicalPayload(record, publish)
-  const canonical = await insertCanonicalResource(admin, payload)
-  const evidenceSummary = await insertPromotedFieldEvidence(
-    admin,
-    record,
-    canonical
+  const { data, error } = await admin.rpc(
+    "promote_resource_map_import_record",
+    {
+      p_import_record_id: record.id,
+      p_payload: payload,
+      p_publish: publish,
+    }
   )
-  await markPromoted(admin, record, canonical)
-  await insertPromotionEvent(
-    admin,
-    record,
-    canonical,
-    payload,
-    publish,
-    evidenceSummary
-  )
-  return "promoted"
+
+  if (error) throw error
+  const result = Array.isArray(data) ? data[0] : data
+  if (!result?.promotion_result) {
+    throw new Error(
+      `Atomic promotion returned no result for import record ${record.id}.`
+    )
+  }
+  return result.promotion_result
 }
 
 async function main() {
@@ -224,8 +104,10 @@ async function main() {
   const limit = normalizeLimit(args.get("limit"))
   const admin = createResourceMapAdminClient()
   const records = await fetchPromotionRecords(admin, limit)
+  assertRecordsReadyForPublication(records)
 
   if (!apply) {
+    records.forEach((record) => buildCanonicalPayload(record, publish))
     const acceptedDuplicateMatches = (
       await Promise.all(
         records.map((record) => fetchAcceptedDuplicateMatch(admin, record.id))
@@ -239,14 +121,16 @@ async function main() {
 
   let promoted = 0
   let blocked = 0
+  let alreadyPromoted = 0
   for (const record of records) {
     const result = await promoteRecord(admin, record, publish)
     if (result === "promoted") promoted += 1
     if (result === "blocked") blocked += 1
+    if (result === "already_promoted") alreadyPromoted += 1
   }
 
   console.log(
-    `Promoted ${promoted} approved resource import records; blocked ${blocked} accepted duplicate matches.`
+    `Promoted ${promoted} approved resource import records atomically; blocked ${blocked} accepted duplicate matches; ${alreadyPromoted} retries were already promoted.`
   )
 }
 

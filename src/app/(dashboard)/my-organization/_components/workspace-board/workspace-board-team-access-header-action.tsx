@@ -154,7 +154,7 @@ export function WorkspaceBoardTeamAccessHeaderActionContent({
       type="button"
       variant="ghost"
       size="sm"
-      className="border-border/65 bg-card hover:bg-muted/20 h-9 max-w-[13rem] min-w-0 rounded-full border px-2 py-1 text-left shadow-xs transition-colors"
+      className="border-border/65 bg-card hover:bg-muted/20 h-9 max-w-[13rem] min-w-0 rounded-full border px-2 py-1 text-left transition-colors"
       aria-label={`Team access. ${summaryText}. ${realtimeLabel}.`}
     >
       <span className="flex min-w-0 items-center">

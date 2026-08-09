@@ -2,38 +2,75 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-export type PublicMapDrawerSnapPoints = readonly [string, string, string]
+export type PublicMapDrawerSnapPoints = readonly [string, string, number]
+export type PublicMapDrawerSnapPointIndex = 0 | 1 | 2
+
+const PUBLIC_MAP_DRAWER_COLLAPSED_HEIGHT = 168
 
 export function buildPublicMapDrawerSnapPoints(
-  surfaceHeight: number,
+  surfaceHeight: number
 ): PublicMapDrawerSnapPoints {
   const safeSurfaceHeight = Math.max(0, Math.round(surfaceHeight))
 
   if (safeSurfaceHeight <= 0) {
-    return ["168px", "336px", "520px"] as const
+    return ["168px", "336px", 1] as const
   }
 
-  const collapsedHeight = Math.round(
-    clamp(safeSurfaceHeight * 0.24, 168, 216),
-  )
+  // Keep the lowest stop limited to the drawer controls, without list content.
+  const collapsedHeight = PUBLIC_MAP_DRAWER_COLLAPSED_HEIGHT
   const defaultHeight = Math.round(
-    clamp(
-      safeSurfaceHeight * 0.56,
-      336,
-      Math.max(360, safeSurfaceHeight - 88),
-    ),
+    clamp(safeSurfaceHeight * 0.56, 336, Math.max(360, safeSurfaceHeight - 88))
   )
-  const expandedHeight = Math.round(
-    clamp(
-      safeSurfaceHeight * 0.9,
-      Math.min(safeSurfaceHeight - 24, defaultHeight + 132),
-      Math.max(defaultHeight + 132, safeSurfaceHeight - 16),
-    ),
-  )
+  return [`${collapsedHeight}px`, `${defaultHeight}px`, 1] as const
+}
 
-  return [
-    `${collapsedHeight}px`,
-    `${defaultHeight}px`,
-    `${expandedHeight}px`,
-  ] as const
+function parseSnapPointPixels(
+  snapPoint: number | string,
+  surfaceHeight: number
+) {
+  const pixels =
+    typeof snapPoint === "number"
+      ? snapPoint >= 0 && snapPoint <= 1
+        ? snapPoint * surfaceHeight
+        : snapPoint
+      : Number.parseFloat(snapPoint.replace("px", ""))
+
+  return Number.isFinite(pixels) ? pixels : null
+}
+
+export function resolvePublicMapDrawerSnapPointIndex({
+  snapPoint,
+  snapPoints,
+  surfaceHeight,
+}: {
+  snapPoint: number | string | null
+  snapPoints: PublicMapDrawerSnapPoints
+  surfaceHeight: number
+}): PublicMapDrawerSnapPointIndex | null {
+  if (snapPoint == null) return null
+
+  const exactIndex = snapPoints.findIndex(
+    (candidate) => candidate === snapPoint
+  )
+  if (exactIndex >= 0) return exactIndex as PublicMapDrawerSnapPointIndex
+
+  const targetPixels = parseSnapPointPixels(snapPoint, surfaceHeight)
+
+  if (targetPixels == null) return null
+
+  let resolvedIndex: PublicMapDrawerSnapPointIndex = 0
+  let smallestDifference = Number.POSITIVE_INFINITY
+
+  snapPoints.forEach((candidate, index) => {
+    const candidatePixels = parseSnapPointPixels(candidate, surfaceHeight)
+    if (candidatePixels == null) return
+
+    const difference = Math.abs(candidatePixels - targetPixels)
+    if (difference >= smallestDifference) return
+
+    resolvedIndex = index as PublicMapDrawerSnapPointIndex
+    smallestDifference = difference
+  })
+
+  return resolvedIndex
 }

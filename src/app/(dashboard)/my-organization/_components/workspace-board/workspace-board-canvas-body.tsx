@@ -4,6 +4,7 @@ import {
   clampWorkspaceCanvasTutorialStepIndex,
   resolveWorkspaceCanvasTutorialCallout,
 } from "@/features/workspace-canvas-tutorial"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceCanvasCardFocusRequest,
   WorkspaceCanvasTutorialCompletionExitRequest,
@@ -43,6 +44,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest,
   journeyGuideState,
   organizationEditorData,
+  financeInput,
   workspaceFoundationEnabled,
   onInitialOnboardingSubmit,
   onInvitesChange,
@@ -85,6 +87,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   workspaceFoundationEnabled: boolean
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
@@ -160,6 +163,7 @@ export function WorkspaceBoardCanvasBody({
         <WorkspaceBoardFlowSurface
           seed={seed}
           organizationEditorData={organizationEditorData}
+          financeInput={financeInput}
           workspaceFoundationEnabled={workspaceFoundationEnabled}
           boardState={boardState}
           allowEditing={allowEditing}

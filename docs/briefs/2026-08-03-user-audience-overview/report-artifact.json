@@ -1,0 +1,221 @@
+{
+  "surface": "report",
+  "sources": [
+    {
+      "id": "account_headline_source",
+      "label": "Production account headline aggregates",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL reviewed aggregate snapshot",
+        "description": "Reviewed headline account measures derived from production Supabase data.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES (180, 77, 27)) AS reviewed(external_accounts, ever_signed_in, tracked_active_30d);",
+        "tables_used": ["auth.users", "public.platform_staff_members", "public.user_journey_events"],
+        "filters": ["Exclude 11 identified synthetic or demo accounts", "Exclude 3 internal platform staff accounts", "Activity window is the 30 days ending 2026-08-03"],
+        "metric_definitions": ["External accounts = Auth records minus identified synthetic/demo accounts minus internal staff accounts.", "Authenticated at least once = account has a non-null Supabase last_sign_in_at value; this may include a session created during signup or email confirmation.", "Tracked active 30d = distinct eligible accounts with at least one tracked product event during the window."]
+      }
+    },
+    {
+      "id": "stripe_source",
+      "label": "Live Stripe payment aggregate",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL projection of reviewed Stripe API aggregate",
+        "description": "Reviewed paid regular-user count from live Stripe customers, subscriptions, and latest invoices.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT 21::integer AS current_paying_regular_users;",
+        "tables_used": ["Stripe customers", "Stripe subscriptions", "Stripe invoices"],
+        "filters": ["Regular external accounts only", "Active subscription required", "Latest invoice amount_paid must exceed zero", "Tester accounts excluded"],
+        "metric_definitions": ["Current paying regular users = eligible regular accounts with an active Stripe subscription whose latest invoice collected money."]
+      }
+    },
+    {
+      "id": "signup_source",
+      "label": "Monthly external account signup aggregates",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL reviewed aggregate snapshot",
+        "description": "Reviewed eligible-account signups grouped by UTC month and tester status.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES ('2026-01-01'::date,'Regular',3),('2026-01-01'::date,'Tester',0),('2026-02-01'::date,'Regular',1),('2026-02-01'::date,'Tester',15),('2026-03-01'::date,'Regular',11),('2026-03-01'::date,'Tester',4),('2026-04-01'::date,'Regular',19),('2026-04-01'::date,'Tester',1),('2026-05-01'::date,'Regular',110),('2026-05-01'::date,'Tester',0),('2026-06-01'::date,'Regular',6),('2026-06-01'::date,'Tester',2),('2026-07-01'::date,'Regular',7),('2026-07-01'::date,'Tester',0),('2026-08-01'::date,'Regular',1),('2026-08-01'::date,'Tester',0)) AS reviewed(month,audience,accounts) ORDER BY month,audience;",
+        "tables_used": ["auth.users", "public.profiles", "public.platform_staff_members"],
+        "filters": ["External non-synthetic accounts only", "UTC signup month", "Snapshot through 2026-08-03"]
+      }
+    },
+    {
+      "id": "focus_source",
+      "label": "Selected onboarding focus aggregates",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL reviewed aggregate snapshot",
+        "description": "Reviewed eligible accounts grouped by self-selected onboarding focus.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES ('Build',118,0.6556,66,27,50,21),('Find',56,0.3111,5,0,1,0),('Other or unknown',6,0.0333,6,0,2,0)) AS reviewed(focus,accounts,share,ever_signed_in,tracked_active_30d,organization_owners,current_payers) ORDER BY accounts DESC;",
+        "tables_used": ["auth.users", "public.profiles", "public.organizations", "public.user_journey_events", "Stripe subscriptions", "Stripe invoices"],
+        "filters": ["External non-synthetic accounts only", "Activity window is the 30 days ending 2026-08-03", "Current payer rule excludes testers and zero-dollar latest invoices"],
+        "metric_definitions": ["Selected focus is self-reported onboarding intent and is not a verified job title."]
+      }
+    },
+    {
+      "id": "account_context_source",
+      "label": "Account and organization context aggregates",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL reviewed aggregate snapshot",
+        "description": "Reviewed email, cohort, geography, and attribution-coverage measures.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES ('custom_email_accounts',82),('gmail_accounts',66),('other_consumer_email_accounts',32),('may_accounts',110),('may_ever_signed_in',25),('may_ever_tracked_activity',15),('organization_owners',53),('known_organization_state',17),('known_organization_state_illinois',17)) AS reviewed(metric,value);",
+        "tables_used": ["auth.users", "public.profiles", "public.organizations", "public.user_journey_events"],
+        "filters": ["External non-synthetic accounts only", "May cohort uses UTC created_at month", "Email providers grouped without exposing addresses"]
+      }
+    },
+    {
+      "id": "organization_stage_source",
+      "label": "Organization formation-stage aggregates",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL reviewed aggregate snapshot",
+        "description": "Reviewed formation stage among 53 eligible organization owners.",
+        "executed_at": "2026-08-03T17:51:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES ('IRS approved',21,0.3962),('Pre-501(c)(3)',7,0.1321),('In progress',6,0.1132),('Unknown',19,0.3585)) AS reviewed(stage,organizations,share) ORDER BY organizations DESC;",
+        "tables_used": ["public.organizations", "auth.users", "public.platform_staff_members"],
+        "filters": ["Organizations owned by external non-synthetic accounts only"]
+      }
+    },
+    {
+      "id": "traffic_summary_source",
+      "label": "Vercel Web Analytics summary",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL projection of reviewed Vercel dashboard aggregate",
+        "description": "Anonymous production traffic for the custom 30-day window ending August 3, 2026.",
+        "executed_at": "2026-08-03T17:55:00Z",
+        "language": "sql",
+        "sql": "SELECT 184::integer AS anonymous_visitors, 990::integer AS page_views, 0.43::numeric AS bounce_rate, 0.97::numeric AS united_states_share, 0.86::numeric AS desktop_share;",
+        "tables_used": ["Vercel Web Analytics production dashboard"],
+        "filters": ["Window 2026-07-04 through 2026-08-03", "Production traffic"],
+        "metric_definitions": ["Visitors are anonymous browser visitors and cannot be joined one-to-one to Auth accounts."]
+      }
+    },
+    {
+      "id": "top_pages_source",
+      "label": "Vercel Web Analytics top pages",
+      "path": "docs/briefs/2026-08-03-user-audience-overview/analysis-snapshot.json",
+      "query": {
+        "engine": "PostgreSQL projection of reviewed Vercel dashboard aggregate",
+        "description": "Most visited production pages for the custom 30-day window ending August 3, 2026.",
+        "executed_at": "2026-08-03T17:55:00Z",
+        "language": "sql",
+        "sql": "SELECT * FROM (VALUES ('/',129),('/workspace',89),('/find',63),('/workspace/accelerator',21),('/workspace/roadmap/origin-story',21),('/auth/confirm',14),('/organizations',13)) AS reviewed(page,visitors) ORDER BY visitors DESC,page;",
+        "tables_used": ["Vercel Web Analytics production dashboard"],
+        "filters": ["Window 2026-07-04 through 2026-08-03", "Production traffic", "Top seven pages"]
+      }
+    }
+  ],
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Coach House user audience overview",
+    "description": "Partner briefing on who the external account base appears to be, how it arrived, and where attribution remains incomplete.",
+    "generatedAt": "2026-08-03T18:01:33Z",
+    "sources": [
+      {"id":"account_headline_source"},
+      {"id":"stripe_source"},
+      {"id":"signup_source"},
+      {"id":"focus_source"},
+      {"id":"account_context_source"},
+      {"id":"organization_stage_source"},
+      {"id":"traffic_summary_source"},
+      {"id":"top_pages_source"}
+    ],
+    "cards": [
+      {"id":"external_accounts","description":"Non-synthetic Auth accounts excluding internal staff.","dataset":"headline","sourceId":"account_headline_source","metrics":[{"label":"External accounts","field":"external_accounts","format":"number"}]},
+      {"id":"ever_signed_in","description":"Accounts with at least one recorded authenticated session, including sessions that may have been created during signup or email confirmation.","dataset":"headline","sourceId":"account_headline_source","metrics":[{"label":"Authenticated at least once","field":"ever_signed_in","format":"number"}]},
+      {"id":"tracked_active_30d","description":"Distinct accounts with tracked product activity in the last 30 days.","dataset":"headline","sourceId":"account_headline_source","metrics":[{"label":"Active in 30 days","field":"tracked_active_30d","format":"number"}]},
+      {"id":"current_payers","description":"Regular accounts with an active paid Stripe subscription and a latest invoice that collected money.","dataset":"headline","sourceId":"stripe_source","metrics":[{"label":"Current paying users","field":"current_paying_regular_users","format":"number"}]}
+    ],
+    "charts": [
+      {
+        "id":"signup_history",
+        "title":"External account signups by month",
+        "subtitle":"Sixty-one percent of the current external account base joined in May.",
+        "intent":"composition",
+        "question":"When did the external account base arrive, and how much was regular versus tester traffic?",
+        "rationale":"A stacked monthly bar chart makes the May acquisition wave and tester concentration easy to compare.",
+        "type":"bar",
+        "dataset":"signup_months",
+        "sourceId":"signup_source",
+        "encodings":{"x":{"field":"month","type":"temporal","label":"Signup month"},"y":{"field":"accounts","type":"quantitative","aggregate":"sum","label":"Accounts","format":"number"},"color":{"field":"audience","type":"nominal","label":"Account type"},"tooltip":[{"field":"month","type":"temporal","label":"Month"},{"field":"audience","type":"nominal","label":"Account type"},{"field":"accounts","type":"quantitative","label":"Accounts","format":"number"}]},
+        "xAxisTitle":"Signup month",
+        "yAxisTitle":"Accounts",
+        "valueFormat":"number",
+        "layout":"full",
+        "legend":{"position":"bottom","title":"Account type"},
+        "palette":{"kind":"categorical"},
+        "settings":{"groupMode":"stacked","orientation":"vertical","showValues":true,"sort":"none"},
+        "surface":{"surface":"card","viewMode":"both"}
+      }
+    ],
+    "tables": [
+      {
+        "id":"focus_table","title":"Selected onboarding focus","subtitle":"Build is the only path producing current tracked activity and regular-user revenue.","dataset":"focus_segments","sourceId":"focus_source","layout":"full","defaultSort":{"field":"accounts","direction":"desc"},
+        "columns":[{"field":"focus","label":"Selected focus","type":"text"},{"field":"accounts","label":"Accounts","format":"number"},{"field":"share","label":"Share","format":"percent"},{"field":"ever_signed_in","label":"Authenticated once","format":"number"},{"field":"tracked_active_30d","label":"Active 30d","format":"number"},{"field":"organization_owners","label":"Org owners","format":"number"},{"field":"current_payers","label":"Current payers","format":"number"}]
+      },
+      {
+        "id":"organization_stage_table","title":"Reported organization formation stage","subtitle":"Formation stage is known for 34 of 53 organization owners.","dataset":"organization_stages","sourceId":"organization_stage_source","layout":"half","defaultSort":{"field":"organizations","direction":"desc"},
+        "columns":[{"field":"stage","label":"Stage","type":"text"},{"field":"organizations","label":"Organizations","format":"number"},{"field":"share","label":"Share of 53","format":"percent"}]
+      },
+      {
+        "id":"top_pages_table","title":"Most visited pages","subtitle":"Anonymous visitors during the 30-day window ending August 3.","dataset":"top_pages","sourceId":"top_pages_source","layout":"half","defaultSort":{"field":"visitors","direction":"desc"},
+        "columns":[{"field":"page","label":"Page","type":"text"},{"field":"visitors","label":"Visitors","format":"number"}]
+      }
+    ],
+    "blocks": [
+      {"id":"title","type":"markdown","body":"# Coach House user audience overview"},
+      {"id":"executive_summary","type":"markdown","body":"## Executive Summary\n\nCoach House has built a meaningful external lead base, but its active and paying core is much smaller. The strongest signal comes from nonprofit builders and organization owners. A sustained May acquisition wave created most accounts, while missing first-touch tracking prevents reliable campaign attribution."},
+      {"id":"headline_metrics","type":"metric-strip","cardIds":["external_accounts","ever_signed_in","tracked_active_30d","current_payers"]},
+      {"id":"audience_heading","type":"markdown","body":"## Who the audience appears to be\n\nThe strongest customer profile is a nonprofit builder or organization leader. Email domains suggest a mix of formally affiliated organization leaders and grassroots founders using personal accounts. Selected focus is self-reported intent, not a verified job title."},
+      {"id":"focus_segments","type":"table","tableId":"focus_table"},
+      {"id":"email_context","type":"markdown","sourceId":"account_context_source","body":"Forty-six percent use an organization or custom email domain, 37% use Gmail, and 18% use another consumer provider. The 82 custom-domain accounts span 73 domains, indicating a broad set of mostly separate organizations."},
+      {"id":"signup_heading","type":"markdown","body":"## When they arrived\n\nThe account base did not grow evenly. Most registrations came through one sustained wave across May rather than one bulk-import timestamp."},
+      {"id":"signup_chart","type":"chart","chartId":"signup_history"},
+      {"id":"may_context","type":"markdown","sourceId":"account_context_source","body":"The May cohort contains 110 accounts. Only 25 have a recorded authenticated session and 15 produced any tracked product activity, which explains much of the gap between registrations and active users."},
+      {"id":"organization_heading","type":"markdown","body":"## Organization maturity and geography\n\nOrganization records show both established nonprofits and earlier-stage projects. Geographic coverage is too sparse for a platform-wide claim."},
+      {"id":"organization_stage","type":"table","tableId":"organization_stage_table"},
+      {"id":"geography_context","type":"markdown","sourceId":"account_context_source","body":"Only 17 of 53 organizations supplied a usable state, and all 17 are in Illinois. Treat Illinois as a strong signal among known records, not proof that the entire audience is Illinois-based."},
+      {"id":"traffic_heading","type":"markdown","sourceId":"traffic_summary_source","body":"## Current traffic context\n\nFrom July 4 through August 3, Vercel recorded 184 anonymous visitors, 990 page views, and a 43% bounce rate. Traffic was 97% United States and 86% desktop. Anonymous visitors cannot be matched one-to-one with the 180 accounts."},
+      {"id":"top_pages","type":"table","tableId":"top_pages_table"},
+      {"id":"attribution_gap","type":"markdown","sourceId":"account_context_source","body":"## What is still unknown\n\nHistorical signup records did not preserve first-touch source, UTM campaign values, initial referrer, landing page, or partner code. The May pattern is consistent with a sustained campaign, launch, or community push, but the responsible source cannot be verified from current data."},
+      {"id":"recommendations","type":"markdown","body":"## Recommended next steps\n\n1. Treat Build-focused founders and organization owners as the primary customer profile.\n2. Reactivate the May cohort, especially accounts with no authenticated session recorded.\n3. Rework the Find signup and onboarding path before spending to grow it.\n4. Store first-touch attribution and partner codes at signup before the next campaign.\n5. Report registrations, recorded authentication, tracked active users, and payers as separate measures."},
+      {"id":"definitions","type":"markdown","body":"## Definitions and limits\n\nThe 180 figure counts accounts, not deduplicated humans or customers. `last_sign_in_at` means Supabase recorded at least one authenticated session, possibly during signup or email confirmation; it does not prove a later manual login or current activity. Product activity requires a tracked event. Stripe is authoritative for payment status. Marketing and newsletter flags were excluded because historical defaults make them unreliable preference evidence."}
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-03T18:01:33Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [{"external_accounts":180,"ever_signed_in":77,"tracked_active_30d":27,"current_paying_regular_users":21}],
+      "signup_months": [
+        {"month":"2026-01-01","audience":"Regular","accounts":3},{"month":"2026-01-01","audience":"Tester","accounts":0},{"month":"2026-02-01","audience":"Regular","accounts":1},{"month":"2026-02-01","audience":"Tester","accounts":15},{"month":"2026-03-01","audience":"Regular","accounts":11},{"month":"2026-03-01","audience":"Tester","accounts":4},{"month":"2026-04-01","audience":"Regular","accounts":19},{"month":"2026-04-01","audience":"Tester","accounts":1},{"month":"2026-05-01","audience":"Regular","accounts":110},{"month":"2026-05-01","audience":"Tester","accounts":0},{"month":"2026-06-01","audience":"Regular","accounts":6},{"month":"2026-06-01","audience":"Tester","accounts":2},{"month":"2026-07-01","audience":"Regular","accounts":7},{"month":"2026-07-01","audience":"Tester","accounts":0},{"month":"2026-08-01","audience":"Regular","accounts":1},{"month":"2026-08-01","audience":"Tester","accounts":0}
+      ],
+      "focus_segments": [
+        {"focus":"Build","accounts":118,"share":0.6556,"ever_signed_in":66,"tracked_active_30d":27,"organization_owners":50,"current_payers":21},
+        {"focus":"Find","accounts":56,"share":0.3111,"ever_signed_in":5,"tracked_active_30d":0,"organization_owners":1,"current_payers":0},
+        {"focus":"Other or unknown","accounts":6,"share":0.0333,"ever_signed_in":6,"tracked_active_30d":0,"organization_owners":2,"current_payers":0}
+      ],
+      "organization_stages": [
+        {"stage":"IRS approved","organizations":21,"share":0.3962},{"stage":"Pre-501(c)(3)","organizations":7,"share":0.1321},{"stage":"In progress","organizations":6,"share":0.1132},{"stage":"Unknown","organizations":19,"share":0.3585}
+      ],
+      "top_pages": [
+        {"page":"/","visitors":129},{"page":"/workspace","visitors":89},{"page":"/find","visitors":63},{"page":"/workspace/accelerator","visitors":21},{"page":"/workspace/roadmap/origin-story","visitors":21},{"page":"/auth/confirm","visitors":14},{"page":"/organizations","visitors":13}
+      ]
+    }
+  }
+}

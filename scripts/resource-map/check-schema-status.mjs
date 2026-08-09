@@ -33,6 +33,28 @@ const REQUIRED_RELATIONS = [
     ],
   },
   {
+    name: "resource_map_enrichment_runs",
+    columns: [
+      "id",
+      "import_record_id",
+      "pass_type",
+      "pass_number",
+      "status",
+      "provider",
+      "model",
+      "prompt_version",
+      "input_sha256",
+      "output_sha256",
+      "source_urls",
+      "structured_result",
+      "issues",
+      "attempt_count",
+      "actor_id",
+      "started_at",
+      "completed_at",
+    ],
+  },
+  {
     name: "resource_map_raw_ingestion_records",
     columns: [
       "id",

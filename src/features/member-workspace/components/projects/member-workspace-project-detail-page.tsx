@@ -48,12 +48,6 @@ import { MemberWorkspaceProjectDetailTabs } from "./member-workspace-project-det
 import { ProjectDetailTopBarActions } from "./member-workspace-project-detail-top-bar-actions"
 import { useProjectAssetActions } from "./member-workspace-project-asset-actions"
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
-import {
-  OrganizationCoachAssignmentControl,
-  type OrganizationCoachAssignment,
-  type OrganizationCoachAssignmentAction,
-  type OrganizationCoachOption,
-} from "@/features/organization-coach-assignments"
 
 type MemberWorkspaceProjectDetailPageProps = {
   adminBilling?: ReactNode
@@ -62,11 +56,6 @@ type MemberWorkspaceProjectDetailPageProps = {
   currentUser: User
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
-  coachAssignments?: OrganizationCoachAssignment[]
-  coachOptions?: OrganizationCoachOption[]
-  canManageCoachAssignment?: boolean
-  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
-  canUnassignCoachAssignment?: boolean
   canManageProject?: boolean
   canManageProjectAssets?: boolean
   canEditProjectDetails?: boolean
@@ -134,11 +123,23 @@ function getProjectSourceProjectKind(source: ProjectDetails["source"]) {
     : undefined
 }
 
-function buildProjectBreadcrumbs(projectName: string) {
-  return [
-    { label: "Organizations", href: "/organizations" },
-    { label: projectName },
-  ]
+function revealFiscalUpdateTarget(href: string) {
+  window.history.pushState(null, "", href)
+  window.requestAnimationFrame(() => {
+    const target = document.getElementById(href.slice(1))
+    if (!target) return
+
+    if (href === "#fiscal-sponsorship-application-intake") {
+      const trigger = target.querySelector<HTMLButtonElement>(
+        'button[aria-expanded="false"]'
+      )
+      trigger?.click()
+    }
+
+    window.requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "nearest", inline: "nearest" })
+    })
+  })
 }
 
 function useMemberWorkspaceProjectDelete({
@@ -190,11 +191,6 @@ export function MemberWorkspaceProjectDetailPage({
   currentUser,
   fiscalSponsorshipWorkflowSummary,
   organizationSummary,
-  coachAssignments = [],
-  coachOptions = [],
-  canManageCoachAssignment = false,
-  updateCoachAssignmentAction,
-  canUnassignCoachAssignment = true,
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
@@ -239,7 +235,14 @@ export function MemberWorkspaceProjectDetailPage({
   )
   const [projectDraft, setProjectDraft] =
     useState<MemberWorkspaceProjectDetailDraft>(initialProjectDraft)
-  const breadcrumbs = buildProjectBreadcrumbs(project.name)
+
+  const breadcrumbs = useMemo(
+    () => [
+      { label: "Organizations", href: "/organizations" },
+      { label: project.name },
+    ],
+    [project.name]
+  )
 
   useEffect(() => {
     setProjectDraft(initialProjectDraft)
@@ -266,6 +269,13 @@ export function MemberWorkspaceProjectDetailPage({
     } catch {
       toast.error("Failed to copy link")
     }
+  }, [])
+
+  const handleNavigateFiscalUpdate = useCallback((href: string) => {
+    if (!href.startsWith("#")) return
+
+    setActiveTab("overview")
+    revealFiscalUpdateTarget(href)
   }, [])
 
   const handleChangeProjectDraftField = useCallback(
@@ -415,7 +425,7 @@ export function MemberWorkspaceProjectDetailPage({
                 className={
                   "mt-0 grid grid-cols-1 gap-15 " +
                   (showMeta
-                    ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,320px)]"
+                    ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,384px)]"
                     : "lg:grid-cols-[minmax(0,1fr)_minmax(0,0px)]")
                 }
               >
@@ -430,17 +440,6 @@ export function MemberWorkspaceProjectDetailPage({
                     draft={projectDraft}
                     onChangeDraftField={handleChangeProjectDraftField}
                     onEditProject={handleStartProjectEditing}
-                    actions={
-                      <OrganizationCoachAssignmentControl
-                        assignments={coachAssignments}
-                        canManage={canManageCoachAssignment}
-                        coachOptions={coachOptions}
-                        organizationId={organizationSummary.orgId}
-                        organizationName={organizationSummary.name}
-                        updateAssignmentAction={updateCoachAssignmentAction}
-                        preventEmpty={!canUnassignCoachAssignment}
-                      />
-                    }
                   />
 
                   <MemberWorkspaceProjectDetailTabs
@@ -521,6 +520,10 @@ export function MemberWorkspaceProjectDetailPage({
                         adminBilling={adminBilling}
                         project={project}
                         organizationSummary={organizationSummary}
+                        fiscalSponsorshipWorkflowSummary={
+                          fiscalSponsorshipWorkflowSummary
+                        }
+                        onNavigateFiscalUpdate={handleNavigateFiscalUpdate}
                         createQuickLinkAction={
                           canManageProject ? createQuickLinkAction : undefined
                         }

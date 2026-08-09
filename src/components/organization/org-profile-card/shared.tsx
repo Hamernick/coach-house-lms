@@ -188,7 +188,7 @@ export function BrandLink({ href }: { href: string }) {
             alt="Brand asset"
             fill
             sizes="80px"
-            className="object-contain"
+            className="object-cover"
           />
         </a>
       </div>

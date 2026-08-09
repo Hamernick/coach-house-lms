@@ -62,6 +62,14 @@ declare global {
       getFeatures: () => mapboxgl.MapboxGeoJSONFeature[]
       getLayers: () => Array<ReturnType<mapboxgl.Map["getLayer"]>>
       getSource: () => ReturnType<mapboxgl.Map["getSource"]>
+      getImages?: () => string[]
+      getZoom?: () => number
+      setZoom?: (zoom: number) => void
+      setViewport?: (viewport: {
+        latitude: number
+        longitude: number
+        zoom: number
+      }) => void
     }
   }
 }
@@ -91,6 +99,11 @@ function installPublicMapDebugProbe(map: mapboxgl.Map) {
           PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
         ],
       }),
+    getImages: () => map.listImages(),
+    getZoom: () => map.getZoom(),
+    setZoom: (zoom: number) => {
+      map.setZoom(zoom)
+    },
   } satisfies NonNullable<Window["__MAP_DEBUG__"]>
 
   window.__MAP_DEBUG__ = debug

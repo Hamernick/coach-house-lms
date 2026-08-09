@@ -6,6 +6,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 
 - Source of truth: this file + linked `docs/agent/**` documents.
 - Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
+- New-chat branch checkpoint: before writing files in the first turn of every chat, follow the mandatory worktree report and branch-choice protocol in `docs/agent/workflow-quality.md` unless the user's prompt already chose the branch strategy.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
 - Keep PRs small and pass: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
 - Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.
@@ -19,15 +20,13 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Treat UI, feature, and product-development requests as implementation tasks by default (not brainstorming-only) unless the user explicitly asks for planning only.
 - For new feature work, start from `pnpm scaffold:feature <kebab-name>` and implement inside `src/features/**`; keep `src/app/**` route files composition-only.
 - For UI changes, use existing shadcn/ui primitives and shared patterns; avoid one-off controls where system primitives already exist.
+- For public resource-map work, prioritize current provider directories and real service diversity; use deterministic source-specific extraction by default, never require a model key or add an admin surface unless explicitly requested, keep raw API links private, expose provider websites, and report exact field-complete and verified/publishable counts. Never mix synthetic seeds or the raw candidate intake queue into `/find`, including admin sessions; local review requires an explicit curated preview file. Treat Wikidata/entity catalogs as discovery evidence, not public resources, until provider evidence establishes a specific actionable service.
 - Ship only when `pnpm check:quality` passes (includes structure, boundaries, visual regression, tests, build, perf).
 - If visuals intentionally changed, update visual baselines with `pnpm test:visual:update` and include the rationale in the current monthly log linked from `docs/RUNLOG.md`.
 
 ## Quick Commands
 
-- Install: `pnpm install`
-- Setup local git hooks (once per clone): `pnpm setup:hooks`
-- Dev: `pnpm dev`
-- Build/start: `pnpm build && pnpm start`
+- Install: `pnpm install`; hooks: `pnpm setup:hooks`; dev: `pnpm dev`; build/start: `pnpm build && pnpm start`.
 
 ## Detailed Contracts
 
@@ -41,6 +40,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Workspace presentation operations checklist: `docs/agent/workspace-presentation-runbook.md`
 - Workspace canvas node shell anatomy and React Flow boundary: `docs/agent/workspace-node-frame-contract.md`
 - React Grab pasted-component ownership workflow: `docs/agent/react-grab-execution-contract.md`
+- Public resource source verification, AI enrichment, review, and publication gates: `docs/agent/resource-map-enrichment.md`
 
 ## Existing Supporting Docs
 

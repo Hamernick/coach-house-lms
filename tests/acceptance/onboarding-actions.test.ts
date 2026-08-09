@@ -58,7 +58,7 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/onboarding?error=builder_plan_required")
   })
 
-  it("lets free post-signup builders enter the workspace without a subscription check", async () => {
+  it("sends free post-signup builders to required workspace setup without a subscription check", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -100,9 +100,14 @@ describe("completeOnboardingAction", () => {
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe(
-      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
-    )
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: false,
+        onboarding_completed_at: null,
+        workspace_onboarding_active: false,
+      }),
+    })
+    expect(destination).toBe("/workspace?source=onboarding_setup")
   })
 
   it("sends completed member onboarding to find", async () => {
@@ -327,6 +332,7 @@ describe("completeOnboardingAction", () => {
     )
     expect(updateUserMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        onboarding_completed: true,
         workspace_onboarding_active: true,
         workspace_onboarding_completed_at: null,
         workspace_onboarding_stage: 2,
@@ -346,7 +352,7 @@ describe("completeOnboardingAction", () => {
     )
   })
 
-  it("allows build onboarding to finish when entitlement fallback reports an active subscription", async () => {
+  it("sends paid builders to required workspace setup after entitlement recovery", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -399,8 +405,13 @@ describe("completeOnboardingAction", () => {
     })
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe(
-      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
-    )
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: false,
+        onboarding_completed_at: null,
+        workspace_onboarding_active: false,
+      }),
+    })
+    expect(destination).toBe("/workspace?source=onboarding_setup")
   })
 })

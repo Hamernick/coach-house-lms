@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
+import MinusIcon from "lucide-react/dist/esm/icons/minus"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
@@ -39,16 +40,18 @@ export function PublicMapOrganizationsRailSection({
         className
       )}
     >
-      <header className="border-border/60 flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
+      <header className="border-border/60 flex shrink-0 items-center gap-2 border-b px-4 py-3">
         {icon}
-        <p className="text-foreground truncate text-sm font-medium">{title}</p>
+        <p className="text-foreground truncate text-base font-medium">
+          {title}
+        </p>
       </header>
 
       <ScrollArea
         data-public-map-member-rail-section="saved-list-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden"
+        className="h-full min-h-0 flex-1 overflow-hidden bg-transparent"
         viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [scrollbar-width:thin]"
-        contentClassName="px-3 py-3"
+        contentClassName="p-4"
       >
         {organizations.length === 0 ? (
           <Empty
@@ -57,7 +60,10 @@ export function PublicMapOrganizationsRailSection({
             description={emptyDescription}
           />
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div
+            data-public-map-saved-organization-grid="true"
+            className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] items-stretch gap-3"
+          >
             {organizations.map((organization) => {
               const location = formatCompactOrganizationLocation({
                 city: organization.city,
@@ -68,7 +74,7 @@ export function PublicMapOrganizationsRailSection({
               return (
                 <article
                   key={organization.id}
-                  className="border-border/70 bg-background/75 rounded-xl border p-2.5"
+                  className="border-border/70 bg-background/75 h-full rounded-xl border p-4"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <Button
@@ -78,18 +84,18 @@ export function PublicMapOrganizationsRailSection({
                       onClick={() => onSelectOrganization(organization.id)}
                     >
                       <div className="w-full min-w-0 overflow-hidden">
-                        <p className="text-foreground truncate text-sm font-semibold">
+                        <p className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty">
                           {organization.name}
                         </p>
                         {organization.tagline ? (
-                          <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs break-words">
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-relaxed text-pretty break-words">
                             {organization.tagline}
                           </p>
                         ) : null}
                         {location ? (
-                          <p className="text-muted-foreground mt-1 inline-flex max-w-full items-center gap-1 text-[11px]">
+                          <p className="text-muted-foreground mt-2 inline-flex max-w-full items-center gap-1.5 text-xs">
                             <MapPinIcon
-                              className="h-3.5 w-3.5 shrink-0"
+                              className="size-4 shrink-0"
                               aria-hidden
                             />
                             <span className="truncate">{location}</span>
@@ -101,11 +107,12 @@ export function PublicMapOrganizationsRailSection({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="border-border/70 bg-background/85 h-8 rounded-full border px-2 text-xs"
+                        size="icon"
+                        className="border-border/70 bg-background/85 text-muted-foreground hover:bg-muted hover:text-foreground size-11 shrink-0 rounded-full border"
+                        aria-label={`Remove ${organization.name} from saved organizations`}
                         onClick={() => onToggleFavorite(organization.id)}
                       >
-                        Remove
+                        <MinusIcon className="size-4" aria-hidden />
                       </Button>
                     ) : null}
                   </div>

@@ -14,7 +14,7 @@ const w9Page = readSource(
   "src/app/(dashboard)/fiscal-sponsorship/w9/[projectId]/page.tsx"
 )
 const browserConfig = readSource("playwright.fiscal-auth.config.ts")
-const generalVisualConfig = readSource("playwright.visual.config.ts")
+const visualConfig = readSource("playwright.visual.config.ts")
 const browserSpec = readSource(
   "tests/visual/fiscal-sponsorship-authenticated-routes.visual.spec.ts"
 )
@@ -38,7 +38,7 @@ describe("fiscal sponsorship authenticated route proof", () => {
     expect(browserConfig).toContain("FISCAL_AUTH_QA_ALLOW_SEED")
     expect(browserConfig).toContain("PRODUCTION_SUPABASE_HOST")
     expect(browserConfig).toContain("reuseExistingServer: false")
-    expect(generalVisualConfig).toContain(
+    expect(visualConfig).toContain(
       'testIgnore: "fiscal-sponsorship-authenticated-routes.visual.spec.ts"'
     )
     expect(browserSpec).toContain("require a preview branch")

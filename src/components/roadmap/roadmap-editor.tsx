@@ -25,6 +25,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     statusSelectDisabled,
     isHydrated,
     isCalendarSection,
+    isBudgetSection,
     contentMaxWidth,
     editorPlaceholder,
     handleDraftChange,
@@ -60,6 +61,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       statusSelectDisabled={statusSelectDisabled}
       isHydrated={isHydrated}
       isCalendarSection={isCalendarSection}
+      isBudgetSection={isBudgetSection}
       contentMaxWidth={contentMaxWidth}
       activeDraft={activeDraft}
       editorPlaceholder={editorPlaceholder}

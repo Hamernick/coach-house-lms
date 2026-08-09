@@ -23,13 +23,13 @@ function createProject(
     startDate: overrides.startDate ?? new Date("2026-04-01T00:00:00.000Z"),
     endDate: overrides.endDate ?? new Date("2026-04-30T00:00:00.000Z"),
     status: overrides.status ?? "planned",
+    fiscalSponsorshipStatus: overrides.fiscalSponsorshipStatus,
     priority: overrides.priority ?? "medium",
     tags: overrides.tags ?? [],
     members: overrides.members ?? [],
     client: overrides.client,
     typeLabel: overrides.typeLabel,
     durationLabel: overrides.durationLabel,
-    workstreamCategoryId: overrides.workstreamCategoryId,
     tasks: overrides.tasks ?? [],
   }
 }
@@ -60,6 +60,23 @@ describe("member workspace project filters", () => {
     ])
   })
 
+  it("keeps legacy project status URLs compatible with organization stages", () => {
+    const projects = [
+      createProject({ id: "project-onboarding", status: "planned" }),
+      createProject({ id: "project-active", status: "active" }),
+    ]
+
+    const filteredProjects = filterMemberWorkspaceProjects({
+      filters: [{ key: "Status", value: "Planned" }],
+      projects,
+      viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
+    })
+
+    expect(filteredProjects.map((project) => project.id)).toEqual([
+      "project-onboarding",
+    ])
+  })
+
   it("keeps facet counts stable by excluding the active category filter from that facet", () => {
     const projects = [
       createProject({
@@ -86,19 +103,50 @@ describe("member workspace project filters", () => {
     ]
 
     const counts = computeMemberWorkspaceProjectFilterCounts({
-      filters: [{ key: "Status", value: "Planned" }],
+      filters: [{ key: "Status", value: "Onboarding" }],
       projects,
       viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
     })
 
     expect(counts.status).toMatchObject({
-      planned: 1,
+      onboarding: 1,
       active: 1,
-      completed: 1,
+      archived: 1,
     })
     expect(counts.priority).toMatchObject({
       high: 1,
     })
+  })
+
+  it("filters fiscal sponsorship independently from organization status", () => {
+    const projects = [
+      createProject({
+        id: "project-eligible",
+        status: "planned",
+        fiscalSponsorshipStatus: "eligible",
+      }),
+      createProject({
+        id: "project-active",
+        status: "planned",
+        fiscalSponsorshipStatus: "active",
+      }),
+    ]
+
+    const filteredProjects = filterMemberWorkspaceProjects({
+      filters: [{ key: "Fiscal Sponsorship", value: "Active" }],
+      projects,
+      viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
+    })
+    const counts = computeMemberWorkspaceProjectFilterCounts({
+      filters: [{ key: "Fiscal Sponsorship", value: "Active" }],
+      projects,
+      viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
+    })
+
+    expect(filteredProjects.map((project) => project.id)).toEqual([
+      "project-active",
+    ])
+    expect(counts.fiscalSponsorship).toEqual({ eligible: 1, active: 1 })
   })
 
   it("respects showClosedProjects when computing filtered results and counts", () => {
@@ -140,59 +188,6 @@ describe("member workspace project filters", () => {
     expect(counts.status?.completed).toBeUndefined()
   })
 
-  it("uses coach-owned workstream placement when hiding closed projects", () => {
-    const workstreamCategories = [
-      {
-        id: "coach-action",
-        name: "Coach Action",
-        color: "amber",
-        position: 1,
-        defaultKey: "planned",
-      },
-      {
-        id: "complete",
-        name: "Complete",
-        color: "emerald",
-        position: 5,
-        defaultKey: "completed",
-      },
-    ]
-    const projects = [
-      createProject({
-        id: "completed-readiness-in-coach-action",
-        status: "completed",
-        workstreamCategoryId: "coach-action",
-      }),
-      createProject({
-        id: "active-readiness-in-complete",
-        status: "active",
-        workstreamCategoryId: "complete",
-      }),
-    ]
-    const viewOptions = {
-      ...DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
-      showClosedProjects: false,
-    }
-
-    const filteredProjects = filterMemberWorkspaceProjects({
-      filters: [],
-      projects,
-      viewOptions,
-      workstreamCategories,
-    })
-    const counts = computeMemberWorkspaceProjectFilterCounts({
-      filters: [],
-      projects,
-      viewOptions,
-      workstreamCategories,
-    })
-
-    expect(filteredProjects.map((project) => project.id)).toEqual([
-      "completed-readiness-in-coach-action",
-    ])
-    expect(counts.status).toEqual({ completed: 1 })
-  })
-
   it("parses and serializes view options through URL params", () => {
     const params = new URLSearchParams(
       "view=board&order=date&closed=hide&properties=title,assignee"
@@ -216,6 +211,26 @@ describe("member workspace project filters", () => {
     expect(nextParams.toString()).toBe(
       "view=board&order=date&closed=hide&properties=title%2Cassignee"
     )
+  })
+
+  it("persists hidden protected board categories in the URL", () => {
+    const viewOptions = paramsToViewOptions(
+      new URLSearchParams(
+        "view=board&hidden-categories=planned,review_approval,INVALID!,planned"
+      )
+    )
+
+    expect(viewOptions.hiddenWorkstreamCategoryKeys).toEqual([
+      "planned",
+      "review_approval",
+    ])
+
+    const nextParams = applyViewOptionsToParams(
+      new URLSearchParams(),
+      viewOptions
+    )
+
+    expect(nextParams.get("hidden-categories")).toBe("planned,review_approval")
   })
 
   it("includes closed board columns only when showClosedProjects is enabled", () => {

@@ -45,7 +45,6 @@ export const WorkspacePeopleDrawerTable = memo(
             initial={editingPerson}
             open
             readOnly={!props.canEdit}
-            extendedSocialLinksEnabled
             onOpenChange={(open) => {
               if (!open) setEditingPerson(null)
             }}

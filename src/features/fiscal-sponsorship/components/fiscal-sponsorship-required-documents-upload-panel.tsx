@@ -6,11 +6,11 @@ import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
+import FileSignatureIcon from "lucide-react/dist/esm/icons/file-signature"
 import FileUpIcon from "lucide-react/dist/esm/icons/file-up"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -25,13 +25,14 @@ import {
 import { uploadFiscalSponsorshipProjectAsset } from "../lib/project-asset-upload"
 import type {
   FiscalSponsorshipDocumentKey,
-  FiscalSponsorshipDocumentReviewStatus,
   FiscalSponsorshipLegalEntityType,
   FiscalSponsorshipProjectWorkflowSummaryDocument,
 } from "../types"
+import { RequiredDocumentReviewBadge } from "./fiscal-sponsorship-project-workbench-required-documents-support"
 
 type FiscalSponsorshipRequiredDocumentsUploadPanelProps = {
   applicationReady: boolean
+  canCompleteW9?: boolean
   documents: FiscalSponsorshipProjectWorkflowSummaryDocument[]
   legalEntityType?: FiscalSponsorshipLegalEntityType | null
   onOpenApplication?: () => void
@@ -58,30 +59,6 @@ function buildDocumentLookup(
   }
 
   return lookup
-}
-
-function formatReviewStatus(
-  status: FiscalSponsorshipDocumentReviewStatus | null | undefined
-) {
-  const labels: Record<FiscalSponsorshipDocumentReviewStatus, string> = {
-    accepted: "Accepted",
-    needs_info: "Needs info",
-    not_required: "Not required",
-    pending: "Pending review",
-    rejected: "Rejected",
-  }
-
-  return status ? labels[status] : "Needed"
-}
-
-function getStatusTone(
-  status: FiscalSponsorshipDocumentReviewStatus | null | undefined
-) {
-  if (status === "accepted") return "bg-emerald-500/10 text-emerald-700"
-  if (status === "needs_info") return "bg-amber-500/12 text-amber-700"
-  if (status === "rejected") return "bg-destructive/10 text-destructive"
-  if (status === "pending") return "bg-secondary text-secondary-foreground"
-  return "bg-amber-500/12 text-amber-700"
 }
 
 function getUploadLabel({
@@ -139,6 +116,7 @@ function RequirementDocumentLinks({
 
 export function FiscalSponsorshipRequiredDocumentsUploadPanel({
   applicationReady,
+  canCompleteW9 = false,
   documents,
   legalEntityType = null,
   onOpenApplication,
@@ -210,7 +188,6 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
       toast.error("Choose a file to upload.")
       return
     }
-
     setPendingUpload({ key, label })
     startTransition(async () => {
       const toastId = toast.loading(`Uploading ${label.toLowerCase()}…`)
@@ -314,6 +291,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
       <div className="divide-border/70 divide-y divide-dashed">
         {visibleRequirements.map((requirement) => {
           const document = documentLookup.get(requirement.key) ?? null
+          const isW9 = requirement.key === "tax_id_confirmation"
           const connected = Boolean(document)
           const uploadAllowed =
             applicationReady && shouldShowUploadAction(document)
@@ -342,14 +320,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
                     <p className="text-foreground text-xs font-medium">
                       {requirement.label}
                     </p>
-                    <Badge
-                      className={cn(
-                        "h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none",
-                        getStatusTone(document?.reviewStatus)
-                      )}
-                    >
-                      {formatReviewStatus(document?.reviewStatus)}
-                    </Badge>
+                    <RequiredDocumentReviewBadge document={document} />
                   </div>
                   <p className="text-muted-foreground mt-0.5 min-w-0 text-[11px] leading-snug [overflow-wrap:anywhere] break-words">
                     {document?.title || requirement.description}
@@ -360,6 +331,22 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
               {document ? (
                 <div className="pl-6">
                   <RequirementDocumentLinks document={document} />
+                </div>
+              ) : null}
+
+              {isW9 && canCompleteW9 ? (
+                <div className="pl-6">
+                  <Button
+                    asChild
+                    type="button"
+                    size="sm"
+                    className="w-fit rounded-full"
+                  >
+                    <a href={`/fiscal-sponsorship/w9/${projectId}`}>
+                      <FileSignatureIcon data-icon="inline-start" aria-hidden />
+                      {document ? "Complete new W-9" : "Complete W-9"}
+                    </a>
+                  </Button>
                 </div>
               ) : null}
 

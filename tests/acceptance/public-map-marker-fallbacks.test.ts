@@ -427,7 +427,7 @@ describe("public map marker fallbacks", () => {
     restoreCanvasMocks()
   })
 
-  it("keeps external data markers as category dots even if a source image is present", async () => {
+  it("keeps archived external marker rendering stable", async () => {
     resetPublicMapMarkerImageCachesForTest()
     const restoreCanvasMocks = installCanvasMocks()
     const fetchSpy = vi.spyOn(globalThis, "fetch")
@@ -465,9 +465,10 @@ describe("public map marker fallbacks", () => {
       expect.any(Number),
       expect.any(Number)
     )
-    expect(restoreCanvasMocks.context.fill).toHaveBeenCalledWith(
+    expect(restoreCanvasMocks.context.stroke).toHaveBeenCalledWith(
       expect.any(Object)
     )
+    expect(restoreCanvasMocks.styles.strokeStyle).toContain("#FFFFFF")
 
     fetchSpy.mockRestore()
     restoreCanvasMocks()
@@ -763,7 +764,7 @@ describe("public map marker fallbacks", () => {
     restoreCanvasMocks()
   })
 
-  it("draws filled category icons on seeded resource dot markers", () => {
+  it("draws the food shopping-cart icon on seeded resource dot markers", () => {
     const restoreCanvasMocks = installCanvasMocks()
     const iconSource = readRepoFile(
       "src/lib/public-map/public-map-marker-icons.ts"
@@ -771,18 +772,19 @@ describe("public map marker fallbacks", () => {
 
     createPublicMapFallbackMarkerImage({
       label: "Food Access",
-      markerAccentColor: "#e11d48",
+      markerAccentColor: resolvePublicMapResourceCategoryColor("food"),
       resourceCategory: "food",
       selected: false,
       verificationStatus: "external_data",
     })
 
-    expect(restoreCanvasMocks.styles.fillStyle).toEqual(
-      expect.arrayContaining([restoreCanvasMocks.gradient, "#FFFFFF"])
+    expect(restoreCanvasMocks.styles.fillStyle).toContain(
+      restoreCanvasMocks.gradient
     )
+    expect(restoreCanvasMocks.styles.strokeStyle).toContain("#FFFFFF")
     expect(restoreCanvasMocks.context.createRadialGradient).toHaveBeenCalled()
     expect(restoreCanvasMocks.context.fillText).not.toHaveBeenCalled()
-    expect(restoreCanvasMocks.context.fill).toHaveBeenCalledWith(
+    expect(restoreCanvasMocks.context.stroke).toHaveBeenCalledWith(
       expect.any(Object)
     )
     expect(iconSource).toContain("resource-category-icon-paths")
@@ -805,11 +807,13 @@ describe("public map marker fallbacks", () => {
     restoreCanvasMocks()
   })
 
-  it("draws special resource markers as larger capsules with circular icon badges", () => {
+  it("draws special resource markers as compact capsules with circular icon badges", () => {
     const restoreCanvasMocks = installCanvasMocks()
-    const geometry = resolvePublicMapSpecialPillMarkerChromeGeometry(false)
-    const selectedGeometry =
-      resolvePublicMapSpecialPillMarkerChromeGeometry(true)
+    const geometry = resolvePublicMapSpecialPillMarkerChromeGeometry(false, 70)
+    const selectedGeometry = resolvePublicMapSpecialPillMarkerChromeGeometry(
+      true,
+      70
+    )
 
     createPublicMapFallbackMarkerImage({
       label: "Garfield Center",
@@ -822,57 +826,94 @@ describe("public map marker fallbacks", () => {
     })
 
     expect(geometry).toEqual({
-      canvasHeight: 88,
-      canvasWidth: 244,
-      contentRadius: 13.4,
-      iconBadgeRadius: 19,
-      iconCenterX: 40,
-      iconCenterY: 44,
-      labelMaxWidth: 144,
-      labelX: 72,
-      labelY: 44.35,
-      outerHeight: 52,
-      outerRadius: 26,
-      outerWidth: 224,
-      outerX: 10,
-      outerY: 18,
-      surfaceStrokeWidth: 0.66,
+      canvasHeight: 76,
+      canvasWidth: 204,
+      contentRadius: 11.1,
+      iconBadgeRadius: 15.5,
+      iconCenterX: 59.75,
+      iconCenterY: 38,
+      labelMaxWidth: 70,
+      labelX: 85.75,
+      labelY: 38.3,
+      outerHeight: 42,
+      outerRadius: 21,
+      outerWidth: 131.5,
+      outerX: 36.25,
+      outerY: 17,
+      surfaceStrokeWidth: 0.62,
     })
     expect(selectedGeometry).toMatchObject({
-      canvasHeight: 88,
-      canvasWidth: 244,
-      contentRadius: 14.2,
-      iconBadgeRadius: 20.5,
-      iconCenterX: 37.5,
-      iconCenterY: 44,
-      labelMaxWidth: 147,
-      labelX: 72,
-      labelY: 44.35,
-      outerHeight: 56,
-      outerRadius: 28,
-      outerWidth: 234,
-      outerX: 5,
-      outerY: 16,
-      surfaceStrokeWidth: 0.8,
+      canvasHeight: 76,
+      canvasWidth: 204,
+      contentRadius: 11.8,
+      iconBadgeRadius: 17,
+      iconCenterX: 59.5,
+      iconCenterY: 38,
+      labelMaxWidth: 70,
+      labelX: 87.5,
+      labelY: 38.3,
+      outerHeight: 46,
+      outerRadius: 23,
+      outerWidth: 137,
+      outerX: 33.5,
+      outerY: 15,
+      surfaceStrokeWidth: 0.76,
     })
     expect(geometry.outerRadius).toBe(geometry.outerHeight / 2)
     expect(selectedGeometry.outerRadius).toBe(selectedGeometry.outerHeight / 2)
+    expect(geometry.outerWidth / geometry.outerHeight).toBeGreaterThan(3)
+    expect(
+      selectedGeometry.outerWidth / selectedGeometry.outerHeight
+    ).toBeGreaterThan(2.9)
+    expect(
+      geometry.iconCenterX - geometry.iconBadgeRadius - geometry.outerX
+    ).toBe(8)
+    expect(
+      geometry.outerX +
+        geometry.outerWidth -
+        (geometry.labelX + geometry.labelMaxWidth)
+    ).toBe(12)
+    expect(
+      selectedGeometry.iconCenterX -
+        selectedGeometry.iconBadgeRadius -
+        selectedGeometry.outerX
+    ).toBe(9)
+    expect(
+      selectedGeometry.outerX +
+        selectedGeometry.outerWidth -
+        (selectedGeometry.labelX + selectedGeometry.labelMaxWidth)
+    ).toBe(13)
     expect(
       resolvePublicMapSpecialPillMarkerChromePalette("dark", false, "#0284c7")
     ).toEqual({
-      iconBadgeFill: "rgba(255, 255, 255, 0.54)",
-      iconBadgeStroke: "rgba(2, 132, 199, 0.42)",
-      iconColor: "#075985",
-      iconGlowColor: "rgba(2, 132, 199, 0.24)",
-      shadowColor: "rgba(2, 132, 199, 0.22)",
-      surfaceFill: "rgba(224, 242, 254, 0.96)",
-      surfaceStroke: "rgba(2, 132, 199, 0.48)",
-      textColor: "#0C4A6E",
+      iconBadgeFill: "#FFFFFF",
+      iconBadgeShadowColor: "rgba(0, 0, 0, 0.22)",
+      iconColor: "#38BDF8",
+      iconGlowColor: "rgba(56, 189, 248, 0.28)",
+      shadowColor: "rgba(0, 0, 0, 0.34)",
+      surfaceBackdropFill: "rgba(24, 24, 27, 0.42)",
+      surfaceFill: "rgba(255, 255, 255, 0.1)",
+      surfaceStroke: "rgba(255, 255, 255, 0.15)",
+      textColor: "#FAFAFA",
     })
     expect(
       resolvePublicMapSpecialPillMarkerChromePalette("light", false, "#0284c7")
     ).toEqual(
       resolvePublicMapSpecialPillMarkerChromePalette("dark", false, "#0284c7")
+    )
+    expect(
+      resolvePublicMapSpecialPillMarkerChromePalette("dark", true, "#0284c7")
+    ).toMatchObject({
+      iconBadgeFill: "#FFFFFF",
+      iconBadgeShadowColor: "rgba(0, 0, 0, 0.28)",
+      iconColor: "#38BDF8",
+      surfaceBackdropFill: "rgba(24, 24, 27, 0.48)",
+      surfaceFill: "rgba(255, 255, 255, 0.15)",
+    })
+    expect(
+      resolvePublicMapSpecialPillMarkerChromePalette("light", true, "#0284c7")
+    ).toEqual(
+      resolvePublicMapSpecialPillMarkerChromePalette("dark", true, "#0284c7")
     )
     expect(restoreCanvasMocks.context.getImageData).toHaveBeenCalledWith(
       0,
@@ -881,23 +922,23 @@ describe("public map marker fallbacks", () => {
       PUBLIC_MAP_SPECIAL_MARKER_IMAGE_BACKING_HEIGHT
     )
     expect(restoreCanvasMocks.context.fillText).toHaveBeenCalledWith(
-      "Cooling center",
+      "Cooling Center",
       geometry.labelX,
       geometry.labelY
     )
     expect(restoreCanvasMocks.styles.fillStyle).toEqual(
       expect.arrayContaining([
-        "rgba(224, 242, 254, 0.96)",
-        "rgba(255, 255, 255, 0.54)",
-        "#0C4A6E",
+        "rgba(24, 24, 27, 0.42)",
+        "rgba(255, 255, 255, 0.1)",
+        "#FFFFFF",
+        "#FAFAFA",
       ])
     )
     expect(restoreCanvasMocks.styles.strokeStyle).toEqual(
-      expect.arrayContaining([
-        "rgba(2, 132, 199, 0.42)",
-        "rgba(2, 132, 199, 0.48)",
-        "#075985",
-      ])
+      expect.arrayContaining(["rgba(255, 255, 255, 0.15)", "#38BDF8"])
+    )
+    expect(restoreCanvasMocks.styles.strokeStyle).not.toContain(
+      "rgba(56, 189, 248, 0.42)"
     )
     expect(restoreCanvasMocks.context.arc).toHaveBeenCalledWith(
       geometry.iconCenterX,
@@ -906,7 +947,20 @@ describe("public map marker fallbacks", () => {
       0,
       Math.PI * 2
     )
-    expect(restoreCanvasMocks.context.quadraticCurveTo).toHaveBeenCalled()
+    expect(restoreCanvasMocks.context.arc).toHaveBeenCalledWith(
+      geometry.outerX + geometry.outerWidth - geometry.outerRadius,
+      geometry.iconCenterY,
+      geometry.outerRadius,
+      -Math.PI / 2,
+      Math.PI / 2
+    )
+    expect(restoreCanvasMocks.context.arc).toHaveBeenCalledWith(
+      geometry.outerX + geometry.outerRadius,
+      geometry.iconCenterY,
+      geometry.outerRadius,
+      Math.PI / 2,
+      (Math.PI * 3) / 2
+    )
     expect(restoreCanvasMocks.context.stroke).toHaveBeenCalledWith(
       expect.any(Object)
     )
@@ -952,22 +1006,17 @@ describe("public map marker fallbacks", () => {
     })
   })
 
-  it("registers marker images before swapping clustered source data", () => {
-    const clusteredMarkersSource = readRepoFile(
-      "src/components/public/public-map-index/use-public-map-clustered-markers.ts"
+  it("registers pin marker images before swapping unclustered source data", () => {
+    const markerSource = readRepoFile(
+      "src/components/public/public-map-index/use-public-map-markers.ts"
     )
 
     expect(
-      clusteredMarkersSource.indexOf(
-        "const markerImageLoads = ensurePublicMapMarkerImages"
-      )
+      markerSource.indexOf("ensurePublicMapPinMarkerImages({")
     ).toBeLessThan(
-      clusteredMarkersSource.indexOf(
-        "const updated = setPublicMapClusterSourceData"
-      )
+      markerSource.indexOf("const updated = setPublicMapMarkerSourceData")
     )
-    expect(clusteredMarkersSource).toContain(
-      "void Promise.all(markerImageLoads)"
-    )
+    expect(markerSource).not.toContain("markerImageLoads")
+    expect(markerSource).not.toContain("createRemoteMarkerImageLoad")
   })
 })

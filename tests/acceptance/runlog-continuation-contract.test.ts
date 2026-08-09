@@ -32,6 +32,25 @@ describe("RUNLOG continuation contract", () => {
     )
   })
 
+  it("requires a visible branch choice before new-chat writes", () => {
+    const agentContract = readFileSync("AGENTS.md", "utf8")
+    const workflowContract = readFileSync(
+      "docs/agent/workflow-quality.md",
+      "utf8"
+    )
+
+    expect(agentContract).toContain("New-chat branch checkpoint")
+    expect(workflowContract).toContain("## New Chat Worktree Checkpoint")
+    expect(workflowContract).toContain("git status --short --branch")
+    expect(workflowContract).toContain("git worktree list")
+    expect(workflowContract).toContain("continue the current branch")
+    expect(workflowContract).toContain("use a named existing branch/worktree")
+    expect(workflowContract).toContain("create a clean isolated")
+    expect(workflowContract).toContain(
+      "Do not create or switch branches, move existing changes, or write task files until the user chooses."
+    )
+  })
+
   it("preserves the legacy monolith byte-for-byte", () => {
     const archive = readFileSync(legacyArchivePath)
     const archiveSha256 = createHash("sha256").update(archive).digest("hex")

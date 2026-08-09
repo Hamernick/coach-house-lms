@@ -6,6 +6,7 @@ import {
   WORKSPACE_EDGE_SPECS,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy"
 import { normalizeWorkspaceBoardState } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
+import { resolveWorkspaceDataDrawerRequest } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs"
 import {
   WORKSPACE_CARD_IDS,
   WORKSPACE_FINANCE_CARD_ID,
@@ -13,11 +14,12 @@ import {
 import {
   WORKSPACE_DRAWER_TABS,
   WORKSPACE_FINANCE_DRAWER_TAB,
+  getWorkspaceDrawerPath,
   normalizeWorkspaceDrawerTab,
 } from "@/lib/workspace/routes"
 
-describe("future workspace Finance identity", () => {
-  it("reserves Finance without enabling a card or drawer", () => {
+describe("workspace Finance identity", () => {
+  it("activates the Finance drawer tab without enabling a card", () => {
     expect(WORKSPACE_FINANCE_CARD_ID).toBe("finance")
     expect(WORKSPACE_FINANCE_CARD_ID).not.toBe("economic-engine")
     expect(WORKSPACE_CARD_IDS).toContain("economic-engine")
@@ -25,8 +27,16 @@ describe("future workspace Finance identity", () => {
     expect(normalizeWorkspaceCardId(WORKSPACE_FINANCE_CARD_ID)).toBeNull()
 
     expect(WORKSPACE_FINANCE_DRAWER_TAB).toBe("finance")
-    expect(WORKSPACE_DRAWER_TABS).not.toContain(WORKSPACE_FINANCE_DRAWER_TAB)
-    expect(normalizeWorkspaceDrawerTab(WORKSPACE_FINANCE_DRAWER_TAB)).toBeNull()
+    expect(WORKSPACE_DRAWER_TABS).toContain(WORKSPACE_FINANCE_DRAWER_TAB)
+    expect(normalizeWorkspaceDrawerTab(WORKSPACE_FINANCE_DRAWER_TAB)).toBe(
+      WORKSPACE_FINANCE_DRAWER_TAB
+    )
+    expect(getWorkspaceDrawerPath({ tab: WORKSPACE_FINANCE_DRAWER_TAB })).toBe(
+      "/workspace?drawer=finance"
+    )
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=finance")
+    ).toEqual({ tab: WORKSPACE_FINANCE_DRAWER_TAB })
   })
 
   it("keeps reserved Finance layout state opaque until activation", () => {

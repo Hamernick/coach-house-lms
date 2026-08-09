@@ -18,7 +18,7 @@ import {
   resolvePrototypeLabSidebarOpenFolderIds,
   type PrototypeLabSidebarTreeFolderNode,
   type PrototypeLabSidebarTreeNode,
-} from "@/features/prototype-lab"
+} from "@/lib/prototype-lab-sidebar-tree"
 import {
   Collapsible,
   CollapsibleContent,

@@ -193,35 +193,35 @@ describe("workspace board layout", () => {
   })
 
   it("round-trips future card layout state without exposing unknown cards to the current canvas", () => {
-    const futureCardNode = {
-      id: "future-card",
+    const futureFinanceNode = {
+      id: "finance",
       x: 820,
       y: 640,
       size: "lg",
       positionMode: "manual",
       futureMetadata: { view: "overview" },
     }
-    const futureCardConnection = {
-      id: "edge-organization-to-future-card",
+    const futureFinanceConnection = {
+      id: "edge-organization-to-finance",
       source: "organization-overview",
-      target: "future-card",
+      target: "finance",
       futureMetadata: { emphasis: "primary" },
     }
     const normalized = normalizeWorkspaceBoardState({
-      nodes: [futureCardNode],
-      connections: [futureCardConnection],
-      hiddenCardIds: ["future-card"],
+      nodes: [futureFinanceNode],
+      connections: [futureFinanceConnection],
+      hiddenCardIds: ["finance"],
     })
 
-    expect(normalized.nodes.map((node) => node.id)).not.toContain("future-card")
+    expect(normalized.nodes.map((node) => node.id)).not.toContain("finance")
     expect(
       normalized.connections.map((connection) => connection.target)
-    ).not.toContain("future-card")
-    expect(normalized.hiddenCardIds).not.toContain("future-card")
+    ).not.toContain("finance")
+    expect(normalized.hiddenCardIds).not.toContain("finance")
     expect(normalized.forwardCompatibility).toEqual({
-      nodes: [futureCardNode],
-      connections: [futureCardConnection],
-      hiddenCardIds: ["future-card"],
+      nodes: [futureFinanceNode],
+      connections: [futureFinanceConnection],
+      hiddenCardIds: ["finance"],
     })
 
     expect(

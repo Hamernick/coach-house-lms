@@ -15,9 +15,6 @@ import { cn } from "@/lib/utils"
 import type { FiscalSponsorshipActivityEligibility } from "../lib/activity-eligibility"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
 
-type FiscalSponsorshipCriterionId =
-  FiscalSponsorshipActivityEligibility["criteria"][number]["id"]
-
 export function FiscalSponsorshipActivityAction({
   active,
   ariaLabel,
@@ -31,13 +28,12 @@ export function FiscalSponsorshipActivityAction({
   disabled?: boolean
   eligibility: FiscalSponsorshipActivityEligibility
   onOpen: () => void
-  onUpdateInfo: (criterionId: FiscalSponsorshipCriterionId) => void
+  onUpdateInfo: (
+    criterionId: FiscalSponsorshipActivityEligibility["criteria"][number]["id"]
+  ) => void
 }) {
   const markState = active ? "active" : eligibility.state
   const actionLabel = eligibility.eligible ? "Request review" : "Update info"
-  const nextUnmetCriterion = eligibility.criteria.find(
-    (criterion) => !criterion.met
-  )
   const statusLabel = active
     ? "Open"
     : eligibility.eligible
@@ -51,7 +47,7 @@ export function FiscalSponsorshipActivityAction({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg p-0 hover:bg-transparent"
+          className="nodrag nopan hover:bg-background hover:text-foreground dark:hover:bg-background relative"
           aria-label={
             ariaLabel ?? `Fiscal sponsorship ${statusLabel.toLowerCase()}`
           }
@@ -66,7 +62,7 @@ export function FiscalSponsorshipActivityAction({
         >
           <FiscalSponsorshipMark
             state={markState}
-            className="size-8 rounded-lg text-xs"
+            className="text-foreground size-7 rounded-md bg-transparent text-xs shadow-none ring-0"
           />
         </Button>
       </TooltipTrigger>
@@ -83,14 +79,9 @@ export function FiscalSponsorshipActivityAction({
                 state={markState}
                 className="size-4 rounded-[0.35rem] text-[7px]"
               />
-              <div className="min-w-0">
-                <p className="text-foreground truncate font-medium">
-                  Fiscal sponsorship
-                </p>
-                <p className="text-muted-foreground truncate text-[10px]">
-                  Signals only. Coach House reviews.
-                </p>
-              </div>
+              <p className="text-foreground min-w-0 truncate font-medium">
+                Fiscal sponsorship
+              </p>
             </div>
             <Badge
               variant={eligibility.eligible ? "default" : "secondary"}
@@ -158,8 +149,11 @@ export function FiscalSponsorshipActivityAction({
                 return
               }
 
-              if (nextUnmetCriterion) {
-                onUpdateInfo(nextUnmetCriterion.id)
+              const firstMissingCriterion = eligibility.criteria.find(
+                (criterion) => !criterion.met
+              )
+              if (firstMissingCriterion) {
+                onUpdateInfo(firstMissingCriterion.id)
               }
             }}
           >

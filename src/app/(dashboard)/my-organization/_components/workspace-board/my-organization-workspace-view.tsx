@@ -1,6 +1,7 @@
 "use client"
 
 import { WorkspaceBoardCanvas } from "./workspace-board-canvas"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceCardId,
   WorkspaceOrganizationEditorData,
@@ -12,12 +13,14 @@ export function MyOrganizationWorkspaceView({
   seed,
   onInitialOnboardingSubmit,
   organizationEditorData,
+  financeInput,
   workspaceFoundationEnabled,
 }: {
   initialFocusCardId?: WorkspaceCardId | null
   seed: WorkspaceSeedData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   workspaceFoundationEnabled: boolean
 }) {
   return (
@@ -28,6 +31,7 @@ export function MyOrganizationWorkspaceView({
         seed={seed}
         onInitialOnboardingSubmit={onInitialOnboardingSubmit}
         organizationEditorData={organizationEditorData}
+        financeInput={financeInput}
         workspaceFoundationEnabled={workspaceFoundationEnabled}
       />
     </div>

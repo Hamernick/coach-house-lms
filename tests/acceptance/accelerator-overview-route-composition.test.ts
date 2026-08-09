@@ -27,7 +27,9 @@ describe("accelerator overview route composition", () => {
     )
     expect(content).toContain("createSupabaseServerClient")
     expect(content).toContain("fetchAcceleratorProgressSummary")
-    expect(content).toContain("const { groups } = progressSummary")
+    expect(content).toContain(
+      "applyOrganizationSetupAcceleratorProgressOverride"
+    )
     expect(content).toContain("<AcceleratorOrgSnapshotStrip")
     expect(content).toContain("<RoadmapOutlineCard")
   })

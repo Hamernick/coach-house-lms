@@ -7,7 +7,11 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react"
-import type { Edge, NodeMouseHandler, ReactFlowInstance } from "reactflow"
+import type {
+  Edge,
+  NodeMouseHandler,
+  ReactFlowInstance,
+} from "reactflow"
 
 import { buildWorkspaceCardEdgeGeometryLookup } from "../../workspace-board-connection-handles"
 import type { WorkspaceBoardState } from "../../workspace-board-types"
@@ -134,7 +138,9 @@ export function useWorkspaceCanvasSurfaceFlowState({
       if (tutorialActive) return
       if (
         event.target instanceof Element &&
-        event.target.closest("button, a, input, textarea, select")
+        event.target.closest(
+          "button, a, input, textarea, select"
+        )
       ) {
         return
       }
@@ -147,7 +153,8 @@ export function useWorkspaceCanvasSurfaceFlowState({
         command: { kind: "focus-card", cardId: node.id },
         layoutFitOptions: WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
         sceneFitOptions: WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
-        acceleratorFocusOptions: WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
+        acceleratorFocusOptions:
+          WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
         focusCardOptions: WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
       })
     },

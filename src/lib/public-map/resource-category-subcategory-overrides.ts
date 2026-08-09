@@ -19,7 +19,7 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES: Partial<
   food_community_fridges: {
     aliases: ["community fridge", "free fridge", "freedge", "friendly fridge"],
     description: "Community fridges and mutual-aid food.",
-    iconName: "bread",
+    iconName: "shopping-basket",
     markerColor: "#0891b2",
     tailwindToken: "cyan-600",
   },

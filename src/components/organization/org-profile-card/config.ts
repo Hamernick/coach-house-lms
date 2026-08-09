@@ -146,6 +146,11 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandVoicePersonality: source.brandVoicePersonality ?? "",
     brandVoiceGuidelines: source.brandVoiceGuidelines ?? "",
     brandVoiceAvoid: source.brandVoiceAvoid ?? "",
+    narrativeRevisions: source.narrativeRevisions ?? {
+      mission: null,
+      vision: null,
+      values: null,
+    },
     brandPrimary: source.brandPrimary ?? "",
     brandColors: Array.isArray(source.brandColors) ? source.brandColors : [],
     brandThemePresetId: source.brandThemePresetId ?? "",
@@ -154,10 +159,5 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandTypography: normalizeTypography(source),
     publicSlug: source.publicSlug ?? "",
     isPublic: Boolean(source.isPublic ?? false),
-    narrativeRevisions: source.narrativeRevisions ?? {
-      mission: null,
-      vision: null,
-      values: null,
-    },
   }
 }

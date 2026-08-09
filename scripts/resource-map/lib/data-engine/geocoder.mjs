@@ -125,6 +125,80 @@ async function fetchJsonWithTimeout(url, { timeoutMs, headers }) {
   }
 }
 
+function normalizePlace(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .trim()
+}
+
+function readRequestedAddressComponents(address) {
+  const text = readString(address) ?? ""
+  return {
+    city: readString(
+      text.match(/,\s*([^,]+),\s*[A-Z]{2}\s*,?\s*\d{5}(?:-\d{4})?\s*$/iu)?.[1]
+    ),
+    state: readString(
+      text.match(/,\s*([A-Z]{2})\s*,?\s*\d{5}(?:-\d{4})?\s*$/iu)?.[1]
+    )?.toUpperCase(),
+    zip: readString(text.match(/\b(\d{5})(?:-\d{4})?\s*$/u)?.[1]),
+  }
+}
+
+function addressComponentsMatchRequest(address, components = {}) {
+  const requested = readRequestedAddressComponents(address)
+  const matchedZip = readString(components.zip, components.postcode)
+  const matchedState = readString(
+    components.state,
+    components.state_code
+  )?.toUpperCase()
+  const matchedCity = readString(
+    components.city,
+    components.town,
+    components.village,
+    components.hamlet,
+    components.borough
+  )
+
+  if (requested.zip && matchedZip !== requested.zip) return false
+  if (
+    requested.state &&
+    matchedState?.length === 2 &&
+    matchedState !== requested.state
+  ) {
+    return false
+  }
+  if (
+    !requested.zip &&
+    requested.city &&
+    matchedCity &&
+    normalizePlace(matchedCity) !== normalizePlace(requested.city)
+  ) {
+    return false
+  }
+  return true
+}
+
+export function selectCensusAddressMatch(address, matches) {
+  if (!Array.isArray(matches)) return null
+  return (
+    matches.find(
+      (match) =>
+        match?.coordinates &&
+        addressComponentsMatchRequest(address, match.addressComponents)
+    ) ?? null
+  )
+}
+
+function cachedGeocodeMatchesAddress(cached, address) {
+  if (!cached) return false
+  if (!["census", "nominatim"].includes(cached.provider)) return true
+  return (
+    cached.addressComponents &&
+    addressComponentsMatchRequest(address, cached.addressComponents)
+  )
+}
+
 async function censusGeocode(address, options = {}) {
   const url = new URL(
     "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
@@ -136,12 +210,14 @@ async function censusGeocode(address, options = {}) {
     timeoutMs: options.timeoutMs,
     headers: { "User-Agent": "coach-house-resource-map-local-prototype" },
   })
-  const match = body?.result?.addressMatches?.[0]
+  const match = selectCensusAddressMatch(address, body?.result?.addressMatches)
   if (!match?.coordinates) return null
   return {
+    addressComponents: match.addressComponents,
     latitude: match.coordinates.y,
     longitude: match.coordinates.x,
     geocodingAccuracy: "street",
+    matchedAddress: match.matchedAddress,
     provider: "census",
     confidence: 82,
   }
@@ -152,6 +228,7 @@ async function nominatimGeocode(address, options = {}) {
   url.searchParams.set("q", address)
   url.searchParams.set("format", "jsonv2")
   url.searchParams.set("limit", "1")
+  url.searchParams.set("addressdetails", "1")
   const body = await fetchJsonWithTimeout(url, {
     timeoutMs: options.timeoutMs,
     headers: {
@@ -159,11 +236,15 @@ async function nominatimGeocode(address, options = {}) {
     },
   })
   const match = Array.isArray(body) ? body[0] : null
-  if (!match) return null
+  if (!match || !addressComponentsMatchRequest(address, match.address)) {
+    return null
+  }
   return {
+    addressComponents: match.address,
     latitude: Number.parseFloat(match.lat),
     longitude: Number.parseFloat(match.lon),
     geocodingAccuracy: "unknown",
+    matchedAddress: match.display_name,
     provider: "nominatim",
     confidence: 70,
   }
@@ -425,6 +506,7 @@ export async function geocodeRecord(
   const key = sha256(address.toLowerCase())
   const cache = loadCache()
   let cached = cache.get(key)
+  if (cached && !cachedGeocodeMatchesAddress(cached, address)) cached = null
   let geocodingErrors = []
   if (!cached && network) {
     const resolved = await resolveNetworkGeocode(address, {
@@ -554,14 +636,28 @@ export async function geocodeRecord(
         derivedFrom: ["data/resource-map/.engine/geocode-cache.jsonl"],
         transformation: "geocode_cache_lookup",
       },
+      {
+        fieldPath: "extractedFields.geocodingMatchedAddress",
+        fieldValue: cached.matchedAddress,
+        confidenceScore: cached.confidence,
+        derivedFrom: [
+          "extractedFields.address",
+          "extractedFields.city",
+          "extractedFields.state",
+          "extractedFields.postalCode",
+        ],
+        transformation: `geocode_${cached.provider}`,
+      },
     ]),
     extractedFields: {
       ...fields,
       latitude: cached.latitude,
       longitude: cached.longitude,
       geocodingAccuracy: cached.geocodingAccuracy,
+      geocodingAddressComponents: cached.addressComponents ?? null,
       geocodingProvider: cached.provider,
       geocodingConfidence: cached.confidence,
+      geocodingMatchedAddress: cached.matchedAddress ?? null,
     },
   }
 }

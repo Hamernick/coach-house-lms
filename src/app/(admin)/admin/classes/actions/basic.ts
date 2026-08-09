@@ -19,7 +19,7 @@ export async function createClassAction() {
 
   const slug = `class-${randomId().slice(0, 8)}`
 
-  const insertPayload: Database["public"]["Tables"]["classes"]["Insert"] & Record<string, unknown> = {
+  const insertPayload: Database["public"]["Tables"]["classes"]["Insert"] = {
     title: "Untitled Class",
     slug,
     description: "",

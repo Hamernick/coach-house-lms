@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type ReactFlowInstance } from "reactflow"
 import "reactflow/dist/style.css"
-
 import { useWorkspaceAcceleratorDrawer } from "./use-workspace-accelerator-drawer"
 import { useWorkspaceOntologyActionRequest } from "./use-workspace-ontology-action-request"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
@@ -13,9 +12,7 @@ import {
   type WorkspaceCanvasV2CardId,
 } from "./workspace-canvas-surface-v2-helpers"
 import * as Runtime from "./workspace-canvas-surface-v2-runtime"
-
 const WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED = false
-
 // eslint-disable-next-line max-lines-per-function
 export function WorkspaceCanvasSurfaceV2({
   boardState,
@@ -49,12 +46,11 @@ export function WorkspaceCanvasSurfaceV2({
   onDisconnectAllConnections,
   onToggleCardVisibility,
   onTutorialCompletionExitHandled,
+  workspaceFoundationEnabled,
 }: WorkspaceCanvasSurfaceV2Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const [isFlowReady, setIsFlowReady] = useState(false)
-  const [vaultViewMode, setVaultViewMode] = useState(
-    WORKSPACE_CANVAS_V2_VAULT_MODE
-  )
+  const [vaultViewMode, setVaultViewMode] = useState(WORKSPACE_CANVAS_V2_VAULT_MODE)
   const {
     request: ontologyActionRequest,
     openAction: handleOpenOntologyAction,
@@ -105,6 +101,7 @@ export function WorkspaceCanvasSurfaceV2({
     tutorialActive: tutorialActiveFromBoard,
     uiPreferencesScope,
     workspaceDataDrawerCanEdit,
+    workspaceFoundationEnabled,
   })
   const {
     acceleratorWorkspaceNode,
@@ -399,6 +396,7 @@ export function WorkspaceCanvasSurfaceV2({
     allowEditing,
     peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction,
     workspaceDataDrawerCanEdit,
+    workspaceFoundationEnabled,
     nodesDraggable:
       allowEditing || allowPeopleCanvasInteraction || tutorialActive,
     tutorialActive,

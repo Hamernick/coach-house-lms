@@ -45,6 +45,7 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState,
   organizationEditorData,
   financeInput,
+  workspaceFoundationEnabled,
   onInitialOnboardingSubmit,
   onInvitesChange,
   onSizeChange,
@@ -87,6 +88,7 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
   financeInput: WorkspaceFinanceInput
+  workspaceFoundationEnabled: boolean
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
@@ -162,6 +164,7 @@ export function WorkspaceBoardCanvasBody({
           seed={seed}
           organizationEditorData={organizationEditorData}
           financeInput={financeInput}
+          workspaceFoundationEnabled={workspaceFoundationEnabled}
           boardState={boardState}
           allowEditing={allowEditing}
           workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}

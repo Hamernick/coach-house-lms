@@ -41,6 +41,18 @@ export type PlatformAdminDashboardLabTask = {
   endDate: Date
 }
 
+export type PlatformAdminDashboardLabOrganizationCoachAssignment = {
+  organizationId: string
+  coach: {
+    id: string
+    name: string
+    email: string | null
+    avatarUrl: string | null
+  }
+  assignedBy: string | null
+  updatedAt: string
+}
+
 export type PlatformAdminDashboardLabProject = {
   id: string
   organizationId?: string
@@ -59,6 +71,7 @@ export type PlatformAdminDashboardLabProject = {
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
+  organizationCoachAssignments?: PlatformAdminDashboardLabOrganizationCoachAssignment[]
   client?: string
   typeLabel?: string
   durationLabel?: string

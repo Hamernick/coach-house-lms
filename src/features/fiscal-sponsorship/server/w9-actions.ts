@@ -205,7 +205,9 @@ export async function completeFiscalSponsorshipW9(
         .from(FISCAL_SPONSORSHIP_SIGNING_BUCKET)
         .remove([storagePath])
       uploadedPath = null
-      return transition
+      return {
+        error: transition.error ?? "Unable to save the signed W-9 record.",
+      }
     }
 
     await notifyFiscalDocumentConnected({

@@ -32,6 +32,10 @@ export async function resolveMyOrganizationPageSearchState(
       typeof resolvedSearchParams?.focus === "string"
         ? resolvedSearchParams.focus
         : "",
+    initialWorkspaceFocusCardId:
+      resolvedSearchParams?.focus === "fiscal-sponsorship"
+        ? ("fiscal-sponsorship" as const)
+        : null,
     drawerParam:
       typeof resolvedSearchParams?.drawer === "string"
         ? resolvedSearchParams.drawer

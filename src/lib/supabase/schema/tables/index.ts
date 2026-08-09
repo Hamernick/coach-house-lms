@@ -57,6 +57,9 @@ import type { OrganizationPeopleSegmentsTable } from "./organization_people_segm
 import type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
 import type { OrganizationPeopleTagsTable } from "./organization_people_tags"
 import type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+import type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+import type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
+import type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -84,6 +87,7 @@ import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 import type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 import type { NotificationsTable } from "./notifications"
+import type { AppPageHealthEventsTable } from "./app_page_health_events"
 import type { UserJourneyEventsTable } from "./user_journey_events"
 import type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 import type { CoachingCoachesTable } from "./coaching_coaches"
@@ -165,6 +169,9 @@ export type { OrganizationPeopleSegmentsTable } from "./organization_people_segm
 export type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
 export type { OrganizationPeopleTagsTable } from "./organization_people_tags"
 export type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+export type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+export type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
+export type { OrganizationStaffKanbanPreferencesTable } from "./organization_staff_kanban_preferences"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -192,6 +199,7 @@ export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 export type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 export type { NotificationsTable } from "./notifications"
+export type { AppPageHealthEventsTable } from "./app_page_health_events"
 export type { UserJourneyEventsTable } from "./user_journey_events"
 export type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 export type { CoachingCoachesTable } from "./coaching_coaches"
@@ -274,6 +282,9 @@ export type PublicTables = {
   organization_people_tag_members: OrganizationPeopleTagMembersTable
   organization_people_tags: OrganizationPeopleTagsTable
   organization_coach_assignments: OrganizationCoachAssignmentsTable
+  organization_coach_scope_events: OrganizationCoachScopeEventsTable
+  organization_coach_scope_settings: OrganizationCoachScopeSettingsTable
+  organization_staff_kanban_preferences: OrganizationStaffKanbanPreferencesTable
   organization_invites: OrganizationInvitesTable
   organization_access_requests: OrganizationAccessRequestsTable
   organization_access_settings: OrganizationAccessSettingsTable
@@ -301,6 +312,7 @@ export type PublicTables = {
   organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
   organization_workspace_starter_state: OrganizationWorkspaceStarterStateTable
   notifications: NotificationsTable
+  app_page_health_events: AppPageHealthEventsTable
   user_journey_events: UserJourneyEventsTable
   user_activation_checkpoints: UserActivationCheckpointsTable
   coaching_coaches: CoachingCoachesTable

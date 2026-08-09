@@ -5,7 +5,6 @@ import {
   useMemo,
   useState,
   type DragEvent,
-  type KeyboardEventHandler,
 } from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
@@ -14,35 +13,15 @@ import {
   ReactFlow,
   ReactFlowProvider,
   SelectionMode,
-  type NodeDragHandler,
-  type NodeMouseHandler,
-  type OnMoveEnd,
-  type OnNodesChange,
-  type ReactFlowInstance,
-  type SelectionDragHandler,
 } from "reactflow"
 
 import {
   useRegisterAppShellAccountMenuAction,
   type AppShellAccountMenuAction,
 } from "@/components/app-shell/account-menu-actions-context"
-import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
-import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
-import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
-import {
-  WorkspaceReactFlowErrorBootstrap,
-  type WorkspaceReactFlowErrorHandler,
-} from "@/components/workspace/workspace-reactflow-error-bootstrap"
-import type { RoadmapSection } from "@/lib/roadmap"
+import { WorkspaceReactFlowErrorBootstrap } from "@/components/workspace/workspace-reactflow-error-bootstrap"
 import { WorkspaceCardShortcutRail } from "../shortcuts/workspace-card-shortcut-rail"
-import type { WorkspaceCardShortcutItemModel } from "../shortcuts/workspace-card-shortcut-model"
 import { WorkspaceCanvasErrorBoundary } from "../runtime/workspace-canvas-error-boundary"
-import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
-import type {
-  WorkspaceCanvasNode,
-  WorkspaceCanvasNodeData,
-} from "./workspace-canvas-surface-v2-helpers"
 import {
   WORKSPACE_CANVAS_V2_EDGE_TYPES,
   WORKSPACE_CANVAS_V2_NODE_TYPES,
@@ -52,16 +31,12 @@ import { WorkspaceCanvasSurfaceV2ViewportControls } from "./workspace-canvas-sur
 import { useWorkspaceCanvasSurfaceGestureGuards } from "./workspace-canvas-surface-v2-gesture-effect"
 import { WorkspaceCanvasOverlayDrawerContainerProvider } from "./workspace-canvas-overlay-drawer-container"
 import { WorkspaceCanvasOverlayDrawer } from "./workspace-canvas-overlay-drawer"
-import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 import { WorkspaceCanvasSurfaceV2MobileShortcutOverlay } from "./workspace-canvas-surface-v2-mobile-shortcut-overlay"
 import {
   hasWorkspaceCanvasPersonDragPayload,
   readWorkspaceCanvasPersonDragPayload,
-  type WorkspaceCanvasPeopleAddRequest,
-  type WorkspaceCanvasPersonDropRequest,
 } from "./workspace-canvas-people-dnd"
-import type { WorkspaceBoardUiPreferenceScope } from "../../workspace-board-ui-preferences"
-import type { WorkspaceOrganizationEditorData } from "../../workspace-board-types"
+import type { WorkspaceCanvasSurfaceV2ViewProps } from "./workspace-canvas-surface-v2-view-types"
 
 const WORKSPACE_CANVAS_V2_PRO_OPTIONS = Object.freeze({ hideAttribution: true })
 
@@ -94,6 +69,7 @@ export function WorkspaceCanvasSurfaceV2View({
   allowEditing,
   peopleCanvasInteractionEnabled,
   workspaceDataDrawerCanEdit,
+  workspaceFoundationEnabled,
   nodesDraggable,
   tutorialActive,
   layoutAnimating,
@@ -143,88 +119,7 @@ export function WorkspaceCanvasSurfaceV2View({
   onDisconnectFromSource,
   onDisconnectToTarget,
   onDisconnectAll,
-}: {
-  nodes: WorkspaceCanvasNode[]
-  edges: ReturnType<typeof useWorkspaceCanvasConnectionsController>["edges"]
-  allowEditing: boolean
-  peopleCanvasInteractionEnabled: boolean
-  workspaceDataDrawerCanEdit: boolean
-  nodesDraggable: boolean
-  tutorialActive: boolean
-  layoutAnimating: boolean
-  presentationMode: boolean
-  workspaceDataDrawerPeople: OrgPersonWithImage[]
-  placedWorkspacePersonIds: ReadonlySet<string>
-  workspaceDataDrawerViewerId: string
-  workspaceDataDrawerOrganization: WorkspaceOrganizationEditorData
-  workspaceDataDrawerFinance: WorkspaceFinanceInput
-  workspaceDataDrawerDocuments: DocumentsTabData
-  workspaceAcceleratorDrawerInput: WorkspaceAcceleratorCardInput
-  workspaceAcceleratorDrawerRoadmapSections: RoadmapSection[]
-  workspaceAcceleratorDrawerHasAccess: boolean
-  workspaceAcceleratorDrawerPaywallHref: string
-  workspaceDataDrawerRequest: WorkspaceDataDrawerRequest | null
-  uiPreferencesScope: WorkspaceBoardUiPreferenceScope
-  edgeContextMenuState: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["edgeContextMenuState"]
-  shortcutItems: WorkspaceCardShortcutItemModel[]
-  tutorialCalendarButtonCallout?: { title: string; instruction: string } | null
-  emptyStateMessage?: string | null
-  showTutorialRestart: boolean
-  onNodesChange: OnNodesChange
-  onNodeClick: NodeMouseHandler
-  onNodeDoubleClick: NodeMouseHandler
-  onKeyDownCapture: KeyboardEventHandler<HTMLDivElement>
-  onNodeDragStop: NodeDragHandler
-  onSelectionDragStop: SelectionDragHandler
-  onMoveStart: () => void
-  onMoveEnd: OnMoveEnd
-  onConnect: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleConnect"]
-  isValidConnection: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleIsValidConnection"]
-  onEdgeDoubleClick: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleEdgeDoubleClick"]
-  onEdgeContextMenu: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleEdgeContextMenu"]
-  onError: WorkspaceReactFlowErrorHandler
-  onInit: (instance: ReactFlowInstance) => void
-  onTutorialRestart: () => void
-  onTutorialCalendarButtonComplete?: (() => void) | undefined
-  onRecenterView: () => void
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onWorkspacePersonDropToCanvas: (
-    request: WorkspaceCanvasPersonDropRequest
-  ) => boolean
-  onAddWorkspacePeopleToCanvas: (
-    request: WorkspaceCanvasPeopleAddRequest
-  ) => number
-  onRemoveWorkspacePersonFromCanvas: (personId: string) => void
-  onOpenWorkspaceDataDrawer: (
-    request: Omit<WorkspaceDataDrawerRequest, "id">
-  ) => void
-  onCloseEdgeContextMenu: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["closeEdgeContextMenu"]
-  onDisconnectEdge: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleContextDisconnectEdge"]
-  onDisconnectFromSource: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleContextDisconnectFromSource"]
-  onDisconnectToTarget: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleContextDisconnectToTarget"]
-  onDisconnectAll: ReturnType<
-    typeof useWorkspaceCanvasConnectionsController
-  >["handleContextDisconnectAll"]
-}) {
+}: WorkspaceCanvasSurfaceV2ViewProps) {
   const [surfaceContainer, setSurfaceContainer] =
     useState<HTMLDivElement | null>(null)
   const [flowFrameContainer, setFlowFrameContainer] =
@@ -313,33 +208,39 @@ export function WorkspaceCanvasSurfaceV2View({
       >
         <WorkspaceCanvasOverlayDrawerContainerProvider
           container={flowFrameContainer}
-          onOpenDataDrawer={onOpenWorkspaceDataDrawer}
+          onOpenDataDrawer={
+            workspaceFoundationEnabled ? onOpenWorkspaceDataDrawer : null
+          }
         >
           {shortcutItems.length > 0 ? (
             <WorkspaceCardShortcutRail
               items={shortcutItems}
               dataAction={
-                <WorkspaceCanvasOverlayDrawer
-                  people={workspaceDataDrawerPeople}
-                  placedPersonIds={placedWorkspacePersonIds}
-                  viewerId={workspaceDataDrawerViewerId}
-                  organizationEditorData={workspaceDataDrawerOrganization}
-                  financeInput={workspaceDataDrawerFinance}
-                  documentsTab={workspaceDataDrawerDocuments}
-                  acceleratorInput={workspaceAcceleratorDrawerInput}
-                  acceleratorRoadmapSections={
-                    workspaceAcceleratorDrawerRoadmapSections
-                  }
-                  acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
-                  acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
-                  request={workspaceDataDrawerRequest}
-                  canEdit={workspaceDataDrawerCanEdit}
-                  uiPreferencesScope={uiPreferencesScope}
-                  peopleCanvasActions={{
-                    add: handleAddWorkspacePeopleToCanvas,
-                    remove: onRemoveWorkspacePersonFromCanvas,
-                  }}
-                />
+                workspaceFoundationEnabled ? (
+                  <WorkspaceCanvasOverlayDrawer
+                    people={workspaceDataDrawerPeople}
+                    placedPersonIds={placedWorkspacePersonIds}
+                    viewerId={workspaceDataDrawerViewerId}
+                    organizationEditorData={workspaceDataDrawerOrganization}
+                    financeInput={workspaceDataDrawerFinance}
+                    documentsTab={workspaceDataDrawerDocuments}
+                    acceleratorInput={workspaceAcceleratorDrawerInput}
+                    acceleratorRoadmapSections={
+                      workspaceAcceleratorDrawerRoadmapSections
+                    }
+                    acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
+                    acceleratorPaywallHref={
+                      workspaceAcceleratorDrawerPaywallHref
+                    }
+                    request={workspaceDataDrawerRequest}
+                    canEdit={workspaceDataDrawerCanEdit}
+                    uiPreferencesScope={uiPreferencesScope}
+                    peopleCanvasActions={{
+                      add: handleAddWorkspacePeopleToCanvas,
+                      remove: onRemoveWorkspacePersonFromCanvas,
+                    }}
+                  />
+                ) : null
               }
             />
           ) : null}

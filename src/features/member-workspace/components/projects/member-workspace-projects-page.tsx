@@ -2,11 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-
-import {
-  ChipOverflow,
-  type PlatformAdminDashboardLabProject,
-} from "@/features/platform-admin-dashboard"
+import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import type {
   MemberWorkspaceCreateProjectFormInput,
   MemberWorkspacePersonOption,
@@ -20,12 +16,35 @@ import {
   computeMemberWorkspaceProjectFilterCounts,
   filterMemberWorkspaceProjects,
 } from "./member-workspace-project-filters"
-import { MemberWorkspaceProjectFilterPopover } from "./member-workspace-project-filter-popover"
 import { MemberWorkspaceProjectTimelineView } from "./member-workspace-project-timeline-view"
-import { MemberWorkspaceProjectViewOptionsPopover } from "./member-workspace-project-view-options-popover"
 import { MemberWorkspaceProjectWizard } from "./member-workspace-project-wizard"
-import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
+import { MemberWorkspaceProjectsEmptyStates } from "./member-workspace-projects-empty-states"
+import { MemberWorkspaceProjectsHeader } from "./member-workspace-projects-header"
 import styles from "./member-workspace-projects-surface-theme.module.css"
+import {
+  applyOrganizationCoachFilterToParams,
+  computeOrganizationCoachAssignmentCoverage,
+  filterProjectsByOrganizationCoach,
+  normalizeOrganizationCoachFilter,
+  ORGANIZATION_COACH_FILTER_ALL,
+  type OrganizationCoachFilterValue,
+  type AssignAllOrganizationCoachesAction,
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
+  type OrganizationCoachScopeStatus,
+  type SetOrganizationCoachScopeAction,
+} from "@/features/organization-coach-assignments"
+import {
+  applyOrganizationKanbanVisibilityToParams,
+  computeOrganizationKanbanVisibilityCounts,
+  filterProjectsByOrganizationKanbanVisibility,
+  normalizeOrganizationKanbanVisibilityMode,
+  ORGANIZATION_KANBAN_VISIBILITY_HIDDEN,
+  ORGANIZATION_KANBAN_VISIBILITY_VISIBLE,
+  useOrganizationKanbanVisibilityController,
+  type OrganizationKanbanVisibilityMode,
+  type UpdateOrganizationKanbanVisibilityAction,
+} from "@/features/organization-kanban-visibility"
 import {
   applyViewOptionsToParams,
   DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS as DEFAULT_VIEW_OPTIONS,
@@ -35,7 +54,7 @@ import {
   type MemberWorkspaceProjectFilterChip as FilterChip,
 } from "./member-workspace-project-view-options"
 
-export function MemberWorkspaceProjectsPage(props: {
+type MemberWorkspaceProjectsPageProps = {
   projects: PlatformAdminDashboardLabProject[]
   storageMode: MemberWorkspaceStorageMode
   canResetStarterData: boolean
@@ -60,6 +79,16 @@ export function MemberWorkspaceProjectsPage(props: {
   canCreateProjects: boolean
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
   assigneeOptions: MemberWorkspacePersonOption[]
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignments?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  assignAllCoachesAction?: AssignAllOrganizationCoachesAction
+  coachScopeStatus?: OrganizationCoachScopeStatus
+  setCoachScopeAction?: SetOrganizationCoachScopeAction
+  showAssignedOrganizationsEmpty?: boolean
+  kanbanVisibilityAvailable?: boolean
+  hiddenOrganizationIds?: string[]
+  updateOrganizationKanbanVisibilityAction?: UpdateOrganizationKanbanVisibilityAction
   scope: "organization" | "platform-admin"
   workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
   createWorkstreamCategoryAction?: (
@@ -79,12 +108,23 @@ export function MemberWorkspaceProjectsPage(props: {
     projectId: string,
     categoryId: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
-}) {
+}
+
+function getView(
+  visibility: OrganizationKanbanVisibilityMode,
+  viewType: "list" | "board" | "timeline"
+) {
+  return visibility === ORGANIZATION_KANBAN_VISIBILITY_HIDDEN
+    ? "list"
+    : viewType
+}
+
+export function MemberWorkspaceProjectsPage(
+  props: MemberWorkspaceProjectsPageProps
+) {
   const {
     projects,
-    storageMode: _storageMode,
     canResetStarterData,
-    starterProjectCount: _starterProjectCount,
     clearStarterDataAction,
     createProjectAction,
     updateProjectAction,
@@ -92,7 +132,22 @@ export function MemberWorkspaceProjectsPage(props: {
     updateProjectStatusAction,
     canCreateProjects,
     organizationOptions,
+    assigneeOptions,
     scope,
+    coachOptions = [],
+    canManageCoachAssignments = false,
+    updateCoachAssignmentAction,
+    assignAllCoachesAction,
+    coachScopeStatus = {
+      available: false,
+      assignedOnlyEnabled: false,
+      activatedAt: null,
+    },
+    setCoachScopeAction,
+    showAssignedOrganizationsEmpty = false,
+    kanbanVisibilityAvailable = false,
+    hiddenOrganizationIds = [],
+    updateOrganizationKanbanVisibilityAction,
     workstreamCategories = [],
     createWorkstreamCategoryAction,
     updateWorkstreamCategoryAction,
@@ -100,37 +155,64 @@ export function MemberWorkspaceProjectsPage(props: {
     restoreWorkstreamDefaultsAction,
     updateProjectWorkstreamAction,
   } = props
-  const assigneeOptions = props.assigneeOptions ?? []
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const [filters, setFilters] = useState<FilterChip[]>([])
+  const [coachFilter, setCoachFilter] = useState<OrganizationCoachFilterValue>(
+    ORGANIZATION_COACH_FILTER_ALL
+  )
   const [viewOptions, setViewOptions] = useState(DEFAULT_VIEW_OPTIONS)
+  const [kanbanVisibilityMode, setKanbanVisibilityMode] =
+    useState<OrganizationKanbanVisibilityMode>(
+      ORGANIZATION_KANBAN_VISIBILITY_VISIBLE
+    )
   const [isProjectWizardOpen, setIsProjectWizardOpen] = useState(false)
   const [editingProject, setEditingProject] =
     useState<PlatformAdminDashboardLabProject | null>(null)
 
   const prevParamsRef = useRef("")
+  const kanbanVisibility = useOrganizationKanbanVisibilityController({
+    initialHiddenOrganizationIds: hiddenOrganizationIds,
+    updateVisibilityAction: updateOrganizationKanbanVisibilityAction,
+  })
 
   useEffect(() => {
     const currentParams = searchParams.toString()
-    if (prevParamsRef.current === currentParams) return
+    const currentStateKey = `${currentParams}|${coachOptions
+      .map((coach) => coach.id)
+      .join(",")}`
+    if (prevParamsRef.current === currentStateKey) return
 
-    prevParamsRef.current = currentParams
+    prevParamsRef.current = currentStateKey
     const params = new URLSearchParams(currentParams)
     setFilters(paramsToChips(params))
+    setCoachFilter(
+      normalizeOrganizationCoachFilter({
+        coachOptions,
+        value: params.get("coach"),
+      })
+    )
     setViewOptions(paramsToViewOptions(params))
-  }, [searchParams])
+    setKanbanVisibilityMode(
+      normalizeOrganizationKanbanVisibilityMode(params.get("visibility"))
+    )
+  }, [coachOptions, searchParams])
 
   const replaceSearchState = ({
     nextFilters = filters,
+    nextCoachFilter = coachFilter,
+    nextKanbanVisibilityMode = kanbanVisibilityMode,
     nextViewOptions = viewOptions,
   }: {
     nextFilters?: FilterChip[]
+    nextCoachFilter?: OrganizationCoachFilterValue
+    nextKanbanVisibilityMode?: OrganizationKanbanVisibilityMode
     nextViewOptions?: typeof viewOptions
   }) => {
     const params = chipsToParams(nextFilters)
+    applyOrganizationCoachFilterToParams(params, nextCoachFilter)
+    applyOrganizationKanbanVisibilityToParams(params, nextKanbanVisibilityMode)
     applyViewOptionsToParams(params, nextViewOptions)
     const nextQuery = params.toString()
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
@@ -148,85 +230,152 @@ export function MemberWorkspaceProjectsPage(props: {
     replaceSearchState({ nextViewOptions })
   }
 
+  const handleCoachFilterChange = (
+    nextCoachFilter: OrganizationCoachFilterValue
+  ) => {
+    setCoachFilter(nextCoachFilter)
+    replaceSearchState({ nextCoachFilter })
+  }
+
+  const handleKanbanVisibilityModeChange = (
+    nextKanbanVisibilityMode: OrganizationKanbanVisibilityMode
+  ) => {
+    setKanbanVisibilityMode(nextKanbanVisibilityMode)
+    replaceSearchState({ nextKanbanVisibilityMode })
+  }
+
+  const handleClearAllFilters = () => {
+    setFilters([])
+    setCoachFilter(ORGANIZATION_COACH_FILTER_ALL)
+    setKanbanVisibilityMode(ORGANIZATION_KANBAN_VISIBILITY_VISIBLE)
+    replaceSearchState({
+      nextFilters: [],
+      nextCoachFilter: ORGANIZATION_COACH_FILTER_ALL,
+      nextKanbanVisibilityMode: ORGANIZATION_KANBAN_VISIBILITY_VISIBLE,
+    })
+  }
+
+  const coachAssignmentCoverage = useMemo(
+    () => computeOrganizationCoachAssignmentCoverage(projects),
+    [projects]
+  )
+  const coachFilteredProjects = useMemo(
+    () =>
+      filterProjectsByOrganizationCoach({
+        projects,
+        value: coachFilter,
+      }),
+    [coachFilter, projects]
+  )
+  const kanbanVisibilityCounts = useMemo(
+    () =>
+      computeOrganizationKanbanVisibilityCounts({
+        hiddenOrganizationIds: kanbanVisibility.hiddenOrganizationIdSet,
+        projects,
+      }),
+    [kanbanVisibility.hiddenOrganizationIdSet, projects]
+  )
+  const kanbanVisibleProjects = useMemo(
+    () =>
+      filterProjectsByOrganizationKanbanVisibility({
+        hiddenOrganizationIds: kanbanVisibility.hiddenOrganizationIdSet,
+        mode: kanbanVisibilityMode,
+        projects: coachFilteredProjects,
+      }),
+    [
+      coachFilteredProjects,
+      kanbanVisibility.hiddenOrganizationIdSet,
+      kanbanVisibilityMode,
+    ]
+  )
+
   const filteredProjects = useMemo(
     () =>
       filterMemberWorkspaceProjects({
         filters,
-        projects,
+        projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [filters, projects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
 
   const counts = useMemo(
     () =>
       computeMemberWorkspaceProjectFilterCounts({
         filters,
-        projects,
+        projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [filters, projects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
+  const hasActiveFilters =
+    filters.length > 0 ||
+    coachFilter !== ORGANIZATION_COACH_FILTER_ALL ||
+    kanbanVisibilityMode === ORGANIZATION_KANBAN_VISIBILITY_HIDDEN
+  const showHiddenOrganizationsEmpty =
+    kanbanVisibilityMode === ORGANIZATION_KANBAN_VISIBILITY_HIDDEN &&
+    kanbanVisibleProjects.length === 0
+  const showAllOrganizationsHidden =
+    kanbanVisibilityMode === ORGANIZATION_KANBAN_VISIBILITY_VISIBLE &&
+    kanbanVisibilityCounts.visible === 0 &&
+    kanbanVisibilityCounts.hidden > 0 &&
+    kanbanVisibleProjects.length === 0
+  const showFilteredEmpty = hasActiveFilters && filteredProjects.length === 0
+  const showPageEmpty =
+    showAssignedOrganizationsEmpty ||
+    showHiddenOrganizationsEmpty ||
+    showAllOrganizationsHidden ||
+    showFilteredEmpty
+  const effectiveViewType = getView(kanbanVisibilityMode, viewOptions.viewType)
 
   return (
     <>
       <div
         className={`${styles.surface} bg-background -mx-[var(--shell-content-pad)] -mt-[var(--shell-content-pad)] -mb-[var(--shell-content-pad)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden`}
       >
-        <header className="border-border/40 flex flex-col border-b">
-          <div className="border-border flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-3">
-              <p className="text-foreground text-base font-medium">
-                Organizations
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {canResetStarterData && clearStarterDataAction ? (
-                <MemberWorkspaceClearStarterDataButton
-                  clearStarterDataAction={clearStarterDataAction}
-                />
-              ) : null}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-4 pt-3 pb-3">
-            <div className="flex items-center gap-2">
-              <MemberWorkspaceProjectFilterPopover
-                projects={projects}
-                initialChips={filters}
-                onApply={handleFiltersChange}
-                onClear={() => handleFiltersChange([])}
-                counts={counts}
-              />
-              <ChipOverflow
-                chips={filters}
-                onRemove={(key, value) =>
-                  handleFiltersChange(
-                    filters.filter(
-                      (chip) => !(chip.key === key && chip.value === value)
-                    )
-                  )
-                }
-                maxVisible={6}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <MemberWorkspaceProjectViewOptionsPopover
-                options={viewOptions}
-                onChange={handleViewOptionsChange}
-              />
-            </div>
-          </div>
-        </header>
+        <MemberWorkspaceProjectsHeader
+          assignAllCoachesAction={assignAllCoachesAction}
+          canManageCoachAssignments={canManageCoachAssignments}
+          canResetStarterData={canResetStarterData}
+          clearStarterDataAction={clearStarterDataAction}
+          coachAssignmentCoverage={coachAssignmentCoverage}
+          coachFilter={coachFilter}
+          coachOptions={coachOptions}
+          coachScopeStatus={coachScopeStatus}
+          counts={counts}
+          filters={filters}
+          kanbanVisibility={{
+            available: kanbanVisibilityAvailable,
+            hiddenCount: kanbanVisibilityCounts.hidden,
+            mode: kanbanVisibilityMode,
+            visibleCount: kanbanVisibilityCounts.visible,
+          }}
+          onCoachFilterChange={handleCoachFilterChange}
+          onFiltersChange={handleFiltersChange}
+          onKanbanVisibilityChange={handleKanbanVisibilityModeChange}
+          onViewOptionsChange={handleViewOptionsChange}
+          projects={kanbanVisibleProjects}
+          setCoachScopeAction={setCoachScopeAction}
+          showAssignedOrganizationsEmpty={showAssignedOrganizationsEmpty}
+          viewOptions={viewOptions}
+        />
 
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-          {viewOptions.viewType === "timeline" ? (
+          <MemberWorkspaceProjectsEmptyStates
+            onClearFilters={handleClearAllFilters}
+            onVisibilityModeChange={handleKanbanVisibilityModeChange}
+            showAssignedOrganizationsEmpty={showAssignedOrganizationsEmpty}
+            showAllOrganizationsHidden={showAllOrganizationsHidden}
+            showFilteredEmpty={showFilteredEmpty}
+            showHiddenOrganizationsEmpty={showHiddenOrganizationsEmpty}
+          />
+          {!showPageEmpty && effectiveViewType === "timeline" ? (
             <MemberWorkspaceProjectTimelineView
               projects={filteredProjects}
               updateProjectScheduleAction={updateProjectScheduleAction}
             />
           ) : null}
-          {viewOptions.viewType === "list" ? (
+          {!showPageEmpty && effectiveViewType === "list" ? (
             <MemberWorkspaceProjectCardsView
               projects={filteredProjects}
               visibleProperties={viewOptions.properties}
@@ -247,21 +396,27 @@ export function MemberWorkspaceProjectsPage(props: {
                   : undefined
               }
               scope={scope}
+              coachOptions={coachOptions}
+              canManageCoachAssignments={canManageCoachAssignments}
+              updateCoachAssignmentAction={updateCoachAssignmentAction}
+              canUnassignCoachAssignments={
+                !coachScopeStatus.assignedOnlyEnabled
+              }
+              kanbanVisibilityMode={kanbanVisibilityMode}
+              pendingVisibilityOrganizationIds={
+                kanbanVisibility.pendingOrganizationIds
+              }
+              onOrganizationVisibilityChange={
+                kanbanVisibilityAvailable
+                  ? kanbanVisibility.setOrganizationHidden
+                  : undefined
+              }
             />
           ) : null}
-          {viewOptions.viewType === "board" ? (
+          {!showPageEmpty && effectiveViewType === "board" ? (
             <MemberWorkspaceProjectBoardView
               projects={filteredProjects}
               showClosedProjects={viewOptions.showClosedProjects}
-              hiddenWorkstreamCategoryKeys={
-                viewOptions.hiddenWorkstreamCategoryKeys
-              }
-              onHiddenWorkstreamCategoryKeysChange={(categoryKeys) =>
-                handleViewOptionsChange({
-                  ...viewOptions,
-                  hiddenWorkstreamCategoryKeys: categoryKeys,
-                })
-              }
               visibleProperties={viewOptions.properties}
               updateProjectStatusAction={updateProjectStatusAction}
               workstreamCategories={workstreamCategories}
@@ -270,6 +425,21 @@ export function MemberWorkspaceProjectsPage(props: {
               deleteWorkstreamCategoryAction={deleteWorkstreamCategoryAction}
               restoreWorkstreamDefaultsAction={restoreWorkstreamDefaultsAction}
               updateProjectWorkstreamAction={updateProjectWorkstreamAction}
+              coachOptions={coachOptions}
+              canManageCoachAssignments={canManageCoachAssignments}
+              updateCoachAssignmentAction={updateCoachAssignmentAction}
+              canUnassignCoachAssignments={
+                !coachScopeStatus.assignedOnlyEnabled
+              }
+              kanbanVisibilityMode={kanbanVisibilityMode}
+              pendingVisibilityOrganizationIds={
+                kanbanVisibility.pendingOrganizationIds
+              }
+              onOrganizationVisibilityChange={
+                kanbanVisibilityAvailable
+                  ? kanbanVisibility.setOrganizationHidden
+                  : undefined
+              }
               onAddProject={
                 canCreateProjects
                   ? () => {

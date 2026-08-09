@@ -69,7 +69,9 @@ export function buildFinancePlanResponseLinks(
         seen.add(url.href)
 
         const path = url.pathname.toLowerCase()
-        const kind = VIDEO_HOSTS.has(url.hostname)
+        const kind: FinancePlanResponseLink["kind"] = VIDEO_HOSTS.has(
+          url.hostname
+        )
           ? "video"
           : IMAGE_EXTENSIONS.test(path)
             ? "image"

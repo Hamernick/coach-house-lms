@@ -141,6 +141,9 @@ describe("workspace board UI preferences", () => {
     const viewSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
     )
+    const viewTypesSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view-types.ts"
+    )
     const cameraEffectsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller-effects.ts"
     )
@@ -170,7 +173,7 @@ describe("workspace board UI preferences", () => {
     )
     expect(viewportPreferencesSource).toContain("canvasViewport: null")
     expect(viewportPreferencesSource).toContain("suppressInitialFit:")
-    expect(viewSource).toContain("onMoveEnd: OnMoveEnd")
+    expect(viewTypesSource).toContain("onMoveEnd: OnMoveEnd")
     expect(viewSource).toContain("onMoveEnd={onMoveEnd}")
     expect(cameraEffectsSource).toContain("if (suppressInitialFit) return")
     expect(drawerSource).toContain("dataDrawerSnapPoint: storedSnapPoint")

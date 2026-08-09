@@ -340,12 +340,12 @@ function buildGuideItems({
 export function buildPublicMapResourceGuides(
   items: PublicMapItem[]
 ): PublicMapResourceGuide[] {
-  return PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.map((definition) => {
+  return PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.flatMap((definition) => {
     const guideItems = buildGuideItems({ definition, items })
     const minItems = definition.minItems ?? 1
-    if (guideItems.length < minItems) return null
+    if (guideItems.length < minItems) return []
 
-    return {
+    return [{
       id: definition.id,
       title: definition.title,
       subtitle: definition.subtitle,
@@ -355,6 +355,6 @@ export function buildPublicMapResourceGuides(
       primaryResourceCategory:
         definition.primaryResourceCategory ?? "emergency_cooling_centers",
       visualVariant: definition.visualVariant,
-    } satisfies PublicMapResourceGuide
-  }).filter((guide): guide is PublicMapResourceGuide => guide !== null)
+    } satisfies PublicMapResourceGuide]
+  })
 }

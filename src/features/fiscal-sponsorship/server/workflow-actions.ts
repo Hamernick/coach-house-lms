@@ -95,11 +95,6 @@ export async function submitFiscalSponsorshipApplication(
 
   const loaded = await loadFiscalApplicationForProject(context)
   if ("error" in loaded) return loaded
-  if (!["draft", "needs_info"].includes(loaded.application.status)) {
-    return {
-      error: "This application has already been submitted or processed.",
-    }
-  }
 
   const validationError = validateApplicationForSubmission(loaded.application)
   if (validationError) {

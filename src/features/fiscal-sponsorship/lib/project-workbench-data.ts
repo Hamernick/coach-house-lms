@@ -15,7 +15,6 @@ import {
   getFiscalWorkflowNextStep,
   isApplicationApprovedOrLater,
   isApplicationSubmittedOrLater,
-  isAcceptedCompletedW9Document,
   resolveApplicantSigningStatus,
   resolveCoachSigningStatus,
 } from "./project-workbench-data-helpers"
@@ -86,6 +85,13 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
   const hasGeneratedAgreement = Boolean(agreementDocument)
   const hasSentSignaturePacket = Boolean(signaturePacket)
   const hasCompletedSignaturePacket = signaturePacketStatus === "completed"
+  const hasAcceptedW9 = requiredDocuments.some(
+    (document) =>
+      document.documentKey === "tax_id_confirmation" &&
+      document.kind === "tax_form" &&
+      document.status === "executed" &&
+      document.reviewStatus === "accepted"
+  )
   const hasProjectDescription = hasValue(project.description)
   const hasProjectLocation = hasValue(project.locationLabel)
   const hasOrganizationOwner = hasValue(organization.ownerName)
@@ -99,9 +105,6 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
   const hasFiles = (project.fileCount ?? 0) > 0
   const hasRequiredDocumentSupport = requiredDocuments.some(
     (document) => document.documentKey && document.reviewStatus !== "rejected"
-  )
-  const hasAcceptedCompletedW9 = requiredDocuments.some(
-    isAcceptedCompletedW9Document
   )
   const hasFundraisingMaterialsSupport = requiredDocuments.some(
     (document) =>
@@ -203,7 +206,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
         ? `${agreementDocument.title} v${agreementDocument.version} is ${formatDocumentStatus(
             agreementDocumentStatus
           ).toLowerCase()}`
-        : "Prepare a Form B agreement after approval",
+        : "Prepare the Form B agreement after approval",
       complete: hasGeneratedAgreement,
     },
     {
@@ -230,15 +233,9 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
       100
   )
   const canApproveApplication = Boolean(
-    applicationStatus &&
-    ["submitted", "in_review", "needs_info"].includes(applicationStatus)
+    applicationStatus && ["submitted", "in_review"].includes(applicationStatus)
   )
-  const canGenerateAgreement =
-    hasApprovedApplication &&
-    hasAcceptedCompletedW9 &&
-    (!agreementDocument ||
-      agreementDocumentStatus === "error" ||
-      agreementDocumentStatus === "voided")
+  const canGenerateAgreement = hasApprovedApplication && hasAcceptedW9
   const canSendAgreement = Boolean(
     agreementDocument?.id &&
     agreementDocumentStatus === "generated" &&
@@ -338,10 +335,11 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
     nextStep: getFiscalWorkflowNextStep({
       agreementDocumentStatus,
       applicationStatus,
-      hasAcceptedCompletedW9,
       hasCloseoutReport,
       hasGrantRequestSupport,
       hasReportSupport,
+      hasAcceptedCompletedW9: hasAcceptedW9,
+      hasAcceptedW9,
       signaturePacketStatus,
     }),
     metrics: [

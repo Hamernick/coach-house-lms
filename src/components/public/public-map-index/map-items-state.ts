@@ -33,11 +33,17 @@ function normalizePublicMapListSearchText(value: string | null | undefined) {
 }
 
 function buildPublicMapResourceCategorySearchText(
-  categories: PublicMapResourceCategoryKey[]
+  categories: PublicMapResourceCategoryKey[] | null | undefined
 ) {
-  return categories
+  return (categories ?? [])
     .map((category) => PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category])
     .join(" ")
+}
+
+function normalizePublicMapListEnumSearchText(
+  value: string | null | undefined
+) {
+  return normalizePublicMapListSearchText(value?.replaceAll("_", " "))
 }
 
 const publicMapListItemSearchTextCache = new WeakMap<
@@ -60,8 +66,8 @@ function buildPublicMapExternalResourceSearchText(
     item.state,
     item.country,
     item.sourceLabel,
-    item.verificationStatus.replaceAll("_", " "),
-    item.visibility.replaceAll("_", " "),
+    normalizePublicMapListEnumSearchText(item.verificationStatus),
+    normalizePublicMapListEnumSearchText(item.visibility),
     buildPublicMapResourceCategorySearchText(item.resourceCategories),
   ]
     .map(normalizePublicMapListSearchText)

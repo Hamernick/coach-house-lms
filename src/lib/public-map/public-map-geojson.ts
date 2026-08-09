@@ -356,7 +356,7 @@ export function buildPublicMapItemPointFeatures(
               `count:${selectableIds.length}`,
             ].join("|")
           ),
-          markerImageUrl: leadItem.markerImageUrl,
+          markerImageUrl: leadItem.markerImageUrl ?? null,
           markerStyleKey,
           verificationStatus: leadItem.verificationStatus,
           isSaved: false,

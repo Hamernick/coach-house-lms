@@ -1,4 +1,4 @@
-import type { Json } from "./json"
+import type { Json } from "../../types"
 
 export type OrganizationFinanceRecordEventsTable = {
   Row: {

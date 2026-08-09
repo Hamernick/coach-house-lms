@@ -19,6 +19,11 @@ import {
 import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+import {
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
+} from "@/features/organization-coach-assignments"
+import type { OrganizationKanbanVisibilityMode } from "@/features/organization-kanban-visibility"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -31,6 +36,7 @@ import {
   MemberWorkspaceProjectBoardCategoryMenu,
   MemberWorkspaceProjectBoardCategoryToolbar,
 } from "./member-workspace-project-board-category-controls"
+import { MemberWorkspaceOrganizationStaffActions } from "./member-workspace-organization-staff-actions"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
@@ -146,22 +152,7 @@ function useMemberWorkspaceProjectBoardColumns({
   return { allColumns, columns, hiddenCategories }
 }
 
-export function MemberWorkspaceProjectBoardView({
-  projects,
-  onAddProject,
-  onEditProject,
-  updateProjectStatusAction,
-  showClosedProjects,
-  hiddenWorkstreamCategoryKeys = [],
-  onHiddenWorkstreamCategoryKeysChange,
-  visibleProperties,
-  workstreamCategories = [],
-  createWorkstreamCategoryAction,
-  updateWorkstreamCategoryAction,
-  deleteWorkstreamCategoryAction,
-  restoreWorkstreamDefaultsAction,
-  updateProjectWorkstreamAction,
-}: {
+type MemberWorkspaceProjectBoardViewProps = {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
@@ -191,7 +182,41 @@ export function MemberWorkspaceProjectBoardView({
     projectId: string,
     categoryId: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
-}) {
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignments?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  canUnassignCoachAssignments?: boolean
+  kanbanVisibilityMode?: OrganizationKanbanVisibilityMode
+  pendingVisibilityOrganizationIds?: string[]
+  onOrganizationVisibilityChange?: (
+    organizationId: string,
+    hidden: boolean
+  ) => void
+}
+
+export function MemberWorkspaceProjectBoardView({
+  projects,
+  onAddProject,
+  onEditProject,
+  updateProjectStatusAction,
+  showClosedProjects,
+  hiddenWorkstreamCategoryKeys = [],
+  onHiddenWorkstreamCategoryKeysChange,
+  visibleProperties,
+  workstreamCategories = [],
+  createWorkstreamCategoryAction,
+  updateWorkstreamCategoryAction,
+  deleteWorkstreamCategoryAction,
+  restoreWorkstreamDefaultsAction,
+  updateProjectWorkstreamAction,
+  coachOptions = [],
+  canManageCoachAssignments = false,
+  updateCoachAssignmentAction,
+  canUnassignCoachAssignments = true,
+  kanbanVisibilityMode = "visible",
+  pendingVisibilityOrganizationIds = [],
+  onOrganizationVisibilityChange,
+}: MemberWorkspaceProjectBoardViewProps) {
   const router = useRouter()
   const [items, setItems] =
     useState<PlatformAdminDashboardLabProject[]>(projects)
@@ -449,7 +474,29 @@ export function MemberWorkspaceProjectBoardView({
                       }
                       visibleProperties={visibleProperties}
                       actions={
-                        canManageProjectCard ? (
+                        project.projectKind === "organization_admin" &&
+                        project.organizationId ? (
+                          <MemberWorkspaceOrganizationStaffActions
+                            canManageCoachAssignments={
+                              canManageCoachAssignments
+                            }
+                            canUnassignCoachAssignments={
+                              canUnassignCoachAssignments
+                            }
+                            coachOptions={coachOptions}
+                            kanbanVisibilityMode={kanbanVisibilityMode}
+                            onOrganizationVisibilityChange={
+                              onOrganizationVisibilityChange
+                            }
+                            pendingVisibilityOrganizationIds={
+                              pendingVisibilityOrganizationIds
+                            }
+                            project={project}
+                            updateCoachAssignmentAction={
+                              updateCoachAssignmentAction
+                            }
+                          />
+                        ) : canManageProjectCard ? (
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button

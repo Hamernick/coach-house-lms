@@ -32,6 +32,7 @@ type Props = {
   onOpenChange?: (open: boolean) => void
   people?: OrgPerson[]
   readOnly?: boolean
+  extendedSocialLinksEnabled?: boolean
 }
 
 export function CreatePersonDialog({
@@ -42,6 +43,7 @@ export function CreatePersonDialog({
   onOpenChange,
   people = [],
   readOnly = false,
+  extendedSocialLinksEnabled = false,
 }: Props) {
   const router = useRouter()
   const formId = React.useId()
@@ -119,7 +121,9 @@ export function CreatePersonDialog({
         name: name.trim(),
         title: title.trim(),
         email: email.trim(),
-        ...socialLinks,
+        ...(extendedSocialLinksEnabled
+          ? socialLinks
+          : { linkedin: socialLinks.linkedin }),
         category,
         image,
         reportsToId: reportsToId || null,
@@ -181,6 +185,7 @@ export function CreatePersonDialog({
               title={title}
               email={email}
               socialLinks={socialLinks}
+              extendedSocialLinksEnabled={extendedSocialLinksEnabled}
               category={category}
               image={image}
               reportsToId={reportsToId}

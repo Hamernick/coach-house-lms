@@ -1,6 +1,5 @@
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
 import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
@@ -251,8 +250,6 @@ export function HomeCanvasBuildPanel({
 }
 
 export function HomeCanvasFundPanel() {
-  const router = useRouter()
-
   return (
     <HomeCanvasRevealMotion>
       <section
@@ -291,7 +288,7 @@ export function HomeCanvasFundPanel() {
           <div data-home-canvas-reveal="" className="min-w-0">
             <FiscalSponsorshipWorkspaceCardSurface
               className="mx-auto max-w-full"
-              onOpenFlow={() => router.push("/?section=signup&intent=fund")}
+              openFlowHref="/?section=signup&intent=fund"
               programs={PUBLIC_FISCAL_SPONSORSHIP_PROGRAMS}
               selectedProgramId="public-fiscal-preview"
             />

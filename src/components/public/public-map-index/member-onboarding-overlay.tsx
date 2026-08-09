@@ -9,7 +9,7 @@ import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import HeartIcon from "lucide-react/dist/esm/icons/heart"
 import MapPinnedIcon from "lucide-react/dist/esm/icons/map-pinned"
-import PanelBottomOpenIcon from "lucide-react/dist/esm/icons/panel-bottom-open"
+import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Button } from "@/components/ui/button"
@@ -32,18 +32,18 @@ export function buildPublicMapMemberOnboardingSteps({
   return [
     {
       id: "map",
-      title: "Resource map",
-      body: "Start here for public organizations, programs, and local resources as the directory grows.",
+      title: "Welcome to Find",
+      body: "Browse public organizations, programs, local services, and web resources from the latest directory updates.",
     },
     {
       id: "search",
-      title: "Search resources",
-      body: "Use the drawer to search by organization, location, program, or focus area without leaving the map.",
+      title: "Search the directory",
+      body: "Search by organization, location, program, service, or focus area without leaving the map.",
     },
     {
       id: "save",
-      title: "Save resources",
-      body: "Save organizations to keep a short list of useful resources and return to them later.",
+      title: "Save locations",
+      body: "Create an account to save organizations and useful locations, keep a short list, and return later.",
     },
     {
       id: "notifications",
@@ -194,7 +194,7 @@ function StepVisual({ stepId }: { stepId: MemberMapOnboardingStep["id"] }) {
         <MapPinnedIcon className="size-9" aria-hidden />
       </div>
       <div className="border-border/70 bg-card/90 text-foreground absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium">
-        <PanelBottomOpenIcon className="size-3.5" aria-hidden />
+        <PanelRightOpenIcon className="size-3.5" aria-hidden />
         <span>Find</span>
       </div>
     </div>

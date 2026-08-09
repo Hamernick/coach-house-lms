@@ -16,7 +16,9 @@ export function WorkspaceCanvasOverlayDrawerContainerProvider({
   children,
 }: {
   container: HTMLElement | null
-  onOpenDataDrawer: (request: Omit<WorkspaceDataDrawerRequest, "id">) => void
+  onOpenDataDrawer:
+    | ((request: Omit<WorkspaceDataDrawerRequest, "id">) => void)
+    | null
   children: ReactNode
 }) {
   return (

@@ -15,12 +15,12 @@ import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveAcceleratorReadiness } from "@/lib/accelerator/readiness"
 import { buildReadinessChecklist } from "@/lib/accelerator/readiness-checklist"
-import { ProgramBuilderSection } from "./_components/program-builder-section"
+import { ProgramBuilderSection } from "./program-builder-section"
 import {
   buildVisibleAcceleratorGroups,
   CORE_ROADMAP_SECTION_IDS,
   isRecord,
-} from "./_lib/overview-helpers"
+} from "../_lib/overview-helpers"
 
 export async function AcceleratorOverviewPageContent() {
   const supabase = await createSupabaseServerClient()

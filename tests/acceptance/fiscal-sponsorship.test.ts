@@ -13,7 +13,7 @@ describe("fiscal sponsorship entrypoints", () => {
   it("is available from the prototype lab as the default centered canvas entry", () => {
     const entries = readSource("src/features/prototype-lab/lib/index.ts")
     const sidebarTree = readSource(
-      "src/features/prototype-lab/lib/sidebar-tree.ts"
+      "src/lib/prototype-lab-sidebar-tree.ts"
     )
     const panel = readSource(
       "src/features/prototype-lab/components/prototype-lab-panel.tsx"

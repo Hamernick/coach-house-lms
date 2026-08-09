@@ -6,37 +6,29 @@ import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-item
 import { warmPublicMapListItemSearchCache } from "./map-items-state"
 
 export const EMPTY_PUBLIC_MAP_RESOURCE_ITEMS: ExternalResourceMapItem[] = []
-
+export const PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 export type PublicMapResourceItemsLoadStatus = "loading" | "ready" | "error"
 
-const pendingResourceItemsLoadByEndpoint = new Map<
+const resourceItemsLoadByEndpoint = new Map<
   string,
   Promise<ExternalResourceMapItem[]>
->()
-const resolvedResourceItemsByEndpoint = new Map<
-  string,
-  ExternalResourceMapItem[]
 >()
 
 export function clearPublicMapResourceItemsCache(endpoint?: string) {
   if (endpoint) {
-    pendingResourceItemsLoadByEndpoint.delete(endpoint)
-    resolvedResourceItemsByEndpoint.delete(endpoint)
+    resourceItemsLoadByEndpoint.delete(endpoint)
     return
   }
 
-  pendingResourceItemsLoadByEndpoint.clear()
-  resolvedResourceItemsByEndpoint.clear()
+  resourceItemsLoadByEndpoint.clear()
 }
 
 export function loadPublicMapResourceItems(endpoint: string) {
-  const resolved = resolvedResourceItemsByEndpoint.get(endpoint)
-  if (resolved) return Promise.resolve(resolved)
-
-  const pending = pendingResourceItemsLoadByEndpoint.get(endpoint)
-  if (pending) return pending
+  const cached = resourceItemsLoadByEndpoint.get(endpoint)
+  if (cached) return cached
 
   const load = fetch(endpoint, {
+    cache: "no-store",
     headers: { Accept: "application/json" },
   }).then(async (response) => {
     if (!response.ok) {
@@ -50,18 +42,16 @@ export function loadPublicMapResourceItems(endpoint: string) {
       ? (payload.resourceItems as ExternalResourceMapItem[])
       : EMPTY_PUBLIC_MAP_RESOURCE_ITEMS
     warmPublicMapListItemSearchCache(resourceItems)
-    resolvedResourceItemsByEndpoint.set(endpoint, resourceItems)
     return resourceItems
   })
 
-  const clearPendingLoad = () => {
-    if (pendingResourceItemsLoadByEndpoint.get(endpoint) === load) {
-      pendingResourceItemsLoadByEndpoint.delete(endpoint)
+  resourceItemsLoadByEndpoint.set(endpoint, load)
+  const clearSettledLoad = () => {
+    if (resourceItemsLoadByEndpoint.get(endpoint) === load) {
+      resourceItemsLoadByEndpoint.delete(endpoint)
     }
   }
-
-  pendingResourceItemsLoadByEndpoint.set(endpoint, load)
-  void load.then(clearPendingLoad, clearPendingLoad)
+  void load.then(clearSettledLoad, clearSettledLoad)
   return load
 }
 
@@ -111,9 +101,25 @@ export function usePublicMapResourceItems({
     }
 
     void loadResourceItems()
+    const refreshVisibleResourceItems = () => {
+      if (document.visibilityState === "hidden") return
+      void loadResourceItems()
+    }
+    const refreshInterval = window.setInterval(
+      refreshVisibleResourceItems,
+      PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS
+    )
+    window.addEventListener("focus", refreshVisibleResourceItems)
+    document.addEventListener("visibilitychange", refreshVisibleResourceItems)
 
     return () => {
       cancelled = true
+      window.clearInterval(refreshInterval)
+      window.removeEventListener("focus", refreshVisibleResourceItems)
+      document.removeEventListener(
+        "visibilitychange",
+        refreshVisibleResourceItems
+      )
     }
   }, [loadRequestId, resourceItemsEndpoint])
 

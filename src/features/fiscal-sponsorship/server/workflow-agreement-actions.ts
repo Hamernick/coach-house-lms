@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto"
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import type { Json } from "@/lib/supabase"
 import {
   FISCAL_SPONSORSHIP_FORM_B_TEMPLATE,
   formatFiscalSponsorshipLegalEntityType,
@@ -161,7 +162,7 @@ export async function generateFiscalSponsorshipAgreement(
       template_sha256: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.sha256,
       template_version: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.version,
       title,
-    },
+    } as unknown as Json,
     expectedUpdatedAt: loaded.application.updated_at,
   })
   if ("error" in transition) {

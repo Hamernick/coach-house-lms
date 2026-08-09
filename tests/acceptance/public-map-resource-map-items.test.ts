@@ -131,7 +131,7 @@ function buildGuideResourceItem(
 }
 
 describe("public map resource map items", () => {
-  it("deduplicates concurrent and previously resolved public resource loads", async () => {
+  it("deduplicates concurrent public resource loads and supports cache clearing", async () => {
     clearPublicMapResourceItemsCache("/api/test-resource-items")
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       json: vi.fn(async () => ({ resourceItems: [] })),
@@ -146,14 +146,15 @@ describe("public map resource map items", () => {
     await firstLoad
 
     await loadPublicMapResourceItems("/api/test-resource-items")
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
     expect(fetchSpy).toHaveBeenCalledWith("/api/test-resource-items", {
+      cache: "no-store",
       headers: { Accept: "application/json" },
     })
 
     clearPublicMapResourceItemsCache("/api/test-resource-items")
     await loadPublicMapResourceItems("/api/test-resource-items")
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(fetchSpy).toHaveBeenCalledTimes(3)
 
     fetchSpy.mockRestore()
     clearPublicMapResourceItemsCache("/api/test-resource-items")

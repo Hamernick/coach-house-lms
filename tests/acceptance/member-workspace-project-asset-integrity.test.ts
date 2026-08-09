@@ -40,7 +40,7 @@ describe("member workspace project asset integrity", () => {
       "assetIds: insertedAssets.map((asset) => asset.id)"
     )
     expect(supportSource).toContain('.from("organization_project_assets")')
-    expect(supportSource).toContain('.delete()\n      .in("id", assetIds)')
+    expect(supportSource).toMatch(/\.delete\(\)\s*\.in\("id", assetIds\)/)
     expect(supportSource).toContain(".remove(storagePaths)")
     expect(source.match(/await cleanupProjectAssetCreation\(/g)).toHaveLength(3)
   })

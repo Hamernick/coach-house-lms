@@ -74,6 +74,13 @@ function hasWorkspaceOntologyLayoutMovement({
   return hasNodeMovement
 }
 
+export function shouldResetWorkspaceOntologyLayoutScene(
+  previouslyEnabled: boolean,
+  enabled: boolean
+) {
+  return previouslyEnabled && !enabled
+}
+
 export function useWorkspaceOntologyLayoutScene({
   enabled,
   input,
@@ -92,6 +99,7 @@ export function useWorkspaceOntologyLayoutScene({
   const layoutEdgesRef = useRef<WorkspaceOntologyProjectedEdge[]>([])
   const layoutSignaturesRef = useRef(new Map<WorkspaceOntologyRootId, string>())
   const layoutTransitionTimerRef = useRef<number | null>(null)
+  const layoutWasEnabledRef = useRef(enabled)
   const [layoutNodes, setLayoutNodes] = useState<WorkspaceOntologyLayoutNode[]>(
     []
   )
@@ -114,11 +122,17 @@ export function useWorkspaceOntologyLayoutScene({
 
   useEffect(() => {
     let cancelled = false
+    const shouldResetDisabledScene = shouldResetWorkspaceOntologyLayoutScene(
+      layoutWasEnabledRef.current,
+      enabled
+    )
+    layoutWasEnabledRef.current = enabled
     if (layoutTransitionTimerRef.current !== null) {
       window.clearTimeout(layoutTransitionTimerRef.current)
       layoutTransitionTimerRef.current = null
     }
     if (!enabled) {
+      if (!shouldResetDisabledScene) return
       layoutRequestRef.current += 1
       layoutNodesRef.current = []
       layoutEdgesRef.current = []

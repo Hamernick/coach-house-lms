@@ -226,7 +226,11 @@ function prioritizeCoolingResourceCategories(
   ] as PublicMapResourceCategoryKey[]
 }
 
-function buildLinks(fields: JsonRecord, record: JsonRecord, id: string) {
+function buildLinks(
+  fields: JsonRecord,
+  record: JsonRecord,
+  id: string
+): PublicMapResourceLink[] {
   const explicitLinks = [
     ...readArray(fields["links"]),
     ...readArray(fields["public_links"]),

@@ -99,6 +99,7 @@ type ApplicationSummaryRow = {
   primary_email: string | null
   status: string
   reviewed_at: string | null
+  review_notes: string | null
   submitted_at: string | null
 }
 
@@ -333,7 +334,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
   const { data: application, error: applicationError } = await context.supabase
     .from("fiscal_sponsorship_applications")
     .select(
-      "id, legal_entity_type, primary_email, status, reviewed_at, submitted_at"
+      "id, legal_entity_type, primary_email, status, reviewed_at, review_notes, submitted_at"
     )
     .eq("project_id", context.project.id)
     .eq("org_id", context.project.org_id)
@@ -358,6 +359,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       latestSignaturePacket: null,
       requiredDocuments: [],
       reviewedAt: null,
+      reviewNotes: null,
       submittedAt: null,
     }
   }
@@ -512,6 +514,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
         }
       : null,
     reviewedAt: application.reviewed_at,
+    reviewNotes: application.review_notes,
     submittedAt: application.submitted_at,
   }
 }

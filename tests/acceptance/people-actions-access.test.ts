@@ -19,11 +19,14 @@ describe("people actions access", () => {
     expect(source).toContain('.select("role")')
     expect(source).toContain('profileRow?.role === "admin"')
     expect(source).toContain("canManagePeople")
-    expect(source.match(/if \(!canManagePeople\) return/g)?.length).toBe(4)
+    expect(source.match(/if \(!canManagePeople\) return/g)?.length).toBe(5)
     expect(source).toContain("export async function upsertPersonAction")
     expect(source).toContain("export async function updatePersonCategoryAction")
     expect(source).toContain("export async function updatePersonTagsAction")
     expect(source).toContain("export async function deletePersonAction")
+    expect(source).toContain(
+      "export async function refreshPersonLinkedInImageAction"
+    )
     expect(source).toContain("normalizePersonTags(existingPerson?.tags)")
     expect(source).toContain('revalidatePath("/my-organization")')
     expect(source).not.toContain(

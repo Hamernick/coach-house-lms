@@ -425,7 +425,9 @@ const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_BY_KEY = Object.fromEntries(
   (typeof PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS)[number]
 >
 
-const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ICON_OVERRIDES = {
+const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ICON_OVERRIDES: Partial<
+  Record<PublicMapResourceSubcategoryKey, string>
+> = {
   food_community_fridges: "shopping-basket",
   community_libraries: "book-open",
   community_community_centers: "building-2",
@@ -447,7 +449,7 @@ const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ICON_OVERRIDES = {
   animals_rescue: "paw-print",
   animals_adoption: "paw-print",
   animals_wildlife_conservation: "paw-print",
-} satisfies Partial<Record<PublicMapResourceSubcategoryKey, string>>
+}
 
 export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ORDER = Object.values(
   PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS
@@ -607,7 +609,10 @@ export function resolvePublicMapResourceCategoryInputKey(
 export function resolvePublicMapResourceTopLevelCategory(
   key: PublicMapResourceCategoryKey
 ): PublicMapResourceTopLevelCategoryKey {
-  return PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key] ?? key
+  return (
+    PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key] ??
+    (key as PublicMapResourceTopLevelCategoryKey)
+  )
 }
 
 export function publicMapResourceCategoryMatchesTopLevel({

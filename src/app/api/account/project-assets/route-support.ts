@@ -39,17 +39,21 @@ export async function cleanupProjectAssetCreation({
   supabase: ProjectAssetsRouteClient
 }) {
   if (storagePaths.length) {
-    await supabase.storage
-      .from(PROJECT_ASSET_BUCKET)
-      .remove(storagePaths)
-      .catch(() => undefined)
+    try {
+      await supabase.storage.from(PROJECT_ASSET_BUCKET).remove(storagePaths)
+    } catch {
+      // Continue the best-effort rollback.
+    }
   }
   if (assetIds.length) {
-    await supabase
-      .from("organization_project_assets")
-      .delete()
-      .in("id", assetIds)
-      .catch(() => undefined)
+    try {
+      await supabase
+        .from("organization_project_assets")
+        .delete()
+        .in("id", assetIds)
+    } catch {
+      // Rollback errors must not mask the original request failure.
+    }
   }
 }
 

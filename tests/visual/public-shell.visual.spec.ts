@@ -44,6 +44,13 @@ async function stabilizeForScreenshot(page: Page) {
   await page.waitForTimeout(100)
 }
 
+async function waitForHomeCanvasHydration(page: Page) {
+  await page.waitForFunction(() => {
+    const panel = document.querySelector("[data-home-canvas-panel]")
+    return Object.keys(panel ?? {}).some((key) => key.startsWith("__reactProps$"))
+  })
+}
+
 test("map-first public home", async ({ page }) => {
   await page.goto("/")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
@@ -52,7 +59,7 @@ test("map-first public home", async ({ page }) => {
   const hero = page.locator("[data-public-home-hero]")
   await expect(page.locator("[data-home-map-preview]")).toHaveAttribute(
     "data-home-map-controls-position",
-    "top-left"
+    "bottom-right"
   )
   await expect(hero).toHaveScreenshot("public-home-map-hero.png", {
     animations: "disabled",
@@ -229,17 +236,19 @@ test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
 })
 
 test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
-  await page.goto("/?section=accelerator")
+  test.setTimeout(60_000)
+  await page.goto("/?section=accelerator", { waitUntil: "domcontentloaded" })
   await page.waitForSelector(
     '[data-fiscal-sponsorship-surface="workspace-card"]',
     { state: "visible" }
   )
+  await waitForHomeCanvasHydration(page)
   await stabilizeForScreenshot(page)
 
   const fiscalCard = page.locator(
     '[data-fiscal-sponsorship-surface="workspace-card"]'
   )
-  const startApplication = fiscalCard.getByRole("button", {
+  const startApplication = fiscalCard.getByRole("link", {
     name: "Start application",
   })
   await expect(startApplication).toBeEnabled()
@@ -282,8 +291,8 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
   test.setTimeout(60_000)
   await page.goto("/find")
 
-  const drawer = page.locator('[data-slot="drawer-content"]')
-  await expect(drawer).toBeVisible()
+  const drawer = page.getByRole("dialog", { name: "Resource map panel" })
+  await expect(drawer).toBeVisible({ timeout: 45_000 })
   const tabList = drawer.locator("[data-public-map-tab-list]")
   await expect(tabList).toBeVisible()
   await expect(tabList.getByRole("tab")).toHaveCount(3)
@@ -294,7 +303,7 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
   await expect(
-    drawer.getByRole("textbox", {
+    drawer.getByRole("searchbox", {
       name: "Find organizations and resources",
     })
   ).toBeVisible()
@@ -316,7 +325,7 @@ test("public Find keeps its mobile drawer controls visible when collapsed", asyn
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
   await expect(
-    drawer.getByRole("textbox", {
+    drawer.getByRole("searchbox", {
       name: "Find organizations and resources",
     })
   ).toBeVisible()

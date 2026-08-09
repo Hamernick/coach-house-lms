@@ -535,6 +535,7 @@ export type FiscalSponsorshipProjectWorkflowSummary = {
   legalEntityType: FiscalSponsorshipLegalEntityType | null
   submittedAt: string | null
   reviewedAt: string | null
+  reviewNotes: string | null
   events: FiscalSponsorshipProjectWorkflowEvent[]
   latestAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null
   latestExecutedAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null

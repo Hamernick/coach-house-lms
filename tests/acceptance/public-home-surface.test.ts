@@ -146,8 +146,9 @@ describe("public home canvas", () => {
       "src/components/public/home-canvas-product-panels.tsx"
     )
 
-    expect(source).toContain("onOpenFlow={() =>")
-    expect(source).toContain('router.push("/?section=signup&intent=fund")')
+    expect(source).toContain(
+      'openFlowHref="/?section=signup&intent=fund"'
+    )
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {

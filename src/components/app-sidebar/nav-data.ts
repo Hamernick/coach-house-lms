@@ -16,7 +16,7 @@ import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
 import {
   listPrototypeLabSidebarTree,
   type PrototypeLabSidebarTreeNode,
-} from "@/features/prototype-lab"
+} from "@/lib/prototype-lab-sidebar-tree"
 import type { SidebarClass } from "@/lib/academy"
 import {
   hasPlatformCapability,

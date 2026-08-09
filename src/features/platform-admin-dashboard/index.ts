@@ -84,7 +84,6 @@ export type {
   ProjectActivityItem,
   ProjectDetails,
   ProjectFile,
-  ProjectActivityItem,
   ProjectMeta,
   ProjectNote,
   ProjectScope,

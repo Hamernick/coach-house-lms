@@ -24,7 +24,7 @@ export async function transitionFiscalW9Completion({
   )
 
   if (error) {
-    const record = error as Record<string, unknown>
+    const record = error as unknown as Record<string, unknown>
     const missing =
       record.code === "42883" ||
       record.code === "PGRST202" ||

@@ -1,5 +1,7 @@
 "use server"
 
+import { randomUUID } from "node:crypto"
+
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
@@ -14,11 +16,13 @@ import {
   type PersonSocialPlatform,
 } from "@/lib/people/social-links"
 import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
+import { fetchLinkedInProfileImage } from "@/lib/people/linkedin-image-refresh"
 import { normalizePersonTags } from "@/lib/people/tags"
 import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
+import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 export type OrgPerson = {
   id: string
@@ -31,6 +35,14 @@ export type OrgPerson = {
   pos?: { x: number; y: number } | null
   tags?: string[]
 } & Partial<Record<PersonSocialPlatform, string | null>>
+
+const EXTENDED_PERSON_SOCIAL_PLATFORMS = [
+  "instagram",
+  "facebook",
+  "twitter",
+  "youtube",
+  "tiktok",
+] as const satisfies readonly PersonSocialPlatform[]
 
 function resolvePeopleAvatarCleanupPath(
   previous: string | null | undefined,
@@ -76,6 +88,9 @@ async function resolvePeopleManagementAccess(
 export async function upsertPersonAction(
   person: Omit<OrgPerson, "id"> & { id?: string }
 ) {
+  const extendedSocialWriteRequested = EXTENDED_PERSON_SOCIAL_PLATFORMS.some(
+    (platform) => person[platform] !== undefined
+  )
   const socialLinkError = findPersonSocialLinkError(person)
   if (socialLinkError) return { error: socialLinkError }
 
@@ -86,6 +101,12 @@ export async function upsertPersonAction(
     userId
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    extendedSocialWriteRequested &&
+    !isWorkspaceFoundationRolloutEnabled({ orgId, userId })
+  ) {
+    return { error: "Not available." }
+  }
 
   const id =
     person.id && person.id.length > 0
@@ -213,6 +234,14 @@ export async function updatePersonCategoryAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,
@@ -255,6 +284,14 @@ export async function updatePersonTagsAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,
@@ -332,4 +369,110 @@ export async function deletePersonAction(id: string) {
   }
   revalidatePath("/people")
   return { ok: true }
+}
+
+export async function refreshPersonLinkedInImageAction(id: string) {
+  const { supabase, session } = await requireServerSession("/people")
+  const { orgId, canManagePeople } = await resolvePeopleManagementAccess(
+    supabase,
+    session.user.id
+  )
+  if (!canManagePeople) return { error: "Forbidden" }
+
+  const { data: orgRow, error: orgError } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+  if (orgError) return { error: orgError.message }
+
+  const people = Array.isArray(orgRow?.profile?.org_people)
+    ? (orgRow.profile.org_people as OrgPerson[])
+    : []
+  const person = people.find((item) => item.id === id)
+  if (!person) return { error: "Not found" }
+  if (!person.linkedin) return { error: "LinkedIn not set" }
+
+  let linkedInImage
+  try {
+    linkedInImage = await fetchLinkedInProfileImage(person.linkedin)
+  } catch {
+    return { error: "Could not fetch image" }
+  }
+
+  try {
+    const admin = createSupabaseAdminClient()
+    const bucket = "avatars"
+    const { data: existing } = await admin.storage.getBucket(bucket)
+    if (!existing) await admin.storage.createBucket(bucket, { public: false })
+    const contentType = linkedInImage.contentType
+    const extension =
+      contentType === "image/png"
+        ? "png"
+        : contentType === "image/webp"
+          ? "webp"
+          : contentType === "image/gif"
+            ? "gif"
+            : contentType === "image/avif"
+              ? "avif"
+              : "jpg"
+    const objectPath = `users/${orgId}/${id}-${randomUUID()}.${extension}`
+    const { error: uploadError } = await admin.storage
+      .from(bucket)
+      .upload(objectPath, linkedInImage.bytes, {
+        contentType,
+        upsert: false,
+      })
+    if (uploadError) return { error: "Upload failed" }
+
+    const writeResult = await mutateOrganizationPeopleProfile<
+      OrgPerson,
+      { previousImage: string | null }
+    >({
+      supabase,
+      orgId,
+      mutate: (currentPeople) => {
+        const currentPerson = currentPeople.find((item) => item.id === id)
+        if (!currentPerson) return { error: "Not found" }
+        if (currentPerson.linkedin !== person.linkedin) {
+          return { error: "LinkedIn changed. Reload before refreshing." }
+        }
+        return {
+          ok: true,
+          changed: true,
+          people: currentPeople.map((item) =>
+            item.id === id ? { ...item, image: objectPath } : item
+          ),
+          value: {
+            previousImage:
+              typeof currentPerson.image === "string"
+                ? currentPerson.image
+                : null,
+          },
+        }
+      },
+    })
+    if ("error" in writeResult) {
+      await admin.storage.from(bucket).remove([objectPath])
+      return writeResult
+    }
+
+    const cleanupPath = resolvePeopleAvatarCleanupPath(
+      writeResult.value.previousImage,
+      objectPath,
+      orgId
+    )
+    if (cleanupPath) {
+      try {
+        await admin.storage.from(bucket).remove([cleanupPath])
+      } catch {}
+    }
+
+    revalidatePath("/my-organization")
+    revalidatePath("/workspace")
+    revalidatePath("/people")
+    return { ok: true }
+  } catch {
+    return { error: "Upload failed" }
+  }
 }

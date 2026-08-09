@@ -2,6 +2,23 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  set_organization_coach_assignments: {
+    Args: {
+      p_organization_id: string
+      p_coach_user_ids: string[]
+    }
+    Returns: Json
+  }
+  assign_all_coaches_to_all_organizations: {
+    Args: Record<PropertyKey, never>
+    Returns: Json
+  }
+  set_organization_coach_scope_enabled: {
+    Args: {
+      p_enabled: boolean
+    }
+    Returns: Json
+  }
   complete_organization_finance_stripe_install: {
     Args: {
       p_state_sha256: string

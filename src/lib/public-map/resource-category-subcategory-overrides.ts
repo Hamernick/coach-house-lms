@@ -10,7 +10,12 @@ type PublicMapResourceSubcategoryDefinitionOverride = Partial<
   >
 >
 
-export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES = {
+export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES: Partial<
+  Record<
+    PublicMapResourceSubcategoryKey,
+    PublicMapResourceSubcategoryDefinitionOverride
+  >
+> = {
   food_community_fridges: {
     aliases: ["community fridge", "free fridge", "freedge", "friendly fridge"],
     description: "Community fridges and mutual-aid food.",
@@ -25,9 +30,4 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES = {
     markerColor: "#0284c7",
     tailwindToken: "sky-600",
   },
-} satisfies Partial<
-  Record<
-    PublicMapResourceSubcategoryKey,
-    PublicMapResourceSubcategoryDefinitionOverride
-  >
->
+}

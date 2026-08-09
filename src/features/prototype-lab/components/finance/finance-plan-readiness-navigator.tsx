@@ -460,7 +460,9 @@ export function FinancePlanReadinessPanel({
               description="Product, release, fiscal, and visual choices that cannot be assumed during implementation."
               inputs={FINANCE_PLAN_OPEN_DECISIONS}
               onSelect={handleInputSelect}
-              onSelectResponseTarget={onSelectResponseTarget}
+              onSelectResponseTarget={(item) =>
+                onSelectResponseTarget(item.id)
+              }
               responseTargetId={responseTargetId}
               title="Need from you"
             />
@@ -468,7 +470,9 @@ export function FinancePlanReadinessPanel({
               description="Evidence and external verification that must be completed before coding each batch."
               inputs={FINANCE_PLAN_OPEN_RESEARCH}
               onSelect={handleInputSelect}
-              onSelectResponseTarget={onSelectResponseTarget}
+              onSelectResponseTarget={(item) =>
+                onSelectResponseTarget(item.id)
+              }
               responseTargetId={responseTargetId}
               title="Research before coding"
             />

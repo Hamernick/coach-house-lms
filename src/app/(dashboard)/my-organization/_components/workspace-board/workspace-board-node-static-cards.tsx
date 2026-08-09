@@ -101,7 +101,6 @@ export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
 ): FiscalSponsorshipProgramOption[] {
   return (programs ?? []).map((program) => {
     const budgetUsd = safeSnapshotNumber(program.wizard_snapshot, "budgetUsd")
-    const budgetRows = getSnapshotBudgetRows(program.wizard_snapshot)
     const successOutcomes = safeSnapshotTextList(
       program.wizard_snapshot,
       "successOutcomes"

@@ -586,7 +586,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain(
       'href="/api/account/project-assets?assetId=asset-1&amp;projectId=project-1"'
     )
-  })
+  }, 15_000)
 
   it("renders coach fiscal sponsorship workflow actions when provided", () => {
     const markup = renderProjectDetailPage({

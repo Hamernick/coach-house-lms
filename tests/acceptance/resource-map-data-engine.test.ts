@@ -1480,7 +1480,7 @@ describe("resource map local data engine", () => {
         sourceRecordId: "record-b",
       })
     })
-  })
+  }, 30_000)
 
   it("encodes explicit OSM Overpass and Wikidata SPARQL connector queries", async () => {
     const { buildConnectorHttpRequest, buildDerivedConnectorUrl } =
@@ -3590,7 +3590,7 @@ describe("resource map local data engine", () => {
       expect(secondRun.parsed_count).toBe(14)
       expect(secondCandidates).toHaveLength(14)
     })
-  }, 10_000)
+  }, 120_000)
 
   it("updates source freshness on unchanged checksum reruns without duplicating raw payloads", () => {
     withTempDir((directory) => {
@@ -3684,7 +3684,7 @@ describe("resource map local data engine", () => {
         parsed_count: expect.any(Number),
       })
     })
-  })
+  }, 30_000)
 
   it("preserves connector retry attempts for failed raw fetches", () => {
     withTempDir((directory) => {

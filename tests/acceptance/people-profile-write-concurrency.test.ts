@@ -139,7 +139,7 @@ describe("People profile write concurrency", () => {
     )
     const writer = readSource("src/lib/people/profile-write.ts")
 
-    expect(actions.match(/mutateOrganizationPeopleProfile</g)?.length).toBe(4)
+    expect(actions.match(/mutateOrganizationPeopleProfile</g)?.length).toBe(5)
     expect(actions).not.toContain(".upsert({ user_id: orgId, profile:")
     expect(positions).toContain("mutateOrganizationPeopleProfile<")
     expect(resetPositions).toContain("mutateOrganizationPeopleProfile<")

@@ -89,7 +89,9 @@ function isResourceCategoryKey(
   return PUBLIC_MAP_RESOURCE_CATEGORY_KEYS.has(value)
 }
 
-function normalizeResourceCategories(row: ResourceMapPublicItemRow) {
+function normalizeResourceCategories(
+  row: ResourceMapPublicItemRow
+): PublicMapResourceCategoryKey[] {
   const categories = row.resource_categories
     .flatMap((value) => {
       const category = resolvePublicMapResourceCategoryInputKey(value)

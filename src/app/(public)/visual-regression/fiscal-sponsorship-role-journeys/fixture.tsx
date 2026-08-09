@@ -73,6 +73,7 @@ function createWorkflowSummary(
     latestSignaturePacket: null,
     legalEntityType: "individual",
     requiredDocuments: sponsorOperator ? [ACCEPTED_W9] : [],
+    reviewNotes: null,
     reviewedAt: sponsorOperator ? "2026-08-06T12:10:00.000Z" : null,
     submittedAt:
       role === "assigned-coach" || sponsorOperator

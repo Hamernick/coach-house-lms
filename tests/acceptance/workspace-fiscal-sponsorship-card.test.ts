@@ -217,6 +217,9 @@ describe("workspace fiscal sponsorship card", () => {
     const myOrganizationPage = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
     )
+    const myOrganizationFiscalSupport = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-fiscal.ts"
+    )
 
     expect(cardSummary).toContain("Sheet")
     expect(cardSummary).toContain("FiscalSponsorshipWorkflowDrawer")
@@ -403,12 +406,16 @@ describe("workspace fiscal sponsorship card", () => {
     expect(myOrganizationPage).toContain(
       "resolveFiscalApplicantPrefillIdentity"
     )
-    expect(myOrganizationPage).toContain("applicantEmail: user.email ?? null")
-    expect(myOrganizationPage).toContain("applicantFullName:")
-    expect(myOrganizationPage).toContain(
+    expect(myOrganizationFiscalSupport).toContain(
+      "applicantEmail: user.email ?? null"
+    )
+    expect(myOrganizationFiscalSupport).toContain("applicantFullName:")
+    expect(myOrganizationFiscalSupport).toContain(
       "loadFiscalSponsorshipProjectWorkflowSummary"
     )
-    expect(myOrganizationPage).toContain('project_kind", "organization_admin"')
+    expect(myOrganizationFiscalSupport).toContain(
+      'project_kind", "organization_admin"'
+    )
   })
 
   it("builds fiscal application prefill from organization profile and program builder data", () => {

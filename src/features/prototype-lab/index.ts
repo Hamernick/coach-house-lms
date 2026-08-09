@@ -4,9 +4,9 @@ export {
   listPrototypeLabSidebarTree,
   resolvePrototypeLabSidebarActiveEntryId,
   resolvePrototypeLabSidebarOpenFolderIds,
-} from "./lib/sidebar-tree"
+} from "@/lib/prototype-lab-sidebar-tree"
 export type {
   PrototypeLabSidebarTreeFolderNode,
   PrototypeLabSidebarTreeNode,
-} from "./lib/sidebar-tree"
+} from "@/lib/prototype-lab-sidebar-tree"
 export type { PrototypeLabInput } from "./types"

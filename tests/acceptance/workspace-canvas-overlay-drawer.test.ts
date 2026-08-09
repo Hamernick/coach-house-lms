@@ -773,8 +773,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(cardHeaderSource).toContain("event.preventDefault()")
     expect(pageStateSource).toContain("const organizationEditorRequested =")
     expect(pageStateSource).toContain("initialProfileTab:")
-    expect(pageSource).not.toContain("if (showEditor)")
-    expect(pageSource).not.toContain("renderMyOrganizationEditorView")
+    expect(pageSource).toContain("showLegacyEditor")
+    expect(pageSource).toContain("renderMyOrganizationEditorView")
     expect(profileHeaderControlsSource).toContain("View map profile")
     expect(profileHeaderControlsSource).toContain(
       'className="absolute top-6 right-6 flex gap-2"'
@@ -1878,11 +1878,17 @@ describe("workspace canvas overlay drawer", () => {
     const viewSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
     )
+    const viewTypesSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view-types.ts"
+    )
     const mobileShortcutOverlaySource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-mobile-shortcut-overlay.tsx"
     )
     const peoplePlacementControllerSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-placement-controller.ts"
+    )
+    const peoplePlacementStorageSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-stored-workspace-person-placements.ts"
     )
     const personFitRequestSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-person-fit-request.ts"
@@ -1970,7 +1976,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(peoplePlacementControllerSource).toContain(
       "uiPreferencesScope: WorkspaceBoardUiPreferenceScope"
     )
-    expect(peoplePlacementControllerSource).toContain(
+    expect(peoplePlacementStorageSource).toContain(
       "readWorkspaceBoardUiPreferences"
     )
     expect(peoplePlacementControllerSource).toContain(
@@ -1983,10 +1989,10 @@ describe("workspace canvas overlay drawer", () => {
       "const commitWorkspacePersonPlacements = useCallback"
     )
     expect(peoplePlacementControllerSource).toContain(
-      "if (!allowPeopleCanvasInteraction || tutorialActive) return false"
+      "if (!canMutatePeople) return false"
     )
     expect(peoplePlacementControllerSource).toContain(
-      "!allowPeopleCanvasInteraction ||"
+      "canMutateWorkspaceCanvasPeople"
     )
     expect(nodeBuildersSource).toContain(
       "allowPeopleCanvasInteraction: boolean"
@@ -2061,9 +2067,9 @@ describe("workspace canvas overlay drawer", () => {
       "if (unplacedPersonIds.length === 0) return 0"
     )
     expect(personFitRequestSource).toContain("flowInstance.fitView")
-    expect(viewSource).toContain("workspaceDataDrawerViewerId: string")
-    expect(viewSource).toContain("workspaceDataDrawerCanEdit: boolean")
-    expect(viewSource).toContain("peopleCanvasInteractionEnabled: boolean")
+    expect(viewTypesSource).toContain("workspaceDataDrawerViewerId: string")
+    expect(viewTypesSource).toContain("workspaceDataDrawerCanEdit: boolean")
+    expect(viewTypesSource).toContain("peopleCanvasInteractionEnabled: boolean")
     expect(viewSource).toContain("const nodesSelectable = !tutorialActive")
     expect(viewSource).toContain("const selectNodesOnDrag =")
     expect(viewSource).toContain(
@@ -2085,7 +2091,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("if (personIds.length === 1)")
     expect(viewSource).toContain("const personId = personIds[0]")
     expect(viewSource).toContain("onAddWorkspacePeopleToCanvas({")
-    expect(viewSource).toContain(
+    expect(viewTypesSource).toContain(
       "workspaceDataDrawerDocuments: DocumentsTabData"
     )
     expect(viewSource).toContain("<WorkspaceCardShortcutRail")

@@ -112,15 +112,15 @@ function PublicMapMemberOnboardingPreviewToggle({
   onToggle: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] left-1/2 z-30 -translate-x-1/2">
+    <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-30 -translate-x-1/2">
       <Button
         type="button"
         variant="outline"
         size="sm"
         aria-pressed={active}
         className={cn(
-          PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-          "hover:bg-input/50 pointer-events-auto rounded-xl shadow-sm [html.light_&]:!text-zinc-950 [html.light_&]:hover:!text-zinc-950"
+          "pointer-events-auto rounded-xl shadow-sm backdrop-blur [html.light_&]:!text-zinc-950",
+          PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME
         )}
         onClick={onToggle}
       >

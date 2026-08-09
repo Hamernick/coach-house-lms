@@ -48,6 +48,7 @@ type PersonProfileFormFieldsProps = {
   title: string
   email: string
   socialLinks: PersonSocialLinks
+  extendedSocialLinksEnabled?: boolean
   category: OrgPerson["category"]
   image: string | null
   reportsToId: string | null
@@ -81,6 +82,7 @@ export function PersonProfileFormFields({
   title,
   email,
   socialLinks,
+  extendedSocialLinksEnabled = false,
   category,
   image,
   reportsToId,
@@ -299,7 +301,10 @@ export function PersonProfileFormFields({
           </p>
         </div>
         <FieldGroup className="gap-4">
-          {PERSON_SOCIAL_PLATFORMS.map((platform) => {
+          {PERSON_SOCIAL_PLATFORMS.filter(
+            (platform) =>
+              extendedSocialLinksEnabled || platform.key === "linkedin"
+          ).map((platform) => {
             const href = resolvePersonSocialHref(
               platform.key,
               socialLinks[platform.key]

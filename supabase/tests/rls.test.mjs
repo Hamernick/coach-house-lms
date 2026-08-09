@@ -1002,43 +1002,41 @@ async function run() {
     memberWorkspaceTaskAssigneesTableAvailable &&
     memberWorkspaceProjectId
   ) {
-    const taskId = randomUUID()
-
-    const { data: staffTask, error: staffTaskError } = await staffClient
-      .from("organization_tasks")
-      .insert({
-        id: taskId,
-        org_id: member.id,
-        project_id: memberWorkspaceProjectId,
-        title: "Staff task",
-        task_type: "task",
-        status: "todo",
-        start_date: "2026-01-10",
-        end_date: "2026-01-12",
-        created_source: "user",
-        created_by: staff.id,
-        updated_by: staff.id,
+    const { data: staffTaskTransition, error: staffTaskError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: staff.id,
+        p_project_id: memberWorkspaceProjectId,
+        p_title: "Staff task",
+        p_description: null,
+        p_task_type: "task",
+        p_status: "todo",
+        p_start_date: "2026-01-10",
+        p_end_date: "2026-01-12",
+        p_priority: "no-priority",
+        p_tag_label: null,
+        p_workstream_name: null,
+        p_assignee_id: board.id,
       })
+    const taskId = staffTaskTransition?.taskId
+    const { data: staffTask } = await staffClient
+      .from("organization_tasks")
       .select("id")
+      .eq("id", taskId)
       .maybeSingle()
     results.push({
-      name: "staff can insert organization tasks",
+      name: "staff can create organization tasks through the atomic transition",
       passed: !!staffTask && !staffTaskError,
     })
 
     const { data: staffAssignment, error: staffAssignmentError } =
       await staffClient
         .from("organization_task_assignees")
-        .insert({
-          org_id: member.id,
-          task_id: taskId,
-          user_id: board.id,
-          created_by: staff.id,
-        })
         .select("id")
+        .eq("task_id", taskId)
+        .eq("user_id", board.id)
         .maybeSingle()
     results.push({
-      name: "staff can insert organization task assignees",
+      name: "atomic task creation inserts the organization task assignee",
       passed: !!staffAssignment && !staffAssignmentError,
     })
 
@@ -1114,41 +1112,53 @@ async function run() {
       passed: !!adminReadsTask && !adminReadsTaskError,
     })
 
-    const adminTaskId = randomUUID()
-    const { data: adminTask, error: adminTaskError } = await adminSessionClient
-      .from("organization_tasks")
-      .insert({
-        id: adminTaskId,
-        org_id: member.id,
-        project_id: memberWorkspaceProjectId,
-        title: "Coach follow-up",
-        task_type: "task",
-        status: "todo",
-        start_date: "2026-01-14",
-        end_date: "2026-01-16",
-        created_source: "user",
-        created_by: admin.id,
-        updated_by: admin.id,
+    const { data: adminTaskTransition, error: adminTaskError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: admin.id,
+        p_project_id: memberWorkspaceProjectId,
+        p_title: "Coach follow-up",
+        p_description: null,
+        p_task_type: "task",
+        p_status: "todo",
+        p_start_date: "2026-01-14",
+        p_end_date: "2026-01-16",
+        p_priority: "no-priority",
+        p_tag_label: null,
+        p_workstream_name: null,
+        p_assignee_id: null,
       })
+    const adminTaskId = adminTaskTransition?.taskId
+    const { data: adminTask } = await adminSessionClient
+      .from("organization_tasks")
       .select("id")
+      .eq("id", adminTaskId)
       .maybeSingle()
     results.push({
-      name: "platform admin can create organization tasks",
+      name: "platform admin can create organization tasks through the atomic transition",
       passed: !!adminTask && !adminTaskError,
     })
 
     const { data: adminUpdatedTask, error: adminUpdatedTaskError } =
-      await adminSessionClient
-        .from("organization_tasks")
-        .update({ status: "done", updated_by: admin.id })
-        .eq("id", adminTaskId)
-        .select("id")
+      await adminClient.rpc("update_organization_task_transition", {
+        p_actor_id: admin.id,
+        p_task_id: adminTaskId,
+        p_expected_org_id: member.id,
+        p_expected_project_id: memberWorkspaceProjectId,
+        p_project_id: memberWorkspaceProjectId,
+        p_title: "Coach follow-up",
+        p_description: null,
+        p_task_type: "task",
+        p_status: "done",
+        p_start_date: "2026-01-14",
+        p_end_date: "2026-01-16",
+        p_priority: "no-priority",
+        p_tag_label: null,
+        p_workstream_name: null,
+        p_assignee_id: null,
+      })
     results.push({
-      name: "platform admin can complete organization tasks",
-      passed:
-        !adminUpdatedTaskError &&
-        Array.isArray(adminUpdatedTask) &&
-        adminUpdatedTask.length === 1,
+      name: "platform admin can complete organization tasks through the atomic transition",
+      passed: adminUpdatedTask?.ok === true && !adminUpdatedTaskError,
     })
 
     if (organizationProjectActivityTableAvailable) {

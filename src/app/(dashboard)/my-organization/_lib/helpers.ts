@@ -10,10 +10,6 @@ import type {
   OrgProfile,
   FormationStatus,
 } from "@/components/organization/org-profile-card/types"
-import {
-  resolveOrganizationNarrativeRevisions,
-  resolveOrganizationNarratives,
-} from "@/lib/roadmap"
 
 import type { FormationStepState, MyOrganizationSearchParams } from "./types"
 

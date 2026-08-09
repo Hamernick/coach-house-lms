@@ -61,7 +61,7 @@ export type PublicMapResourceLink = {
 
 export type PublicMapResourceContact = {
   id: string
-  label: string
+  label: string | null
   value: string
   type: PublicMapResourceContactType
   url: string | null
@@ -108,7 +108,7 @@ type PublicMapBaseItem = {
   sourceUrl: string | null
   lastVerifiedAt: string | null
   visibility: PublicMapItemVisibility
-  markerImageUrl: string | null
+  markerImageUrl?: string | null
   logoUrl?: string | null
   faviconUrl?: string | null
   mission?: string | null

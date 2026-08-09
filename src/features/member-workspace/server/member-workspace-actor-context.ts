@@ -4,6 +4,7 @@ import { hasPlatformCapability } from "@/features/platform-access"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 import { canEditOrganization } from "@/lib/organization/active-org"
+import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 const resolveMemberWorkspaceActorContextCached = cache(async () => {
@@ -40,6 +41,11 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
         supabase: adminSupabase,
         orgId: activeOrg.orgId,
       })
+  const organizationCoachScope = await loadOrganizationCoachActorScope({
+    accessLevel: profileAudience.platformAccessLevel,
+    supabase: adminSupabase,
+    userId: user.id,
+  })
 
   return {
     supabase: dataSupabase,
@@ -51,6 +57,7 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
       profileAudience.platformAccessLevel,
       "organizations"
     ),
+    organizationCoachScope,
     activeOrg,
     canEdit: canEditOrganization(activeOrg.role),
     hasMemberWorkspaceAccess:

@@ -121,10 +121,10 @@ describe("public find routes", () => {
     expect(previewControlsSource).toContain("left-1/2 z-30 -translate-x-1/2")
     expect(overlaySource).toContain("absolute inset-0 z-50")
     expect(overlaySource).not.toContain("OnboardingWorkspaceCard")
-    expect(overlaySource).toContain("Resource map")
+    expect(overlaySource).toContain("Welcome to Find")
     expect(overlaySource).toContain("Search resources")
-    expect(overlaySource).toContain("Use the drawer to search")
-    expect(overlaySource).toContain("Save resources")
+    expect(overlaySource).toContain("Search by organization")
+    expect(overlaySource).toContain("Save locations")
     expect(overlaySource).toContain("Notifications")
   })
 
@@ -538,7 +538,7 @@ describe("public find routes", () => {
       'data-public-map-search-empty="true"'
     )
     expect(organizationListSource).toContain("No matches for")
-    expect(resourceItemsSource).toContain("resolvedResourceItemsByEndpoint")
+    expect(resourceItemsSource).toContain("resourceItemsLoadByEndpoint")
     expect(resourceItemsSource).toContain(
       "warmPublicMapListItemSearchCache(resourceItems)"
     )

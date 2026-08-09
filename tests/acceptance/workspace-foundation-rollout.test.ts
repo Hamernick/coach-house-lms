@@ -191,8 +191,8 @@ describe("workspace foundation rollout", () => {
     const peoplePlacementStorageSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-stored-workspace-person-placements.ts"
     )
-    const peopleDrawerTableSource = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table.tsx"
+    const peopleControlsSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-controls.tsx"
     )
     const peopleSource = readSource("src/actions/people.ts")
     const segmentSource = readSource("src/actions/people-segments.ts")
@@ -222,7 +222,7 @@ describe("workspace foundation rollout", () => {
     expect(peoplePlacementSource).toContain("if (!enabled) return")
     expect(peopleSource).toContain('return { error: "Not available." }')
     expect(peopleSource).toContain("extendedSocialWriteRequested")
-    expect(peopleDrawerTableSource).toContain("extendedSocialLinksEnabled")
+    expect(peopleControlsSource).toContain("extendedSocialLinksEnabled")
     expect(segmentSource).toContain("isWorkspaceFoundationRolloutEnabled")
     expect(tagSource).toContain("isWorkspaceFoundationRolloutEnabled")
   })

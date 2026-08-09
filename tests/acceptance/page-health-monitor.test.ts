@@ -235,7 +235,7 @@ describe("page-health-monitor feature contract", () => {
       "src/app/(admin)/admin/platform/prototypes/page.tsx"
     )
     const entries = readSource("src/features/prototype-lab/lib/index.ts")
-    const sidebar = readSource("src/features/prototype-lab/lib/sidebar-tree.ts")
+    const sidebar = readSource("src/lib/prototype-lab-sidebar-tree.ts")
     const panel = readSource(
       "src/features/prototype-lab/components/prototype-lab-panel.tsx"
     )

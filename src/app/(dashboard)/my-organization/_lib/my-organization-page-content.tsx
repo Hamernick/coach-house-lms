@@ -6,24 +6,13 @@ import { measureServerStep } from "@/lib/performance/server-timing"
 import type { Json } from "@/lib/supabase"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import {
-  applyOrganizationSetupAcceleratorProgressOverride,
-  hasSavedOrganizationSetup,
-} from "@/lib/accelerator/organization-setup"
-import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
-import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
-import {
-  buildWorkspaceAcceleratorCardSteps,
-  type WorkspaceAcceleratorCardStep,
-} from "@/features/workspace-accelerator-card"
-import { loadFiscalSponsorshipProjectWorkflowSummary } from "@/features/fiscal-sponsorship"
+import { buildWorkspaceAcceleratorCardSteps } from "@/features/workspace-accelerator-card"
 import { completeOnboardingAction } from "../../onboarding/actions"
-import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import { buildMyOrganizationCalendarView } from "./calendar"
-import { applyFormationStatusAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
+import { applyOrganizationAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
 import {
   buildAcceleratorTimelineModules,
   buildModuleGroupMetaById,
@@ -31,6 +20,7 @@ import {
 import {
   buildAcceleratorWorkspaceSeed,
   buildMyOrganizationDerivedMetrics,
+  buildWorkspaceOnboardingDefaults,
   buildWorkspaceViewer,
   fetchWorkspacePrograms,
 } from "./my-organization-page-content-support"
@@ -40,121 +30,38 @@ import {
   applyWorkspaceOnboardingStageToSeed,
   applyWorkspaceTutorialActivationToSeed,
   hydrateWorkspaceSeedAcceleratorState,
+  partitionRoadmapModules,
 } from "./my-organization-page-content-helpers"
 import { isMissingWorkspaceBoardsTableError } from "./workspace-view-helpers"
 import { readWorkspaceBoardStateValue } from "./workspace-state"
-import type { FormationSummary, MyOrganizationSearchParams } from "./types"
+import type { MyOrganizationSearchParams } from "./types"
 import { buildWorkspaceOrganizationEditorData } from "./workspace-organization-editor-data"
 import { loadMyOrganizationProfileContext } from "./my-organization-page-profile"
 import {
   redirectLegacyMyOrganizationTab,
   resolveMyOrganizationPageSearchState,
 } from "./my-organization-page-search"
+import { getOnboarding } from "./my-organization-page-state"
+import { resolveWorkspaceFoundationPageMode } from "./my-organization-page-rollout"
 import {
-  getOnboarding,
-  resolveInitialWorkspaceDrawerData,
-} from "./my-organization-page-state"
+  renderMyOrganizationEditorView,
+  resolveLegacyEditorTab,
+} from "./my-organization-page-legacy-editor"
+import {
+  loadMyOrganizationFiscalSponsorshipWorkflow,
+  resolveFiscalApplicantPrefillIdentity,
+} from "./my-organization-page-fiscal"
 import {
   buildWorkspacePeopleData,
   loadOrganizationPeopleTaxonomy,
 } from "./workspace-people-segments"
 
-type MyOrganizationRequestContext = NonNullable<
-  Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
->
-
-type MyOrganizationSupabase = MyOrganizationRequestContext["supabase"]
-
-function resolveFiscalApplicantPrefillIdentity({
-  profileAudience,
-  user,
-}: {
-  profileAudience: { fullName: string | null }
-  user: { email?: string | null }
-}) {
-  return {
-    applicantEmail: user.email ?? null,
-    applicantFullName: profileAudience.fullName,
-  }
-}
-
-async function loadMyOrganizationFiscalSponsorshipWorkflow({
-  orgId,
-  supabase,
-}: {
-  orgId: string
-  supabase: MyOrganizationSupabase
-}) {
-  const { data: fiscalSponsorshipProjectRow } = await supabase
-    .from("organization_projects")
-    .select("id")
-    .eq("org_id", orgId)
-    .eq("project_kind", "organization_admin")
-    .maybeSingle<{ id: string }>()
-  const fiscalSponsorshipProjectId = fiscalSponsorshipProjectRow?.id ?? null
-  const fiscalSponsorshipWorkflowSummaryResult = fiscalSponsorshipProjectId
-    ? await loadFiscalSponsorshipProjectWorkflowSummary(
-        fiscalSponsorshipProjectId
-      )
-    : null
-  const fiscalSponsorshipWorkflowSummary =
-    fiscalSponsorshipWorkflowSummaryResult &&
-    !("error" in fiscalSponsorshipWorkflowSummaryResult)
-      ? fiscalSponsorshipWorkflowSummaryResult
-      : null
-
-  return {
-    fiscalSponsorshipProjectId,
-    fiscalSponsorshipWorkflowSummary,
-  }
-}
-
-type SortableRoadmapModule = {
-  slug: string
-  title: string
-  index: number
-  sequence?: number
-  href?: string
-}
-
-function partitionRoadmapModules<T extends SortableRoadmapModule>(
-  modules: T[]
-) {
-  const sortedRoadmapModules = sortAcceleratorModules(modules)
-  return {
-    sortedRoadmapModules,
-    foundationRoadmapModules: sortedRoadmapModules.filter(
-      (module) => !isElectiveAddOnModule(module)
-    ),
-    acceleratorRoadmapModules: sortedRoadmapModules.filter((module) =>
-      isElectiveAddOnModule(module)
-    ),
-  }
-}
-
-// eslint-disable-next-line max-lines-per-function
 export default async function MyOrganizationPage({
   searchParams,
 }: {
   searchParams?: Promise<MyOrganizationSearchParams>
 }) {
-  const {
-    resolvedSearchParams,
-    viewParam,
-    modeParam,
-    tabParam,
-    programIdParam,
-    focusParam,
-    drawerParam,
-    acceleratorGroupParam,
-    acceleratorModuleParam,
-    acceleratorStepParam,
-    roadmapSectionParam,
-    monthParam,
-    onboardingFlowRequested,
-    onboardingStageOverride,
-  } = await resolveMyOrganizationPageSearchState(searchParams)
-  redirectLegacyMyOrganizationTab(tabParam)
+  const searchState = await resolveMyOrganizationPageSearchState(searchParams)
   const requestContext = await resolveOptionalAuthenticatedAppContext()
   if (!requestContext) redirect("/login?redirect=/organization")
   const { supabase, user, profileAudience, activeOrg } = requestContext
@@ -162,22 +69,24 @@ export default async function MyOrganizationPage({
   const isAdmin = profileAudience.isAdmin
   const { userMeta, needsInitialOnboarding } = getOnboarding(requestContext)
   const canEdit = isAdmin || canEditOrganization(role)
-  const acceleratorViewRequested = viewParam === "accelerator"
-  const { organizationEditorRequested, initialDrawerData } =
-    resolveInitialWorkspaceDrawerData({
-      acceleratorGroupParam,
-      acceleratorModuleParam,
-      acceleratorStepParam,
-      drawerParam,
-      focusParam,
-      needsInitialOnboarding,
-      programIdParam,
-      roadmapSectionParam,
-      tabParam,
-      viewParam,
-    })
+  const {
+    enabled: workspaceFoundationEnabled,
+    initialDrawerData,
+    legacyDestination,
+    showLegacyEditor,
+  } = resolveWorkspaceFoundationPageMode({
+    needsInitialOnboarding,
+    orgId,
+    searchState,
+    userId: user.id,
+  })
+  if (legacyDestination) redirect(legacyDestination)
+  if (workspaceFoundationEnabled) {
+    redirectLegacyMyOrganizationTab(searchState.tabParam)
+  }
+  const acceleratorViewRequested = searchState.viewParam === "accelerator"
   const presentationMode =
-    modeParam === "present" || modeParam === "presentation"
+    searchState.modeParam === "present" || searchState.modeParam === "presentation"
   const { orgRow, profile, initialProfile, roadmapSections } =
     await measureServerStep(
       "workspace.content.load_profile_context",
@@ -234,11 +143,12 @@ export default async function MyOrganizationPage({
           orgUserId: orgId,
           isAdmin,
         }),
-        loadOrganizationPeopleTaxonomy({ orgId, supabase }),
+        workspaceFoundationEnabled
+          ? loadOrganizationPeopleTaxonomy({ orgId, supabase })
+          : Promise.resolve({ segments: [], tags: [] }),
       ]),
     { thresholdMs: 1_000 }
   )
-  const programs = programsResult
   const upcomingEvents = mapUpcomingEvents(upcomingEventsResult.data)
   const currentPlanTier = resolvePricingPlanTier(
     activeSubscriptionResult.data ?? null
@@ -247,19 +157,14 @@ export default async function MyOrganizationPage({
   const hasWorkspaceAcceleratorAccess =
     entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
   const acceleratorProgressSummary =
-    applyFormationStatusAcceleratorProgressOverrides(
-      applyOrganizationSetupAcceleratorProgressOverride(
-        acceleratorProgress,
-        hasSavedOrganizationSetup({
-          organizationName: initialProfile.name,
-          publicSlug: orgRow?.public_slug,
-        })
-      ),
-      initialProfile.formationStatus ?? null
+    applyOrganizationAcceleratorProgressOverrides(
+      acceleratorProgress,
+      initialProfile,
+      orgRow?.public_slug
     )
   const calendarView = buildMyOrganizationCalendarView({
-    monthParam,
-    searchParams: resolvedSearchParams,
+    monthParam: searchState.monthParam,
+    searchParams: searchState.resolvedSearchParams,
     upcomingEvents,
   })
   const {
@@ -271,25 +176,14 @@ export default async function MyOrganizationPage({
   )
   const { peopleNormalized, peopleSegments, peopleTags } =
     buildWorkspacePeopleData({ profile, ...organizationPeopleTaxonomy })
-  const onboardingDefaults = buildOnboardingFlowDefaults({
-    userId: user.id,
-    email: user.email ?? null,
-    displayName:
-      profileAudience.fullName ??
-      (typeof user.user_metadata?.full_name === "string"
-        ? user.user_metadata.full_name
-        : null),
-    avatarUrl:
-      profileAudience.avatarUrl ??
-      (typeof user.user_metadata?.avatar_url === "string"
-        ? user.user_metadata.avatar_url
-        : null),
-    userMetadata: userMeta,
-    orgProfile: profile,
+  const onboardingDefaults = buildWorkspaceOnboardingDefaults({
     orgSlug: orgRow?.public_slug ?? null,
     builderPlanTier: currentPlanTier,
+    orgProfile: profile,
+    requestContext,
+    userMeta,
   })
-  const programRows = (programs ?? []) as Array<{
+  const programRows = (programsResult ?? []) as Array<{
     goal_cents: number | null
     raised_cents: number | null
   }>
@@ -313,6 +207,16 @@ export default async function MyOrganizationPage({
     acceleratorRoadmapModules,
   })
   const viewer = buildWorkspaceViewer(user)
+  if (showLegacyEditor) {
+    return renderMyOrganizationEditorView({
+      canEdit,
+      initialProfile,
+      initialProgramId: searchState.programIdParam || null,
+      initialTab: resolveLegacyEditorTab(searchState.tabParam),
+      peopleNormalized,
+      programs: programsResult,
+    })
+  }
   const moduleGroupMetaById = buildModuleGroupMetaById(
     acceleratorProgressSummary.groups
   )
@@ -337,7 +241,6 @@ export default async function MyOrganizationPage({
     if (!hasWorkspaceAcceleratorAccess) {
       redirect(getWorkspaceAcceleratorPaywallPath())
     }
-
     const boardResult = await supabase
       .from("organization_workspace_boards")
       .select("state")
@@ -386,9 +289,9 @@ export default async function MyOrganizationPage({
     return (
       <MyOrganizationAcceleratorView
         seed={acceleratorSeed}
-        initialStepId={acceleratorStepParam}
-        initialModuleId={acceleratorModuleParam}
-        initialLessonGroupKey={acceleratorGroupParam}
+        initialStepId={searchState.acceleratorStepParam}
+        initialModuleId={searchState.acceleratorModuleParam}
+        initialLessonGroupKey={searchState.acceleratorGroupParam}
         programFundingTargets={programRows}
         onWorkspaceOnboardingSubmit={completeOnboardingAction}
       />
@@ -435,7 +338,7 @@ export default async function MyOrganizationPage({
   )
   const workspaceSeedForRender = applyWorkspaceOnboardingStageToSeed(
     hydratedWorkspaceSeed,
-    onboardingStageOverride
+    searchState.onboardingStageOverride
   )
   const workspaceSeedWithTutorial = applyWorkspaceTutorialActivationToSeed(
     workspaceSeedForRender,
@@ -443,7 +346,8 @@ export default async function MyOrganizationPage({
       initialOnboardingRequired: needsInitialOnboarding,
       workspaceOnboardingActive: userMeta?.workspace_onboarding_active === true,
       workspaceTutorialRequested:
-        onboardingFlowRequested || onboardingStageOverride !== null,
+        searchState.onboardingFlowRequested ||
+        searchState.onboardingStageOverride !== null,
       workspaceOnboardingCompletedAt:
         typeof userMeta?.workspace_onboarding_completed_at === "string"
           ? userMeta.workspace_onboarding_completed_at
@@ -472,7 +376,7 @@ export default async function MyOrganizationPage({
         peopleSegments,
         peopleTags,
         profile,
-        programs,
+        programs: programsResult,
         publicSlug: orgRow?.public_slug ?? null,
         roadmapSections,
       }),
@@ -488,10 +392,12 @@ export default async function MyOrganizationPage({
 
   return (
     <MyOrganizationWorkspaceView
+      initialFocusCardId={searchState.initialWorkspaceFocusCardId}
       seed={workspaceSeedWithTutorial}
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}
       financeInput={financeInput}
+      workspaceFoundationEnabled={workspaceFoundationEnabled}
     />
   )
 }

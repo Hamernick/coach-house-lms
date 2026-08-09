@@ -42,7 +42,7 @@ function normalizeLocalPreviewFile(value: string | null | undefined) {
   return isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath)
 }
 
-function parseLocalPreviewRows(raw: string) {
+function parseLocalPreviewRows(raw: string): unknown[] {
   const trimmed = raw.trim()
   if (!trimmed) return []
 

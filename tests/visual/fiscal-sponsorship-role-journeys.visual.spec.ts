@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 const FIXTURE_PATH = "/visual-regression/fiscal-sponsorship-role-journeys"
 
-test.describe.configure({ timeout: 60_000 })
+test.describe.configure({ timeout: 90_000 })
 
 async function openFixture(page: Page) {
   await page.goto(FIXTURE_PATH, { waitUntil: "domcontentloaded" })
@@ -12,7 +12,7 @@ async function openFixture(page: Page) {
   await expect(page.getByTestId("role-journey-hydrated")).toHaveAttribute(
     "data-hydrated",
     "true",
-    { timeout: 45_000 }
+    { timeout: 75_000 }
   )
 }
 

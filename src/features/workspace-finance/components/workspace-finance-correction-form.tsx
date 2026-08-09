@@ -22,6 +22,7 @@ import {
 import {
   getWorkspaceFinanceRecordType,
   WORKSPACE_FINANCE_MANUAL_RECORD_TYPES,
+  type WorkspaceFinanceManualRecordType,
 } from "../lib/record-types"
 import type {
   WorkspaceFinanceRaisingProgram,
@@ -139,7 +140,12 @@ export function WorkspaceFinanceCorrectionForm({
           <FieldLabel htmlFor={`finance-correction-type-${record.id}`}>
             Type
           </FieldLabel>
-          <Select value={recordType} onValueChange={setRecordType}>
+          <Select
+            value={recordType}
+            onValueChange={(value) =>
+              setRecordType(value as WorkspaceFinanceManualRecordType)
+            }
+          >
             <SelectTrigger
               id={`finance-correction-type-${record.id}`}
               className="h-11 w-full sm:h-9"

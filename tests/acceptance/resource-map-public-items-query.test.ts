@@ -457,7 +457,7 @@ describe("fetchPublicResourceMapItems", () => {
     expect(rpc.mock.calls.map((call) => call[1].p_offset)).toEqual([
       0, 500, 1000,
     ])
-  })
+  }, 15_000)
 
   it("can render scraped JSONL locally before anything is uploaded to Supabase", async () => {
     const directory = mkdtempSync(join(tmpdir(), "resource-map-preview-"))

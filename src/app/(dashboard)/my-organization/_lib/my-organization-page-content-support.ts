@@ -15,6 +15,11 @@ import { resolveOrganizationProfileComplete } from "./my-organization-page-conte
 import { countWorkspaceDocuments } from "./my-organization-page-content-helpers"
 import type { FormationSummary } from "./types"
 import { buildMyOrganizationCalendarView } from "./calendar"
+import type { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
+
+type MyOrganizationRequestContext = NonNullable<
+  Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
+>
 
 const WORKSPACE_PROGRAM_SELECT = [
   "id",
@@ -60,6 +65,42 @@ const WORKSPACE_PROGRAM_LEGACY_SELECT = [
   "end_date",
 ].join(", ")
 
+export function buildWorkspaceOnboardingDefaults({
+  builderPlanTier,
+  orgProfile,
+  orgSlug,
+  requestContext,
+  userMeta,
+}: {
+  builderPlanTier: Parameters<
+    typeof buildOnboardingFlowDefaults
+  >[0]["builderPlanTier"]
+  orgProfile: Record<string, unknown>
+  orgSlug: string | null
+  requestContext: MyOrganizationRequestContext
+  userMeta: Record<string, unknown> | null
+}) {
+  const { profileAudience, user } = requestContext
+  return buildOnboardingFlowDefaults({
+    userId: user.id,
+    email: user.email ?? null,
+    displayName:
+      profileAudience.fullName ??
+      (typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null),
+    avatarUrl:
+      profileAudience.avatarUrl ??
+      (typeof user.user_metadata?.avatar_url === "string"
+        ? user.user_metadata.avatar_url
+        : null),
+    userMetadata: userMeta,
+    orgProfile,
+    orgSlug,
+    builderPlanTier,
+  })
+}
+
 export async function fetchWorkspacePrograms({
   supabase,
   orgId,
@@ -74,7 +115,7 @@ export async function fetchWorkspacePrograms({
     .order("created_at", { ascending: false })
 
   if (!primaryResult.error) {
-    return (primaryResult.data ?? []) as OrgProgram[]
+    return (primaryResult.data ?? []) as unknown as OrgProgram[]
   }
 
   const legacyResult = await supabase
@@ -92,10 +133,12 @@ export async function fetchWorkspacePrograms({
     return []
   }
 
-  return ((legacyResult.data ?? []) as OrgProgram[]).map((program) => ({
-    ...program,
-    wizard_snapshot: null,
-  }))
+  return ((legacyResult.data ?? []) as unknown as OrgProgram[]).map(
+    (program) => ({
+      ...program,
+      wizard_snapshot: null,
+    })
+  )
 }
 
 export function buildAcceleratorWorkspaceSeed({
@@ -186,10 +229,10 @@ export function buildAcceleratorWorkspaceSeed({
         teammateCount,
         workspaceDocumentCount,
         acceleratorStarted: acceleratorTimeline.some(
-          (step) => step.status !== "not_started",
+          (step) => step.status !== "not_started"
         ),
         acceleratorCompletedStepCount: acceleratorTimeline.filter(
-          (step) => step.status === "completed",
+          (step) => step.status === "completed"
         ).length,
       },
       initialProfile,
@@ -215,7 +258,7 @@ export function buildAcceleratorWorkspaceSeed({
         defaults: onboardingDefaults,
       },
     },
-    acceleratorTimeline,
+    acceleratorTimeline
   )
 }
 
@@ -240,20 +283,20 @@ export function buildMyOrganizationDerivedMetrics({
   const programsCount = programs.length
   const fundingGoalCents = programs.reduce(
     (sum, program) => sum + (program.goal_cents ?? 0),
-    0,
+    0
   )
   const raisedCents = programs.reduce(
     (sum, program) => sum + (program.raised_cents ?? 0),
-    0,
+    0
   )
   const peopleCount = Math.max(1, teammateCount)
   const formationCompletedCount = foundationRoadmapModules.filter(
-    (module) => module.status === "completed",
+    (module) => module.status === "completed"
   ).length
   const formationProgressPercent =
     foundationRoadmapModules.length > 0
       ? Math.round(
-          (formationCompletedCount / foundationRoadmapModules.length) * 100,
+          (formationCompletedCount / foundationRoadmapModules.length) * 100
         )
       : 0
   const nextFormationModule =

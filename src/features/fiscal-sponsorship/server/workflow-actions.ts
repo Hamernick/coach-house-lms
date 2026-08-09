@@ -36,6 +36,18 @@ import {
 } from "./workflow-transition-support"
 import { validateApplicationForSubmission } from "./workflow-validation"
 
+const APPLICATION_REVIEW_DECISIONS = new Set([
+  "approved",
+  "declined",
+  "needs_info",
+])
+const DOCUMENT_REVIEW_DECISIONS = new Set([
+  "accepted",
+  "needs_info",
+  "not_required",
+  "rejected",
+])
+
 function formatReviewDecisionLabel(decision: string) {
   return decision.replaceAll("_", " ")
 }
@@ -83,6 +95,11 @@ export async function submitFiscalSponsorshipApplication(
 
   const loaded = await loadFiscalApplicationForProject(context)
   if ("error" in loaded) return loaded
+  if (!["draft", "needs_info"].includes(loaded.application.status)) {
+    return {
+      error: "This application has already been submitted or processed.",
+    }
+  }
 
   const validationError = validateApplicationForSubmission(loaded.application)
   if (validationError) {
@@ -110,6 +127,10 @@ export async function submitFiscalSponsorshipApplication(
 export async function reviewFiscalSponsorshipApplication(
   input: FiscalSponsorshipReviewInput
 ): Promise<FiscalSponsorshipWorkflowActionResult> {
+  if (!APPLICATION_REVIEW_DECISIONS.has(input.decision)) {
+    return { error: "Choose a valid application review decision." }
+  }
+
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 
@@ -129,6 +150,11 @@ export async function reviewFiscalSponsorshipApplication(
 
   const loaded = await loadFiscalApplicationForProject(context)
   if ("error" in loaded) return loaded
+  if (!["submitted", "in_review"].includes(loaded.application.status)) {
+    return {
+      error: "Only a submitted application can be reviewed.",
+    }
+  }
 
   const reviewNotes = input.notes?.trim() || null
   const reviewNoteError = getRequiredReviewNoteError({
@@ -224,6 +250,10 @@ export async function connectFiscalSponsorshipDocumentAsset(
 export async function reviewFiscalSponsorshipDocument(
   input: ReviewFiscalSponsorshipDocumentInput
 ): Promise<ReviewFiscalSponsorshipDocumentResult> {
+  if (!DOCUMENT_REVIEW_DECISIONS.has(input.decision)) {
+    return { error: "Choose a valid document review decision." }
+  }
+
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 

@@ -97,6 +97,7 @@ export const WorkspacePeopleDrawerControls = memo(
           <CreatePersonDialog
             triggerClassName="h-8 w-full justify-center rounded-xl px-2.5 md:w-auto"
             people={people}
+            extendedSocialLinksEnabled
           />
         ) : null}
       </div>

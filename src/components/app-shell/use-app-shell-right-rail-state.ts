@@ -49,7 +49,10 @@ export function useAppShellRightRailState({
     wasMobileRef.current = isMobile
   }, [isMobile])
 
-  const handleRightOpenChange = (open: boolean, source: "user" | "auto" = "user") => {
+  const handleRightOpenChange = (
+    open: boolean,
+    source: "user" | "auto" = "user"
+  ) => {
     if (source === "user") {
       rightRailPreferenceRef.current = open ? "open" : "closed"
     }
@@ -58,7 +61,9 @@ export function useAppShellRightRailState({
 
   return {
     rightOpen,
-    handleRightOpenChangeUser: (open: boolean) => handleRightOpenChange(open, "user"),
-    handleRightOpenChangeAuto: (open: boolean) => handleRightOpenChange(open, "auto"),
+    handleRightOpenChangeUser: (open: boolean) =>
+      handleRightOpenChange(open, "user"),
+    handleRightOpenChangeAuto: (open: boolean) =>
+      handleRightOpenChange(open, "auto"),
   }
 }

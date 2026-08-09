@@ -1,5 +1,9 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
+import {
+  resolveOrganizationNarrativeRevisions,
+  resolveOrganizationNarratives,
+} from "@/lib/roadmap"
 import type {
   BrandTypographyConfig,
   BrandTypographyTracking,

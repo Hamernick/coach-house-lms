@@ -41,6 +41,7 @@ export type RoadmapSection = RoadmapSectionDefinition & {
   templateSubtitle: string
   titleIsTemplate: boolean
   subtitleIsTemplate: boolean
+  storageExtras?: Record<string, unknown>
 }
 
 export type StoredSection = {

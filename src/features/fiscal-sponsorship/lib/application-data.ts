@@ -97,7 +97,7 @@ Coach House does not currently sponsor projects or organizations based outside t
     id: "fs-agreement-template",
     eyebrow: "Agreement",
     title: "Agreement Template Inputs",
-    markdown: `The Model C agreement is generated from the approved application and incorporated policies.
+    markdown: `The Model C agreement is prepared from the approved application and incorporated policies.
 
 The template needs:
 

@@ -8,6 +8,10 @@ import {
 } from "@/features/activation-monitor"
 import { FiscalSponsorshipPanel } from "@/features/fiscal-sponsorship"
 import {
+  getPageHealthMonitorPageInput,
+  PageHealthMonitorPanel,
+} from "@/features/page-health-monitor"
+import {
   getUserJourneyAtlasPageInput,
   UserJourneyAtlasPanel,
 } from "@/features/user-journey-atlas"
@@ -28,12 +32,19 @@ export default async function AdminPlatformPrototypesPage({
     selectedEntryId: readSearchParam(resolvedSearchParams?.entry),
     selectedProjectId: readSearchParam(resolvedSearchParams?.project),
   })
-  const [userJourneyAtlasInput, activationMonitorInput] = await Promise.all([
+  const [
+    userJourneyAtlasInput,
+    activationMonitorInput,
+    pageHealthMonitorInput,
+  ] = await Promise.all([
     input.selectedEntry.id === "user-journey-atlas"
       ? getUserJourneyAtlasPageInput()
       : Promise.resolve(null),
     input.selectedEntry.id === "activation-monitor"
       ? getActivationMonitorPageInput()
+      : Promise.resolve(null),
+    input.selectedEntry.id === "page-health-monitor"
+      ? getPageHealthMonitorPageInput()
       : Promise.resolve(null),
   ])
 
@@ -47,6 +58,11 @@ export default async function AdminPlatformPrototypesPage({
       }
       fiscalSponsorshipPrototype={
         <FiscalSponsorshipPanel input={{ id: "fiscal-sponsorship-flow" }} />
+      }
+      pageHealthMonitorPrototype={
+        pageHealthMonitorInput ? (
+          <PageHealthMonitorPanel input={pageHealthMonitorInput} />
+        ) : undefined
       }
       userJourneyAtlasPrototype={
         userJourneyAtlasInput ? (

@@ -230,7 +230,7 @@ describe("workspace-accelerator-card feature contract", () => {
         resources: [],
         hasAssignment: false,
         hasDeck: false,
-      }),
+      })
     ).toBe("sm")
 
     expect(
@@ -253,7 +253,7 @@ describe("workspace-accelerator-card feature contract", () => {
         resources: [],
         hasAssignment: true,
         hasDeck: false,
-      }),
+      })
     ).toBe("sm")
   })
 
@@ -368,6 +368,8 @@ describe("workspace-accelerator-card feature contract", () => {
       initialCompletedStepIds: [],
     })
 
-    expect(normalized.initialCurrentStepId).toBe("origin-module:assignment:assignment-overview")
+    expect(normalized.initialCurrentStepId).toBe(
+      "origin-module:assignment:assignment-overview"
+    )
   })
 })

@@ -45,13 +45,16 @@ export async function listRoadmapCalendarEvents({
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   const table = CALENDAR_TABLES[calendarType].events
 
   let query = supabase
     .from(table)
     .select(
-      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
+      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at"
     )
     .eq("org_id", orgId)
     .order("starts_at", { ascending: true })
@@ -61,7 +64,7 @@ export async function listRoadmapCalendarEvents({
   }
   if (from) {
     query = query.or(
-      `ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from}),recurrence.not.is.null`,
+      `ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from}),recurrence.not.is.null`
     )
   }
 
@@ -94,7 +97,10 @@ export async function createRoadmapCalendarEvent({
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const normalized = normalizeCalendarInput(event)
@@ -117,7 +123,7 @@ export async function createRoadmapCalendarEvent({
       assigned_roles: normalized.assignedRoles,
     })
     .select(
-      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
+      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at"
     )
     .maybeSingle()
 
@@ -157,7 +163,10 @@ export async function updateRoadmapCalendarEvent({
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const table = CALENDAR_TABLES[calendarType].events
@@ -165,7 +174,7 @@ export async function updateRoadmapCalendarEvent({
   const { data: existing } = await supabase
     .from(table)
     .select(
-      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
+      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", eventId)
@@ -191,7 +200,9 @@ export async function updateRoadmapCalendarEvent({
     recurrence:
       updates.recurrence ??
       (existing.recurrence as RoadmapCalendarRecurrence | null),
-    status: updates.status ?? (existing.status === "canceled" ? "canceled" : "active"),
+    status:
+      updates.status ??
+      (existing.status === "canceled" ? "canceled" : "active"),
     assignedRoles:
       updates.assignedRoles ??
       normalizeAssignedRoles(existing.assigned_roles ?? []),
@@ -216,7 +227,7 @@ export async function updateRoadmapCalendarEvent({
     .eq("id", eventId)
     .eq("updated_at", existing.updated_at)
     .select(
-      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
+      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at"
     )
     .maybeSingle()
 
@@ -259,7 +270,10 @@ export async function deleteRoadmapCalendarEvent({
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const table = CALENDAR_TABLES[calendarType].events
@@ -267,7 +281,7 @@ export async function deleteRoadmapCalendarEvent({
   const { data: existing } = await supabase
     .from(table)
     .select(
-      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
+      "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", eventId)
@@ -306,7 +320,10 @@ export async function getRoadmapCalendarFeedTokens(): Promise<FeedTokenResult> {
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const [publicToken, internalToken] = await Promise.all([
@@ -340,7 +357,10 @@ export async function rotateRoadmapCalendarFeedToken({
   }
   if (!user) return { error: "Not authenticated." }
 
-  const { orgId, canManageCalendar } = await resolveCalendarAccess(supabase, user.id)
+  const { orgId, canManageCalendar } = await resolveCalendarAccess(
+    supabase,
+    user.id
+  )
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const table = CALENDAR_TABLES[calendarType].feeds

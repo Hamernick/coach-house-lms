@@ -5,7 +5,10 @@ import type {
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
 
-export type MyOrganizationSearchParams = Record<string, string | string[] | undefined>
+export type MyOrganizationSearchParams = Record<
+  string,
+  string | string[] | undefined
+>
 
 export type UpcomingEvent = {
   id: string

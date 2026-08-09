@@ -51,7 +51,9 @@ export function WorkspaceBoardCalendarEventSheet({
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState<CalendarEventDraft>(() => buildDefaultCalendarEventDraft(event))
+  const [draft, setDraft] = useState<CalendarEventDraft>(() =>
+    buildDefaultCalendarEventDraft(event)
+  )
   const [formError, setFormError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -168,7 +170,9 @@ export function WorkspaceBoardCalendarEventSheet({
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{mode === "edit" ? "Edit event" : "Add event"}</SheetTitle>
+          <SheetTitle>
+            {mode === "edit" ? "Edit event" : "Add event"}
+          </SheetTitle>
           <SheetDescription>
             Create and manage calendar events directly from the workspace board.
           </SheetDescription>

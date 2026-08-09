@@ -24,10 +24,7 @@ export const WORKSPACE_LAYOUT_PRESETS = [
 
 export type WorkspaceLayoutPreset = (typeof WORKSPACE_LAYOUT_PRESETS)[number]
 
-export const WORKSPACE_AUTO_LAYOUT_MODES = [
-  "dagre-tree",
-  "timeline",
-] as const
+export const WORKSPACE_AUTO_LAYOUT_MODES = ["dagre-tree", "timeline"] as const
 
 export type WorkspaceAutoLayoutMode =
   (typeof WORKSPACE_AUTO_LAYOUT_MODES)[number]
@@ -39,8 +36,7 @@ export const WORKSPACE_JOURNEY_STAGES = [
   "operating",
 ] as const
 
-export type WorkspaceJourneyStage =
-  (typeof WORKSPACE_JOURNEY_STAGES)[number]
+export type WorkspaceJourneyStage = (typeof WORKSPACE_JOURNEY_STAGES)[number]
 
 export type WorkspaceLayoutPresetMeta = {
   label: string

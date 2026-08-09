@@ -8,9 +8,34 @@ import { buildDefaultWorkspaceConnections } from "../_components/workspace-board
 import type { WorkspaceBoardState } from "../_components/workspace-board/workspace-board-types"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import { resolveWorkspaceCanvasTutorialStepCount } from "@/features/workspace-canvas-tutorial"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
+import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 
 export type WorkspaceSeedWithAcceleratorBoardState = {
   boardState: WorkspaceBoardState
+}
+
+type SortableRoadmapModule = {
+  slug: string
+  title: string
+  index: number
+  sequence?: number
+  href?: string
+}
+
+export function partitionRoadmapModules<T extends SortableRoadmapModule>(
+  modules: T[]
+) {
+  const sortedRoadmapModules = sortAcceleratorModules(modules)
+  return {
+    sortedRoadmapModules,
+    foundationRoadmapModules: sortedRoadmapModules.filter(
+      (module) => !isElectiveAddOnModule(module)
+    ),
+    acceleratorRoadmapModules: sortedRoadmapModules.filter((module) =>
+      isElectiveAddOnModule(module)
+    ),
+  }
 }
 
 function hasCompletedWorkspaceTutorial(boardState: WorkspaceBoardState) {

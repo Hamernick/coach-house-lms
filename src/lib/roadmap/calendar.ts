@@ -8,7 +8,8 @@ export const ROADMAP_CALENDAR_EVENT_TYPES = [
   "milestone",
   "other",
 ] as const
-export type RoadmapCalendarEventType = (typeof ROADMAP_CALENDAR_EVENT_TYPES)[number]
+export type RoadmapCalendarEventType =
+  (typeof ROADMAP_CALENDAR_EVENT_TYPES)[number]
 
 export type RoadmapCalendarRecurrence = {
   frequency: "weekly" | "monthly" | "quarterly" | "annual"
@@ -84,7 +85,9 @@ export function normalizeEventType(input: unknown): RoadmapCalendarEventType {
   return "meeting"
 }
 
-export function getRoadmapCalendarEventTypeLabel(eventType: RoadmapCalendarEventType) {
+export function getRoadmapCalendarEventTypeLabel(
+  eventType: RoadmapCalendarEventType
+) {
   if (eventType === "board_meeting") return "Board meeting"
   if (eventType === "deadline") return "Deadline"
   if (eventType === "milestone") return "Milestone"
@@ -92,21 +95,42 @@ export function getRoadmapCalendarEventTypeLabel(eventType: RoadmapCalendarEvent
   return "Meeting"
 }
 
-export function normalizeAssignedRoles(input: unknown): RoadmapCalendarAssignedRole[] {
+export function normalizeAssignedRoles(
+  input: unknown
+): RoadmapCalendarAssignedRole[] {
   if (!Array.isArray(input)) return []
-  return input.filter((role): role is RoadmapCalendarAssignedRole => role === "admin" || role === "staff" || role === "board")
+  return input.filter(
+    (role): role is RoadmapCalendarAssignedRole =>
+      role === "admin" || role === "staff" || role === "board"
+  )
 }
 
-export function normalizeRecurrence(input: unknown): RoadmapCalendarRecurrence | null {
+export function normalizeRecurrence(
+  input: unknown
+): RoadmapCalendarRecurrence | null {
   if (!input || typeof input !== "object") return null
   const recurrence = input as RoadmapCalendarRecurrence
-  if (recurrence.frequency !== "weekly" && recurrence.frequency !== "monthly" && recurrence.frequency !== "quarterly" && recurrence.frequency !== "annual") {
+  if (
+    recurrence.frequency !== "weekly" &&
+    recurrence.frequency !== "monthly" &&
+    recurrence.frequency !== "quarterly" &&
+    recurrence.frequency !== "annual"
+  ) {
     return null
   }
-  const interval = typeof recurrence.interval === "number" && recurrence.interval > 0 ? recurrence.interval : undefined
-  const byDay = Array.isArray(recurrence.byDay) ? recurrence.byDay.map(String) : undefined
-  const endDate = typeof recurrence.endDate === "string" ? recurrence.endDate : undefined
-  const count = typeof recurrence.count === "number" && recurrence.count > 0 ? recurrence.count : undefined
+  const interval =
+    typeof recurrence.interval === "number" && recurrence.interval > 0
+      ? recurrence.interval
+      : undefined
+  const byDay = Array.isArray(recurrence.byDay)
+    ? recurrence.byDay.map(String)
+    : undefined
+  const endDate =
+    typeof recurrence.endDate === "string" ? recurrence.endDate : undefined
+  const count =
+    typeof recurrence.count === "number" && recurrence.count > 0
+      ? recurrence.count
+      : undefined
   return {
     frequency: recurrence.frequency,
     interval,
@@ -116,23 +140,21 @@ export function normalizeRecurrence(input: unknown): RoadmapCalendarRecurrence |
   }
 }
 
-export function mapCalendarRow(
-  row: {
-    id: string
-    org_id: string
-    title: string
-    description: string | null
-    event_type: string | null
-    starts_at: string
-    ends_at: string | null
-    all_day: boolean
-    recurrence: unknown | null
-    status: string
-    assigned_roles: string[] | null
-    created_at: string
-    updated_at: string
-  }
-): RoadmapCalendarEvent {
+export function mapCalendarRow(row: {
+  id: string
+  org_id: string
+  title: string
+  description: string | null
+  event_type: string | null
+  starts_at: string
+  ends_at: string | null
+  all_day: boolean
+  recurrence: unknown | null
+  status: string
+  assigned_roles: string[] | null
+  created_at: string
+  updated_at: string
+}): RoadmapCalendarEvent {
   return {
     id: row.id,
     orgId: row.org_id,
@@ -150,7 +172,10 @@ export function mapCalendarRow(
   }
 }
 
-export function formatCalendarTime(value: string, options?: Intl.DateTimeFormatOptions) {
+export function formatCalendarTime(
+  value: string,
+  options?: Intl.DateTimeFormatOptions
+) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
   return new Intl.DateTimeFormat(undefined, {
@@ -160,7 +185,10 @@ export function formatCalendarTime(value: string, options?: Intl.DateTimeFormatO
   }).format(date)
 }
 
-export function formatCalendarDate(value: string, options?: Intl.DateTimeFormatOptions) {
+export function formatCalendarDate(
+  value: string,
+  options?: Intl.DateTimeFormatOptions
+) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
   return new Intl.DateTimeFormat(undefined, {
@@ -179,7 +207,10 @@ export function formatCalendarWeekday(value: string) {
 
 export function formatCalendarDateRange(event: RoadmapCalendarEvent) {
   if (event.allDay) {
-    return formatCalendarDate(event.startsAt, { month: "short", day: "numeric" })
+    return formatCalendarDate(event.startsAt, {
+      month: "short",
+      day: "numeric",
+    })
   }
 
   const startLabel = formatCalendarTime(event.startsAt)
@@ -187,7 +218,9 @@ export function formatCalendarDateRange(event: RoadmapCalendarEvent) {
   return endLabel ? `${startLabel}–${endLabel}` : startLabel
 }
 
-export function formatCalendarRecurrence(recurrence: RoadmapCalendarRecurrence | null) {
+export function formatCalendarRecurrence(
+  recurrence: RoadmapCalendarRecurrence | null
+) {
   if (!recurrence) return ""
   if (recurrence.frequency === "weekly") return "Repeats weekly"
   if (recurrence.frequency === "monthly") return "Repeats monthly"

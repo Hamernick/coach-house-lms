@@ -405,7 +405,7 @@ export function SigningActions({
         <AlertTitle>No signature packet yet</AlertTitle>
         <AlertDescription>
           Applicant and Coach House signing links appear after the agreement is
-          generated and sent.
+          prepared and sent for signature.
         </AlertDescription>
       </Alert>
     )

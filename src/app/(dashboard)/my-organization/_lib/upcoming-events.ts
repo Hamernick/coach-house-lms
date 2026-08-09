@@ -20,7 +20,9 @@ export type UpcomingEventRow = {
   updated_at: string
 }
 
-export function mapUpcomingEvents(rows: UpcomingEventRow[] | null | undefined): UpcomingEvent[] {
+export function mapUpcomingEvents(
+  rows: UpcomingEventRow[] | null | undefined
+): UpcomingEvent[] {
   if (!rows || rows.length === 0) return []
   return rows.map((event) => ({
     id: event.id,

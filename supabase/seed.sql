@@ -2245,13 +2245,13 @@ select
       ),
       jsonb_build_object(
         'name', 'pilot_direct_costs',
-        'label', 'What items will incur a direct cost? (Don\\'t worry about amounts for now).',
+        'label', 'What items will incur a direct cost? (Don''t worry about amounts for now).',
         'type', 'long_text',
         'placeholder', 'Staff time, supplies, incentives, and other direct expenses.'
       ),
       jsonb_build_object(
         'name', 'pilot_indirect_costs',
-        'label', 'What items will incur an indirect cost? (Don\\'t worry about amounts for now).',
+        'label', 'What items will incur an indirect cost? (Don''t worry about amounts for now).',
         'type', 'long_text',
         'placeholder', 'Insurance, admin support, overhead, shared services, transportation, etc.'
       ),

@@ -106,6 +106,7 @@ export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
       program.wizard_snapshot,
       "successOutcomes"
     )
+    const budgetRows = getSnapshotBudgetRows(program.wizard_snapshot)
 
     return {
       id: program.id,

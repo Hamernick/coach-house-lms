@@ -154,6 +154,20 @@ describe("member workspace task transitions", () => {
     expect(sql).toContain("to service_role;")
   })
 
+  it("removes legacy direct assignee writes in a forward migration", () => {
+    const sql = readFileSync(
+      join(
+        process.cwd(),
+        "supabase/migrations/20260809110500_harden_organization_task_assignee_writes.sql"
+      ),
+      "utf8"
+    )
+
+    expect(sql).toContain('"organization_task_assignees_insert"')
+    expect(sql).toContain('"organization_task_assignees_update"')
+    expect(sql).toContain('"organization_task_assignees_delete"')
+  })
+
   it("deletes the task and repairs its project count through one RPC", async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: { ok: true, projectId: "project-1", taskId: "task-1" },

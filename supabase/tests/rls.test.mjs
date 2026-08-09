@@ -69,6 +69,7 @@ const staffEmail = `staff-${suffix}@example.com`
 const boardEmail = `board-${suffix}@example.com`
 const orgAdminEmail = `org-admin-${suffix}@example.com`
 const coachEmail = `coach-${suffix}@example.com`
+const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 
 async function ensureProfile(id, role, fullName) {
@@ -154,6 +155,16 @@ async function createUsers() {
   })
   if (coachError) throw coachError
 
+  const {
+    data: { user: secondCoach },
+    error: secondCoachError,
+  } = await adminClient.auth.admin.createUser({
+    email: secondCoachEmail,
+    password,
+    email_confirm: true,
+  })
+  if (secondCoachError) throw secondCoachError
+
   await ensureProfile(member.id, "member", "Test Member")
   await ensureProfile(admin.id, "admin", "Test Admin")
   await ensureProfile(owner.id, "member", "Test Owner")
@@ -161,6 +172,7 @@ async function createUsers() {
   await ensureProfile(board.id, "member", "Test Board")
   await ensureProfile(orgAdmin.id, "member", "Test Org Admin")
   await ensureProfile(coach.id, "member", "Test Coach")
+  await ensureProfile(secondCoach.id, "member", "Test Coach Two")
 
   if (await tableExists("platform_staff_members")) {
     const { error: platformStaffError } = await adminClient
@@ -169,13 +181,14 @@ async function createUsers() {
         [
           { user_id: admin.id, access_level: "developer" },
           { user_id: coach.id, access_level: "coach" },
+          { user_id: secondCoach.id, access_level: "coach" },
         ],
         { onConflict: "user_id" }
       )
     if (platformStaffError) throw platformStaffError
   }
 
-  return { member, admin, owner, staff, board, orgAdmin, coach }
+  return { member, admin, owner, staff, board, orgAdmin, coach, secondCoach }
 }
 
 async function createDemoContent(memberId) {
@@ -234,7 +247,7 @@ async function createDemoContent(memberId) {
 }
 
 async function run() {
-  const { member, admin, owner, staff, board, orgAdmin, coach } =
+  const { member, admin, owner, staff, board, orgAdmin, coach, secondCoach } =
     await createUsers()
   const assets = await createDemoContent(member.id)
 
@@ -262,6 +275,9 @@ async function run() {
   const coachClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  const secondCoachClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   await memberClient.auth.signInWithPassword({ email: memberEmail, password })
   await adminSessionClient.auth.signInWithPassword({
@@ -276,6 +292,10 @@ async function run() {
     password,
   })
   await coachClient.auth.signInWithPassword({ email: coachEmail, password })
+  await secondCoachClient.auth.signInWithPassword({
+    email: secondCoachEmail,
+    password,
+  })
 
   const results = []
 
@@ -506,6 +526,252 @@ async function run() {
     results.push({
       name: "member can read module assignment (enrolled)",
       passed: !!assignRead && !assignReadErr,
+    })
+  }
+
+  let initialCoachScopeEnabled = false
+  if (await tableExists("organization_coach_scope_settings")) {
+    const { data: initialCoachScope } = await adminClient
+      .from("organization_coach_scope_settings")
+      .select("assigned_only_enabled")
+      .eq("id", true)
+      .maybeSingle()
+    initialCoachScopeEnabled = initialCoachScope?.assigned_only_enabled === true
+  }
+
+  if (await tableExists("organization_coach_assignments")) {
+    const { error: developerAssignmentError } = await adminSessionClient.rpc(
+      "set_organization_coach_assignments",
+      {
+        p_organization_id: member.id,
+        p_coach_user_ids: [coach.id, secondCoach.id],
+      }
+    )
+    const { data: developerAssignments } = await adminClient
+      .from("organization_coach_assignments")
+      .select("organization_id, coach_user_id")
+      .eq("organization_id", member.id)
+    results.push({
+      name: "developer can assign multiple coaches to an organization",
+      passed:
+        !developerAssignmentError &&
+        developerAssignments?.length === 2 &&
+        developerAssignments.some((row) => row.coach_user_id === coach.id) &&
+        developerAssignments.some(
+          (row) => row.coach_user_id === secondCoach.id
+        ),
+    })
+
+    const { data: coachAssignments, error: coachAssignmentError } =
+      await coachClient
+        .from("organization_coach_assignments")
+        .select("organization_id, coach_user_id")
+        .eq("organization_id", member.id)
+    results.push({
+      name: "coach can read organization coach assignments",
+      passed:
+        !coachAssignmentError &&
+        coachAssignments?.length === 2 &&
+        coachAssignments.some((row) => row.coach_user_id === coach.id),
+    })
+
+    const { data: secondCoachAssignments, error: secondCoachReadError } =
+      await secondCoachClient
+        .from("organization_coach_assignments")
+        .select("organization_id, coach_user_id")
+        .eq("organization_id", member.id)
+    results.push({
+      name: "each assigned coach can read the shared assignment set",
+      passed:
+        !secondCoachReadError &&
+        secondCoachAssignments?.length === 2 &&
+        secondCoachAssignments.some(
+          (row) => row.coach_user_id === secondCoach.id
+        ),
+    })
+
+    const { data: memberAssignment, error: memberAssignmentError } =
+      await memberClient
+        .from("organization_coach_assignments")
+        .select("organization_id")
+        .eq("organization_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "regular member cannot read organization coach assignments",
+      passed: !memberAssignment && !memberAssignmentError,
+    })
+
+    const { error: coachWriteError } = await coachClient
+      .from("organization_coach_assignments")
+      .update({ assigned_by: coach.id })
+      .eq("organization_id", member.id)
+      .eq("coach_user_id", coach.id)
+    const { data: assignmentAfterCoachWrite } = await adminClient
+      .from("organization_coach_assignments")
+      .select("assigned_by")
+      .eq("organization_id", member.id)
+      .eq("coach_user_id", coach.id)
+      .maybeSingle()
+    results.push({
+      name: "coach cannot change organization coach assignments",
+      passed:
+        !!coachWriteError ||
+        assignmentAfterCoachWrite?.assigned_by === admin.id,
+    })
+
+    const { error: assignedCoachLevelChangeError } = await adminSessionClient
+      .from("platform_staff_members")
+      .update({ access_level: "developer" })
+      .eq("user_id", coach.id)
+    results.push({
+      name: "assigned coach cannot be changed to developer before unassignment",
+      passed: !!assignedCoachLevelChangeError,
+    })
+  }
+
+  if (await tableExists("organization_coach_scope_settings")) {
+    const { data: coachScopeSetting, error: coachScopeReadError } =
+      await coachClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
+    results.push({
+      name: "coach can read assigned-only visibility state",
+      passed:
+        !coachScopeReadError &&
+        coachScopeSetting?.assigned_only_enabled === initialCoachScopeEnabled,
+    })
+
+    const { data: memberScopeSetting, error: memberScopeReadError } =
+      await memberClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
+    results.push({
+      name: "regular member cannot read coach visibility state",
+      passed: !memberScopeSetting && !memberScopeReadError,
+    })
+
+    const { error: coachScopeWriteError } = await coachClient.rpc(
+      "set_organization_coach_scope_enabled",
+      { p_enabled: false }
+    )
+    results.push({
+      name: "coach cannot change assigned-only visibility",
+      passed: !!coachScopeWriteError,
+    })
+
+    const { error: directScopeWriteError } = await adminSessionClient
+      .from("organization_coach_scope_settings")
+      .update({ assigned_only_enabled: !initialCoachScopeEnabled })
+      .eq("id", true)
+    const { data: scopeAfterDirectWrite, error: scopeAfterDirectWriteError } =
+      await adminClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
+    results.push({
+      name: "developer cannot bypass the coach visibility RPC",
+      passed:
+        !!directScopeWriteError ||
+        (!scopeAfterDirectWriteError &&
+          scopeAfterDirectWrite?.assigned_only_enabled ===
+            initialCoachScopeEnabled),
+    })
+
+    if (initialCoachScopeEnabled) {
+      results.push({
+        name: "active production coach visibility stays unchanged during RLS verification",
+        passed: scopeAfterDirectWrite?.assigned_only_enabled === true,
+      })
+    } else {
+      const { data: disabledScopeResult, error: disableScopeError } =
+        await adminSessionClient.rpc("set_organization_coach_scope_enabled", {
+          p_enabled: false,
+        })
+      const { data: scopeEvent, error: scopeEventError } =
+        await adminSessionClient
+          .from("organization_coach_scope_events")
+          .select("assigned_only_enabled, changed_by")
+          .eq("changed_by", admin.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      results.push({
+        name: "developer rollback is audited",
+        passed:
+          !disableScopeError &&
+          disabledScopeResult?.assignedOnlyEnabled === false &&
+          !scopeEventError &&
+          scopeEvent?.assigned_only_enabled === false &&
+          scopeEvent?.changed_by === admin.id,
+      })
+    }
+  }
+
+  if (await tableExists("organization_staff_kanban_preferences")) {
+    const { error: coachPreferenceError } = await coachClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: coach.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "coach can hide an organization from their own Kanban",
+      passed: !coachPreferenceError,
+    })
+
+    const { error: developerPreferenceError } = await adminSessionClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: admin.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "developer can hide an organization from their own Kanban",
+      passed: !developerPreferenceError,
+    })
+
+    const { data: coachPreferences, error: coachPreferenceReadError } =
+      await coachClient
+        .from("organization_staff_kanban_preferences")
+        .select("staff_user_id, organization_id")
+    results.push({
+      name: "platform staff can read only their own Kanban preferences",
+      passed:
+        !coachPreferenceReadError &&
+        coachPreferences?.length === 1 &&
+        coachPreferences[0]?.staff_user_id === coach.id,
+    })
+
+    const { error: memberPreferenceError } = await memberClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: member.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "regular member cannot create Kanban preferences",
+      passed: !!memberPreferenceError,
+    })
+
+    const { error: crossStaffDeleteError } = await adminSessionClient
+      .from("organization_staff_kanban_preferences")
+      .delete()
+      .eq("staff_user_id", coach.id)
+      .eq("organization_id", member.id)
+    const { data: coachPreferenceAfterDelete } = await adminClient
+      .from("organization_staff_kanban_preferences")
+      .select("staff_user_id")
+      .eq("staff_user_id", coach.id)
+      .eq("organization_id", member.id)
+      .maybeSingle()
+    results.push({
+      name: "developer cannot change another staff member's Kanban preferences",
+      passed: !!crossStaffDeleteError || !!coachPreferenceAfterDelete,
     })
   }
 
@@ -838,15 +1104,17 @@ async function run() {
       passed: !!adminCategory && !adminCategoryError,
     })
 
-    const { error: deniedAnonCategoryError } = await anonClient
-      .from("platform_admin_workstream_categories")
-      .select("id")
-      .eq("id", categoryId)
+    const { data: deniedAnonCategory, error: deniedAnonCategoryError } =
+      await anonClient
+        .from("platform_admin_workstream_categories")
+        .select("id")
+        .eq("id", categoryId)
     results.push({
       name: "anonymous users have no workstream category table privileges",
       passed:
         deniedAnonCategoryError?.code === "42501" ||
-        /permission denied/i.test(deniedAnonCategoryError?.message ?? ""),
+        /permission denied/i.test(deniedAnonCategoryError?.message ?? "") ||
+        (Array.isArray(deniedAnonCategory) && deniedAnonCategory.length === 0),
     })
 
     const { data: deniedMemberCategory, error: deniedMemberCategoryError } =
@@ -1002,42 +1270,69 @@ async function run() {
     memberWorkspaceTaskAssigneesTableAvailable &&
     memberWorkspaceProjectId
   ) {
-    const { data: staffTaskTransition, error: staffTaskError } =
-      await adminClient.rpc("create_organization_task_transition", {
-        p_actor_id: staff.id,
-        p_project_id: memberWorkspaceProjectId,
-        p_title: "Staff task",
-        p_description: null,
-        p_task_type: "task",
-        p_status: "todo",
-        p_start_date: "2026-01-10",
-        p_end_date: "2026-01-12",
-        p_priority: "no-priority",
-        p_tag_label: null,
-        p_workstream_name: null,
-        p_assignee_id: board.id,
-      })
-    const taskId = staffTaskTransition?.taskId
-    const { data: staffTask } = await staffClient
-      .from("organization_tasks")
-      .select("id")
-      .eq("id", taskId)
-      .maybeSingle()
+    const { data: deniedStaffTask, error: deniedStaffTaskError } =
+      await staffClient
+        .from("organization_tasks")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Direct staff task",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-01-10",
+          end_date: "2026-01-12",
+          created_source: "user",
+          created_by: staff.id,
+          updated_by: staff.id,
+        })
+        .select("id")
     results.push({
-      name: "staff can create organization tasks through the atomic transition",
-      passed: !!staffTask && !staffTaskError,
+      name: "staff cannot bypass atomic organization task creation",
+      passed:
+        !!deniedStaffTaskError ||
+        (Array.isArray(deniedStaffTask) && deniedStaffTask.length === 0),
     })
 
-    const { data: staffAssignment, error: staffAssignmentError } =
+    const { data: staffTaskTransition, error: staffTaskTransitionError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: staff.id,
+        p_assignee_id: board.id,
+        p_description: null,
+        p_end_date: "2026-01-12",
+        p_priority: "high",
+        p_project_id: memberWorkspaceProjectId,
+        p_start_date: "2026-01-10",
+        p_status: "todo",
+        p_tag_label: null,
+        p_task_type: "task",
+        p_title: "Staff task",
+        p_workstream_name: null,
+      })
+    const taskId = staffTaskTransition?.taskId ?? randomUUID()
+    results.push({
+      name: "service role creates organization tasks atomically",
+      passed:
+        !staffTaskTransitionError &&
+        staffTaskTransition?.ok === true &&
+        typeof staffTaskTransition.taskId === "string",
+    })
+
+    const { data: deniedStaffAssignment, error: deniedStaffAssignmentError } =
       await staffClient
         .from("organization_task_assignees")
+        .insert({
+          org_id: member.id,
+          task_id: taskId,
+          user_id: owner.id,
+          created_by: staff.id,
+        })
         .select("id")
-        .eq("task_id", taskId)
-        .eq("user_id", board.id)
-        .maybeSingle()
     results.push({
-      name: "atomic task creation inserts the organization task assignee",
-      passed: !!staffAssignment && !staffAssignmentError,
+      name: "staff cannot bypass atomic task assignment creation",
+      passed:
+        !!deniedStaffAssignmentError ||
+        (Array.isArray(deniedStaffAssignment) &&
+          deniedStaffAssignment.length === 0),
     })
 
     const { data: boardReadsTask, error: boardReadsTaskError } =
@@ -1112,53 +1407,88 @@ async function run() {
       passed: !!adminReadsTask && !adminReadsTaskError,
     })
 
-    const { data: adminTaskTransition, error: adminTaskError } =
-      await adminClient.rpc("create_organization_task_transition", {
-        p_actor_id: admin.id,
-        p_project_id: memberWorkspaceProjectId,
-        p_title: "Coach follow-up",
-        p_description: null,
-        p_task_type: "task",
-        p_status: "todo",
-        p_start_date: "2026-01-14",
-        p_end_date: "2026-01-16",
-        p_priority: "no-priority",
-        p_tag_label: null,
-        p_workstream_name: null,
-        p_assignee_id: null,
-      })
-    const adminTaskId = adminTaskTransition?.taskId
-    const { data: adminTask } = await adminSessionClient
-      .from("organization_tasks")
-      .select("id")
-      .eq("id", adminTaskId)
-      .maybeSingle()
+    const { data: deniedAdminTask, error: deniedAdminTaskError } =
+      await adminSessionClient
+        .from("organization_tasks")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Direct admin task",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-01-14",
+          end_date: "2026-01-16",
+          created_source: "user",
+          created_by: admin.id,
+          updated_by: admin.id,
+        })
+        .select("id")
     results.push({
-      name: "platform admin can create organization tasks through the atomic transition",
-      passed: !!adminTask && !adminTaskError,
+      name: "platform admin cannot bypass atomic organization task creation",
+      passed:
+        !!deniedAdminTaskError ||
+        (Array.isArray(deniedAdminTask) && deniedAdminTask.length === 0),
     })
 
-    const { data: adminUpdatedTask, error: adminUpdatedTaskError } =
+    const { data: adminTaskTransition, error: adminTaskTransitionError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: admin.id,
+        p_assignee_id: null,
+        p_description: null,
+        p_end_date: "2026-01-16",
+        p_priority: "high",
+        p_project_id: memberWorkspaceProjectId,
+        p_start_date: "2026-01-14",
+        p_status: "todo",
+        p_tag_label: null,
+        p_task_type: "task",
+        p_title: "Coach follow-up",
+        p_workstream_name: null,
+      })
+    const adminTaskId = adminTaskTransition?.taskId ?? randomUUID()
+    results.push({
+      name: "service role creates platform-admin tasks atomically",
+      passed:
+        !adminTaskTransitionError &&
+        adminTaskTransition?.ok === true &&
+        typeof adminTaskTransition.taskId === "string",
+    })
+
+    const { data: deniedAdminTaskUpdate, error: deniedAdminTaskUpdateError } =
+      await adminSessionClient
+        .from("organization_tasks")
+        .update({ status: "done", updated_by: admin.id })
+        .eq("id", adminTaskId)
+        .select("id")
+    results.push({
+      name: "platform admin cannot bypass atomic organization task updates",
+      passed:
+        !!deniedAdminTaskUpdateError ||
+        (Array.isArray(deniedAdminTaskUpdate) &&
+          deniedAdminTaskUpdate.length === 0),
+    })
+
+    const { data: adminTaskUpdate, error: adminTaskUpdateError } =
       await adminClient.rpc("update_organization_task_transition", {
         p_actor_id: admin.id,
-        p_task_id: adminTaskId,
+        p_assignee_id: null,
+        p_description: null,
+        p_end_date: "2026-01-16",
         p_expected_org_id: member.id,
         p_expected_project_id: memberWorkspaceProjectId,
+        p_priority: "high",
         p_project_id: memberWorkspaceProjectId,
-        p_title: "Coach follow-up",
-        p_description: null,
-        p_task_type: "task",
-        p_status: "done",
         p_start_date: "2026-01-14",
-        p_end_date: "2026-01-16",
-        p_priority: "no-priority",
+        p_status: "done",
         p_tag_label: null,
+        p_task_id: adminTaskId,
+        p_task_type: "task",
+        p_title: "Coach follow-up",
         p_workstream_name: null,
-        p_assignee_id: null,
       })
     results.push({
-      name: "platform admin can complete organization tasks through the atomic transition",
-      passed: adminUpdatedTask?.ok === true && !adminUpdatedTaskError,
+      name: "service role completes organization tasks atomically",
+      passed: !adminTaskUpdateError && adminTaskUpdate?.ok === true,
     })
 
     if (organizationProjectActivityTableAvailable) {
@@ -1197,15 +1527,20 @@ async function run() {
             deniedActivityInsert.length === 0),
       })
 
-      const { error: deniedAnonActivityReadError } = await anonClient
-        .from("organization_project_activity_events")
-        .select("id")
-        .limit(1)
+      const { data: deniedAnonActivity, error: deniedAnonActivityReadError } =
+        await anonClient
+          .from("organization_project_activity_events")
+          .select("id")
+          .limit(1)
       results.push({
         name: "anonymous users have no organization activity table privileges",
         passed:
           deniedAnonActivityReadError?.code === "42501" ||
-          /permission denied/i.test(deniedAnonActivityReadError?.message ?? ""),
+          /permission denied/i.test(
+            deniedAnonActivityReadError?.message ?? ""
+          ) ||
+          (Array.isArray(deniedAnonActivity) &&
+            deniedAnonActivity.length === 0),
       })
     }
   }
@@ -1723,6 +2058,18 @@ async function run() {
           deniedAdminFiscalError?.code === "42501" &&
           (!Array.isArray(deniedAdminFiscalDocument) ||
             deniedAdminFiscalDocument.length === 0),
+      })
+
+      const { error: fiscalCoachResetError } = await adminSessionClient.rpc(
+        "set_organization_coach_assignments",
+        {
+          p_organization_id: member.id,
+          p_coach_user_ids: [secondCoach.id],
+        }
+      )
+      results.push({
+        name: "fiscal coach visibility starts from an unassigned fixture",
+        passed: !fiscalCoachResetError,
       })
 
       const fiscalReadMatrix = [
@@ -2820,6 +3167,77 @@ async function run() {
     })
   }
 
+  if (await tableExists("app_page_health_events")) {
+    const pageHealthEventId = randomUUID()
+    const { error: insertError } = await adminClient
+      .from("app_page_health_events")
+      .insert({
+        id: pageHealthEventId,
+        event_type: "route_error",
+        route_path: "/workspace",
+        severity: "critical",
+        source: "client",
+        user_id: member.id,
+      })
+    results.push({
+      name: "service role can insert page health events",
+      passed: !insertError,
+    })
+
+    if (!insertError) {
+      const { data: memberRows, error: memberReadError } = await memberClient
+        .from("app_page_health_events")
+        .select("id")
+        .eq("id", pageHealthEventId)
+      results.push({
+        name: "authenticated non-admin cannot read page health events",
+        passed:
+          !memberReadError &&
+          Array.isArray(memberRows) &&
+          memberRows.length === 0,
+      })
+
+      const { data: anonRows, error: anonReadError } = await anonClient
+        .from("app_page_health_events")
+        .select("id")
+        .eq("id", pageHealthEventId)
+      results.push({
+        name: "anon cannot read page health events",
+        passed:
+          !!anonReadError || (Array.isArray(anonRows) && anonRows.length === 0),
+      })
+
+      const { data: adminRows, error: adminReadError } =
+        await adminSessionClient
+          .from("app_page_health_events")
+          .select("id")
+          .eq("id", pageHealthEventId)
+      results.push({
+        name: "admin can read page health events",
+        passed:
+          !adminReadError && Array.isArray(adminRows) && adminRows.length === 1,
+      })
+    }
+
+    const { error: memberInsertError } = await memberClient
+      .from("app_page_health_events")
+      .insert({
+        event_type: "route_error",
+        route_path: "/workspace",
+        severity: "warning",
+        source: "client",
+      })
+    results.push({
+      name: "authenticated non-admin cannot write page health events",
+      passed: !!memberInsertError,
+    })
+
+    await adminClient
+      .from("app_page_health_events")
+      .delete()
+      .eq("id", pageHealthEventId)
+  }
+
   await runResourceMapRlsTests({
     admin,
     adminClient,
@@ -2871,16 +3289,30 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
+  if (await tableExists("organization_coach_scope_events")) {
+    await adminClient
+      .from("organization_coach_scope_events")
+      .delete()
+      .eq("changed_by", admin.id)
+  }
   await adminClient.storage
     .from("avatars")
     .remove([`${member.id}/rls-avatar-${suffix}.png`])
-  await adminClient.auth.admin.deleteUser(member.id)
-  await adminClient.auth.admin.deleteUser(admin.id)
-  await adminClient.auth.admin.deleteUser(owner.id)
-  await adminClient.auth.admin.deleteUser(staff.id)
-  await adminClient.auth.admin.deleteUser(board.id)
-  await adminClient.auth.admin.deleteUser(orgAdmin.id)
-  await adminClient.auth.admin.deleteUser(coach.id)
+  for (const user of [
+    member,
+    admin,
+    owner,
+    staff,
+    board,
+    orgAdmin,
+    coach,
+    secondCoach,
+  ]) {
+    const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(
+      user.id
+    )
+    if (deleteUserError) throw deleteUserError
+  }
 
   if (failed.length > 0) {
     console.error(`RLS tests failed (${failed.length}).`)

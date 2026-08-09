@@ -10,6 +10,9 @@ function readSource(relativePath: string) {
 }
 
 describe("fiscal sponsorship final-schema RLS", () => {
+  const publicationMigration = readSource(
+    "supabase/migrations/20251015235935_use_is_published_columns.sql"
+  )
   const migration = readSource(
     "supabase/migrations/20260806010000_harden_fiscal_sponsorship_rls.sql"
   )
@@ -18,6 +21,17 @@ describe("fiscal sponsorship final-schema RLS", () => {
   )
   const runner = readSource("supabase/tests/fiscal-final-schema-rls.test.mjs")
   const remoteRls = readSource("supabase/tests/rls.test.mjs")
+
+  it("keeps the full migration chain compatible with a fresh database", () => {
+    expect(publicationMigration).toContain("information_schema.columns")
+    expect(publicationMigration).toContain("column_name = 'published'")
+    expect(publicationMigration).not.toContain(
+      "update public.classes set is_published = coalesce(published, false);"
+    )
+    expect(publicationMigration).not.toContain(
+      "update public.modules set is_published = coalesce(published, false);"
+    )
+  })
 
   it("scopes sponsor access to developers or assigned coaches", () => {
     expect(migration).toContain("can_manage_fiscal_sponsorship_organization")

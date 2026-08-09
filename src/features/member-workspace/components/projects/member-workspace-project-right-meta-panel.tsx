@@ -1,5 +1,7 @@
 "use client"
 
+import type { ReactNode } from "react"
+
 import {
   BacklogCard,
   Separator,
@@ -11,12 +13,14 @@ import { MemberWorkspaceProjectOrganizationCard } from "./member-workspace-proje
 import { MemberWorkspaceProjectQuickLinksCard } from "./member-workspace-project-quick-links-card"
 
 export function MemberWorkspaceProjectRightMetaPanel({
+  adminBilling,
   project,
   organizationSummary,
   createQuickLinkAction,
   updateQuickLinkAction,
   deleteQuickLinkAction,
 }: {
+  adminBilling?: ReactNode
   project: ProjectDetails
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
   createQuickLinkAction?: (input: {
@@ -44,6 +48,12 @@ export function MemberWorkspaceProjectRightMetaPanel({
       <MemberWorkspaceProjectOrganizationCard
         organization={organizationSummary}
       />
+      {adminBilling ? (
+        <>
+          <Separator />
+          {adminBilling}
+        </>
+      ) : null}
       <Separator />
       <MemberWorkspaceProjectQuickLinksCard
         links={project.quickLinks}

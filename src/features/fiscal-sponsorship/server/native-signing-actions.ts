@@ -145,6 +145,14 @@ async function uploadPrivatePdf({
   if (error) throw new Error("Unable to store the signed agreement.")
 }
 
+async function removePrivatePdfs(paths: string[]) {
+  if (!paths.length) return
+  await createSupabaseAdminClient()
+    .storage.from(FISCAL_SPONSORSHIP_SIGNING_BUCKET)
+    .remove(paths)
+    .catch(() => undefined)
+}
+
 async function verifyApplicantSourceIntegrity(context: SigningContext) {
   const expectedSha256 = context.document.file_sha256
   if (
@@ -271,7 +279,10 @@ async function completeApplicantSignature({
       },
     }
   )
-  if (error) throw new Error("Unable to finalize the applicant signature.")
+  if (error) {
+    await removePrivatePdfs([storagePath])
+    throw new Error("Unable to finalize the applicant signature.")
+  }
   await notifyFiscalApplicantSigned({
     actorId: context.appContext.user.id,
     applicationId: context.packet.application_id,
@@ -342,8 +353,16 @@ async function completeCoachSignature({
   const basePath = `${context.packet.org_id}/${context.packet.project_id}/${context.packet.application_id}/${context.packet.id}`
   const executedPath = `${basePath}/executed/${randomUUID()}.pdf`
   const auditPath = `${basePath}/audit/${randomUUID()}.pdf`
-  await uploadPrivatePdf({ bytes: executed.bytes, path: executedPath })
-  await uploadPrivatePdf({ bytes: audit.bytes, path: auditPath })
+  const uploadedPaths: string[] = []
+  try {
+    await uploadPrivatePdf({ bytes: executed.bytes, path: executedPath })
+    uploadedPaths.push(executedPath)
+    await uploadPrivatePdf({ bytes: audit.bytes, path: auditPath })
+    uploadedPaths.push(auditPath)
+  } catch (error) {
+    await removePrivatePdfs(uploadedPaths)
+    throw error
+  }
   const requestHeaders = await headers()
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin.rpc(
@@ -379,7 +398,11 @@ async function completeCoachSignature({
       },
     }
   )
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+  if (error) {
+    await removePrivatePdfs(uploadedPaths)
+    throw new Error("Unable to finalize the Coach House signature.")
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("Unable to finalize the Coach House signature.")
   }
   const auditDocumentId = data.auditDocumentId
@@ -427,7 +450,6 @@ export async function completeFiscalSponsorshipSignature(
       method: input.signatureMethod,
       value: input.signatureValue,
     })
-    if (signatureError) return { error: signatureError, field: "signature" }
     const signerTitleError = validateSignerTitle(input.signerTitle)
     if (signerTitleError) {
       return { error: signerTitleError, field: "signerTitle" }

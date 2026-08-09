@@ -448,33 +448,15 @@ describe("member workspace task actions", () => {
       canEdit: false,
     })
 
-    const taskInsertQuery = {
-      insert: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn(() =>
-        Promise.resolve({ data: { id: "task-admin-created" }, error: null })
-      ),
-    }
-    const assigneeMutationQuery = {
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      insert: vi.fn(() => Promise.resolve({ error: null })),
-    }
-    const projectUpdateQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-
-    createSupabaseAdminClientMock.mockReturnValue({
-      from: vi.fn((table: string) => {
-        if (table === "organization_tasks") return taskInsertQuery
-        if (table === "organization_task_assignees") {
-          return assigneeMutationQuery
-        }
-        if (table === "organization_projects") return projectUpdateQuery
-        throw new Error(`Unexpected admin table query: ${table}`)
-      }),
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        ok: true,
+        projectId: "project-organization",
+        taskId: "task-admin-created",
+      },
+      error: null,
     })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     await expect(
       createMemberWorkspaceTaskAction({
@@ -487,17 +469,13 @@ describe("member workspace task actions", () => {
       })
     ).resolves.toEqual({ ok: true, taskId: "task-admin-created" })
 
-    expect(taskInsertQuery.insert).toHaveBeenCalledWith(
+    expect(rpc).toHaveBeenCalledWith(
+      "create_organization_task_transition",
       expect.objectContaining({
-        org_id: "org-1",
-        project_id: "project-organization",
-        created_by: "platform-admin-1",
-      })
-    )
-    expect(assigneeMutationQuery.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        task_id: "task-admin-created",
-        user_id: "platform-admin-2",
+        p_actor_id: "platform-admin-1",
+        p_assignee_id: "platform-admin-2",
+        p_project_id: "project-organization",
+        p_title: "Review grant timeline",
       })
     )
   })
@@ -516,36 +494,6 @@ describe("member workspace task actions", () => {
           error: null,
         })
       ),
-    }
-
-    const assigneeDeleteQuery = {
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-
-    const taskDeleteQuery = {
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-
-    const projectSelectQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn(() =>
-        Promise.resolve({
-          data: {
-            id: "project-standard",
-            org_id: "org-1",
-            task_count: 2,
-          },
-          error: null,
-        })
-      ),
-    }
-
-    const projectUpdateQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
     }
 
     const actorProjectQuery = createProjectQuery({
@@ -575,22 +523,15 @@ describe("member workspace task actions", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    createSupabaseAdminClientMock.mockReturnValue({
-      from: vi.fn((table: string) => {
-        if (table === "organization_task_assignees") {
-          return assigneeDeleteQuery
-        }
-        if (table === "organization_tasks") {
-          return taskDeleteQuery
-        }
-        if (table === "organization_projects") {
-          return projectSelectQuery.select.mock.calls.length === 0
-            ? projectSelectQuery
-            : projectUpdateQuery
-        }
-        throw new Error(`Unexpected admin table query: ${table}`)
-      }),
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        ok: true,
+        projectId: "project-standard",
+        taskId: "task-1",
+      },
+      error: null,
     })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     await expect(deleteMemberWorkspaceTaskAction("task-1")).resolves.toEqual({
       ok: true,
@@ -598,11 +539,11 @@ describe("member workspace task actions", () => {
       projectId: "project-standard",
     })
 
-    expect(assigneeDeleteQuery.delete).toHaveBeenCalledTimes(1)
-    expect(taskDeleteQuery.delete).toHaveBeenCalledTimes(1)
-    expect(projectUpdateQuery.update).toHaveBeenCalledWith({
-      task_count: 1,
-      updated_by: "platform-admin-1",
+    expect(rpc).toHaveBeenCalledWith("delete_organization_task_transition", {
+      p_actor_id: "platform-admin-1",
+      p_expected_org_id: "org-1",
+      p_expected_project_id: "project-standard",
+      p_task_id: "task-1",
     })
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
     expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
@@ -757,23 +698,17 @@ describe("member workspace task actions", () => {
       canEdit: false,
     })
 
-    const taskUpdateQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-    const assigneeMutationQuery = {
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      insert: vi.fn(() => Promise.resolve({ error: null })),
-    }
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        ok: true,
+        previousProjectId: "project-2",
+        projectId: "project-2",
+        taskId: "task-1",
+      },
+      error: null,
+    })
     createSupabaseAdminClientMock.mockReturnValue({
-      from: vi.fn((table: string) => {
-        if (table === "organization_tasks") return taskUpdateQuery
-        if (table === "organization_task_assignees") {
-          return assigneeMutationQuery
-        }
-        throw new Error(`Unexpected admin table query: ${table}`)
-      }),
+      rpc,
     })
 
     await expect(
@@ -786,12 +721,13 @@ describe("member workspace task actions", () => {
       })
     ).resolves.toEqual({ ok: true, taskId: "task-1" })
 
-    expect(taskUpdateQuery.update).toHaveBeenCalledWith(
+    expect(rpc).toHaveBeenCalledWith(
+      "update_organization_task_transition",
       expect.objectContaining({
-        title: "Updated by Coach House",
-        org_id: "org-2",
-        project_id: "project-2",
-        updated_by: "platform-admin-1",
+        p_actor_id: "platform-admin-1",
+        p_project_id: "project-2",
+        p_task_id: "task-1",
+        p_title: "Updated by Coach House",
       })
     )
   })
@@ -814,40 +750,23 @@ describe("member workspace task actions", () => {
       canEdit: false,
     })
 
-    const taskRowsQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      returns: vi.fn(() =>
-        Promise.resolve({
-          data: [{ id: "task-1" }, { id: "task-2" }],
-          error: null,
-        })
-      ),
-    }
-    const taskUpdateQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-    let taskTableCalls = 0
+    const rpc = vi.fn().mockResolvedValue({
+      data: { ok: true, projectId: "project-2" },
+      error: null,
+    })
     createSupabaseAdminClientMock.mockReturnValue({
-      from: vi.fn(() => {
-        taskTableCalls += 1
-        return taskTableCalls === 1 ? taskRowsQuery : taskUpdateQuery
-      }),
+      rpc,
     })
 
     await expect(
       updateMemberWorkspaceTaskOrderAction("project-2", ["task-2", "task-1"])
     ).resolves.toEqual({ ok: true, projectId: "project-2" })
 
-    expect(taskUpdateQuery.update).toHaveBeenNthCalledWith(1, {
-      sort_order: 0,
-      updated_by: "platform-admin-1",
-    })
-    expect(taskUpdateQuery.update).toHaveBeenNthCalledWith(2, {
-      sort_order: 1,
-      updated_by: "platform-admin-1",
+    expect(rpc).toHaveBeenCalledWith("reorder_organization_tasks_transition", {
+      p_actor_id: "platform-admin-1",
+      p_expected_org_id: "org-2",
+      p_ordered_task_ids: ["task-2", "task-1"],
+      p_project_id: "project-2",
     })
   })
 })

@@ -3,8 +3,6 @@
 import type {
   ConnectFiscalSponsorshipDocumentAssetInput,
   ConnectFiscalSponsorshipDocumentAssetResult,
-  FiscalSponsorshipApplicationStatus,
-  FiscalSponsorshipDocumentStatus,
   FiscalSponsorshipReviewInput,
   FiscalSponsorshipWorkflowActionResult,
   ReviewFiscalSponsorshipDocumentInput,
@@ -14,7 +12,6 @@ import {
   formatDocumentKeyLabel,
   loadProjectAssetForFiscalDocument,
   normalizeFiscalDocumentKey,
-  resolveDocumentKindForKey,
 } from "./workflow-document-actions-support"
 import {
   notifyFiscalApplicationReviewed,
@@ -26,13 +23,17 @@ import {
   buildWorkflowTableError,
   canManageFiscalSponsorshipForOrganization,
   canEditFiscalProject,
-  insertFiscalEvent,
   isMissingFiscalWorkflowTableError,
   loadFiscalApplicationForProject,
   revalidateFiscalApplicationRoutes,
   resolveProjectAndContext,
-  updateFiscalApplicationStatus,
 } from "./workflow-support"
+import {
+  transitionFiscalApplicationReview,
+  transitionFiscalApplicationSubmission,
+  transitionFiscalDocumentConnection,
+  transitionFiscalDocumentReview,
+} from "./workflow-transition-support"
 import { validateApplicationForSubmission } from "./workflow-validation"
 
 const APPLICATION_REVIEW_DECISIONS = new Set([
@@ -94,42 +95,25 @@ export async function submitFiscalSponsorshipApplication(
 
   const loaded = await loadFiscalApplicationForProject(context)
   if ("error" in loaded) return loaded
-  if (!["draft", "needs_info"].includes(loaded.application.status)) {
-    return {
-      error: "This application has already been submitted or processed.",
-    }
-  }
 
   const validationError = validateApplicationForSubmission(loaded.application)
   if (validationError) {
     return { error: validationError }
   }
 
-  const submittedAt = new Date().toISOString()
-  const updated = await updateFiscalApplicationStatus({
-    applicationId: loaded.application.id,
-    patch: {
-      status: "submitted",
-      submitted_at: submittedAt,
-      updated_by: context.user.id,
-    },
-    supabase: context.supabase,
-  })
-  if ("error" in updated) return updated
-
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: "application_submitted",
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: "Fiscal sponsorship application submitted.",
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
-  await notifyFiscalApplicationSubmitted({
+  const transition = await transitionFiscalApplicationSubmission({
     actorId: context.user.id,
-    application: loaded.application,
+    applicationId: loaded.application.id,
+    expectedUpdatedAt: loaded.application.updated_at,
   })
+  if ("error" in transition) return transition
+
+  if (transition.transitioned) {
+    await notifyFiscalApplicationSubmitted({
+      actorId: context.user.id,
+      application: loaded.application,
+    })
+  }
 
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
   return { ok: true, applicationId: loaded.application.id }
@@ -175,61 +159,22 @@ export async function reviewFiscalSponsorshipApplication(
   })
   if (reviewNoteError) return { error: reviewNoteError }
 
-  const reviewedAt = new Date().toISOString()
-  const { error: reviewError } = await context.supabase
-    .from("fiscal_sponsorship_reviews")
-    .insert({
-      application_id: loaded.application.id,
-      decision: input.decision,
-      notes: reviewNotes,
-      org_id: loaded.application.org_id,
-      project_id: loaded.application.project_id,
-      reviewed_at: reviewedAt,
-      reviewed_by: context.user.id,
-    })
-
-  if (reviewError) {
-    return isMissingFiscalWorkflowTableError(reviewError)
-      ? buildWorkflowTableError()
-      : { error: "Unable to save fiscal sponsorship review." }
-  }
-
-  const statusByDecision: Record<
-    FiscalSponsorshipReviewInput["decision"],
-    FiscalSponsorshipApplicationStatus
-  > = {
-    approved: "approved",
-    declined: "declined",
-    needs_info: "needs_info",
-  }
-  const updated = await updateFiscalApplicationStatus({
-    applicationId: loaded.application.id,
-    patch: {
-      review_notes: reviewNotes,
-      reviewed_at: reviewedAt,
-      reviewed_by: context.user.id,
-      status: statusByDecision[input.decision],
-      updated_by: context.user.id,
-    },
-    supabase: context.supabase,
-  })
-  if ("error" in updated) return updated
-
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: `application_${input.decision}`,
-    metadata: { decision: input.decision },
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: `Fiscal sponsorship application marked ${formatReviewDecisionLabel(input.decision)}.`,
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
-  await notifyFiscalApplicationReviewed({
+  const transition = await transitionFiscalApplicationReview({
     actorId: context.user.id,
-    application: loaded.application,
+    applicationId: loaded.application.id,
     decision: input.decision,
+    expectedUpdatedAt: loaded.application.updated_at,
+    notes: reviewNotes,
   })
+  if ("error" in transition) return transition
+
+  if (transition.transitioned) {
+    await notifyFiscalApplicationReviewed({
+      actorId: context.user.id,
+      application: loaded.application,
+      decision: input.decision,
+    })
+  }
 
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
   return { ok: true, applicationId: loaded.application.id }
@@ -270,89 +215,31 @@ export async function connectFiscalSponsorshipDocumentAsset(
   })
   if ("error" in assetResult) return assetResult
 
-  const kind = resolveDocumentKindForKey(documentKey)
-  const connectedAt = new Date().toISOString()
-  const { data: previousDocument } = await context.supabase
-    .from("fiscal_sponsorship_documents")
-    .select("version")
-    .eq("application_id", loaded.application.id)
-    .eq("kind", kind)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ version: number }>()
-  const nextVersion = (previousDocument?.version ?? 0) + 1
   const title =
     input.title?.trim() ||
     assetResult.asset.name ||
     formatDocumentKeyLabel(documentKey)
+  const transition = await transitionFiscalDocumentConnection({
+    actorId: context.user.id,
+    applicationId: loaded.application.id,
+    assetId: assetResult.asset.id,
+    documentKey,
+    requirementLabel: formatDocumentKeyLabel(documentKey),
+    title,
+  })
+  if ("error" in transition) return transition
 
-  const { data: document, error: documentError } = await context.supabase
-    .from("fiscal_sponsorship_documents")
-    .insert({
-      application_id: loaded.application.id,
-      asset_id: assetResult.asset.id,
-      document_key: documentKey,
-      generated_at: connectedAt,
-      kind,
-      metadata: {
-        assetType: assetResult.asset.asset_type,
-        externalUrl: assetResult.asset.external_url,
-        requirementLabel: formatDocumentKeyLabel(documentKey),
-      },
-      mime: assetResult.asset.mime,
-      org_id: loaded.application.org_id,
-      project_id: loaded.application.project_id,
-      review_status: "pending",
-      size_bytes: assetResult.asset.size_bytes,
-      source_snapshot: {
-        asset: {
-          id: assetResult.asset.id,
-          name: assetResult.asset.name,
-          description: assetResult.asset.description,
-        },
-        connectedAt,
-        documentKey,
-        source: "project-assets",
-      },
-      status: "draft" satisfies FiscalSponsorshipDocumentStatus,
-      storage_path: assetResult.asset.storage_path,
-      title,
-      uploaded_at: connectedAt,
-      uploaded_by: context.user.id,
-      version: nextVersion,
+  if (transition.transitioned) {
+    await notifyFiscalDocumentConnected({
+      actorId: context.user.id,
+      application: loaded.application,
+      documentId: transition.documentId,
+      documentKey,
     })
-    .select("id")
-    .single<{ id: string }>()
-
-  if (documentError) {
-    return isMissingFiscalWorkflowTableError(documentError)
-      ? buildWorkflowTableError()
-      : { error: "Unable to connect that fiscal sponsorship document." }
   }
 
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: "document_connected",
-    metadata: {
-      assetId: assetResult.asset.id,
-      documentId: document.id,
-      documentKey,
-    },
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: `${formatDocumentKeyLabel(documentKey)} connected to fiscal sponsorship.`,
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
-  await notifyFiscalDocumentConnected({
-    actorId: context.user.id,
-    application: loaded.application,
-    documentId: document.id,
-    documentKey,
-  })
-
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
-  return { ok: true, documentId: document.id }
+  return { ok: true, documentId: transition.documentId }
 }
 
 export async function reviewFiscalSponsorshipDocument(
@@ -389,52 +276,67 @@ export async function reviewFiscalSponsorshipDocument(
   })
   if (reviewNoteError) return { error: reviewNoteError }
 
-  const reviewedAt = new Date().toISOString()
-  const { data: document, error: documentError } = await context.supabase
+  const { data: document, error: documentLoadError } = await context.supabase
     .from("fiscal_sponsorship_documents")
-    .update({
-      review_notes: reviewNotes,
-      review_status: input.decision,
-      reviewed_at: reviewedAt,
-      reviewed_by: context.user.id,
-      updated_at: reviewedAt,
-    })
+    .select(
+      "asset_id, document_key, id, kind, mime, review_notes, review_status, status, title, updated_at"
+    )
     .eq("id", input.documentId)
     .eq("application_id", loaded.application.id)
     .eq("project_id", loaded.application.project_id)
-    .select("id, document_key")
-    .single<{ id: string; document_key: string | null }>()
-
-  if (documentError) {
-    return isMissingFiscalWorkflowTableError(documentError)
+    .maybeSingle<{
+      asset_id: string | null
+      document_key: string | null
+      id: string
+      kind: string
+      mime: string | null
+      review_notes: string | null
+      review_status: string
+      status: string
+      title: string
+      updated_at: string
+    }>()
+  if (documentLoadError || !document) {
+    return isMissingFiscalWorkflowTableError(documentLoadError)
       ? buildWorkflowTableError()
-      : { error: "Unable to review that fiscal sponsorship document." }
+      : { error: "Unable to load that fiscal sponsorship document." }
   }
 
   const documentKey = normalizeFiscalDocumentKey(document.document_key ?? "")
+  const acceptingW9 =
+    input.decision === "accepted" && documentKey === "tax_id_confirmation"
+  const completedNativeW9 =
+    document.kind === "tax_form" && document.status === "executed"
+  const uploadedW9Pdf =
+    Boolean(document.asset_id) && document.mime === "application/pdf"
 
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: "document_reviewed",
-    metadata: {
-      decision: input.decision,
-      documentId: document.id,
-      documentKey,
-    },
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: `${documentKey ? formatDocumentKeyLabel(documentKey) : "Fiscal sponsorship document"} marked ${formatReviewDecisionLabel(input.decision)}.`,
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
-  await notifyFiscalDocumentReviewed({
+  if (acceptingW9 && !completedNativeW9 && !uploadedW9Pdf) {
+    return {
+      error:
+        "Complete and sign the W-9 in Coach House, or connect an existing signed W-9 PDF.",
+    }
+  }
+
+  const transition = await transitionFiscalDocumentReview({
     actorId: context.user.id,
-    application: loaded.application,
+    applicationId: loaded.application.id,
     decision: input.decision,
     documentId: document.id,
-    documentKey,
+    expectedUpdatedAt: document.updated_at,
+    notes: reviewNotes,
   })
+  if ("error" in transition) return transition
+
+  if (transition.transitioned) {
+    await notifyFiscalDocumentReviewed({
+      actorId: context.user.id,
+      application: loaded.application,
+      decision: input.decision,
+      documentId: transition.documentId,
+      documentKey,
+    })
+  }
 
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
-  return { ok: true, documentId: document.id }
+  return { ok: true, documentId: transition.documentId }
 }

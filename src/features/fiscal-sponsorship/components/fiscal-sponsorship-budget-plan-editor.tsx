@@ -6,32 +6,23 @@ import FileSpreadsheetIcon from "lucide-react/dist/esm/icons/file-spreadsheet"
 import FileUpIcon from "lucide-react/dist/esm/icons/file-up"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
-import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
 
+import { BudgetTable } from "@/components/training/module-detail/budget-table"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { toast } from "@/lib/toast"
 
 import { connectFiscalSponsorshipDocumentAsset } from "../actions"
 import {
   BUDGET_SUPPORT_ACCEPT,
   formatBudgetDollars,
+  getBudgetRowTotal,
   getBudgetTotal,
   isCsvFile,
   makeBudgetRow,
-  parseBudgetRows,
   parseCsvBudgetRows,
-  serializeBudgetRows,
+  summarizeBudgetRows,
   uploadProjectAsset,
   type FiscalSponsorshipBudgetRow,
 } from "../lib/budget-plan"
@@ -44,6 +35,22 @@ type FiscalSponsorshipBudgetPlanEditorProps = {
   formId: string
   onFieldChange: DraftFieldChange
   projectId: string
+  sourceActivityTitle?: string | null
+}
+
+const COST_TYPE_OPTIONS = ["Fixed", "Variable", "Fixed or Variable"]
+const UNIT_OPTIONS = [
+  "Session / Hour",
+  "Participant / Session",
+  "Participant / Event",
+  "Event / Month",
+  "Participant / Trip",
+  "Program / Participant",
+  "Program / Session",
+]
+
+function formatMoney(value: number) {
+  return Number.isFinite(value) ? value.toFixed(2) : "0.00"
 }
 
 export function FiscalSponsorshipBudgetPlanEditor({
@@ -52,70 +59,48 @@ export function FiscalSponsorshipBudgetPlanEditor({
   formId,
   onFieldChange,
   projectId,
+  sourceActivityTitle,
 }: FiscalSponsorshipBudgetPlanEditorProps) {
   const router = useRouter()
   const [selectedSupportFile, setSelectedSupportFile] =
     React.useState<File | null>(null)
-  const [rows, setRows] = React.useState(() =>
-    parseBudgetRows(draft.expenseSummary)
-  )
   const [isUploadPending, startUploadTransition] = React.useTransition()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-  const lastSerializedRowsRef = React.useRef(draft.expenseSummary)
-  const hasLineItemAmounts = rows.some((row) => row.amount.trim())
+  const rows =
+    draft.budgetRows.length > 0 ? draft.budgetRows : [makeBudgetRow(0)]
+  const totals = rows.map(getBudgetRowTotal)
+  const hasLineItemAmounts = totals.some((total) => total > 0)
   const budgetTotal = getBudgetTotal(rows)
-  const totalInputId = `${formId}-estimatedBudgetDollars`
   const supportFileInputId = `${formId}-budgetSupportFile`
-
-  React.useEffect(() => {
-    if (draft.expenseSummary === lastSerializedRowsRef.current) return
-    setRows(parseBudgetRows(draft.expenseSummary))
-    lastSerializedRowsRef.current = draft.expenseSummary
-  }, [draft.expenseSummary])
+  const unitListId = `${formId}-fiscal-budget-unit-options`
 
   function commitRows(nextRows: FiscalSponsorshipBudgetRow[]) {
-    const serializedRows = serializeBudgetRows(nextRows)
     const nextTotal = getBudgetTotal(nextRows)
-    setRows(nextRows)
-    lastSerializedRowsRef.current = serializedRows
-    onFieldChange("expenseSummary", serializedRows)
-
-    if (nextRows.some((row) => row.amount.trim())) {
-      onFieldChange(
-        "estimatedBudgetDollars",
-        nextTotal > 0 ? formatBudgetDollars(nextTotal) : ""
-      )
-    }
-  }
-
-  function handleRowChange({
-    field,
-    id,
-    value,
-  }: {
-    field: keyof Pick<
-      FiscalSponsorshipBudgetRow,
-      "amount" | "category" | "description"
-    >
-    id: string
-    value: string
-  }) {
-    commitRows(
-      rows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
+    onFieldChange("budgetRows", nextRows)
+    onFieldChange("expenseSummary", summarizeBudgetRows(nextRows))
+    onFieldChange(
+      "estimatedBudgetDollars",
+      nextTotal > 0 ? formatMoney(nextTotal) : ""
     )
   }
 
-  function handleAddRow() {
-    setRows((currentRows) => [
-      ...currentRows,
-      makeBudgetRow(currentRows.length, {
-        id: `budget-row-new-${Date.now()}`,
-      }),
-    ])
+  function handleRowChange(
+    rowIndex: number,
+    patch: Partial<FiscalSponsorshipBudgetRow>
+  ) {
+    const nextRows = [...rows]
+    const nextRow = { ...nextRows[rowIndex], ...patch }
+    nextRow.totalCost = formatMoney(getBudgetRowTotal(nextRow))
+    nextRows[rowIndex] = nextRow
+    commitRows(nextRows)
   }
 
-  function handleRemoveRow(id: string) {
-    const nextRows = rows.filter((row) => row.id !== id)
+  function handleAddRow() {
+    commitRows([...rows, makeBudgetRow(rows.length)])
+  }
+
+  function handleRemoveRow(rowIndex: number) {
+    const nextRows = rows.filter((_, index) => index !== rowIndex)
     commitRows(nextRows.length > 0 ? nextRows : [makeBudgetRow(0)])
   }
 
@@ -198,8 +183,11 @@ export function FiscalSponsorshipBudgetPlanEditor({
           <div className="min-w-0">
             <FieldLabel>Budget plan</FieldLabel>
             <FieldDescription>
-              Add line items or import a CSV with category, description, and
-              amount columns.
+              {sourceActivityTitle
+                ? `Linked to the budget for ${sourceActivityTitle}.`
+                : "Linked to the budget for the selected activity or program."}{" "}
+              Saving this application updates the same line items in the program
+              builder.
             </FieldDescription>
           </div>
           <Button
@@ -213,169 +201,92 @@ export function FiscalSponsorshipBudgetPlanEditor({
             Add row
           </Button>
         </div>
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-36">Category</TableHead>
-                <TableHead className="min-w-56">Description</TableHead>
-                <TableHead className="min-w-32">Amount</TableHead>
-                <TableHead className="w-12">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="whitespace-normal">
-                    <Input
-                      value={row.category}
-                      aria-label="Budget category"
-                      placeholder="Program supplies"
-                      onChange={(event) =>
-                        handleRowChange({
-                          field: "category",
-                          id: row.id,
-                          value: event.target.value,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="whitespace-normal">
-                    <Input
-                      value={row.description}
-                      aria-label="Budget description"
-                      placeholder="Materials, venue, contractors..."
-                      onChange={(event) =>
-                        handleRowChange({
-                          field: "description",
-                          id: row.id,
-                          value: event.target.value,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="whitespace-normal">
-                    <Input
-                      value={row.amount}
-                      aria-label="Budget amount"
-                      placeholder="$0"
-                      inputMode="decimal"
-                      onChange={(event) =>
-                        handleRowChange({
-                          field: "amount",
-                          id: row.id,
-                          value: event.target.value,
-                        })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Remove budget row"
-                      onClick={() => handleRemoveRow(row.id)}
-                    >
-                      <Trash2Icon data-icon="inline-start" aria-hidden />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={2}>Line-item total</TableCell>
-                <TableCell colSpan={2}>
-                  {hasLineItemAmounts
-                    ? formatBudgetDollars(budgetTotal)
-                    : "Add amounts"}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+        <div className="min-w-0">
+          <BudgetTable
+            rows={rows}
+            blankRow={makeBudgetRow(0)}
+            totals={totals}
+            subtotal={budgetTotal}
+            costTypeOptions={COST_TYPE_OPTIONS}
+            unitOptions={UNIT_OPTIONS}
+            unitListId={unitListId}
+            formatMoney={formatMoney}
+            onUpdateRow={handleRowChange}
+            onRowsChange={commitRows}
+            layout="grid"
+            maxBodyHeightClassName="max-h-[min(52vh,34rem)]"
+          />
         </div>
+        <FieldDescription className="flex items-center justify-between gap-3">
+          <span>
+            {hasLineItemAmounts
+              ? "The fiscal application total updates from these line items."
+              : "Add quantity and unit cost to calculate the budget."}
+          </span>
+          <span className="text-foreground shrink-0 font-semibold tabular-nums">
+            {hasLineItemAmounts
+              ? formatBudgetDollars(budgetTotal)
+              : "Not calculated"}
+          </span>
+        </FieldDescription>
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor={totalInputId}>Estimated total budget</FieldLabel>
-          <Input
-            id={totalInputId}
-            name="estimatedBudgetDollars"
-            value={draft.estimatedBudgetDollars}
-            placeholder="$0"
-            inputMode="decimal"
-            onChange={(event) =>
-              onFieldChange("estimatedBudgetDollars", event.target.value)
+      <Field>
+        <FieldLabel htmlFor={supportFileInputId}>
+          Budget support files
+        </FieldLabel>
+        <Input
+          ref={fileInputRef}
+          id={supportFileInputId}
+          type="file"
+          accept={BUDGET_SUPPORT_ACCEPT}
+          onChange={(event) =>
+            setSelectedSupportFile(event.target.files?.[0] ?? null)
+          }
+        />
+        <FieldDescription>
+          {selectedSupportFile
+            ? `${selectedSupportFile.name} selected`
+            : "CSV, spreadsheet, PDF, image, and document files are supported."}
+        </FieldDescription>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!isCsvFile(selectedSupportFile)}
+            onClick={() => void handleImportCsvRows()}
+          >
+            <FileSpreadsheetIcon data-icon="inline-start" aria-hidden />
+            Import CSV rows
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={
+              !selectedSupportFile || !applicationReady || isUploadPending
             }
-          />
+            aria-busy={isUploadPending}
+            onClick={handleUploadSupportFile}
+          >
+            {isUploadPending ? (
+              <Loader2Icon
+                data-icon="inline-start"
+                className="animate-spin"
+                aria-hidden
+              />
+            ) : (
+              <FileUpIcon data-icon="inline-start" aria-hidden />
+            )}
+            Upload support file
+          </Button>
+        </div>
+        {!applicationReady ? (
           <FieldDescription>
-            {hasLineItemAmounts
-              ? "Updated from the line-item amounts."
-              : "Use this when line-item amounts are not known yet."}
+            Save the application first to attach budget files for review.
           </FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={supportFileInputId}>
-            Budget support files
-          </FieldLabel>
-          <Input
-            ref={fileInputRef}
-            id={supportFileInputId}
-            type="file"
-            accept={BUDGET_SUPPORT_ACCEPT}
-            onChange={(event) =>
-              setSelectedSupportFile(event.target.files?.[0] ?? null)
-            }
-          />
-          <FieldDescription>
-            {selectedSupportFile
-              ? `${selectedSupportFile.name} selected`
-              : "CSV, spreadsheet, PDF, image, and document files are supported."}
-          </FieldDescription>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!isCsvFile(selectedSupportFile)}
-              onClick={() => void handleImportCsvRows()}
-            >
-              <FileSpreadsheetIcon data-icon="inline-start" aria-hidden />
-              Import CSV rows
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={
-                !selectedSupportFile || !applicationReady || isUploadPending
-              }
-              aria-busy={isUploadPending}
-              onClick={handleUploadSupportFile}
-            >
-              {isUploadPending ? (
-                <Loader2Icon
-                  data-icon="inline-start"
-                  className="animate-spin"
-                  aria-hidden
-                />
-              ) : (
-                <FileUpIcon data-icon="inline-start" aria-hidden />
-              )}
-              Upload support file
-            </Button>
-          </div>
-          {!applicationReady ? (
-            <FieldDescription>
-              Save the application first to attach budget files for review.
-            </FieldDescription>
-          ) : null}
-        </Field>
-      </div>
+        ) : null}
+      </Field>
     </div>
   )
 }

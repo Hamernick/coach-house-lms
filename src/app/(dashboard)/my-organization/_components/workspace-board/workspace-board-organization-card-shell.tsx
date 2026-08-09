@@ -18,6 +18,7 @@ export function WorkspaceBoardOrganizationCardShell({
   fullHref,
   canEdit,
   editorHref = null,
+  onEditorOpen,
   menuActions = [],
   contentClassName,
   isCanvasFullscreen = false,
@@ -33,6 +34,7 @@ export function WorkspaceBoardOrganizationCardShell({
   fullHref: string
   canEdit: boolean
   editorHref?: string | null
+  onEditorOpen?: () => void
   menuActions?: WorkspaceCardOverflowAction[]
   contentClassName?: string
   isCanvasFullscreen?: boolean
@@ -52,6 +54,7 @@ export function WorkspaceBoardOrganizationCardShell({
       fullHref={fullHref}
       canEdit={canEdit}
       editorHref={editorHref}
+      onEditorOpen={onEditorOpen}
       menuActions={menuActions}
       contentClassName={contentClassName}
       isCanvasFullscreen={isCanvasFullscreen}

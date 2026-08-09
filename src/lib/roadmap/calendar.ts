@@ -46,7 +46,9 @@ export type RoadmapCalendarEventInput = {
   assignedRoles?: RoadmapCalendarAssignedRole[]
 }
 
-export type RoadmapCalendarEventUpdate = Partial<RoadmapCalendarEventInput>
+export type RoadmapCalendarEventUpdate = Partial<RoadmapCalendarEventInput> & {
+  expectedUpdatedAt?: string
+}
 
 export const ROADMAP_CALENDAR_PRESETS = [
   {

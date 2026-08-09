@@ -6,12 +6,25 @@ import type {
 import type { AcceleratorReadinessSummary } from "@/lib/accelerator/readiness"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 
-export const WORKSPACE_ACCELERATOR_STEP_STATUS = ["not_started", "in_progress", "completed"] as const
-export type WorkspaceAcceleratorStepStatus = (typeof WORKSPACE_ACCELERATOR_STEP_STATUS)[number]
+export const WORKSPACE_ACCELERATOR_STEP_STATUS = [
+  "not_started",
+  "in_progress",
+  "completed",
+] as const
+export type WorkspaceAcceleratorStepStatus =
+  (typeof WORKSPACE_ACCELERATOR_STEP_STATUS)[number]
 
 export type WorkspaceAcceleratorCardSize = "sm" | "md" | "lg"
-export const WORKSPACE_ACCELERATOR_STEP_KIND = ["lesson", "video", "resources", "assignment", "deck", "complete"] as const
-export type WorkspaceAcceleratorStepKind = (typeof WORKSPACE_ACCELERATOR_STEP_KIND)[number]
+export const WORKSPACE_ACCELERATOR_STEP_KIND = [
+  "lesson",
+  "video",
+  "resources",
+  "assignment",
+  "deck",
+  "complete",
+] as const
+export type WorkspaceAcceleratorStepKind =
+  (typeof WORKSPACE_ACCELERATOR_STEP_KIND)[number]
 
 export type WorkspaceAcceleratorCardStepResource = {
   id: string
@@ -23,6 +36,7 @@ export type WorkspaceAcceleratorCardStepResource = {
 export type WorkspaceAcceleratorCardStep = {
   id: string
   moduleId: string
+  published?: boolean
   moduleSlug?: string | null
   moduleTitle: string
   stepKind: WorkspaceAcceleratorStepKind
@@ -60,6 +74,7 @@ export type WorkspaceAcceleratorModuleContext = {
 
 export type WorkspaceAcceleratorTimelineModuleSeed = {
   id: string
+  published?: boolean
   slug?: string | null
   title: string
   description: string | null
@@ -92,6 +107,13 @@ export type WorkspaceAcceleratorCardInput = {
 export type WorkspaceAcceleratorCardProgressState = {
   currentStepId: string | null
   completedStepIds: string[]
+}
+
+export type WorkspaceAcceleratorOpenStepRequest = {
+  id: number
+  stepId: string
+  moduleId: string
+  lessonGroupKey?: string | null
 }
 
 export type WorkspaceAcceleratorLessonGroupSummary = {

@@ -2,26 +2,39 @@
 
 import { revalidatePath } from "next/cache"
 
+import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
+import type { BudgetTableRow } from "@/lib/modules"
 import {
   ROADMAP_SECTION_LIMIT,
+  getOrganizationNarrativeKeyForSectionId,
   getRoadmapWorkspaceRevalidationPaths,
+  normalizeOrganizationNarrativeHtml,
   removeRoadmapSection,
   resolveRoadmapSections,
   updateRoadmapSection,
+  updateOrganizationNarrativeSection,
   type RoadmapSection,
 } from "@/lib/roadmap"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import { ORG_MEDIA_BUCKET, resolveOrgMediaCleanupPath } from "@/lib/storage/org-media"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import {
+  ORG_MEDIA_BUCKET,
+  resolveOrgMediaCleanupPath,
+} from "@/lib/storage/org-media"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import { createNotification } from "@/lib/notifications"
 
 type SaveInput = {
   sectionId?: string
+  expectedLastUpdated?: string | null
   title?: string
   subtitle?: string
   content?: string
+  budgetRows?: BudgetTableRow[]
   imageUrl?: string | null
   isPublic?: boolean
   layout?: "square" | "vertical" | "wide"
@@ -53,9 +66,11 @@ function revalidateRoadmapWorkspacePaths({
 
 export async function saveRoadmapSectionAction({
   sectionId,
+  expectedLastUpdated,
   title,
   subtitle,
   content,
+  budgetRows,
   imageUrl,
   isPublic,
   layout,
@@ -83,9 +98,13 @@ export async function saveRoadmapSectionAction({
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
-    .select("profile, public_slug")
+    .select("profile, public_slug, updated_at")
     .eq("user_id", orgId)
-    .maybeSingle<{ profile: Json | null; public_slug: string | null }>()
+    .maybeSingle<{
+      profile: Json | null
+      public_slug: string | null
+      updated_at: string
+    }>()
 
   if (orgError) {
     return { error: orgError.message }
@@ -93,26 +112,56 @@ export async function saveRoadmapSectionAction({
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
   const existingSections = resolveRoadmapSections(currentProfile)
-  const normalizedSectionId = typeof sectionId === "string" ? sectionId.trim() : ""
+  const normalizedSectionId =
+    typeof sectionId === "string" ? sectionId.trim() : ""
   const previousSection = normalizedSectionId
-    ? existingSections.find((section) => section.id === normalizedSectionId) ?? null
+    ? (existingSections.find((section) => section.id === normalizedSectionId) ??
+      null)
     : null
 
+  if (
+    previousSection &&
+    expectedLastUpdated !== undefined &&
+    previousSection.lastUpdated !== expectedLastUpdated
+  ) {
+    return {
+      error: "This roadmap section was updated elsewhere. Reload before saving.",
+    }
+  }
+
   if (!previousSection && existingSections.length >= ROADMAP_SECTION_LIMIT) {
-    return { error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.` }
+    return {
+      error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.`,
+    }
   }
   const isNewSection = !previousSection
-  const { nextProfile, section } = updateRoadmapSection(currentProfile, sectionId ?? null, {
+  const narrativeKey =
+    getOrganizationNarrativeKeyForSectionId(normalizedSectionId)
+  const sanitizedContent =
+    typeof content === "string"
+      ? narrativeKey
+        ? normalizeOrganizationNarrativeHtml(content)
+        : sanitizeHtml(content)
+      : content
+  const sectionUpdates = {
     title,
     subtitle,
-    content,
+    content: sanitizedContent,
+    budgetRows,
     imageUrl,
     isPublic: allowPublicSharing ? isPublic : false,
     layout,
     status,
     ctaLabel,
     ctaUrl,
-  })
+  }
+  const { nextProfile, section } = narrativeKey
+    ? updateOrganizationNarrativeSection(
+        currentProfile,
+        narrativeKey,
+        sectionUpdates
+      )
+    : updateRoadmapSection(currentProfile, sectionId ?? null, sectionUpdates)
 
   const cleanupPath = resolveOrgMediaCleanupPath({
     previousUrl: previousSection?.imageUrl ?? null,
@@ -120,15 +169,27 @@ export async function saveRoadmapSectionAction({
     userId: orgId,
   })
 
-  const { error: upsertError } = await supabase
-    .from("organizations")
-    .upsert({
+  if (orgRow) {
+    const { data: updatedRow, error: updateError } = await supabase
+      .from("organizations")
+      .update({ profile: nextProfile as Json })
+      .eq("user_id", orgId)
+      .eq("updated_at", orgRow.updated_at)
+      .select("user_id")
+      .maybeSingle<{ user_id: string }>()
+
+    if (updateError) return { error: updateError.message }
+    if (!updatedRow) {
+      return {
+        error: "This organization was updated elsewhere. Reload before saving.",
+      }
+    }
+  } else {
+    const { error: insertError } = await supabase.from("organizations").insert({
       user_id: orgId,
       profile: nextProfile as Json,
     })
-
-  if (upsertError) {
-    return { error: upsertError.message }
+    if (insertError) return { error: insertError.message }
   }
 
   if (cleanupPath) {
@@ -144,7 +205,9 @@ export async function saveRoadmapSectionAction({
     const notifyResult = await createNotification(supabase, {
       userId: user.id,
       title: "Roadmap section added",
-      description: section.title ? `New section: ${section.title}.` : "A new roadmap section was added.",
+      description: section.title
+        ? `New section: ${section.title}.`
+        : "A new roadmap section was added.",
       href: "/organization",
       tone: "success",
       type: "roadmap_section_added",
@@ -159,7 +222,9 @@ export async function saveRoadmapSectionAction({
   return { section }
 }
 
-export async function deleteRoadmapSectionAction(sectionId: string | null | undefined): Promise<DeleteResult> {
+export async function deleteRoadmapSectionAction(
+  sectionId: string | null | undefined
+): Promise<DeleteResult> {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -179,9 +244,13 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
-    .select("profile, public_slug")
+    .select("profile, public_slug, updated_at")
     .eq("user_id", orgId)
-    .maybeSingle<{ profile: Json | null; public_slug: string | null }>()
+    .maybeSingle<{
+      profile: Json | null
+      public_slug: string | null
+      updated_at: string
+    }>()
 
   if (orgError) {
     return { error: orgError.message }
@@ -189,8 +258,15 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
   const targetId = typeof sectionId === "string" ? sectionId.trim() : ""
-  const previousSection = targetId ? resolveRoadmapSections(currentProfile).find((section) => section.id === targetId) ?? null : null
-  const { nextProfile, removed, error } = removeRoadmapSection(currentProfile, sectionId)
+  const previousSection = targetId
+    ? (resolveRoadmapSections(currentProfile).find(
+        (section) => section.id === targetId
+      ) ?? null)
+    : null
+  const { nextProfile, removed, error } = removeRoadmapSection(
+    currentProfile,
+    sectionId
+  )
 
   if (error) {
     return { error }
@@ -200,15 +276,21 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
     return { error: "Unable to delete section." }
   }
 
-  const { error: upsertError } = await supabase
-    .from("organizations")
-    .upsert({
-      user_id: orgId,
-      profile: nextProfile as Json,
-    })
+  if (!orgRow) return { error: "Organization not found." }
 
-  if (upsertError) {
-    return { error: upsertError.message }
+  const { data: updatedRow, error: updateError } = await supabase
+    .from("organizations")
+    .update({ profile: nextProfile as Json })
+    .eq("user_id", orgId)
+    .eq("updated_at", orgRow.updated_at)
+    .select("user_id")
+    .maybeSingle<{ user_id: string }>()
+
+  if (updateError) return { error: updateError.message }
+  if (!updatedRow) {
+    return {
+      error: "This organization was updated elsewhere. Reload before deleting.",
+    }
   }
 
   const cleanupPath = resolveOrgMediaCleanupPath({
@@ -231,7 +313,9 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
 
 type ToggleResult = { ok: true } | { error: string }
 
-export async function setRoadmapPublicAction(nextPublic: boolean): Promise<ToggleResult> {
+export async function setRoadmapPublicAction(
+  nextPublic: boolean
+): Promise<ToggleResult> {
   if (!publicSharingEnabled) {
     return { error: "Public sharing is disabled until launch." }
   }
@@ -297,7 +381,9 @@ type HeroResult = { ok: true } | { error: string }
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
-export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise<HeroResult> {
+export async function setRoadmapHeroImageAction(
+  heroUrl: string | null
+): Promise<HeroResult> {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -315,23 +401,38 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
 
-  const nextHero = typeof heroUrl === "string" && heroUrl.trim().length > 0 ? heroUrl.trim() : null
+  const nextHero =
+    typeof heroUrl === "string" && heroUrl.trim().length > 0
+      ? heroUrl.trim()
+      : null
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
-    .select("profile, public_slug, is_public_roadmap")
+    .select("profile, public_slug, is_public_roadmap, updated_at")
     .eq("user_id", orgId)
-    .maybeSingle<{ profile: Json | null; public_slug: string | null; is_public_roadmap: boolean | null }>()
+    .maybeSingle<{
+      profile: Json | null
+      public_slug: string | null
+      is_public_roadmap: boolean | null
+      updated_at: string
+    }>()
 
   if (orgError) {
     return { error: orgError.message }
   }
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const currentRoadmap = isRecord(currentProfile.roadmap) ? (currentProfile.roadmap as Record<string, unknown>) : {}
-  const previousHeroUrl = typeof currentRoadmap.heroUrl === "string" ? (currentRoadmap.heroUrl as string) : null
+  const currentRoadmap = isRecord(currentProfile.roadmap)
+    ? (currentProfile.roadmap as Record<string, unknown>)
+    : {}
+  const previousHeroUrl =
+    typeof currentRoadmap.heroUrl === "string"
+      ? (currentRoadmap.heroUrl as string)
+      : null
   const nextProfile = isRecord(currentProfile) ? { ...currentProfile } : {}
-  const roadmapRecord = isRecord(nextProfile.roadmap) ? { ...(nextProfile.roadmap as Record<string, unknown>) } : {}
+  const roadmapRecord = isRecord(nextProfile.roadmap)
+    ? { ...(nextProfile.roadmap as Record<string, unknown>) }
+    : {}
   roadmapRecord.heroUrl = nextHero
   nextProfile.roadmap = roadmapRecord
 
@@ -341,12 +442,27 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
     userId: orgId,
   })
 
-  const { error: upsertError } = await supabase
-    .from("organizations")
-    .upsert({ user_id: orgId, profile: nextProfile as Json }, { onConflict: "user_id" })
+  if (orgRow) {
+    const { data: updatedRow, error: updateError } = await supabase
+      .from("organizations")
+      .update({ profile: nextProfile as Json })
+      .eq("user_id", orgId)
+      .eq("updated_at", orgRow.updated_at)
+      .select("user_id")
+      .maybeSingle<{ user_id: string }>()
 
-  if (upsertError) {
-    return { error: upsertError.message }
+    if (updateError) return { error: updateError.message }
+    if (!updatedRow) {
+      return {
+        error: "This organization was updated elsewhere. Reload before saving.",
+      }
+    }
+  } else {
+    const { error: insertError } = await supabase.from("organizations").insert({
+      user_id: orgId,
+      profile: nextProfile as Json,
+    })
+    if (insertError) return { error: insertError.message }
   }
 
   if (cleanupPath) {

@@ -1,15 +1,16 @@
-import type {
-  RoadmapSection,
-  RoadmapSectionStatus,
-} from "@/lib/roadmap"
+import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
+import type { BudgetTableRow } from "@/lib/modules"
 
 export type RoadmapEditorLayout = "default" | "centered-right"
+export type RoadmapEditorNavigationMode = "route" | "embedded"
 
 export type RoadmapEditorProps = {
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit?: boolean
   layout?: RoadmapEditorLayout
+  navigationMode?: RoadmapEditorNavigationMode
+  showRightRail?: boolean
   initialSectionId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onRegisterDiscard?: (handler: (() => void) | null) => void
@@ -20,6 +21,7 @@ export type RoadmapDraft = {
   title: string
   subtitle: string
   content: string
+  budgetRows: BudgetTableRow[]
   imageUrl: string
   layout: RoadmapSection["layout"]
   ctaLabel?: string
@@ -35,7 +37,13 @@ export type RoadmapDraftStorage = {
   updatedAt: string
   drafts: Record<
     string,
-    { title?: string; subtitle?: string; content?: string; imageUrl?: string }
+    {
+      title?: string
+      subtitle?: string
+      content?: string
+      budgetRows?: BudgetTableRow[]
+      imageUrl?: string
+    }
   >
 }
 

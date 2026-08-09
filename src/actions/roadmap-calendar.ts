@@ -172,6 +172,14 @@ export async function updateRoadmapCalendarEvent({
     .maybeSingle()
 
   if (!existing) return { error: "Event not found." }
+  if (
+    updates.expectedUpdatedAt &&
+    updates.expectedUpdatedAt !== existing.updated_at
+  ) {
+    return {
+      error: "This calendar event was updated elsewhere. Reload before saving.",
+    }
+  }
 
   const normalized = normalizeCalendarInput({
     title: updates.title ?? existing.title,
@@ -206,13 +214,19 @@ export async function updateRoadmapCalendarEvent({
     })
     .eq("org_id", orgId)
     .eq("id", eventId)
+    .eq("updated_at", existing.updated_at)
     .select(
       "id,org_id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,created_at,updated_at",
     )
     .maybeSingle()
 
-  if (updateError || !data) {
-    return { error: updateError?.message ?? "Unable to update event." }
+  if (updateError) {
+    return { error: updateError.message }
+  }
+  if (!data) {
+    return {
+      error: "This calendar event was updated elsewhere. Reload before saving.",
+    }
   }
 
   const mapped = mapCalendarRow(data)

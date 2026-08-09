@@ -2,7 +2,7 @@ import {
   defaultProgramWizardForm,
   DELIVERY_FORMATS,
   LOCATION_MODES,
-  ORGANIZATION_PRIMARY_OBJECT_KINDS,
+  ORGANIZATION_ACTIVITY_KINDS,
   ProgramWizardFormState,
   PROGRAM_TYPES,
 } from "../schema"
@@ -48,7 +48,7 @@ export function hydrateFromProgram(
   const snapshotCoreFormat = toStringValue(snapshot.coreFormat)
 
   const objectKind = (
-    ORGANIZATION_PRIMARY_OBJECT_KINDS as readonly string[]
+    ORGANIZATION_ACTIVITY_KINDS as readonly string[]
   ).includes(snapshotObjectKind)
     ? (snapshotObjectKind as ProgramWizardFormState["objectKind"])
     : "Program"
@@ -164,6 +164,10 @@ export function hydrateFromProgram(
     locationDetails: toStringValue(
       snapshot.locationDetails,
       toStringValue(program.location)
+    ),
+    locationUrl: toStringValue(
+      snapshot.locationUrl,
+      toStringValue(program.location_url)
     ),
     budgetRows: budget.rows,
     budgetUsd: budget.totalBudget,

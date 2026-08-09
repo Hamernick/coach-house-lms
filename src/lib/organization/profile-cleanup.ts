@@ -2,10 +2,7 @@ import { stripHtml } from "@/lib/markdown/convert"
 
 const HTML_TEXT_FIELDS = new Set([
   "description",
-  "vision",
-  "mission",
   "need",
-  "values",
   "originStory",
   "theoryOfChange",
   "origin_story",
@@ -13,6 +10,12 @@ const HTML_TEXT_FIELDS = new Set([
   "programs",
   "reports",
   "boilerplate",
+  "brandVoiceAudience",
+  "brandVoiceTone",
+  "brandVoiceStyle",
+  "brandVoicePersonality",
+  "brandVoiceGuidelines",
+  "brandVoiceAvoid",
 ])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -36,7 +39,9 @@ function normalizeArray(value: unknown[]): string | null {
   return items.length > 0 ? items.join("\n") : null
 }
 
-export function cleanupOrgProfileHtml(profile: Record<string, unknown> | null | undefined): {
+export function cleanupOrgProfileHtml(
+  profile: Record<string, unknown> | null | undefined
+): {
   nextProfile: Record<string, unknown>
   changed: boolean
 } {

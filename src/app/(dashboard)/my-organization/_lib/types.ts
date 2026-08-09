@@ -18,6 +18,7 @@ export type UpcomingEvent = {
   recurrence: RoadmapCalendarRecurrence | null
   status: "active" | "canceled"
   assigned_roles: RoadmapCalendarAssignedRole[]
+  updated_at: string
 }
 
 export type FormationStepState = "completed" | "active" | "pending"

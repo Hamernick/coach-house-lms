@@ -12,8 +12,14 @@ describe("home-canvas section behavior", () => {
 
     expect(resolveCanvasSectionBehavior("hero")).toEqual({
       lockNavigationGestures: false,
-      scrollable: false,
-      touchAction: "pan-x",
+      scrollable: true,
+      touchAction: "pan-y",
+    })
+
+    expect(resolveCanvasSectionBehavior("platform")).toEqual({
+      lockNavigationGestures: false,
+      scrollable: true,
+      touchAction: "pan-y",
     })
 
     expect(resolveCanvasSectionBehavior("signup")).toEqual({

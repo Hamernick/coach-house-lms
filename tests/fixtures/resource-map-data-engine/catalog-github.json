@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "name": "food-pantries.json",
+      "path": "data/food-pantries.json",
+      "sha": "github-food-sha",
+      "html_url": "https://github.com/example/chicago-resources/blob/main/data/food-pantries.json",
+      "download_url": "https://raw.githubusercontent.com/example/chicago-resources/main/data/food-pantries.json",
+      "repository": {
+        "full_name": "example/chicago-resources",
+        "html_url": "https://github.com/example/chicago-resources",
+        "description": "Open public resource datasets for Chicago.",
+        "stargazers_count": 42,
+        "license": {
+          "spdx_id": "CC-BY-4.0"
+        },
+        "owner": {
+          "login": "example"
+        }
+      }
+    }
+  ]
+}

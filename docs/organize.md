@@ -10,7 +10,7 @@ Legacy full notes: `deprecated/docs/organize-legacy-2026-02-07.md`
 - `docs/organize.md` (this file): launch status board
 - `docs/briefs/accelerator-launch-active-worklog.md`: active execution queue
 - `docs/briefs/INDEX.md`: brief relevance/status map
-- `docs/RUNLOG.md`: chronological implementation log
+- `docs/RUNLOG.md`: chronological implementation-log index
 
 ## Pending (P0)
 - [ ] Set Vercel prod envs: Supabase, Stripe keys, price IDs, coaching links, `NEXT_PUBLIC_SITE_URL=https://coachhouse.app`.
@@ -60,6 +60,6 @@ Archive candidates (likely stale; review before deletion):
 
 ## Next Cleanup Rule
 - Keep new launch decisions in `docs/organize.md`.
-- Keep implementation details in `docs/RUNLOG.md`.
+- Keep implementation details in the current monthly log linked from `docs/RUNLOG.md`.
 - Keep feature specs in briefs only when still active.
 - Archive superseded docs in `deprecated/docs/` instead of deleting.

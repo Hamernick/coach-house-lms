@@ -16,6 +16,10 @@ import type {
 } from "../../workspace-board-types"
 import type { WorkspaceBoardNodeData } from "../../workspace-board-node-types"
 import type {
+  WorkspaceOntologyActionRequest,
+  WorkspaceOntologyRootControl,
+} from "@/features/workspace-ontology"
+import type {
   WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "@/features/workspace-accelerator-card"
@@ -57,6 +61,8 @@ export function useWorkspaceCanvasCardDataLookup({
   organizationMapButtonCallout,
   onOrganizationMapButtonTutorialComplete,
   tutorialStepId,
+  ontologyRootControls,
+  ontologyActionRequest,
 }: {
   allowEditing: boolean
   presentationMode: boolean
@@ -78,7 +84,7 @@ export function useWorkspaceCanvasCardDataLookup({
   onOpenAcceleratorStepNode: (stepId?: string | null) => void
   onHideAcceleratorStepNode: () => void
   onAcceleratorRuntimeChange: (
-    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
+    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot
   ) => void
   onAcceleratorRuntimeActionsChange: WorkspaceBoardNodeData["onAcceleratorRuntimeActionsChange"]
   acceleratorRuntimeSnapshot?: WorkspaceAcceleratorCardRuntimeSnapshot | null
@@ -91,12 +97,16 @@ export function useWorkspaceCanvasCardDataLookup({
   onCardMeasuredHeightChange?: (
     cardId: WorkspaceCardId,
     size: WorkspaceCardSize,
-    height: number,
+    height: number
   ) => void
   organizationShortcutItems: WorkspaceCardShortcutItemModel[]
   organizationMapButtonCallout: WorkspaceBoardNodeData["organizationMapButtonCallout"]
   onOrganizationMapButtonTutorialComplete: WorkspaceBoardNodeData["onOrganizationMapButtonTutorialComplete"]
   tutorialStepId?: WorkspaceCanvasTutorialStepId | null
+  ontologyRootControls?: Partial<
+    Record<WorkspaceCardId, WorkspaceOntologyRootControl>
+  >
+  ontologyActionRequest?: WorkspaceOntologyActionRequest | null
 }) {
   return useMemo(
     () =>
@@ -134,6 +144,8 @@ export function useWorkspaceCanvasCardDataLookup({
         organizationMapButtonCallout,
         onOrganizationMapButtonTutorialComplete,
         tutorialStepId,
+        ontologyRootControls,
+        ontologyActionRequest,
       }),
     [
       acceleratorState,
@@ -164,11 +176,13 @@ export function useWorkspaceCanvasCardDataLookup({
       organizationMapButtonCallout,
       organizationEditorData,
       organizationShortcutItems,
+      ontologyRootControls,
+      ontologyActionRequest,
       presentationMode,
       seed,
       tutorialStepId,
       tracker,
       vaultViewMode,
-    ],
+    ]
   )
 }

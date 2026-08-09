@@ -32,6 +32,7 @@ export default async function AdminLayout({
       sidebarTree={state.sidebarTree}
       user={state.user}
       isAdmin={state.isAdmin}
+      platformAccessLevel={state.platformAccessLevel}
       isTester={state.isTester}
       showOrgAdmin={state.showOrgAdmin}
       canAccessOrgAdmin={state.canAccessOrgAdmin}

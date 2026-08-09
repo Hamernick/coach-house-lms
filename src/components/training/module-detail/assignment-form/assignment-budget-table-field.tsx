@@ -1,3 +1,4 @@
+import { useCallback, useRef } from "react"
 import Download from "lucide-react/dist/esm/icons/download"
 import Info from "lucide-react/dist/esm/icons/info"
 import Plus from "lucide-react/dist/esm/icons/plus"
@@ -79,6 +80,7 @@ export function AssignmentBudgetTableField({
   layout = "grid",
   updateValue,
 }: AssignmentBudgetTableFieldProps) {
+  const pendingAddedRowIndexRef = useRef<number | null>(null)
   const rawRows = Array.isArray(values[field.name])
     ? (values[field.name] as BudgetTableRow[])
     : (field.rows ?? [])
@@ -142,8 +144,24 @@ export function AssignmentBudgetTableField({
   ) : null
 
   const addRow = (seed?: Partial<BudgetTableRow>) => {
+    pendingAddedRowIndexRef.current = ensureRows.length
     updateValue(field.name, [...ensureRows, { ...BLANK_BUDGET_ROW, ...seed }])
   }
+
+  const handleCategoryInputMount = useCallback(
+    (rowIndex: number, input: HTMLInputElement | null) => {
+      if (!input || pendingAddedRowIndexRef.current !== rowIndex) return
+
+      pendingAddedRowIndexRef.current = null
+      requestAnimationFrame(() => {
+        if (!input.isConnected) return
+
+        input.scrollIntoView({ block: "nearest", inline: "nearest" })
+        input.focus({ preventScroll: true })
+      })
+    },
+    []
+  )
 
   const updateRow = (rowIndex: number, patch: Partial<BudgetTableRow>) => {
     const nextRows = [...ensureRows]
@@ -221,6 +239,7 @@ export function AssignmentBudgetTableField({
           formatMoney={formatMoney}
           onUpdateRow={updateRow}
           onRowsChange={(nextRows) => updateValue(field.name, nextRows)}
+          onCategoryInputMount={handleCategoryInputMount}
           layout={layout}
           maxBodyHeightClassName={
             layout === "grid" && isStepper

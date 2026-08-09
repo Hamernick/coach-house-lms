@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down"
-import { useRouter } from "next/navigation"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -76,7 +75,10 @@ function OrganizationList({
       <CommandInput placeholder="Search organizations" />
       <CommandList className="max-h-[18rem]">
         <CommandEmpty>No organizations found.</CommandEmpty>
-        <CommandGroup heading="Organizations">
+        <CommandGroup
+          heading="Organizations"
+          className="[&_[cmdk-group-items]]:space-y-1"
+        >
           {organizations.map((organization) => {
             const isActive = organization.orgId === activeOrganization.orgId
             return (
@@ -137,7 +139,6 @@ export function MemberWorkspaceOrgSwitcher({
   organizations,
   setActiveOrganizationAction,
 }: MemberWorkspaceOrgSwitcherProps) {
-  const router = useRouter()
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -163,7 +164,7 @@ export function MemberWorkspaceOrgSwitcher({
       }
 
       setOpen(false)
-      router.refresh()
+      window.location.reload()
     })
   }
 

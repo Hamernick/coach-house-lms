@@ -7,7 +7,9 @@ import {
 } from "@/components/public/public-map-index/public-map-index-runtime"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
-function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): PublicMapOrganization {
+function buildOrganization(
+  overrides: Partial<PublicMapOrganization> = {}
+): PublicMapOrganization {
   return {
     id: "org-1",
     name: "Alpha Org",
@@ -49,6 +51,7 @@ function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): Publ
     country: "United States",
     locationUrl: null,
     publicSlug: "alpha-org",
+    activityLinks: [],
     programPreview: null,
     programs: [],
     programCount: 0,
@@ -67,13 +70,13 @@ describe("public map actions", () => {
       resolvePublicMapSelectedOrganization({
         organizationById,
         selectedOrgId: null,
-      }),
+      })
     ).toBeNull()
     expect(
       resolveSyncedPublicMapSelectedOrgId({
         organizationById,
         selectedOrgId: null,
-      }),
+      })
     ).toBeNull()
   })
 
@@ -84,13 +87,13 @@ describe("public map actions", () => {
       resolvePublicMapSelectedOrganization({
         organizationById,
         selectedOrgId: "missing-org",
-      }),
+      })
     ).toBeNull()
     expect(
       resolveSyncedPublicMapSelectedOrgId({
         organizationById,
         selectedOrgId: "missing-org",
-      }),
+      })
     ).toBeNull()
   })
 

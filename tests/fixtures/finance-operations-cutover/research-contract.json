@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-06T12:00:00Z",
+  "status": "draft_unsigned",
+  "boundaries": {
+    "economicEngineUnchanged": true,
+    "hcaptchaAllowed": false,
+    "independentChargeModel": "connected_account_direct_charge",
+    "independentApplicationFeeAllowed": false,
+    "fiscalFee": {
+      "percent": 7,
+      "appliesOnlyTo": "approved_fiscally_sponsored_grant_allocation",
+      "approvalRequired": true
+    },
+    "productUiBlockedOnScreenshots": true
+  },
+  "integrityInvariants": [
+    "one_semantic_transition_one_financial_effect",
+    "organization_account_environment_currency_isolation",
+    "test_data_never_enters_live_totals",
+    "immutable_ledger_compensations_only",
+    "restricted_balance_never_crosses_organization_or_project",
+    "no_private_data_in_public_payloads_metrics_or_alerts",
+    "no_independent_application_fee_transfer_or_custody",
+    "grant_allocation_only_seven_percent_fee",
+    "economic_engine_unchanged",
+    "webhook_and_reconciliation_survive_presentation_rollback"
+  ],
+  "slos": [
+    {
+      "id": "webhook_durable_acceptance",
+      "window": "rolling_30_days",
+      "targetPercent": 99.9,
+      "p95Seconds": 2,
+      "p99Seconds": 5,
+      "hardGate": "accepted_event_without_durable_inbox_row"
+    },
+    {
+      "id": "event_processing_freshness",
+      "window": "rolling_30_days",
+      "targetPercent": 99,
+      "targetSeconds": 60,
+      "hardMaximumSeconds": 300
+    },
+    {
+      "id": "connect_readiness_freshness",
+      "window": "rolling_30_days",
+      "targetPercent": 99,
+      "targetSeconds": 300,
+      "hardMaximumSeconds": 900
+    },
+    {
+      "id": "reconciliation_freshness",
+      "window": "per_tracked_live_account",
+      "targetHours": 24,
+      "operatorRunP95Minutes": 15,
+      "hardGate": "unexplained_monetary_delta_or_last_success_over_24_hours"
+    },
+    {
+      "id": "public_aggregate_freshness",
+      "window": "enabled_campaigns",
+      "targetPercent": 99,
+      "targetSeconds": 300,
+      "hardMaximumSeconds": 900
+    },
+    {
+      "id": "finance_route_availability",
+      "window": "rolling_30_days_enabled_cohorts",
+      "targetPercent": 99.9,
+      "hardGate": "two_synthetic_failures_or_five_minutes_elevated_server_errors"
+    }
+  ],
+  "alertSeverities": [
+    {
+      "id": "sev0",
+      "acknowledgement": "immediate",
+      "scope": "integrity_or_privacy",
+      "haltsExpansion": true
+    },
+    {
+      "id": "sev1",
+      "acknowledgementMinutes": 15,
+      "scope": "money_path_unavailable_or_untrusted",
+      "haltsExpansion": true
+    },
+    {
+      "id": "sev2",
+      "acknowledgement": "one_business_day",
+      "scope": "degraded_objective_or_support_risk",
+      "haltsExpansionWhenExitCriterionAffected": true
+    }
+  ],
+  "monitoringViews": [
+    "release_and_canary",
+    "connect_delivery",
+    "financial_integrity",
+    "account_readiness",
+    "public_projection",
+    "fiscal_funds"
+  ],
+  "serverControls": [
+    "connect_provisioning",
+    "campaign_creation",
+    "public_finance_projection",
+    "fiscal_restricted_funds",
+    "organization_cohort"
+  ],
+  "canaryStages": [
+    {
+      "id": "sandbox",
+      "production": false,
+      "minimumObservationHours": 0
+    },
+    {
+      "id": "production_dark",
+      "production": true,
+      "capabilitiesEnabled": false,
+      "minimumObservationHours": 24
+    },
+    {
+      "id": "internal_live",
+      "production": true,
+      "maximumOrganizations": 1,
+      "minimumObservationHours": 24
+    },
+    {
+      "id": "approved_organization",
+      "production": true,
+      "maximumOrganizations": 1,
+      "minimumObservationHours": 72
+    },
+    {
+      "id": "limited_cohort",
+      "production": true,
+      "maximumOrganizations": 5,
+      "minimumObservationHours": 168,
+      "minimumCompletePaymentLifecycles": 10
+    },
+    {
+      "id": "broader_release",
+      "production": true,
+      "eligibleOrganizationPercentages": [25, 100],
+      "minimumObservationHoursAt25Percent": 168
+    }
+  ],
+  "rollback": {
+    "disable": [
+      "connect_provisioning",
+      "campaign_creation",
+      "affected_payment_links",
+      "affected_public_projection"
+    ],
+    "keepRunning": [
+      "connect_webhook",
+      "durable_event_inbox",
+      "event_processing",
+      "immutable_ledger",
+      "reconciliation",
+      "support_access"
+    ],
+    "never": [
+      "delete_financial_rows",
+      "reverse_applied_migration",
+      "invent_public_fallback_total",
+      "skip_failed_canary_stage"
+    ]
+  },
+  "requiredDrills": [
+    "duplicate_replay_out_of_order",
+    "three_hour_webhook_interruption_and_recovery",
+    "account_environment_mode_currency_version_mismatch",
+    "database_partial_failure",
+    "public_cache_staleness",
+    "deployment_and_schema_compatibility_rollback",
+    "public_privacy_kill_switch",
+    "provider_degradation",
+    "backup_owner_handoff",
+    "disposable_backup_restore_or_pitr"
+  ],
+  "ownerRoles": [
+    "release_manager",
+    "incident_commander",
+    "engineering_owner",
+    "finance_operations",
+    "fiscal_sponsorship_operations",
+    "security_privacy",
+    "member_support",
+    "product_owner",
+    "connected_organization_owner",
+    "accounting_reviewer",
+    "counsel"
+  ],
+  "openEvidence": [
+    "implemented_monitoring_dashboard",
+    "delivered_alerts",
+    "named_primary_and_backup_owners",
+    "completed_drills",
+    "signed_rollout_approval",
+    "three_pass_screenshot_review",
+    "responsive_and_error_state_visual_evidence"
+  ]
+}

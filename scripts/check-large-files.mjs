@@ -16,9 +16,19 @@ const defaultBudget = {
 
 const budgets = [
   {
-    label: "run log",
-    maxBytes: 4 * MB,
+    label: "run log index",
+    maxBytes: 64 * KB,
     test: (file) => file === "docs/RUNLOG.md",
+  },
+  {
+    label: "monthly run log",
+    maxBytes: 1 * MB,
+    test: (file) => /^docs\/runlog\/\d{4}-\d{2}\.md$/.test(file),
+  },
+  {
+    label: "legacy run log archive",
+    maxBytes: 4 * MB,
+    test: (file) => file === "docs/runlog/archive/legacy-through-2026-07-14.md",
   },
   {
     label: "pnpm lockfile",

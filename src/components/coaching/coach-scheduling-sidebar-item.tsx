@@ -51,7 +51,9 @@ export function CoachSchedulingSidebarItem() {
               <Link href="/coaching">
                 <CoachingAvatarGroup
                   size="sm"
-                  label="Coach House coaching team"
+                  label="Coach available"
+                  limit={1}
+                  showStatus
                   className="shrink-0"
                 />
                 <span className="min-w-0 flex-1 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">

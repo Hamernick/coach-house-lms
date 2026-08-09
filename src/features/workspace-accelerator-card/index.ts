@@ -5,6 +5,7 @@ export {
   WorkspaceAcceleratorHeaderSummary,
 } from "./public-components"
 export { WorkspaceAcceleratorCardPanel as WorkspaceAcceleratorCardPanelComponent } from "./components/workspace-accelerator-card-panel"
+export { WorkspaceAcceleratorBanner } from "./components/workspace-accelerator-banner"
 export { WorkspaceAcceleratorCardProgressSummary } from "./components/workspace-accelerator-card-progress-strip"
 export { WorkspaceAcceleratorStepNodeCard as WorkspaceAcceleratorStepNodeCardComponent } from "./components/workspace-accelerator-step-node-card"
 export { WorkspaceAcceleratorHeaderPicker as WorkspaceAcceleratorHeaderPickerComponent } from "./components/workspace-accelerator-header-picker"
@@ -15,14 +16,18 @@ export { resolveWorkspaceAcceleratorModuleStepNavigation } from "./components/wo
 export { useWorkspaceAcceleratorCardController } from "./hooks/use-workspace-accelerator-card-controller"
 export {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,
+  buildWorkspaceAcceleratorLessonGroupKey,
+  buildWorkspaceAcceleratorLessonGroupOptions,
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   buildWorkspaceAcceleratorFullscreenHref,
   buildWorkspaceAcceleratorCardSteps,
   buildWorkspaceAcceleratorRuntimeStepSignature,
   formatWorkspaceAcceleratorModuleCompletionLabel,
+  isWorkspaceAcceleratorControllerStepVisible,
   normalizeWorkspaceAcceleratorCardInput,
   normalizeWorkspaceAcceleratorResources,
   resolveWorkspaceAcceleratorCardTargetSize,
+  resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "./lib"
 export type {
   WorkspaceAcceleratorCardInput,
@@ -31,6 +36,7 @@ export type {
   WorkspaceAcceleratorCardStepResource,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorOpenStepRequest,
   WorkspaceAcceleratorTutorialBlockedAction,
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialFocus,

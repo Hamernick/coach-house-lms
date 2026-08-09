@@ -47,7 +47,7 @@ function resolveTutorialWorkspaceCanvasVisibleCardIds({
 
   return resolveWorkspaceCanvasTutorialVisibleCardIds(
     tutorialStepIndex,
-    openedTutorialStepIds,
+    openedTutorialStepIds
   ).filter(isWorkspaceCanvasV2CardId)
 }
 
@@ -64,7 +64,7 @@ export function useWorkspaceCanvasVisibleCardIds({
 }) {
   const boardVisibleCardIds = useMemo<WorkspaceCanvasV2CardId[]>(
     () => resolveVisibleWorkspaceCanvasCardIds(hiddenCardIds),
-    [hiddenCardIds],
+    [hiddenCardIds]
   )
 
   return useMemo<WorkspaceCanvasV2CardId[]>(
@@ -80,12 +80,12 @@ export function useWorkspaceCanvasVisibleCardIds({
       openedTutorialStepIds,
       tutorialActive,
       tutorialStepIndex,
-    ],
+    ]
   )
 }
 
 export function resolveAcceleratorWorkspaceNodeId(
-  acceleratorWorkspaceNode: WorkspaceBoardState["nodes"][number] | null,
+  acceleratorWorkspaceNode: WorkspaceBoardState["nodes"][number] | null
 ): WorkspaceCanvasV2CardId | null {
   return acceleratorWorkspaceNode &&
     isWorkspaceCanvasV2CardId(acceleratorWorkspaceNode.id)
@@ -134,62 +134,59 @@ export function useWorkspaceCardShortcutItems({
   openedTutorialStepIds: WorkspaceBoardState["onboardingFlow"]["openedTutorialStepIds"]
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext,
+    context?: WorkspaceBoardToggleContext
   ) => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   onTutorialAdvance?: (() => void) | null
 }) {
-  return useMemo(
-    () => {
-      const tutorialContinueMode = resolveWorkspaceCanvasTutorialContinueMode(
-        tutorialStepIndex,
-        openedTutorialStepIds,
-      )
-      const tutorialCallout =
-        tutorialActive && tutorialContinueMode === "shortcut"
-          ? resolveWorkspaceCanvasTutorialCallout(
-              tutorialStepIndex,
-              openedTutorialStepIds,
-            )
-          : null
-
-      return buildWorkspaceCardShortcutItemModels({
-        hiddenCardIds,
-        visibleCardIds,
-        selectedCardId,
-        onToggle: onToggleCardVisibility,
-        onFocusCard,
-        tutorialTargetCardId:
-          tutorialCallout?.kind === "shortcut-button"
-            ? tutorialCallout.cardId
-            : null,
-        tutorialInstruction:
-          tutorialCallout?.kind === "shortcut-button"
-            ? tutorialCallout.instruction
-            : null,
-        tutorialHighlightAll:
-          tutorialActive &&
-          resolveWorkspaceCanvasTutorialHighlightShortcutButtons(
-            tutorialStepIndex,
-          ),
-        onTutorialAdvance:
-          tutorialActive && tutorialContinueMode === "shortcut"
-            ? onTutorialAdvance
-            : null,
-      })
-    },
-    [
-      hiddenCardIds,
-      onFocusCard,
-      onToggleCardVisibility,
-      onTutorialAdvance,
-      openedTutorialStepIds,
-      selectedCardId,
-      tutorialActive,
+  return useMemo(() => {
+    const tutorialContinueMode = resolveWorkspaceCanvasTutorialContinueMode(
       tutorialStepIndex,
+      openedTutorialStepIds
+    )
+    const tutorialCallout =
+      tutorialActive && tutorialContinueMode === "shortcut"
+        ? resolveWorkspaceCanvasTutorialCallout(
+            tutorialStepIndex,
+            openedTutorialStepIds
+          )
+        : null
+
+    return buildWorkspaceCardShortcutItemModels({
+      hiddenCardIds,
       visibleCardIds,
-    ],
-  )
+      selectedCardId,
+      onToggle: onToggleCardVisibility,
+      onFocusCard,
+      tutorialTargetCardId:
+        tutorialCallout?.kind === "shortcut-button"
+          ? tutorialCallout.cardId
+          : null,
+      tutorialInstruction:
+        tutorialCallout?.kind === "shortcut-button"
+          ? tutorialCallout.instruction
+          : null,
+      tutorialHighlightAll:
+        tutorialActive &&
+        resolveWorkspaceCanvasTutorialHighlightShortcutButtons(
+          tutorialStepIndex
+        ),
+      onTutorialAdvance:
+        tutorialActive && tutorialContinueMode === "shortcut"
+          ? onTutorialAdvance
+          : null,
+    })
+  }, [
+    hiddenCardIds,
+    onFocusCard,
+    onToggleCardVisibility,
+    onTutorialAdvance,
+    openedTutorialStepIds,
+    selectedCardId,
+    tutorialActive,
+    tutorialStepIndex,
+    visibleCardIds,
+  ])
 }
 
 export function useWorkspaceCardReadinessMap({
@@ -205,7 +202,7 @@ export function useWorkspaceCardReadinessMap({
         seed,
         boardState,
       }),
-    [boardState, seed],
+    [boardState, seed]
   )
 }
 
@@ -219,7 +216,7 @@ export function useWorkspaceCanvasTutorialVisibility({
     const tutorialSelectedCardId = tutorialActive
       ? resolveWorkspaceCanvasTutorialSelectedCardId(
           boardState.onboardingFlow.tutorialStepIndex,
-          boardState.onboardingFlow.openedTutorialStepIds,
+          boardState.onboardingFlow.openedTutorialStepIds
         )
       : null
 
@@ -238,9 +235,12 @@ export function useWorkspaceCanvasTutorialVisibility({
 }
 
 export function useWorkspaceTutorialCardMeasuredHeights() {
-  const [tutorialCardMeasuredHeights, setTutorialCardMeasuredHeights] = useState<
-    Partial<Record<WorkspaceCardId, Partial<Record<WorkspaceCardSize, number>>>>
-  >({})
+  const [tutorialCardMeasuredHeights, setTutorialCardMeasuredHeights] =
+    useState<
+      Partial<
+        Record<WorkspaceCardId, Partial<Record<WorkspaceCardSize, number>>>
+      >
+    >({})
 
   const handleCardMeasuredHeightChange = useCallback(
     (cardId: WorkspaceCardId, size: WorkspaceCardSize, height: number) => {
@@ -258,7 +258,7 @@ export function useWorkspaceTutorialCardMeasuredHeights() {
             }
       })
     },
-    [],
+    []
   )
 
   return {
@@ -283,7 +283,7 @@ export function useWorkspaceTutorialShellMeasuredHeights() {
             }
       })
     },
-    [],
+    []
   )
 
   return {
@@ -309,14 +309,14 @@ export function useWorkspaceTutorialMeasurements({
     handleCardMeasuredHeightChange,
     tutorialShellMeasuredHeight:
       tutorialSceneSignature !== null
-        ? tutorialShellMeasuredHeights[tutorialSceneSignature] ?? null
+        ? (tutorialShellMeasuredHeights[tutorialSceneSignature] ?? null)
         : null,
     handleCurrentTutorialShellMeasuredHeightChange:
       tutorialSceneSignature !== null
         ? (height: number) =>
             handleTutorialShellMeasuredHeightChange(
               tutorialSceneSignature,
-              height,
+              height
             )
         : undefined,
   }

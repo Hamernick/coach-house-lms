@@ -2,10 +2,13 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { sendResendEmail } from "@/lib/email/resend"
+import { env } from "@/lib/env"
 import { createNotification, type NotificationTone } from "@/lib/notifications"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { formatFiscalSponsorshipDocumentKey } from "../lib/required-documents"
+import { selectFiscalReviewerRecipientIds } from "../lib/reviewer-recipients"
 import type {
   FiscalSponsorshipDocumentKey,
   FiscalSponsorshipDocumentReviewStatus,
@@ -63,30 +66,69 @@ function uniqueUserIds(userIds: Array<string | null | undefined>) {
   ]
 }
 
-async function loadPlatformAdminRecipientIds({
+function escapeEmailHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
+function resolveFiscalSiteUrl() {
+  return (
+    env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    env.NEXT_PUBLIC_APP_URL?.trim() ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "")
+}
+
+async function loadFiscalReviewerRecipientIds({
   excludeUserId,
+  orgId,
   supabase,
 }: {
   excludeUserId?: string | null
+  orgId: string
   supabase: Pick<FiscalNotificationClient, "from">
 }) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("role", "admin")
-    .returns<Array<{ id: string }>>()
+  const [staffResult, assignmentsResult] = await Promise.all([
+    supabase
+      .from("platform_staff_members")
+      .select("user_id, access_level")
+      .returns<
+        Array<{
+          access_level: "developer" | "coach"
+          user_id: string
+        }>
+      >(),
+    supabase
+      .from("organization_coach_assignments")
+      .select("coach_user_id")
+      .eq("organization_id", orgId)
+      .returns<Array<{ coach_user_id: string }>>(),
+  ])
 
-  if (error) {
+  if (staffResult.error) {
     console.error(
-      "[fiscal-sponsorship] Unable to load admin notification recipients.",
-      error
+      "[fiscal-sponsorship] Unable to load fiscal reviewer recipients.",
+      staffResult.error
     )
     return []
   }
 
-  return uniqueUserIds((data ?? []).map((profile) => profile.id)).filter(
-    (userId) => userId !== excludeUserId
-  )
+  if (assignmentsResult.error) {
+    console.error(
+      "[fiscal-sponsorship] Unable to load assigned coach recipients.",
+      assignmentsResult.error
+    )
+  }
+
+  return selectFiscalReviewerRecipientIds({
+    assignments: assignmentsResult.error ? [] : (assignmentsResult.data ?? []),
+    excludeUserId,
+    staff: staffResult.data ?? [],
+  })
 }
 
 async function loadOrganizationEditorRecipientIds({
@@ -160,12 +202,13 @@ async function createFiscalNotifications({
   )
 }
 
-async function notifyPlatformAdmins(payload: FiscalNotificationPayload) {
+async function notifyFiscalReviewers(payload: FiscalNotificationPayload) {
   const supabase = getFiscalNotificationClient()
   if (!supabase) return
 
-  const recipientIds = await loadPlatformAdminRecipientIds({
+  const recipientIds = await loadFiscalReviewerRecipientIds({
     excludeUserId: payload.actorId,
+    orgId: payload.application.org_id,
     supabase,
   })
   if (recipientIds.length === 0) return
@@ -268,7 +311,7 @@ export async function notifyFiscalApplicationSubmitted({
   actorId: string
   application: FiscalApplicationRow
 }) {
-  await notifyPlatformAdmins({
+  await notifyFiscalReviewers({
     actorId,
     application,
     description: `${getFiscalProjectName(application)} is ready for Coach House review.`,
@@ -311,7 +354,7 @@ export async function notifyFiscalDocumentConnected({
   documentId: string
   documentKey: FiscalSponsorshipDocumentKey
 }) {
-  await notifyPlatformAdmins({
+  await notifyFiscalReviewers({
     actorId,
     application,
     description: `${formatFiscalSponsorshipDocumentKey(documentKey)} for ${getFiscalProjectName(
@@ -376,15 +419,19 @@ export async function notifyFiscalAgreementGenerated({
 export async function notifyFiscalAgreementSent({
   actorId,
   application,
+  applicantSignerEmail,
+  applicantSignerId,
   packetId,
   providerSubmissionId,
 }: {
   actorId: string
   application: FiscalApplicationRow
+  applicantSignerEmail: string
+  applicantSignerId: string
   packetId: string
   providerSubmissionId: string | null
 }) {
-  await notifyOrganizationEditors({
+  const payload: FiscalNotificationPayload = {
     actorId,
     application,
     description: `The fiscal sponsorship agreement for ${getFiscalProjectName(
@@ -395,6 +442,85 @@ export async function notifyFiscalAgreementSent({
     title: "Fiscal agreement sent for signature",
     tone: "info",
     type: "fiscal_sponsorship_agreement_sent",
+  }
+  const supabase = getFiscalNotificationClient()
+  const signingPath = `/fiscal-sponsorship/sign/${packetId}`
+  const signingUrl = `${resolveFiscalSiteUrl()}${signingPath}`
+  const projectName = getFiscalProjectName(application)
+
+  await Promise.all([
+    supabase
+      ? createFiscalNotifications({
+          payload: {
+            ...payload,
+            description: `${projectName} is ready for your signature.`,
+            href: signingPath,
+            title: "Fiscal agreement ready to sign",
+          },
+          recipientIds: [applicantSignerId],
+          supabase,
+        })
+      : Promise.resolve(),
+    sendResendEmail({
+      html: [
+        `<p>${escapeEmailHtml(projectName)} is ready for your signature in Coach House.</p>`,
+        `<p><a href="${escapeEmailHtml(signingUrl)}">Review and sign the agreement</a></p>`,
+        "<p>You must sign in with the Coach House account assigned to this application.</p>",
+      ].join(""),
+      idempotencyKey: `fiscal-agreement-signing-${packetId}`,
+      subject: `${projectName} is ready for signature`,
+      tags: [
+        { name: "category", value: "fiscal-signature" },
+        { name: "packet", value: packetId },
+      ],
+      text: [
+        `${projectName} is ready for your signature in Coach House.`,
+        "",
+        `Review and sign: ${signingUrl}`,
+        "",
+        "Sign in with the Coach House account assigned to this application.",
+      ].join("\n"),
+      to: applicantSignerEmail,
+    }).then((result) => {
+      if (!result.ok) {
+        console.error(
+          "[fiscal-sponsorship] Unable to send signing email.",
+          result.error
+        )
+      }
+    }),
+  ])
+}
+
+export async function notifyFiscalApplicantSigned({
+  actorId,
+  applicationId,
+  orgId,
+  packetId,
+  projectId,
+  projectName,
+}: {
+  actorId: string
+  applicationId: string
+  orgId: string
+  packetId: string
+  projectId: string
+  projectName: string
+}) {
+  await notifyFiscalReviewers({
+    actorId,
+    application: {
+      id: applicationId,
+      org_id: orgId,
+      project_id: projectId,
+      project_name: projectName,
+    } as FiscalApplicationRow,
+    description: `${projectName} was signed by the applicant and is ready for Coach House countersignature.`,
+    href: `/fiscal-sponsorship/sign/${packetId}`,
+    metadata: { packetId },
+    title: "Fiscal agreement ready to countersign",
+    tone: "info",
+    type: "fiscal_sponsorship_applicant_signed",
   })
 }
 
@@ -431,6 +557,53 @@ export async function notifyFiscalDocuSealCompleted({
 
   await Promise.all([
     notifyOrganizationEditors(payload),
-    notifyPlatformAdmins(payload),
+    notifyFiscalReviewers({
+      ...payload,
+      href: `/organizations/${projectId}`,
+    }),
+  ])
+}
+
+export async function notifyFiscalNativeAgreementCompleted({
+  actorId,
+  applicationId,
+  auditDocumentId,
+  executedDocumentId,
+  orgId,
+  packetId,
+  projectId,
+  projectName,
+}: {
+  actorId: string
+  applicationId: string
+  auditDocumentId: string
+  executedDocumentId: string
+  orgId: string
+  packetId: string
+  projectId: string
+  projectName: string
+}) {
+  const payload: FiscalNotificationPayload = {
+    actorId,
+    application: {
+      id: applicationId,
+      org_id: orgId,
+      project_id: projectId,
+      project_name: projectName,
+    } as FiscalApplicationRow,
+    description: `Signing is complete for ${projectName}. Final files are ready.`,
+    href: "/my-organization",
+    metadata: { auditDocumentId, executedDocumentId, packetId },
+    title: "Fiscal agreement fully signed",
+    tone: "success",
+    type: "fiscal_sponsorship_agreement_completed",
+  }
+
+  await Promise.all([
+    notifyOrganizationEditors(payload),
+    notifyFiscalReviewers({
+      ...payload,
+      href: `/organizations/${projectId}`,
+    }),
   ])
 }

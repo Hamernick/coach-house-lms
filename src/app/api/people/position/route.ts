@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 
-import type { Json } from "@/lib/supabase"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
+import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 
 type PositionPayload = {
   id?: unknown
@@ -35,7 +38,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const rawPayload = (await request.json().catch(() => null)) as (PositionPayload & BulkPayload) | null
+  const rawPayload = (await request.json().catch(() => null)) as
+    | (PositionPayload & BulkPayload)
+    | null
   const incomingPositions = Array.isArray(rawPayload?.positions)
     ? rawPayload?.positions
     : [rawPayload]
@@ -49,7 +54,9 @@ export async function POST(request: Request) {
       if (!id || x == null || y == null) return null
       return { id, x, y }
     })
-    .filter((entry): entry is { id: string; x: number; y: number } => entry !== null)
+    .filter(
+      (entry): entry is { id: string; x: number; y: number } => entry !== null
+    )
 
   if (parsedPositions.length === 0) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
@@ -60,59 +67,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { data: orgRow, error: orgError } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", orgId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+  const writeResult = await mutateOrganizationPeopleProfile<
+    Record<string, unknown>,
+    { updated: number }
+  >({
+    supabase,
+    orgId,
+    mutate: (people) => {
+      const nextPeople = people.map((person) =>
+        isRecord(person) ? { ...person } : person
+      )
+      const peopleById = new Map<string, number>()
+      nextPeople.forEach((person, index) => {
+        if (typeof person.id === "string") peopleById.set(person.id, index)
+      })
 
-  if (orgError) {
-    return NextResponse.json({ error: "Unable to load organization." }, { status: 500 })
-  }
+      let updated = 0
+      for (const position of parsedPositions) {
+        const personIndex = peopleById.get(position.id)
+        if (personIndex == null) continue
+        nextPeople[personIndex] = {
+          ...nextPeople[personIndex],
+          pos: { x: position.x, y: position.y },
+        }
+        updated += 1
+      }
 
-  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const people = Array.isArray(profile.org_people)
-    ? profile.org_people.filter((entry): entry is Record<string, unknown> => isRecord(entry))
-    : []
-
-  const peopleById = new Map<string, number>()
-  people.forEach((entry, index) => {
-    if (typeof entry.id === "string") peopleById.set(entry.id, index)
+      if (updated === 0) return { error: "Person not found." }
+      return {
+        ok: true,
+        changed: true,
+        people: nextPeople,
+        value: { updated },
+      }
+    },
   })
 
-  let updatesApplied = 0
-  for (const pos of parsedPositions) {
-    const personIndex = peopleById.get(pos.id)
-    if (personIndex == null) continue
-    people[personIndex] = {
-      ...people[personIndex],
-      pos: { x: pos.x, y: pos.y },
-    }
-    updatesApplied += 1
+  if ("error" in writeResult) {
+    const status = writeResult.error === "Person not found." ? 404 : 500
+    return NextResponse.json({ error: writeResult.error }, { status })
   }
 
-  if (updatesApplied === 0) {
-    return NextResponse.json({ error: "Person not found." }, { status: 404 })
-  }
-
-  const nextProfile = {
-    ...profile,
-    org_people: people,
-  } as Json
-
-  const { error: upsertError } = await supabase
-    .from("organizations")
-    .upsert(
-      {
-        user_id: orgId,
-        profile: nextProfile,
-      },
-      { onConflict: "user_id" },
-    )
-
-  if (upsertError) {
-    return NextResponse.json({ error: "Unable to save position." }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true, updated: updatesApplied })
+  return NextResponse.json({ ok: true, updated: writeResult.value.updated })
 }

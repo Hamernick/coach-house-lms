@@ -149,7 +149,7 @@ export function buildDocumentsPolicyProgramOptions(
     label:
       typeof program.title === "string" && program.title.trim().length > 0
         ? program.title
-        : "Untitled object",
+        : "Untitled activity",
   }))
 }
 

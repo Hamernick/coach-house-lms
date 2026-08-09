@@ -1,218 +1,506 @@
 "use client"
 
-import { useState } from "react"
-import { addDays, differenceInDays, format, isWithinInterval, startOfWeek } from "date-fns"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
+import {
+  addDays,
+  differenceInDays,
+  format,
+  isSameDay,
+  isWithinInterval,
+  startOfWeek,
+} from "date-fns"
+import {
+  CalendarBlank,
+  CaretLeft,
+  CaretRight,
+  MagnifyingGlass,
+  Plus,
+} from "@phosphor-icons/react/dist/ssr"
 
-import type { TimelineTask } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
+import type {
+  ProjectActivityItem,
+  TimelineTask,
+} from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
+import { Badge } from "@/features/platform-admin-dashboard/upstream/components/ui/badge"
 import { Button } from "@/features/platform-admin-dashboard/upstream/components/ui/button"
+import { Calendar } from "@/features/platform-admin-dashboard/upstream/components/ui/calendar"
+import { Input } from "@/features/platform-admin-dashboard/upstream/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/features/platform-admin-dashboard/upstream/components/ui/popover"
 import { Separator } from "@/features/platform-admin-dashboard/upstream/components/ui/separator"
-import { CaretLeft, CaretRight, CalendarBlank, MagnifyingGlass } from "@phosphor-icons/react/dist/ssr"
+
+export type TimelineProgram = {
+  endAt: string | null
+  id: string
+  startAt: string | null
+  statusLabel: string
+  title: string
+}
 
 type TimelineGanttProps = {
+  activity?: ProjectActivityItem[]
+  onCreateTask?: () => void
+  programs?: TimelineProgram[]
   tasks: TimelineTask[]
+}
+
+type TimelineRow = {
+  endDate: Date | null
+  id: string
+  kind: "Program" | "Task"
+  name: string
+  startDate: Date | null
+  statusLabel: string
+}
+
+const timelineGridStyle = {
+  gridTemplateColumns: "clamp(7rem, 26vw, 15rem) minmax(0, 1fr)",
 }
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n))
 }
 
-export function TimelineGantt({ tasks }: TimelineGanttProps) {
+function toValidDate(value: string | null) {
+  if (!value) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function toTitleCase(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function buildTimelineRows(tasks: TimelineTask[], programs: TimelineProgram[]) {
+  return [
+    ...tasks.map<TimelineRow>((task) => ({
+      endDate: task.endDate,
+      id: `task:${task.id}`,
+      kind: "Task",
+      name: task.name,
+      startDate: task.startDate,
+      statusLabel: toTitleCase(task.status),
+    })),
+    ...programs.map<TimelineRow>((program) => {
+      const startDate = toValidDate(program.startAt)
+      const endDate = toValidDate(program.endAt)
+      return {
+        endDate: endDate ?? startDate,
+        id: `program:${program.id}`,
+        kind: "Program",
+        name: program.title,
+        startDate: startDate ?? endDate,
+        statusLabel: program.statusLabel,
+      }
+    }),
+  ]
+}
+
+function rowIntersectsRange(row: TimelineRow, start: Date, end: Date) {
+  return Boolean(
+    row.startDate && row.endDate && row.startDate < end && row.endDate >= start
+  )
+}
+
+export function TimelineGantt({
+  activity = [],
+  onCreateTask,
+  programs = [],
+  tasks,
+}: TimelineGanttProps) {
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [query, setQuery] = useState("")
   const [rangeStart, setRangeStart] = useState<Date | null>(null)
-
-  if (tasks.length === 0) {
-    return (
-      <section>
-        <h2 className="text-base font-semibold text-foreground">Expected Timeline</h2>
-        <div className="mt-4 rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
-          No tasks scheduled
-        </div>
-      </section>
-    )
-  }
-
-  const minDate = tasks.reduce((acc, t) => (t.startDate < acc ? t.startDate : acc), tasks[0].startDate)
-  const maxDate = tasks.reduce((acc, t) => (t.endDate > acc ? t.endDate : acc), tasks[0].endDate)
-  const minWeekStart = startOfWeek(minDate, { weekStartsOn: 1 })
-  const maxWeekStart = startOfWeek(maxDate, { weekStartsOn: 1 })
-
-  const effectiveRangeStart = rangeStart ?? minWeekStart
-  const currentWeekStart = startOfWeek(effectiveRangeStart, { weekStartsOn: 1 })
-
-  const clampToRange = (date: Date) => {
-    if (date.getTime() < minWeekStart.getTime()) return minWeekStart
-    if (date.getTime() > maxWeekStart.getTime()) return maxWeekStart
-    return date
-  }
-
-  const days = (() => {
-    const start = startOfWeek(effectiveRangeStart, { weekStartsOn: 1 })
-    return Array.from({ length: 7 }).map((_, i) => addDays(start, i))
-  })()
-
-  const monthLabel = format(days[0], "MMMM yyyy")
-
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchInputId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const rows = useMemo(
+    () => buildTimelineRows(tasks, programs),
+    [programs, tasks]
+  )
+  const datedStarts = [
+    ...rows.map((row) => row.startDate),
+    ...activity.map((item) => item.occurredAt),
+  ].filter((date): date is Date => Boolean(date))
+  const initialDate = datedStarts.length
+    ? new Date(Math.min(...datedStarts.map((date) => date.getTime())))
+    : new Date()
+  const effectiveRangeStart = rangeStart ?? initialDate
+  const days = Array.from({ length: 7 }, (_, index) =>
+    addDays(startOfWeek(effectiveRangeStart, { weekStartsOn: 1 }), index)
+  )
   const today = new Date()
-  const todayInRange = isWithinInterval(today, { start: days[0], end: addDays(days[days.length - 1], 1) })
-  const todayIndex = todayInRange
-    ? clamp(differenceInDays(today, days[0]), 0, days.length - 1)
-    : Math.floor(days.length / 2)
+  const rangeStartDate = days[0]
+  const rangeEndDate = addDays(days[days.length - 1], 1)
+  const todayInRange = isWithinInterval(today, {
+    start: rangeStartDate,
+    end: rangeEndDate,
+  })
+  const todayIndex = clamp(
+    differenceInDays(today, rangeStartDate),
+    0,
+    days.length - 1
+  )
+  const normalizedQuery = query.trim().toLowerCase()
+  const matchingRows = rows.filter(
+    (row) =>
+      !normalizedQuery ||
+      row.name.toLowerCase().includes(normalizedQuery) ||
+      row.kind.toLowerCase().includes(normalizedQuery) ||
+      row.statusLabel.toLowerCase().includes(normalizedQuery)
+  )
+  const visibleRows = matchingRows.filter(
+    (row) =>
+      (!row.startDate && !row.endDate) ||
+      rowIntersectsRange(row, rangeStartDate, rangeEndDate)
+  )
+  const visibleActivity = activity
+    .filter(
+      (item) =>
+        item.occurredAt >= rangeStartDate && item.occurredAt < rangeEndDate
+    )
+    .filter(
+      (item) =>
+        !normalizedQuery ||
+        item.title.toLowerCase().includes(normalizedQuery) ||
+        item.entityType.toLowerCase().includes(normalizedQuery) ||
+        item.eventType.toLowerCase().includes(normalizedQuery)
+    )
+    .sort(
+      (left, right) => right.occurredAt.getTime() - left.occurredAt.getTime()
+    )
+  const activityByDay = days.map((day) =>
+    visibleActivity.filter((item) => isSameDay(item.occurredAt, day))
+  )
+  const monthLabel = `${format(days[0], "MMM d")} – ${format(
+    days[days.length - 1],
+    "MMM d, yyyy"
+  )}`
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus()
+  }, [searchOpen])
 
   const handlePrevious = () => {
-    setRangeStart((prev) => {
-      const base = prev ?? minWeekStart
-      const nextWeek = addDays(base, -7)
-      return clampToRange(nextWeek)
-    })
+    setRangeStart(addDays(rangeStartDate, -7))
   }
 
   const handleNext = () => {
-    setRangeStart((prev) => {
-      const base = prev ?? minWeekStart
-      const nextWeek = addDays(base, 7)
-      return clampToRange(nextWeek)
-    })
+    setRangeStart(addDays(rangeStartDate, 7))
   }
 
   const handleToday = () => {
-    const base = startOfWeek(today, { weekStartsOn: 1 })
-    setRangeStart(base)
+    setRangeStart(startOfWeek(today, { weekStartsOn: 1 }))
   }
 
-  const rangeStartDate = days[0]
-  const rangeEndDate = addDays(days[days.length - 1], 1)
-
-  const hasTasksInRange = tasks.some((t) => t.startDate < rangeEndDate && t.endDate >= rangeStartDate)
-
-  const canGoPrevious = currentWeekStart.getTime() > minWeekStart.getTime()
-  const canGoNext = currentWeekStart.getTime() < maxWeekStart.getTime()
+  const handleSearchToggle = () => {
+    setSearchOpen((open) => {
+      if (open) setQuery("")
+      return !open
+    })
+  }
 
   return (
     <section>
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-semibold text-foreground">Expected Timeline</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-foreground text-base font-semibold">
+          Expected Timeline
+        </h2>
+        {onCreateTask ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={onCreateTask}
+          >
+            <Plus data-icon="inline-start" aria-hidden />
+            Add task
+          </Button>
+        ) : null}
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-border">
-        <div className=" w-full">
-          <div className="grid grid-cols-[240px_1fr]">
-            <div className="px-4 py-3 text-sm font-medium text-muted-foreground border-r border-border bg-muted/20">
-              Name
-            </div>
-            <div className="px-4 py-2 border-b border-border bg-background">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs text-muted-foreground">{monthLabel}</div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Previous"
-                    onClick={handlePrevious}
-                    disabled={!canGoPrevious}
-                  >
-                    <CaretLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 rounded-lg px-3 text-xs bg-transparent"
-                    onClick={handleToday}
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Next"
-                    onClick={handleNext}
-                    disabled={!canGoNext}
-                  >
-                    <CaretRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Range: week"
-                    className="h-7 rounded-lg px-3 text-xs"
-                  >
-                    Week
-                  </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label="Date range">
-                    <CalendarBlank className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label="Search tasks">
-                    <MagnifyingGlass className="h-4 w-4" />
-                  </Button>
-                </div>
+      <div className="border-border mt-4 min-w-0 overflow-hidden rounded-lg border">
+        <div className="grid min-w-0" style={timelineGridStyle}>
+          <div className="border-border bg-muted/20 text-muted-foreground border-r px-3 py-3 text-sm font-medium sm:px-4">
+            Name
+          </div>
+          <div className="border-border bg-background min-w-0 border-b px-2 py-2 sm:px-4">
+            <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+              <div className="text-muted-foreground truncate text-xs tabular-nums">
+                {monthLabel}
+              </div>
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Previous week"
+                  onClick={handlePrevious}
+                >
+                  <CaretLeft aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToday}
+                >
+                  Today
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Next week"
+                  onClick={handleNext}
+                >
+                  <CaretRight aria-hidden />
+                </Button>
+                <Badge variant="outline">Week</Badge>
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Jump to date"
+                    >
+                      <CalendarBlank aria-hidden />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={rangeStartDate}
+                      defaultMonth={rangeStartDate}
+                      onSelect={(date) => {
+                        if (!date) return
+                        setRangeStart(startOfWeek(date, { weekStartsOn: 1 }))
+                        setDatePickerOpen(false)
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  type="button"
+                  variant={searchOpen ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  aria-label="Search timeline"
+                  aria-controls={searchInputId}
+                  aria-expanded={searchOpen}
+                  onClick={handleSearchToggle}
+                >
+                  <MagnifyingGlass aria-hidden />
+                </Button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-[240px_1fr]">
-            <div className="border-r border-border bg-muted/10" />
-            <div
-              className={`grid px-4 py-2 bg-muted/10 gap-1`}
-              style={{ gridTemplateColumns: `repeat(${days.length}, minmax(3rem, 1fr))` }}
-            >
-              {days.map((d) => (
-                <div key={d.toISOString()} className="flex flex-col text-[11px] leading-4 text-muted-foreground">
-                  <span className="font-medium">{format(d, "EEE")}</span>
-                  <span className="text-xs text-foreground">{format(d, "d")}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="relative">
-            <div
-              className="absolute top-0 bottom-0 w-px bg-primary"
-              style={{ left: `calc(240px + 16px + ${(todayIndex / days.length) * 100}%)` }}
-              aria-hidden="true"
+        {searchOpen ? (
+          <div className="border-border border-t p-3">
+            <label htmlFor={searchInputId} className="sr-only">
+              Search tasks, programs, and activity
+            </label>
+            <Input
+              ref={searchInputRef}
+              id={searchInputId}
+              type="search"
+              value={query}
+              placeholder="Search timeline…"
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Escape") return
+                setQuery("")
+                setSearchOpen(false)
+              }}
             />
+          </div>
+        ) : null}
 
-            {!hasTasksInRange && (
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/70">
-                <div className="rounded-md border border-dashed border-border/70 bg-background px-4 py-2 text-xs text-muted-foreground">
-                  No tasks scheduled in this week
-                </div>
+        <div className="grid min-w-0" style={timelineGridStyle}>
+          <div className="border-border bg-muted/10 border-r" />
+          <div
+            className="bg-muted/10 grid min-w-0 gap-1 px-2 py-2 sm:px-4"
+            style={{
+              gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {days.map((day) => (
+              <div
+                key={day.toISOString()}
+                className="text-muted-foreground flex min-w-0 flex-col text-[10px] leading-4 sm:text-[11px]"
+              >
+                <span className="truncate font-medium">
+                  {format(day, "EEE")}
+                </span>
+                <span className="text-foreground text-xs tabular-nums">
+                  {format(day, "d")}
+                </span>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
 
-            {tasks.map((t, rowIdx) => {
-              const startOffset = differenceInDays(t.startDate, days[0])
-              const endOffset = differenceInDays(t.endDate, days[0])
+        <Separator />
 
+        <div className="relative min-w-0">
+          {todayInRange ? (
+            <div
+              className="pointer-events-none absolute inset-0 grid"
+              style={timelineGridStyle}
+              aria-hidden
+            >
+              <span />
+              <span className="relative">
+                <span
+                  className="bg-primary absolute inset-y-0 w-px"
+                  style={{
+                    left: `${((todayIndex + 0.5) / days.length) * 100}%`,
+                  }}
+                />
+              </span>
+            </div>
+          ) : null}
+
+          {visibleRows.length ? (
+            visibleRows.map((row, rowIndex) => {
+              const startOffset = row.startDate
+                ? differenceInDays(row.startDate, days[0])
+                : 0
+              const endOffset = row.endDate
+                ? differenceInDays(row.endDate, days[0])
+                : startOffset
               const totalDays = days.length
               const leftPct = clamp((startOffset / totalDays) * 100, 0, 100)
               const rightPct = clamp((endOffset / totalDays) * 100, 0, 100)
               const minWidthPct = (1 / totalDays) * 100
-              const widthPct = clamp(rightPct - leftPct + minWidthPct, minWidthPct, 100)
+              const widthPct = clamp(
+                rightPct - leftPct + minWidthPct,
+                minWidthPct,
+                100 - leftPct
+              )
 
               return (
-                <div key={t.id} className="grid grid-cols-[240px_1fr]">
-                  <div className="px-4 py-2 text-sm text-foreground border-r border-border truncate">
-                    {t.name}
-                  </div>
-                  <div className="relative px-4 py-0">
-                    <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(3rem, 1fr))` }}>
-                      {Array.from({ length: days.length }).map((_, i) => (
-                        <div key={i} className="h-10 first:border-l-0" />
-                      ))}
+                <div key={row.id}>
+                  <div className="grid min-w-0" style={timelineGridStyle}>
+                    <div className="border-border min-w-0 border-r px-3 py-2 sm:px-4">
+                      <p className="text-foreground truncate text-sm">
+                        {row.name}
+                      </p>
+                      <div className="mt-1 flex min-w-0 flex-wrap gap-1">
+                        <Badge
+                          variant={
+                            row.kind === "Program" ? "secondary" : "outline"
+                          }
+                        >
+                          {row.kind}
+                        </Badge>
+                        <span className="text-muted-foreground truncate text-[11px]">
+                          {row.statusLabel}
+                        </span>
+                      </div>
                     </div>
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 h-7 rounded-md bg-muted border border-border px-2 flex items-center"
-                      style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-                      title={t.name}
-                    >
-                      <span className="text-xs text-foreground truncate">{t.name}</span>
+                    <div className="relative min-w-0 px-2 sm:px-4">
+                      <div
+                        className="grid"
+                        style={{
+                          gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`,
+                        }}
+                      >
+                        {days.map((day) => (
+                          <div key={day.toISOString()} className="h-12" />
+                        ))}
+                      </div>
+                      {row.startDate && row.endDate ? (
+                        <div
+                          className="border-border bg-muted absolute top-1/2 flex h-7 -translate-y-1/2 items-center rounded-md border px-2"
+                          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                          title={`${row.name} · ${row.statusLabel}`}
+                        >
+                          <span className="text-foreground truncate text-xs">
+                            {row.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground absolute inset-0 flex items-center px-3 text-xs">
+                          Dates not set
+                        </span>
+                      )}
                     </div>
                   </div>
-                  {rowIdx < tasks.length - 1 ? <Separator className="col-span-2" /> : null}
+                  {rowIndex < visibleRows.length - 1 ? <Separator /> : null}
                 </div>
               )
-            })}
-          </div>
+            })
+          ) : (
+            <div className="grid min-w-0" style={timelineGridStyle}>
+              <div className="border-border border-r" />
+              <p className="text-muted-foreground p-4 text-sm">
+                {normalizedQuery
+                  ? "No matching items in this week."
+                  : "No tasks or programs scheduled in this week."}
+              </p>
+            </div>
+          )}
+          {visibleActivity.length ? (
+            <>
+              <Separator />
+              <div
+                className="grid min-w-0"
+                style={timelineGridStyle}
+                data-timeline-activity-row
+              >
+                <div className="border-border min-w-0 border-r px-3 py-2 sm:px-4">
+                  <p className="text-foreground truncate text-sm">Activity</p>
+                  <p className="text-muted-foreground mt-1 truncate text-[11px]">
+                    Recorded events
+                  </p>
+                </div>
+                <div
+                  className="grid min-w-0"
+                  style={{
+                    gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {activityByDay.map((events, index) => (
+                    <div
+                      key={days[index].toISOString()}
+                      className="relative h-12 min-w-0"
+                    >
+                      {events.length ? (
+                        <div
+                          className="border-border bg-muted absolute inset-x-0.5 top-1/2 flex h-8 min-w-0 -translate-y-1/2 items-center gap-2 overflow-hidden rounded-md border px-1.5"
+                          data-timeline-activity-bar
+                          title={events.map((event) => event.title).join(", ")}
+                          aria-label={`${events.length} activity events on ${format(days[index], "MMMM d, yyyy")}: ${events.map((event) => event.title).join(", ")}`}
+                        >
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 px-2.5 py-1 text-sm leading-none tabular-nums"
+                          >
+                            {events.length}{" "}
+                            {events.length === 1 ? "event" : "events"}
+                          </Badge>
+                          <span className="text-foreground min-w-0 truncate text-xs">
+                            {events[0].title}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </section>

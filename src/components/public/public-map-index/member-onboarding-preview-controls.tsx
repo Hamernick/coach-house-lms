@@ -6,11 +6,13 @@ import BookOpenCheckIcon from "lucide-react/dist/esm/icons/book-open-check"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { PublicMapMemberOnboardingOverlay } from "./member-onboarding-overlay"
 import {
   buildPublicMapMemberOnboardingPreviewHref,
   isPublicMapMemberOnboardingPreviewActive,
 } from "./member-onboarding-preview"
+import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 
 export type PublicMapMemberOnboardingConfig = {
   enabled: boolean
@@ -24,6 +26,11 @@ export type PublicMapAdminOnboardingPreviewConfig = {
   hasOrganizationSwitcher: boolean
 }
 
+export type PublicMapMemberOnboardingMapOverlayState = {
+  isOpen: boolean
+  overlay: ReactNode
+}
+
 export function usePublicMapMemberOnboardingMapOverlay({
   isAuthenticated,
   memberOnboarding,
@@ -32,11 +39,12 @@ export function usePublicMapMemberOnboardingMapOverlay({
   isAuthenticated: boolean
   memberOnboarding?: PublicMapMemberOnboardingConfig
   adminOnboardingPreview?: PublicMapAdminOnboardingPreviewConfig
-}): ReactNode {
+}): PublicMapMemberOnboardingMapOverlayState {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const realMemberOnboardingEnabled = isAuthenticated && Boolean(memberOnboarding?.enabled)
+  const realMemberOnboardingEnabled =
+    isAuthenticated && Boolean(memberOnboarding?.enabled)
   const adminOnboardingPreviewEnabled =
     isAuthenticated &&
     !realMemberOnboardingEnabled &&
@@ -54,16 +62,18 @@ export function usePublicMapMemberOnboardingMapOverlay({
           searchParams,
           enabled,
         }),
-        { scroll: false },
+        { scroll: false }
       )
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams]
   )
   const adminPreviewToggle =
     isAuthenticated && adminOnboardingPreview?.canToggle ? (
       <PublicMapMemberOnboardingPreviewToggle
         active={adminOnboardingPreviewEnabled}
-        onToggle={() => handleToggleAdminOnboardingPreview(!adminOnboardingPreviewEnabled)}
+        onToggle={() =>
+          handleToggleAdminOnboardingPreview(!adminOnboardingPreviewEnabled)
+        }
       />
     ) : null
   const memberOnboardingOverlay = showMemberOnboardingOverlay ? (
@@ -82,12 +92,16 @@ export function usePublicMapMemberOnboardingMapOverlay({
     ) : null
   ) : null
 
-  return adminPreviewToggle || memberOnboardingOverlay ? (
-    <>
-      {adminPreviewToggle}
-      {memberOnboardingOverlay}
-    </>
-  ) : null
+  return {
+    isOpen: showMemberOnboardingOverlay,
+    overlay:
+      adminPreviewToggle || memberOnboardingOverlay ? (
+        <>
+          {adminPreviewToggle}
+          {memberOnboardingOverlay}
+        </>
+      ) : null,
+  }
 }
 
 function PublicMapMemberOnboardingPreviewToggle({
@@ -98,13 +112,16 @@ function PublicMapMemberOnboardingPreviewToggle({
   onToggle: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-30">
+    <div className="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] left-1/2 z-30 -translate-x-1/2">
       <Button
         type="button"
         variant="outline"
         size="sm"
         aria-pressed={active}
-        className="pointer-events-auto rounded-xl border-border/70 bg-card/92 shadow-sm backdrop-blur"
+        className={cn(
+          PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+          "hover:bg-input/50 pointer-events-auto rounded-xl shadow-sm [html.light_&]:!text-zinc-950 [html.light_&]:hover:!text-zinc-950"
+        )}
         onClick={onToggle}
       >
         {active ? (
@@ -112,7 +129,7 @@ function PublicMapMemberOnboardingPreviewToggle({
         ) : (
           <BookOpenCheckIcon data-icon="inline-start" aria-hidden />
         )}
-        {active ? "Hide intro" : "Preview intro"}
+        {active ? "Hide welcome" : "Welcome"}
       </Button>
     </div>
   )

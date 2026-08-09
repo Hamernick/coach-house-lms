@@ -6,6 +6,15 @@ import type {
   FiscalSponsorshipProjectDurationType,
   FiscalSponsorshipProjectWorkbenchData,
 } from "../types"
+import type { BudgetTableRow } from "@/lib/modules"
+import {
+  getBudgetTotal,
+  normalizeFiscalSponsorshipBudgetRows,
+  parseBudgetRows,
+  readBudgetRowsFromMetadata,
+  readBudgetSourceActivityIdFromMetadata,
+  summarizeBudgetRows,
+} from "./budget-plan"
 
 export type FiscalSponsorshipBooleanChoice = "unknown" | "yes" | "no"
 
@@ -32,6 +41,7 @@ export type FiscalSponsorshipApplicationDraft = {
   focusArea: string
   projectDescription: string
   projectLocation: string
+  budgetRows: BudgetTableRow[]
   estimatedBudgetDollars: string
   expenseSummary: string
   prospectiveFundingSources: string
@@ -162,6 +172,40 @@ export function buildFiscalSponsorshipApplicationDraft({
   const applicationName = text(application?.applicantFullName)
   const fullName = applicationName || fallbackApplicantName
   const fullNameParts = splitName(fullName)
+  const savedBudgetRows = readBudgetRowsFromMetadata(application?.metadata)
+  const savedBudgetActivityId = readBudgetSourceActivityIdFromMetadata(
+    application?.metadata
+  )
+  const selectedActivityId = prefill?.sourceActivityId?.trim() || null
+  const sourceActivityChanged = Boolean(
+    selectedActivityId &&
+    savedBudgetActivityId &&
+    selectedActivityId !== savedBudgetActivityId
+  )
+  const prefillBudgetRows = normalizeFiscalSponsorshipBudgetRows(
+    prefill?.budgetRows
+  )
+  const savedSummaryBudgetRows = parseBudgetRows(
+    text(application?.expenseSummary)
+  )
+  const prefillSummaryBudgetRows = parseBudgetRows(
+    text(prefill?.expenseSummary)
+  )
+  const nextPrefillBudgetRows =
+    prefillBudgetRows.length > 0 ? prefillBudgetRows : prefillSummaryBudgetRows
+  const budgetRows = sourceActivityChanged
+    ? nextPrefillBudgetRows
+    : savedBudgetRows.length > 0
+      ? savedBudgetRows
+      : application
+        ? savedSummaryBudgetRows
+        : nextPrefillBudgetRows
+  const budgetTotal = getBudgetTotal(budgetRows)
+  const storedEstimatedBudgetDollars = formatBudgetCentsForDraft(
+    application?.estimatedBudgetCents ?? prefill?.estimatedBudgetCents
+  )
+  const estimatedBudgetDollars =
+    budgetTotal > 0 ? String(budgetTotal) : storedEstimatedBudgetDollars
 
   return {
     projectId: data.projectId,
@@ -227,9 +271,8 @@ export function buildFiscalSponsorshipApplicationDraft({
       application?.projectLocation,
       prefill?.projectLocation
     ),
-    estimatedBudgetDollars: formatBudgetCentsForDraft(
-      application?.estimatedBudgetCents ?? prefill?.estimatedBudgetCents
-    ),
+    budgetRows,
+    estimatedBudgetDollars,
     expenseSummary: firstText(
       application?.expenseSummary,
       prefill?.expenseSummary
@@ -313,7 +356,7 @@ export function buildFiscalSponsorshipApplicationInput({
     estimatedBudgetCents: parseBudgetDollarsToCents(
       draft.estimatedBudgetDollars
     ),
-    expenseSummary: nullableText(draft.expenseSummary),
+    expenseSummary: nullableText(summarizeBudgetRows(draft.budgetRows)),
     prospectiveFundingSources: nullableText(draft.prospectiveFundingSources),
     publicBenefit: nullableText(draft.publicBenefit),
     leadershipBackground: nullableText(draft.leadershipBackground),
@@ -369,6 +412,7 @@ export function buildFiscalSponsorshipApplicationInput({
       },
     },
     metadata: {
+      budgetRows: draft.budgetRows,
       lastEditedSurface: "project-fiscal-sponsorship-drawer",
       selectedActivityId: data.applicationPrefill?.sourceActivityId ?? null,
     },

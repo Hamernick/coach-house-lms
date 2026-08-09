@@ -17,6 +17,14 @@ export type ExportedBrandKitManifest = {
   name: string
   tagline: string | null
   boilerplate: string | null
+  brandVoice: {
+    audience: string | null
+    tone: string | null
+    style: string | null
+    personality: string | null
+    guidelines: string | null
+    avoid: string | null
+  }
   primaryColor: string | null
   palette: string[]
   brandThemePresetId: string | null
@@ -41,14 +49,18 @@ function normalizeText(value: string | null | undefined) {
 function normalizeHex(value: string | null | undefined) {
   const trimmed = typeof value === "string" ? value.trim() : ""
   if (!trimmed) return null
-  return trimmed.startsWith("#") ? trimmed.toUpperCase() : `#${trimmed.toUpperCase()}`
+  return trimmed.startsWith("#")
+    ? trimmed.toUpperCase()
+    : `#${trimmed.toUpperCase()}`
 }
 
 export function resolveBrandPalette(profile: OrgProfile) {
   const palette = new Set<string>()
   const primary = normalizeHex(profile.brandPrimary)
   if (primary) palette.add(primary)
-  for (const color of Array.isArray(profile.brandColors) ? profile.brandColors : []) {
+  for (const color of Array.isArray(profile.brandColors)
+    ? profile.brandColors
+    : []) {
     const normalized = normalizeHex(color)
     if (!normalized || normalized === primary) continue
     palette.add(normalized)
@@ -69,10 +81,20 @@ export function resolveBrandManifest(profile: OrgProfile, now = new Date()) {
     name: normalizeText(profile.name) ?? "Organization",
     tagline: normalizeText(profile.tagline),
     boilerplate: normalizeText(profile.boilerplate),
+    brandVoice: {
+      audience: normalizeText(profile.brandVoiceAudience),
+      tone: normalizeText(profile.brandVoiceTone),
+      style: normalizeText(profile.brandVoiceStyle),
+      personality: normalizeText(profile.brandVoicePersonality),
+      guidelines: normalizeText(profile.brandVoiceGuidelines),
+      avoid: normalizeText(profile.brandVoiceAvoid),
+    },
     primaryColor: normalizeHex(profile.brandPrimary),
     palette,
     brandThemePresetId: normalizeText(theme?.id ?? profile.brandThemePresetId),
-    brandAccentPresetId: normalizeText(accent?.id ?? profile.brandAccentPresetId),
+    brandAccentPresetId: normalizeText(
+      accent?.id ?? profile.brandAccentPresetId
+    ),
     typographyPresetId: normalizeText(profile.brandTypographyPresetId),
     typographyPresetLabel: preset?.label ?? null,
     headingFontLabel: typography.headings.family,
@@ -105,11 +127,34 @@ export function buildBrandKitReadme({
     `${manifest.name} Brand Kit`,
     "",
     manifest.tagline ? `Tagline: ${manifest.tagline}` : null,
-    manifest.boilerplate ? `Boilerplate: ${manifest.boilerplate}` : null,
+    manifest.brandVoice.audience
+      ? `Brand voice audience: ${manifest.brandVoice.audience}`
+      : null,
+    manifest.brandVoice.tone
+      ? `Brand voice tone: ${manifest.brandVoice.tone}`
+      : null,
+    manifest.brandVoice.style
+      ? `Brand voice style: ${manifest.brandVoice.style}`
+      : null,
+    manifest.brandVoice.personality
+      ? `Brand voice personality: ${manifest.brandVoice.personality}`
+      : null,
+    manifest.brandVoice.guidelines
+      ? `Brand voice guidelines: ${manifest.brandVoice.guidelines}`
+      : null,
+    manifest.brandVoice.avoid
+      ? `Brand voice avoid: ${manifest.brandVoice.avoid}`
+      : null,
     manifest.primaryColor ? `Primary color: ${manifest.primaryColor}` : null,
-    manifest.palette.length > 0 ? `Palette: ${manifest.palette.join(", ")}` : null,
-    manifest.brandThemePresetId ? `Theme preset: ${manifest.brandThemePresetId}` : null,
-    manifest.brandAccentPresetId ? `Accent preset: ${manifest.brandAccentPresetId}` : null,
+    manifest.palette.length > 0
+      ? `Palette: ${manifest.palette.join(", ")}`
+      : null,
+    manifest.brandThemePresetId
+      ? `Theme preset: ${manifest.brandThemePresetId}`
+      : null,
+    manifest.brandAccentPresetId
+      ? `Accent preset: ${manifest.brandAccentPresetId}`
+      : null,
     preset ? `Typography preset: ${preset.label}` : null,
     manifest.brandTypography
       ? `Typography slots: headings ${manifest.brandTypography.headings.family} ${manifest.brandTypography.headings.weight}, body ${manifest.brandTypography.body.family} ${manifest.brandTypography.body.weight}, code ${manifest.brandTypography.code.family}`

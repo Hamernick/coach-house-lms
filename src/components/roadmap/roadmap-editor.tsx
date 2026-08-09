@@ -16,8 +16,6 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     drafts,
     handleSectionSelect,
     roadmapBasePath,
-    roadmapReturnHref,
-    roadmapReturnLabel,
     headerTitle,
     headerSubtitle,
     showSectionHeader,
@@ -27,6 +25,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     statusSelectDisabled,
     isHydrated,
     isCalendarSection,
+    isBudgetSection,
     contentMaxWidth,
     editorPlaceholder,
     handleDraftChange,
@@ -50,8 +49,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       drafts={drafts}
       roadmapBasePath={roadmapBasePath}
       onSectionSelect={handleSectionSelect}
-      roadmapReturnHref={roadmapReturnHref}
-      roadmapReturnLabel={roadmapReturnLabel}
+      showRightRail={props.showRightRail ?? true}
       headerTitle={headerTitle}
       headerSubtitle={headerSubtitle}
       showSectionHeader={showSectionHeader}
@@ -63,6 +61,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       statusSelectDisabled={statusSelectDisabled}
       isHydrated={isHydrated}
       isCalendarSection={isCalendarSection}
+      isBudgetSection={isBudgetSection}
       contentMaxWidth={contentMaxWidth}
       activeDraft={activeDraft}
       editorPlaceholder={editorPlaceholder}

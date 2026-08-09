@@ -13,6 +13,7 @@ export const redirectMock = vi.fn((destination: string) => {
 })
 
 export const revalidatePathMock = vi.fn()
+export const revalidateTagMock = vi.fn()
 export const unstableCacheMock = vi.fn(
   <T extends (...args: never[]) => unknown>(fn: T) => fn
 )
@@ -32,6 +33,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
   unstable_cache: unstableCacheMock,
 }))
 
@@ -120,6 +122,7 @@ vi.mock("stripe", () => ({
 export function resetTestMocks() {
   redirectMock.mockClear()
   revalidatePathMock.mockClear()
+  revalidateTagMock.mockClear()
   unstableCacheMock.mockClear()
   headersMock.mockClear()
   createSupabaseServerClientMock.mockReset()

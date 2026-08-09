@@ -10,6 +10,7 @@ import type {
   MemberWorkspaceUpdateProjectQuickLinkInput,
 } from "../types"
 import { ensureMemberWorkspaceFeatureAccess } from "./access"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
   isMissingOrganizationProjectNotesTableError,
@@ -48,9 +49,6 @@ type OrganizationProjectQuickLinkInsert =
 type OrganizationProjectQuickLinkUpdate =
   Database["public"]["Tables"]["organization_project_quick_links"]["Update"]
 
-const PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR =
-  "Platform admins can view organization project details here, but cannot edit them."
-
 function normalizeProjectNoteTitle(value: string) {
   return value.trim()
 }
@@ -77,10 +75,6 @@ async function resolveProjectForDetailMutation({
 }): Promise<
   { ok: true; project: ProjectNoteMutationProjectRow } | { error: string }
 > {
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
-  }
-
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
@@ -104,13 +98,16 @@ async function resolveProjectForDetailMutation({
     return { error: "Unable to find that project." }
   }
 
-  if (project.org_id !== actor.activeOrg.orgId) {
+  if (
+    !actorCanAccessOrganizations(actor) &&
+    project.org_id !== actor.activeOrg.orgId
+  ) {
     return {
       error: "You can only manage project details for the active organization.",
     }
   }
 
-  if (!actor.canEdit) {
+  if (!actorCanAccessOrganizations(actor) && !actor.canEdit) {
     return { error: "Only organization editors can manage project details." }
   }
 

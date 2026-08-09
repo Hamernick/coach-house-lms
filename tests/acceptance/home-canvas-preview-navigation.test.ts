@@ -12,10 +12,7 @@ vi.mock("@/components/public/legacy-home-sections", () => ({
   ],
 }))
 
-import {
-  SIDEBAR_CANVAS_NAV,
-  VISIBLE_CANVAS_NAV,
-} from "@/components/public/home-canvas-preview-config"
+import { VISIBLE_CANVAS_NAV } from "@/components/public/home-canvas-preview-config"
 import { resolveHomeCanvasSectionTransition } from "@/components/public/home-canvas-preview-navigation"
 
 const ROOT = process.cwd()
@@ -25,12 +22,8 @@ function readSource(relativePath: string) {
 }
 
 describe("home canvas preview navigation", () => {
-  it("keeps the hero section available while hiding Welcome from the sidebar nav", () => {
+  it("keeps the hero section available to explicit navigation", () => {
     expect(VISIBLE_CANVAS_NAV.map((item) => item.id)).toContain("hero")
-    expect(SIDEBAR_CANVAS_NAV.map((item) => item.id)).not.toContain("hero")
-    expect(SIDEBAR_CANVAS_NAV.map((item) => item.label)).not.toContain(
-      "Welcome"
-    )
   })
 
   it("still syncs hidden auth panels when the section changes via URL", () => {
@@ -55,26 +48,28 @@ describe("home canvas preview navigation", () => {
     })
   })
 
-  it("keeps mobile brand and menu controls in their expected positions", () => {
+  it("keeps branding and signup in the top rail while reserving the menu for Find", () => {
     const source = readSource(
       "src/components/public/home-canvas-preview-shell.tsx"
     )
 
-    expect(source).toContain("function HomeCanvasMobileHeaderBrand")
+    expect(source).not.toContain("function HomeCanvasMobileHeaderBrand")
+    expect(source).toContain("function HomeCanvasBrandLink")
     expect(source).toContain("function HomeCanvasSidebarHeader")
     expect(source).toContain("function HomeCanvasMobileSidebarTrigger")
     expect(source).toContain(
       "const { isMobile, openMobile, toggleSidebar } = useSidebar()"
     )
-    expect(source).toContain(
-      'aria-label={openMobile ? "Close navigation menu" : "Open navigation menu"}'
-    )
+    expect(source).toContain('"Close Find, Guides, and Saved"')
+    expect(source).toContain('"Open Find, Guides, and Saved"')
     expect(source).toContain("aria-expanded={openMobile}")
     expect(source).toContain("onClick={toggleSidebar}")
     expect(source).toContain("size-11")
-    expect(source).toContain('className="hidden md:inline-flex"')
     expect(source).toContain('className="size-10 touch-manipulation md:hidden"')
-    expect(source.indexOf("<HomeCanvasMobileHeaderBrand")).toBeLessThan(
+    expect(source).toContain('showShellSidebar && "md:hidden"')
+    expect(source).toContain('onClick={() => changeSection("signup")}')
+    expect(source).toContain("Sign up")
+    expect(source.indexOf("<HomeCanvasBrandLink")).toBeLessThan(
       source.indexOf("<HomeCanvasLoginButton")
     )
     expect(source.indexOf("<HomeCanvasMobileSidebarTrigger")).toBeGreaterThan(

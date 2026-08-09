@@ -1,12 +1,10 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
-
-import { useAppShellRightRailControls } from "@/components/app-shell/right-rail-controls"
 import {
   clampWorkspaceCanvasTutorialStepIndex,
   resolveWorkspaceCanvasTutorialCallout,
 } from "@/features/workspace-canvas-tutorial"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceCanvasCardFocusRequest,
   WorkspaceCanvasTutorialCompletionExitRequest,
@@ -15,8 +13,8 @@ import type {
 import { WorkspaceBoardFlowSurface } from "./workspace-board-flow-surface"
 import { WorkspaceBoardInitialOnboardingSurface } from "./workspace-board-initial-onboarding-surface"
 import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
+import { WorkspaceBoardTeamAccessHeaderAction } from "./workspace-board-team-access-header-action"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
-import { shouldAutoOpenRightRailForWorkspaceTutorialCallout } from "./workspace-board-tutorial-right-rail"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardOnboardingFlowState,
@@ -46,6 +44,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest,
   journeyGuideState,
   organizationEditorData,
+  financeInput,
   onInitialOnboardingSubmit,
   onInvitesChange,
   onSizeChange,
@@ -87,6 +86,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
@@ -115,7 +115,6 @@ export function WorkspaceBoardCanvasBody({
   ) => void
   onTutorialCompletionExitHandled: () => void
 }) {
-  const rightRailControls = useAppShellRightRailControls()
   const tutorialActive = boardState.onboardingFlow.active
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
     boardState.onboardingFlow.tutorialStepIndex
@@ -126,23 +125,8 @@ export function WorkspaceBoardCanvasBody({
         boardState.onboardingFlow.openedTutorialStepIds
       )
     : null
-  const uiPreferencesScope = useMemo(
-    () => ({
-      orgId: seed.orgId,
-      viewerId: seed.viewerId,
-    }),
-    [seed.orgId, seed.viewerId]
-  )
-
-  useEffect(() => {
-    if (!shouldAutoOpenRightRailForWorkspaceTutorialCallout(tutorialCallout)) {
-      return
-    }
-    rightRailControls?.setRightOpenAuto(true)
-  }, [rightRailControls, tutorialCallout])
-
   const workspaceDataDrawerCanEdit =
-    seed.canEdit || seed.isPlatformAdmin === true
+    !seed.presentationMode && (seed.canEdit || seed.isPlatformAdmin === true)
 
   if (initialOnboardingActive) {
     return (
@@ -155,15 +139,13 @@ export function WorkspaceBoardCanvasBody({
 
   return (
     <>
-      <WorkspaceBoardRightRail
+      <WorkspaceBoardTeamAccessHeaderAction
         canInvite={seed.canInviteCollaborators}
         members={seed.members}
         invites={invites}
         realtimeState={cursorConnectionState}
         currentUser={rightRailCurrentUser}
-        uiPreferencesScope={uiPreferencesScope}
-        roadmapSections={seed.roadmapSections}
-        tutorialTeamAccessCallout={
+        tutorialCallout={
           tutorialCallout?.kind === "team-access"
             ? {
                 title: tutorialCallout.label,
@@ -173,11 +155,13 @@ export function WorkspaceBoardCanvasBody({
         }
         onInvitesChange={onInvitesChange}
       />
+      <WorkspaceBoardRightRail roadmapSections={seed.roadmapSections} />
 
-      <div className="relative flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden">
         <WorkspaceBoardFlowSurface
           seed={seed}
           organizationEditorData={organizationEditorData}
+          financeInput={financeInput}
           boardState={boardState}
           allowEditing={allowEditing}
           workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}

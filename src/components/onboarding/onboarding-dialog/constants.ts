@@ -5,6 +5,7 @@ import SearchIcon from "lucide-react/dist/esm/icons/search"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import { FORMATION_STATUS_OPTIONS } from "@/lib/organization/formation-status"
+import { RESERVED_PUBLIC_ORGANIZATION_SLUGS } from "@/lib/organization/reserved-public-slugs"
 import type { FormationStatus, IntentFocus, Step } from "./types"
 
 export const FORMATION_OPTIONS: Array<{
@@ -55,7 +56,8 @@ export const MEMBER_STEPS: Step[] = [
   {
     id: "account",
     title: "Set up your account",
-    description: "A few details so we can personalize your internal member view.",
+    description:
+      "A few details so we can personalize your internal member view.",
   },
   {
     id: "community",
@@ -68,7 +70,9 @@ export const MEMBER_STEPS: Step[] = [
 export const STEPS = BUILDER_STEPS
 
 export function resolveOnboardingSteps(intentFocus: IntentFocus | "") {
-  return intentFocus === "find" || intentFocus === "fund" || intentFocus === "support"
+  return intentFocus === "find" ||
+    intentFocus === "fund" ||
+    intentFocus === "support"
     ? MEMBER_STEPS
     : BUILDER_STEPS
 }
@@ -112,24 +116,7 @@ export const INTENT_OPTIONS: IntentOption[] = [
   },
 ]
 
-export const RESERVED_SLUGS = new Set([
-  "admin",
-  "api",
-  "login",
-  "signup",
-  "pricing",
-  "billing",
-  "class",
-  "dashboard",
-  "people",
-  "organization",
-  "my-organization",
-  "roadmap",
-  "_next",
-  "public",
-  "favicon",
-  "assets",
-])
+export const RESERVED_SLUGS = RESERVED_PUBLIC_ORGANIZATION_SLUGS
 
 export const DRAFT_VALUE_KEYS = [
   "intentFocus",

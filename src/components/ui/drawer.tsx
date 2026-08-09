@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils"
 
 function Drawer({
   onOpenChange,
-  open,
-  modal,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
   const handleOpenChange = React.useCallback(
@@ -25,8 +23,6 @@ function Drawer({
   return (
     <DrawerPrimitive.Root
       data-slot="drawer"
-      modal={open === false ? false : modal}
-      open={open}
       onOpenChange={handleOpenChange}
       {...props}
     />

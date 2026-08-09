@@ -18,23 +18,26 @@ describe("app shell navigation performance", () => {
   it("keeps prefetching scoped to internal routes", () => {
     expect(isInternalPrefetchHref("/workspace")).toBe(true)
     expect(isInternalPrefetchHref("/find?group=all")).toBe(true)
-    expect(isInternalPrefetchHref("mailto:joel@coachhousesolutions.org")).toBe(false)
+    expect(isInternalPrefetchHref("mailto:joel@coachhousesolutions.org")).toBe(
+      false
+    )
     expect(isInternalPrefetchHref("https://coachhouse.app")).toBe(false)
     expect(isInternalPrefetchHref("//coachhouse.app")).toBe(false)
     expect(isInternalPrefetchHref("?paywall=organization")).toBe(false)
-    expect(uniqueInternalPrefetchHrefs(["/workspace", "/workspace", "/tasks"])).toEqual([
-      "/workspace",
-      "/tasks",
-    ])
+    expect(
+      uniqueInternalPrefetchHrefs(["/workspace", "/workspace", "/tasks"])
+    ).toEqual(["/workspace", "/tasks"])
   })
 
   it("animates route swaps without remounting shell content", () => {
-    const shellSource = readSource("src/components/app-shell/app-shell-inner.tsx")
+    const shellSource = readSource(
+      "src/components/app-shell/app-shell-inner.tsx"
+    )
     const shellMainContentSource = readSource(
-      "src/components/app-shell/components/shell-main-content.tsx",
+      "src/components/app-shell/components/shell-main-content.tsx"
     )
     const transitionHookSource = readSource(
-      "src/components/app-shell/use-app-shell-route-transition.ts",
+      "src/components/app-shell/use-app-shell-route-transition.ts"
     )
 
     expect(shellSource).toContain("useAppShellRouteTransition")
@@ -47,53 +50,76 @@ describe("app shell navigation performance", () => {
 
   it("prefetches internal nav and lesson destinations ahead of interaction", () => {
     const navSource = readSource("src/components/nav-main.tsx")
-    const sidebarStepperSource = readSource("src/components/app-sidebar/module-stepper.tsx")
+    const sidebarStepperSource = readSource(
+      "src/components/app-sidebar/module-stepper.tsx"
+    )
     const moduleStepperSource = readSource(
-      "src/components/training/module-detail/module-stepper.tsx",
+      "src/components/training/module-detail/module-stepper.tsx"
     )
     const moduleStepContentSource = readSource(
-      "src/components/training/module-detail/module-stepper-active-step-content.tsx",
+      "src/components/training/module-detail/module-stepper-active-step-content.tsx"
     )
     const acceleratorPanelSource = readSource(
-      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx",
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx"
     )
     const acceleratorViewerTransitionSource = readSource(
-      "src/features/workspace-accelerator-card/components/workspace-accelerator-step-viewer-transition.tsx",
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-step-viewer-transition.tsx"
     )
 
     expect(navSource).toContain("useInternalRoutePrefetch")
     expect(navSource).toContain("onPointerEnter={() => prefetchHref")
-    expect(sidebarStepperSource).toContain("onFocus={() => onHover?.(step.href)}")
+    expect(sidebarStepperSource).toContain(
+      "onFocus={() => onHover?.(step.href)}"
+    )
     expect(sidebarStepperSource).toContain("prefetch={true}")
     expect(moduleStepperSource).toContain("router.prefetch(nextHref)")
     expect(moduleStepperSource).toContain("requestIdleCallback")
     expect(moduleStepContentSource).toContain("preloadAssignmentForm")
-    expect(acceleratorPanelSource).toContain("WorkspaceAcceleratorStepViewerTransition")
-    expect(acceleratorViewerTransitionSource).toContain('key="accelerator-step-viewer"')
+    expect(acceleratorPanelSource).toContain(
+      "WorkspaceAcceleratorStepViewerTransition"
+    )
+    expect(acceleratorViewerTransitionSource).toContain(
+      'key="accelerator-step-viewer"'
+    )
     expect(acceleratorViewerTransitionSource).toContain("useReducedMotion")
   })
 
   it("keeps public find search and list updates responsive", () => {
-    const publicMapSource = readSource("src/components/public/public-map-index.tsx")
+    const publicMapSource = readSource(
+      "src/components/public/public-map-index.tsx"
+    )
     const searchIndexSource = readSource(
-      "src/components/public/public-map-index/search-index.ts",
+      "src/components/public/public-map-index/search-index.ts"
     )
     const organizationListSource = readSource(
-      "src/components/public/public-map-index/organization-list.tsx",
+      "src/components/public/public-map-index/organization-list.tsx"
+    )
+    const organizationDetailChromeSource = readSource(
+      "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
     )
     const actionsSource = readSource(
-      "src/components/public/public-map-index/use-public-map-actions.ts",
+      "src/components/public/public-map-index/use-public-map-actions.ts"
     )
 
     expect(publicMapSource).toContain("useDeferredValue")
-    expect(publicMapSource).toContain("query: deferredQuery")
+    expect(publicMapSource).toContain("deferredQuery: query")
+    expect(publicMapSource).toContain(
+      "filteredOrganizations: mapFilteredOrganizations"
+    )
+    expect(publicMapSource).toContain("query,")
     expect(searchIndexSource).not.toContain("new Map(organizations.map")
-    expect(searchIndexSource).toContain("const favoriteIds = sortByFavorites ? new Set(favorites) : null")
+    expect(searchIndexSource).toContain(
+      "const favoriteIds = sortByFavorites ? new Set(favorites) : null"
+    )
     expect(searchIndexSource).toContain("PUBLIC_MAP_NAME_COLLATOR")
     expect(organizationListSource).toMatch(
       /memo\(\s*PublicMapOrganizationListComponent\s*\)/
     )
-    expect(organizationListSource).toContain("const favoriteIds = useMemo(() => new Set(favorites), [favorites])")
+    expect(organizationListSource).not.toContain("favoriteIds")
+    expect(organizationListSource).not.toContain("favorite-button")
+    expect(organizationDetailChromeSource).toContain(
+      "aria-pressed={isFavorite}"
+    )
     expect(actionsSource).toContain("useCallback")
   })
 })

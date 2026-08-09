@@ -23,6 +23,11 @@ import { useRoadmapEditorLayoutMetrics } from "@/components/roadmap/roadmap-edit
 import type { RoadmapDraft } from "@/components/roadmap/roadmap-editor/types"
 import { Button } from "@/components/ui/button"
 import type { RoadmapSection } from "@/lib/roadmap"
+import {
+  getWorkspaceRoadmapDrawerPath,
+  WORKSPACE_ROADMAP_PATH,
+} from "@/lib/workspace/routes"
+import { requestWorkspaceRoadmapDrawer } from "@/lib/workspace/data-drawer-events"
 import { cn } from "@/lib/utils"
 
 export type RoadmapNavigatorSectionProps = {
@@ -128,7 +133,17 @@ export function RoadmapNavigatorSection({
         onSectionSelect(next)
         return
       }
-      router.push(`${basePath}/${next.slug}`)
+      if (
+        basePath === WORKSPACE_ROADMAP_PATH &&
+        requestWorkspaceRoadmapDrawer(next.slug)
+      ) {
+        return
+      }
+      router.push(
+        basePath === WORKSPACE_ROADMAP_PATH
+          ? getWorkspaceRoadmapDrawerPath(next.slug)
+          : `${basePath}/${next.slug}`
+      )
     },
     [basePath, onSectionSelect, router]
   )
@@ -162,7 +177,7 @@ export function RoadmapNavigatorSection({
                 ROADMAP_TOC_TITLE_CLASS_NAME
               )}
             >
-              <span className="truncate">Strategic Roadmap</span>
+              <span className="truncate">Core Documents</span>
             </span>
             <ChevronDownIcon
               className={cn(

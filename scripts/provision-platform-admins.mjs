@@ -6,7 +6,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 
-const VALID_ROLE = "admin"
+const VALID_ACCESS_LEVELS = new Set(["developer", "coach"])
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : ""
@@ -32,6 +32,7 @@ export function normalizePlatformAdminManifest(raw) {
     const email = normalizeEmail(record.email)
     const fullName = normalizeText(record.fullName)
     const password = normalizeText(record.password)
+    const accessLevel = normalizeText(record.accessLevel) || "developer"
 
     if (!email) {
       throw new Error(`Manifest entry ${index + 1} is missing an email.`)
@@ -42,11 +43,17 @@ export function normalizePlatformAdminManifest(raw) {
     }
     seenEmails.add(email)
 
+    if (!VALID_ACCESS_LEVELS.has(accessLevel)) {
+      throw new Error(
+        `Manifest entry ${index + 1} has invalid accessLevel '${accessLevel}'.`
+      )
+    }
+
     return {
       email,
       fullName: fullName || null,
       password: password || null,
-      role: VALID_ROLE,
+      accessLevel,
     }
   })
 }
@@ -63,10 +70,15 @@ async function findUserByEmail(adminClient, email) {
   let page = 1
 
   while (true) {
-    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage })
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page,
+      perPage,
+    })
     if (error) throw new Error(error.message)
 
-    const match = (data.users ?? []).find((user) => (user.email ?? "").toLowerCase() === email)
+    const match = (data.users ?? []).find(
+      (user) => (user.email ?? "").toLowerCase() === email
+    )
     if (match) return match
     if (!data.users || data.users.length < perPage) break
     page += 1
@@ -75,23 +87,44 @@ async function findUserByEmail(adminClient, email) {
   return null
 }
 
-async function ensureProfileRole(adminClient, { userId, email, fullName }) {
+async function ensureProfileRole(
+  adminClient,
+  { userId, email, fullName, accessLevel }
+) {
   const payload = {
     id: userId,
-    role: VALID_ROLE,
+    role: accessLevel === "developer" ? "admin" : "member",
     email,
     ...(fullName ? { full_name: fullName } : {}),
   }
 
-  const { error } = await adminClient.from("profiles").upsert(payload, { onConflict: "id" })
+  const { error } = await adminClient
+    .from("profiles")
+    .upsert(payload, { onConflict: "id" })
   if (error) {
-    throw new Error(`Unable to upsert profile role for ${email}: ${error.message}`)
+    throw new Error(
+      `Unable to upsert profile role for ${email}: ${error.message}`
+    )
+  }
+}
+
+async function ensurePlatformStaffAccess(adminClient, { userId, accessLevel }) {
+  const { error } = await adminClient
+    .from("platform_staff_members")
+    .upsert(
+      { user_id: userId, access_level: accessLevel },
+      { onConflict: "user_id" }
+    )
+  if (error) {
+    throw new Error(`Unable to set platform access: ${error.message}`)
   }
 }
 
 async function createPlatformAdmin(adminClient, entry) {
   if (!entry.password) {
-    throw new Error(`Cannot create ${entry.email} without a password in the manifest.`)
+    throw new Error(
+      `Cannot create ${entry.email} without a password in the manifest.`
+    )
   }
 
   const {
@@ -105,13 +138,20 @@ async function createPlatformAdmin(adminClient, entry) {
   })
 
   if (error || !user) {
-    throw new Error(`Unable to create ${entry.email}: ${error?.message ?? "Unknown error"}`)
+    throw new Error(
+      `Unable to create ${entry.email}: ${error?.message ?? "Unknown error"}`
+    )
   }
 
   await ensureProfileRole(adminClient, {
     userId: user.id,
     email: entry.email,
     fullName: entry.fullName,
+    accessLevel: entry.accessLevel,
+  })
+  await ensurePlatformStaffAccess(adminClient, {
+    userId: user.id,
+    accessLevel: entry.accessLevel,
   })
 
   return { action: "created", userId: user.id }
@@ -120,20 +160,35 @@ async function createPlatformAdmin(adminClient, entry) {
 async function updateExistingPlatformAdmin(adminClient, existingUser, entry) {
   const updatePayload = {
     email_confirm: true,
-    ...(entry.fullName ? { user_metadata: { ...(existingUser.user_metadata ?? {}), full_name: entry.fullName } } : {}),
+    ...(entry.fullName
+      ? {
+          user_metadata: {
+            ...(existingUser.user_metadata ?? {}),
+            full_name: entry.fullName,
+          },
+        }
+      : {}),
     ...(entry.password ? { password: entry.password } : {}),
   }
 
-  const { data, error } = await adminClient.auth.admin.updateUserById(existingUser.id, updatePayload)
+  const { data, error } = await adminClient.auth.admin.updateUserById(
+    existingUser.id,
+    updatePayload
+  )
   if (error) {
     throw new Error(`Unable to update ${entry.email}: ${error.message}`)
   }
 
   const resolvedUserId = data.user?.id ?? existingUser.id
+  await ensurePlatformStaffAccess(adminClient, {
+    userId: resolvedUserId,
+    accessLevel: entry.accessLevel,
+  })
   await ensureProfileRole(adminClient, {
     userId: resolvedUserId,
     email: entry.email,
     fullName: entry.fullName,
+    accessLevel: entry.accessLevel,
   })
 
   return { action: "updated", userId: resolvedUserId }
@@ -153,7 +208,9 @@ export async function provisionPlatformAdmins({
   const serviceRole = env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !serviceRole) {
-    throw new Error("Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.")
+    throw new Error(
+      "Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY."
+    )
   }
 
   const manifest = await loadManifestFromFile(manifestFile)
@@ -176,6 +233,7 @@ export async function provisionPlatformAdmins({
         email: entry.email,
         action: existingUser ? "would-update" : "would-create",
         hasPassword: Boolean(entry.password),
+        accessLevel: entry.accessLevel,
       })
       continue
     }
@@ -189,6 +247,7 @@ export async function provisionPlatformAdmins({
       action: result.action,
       userId: result.userId,
       passwordChanged: Boolean(entry.password),
+      accessLevel: entry.accessLevel,
     })
   }
 
@@ -197,11 +256,16 @@ export async function provisionPlatformAdmins({
       [
         `${item.action}: ${item.email}`,
         "userId" in item && item.userId ? `user_id=${item.userId}` : null,
-        "passwordChanged" in item ? `password_set=${item.passwordChanged ? "yes" : "no"}` : null,
-        "hasPassword" in item ? `password_in_manifest=${item.hasPassword ? "yes" : "no"}` : null,
+        "passwordChanged" in item
+          ? `password_set=${item.passwordChanged ? "yes" : "no"}`
+          : null,
+        "hasPassword" in item
+          ? `password_in_manifest=${item.hasPassword ? "yes" : "no"}`
+          : null,
+        `access_level=${item.accessLevel}`,
       ]
         .filter(Boolean)
-        .join(" | "),
+        .join(" | ")
     )
   }
 
@@ -222,7 +286,8 @@ async function main() {
   })
 
   await provisionPlatformAdmins({
-    manifestFile: values.file || process.env.PLATFORM_ADMIN_MANIFEST_FILE || null,
+    manifestFile:
+      values.file || process.env.PLATFORM_ADMIN_MANIFEST_FILE || null,
     dryRun: values["dry-run"],
   })
 }

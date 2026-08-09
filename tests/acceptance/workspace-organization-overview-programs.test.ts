@@ -101,7 +101,7 @@ describe("workspace organization overview programs", () => {
     expect(isWorkspaceProgramsPreviewOnlyStep(null)).toBe(false)
   })
 
-  it("uses Activity copy for empty primary-object surfaces", () => {
+  it("uses Activity copy and keeps owner activity cards editable", () => {
     const workspaceProgramsCard = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-programs-card.tsx"
     )
@@ -120,14 +120,50 @@ describe("workspace organization overview programs", () => {
     const programsTab = readSource(
       "src/components/organization/org-profile-card/tabs/programs-tab.tsx"
     )
+    const peopleTab = readSource(
+      "src/components/organization/org-profile-card/tabs/people-tab.tsx"
+    )
+    const supportersTab = readSource(
+      "src/components/organization/org-profile-card/tabs/supporters-tab.tsx"
+    )
+    const supportersShowcase = readSource(
+      "src/components/people/supporters-showcase.tsx"
+    )
+    const orgProfileShared = readSource(
+      "src/components/organization/org-profile-card/shared.tsx"
+    )
+    const orgProfileCard = readSource(
+      "src/components/organization/org-profile-card/org-profile-card.tsx"
+    )
+    const orgProfileNavigation = readSource(
+      "src/components/organization/org-profile-card/org-profile-tab-navigation.tsx"
+    )
+    const orgProfileConfig = readSource(
+      "src/components/organization/org-profile-card/config.ts"
+    )
+    const publicCardSections = readSource(
+      "src/components/organization/org-profile-card/public-card-sections.tsx"
+    )
+    const publicPeopleSections = readSource(
+      "src/components/organization/org-profile-card/public-card-people-sections.tsx"
+    )
+    const myOrganizationPage = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+    const programActions = readSource("src/actions/programs.ts")
+    const programMediaRoute = readSource(
+      "src/app/api/account/program-media/route.ts"
+    )
 
     expect(workspaceProgramsCard).toContain('title="No activity to display"')
+    expect(workspaceProgramsCard).toContain('"Untitled activity"')
     expect(workspaceProgramsCard).toContain("Open activity")
     expect(workspaceProgramsCard).toContain(
       'className="bg-background min-h-[148px] rounded-xl px-4 py-6 shadow-none"'
     )
+    expect(workspaceProgramsCard).not.toContain('<div className="pb-3">')
     expect(workspaceProgramsCard).not.toContain(
-      'className="bg-background mb-3 min-h-[148px] rounded-xl px-4 py-6"'
+      "bg-background mb-3 min-h-[148px]"
     )
     expect(workspaceProgramsCard).toContain(
       'className="flex min-h-0 flex-col gap-3 pb-0"'
@@ -175,15 +211,26 @@ describe("workspace organization overview programs", () => {
       "onCarouselApiChange={setCarouselApi}"
     )
     expect(workspaceProgramsRenderer).toContain(
+      "headerAction={renderProgramsHeaderAction({"
+    )
+    expect(workspaceProgramsRenderer).toContain(
       "footer={renderProgramsFooterAction({"
     )
     expect(workspaceProgramsRenderer).toContain(
+      'shellInsetClassName="px-3 pt-3 pb-3"'
+    )
+    expect(workspaceProgramsRenderer).not.toContain(
       'shellInsetClassName="px-3 pt-3 pb-0"'
     )
     expect(workspaceProgramsRenderer).toContain(
-      'footerClassName="px-3 pt-2 pb-3"'
+      'footerClassName="justify-center px-3 pt-2 pb-3"'
     )
-    expect(workspaceProgramsRenderer).toContain('className="ml-auto"')
+    expect(workspaceProgramsRenderer).toContain('aria-label="Add program"')
+    expect(workspaceProgramsRenderer).toContain("<PlusIcon aria-hidden />")
+    expect(workspaceProgramsRenderer).not.toContain('className="ml-auto"')
+    expect(workspaceProgramsRenderer).toContain(
+      "onProgramsCreateOpenChange(true)"
+    )
     expect(shellSource).toContain("gap-3 px-3 py-3")
     expect(shellSource).not.toContain("gap-3 px-4 pt-4 pb-1")
     expect(workspaceProgramsCard).not.toContain("<CarouselPrevious")
@@ -207,14 +254,103 @@ describe("workspace organization overview programs", () => {
       'cardId === "organization-overview" ||\n    cardId === "programs" ||'
     )
     expect(dashboardCard).toContain('title="No activity to display"')
+    expect(dashboardCard).toContain("Add activity")
+    expect(dashboardCard).toContain("Start activity builder")
+    expect(dashboardCard).toContain("Supported activity types")
+    expect(dashboardCard).toContain("Untitled activity")
     expect(dashboardCard).toContain("Open full view")
     expect(dashboardCard).not.toContain("ArrowUpRightIcon")
+    expect(orgProfileCard).toContain("canEdit={canEdit}")
+    expect(orgProfileNavigation).toContain('variant="line"')
+    expect(orgProfileNavigation).toContain("after:bg-primary")
+    expect(orgProfileNavigation).toContain("data-[state=active]:shadow-none")
+    expect(orgProfileNavigation).toContain(
+      'data-org-profile-tabs-separator="true"'
+    )
+    expect(orgProfileNavigation).toContain(
+      "hidden w-full border-b px-6 sm:block"
+    )
+    expect(orgProfileNavigation).toContain(
+      "h-10 w-fit max-w-full items-end justify-start gap-1"
+    )
+    expect(orgProfileNavigation).toContain("h-10 flex-none items-center")
+    expect(orgProfileNavigation).toContain("after:bottom-0 after:z-10")
+    expect(orgProfileNavigation).not.toContain(
+      "h-10 w-full items-end justify-start gap-3"
+    )
+    expect(orgProfileNavigation).not.toContain(
+      "data-[state=active]:border-b-[2px]"
+    )
+    expect(orgProfileNavigation).not.toContain(
+      "data-[state=active]:border-b-primary"
+    )
+    expect(orgProfileNavigation).not.toContain("shadow-sm")
+    expect(programsTab).toContain("canEdit: boolean")
+    expect(programsTab).toContain('<FormRow title="Activity">')
+    expect(orgProfileShared).toContain('layout = "split"')
+    expect(orgProfileShared).toContain('layout?: "split" | "stacked"')
+    expect(orgProfileShared).toContain(
+      'layout === "stacked"\n      ? "grid gap-4"'
+    )
+    expect(orgProfileShared).toContain(
+      '"grid min-w-0 content-start gap-1 self-start"'
+    )
+    expect(orgProfileShared).toContain(
+      "inline-flex w-full min-w-0 items-center"
+    )
+    expect(orgProfileShared).toContain('sizes="80px"')
+    expect(orgProfileShared).toContain('className="object-cover"')
+    expect(orgProfileShared).not.toContain('className="object-contain"')
+    expect(orgProfileShared).not.toContain(
+      '<span className="absolute inset-1">'
+    )
+    expect(supportersShowcase).toContain(
+      "grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3"
+    )
+    expect(supportersShowcase).not.toContain(
+      "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    )
+    expect(publicPeopleSections).toContain('layout="stacked"')
+    expect(peopleTab).toContain('layout="stacked"')
+    expect(peopleTab).toContain('getWorkspaceDrawerPath({ tab: "people" })')
+    expect(peopleTab).toContain("href={peopleDrawerHref}")
+    expect(peopleTab).not.toContain('href="/people"')
+    expect(supportersTab).toContain('layout="stacked"')
+    expect(programsTab).toContain('aria-label="Activity visibility info"')
+    expect(programsTab).toContain("Activity appears in your overview")
+    expect(programsTab).toContain('ctaLabel={canEdit ? "Edit"')
+    expect(programsTab).toContain(
+      "canEdit ? () => onProgramEdit(program) : undefined"
+    )
+    expect(programsTab).toContain("Untitled activity")
     expect(programsTab).toContain('title="No activity yet"')
     expect(programsTab).toContain('title="No activity to display"')
+    expect(orgProfileConfig).toContain('{ value: "programs", label: "Activity"')
+    expect(publicCardSections).toContain(
+      '<h2 className="text-lg font-semibold">Activity</h2>'
+    )
+    expect(publicCardSections).toContain("Untitled activity")
+    expect(myOrganizationPage).toContain(
+      "const canEdit = isAdmin || canEditOrganization(role)"
+    )
+    expect(programActions).toContain("resolveProfileAudience")
+    expect(programActions).toContain(
+      "const canEdit = profileAudience.isAdmin || canEditOrganization(role)"
+    )
+    expect(programMediaRoute).toContain("resolveProfileAudience")
+    expect(programMediaRoute).toContain(
+      "if (!profileAudience.isAdmin && !canEditOrganization(role))"
+    )
     expect(workspaceProgramsCard).not.toContain(
       'title="No primary objects to display"'
     )
     expect(dashboardCard).not.toContain('title="No primary objects to display"')
+    expect(dashboardCard).not.toContain("New object")
+    expect(dashboardCard).not.toContain("Start object builder")
+    expect(dashboardCard).not.toContain("Supported primary object types")
     expect(programsTab).not.toContain('title="No primary objects yet"')
+    expect(programsTab).not.toContain("Primary objects")
+    expect(orgProfileConfig).not.toContain('label: "Primary objects"')
+    expect(publicCardSections).not.toContain("Primary objects")
   })
 })

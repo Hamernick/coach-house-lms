@@ -17,6 +17,7 @@ import type {
   ProjectTask,
 } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
+import { MemberWorkspaceProjectTaskDeleteDialog } from "./member-workspace-project-task-delete-dialog"
 import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspacePersonOption,
@@ -80,7 +81,7 @@ export function MemberWorkspaceProjectTasksEditor({
   const [draftTargetId, setDraftTargetId] = useState<string | null>(null)
   const [taskDraft, setTaskDraft] = useState<TaskDraft | null>(null)
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null)
-  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -204,34 +205,6 @@ export function MemberWorkspaceProjectTasksEditor({
     updateTaskAction,
   ])
 
-  const handleDeleteTask = useCallback(
-    async (taskId: string) => {
-      if (!deleteTaskAction) {
-        toast.error("Task deletion is unavailable.")
-        return
-      }
-
-      setDeletingTaskId(taskId)
-      try {
-        const result = await deleteTaskAction(taskId)
-        if ("error" in result) {
-          toast.error(result.error)
-          return
-        }
-
-        setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId))
-        if (draftTargetId === taskId) {
-          handleCancelDraft()
-        }
-        toast.success("Task deleted")
-        router.refresh()
-      } finally {
-        setDeletingTaskId(null)
-      }
-    },
-    [deleteTaskAction, draftTargetId, handleCancelDraft, router],
-  )
-
   const handleMoveTask = useCallback(
     async (taskId: string, direction: -1 | 1) => {
       if (!updateTaskOrderAction) {
@@ -311,7 +284,6 @@ export function MemberWorkspaceProjectTasksEditor({
 
         {tasks.map((task, index) => {
           const isEditingTask = draftTargetId === task.id && taskDraft
-          const isDeleting = deletingTaskId === task.id
           const isMoving = movingTaskId === task.id
 
           return (
@@ -395,11 +367,11 @@ export function MemberWorkspaceProjectTasksEditor({
                     type="button"
                     variant="destructive"
                     size="sm"
-                    disabled={isDeleting}
-                    onClick={() => handleDeleteTask(task.id)}
+                    disabled={!deleteTaskAction}
+                    onClick={() => setPendingDeleteTaskId(task.id)}
                   >
                     <Trash className="h-4 w-4" />
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    Delete
                   </Button>
                 </div>
               </div>
@@ -412,7 +384,11 @@ export function MemberWorkspaceProjectTasksEditor({
                   isSaving={savingTaskId === task.id}
                   onCancel={handleCancelDraft}
                   onChangeDraftField={handleChangeDraftField}
-                  onDelete={() => handleDeleteTask(task.id)}
+                  onDelete={
+                    deleteTaskAction
+                      ? () => setPendingDeleteTaskId(task.id)
+                      : undefined
+                  }
                   onSave={handleSaveTask}
                   workstreamSuggestions={workstreamSuggestions}
                 />
@@ -421,6 +397,20 @@ export function MemberWorkspaceProjectTasksEditor({
           )
         })}
       </div>
+
+      <MemberWorkspaceProjectTaskDeleteDialog
+        deleteTaskAction={deleteTaskAction}
+        task={tasks.find((task) => task.id === pendingDeleteTaskId) ?? null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteTaskId(null)
+        }}
+        onDeleted={(taskId) => {
+          setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId))
+          if (draftTargetId === taskId) handleCancelDraft()
+          setPendingDeleteTaskId(null)
+          router.refresh()
+        }}
+      />
     </section>
   )
 }

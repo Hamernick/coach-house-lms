@@ -47,6 +47,7 @@ export function renderOrganizationOverviewCard({
   canEdit,
   contentClassName,
   organizationEditorHref,
+  onOrganizationEditorOpen,
   headerAction,
   isCanvasFullscreen,
   onToggleCanvasFullscreen,
@@ -58,6 +59,7 @@ export function renderOrganizationOverviewCard({
   canEdit: boolean
   contentClassName: string | undefined
   organizationEditorHref: string
+  onOrganizationEditorOpen?: () => void
   headerAction: ReturnType<typeof resolveOrganizationHeaderAction>
   isCanvasFullscreen: boolean
   onToggleCanvasFullscreen?: () => void
@@ -77,6 +79,7 @@ export function renderOrganizationOverviewCard({
       canEdit={canEdit}
       contentClassName={contentClassName}
       editorHref={canEdit ? organizationEditorHref : null}
+      onEditorOpen={canEdit ? onOrganizationEditorOpen : undefined}
       headerAction={headerAction}
       isCanvasFullscreen={isCanvasFullscreen}
       onToggleCanvasFullscreen={onToggleCanvasFullscreen}

@@ -19,6 +19,33 @@ export type CalendarStripObjectiveItem = {
   status: "active" | "todo" | "done"
 }
 
+export function resolveVisibleCalendarEvents({
+  upcomingEvents,
+  selectedDayEvents,
+  requestedEventId,
+  limit = 3,
+}: {
+  upcomingEvents: MyOrganizationCalendarView["upcomingEvents"]
+  selectedDayEvents: MyOrganizationCalendarView["upcomingEvents"]
+  requestedEventId?: string | null
+  limit?: number
+}) {
+  const baseEvents =
+    selectedDayEvents.length > 0
+      ? selectedDayEvents.slice(0, limit)
+      : upcomingEvents.slice(0, limit)
+  const requestedEvent = requestedEventId
+    ? selectedDayEvents.find((event) => event.id === requestedEventId)
+    : null
+
+  return requestedEvent
+    ? [
+        requestedEvent,
+        ...baseEvents.filter((event) => event.id !== requestedEvent.id),
+      ].slice(0, limit)
+    : baseEvents
+}
+
 export function buildCalendarStripEventPreview({
   visibleEvents,
   selectedDayEvents,
@@ -33,14 +60,19 @@ export function buildCalendarStripEventPreview({
     return "before:bg-muted-foreground/70"
   }
 
-  const shouldShowPreviewData = visibleEvents.length === 0 && selectedDayEvents.length === 0
+  const shouldShowPreviewData =
+    visibleEvents.length === 0 && selectedDayEvents.length === 0
 
   const eventItems: CalendarStripEventItem[] = !shouldShowPreviewData
     ? visibleEvents.map((event) => ({
         id: event.id,
         title: event.title,
-        timeLabel: event.all_day ? safeDateLabel(event.starts_at) : safeDateLabel(event.starts_at, true),
-        invitesLabel: event.assigned_roles.length ? `Invites: ${event.assigned_roles.join(", ")}` : null,
+        timeLabel: event.all_day
+          ? safeDateLabel(event.starts_at)
+          : safeDateLabel(event.starts_at, true),
+        invitesLabel: event.assigned_roles.length
+          ? `Invites: ${event.assigned_roles.join(", ")}`
+          : null,
         accentClassName: resolveAccentClassName(event.assigned_roles),
         event,
         detailDescription: event.description,
@@ -73,12 +105,15 @@ export function buildCalendarStripEventPreview({
 
   return {
     eventItems,
-    selectedDayEventCount: shouldShowPreviewData ? eventItems.length : selectedDayEvents.length,
+    selectedDayEventCount: shouldShowPreviewData
+      ? eventItems.length
+      : selectedDayEvents.length,
   }
 }
 
-export const CALENDAR_STRIP_OBJECTIVE_PREVIEW_ITEMS: CalendarStripObjectiveItem[] = [
-  { id: "objective-1", title: "Finalize board packet", status: "active" },
-  { id: "objective-2", title: "Confirm guest speaker", status: "todo" },
-  { id: "objective-3", title: "Publish monthly update", status: "done" },
-]
+export const CALENDAR_STRIP_OBJECTIVE_PREVIEW_ITEMS: CalendarStripObjectiveItem[] =
+  [
+    { id: "objective-1", title: "Finalize board packet", status: "active" },
+    { id: "objective-2", title: "Confirm guest speaker", status: "todo" },
+    { id: "objective-3", title: "Publish monthly update", status: "done" },
+  ]

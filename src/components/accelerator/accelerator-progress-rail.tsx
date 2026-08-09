@@ -1,6 +1,9 @@
 import * as ProgressPrimitive from "@radix-ui/react-progress"
+import BadgeCheckIcon from "lucide-react/dist/esm/icons/badge-check"
+import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 
 import { clampPercent } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
+import { ACCELERATOR_PROGRESS_SEGMENT_VISUALS } from "@/components/accelerator/accelerator-progress-segments"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -52,6 +55,17 @@ type AcceleratorProgressRailSegment = {
   fillClassName: string
 }
 
+const MILESTONE_VISUALS = {
+  fundable: {
+    icon: DollarSignIcon,
+    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.iconClassName,
+  },
+  verified: {
+    icon: BadgeCheckIcon,
+    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.iconClassName,
+  },
+} as const
+
 function resolveSegmentFillPercent({
   end,
   progress,
@@ -77,8 +91,11 @@ export function resolveAcceleratorProgressRailState({
   "className"
 >): AcceleratorProgressRailState {
   const progress = clampPercent(progressPercent)
-  const fundable = clampPercent(fundableCheckpoint)
-  const verified = Math.max(fundable + 1, clampPercent(verifiedCheckpoint))
+  const fundable = Math.max(1, Math.min(98, clampPercent(fundableCheckpoint)))
+  const verified = Math.max(
+    fundable + 1,
+    Math.min(99, clampPercent(verifiedCheckpoint))
+  )
 
   const firstSegmentFill = Math.min(progress, fundable)
   const secondSegmentFill = Math.max(
@@ -105,8 +122,8 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= fundable,
       active: progress > 0 && progress < fundable,
-      trackClassName: "bg-amber-500/20 dark:bg-amber-400/18",
-      fillClassName: "bg-amber-500",
+      trackClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.trackClassName,
+      fillClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
     },
     {
       id: "fundable",
@@ -122,8 +139,10 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= verified,
       active: progress >= fundable && progress < verified,
-      trackClassName: "bg-emerald-500/18 dark:bg-emerald-400/18",
-      fillClassName: "bg-emerald-500",
+      trackClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.trackClassName,
+      fillClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
     },
     {
       id: "verified",
@@ -139,8 +158,10 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= 100,
       active: progress >= verified && progress < 100,
-      trackClassName: "bg-sky-500/18 dark:bg-sky-400/18",
-      fillClassName: "bg-sky-500",
+      trackClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.trackClassName,
+      fillClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.fillClassName,
     },
   ] satisfies AcceleratorProgressRailSegment[]
 
@@ -152,8 +173,9 @@ export function resolveAcceleratorProgressRailState({
     secondSegmentWidth,
     fundableReached,
     verifiedReached,
-    firstSegmentClass: "bg-amber-500",
-    secondSegmentClass: "bg-emerald-500",
+    firstSegmentClass: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
+    secondSegmentClass:
+      ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
     segments,
   }
 }
@@ -223,43 +245,62 @@ export function AcceleratorProgressRail({
 
       {showMilestones && showMilestoneTooltips ? (
         <div className="absolute inset-0 flex gap-0.5 p-0.5">
-          {state.segments.map((segment) => (
-            <Tooltip
-              key={segment.id}
-              delayDuration={140}
-              disableHoverableContent
-            >
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`${segment.label} segment, ${segment.rangeLabel}`}
-                  className="focus-visible:ring-ring/70 data-[state=delayed-open]:ring-foreground/20 data-[state=instant-open]:ring-foreground/20 h-full min-w-0 flex-none rounded-full p-0 text-transparent shadow-none transition-[box-shadow] hover:bg-transparent hover:text-transparent focus-visible:ring-2 focus-visible:ring-offset-2 data-[state=delayed-open]:ring-1 data-[state=instant-open]:ring-1"
-                  style={{ width: `${segment.width}%` }}
-                />
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                sideOffset={6}
-                className="px-2.5 py-1.5"
+          {state.segments.map((segment) => {
+            const milestoneVisual =
+              segment.id === "build" ? null : MILESTONE_VISUALS[segment.id]
+            const MilestoneIcon = milestoneVisual?.icon
+
+            return (
+              <Tooltip
+                key={segment.id}
+                delayDuration={140}
+                disableHoverableContent
               >
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    aria-hidden
-                    className={cn("size-2 rounded-full", segment.fillClassName)}
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`${segment.label} segment, ${segment.rangeLabel}`}
+                    className="focus-visible:ring-ring/70 data-[state=delayed-open]:ring-foreground/20 data-[state=instant-open]:ring-foreground/20 h-full min-w-0 flex-none rounded-full p-0 shadow-none transition-[box-shadow] hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 data-[state=delayed-open]:ring-1 data-[state=instant-open]:ring-1"
+                    style={{ width: `${segment.width}%` }}
                   />
-                  <span className="font-medium">{segment.label}</span>
-                  <span className="text-muted-foreground tabular-nums">
-                    {segment.rangeLabel}
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  sideOffset={6}
+                  className="px-2.5 py-1.5"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {MilestoneIcon ? (
+                      <MilestoneIcon
+                        aria-hidden
+                        className={cn(
+                          "size-4 shrink-0",
+                          milestoneVisual.iconClassName
+                        )}
+                      />
+                    ) : (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "size-2 rounded-full",
+                          segment.fillClassName
+                        )}
+                      />
+                    )}
+                    <span className="font-medium">{segment.label}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {segment.rangeLabel}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {segmentStatusLabels[segment.id]}
+                    </span>
                   </span>
-                  <span className="text-muted-foreground">
-                    {segmentStatusLabels[segment.id]}
-                  </span>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-          ))}
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
         </div>
       ) : null}
     </div>

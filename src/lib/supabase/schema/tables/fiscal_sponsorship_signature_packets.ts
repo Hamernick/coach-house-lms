@@ -11,15 +11,25 @@ export type FiscalSponsorshipSignaturePacketsTable = {
     status: string
     coach_signer_name: string | null
     coach_signer_email: string | null
+    coach_signer_id: string | null
     applicant_signer_name: string | null
     applicant_signer_email: string | null
+    applicant_signer_id: string | null
     sent_by: string | null
     sent_at: string | null
+    applicant_signed_at: string | null
+    coach_signed_at: string | null
     completed_at: string | null
     executed_document_id: string | null
     audit_document_id: string | null
     provider_payload: unknown
     metadata: unknown
+    template_version: string | null
+    source_document_sha256: string | null
+    current_document_sha256: string | null
+    revision: number
+    consent_version: string | null
+    consent_sha256: string | null
     created_at: string
     updated_at: string
   }
@@ -37,13 +47,23 @@ export type FiscalSponsorshipSignaturePacketsTable = {
     coach_signer_email?: string | null
     applicant_signer_name?: string | null
     applicant_signer_email?: string | null
+    applicant_signer_id?: string | null
+    coach_signer_id?: string | null
     sent_by?: string | null
     sent_at?: string | null
+    applicant_signed_at?: string | null
+    coach_signed_at?: string | null
     completed_at?: string | null
     executed_document_id?: string | null
     audit_document_id?: string | null
     provider_payload?: unknown
     metadata?: unknown
+    template_version?: string | null
+    source_document_sha256?: string | null
+    current_document_sha256?: string | null
+    revision?: number
+    consent_version?: string | null
+    consent_sha256?: string | null
     created_at?: string
     updated_at?: string
   }

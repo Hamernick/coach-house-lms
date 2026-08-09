@@ -1,21 +1,27 @@
-# Platform Admin Access
+# Platform Staff Access
 
-Platform admins are the highest-privilege internal users in this app.
+Platform staff are internal users. Their access is separate from subscriptions
+and organization membership roles.
 
 ## What a Platform Admin Can Do
 
-Today, platform admin access is controlled by:
+Platform access is controlled by `platform_staff_members.access_level`:
 
-- `profiles.role = "admin"`
+- `developer`: every internal tool and broad administrative RLS access.
+- `coach`: Workspace, Find, and Organizations only.
 
-That role unlocks:
+`profiles.role = "admin"` remains a legacy developer mirror during the
+transition. It does not define coach access.
+
+Developer access unlocks:
 
 - `/admin/platform`
 - internal Supabase Platform Kit tools
 - platform-only testing/devtools actions
 - admin-only server actions guarded by `requireAdmin()`
 
-This is broader than normal org roles like `owner`, `staff`, or `board`. Only give it to you and trusted internal team members.
+Coach access is deliberately narrower and never satisfies `public.is_admin()`.
+Both levels remain separate from org roles like `owner`, `staff`, or `board`.
 
 ## Recommended Setup Flow
 
@@ -41,12 +47,14 @@ Create a local JSON file like:
   {
     "email": "you@example.com",
     "fullName": "Your Name",
-    "password": "TempPass!123456"
+    "password": "TempPass!123456",
+    "accessLevel": "developer"
   },
   {
     "email": "teammate@example.com",
     "fullName": "Teammate Name",
-    "password": "TempPass!987654"
+    "password": "TempPass!987654",
+    "accessLevel": "coach"
   }
 ]
 ```
@@ -65,10 +73,11 @@ pnpm provision:admins -- --file ./platform-admins.local.json --dry-run
 
 Behavior:
 
-- existing user + no password: promote to platform admin only
-- existing user + password: promote and reset password
-- missing user + password: create confirmed account and make them platform admin
+- existing user + no password: update platform access only
+- existing user + password: update platform access and reset password
+- missing user + password: create a confirmed account with the requested access
 - missing user + no password: fail closed
+- omitted `accessLevel`: default to `developer` for backward compatibility
 
 ## Existing One-Off Commands
 
@@ -77,7 +86,7 @@ You still have these scripts:
 - `pnpm create:admin`
   - create one brand-new admin user from env vars
 - `pnpm promote:admin`
-  - promote one existing user by email
+  - set one existing user's access with `TARGET_ACCESS_LEVEL=developer|coach`
 
 The manifest-based provisioning flow is the better option for your team.
 
@@ -95,4 +104,5 @@ Make sure those values point at the environment you actually intend to modify. I
 - Keep the manifest file local and out of git.
 - Use a password manager or another secure channel to share temporary passwords.
 - Ask each admin to change their password after first login.
-- Revoke platform admin access by changing `profiles.role` away from `admin` if someone should no longer have global access.
+- Revoke internal access by deleting the user's `platform_staff_members` row.
+- Change levels through the provisioner so the legacy profile-role mirror stays synchronized.

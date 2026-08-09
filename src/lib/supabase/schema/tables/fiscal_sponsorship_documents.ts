@@ -12,6 +12,17 @@ export type FiscalSponsorshipDocumentsTable = {
     title: string
     version: number
     storage_path: string | null
+    storage_bucket: string
+    file_sha256: string | null
+    template_key: string | null
+    template_version: number | null
+    template_sha256: string | null
+    field_values: unknown
+    field_values_sha256: string | null
+    confirmed_by: string | null
+    confirmed_at: string | null
+    locked_at: string | null
+    revision: number
     mime: string | null
     size_bytes: number | null
     source_snapshot: unknown
@@ -39,6 +50,17 @@ export type FiscalSponsorshipDocumentsTable = {
     title: string
     version?: number
     storage_path?: string | null
+    storage_bucket?: string
+    file_sha256?: string | null
+    template_key?: string | null
+    template_version?: number | null
+    template_sha256?: string | null
+    field_values?: unknown
+    field_values_sha256?: string | null
+    confirmed_by?: string | null
+    confirmed_at?: string | null
+    locked_at?: string | null
+    revision?: number
     mime?: string | null
     size_bytes?: number | null
     source_snapshot?: unknown
@@ -66,6 +88,17 @@ export type FiscalSponsorshipDocumentsTable = {
     title?: string
     version?: number
     storage_path?: string | null
+    storage_bucket?: string
+    file_sha256?: string | null
+    template_key?: string | null
+    template_version?: number | null
+    template_sha256?: string | null
+    field_values?: unknown
+    field_values_sha256?: string | null
+    confirmed_by?: string | null
+    confirmed_at?: string | null
+    locked_at?: string | null
+    revision?: number
     mime?: string | null
     size_bytes?: number | null
     source_snapshot?: unknown

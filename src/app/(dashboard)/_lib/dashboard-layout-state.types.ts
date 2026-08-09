@@ -3,6 +3,7 @@ import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 import type { AppPricingFeedbackPromptState } from "@/features/app-pricing-feedback"
 import type { MemberWorkspaceHeaderState } from "@/features/member-workspace"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 
 export type DashboardLayoutState = {
   userPresent: boolean
@@ -14,6 +15,7 @@ export type DashboardLayoutState = {
     avatar: string | null
   }
   isAdmin: boolean
+  platformAccessLevel: PlatformAccessLevel | null
   isTester: boolean
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
@@ -55,6 +57,7 @@ export const EMPTY_STATE: DashboardLayoutState = {
     avatar: null,
   },
   isAdmin: false,
+  platformAccessLevel: null,
   isTester: false,
   showOrgAdmin: false,
   canAccessOrgAdmin: false,

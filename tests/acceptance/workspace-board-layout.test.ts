@@ -69,6 +69,26 @@ describe("workspace board layout", () => {
     expect(communications?.size).toBe("md")
   })
 
+  it("infers managed and manual ownership for legacy node positions", () => {
+    const defaults = buildDefaultBoardState()
+    const legacyNodes = defaults.nodes.map((node) => {
+      const { positionMode: _positionMode, ...legacyNode } = node
+      return node.id === "programs"
+        ? { ...legacyNode, x: legacyNode.x + 120 }
+        : legacyNode
+    })
+
+    const normalized = normalizeWorkspaceBoardState({ nodes: legacyNodes })
+
+    expect(
+      normalized.nodes.find((node) => node.id === "organization-overview")
+        ?.positionMode
+    ).toBe("managed")
+    expect(
+      normalized.nodes.find((node) => node.id === "programs")?.positionMode
+    ).toBe("manual")
+  })
+
   it("migrates legacy hub layout mode to dagre tree", () => {
     const normalized = normalizeWorkspaceBoardState({
       autoLayoutMode: "hub",
@@ -170,6 +190,43 @@ describe("workspace board layout", () => {
         }),
       ])
     )
+  })
+
+  it("round-trips future card layout state without exposing unknown cards to the current canvas", () => {
+    const futureFinanceNode = {
+      id: "finance",
+      x: 820,
+      y: 640,
+      size: "lg",
+      positionMode: "manual",
+      futureMetadata: { view: "overview" },
+    }
+    const futureFinanceConnection = {
+      id: "edge-organization-to-finance",
+      source: "organization-overview",
+      target: "finance",
+      futureMetadata: { emphasis: "primary" },
+    }
+    const normalized = normalizeWorkspaceBoardState({
+      nodes: [futureFinanceNode],
+      connections: [futureFinanceConnection],
+      hiddenCardIds: ["finance"],
+    })
+
+    expect(normalized.nodes.map((node) => node.id)).not.toContain("finance")
+    expect(
+      normalized.connections.map((connection) => connection.target)
+    ).not.toContain("finance")
+    expect(normalized.hiddenCardIds).not.toContain("finance")
+    expect(normalized.forwardCompatibility).toEqual({
+      nodes: [futureFinanceNode],
+      connections: [futureFinanceConnection],
+      hiddenCardIds: ["finance"],
+    })
+
+    expect(
+      normalizeWorkspaceBoardState(normalized).forwardCompatibility
+    ).toEqual(normalized.forwardCompatibility)
   })
 
   it("keeps the communications card wider at medium and large sizes", () => {

@@ -7,6 +7,7 @@ import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils"
 
 export type TaskRowBaseProps = {
   checked: boolean
+  disabled?: boolean
   title: string
   onCheckedChange?: () => void
   titleAriaLabel?: string
@@ -18,6 +19,7 @@ export type TaskRowBaseProps = {
 
 export function TaskRowBase({
   checked,
+  disabled = false,
   title,
   onCheckedChange,
   titleAriaLabel,
@@ -35,11 +37,12 @@ export function TaskRowBase({
     >
       <Checkbox
         checked={checked}
+        disabled={disabled}
         onCheckedChange={onCheckedChange}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
         aria-label={titleAriaLabel ?? title}
-        className="rounded-full border-border bg-background data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600 hover:cursor-pointer"
+        className="rounded-full border-border bg-background data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600 enabled:hover:cursor-pointer"
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

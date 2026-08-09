@@ -20,7 +20,7 @@ import {
 } from "./workflow-event-summary"
 import {
   buildWorkflowTableError,
-  canCoachManageFiscalSponsorship,
+  canManageFiscalSponsorshipForOrganization,
   isMissingFiscalWorkflowTableError,
   resolveProjectAndContext,
 } from "./workflow-support"
@@ -52,6 +52,7 @@ const DOCUMENT_KINDS = new Set<FiscalSponsorshipDocumentKind>([
   "agreement",
   "executed_agreement",
   "audit_certificate",
+  "tax_form",
   "regrant",
 ])
 
@@ -95,6 +96,7 @@ const PACKET_STATUSES = new Set<FiscalSponsorshipSignaturePacketStatus>([
 type ApplicationSummaryRow = {
   id: string
   legal_entity_type: string | null
+  primary_email: string | null
   status: string
   reviewed_at: string | null
   submitted_at: string | null
@@ -112,6 +114,7 @@ type FiscalDocumentSummaryRow = {
   reviewed_at: string | null
   status: string
   storage_path: string | null
+  storage_bucket: string
   title: string
   uploaded_at: string | null
   version: number
@@ -120,6 +123,7 @@ type FiscalDocumentSummaryRow = {
 type SignaturePacketSummaryRow = {
   id: string
   applicant_signer_email: string | null
+  applicant_signer_id: string | null
   coach_signer_email: string | null
   completed_at: string | null
   provider: string
@@ -209,6 +213,19 @@ function buildProjectAssetHref({
   return `/api/account/project-assets?${search.toString()}`
 }
 
+function buildFiscalDocumentHref({
+  documentId,
+  download = false,
+  storageBucket,
+}: {
+  documentId: string
+  download?: boolean
+  storageBucket: string
+}) {
+  if (storageBucket === "project-assets") return null
+  return `/api/fiscal-sponsorship/documents/${documentId}${download ? "?download=1" : ""}`
+}
+
 function mapFiscalDocumentSummary(
   document: FiscalDocumentSummaryRow | null | undefined
 ) {
@@ -216,11 +233,17 @@ function mapFiscalDocumentSummary(
 
   return {
     assetId: document.asset_id,
-    downloadHref: buildProjectAssetHref({
-      assetId: document.asset_id,
-      download: true,
-      projectId: document.project_id,
-    }),
+    downloadHref:
+      buildProjectAssetHref({
+        assetId: document.asset_id,
+        download: true,
+        projectId: document.project_id,
+      }) ??
+      buildFiscalDocumentHref({
+        documentId: document.id,
+        download: true,
+        storageBucket: document.storage_bucket,
+      }),
     generatedAt: document.generated_at,
     id: document.id,
     kind: normalizeDocumentKind(document.kind),
@@ -233,10 +256,15 @@ function mapFiscalDocumentSummary(
     title: document.title,
     uploadedAt: document.uploaded_at,
     version: document.version,
-    viewHref: buildProjectAssetHref({
-      assetId: document.asset_id,
-      projectId: document.project_id,
-    }),
+    viewHref:
+      buildProjectAssetHref({
+        assetId: document.asset_id,
+        projectId: document.project_id,
+      }) ??
+      buildFiscalDocumentHref({
+        documentId: document.id,
+        storageBucket: document.storage_bucket,
+      }),
   }
 }
 
@@ -252,7 +280,7 @@ async function loadLatestFiscalDocument({
   return supabase
     .from("fiscal_sponsorship_documents")
     .select(
-      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_path, title, uploaded_at, version"
+      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_bucket, storage_path, title, uploaded_at, version"
     )
     .eq("application_id", applicationId)
     .eq("kind", kind)
@@ -271,7 +299,7 @@ async function loadRequiredFiscalDocuments({
   return supabase
     .from("fiscal_sponsorship_documents")
     .select(
-      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_path, title, uploaded_at, version"
+      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_bucket, storage_path, title, uploaded_at, version"
     )
     .eq("application_id", applicationId)
     .not("document_key", "is", null)
@@ -304,7 +332,9 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
 
   const { data: application, error: applicationError } = await context.supabase
     .from("fiscal_sponsorship_applications")
-    .select("id, legal_entity_type, status, reviewed_at, submitted_at")
+    .select(
+      "id, legal_entity_type, primary_email, status, reviewed_at, submitted_at"
+    )
     .eq("project_id", context.project.id)
     .eq("org_id", context.project.org_id)
     .maybeSingle<ApplicationSummaryRow>()
@@ -319,6 +349,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
     return {
       applicationId: null,
       applicationStatus: null,
+      canCompleteW9: false,
       events: [],
       legalEntityType: null,
       latestAuditCertificateDocument: null,
@@ -389,6 +420,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
         [
           "id",
           "applicant_signer_email",
+          "applicant_signer_id",
           "coach_signer_email",
           "completed_at",
           "provider",
@@ -421,13 +453,21 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       : { error: "Unable to load fiscal sponsorship activity." }
   }
 
-  const canViewCoachSigningLink = canCoachManageFiscalSponsorship(
-    context.profileAudience.isAdmin
-  )
+  const canViewCoachSigningLink =
+    await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    })
 
   return {
     applicationId: application.id,
     applicationStatus: normalizeApplicationStatus(application.status),
+    canCompleteW9:
+      Boolean(application.primary_email) &&
+      application.primary_email?.trim().toLowerCase() ===
+        context.user.email?.trim().toLowerCase(),
     events: (events ?? []).map(mapFiscalWorkflowEventSummary),
     legalEntityType: normalizeLegalEntityType(application.legal_entity_type),
     latestAgreementDocument: mapFiscalDocumentSummary(agreementDocument),
@@ -442,18 +482,25 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       .filter((document) => document !== null),
     latestSignaturePacket: signaturePacket
       ? {
-          applicantSigningHref: resolveDocuSealSubmitterSigningHref({
-            email: signaturePacket.applicant_signer_email,
-            payload: signaturePacket.provider_payload,
-            role: "Applicant",
-          }),
+          applicantSigningHref:
+            signaturePacket.provider === "native"
+              ? signaturePacket.applicant_signer_id === context.user.id
+                ? `/fiscal-sponsorship/sign/${signaturePacket.id}`
+                : null
+              : resolveDocuSealSubmitterSigningHref({
+                  email: signaturePacket.applicant_signer_email,
+                  payload: signaturePacket.provider_payload,
+                  role: "Applicant",
+                }),
           applicantSignerEmail: signaturePacket.applicant_signer_email,
           coachSigningHref: canViewCoachSigningLink
-            ? resolveDocuSealSubmitterSigningHref({
-                email: signaturePacket.coach_signer_email,
-                payload: signaturePacket.provider_payload,
-                role: "Coach House",
-              })
+            ? signaturePacket.provider === "native"
+              ? `/fiscal-sponsorship/sign/${signaturePacket.id}`
+              : resolveDocuSealSubmitterSigningHref({
+                  email: signaturePacket.coach_signer_email,
+                  payload: signaturePacket.provider_payload,
+                  role: "Coach House",
+                })
             : null,
           coachSignerEmail: signaturePacket.coach_signer_email,
           completedAt: signaturePacket.completed_at,

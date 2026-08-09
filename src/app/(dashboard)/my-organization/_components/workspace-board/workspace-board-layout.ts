@@ -1,5 +1,7 @@
-import { WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS } from "@/lib/workspace-card-policy"
-
+import {
+  buildDefaultWorkspaceOntologyState,
+  normalizeWorkspaceOntologyState,
+} from "@/features/workspace-ontology"
 import {
   WORKSPACE_CARD_IDS,
   type WorkspaceAutoLayoutMode,
@@ -19,8 +21,9 @@ import {
   normalizeNodeCardSize,
 } from "./workspace-board-preset-layout"
 import { normalizeWorkspaceCardId } from "./workspace-board-card-id"
+import { resolveWorkspaceBoardForwardCompatibleInput } from "./workspace-board-forward-compatibility"
+import { normalizeWorkspaceBoardHiddenCardIdsForPayload } from "./workspace-board-hidden-card-normalization"
 import {
-  normalizeWorkspaceHiddenCardIds,
   sanitizeWorkspaceBoardHiddenState,
   toggleWorkspaceBoardCardVisibility,
 } from "./workspace-board-hidden-cards"
@@ -133,6 +136,7 @@ export function buildDefaultBoardState(
     onboardingFlow: buildDefaultWorkspaceOnboardingFlowState(),
     hiddenCardIds,
     visibility: buildDefaultWorkspaceVisibilityState(),
+    ontology: buildDefaultWorkspaceOntologyState(),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -189,47 +193,6 @@ function normalizeWorkspaceVisibilityState(
   }
 }
 
-function normalizeWorkspaceBoardHiddenCardIdsForPayload(
-  record: Partial<WorkspaceBoardState>
-): WorkspaceCardId[] {
-  const normalizedHiddenCardIds = normalizeWorkspaceHiddenCardIds(
-    record.hiddenCardIds
-  )
-  const optionalDefaultCardIds =
-    WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS as readonly WorkspaceCardId[]
-
-  if (!Array.isArray(record.nodes)) {
-    return WORKSPACE_CARD_IDS.filter(
-      (cardId) =>
-        normalizedHiddenCardIds.includes(cardId) ||
-        optionalDefaultCardIds.includes(cardId)
-    )
-  }
-
-  const payloadNodeIds = new Set<WorkspaceCardId>()
-  for (const rawNode of record.nodes) {
-    if (!rawNode || typeof rawNode !== "object") continue
-    const normalizedNodeId = normalizeWorkspaceCardId(
-      (rawNode as Partial<WorkspaceNodeState>).id
-    )
-    if (!normalizedNodeId) continue
-    payloadNodeIds.add(normalizedNodeId)
-  }
-
-  const missingOptionalDefaultCardIds = optionalDefaultCardIds.filter(
-    (cardId) => !payloadNodeIds.has(cardId)
-  )
-  if (missingOptionalDefaultCardIds.length === 0) {
-    return normalizedHiddenCardIds
-  }
-
-  return WORKSPACE_CARD_IDS.filter(
-    (cardId) =>
-      normalizedHiddenCardIds.includes(cardId) ||
-      missingOptionalDefaultCardIds.includes(cardId)
-  )
-}
-
 function normalizeNodeState(
   value: unknown,
   fallbackMode: WorkspaceAutoLayoutMode,
@@ -272,6 +235,13 @@ function normalizeNodeState(
         nodeRecord.size,
         fallback.size
       ),
+      positionMode:
+        nodeRecord.positionMode === "managed" ||
+        nodeRecord.positionMode === "manual"
+          ? nodeRecord.positionMode
+          : normalizedX === fallback.x && normalizedY === fallback.y
+            ? "managed"
+            : "manual",
     })
   }
 
@@ -366,19 +336,30 @@ export function normalizeWorkspaceBoardState(
       ? record.preset
       : "balanced"
   const autoLayoutMode = normalizeWorkspaceAutoLayoutMode(record.autoLayoutMode)
+  const forwardCompatibleInput = resolveWorkspaceBoardForwardCompatibleInput({
+    connections: record.connections,
+    forwardCompatibility: record.forwardCompatibility,
+    hiddenCardIds: record.hiddenCardIds,
+    nodes: record.nodes,
+  })
   const normalizedAccelerator = normalizeWorkspaceAcceleratorState(
     record.accelerator
   )
   const normalizedHiddenCardIds =
-    normalizeWorkspaceBoardHiddenCardIdsForPayload(record)
-  const normalizedConnections = normalizeConnectionState(record.connections)
+    normalizeWorkspaceBoardHiddenCardIdsForPayload(
+      forwardCompatibleInput.hiddenCardIds,
+      forwardCompatibleInput.nodes
+    )
+  const normalizedConnections = normalizeConnectionState(
+    forwardCompatibleInput.connections
+  )
 
   return {
     version: 1,
     preset,
     autoLayoutMode,
     nodes: normalizeNodeState(
-      record.nodes,
+      forwardCompatibleInput.nodes,
       autoLayoutMode,
       normalizedHiddenCardIds,
       normalizedConnections
@@ -398,6 +379,12 @@ export function normalizeWorkspaceBoardState(
     ),
     hiddenCardIds: normalizedHiddenCardIds,
     visibility: normalizeWorkspaceVisibilityState(record.visibility),
+    ontology: record.ontology
+      ? normalizeWorkspaceOntologyState(record.ontology)
+      : undefined,
+    ...(forwardCompatibleInput.forwardCompatibility
+      ? { forwardCompatibility: forwardCompatibleInput.forwardCompatibility }
+      : {}),
     updatedAt:
       typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0
         ? record.updatedAt

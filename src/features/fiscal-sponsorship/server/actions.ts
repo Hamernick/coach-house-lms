@@ -4,9 +4,15 @@ import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
-import type { Database } from "@/lib/supabase"
+import type { Database, Json } from "@/lib/supabase"
 import { normalizeFiscalSponsorshipInput } from "../lib"
+import {
+  getBudgetTotal,
+  readBudgetRowsFromMetadata,
+  readBudgetSourceActivityIdFromMetadata,
+} from "../lib/budget-plan"
 import type {
   FiscalSponsorshipApplicationRecord,
   FiscalSponsorshipApplicationStatus,
@@ -17,6 +23,7 @@ import type {
   LoadFiscalSponsorshipApplicationResult,
   SaveFiscalSponsorshipApplicationResult,
 } from "../types"
+import { saveFiscalApplicationDraftTransition } from "./application-draft-transition-support"
 
 type FiscalApplicationRow =
   Database["public"]["Tables"]["fiscal_sponsorship_applications"]["Row"]
@@ -216,8 +223,13 @@ function revalidateFiscalApplicationRoutes(projectId: string) {
 export async function loadFiscalSponsorshipApplicationDraft(
   projectId: string
 ): Promise<LoadFiscalSponsorshipApplicationResult> {
-  const { activeOrg, profileAudience, supabase } =
-    await resolveAuthenticatedAppContext()
+  const context = await resolveAuthenticatedAppContext()
+  const { activeOrg, profileAudience } = context
+  const isPlatformStaff =
+    profileAudience.isPlatformStaff || profileAudience.isAdmin
+  const supabase = profileAudience.isPlatformStaff
+    ? createSupabaseAdminClient()
+    : context.supabase
   const normalizedProjectId = projectId.trim()
   if (!normalizedProjectId) {
     return { error: "Choose a project before loading this application." }
@@ -232,7 +244,7 @@ export async function loadFiscalSponsorshipApplicationDraft(
   if (
     !canAccessFiscalProject({
       activeOrgId: activeOrg.orgId,
-      isAdmin: profileAudience.isAdmin,
+      isAdmin: isPlatformStaff,
       project: projectResult.project,
     })
   ) {
@@ -270,8 +282,13 @@ export async function saveFiscalSponsorshipApplicationDraft(
     return { error: normalized.error }
   }
 
-  const { activeOrg, profileAudience, supabase, user } =
-    await resolveAuthenticatedAppContext()
+  const context = await resolveAuthenticatedAppContext()
+  const { activeOrg, profileAudience, user } = context
+  const isPlatformStaff =
+    profileAudience.isPlatformStaff || profileAudience.isAdmin
+  const supabase = profileAudience.isPlatformStaff
+    ? createSupabaseAdminClient()
+    : context.supabase
   const projectResult = await resolveFiscalProject({
     projectId: normalized.value.projectId,
     supabase,
@@ -282,7 +299,7 @@ export async function saveFiscalSponsorshipApplicationDraft(
     !canEditFiscalProject({
       activeOrgId: activeOrg.orgId,
       activeOrgRole: activeOrg.role,
-      isAdmin: profileAudience.isAdmin,
+      isAdmin: isPlatformStaff,
       project: projectResult.project,
     })
   ) {
@@ -295,24 +312,34 @@ export async function saveFiscalSponsorshipApplicationDraft(
     projectId: projectResult.project.id,
     userId: user.id,
   })
-  const { data, error } = await supabase
-    .from("fiscal_sponsorship_applications")
-    .upsert(payload, { onConflict: "org_id,project_id" })
-    .select("id")
-    .single<{ id: string }>()
-
-  if (error) {
-    if (isMissingFiscalApplicationTableError(error)) {
-      return {
-        error:
-          "Fiscal sponsorship applications are not available until the latest database migrations are applied.",
-      }
-    }
-    return { error: "Unable to save fiscal sponsorship application." }
+  const expectedUpdatedAt = input.expectedUpdatedAt?.trim() || null
+  if (expectedUpdatedAt && Number.isNaN(Date.parse(expectedUpdatedAt))) {
+    return { error: "Refresh this application before saving again." }
   }
+  const metadata = normalized.value.metadata
+  const hasBudgetRows = Boolean(
+    metadata &&
+    typeof metadata === "object" &&
+    !Array.isArray(metadata) &&
+    Array.isArray((metadata as Record<string, unknown>).budgetRows)
+  )
+  const budgetRows = readBudgetRowsFromMetadata(metadata)
+  const result = await saveFiscalApplicationDraftTransition({
+    actorId: user.id,
+    allowLocked: isPlatformStaff,
+    budgetRows: JSON.parse(JSON.stringify(budgetRows)) as Json,
+    budgetTotalCents: Math.round(getBudgetTotal(budgetRows) * 100),
+    expectedUpdatedAt,
+    hasBudgetRows,
+    payload: JSON.parse(JSON.stringify(payload)) as Json,
+    projectId: projectResult.project.id,
+    sourceActivityId: readBudgetSourceActivityIdFromMetadata(metadata),
+  })
+
+  if ("error" in result) return result
 
   revalidateFiscalApplicationRoutes(projectResult.project.id)
-  return { ok: true, applicationId: data.id }
+  return result
 }
 
 export async function saveFiscalSponsorship(

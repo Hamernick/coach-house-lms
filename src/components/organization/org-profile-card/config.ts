@@ -16,7 +16,7 @@ export const ORG_PROFILE_TABS: Array<{
   icon: typeof BuildingIcon
 }> = [
   { value: "company", label: "About", icon: BuildingIcon },
-  { value: "programs", label: "Primary objects", icon: ClipboardListIcon },
+  { value: "programs", label: "Activity", icon: ClipboardListIcon },
   { value: "people", label: "People", icon: UsersIcon },
 ]
 
@@ -140,6 +140,17 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     programs: source.programs ?? "",
     reports: source.reports ?? "",
     boilerplate: source.boilerplate ?? "",
+    brandVoiceAudience: source.brandVoiceAudience ?? "",
+    brandVoiceTone: source.brandVoiceTone ?? "",
+    brandVoiceStyle: source.brandVoiceStyle ?? "",
+    brandVoicePersonality: source.brandVoicePersonality ?? "",
+    brandVoiceGuidelines: source.brandVoiceGuidelines ?? "",
+    brandVoiceAvoid: source.brandVoiceAvoid ?? "",
+    narrativeRevisions: source.narrativeRevisions ?? {
+      mission: null,
+      vision: null,
+      values: null,
+    },
     brandPrimary: source.brandPrimary ?? "",
     brandColors: Array.isArray(source.brandColors) ? source.brandColors : [],
     brandThemePresetId: source.brandThemePresetId ?? "",

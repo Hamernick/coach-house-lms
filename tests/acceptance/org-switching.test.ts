@@ -88,6 +88,9 @@ describe("organization switching", () => {
     const switcherSource = readSource(
       "src/features/member-workspace/components/shell/member-workspace-org-switcher.tsx",
     )
+    const workspaceViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-workspace-view.tsx",
+    )
     const actionSource = readSource("src/features/member-workspace/server/actions.ts")
     const appShellSource = readSource("src/components/app-shell/app-shell-inner.tsx")
 
@@ -101,7 +104,13 @@ describe("organization switching", () => {
     expect(switcherSource).toContain("value={organization.orgId}")
     expect(switcherSource).toContain("keywords={[organization.name, organization.role]}")
     expect(switcherSource).toContain('aria-current={isActive ? "true" : undefined}')
+    expect(switcherSource).toContain(
+      'className="[&_[cmdk-group-items]]:space-y-1"',
+    )
     expect(switcherSource).toContain("Workspace, Admin, and Documents")
+    expect(switcherSource).toContain("window.location.reload()")
+    expect(switcherSource).not.toContain("router.refresh()")
+    expect(workspaceViewSource).toContain("key={seed.orgId}")
     expect(actionSource).toContain('revalidatePath("/admin")')
     expect(actionSource).toContain('revalidatePath("/workspace")')
     expect(actionSource).toContain('revalidatePath("/organization/documents")')

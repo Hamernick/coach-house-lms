@@ -18,6 +18,7 @@ type PeopleTablePaginationProps<TData> = {
   canEdit: boolean
   filteredCount: number
   className?: string
+  pageSizeOptions?: number[]
   showSelectionCount?: boolean
 }
 
@@ -26,6 +27,7 @@ export function PeopleTablePagination<TData>({
   canEdit,
   filteredCount,
   className,
+  pageSizeOptions = [10, 20, 30, 40, 50],
   showSelectionCount = canEdit,
 }: PeopleTablePaginationProps<TData>) {
   const pageCount = Math.max(table.getPageCount(), 1)
@@ -61,7 +63,7 @@ export function PeopleTablePagination<TData>({
             <SelectValue placeholder={table.getState().pagination.pageSize} />
           </SelectTrigger>
           <SelectContent align="end">
-            {[10, 20, 30, 40, 50].map((pageSize) => (
+            {pageSizeOptions.map((pageSize) => (
               <SelectItem key={pageSize} value={`${pageSize}`}>
                 {pageSize}
               </SelectItem>

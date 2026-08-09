@@ -128,17 +128,17 @@ function SignaturePanel({
     <div className="flex flex-col gap-4">
       <Alert>
         <PenLineIcon aria-hidden />
-        <AlertTitle>DocuSeal signing packet</AlertTitle>
+        <AlertTitle>Coach House signing packet</AlertTitle>
         <AlertDescription>
-          Coach House sends signing documents through DocuSeal, then stores the
-          executed agreement and audit metadata with the project.
+          The applicant signs in Coach House first, then a super admin
+          countersigns. Executed files and audit evidence stay private.
         </AlertDescription>
       </Alert>
       <div className="bg-background rounded-2xl border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold">
-              {currentDocument?.title ?? "Model C agreement"}
+              {currentDocument?.title ?? "Form B agreement"}
             </p>
             <p className="text-muted-foreground mt-1 text-sm leading-snug">
               {currentDocument?.description ??
@@ -209,8 +209,8 @@ function StepWorkContent({
             <PenLineIcon aria-hidden />
             <AlertTitle>Agreement from Coach House</AlertTitle>
             <AlertDescription>
-              Once your application is accepted, Coach House will send the Model
-              C agreement here for review and signature.
+              Once your application is accepted, Coach House will send the Form
+              B agreement here for review and signature.
             </AlertDescription>
           </Alert>
           <div className="bg-background rounded-2xl border p-4">

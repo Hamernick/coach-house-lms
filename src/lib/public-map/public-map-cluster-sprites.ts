@@ -1,13 +1,26 @@
 import {
   isPublicMapClusterFeature,
   type PublicMapFeatureCollection,
-  type PublicMapPointFeature,
 } from "./public-map-geojson"
 import type { PublicMapClusterClient } from "./public-map-cluster-client"
-import { getPublicMapMarkerImageBitmap } from "./public-map-marker-images"
 import { buildPublicMapClusterSprite } from "./public-map-cluster-sprite-renderer"
+import {
+  resolvePublicMapClusterCategoryColorKeys,
+  resolvePublicMapClusterVisibleCategoryKeys,
+} from "./public-map-cluster-aggregation"
+import {
+  PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION,
+  resolveVisiblePublicMapClusterDotCount,
+} from "./public-map-cluster-layout"
+import {
+  isPublicMapResourceCategoryKey,
+  resolvePublicMapResourceCategoryColor,
+  type PublicMapResourceCategoryKey,
+} from "./resource-categories"
+import type { PublicMapTheme } from "./public-map-theme"
 
 export { buildPublicMapClusterSprite } from "./public-map-cluster-sprite-renderer"
+export { PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION } from "./public-map-cluster-layout"
 
 export type PublicMapClusterTierName = "small" | "medium" | "large" | "xlarge"
 
@@ -17,6 +30,9 @@ export type PublicMapClusterTier = {
 }
 
 export type PublicMapClusterSignatureInput = {
+  categoryColorKeys?: string[]
+  categoryKeys?: PublicMapResourceCategoryKey[]
+  markerTheme?: PublicMapTheme
   totalCount: number
   imageKeys: string[]
   zoom: number
@@ -25,10 +41,13 @@ export type PublicMapClusterSignatureInput = {
 export type PublicMapClusterSignature = {
   signature: string
   imageId: string
+  markerTheme: PublicMapTheme
   tierName: PublicMapClusterTierName
   tier: PublicMapClusterTier
   totalCount: number
   visibleImageKeys: string[]
+  visibleCategoryColors: string[]
+  visibleCategoryKeys: PublicMapResourceCategoryKey[]
   overflowCount: number
   zoomBucket: number
 }
@@ -49,7 +68,7 @@ export type PublicMapClusterSpriteImageMap = {
   addImage: (
     id: string,
     image: ImageData,
-    options?: { pixelRatio?: number },
+    options?: { pixelRatio?: number }
   ) => unknown
   hasImage?: (id: string) => boolean
   updateImage?: (id: string, image: ImageData) => unknown
@@ -62,12 +81,15 @@ export type PublicMapClusterSpriteCacheResult = {
   changed: boolean
 }
 
-export type PublicMapClusterSpriteCache = ReturnType<typeof createPublicMapClusterSpriteCache>
+export type PublicMapClusterSpriteCache = ReturnType<
+  typeof createPublicMapClusterSpriteCache
+>
 
 export type PublicMapClusterSourceDataSpriteInput = {
   clusterClient: PublicMapClusterClient
   dataVersion: string
   map: PublicMapClusterSpriteImageMap
+  markerTheme?: PublicMapTheme
   shouldContinue?: () => boolean
   sourceData: PublicMapFeatureCollection
   spriteCache: PublicMapClusterSpriteCache
@@ -82,17 +104,17 @@ export type PublicMapClusterSpriteUpgradeResult = {
 }
 
 export const PUBLIC_MAP_CLUSTER_TIERS = {
-  small: { size: 32, avatars: 1 },
-  medium: { size: 36, avatars: 2 },
-  large: { size: 42, avatars: 3 },
-  xlarge: { size: 48, avatars: 4 },
+  small: { size: 64, avatars: 1 },
+  medium: { size: 64, avatars: 2 },
+  large: { size: 64, avatars: 3 },
+  xlarge: { size: 64, avatars: 4 },
 } as const satisfies Record<PublicMapClusterTierName, PublicMapClusterTier>
 
 const PUBLIC_MAP_CLUSTER_IMAGE_ID_PREFIX = "public-map-cluster-sprite"
 const PUBLIC_MAP_CLUSTER_SPRITE_CACHE_LIMIT = 360
 
 export function getPublicMapClusterTier(
-  totalCount: number,
+  totalCount: number
 ): PublicMapClusterTierName {
   const count = normalizePublicMapClusterCount(totalCount)
   if (count < 5) return "small"
@@ -107,37 +129,65 @@ export function resolvePublicMapClusterZoomBucket(zoom: number) {
 }
 
 export function buildPublicMapClusterSignature({
+  categoryColorKeys = [],
+  categoryKeys = [],
+  markerTheme = "light",
   totalCount,
-  imageKeys,
   zoom,
 }: PublicMapClusterSignatureInput): PublicMapClusterSignature {
   const normalizedTotalCount = normalizePublicMapClusterCount(totalCount)
   const tierName = getPublicMapClusterTier(normalizedTotalCount)
   const tier = PUBLIC_MAP_CLUSTER_TIERS[tierName]
-  const visibleImageKeys = normalizePublicMapClusterImageKeys(imageKeys).slice(
-    0,
-    tier.avatars,
-  )
-  const overflowCount = Math.max(0, normalizedTotalCount - visibleImageKeys.length)
+  const visibleImageKeys: string[] = []
+  const visibleCategoryKeys =
+    normalizePublicMapClusterCategoryKeys(categoryKeys)
+  const visibleCategoryColors =
+    visibleCategoryKeys.length > 0
+      ? visibleCategoryKeys.map((category) =>
+          resolvePublicMapResourceCategoryColor(category)
+        )
+      : normalizePublicMapClusterCategoryColorKeys(categoryColorKeys)
+  const overflowCount = 0
   const zoomBucket = resolvePublicMapClusterZoomBucket(zoom)
-  const signature = [
+  const signatureParts = [
+    `layout:${PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION}`,
+    `theme:${markerTheme}`,
     `tier:${tierName}`,
     `count:${normalizedTotalCount}`,
-    `images:${visibleImageKeys.map(encodePublicMapClusterSignaturePart).join(",")}`,
-    `overflow:${overflowCount}`,
-    `zoom:${zoomBucket}`,
-  ].join("|")
+  ]
+  if (visibleCategoryKeys.length > 0) {
+    signatureParts.push(`categories:${visibleCategoryKeys.join(",")}`)
+  } else if (visibleCategoryColors.length > 0) {
+    signatureParts.push(`colors:${visibleCategoryColors.join(",")}`)
+  }
+  const signature = signatureParts.join("|")
 
   return {
     signature,
     imageId: buildPublicMapClusterImageId(signature),
+    markerTheme,
     tierName,
     tier,
     totalCount: normalizedTotalCount,
     visibleImageKeys,
+    visibleCategoryColors,
+    visibleCategoryKeys,
     overflowCount,
     zoomBucket,
   }
+}
+
+function normalizePublicMapClusterCategoryKeys(
+  categoryKeys: PublicMapResourceCategoryKey[]
+) {
+  return categoryKeys.filter(isPublicMapResourceCategoryKey)
+}
+
+function normalizePublicMapClusterCategoryColorKeys(colorKeys: string[]) {
+  return colorKeys.flatMap((colorKey) => {
+    const normalizedColor = colorKey.trim().toLowerCase()
+    return normalizedColor.length > 0 ? [normalizedColor] : []
+  })
 }
 
 export function buildPublicMapClusterImageId(signature: string) {
@@ -150,7 +200,6 @@ export function createPublicMapClusterSpriteCache({
   limit?: number
 } = {}) {
   const imageIdBySignature = new Map<string, string>()
-  const upgradedSignatures = new Set<string>()
 
   const cacheSignature = (signature: PublicMapClusterSignature) => {
     touchPublicMapClusterSpriteCacheEntry({
@@ -195,7 +244,6 @@ export function createPublicMapClusterSpriteCache({
 
       try {
         map.addImage(imageId, sprite.image, { pixelRatio: sprite.pixelRatio })
-        upgradedSignatures.delete(signature.signature)
         return {
           imageId,
           signature: signature.signature,
@@ -214,14 +262,14 @@ export function createPublicMapClusterSpriteCache({
     upgradeSprite({
       map,
       signature,
-      avatarBitmaps,
+      avatarBitmaps: _avatarBitmaps,
     }: {
       map: PublicMapClusterSpriteImageMap
       signature: PublicMapClusterSignature
       avatarBitmaps: ImageBitmap[]
     }): PublicMapClusterSpriteUpgradeResult {
       const imageId = cacheSignature(signature)
-      if (!mapHasClusterSpriteImage(map, imageId) || typeof map.updateImage !== "function") {
+      if (!mapHasClusterSpriteImage(map, imageId)) {
         return {
           imageId,
           signature: signature.signature,
@@ -229,41 +277,11 @@ export function createPublicMapClusterSpriteCache({
           changed: false,
         }
       }
-      if (upgradedSignatures.has(signature.signature)) {
-        return {
-          imageId,
-          signature: signature.signature,
-          status: "cached",
-          changed: false,
-        }
-      }
-
-      const sprite = buildPublicMapClusterSprite({ signature, avatarBitmaps })
-      if (!sprite) {
-        return {
-          imageId,
-          signature: signature.signature,
-          status: "failed",
-          changed: false,
-        }
-      }
-
-      try {
-        map.updateImage(imageId, sprite.image)
-        upgradedSignatures.add(signature.signature)
-        return {
-          imageId,
-          signature: signature.signature,
-          status: "updated",
-          changed: true,
-        }
-      } catch {
-        return {
-          imageId,
-          signature: signature.signature,
-          status: "failed",
-          changed: false,
-        }
+      return {
+        imageId,
+        signature: signature.signature,
+        status: "cached",
+        changed: false,
       }
     },
     has(signature: PublicMapClusterSignature) {
@@ -276,9 +294,10 @@ export function createPublicMapClusterSpriteCache({
 }
 
 export async function enrichPublicMapClusterSourceDataWithSprites({
-  clusterClient,
-  dataVersion,
+  clusterClient: _clusterClient,
+  dataVersion: _dataVersion,
   map,
+  markerTheme = "light",
   sourceData,
   spriteCache,
   zoom,
@@ -289,14 +308,17 @@ export async function enrichPublicMapClusterSourceDataWithSprites({
     sourceData.features.map(async (feature: PublicMapSourceFeature) => {
       if (!isPublicMapClusterFeature(feature)) return feature
 
-      const leaves = await clusterClient.getLeaves(
-        feature.properties.cluster_id,
-        4,
-        dataVersion,
-      )
       const signature = buildPublicMapClusterSignature({
+        categoryColorKeys: resolvePublicMapClusterCategoryColorKeys(
+          feature.properties
+        ),
+        categoryKeys: resolvePublicMapClusterVisibleCategoryKeys(
+          feature.properties,
+          resolveVisiblePublicMapClusterDotCount(feature.properties.point_count)
+        ),
+        markerTheme,
         totalCount: feature.properties.point_count,
-        imageKeys: leaves.map((leaf) => leaf.properties.markerImageKey),
+        imageKeys: [],
         zoom,
       })
       spriteCache.ensureFallbackSprite({ map, signature })
@@ -309,7 +331,7 @@ export async function enrichPublicMapClusterSourceDataWithSprites({
           clusterSignature: signature.signature,
         },
       }
-    }),
+    })
   )
 
   return {
@@ -319,55 +341,28 @@ export async function enrichPublicMapClusterSourceDataWithSprites({
 }
 
 export async function upgradePublicMapClusterSpritesWithAvatars({
-  clusterClient,
-  dataVersion,
-  map,
+  clusterClient: _clusterClient,
+  dataVersion: _dataVersion,
+  map: _map,
   shouldContinue,
   sourceData,
-  spriteCache,
-  zoom,
-}: PublicMapClusterSourceDataSpriteInput): Promise<PublicMapClusterSpriteUpgradeResult[]> {
+  spriteCache: _spriteCache,
+  zoom: _zoom,
+}: PublicMapClusterSourceDataSpriteInput): Promise<
+  PublicMapClusterSpriteUpgradeResult[]
+> {
   const results: PublicMapClusterSpriteUpgradeResult[] = []
 
   for (const feature of sourceData.features) {
     if (!isPublicMapClusterFeature(feature)) continue
     if (shouldContinue && !shouldContinue()) break
 
-    const leaves = await clusterClient.getLeaves(
-      feature.properties.cluster_id,
-      4,
-      dataVersion,
-    )
-    const signature = buildPublicMapClusterSignature({
-      totalCount: feature.properties.point_count,
-      imageKeys: leaves.map((leaf) => leaf.properties.markerImageKey),
-      zoom,
+    results.push({
+      imageId: feature.properties.clusterImageId ?? "",
+      signature: feature.properties.clusterSignature ?? "",
+      status: "skipped",
+      changed: false,
     })
-
-    if (feature.properties.clusterSignature !== signature.signature) {
-      results.push({
-        imageId: feature.properties.clusterImageId ?? signature.imageId,
-        signature: feature.properties.clusterSignature ?? signature.signature,
-        status: "skipped",
-        changed: false,
-      })
-      continue
-    }
-
-    const avatarBitmaps = await loadPublicMapClusterAvatarBitmaps({
-      leaves,
-      visibleImageKeys: signature.visibleImageKeys,
-    })
-    if (shouldContinue && !shouldContinue()) {
-      results.push({
-        imageId: signature.imageId,
-        signature: signature.signature,
-        status: "skipped",
-        changed: false,
-      })
-      continue
-    }
-    results.push(spriteCache.upgradeSprite({ map, signature, avatarBitmaps }))
   }
 
   return results
@@ -375,44 +370,6 @@ export async function upgradePublicMapClusterSpritesWithAvatars({
 
 function normalizePublicMapClusterCount(totalCount: number) {
   return Number.isFinite(totalCount) ? Math.max(0, Math.floor(totalCount)) : 0
-}
-
-async function loadPublicMapClusterAvatarBitmaps({
-  leaves,
-  visibleImageKeys,
-}: {
-  leaves: PublicMapPointFeature[]
-  visibleImageKeys: string[]
-}) {
-  const leafByMarkerImageKey = new Map(
-    leaves.map((leaf) => [leaf.properties.markerImageKey, leaf] as const),
-  )
-  const results = await Promise.all(
-    visibleImageKeys.map(async (imageKey) => {
-      const leaf = leafByMarkerImageKey.get(imageKey)
-      if (!leaf) return null
-      const result = await getPublicMapMarkerImageBitmap({
-        imageKey: leaf.properties.markerImageKey,
-        imageUrl: leaf.properties.markerImageUrl,
-        fallbackLabel: leaf.properties.name,
-      })
-      return result.bitmap
-    }),
-  )
-
-  return results.filter((bitmap): bitmap is ImageBitmap => Boolean(bitmap))
-}
-
-function normalizePublicMapClusterImageKeys(imageKeys: string[]) {
-  return [...new Set(
-    imageKeys
-      .map((imageKey) => imageKey.trim())
-      .filter((imageKey) => imageKey.length > 0),
-  )].sort()
-}
-
-function encodePublicMapClusterSignaturePart(value: string) {
-  return encodeURIComponent(value)
 }
 
 function hashPublicMapClusterSignature(signature: string) {
@@ -449,7 +406,7 @@ function touchPublicMapClusterSpriteCacheEntry({
 
 function mapHasClusterSpriteImage(
   map: PublicMapClusterSpriteImageMap,
-  imageId: string,
+  imageId: string
 ) {
   try {
     return typeof map.hasImage === "function" && map.hasImage(imageId)

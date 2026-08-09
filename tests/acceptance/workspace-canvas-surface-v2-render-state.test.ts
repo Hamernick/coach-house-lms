@@ -37,6 +37,7 @@ describe("workspace canvas v2 render state", () => {
       } as Record<WorkspaceCardId, WorkspaceBoardNodeData>,
       orgNodePositionFromBoard: { x: 0, y: 0 },
       allowEditing: true,
+      allowPeopleCanvasInteraction: true,
       acceleratorStepNodeData: null,
       tutorialNodeData: null,
       workspacePersonPlacements: [],

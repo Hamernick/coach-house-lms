@@ -1,4 +1,5 @@
 import { ProgramCard } from "@/components/programs/program-card"
+import { OrganizationNarrativeContent } from "./organization-narrative-content"
 import { cn } from "@/lib/utils"
 import {
   resolveProgramBannerImageUrl,
@@ -61,7 +62,7 @@ export function OrgProfilePublicAboutSection({
         {need.trim().length > 0 ? (
           <div className="space-y-1">
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
-              Need statement
+              Need
             </p>
             <FieldText text={need} multiline />
           </div>
@@ -71,7 +72,7 @@ export function OrgProfilePublicAboutSection({
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
               Mission
             </p>
-            <FieldText text={mission} multiline />
+            <OrganizationNarrativeContent value={mission} />
           </div>
         ) : null}
         {vision.trim().length > 0 ? (
@@ -79,7 +80,7 @@ export function OrgProfilePublicAboutSection({
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
               Vision
             </p>
-            <FieldText text={vision} multiline />
+            <OrganizationNarrativeContent value={vision} />
           </div>
         ) : null}
         {values.trim().length > 0 ? (
@@ -87,7 +88,7 @@ export function OrgProfilePublicAboutSection({
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
               Values
             </p>
-            <FieldText text={values} multiline />
+            <OrganizationNarrativeContent value={values} />
           </div>
         ) : null}
         {theoryOfChange.trim().length > 0 ? (
@@ -159,7 +160,7 @@ export function OrgProfilePublicProgramsSection({
     <section id="programs" className="scroll-mt-20 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Primary objects</h2>
+          <h2 className="text-lg font-semibold">Activity</h2>
           <p className="text-muted-foreground text-sm">
             {selectedProgramId
               ? "Focused view from map discovery"
@@ -180,7 +181,7 @@ export function OrgProfilePublicProgramsSection({
           >
             <ProgramCard
               variant="medium"
-              title={program.title ?? "Untitled object"}
+              title={program.title ?? "Untitled activity"}
               org={profileName || undefined}
               location={locationSummary(program) || undefined}
               description={resolveProgramSummary(program) || undefined}

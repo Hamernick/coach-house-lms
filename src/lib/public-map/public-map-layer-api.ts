@@ -8,6 +8,8 @@ export {
 export {
   buildEmptyPublicMapFeatureCollection,
   buildPublicMapDataVersion,
+  buildPublicMapItemDataVersion,
+  buildPublicMapItemPointFeatures,
   buildPublicMapOrganizationFeatureCollection,
   buildPublicMapPointFeatures,
   parsePublicMapOrganizationIds,
@@ -15,16 +17,28 @@ export {
   resolvePublicMapMarkerImageUrl,
 } from "./public-map-geojson"
 export {
+  buildPublicMapClusterLabelExpression,
   buildPublicMapIconImageExpression,
+  buildPublicMapPointLabelExpression,
   buildPublicMapSelectedIconImageExpression,
   buildPublicMapClusterBadgeImageExpression,
   buildPublicMapClusterBadgeShadowImageExpression,
   PUBLIC_MAP_APPLE_BLUE,
+  PUBLIC_MAP_MARKER_REDUCED_MOTION_TRANSITION,
+  PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
   PUBLIC_MAP_POINT_SHADOW_KEY,
+  resolvePublicMapClusterLabelOffset,
+  resolvePublicMapClusterLabelTextSize,
   resolvePublicMapClusterTextSize,
   resolvePublicMapPointIconSize,
+  resolvePublicMapPointLabelOffset,
+  resolvePublicMapPointLabelTextSize,
+  resolvePublicMapSelectedPointLabelOffset,
   resolvePublicMapPointShadowOpacity,
+  resolvePublicMapPointShadowSize,
   resolvePublicMapSelectedPointIconSize,
+  resolvePublicMapSelectedPointShadowOpacity,
+  resolvePublicMapSelectedPointShadowSize,
 } from "./public-map-marker-style"
 export {
   ensurePublicMapBadgeImages,
@@ -38,9 +52,7 @@ export {
   resolveSameLocationGroupKey,
   resolveSameLocationLabel,
 } from "./public-map-same-location"
-export {
-  createPublicMapClusterClient,
-} from "./public-map-cluster-client"
+export { createPublicMapClusterClient } from "./public-map-cluster-client"
 export {
   buildPublicMapClusterImageId,
   buildPublicMapClusterSignature,
@@ -52,9 +64,7 @@ export {
   resolvePublicMapClusterZoomBucket,
   upgradePublicMapClusterSpritesWithAvatars,
 } from "./public-map-cluster-sprites"
-export type {
-  PublicMapClusterBbox,
-} from "./public-map-bounds"
+export type { PublicMapClusterBbox } from "./public-map-bounds"
 export type {
   PublicMapClusterableFeature,
   PublicMapClusterFeature,
@@ -68,9 +78,7 @@ export type {
   PublicMapSameLocationGroup,
   PublicMapSameLocationSelection,
 } from "./public-map-same-location"
-export type {
-  PublicMapClusterClient,
-} from "./public-map-cluster-client"
+export type { PublicMapClusterClient } from "./public-map-cluster-client"
 export type {
   PublicMapClusterSignature,
   PublicMapClusterSignatureInput,

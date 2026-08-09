@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { PersonSocialBrandIcon } from "@/components/people/person-social-brand-icon"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Field,
@@ -15,6 +16,7 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
+  InputGroupInput,
 } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
 import {
@@ -30,6 +32,13 @@ import {
   PERSON_CATEGORY_META,
   PERSON_CATEGORY_OPTIONS,
 } from "@/lib/people/categories"
+import {
+  getPersonSocialLinkError,
+  PERSON_SOCIAL_PLATFORMS,
+  resolvePersonSocialHref,
+  type PersonSocialLinks,
+  type PersonSocialPlatform,
+} from "@/lib/people/social-links"
 
 type PersonProfileFormFieldsProps = {
   formId: string
@@ -38,29 +47,22 @@ type PersonProfileFormFieldsProps = {
   name: string
   title: string
   email: string
-  linkedin: string
+  socialLinks: PersonSocialLinks
   category: OrgPerson["category"]
   image: string | null
   reportsToId: string | null
   onNameChange: (value: string) => void
   onTitleChange: (value: string) => void
   onEmailChange: (value: string) => void
-  onLinkedinChange: (value: string) => void
+  onSocialLinkChange: (platform: PersonSocialPlatform, value: string) => void
   onCategoryChange: (value: OrgPerson["category"]) => void
   onImageChange: (value: string | null) => void
   onReportsToChange: (value: string | null) => void
+  readOnly?: boolean
 }
 
 function canAssignManager(_category: OrgPerson["category"]) {
   return true
-}
-
-function resolveLinkedInHref(linkedin: string) {
-  const trimmed = linkedin.trim()
-  if (!trimmed) return ""
-  return trimmed.startsWith("http")
-    ? trimmed
-    : `https://www.linkedin.com/in/${trimmed.replace(/^\//, "")}`
 }
 
 function resolveInitials(name: string) {
@@ -78,21 +80,20 @@ export function PersonProfileFormFields({
   name,
   title,
   email,
-  linkedin,
+  socialLinks,
   category,
   image,
   reportsToId,
   onNameChange,
   onTitleChange,
   onEmailChange,
-  onLinkedinChange,
+  onSocialLinkChange,
   onCategoryChange,
   onImageChange,
   onReportsToChange,
+  readOnly = false,
 }: PersonProfileFormFieldsProps) {
   const categoryMeta = PERSON_CATEGORY_META[category]
-  const linkedInHref = resolveLinkedInHref(linkedin)
-
   function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -120,16 +121,20 @@ export function PersonProfileFormFields({
             >
               Profile photo
             </Label>
-            <Input
-              id={`${formId}-image`}
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleFile}
-            />
-            <p className="text-muted-foreground text-xs">
-              Square images work best.
-            </p>
+            {readOnly ? null : (
+              <>
+                <Input
+                  id={`${formId}-image`}
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFile}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Square images work best.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -161,6 +166,7 @@ export function PersonProfileFormFields({
                 placeholder="Full name"
                 autoComplete="name"
                 required
+                readOnly={readOnly}
               />
             </FieldControl>
           </Field>
@@ -174,6 +180,7 @@ export function PersonProfileFormFields({
                 onChange={(event) => onTitleChange(event.target.value)}
                 placeholder="Role or title"
                 autoComplete="organization-title"
+                readOnly={readOnly}
               />
             </FieldControl>
           </Field>
@@ -182,6 +189,7 @@ export function PersonProfileFormFields({
             <FieldControl>
               <Select
                 value={category}
+                disabled={readOnly}
                 onValueChange={(value) => {
                   const nextCategory = value as OrgPerson["category"]
                   onCategoryChange(nextCategory)
@@ -227,6 +235,7 @@ export function PersonProfileFormFields({
                   )}
                   onChange={(value) => onReportsToChange(value)}
                   className="w-full"
+                  disabled={readOnly}
                 />
                 <FieldDescription className="mt-2">
                   Optional: set their reporting line.
@@ -264,41 +273,84 @@ export function PersonProfileFormFields({
                 onChange={(event) => onEmailChange(event.target.value)}
                 placeholder="name@org.org"
                 autoComplete="email"
+                readOnly={readOnly}
               />
               <FieldDescription className="mt-2">
                 Used for contact cards.
               </FieldDescription>
             </FieldControl>
           </Field>
-          <Field orientation="responsive">
-            <FieldLabel htmlFor={`${formId}-linkedin`}>LinkedIn</FieldLabel>
-            <FieldControl>
-              <InputGroup>
-                <Input
-                  id={`${formId}-linkedin`}
-                  name="linkedin"
-                  value={linkedin ?? ""}
-                  onChange={(event) => onLinkedinChange(event.target.value)}
-                  placeholder="https://linkedin.com/in/username"
-                  autoComplete="url"
-                />
-                <InputGroupAddon>
-                  <InputGroupButton
-                    type="button"
-                    disabled={!linkedInHref}
-                    onClick={() => {
-                      if (linkedInHref) window.open(linkedInHref, "_blank")
-                    }}
-                  >
-                    Open
-                  </InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
-              <FieldDescription>
-                If set, we’ll auto-fetch their photo on save.
-              </FieldDescription>
-            </FieldControl>
-          </Field>
+        </FieldGroup>
+      </section>
+
+      <section
+        className="space-y-4"
+        aria-labelledby={`${formId}-social-media-heading`}
+      >
+        <div>
+          <h3
+            id={`${formId}-social-media-heading`}
+            className="text-sm font-semibold text-balance"
+          >
+            Social media
+          </h3>
+          <p className="text-muted-foreground mt-1 text-xs text-pretty">
+            Add the profiles that should appear in People.
+          </p>
+        </div>
+        <FieldGroup className="gap-4">
+          {PERSON_SOCIAL_PLATFORMS.map((platform) => {
+            const href = resolvePersonSocialHref(
+              platform.key,
+              socialLinks[platform.key]
+            )
+            const linkError = getPersonSocialLinkError(
+              platform.key,
+              socialLinks[platform.key]
+            )
+            return (
+              <Field key={platform.key} orientation="responsive">
+                <FieldLabel htmlFor={`${formId}-${platform.key}`}>
+                  <PersonSocialBrandIcon
+                    platform={platform.key}
+                    className="size-4 shrink-0"
+                    aria-hidden
+                  />
+                  {platform.label}
+                </FieldLabel>
+                <FieldControl>
+                  <InputGroup>
+                    <InputGroupInput
+                      id={`${formId}-${platform.key}`}
+                      name={platform.key}
+                      value={socialLinks[platform.key]}
+                      onChange={(event) =>
+                        onSocialLinkChange(platform.key, event.target.value)
+                      }
+                      placeholder={platform.placeholder}
+                      autoComplete="url"
+                      aria-invalid={Boolean(linkError)}
+                      readOnly={readOnly}
+                    />
+                    <InputGroupAddon>
+                      <InputGroupButton
+                        type="button"
+                        disabled={!href}
+                        onClick={() => window.open(href, "_blank", "noopener")}
+                      >
+                        Open
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {linkError ? (
+                    <FieldDescription className="text-destructive mt-2">
+                      {linkError}
+                    </FieldDescription>
+                  ) : null}
+                </FieldControl>
+              </Field>
+            )
+          })}
         </FieldGroup>
       </section>
     </div>

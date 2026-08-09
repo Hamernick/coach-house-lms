@@ -1,13 +1,80 @@
 import { describe, expect, it } from "vitest"
 
 import { buildDefaultBoardState } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
-import { applyWorkspaceTutorialActivationToSeed } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
+import {
+  applyWorkspaceTutorialActivationToSeed,
+  hydrateWorkspaceSeedAcceleratorState,
+} from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
+import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import {
   buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   resolveWorkspaceCanvasTutorialStepCount,
 } from "@/features/workspace-canvas-tutorial"
 
 describe("my organization page content helpers", () => {
+  it("advances past recovered organization setup progress", () => {
+    const boardState = buildDefaultBoardState()
+    boardState.accelerator = {
+      activeStepId: "setup:lesson",
+      completedStepIds: [],
+    }
+    const baseStep = {
+      published: true,
+      stepKind: "lesson" as const,
+      stepDescription: null,
+      href: "/accelerator",
+      stepSequenceIndex: 0,
+      stepSequenceTotal: 2,
+      moduleSequenceIndex: 0,
+      moduleSequenceTotal: 2,
+      groupTitle: "Formation",
+      groupOrder: 0,
+      videoUrl: null,
+      durationMinutes: null,
+      resources: [],
+      hasAssignment: false,
+      hasDeck: false,
+    }
+    const steps: WorkspaceAcceleratorCardStep[] = [
+      {
+        ...baseStep,
+        id: "setup:lesson",
+        moduleId: "setup",
+        moduleSlug: "organization-setup",
+        moduleTitle: "Organization setup",
+        stepTitle: "Organization setup",
+        status: "completed",
+        moduleContext: {
+          classTitle: "Formation",
+          lessonNotesContent: null,
+          moduleResources: [],
+          assignmentFields: [],
+          assignmentSubmission: null,
+          completeOnSubmit: false,
+          workspaceOnboarding: { view: "organization-setup" },
+        },
+      },
+      {
+        ...baseStep,
+        id: "naming:lesson",
+        moduleId: "naming",
+        moduleSlug: "naming-your-nfp",
+        moduleTitle: "Naming your NFP",
+        stepTitle: "Naming your NFP",
+        status: "not_started",
+        stepSequenceIndex: 1,
+        moduleSequenceIndex: 1,
+      },
+    ]
+
+    const next = hydrateWorkspaceSeedAcceleratorState({ boardState }, steps)
+
+    expect(next.boardState.accelerator).toEqual({
+      activeStepId: "naming:lesson",
+      completedStepIds: ["setup:lesson"],
+    })
+  })
+
   it("preserves the current tutorial step on refresh activation", () => {
     const boardState = buildDefaultBoardState()
     boardState.onboardingFlow = {
@@ -25,7 +92,7 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: true,
         workspaceOnboardingCompletedAt: null,
-      },
+      }
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(true)
@@ -41,7 +108,8 @@ describe("my organization page content helpers", () => {
 
   it("does not reactivate a completed tutorial from the onboarding query", () => {
     const boardState = buildDefaultBoardState()
-    const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+    const completionHiddenCardIds =
+      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
     boardState.onboardingFlow = {
       ...boardState.onboardingFlow,
       active: false,
@@ -56,12 +124,12 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: true,
         workspaceOnboardingCompletedAt: null,
-      },
+      }
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(false)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(
-      resolveWorkspaceCanvasTutorialStepCount() - 1,
+      resolveWorkspaceCanvasTutorialStepCount() - 1
     )
     expect(next.boardState.hiddenCardIds).toEqual(boardState.hiddenCardIds)
   })
@@ -81,15 +149,15 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: "2026-03-18T21:00:00.000Z",
-      },
+      }
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(false)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(
-      resolveWorkspaceCanvasTutorialStepCount() - 1,
+      resolveWorkspaceCanvasTutorialStepCount() - 1
     )
     expect(next.boardState.hiddenCardIds).toEqual(
-      buildWorkspaceCanvasTutorialCompletionHiddenCardIds(),
+      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
     )
   })
 
@@ -100,9 +168,10 @@ describe("my organization page content helpers", () => {
       active: false,
       tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
     }
-    boardState.hiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds().filter(
-      (cardId) => cardId !== "fiscal-sponsorship"
-    )
+    boardState.hiddenCardIds =
+      buildWorkspaceCanvasTutorialCompletionHiddenCardIds().filter(
+        (cardId) => cardId !== "fiscal-sponsorship"
+      )
     boardState.nodes = boardState.nodes.map((node) =>
       node.id === "fiscal-sponsorship"
         ? { ...node, x: 898, y: -510, size: "sm" as const }
@@ -116,7 +185,7 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: "2026-06-05T15:43:37.000Z",
-      },
+      }
     )
 
     expect(next.boardState.hiddenCardIds).not.toContain("fiscal-sponsorship")
@@ -129,7 +198,7 @@ describe("my organization page content helpers", () => {
     })
   })
 
-  it("activates the workspace tutorial when initial onboarding is still required", () => {
+  it("keeps the workspace tutorial inactive until required setup is complete", () => {
     const boardState = buildDefaultBoardState()
 
     const next = applyWorkspaceTutorialActivationToSeed(
@@ -139,18 +208,17 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: null,
-      },
+      }
     )
 
-    expect(next.boardState.onboardingFlow.active).toBe(true)
-    expect(next.boardState.connections.length).toBeGreaterThanOrEqual(
-      boardState.connections.length,
-    )
+    expect(next.boardState.onboardingFlow.active).toBe(false)
+    expect(next.boardState.connections).toEqual(boardState.connections)
   })
 
   it("restarts a completed tutorial when auth metadata reactivates onboarding", () => {
     const boardState = buildDefaultBoardState()
-    const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+    const completionHiddenCardIds =
+      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
     boardState.onboardingFlow = {
       ...boardState.onboardingFlow,
       active: false,
@@ -165,13 +233,15 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: true,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: null,
-      },
+      }
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(true)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(0)
     expect(next.boardState.onboardingFlow.openedTutorialStepIds).toEqual([])
-    expect(next.boardState.onboardingFlow.acknowledgedTutorialStepIds).toEqual([])
+    expect(next.boardState.onboardingFlow.acknowledgedTutorialStepIds).toEqual(
+      []
+    )
     expect(next.boardState.hiddenCardIds).toContain("organization-overview")
     expect(next.boardState.hiddenCardIds).toContain("accelerator")
   })

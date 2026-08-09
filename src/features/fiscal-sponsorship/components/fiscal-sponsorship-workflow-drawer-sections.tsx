@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
@@ -211,6 +212,17 @@ function WorkflowActionButton({
     (phase.actionType === "document" || phase.actionType === "signature") &&
     phase.href
   ) {
+    if (phase.actionType === "signature") {
+      return (
+        <Button asChild size="sm" className="h-8 rounded-full px-3">
+          <Link href={phase.href}>
+            <Icon data-icon="inline-start" aria-hidden />
+            {phase.actionLabel}
+          </Link>
+        </Button>
+      )
+    }
+
     return (
       <Button asChild size="sm" className="h-8 rounded-full px-3">
         <a href={phase.href} target="_blank" rel="noreferrer">
@@ -373,7 +385,7 @@ export function DocumentsAndSigning({
           <AlertTitle>No prepared documents yet</AlertTitle>
           <AlertDescription>
             Agreement and executed document links appear here after Coach House
-            review, confirmation, and DocuSeal activity.
+            review, confirmation, and signature activity.
           </AlertDescription>
         </Alert>
       )}
@@ -408,14 +420,14 @@ export function SigningActions({
           title={action.title}
           description={action.description}
           statusLabel={action.statusLabel}
-          complete={!action.href}
+          complete={action.complete}
         >
           {action.href ? (
             <Button asChild size="sm" className="w-fit rounded-full">
-              <a href={action.href} target="_blank" rel="noreferrer">
+              <Link href={action.href}>
                 <PenLineIcon data-icon="inline-start" aria-hidden />
-                Sign
-              </a>
+                {action.actionLabel}
+              </Link>
             </Button>
           ) : null}
         </FiscalWorkflowDisclosureRow>

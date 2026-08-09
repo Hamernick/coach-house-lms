@@ -186,8 +186,17 @@ export function renderWorkspaceBoardResolvedCard({
   }
 
   if (cardId === "fiscal-sponsorship") {
+    const fiscalActionRequest =
+      data.ontologyActionRequest?.rootId === "fiscal-sponsorship" &&
+      data.ontologyActionRequest.target.kind === "fiscal-phase"
+        ? {
+            id: data.ontologyActionRequest.id,
+            phaseId: data.ontologyActionRequest.target.phaseId,
+          }
+        : null
     return (
       <WorkspaceBoardFiscalSponsorshipCard
+        actionRequest={fiscalActionRequest}
         applicationPrefill={
           data.organizationEditorData?.fiscalSponsorshipApplicationPrefill ??
           null
@@ -318,6 +327,7 @@ export function renderWorkspaceBoardResolvedCard({
       ) : null}
       {cardId === "calendar" ? (
         <WorkspaceBoardCalendarCard
+          actionRequest={data.ontologyActionRequest ?? null}
           calendar={seed.calendar}
           canEdit={canEdit}
           formationStatus={seed.initialProfile.formationStatus ?? null}

@@ -4,19 +4,24 @@ import { redirect } from "next/navigation"
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 import { PricingSurface } from "@/components/public/pricing-surface"
-import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import {
+  DEFAULT_POST_AUTH_REDIRECT,
+  getSafeRedirectPath,
+} from "@/lib/auth/redirects"
 import {
   resolveSignupBuilderPlanTier,
   resolveSignupBuilderPlanTierFromRedirect,
   resolveSignupIntentFocus,
 } from "@/lib/onboarding/signup-plan"
+import { getPublicMapboxToken } from "@/lib/mapbox/token"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: {
     absolute: "Coach House",
   },
-  description: "A nonprofit platform for formation, planning, and public-ready storytelling.",
+  description:
+    "Build, find, and fund nonprofit work with one shared workspace, a public resource map, centralized documents, and fiscal sponsorship for qualified projects.",
 }
 
 export const runtime = "nodejs"
@@ -54,13 +59,13 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
 
   const initialSection = readStringParam(resolvedSearchParams?.section)
   const loginRedirectTo = getSafeRedirectPath(
-    readStringParam(resolvedSearchParams?.redirect),
+    readStringParam(resolvedSearchParams?.redirect)
   )
   const signupPlanTier =
     resolveSignupBuilderPlanTier(readStringParam(resolvedSearchParams?.plan)) ??
     resolveSignupBuilderPlanTierFromRedirect(loginRedirectTo)
   const signupIntentFocus = resolveSignupIntentFocus(
-    readStringParam(resolvedSearchParams?.intent),
+    readStringParam(resolvedSearchParams?.intent)
   )
   if (initialSection === "login") {
     const supabase = await createSupabaseServerClient()
@@ -75,6 +80,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
     <HomeCanvasPreview
       initialSection={initialSection}
       loginRedirectTo={loginRedirectTo}
+      mapboxToken={getPublicMapboxToken()}
       pricingPanel={<PricingSurface embedded />}
       signupIntentFocus={signupIntentFocus}
       signupPlanTier={signupPlanTier}

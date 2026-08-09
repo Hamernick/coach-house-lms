@@ -3,6 +3,14 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import {
+  getBudgetTotal,
+  normalizeFiscalSponsorshipBudgetRows,
+  parseBudgetRows,
+  readBudgetSourceActivityIdFromMetadata,
+  serializeBudgetRows,
+} from "@/features/fiscal-sponsorship/lib/budget-plan"
+
 const ROOT = process.cwd()
 
 function readSource(relativePath: string) {
@@ -10,12 +18,40 @@ function readSource(relativePath: string) {
 }
 
 describe("fiscal sponsorship application UI", () => {
-  it("keeps the drawer persistent, scroll-safe, and submission-owned", () => {
+  it("keeps client-callable fiscal actions behind a real Server Action boundary", () => {
+    const actionFacade = readSource(
+      "src/features/fiscal-sponsorship/actions.ts"
+    )
+    const applicationDrawer = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
+    )
+
+    expect(actionFacade.startsWith('"use server"')).toBe(true)
+    expect(actionFacade).not.toContain("export {")
+    expect(actionFacade).toContain(
+      "export async function loadFiscalSponsorshipApplicationDraft"
+    )
+    expect(actionFacade).toContain(
+      "export async function saveFiscalSponsorshipApplicationDraft"
+    )
+    expect(actionFacade).toContain(
+      "export async function submitFiscalSponsorshipApplication"
+    )
+    expect(applicationDrawer).toContain('from "../actions"')
+    expect(applicationDrawer).not.toContain("../server/")
+  })
+
+  it("keeps one application editor for inline and drawer surfaces", () => {
     const applicationDrawer = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
     )
 
     expect(applicationDrawer).toContain("FiscalSponsorshipApplicationDrawer")
+    expect(applicationDrawer).toContain("FiscalSponsorshipApplicationEditor")
+    expect(applicationDrawer).toContain('surface: "drawer" | "inline"')
+    expect(applicationDrawer).toContain(
+      'data-fiscal-sponsorship-application-editor="inline"'
+    )
     expect(applicationDrawer).toContain("SheetContent")
     expect(applicationDrawer).toContain("loadFiscalSponsorshipApplicationDraft")
     expect(applicationDrawer).toContain("saveFiscalSponsorshipApplicationDraft")
@@ -34,6 +70,10 @@ describe("fiscal sponsorship application UI", () => {
     expect(applicationDrawer).toContain("onInteractOutside")
     expect(applicationDrawer).toContain("Discard application changes?")
     expect(applicationDrawer).toContain("beforeunload")
+    expect(applicationDrawer).toContain("loadedApplicationKeyRef")
+    expect(applicationDrawer).toContain(
+      "data.applicationPrefill?.sourceActivityId"
+    )
     expect(applicationDrawer).toContain("<ScrollFadeEffect")
     expect(applicationDrawer).toContain(
       "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 [--mask-height:2rem] [--scroll-buffer:1.5rem]"
@@ -137,9 +177,22 @@ describe("fiscal sponsorship application UI", () => {
     const applicationDraft = readSource(
       "src/features/fiscal-sponsorship/lib/application-draft.ts"
     )
+    const applicationActions = readSource(
+      "src/features/fiscal-sponsorship/server/actions.ts"
+    )
+    const draftSaveMigration = readSource(
+      "supabase/migrations/20260805232500_atomic_fiscal_application_draft_saves.sql"
+    )
 
     expect(budgetPlanEditor).toContain("Budget plan")
-    expect(budgetPlanEditor).toContain("TableHeader")
+    expect(budgetPlanEditor).toContain("BudgetTable")
+    expect(budgetPlanEditor).toContain('layout="grid"')
+    expect(budgetPlanEditor).toContain("Linked to the budget for")
+    expect(budgetPlanEditor).toContain(
+      "Saving this application updates the same line items"
+    )
+    expect(budgetPlanEditor).not.toContain("TableHead")
+    expect(budgetPlanEditor).not.toContain('placeholder="$0"')
     expect(budgetPlanEditor).toContain("Import CSV rows")
     expect(budgetPlanEditor).toContain("parseCsvBudgetRows")
     expect(budgetPlanEditor).toContain("connectFiscalSponsorshipDocumentAsset")
@@ -159,5 +212,53 @@ describe("fiscal sponsorship application UI", () => {
     expect(applicationDraft).toContain("documentTemplatePayload")
     expect(applicationDraft).toContain("individualApplicant")
     expect(applicationDraft).toContain('draft.legalEntityType === "individual"')
+    expect(applicationDraft).toContain("budgetRows: draft.budgetRows")
+
+    expect(applicationActions).toContain("saveFiscalApplicationDraftTransition")
+    expect(applicationActions).toContain("budgetRows")
+    expect(draftSaveMigration).toContain("'budgetUsd'")
+    expect(draftSaveMigration).toContain("'goalUsd'")
+    expect(draftSaveMigration).toContain("for update;")
+  })
+
+  it("preserves complete program budget rows and ignores zero-only legacy summaries", () => {
+    expect(parseBudgetRows("$0.00; $0.00")).toEqual([
+      {
+        category: "",
+        costPerUnit: "",
+        costType: "",
+        description: "",
+        totalCost: "",
+        unit: "",
+        units: "",
+      },
+    ])
+    expect(
+      normalizeFiscalSponsorshipBudgetRows([
+        { category: "", description: "", totalCost: "0.00" },
+        { category: "", description: "", totalCost: "$0.00" },
+      ])
+    ).toEqual([])
+    expect(
+      readBudgetSourceActivityIdFromMetadata({
+        selectedActivityId: " program-2 ",
+      })
+    ).toBe("program-2")
+
+    const rows = parseBudgetRows(
+      "Materials | Welding kits | Variable | Participant / Program | 20 | 75.00 | 1500.00"
+    )
+
+    expect(rows[0]).toEqual({
+      category: "Materials",
+      costPerUnit: "75.00",
+      costType: "Variable",
+      description: "Welding kits",
+      totalCost: "1500.00",
+      unit: "Participant / Program",
+      units: "20",
+    })
+    expect(getBudgetTotal(rows)).toBe(1500)
+    expect(parseBudgetRows(serializeBudgetRows(rows))).toEqual(rows)
   })
 })

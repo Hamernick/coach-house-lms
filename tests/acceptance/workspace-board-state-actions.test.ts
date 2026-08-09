@@ -59,4 +59,25 @@ describe("workspace board state actions", () => {
       "const response = await saveWorkspaceNodePositionAction"
     )
   })
+
+  it("aligns board layout persistence with platform-admin client edit access", () => {
+    const actionSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/workspace-actions.ts"
+    )
+    const pageSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+
+    expect(pageSource).toContain(
+      "const canEdit = isAdmin || canEditOrganization(role)"
+    )
+    expect(actionSource).toContain("async function canEditWorkspaceLayout")
+    expect(actionSource).toContain('profile?.role === "admin"')
+    expect(actionSource).toContain(
+      "const canEditLayout = await canEditWorkspaceLayout"
+    )
+    expect(actionSource).not.toContain(
+      "if (!canEditOrganization(activeOrg.role)) {"
+    )
+  })
 })

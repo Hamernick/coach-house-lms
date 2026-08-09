@@ -10,6 +10,8 @@ import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typograp
 import { Progress } from "@/components/ui/progress"
 import {
   FiscalSponsorshipWorkspaceCardSummary,
+  normalizeFiscalSponsorshipBudgetRows,
+  summarizeBudgetRows,
   type FiscalSponsorshipApplicationPrefill,
   type FiscalSponsorshipProgramOption,
   type FiscalSponsorshipProjectWorkflowSummary,
@@ -80,39 +82,18 @@ function safeSnapshotTextList(snapshot: unknown, key: string) {
     .filter((entry): entry is string => Boolean(entry))
 }
 
-function safeBudgetRowText(row: Record<string, unknown>, key: string) {
-  const value = row[key]
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : null
+function getSnapshotBudgetRows(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    return []
+  }
+
+  return normalizeFiscalSponsorshipBudgetRows(
+    (snapshot as Record<string, unknown>).budgetRows
+  )
 }
 
 function formatSnapshotBudgetRows(snapshot: unknown) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return null
-  }
-
-  const rows = (snapshot as Record<string, unknown>).budgetRows
-  if (!Array.isArray(rows)) return null
-
-  const summaryRows = rows
-    .map((row) => {
-      if (!row || typeof row !== "object" || Array.isArray(row)) return null
-
-      const record = row as Record<string, unknown>
-      const category = safeBudgetRowText(record, "category")
-      const description = safeBudgetRowText(record, "description")
-      const totalCost = safeBudgetRowText(record, "totalCost")
-
-      if (!category && !description && !totalCost) return null
-
-      return [category, description, totalCost ? `$${totalCost}` : null]
-        .filter((part): part is string => Boolean(part))
-        .join(" - ")
-    })
-    .filter((row): row is string => Boolean(row))
-
-  return summaryRows.length > 0 ? summaryRows.join("; ") : null
+  return summarizeBudgetRows(getSnapshotBudgetRows(snapshot)) || null
 }
 
 export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
@@ -120,6 +101,7 @@ export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
 ): FiscalSponsorshipProgramOption[] {
   return (programs ?? []).map((program) => {
     const budgetUsd = safeSnapshotNumber(program.wizard_snapshot, "budgetUsd")
+    const budgetRows = getSnapshotBudgetRows(program.wizard_snapshot)
     const successOutcomes = safeSnapshotTextList(
       program.wizard_snapshot,
       "successOutcomes"
@@ -145,6 +127,7 @@ export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
       estimatedBudgetCents: budgetUsd
         ? Math.round(budgetUsd * 100)
         : program.goal_cents,
+      budgetRows,
       expenseSummary: formatSnapshotBudgetRows(program.wizard_snapshot),
       prospectiveFundingSources: safeSnapshotText(
         program.wizard_snapshot,
@@ -408,12 +391,17 @@ export function EconomicEngineCard({
 }
 
 export function WorkspaceBoardFiscalSponsorshipCard({
+  actionRequest = null,
   applicationPrefill,
   fiscalSponsorshipProjectId,
   fiscalSponsorshipWorkflowSummary,
   organizationName,
   programs,
 }: {
+  actionRequest?: {
+    id: number
+    phaseId: "application-intake" | "required-documents"
+  } | null
   applicationPrefill?: FiscalSponsorshipApplicationPrefill | null
   fiscalSponsorshipProjectId?: string | null
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
@@ -422,6 +410,7 @@ export function WorkspaceBoardFiscalSponsorshipCard({
 }) {
   return (
     <FiscalSponsorshipWorkspaceCardSummary
+      actionRequest={actionRequest}
       applicationPrefill={applicationPrefill}
       fiscalSponsorshipProjectId={fiscalSponsorshipProjectId}
       fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowSummary}

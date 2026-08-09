@@ -7,17 +7,22 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from "react"
-import type { Edge, ReactFlowInstance } from "reactflow"
+import type {
+  Edge,
+  NodeMouseHandler,
+  ReactFlowInstance,
+} from "reactflow"
 
 import { buildWorkspaceCardEdgeGeometryLookup } from "../../workspace-board-connection-handles"
 import type { WorkspaceBoardState } from "../../workspace-board-types"
 import { useWorkspaceCanvasCameraController } from "../runtime/workspace-canvas-camera-controller"
 import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
 import { useWorkspaceCanvasLifecycleLogs } from "../runtime/workspace-canvas-lifecycle-logs"
-import type {
-  WorkspaceCanvasCardFocusRequest,
-  WorkspaceCanvasSceneFitRequest,
-  WorkspaceCanvasTutorialCompletionExitRequest,
+import {
+  executeWorkspaceCanvasViewportCommand,
+  type WorkspaceCanvasCardFocusRequest,
+  type WorkspaceCanvasSceneFitRequest,
+  type WorkspaceCanvasTutorialCompletionExitRequest,
 } from "../runtime/workspace-canvas-viewport-command"
 import {
   WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
@@ -29,6 +34,7 @@ import type {
   WorkspaceCanvasNode,
   WorkspaceCanvasV2CardId,
 } from "./workspace-canvas-surface-v2-helpers"
+import { mergeUniqueWorkspaceCanvasEdges } from "./workspace-canvas-edge-deduplication"
 import { useWorkspaceCardReadinessMap } from "./workspace-canvas-surface-v2-hooks"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import { useWorkspaceCanvasViewportControls } from "./workspace-canvas-surface-v2-viewport-controls"
@@ -45,6 +51,7 @@ export function useWorkspaceCanvasSurfaceFlowState({
   isFlowReady,
   layoutFitRequestKey,
   nodeRelationshipEdges,
+  ontologyEdges,
   onConnectCards,
   onDisconnectAllConnections,
   onDisconnectConnection,
@@ -72,6 +79,7 @@ export function useWorkspaceCanvasSurfaceFlowState({
   isFlowReady: boolean
   layoutFitRequestKey: number
   nodeRelationshipEdges: Edge[]
+  ontologyEdges: Edge[]
   onConnectCards: WorkspaceCanvasSurfaceV2Props["onConnectCards"]
   onDisconnectAllConnections: WorkspaceCanvasSurfaceV2Props["onDisconnectAllConnections"]
   onDisconnectConnection: WorkspaceCanvasSurfaceV2Props["onDisconnectConnection"]
@@ -125,6 +133,33 @@ export function useWorkspaceCanvasSurfaceFlowState({
     suppressInitialFit,
     onTutorialCompletionExitHandled,
   })
+  const handleNodeDoubleClick = useCallback<NodeMouseHandler>(
+    (event, node) => {
+      if (tutorialActive) return
+      if (
+        event.target instanceof Element &&
+        event.target.closest(
+          "button, a, input, textarea, select"
+        )
+      ) {
+        return
+      }
+      const flowInstance = flowInstanceRef.current
+      if (!flowInstance) return
+
+      event.preventDefault()
+      executeWorkspaceCanvasViewportCommand({
+        flowInstance,
+        command: { kind: "focus-card", cardId: node.id },
+        layoutFitOptions: WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
+        sceneFitOptions: WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
+        acceleratorFocusOptions:
+          WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
+        focusCardOptions: WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
+      })
+    },
+    [flowInstanceRef, tutorialActive]
+  )
 
   const {
     edges,
@@ -154,8 +189,13 @@ export function useWorkspaceCanvasSurfaceFlowState({
     onDisconnectAllConnections,
   })
   const renderEdges = useMemo(
-    () => [...edges, ...nodeRelationshipEdges],
-    [edges, nodeRelationshipEdges]
+    () =>
+      mergeUniqueWorkspaceCanvasEdges(
+        edges,
+        nodeRelationshipEdges,
+        ontologyEdges
+      ),
+    [edges, nodeRelationshipEdges, ontologyEdges]
   )
   useWorkspaceCanvasLifecycleLogs(renderNodes.length)
 
@@ -171,6 +211,7 @@ export function useWorkspaceCanvasSurfaceFlowState({
     handleEdgeDoubleClick,
     handleFlowInit,
     handleIsValidConnection,
+    handleNodeDoubleClick,
     handleRecenterView,
     handleZoomIn,
     handleZoomOut,

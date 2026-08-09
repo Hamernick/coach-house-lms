@@ -1,6 +1,7 @@
 import type {
   OrgProgram,
   OrgProfile,
+  ProfileTab,
 } from "@/components/organization/org-profile-card/types"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
@@ -11,7 +12,10 @@ import type {
 } from "@/features/fiscal-sponsorship"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
+import type { OrganizationPeopleSegment } from "@/lib/people/segments"
+import type { OrganizationPeopleTag } from "@/lib/people/tags"
 import type { RoadmapSection } from "@/lib/roadmap"
+import type { WorkspaceDrawerTab } from "@/lib/workspace/routes"
 
 import type {
   FormationSummary,
@@ -94,9 +98,21 @@ export type WorkspaceSeedData = {
 }
 
 export type WorkspaceOrganizationEditorData = {
+  initialDrawerTab: WorkspaceDrawerTab | null
+  initialAcceleratorGroup: string | null
+  initialAcceleratorModuleId: string | null
+  initialAcceleratorStepId: string | null
+  initialEditMode: boolean
+  initialFocus: string | null
+  initialRoadmapSectionSlug: string | null
   initialProfile: OrgProfile
+  initialProfileTab: ProfileTab | null
+  initialProgramId: string | null
   roadmapSections: RoadmapSection[]
+  roadmapPublicSlug: string | null
   people: OrgPersonWithImage[]
+  peopleSegments: OrganizationPeopleSegment[]
+  peopleTags: OrganizationPeopleTag[]
   programs: OrgProgram[]
   fiscalSponsorshipProjectId: string | null
   fiscalSponsorshipWorkflowSummary: FiscalSponsorshipProjectWorkflowSummary | null

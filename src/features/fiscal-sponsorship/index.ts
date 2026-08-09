@@ -1,8 +1,15 @@
 export {
   connectFiscalSponsorshipDocumentAsset,
+  buildFiscalSponsorshipSigningPreview,
+  canManageFiscalSponsorshipForOrganization,
   generateFiscalSponsorshipAgreement,
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,
+  loadFiscalSponsorshipSigningSession,
+  loadFiscalSponsorshipW9Session,
+  saveFiscalSponsorshipSigningDraft,
+  completeFiscalSponsorshipW9,
+  completeFiscalSponsorshipSignature,
   reviewFiscalSponsorshipDocument,
   reviewFiscalSponsorshipApplication,
   sendFiscalSponsorshipAgreementForSignature,
@@ -10,6 +17,8 @@ export {
 } from "./actions"
 export {
   FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipApplicationEditor,
+  FiscalSponsorshipActivityAction,
   FiscalSponsorshipMark,
   FiscalSponsorshipMarkdownDocument,
   FiscalSponsorshipPanel,
@@ -19,18 +28,34 @@ export {
   FiscalSponsorshipWorkflowTimeline,
   FiscalSponsorshipWorkflowDrawer,
   FiscalSponsorshipWorkspaceCardSummary,
+  FiscalSponsorshipWorkspaceCardSurface,
+  FiscalSponsorshipSigningPage,
+  FiscalSponsorshipW9Page,
 } from "./components"
+export {
+  analyzeFiscalSponsorshipActivityEligibility,
+  type FiscalSponsorshipActivityEligibility,
+  type FiscalSponsorshipActivityEligibilityActivity,
+  type FiscalSponsorshipActivityEligibilityOrganization,
+  type FiscalSponsorshipActivityEligibilityState,
+  type FiscalSponsorshipActivityEligibilityCriterion,
+} from "./lib/activity-eligibility"
 export {
   FISCAL_SPONSORSHIP_HANDBOOK_DOWNLOAD_HREF,
   FISCAL_SPONSORSHIP_HANDBOOK_HREF,
   FISCAL_SPONSORSHIP_HANDBOOK_NAV_ITEMS,
 } from "./lib/application-data"
+export {
+  normalizeFiscalSponsorshipBudgetRows,
+  summarizeBudgetRows,
+} from "./lib/budget-plan"
 export { FISCAL_SPONSORSHIP_PROTOTYPE_STEPS } from "./lib/prototype-data"
 export { buildFiscalSponsorshipProjectWorkbenchData } from "./lib/project-workbench-data"
 export {
   FISCAL_SPONSORSHIP_REQUIRED_DOCUMENTS,
   formatFiscalSponsorshipDocumentKey,
 } from "./lib/required-documents"
+export type { FiscalSponsorshipW9Fields } from "./lib/w9-field-manifest"
 export {
   buildFiscalSponsorshipAgreementDocument,
   normalizeFiscalSponsorshipInput,
@@ -82,4 +107,16 @@ export type {
   ConnectFiscalSponsorshipDocumentAssetResult,
   ReviewFiscalSponsorshipDocumentInput,
   ReviewFiscalSponsorshipDocumentResult,
+  FiscalSponsorshipSignerRole,
+  FiscalSponsorshipSignatureMethod,
+  FiscalSponsorshipSigningSession,
+  LoadFiscalSponsorshipSigningSessionResult,
+  SaveFiscalSponsorshipSigningDraftInput,
+  SaveFiscalSponsorshipSigningDraftResult,
+  CompleteFiscalSponsorshipSignatureInput,
+  CompleteFiscalSponsorshipSignatureResult,
+  CompleteFiscalSponsorshipW9Input,
+  CompleteFiscalSponsorshipW9Result,
+  FiscalSponsorshipW9Session,
+  LoadFiscalSponsorshipW9SessionResult,
 } from "./types"

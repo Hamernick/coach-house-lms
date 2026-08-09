@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
 import {
@@ -46,10 +47,12 @@ export function WorkspaceBoardCanvas({
   seed,
   onInitialOnboardingSubmit,
   organizationEditorData,
+  financeInput,
 }: {
   seed: WorkspaceSeedData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
+  financeInput: WorkspaceFinanceInput
 }) {
   const presentationMode = seed.presentationMode
   const hydratedSeedBoardState = useMemo(() => {
@@ -332,6 +335,7 @@ export function WorkspaceBoardCanvas({
         tutorialCompletionExitRequest={tutorialCompletionExitRequest}
         journeyGuideState={journeyGuideState}
         organizationEditorData={organizationEditorData}
+        financeInput={financeInput}
         onInitialOnboardingSubmit={onInitialOnboardingSubmit}
         onInvitesChange={setInvites}
         onSizeChange={handleSizeChange}

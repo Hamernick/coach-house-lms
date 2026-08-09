@@ -1,5 +1,9 @@
 import dynamic from "next/dynamic"
 import type { ComponentProps } from "react"
+import {
+  WorkspaceOntologyEdge,
+  WorkspaceOntologyNode,
+} from "@/features/workspace-ontology"
 
 import {
   WorkspaceBoardAcceleratorStepNode,
@@ -32,9 +36,11 @@ export const WORKSPACE_CANVAS_V2_NODE_TYPES = Object.freeze({
   "onboarding-guide": WorkspaceBoardOnboardingGuideNode,
   "workspace-person": WorkspaceCanvasPersonNode,
   "workspace-tutorial": WorkspaceCanvasTutorialNode,
+  "workspace-ontology": WorkspaceOntologyNode,
 })
 
 export const WORKSPACE_CANVAS_V2_EDGE_TYPES = Object.freeze({
   [WORKSPACE_CANVAS_PERSON_RELATIONSHIP_EDGE_TYPE]:
     WorkspaceCanvasPersonRelationshipEdge,
+  "workspace-ontology": WorkspaceOntologyEdge,
 })

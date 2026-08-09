@@ -1,19 +1,36 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ChartBar, Funnel, Spinner, Tag, User } from "@phosphor-icons/react/dist/ssr"
+import {
+  ChartBar,
+  Funnel,
+  HandHeart,
+  Spinner,
+  Tag,
+  User,
+} from "@phosphor-icons/react/dist/ssr"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import type { MemberWorkspaceProjectFilterCounts as FilterCounts } from "./member-workspace-project-filters"
 import type { MemberWorkspaceProjectFilterChip as FilterChip } from "./member-workspace-project-view-options"
+import {
+  MEMBER_WORKSPACE_FISCAL_SPONSORSHIP_STATUS_OPTIONS,
+  MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS,
+  normalizeMemberWorkspaceOrganizationStatusFilterValue,
+} from "./member-workspace-project-status"
 
 type FilterTemp = {
   status: Set<string>
+  fiscalSponsorship: Set<string>
   priority: Set<string>
   tags: Set<string>
   members: Set<string>
@@ -28,7 +45,12 @@ type MemberWorkspaceProjectFilterPopoverProps = {
 }
 
 const FILTER_CATEGORIES = [
-  { id: "status", label: "Status", icon: Spinner },
+  { id: "status", label: "Organization status", icon: Spinner },
+  {
+    id: "fiscalSponsorship",
+    label: "Fiscal Sponsorship",
+    icon: HandHeart,
+  },
   { id: "priority", label: "Priority", icon: ChartBar },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "members", label: "Members", icon: User },
@@ -58,9 +80,12 @@ export function MemberWorkspaceProjectFilterPopover({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [tagSearch, setTagSearch] = useState("")
-  const [active, setActive] = useState<"status" | "priority" | "tags" | "members">("status")
+  const [active, setActive] = useState<
+    "status" | "fiscalSponsorship" | "priority" | "tags" | "members"
+  >("status")
   const [temp, setTemp] = useState<FilterTemp>({
     status: new Set<string>(),
+    fiscalSponsorship: new Set<string>(),
     priority: new Set<string>(),
     tags: new Set<string>(),
     members: new Set<string>(),
@@ -78,7 +103,9 @@ export function MemberWorkspaceProjectFilterPopover({
         }
       }
     }
-    return Array.from(values.values()).sort((left, right) => left.label.localeCompare(right.label))
+    return Array.from(values.values()).sort((left, right) =>
+      left.label.localeCompare(right.label)
+    )
   }, [projects])
 
   const tagOptions = useMemo(() => {
@@ -96,6 +123,7 @@ export function MemberWorkspaceProjectFilterPopover({
 
     const next: FilterTemp = {
       status: new Set<string>(),
+      fiscalSponsorship: new Set<string>(),
       priority: new Set<string>(),
       tags: new Set<string>(),
       members: new Set<string>(),
@@ -103,10 +131,22 @@ export function MemberWorkspaceProjectFilterPopover({
 
     for (const chip of initialChips ?? []) {
       const key = chip.key.toLowerCase()
-      if (key === "status") next.status.add(chip.value.toLowerCase())
+      if (key === "status") {
+        const status = normalizeMemberWorkspaceOrganizationStatusFilterValue(
+          chip.value
+        )
+        if (status) next.status.add(status)
+      }
+      if (key === "fiscal sponsorship") {
+        next.fiscalSponsorship.add(
+          chip.value.toLowerCase().replaceAll(" ", "_")
+        )
+      }
       if (key === "priority") next.priority.add(chip.value.toLowerCase())
-      if (key === "tag" || key === "tags") next.tags.add(chip.value.toLowerCase())
-      if (key === "member" || key === "members" || key === "pic") next.members.add(chip.value)
+      if (key === "tag" || key === "tags")
+        next.tags.add(chip.value.toLowerCase())
+      if (key === "member" || key === "members" || key === "pic")
+        next.members.add(chip.value)
     }
 
     setTemp(next)
@@ -116,14 +156,24 @@ export function MemberWorkspaceProjectFilterPopover({
     const normalizedQuery = query.trim().toLowerCase()
     if (!normalizedQuery) return FILTER_CATEGORIES
     return FILTER_CATEGORIES.filter((category) =>
-      category.label.toLowerCase().includes(normalizedQuery),
+      category.label.toLowerCase().includes(normalizedQuery)
     )
   }, [query])
 
   const handleApply = () => {
     const chips: FilterChip[] = []
-    temp.status.forEach((value) => chips.push({ key: "Status", value: capitalize(value) }))
-    temp.priority.forEach((value) => chips.push({ key: "Priority", value: capitalize(value) }))
+    temp.status.forEach((value) =>
+      chips.push({ key: "Status", value: capitalize(value) })
+    )
+    temp.fiscalSponsorship.forEach((value) =>
+      chips.push({
+        key: "Fiscal Sponsorship",
+        value: value.split("_").map(capitalize).join(" "),
+      })
+    )
+    temp.priority.forEach((value) =>
+      chips.push({ key: "Priority", value: capitalize(value) })
+    )
     temp.tags.forEach((value) => chips.push({ key: "Tag", value }))
     temp.members.forEach((value) => chips.push({ key: "Member", value }))
     onApply(chips)
@@ -133,6 +183,7 @@ export function MemberWorkspaceProjectFilterPopover({
   const handleClear = () => {
     setTemp({
       status: new Set<string>(),
+      fiscalSponsorship: new Set<string>(),
       priority: new Set<string>(),
       tags: new Set<string>(),
       members: new Set<string>(),
@@ -143,17 +194,24 @@ export function MemberWorkspaceProjectFilterPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-2 rounded-lg border-border/60 bg-transparent px-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-border/60 h-8 gap-2 rounded-lg bg-transparent px-3"
+        >
           <Funnel className="h-4 w-4" />
           Filter
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[720px] rounded-xl p-0">
-        <div className="grid grid-cols-[260px_minmax(0,1fr)]">
-          <div className="border-r border-border/40 p-3">
+      <PopoverContent
+        align="start"
+        className="w-[calc(100vw-2rem)] max-w-[720px] rounded-xl p-0"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-[260px_minmax(0,1fr)]">
+          <div className="border-border/40 border-r p-3">
             <div className="px-1 pb-2">
               <Input
-                placeholder="Search..."
+                placeholder="Search…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className="h-8"
@@ -163,19 +221,21 @@ export function MemberWorkspaceProjectFilterPopover({
               {filteredCategories.map((category) => (
                 <button
                   key={category.id}
+                  type="button"
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent",
-                    active === category.id && "bg-accent",
+                    "hover:bg-accent flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                    active === category.id && "bg-accent"
                   )}
                   onClick={() => setActive(category.id)}
                 >
                   <category.icon className="h-4 w-4" />
                   <span className="flex-1 text-left">{category.label}</span>
                   {counts?.[category.id] ? (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {Object.values(counts[category.id] ?? {}).reduce(
-                        (sum, value) => sum + (typeof value === "number" ? value : 0),
-                        0,
+                        (sum, value) =>
+                          sum + (typeof value === "number" ? value : 0),
+                        0
                       )}
                     </span>
                   ) : null}
@@ -190,7 +250,7 @@ export function MemberWorkspaceProjectFilterPopover({
                 {["urgent", "high", "medium", "low"].map((priority) => (
                   <label
                     key={priority}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border p-2 hover:bg-accent"
+                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"
                   >
                     <Checkbox
                       checked={temp.priority.has(priority)}
@@ -201,9 +261,13 @@ export function MemberWorkspaceProjectFilterPopover({
                         }))
                       }
                     />
-                    <span className="flex-1 text-sm">{capitalize(priority)}</span>
+                    <span className="flex-1 text-sm">
+                      {capitalize(priority)}
+                    </span>
                     {counts?.priority?.[priority] != null ? (
-                      <span className="text-xs text-muted-foreground">{counts.priority[priority]}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {counts.priority[priority]}
+                      </span>
                     ) : null}
                   </label>
                 ))}
@@ -212,26 +276,60 @@ export function MemberWorkspaceProjectFilterPopover({
 
             {active === "status" ? (
               <div className="grid grid-cols-2 gap-2">
-                {["backlog", "planned", "active", "cancelled", "completed"].map((status) => (
+                {MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS.map((option) => (
                   <label
-                    key={status}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border p-2 hover:bg-accent"
+                    key={option.value}
+                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"
                   >
                     <Checkbox
-                      checked={temp.status.has(status)}
+                      checked={temp.status.has(option.value)}
                       onCheckedChange={() =>
                         setTemp((current) => ({
                           ...current,
-                          status: toggleSet(current.status, status),
+                          status: toggleSet(current.status, option.value),
                         }))
                       }
                     />
-                    <span className="flex-1 text-sm">{capitalize(status)}</span>
-                    {counts?.status?.[status] != null ? (
-                      <span className="text-xs text-muted-foreground">{counts.status[status]}</span>
+                    <span className="flex-1 text-sm">{option.label}</span>
+                    {counts?.status?.[option.value] != null ? (
+                      <span className="text-muted-foreground text-xs">
+                        {counts.status[option.value]}
+                      </span>
                     ) : null}
                   </label>
                 ))}
+              </div>
+            ) : null}
+
+            {active === "fiscalSponsorship" ? (
+              <div className="grid grid-cols-2 gap-2">
+                {MEMBER_WORKSPACE_FISCAL_SPONSORSHIP_STATUS_OPTIONS.map(
+                  (option) => (
+                    <label
+                      key={option.value}
+                      className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"
+                    >
+                      <Checkbox
+                        checked={temp.fiscalSponsorship.has(option.value)}
+                        onCheckedChange={() =>
+                          setTemp((current) => ({
+                            ...current,
+                            fiscalSponsorship: toggleSet(
+                              current.fiscalSponsorship,
+                              option.value
+                            ),
+                          }))
+                        }
+                      />
+                      <span className="flex-1 text-sm">{option.label}</span>
+                      {counts?.fiscalSponsorship?.[option.value] != null ? (
+                        <span className="text-muted-foreground text-xs">
+                          {counts.fiscalSponsorship[option.value]}
+                        </span>
+                      ) : null}
+                    </label>
+                  )
+                )}
               </div>
             ) : null}
 
@@ -240,7 +338,7 @@ export function MemberWorkspaceProjectFilterPopover({
                 {memberOptions.map((member) => (
                   <label
                     key={member.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border p-2 hover:bg-accent"
+                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"
                   >
                     <Checkbox
                       checked={temp.members.has(member.id)}
@@ -253,7 +351,7 @@ export function MemberWorkspaceProjectFilterPopover({
                     />
                     <span className="flex-1 text-sm">{member.label}</span>
                     {counts?.members?.[member.id.toLowerCase()] != null ? (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {counts.members[member.id.toLowerCase()]}
                       </span>
                     ) : null}
@@ -266,7 +364,7 @@ export function MemberWorkspaceProjectFilterPopover({
               <div>
                 <div className="pb-2">
                   <Input
-                    placeholder="Search tags..."
+                    placeholder="Search tags…"
                     value={tagSearch}
                     onChange={(event) => setTagSearch(event.target.value)}
                     className="h-8"
@@ -278,7 +376,7 @@ export function MemberWorkspaceProjectFilterPopover({
                     .map((tag) => (
                       <label
                         key={tag}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border p-2 hover:bg-accent"
+                        className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"
                       >
                         <Checkbox
                           checked={temp.tags.has(tag)}
@@ -291,7 +389,9 @@ export function MemberWorkspaceProjectFilterPopover({
                         />
                         <span className="flex-1 text-sm">{tag}</span>
                         {counts?.tags?.[tag] != null ? (
-                          <span className="text-xs text-muted-foreground">{counts.tags[tag]}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {counts.tags[tag]}
+                          </span>
                         ) : null}
                       </label>
                     ))}
@@ -299,8 +399,13 @@ export function MemberWorkspaceProjectFilterPopover({
               </div>
             ) : null}
 
-            <div className="mt-4 flex items-center justify-end gap-2 border-t border-border/40 pt-3">
-              <Button type="button" variant="ghost" size="sm" onClick={handleClear}>
+            <div className="border-border/40 mt-4 flex items-center justify-end gap-2 border-t pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+              >
                 Clear
               </Button>
               <Button type="button" size="sm" onClick={handleApply}>

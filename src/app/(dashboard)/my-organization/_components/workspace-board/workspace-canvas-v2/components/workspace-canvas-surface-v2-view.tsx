@@ -3,10 +3,9 @@
 import {
   useCallback,
   useMemo,
-  useRef,
   useState,
   type DragEvent,
-  type ReactNode,
+  type KeyboardEventHandler,
 } from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
@@ -16,11 +15,11 @@ import {
   ReactFlowProvider,
   SelectionMode,
   type NodeDragHandler,
+  type NodeMouseHandler,
   type OnMoveEnd,
   type OnNodesChange,
   type ReactFlowInstance,
   type SelectionDragHandler,
-  useStoreApi,
 } from "reactflow"
 
 import {
@@ -29,9 +28,14 @@ import {
 } from "@/components/app-shell/account-menu-actions-context"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-
+import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
+import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
+import {
+  WorkspaceReactFlowErrorBootstrap,
+  type WorkspaceReactFlowErrorHandler,
+} from "@/components/workspace/workspace-reactflow-error-bootstrap"
+import type { RoadmapSection } from "@/lib/roadmap"
 import { WorkspaceCardShortcutRail } from "../shortcuts/workspace-card-shortcut-rail"
-import { WorkspaceCardShortcutsMobile } from "../shortcuts/workspace-card-shortcuts-mobile"
 import type { WorkspaceCardShortcutItemModel } from "../shortcuts/workspace-card-shortcut-model"
 import { WorkspaceCanvasErrorBoundary } from "../runtime/workspace-canvas-error-boundary"
 import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
@@ -48,6 +52,8 @@ import { WorkspaceCanvasSurfaceV2ViewportControls } from "./workspace-canvas-sur
 import { useWorkspaceCanvasSurfaceGestureGuards } from "./workspace-canvas-surface-v2-gesture-effect"
 import { WorkspaceCanvasOverlayDrawerContainerProvider } from "./workspace-canvas-overlay-drawer-container"
 import { WorkspaceCanvasOverlayDrawer } from "./workspace-canvas-overlay-drawer"
+import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
+import { WorkspaceCanvasSurfaceV2MobileShortcutOverlay } from "./workspace-canvas-surface-v2-mobile-shortcut-overlay"
 import {
   hasWorkspaceCanvasPersonDragPayload,
   readWorkspaceCanvasPersonDragPayload,
@@ -55,49 +61,9 @@ import {
   type WorkspaceCanvasPersonDropRequest,
 } from "./workspace-canvas-people-dnd"
 import type { WorkspaceBoardUiPreferenceScope } from "../../workspace-board-ui-preferences"
+import type { WorkspaceOrganizationEditorData } from "../../workspace-board-types"
 
 const WORKSPACE_CANVAS_V2_PRO_OPTIONS = Object.freeze({ hideAttribution: true })
-const REACT_FLOW_TYPES_WARNING_CODE = "002"
-
-type ReactFlowErrorHandler = (errorCode: string, message: string) => void
-
-function WorkspaceCanvasReactFlowErrorBootstrap({
-  onError,
-  children,
-}: {
-  onError: ReactFlowErrorHandler
-  children: (onError: ReactFlowErrorHandler) => ReactNode
-}) {
-  const store = useStoreApi()
-  const onErrorRef = useRef(onError)
-  onErrorRef.current = onError
-  const handleReactFlowError = useMemo<ReactFlowErrorHandler>(
-    () => (errorCode, message) => {
-      if (errorCode === REACT_FLOW_TYPES_WARNING_CODE) return
-      onErrorRef.current(errorCode, message)
-    },
-    []
-  )
-
-  // React Flow v11 parses nodeTypes before StoreUpdater applies the onError prop.
-  if (store.getState().onError !== handleReactFlowError) {
-    store.setState({ onError: handleReactFlowError })
-  }
-
-  return <>{children(handleReactFlowError)}</>
-}
-
-function WorkspaceCanvasSurfaceV2MobileShortcutOverlay({
-  items,
-}: {
-  items: WorkspaceCardShortcutItemModel[]
-}) {
-  return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-20 md:hidden">
-      <WorkspaceCardShortcutsMobile items={items} />
-    </div>
-  )
-}
 
 function useWorkspaceTutorialRestartAccountMenuAction({
   showTutorialRestart,
@@ -135,7 +101,14 @@ export function WorkspaceCanvasSurfaceV2View({
   workspaceDataDrawerPeople,
   placedWorkspacePersonIds,
   workspaceDataDrawerViewerId,
+  workspaceDataDrawerOrganization,
+  workspaceDataDrawerFinance,
   workspaceDataDrawerDocuments,
+  workspaceAcceleratorDrawerInput,
+  workspaceAcceleratorDrawerRoadmapSections,
+  workspaceAcceleratorDrawerHasAccess,
+  workspaceAcceleratorDrawerPaywallHref,
+  workspaceDataDrawerRequest,
   uiPreferencesScope,
   edgeContextMenuState,
   shortcutItems,
@@ -143,8 +116,12 @@ export function WorkspaceCanvasSurfaceV2View({
   emptyStateMessage,
   showTutorialRestart,
   onNodesChange,
+  onNodeClick,
+  onNodeDoubleClick,
+  onKeyDownCapture,
   onNodeDragStop,
   onSelectionDragStop,
+  onMoveStart,
   onMoveEnd,
   onConnect,
   isValidConnection,
@@ -159,6 +136,8 @@ export function WorkspaceCanvasSurfaceV2View({
   onZoomOut,
   onWorkspacePersonDropToCanvas,
   onAddWorkspacePeopleToCanvas,
+  onRemoveWorkspacePersonFromCanvas,
+  onOpenWorkspaceDataDrawer,
   onCloseEdgeContextMenu,
   onDisconnectEdge,
   onDisconnectFromSource,
@@ -177,7 +156,14 @@ export function WorkspaceCanvasSurfaceV2View({
   workspaceDataDrawerPeople: OrgPersonWithImage[]
   placedWorkspacePersonIds: ReadonlySet<string>
   workspaceDataDrawerViewerId: string
+  workspaceDataDrawerOrganization: WorkspaceOrganizationEditorData
+  workspaceDataDrawerFinance: WorkspaceFinanceInput
   workspaceDataDrawerDocuments: DocumentsTabData
+  workspaceAcceleratorDrawerInput: WorkspaceAcceleratorCardInput
+  workspaceAcceleratorDrawerRoadmapSections: RoadmapSection[]
+  workspaceAcceleratorDrawerHasAccess: boolean
+  workspaceAcceleratorDrawerPaywallHref: string
+  workspaceDataDrawerRequest: WorkspaceDataDrawerRequest | null
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   edgeContextMenuState: ReturnType<
     typeof useWorkspaceCanvasConnectionsController
@@ -187,8 +173,12 @@ export function WorkspaceCanvasSurfaceV2View({
   emptyStateMessage?: string | null
   showTutorialRestart: boolean
   onNodesChange: OnNodesChange
+  onNodeClick: NodeMouseHandler
+  onNodeDoubleClick: NodeMouseHandler
+  onKeyDownCapture: KeyboardEventHandler<HTMLDivElement>
   onNodeDragStop: NodeDragHandler
   onSelectionDragStop: SelectionDragHandler
+  onMoveStart: () => void
   onMoveEnd: OnMoveEnd
   onConnect: ReturnType<
     typeof useWorkspaceCanvasConnectionsController
@@ -202,7 +192,7 @@ export function WorkspaceCanvasSurfaceV2View({
   onEdgeContextMenu: ReturnType<
     typeof useWorkspaceCanvasConnectionsController
   >["handleEdgeContextMenu"]
-  onError: (errorCode: string, message: string) => void
+  onError: WorkspaceReactFlowErrorHandler
   onInit: (instance: ReactFlowInstance) => void
   onTutorialRestart: () => void
   onTutorialCalendarButtonComplete?: (() => void) | undefined
@@ -215,6 +205,10 @@ export function WorkspaceCanvasSurfaceV2View({
   onAddWorkspacePeopleToCanvas: (
     request: WorkspaceCanvasPeopleAddRequest
   ) => number
+  onRemoveWorkspacePersonFromCanvas: (personId: string) => void
+  onOpenWorkspaceDataDrawer: (
+    request: Omit<WorkspaceDataDrawerRequest, "id">
+  ) => void
   onCloseEdgeContextMenu: ReturnType<
     typeof useWorkspaceCanvasConnectionsController
   >["closeEdgeContextMenu"]
@@ -237,7 +231,8 @@ export function WorkspaceCanvasSurfaceV2View({
     useState<HTMLDivElement | null>(null)
   const nodeTypes = useMemo(() => WORKSPACE_CANVAS_V2_NODE_TYPES, [])
   const edgeTypes = useMemo(() => WORKSPACE_CANVAS_V2_EDGE_TYPES, [])
-  const nodesSelectable =
+  const nodesSelectable = !tutorialActive
+  const selectNodesOnDrag =
     !tutorialActive && (allowEditing || peopleCanvasInteractionEnabled)
   const tutorialRestartAccountMenuAction =
     useWorkspaceTutorialRestartAccountMenuAction({
@@ -313,11 +308,12 @@ export function WorkspaceCanvasSurfaceV2View({
     <WorkspaceCanvasErrorBoundary>
       <div
         ref={setSurfaceContainer}
-        className="workspace-layout-surface relative min-h-[min(820px,calc(100svh-9.5rem))] flex-1 overflow-hidden bg-zinc-100 dark:bg-zinc-800"
+        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#fcfcfc] dark:bg-zinc-800"
         data-layout-animating={layoutAnimating ? "true" : undefined}
       >
         <WorkspaceCanvasOverlayDrawerContainerProvider
           container={flowFrameContainer}
+          onOpenDataDrawer={onOpenWorkspaceDataDrawer}
         >
           {shortcutItems.length > 0 ? (
             <WorkspaceCardShortcutRail
@@ -327,10 +323,22 @@ export function WorkspaceCanvasSurfaceV2View({
                   people={workspaceDataDrawerPeople}
                   placedPersonIds={placedWorkspacePersonIds}
                   viewerId={workspaceDataDrawerViewerId}
+                  organizationEditorData={workspaceDataDrawerOrganization}
+                  financeInput={workspaceDataDrawerFinance}
                   documentsTab={workspaceDataDrawerDocuments}
+                  acceleratorInput={workspaceAcceleratorDrawerInput}
+                  acceleratorRoadmapSections={
+                    workspaceAcceleratorDrawerRoadmapSections
+                  }
+                  acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
+                  acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
+                  request={workspaceDataDrawerRequest}
                   canEdit={workspaceDataDrawerCanEdit}
                   uiPreferencesScope={uiPreferencesScope}
-                  onAddPeopleToCanvas={handleAddWorkspacePeopleToCanvas}
+                  peopleCanvasActions={{
+                    add: handleAddWorkspacePeopleToCanvas,
+                    remove: onRemoveWorkspacePersonFromCanvas,
+                  }}
                 />
               }
             />
@@ -347,10 +355,10 @@ export function WorkspaceCanvasSurfaceV2View({
           <div
             ref={setFlowFrameContainer}
             data-workspace-canvas-flow-frame="true"
-            className="absolute inset-0"
+            className="absolute inset-0 max-w-full min-w-0 overflow-hidden"
           >
             <ReactFlowProvider>
-              <WorkspaceCanvasReactFlowErrorBootstrap onError={onError}>
+              <WorkspaceReactFlowErrorBootstrap onError={onError}>
                 {(handleReactFlowError) => (
                   <ReactFlow
                     nodes={nodes}
@@ -359,15 +367,20 @@ export function WorkspaceCanvasSurfaceV2View({
                     edgeTypes={edgeTypes}
                     nodesDraggable={nodesDraggable}
                     nodesConnectable={allowEditing && !tutorialActive}
+                    nodeDragThreshold={4}
                     elementsSelectable={nodesSelectable}
                     selectionKeyCode="Shift"
                     multiSelectionKeyCode={["Meta", "Control"]}
                     selectionMode={SelectionMode.Partial}
                     selectionOnDrag={false}
-                    selectNodesOnDrag={nodesSelectable}
+                    selectNodesOnDrag={selectNodesOnDrag}
                     onNodesChange={onNodesChange}
+                    onNodeClick={onNodeClick}
+                    onNodeDoubleClick={onNodeDoubleClick}
+                    onKeyDownCapture={onKeyDownCapture}
                     onNodeDragStop={onNodeDragStop}
                     onSelectionDragStop={onSelectionDragStop}
+                    onMoveStart={onMoveStart}
                     onMoveEnd={onMoveEnd}
                     onConnect={onConnect}
                     isValidConnection={isValidConnection}
@@ -379,9 +392,12 @@ export function WorkspaceCanvasSurfaceV2View({
                     zoomOnScroll
                     zoomOnDoubleClick={false}
                     panOnDrag
+                    panOnScroll
+                    panOnScrollSpeed={0.8}
                     preventScrolling
                     minZoom={0.2}
                     maxZoom={1.25}
+                    onlyRenderVisibleElements
                     proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
                     onError={handleReactFlowError}
                     onInit={onInit}
@@ -400,7 +416,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     />
                   </ReactFlow>
                 )}
-              </WorkspaceCanvasReactFlowErrorBootstrap>
+              </WorkspaceReactFlowErrorBootstrap>
             </ReactFlowProvider>
           </div>
           {nodes.length === 0 && emptyStateMessage ? (

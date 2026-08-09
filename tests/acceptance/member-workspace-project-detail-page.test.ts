@@ -91,6 +91,19 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     )
   })
 
+  it("gives the organization setup rail a wider desktop column", () => {
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        "src/features/member-workspace/components/projects/member-workspace-project-detail-page.tsx"
+      ),
+      "utf8"
+    )
+
+    expect(source).toContain("lg:grid-cols-[minmax(0,2fr)_minmax(0,384px)]")
+    expect(source).not.toContain("lg:grid-cols-[minmax(0,2fr)_minmax(0,320px)]")
+  })
+
   it("renders the inline header editing surface without relying on a dialog", () => {
     const draft = buildMemberWorkspaceProjectDetailDraft(project)
     const markup = renderToStaticMarkup(
@@ -220,6 +233,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(overviewTypographySource).toContain("[&_li]:whitespace-pre-wrap")
     expect(overviewTypographySource).toContain("ProseMirror")
     expect(overviewTypographySource).toContain("min-h-[32rem]")
+    expect(overviewTypographySource).toContain("max-h-[32rem]")
+    expect(overviewTypographySource).toContain("overflow-y-auto")
+    expect(overviewTypographySource).not.toContain(
+      "min-h-[32rem] bg-transparent px-4 py-3"
+    )
     expect(overviewDocumentSource).toContain("ReactMarkdown")
     expect(overviewDocumentSource).toContain("remarkGfm")
     expect(overviewDocumentSource).toContain(
@@ -258,7 +276,9 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       'data-slot="member-workspace-project-overview-document"'
     )
     expect(markup).toContain("ProseMirror")
-    expect(markup).toContain("min-h-[32rem]")
+    expect(markup).toContain("max-h-[32rem]")
+    expect(markup).toContain("overflow-y-auto")
+    expect(markup).not.toContain("min-h-[32rem]")
     expect(markup).toContain("whitespace-pre-wrap")
     expect(markup).toContain("<h2>Saved overview</h2>")
     expect(markup).toContain("<p>This should show in view mode.</p>")
@@ -490,6 +510,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain("Fiscal Sponsorship")
     expect(markup).toContain("Fiscal sponsorship workbench")
     expect(markup).toContain("Fiscal sponsorship progress")
+    expect(markup).toContain('data-slot="radio-group"')
+    expect(markup).toContain('data-state="checked"')
+    expect(markup).toContain(
+      'data-fiscal-sponsorship-phase-status="incomplete"'
+    )
     expect(markup).toContain("Required data")
     expect(markup).toContain("Applicant: Alex Rivera")
     expect(markup).toContain("No application")
@@ -512,6 +537,17 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         legalEntityType: "informal_group_with_ein",
         reviewedAt: "2026-06-10T18:00:00.000Z",
         submittedAt: "2026-06-10T17:00:00.000Z",
+        events: [
+          {
+            actorId: "coach-1",
+            applicationId: "app-1",
+            createdAt: "2026-06-10T18:05:00.000Z",
+            eventType: "agreement_generated",
+            id: "event-1",
+            metadata: { documentId: "doc-1" },
+            summary: "Fiscal sponsorship agreement generated.",
+          },
+        ],
         latestAgreementDocument: {
           assetId: "asset-1",
           documentKey: null,
@@ -539,11 +575,17 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     })
 
     expect(markup).toContain("Agreement ready")
-    expect(markup).toContain("Generated")
+    expect(markup).toContain("Prepared")
     expect(markup).toContain("Signatures")
     expect(markup).toContain("Not sent")
     expect(markup).toContain("Next: Send prepared agreement for signatures")
-    expect(markup).toContain("Model C agreement v1 is generated")
+    expect(markup).toContain("Model C agreement v1 is prepared")
+    expect(markup).toContain("Recent updates")
+    expect(markup).toContain("Fiscal sponsorship agreement prepared.")
+    expect(markup).toContain("Agreement prepared")
+    expect(markup).toContain(
+      'href="/api/account/project-assets?assetId=asset-1&amp;projectId=project-1"'
+    )
   })
 
   it("renders coach fiscal sponsorship workflow actions when provided", () => {
@@ -554,6 +596,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         legalEntityType: "informal_group_with_ein",
         reviewedAt: "2026-06-10T18:00:00.000Z",
         submittedAt: "2026-06-10T17:00:00.000Z",
+        events: [],
         latestAgreementDocument: {
           assetId: "asset-1",
           documentKey: null,
@@ -599,9 +642,9 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain(
       "data-fiscal-sponsorship-project-workbench-admin-actions"
     )
-    expect(markup).toContain("Approve")
-    expect(markup).toContain("Generate")
-    expect(markup).toContain("Send")
+    expect(markup).not.toContain("Approve application")
+    expect(markup).not.toContain("Prepare agreement")
+    expect(markup).toContain("Send for signature")
   })
 
   it("keeps /organizations fiscal document actions platform-admin only", () => {
@@ -655,14 +698,31 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     )
 
     expect(organizationsPageSource).toContain('from "@/lib/admin/auth"')
-    expect(organizationsPageSource).toContain("await requireAdmin()")
+    expect(organizationsPageSource).toContain(
+      'await requirePlatformCapability("organizations"'
+    )
     expect(organizationsPageSource).not.toContain(
       "requireMemberWorkspacePageAccess"
     )
     expect(organizationDetailRouteSource).toContain('from "@/lib/admin/auth"')
-    expect(organizationDetailRouteSource).toContain("await requireAdmin()")
+    expect(organizationDetailRouteSource).toContain(
+      'const staff = await requirePlatformCapability("organizations"'
+    )
+    expect(organizationDetailRouteSource).toContain(
+      "loadPlatformAdminOrganizationProjectDetailPage({"
+    )
+    expect(organizationDetailRouteSource).toContain("userId: staff.userId")
+    expect(organizationDetailRouteSource).not.toContain(
+      "loadMemberWorkspaceProjectDetailPage(id)"
+    )
     expect(organizationDetailRouteSource).not.toContain(
       "requireMemberWorkspacePageAccess"
+    )
+    expect(organizationDetailRouteSource).toContain(
+      'const canManageProjectTasks =\n    result.scope === "organization" || result.scope === "platform-admin"'
+    )
+    expect(organizationDetailRouteSource).toContain(
+      "canManageProjectTasks ? deleteMemberWorkspaceTaskAction : undefined"
     )
     expect(organizationDetailRouteSource).toContain(
       "connectFiscalSponsorshipDocumentAsset"

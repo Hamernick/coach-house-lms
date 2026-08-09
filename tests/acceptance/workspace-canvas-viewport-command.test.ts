@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   executeWorkspaceCanvasViewportCommand,
+  resolveWorkspaceCanvasCameraDuration,
+  resolveWorkspaceCanvasDrawerAwareFocusViewportSize,
   resolveWorkspaceCanvasViewportCommand,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
 
@@ -26,7 +28,65 @@ const FOCUS_OPTIONS = {
   duration: 240,
 } as const
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe("workspace canvas viewport command", () => {
+  it("removes camera motion when reduced motion is requested", () => {
+    vi.stubGlobal("window", {
+      matchMedia: vi.fn(() => ({ matches: true })),
+    })
+
+    expect(resolveWorkspaceCanvasCameraDuration(520)).toBe(0)
+  })
+
+  it("uses only the canvas area above an overlapping drawer for card focus", () => {
+    expect(
+      resolveWorkspaceCanvasDrawerAwareFocusViewportSize({
+        frameRect: { top: 0, bottom: 800, width: 1200, height: 800 },
+        drawerRect: { top: 420, bottom: 800, width: 1200, height: 380 },
+      })
+    ).toEqual({ width: 1200, height: 420 })
+
+    expect(
+      resolveWorkspaceCanvasDrawerAwareFocusViewportSize({
+        frameRect: { top: 0, bottom: 800, width: 1200, height: 800 },
+        drawerRect: { top: 732, bottom: 800, width: 1200, height: 68 },
+      })
+    ).toBeNull()
+  })
+
+  it("centers a focused card within the drawer-aware viewport", () => {
+    const setViewport = vi.fn()
+    const fitView = vi.fn()
+    const flowInstance = {
+      getNodes: vi.fn(() => [
+        {
+          id: "organization-overview",
+          position: { x: 400, y: 300 },
+          width: 240,
+          height: 160,
+        },
+      ]),
+      setViewport,
+      fitView,
+    }
+
+    const result = executeWorkspaceCanvasViewportCommand({
+      flowInstance: flowInstance as never,
+      command: { kind: "focus-card", cardId: "organization-overview" },
+      layoutFitOptions: LAYOUT_OPTIONS,
+      sceneFitOptions: SCENE_OPTIONS,
+      focusCardOptions: FOCUS_OPTIONS,
+      focusViewportSize: { width: 1200, height: 420 },
+    })
+
+    expect(result.executed).toBe(true)
+    expect(setViewport).toHaveBeenCalledOnce()
+    expect(fitView).not.toHaveBeenCalled()
+  })
+
   it("uses the shared precedence of scene-fit, then tutorial completion exit, then focus-card, then fit-visible", () => {
     expect(
       resolveWorkspaceCanvasViewportCommand({

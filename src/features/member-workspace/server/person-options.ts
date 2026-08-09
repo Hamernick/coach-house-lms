@@ -20,6 +20,10 @@ type ProfilePeopleRow = Pick<
   "id" | "full_name" | "avatar_url" | "email" | "role"
 >
 
+type PlatformStaffProfile = ProfilePeopleRow & {
+  platformAccessLevel: "developer" | "coach"
+}
+
 function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
@@ -74,7 +78,7 @@ function sortGroupPriority(groupKey: MemberWorkspacePersonOption["groupKey"]) {
 
 function mergeGroupKey(
   existing: MemberWorkspacePersonOption["groupKey"] | undefined,
-  next: MemberWorkspacePersonOption["groupKey"] | undefined,
+  next: MemberWorkspacePersonOption["groupKey"] | undefined
 ) {
   if (existing === "platform-admins" || next === "platform-admins") {
     return "platform-admins" as const
@@ -92,7 +96,7 @@ function mergeGroupLabel({
   next: string | null | undefined
   groupKey: MemberWorkspacePersonOption["groupKey"] | undefined
 }) {
-  if (groupKey === "platform-admins") return "Coach House admins"
+  if (groupKey === "platform-admins") return "Coach House staff"
   return next ?? existing ?? null
 }
 
@@ -125,7 +129,7 @@ function upsertPersonOption({
   const normalizedGroupKey = mergeGroupKey(undefined, groupKey)
   const normalizedGroupLabel =
     toTrimmedString(groupLabel) ||
-    (normalizedGroupKey === "platform-admins" ? "Coach House admins" : null)
+    (normalizedGroupKey === "platform-admins" ? "Coach House staff" : null)
   const key = optionKey({
     id: normalizedId,
     email: normalizedEmail,
@@ -174,7 +178,9 @@ async function loadProfilesByIds({
     throw supabaseErrorToError(profilesError, "Unable to load member profiles.")
   }
 
-  return new Map((profiles ?? []).map((profile) => [profile.id, profile] as const))
+  return new Map(
+    (profiles ?? []).map((profile) => [profile.id, profile] as const)
+  )
 }
 
 async function loadPlatformAdminProfiles({
@@ -185,20 +191,54 @@ async function loadPlatformAdminProfiles({
   supabase: ServerSupabase
 }) {
   if (!includePlatformAdmins) {
-    return [] as ProfilePeopleRow[]
+    return [] as PlatformStaffProfile[]
   }
 
-  const { data: platformAdmins, error: platformAdminsError } = await supabase
-    .from("profiles")
-    .select("id, full_name, avatar_url, email, role")
-    .eq("role", "admin")
-    .returns<ProfilePeopleRow[]>()
+  const { data: staffRows, error: staffError } = await supabase
+    .from("platform_staff_members")
+    .select("user_id, access_level")
+    .returns<
+      Array<{
+        user_id: string
+        access_level: "developer" | "coach"
+      }>
+    >()
 
-  if (platformAdminsError) {
-    throw supabaseErrorToError(platformAdminsError, "Unable to load Coach House admins.")
+  if (staffError) {
+    const code = (staffError as { code?: string }).code
+    if (code === "42P01" || code === "PGRST205") {
+      const { data: legacyAdmins, error: legacyError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, email, role")
+        .eq("role", "admin")
+        .returns<ProfilePeopleRow[]>()
+      if (legacyError) {
+        throw supabaseErrorToError(
+          legacyError,
+          "Unable to load Coach House staff."
+        )
+      }
+      return (legacyAdmins ?? []).map((profile) => ({
+        ...profile,
+        platformAccessLevel: "developer" as const,
+      }))
+    }
+    throw supabaseErrorToError(staffError, "Unable to load Coach House staff.")
   }
 
-  return platformAdmins ?? []
+  const staffIds = (staffRows ?? []).map((row) => row.user_id)
+  if (staffIds.length === 0) return []
+  const profilesById = await loadProfilesByIds({
+    profileIds: staffIds,
+    supabase,
+  })
+
+  return (staffRows ?? []).flatMap((row) => {
+    const profile = profilesById.get(row.user_id)
+    return profile
+      ? [{ ...profile, platformAccessLevel: row.access_level }]
+      : []
+  })
 }
 
 export async function loadMemberWorkspacePersonOptionsForOrganizations({
@@ -247,11 +287,17 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
   ])
 
   if (organizationsError) {
-    throw supabaseErrorToError(organizationsError, "Unable to load organization people.")
+    throw supabaseErrorToError(
+      organizationsError,
+      "Unable to load organization people."
+    )
   }
 
   if (membershipsError) {
-    throw supabaseErrorToError(membershipsError, "Unable to load organization memberships.")
+    throw supabaseErrorToError(
+      membershipsError,
+      "Unable to load organization memberships."
+    )
   }
 
   const profileIds = Array.from(
@@ -260,8 +306,8 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
         ...(organizations ?? []).map((organization) => organization.user_id),
         ...(memberships ?? []).map((membership) => membership.member_id),
         ...platformAdminProfiles.map((profile) => profile.id),
-      ].filter(Boolean),
-    ),
+      ].filter(Boolean)
+    )
   )
 
   const profilesById = await loadProfilesByIds({
@@ -275,12 +321,14 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
     upsertPersonOption({
       map: options,
       id: platformAdmin.id,
-      name: platformAdmin.full_name ?? platformAdmin.email ?? "Coach House admin",
+      name:
+        platformAdmin.full_name ?? platformAdmin.email ?? "Coach House staff",
       email: platformAdmin.email ?? null,
       avatarUrl: platformAdmin.avatar_url ?? null,
-      roleLabel: "Coach House admin",
+      roleLabel:
+        platformAdmin.platformAccessLevel === "coach" ? "Coach" : "Developer",
       groupKey: "platform-admins",
-      groupLabel: "Coach House admins",
+      groupLabel: "Coach House staff",
     })
   }
 
@@ -289,7 +337,8 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
     upsertPersonOption({
       map: options,
       id: ownerProfile?.id ?? organization.user_id,
-      name: ownerProfile?.full_name ?? ownerProfile?.email ?? "Organization owner",
+      name:
+        ownerProfile?.full_name ?? ownerProfile?.email ?? "Organization owner",
       email: ownerProfile?.email ?? null,
       avatarUrl: ownerProfile?.avatar_url ?? null,
       roleLabel: "Owner",
@@ -313,7 +362,8 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
   }
 
   return Array.from(options.values()).sort((left, right) => {
-    const groupDiff = sortGroupPriority(left.groupKey) - sortGroupPriority(right.groupKey)
+    const groupDiff =
+      sortGroupPriority(left.groupKey) - sortGroupPriority(right.groupKey)
     if (groupDiff !== 0) return groupDiff
     return left.name.localeCompare(right.name)
   })

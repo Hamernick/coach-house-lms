@@ -8,6 +8,7 @@ import {
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-module-navigation"
 import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
 import { WorkspaceAcceleratorCardPanel } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
+import { isWorkspaceAcceleratorOpenStepRequestFulfilled } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-runtime"
 import { RightRailProvider } from "@/components/app-shell/right-rail"
 import {
   resolveWorkspaceAcceleratorCollapsedCardSize,
@@ -25,6 +26,41 @@ vi.mock("next/navigation", () => ({
 }))
 
 describe("workspace accelerator tutorial panel state", () => {
+  it("acknowledges an exact canvas request only after its viewer is active", () => {
+    const currentStep = {
+      id: "budgeting:video",
+      moduleId: "budgeting",
+    }
+    const request = {
+      id: 1,
+      stepId: "budgeting:video",
+      moduleId: "budgeting",
+      lessonGroupKey: null,
+    }
+
+    expect(
+      isWorkspaceAcceleratorOpenStepRequestFulfilled({
+        request,
+        currentStep,
+        isModuleViewerOpen: false,
+      })
+    ).toBe(false)
+    expect(
+      isWorkspaceAcceleratorOpenStepRequestFulfilled({
+        request,
+        currentStep,
+        isModuleViewerOpen: true,
+      })
+    ).toBe(true)
+    expect(
+      isWorkspaceAcceleratorOpenStepRequestFulfilled({
+        request,
+        currentStep: { ...currentStep, id: "mission:video" },
+        isModuleViewerOpen: true,
+      })
+    ).toBe(false)
+  })
+
   it("keeps module viewer arrow navigation inside the current module", () => {
     const moduleSteps = [
       {

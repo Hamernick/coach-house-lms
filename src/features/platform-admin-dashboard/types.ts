@@ -14,9 +14,22 @@ export type PlatformAdminDashboardLabStatus =
   | "cancelled"
   | "completed"
 
-export type PlatformAdminDashboardLabPriority = "urgent" | "high" | "medium" | "low"
+export type PlatformAdminDashboardLabFiscalSponsorshipStatus =
+  | "not_eligible"
+  | "eligible"
+  | "in_progress"
+  | "active"
 
-export type PlatformAdminDashboardLabTaskStatus = "todo" | "in-progress" | "done"
+export type PlatformAdminDashboardLabPriority =
+  | "urgent"
+  | "high"
+  | "medium"
+  | "low"
+
+export type PlatformAdminDashboardLabTaskStatus =
+  | "todo"
+  | "in-progress"
+  | "done"
 
 export type PlatformAdminDashboardLabTask = {
   id: string
@@ -32,6 +45,8 @@ export type PlatformAdminDashboardLabProject = {
   id: string
   organizationId?: string
   projectKind?: "standard" | "organization_admin"
+  workstreamCategoryId?: string
+  fiscalSponsorshipStatus?: PlatformAdminDashboardLabFiscalSponsorshipStatus
   name: string
   description?: string
   taskCount: number

@@ -32,10 +32,14 @@ export function usePublicMapPreferences({
 }: UsePublicMapPreferencesOptions = {}) {
   const [favorites, setFavorites] = useState<string[]>([])
   const [savedQueries, setSavedQueries] = useState<string[]>([])
-  const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>([])
-  const [preferenceMode, setPreferenceMode] = useState<PreferenceMode>("unknown")
-  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
-  const [preferencesSaveError, setPreferencesSaveError] = useState<string | null>(null)
+  const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>(
+    []
+  )
+  const [preferenceMode, setPreferenceMode] =
+    useState<PreferenceMode>("unknown")
+  const [preferencesSaveError, setPreferencesSaveError] = useState<
+    string | null
+  >(null)
   const [viewer, setViewer] = useState<PublicMapViewer>(initialViewer)
 
   const shouldSkipRemoteSyncRef = useRef(true)
@@ -47,7 +51,7 @@ export function usePublicMapPreferences({
     const localSavedQueries = readStoredArray(SAVED_QUERIES_STORAGE_KEY, 40)
     const localRecentOrganizationIds = readStoredArray(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
-      40,
+      40
     )
     setFavorites(localFavorites)
     setSavedQueries(localSavedQueries)
@@ -82,26 +86,40 @@ export function usePublicMapPreferences({
         }
 
         const payload = (await response.json().catch(() => ({}))) as unknown
-        const preferences = isRecord(payload) && isRecord(payload.preferences) ? payload.preferences : {}
+        const preferences =
+          isRecord(payload) && isRecord(payload.preferences)
+            ? payload.preferences
+            : {}
         const nextFavorites = normalizeStringArray(preferences.favorites, 120)
-        const nextSavedQueries = normalizeStringArray(preferences.savedQueries, 40)
+        const nextSavedQueries = normalizeStringArray(
+          preferences.savedQueries,
+          40
+        )
         const nextRecentOrganizationIds = normalizeStringArray(
           preferences.recentOrganizationIds,
-          40,
+          40
         )
-        const mergedFavorites = mergeUniqueStrings(nextFavorites, localFavorites, 120)
-        const mergedSavedQueries = mergeUniqueStrings(nextSavedQueries, localSavedQueries, 40)
+        const mergedFavorites = mergeUniqueStrings(
+          nextFavorites,
+          localFavorites,
+          120
+        )
+        const mergedSavedQueries = mergeUniqueStrings(
+          nextSavedQueries,
+          localSavedQueries,
+          40
+        )
         const mergedRecentOrganizationIds = mergeUniqueStrings(
           nextRecentOrganizationIds,
           localRecentOrganizationIds,
-          40,
+          40
         )
         const shouldSyncMergedPreferences =
           !stringArraysEqual(mergedFavorites, nextFavorites) ||
           !stringArraysEqual(mergedSavedQueries, nextSavedQueries) ||
           !stringArraysEqual(
             mergedRecentOrganizationIds,
-            nextRecentOrganizationIds,
+            nextRecentOrganizationIds
           )
 
         if (!cancelled) {
@@ -115,15 +133,13 @@ export function usePublicMapPreferences({
             isRecord(payload) && isRecord(payload.user)
               ? {
                   id:
-                    typeof payload.user.id === "string"
-                      ? payload.user.id
-                      : "",
+                    typeof payload.user.id === "string" ? payload.user.id : "",
                   email:
                     typeof payload.user.email === "string"
                       ? payload.user.email
                       : null,
                 }
-              : null,
+              : null
           )
         }
       } catch (error) {
@@ -142,11 +158,17 @@ export function usePublicMapPreferences({
   useEffect(() => {
     if (typeof window === "undefined") return
     if (preferenceMode === "authenticated") return
-    window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites))
-    window.localStorage.setItem(SAVED_QUERIES_STORAGE_KEY, JSON.stringify(savedQueries))
+    window.localStorage.setItem(
+      FAVORITES_STORAGE_KEY,
+      JSON.stringify(favorites)
+    )
+    window.localStorage.setItem(
+      SAVED_QUERIES_STORAGE_KEY,
+      JSON.stringify(savedQueries)
+    )
     window.localStorage.setItem(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
-      JSON.stringify(recentOrganizationIds),
+      JSON.stringify(recentOrganizationIds)
     )
   }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
 
@@ -165,7 +187,6 @@ export function usePublicMapPreferences({
     saveTimerRef.current = setTimeout(() => {
       void (async () => {
         try {
-          setIsSavingPreferences(true)
           setPreferencesSaveError(null)
           const response = await fetch("/api/account/map-preferences", {
             method: "PATCH",
@@ -180,13 +201,13 @@ export function usePublicMapPreferences({
           })
 
           if (!response.ok) {
-            throw new Error(`Unable to save map preferences (${response.status})`)
+            throw new Error(
+              `Unable to save map preferences (${response.status})`
+            )
           }
         } catch (error) {
           console.error("Map preferences save failed:", error)
           setPreferencesSaveError("Could not sync preferences.")
-        } finally {
-          setIsSavingPreferences(false)
         }
       })()
     }, 320)
@@ -203,7 +224,6 @@ export function usePublicMapPreferences({
     savedQueries,
     recentOrganizationIds,
     preferenceMode,
-    isSavingPreferences,
     preferencesSaveError,
     viewer,
     setFavorites,

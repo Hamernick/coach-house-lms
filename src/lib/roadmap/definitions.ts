@@ -25,14 +25,36 @@ export const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
   },
   {
     id: "mission_vision_values",
-    title: "Mission, Vision, Values",
+    title: "Mission",
     slug: "mission-vision-values",
-    subtitle: "Your guiding statements and principles.",
-    titleExample: "Example: Our mission and vision",
-    subtitleExample: "Example: The values that guide our decisions",
-    prompt: "State the mission, vision, and values in clear language.",
+    subtitle: "What you do, who you serve, and the difference you make.",
+    titleExample: "Example: Our mission",
+    subtitleExample: "Example: The purpose that guides our work",
+    prompt: "State your mission in clear language.",
     placeholder:
-      "State the mission in one clear sentence, then describe the vision of the future you are working toward. List 3-5 values and describe how they guide decisions.",
+      "State what your organization does, who it serves, and the difference the work makes. Keep the mission clear, specific, and grounded in real work.",
+  },
+  {
+    id: "vision",
+    title: "Vision",
+    slug: "vision",
+    subtitle: "The future you are working to create.",
+    titleExample: "Example: Our vision",
+    subtitleExample: "Example: What success looks like in the future",
+    prompt: "Describe the future your work is helping create.",
+    placeholder:
+      "Describe what will be different for people and communities if your work succeeds. Focus on the lasting future you want to help create.",
+  },
+  {
+    id: "values",
+    title: "Values",
+    slug: "values",
+    subtitle: "The principles that guide decisions and behavior.",
+    titleExample: "Example: Our core values",
+    subtitleExample: "Example: How we commit to doing the work",
+    prompt: "Define the values that guide your organization.",
+    placeholder:
+      "List the principles your organization will not compromise and explain how each value should guide decisions, relationships, and behavior.",
   },
   {
     id: "theory_of_change",

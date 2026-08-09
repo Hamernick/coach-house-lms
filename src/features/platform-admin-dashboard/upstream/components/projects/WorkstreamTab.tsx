@@ -21,6 +21,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { toast } from "sonner"
 
 import type { WorkstreamGroup, WorkstreamTask } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/features/platform-admin-dashboard/upstream/components/ui/accordion"
@@ -37,6 +38,13 @@ type WorkstreamTabProps = {
   canReorder?: boolean
   canToggleTasks?: boolean
   onCreateTask?: (context?: CreateTaskContext) => void
+  onUpdateTaskStatus?: (
+    taskId: string,
+    nextStatus: WorkstreamTask["status"],
+  ) => Promise<
+    | { ok: true; taskId: string; status: WorkstreamTask["status"] }
+    | { error: string }
+  >
 }
 
 export function WorkstreamTab({
@@ -44,6 +52,7 @@ export function WorkstreamTab({
   canReorder = true,
   canToggleTasks = true,
   onCreateTask,
+  onUpdateTaskStatus,
 }: WorkstreamTabProps) {
   const [state, setState] = useState<WorkstreamGroup[]>(() => workstreams ?? [])
   const [openValues, setOpenValues] = useState<string[]>(() =>
@@ -51,6 +60,7 @@ export function WorkstreamTab({
   )
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [overTaskId, setOverTaskId] = useState<string | null>(null)
+  const [pendingTaskIds, setPendingTaskIds] = useState<Set<string>>(() => new Set())
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -71,28 +81,56 @@ export function WorkstreamTab({
 
   const activeTask = findTaskById(activeTaskId)
 
-  const toggleTask = (groupId: string, taskId: string) => {
-    if (!canToggleTasks) {
+  const toggleTask = async (groupId: string, taskId: string) => {
+    if (!canToggleTasks || !onUpdateTaskStatus || pendingTaskIds.has(taskId)) {
       return
     }
 
-    setState((prev) =>
-      prev.map((group) =>
-        group.id === groupId
-          ? {
-            ...group,
-            tasks: group.tasks.map((task) =>
-              task.id === taskId
-                ? {
-                  ...task,
-                  status: task.status === "done" ? "todo" : "done",
-                }
-                : task,
-            ),
-          }
-          : group,
-      ),
-    )
+    const currentTask = state
+      .find((group) => group.id === groupId)
+      ?.tasks.find((task) => task.id === taskId)
+    if (!currentTask) return
+
+    const previousStatus = currentTask.status
+    const nextStatus = previousStatus === "done" ? "todo" : "done"
+    const setTaskStatus = (status: WorkstreamTask["status"]) => {
+      setState((currentGroups) =>
+        currentGroups.map((group) =>
+          group.id === groupId
+            ? {
+              ...group,
+              tasks: group.tasks.map((task) =>
+                task.id === taskId ? { ...task, status } : task,
+              ),
+            }
+            : group,
+        ),
+      )
+    }
+
+    setTaskStatus(nextStatus)
+    setPendingTaskIds((currentIds) => new Set(currentIds).add(taskId))
+
+    try {
+      const result = await onUpdateTaskStatus(taskId, nextStatus)
+      if ("error" in result) {
+        setTaskStatus(previousStatus)
+        toast.error(result.error)
+        return
+      }
+
+      setTaskStatus(result.status)
+      toast.success(nextStatus === "done" ? "Task completed" : "Task reopened")
+    } catch {
+      setTaskStatus(previousStatus)
+      toast.error("Task status could not be updated.")
+    } finally {
+      setPendingTaskIds((currentIds) => {
+        const nextIds = new Set(currentIds)
+        nextIds.delete(taskId)
+        return nextIds
+      })
+    }
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -189,7 +227,7 @@ export function WorkstreamTab({
     return (
       <section>
         <h2 className="text-sm font-semibold tracking-normal text-foreground uppercase">
-          WORKSTEAM BREAKDOWN
+          WORKSTREAM BREAKDOWN
         </h2>
         <div className="mt-4 rounded-lg border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
           No workstreams defined yet.
@@ -204,7 +242,7 @@ export function WorkstreamTab({
     <section className="rounded-2xl border border-border bg-muted shadow-[var(--shadow-workstream)] p-3 space-y-3">
       <div className="flex items-center justify-between gap-3 px-2">
         <h2 className="flex-1 min-w-0 truncate text-sm font-semibold tracking-normal text-foreground uppercase">
-          WORKSTEAM BREAKDOWN
+          WORKSTREAM BREAKDOWN
         </h2>
         <div className="flex items-center gap-1 opacity-60 shrink-0">
           <Button
@@ -291,7 +329,9 @@ export function WorkstreamTab({
                   activeTaskId={activeTaskId}
                   overTaskId={overTaskId}
                   canReorder={canReorder}
-                  onToggleTask={(taskId) => toggleTask(group.id, taskId)}
+                  canToggleTasks={canToggleTasks && Boolean(onUpdateTaskStatus)}
+                  pendingTaskIds={pendingTaskIds}
+                  onToggleTask={(taskId) => void toggleTask(group.id, taskId)}
                 />
               </AccordionItem>
             ))}
@@ -342,6 +382,8 @@ type WorkstreamTasksProps = {
   activeTaskId: string | null
   overTaskId: string | null
   canReorder?: boolean
+  canToggleTasks: boolean
+  pendingTaskIds: Set<string>
   onToggleTask: (taskId: string) => void
 }
 
@@ -350,6 +392,8 @@ function WorkstreamTasks({
   activeTaskId,
   overTaskId,
   canReorder = true,
+  canToggleTasks,
+  pendingTaskIds,
   onToggleTask,
 }: WorkstreamTasksProps) {
   const { setNodeRef } = useDroppable({ id: `group:${group.id}` })
@@ -366,6 +410,7 @@ function WorkstreamTasks({
               activeTaskId={activeTaskId}
               overTaskId={overTaskId}
               canReorder={canReorder}
+              canToggle={canToggleTasks && !pendingTaskIds.has(task.id)}
             />
           ))}
         </div>
@@ -380,6 +425,7 @@ type TaskRowProps = {
   activeTaskId: string | null
   overTaskId: string | null
   canReorder?: boolean
+  canToggle: boolean
 }
 
 function TaskRow({
@@ -388,6 +434,7 @@ function TaskRow({
   activeTaskId,
   overTaskId,
   canReorder = true,
+  canToggle,
 }: TaskRowProps) {
   const isDone = task.status === "done"
 
@@ -408,6 +455,7 @@ function TaskRow({
       {showDropLine && <div className="h-px w-full rounded-full bg-primary" />}
       <TaskRowBase
         checked={isDone}
+        disabled={!canToggle}
         title={task.name}
         onCheckedChange={onToggle}
         titleAriaLabel={task.name}

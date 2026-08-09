@@ -1,13 +1,22 @@
 "use client"
 
+import { useEffect, useRef } from "react"
+
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
 import { useWorkspaceBoardFormationTrackerController } from "./workspace-board-formation-tracker-card-controller"
 import { WorkspaceBoardFormationTrackerEditorPanel } from "./workspace-board-formation-tracker-editor-panel"
-import { TrackerAcceleratorTab, TrackerTicketsTab } from "./workspace-board-formation-tracker-card-panels"
-import type { WorkspaceCardSize, WorkspaceSeedData, WorkspaceTrackerState } from "./workspace-board-types"
+import {
+  TrackerAcceleratorTab,
+  TrackerTicketsTab,
+} from "./workspace-board-formation-tracker-card-panels"
+import type {
+  WorkspaceCardSize,
+  WorkspaceSeedData,
+  WorkspaceTrackerState,
+} from "./workspace-board-types"
 
 type FormationTrackerCardProps = {
   size: WorkspaceCardSize
@@ -15,6 +24,7 @@ type FormationTrackerCardProps = {
   presentationMode: boolean
   tracker: WorkspaceTrackerState
   onTrackerChange: (next: WorkspaceTrackerState) => void
+  focusRequest?: { id: number; ticketId: string | null } | null
 }
 
 export function WorkspaceBoardFormationTrackerCard({
@@ -23,6 +33,7 @@ export function WorkspaceBoardFormationTrackerCard({
   presentationMode,
   tracker,
   onTrackerChange,
+  focusRequest = null,
 }: FormationTrackerCardProps) {
   const isCompactCard = size === "sm" && !presentationMode
   const maxVisibleModulesPerGroup = presentationMode ? 4 : isCompactCard ? 2 : 3
@@ -32,43 +43,72 @@ export function WorkspaceBoardFormationTrackerCard({
     tracker,
     onTrackerChange,
   })
+  const handledFocusRequestIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id) {
+      return
+    }
+    handledFocusRequestIdRef.current = focusRequest.id
+    controller.setTab("objectives")
+    if (focusRequest.ticketId && seed.canEdit && !presentationMode) {
+      controller.openTicketEditor(focusRequest.ticketId)
+    }
+  }, [controller, focusRequest, presentationMode, seed.canEdit])
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col pb-3", isCompactCard ? "gap-2" : "gap-2.5")}>
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col pb-3",
+        isCompactCard ? "gap-2" : "gap-2.5"
+      )}
+    >
       <div className="space-y-0.5">
-        <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground/90">
-            {seed.initialProfile.formationStatus === "approved" ? "IRS Approved" : "Pre-501(c)(3)"}
+        <p className="text-muted-foreground text-xs">
+          <span className="text-foreground/90 font-medium">
+            {seed.initialProfile.formationStatus === "approved"
+              ? "IRS Approved"
+              : "Pre-501(c)(3)"}
           </span>{" "}
           <span className="tabular-nums">
-            · {seed.formationSummary.completedCount}/{seed.formationSummary.visibleModules.length} complete
+            · {seed.formationSummary.completedCount}/
+            {seed.formationSummary.visibleModules.length} complete
           </span>
         </p>
       </div>
 
       <div className={cn("space-y-1.5", isCompactCard && "space-y-1")}>
         <div className="flex items-center justify-between gap-2 px-1">
-          <p className="text-sm font-semibold text-foreground">Objectives</p>
-          <p className="text-xs font-semibold tabular-nums text-foreground">{seed.formationSummary.progressPercent}%</p>
+          <p className="text-foreground text-sm font-semibold">Objectives</p>
+          <p className="text-foreground text-xs font-semibold tabular-nums">
+            {seed.formationSummary.progressPercent}%
+          </p>
         </div>
-        <Progress value={seed.formationSummary.progressPercent} className={cn("h-1.5", isCompactCard && "h-1")} />
+        <Progress
+          value={seed.formationSummary.progressPercent}
+          className={cn("h-1.5", isCompactCard && "h-1")}
+        />
       </div>
 
       <Tabs
         value={tracker.tab}
-        onValueChange={(nextValue) => controller.setTab(nextValue === "objectives" ? "objectives" : "accelerator")}
+        onValueChange={(nextValue) =>
+          controller.setTab(
+            nextValue === "objectives" ? "objectives" : "accelerator"
+          )
+        }
         className="min-h-0 flex-1 gap-2"
       >
-        <TabsList className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/70 p-1">
+        <TabsList className="border-border/70 bg-background/70 inline-flex w-fit items-center rounded-full border p-1">
           <TabsTrigger
             value="accelerator"
-            className="rounded-full px-2.5 py-1 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background"
+            className="data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full px-2.5 py-1 text-[11px]"
           >
             Accelerator
           </TabsTrigger>
           <TabsTrigger
             value="objectives"
-            className="rounded-full px-2.5 py-1 text-[11px] data-[state=active]:bg-foreground data-[state=active]:text-background"
+            className="data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full px-2.5 py-1 text-[11px]"
           >
             Objectives
           </TabsTrigger>
@@ -129,7 +169,9 @@ export function WorkspaceBoardFormationTrackerCard({
             draftTicketTitle={controller.draftTicketTitle}
             onDraftTicketTitleChange={controller.setDraftTicketTitle}
             draftTicketDescription={controller.draftTicketDescription}
-            onDraftTicketDescriptionChange={controller.setDraftTicketDescription}
+            onDraftTicketDescriptionChange={
+              controller.setDraftTicketDescription
+            }
             draftTicketPriority={controller.draftTicketPriority}
             onDraftTicketPriorityChange={controller.setDraftTicketPriority}
             draftTicketDueDate={controller.draftTicketDueDate}
@@ -148,7 +190,9 @@ export function WorkspaceBoardFormationTrackerCard({
             onCreateCategory={controller.createCategory}
             onCreateTicket={controller.createTicket}
           />
-          {controller.isSyncingObjectives ? <p className="px-0.5 text-[11px] text-muted-foreground">Syncing…</p> : null}
+          {controller.isSyncingObjectives ? (
+            <p className="text-muted-foreground px-0.5 text-[11px]">Syncing…</p>
+          ) : null}
         </TabsContent>
       </Tabs>
     </div>

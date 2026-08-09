@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr"
 
 import { env } from "@/lib/env"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
+import { isCoachRestrictedPath } from "@/features/platform-access"
 import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = [
@@ -50,7 +51,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  )
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!user && isProtected) {
@@ -62,9 +65,27 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL(DEFAULT_POST_AUTH_REDIRECT, request.url))
+    const redirectResponse = NextResponse.redirect(
+      new URL(DEFAULT_POST_AUTH_REDIRECT, request.url)
+    )
     copyCookies(response, redirectResponse)
     return redirectResponse
+  }
+
+  if (user && isCoachRestrictedPath(pathname)) {
+    const { data: platformStaff } = await supabase
+      .from("platform_staff_members")
+      .select("access_level")
+      .eq("user_id", user.id)
+      .maybeSingle<{ access_level: "developer" | "coach" }>()
+
+    if (platformStaff?.access_level === "coach") {
+      const redirectResponse = NextResponse.redirect(
+        new URL("/organizations", request.url)
+      )
+      copyCookies(response, redirectResponse)
+      return redirectResponse
+    }
   }
 
   // Onboarding is now an in-app overlay; do not redirect to /onboarding here.

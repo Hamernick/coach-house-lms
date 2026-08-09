@@ -8,18 +8,20 @@ import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
-import LockIcon from "lucide-react/dist/esm/icons/lock"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
-import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import {
   listPrototypeLabSidebarTree,
   type PrototypeLabSidebarTreeNode,
 } from "@/features/prototype-lab"
 import type { SidebarClass } from "@/lib/academy"
+import {
+  hasPlatformCapability,
+  type PlatformAccessLevel,
+} from "@/features/platform-access"
 import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
@@ -36,12 +38,14 @@ type MainNavItem = {
 
 export function buildMainNav({
   isAdmin,
+  platformAccessLevel = null,
   showMemberWorkspace = false,
   hasMemberWorkspaceAccess = true,
   showWorkspaceHome = true,
   showPlatformLab = platformLabEnabled,
 }: {
   isAdmin: boolean
+  platformAccessLevel?: PlatformAccessLevel | null
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
   showMemberWorkspace?: boolean
@@ -52,15 +56,25 @@ export function buildMainNav({
   const workspaceHomeItem = showWorkspaceHome
     ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
     : []
-  const memberWorkspaceItems: MainNavItem[] = isAdmin
+  const resolvedPlatformAccessLevel =
+    platformAccessLevel ?? (isAdmin ? "developer" : null)
+  const canAccessOrganizations = hasPlatformCapability(
+    resolvedPlatformAccessLevel,
+    "organizations"
+  )
+  const memberWorkspaceItems: MainNavItem[] = canAccessOrganizations
     ? [
         {
           title: "Organizations",
           href: "/organizations",
           icon: FolderKanbanIcon,
         },
-        { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
-        { title: "Email", href: "/email", icon: MailIcon },
+        ...(isAdmin
+          ? [
+              { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+              { title: "Email", href: "/email", icon: MailIcon },
+            ]
+          : []),
       ]
     : []
   const items: MainNavItem[] = [
@@ -69,12 +83,6 @@ export function buildMainNav({
           ...workspaceHomeItem,
           { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...memberWorkspaceItems,
-          { title: "People", href: "/people", icon: UsersIcon },
-          {
-            title: "Documents",
-            href: "/organization/documents",
-            icon: LockIcon,
-          },
         ]
       : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]

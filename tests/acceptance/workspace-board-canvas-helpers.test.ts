@@ -100,6 +100,7 @@ describe("workspace board canvas helpers", () => {
     ).toMatchObject({
       x: 320,
       y: 904,
+      positionMode: "manual",
     })
 
     expect(
@@ -110,6 +111,29 @@ describe("workspace board canvas helpers", () => {
         y: 904,
       })
     ).toBe(next)
+  })
+
+  it("composes manual ownership across selection-dragged root updates", () => {
+    const initialBoardState = buildDefaultBoardState("balanced")
+    const organizationMoved = buildWorkspaceBoardStateWithNodePosition({
+      boardState: initialBoardState,
+      cardId: "organization-overview",
+      x: 480,
+      y: 360,
+    })
+    const selectionMoved = buildWorkspaceBoardStateWithNodePosition({
+      boardState: organizationMoved,
+      cardId: "programs",
+      x: 920,
+      y: 360,
+    })
+
+    expect(
+      selectionMoved.nodes.find((node) => node.id === "organization-overview")
+    ).toMatchObject({ x: 480, y: 360, positionMode: "manual" })
+    expect(
+      selectionMoved.nodes.find((node) => node.id === "programs")
+    ).toMatchObject({ x: 920, y: 360, positionMode: "manual" })
   })
 
   it("preserves board placement when toggling the fiscal sponsorship card", () => {

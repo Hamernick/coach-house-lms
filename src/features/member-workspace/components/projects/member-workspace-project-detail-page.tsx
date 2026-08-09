@@ -1,6 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AnimatePresence, motion } from "motion/react"
@@ -43,6 +50,7 @@ import { useProjectAssetActions } from "./member-workspace-project-asset-actions
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
 
 type MemberWorkspaceProjectDetailPageProps = {
+  adminBilling?: ReactNode
   project: ProjectDetails
   assigneeOptions: MemberWorkspacePersonOption[]
   currentUser: User
@@ -115,6 +123,25 @@ function getProjectSourceProjectKind(source: ProjectDetails["source"]) {
     : undefined
 }
 
+function revealFiscalUpdateTarget(href: string) {
+  window.history.pushState(null, "", href)
+  window.requestAnimationFrame(() => {
+    const target = document.getElementById(href.slice(1))
+    if (!target) return
+
+    if (href === "#fiscal-sponsorship-application-intake") {
+      const trigger = target.querySelector<HTMLButtonElement>(
+        'button[aria-expanded="false"]'
+      )
+      trigger?.click()
+    }
+
+    window.requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "nearest", inline: "nearest" })
+    })
+  })
+}
+
 function useMemberWorkspaceProjectDelete({
   deleteProjectAction,
   projectId,
@@ -158,6 +185,7 @@ function useMemberWorkspaceProjectDelete({
 }
 
 export function MemberWorkspaceProjectDetailPage({
+  adminBilling,
   project,
   assigneeOptions,
   currentUser,
@@ -241,6 +269,13 @@ export function MemberWorkspaceProjectDetailPage({
     } catch {
       toast.error("Failed to copy link")
     }
+  }, [])
+
+  const handleNavigateFiscalUpdate = useCallback((href: string) => {
+    if (!href.startsWith("#")) return
+
+    setActiveTab("overview")
+    revealFiscalUpdateTarget(href)
   }, [])
 
   const handleChangeProjectDraftField = useCallback(
@@ -390,7 +425,7 @@ export function MemberWorkspaceProjectDetailPage({
                 className={
                   "mt-0 grid grid-cols-1 gap-15 " +
                   (showMeta
-                    ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,320px)]"
+                    ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,384px)]"
                     : "lg:grid-cols-[minmax(0,1fr)_minmax(0,0px)]")
                 }
               >
@@ -482,8 +517,13 @@ export function MemberWorkspaceProjectDetailPage({
                       className="lg:border-border pb-8 lg:border-l lg:pl-6"
                     >
                       <MemberWorkspaceProjectRightMetaPanel
+                        adminBilling={adminBilling}
                         project={project}
                         organizationSummary={organizationSummary}
+                        fiscalSponsorshipWorkflowSummary={
+                          fiscalSponsorshipWorkflowSummary
+                        }
+                        onNavigateFiscalUpdate={handleNavigateFiscalUpdate}
                         createQuickLinkAction={
                           canManageProject ? createQuickLinkAction : undefined
                         }

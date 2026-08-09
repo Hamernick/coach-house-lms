@@ -7,6 +7,8 @@ import {
   buildWorkspaceBoardUiPreferencesStorageKey,
   normalizeWorkspaceCanvasPersonPlacementsPreference,
   normalizeWorkspaceCanvasViewportPreference,
+  normalizeWorkspaceDataDrawerSnapPointPreference,
+  normalizeWorkspaceDataDrawerTabPreference,
   patchWorkspaceBoardUiPreferences,
   readWorkspaceBoardUiPreferences,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-ui-preferences"
@@ -84,7 +86,9 @@ describe("workspace board UI preferences", () => {
 
     patchWorkspaceBoardUiPreferences(scope, {
       canvasViewport: { x: 10, y: 20, zoom: 0.75 },
+      canvasViewportLayoutVersion: 2,
       dataDrawerSnapPoint: 0.48,
+      dataDrawerTab: "documents",
       teamAccessCollapsed: true,
       workspacePersonPlacements: [{ personId: "person-a", x: 120, y: 220 }],
     })
@@ -94,13 +98,40 @@ describe("workspace board UI preferences", () => {
     ).toBeTruthy()
     expect(readWorkspaceBoardUiPreferences(scope)).toEqual({
       canvasViewport: { x: 10, y: 20, zoom: 0.75 },
+      canvasViewportLayoutVersion: 2,
       dataDrawerSnapPoint: 0.48,
+      dataDrawerTab: "documents",
       teamAccessCollapsed: true,
       workspacePersonPlacements: [{ personId: "person-a", x: 120, y: 220 }],
     })
   })
 
-  it("wires viewport, drawer, and team access state through the shared preference contract", () => {
+  it("defaults invalid drawer tabs to Accelerator", () => {
+    expect(normalizeWorkspaceDataDrawerTabPreference("organization")).toBe(
+      "organization"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("accelerator")).toBe(
+      "accelerator"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("people")).toBe("people")
+    expect(normalizeWorkspaceDataDrawerTabPreference("roadmap")).toBe("roadmap")
+    expect(normalizeWorkspaceDataDrawerTabPreference("documents")).toBe(
+      "documents"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("unknown")).toBe(
+      "accelerator"
+    )
+  })
+
+  it("keeps the collapsed drawer tall enough for its tab row", () => {
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference(0.06)).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("44px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("52px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("68px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference(0.48)).toBe(0.48)
+  })
+
+  it("wires viewport and drawer state through the shared preference contract", () => {
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
     )
@@ -116,13 +147,14 @@ describe("workspace board UI preferences", () => {
     const drawerSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
-    const teamAccessSource = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx"
-    )
 
     expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
     expect(surfaceSource).toContain("suppressInitialFit")
     expect(surfaceSource).toContain("onMoveEnd: handleCanvasMoveEnd")
+    expect(viewportPreferencesSource).toContain(
+      "setViewportZoom(viewport.zoom)"
+    )
+    expect(viewportPreferencesSource).toContain("viewportZoom,")
     expect(surfaceSource).toContain("uiPreferencesScope,")
     expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
@@ -133,11 +165,19 @@ describe("workspace board UI preferences", () => {
       "patchWorkspaceBoardUiPreferences"
     )
     expect(viewportPreferencesSource).toContain("canvasViewport,")
+    expect(viewportPreferencesSource).toContain(
+      "WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION"
+    )
+    expect(viewportPreferencesSource).toContain("canvasViewport: null")
     expect(viewportPreferencesSource).toContain("suppressInitialFit:")
     expect(viewSource).toContain("onMoveEnd: OnMoveEnd")
     expect(viewSource).toContain("onMoveEnd={onMoveEnd}")
     expect(cameraEffectsSource).toContain("if (suppressInitialFit) return")
     expect(drawerSource).toContain("dataDrawerSnapPoint: storedSnapPoint")
-    expect(teamAccessSource).toContain("teamAccessCollapsed: nextCollapsed")
+    expect(drawerSource).toContain("dataDrawerTab: nextTab")
+    expect(drawerSource).toContain(
+      "readWorkspaceBoardUiPreferences(uiPreferencesScope)\n      if (request) return"
+    )
+    expect(drawerSource).toContain("}, [request, uiPreferencesScope])")
   })
 })

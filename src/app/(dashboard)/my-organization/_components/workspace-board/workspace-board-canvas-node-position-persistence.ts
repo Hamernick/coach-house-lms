@@ -31,6 +31,8 @@ export function useWorkspaceNodePositionPersistence({
   setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
 }) {
   const nodePositionPersistInFlightRef = useRef(false)
+  const boardStateRef = useRef(boardState)
+  boardStateRef.current = boardState
   const pendingNodePositionBoardStateRef = useRef<{
     boardState: WorkspaceBoardState
     cardId: WorkspaceCardId
@@ -93,14 +95,16 @@ export function useWorkspaceNodePositionPersistence({
   return useCallback(
     (cardId: WorkspaceCardId, x: number, y: number) => {
       if (!allowEditing) return
+      const currentBoardState = boardStateRef.current
       const nextBoardState = buildWorkspaceBoardStateWithNodePosition({
-        boardState,
+        boardState: currentBoardState,
         cardId,
         x,
         y,
       })
-      if (nextBoardState === boardState) return
+      if (nextBoardState === currentBoardState) return
 
+      boardStateRef.current = nextBoardState
       pendingNodePositionBoardStateRef.current = {
         boardState: nextBoardState,
         cardId,
@@ -110,6 +114,6 @@ export function useWorkspaceNodePositionPersistence({
       setBoardState(nextBoardState)
       flushNodePositionPersist()
     },
-    [allowEditing, boardState, flushNodePositionPersist, setBoardState]
+    [allowEditing, flushNodePositionPersist, setBoardState]
   )
 }

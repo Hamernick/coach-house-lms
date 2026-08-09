@@ -28,6 +28,7 @@ import { publicSharingEnabled } from "@/lib/feature-flags"
 type ProgramsTabProps = {
   programs: OrgProgram[]
   companyName?: string | null
+  canEdit: boolean
   editMode: boolean
   onProgramEdit: (program: OrgProgram) => void
 }
@@ -35,13 +36,14 @@ type ProgramsTabProps = {
 export function ProgramsTab({
   programs,
   companyName,
+  canEdit,
   editMode,
   onProgramEdit,
 }: ProgramsTabProps) {
   const hasPrograms = programs && programs.length > 0
   const publicCopy = publicSharingEnabled
-    ? "Primary objects appear in your overview and public page when published."
-    : "Primary objects stay private until public sharing is enabled."
+    ? "Activity appears in your overview and public page when published."
+    : "Activity stays private until public sharing is enabled."
 
   return (
     <div className="grid gap-6">
@@ -50,9 +52,7 @@ export function ProgramsTab({
           <div className="grid gap-2 md:grid-cols-3">
             <div className="px-6 md:px-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base leading-none font-medium">
-                  Primary objects
-                </h3>
+                <h3 className="text-base leading-none font-medium">Activity</h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -60,7 +60,7 @@ export function ProgramsTab({
                       variant="ghost"
                       size="icon"
                       className="border-border/70 text-muted-foreground hover:text-foreground h-5 w-5 rounded-full border p-0 hover:bg-transparent"
-                      aria-label="Primary objects visibility info"
+                      aria-label="Activity visibility info"
                     >
                       <InfoIcon className="h-3.5 w-3.5" aria-hidden />
                     </Button>
@@ -89,7 +89,7 @@ export function ProgramsTab({
                 <ProgramCard
                   key={program.id}
                   variant="medium"
-                  title={program.title ?? "Untitled object"}
+                  title={program.title ?? "Untitled activity"}
                   org={companyName || undefined}
                   location={locationSummary(program) || undefined}
                   description={resolveProgramSummary(program) || undefined}
@@ -119,7 +119,7 @@ export function ProgramsTab({
         </Fragment>
       ) : (
         <Fragment>
-          <FormRow title="Primary objects">
+          <FormRow title="Activity">
             {hasPrograms ? (
               <div
                 className="grid items-start justify-start gap-6"
@@ -129,7 +129,7 @@ export function ProgramsTab({
                   <ProgramCard
                     key={program.id}
                     variant="medium"
-                    title={program.title ?? "Untitled object"}
+                    title={program.title ?? "Untitled activity"}
                     org={companyName || undefined}
                     location={locationSummary(program) || undefined}
                     description={resolveProgramSummary(program) || undefined}
@@ -147,8 +147,11 @@ export function ProgramsTab({
                     chips={resolveProgramCardChips(program)}
                     goalCents={program.goal_cents || 0}
                     raisedCents={program.raised_cents || 0}
-                    ctaLabel={program.cta_label || "Learn more"}
-                    ctaHref={program.cta_url || undefined}
+                    ctaLabel={canEdit ? "Edit" : program.cta_label || "Open"}
+                    ctaHref={canEdit ? undefined : program.cta_url || undefined}
+                    onCtaClick={
+                      canEdit ? () => onProgramEdit(program) : undefined
+                    }
                   />
                 ))}
               </div>

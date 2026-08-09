@@ -1,18 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
 import { geocodeOrganizationLocation } from "@/lib/geocoding/geocode"
 import { buildOrganizationAddress } from "@/lib/geocoding/organization-address"
-import { normalizeOrganizationLocationFields, normalizeWhitespace } from "@/lib/location/organization-location"
+import {
+  normalizeOrganizationLocationFields,
+  normalizeWhitespace,
+} from "@/lib/location/organization-location"
 import type { BrandTypographyConfig } from "@/lib/organization/org-profile-brand-types"
 import type { Database } from "@/lib/supabase"
-import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
+import {
+  sanitizeOrgProfileText,
+  shouldStripOrgProfileHtml,
+} from "@/lib/organization/profile-cleanup"
 import { normalizeExternalUrl } from "@/lib/organization/urls"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
-import { ORG_MEDIA_BUCKET, resolveOrgMediaCleanupPath } from "@/lib/storage/org-media"
+import {
+  findOrganizationNarrativeRevisionConflict,
+  normalizeOrganizationNarrativeHtml,
+  type OrganizationNarratives,
+  type OrganizationNarrativeRevisions,
+  resolveOrganizationNarrativeRevisions,
+  resolveOrganizationNarratives,
+  updateOrganizationNarratives,
+} from "@/lib/roadmap"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
+import { validateOrganizationProfilePersistencePatch } from "@/lib/organization/profile-persistence-validation"
+import {
+  ORG_MEDIA_BUCKET,
+  resolveOrgMediaCleanupPath,
+} from "@/lib/storage/org-media"
 
 type OrgProfilePayload = {
   name?: string | null
@@ -52,6 +74,12 @@ type OrgProfilePayload = {
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
+  brandVoiceAudience?: string | null
+  brandVoiceTone?: string | null
+  brandVoiceStyle?: string | null
+  brandVoicePersonality?: string | null
+  brandVoiceGuidelines?: string | null
+  brandVoiceAvoid?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
   brandThemePresetId?: string | null
@@ -60,9 +88,12 @@ type OrgProfilePayload = {
   brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
+  narrativeRevisions?: OrganizationNarrativeRevisions
 }
 
-export async function updateOrganizationProfileAction(payload: OrgProfilePayload) {
+export async function updateOrganizationProfileAction(
+  payload: OrgProfilePayload
+) {
   const { supabase, session } = await requireServerSession("/organization")
 
   const userId = session.user.id
@@ -70,10 +101,17 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const canEdit = canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
 
+  const validation = validateOrganizationProfilePersistencePatch(payload)
+  if (!validation.success) {
+    return { error: validation.error, field: validation.field }
+  }
+
   // Load existing profile to merge
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")
-    .select("ein, profile, location_lat, location_lng, public_slug, is_public")
+    .select(
+      "ein, profile, location_lat, location_lng, public_slug, is_public, updated_at"
+    )
     .eq("user_id", orgId)
     .maybeSingle<{
       ein: string | null
@@ -82,6 +120,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
       location_lng: number | null
       public_slug: string | null
       is_public: boolean | null
+      updated_at: string
     }>()
 
   if (orgErr) {
@@ -89,16 +128,50 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   }
 
   const current = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const previousLogoUrl = typeof current["logoUrl"] === "string" ? (current["logoUrl"] as string) : null
+  const previousLogoUrl =
+    typeof current["logoUrl"] === "string"
+      ? (current["logoUrl"] as string)
+      : null
   const previousBrandMarkUrl =
     typeof current["brandMarkUrl"] === "string"
       ? (current["brandMarkUrl"] as string)
       : null
-  const previousHeaderUrl = typeof current["headerUrl"] === "string" ? (current["headerUrl"] as string) : null
+  const previousHeaderUrl =
+    typeof current["headerUrl"] === "string"
+      ? (current["headerUrl"] as string)
+      : null
   const logoTouched = Object.prototype.hasOwnProperty.call(payload, "logoUrl")
-  const brandMarkTouched = Object.prototype.hasOwnProperty.call(payload, "brandMarkUrl")
-  const headerTouched = Object.prototype.hasOwnProperty.call(payload, "headerUrl")
-  const next: Record<string, unknown> = { ...current }
+  const brandMarkTouched = Object.prototype.hasOwnProperty.call(
+    payload,
+    "brandMarkUrl"
+  )
+  const headerTouched = Object.prototype.hasOwnProperty.call(
+    payload,
+    "headerUrl"
+  )
+  let next: Record<string, unknown> = { ...current }
+  const currentNarratives = resolveOrganizationNarratives(current)
+  const narrativeUpdates: Partial<OrganizationNarratives> = {}
+  for (const key of ["mission", "vision", "values"] as const) {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) continue
+    const value = payload[key]
+    const normalized = normalizeOrganizationNarrativeHtml(
+      typeof value === "string" ? value : ""
+    )
+    if (normalized !== currentNarratives[key])
+      narrativeUpdates[key] = normalized
+  }
+  const narrativeConflict = findOrganizationNarrativeRevisionConflict({
+    profile: current,
+    updates: narrativeUpdates,
+    expectedRevisions: payload.narrativeRevisions,
+  })
+  if (narrativeConflict) {
+    return {
+      error: `${narrativeConflict[0].toUpperCase()}${narrativeConflict.slice(1)} was updated elsewhere. Reload before saving.`,
+      conflict: narrativeConflict,
+    }
+  }
   const urlFields = new Set([
     "publicUrl",
     "newsletter",
@@ -115,18 +188,23 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   ])
 
   for (const [k, v] of Object.entries(payload)) {
+    if (k === "narrativeRevisions") continue
+    if (k === "mission" || k === "vision" || k === "values") continue
     // Store EIN in both the column and profile for now (column is canonical)
     if (k === "ein") {
       next[k] = v ?? null
     } else if (k === "formationStatus") {
       const trimmed = typeof v === "string" ? v.trim() : ""
       next[k] =
-        trimmed === "pre_501c3" || trimmed === "in_progress" || trimmed === "approved"
+        trimmed === "pre_501c3" ||
+        trimmed === "in_progress" ||
+        trimmed === "approved"
           ? trimmed
           : null
     } else if (k === "locationType") {
       const trimmed = typeof v === "string" ? v.trim() : ""
-      next.location_type = trimmed === "online" || trimmed === "in_person" ? trimmed : null
+      next.location_type =
+        trimmed === "online" || trimmed === "in_person" ? trimmed : null
     } else if (k === "locationUrl") {
       next.location_url = typeof v === "string" ? normalizeExternalUrl(v) : null
     } else {
@@ -147,6 +225,8 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
       }
     }
   }
+
+  next = updateOrganizationNarratives(next, narrativeUpdates).nextProfile
 
   const addressMapping: Array<[keyof OrgProfilePayload, string]> = [
     ["addressStreet", "address_street"],
@@ -187,11 +267,13 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   next["address_country"] = normalizedLocation.country || null
 
   const fallbackAddress =
-    typeof payload.address === "string" && normalizeWhitespace(payload.address).length > 0
+    typeof payload.address === "string" &&
+    normalizeWhitespace(payload.address).length > 0
       ? normalizeWhitespace(payload.address)
-      : (typeof current["address"] === "string" && normalizeWhitespace(current["address"]).length > 0
-          ? normalizeWhitespace(current["address"])
-          : null)
+      : typeof current["address"] === "string" &&
+          normalizeWhitespace(current["address"]).length > 0
+        ? normalizeWhitespace(current["address"])
+        : null
 
   next.address = buildOrganizationAddress({
     street: normalizedLocation.street,
@@ -212,20 +294,29 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
         ? String(payload.name ?? current["name"] ?? "")
         : ""
   const normalizedSlugRaw = desiredSlug ? slugify(desiredSlug) : undefined
-  const normalizedSlug = normalizedSlugRaw && normalizedSlugRaw.length > 0 ? normalizedSlugRaw : undefined
+  const normalizedSlug =
+    normalizedSlugRaw && normalizedSlugRaw.length > 0
+      ? normalizedSlugRaw
+      : undefined
 
   let locationLat = orgRow?.location_lat ?? null
   let locationLng = orgRow?.location_lng ?? null
 
-  const nextLogoUrl = typeof next["logoUrl"] === "string" ? (next["logoUrl"] as string) : null
+  const nextLogoUrl =
+    typeof next["logoUrl"] === "string" ? (next["logoUrl"] as string) : null
   const nextBrandMarkUrl =
     typeof next["brandMarkUrl"] === "string"
       ? (next["brandMarkUrl"] as string)
       : null
-  const nextHeaderUrl = typeof next["headerUrl"] === "string" ? (next["headerUrl"] as string) : null
+  const nextHeaderUrl =
+    typeof next["headerUrl"] === "string" ? (next["headerUrl"] as string) : null
   const cleanupPaths = new Set<string>()
   if (logoTouched) {
-    const cleanupPath = resolveOrgMediaCleanupPath({ previousUrl: previousLogoUrl, nextUrl: nextLogoUrl, userId: orgId })
+    const cleanupPath = resolveOrgMediaCleanupPath({
+      previousUrl: previousLogoUrl,
+      nextUrl: nextLogoUrl,
+      userId: orgId,
+    })
     if (cleanupPath) cleanupPaths.add(cleanupPath)
   }
   if (brandMarkTouched) {
@@ -237,7 +328,11 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     if (cleanupPath) cleanupPaths.add(cleanupPath)
   }
   if (headerTouched) {
-    const cleanupPath = resolveOrgMediaCleanupPath({ previousUrl: previousHeaderUrl, nextUrl: nextHeaderUrl, userId: orgId })
+    const cleanupPath = resolveOrgMediaCleanupPath({
+      previousUrl: previousHeaderUrl,
+      nextUrl: nextHeaderUrl,
+      userId: orgId,
+    })
     if (cleanupPath) cleanupPaths.add(cleanupPath)
   }
 
@@ -262,30 +357,51 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
 
   const insertPayload: any = {
     user_id: orgId,
-    ein: typeof payload.ein === "string" ? payload.ein : orgRow?.ein ?? null,
+    ein: typeof payload.ein === "string" ? payload.ein : (orgRow?.ein ?? null),
     public_slug: normalizedSlug ?? undefined,
     is_public: payload.isPublic ?? undefined,
-    profile: next as unknown as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
+    profile:
+      next as unknown as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
     location_lat: locationLat,
     location_lng: locationLng,
   }
 
-  const { error: upsertErr } = await supabase
-    .from("organizations")
-    .upsert(insertPayload, { onConflict: "user_id" })
+  if (orgRow) {
+    const { data: updatedRow, error: updateError } = await supabase
+      .from("organizations")
+      .update(insertPayload)
+      .eq("user_id", orgId)
+      .eq("updated_at", orgRow.updated_at)
+      .select("user_id")
+      .maybeSingle<{ user_id: string }>()
 
-  if (upsertErr) {
-    return { error: upsertErr.message }
+    if (updateError) return { error: updateError.message }
+    if (!updatedRow) {
+      return {
+        error: "This organization was updated elsewhere. Reload before saving.",
+      }
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from("organizations")
+      .insert(insertPayload)
+    if (insertError) return { error: insertError.message }
   }
 
   if (cleanupPaths.size > 0) {
-    await supabase.storage.from(ORG_MEDIA_BUCKET).remove(Array.from(cleanupPaths))
+    await supabase.storage
+      .from(ORG_MEDIA_BUCKET)
+      .remove(Array.from(cleanupPaths))
   }
 
-  const previousSlug = typeof orgRow?.public_slug === "string" && orgRow.public_slug.length > 0 ? orgRow.public_slug : null
+  const previousSlug =
+    typeof orgRow?.public_slug === "string" && orgRow.public_slug.length > 0
+      ? orgRow.public_slug
+      : null
   const nextSlug = normalizedSlug ?? previousSlug
   const wasPublic = Boolean(orgRow?.is_public)
-  const isPublic = typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic
+  const isPublic =
+    typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic
 
   revalidateOrganizationViews({
     previousSlug,
@@ -293,7 +409,10 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     wasPublic,
     isPublic,
   })
-  return { ok: true }
+  return {
+    ok: true,
+    narrativeRevisions: resolveOrganizationNarrativeRevisions(next),
+  }
 }
 
 function slugify(input: string): string {
@@ -318,10 +437,13 @@ function revalidateOrganizationViews({
   wasPublic: boolean
   isPublic: boolean
 }) {
+  revalidatePath("/workspace")
+  revalidatePath("/my-organization")
   revalidatePath("/organization")
   revalidatePath("/find")
 
   if (isPublic || wasPublic) {
+    revalidateTag("public-map-organizations", "max")
     revalidatePath("/community")
   }
 
@@ -335,4 +457,3 @@ function revalidateOrganizationViews({
     revalidatePath(`/find/${nextSlug}`)
   }
 }
- 

@@ -8,6 +8,7 @@ import {
   useEffect,
   useMemo,
 } from "react"
+import { toast } from "sonner"
 
 import {
   clampWorkspaceCanvasTutorialStepIndex,
@@ -20,11 +21,15 @@ import {
   resetWorkspaceCanvasTutorialAction,
   saveWorkspaceBoardStateAction,
 } from "../../_lib/workspace-actions"
+import { reconcileWorkspaceBoardSaveResult } from "../../_lib/workspace-board-state-persistence"
 import {
   isBoardStateContentEqual,
   type WorkspaceCardFocusRequest,
 } from "./workspace-board-canvas-helpers"
-import { logWorkspaceBoardDebug, summarizeWorkspaceBoardVisibility } from "./workspace-board-debug"
+import {
+  logWorkspaceBoardDebug,
+  summarizeWorkspaceBoardVisibility,
+} from "./workspace-board-debug"
 import {
   applyWorkspaceTutorialSnapshot,
   buildRestartedWorkspaceTutorialBoardState,
@@ -53,7 +58,7 @@ export function useWorkspaceBoardJourneyGuideState({
         acceleratorState,
         acceleratorStepNodeVisible,
       }),
-    [acceleratorState, acceleratorStepNodeVisible, seed],
+    [acceleratorState, acceleratorStepNodeVisible, seed]
   )
 }
 
@@ -64,23 +69,22 @@ export function useWorkspaceRightRailCurrentUser(seed: WorkspaceSeedData) {
       name: seed.viewerName,
       avatarUrl: seed.viewerAvatarUrl,
     }),
-    [seed.viewerAvatarUrl, seed.viewerId, seed.viewerName],
+    [seed.viewerAvatarUrl, seed.viewerId, seed.viewerName]
   )
 }
 
 export function buildPreviousWorkspaceTutorialFlowState(
-  flowState: WorkspaceBoardState["onboardingFlow"],
+  flowState: WorkspaceBoardState["onboardingFlow"]
 ) {
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
-    flowState.tutorialStepIndex - 1,
+    flowState.tutorialStepIndex - 1
   )
   const tutorialStep = resolveWorkspaceCanvasTutorialStep(tutorialStepIndex)
-  const openedTutorialStepIds =
-    isWorkspaceCanvasTutorialGatedStep(tutorialStep)
-      ? flowState.openedTutorialStepIds.filter(
-          (stepId) => stepId !== tutorialStep.id,
-        )
-      : flowState.openedTutorialStepIds
+  const openedTutorialStepIds = isWorkspaceCanvasTutorialGatedStep(tutorialStep)
+    ? flowState.openedTutorialStepIds.filter(
+        (stepId) => stepId !== tutorialStep.id
+      )
+    : flowState.openedTutorialStepIds
 
   return {
     ...flowState,
@@ -92,13 +96,15 @@ export function buildPreviousWorkspaceTutorialFlowState(
 }
 
 export function buildOpenedWorkspaceTutorialFlowState(
-  flowState: WorkspaceBoardState["onboardingFlow"],
+  flowState: WorkspaceBoardState["onboardingFlow"]
 ) {
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
-    flowState.tutorialStepIndex,
+    flowState.tutorialStepIndex
   )
   const currentStepId = resolveWorkspaceCanvasTutorialStep(tutorialStepIndex).id
-  const openedTutorialStepIds = flowState.openedTutorialStepIds.includes(currentStepId)
+  const openedTutorialStepIds = flowState.openedTutorialStepIds.includes(
+    currentStepId
+  )
     ? flowState.openedTutorialStepIds
     : [...flowState.openedTutorialStepIds, currentStepId]
   const acknowledgedTutorialStepIds =
@@ -131,7 +137,7 @@ export function useWorkspaceBoardTutorialNavigation({
     setBoardState((previous) =>
       applyWorkspaceTutorialSnapshot(previous, {
         ...buildPreviousWorkspaceTutorialFlowState(previous.onboardingFlow),
-      }),
+      })
     )
   }, [setBoardState])
 
@@ -143,11 +149,13 @@ export function useWorkspaceBoardTutorialNavigation({
 
     setBoardState((previous) => {
       const stepIndex = clampWorkspaceCanvasTutorialStepIndex(
-        previous.onboardingFlow.tutorialStepIndex,
+        previous.onboardingFlow.tutorialStepIndex
       )
       const currentStepId = resolveWorkspaceCanvasTutorialStep(stepIndex).id
       const acknowledgedTutorialStepIds =
-        previous.onboardingFlow.acknowledgedTutorialStepIds.includes(currentStepId)
+        previous.onboardingFlow.acknowledgedTutorialStepIds.includes(
+          currentStepId
+        )
           ? previous.onboardingFlow.acknowledgedTutorialStepIds
           : [
               ...previous.onboardingFlow.acknowledgedTutorialStepIds,
@@ -167,11 +175,13 @@ export function useWorkspaceBoardTutorialNavigation({
   const handleTutorialShortcutOpened = useCallback(() => {
     setBoardState((previous) => {
       const stepIndex = clampWorkspaceCanvasTutorialStepIndex(
-        previous.onboardingFlow.tutorialStepIndex,
+        previous.onboardingFlow.tutorialStepIndex
       )
       const currentStepId = resolveWorkspaceCanvasTutorialStep(stepIndex).id
 
-      if (previous.onboardingFlow.openedTutorialStepIds.includes(currentStepId)) {
+      if (
+        previous.onboardingFlow.openedTutorialStepIds.includes(currentStepId)
+      ) {
         return previous
       }
 
@@ -217,7 +227,10 @@ export function usePersistWorkspaceBoardState({
 }) {
   useEffect(() => {
     if (!allowEditing) return
-    if (isBoardStateContentEqual(boardState, lastPersistedBoardContentRef.current)) return
+    if (
+      isBoardStateContentEqual(boardState, lastPersistedBoardContentRef.current)
+    )
+      return
 
     const requestId = persistRequestIdRef.current + 1
     persistRequestIdRef.current = requestId
@@ -237,24 +250,36 @@ export function usePersistWorkspaceBoardState({
             requestId,
             error: response.error,
           })
-          console.error("[workspace-board] Unable to persist board state.", response.error)
+          console.error(
+            "[workspace-board] Unable to persist board state.",
+            response.error
+          )
+          toast.error("Workspace changes could not be saved.", {
+            id: "workspace-board-save-error",
+            description: "Your changes remain here. Retry when ready.",
+            action: {
+              label: "Retry",
+              onClick: () => setBoardState((previous) => ({ ...previous })),
+            },
+          })
           return
         }
         if (persistRequestIdRef.current !== requestId) return
+        toast.dismiss("workspace-board-save-error")
         logWorkspaceBoardDebug("persist_board_state_success", {
           requestId,
           responseUpdatedAt: response.boardState.updatedAt,
           ...summarizeWorkspaceBoardVisibility(response.boardState),
         })
-        lastPersistedBoardContentRef.current = boardState
-        setBoardState((previous) =>
-          previous.updatedAt === response.boardState.updatedAt
-            ? previous
-            : {
-                ...previous,
-                updatedAt: response.boardState.updatedAt,
-              },
-        )
+        setBoardState((previous) => {
+          if (!isBoardStateContentEqual(previous, boardState)) return previous
+          const reconciled = reconcileWorkspaceBoardSaveResult({
+            current: previous,
+            persisted: response.boardState,
+          })
+          lastPersistedBoardContentRef.current = reconciled
+          return reconciled
+        })
       })()
     }, 550)
 
@@ -268,6 +293,8 @@ export function usePersistWorkspaceBoardState({
   ])
 }
 
-export type WorkspaceRightRailCurrentUser = ReturnType<typeof useWorkspaceRightRailCurrentUser>
+export type WorkspaceRightRailCurrentUser = ReturnType<
+  typeof useWorkspaceRightRailCurrentUser
+>
 export type WorkspaceBoardInvitesState = WorkspaceCollaborationInvite[]
 export type WorkspaceBoardFocusRequest = WorkspaceCardFocusRequest

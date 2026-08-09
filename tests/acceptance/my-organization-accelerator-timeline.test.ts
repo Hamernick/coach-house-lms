@@ -1,11 +1,43 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildModuleGroupMetaById,
   isOrganizationSetupTimelineModule,
   resolveWorkspaceAcceleratorSupplementalResources,
 } from "@/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline"
 
 describe("my-organization accelerator timeline helpers", () => {
+  it("preserves canonical class and module publication visibility", () => {
+    const metadata = buildModuleGroupMetaById([
+      {
+        id: "draft-class",
+        published: false,
+        title: "Draft Class",
+        description: null,
+        slug: "draft-class",
+        modules: [
+          {
+            id: "draft-module",
+            published: true,
+            slug: "draft",
+            title: "Draft",
+            description: null,
+            href: "/accelerator/class/draft-class/module/1",
+            status: "not_started",
+            index: 1,
+            hasNotes: false,
+          },
+        ],
+      },
+    ])
+
+    expect(metadata.get("draft-module")).toEqual({
+      title: "Draft Class",
+      order: 0,
+      published: false,
+    })
+  })
+
   it("detects the canonical organization setup module id", () => {
     expect(
       isOrganizationSetupTimelineModule({

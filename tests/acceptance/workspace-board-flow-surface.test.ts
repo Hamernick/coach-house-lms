@@ -42,6 +42,7 @@ function createProps(
     } as WorkspaceBoardFlowSurfaceProps["seed"],
     organizationEditorData:
       {} as WorkspaceBoardFlowSurfaceProps["organizationEditorData"],
+    financeInput: {},
     boardState: {} as WorkspaceBoardFlowSurfaceProps["boardState"],
     allowEditing: true,
     workspaceDataDrawerCanEdit: true,

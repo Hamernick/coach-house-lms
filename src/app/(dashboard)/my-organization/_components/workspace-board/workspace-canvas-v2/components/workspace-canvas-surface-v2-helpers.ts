@@ -38,6 +38,11 @@ import {
 import { resolveOrgCardSize } from "./workspace-canvas-surface-v2-positioning"
 import { resolveWorkspaceCanvasCollapsedAcceleratorCardSize } from "./workspace-canvas-surface-v2-accelerator-card-size"
 import type { WorkspaceCanvasPersonNodeData } from "./workspace-canvas-person-node-model"
+import type {
+  WorkspaceOntologyActionRequest,
+  WorkspaceOntologyNodeData,
+  WorkspaceOntologyRootControl,
+} from "@/features/workspace-ontology"
 
 export { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
 export {
@@ -68,6 +73,7 @@ export type WorkspaceCanvasNodeData =
   | WorkspaceBoardAcceleratorStepNodeData
   | WorkspaceCanvasPersonNodeData
   | WorkspaceCanvasTutorialNodeData
+  | WorkspaceOntologyNodeData
 export type WorkspaceCanvasNode = Node<WorkspaceCanvasNodeData>
 
 export const WORKSPACE_CANVAS_V2_VAULT_MODE: WorkspaceVaultViewMode = "dropzone"
@@ -150,6 +156,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   organizationMapButtonCallout,
   onOrganizationMapButtonTutorialComplete,
   tutorialStepId,
+  ontologyRootControls,
+  ontologyActionRequest,
 }: {
   allowEditing: boolean
   presentationMode: boolean
@@ -190,6 +198,10 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   organizationMapButtonCallout?: WorkspaceBoardNodeData["organizationMapButtonCallout"]
   onOrganizationMapButtonTutorialComplete?: WorkspaceBoardNodeData["onOrganizationMapButtonTutorialComplete"]
   tutorialStepId?: WorkspaceCanvasTutorialStepId | null
+  ontologyRootControls?: Partial<
+    Record<WorkspaceCardId, WorkspaceOntologyRootControl>
+  >
+  ontologyActionRequest?: WorkspaceOntologyActionRequest | null
 }): Record<WorkspaceCardId, WorkspaceBoardNodeData> {
   const baseData = {
     canEdit: allowEditing,
@@ -204,10 +216,10 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     onAcceleratorStateChange,
     onFocusCard,
     onOpenCard,
-    fiscalSponsorshipCardVisible:
-      !hiddenCardIds.includes("fiscal-sponsorship"),
+    fiscalSponsorshipCardVisible: !hiddenCardIds.includes("fiscal-sponsorship"),
     isCanvasFullscreen: false,
     tutorialStepId: tutorialStepId ?? null,
+    ontologyActionRequest: ontologyActionRequest ?? null,
   } as const
 
   const orgSize = resolveOrgCardSize(nodes)
@@ -219,6 +231,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   return {
     "organization-overview": {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.["organization-overview"],
       cardId: "organization-overview",
       size: orgSize,
       vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
@@ -237,6 +250,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     },
     programs: {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.programs,
       cardId: "programs",
       size: resolveContractCardSize({
         cardId: "programs",
@@ -252,6 +266,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     },
     roadmap: {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.roadmap,
       cardId: "roadmap",
       size: roadmapSize,
       vaultViewMode,
@@ -279,6 +294,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     },
     accelerator: {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.accelerator,
       cardId: "accelerator",
       size: resolveWorkspaceCanvasAcceleratorCardSize({
         nodes,
@@ -339,6 +355,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     },
     calendar: {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.calendar,
       cardId: "calendar",
       size: resolveContractCardSize({
         cardId: "calendar",
@@ -386,6 +403,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     },
     "fiscal-sponsorship": {
       ...baseData,
+      ontologyRootControl: ontologyRootControls?.["fiscal-sponsorship"],
       cardId: "fiscal-sponsorship",
       size: resolveContractCardSize({
         cardId: "fiscal-sponsorship",

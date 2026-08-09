@@ -106,7 +106,10 @@ export function WorkspaceBoardCalendarEventSheet({
           ? await updateRoadmapCalendarEvent({
               calendarType: "internal",
               eventId: event.id,
-              updates: payload,
+              updates: {
+                ...payload,
+                expectedUpdatedAt: event.updated_at,
+              },
             })
           : await createRoadmapCalendarEvent({
               calendarType: "internal",

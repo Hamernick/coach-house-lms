@@ -2,6 +2,13 @@ import { notFound } from "next/navigation"
 
 import { Empty } from "@/components/ui/empty"
 import {
+  AdminOrganizationBillingPanel,
+  changeAdminOrganizationBillingPlanAction,
+  loadAdminOrganizationBilling,
+  refundLatestAdminOrganizationPaymentAction,
+} from "@/features/admin-organization-billing"
+import {
+  canManageFiscalSponsorshipForOrganization,
   connectFiscalSponsorshipDocumentAsset,
   generateFiscalSponsorshipAgreement,
   loadFiscalSponsorshipProjectWorkflowSummary,
@@ -17,7 +24,7 @@ import {
   deleteMemberWorkspaceTaskAction,
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
-  loadMemberWorkspaceProjectDetailPage,
+  loadPlatformAdminOrganizationProjectDetailPage,
   MemberWorkspaceProjectDetailPage,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectNoteAction,
@@ -26,7 +33,7 @@ import {
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
-import { requireAdmin } from "@/lib/admin/auth"
+import { requirePlatformCapability } from "@/lib/admin/auth"
 import type { ProjectDetails } from "@/features/platform-admin-dashboard"
 
 type PageProps = {
@@ -47,10 +54,15 @@ function getOrganizationAdminProjectKind(
 }
 
 export default async function OrganizationDetailPage({ params }: PageProps) {
-  await requireAdmin()
+  const staff = await requirePlatformCapability("organizations", {
+    loginRedirect: "/organizations",
+  })
 
   const { id } = await params
-  const result = await loadMemberWorkspaceProjectDetailPage(id)
+  const result = await loadPlatformAdminOrganizationProjectDetailPage({
+    projectId: id,
+    userId: staff.userId,
+  })
 
   if (result.state === "not-found") {
     notFound()
@@ -68,13 +80,23 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     )
   }
 
-  const canManageProject = result.scope === "organization"
+  const canManageProject =
+    result.scope === "organization" || result.scope === "platform-admin"
   const canManageProjectAssets =
     result.scope === "organization" || result.scope === "platform-admin"
   const canEditProjectDetails =
     result.scope === "organization" || result.scope === "platform-admin"
-  const canManageFiscalSponsorship = result.scope === "platform-admin"
+  const canManageFiscalSponsorship =
+    result.scope === "platform-admin" &&
+    (await canManageFiscalSponsorshipForOrganization({
+      accessLevel: staff.accessLevel,
+      organizationId: result.organizationSummary.orgId,
+      supabase: staff.supabase,
+      userId: staff.userId,
+    }))
   const projectKind = getOrganizationAdminProjectKind(result.project.source)
+  const canManageProjectTasks =
+    result.scope === "organization" || result.scope === "platform-admin"
   const canDeleteProject =
     canEditProjectDetails && projectKind !== "organization_admin"
   const fiscalSponsorshipWorkflowSummary =
@@ -83,9 +105,24 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     "error" in fiscalSponsorshipWorkflowSummary
       ? null
       : fiscalSponsorshipWorkflowSummary
+  const adminBilling =
+    staff.accessLevel === "developer"
+      ? await loadAdminOrganizationBilling(result.organizationSummary.orgId)
+      : null
 
   return (
     <MemberWorkspaceProjectDetailPage
+      adminBilling={
+        adminBilling ? (
+          <AdminOrganizationBillingPanel
+            billing={adminBilling}
+            changePlanAction={changeAdminOrganizationBillingPlanAction}
+            refundLatestPaymentAction={
+              refundLatestAdminOrganizationPaymentAction
+            }
+          />
+        ) : undefined
+      }
       project={result.project}
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
@@ -100,13 +137,13 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
           : undefined
       }
       createTaskAction={
-        canManageProject ? createMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? createMemberWorkspaceTaskAction : undefined
       }
       updateTaskAction={
-        canManageProject ? updateMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? updateMemberWorkspaceTaskAction : undefined
       }
       deleteTaskAction={
-        canManageProject ? deleteMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? deleteMemberWorkspaceTaskAction : undefined
       }
       updateProjectAction={
         canEditProjectDetails ? updateMemberWorkspaceProjectAction : undefined
@@ -115,10 +152,12 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
         canDeleteProject ? deleteMemberWorkspaceProjectAction : undefined
       }
       updateTaskStatusAction={
-        canManageProject ? updateMemberWorkspaceTaskStatusAction : undefined
+        canManageProjectTasks
+          ? updateMemberWorkspaceTaskStatusAction
+          : undefined
       }
       updateTaskOrderAction={
-        canManageProject ? updateMemberWorkspaceTaskOrderAction : undefined
+        canManageProjectTasks ? updateMemberWorkspaceTaskOrderAction : undefined
       }
       createNoteAction={
         canManageProject ? createMemberWorkspaceProjectNoteAction : undefined

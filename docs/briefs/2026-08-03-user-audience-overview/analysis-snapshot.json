@@ -1,0 +1,120 @@
+{
+  "snapshot_date": "2026-08-03",
+  "generated_at": "2026-08-03T18:01:33Z",
+  "population_definition": "Auth accounts excluding 11 synthetic/demo accounts and 3 internal platform staff accounts",
+  "account_summary": {
+    "total_auth_records": 194,
+    "synthetic_demo_accounts": 11,
+    "internal_staff_accounts": 3,
+    "external_nonsynthetic_accounts": 180,
+    "regular_accounts": 158,
+    "tester_accounts": 22,
+    "confirmed_accounts": 85,
+    "ever_signed_in": 77,
+    "never_signed_in": 103,
+    "tracked_active_30d": 27,
+    "tracked_active_7d": 9,
+    "organization_owners": 53,
+    "additional_organization_members": 2
+  },
+  "payment_summary": {
+    "current_paying_regular_users": 21,
+    "regular_active_subscriptions_with_zero_latest_invoice": 7,
+    "paying_tester_accounts_excluded": 3,
+    "regular_users_who_ever_paid": 26,
+    "historical_live_payer_identities_unmapped_to_current_accounts": 10,
+    "authority": "Stripe customers, subscriptions, and latest invoices"
+  },
+  "signup_months": [
+    {"month": "2026-01-01", "audience": "Regular", "accounts": 3},
+    {"month": "2026-01-01", "audience": "Tester", "accounts": 0},
+    {"month": "2026-02-01", "audience": "Regular", "accounts": 1},
+    {"month": "2026-02-01", "audience": "Tester", "accounts": 15},
+    {"month": "2026-03-01", "audience": "Regular", "accounts": 11},
+    {"month": "2026-03-01", "audience": "Tester", "accounts": 4},
+    {"month": "2026-04-01", "audience": "Regular", "accounts": 19},
+    {"month": "2026-04-01", "audience": "Tester", "accounts": 1},
+    {"month": "2026-05-01", "audience": "Regular", "accounts": 110},
+    {"month": "2026-05-01", "audience": "Tester", "accounts": 0},
+    {"month": "2026-06-01", "audience": "Regular", "accounts": 6},
+    {"month": "2026-06-01", "audience": "Tester", "accounts": 2},
+    {"month": "2026-07-01", "audience": "Regular", "accounts": 7},
+    {"month": "2026-07-01", "audience": "Tester", "accounts": 0},
+    {"month": "2026-08-01", "audience": "Regular", "accounts": 1},
+    {"month": "2026-08-01", "audience": "Tester", "accounts": 0}
+  ],
+  "selected_focus_segments": [
+    {"focus": "Build", "accounts": 118, "share": 0.6556, "ever_signed_in": 66, "tracked_active_30d": 27, "organization_owners": 50, "current_paying_regular_users": 21},
+    {"focus": "Find", "accounts": 56, "share": 0.3111, "ever_signed_in": 5, "tracked_active_30d": 0, "organization_owners": 1, "current_paying_regular_users": 0},
+    {"focus": "Other or unknown", "accounts": 6, "share": 0.0333, "ever_signed_in": 6, "tracked_active_30d": 0, "organization_owners": 2, "current_paying_regular_users": 0}
+  ],
+  "may_2026_cohort": {
+    "accounts": 110,
+    "share_of_external_accounts": 0.6111,
+    "confirmed": 31,
+    "ever_signed_in": 25,
+    "ever_tracked_product_activity": 15,
+    "organization_owners": 15
+  },
+  "email_mix": [
+    {"email_type": "Organization or custom domain", "accounts": 82, "share": 0.4556},
+    {"email_type": "Gmail", "accounts": 66, "share": 0.3667},
+    {"email_type": "Other consumer email", "accounts": 32, "share": 0.1778}
+  ],
+  "organization_formation_stages": [
+    {"stage": "IRS approved", "organizations": 21, "share": 0.3962},
+    {"stage": "Pre-501(c)(3)", "organizations": 7, "share": 0.1321},
+    {"stage": "In progress", "organizations": 6, "share": 0.1132},
+    {"stage": "Unknown", "organizations": 19, "share": 0.3585}
+  ],
+  "organization_geography": {
+    "organizations": 53,
+    "known_state": 17,
+    "illinois_among_known_state": 17,
+    "unknown_state": 36,
+    "known_country": 15,
+    "united_states_among_known_country": 15,
+    "unknown_country": 38
+  },
+  "tracked_activity_30d": [
+    {"surface": "Workspace", "unique_people": 26, "events": 1788},
+    {"surface": "Onboarding", "unique_people": 10, "events": null},
+    {"surface": "Pricing checkout", "unique_people": 8, "events": null},
+    {"surface": "Organization access", "unique_people": 2, "events": null},
+    {"surface": "Coaching", "unique_people": 2, "events": null}
+  ],
+  "traffic_30d": {
+    "window_start": "2026-07-04",
+    "window_end": "2026-08-03",
+    "anonymous_visitors": 184,
+    "page_views": 990,
+    "bounce_rate": 0.43,
+    "united_states_share": 0.97,
+    "desktop_share": 0.86
+  },
+  "top_pages_30d": [
+    {"page": "/", "visitors": 129},
+    {"page": "/workspace", "visitors": 89},
+    {"page": "/find", "visitors": 63},
+    {"page": "/workspace/accelerator", "visitors": 21},
+    {"page": "/workspace/roadmap/origin-story", "visitors": 21},
+    {"page": "/auth/confirm", "visitors": 14},
+    {"page": "/organizations", "visitors": 13}
+  ],
+  "named_referrers_30d": [
+    {"referrer": "Stripe Checkout", "visitors": 5},
+    {"referrer": "coachhousesolutions.org", "visitors": 4},
+    {"referrer": "Google", "visitors": 4},
+    {"referrer": "Bing", "visitors": 3},
+    {"referrer": "Gmail", "visitors": 3},
+    {"referrer": "Mobile Facebook", "visitors": 2},
+    {"referrer": "Stripe Billing", "visitors": 1}
+  ],
+  "limitations": [
+    "The 180 figure counts accounts, not deduplicated unique humans.",
+    "Historical signup records do not preserve first-touch source, UTM campaign values, initial referrer, landing page, or partner code.",
+    "Self-selected onboarding focus is not a verified job title or organization role.",
+    "Vercel visitor metrics are anonymous and cannot be joined to accounts.",
+    "Marketing and newsletter flags were excluded because historical defaults make them unreliable preference evidence."
+  ]
+}

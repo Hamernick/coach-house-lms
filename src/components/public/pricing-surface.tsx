@@ -12,30 +12,35 @@ type PricingSurfaceProps = {
   embedded?: boolean
 }
 
-export async function PricingSurface({ embedded = false }: PricingSurfaceProps = {}) {
+export async function PricingSurface({
+  embedded = false,
+}: PricingSurfaceProps = {}) {
   const isEmbedded = embedded
+  const Root = isEmbedded ? "section" : "main"
 
   return (
-    <main
+    <Root
       data-public-surface="pricing"
+      data-public-pricing-embedded={isEmbedded ? "" : undefined}
+      aria-labelledby="pricing-heading"
       className={cn(
-        "relative bg-background pt-px [--background:var(--surface)]",
-        isEmbedded ? "min-h-full" : "min-h-screen",
+        "bg-background relative pt-px [--background:var(--surface)]",
+        isEmbedded ? "min-h-full" : "min-h-screen"
       )}
     >
       {isEmbedded ? null : <PublicHeader />}
       <div
         className={cn(
           "mx-auto flex w-[min(1000px,92%)] flex-col gap-16 pb-16 lg:pb-24",
-          isEmbedded ? "pt-8 sm:pt-10" : "pt-24 sm:pt-28",
+          isEmbedded ? "pt-20 sm:pt-24" : "pt-24 sm:pt-28"
         )}
       >
-        <PricingHeroSection />
+        <PricingHeroSection headingLevel={isEmbedded ? "h2" : "h1"} />
         <PricingTierCardsSection />
         <PricingFeatureBreakdownIntroSection />
         <PricingFeatureMatrixSection />
         <PricingCallToActionSection />
       </div>
-    </main>
+    </Root>
   )
 }

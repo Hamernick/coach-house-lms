@@ -5,7 +5,7 @@ Coach House is a Next.js App Router product for nonprofit organizations. It comb
 ## Source of truth
 
 - Root contract: [`AGENTS.md`](AGENTS.md)
-- Active continuation thread: [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md)
+- Active continuation index: [`docs/RUNLOG.md`](docs/RUNLOG.md)
 - Product/system overview: [`docs/OVERVIEW.md`](docs/OVERVIEW.md)
 - Active system map: [`docs/system-map.md`](docs/system-map.md)
 - Cleanup foundation audit: [`docs/briefs/2026-03-10-cleanup-foundation-audit.md`](docs/briefs/2026-03-10-cleanup-foundation-audit.md)
@@ -124,7 +124,7 @@ Recommended release artifacts:
 - a dedicated release branch and PR into `main`
 - validation evidence copied into the PR body
 - screenshots/manual QA notes for UI changes
-- an appended entry in [`docs/RUNLOG.md`](docs/RUNLOG.md)
+- an appended entry in the current monthly log linked from [`docs/RUNLOG.md`](docs/RUNLOG.md)
 - a release note/checklist doc under `docs/releases/**` when the change set is broad
 
 ## Release workflow
@@ -132,7 +132,7 @@ Recommended release artifacts:
 - Branch format: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`
 - PR title format: `[STEP SNN] <title>`
 - Use [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
-- Update [`docs/RUNLOG.md`](docs/RUNLOG.md) for every ad-hoc/Codex session
+- Update the current monthly log linked from [`docs/RUNLOG.md`](docs/RUNLOG.md) for every ad-hoc/Codex session
 - Ship only after `pnpm check:quality` passes locally and in CI
 
 GitHub Actions currently enforce:

@@ -1,3 +1,5 @@
+export const WORKSPACE_FINANCE_CARD_ID = "finance" as const
+
 export const WORKSPACE_CARD_IDS = [
   "organization-overview",
   "programs",

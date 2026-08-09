@@ -10,6 +10,7 @@ import {
 } from "@/features/member-workspace"
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 
 type AuthenticatedFindShellState = {
   sidebarTree: SidebarClass[]
@@ -20,6 +21,7 @@ type AuthenticatedFindShellState = {
     avatar: string | null
   }
   isAdmin: boolean
+  platformAccessLevel: PlatformAccessLevel | null
   isTester: boolean
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
@@ -50,10 +52,12 @@ type AuthenticatedFindShellState = {
 export function AuthenticatedFindShell({
   children,
   state,
+  defaultSidebarOpen = false,
   organizationDetail = false,
 }: {
   children: ReactNode
   state: AuthenticatedFindShellState
+  defaultSidebarOpen?: boolean
   organizationDetail?: boolean
 }) {
   const segments = organizationDetail
@@ -68,8 +72,12 @@ export function AuthenticatedFindShell({
         sidebarHeaderContent={
           state.memberWorkspaceHeader ? (
             <MemberWorkspaceOrgSwitcher
-              activeOrganization={state.memberWorkspaceHeader.activeOrganization}
-              organizations={state.memberWorkspaceHeader.accessibleOrganizations}
+              activeOrganization={
+                state.memberWorkspaceHeader.activeOrganization
+              }
+              organizations={
+                state.memberWorkspaceHeader.accessibleOrganizations
+              }
               setActiveOrganizationAction={setActiveOrganizationAction}
             />
           ) : null
@@ -77,6 +85,7 @@ export function AuthenticatedFindShell({
         sidebarTree={state.sidebarTree}
         user={state.user}
         isAdmin={state.isAdmin}
+        platformAccessLevel={state.platformAccessLevel}
         isTester={state.isTester}
         showOrgAdmin={state.showOrgAdmin}
         canAccessOrgAdmin={state.canAccessOrgAdmin}
@@ -93,6 +102,8 @@ export function AuthenticatedFindShell({
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}
+        defaultSidebarOpen={defaultSidebarOpen}
+        resizableRightRail
         context="public"
         contentPresentation="full-bleed"
         brandHref="/find"

@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-06T11:09:00Z",
+  "apiFamily": "v1",
+  "installed": {
+    "stripeNode": "18.5.0",
+    "apiVersion": "2025-08-27.basil",
+    "stripeCli": "1.23.3"
+  },
+  "currentStable": {
+    "stripeNode": "22.4.0",
+    "apiVersion": "2026-07-29.dahlia",
+    "stripeCli": "1.45.1"
+  },
+  "account": {
+    "baselineCountry": "US",
+    "baselineCurrency": "usd",
+    "controller": {
+      "fees": { "payer": "account" },
+      "losses": { "payments": "stripe" },
+      "requirement_collection": "stripe",
+      "stripe_dashboard": { "type": "full" }
+    },
+    "capabilities": {
+      "card_payments": { "requested": true },
+      "transfers": { "requested": true }
+    },
+    "requiredActivationStates": [
+      "details_submitted",
+      "charges_enabled",
+      "payouts_enabled",
+      "card_payments_active",
+      "transfers_active"
+    ],
+    "forbiddenFields": ["type", "oauth", "external_account", "tos_acceptance"]
+  },
+  "accountLink": {
+    "type": "account_onboarding",
+    "collectionFields": "eventually_due",
+    "forbiddenTypes": ["account_update"],
+    "singleUse": true,
+    "persistUrl": false
+  },
+  "price": {
+    "type": "one_time",
+    "customUnitAmount": {
+      "enabled": true,
+      "minimum": 100,
+      "maximum": 99999999,
+      "preset": 2500
+    },
+    "recurringCustomAmountSupported": false
+  },
+  "paymentLink": {
+    "submitType": "donate",
+    "quantity": 1,
+    "requestContext": "stripeAccount",
+    "forbiddenFields": [
+      "application_fee_amount",
+      "application_fee_percent",
+      "on_behalf_of",
+      "transfer_data"
+    ]
+  },
+  "eventDestination": {
+    "source": "connected_accounts",
+    "payloadStyle": "snapshot",
+    "events": [
+      "account.updated",
+      "capability.updated",
+      "account.application.deauthorized",
+      "account.external_account.updated",
+      "payment_link.updated",
+      "checkout.session.completed",
+      "checkout.session.async_payment_succeeded",
+      "checkout.session.async_payment_failed",
+      "checkout.session.expired",
+      "payment_intent.processing",
+      "payment_intent.succeeded",
+      "payment_intent.payment_failed",
+      "payment_intent.canceled",
+      "charge.succeeded",
+      "charge.updated",
+      "refund.created",
+      "refund.updated",
+      "refund.failed",
+      "charge.dispute.created",
+      "charge.dispute.updated",
+      "charge.dispute.funds_withdrawn",
+      "charge.dispute.funds_reinstated",
+      "charge.dispute.closed",
+      "payout.failed"
+    ],
+    "canonicalGrossEvent": "payment_intent.succeeded",
+    "deliveryDedupe": "event_id",
+    "semanticDedupe": [
+      "connected_account_id",
+      "event_family",
+      "object_id",
+      "financial_transition",
+      "balance_transaction_id"
+    ]
+  },
+  "secrets": [
+    "STRIPE_CONNECT_WEBHOOK_SECRET",
+    "STRIPE_TEST_CONNECT_WEBHOOK_SECRET"
+  ],
+  "environments": [
+    {
+      "id": "local",
+      "apiKey": "STRIPE_TEST_SECRET_KEY",
+      "secret": "cli_local",
+      "livemode": false
+    },
+    {
+      "id": "preview",
+      "apiKey": "STRIPE_TEST_SECRET_KEY",
+      "secret": "STRIPE_TEST_CONNECT_WEBHOOK_SECRET",
+      "livemode": false
+    },
+    {
+      "id": "production_test",
+      "apiKey": "STRIPE_TEST_SECRET_KEY",
+      "secret": "STRIPE_CONNECT_WEBHOOK_SECRET",
+      "livemode": false
+    },
+    {
+      "id": "production_live",
+      "apiKey": "STRIPE_SECRET_KEY",
+      "secret": "STRIPE_CONNECT_WEBHOOK_SECRET",
+      "livemode": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "controller-exact",
+      "expected": "accept"
+    },
+    {
+      "id": "legacy-account-type-present",
+      "expected": "reject"
+    },
+    {
+      "id": "unsupported-country",
+      "expected": "reject"
+    },
+    {
+      "id": "capability-not-active",
+      "expected": "not_ready"
+    },
+    {
+      "id": "account-link-reused",
+      "expected": "reauthorize_and_refresh"
+    },
+    {
+      "id": "onboarding-return-incomplete",
+      "expected": "requirements_due"
+    },
+    {
+      "id": "connected-context-missing",
+      "expected": "reject"
+    },
+    {
+      "id": "application-fee-present",
+      "expected": "reject"
+    },
+    {
+      "id": "recurring-custom-amount",
+      "expected": "reject"
+    },
+    {
+      "id": "payment-intent-succeeded",
+      "expected": "post_gross_once"
+    },
+    {
+      "id": "checkout-completed-before-payment",
+      "expected": "correlate_only"
+    },
+    {
+      "id": "refund-pending-then-succeeded",
+      "expected": "post_refund_once"
+    },
+    {
+      "id": "refund-failed",
+      "expected": "no_refund_debit"
+    },
+    {
+      "id": "dispute-funds-withdrawn",
+      "expected": "post_dispute_debit_once"
+    },
+    {
+      "id": "dispute-funds-reinstated",
+      "expected": "post_dispute_credit_once"
+    },
+    {
+      "id": "duplicate-event-id",
+      "expected": "ignore_delivery"
+    },
+    {
+      "id": "equivalent-object-event",
+      "expected": "ignore_effect"
+    },
+    {
+      "id": "out-of-order-event",
+      "expected": "retain_newer_state"
+    },
+    {
+      "id": "wrong-livemode",
+      "expected": "reject"
+    },
+    {
+      "id": "unknown-connected-account",
+      "expected": "quarantine"
+    },
+    {
+      "id": "unrelated-account-revenue",
+      "expected": "exclude"
+    },
+    {
+      "id": "payout-failed",
+      "expected": "remediate_without_campaign_effect"
+    },
+    {
+      "id": "reconciliation-newer-than-webhook",
+      "expected": "repair_without_double_count"
+    },
+    {
+      "id": "preview-live-key",
+      "expected": "fail_closed"
+    }
+  ]
+}

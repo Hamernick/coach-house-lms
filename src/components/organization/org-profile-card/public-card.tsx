@@ -7,7 +7,6 @@ import { Separator } from "@/components/ui/separator"
 
 import type { OrgProfile, OrgProgram } from "./types"
 import { buildAddressLines } from "./utils"
-import { FieldText, FormRow } from "./shared"
 import {
   OrgProfilePublicAboutSection,
   OrgProfilePublicDetailsSection,
@@ -69,25 +68,18 @@ export function OrgProfilePublicCard({
     typeof profile.description === "string"
       ? stripHtml(profile.description)
       : ""
-  const mission =
-    typeof profile.mission === "string" ? stripHtml(profile.mission) : ""
-  const vision =
-    typeof profile.vision === "string" ? stripHtml(profile.vision) : ""
-  const need =
-    typeof profile.need === "string" ? stripHtml(profile.need) : ""
-  const values =
-    typeof profile.values === "string" ? stripHtml(profile.values) : ""
+  const mission = typeof profile.mission === "string" ? profile.mission : ""
+  const vision = typeof profile.vision === "string" ? profile.vision : ""
+  const need = typeof profile.need === "string" ? stripHtml(profile.need) : ""
+  const values = typeof profile.values === "string" ? profile.values : ""
   const originStory =
-    typeof profile.originStory === "string" ? stripHtml(profile.originStory) : ""
+    typeof profile.originStory === "string"
+      ? stripHtml(profile.originStory)
+      : ""
   const theoryOfChange =
     typeof profile.theoryOfChange === "string"
       ? stripHtml(profile.theoryOfChange)
       : ""
-  const boilerplate =
-    typeof profile.boilerplate === "string"
-      ? stripHtml(profile.boilerplate)
-      : ""
-
   return (
     <Card className="bg-card/70 w-full overflow-hidden py-0 pb-10 shadow-xl shadow-black/10">
       <OrgProfilePublicHeader profile={profile} />
@@ -128,18 +120,7 @@ export function OrgProfilePublicCard({
           governingBoard={governingBoard}
           advisoryBoard={advisoryBoard}
           supporterRoster={supporterRoster}
-          showBoilerplateSeparator={boilerplate.trim().length > 0}
         />
-
-        {boilerplate.trim().length > 0 ? (
-          <FormRow
-            title="Boilerplate"
-            description="Shareable summary"
-            inset={false}
-          >
-            <FieldText text={boilerplate} multiline />
-          </FormRow>
-        ) : null}
       </CardContent>
     </Card>
   )

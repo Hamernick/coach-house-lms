@@ -13,7 +13,7 @@ describe("member workspace person options", () => {
         Promise.resolve({
           data: [{ user_id: "org-1" }],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -37,7 +37,7 @@ describe("member workspace person options", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -70,7 +70,7 @@ describe("member workspace person options", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -110,7 +110,7 @@ describe("member workspace person options", () => {
     ])
   })
 
-  it("includes coach house admins ahead of the organization team when requested", async () => {
+  it("includes Coach House staff ahead of the organization team when requested", async () => {
     const organizationsQuery = {
       select: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
@@ -118,7 +118,7 @@ describe("member workspace person options", () => {
         Promise.resolve({
           data: [{ user_id: "org-1" }],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -136,33 +136,26 @@ describe("member workspace person options", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
-    const platformAdminsQuery = {
+    const platformStaffQuery = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
           data: [
             {
-              id: "platform-admin-1",
-              full_name: "Alex Admin",
-              avatar_url: null,
-              email: "alex.admin@example.com",
-              role: "admin",
+              user_id: "platform-admin-1",
+              access_level: "developer",
             },
             {
-              id: "platform-admin-2",
-              full_name: "Paula Admin",
-              avatar_url: null,
-              email: "paula.admin@example.com",
-              role: "admin",
+              user_id: "platform-admin-2",
+              access_level: "coach",
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -202,7 +195,7 @@ describe("member workspace person options", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -210,11 +203,8 @@ describe("member workspace person options", () => {
       from: vi.fn((table: string) => {
         if (table === "organizations") return organizationsQuery
         if (table === "organization_memberships") return membershipsQuery
-        if (table === "profiles") {
-          return platformAdminsQuery.select.mock.calls.length === 0
-            ? platformAdminsQuery
-            : profilesByIdQuery
-        }
+        if (table === "platform_staff_members") return platformStaffQuery
+        if (table === "profiles") return profilesByIdQuery
         throw new Error(`Unexpected table query: ${table}`)
       }),
     } as never
@@ -228,12 +218,13 @@ describe("member workspace person options", () => {
     expect(options[0]).toMatchObject({
       id: "platform-admin-1",
       groupKey: "platform-admins",
-      groupLabel: "Coach House admins",
-      roleLabel: "Coach House admin",
+      groupLabel: "Coach House staff",
+      roleLabel: "Developer",
     })
     expect(options[1]).toMatchObject({
       id: "platform-admin-2",
       groupKey: "platform-admins",
+      roleLabel: "Coach",
     })
     expect(options.some((option) => option.id === "staff-1")).toBe(true)
   })

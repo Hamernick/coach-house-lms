@@ -8,9 +8,12 @@ const { resolveMemberWorkspaceActorContextMock } = vi.hoisted(() => ({
   resolveMemberWorkspaceActorContextMock: vi.fn(),
 }))
 
-vi.mock("@/features/member-workspace/server/member-workspace-actor-context", () => ({
-  resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
-}))
+vi.mock(
+  "@/features/member-workspace/server/member-workspace-actor-context",
+  () => ({
+    resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
+  })
+)
 
 import {
   createMemberWorkspaceProjectNoteAction,
@@ -35,15 +38,30 @@ describe("member workspace project note actions", () => {
     resolveMemberWorkspaceActorContextMock.mockReset()
   })
 
-  it("rejects platform admins when they try to create organization notes", async () => {
+  it("allows platform admins to create organization notes", async () => {
     const projectQuery = createProjectQuery({
       id: "project-1",
       org_id: "org-1",
     })
+    const insertedPayloads: unknown[] = []
+    const notesTable = {
+      insert: vi.fn((payload: unknown) => {
+        insertedPayloads.push(payload)
+        return notesTable
+      }),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { id: "note-admin-1" },
+        error: null,
+      }),
+    }
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "organization_projects") {
           return projectQuery
+        }
+        if (table === "organization_project_notes") {
+          return notesTable
         }
         throw new Error(`Unexpected table query: ${table}`)
       }),
@@ -62,11 +80,20 @@ describe("member workspace project note actions", () => {
         projectId: "project-1",
         title: "Internal notes",
         content: "Keep this private to admins",
-      }),
+      })
     ).resolves.toEqual({
-      error:
-        "Platform admins can view organization project details here, but cannot edit them.",
+      ok: true,
+      noteId: "note-admin-1",
     })
+
+    expect(insertedPayloads[0]).toMatchObject({
+      org_id: "org-1",
+      project_id: "project-1",
+      title: "Internal notes",
+      created_by: "platform-admin-1",
+    })
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
   })
 
   it("rejects free users before loading project detail mutations", async () => {
@@ -88,7 +115,7 @@ describe("member workspace project note actions", () => {
         projectId: "project-1",
         title: "Free notes",
         content: "Should not write",
-      }),
+      })
     ).resolves.toEqual({ error: MEMBER_WORKSPACE_UPGRADE_MESSAGE })
 
     expect(supabase.from).not.toHaveBeenCalled()
@@ -137,7 +164,7 @@ describe("member workspace project note actions", () => {
         title: "Board recording",
         content: "<p>Attached recording</p>",
         noteType: "audio",
-      }),
+      })
     ).resolves.toEqual({
       ok: true,
       noteId: "note-1",
@@ -193,7 +220,7 @@ describe("member workspace project note actions", () => {
         title: "Board recording",
         content: "<p>Updated with a recording link</p>",
         noteType: "audio",
-      }),
+      })
     ).resolves.toEqual({
       ok: true,
       noteId: "note-1",

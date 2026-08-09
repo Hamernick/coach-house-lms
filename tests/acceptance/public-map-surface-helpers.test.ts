@@ -10,7 +10,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 540,
         sidebarMode: "search",
         portalContainerReady: false,
-      }),
+      })
     ).toEqual({
       panelPresentation: null,
       panelReady: false,
@@ -25,7 +25,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 540,
         sidebarMode: "search",
         portalContainerReady: false,
-      }),
+      })
     ).toEqual({
       panelPresentation: "drawer",
       panelReady: false,
@@ -40,7 +40,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 540,
         sidebarMode: "search",
         portalContainerReady: true,
-      }),
+      })
     ).toEqual({
       panelPresentation: "drawer",
       panelReady: true,
@@ -48,7 +48,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
     })
   })
 
-  it("allows rail mode immediately once the surface width is measured", () => {
+  it("keeps wide surfaces on the drawer and waits for its portal", () => {
     const state = resolvePublicMapSurfacePanelState({
       surfaceWidth: 900,
       surfaceHeight: 540,
@@ -56,9 +56,9 @@ describe("resolvePublicMapSurfacePanelState", () => {
       portalContainerReady: false,
     })
 
-    expect(state.panelPresentation).toBe("rail")
-    expect(state.panelReady).toBe(true)
-    expect(state.sidebarWidth).toBeGreaterThan(0)
+    expect(state.panelPresentation).toBe("drawer")
+    expect(state.panelReady).toBe(false)
+    expect(state.sidebarWidth).toBe(0)
   })
 
   it("keeps the panel hidden until the surface height is measured", () => {
@@ -68,7 +68,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 0,
         sidebarMode: "search",
         portalContainerReady: true,
-      }),
+      })
     ).toEqual({
       panelPresentation: null,
       panelReady: false,

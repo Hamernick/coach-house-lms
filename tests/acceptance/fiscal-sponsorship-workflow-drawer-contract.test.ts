@@ -11,9 +11,13 @@ function readSource(relativePath: string) {
 
 describe("fiscal sponsorship workspace drawer contract", () => {
   it("keeps the workspace card on the drawer flow instead of a project workbench link", () => {
-    const workspaceCardSummary = readSource(
+    const workspaceCardSummaryController = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-summary.tsx"
     )
+    const workspaceCardSurface = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-surface.tsx"
+    )
+    const workspaceCardSummary = `${workspaceCardSummaryController}\n${workspaceCardSurface}`
     const data = readSource(
       "src/features/fiscal-sponsorship/lib/prototype-data.ts"
     )
@@ -78,10 +82,13 @@ describe("fiscal sponsorship workspace drawer contract", () => {
       "pointer-events-none grid-rows-[0fr] opacity-0"
     )
     expect(workflowDrawer).toContain(
-      "text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 flex-1 rounded-[2rem] border p-3 shadow-sm"
+      "text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 min-w-0 flex-1 overflow-hidden rounded-[2rem] border p-3 shadow-sm"
     )
     expect(workflowDrawer).toContain(
-      'viewportClassName="max-h-[calc(100svh-15rem)] rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem]"'
+      'viewportClassName="max-h-[calc(100svh-15rem)] max-w-full overflow-x-hidden rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem] [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"'
+    )
+    expect(workflowDrawer).toContain(
+      'contentClassName="min-w-0 max-w-full overflow-hidden [&>*]:min-w-0 [&>*]:max-w-full"'
     )
     expect(workflowDrawer).not.toContain("space-y-4")
   })
@@ -90,9 +97,14 @@ describe("fiscal sponsorship workspace drawer contract", () => {
     const uploadPanel = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-documents-upload-panel.tsx"
     )
+    const projectAssetUpload = readSource(
+      "src/features/fiscal-sponsorship/lib/project-asset-upload.ts"
+    )
 
-    expect(uploadPanel).toContain('fetch("/api/account/project-assets"')
+    expect(uploadPanel).toContain("uploadFiscalSponsorshipProjectAsset")
+    expect(projectAssetUpload).toContain('fetch("/api/account/project-assets"')
     expect(uploadPanel).toContain("connectFiscalSponsorshipDocumentAsset")
+    expect(uploadPanel).toContain("[overflow-wrap:anywhere]")
     expect(uploadPanel).toContain(
       "Grant requests and reports come after signing"
     )

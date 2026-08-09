@@ -8,7 +8,11 @@ export function resolveCanvasSectionBehavior(
   sectionId: string
 ): CanvasSectionBehavior {
   const isMapSection = sectionId === "find"
-  const scrollable = sectionId === "pricing" || sectionId === "accelerator"
+  const scrollable =
+    sectionId === "hero" ||
+    sectionId === "pricing" ||
+    sectionId === "platform" ||
+    sectionId === "accelerator"
   return {
     scrollable,
     touchAction: isMapSection ? "auto" : scrollable ? "pan-y" : "pan-x",

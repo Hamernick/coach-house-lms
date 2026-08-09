@@ -29,8 +29,19 @@ import type { WorkspaceCardReadiness } from "./workspace-canvas-card-readiness"
 import { resolveWorkspaceCanvasBranchStyle } from "./workspace-canvas-branch-style"
 
 const WORKSPACE_CANVAS_V2_CARD_ID_SET = new Set<WorkspaceCanvasV2CardId>(
-  WORKSPACE_CANVAS_V2_CARD_IDS,
+  WORKSPACE_CANVAS_V2_CARD_IDS
 )
+
+const WORKSPACE_CONNECTION_LABELS = {
+  "workspace-link": "connected to",
+  "organization-context": "informs",
+  "program-plan": "plans",
+  tasks: "requires",
+  "brand-assets": "uses",
+  "financial-model": "funds",
+  schedule: "schedules",
+  campaign: "publishes",
+} as const
 
 type WorkspaceConnectionValidationFailureReason = Extract<
   WorkspaceConnectionValidationResult,
@@ -73,7 +84,9 @@ export type WorkspaceCanvasDisconnectActionSets = {
   targetConnectionIds: string[]
 }
 
-function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2CardId {
+function isWorkspaceCanvasV2CardId(
+  value: string
+): value is WorkspaceCanvasV2CardId {
   return WORKSPACE_CANVAS_V2_CARD_ID_SET.has(value as WorkspaceCanvasV2CardId)
 }
 
@@ -215,7 +228,7 @@ export function buildWorkspaceCanvasV2Edges({
       target: connection.target,
       sourceHandle: handleIds?.sourceHandle,
       targetHandle: handleIds?.targetHandle,
-      type: "smoothstep",
+      type: "workspace-ontology",
       animated: false,
       style: resolveWorkspaceCanvasBranchStyle({
         readiness: readinessMap[connection.target],
@@ -223,6 +236,7 @@ export function buildWorkspaceCanvasV2Edges({
       }),
       data: {
         role: "workspace-card-connection",
+        label: WORKSPACE_CONNECTION_LABELS[validation.matchedPortType],
         portType: validation.matchedPortType,
         readiness: readinessMap[connection.target].status,
       },
@@ -272,10 +286,10 @@ export function buildWorkspaceCanvasV2Edges({
 }
 
 export function shouldLogWorkspaceCanvasDroppedConnections(
-  droppedConnections: WorkspaceCanvasDroppedConnection[],
+  droppedConnections: WorkspaceCanvasDroppedConnection[]
 ) {
   return droppedConnections.some(
-    (connection) => connection.reason !== "hidden-node-id",
+    (connection) => connection.reason !== "hidden-node-id"
   )
 }
 

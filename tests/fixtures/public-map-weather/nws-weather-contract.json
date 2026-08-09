@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-06T10:46:59Z",
+  "source": "https://api.weather.gov",
+  "userAgent": "CoachHouseFind/1.0 (https://coachhouse.app)",
+  "currentHeatAlertEvents": [
+    "Heat Advisory",
+    "Extreme Heat Watch",
+    "Extreme Heat Warning"
+  ],
+  "legacyEventAliases": {
+    "Excessive Heat Watch": "Extreme Heat Watch",
+    "Excessive Heat Warning": "Extreme Heat Warning"
+  },
+  "threshold": {
+    "metrics": ["heatIndex", "apparentTemperature", "temperature"],
+    "minimumCelsius": 37.78,
+    "minimumConsecutiveHours": 2,
+    "windowHours": 24
+  },
+  "cacheSeconds": {
+    "pointFresh": 86400,
+    "pointStaleIfError": 604800,
+    "forecastFresh": 1800,
+    "forecastStaleIfError": 21600,
+    "alertsFresh": 120,
+    "alertsStaleIfError": 900
+  },
+  "cases": [
+    {
+      "id": "current-heat-advisory",
+      "input": { "event": "Heat Advisory", "active": true },
+      "expectedSignal": "official_alert"
+    },
+    {
+      "id": "current-extreme-heat-watch",
+      "input": { "event": "Extreme Heat Watch", "active": true },
+      "expectedSignal": "official_alert"
+    },
+    {
+      "id": "current-extreme-heat-warning",
+      "input": { "event": "Extreme Heat Warning", "active": true },
+      "expectedSignal": "official_alert"
+    },
+    {
+      "id": "legacy-excessive-warning",
+      "input": { "event": "Excessive Heat Warning", "active": true },
+      "expectedNormalizedEvent": "Extreme Heat Warning",
+      "expectedSignal": "official_alert"
+    },
+    {
+      "id": "expired-alert",
+      "input": { "event": "Heat Advisory", "active": false },
+      "expectedSignal": "none"
+    },
+    {
+      "id": "forecast-threshold-two-hours",
+      "input": { "metric": "heatIndex", "celsius": [37.78, 38.3] },
+      "expectedSignal": "forecast_threshold"
+    },
+    {
+      "id": "forecast-threshold-one-hour",
+      "input": { "metric": "apparentTemperature", "celsius": [37.78, 37.2] },
+      "expectedSignal": "none"
+    },
+    {
+      "id": "forecast-below-threshold",
+      "input": { "metric": "temperature", "celsius": [34.4, 35.0] },
+      "expectedSignal": "none"
+    },
+    {
+      "id": "malformed-forecast",
+      "input": { "metric": "unknown", "celsius": [null] },
+      "expectedSignal": "none"
+    },
+    {
+      "id": "fresh-upstream-failure-with-stale-cache",
+      "input": { "upstreamStatus": 503, "staleAgeSeconds": 300 },
+      "expectedFreshness": "stale"
+    },
+    {
+      "id": "expired-stale-cache",
+      "input": { "upstreamStatus": 429, "staleAgeSeconds": 21601 },
+      "expectedSignal": "none"
+    },
+    {
+      "id": "zero-eligible-cooling-resources",
+      "input": { "weatherSignal": "official_alert", "eligibleResources": 0 },
+      "expectedSignal": "official_alert",
+      "expectedPromotedResources": 0
+    }
+  ]
+}

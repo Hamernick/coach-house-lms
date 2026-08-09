@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import type { ReactNode } from "react"
+import type { MouseEvent, ReactNode } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ExpandIcon from "lucide-react/dist/esm/icons/expand"
 import Maximize2Icon from "lucide-react/dist/esm/icons/maximize-2"
 import Minimize2Icon from "lucide-react/dist/esm/icons/minimize-2"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
+import PencilIcon from "lucide-react/dist/esm/icons/pencil"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,7 @@ type WorkspaceBoardCardHeaderProps = {
   fullHref: string
   canEdit: boolean
   editorHref?: string | null
+  onEditorOpen?: () => void
   menuActions?: WorkspaceCardOverflowAction[]
   isCanvasFullscreen?: boolean
   onToggleCanvasFullscreen?: () => void
@@ -45,6 +47,9 @@ type WorkspaceBoardCardHeaderProps = {
   compactTitleBottomGap?: boolean
   surface?: "frame" | "card"
 }
+
+const CARD_SURFACE_ICON_BUTTON_HOVER_CLASS_NAME =
+  "[&_[data-slot=button]:hover]:!bg-background [&_[data-slot=button]:hover]:!text-foreground"
 
 export function WorkspaceBoardCardHeader({
   title,
@@ -61,6 +66,7 @@ export function WorkspaceBoardCardHeader({
   fullHref: _fullHref,
   canEdit,
   editorHref = null,
+  onEditorOpen,
   menuActions = [],
   isCanvasFullscreen = false,
   onToggleCanvasFullscreen,
@@ -92,18 +98,33 @@ export function WorkspaceBoardCardHeader({
   const defaultTitleClassName = presentationMode
     ? WORKSPACE_TEXT_STYLES.cardTitleCompact
     : WORKSPACE_TEXT_STYLES.cardTitle
+  const handleEditorLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (
+      !onEditorOpen ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    onEditorOpen()
+  }
 
   return (
     <Header
       className={cn(
         surface === "card"
-          ? "relative flex flex-col gap-2 px-3 pt-0 pb-3"
+          ? "relative -mt-1 flex flex-col gap-2 px-3 pt-0 pb-2"
           : "px-4 pt-3 pb-2",
         surface === "frame" &&
           (presentationMode ? "space-y-1.5 px-3.5 pt-2.5 pb-1.5" : "space-y-2"),
         surface === "card" &&
           presentationMode &&
           "gap-1.5 px-3.5 pt-2.5 pb-1.5",
+        surface === "card" && CARD_SURFACE_ICON_BUTTON_HOVER_CLASS_NAME,
         compactTitleBottomGap &&
           !presentationMode &&
           showHeaderCopy &&
@@ -191,13 +212,14 @@ export function WorkspaceBoardCardHeader({
               asChild
               variant="ghost"
               size="icon"
-              className="nodrag nopan h-7 w-7"
+              className="nodrag nopan relative"
             >
-              <Link href={editorHref as string} aria-label="Open card editor">
-                <Maximize2Icon
-                  className="text-muted-foreground h-3.5 w-3.5"
-                  aria-hidden
-                />
+              <Link
+                href={editorHref as string}
+                aria-label="Edit card"
+                onClick={handleEditorLinkClick}
+              >
+                <PencilIcon className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
           ) : null}
@@ -328,8 +350,11 @@ export function WorkspaceBoardCardHeader({
                       size="sm"
                       className="nodrag nopan h-8 justify-start"
                     >
-                      <Link href={editorHref as string}>
-                        <ExpandIcon className="h-3.5 w-3.5" aria-hidden />
+                      <Link
+                        href={editorHref as string}
+                        onClick={handleEditorLinkClick}
+                      >
+                        <PencilIcon className="h-3.5 w-3.5" aria-hidden />
                         Edit
                       </Link>
                     </Button>

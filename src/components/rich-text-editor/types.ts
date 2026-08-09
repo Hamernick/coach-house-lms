@@ -28,6 +28,7 @@ export type RichTextEditorProps = {
     file: File
   }) => void | Promise<void>
   insertUploadedImage?: boolean
+  preserveImages?: boolean
   onImagePickerReady?: (open: (() => void) | null) => void
   toolbarPortalId?: string
   toolbarClassName?: string

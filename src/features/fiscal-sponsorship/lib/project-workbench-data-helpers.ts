@@ -9,7 +9,6 @@ import type {
   FiscalSponsorshipProjectWorkflowSummaryDocument,
   FiscalSponsorshipSignaturePacketStatus,
 } from "../types"
-
 export function isApplicationSubmittedOrLater(
   status: FiscalSponsorshipApplicationStatus | null | undefined
 ) {
@@ -33,6 +32,17 @@ export function isApplicationApprovedOrLater(
   return Boolean(
     status &&
     ["approved", "agreement_ready", "signed", "countersigned"].includes(status)
+  )
+}
+
+export function isAcceptedCompletedW9Document(
+  document: FiscalSponsorshipProjectWorkflowSummaryDocument
+) {
+  return (
+    document.documentKey === "tax_id_confirmation" &&
+    document.kind === "tax_form" &&
+    document.status === "executed" &&
+    document.reviewStatus === "accepted"
   )
 }
 
@@ -61,13 +71,13 @@ export function formatDocumentStatus(
     draft: "Draft",
     error: "Error",
     executed: "Executed",
-    generated: "Generated",
+    generated: "Prepared",
     partially_signed: "Partially signed",
     sent_for_signature: "Sent for signature",
     voided: "Voided",
   }
 
-  return status ? labels[status] : "Not generated"
+  return status ? labels[status] : "Not prepared"
 }
 
 export function formatPacketStatus(
@@ -149,15 +159,18 @@ export function resolveCoachSigningStatus(
 ) {
   if (!status) return "Not sent"
   if (["coach_signed", "completed"].includes(status)) return "Signed"
+  if (status === "sent") return "Waiting for applicant"
+  if (status === "applicant_signed") return "Needs signature"
   if (["declined", "voided", "error"].includes(status)) {
     return formatPacketStatus(status)
   }
-  return "Needs signature"
+  return formatPacketStatus(status)
 }
 
 export function getFiscalWorkflowNextStep({
   agreementDocumentStatus,
   applicationStatus,
+  hasAcceptedCompletedW9,
   hasCloseoutReport,
   hasGrantRequestSupport,
   hasReportSupport,
@@ -165,6 +178,7 @@ export function getFiscalWorkflowNextStep({
 }: {
   agreementDocumentStatus?: FiscalSponsorshipDocumentStatus | null
   applicationStatus?: FiscalSponsorshipApplicationStatus | null
+  hasAcceptedCompletedW9?: boolean
   hasCloseoutReport?: boolean
   hasGrantRequestSupport?: boolean
   hasReportSupport?: boolean
@@ -184,6 +198,10 @@ export function getFiscalWorkflowNextStep({
 
   if (applicationStatus === "declined") {
     return "Review decline reason before restarting"
+  }
+
+  if (!agreementDocumentStatus && !hasAcceptedCompletedW9) {
+    return "Complete and accept the signed W-9"
   }
 
   if (!agreementDocumentStatus || agreementDocumentStatus === "draft") {
@@ -304,17 +322,20 @@ export function buildWorkflowPhases({
   const hasApprovedApplication = isApplicationApprovedOrLater(applicationStatus)
   const hasCompletedSignaturePacket = signaturePacketStatus === "completed"
   const applicantSigningHref =
-    signaturePacketStatus &&
-    ["sent", "coach_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus && signaturePacketStatus === "sent"
       ? (signaturePacket?.applicantSigningHref ?? null)
       : null
   const coachSigningHref =
-    signaturePacketStatus &&
-    ["sent", "applicant_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus && signaturePacketStatus === "applicant_signed"
       ? (signaturePacket?.coachSigningHref ?? null)
       : null
   const signingHref: string | null =
     applicantSigningHref ?? coachSigningHref ?? null
+  const signingActionLabel = applicantSigningHref
+    ? "Review and sign"
+    : coachSigningHref
+      ? "Countersign"
+      : null
 
   return [
     {
@@ -360,21 +381,27 @@ export function buildWorkflowPhases({
       id: "agreement",
       label: "Agreement",
       description:
-        "Coach House prepares the Model C agreement from confirmed intake data and stores it with the project.",
+        "Coach House prepares the Form B agreement from confirmed intake data and stores it with the project.",
       statusLabel: formatDocumentStatus(agreementDocument?.status),
       complete: Boolean(agreementDocument),
-      actionLabel: agreementDocument?.viewHref ? "View" : "Waiting",
-      actionType: agreementDocument?.viewHref ? "document" : "waiting",
-      href: agreementDocument?.viewHref ?? null,
+      actionLabel:
+        signingActionLabel ??
+        (agreementDocument?.viewHref ? "View PDF" : "Waiting"),
+      actionType: signingHref
+        ? "signature"
+        : agreementDocument?.viewHref
+          ? "document"
+          : "waiting",
+      href: signingHref ?? agreementDocument?.viewHref ?? null,
     },
     {
       id: "signatures",
       label: "Signature packet",
       description:
-        "Applicant and Coach House sign in DocuSeal; executed files and audit records are saved back to the project.",
+        "The applicant signs first in Coach House, then a super admin countersigns. Executed files and audit records stay private.",
       statusLabel: formatPacketStatus(signaturePacketStatus),
       complete: hasCompletedSignaturePacket,
-      actionLabel: signingHref ? "Sign" : "Waiting",
+      actionLabel: signingActionLabel ?? "Waiting",
       actionType: signingHref ? "signature" : "waiting",
       href: signingHref,
     },
@@ -468,7 +495,7 @@ export function buildWorkflowPhases({
             id: "executed-agreement",
             label: "Executed agreement",
             description:
-              "Final signed agreement stored in project assets after DocuSeal completion.",
+              "Final signed agreement stored privately after both signatures are complete.",
             statusLabel: formatDocumentStatus(executedAgreementDocument.status),
             complete: true,
             actionLabel: "View",

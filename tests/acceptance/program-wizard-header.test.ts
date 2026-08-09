@@ -42,6 +42,10 @@ describe("program wizard header", () => {
     expect(headerSource).toContain("px-3 py-3 sm:px-5 sm:py-4 md:px-6")
     expect(headerSource).toContain("flex min-w-0 flex-1 flex-col gap-1")
     expect(headerSource).toContain("text-pretty")
+    expect(headerSource).toContain(
+      'className="text-muted-foreground text-[11px] font-medium tabular-nums"'
+    )
+    expect(headerSource).not.toContain('variant="outline"')
     expect(footerSource).toContain(
       "flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between"
     )

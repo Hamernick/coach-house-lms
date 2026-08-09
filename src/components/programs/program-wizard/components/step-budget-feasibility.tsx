@@ -45,7 +45,7 @@ export function StepBudgetFeasibility({
   return (
     <section className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden">
       <div className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden">
-        <div className="bg-muted/35 sticky top-0 z-10 grid w-full max-w-full min-w-0 gap-3 pb-3">
+        <div className="bg-muted/35 sticky top-0 z-10 grid w-full max-w-full min-w-0 gap-3 pb-3 sm:grid-cols-3">
           <div className="border-border/60 bg-background/30 rounded-xl border p-4">
             <div className="text-muted-foreground flex items-center gap-2 text-xs tracking-wide uppercase">
               <ReceiptTextIcon className="h-3.5 w-3.5" aria-hidden />
@@ -95,7 +95,7 @@ export function StepBudgetFeasibility({
               isStepper={false}
               labelClassName="text-sm font-medium text-foreground"
               labelText="Budget breakdown"
-              layout="stacked"
+              layout="grid"
               updateValue={(_name, value) =>
                 update({
                   budgetRows: value as ProgramWizardFormState["budgetRows"],

@@ -130,7 +130,7 @@ export function WorkspaceBoardProgramsCard({
 
     return (
       <ProgramCard
-        title={program.title?.trim() || "Untitled object"}
+        title={program.title?.trim() || "Untitled activity"}
         location={locationSummary(program) ?? undefined}
         description={resolveProgramSummary(program) ?? undefined}
         bannerImageUrl={resolveProgramBannerImageUrl(program) ?? undefined}

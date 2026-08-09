@@ -1,20 +1,3 @@
 "use client"
 
-export const RESERVED_SLUGS = new Set([
-  "admin",
-  "api",
-  "login",
-  "signup",
-  "pricing",
-  "billing",
-  "class",
-  "dashboard",
-  "people",
-  "organization",
-  "my-organization",
-  "internal",
-  "_next",
-  "public",
-  "favicon",
-  "assets",
-])
+export { RESERVED_PUBLIC_ORGANIZATION_SLUGS as RESERVED_SLUGS } from "@/lib/organization/reserved-public-slugs"

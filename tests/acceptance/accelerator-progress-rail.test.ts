@@ -1,9 +1,18 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { resolveAcceleratorProgressRailState } from "@/components/accelerator/accelerator-progress-rail"
+import {
+  AcceleratorProgressRail,
+  resolveAcceleratorProgressRailState,
+} from "@/components/accelerator/accelerator-progress-rail"
+import {
+  resolveAcceleratorModuleProgressSegment,
+  resolveAcceleratorProgressSegment,
+} from "@/components/accelerator/accelerator-progress-segments"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
@@ -46,7 +55,7 @@ describe("accelerator progress rail", () => {
         width: 20,
         fillPercent: 0,
         active: false,
-        trackClassName: "bg-emerald-500/18 dark:bg-emerald-400/18",
+        trackClassName: "bg-emerald-500/25 dark:bg-emerald-400/25",
         fillClassName: "bg-emerald-500",
       },
       {
@@ -56,7 +65,7 @@ describe("accelerator progress rail", () => {
         width: 10,
         fillPercent: 0,
         active: false,
-        trackClassName: "bg-sky-500/18 dark:bg-sky-400/18",
+        trackClassName: "bg-sky-500/25 dark:bg-sky-400/25",
         fillClassName: "bg-sky-500",
       },
     ])
@@ -80,6 +89,46 @@ describe("accelerator progress rail", () => {
     ])
   })
 
+  it("keeps every segment measurable when checkpoints are invalid", () => {
+    const lowFundable = resolveAcceleratorProgressRailState({
+      progressPercent: 50,
+      fundableCheckpoint: -20,
+      verifiedCheckpoint: 200,
+    })
+    const highFundable = resolveAcceleratorProgressRailState({
+      progressPercent: 50,
+      fundableCheckpoint: 100,
+      verifiedCheckpoint: 0,
+    })
+
+    expect(lowFundable.segments.map((segment) => segment.width)).toEqual([
+      1, 98, 1,
+    ])
+    expect(highFundable.segments.map((segment) => segment.width)).toEqual([
+      98, 1, 1,
+    ])
+    expect(
+      lowFundable.segments.reduce((total, segment) => total + segment.width, 0)
+    ).toBe(100)
+    expect(
+      highFundable.segments.reduce((total, segment) => total + segment.width, 0)
+    ).toBe(100)
+  })
+
+  it("keeps the colored rail segments free of embedded icons", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(AcceleratorProgressRail, {
+        progressPercent: 80,
+      })
+    )
+
+    expect(markup).not.toContain('data-slot="accelerator-progress-milestone"')
+    expect(markup).toContain("bg-emerald-500")
+    expect(markup).toContain("bg-sky-500")
+    expect(markup).toContain("Fundable segment, 70-90%")
+    expect(markup).toContain("Verified segment, 90-100%")
+  })
+
   it("uses concise shadcn tooltips instead of separate milestone trigger buttons", () => {
     const source = readSource(
       "src/components/accelerator/accelerator-progress-rail.tsx"
@@ -100,9 +149,11 @@ describe("accelerator progress rail", () => {
     expect(source).toContain("formatSegmentStatusLabel")
     expect(source).toContain("segmentStatusLabels")
     expect(source).toContain('className="px-2.5 py-1.5"')
-    expect(source).toContain(
-      'className={cn("size-2 rounded-full", segment.fillClassName)}'
-    )
+    expect(source).not.toContain('data-slot="accelerator-progress-milestone"')
+    expect(source).toContain('className="bg-border/40 flex h-3')
+    expect(source).toContain('from "lucide-react/dist/esm/icons/dollar-sign"')
+    expect(source).toContain('from "lucide-react/dist/esm/icons/badge-check"')
+    expect(source).toContain("MILESTONE_VISUALS")
     expect(source).toContain("`${completeCount}/${items.length} ready`")
     expect(source).toContain('from "@/components/ui/button"')
     expect(source).toContain('variant="ghost"')
@@ -116,22 +167,28 @@ describe("accelerator progress rail", () => {
     expect(source).not.toContain('size="icon"')
     expect(source).not.toContain('aria-label="Fundable checkpoint"')
     expect(source).not.toContain('aria-label="Verified checkpoint"')
-    expect(source).not.toContain("DollarSignIcon")
-    expect(source).not.toContain("BadgeCheckIcon")
+    expect(source).toContain("DollarSignIcon")
+    expect(source).toContain("BadgeCheckIcon")
+    expect(source).toContain('"size-4 shrink-0"')
+    expect(source).not.toContain("milestoneVisual.iconWrapClassName")
   })
 
   it("uses distinct segment colors instead of a monochrome usage bar", () => {
     const source = readSource(
       "src/components/accelerator/accelerator-progress-rail.tsx"
     )
+    const visualSource = readSource(
+      "src/components/accelerator/accelerator-progress-segments.ts"
+    )
 
     expect(source).toContain("bg-border/40")
-    expect(source).toContain("bg-amber-500/20 dark:bg-amber-400/18")
-    expect(source).toContain("bg-emerald-500/18 dark:bg-emerald-400/18")
-    expect(source).toContain("bg-sky-500/18 dark:bg-sky-400/18")
-    expect(source).toContain('fillClassName: "bg-amber-500"')
-    expect(source).toContain('fillClassName: "bg-emerald-500"')
-    expect(source).toContain('fillClassName: "bg-sky-500"')
+    expect(source).toContain("ACCELERATOR_PROGRESS_SEGMENT_VISUALS")
+    expect(visualSource).toContain("bg-amber-500/20 dark:bg-amber-400/18")
+    expect(visualSource).toContain("bg-emerald-500/25 dark:bg-emerald-400/25")
+    expect(visualSource).toContain("bg-sky-500/25 dark:bg-sky-400/25")
+    expect(visualSource).toContain('fillClassName: "bg-amber-500"')
+    expect(visualSource).toContain('fillClassName: "bg-emerald-500"')
+    expect(visualSource).toContain('fillClassName: "bg-sky-500"')
 
     expect(source).not.toContain('segment.reached ? "bg-primary"')
     expect(source).not.toContain(
@@ -139,7 +196,34 @@ describe("accelerator progress rail", () => {
     )
     expect(source).not.toContain("border-zinc-300")
     expect(source).not.toContain("dark:border-zinc-600")
-    expect(source).not.toContain("text-emerald-")
-    expect(source).not.toContain("text-sky-")
+    expect(visualSource).toContain("text-emerald-600 dark:text-emerald-400")
+    expect(visualSource).toContain("text-sky-600 dark:text-sky-400")
+  })
+
+  it("resolves icon tones against the same segment thresholds", () => {
+    expect(resolveAcceleratorProgressSegment(0)).toBe("build")
+    expect(resolveAcceleratorProgressSegment(69)).toBe("build")
+    expect(resolveAcceleratorProgressSegment(70)).toBe("fundable")
+    expect(resolveAcceleratorProgressSegment(89)).toBe("fundable")
+    expect(resolveAcceleratorProgressSegment(90)).toBe("verified")
+
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 2,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("build")
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 8,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("fundable")
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 10,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("verified")
   })
 })

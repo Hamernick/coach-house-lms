@@ -7,10 +7,12 @@ import {
   WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
   WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
   WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
+  WORKSPACE_CANVAS_V2_ZOOM_PUNCH_MS,
 } from "./workspace-canvas-surface-v2-config"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import {
   executeWorkspaceCanvasViewportCommand,
+  resolveWorkspaceCanvasCameraDuration,
   resolveWorkspaceCanvasViewportCommand,
   type WorkspaceCanvasSceneFitRequest,
 } from "../runtime/workspace-canvas-viewport-command"
@@ -31,11 +33,19 @@ export function useWorkspaceCanvasViewportControls({
   visibleNodeIds: string[]
 }) {
   const handleZoomIn = useCallback(() => {
-    void flowInstanceRef.current?.zoomIn({ duration: 180 })
+    void flowInstanceRef.current?.zoomIn({
+      duration: resolveWorkspaceCanvasCameraDuration(
+        WORKSPACE_CANVAS_V2_ZOOM_PUNCH_MS
+      ),
+    })
   }, [flowInstanceRef])
 
   const handleZoomOut = useCallback(() => {
-    void flowInstanceRef.current?.zoomOut({ duration: 180 })
+    void flowInstanceRef.current?.zoomOut({
+      duration: resolveWorkspaceCanvasCameraDuration(
+        WORKSPACE_CANVAS_V2_ZOOM_PUNCH_MS
+      ),
+    })
   }, [flowInstanceRef])
 
   const handleRecenterView = useCallback(() => {

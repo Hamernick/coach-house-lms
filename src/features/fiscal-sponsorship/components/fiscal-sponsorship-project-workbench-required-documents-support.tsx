@@ -2,13 +2,32 @@
 
 import type { ReactNode } from "react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type {
   FiscalSponsorshipDocumentKey,
   FiscalSponsorshipDocumentReviewStatus,
   FiscalSponsorshipProjectWorkflowSummaryDocument,
 } from "../types"
+
+export function RequiredDocumentReviewBadge({
+  document,
+}: {
+  document: FiscalSponsorshipProjectWorkflowSummaryDocument | null
+}) {
+  return (
+    <Badge
+      className={cn(
+        "h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none",
+        getStatusTone(document?.reviewStatus)
+      )}
+    >
+      {formatReviewStatus(document?.reviewStatus)}
+    </Badge>
+  )
+}
 
 export function formatReviewStatus(
   status: FiscalSponsorshipDocumentReviewStatus | null | undefined

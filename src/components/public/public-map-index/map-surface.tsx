@@ -1,6 +1,14 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
@@ -8,65 +16,123 @@ import { cn } from "@/lib/utils"
 import type { SidebarMode } from "./constants"
 import { PublicMapAuthSheet } from "./auth-sheet"
 import { resolvePublicMapSurfacePanelState } from "./map-surface-helpers"
-import type { UserLocationFeedback } from "./user-location"
+import {
+  PublicMapLocationControl,
+  type PublicMapLocationControlState,
+} from "./location-control"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapSidebarSearchContext } from "./sidebar"
 import type { PublicMapPanelPresentation } from "./map-view-helpers"
+import type { PublicMapListItem } from "./map-items-state"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
+import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
+import type { PublicMapResourceGuide } from "./resource-guides"
+import type {
+  PublicMapGroupFilterCounts,
+  PublicMapGroupFilterKey,
+} from "./category-filter"
+import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
+import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
   sidebarMode: SidebarMode
+  filteredItems: PublicMapListItem[]
   filteredOrganizations: PublicMapOrganization[]
+  selectedItemId: string | null
   selectedOrganization: PublicMapOrganization | null
+  selectedResourceItem: ExternalResourceMapItem | null
+  canManageResourceMap?: boolean
+  organizationCurationAction?: PublicMapOrganizationCurationAction
+  resourceMapCurationAction?: PublicMapResourceCurationAction
   favorites: string[]
+  guides?: PublicMapResourceGuide[]
+  savedOrganizations: PublicMapOrganization[]
   query: string
+  activeGroup: PublicMapGroupFilterKey
+  groupCounts: PublicMapGroupFilterCounts
+  resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
+  resourceItemsLoadError?: string | null
+  searchPending: boolean
   tokenAvailable: boolean
   mapError: string | null
-  locationFeedback: UserLocationFeedback
+  locationControl: PublicMapLocationControlState
   preferencesSaveError: string | null
-  isSavingPreferences: boolean
   authSheetOpen: boolean
   authRedirectTo: string
   onQueryChange: (value: string) => void
+  onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
+  onRetryResourceItems: () => void
   onToggleFavorite: (orgId: string) => void
-  onOpenOrgDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
+  onGuideSelect?: (guideId: string) => void
+  onSelectOrganization: (organizationId: string) => void
+  onSelectItem: (itemId: string) => void
+  onOpenOrgDetails: (
+    orgId: string,
+    options?: { preserveSearchContext?: boolean }
+  ) => void
+  onBackToSearch: () => void
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
   onSidebarInsetChange?: (value: number) => void
   searchContext?: PublicMapSidebarSearchContext | null
   mapOverlay?: ReactNode
   renderDesktopSidebar?: boolean
-  onPanelPresentationChange?: (presentation: PublicMapPanelPresentation | null) => void
+  renderMobileDrawer?: boolean
+  onPanelPresentationChange?: (
+    presentation: PublicMapPanelPresentation | null
+  ) => void
 }
 
 export function PublicMapSurface({
   containerRef,
   sidebarMode,
+  filteredItems,
   filteredOrganizations,
+  selectedItemId,
   selectedOrganization,
+  selectedResourceItem,
+  canManageResourceMap = false,
+  organizationCurationAction,
+  resourceMapCurationAction,
   favorites,
+  guides = [],
+  savedOrganizations,
   query,
+  activeGroup,
+  groupCounts,
+  resourceItemsLoadStatus,
+  resourceItemsLoadError = null,
+  searchPending,
   tokenAvailable,
   mapError,
-  locationFeedback,
+  locationControl,
   preferencesSaveError,
-  isSavingPreferences,
   authSheetOpen,
   authRedirectTo,
   onQueryChange,
+  onActiveGroupChange,
+  onRetryResourceItems,
   onToggleFavorite,
+  onGuideSelect,
+  onSelectOrganization,
+  onSelectItem,
   onOpenOrgDetails,
+  onBackToSearch,
   onSidebarModeChange,
   onAuthSheetOpenChange,
   onSidebarInsetChange,
   searchContext = null,
   mapOverlay = null,
   renderDesktopSidebar = true,
+  renderMobileDrawer = true,
   onPanelPresentationChange,
 }: PublicMapSurfaceProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
-  const [panelPortalContainer, setPanelPortalContainer] = useState<HTMLDivElement | null>(null)
+  const [panelPortalContainer, setPanelPortalContainer] =
+    useState<HTMLDivElement | null>(null)
   const [surfaceWidth, setSurfaceWidth] = useState(0)
   const [surfaceHeight, setSurfaceHeight] = useState(0)
 
@@ -104,7 +170,7 @@ export function PublicMapSurface({
         sidebarMode,
         portalContainerReady: panelPortalContainer !== null,
       }),
-    [panelPortalContainer, sidebarMode, surfaceHeight, surfaceWidth],
+    [panelPortalContainer, sidebarMode, surfaceHeight, surfaceWidth]
   )
 
   const sidebarInset =
@@ -119,83 +185,113 @@ export function PublicMapSurface({
   }, [onPanelPresentationChange, panelPresentation, panelReady])
 
   return (
-    <div ref={surfaceRef} className="relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background">
+    <div
+      ref={surfaceRef}
+      className="bg-background relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden"
+    >
       <div
         ref={setPanelPortalContainer}
-        className="pointer-events-none absolute inset-0 z-30 overflow-hidden transform-gpu"
+        className="pointer-events-none absolute inset-0 z-50 transform-gpu overflow-hidden"
       />
-      {panelReady && panelPresentation && (panelPresentation === "drawer" || renderDesktopSidebar) ? (
+      {panelReady &&
+      panelPresentation &&
+      (panelPresentation === "drawer"
+        ? renderMobileDrawer
+        : renderDesktopSidebar) ? (
         <PublicMapSidebar
           sidebarMode={sidebarMode}
           sidebarWidth={sidebarWidth}
           surfaceHeight={surfaceHeight}
           panelPresentation={panelPresentation}
           portalContainer={panelPortalContainer}
+          filteredItems={filteredItems}
           filteredOrganizations={filteredOrganizations}
+          selectedItemId={selectedItemId}
           selectedOrganization={selectedOrganization}
+          selectedResourceItem={selectedResourceItem}
+          canManageResourceMap={canManageResourceMap}
+          organizationCurationAction={organizationCurationAction}
+          resourceMapCurationAction={resourceMapCurationAction}
           favorites={favorites}
+          guides={guides}
+          savedOrganizations={savedOrganizations}
           query={query}
+          activeGroup={activeGroup}
+          groupCounts={groupCounts}
+          resourceItemsLoadStatus={resourceItemsLoadStatus}
+          resourceItemsLoadError={resourceItemsLoadError}
+          searchPending={searchPending}
           searchContext={searchContext}
           setQuery={onQueryChange}
+          setActiveGroup={onActiveGroupChange}
+          retryResourceItems={onRetryResourceItems}
           toggleFavorite={onToggleFavorite}
+          onGuideSelect={onGuideSelect}
+          onSelectOrganization={onSelectOrganization}
+          onSelectItem={onSelectItem}
           onOpenDetails={onOpenOrgDetails}
+          onBackToSearch={onBackToSearch}
           setSidebarMode={onSidebarModeChange}
         />
       ) : null}
 
       {!tokenAvailable ? (
         <div className="flex h-full min-h-[480px] items-center justify-center px-6">
-          <Alert className="max-w-xl rounded-2xl border-border/70 bg-card/90">
+          <Alert className="border-border/70 bg-card/90 max-w-xl rounded-2xl">
             <AlertDescription>
-              Map unavailable. Add `MAPBOX_TOKEN` or `NEXT_PUBLIC_MAPBOX_TOKEN` to enable the public organization map.
+              Map unavailable. Add `MAPBOX_TOKEN` or `NEXT_PUBLIC_MAPBOX_TOKEN`
+              to enable the public organization map.
             </AlertDescription>
           </Alert>
         </div>
       ) : (
         <div className="relative h-full min-h-[520px]">
-          <div className="absolute inset-0">
+          <div data-public-map-overscan="12px" className="absolute -inset-3">
             <div
               ref={containerRef}
-              className="h-full w-full saturate-[0.82] brightness-[1.03] contrast-[0.94]"
+              className="h-full w-full [&_.mapboxgl-ctrl-logo]:!hidden"
               aria-label="Public organization map"
             />
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.22),rgba(248,250,252,0.1)_28%,rgba(241,245,249,0.08)_58%,rgba(248,250,252,0.18))]" />
-          {mapOverlay}
+          <div className="pointer-events-none absolute inset-0 hidden dark:block dark:bg-[linear-gradient(180deg,rgba(250,250,250,0.08),rgba(250,250,250,0.025)_28%,rgba(24,24,27,0.015)_58%,rgba(9,9,11,0.06))]" />
+          <PublicMapLocationControl
+            {...locationControl}
+            directoryCount={filteredItems.length}
+          />
 
-          <div className="pointer-events-none absolute right-4 top-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+          <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
             {mapError ? (
-              <Alert className="pointer-events-auto rounded-2xl border-destructive/30 bg-background/92 text-xs shadow-sm backdrop-blur">
+              <Alert
+                className={cn(
+                  PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+                  "border-destructive/30 pointer-events-auto rounded-2xl text-xs shadow-sm"
+                )}
+              >
                 <AlertDescription>{mapError}</AlertDescription>
               </Alert>
             ) : null}
-            {locationFeedback ? (
+            {preferencesSaveError ? (
               <Alert
                 className={cn(
-                  "pointer-events-auto w-fit rounded-full border bg-background/92 px-3 py-1.5 text-xs shadow-sm backdrop-blur",
-                  locationFeedback.tone === "error"
-                    ? "border-destructive/30 text-destructive"
-                    : "border-border/70 text-foreground",
+                  PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+                  "border-destructive/30 pointer-events-auto rounded-2xl text-xs shadow-sm"
                 )}
               >
-                <AlertDescription className="text-xs">
-                  {locationFeedback.message}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {preferencesSaveError ? (
-              <Alert className="pointer-events-auto rounded-2xl border-destructive/30 bg-background/92 text-xs shadow-sm backdrop-blur">
                 <AlertDescription>{preferencesSaveError}</AlertDescription>
-              </Alert>
-            ) : null}
-            {isSavingPreferences ? (
-              <Alert className="pointer-events-auto rounded-full border-border/70 bg-background/92 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
-                <AlertDescription>Saving map activity…</AlertDescription>
               </Alert>
             ) : null}
           </div>
         </div>
       )}
+
+      {tokenAvailable && mapOverlay ? (
+        <div
+          data-public-map-overlay-layer=""
+          className="pointer-events-none absolute inset-0"
+        >
+          {mapOverlay}
+        </div>
+      ) : null}
 
       <PublicMapAuthSheet
         open={authSheetOpen}

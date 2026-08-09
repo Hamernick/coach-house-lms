@@ -17,6 +17,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { toast } from "@/lib/toast"
+import {
+  findPersonSocialLinkError,
+  readPersonSocialLinks,
+  type PersonSocialLinks,
+  type PersonSocialPlatform,
+} from "@/lib/people/social-links"
 
 type Props = {
   triggerClassName?: string
@@ -25,6 +31,7 @@ type Props = {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   people?: OrgPerson[]
+  readOnly?: boolean
 }
 
 export function CreatePersonDialog({
@@ -34,6 +41,7 @@ export function CreatePersonDialog({
   open: controlledOpen,
   onOpenChange,
   people = [],
+  readOnly = false,
 }: Props) {
   const router = useRouter()
   const formId = React.useId()
@@ -43,7 +51,9 @@ export function CreatePersonDialog({
   const [name, setName] = React.useState(initial?.name ?? "")
   const [title, setTitle] = React.useState(initial?.title ?? "")
   const [email, setEmail] = React.useState(initial?.email ?? "")
-  const [linkedin, setLinkedin] = React.useState(initial?.linkedin ?? "")
+  const [socialLinks, setSocialLinks] = React.useState<PersonSocialLinks>(() =>
+    readPersonSocialLinks(initial)
+  )
   const [category, setCategory] = React.useState<OrgPerson["category"]>(
     initial?.category ?? "staff"
   )
@@ -56,7 +66,13 @@ export function CreatePersonDialog({
   const isEditing = Boolean(initial?.id)
   const primaryLabel = isEditing ? "Save changes" : "Add person"
   const submittingLabel = isEditing ? "Saving…" : "Adding…"
-  const canSubmit = Boolean(name.trim()) && Boolean(category) && !pending
+  const socialLinkError = findPersonSocialLinkError(socialLinks)
+  const canSubmit =
+    !readOnly &&
+    Boolean(name.trim()) &&
+    Boolean(category) &&
+    !socialLinkError &&
+    !pending
 
   const setOpen = React.useCallback(
     (nextOpen: boolean) => {
@@ -70,19 +86,11 @@ export function CreatePersonDialog({
     setName(initial?.name ?? "")
     setTitle(initial?.title ?? "")
     setEmail(initial?.email ?? "")
-    setLinkedin(initial?.linkedin ?? "")
+    setSocialLinks(readPersonSocialLinks(initial))
     setCategory(initial?.category ?? "staff")
     setImage(initial?.image ?? null)
     setReportsToId(initial?.reportsToId ?? null)
-  }, [
-    initial?.category,
-    initial?.email,
-    initial?.image,
-    initial?.linkedin,
-    initial?.name,
-    initial?.reportsToId,
-    initial?.title,
-  ])
+  }, [initial])
 
   React.useEffect(() => {
     if (open) resetForm()
@@ -100,7 +108,7 @@ export function CreatePersonDialog({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!name.trim() || pending) return
+    if (readOnly || !name.trim() || socialLinkError || pending) return
 
     startTransition(async () => {
       const toastId = toast.loading(
@@ -111,7 +119,7 @@ export function CreatePersonDialog({
         name: name.trim(),
         title: title.trim(),
         email: email.trim(),
-        linkedin: linkedin.trim(),
+        ...socialLinks,
         category,
         image,
         reportsToId: reportsToId || null,
@@ -145,10 +153,17 @@ export function CreatePersonDialog({
         className="flex h-full w-full flex-col overflow-hidden sm:max-w-xl"
       >
         <SheetHeader className="border-border/60 shrink-0 border-b px-6 pt-6 pb-4 text-left">
-          <SheetTitle>{isEditing ? "Edit person" : "Add person"}</SheetTitle>
+          <SheetTitle>
+            {readOnly
+              ? "Person details"
+              : isEditing
+                ? "Edit person"
+                : "Add person"}
+          </SheetTitle>
           <SheetDescription>
-            Manage the profile data used by People, org charts, and canvas
-            relationship views.
+            {readOnly
+              ? "View the profile data used by People, org charts, and canvas relationship views."
+              : "Manage the profile data used by People, org charts, and canvas relationship views."}
           </SheetDescription>
         </SheetHeader>
 
@@ -165,27 +180,44 @@ export function CreatePersonDialog({
               name={name}
               title={title}
               email={email}
-              linkedin={linkedin}
+              socialLinks={socialLinks}
               category={category}
               image={image}
               reportsToId={reportsToId}
               onNameChange={setName}
               onTitleChange={setTitle}
               onEmailChange={setEmail}
-              onLinkedinChange={setLinkedin}
+              onSocialLinkChange={(
+                platform: PersonSocialPlatform,
+                value: string
+              ) =>
+                setSocialLinks((current) => ({
+                  ...current,
+                  [platform]: value,
+                }))
+              }
               onCategoryChange={setCategory}
               onImageChange={setImage}
               onReportsToChange={setReportsToId}
+              readOnly={readOnly}
             />
           </div>
 
           <SheetFooter className="border-border/60 bg-background/95 shrink-0 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!canSubmit} aria-busy={pending}>
-              {pending ? submittingLabel : primaryLabel}
-            </Button>
+            {readOnly ? (
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button type="button" variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!canSubmit} aria-busy={pending}>
+                  {pending ? submittingLabel : primaryLabel}
+                </Button>
+              </>
+            )}
           </SheetFooter>
         </form>
       </SheetContent>

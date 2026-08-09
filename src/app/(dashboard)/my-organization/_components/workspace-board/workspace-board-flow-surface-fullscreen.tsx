@@ -133,12 +133,10 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
   fullscreenCardId,
   organizationEditorData,
   fullscreenCardData,
-  onClose,
 }: {
   fullscreenCardId: WorkspaceCardId | null
   organizationEditorData: WorkspaceOrganizationEditorData
   fullscreenCardData: WorkspaceBoardNodeData | null
-  onClose: () => void
 }) {
   if (fullscreenCardId === "organization-overview" && organizationEditorData) {
     return (
@@ -154,7 +152,6 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
           programs={organizationEditorData.programs}
           initialTab="company"
           canEdit={organizationEditorData.canEdit}
-          onClose={onClose}
         />
       </div>
     )

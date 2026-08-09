@@ -32,15 +32,15 @@ export function countWorkspaceDocuments(profile: Record<string, unknown>) {
     const path = (entry as { path?: unknown }).path
     return typeof path === "string" && path.trim().length > 0
   }).length
-  const policyCount = (Array.isArray(profile.policies) ? profile.policies : []).filter(
-    (entry) => {
-      if (!entry || typeof entry !== "object") return false
-      const document = (entry as { document?: unknown }).document
-      if (!document || typeof document !== "object") return false
-      const path = (document as { path?: unknown }).path
-      return typeof path === "string" && path.trim().length > 0
-    },
-  ).length
+  const policyCount = (
+    Array.isArray(profile.policies) ? profile.policies : []
+  ).filter((entry) => {
+    if (!entry || typeof entry !== "object") return false
+    const document = (entry as { document?: unknown }).document
+    if (!document || typeof document !== "object") return false
+    const path = (document as { path?: unknown }).path
+    return typeof path === "string" && path.trim().length > 0
+  }).length
 
   return uploadCount + policyCount
 }
@@ -64,7 +64,9 @@ export function resolveOrganizationProfileComplete(initialProfile: {
     initialProfile.vision,
     initialProfile.need,
     initialProfile.theoryOfChange,
-  ].filter((value) => typeof value === "string" && value.trim().length > 0).length
+  ].filter(
+    (value) => typeof value === "string" && value.trim().length > 0
+  ).length
 
   return (
     typeof initialProfile.name === "string" &&
@@ -76,20 +78,43 @@ export function resolveOrganizationProfileComplete(initialProfile: {
 export function hydrateWorkspaceSeedAcceleratorState<
   TSeed extends WorkspaceSeedWithAcceleratorBoardState,
 >(workspaceSeed: TSeed, acceleratorTimeline: WorkspaceAcceleratorCardStep[]) {
-  const hasPersistedAcceleratorState =
-    Boolean(workspaceSeed.boardState.accelerator.activeStepId) ||
-    workspaceSeed.boardState.accelerator.completedStepIds.length > 0
   const hasTimeline = acceleratorTimeline.length > 0
-  if (!hasTimeline || hasPersistedAcceleratorState) return workspaceSeed
+  if (!hasTimeline) return workspaceSeed
 
-  const completedStepIds = acceleratorTimeline
-    .filter((step) => step.status === "completed")
-    .map((step) => step.id)
+  const completedStepIds = Array.from(
+    new Set([
+      ...workspaceSeed.boardState.accelerator.completedStepIds,
+      ...acceleratorTimeline
+        .filter((step) => step.status === "completed")
+        .map((step) => step.id),
+    ])
+  )
+  const persistedActiveStep = acceleratorTimeline.find(
+    (step) => step.id === workspaceSeed.boardState.accelerator.activeStepId
+  )
+  const recoveredOrganizationSetup =
+    persistedActiveStep?.status === "completed" &&
+    persistedActiveStep.moduleContext?.workspaceOnboarding?.view ===
+      "organization-setup" &&
+    !workspaceSeed.boardState.accelerator.completedStepIds.includes(
+      persistedActiveStep.id
+    )
   const activeStep =
-    acceleratorTimeline.find((step) => step.status === "in_progress") ??
-    acceleratorTimeline.find((step) => step.status !== "completed") ??
-    acceleratorTimeline[0] ??
-    null
+    persistedActiveStep && !recoveredOrganizationSetup
+      ? persistedActiveStep
+      : (acceleratorTimeline.find((step) => step.status === "in_progress") ??
+        acceleratorTimeline.find((step) => step.status !== "completed") ??
+        acceleratorTimeline.at(-1) ??
+        null)
+
+  if (
+    workspaceSeed.boardState.accelerator.activeStepId ===
+      (activeStep?.id ?? null) &&
+    completedStepIds.length ===
+      workspaceSeed.boardState.accelerator.completedStepIds.length
+  ) {
+    return workspaceSeed
+  }
 
   return {
     ...workspaceSeed,
@@ -109,14 +134,14 @@ export function applyWorkspaceOnboardingStageToSeed<
   workspaceSeed: TSeed,
   onboardingStageOverride: ReturnType<
     typeof resolveWorkspaceOnboardingStageFromSearchParam
-  >,
+  >
 ) {
   if (!onboardingStageOverride) return workspaceSeed
   return {
     ...workspaceSeed,
     boardState: applyWorkspaceOnboardingStageOverride(
       workspaceSeed.boardState,
-      onboardingStageOverride,
+      onboardingStageOverride
     ),
   }
 }
@@ -135,8 +160,10 @@ export function applyWorkspaceTutorialActivationToSeed<
     workspaceOnboardingActive: boolean
     workspaceTutorialRequested: boolean
     workspaceOnboardingCompletedAt: string | null
-  },
+  }
 ) {
+  if (initialOnboardingRequired) return workspaceSeed
+
   if (workspaceOnboardingCompletedAt) {
     if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) {
       return workspaceSeed
@@ -145,19 +172,16 @@ export function applyWorkspaceTutorialActivationToSeed<
     return {
       ...workspaceSeed,
       boardState: buildCompletedWorkspaceTutorialBoardState(
-        workspaceSeed.boardState,
+        workspaceSeed.boardState
       ),
     }
   }
   const shouldActivateTutorial =
-    initialOnboardingRequired ||
-    workspaceOnboardingActive ||
-    workspaceTutorialRequested
+    workspaceOnboardingActive || workspaceTutorialRequested
 
   if (!shouldActivateTutorial) return workspaceSeed
 
-  const shouldRestartCompletedTutorial =
-    initialOnboardingRequired || workspaceOnboardingActive
+  const shouldRestartCompletedTutorial = workspaceOnboardingActive
 
   if (
     hasCompletedWorkspaceTutorial(workspaceSeed.boardState) &&
@@ -166,18 +190,19 @@ export function applyWorkspaceTutorialActivationToSeed<
     return {
       ...workspaceSeed,
       boardState: buildRestartedWorkspaceTutorialBoardState(
-        workspaceSeed.boardState,
+        workspaceSeed.boardState
       ),
     }
   }
 
-  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) return workspaceSeed
+  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState))
+    return workspaceSeed
 
   const connectionMap = new Map(
     workspaceSeed.boardState.connections.map((connection) => [
       `${connection.source}->${connection.target}`,
       connection,
-    ]),
+    ])
   )
   for (const connection of buildDefaultWorkspaceConnections()) {
     const key = `${connection.source}->${connection.target}`

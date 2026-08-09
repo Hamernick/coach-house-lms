@@ -2,6 +2,8 @@ import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import type { PlatformAccessLevel } from "@/features/platform-access"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
 import type {
@@ -38,6 +40,11 @@ type UpdateFiscalApplicationStatusResult = { ok: true } | FiscalWorkflowError
 type ResolveFiscalProjectResult =
   | { ok: true; project: FiscalProjectRow }
   | { ok: false; error: string }
+export type FiscalApplicantSigner = {
+  email: string
+  id: string
+  name: string
+}
 
 export function isMissingFiscalWorkflowTableError(error: unknown) {
   if (!error || typeof error !== "object") return false
@@ -87,8 +94,36 @@ async function resolveFiscalProject({
   return { ok: true, project: data }
 }
 
-export function canCoachManageFiscalSponsorship(isAdmin: boolean) {
-  return isAdmin
+export async function canManageFiscalSponsorshipForOrganization({
+  accessLevel,
+  organizationId,
+  supabase,
+  userId,
+}: {
+  accessLevel: PlatformAccessLevel | null
+  organizationId: string
+  supabase: Pick<FiscalWorkflowClient, "from">
+  userId: string
+}) {
+  if (accessLevel === "developer") return true
+  if (accessLevel !== "coach") return false
+
+  const { data, error } = await supabase
+    .from("organization_coach_assignments")
+    .select("coach_user_id")
+    .eq("organization_id", organizationId)
+    .eq("coach_user_id", userId)
+    .maybeSingle<{ coach_user_id: string }>()
+
+  if (error) {
+    console.error(
+      "[fiscal-sponsorship] Unable to verify coach assignment.",
+      error
+    )
+    return false
+  }
+
+  return Boolean(data)
 }
 
 export function canEditFiscalProject({
@@ -198,6 +233,72 @@ export function getApplicationOrganizationName(
   }
 
   return "Coach House"
+}
+
+export async function resolveFiscalApplicantSigner(
+  application: FiscalApplicationRow
+): Promise<{ signer: FiscalApplicantSigner } | FiscalWorkflowError> {
+  const applicantEmail = application.primary_email?.trim().toLowerCase()
+  if (!applicantEmail) {
+    return { error: "Add a primary applicant email before continuing." }
+  }
+
+  const admin = createSupabaseAdminClient()
+  const { data: memberships, error: membershipError } = await admin
+    .from("organization_memberships")
+    .select("member_email, member_id")
+    .eq("org_id", application.org_id)
+    .returns<Array<{ member_email: string; member_id: string }>>()
+  if (membershipError) {
+    return { error: "Unable to verify the applicant’s organization access." }
+  }
+
+  let signerId =
+    memberships?.find(
+      (membership) =>
+        membership.member_email.trim().toLowerCase() === applicantEmail
+    )?.member_id ?? null
+
+  if (!signerId) {
+    const { data: ownerResult, error: ownerError } =
+      await admin.auth.admin.getUserById(application.org_id)
+    if (ownerError) {
+      return { error: "Unable to verify the organization owner." }
+    }
+    if (ownerResult.user?.email?.trim().toLowerCase() === applicantEmail) {
+      signerId = application.org_id
+    }
+  }
+
+  if (!signerId) {
+    return {
+      error:
+        "The primary applicant email must belong to the organization owner or an accepted organization member.",
+    }
+  }
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", signerId)
+    .maybeSingle<{ email: string | null; full_name: string | null }>()
+  if (profileError) {
+    return { error: "Unable to load the applicant’s Coach House profile." }
+  }
+
+  const applicationName =
+    application.applicant_full_name?.trim() ||
+    [application.applicant_first_name, application.applicant_last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+  return {
+    signer: {
+      email: profile?.email?.trim() || applicantEmail,
+      id: signerId,
+      name: profile?.full_name?.trim() || applicationName || applicantEmail,
+    },
+  }
 }
 
 export function sanitizeAgreementFilename(filename: string) {
@@ -332,14 +433,19 @@ export async function resolveProjectAndContext(
   if (!trimmedProjectId) return { error: "Choose a project before continuing." }
 
   const context = await resolveAuthenticatedAppContext()
+  const supabase =
+    context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+      ? createSupabaseAdminClient()
+      : context.supabase
   const projectResult = await resolveFiscalProject({
     projectId: trimmedProjectId,
-    supabase: context.supabase,
+    supabase,
   })
   if (!projectResult.ok) return { error: projectResult.error }
 
   return {
     ...context,
+    supabase,
     project: projectResult.project,
   }
 }

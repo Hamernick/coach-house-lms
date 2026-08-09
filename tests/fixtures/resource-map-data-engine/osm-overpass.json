@@ -1,0 +1,25 @@
+{
+  "elements": [
+    {
+      "type": "node",
+      "id": 123,
+      "lat": 41.88,
+      "lon": -87.63,
+      "tags": {
+        "name": "Open Pantry OSM",
+        "amenity": "social_facility",
+        "social_facility": "food_bank",
+        "description": "Community food pantry mapped in OSM.",
+        "addr:housenumber": "500",
+        "addr:street": "Map St",
+        "addr:city": "Chicago",
+        "addr:state": "IL",
+        "addr:postcode": "60601",
+        "opening_hours": "Mon-Fri 9-5",
+        "contact:phone": "312-555-0600",
+        "contact:email": "hello@osm-pantry.example.org",
+        "contact:website": "https://osm-pantry.example.org"
+      }
+    }
+  ]
+}

@@ -1,0 +1,332 @@
+"use client"
+
+import { useState, type ReactNode } from "react"
+import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
+import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
+
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
+  resolvePublicMapResourceCategoryColor,
+} from "@/lib/public-map/resource-categories"
+import { isPublicMapTechnicalSourceUrl } from "@/lib/public-map/resource-link-visibility"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import { cn } from "@/lib/utils"
+import {
+  buildResourceAddressLines,
+  buildResourceLocation,
+  formatResourceVerifiedDate,
+  normalizeResourceHref,
+  normalizeResourceImageSrc,
+  PUBLIC_MAP_RESOURCE_STATUS_LABELS,
+} from "./resource-detail-helpers"
+import {
+  PublicMapResourceAdminActions,
+  type PublicMapResourceCurationAction,
+} from "./resource-detail-admin-actions"
+import { PublicMapResourceCategoryIcon } from "./resource-category-icon"
+import { PublicMapResourceSourceLinkPreview } from "./resource-source-link-preview"
+import {
+  PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME,
+  PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+  PUBLIC_MAP_DETAIL_IDENTITY_CLASSNAME,
+  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
+  PUBLIC_MAP_DETAIL_TITLE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME,
+} from "./sidebar-theme"
+
+function PublicMapResourceIdentityMedia({
+  item,
+  markerColor,
+}: {
+  item: ExternalResourceMapItem
+  markerColor: string
+}) {
+  const imageSrc = normalizeResourceImageSrc(item.markerImageUrl)
+  const [loaded, setLoaded] = useState(false)
+  const [errored, setErrored] = useState(false)
+  const showImage = Boolean(imageSrc && !errored)
+
+  return (
+    <div className="border-border/70 bg-muted/25 relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border shadow-sm sm:size-24">
+      <span
+        className="inline-flex size-8 items-center justify-center rounded-full"
+        style={{ backgroundColor: markerColor }}
+        aria-hidden
+      >
+        <PublicMapResourceCategoryIcon
+          category={item.primaryResourceCategory}
+          className="size-4.5 text-white"
+        />
+      </span>
+      {showImage ? (
+        <>
+          {!loaded ? (
+            <Skeleton className="bg-muted/45 absolute inset-0" aria-hidden />
+          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageSrc!}
+            alt={`${item.title} image`}
+            loading="eager"
+            decoding="async"
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none",
+              loaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setLoaded(true)}
+            onError={() => {
+              setErrored(true)
+              setLoaded(false)
+            }}
+          />
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+export function PublicMapResourceDetailChrome({
+  canManageResourceMap = false,
+  item,
+  onBack,
+  resourceMapCurationAction,
+}: {
+  canManageResourceMap?: boolean
+  item: ExternalResourceMapItem
+  onBack: () => void
+  resourceMapCurationAction?: PublicMapResourceCurationAction
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className={cn(
+            PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+            PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
+          )}
+          aria-label="Back to search"
+        >
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+        </Button>
+        <p className="text-foreground text-sm font-medium">Resource</p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {canManageResourceMap && resourceMapCurationAction ? (
+          <PublicMapResourceAdminActions
+            curationAction={resourceMapCurationAction}
+            item={item}
+            onComplete={onBack}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+export function PublicMapResourceIdentitySection({
+  item,
+}: {
+  item: ExternalResourceMapItem
+}) {
+  const location = buildResourceLocation(item)
+  const title = resolveResourceIdentityTitle(item)
+  const subtitle = resolveResourceIdentitySubtitle(item)
+  const markerColor = resolvePublicMapResourceCategoryColor(
+    item.primaryResourceCategory
+  )
+
+  return (
+    <div className={PUBLIC_MAP_DETAIL_IDENTITY_CLASSNAME}>
+      <PublicMapResourceIdentityMedia item={item} markerColor={markerColor} />
+      <div className="min-w-0 flex-1">
+        <h2 className={PUBLIC_MAP_DETAIL_TITLE_CLASSNAME}>{title}</h2>
+        {subtitle ? (
+          <p className="text-muted-foreground mt-1.5 text-base leading-6 text-pretty">
+            {subtitle}
+          </p>
+        ) : null}
+        {location ? (
+          <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 text-sm leading-5">
+            <MapPinIcon className="size-4 shrink-0" aria-hidden />
+            {location}
+          </p>
+        ) : null}
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+          {item.resourceCategories.map((category) => (
+            <span
+              key={category}
+              className={cn(
+                "inline-flex min-h-6 items-center rounded-full px-2.5 py-1 text-xs leading-none",
+                PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME
+              )}
+            >
+              {PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category]}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function normalizeResourceIdentityText(value: string | null | undefined) {
+  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
+}
+
+export function resolveResourceIdentityTitle(item: ExternalResourceMapItem) {
+  const title = item.title.trim()
+  const isCoolingCenter =
+    item.primaryResourceCategory === "emergency_cooling_centers" ||
+    item.resourceCategories.includes("emergency_cooling_centers")
+  if (!isCoolingCenter) return title
+  if (/^cooling centers?$/i.test(title)) return "Cooling Center"
+
+  const prefixMatch = title.match(/^cooling centers?\s*(?:[|:\-–—]\s*)?(.+)$/i)
+  if (prefixMatch?.[1]?.trim()) {
+    return `Cooling Center | ${prefixMatch[1].trim()}`
+  }
+
+  const suffixMatch = title.match(/^(.+?)\s+cooling centers?$/i)
+  if (suffixMatch?.[1]?.trim()) {
+    return `Cooling Center | ${suffixMatch[1].trim()}`
+  }
+
+  return title
+}
+
+function resolveResourceIdentitySubtitle(item: ExternalResourceMapItem) {
+  const subtitle = item.subtitle?.trim()
+  if (!subtitle) return null
+  return normalizeResourceIdentityText(subtitle) ===
+    normalizeResourceIdentityText(item.title)
+    ? null
+    : subtitle
+}
+
+function resolveResourceSourceLinkLabel(href: string) {
+  try {
+    return new URL(href).hostname.replace(/^www\./i, "")
+  } catch {
+    return "Source"
+  }
+}
+
+export function resolvePublicMapResourceSourceLinks(
+  item: ExternalResourceMapItem
+) {
+  const candidates = [
+    {
+      label: item.sourceLabel,
+      url: item.sourceUrl,
+    },
+    ...(item.links ?? [])
+      .filter((link) => link.type === "source")
+      .map((link) => ({ label: link.label, url: link.url })),
+  ]
+  const seen = new Set<string>()
+
+  return candidates.flatMap((candidate) => {
+    const href = normalizeResourceHref(candidate.url)
+    if (!href || isPublicMapTechnicalSourceUrl(href) || seen.has(href)) {
+      return []
+    }
+    seen.add(href)
+    return [
+      {
+        href,
+        label: candidate.label?.trim() || resolveResourceSourceLinkLabel(href),
+      },
+    ]
+  })
+}
+
+function PublicMapResourceStatusRow({
+  children,
+  label,
+}: {
+  children: ReactNode
+  label: string
+}) {
+  return (
+    <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
+      <dt className="text-muted-foreground text-sm leading-5">{label}</dt>
+      <dd className="text-foreground min-w-0 text-sm leading-5 font-medium break-words">
+        {children}
+      </dd>
+    </div>
+  )
+}
+
+export function PublicMapResourceStatusSection({
+  item,
+}: {
+  item: ExternalResourceMapItem
+}) {
+  const verifiedDate = formatResourceVerifiedDate(item.lastVerifiedAt)
+  const sourceLinks = resolvePublicMapResourceSourceLinks(item)
+  const sourceLabel = item.sourceLabel?.trim() || null
+
+  return (
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+      <h3 className="text-base font-semibold">Details</h3>
+      <dl className="mt-3 grid gap-2.5">
+        <PublicMapResourceStatusRow label="Status">
+          {PUBLIC_MAP_RESOURCE_STATUS_LABELS[item.verificationStatus]}
+        </PublicMapResourceStatusRow>
+        <PublicMapResourceStatusRow label="Visibility">
+          {item.visibility === "superadmin_preview"
+            ? "Seed preview"
+            : "Published"}
+        </PublicMapResourceStatusRow>
+        {sourceLinks.length > 0 || sourceLabel ? (
+          <PublicMapResourceStatusRow label="Source">
+            {sourceLinks.length > 0 ? (
+              <div className="flex min-w-0 flex-col items-start gap-1.5">
+                {sourceLinks.map((sourceLink) => (
+                  <PublicMapResourceSourceLinkPreview
+                    key={sourceLink.href}
+                    href={sourceLink.href}
+                    label={sourceLink.label}
+                  />
+                ))}
+              </div>
+            ) : (
+              sourceLabel
+            )}
+          </PublicMapResourceStatusRow>
+        ) : null}
+        {verifiedDate ? (
+          <PublicMapResourceStatusRow label="Last verified">
+            {verifiedDate}
+          </PublicMapResourceStatusRow>
+        ) : null}
+      </dl>
+    </section>
+  )
+}
+
+export function PublicMapResourceAddressSection({
+  item,
+}: {
+  item: ExternalResourceMapItem
+}) {
+  const addressLines = buildResourceAddressLines(item)
+  if (!addressLines || addressLines.length === 0) return null
+
+  return (
+    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+      <h3 className="text-base font-semibold">Address</h3>
+      <div className="text-muted-foreground mt-2 space-y-1 text-sm leading-6">
+        {addressLines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+    </section>
+  )
+}

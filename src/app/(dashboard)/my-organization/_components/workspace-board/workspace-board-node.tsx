@@ -5,8 +5,10 @@ import { type NodeProps } from "reactflow"
 
 import { useWorkspaceNodeInternalsSync } from "@/lib/workspace-canvas/node-internals-sync"
 import { cn } from "@/lib/utils"
+import { WorkspaceOntologyBranchToggle } from "@/features/workspace-ontology"
 
 import { resolveWorkspaceCardHeightModeClassName } from "./workspace-board-layout-config"
+import { WORKSPACE_CARD_META } from "./workspace-board-copy"
 import { WorkspaceBoardCard } from "./workspace-board-node-card"
 import { WorkspaceBoardNodeConnectionHandles as ConnectionHandles } from "./workspace-board-node-connection-handles"
 
@@ -55,14 +57,24 @@ export const WorkspaceBoardNode = memo(function WorkspaceBoardNode({
       ref={nodeRef}
       className={cn(
         "relative min-h-0 w-full min-w-0",
-        resolveWorkspaceCardHeightModeClassName(data.cardId),
+        resolveWorkspaceCardHeightModeClassName(data.cardId)
       )}
     >
-      <WorkspaceBoardCard data={data} />
-      <ConnectionHandles
-        cardId={data.cardId}
-        presentationMode={data.presentationMode}
-      />
+      <div className="relative min-h-0 w-full min-w-0">
+        <WorkspaceBoardCard data={data} />
+        <ConnectionHandles
+          cardId={data.cardId}
+          presentationMode={data.presentationMode}
+        />
+      </div>
+      {data.ontologyRootControl ? (
+        <div className="nodrag nopan flex justify-center pt-2.5">
+          <WorkspaceOntologyBranchToggle
+            label={WORKSPACE_CARD_META[data.cardId].title}
+            control={data.ontologyRootControl}
+          />
+        </div>
+      ) : null}
     </div>
   )
 })

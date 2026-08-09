@@ -10,7 +10,7 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace roadmap card title", () => {
-  it("keeps the workspace card title concise while the roadmap navigator names the strategic surface", () => {
+  it("keeps the workspace card title concise while the roadmap navigator uses the Core Documents label", () => {
     const toc = readSource(
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-toc.tsx"
     )
@@ -47,7 +47,7 @@ describe("workspace roadmap card title", () => {
     expect(navigator).toContain('primitiveImport: "@/components/ui/button"')
     expect(navigator).toContain("<header")
     expect(navigator).toContain(
-      '<span className="truncate">Strategic Roadmap</span>'
+      '<span className="truncate">Core Documents</span>'
     )
     expect(navigator).not.toContain(
       'import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"'
@@ -139,6 +139,7 @@ describe("workspace roadmap card title", () => {
     expect(roadmapCard).toContain("showHeader={false}")
     expect(roadmapCard).toContain("collapsed={collapsed}")
     expect(roadmapCard).toContain('className="px-1 pb-3"')
+    expect(navigator).toContain("requestWorkspaceRoadmapDrawer(next.slug)")
     expect(roadmapCard).not.toContain(
       'resolveCardDimensions(cardSize, "roadmap")'
     )
@@ -172,6 +173,14 @@ describe("workspace roadmap card title", () => {
     expect(cardHeader).toContain('"pb-1.5"')
     expect(cardHeader).toContain('"min-w-0 truncate"')
     expect(cardHeader).toContain("WORKSPACE_TEXT_STYLES.cardTitle")
+    expect(cardHeader).toContain("PencilIcon")
+    expect(cardHeader).toContain('aria-label="Edit card"')
+    expect(cardHeader).toContain('variant="ghost"')
+    expect(cardHeader).toContain('size="icon"')
+    expect(cardHeader).toContain('className="nodrag nopan relative"')
+    expect(cardHeader).toContain(
+      'surface === "card" && CARD_SURFACE_ICON_BUTTON_HOVER_CLASS_NAME'
+    )
     expect(cardHeader).not.toContain(
       '<span className="truncate">{title}</span>'
     )

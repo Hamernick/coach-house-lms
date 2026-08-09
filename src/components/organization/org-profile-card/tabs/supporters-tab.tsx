@@ -5,7 +5,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { FormRow } from "@/components/organization/org-profile-card/shared"
-import { SupportersShowcase, type OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import {
+  SupportersShowcase,
+  type OrgPersonWithImage,
+} from "@/components/people/supporters-showcase"
 import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
 
 type SupportersTabProps = {
@@ -20,7 +23,11 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
   if (editMode) {
     return (
       <div className="grid gap-6">
-        <FormRow title="Supporters" description="Foundations, corporate partners, and other backers.">
+        <FormRow
+          title="Supporters"
+          description="Foundations, corporate partners, and other backers."
+          layout="stacked"
+        >
           {supporters.length === 0 ? (
             <Empty
               icon={<HeartHandshakeIcon className="h-5 w-5" />}
@@ -43,12 +50,14 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
               <SupportersShowcase
                 supporters={supporters}
                 allPeople={people}
-                emptyMessage={"No supporters yet. Add supporters from the People page."}
+                emptyMessage={
+                  "No supporters yet. Add supporters from the People page."
+                }
               />
             </div>
           )}
         </FormRow>
-        <FormRow title="Volunteers">
+        <FormRow title="Volunteers" layout="stacked">
           {volunteers.length === 0 ? (
             <Empty
               icon={<HeartHandshakeIcon className="h-5 w-5" />}
@@ -71,7 +80,9 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
               <SupportersShowcase
                 supporters={volunteers}
                 allPeople={people}
-                emptyMessage={"No volunteers yet. Add volunteers from the People page."}
+                emptyMessage={
+                  "No volunteers yet. Add volunteers from the People page."
+                }
               />
             </div>
           )}
@@ -82,7 +93,11 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
 
   return (
     <div className="grid gap-6">
-      <FormRow title="Supporters" description="Foundations, corporate partners, and other backers.">
+      <FormRow
+        title="Supporters"
+        description="Foundations, corporate partners, and other backers."
+        layout="stacked"
+      >
         {supporters.length === 0 ? (
           <Empty
             icon={<HeartHandshakeIcon className="h-5 w-5" />}
@@ -90,10 +105,14 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
             description="Supporters will appear here once they are added."
           />
         ) : (
-          <SupportersShowcase supporters={supporters} allPeople={people} emptyMessage={""} />
+          <SupportersShowcase
+            supporters={supporters}
+            allPeople={people}
+            emptyMessage={""}
+          />
         )}
       </FormRow>
-      <FormRow title="Volunteers">
+      <FormRow title="Volunteers" layout="stacked">
         {volunteers.length === 0 ? (
           <Empty
             icon={<HeartHandshakeIcon className="h-5 w-5" />}
@@ -101,7 +120,11 @@ export function SupportersTab({ editMode, people }: SupportersTabProps) {
             description="Volunteers will appear here once they are added."
           />
         ) : (
-          <SupportersShowcase supporters={volunteers} allPeople={people} emptyMessage={""} />
+          <SupportersShowcase
+            supporters={volunteers}
+            allPeople={people}
+            emptyMessage={""}
+          />
         )}
       </FormRow>
     </div>

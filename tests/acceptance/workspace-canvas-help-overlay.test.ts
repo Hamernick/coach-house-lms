@@ -47,7 +47,7 @@ describe("workspace canvas help overlay", () => {
 
     expect(source).toContain('variant="ghost"')
     expect(source).toContain(
-      'className="pointer-events-auto h-9 w-9 rounded-xl"'
+      'className="pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"'
     )
     expect(source).toContain('<InfoIcon className="h-4 w-4" aria-hidden />')
     expect(source).toContain("MousePointer2Icon")
@@ -58,6 +58,9 @@ describe("workspace canvas help overlay", () => {
     expect(source).not.toContain('variant="outline"')
     expect(source).not.toContain("rounded-full shadow-sm backdrop-blur-sm")
     expect(globalsSource).toContain(
+      ".workspace-flow .react-flow__node:focus-visible [data-workspace-card]"
+    )
+    expect(globalsSource).not.toContain(
       ".workspace-flow .react-flow__node.selected [data-workspace-card]"
     )
     expect(globalsSource).toContain("outline-offset: 3px;")

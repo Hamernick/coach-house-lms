@@ -12,12 +12,18 @@ function readSource(relativePath: string) {
 describe("my organization editor view layout", () => {
   it("owns the scroll area when rendered in the full-bleed workspace shell", () => {
     const source = readSource(
-      "src/app/(dashboard)/my-organization/_components/my-organization-editor-view.tsx",
+      "src/app/(dashboard)/my-organization/_components/my-organization-editor-view.tsx"
     )
 
     expect(source).toContain('"flex h-full min-h-0 flex-col"')
     expect(source).toContain('"flex min-h-0 flex-1 flex-col gap-3"')
-    expect(source).toContain('"min-h-0 flex-1 overflow-y-auto overscroll-contain"')
+    expect(source).toContain("<ScrollFadeEffect")
+    expect(source).toContain("enabled={hasScrollableOverflow}")
+    expect(source).toContain(
+      'className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"'
+    )
+    expect(source).toContain("new ResizeObserver(updateScrollableOverflow)")
+    expect(source).toContain("new MutationObserver(updateScrollableOverflow)")
     expect(source).toContain('scrollbarGutter: "stable"')
     expect(source).not.toContain('embedded && "min-h-0 flex-1 overflow-y-auto"')
     expect(source).not.toContain('"space-y-3"')

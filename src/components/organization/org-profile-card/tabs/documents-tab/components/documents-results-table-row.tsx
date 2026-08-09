@@ -1,6 +1,10 @@
 "use client"
 
 import { TableCell, TableRow } from "@/components/ui/table"
+import {
+  getOrganizationFocusTargetProps,
+  ORGANIZATION_FOCUS_TARGET_CLASSNAME,
+} from "../../../organization-deep-link-focus"
 
 import { formatBytes, formatUpdatedAt } from "../helpers"
 import type { DocumentIndexRow } from "../types"
@@ -11,6 +15,7 @@ import {
   StatusBadge,
 } from "./document-row-meta"
 import { DocumentRowActions } from "./document-row-actions"
+import { getDocumentRowFocusKey } from "./document-row-focus"
 import type { DocumentsResultsTableProps } from "./documents-results-table-types"
 
 type DocumentsResultsTableRowProps = Pick<
@@ -86,7 +91,12 @@ export function DocumentsResultsTableRow({
   const details = rowDocumentDetails(row)
 
   return (
-    <TableRow key={row.id} data-tour={tourIdForRow(row)}>
+    <TableRow
+      key={row.id}
+      {...getOrganizationFocusTargetProps(getDocumentRowFocusKey(row))}
+      data-tour={tourIdForRow(row)}
+      className={ORGANIZATION_FOCUS_TARGET_CLASSNAME}
+    >
       <TableCell
         className="overflow-hidden"
         style={{ width: columnWidths.status }}

@@ -6,7 +6,13 @@ import type { RoadmapDraft, RoadmapEditorProps } from "../types"
 
 export type UseRoadmapEditorStateArgs = Pick<
   RoadmapEditorProps,
-  "sections" | "publicSlug" | "canEdit" | "initialSectionId" | "onDirtyChange" | "onRegisterDiscard"
+  | "sections"
+  | "publicSlug"
+  | "canEdit"
+  | "navigationMode"
+  | "initialSectionId"
+  | "onDirtyChange"
+  | "onRegisterDiscard"
 >
 
 export type UseRoadmapEditorStateResult = {
@@ -15,8 +21,6 @@ export type UseRoadmapEditorStateResult = {
   drafts: Record<string, RoadmapDraft>
   handleSectionSelect: (next: { id: string; slug: string }) => void
   roadmapBasePath: string
-  roadmapReturnHref: string | null
-  roadmapReturnLabel: string | null
   headerTitle: string
   headerSubtitle: string
   showSectionHeader: boolean
@@ -26,6 +30,7 @@ export type UseRoadmapEditorStateResult = {
   statusSelectDisabled: boolean
   isHydrated: boolean
   isCalendarSection: boolean
+  isBudgetSection: boolean
   contentMaxWidth: string
   editorPlaceholder: string
   handleDraftChange: (updates: Partial<RoadmapDraft>) => void

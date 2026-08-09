@@ -4,7 +4,7 @@ import { buildStoryFields } from "@/components/public/public-map-index/organizat
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 function buildOrganization(
-  overrides: Partial<PublicMapOrganization> = {},
+  overrides: Partial<PublicMapOrganization> = {}
 ): PublicMapOrganization {
   return {
     id: "org-1",
@@ -47,6 +47,7 @@ function buildOrganization(
     country: null,
     locationUrl: null,
     publicSlug: null,
+    activityLinks: [],
     programPreview: null,
     programs: [],
     programCount: 0,
@@ -61,14 +62,16 @@ describe("buildStoryFields", () => {
   it("returns roadmap-ordered origin fields including origin story and theory of change", () => {
     const fields = buildStoryFields(
       buildOrganization({
-        originStory: "Community leaders launched Atlas after repeated service gaps.",
+        originStory:
+          "Community leaders launched Atlas after repeated service gaps.",
         needStatement: "Families lacked nearby legal and coaching support.",
-        mission: "Support organizations building equitable public infrastructure.",
+        mission:
+          "Support organizations building equitable public infrastructure.",
         vision: "Every neighborhood has a trusted support hub.",
         values: "Care, rigor, and shared ownership.",
         theoryOfChange:
           "Train local leaders, pair with technical coaching, and measure outcomes monthly.",
-      }),
+      })
     )
 
     expect(fields.map((field) => field.label)).toEqual([

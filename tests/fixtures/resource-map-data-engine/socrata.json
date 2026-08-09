@@ -1,0 +1,16 @@
+[
+  {
+    "service_id": "socrata-food-1",
+    "agency": "City Food Access",
+    "service": "Senior meal delivery",
+    "description": "Meal delivery for older adults.",
+    "service_category": "senior meals",
+    "street_address": "400 Meal St",
+    "city": "Chicago",
+    "state": "IL",
+    "zip": "60603",
+    "telephone": "312-555-0400",
+    "url": "https://city.example.gov/senior-meals",
+    "last_updated": "2025-01-01T00:00:00.000Z"
+  }
+]

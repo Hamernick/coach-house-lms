@@ -16,6 +16,11 @@ export type WorkspaceCanvasPeopleAddRequest = {
   clientY: number
 }
 
+export type WorkspacePeopleCanvasActions = {
+  add: (personIds: string[]) => number
+  remove: (personId: string) => void
+}
+
 function normalizeWorkspaceCanvasPersonIds(personIds: string[]) {
   return Array.from(
     new Set(personIds.map((personId) => personId.trim()).filter(Boolean))

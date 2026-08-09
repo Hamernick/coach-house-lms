@@ -223,6 +223,7 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
             status: draft.status,
             assignedRoles: draft.assignedRoles,
             recurrence: draft.recurrence,
+            expectedUpdatedAt: editingEvent.updatedAt,
           },
         })
         if ("error" in result) {

@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "result": {
+    "results": [
+      {
+        "title": "Community food resources",
+        "notes": "Open data inventory of food pantries.",
+        "metadata_modified": "2025-02-01T00:00:00.000Z",
+        "groups": [{ "display_name": "Food" }],
+        "organization": { "title": "City Open Data" },
+        "resources": [
+          {
+            "id": "ckan-food-1",
+            "name": "Food pantry resource list",
+            "description": "Food pantry locations and hours.",
+            "url": "https://data.example.gov/food-pantries.csv",
+            "last_modified": "2025-02-02T00:00:00.000Z"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,18 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Plus } from "@phosphor-icons/react/dist/ssr"
 
 import {
   ChipOverflow,
   type PlatformAdminDashboardLabProject,
 } from "@/features/platform-admin-dashboard"
-import { Button } from "@/components/ui/button"
 import type {
   MemberWorkspaceCreateProjectFormInput,
   MemberWorkspacePersonOption,
   MemberWorkspaceProjectOrganizationOption,
   MemberWorkspaceStorageMode,
+  MemberWorkspaceWorkstreamCategory,
 } from "../../types"
 import { MemberWorkspaceProjectBoardView } from "./member-workspace-project-board-view"
 import { MemberWorkspaceProjectCardsView } from "./member-workspace-project-cards-view"
@@ -62,6 +61,24 @@ export function MemberWorkspaceProjectsPage(props: {
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
   assigneeOptions: MemberWorkspacePersonOption[]
   scope: "organization" | "platform-admin"
+  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
+  createWorkstreamCategoryAction?: (
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  updateWorkstreamCategoryAction?: (
+    categoryId: string,
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  deleteWorkstreamCategoryAction?: (
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  restoreWorkstreamDefaultsAction?: () => Promise<
+    { ok: true } | { error: string }
+  >
+  updateProjectWorkstreamAction?: (
+    projectId: string,
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
 }) {
   const {
     projects,
@@ -76,6 +93,12 @@ export function MemberWorkspaceProjectsPage(props: {
     canCreateProjects,
     organizationOptions,
     scope,
+    workstreamCategories = [],
+    createWorkstreamCategoryAction,
+    updateWorkstreamCategoryAction,
+    deleteWorkstreamCategoryAction,
+    restoreWorkstreamDefaultsAction,
+    updateProjectWorkstreamAction,
   } = props
   const assigneeOptions = props.assigneeOptions ?? []
   const router = useRouter()
@@ -163,20 +186,6 @@ export function MemberWorkspaceProjectsPage(props: {
                   clearStarterDataAction={clearStarterDataAction}
                 />
               ) : null}
-              {canCreateProjects ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  onClick={() => {
-                    setEditingProject(null)
-                    setIsProjectWizardOpen(true)
-                  }}
-                >
-                  <Plus data-icon="inline-start" weight="bold" />
-                  Add Organization
-                </Button>
-              ) : null}
             </div>
           </div>
 
@@ -244,8 +253,23 @@ export function MemberWorkspaceProjectsPage(props: {
             <MemberWorkspaceProjectBoardView
               projects={filteredProjects}
               showClosedProjects={viewOptions.showClosedProjects}
+              hiddenWorkstreamCategoryKeys={
+                viewOptions.hiddenWorkstreamCategoryKeys
+              }
+              onHiddenWorkstreamCategoryKeysChange={(categoryKeys) =>
+                handleViewOptionsChange({
+                  ...viewOptions,
+                  hiddenWorkstreamCategoryKeys: categoryKeys,
+                })
+              }
               visibleProperties={viewOptions.properties}
               updateProjectStatusAction={updateProjectStatusAction}
+              workstreamCategories={workstreamCategories}
+              createWorkstreamCategoryAction={createWorkstreamCategoryAction}
+              updateWorkstreamCategoryAction={updateWorkstreamCategoryAction}
+              deleteWorkstreamCategoryAction={deleteWorkstreamCategoryAction}
+              restoreWorkstreamDefaultsAction={restoreWorkstreamDefaultsAction}
+              updateProjectWorkstreamAction={updateProjectWorkstreamAction}
               onAddProject={
                 canCreateProjects
                   ? () => {

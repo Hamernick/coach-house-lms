@@ -61,6 +61,7 @@ describe("program wizard media fields", () => {
       id: "program-1",
       title: "Future Builders Mentorship Lab",
       description: "Fallback description",
+      location_url: "https://example.com/program-location",
       image_url: "https://example.com/program-profile.jpg",
       wizard_snapshot: {
         oneSentence: "Career-connected mentorship for transition-age youth.",
@@ -70,6 +71,7 @@ describe("program wizard media fields", () => {
 
     expect(form.bannerImageUrl).toBe("https://example.com/program-banner.jpg")
     expect(form.imageUrl).toBe("https://example.com/program-profile.jpg")
+    expect(form.locationUrl).toBe("https://example.com/program-location")
     expect(
       resolveProgramBannerImageUrl({
         wizard_snapshot: {

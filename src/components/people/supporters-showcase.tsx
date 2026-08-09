@@ -21,9 +21,13 @@ interface PeopleShowcaseProps {
   variant?: PeopleShowcaseVariant
 }
 
-const CATEGORY_STRIP: Record<OrgPerson["category"], string> = Object.fromEntries(
-  Object.entries(PERSON_CATEGORY_META).map(([key, value]) => [key, value.stripClass]),
-) as Record<OrgPerson["category"], string>
+const CATEGORY_STRIP: Record<OrgPerson["category"], string> =
+  Object.fromEntries(
+    Object.entries(PERSON_CATEGORY_META).map(([key, value]) => [
+      key,
+      value.stripClass,
+    ])
+  ) as Record<OrgPerson["category"], string>
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -41,7 +45,12 @@ export function PeopleShowcase({
 }: PeopleShowcaseProps) {
   if (!people || people.length === 0) {
     return (
-      <p className={cn("rounded-md border border-dashed p-4 text-sm text-muted-foreground", className)}>
+      <p
+        className={cn(
+          "text-muted-foreground rounded-md border border-dashed p-4 text-sm",
+          className
+        )}
+      >
         {emptyMessage}
       </p>
     )
@@ -55,7 +64,13 @@ export function PeopleShowcase({
           return (
             <Fragment key={person.id}>
               <div className="relative flex items-center gap-3.5 px-4 py-0.5 sm:px-6">
-                <Avatar className={cn("size-10", isSupporter && "rounded-xl bg-muted/60 ring-1 ring-border/60")}>
+                <Avatar
+                  className={cn(
+                    "size-10",
+                    isSupporter &&
+                      "bg-muted/60 ring-border/60 rounded-xl ring-1"
+                  )}
+                >
                   <AvatarImage
                     src={person.displayImage ?? person.image ?? undefined}
                     alt={person.name ?? "Person"}
@@ -66,18 +81,26 @@ export function PeopleShowcase({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{person.name}</p>
-                  {person.title ? <p className="truncate text-xs text-muted-foreground">{person.title}</p> : null}
+                  <p className="text-foreground truncate text-sm font-semibold">
+                    {person.name}
+                  </p>
+                  {person.title ? (
+                    <p className="text-muted-foreground truncate text-xs">
+                      {person.title}
+                    </p>
+                  ) : null}
                 </div>
                 <span
                   className={cn(
-                    "pointer-events-none absolute left-0 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full",
-                    CATEGORY_STRIP[person.category],
+                    "pointer-events-none absolute top-1/2 left-0 h-10 w-1 -translate-y-1/2 rounded-full",
+                    CATEGORY_STRIP[person.category]
                   )}
                   aria-hidden="true"
                 />
               </div>
-              {index !== people.length - 1 ? <ItemSeparator className="my-1 w-full" /> : null}
+              {index !== people.length - 1 ? (
+                <ItemSeparator className="my-1 w-full" />
+              ) : null}
             </Fragment>
           )
         })}
@@ -88,7 +111,12 @@ export function PeopleShowcase({
   const collection = allPeople ?? people
 
   return (
-    <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3", className)}>
+    <div
+      className={cn(
+        "grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3",
+        className
+      )}
+    >
       {people.map((person) => (
         <PersonItem key={person.id} person={person} allPeople={collection} />
       ))}
@@ -100,6 +128,9 @@ interface SupportersShowcaseProps extends Omit<PeopleShowcaseProps, "people"> {
   supporters: OrgPersonWithImage[]
 }
 
-export function SupportersShowcase({ supporters, ...rest }: SupportersShowcaseProps) {
+export function SupportersShowcase({
+  supporters,
+  ...rest
+}: SupportersShowcaseProps) {
   return <PeopleShowcase people={supporters} {...rest} />
 }

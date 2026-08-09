@@ -44,8 +44,11 @@ describe("completeOnboardingAction", () => {
     form.set("intentFocus", "build")
     form.set("builderPlanTier", "organization")
 
-    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
+    const { completeOnboardingAction } =
+      await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() =>
+      completeOnboardingAction(form)
+    )
 
     expect(fetchLearningEntitlementsMock).toHaveBeenCalledWith({
       supabase: expect.any(Object),
@@ -55,7 +58,7 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/onboarding?error=builder_plan_required")
   })
 
-  it("lets free post-signup builders enter the workspace without a subscription check", async () => {
+  it("sends free post-signup builders to required workspace setup without a subscription check", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -88,13 +91,23 @@ describe("completeOnboardingAction", () => {
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
 
-    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
+    const { completeOnboardingAction } =
+      await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() =>
+      completeOnboardingAction(form)
+    )
 
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: false,
+        onboarding_completed_at: null,
+        workspace_onboarding_active: false,
+      }),
+    })
+    expect(destination).toBe("/workspace?source=onboarding_setup")
   })
 
   it("sends completed member onboarding to find", async () => {
@@ -129,13 +142,18 @@ describe("completeOnboardingAction", () => {
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
 
-    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
+    const { completeOnboardingAction } =
+      await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() =>
+      completeOnboardingAction(form)
+    )
 
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe("/find?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe(
+      "/find?member_onboarding=0&source=member_onboarding"
+    )
   })
 
   it("saves free workspace setup changes to the active organization", async () => {
@@ -158,10 +176,39 @@ describe("completeOnboardingAction", () => {
       count: 0,
     })
     const organizationsSelectMaybeSingleMock = vi.fn().mockResolvedValue({
-      data: { profile: null },
+      data: { profile: null, updated_at: "revision-1" },
       error: null,
     })
-    const organizationsUpsertMock = vi.fn().mockResolvedValue({ error: null })
+    const organizationsUpdateMaybeSingleMock = vi.fn().mockResolvedValue({
+      data: { updated_at: "revision-2" },
+      error: null,
+    })
+    const organizationsUpdateSelectMock = vi.fn().mockReturnValue({
+      maybeSingle: organizationsUpdateMaybeSingleMock,
+    })
+    const organizationsUpdateRevisionEqMock = vi.fn().mockReturnValue({
+      select: organizationsUpdateSelectMock,
+    })
+    const organizationsUpdateUserEqMock = vi.fn().mockReturnValue({
+      eq: organizationsUpdateRevisionEqMock,
+    })
+    const organizationsUpdateMock = vi.fn().mockReturnValue({
+      eq: organizationsUpdateUserEqMock,
+    })
+    const setupModulesReturnsMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "organization_setup_module",
+          slug: "organization-setup",
+        },
+      ],
+      error: null,
+    })
+    const moduleProgressMaybeSingleMock = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    })
+    const moduleProgressUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
 
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -192,22 +239,50 @@ describe("completeOnboardingAction", () => {
         }
         if (table === "organizations") {
           return {
-            select: vi.fn((columns?: string, options?: { count?: string; head?: boolean }) => {
-              if (options?.count === "exact" && options?.head) {
+            select: vi.fn(
+              (
+                columns?: string,
+                options?: { count?: string; head?: boolean }
+              ) => {
+                if (options?.count === "exact" && options?.head) {
+                  return {
+                    ilike: vi.fn().mockReturnValue({
+                      neq: organizationsSlugCountQueryMock,
+                    }),
+                  }
+                }
+
                 return {
-                  ilike: vi.fn().mockReturnValue({
-                    neq: organizationsSlugCountQueryMock,
+                  eq: vi.fn().mockReturnValue({
+                    maybeSingle: organizationsSelectMaybeSingleMock,
                   }),
                 }
               }
-
-              return {
+            ),
+            update: organizationsUpdateMock,
+          }
+        }
+        if (table === "modules") {
+          return {
+            select: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
-                  maybeSingle: organizationsSelectMaybeSingleMock,
+                  returns: setupModulesReturnsMock,
                 }),
-              }
+              }),
             }),
-            upsert: organizationsUpsertMock,
+          }
+        }
+        if (table === "module_progress") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: moduleProgressMaybeSingleMock,
+                }),
+              }),
+            }),
+            upsert: moduleProgressUpsertMock,
           }
         }
         throw new Error(`Unexpected table lookup: ${table}`)
@@ -224,33 +299,60 @@ describe("completeOnboardingAction", () => {
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
 
-    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
+    const { completeOnboardingAction } =
+      await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() =>
+      completeOnboardingAction(form)
+    )
 
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(membershipsEqMock).toHaveBeenCalledWith("member_id", "user_123")
     expect(organizationsSlugCountQueryMock).toHaveBeenCalledWith(
       "user_id",
-      "org_active",
+      "org_active"
     )
     expect(organizationsSelectMaybeSingleMock).toHaveBeenCalled()
-    expect(organizationsUpsertMock).toHaveBeenCalledWith(
+    expect(organizationsUpdateMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_id: "org_active",
         public_slug: "bright-futures-collective",
         profile: expect.objectContaining({
           name: "Bright Futures Collective",
           formationStatus: "approved",
         }),
-      }),
-      { onConflict: "user_id" },
+      })
     )
-    expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
+    expect(organizationsUpdateUserEqMock).toHaveBeenCalledWith(
+      "user_id",
+      "org_active"
+    )
+    expect(organizationsUpdateRevisionEqMock).toHaveBeenCalledWith(
+      "updated_at",
+      "revision-1"
+    )
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: true,
+        workspace_onboarding_active: true,
+        workspace_onboarding_completed_at: null,
+        workspace_onboarding_stage: 2,
+      }),
+    })
+    expect(moduleProgressUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_123",
+        module_id: "organization_setup_module",
+        status: "completed",
+        completed_at: expect.any(String),
+      }),
+      { onConflict: "user_id,module_id" }
+    )
+    expect(destination).toBe(
+      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+    )
   })
 
-  it("allows build onboarding to finish when entitlement fallback reports an active subscription", async () => {
+  it("sends paid builders to required workspace setup after entitlement recovery", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -290,8 +392,11 @@ describe("completeOnboardingAction", () => {
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
 
-    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
+    const { completeOnboardingAction } =
+      await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() =>
+      completeOnboardingAction(form)
+    )
 
     expect(fetchLearningEntitlementsMock).toHaveBeenCalledWith({
       supabase: expect.any(Object),
@@ -300,6 +405,13 @@ describe("completeOnboardingAction", () => {
     })
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: false,
+        onboarding_completed_at: null,
+        workspace_onboarding_active: false,
+      }),
+    })
+    expect(destination).toBe("/workspace?source=onboarding_setup")
   })
 })

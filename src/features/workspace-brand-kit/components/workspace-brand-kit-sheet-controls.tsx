@@ -17,10 +17,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-import {
-  BRAND_ACCENT_PRESETS,
-  BRAND_THEME_PRESETS,
-} from "../lib"
+import { BRAND_ACCENT_PRESETS, BRAND_THEME_PRESETS } from "../lib"
 import type { ReturnTypeUseWorkspaceBrandKitController } from "./workspace-brand-kit-types"
 
 function hexToRgb(hex: string) {
@@ -36,7 +33,9 @@ function hexToRgb(hex: string) {
 
 function rgbToHex(rgb: { r: number; g: number; b: number }) {
   return `#${[rgb.r, rgb.g, rgb.b]
-    .map((channel) => Math.max(0, Math.min(255, channel)).toString(16).padStart(2, "0"))
+    .map((channel) =>
+      Math.max(0, Math.min(255, channel)).toString(16).padStart(2, "0")
+    )
     .join("")
     .toUpperCase()}`
 }
@@ -55,7 +54,11 @@ function parseRgbText(value: string) {
     .filter(Boolean)
   if (parts.length !== 3) return null
   const channels = parts.map((entry) => Number.parseInt(entry, 10))
-  if (channels.some((channel) => !Number.isInteger(channel) || channel < 0 || channel > 255)) {
+  if (
+    channels.some(
+      (channel) => !Number.isInteger(channel) || channel < 0 || channel > 255
+    )
+  ) {
     return null
   }
   return {
@@ -88,7 +91,7 @@ export function BrandAssetPreview({
     <div
       className={cn(
         "border-border/60 bg-background relative flex h-24 items-center justify-center overflow-hidden rounded-2xl border",
-        className,
+        className
       )}
     >
       {hasImage ? (
@@ -100,7 +103,9 @@ export function BrandAssetPreview({
           className="object-contain p-3"
         />
       ) : (
-        <span className="text-muted-foreground px-4 text-center text-xs">{fallback}</span>
+        <span className="text-muted-foreground px-4 text-center text-xs">
+          {fallback}
+        </span>
       )}
     </div>
   )
@@ -118,8 +123,10 @@ export function Section({
   return (
     <section className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+        <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {description}
+        </p>
       </div>
       {children}
     </section>
@@ -142,10 +149,12 @@ export function UploadControl({
   onFileSelect: (file: File) => void
 }) {
   return (
-    <div className="grid gap-2 rounded-2xl border border-border/60 bg-background/40 p-3">
+    <div className="border-border/60 bg-background/40 grid gap-2 rounded-2xl border p-3">
       <div className="space-y-1">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{helper}</p>
+        <p className="text-foreground text-sm font-medium">{title}</p>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {helper}
+        </p>
       </div>
       <input
         id={id}
@@ -214,17 +223,21 @@ function PresetButton({
         active
           ? "border-foreground/20 bg-muted/80"
           : "border-border/60 bg-background/35 hover:bg-muted/50",
-        disabled && "cursor-not-allowed opacity-60",
+        disabled && "cursor-not-allowed opacity-60"
       )}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground">{title}</p>
-            {active ? <CheckIcon className="h-3.5 w-3.5 text-foreground" aria-hidden /> : null}
+            <p className="text-foreground text-sm font-medium">{title}</p>
+            {active ? (
+              <CheckIcon className="text-foreground h-3.5 w-3.5" aria-hidden />
+            ) : null}
           </div>
-          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {description}
+          </p>
         </div>
         <SwatchStrip colors={colors} />
       </div>
@@ -254,15 +267,17 @@ function AccentButton({
         active
           ? "border-foreground/20 bg-muted/80"
           : "border-border/60 bg-background/35 hover:bg-muted/50",
-        disabled && "cursor-not-allowed opacity-60",
+        disabled && "cursor-not-allowed opacity-60"
       )}
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
         <SwatchStrip colors={colors} />
-        <span className="text-sm font-medium text-foreground">{title}</span>
+        <span className="text-foreground text-sm font-medium">{title}</span>
       </div>
-      {active ? <CheckIcon className="h-3.5 w-3.5 text-foreground" aria-hidden /> : null}
+      {active ? (
+        <CheckIcon className="text-foreground h-3.5 w-3.5" aria-hidden />
+      ) : null}
     </button>
   )
 }
@@ -273,11 +288,13 @@ export function ColorPopoverField({
   label,
   value,
   disabled,
+  commitLabel = "Save color",
   onCommit,
 }: {
   label: string
   value: string
   disabled?: boolean
+  commitLabel?: string
   onCommit: (nextValue: string) => Promise<boolean | void>
 }) {
   const normalizedValue = normalizeHex(value) || "#CBD5E1"
@@ -301,7 +318,11 @@ export function ColorPopoverField({
           })()
 
     if (!/^#[0-9A-F]{6}$/i.test(nextHex)) {
-      setError(mode === "hex" ? "Use a six-digit hex value." : "Use RGB values from 0 to 255.")
+      setError(
+        mode === "hex"
+          ? "Use a six-digit hex value."
+          : "Use RGB values from 0 to 255."
+      )
       return
     }
 
@@ -337,12 +358,17 @@ export function ColorPopoverField({
             />
             <span className="truncate">{label}</span>
           </span>
-          <span className="text-xs text-muted-foreground">{normalizedValue}</span>
+          <span className="text-muted-foreground text-xs">
+            {normalizedValue}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 space-y-3">
         <div className="space-y-2">
-          <Label htmlFor={`${label}-picker`} className="text-xs text-muted-foreground">
+          <Label
+            htmlFor={`${label}-picker`}
+            className="text-muted-foreground text-xs"
+          >
             {label}
           </Label>
           <Input
@@ -354,12 +380,12 @@ export function ColorPopoverField({
               setDraft(mode === "hex" ? nextValue : formatRgbText(nextValue))
               setError(null)
             }}
-            className="h-12 rounded-xl p-1"
+            className="h-12 overflow-hidden rounded-xl p-1 [&::-moz-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
             disabled={disabled}
           />
         </div>
 
-        <div className="inline-flex rounded-full bg-muted/70 p-1">
+        <div className="bg-muted/70 inline-flex rounded-full p-1">
           {(["hex", "rgb"] as const).map((option) => (
             <Button
               key={option}
@@ -369,8 +395,8 @@ export function ColorPopoverField({
               className={cn(
                 "h-7 rounded-full px-3 text-[11px] font-medium",
                 mode === option
-                  ? "bg-background text-foreground shadow-sm hover:bg-background"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-background text-foreground hover:bg-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => {
                 setMode(option)
@@ -397,16 +423,28 @@ export function ColorPopoverField({
             placeholder={mode === "hex" ? "#0F172A" : "15, 23, 42"}
             disabled={disabled || isSaving}
           />
-          {error ? <p className="text-xs text-destructive">{error}</p> : null}
+          {error ? <p className="text-destructive text-xs">{error}</p> : null}
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setOpen(false)}
+          >
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={() => void commit()} disabled={disabled || isSaving}>
-            {isSaving ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-            Save color
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void commit()}
+            disabled={disabled || isSaving}
+          >
+            {isSaving ? (
+              <Loader2Icon className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : null}
+            {commitLabel}
           </Button>
         </div>
       </PopoverContent>
@@ -473,7 +511,7 @@ export function CustomPaletteSection({
     : []
 
   return (
-    <div className="grid gap-3 rounded-2xl border border-border/60 bg-background/35 p-4">
+    <div className="border-border/60 bg-background/35 grid gap-3 rounded-2xl border p-4">
       <ColorPopoverField
         label="Primary color"
         value={controller.draftProfile.brandPrimary ?? "#0F172A"}
@@ -483,8 +521,13 @@ export function CustomPaletteSection({
       <div className="grid gap-2">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-foreground">Supporting colors</p>
-            <p className="text-xs text-muted-foreground">Up to four additional colors for flyers, decks, and social graphics.</p>
+            <p className="text-foreground text-sm font-medium">
+              Supporting colors
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Up to four additional colors for flyers, decks, and social
+              graphics.
+            </p>
           </div>
           {canEdit ? (
             <Button
@@ -502,13 +545,18 @@ export function CustomPaletteSection({
         {colors.length > 0 ? (
           <div className="grid gap-2">
             {colors.map((color, index) => (
-              <div key={`${color}-${index}`} className="flex items-center gap-2">
+              <div
+                key={`${color}-${index}`}
+                className="flex items-center gap-2"
+              >
                 <div className="min-w-0 flex-1">
                   <ColorPopoverField
                     label={`Supporting color ${index + 1}`}
                     value={color}
                     disabled={!canEdit}
-                    onCommit={(nextValue) => controller.savePaletteColor(index, nextValue)}
+                    onCommit={(nextValue) =>
+                      controller.savePaletteColor(index, nextValue)
+                    }
                   />
                 </div>
                 {canEdit ? (
@@ -527,8 +575,9 @@ export function CustomPaletteSection({
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-background/30 px-4 py-5 text-sm text-muted-foreground">
-            Add a few supporting colors if your team needs more than the primary accent.
+          <div className="border-border/60 bg-background/30 text-muted-foreground rounded-2xl border border-dashed px-4 py-5 text-sm">
+            Add a few supporting colors if your team needs more than the primary
+            accent.
           </div>
         )}
       </div>

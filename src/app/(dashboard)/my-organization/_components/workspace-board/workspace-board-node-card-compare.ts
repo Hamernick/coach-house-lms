@@ -25,6 +25,8 @@ export function workspaceBoardCardPropsEqual(
   if (prevData.onTrackerChange !== nextData.onTrackerChange) return false
   if (prevData.onFocusCard !== nextData.onFocusCard) return false
   if (prevData.onOpenCard !== nextData.onOpenCard) return false
+  if (prevData.ontologyRootControl !== nextData.ontologyRootControl)
+    return false
   if (prevData.onMeasuredHeightChange !== nextData.onMeasuredHeightChange) {
     return false
   }
@@ -33,7 +35,9 @@ export function workspaceBoardCardPropsEqual(
   if (prevData.organizationEditorData !== nextData.organizationEditorData)
     return false
   if (prevData.cardId === "organization-overview") {
-    if (prevData.organizationShortcutItems !== nextData.organizationShortcutItems) {
+    if (
+      prevData.organizationShortcutItems !== nextData.organizationShortcutItems
+    ) {
       return false
     }
     if (
@@ -64,7 +68,8 @@ export function workspaceBoardCardPropsEqual(
       return false
     }
     if (
-      prevData.acceleratorStepNodeVisible !== nextData.acceleratorStepNodeVisible
+      prevData.acceleratorStepNodeVisible !==
+      nextData.acceleratorStepNodeVisible
     ) {
       return false
     }
@@ -79,7 +84,8 @@ export function workspaceBoardCardPropsEqual(
       return false
     }
     if (
-      prevData.onAcceleratorRuntimeChange !== nextData.onAcceleratorRuntimeChange
+      prevData.onAcceleratorRuntimeChange !==
+      nextData.onAcceleratorRuntimeChange
     ) {
       return false
     }
@@ -90,7 +96,8 @@ export function workspaceBoardCardPropsEqual(
       return false
     }
     if (
-      prevData.acceleratorTutorialCallout !== nextData.acceleratorTutorialCallout
+      prevData.acceleratorTutorialCallout !==
+      nextData.acceleratorTutorialCallout
     ) {
       return false
     }

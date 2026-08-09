@@ -6,7 +6,7 @@ import {
   FieldSet,
   FieldLegend,
 } from "@/components/ui/field"
-import { ORGANIZATION_PRIMARY_OBJECT_DEFINITIONS } from "@/lib/organization/primary-objects"
+import { ORGANIZATION_ACTIVITY_KIND_DEFINITIONS } from "@/lib/organization/primary-objects"
 import { cn } from "@/lib/utils"
 
 import type { ProgramWizardFormState } from "../schema"
@@ -34,7 +34,7 @@ export function StepActivityKind({
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {ORGANIZATION_PRIMARY_OBJECT_DEFINITIONS.map((option) => {
+        {ORGANIZATION_ACTIVITY_KIND_DEFINITIONS.map((option) => {
           const selected = form.objectKind === option.kind
 
           return (

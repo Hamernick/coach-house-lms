@@ -1,6 +1,9 @@
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 
-function isMissingMemberWorkspaceTableError(error: unknown, tableName: string) {
+export function isMissingMemberWorkspaceTableError(
+  error: unknown,
+  tableName: string
+) {
   if (!error || typeof error !== "object") return false
   const record = error as Record<string, unknown>
   if (record.code === "42P01" || record.code === "PGRST205") return true

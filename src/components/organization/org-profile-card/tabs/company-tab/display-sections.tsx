@@ -1,6 +1,5 @@
 "use client"
 
-
 import {
   AddressDisplay,
   BrandLink,
@@ -9,9 +8,14 @@ import {
   LinkText,
   ProfileField,
 } from "@/components/organization/org-profile-card/shared"
+import { OrganizationNarrativeContent } from "@/components/organization/org-profile-card/organization-narrative-content"
 import type { CompanyViewProps } from "./types"
 import { stripHtml } from "@/lib/markdown/convert"
 import { cn } from "@/lib/utils"
+import {
+  hasWorkspaceBrandKitProfileContent,
+  WorkspaceBrandKitProfilePreview,
+} from "@/features/workspace-brand-kit"
 
 const FORMATION_STATUS_LABELS: Record<string, string> = {
   pre_501c3: "Pre-501(c)(3)",
@@ -21,12 +25,20 @@ const FORMATION_STATUS_LABELS: Record<string, string> = {
 
 export function IdentityPreview({ company }: CompanyViewProps) {
   const formationLabel =
-    typeof company.formationStatus === "string" ? FORMATION_STATUS_LABELS[company.formationStatus] : ""
-  const hasDescription = typeof company.description === "string" && company.description.trim().length > 0
-  const hasEin = typeof company.ein === "string" && company.ein.trim().length > 0
+    typeof company.formationStatus === "string"
+      ? FORMATION_STATUS_LABELS[company.formationStatus]
+      : ""
+  const hasDescription =
+    typeof company.description === "string" &&
+    company.description.trim().length > 0
+  const hasEin =
+    typeof company.ein === "string" && company.ein.trim().length > 0
   const showFormation =
     Boolean(formationLabel) &&
-    (hasDescription || hasEin || company.formationStatus === "approved" || company.formationStatus === "pre_501c3")
+    (hasDescription ||
+      hasEin ||
+      company.formationStatus === "approved" ||
+      company.formationStatus === "pre_501c3")
 
   if (!(hasDescription || hasEin || showFormation)) {
     return null
@@ -56,7 +68,11 @@ export function IdentityPreview({ company }: CompanyViewProps) {
 }
 
 export function ContactPreview({ company }: CompanyViewProps) {
-  if (!([company.rep, company.email, company.phone].some((value) => typeof value === "string" && value.trim()))) {
+  if (
+    ![company.rep, company.email, company.phone].some(
+      (value) => typeof value === "string" && value.trim()
+    )
+  ) {
     return null
   }
 
@@ -95,7 +111,10 @@ export function AddressPreview({ addressLines }: CompanyViewProps) {
   )
 }
 
-const socialFields: Array<{ key: keyof CompanyViewProps["company"]; label: string }> = [
+const socialFields: Array<{
+  key: keyof CompanyViewProps["company"]
+  label: string
+}> = [
   { key: "twitter", label: "Twitter / X" },
   { key: "facebook", label: "Facebook" },
   { key: "linkedin", label: "LinkedIn" },
@@ -106,14 +125,24 @@ const socialFields: Array<{ key: keyof CompanyViewProps["company"]; label: strin
 ]
 
 export function StoryPreview({ company }: CompanyViewProps) {
-  const originStory = typeof company.originStory === "string" ? stripHtml(company.originStory) : ""
-  const vision = typeof company.vision === "string" ? stripHtml(company.vision) : ""
+  const originStory =
+    typeof company.originStory === "string"
+      ? stripHtml(company.originStory)
+      : ""
+  const vision = typeof company.vision === "string" ? company.vision : ""
   const need = typeof company.need === "string" ? stripHtml(company.need) : ""
-  const mission = typeof company.mission === "string" ? stripHtml(company.mission) : ""
-  const values = typeof company.values === "string" ? stripHtml(company.values) : ""
-  const theoryOfChange = typeof company.theoryOfChange === "string" ? stripHtml(company.theoryOfChange) : ""
+  const mission = typeof company.mission === "string" ? company.mission : ""
+  const values = typeof company.values === "string" ? company.values : ""
+  const theoryOfChange =
+    typeof company.theoryOfChange === "string"
+      ? stripHtml(company.theoryOfChange)
+      : ""
 
-  if (!([originStory, vision, need, mission, values, theoryOfChange].some((value) => value.trim().length > 0))) {
+  if (
+    ![originStory, vision, need, mission, values, theoryOfChange].some(
+      (value) => value.trim().length > 0
+    )
+  ) {
     return null
   }
 
@@ -126,23 +155,23 @@ export function StoryPreview({ company }: CompanyViewProps) {
           </ProfileField>
         ) : null}
         {need.trim().length > 0 ? (
-          <ProfileField label="Need statement">
+          <ProfileField label="Need">
             <FieldText text={need} multiline />
           </ProfileField>
         ) : null}
         {mission.trim().length > 0 ? (
           <ProfileField label="Mission">
-            <FieldText text={mission} multiline />
+            <OrganizationNarrativeContent value={mission} />
           </ProfileField>
         ) : null}
         {vision.trim().length > 0 ? (
           <ProfileField label="Vision">
-            <FieldText text={vision} multiline />
+            <OrganizationNarrativeContent value={vision} />
           </ProfileField>
         ) : null}
         {values.trim().length > 0 ? (
           <ProfileField label="Values">
-            <FieldText text={values} multiline />
+            <OrganizationNarrativeContent value={values} />
           </ProfileField>
         ) : null}
         {theoryOfChange.trim().length > 0 ? (
@@ -202,30 +231,13 @@ export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
 }
 
 export function BrandKitPreview({ company }: CompanyViewProps) {
-  const boilerplate = typeof company.boilerplate === "string" ? stripHtml(company.boilerplate) : ""
-  const showBrandKit =
-    (typeof company.logoUrl === "string" && company.logoUrl.trim()) || boilerplate.trim().length > 0
-
-  if (!showBrandKit) {
+  if (!hasWorkspaceBrandKitProfileContent(company)) {
     return null
   }
 
   return (
     <FormRow title="Brand Kit">
-      <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        {typeof company.logoUrl === "string" && company.logoUrl.trim() ? (
-          <ProfileField label="Logo">
-            <div className="pt-1.5">
-              <BrandLink href={company.logoUrl} />
-            </div>
-          </ProfileField>
-        ) : null}
-        {boilerplate.trim().length > 0 ? (
-          <ProfileField label="Boilerplate">
-            <FieldText text={boilerplate} multiline />
-          </ProfileField>
-        ) : null}
-      </div>
+      <WorkspaceBrandKitProfilePreview profile={company} />
     </FormRow>
   )
 }
@@ -245,8 +257,9 @@ export function ViewModeSections(props: CompanyViewProps) {
   if (sections.length === 0) {
     return (
       <div className="mx-auto flex min-h-[220px] w-full max-w-3xl items-center justify-center">
-        <div className="w-full rounded-xl border border-dashed border-border/60 bg-muted/20 px-6 py-8 text-center text-sm text-muted-foreground">
-          No organization details yet. Add company information to populate this section.
+        <div className="border-border/60 bg-muted/20 text-muted-foreground w-full rounded-xl border border-dashed px-6 py-8 text-center text-sm">
+          No organization details yet. Add company information to populate this
+          section.
         </div>
       </div>
     )
@@ -255,9 +268,21 @@ export function ViewModeSections(props: CompanyViewProps) {
   const hasIdentity = sections.some((section) => section.id === "identity")
 
   return (
-    <div className={cn("mx-auto w-full max-w-4xl", hasIdentity ? "divide-y divide-border/60" : "space-y-6")}>
+    <div
+      className={cn(
+        "mx-auto w-full max-w-4xl",
+        hasIdentity ? "divide-border/60 divide-y" : "space-y-6"
+      )}
+    >
       {sections.map((section, index) => (
-        <div key={section.id} className={cn("py-6", index === 0 && "pt-0", index === sections.length - 1 && "pb-0")}>
+        <div
+          key={section.id}
+          className={cn(
+            "py-6",
+            index === 0 && "pt-0",
+            index === sections.length - 1 && "pb-0"
+          )}
+        >
           {section.node}
         </div>
       ))}

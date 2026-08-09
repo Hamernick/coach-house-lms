@@ -10,6 +10,18 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace canvas v2 viewport controls", () => {
+  it("documents the current canvas gestures", () => {
+    const helpSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-help-overlay.tsx"
+    )
+
+    expect(helpSource).toContain("swipe with two fingers on a trackpad")
+    expect(helpSource).toContain("Double-click a card to center it")
+    expect(helpSource).toContain(
+      "Pinch to zoom, or hold Meta or Control while scrolling."
+    )
+  })
+
   it("keeps the reset view action removed from the viewport control path", () => {
     const hookSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts"
@@ -32,12 +44,54 @@ describe("workspace canvas v2 viewport controls", () => {
     const panelSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx"
     )
+    const viewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
+    )
+    const surfaceSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
+    )
+    const flowStateSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-flow-state.ts"
+    )
 
     expect(panelSource).toContain('aria-label="Zoom out"')
     expect(panelSource).toContain('aria-label="Zoom in"')
     expect(panelSource).toContain('aria-label="Recenter view"')
+    expect(viewSource).toContain("group/workspace-canvas-surface")
+    expect(viewSource).toContain("panOnScroll")
+    expect(viewSource).toContain("panOnScrollSpeed={0.8}")
+    expect(viewSource).toContain("onNodeDoubleClick={onNodeDoubleClick}")
+    expect(surfaceSource).toContain(
+      "onNodeDoubleClick: flowState.handleNodeDoubleClick"
+    )
+    expect(flowStateSource).toContain(
+      "executeWorkspaceCanvasViewportCommand({"
+    )
+    expect(flowStateSource).toContain(
+      'command: { kind: "focus-card", cardId: node.id }'
+    )
+    expect(panelSource).toContain(
+      'data-workspace-canvas-viewport-controls="true"'
+    )
+    expect(panelSource).toContain(
+      "group-has-[[data-workspace-canvas-drawer-fullscreen=true]]/workspace-canvas-surface:hidden"
+    )
+    expect(
+      panelSource.match(/size-11 touch-manipulation rounded-xl md:size-9/g)
+    ).toHaveLength(3)
+    expect(panelSource).toContain(
+      "ownerId: `workspace-canvas:viewport-${control}`"
+    )
     expect(panelSource).not.toContain("RotateCcwIcon")
     expect(panelSource).not.toContain("MyOrganizationCalendarView")
+    expect(panelSource).not.toContain("ListTreeIcon")
+    expect(panelSource).not.toContain("NetworkIcon")
+    expect(panelSource).not.toContain("WorkspaceOntologyMode")
+    expect(panelSource).not.toContain("data-workspace-ontology-mode")
+    expect(panelSource).not.toContain("onOntologyModeChange")
+    expect(panelSource).not.toContain("Focus ontology view")
+    expect(panelSource).not.toContain("Map ontology view")
+    expect(viewSource).not.toContain("onOntologyModeChange")
     expect(panelSource).not.toContain('aria-label="Reset view"')
     expect(panelSource).not.toContain('title="Reset view"')
   })

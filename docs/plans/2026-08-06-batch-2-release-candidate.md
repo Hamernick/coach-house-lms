@@ -76,6 +76,7 @@ Status: Preview PR #119 open; connected disposable preview proof passed
 - Selective access additionally requires a matching UUID in
   `WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS` or
   `WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS`.
+- Global access requires `*` in either allowlist variable.
 - Compatibility reads/writes remain unconditional. Finance remains inactive.
 
 ## Rollback plan

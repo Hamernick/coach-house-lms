@@ -56,13 +56,18 @@ export function isWorkspaceFoundationRolloutEnabled({
   const normalizedUserId = userId.trim().toLowerCase()
   if (!normalizedOrgId || !normalizedUserId) return false
 
+  const organizationAllowlist = parseIdentifierAllowlist(
+    rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS
+  )
+  const userAllowlist = parseIdentifierAllowlist(
+    rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS
+  )
+
   return (
-    parseIdentifierAllowlist(
-      rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS
-    ).has(normalizedOrgId) ||
-    parseIdentifierAllowlist(
-      rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS
-    ).has(normalizedUserId)
+    organizationAllowlist.has("*") ||
+    userAllowlist.has("*") ||
+    organizationAllowlist.has(normalizedOrgId) ||
+    userAllowlist.has(normalizedUserId)
   )
 }
 

@@ -8,6 +8,7 @@ export {
   applyOrganizationKanbanVisibilityToParams,
   computeOrganizationKanbanVisibilityCounts,
   filterProjectsByOrganizationKanbanVisibility,
+  getOrganizationKanbanVisibilityIdsSignature,
   normalizeOrganizationKanbanVisibilityMode,
   ORGANIZATION_KANBAN_VISIBILITY_HIDDEN,
   ORGANIZATION_KANBAN_VISIBILITY_VISIBLE,

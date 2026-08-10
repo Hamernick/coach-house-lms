@@ -6,6 +6,7 @@ import {
   applyOrganizationKanbanVisibilityToParams,
   computeOrganizationKanbanVisibilityCounts,
   filterProjectsByOrganizationKanbanVisibility,
+  getOrganizationKanbanVisibilityIdsSignature,
   normalizeOrganizationKanbanVisibilityMode,
 } from "@/features/organization-kanban-visibility"
 
@@ -36,6 +37,15 @@ const projects = [
 ]
 
 describe("organization Kanban visibility", () => {
+  it("keeps recreated equivalent visibility props stable", () => {
+    expect(getOrganizationKanbanVisibilityIdsSignature(["b", "a", "a"])).toBe(
+      getOrganizationKanbanVisibilityIdsSignature(["a", "b"])
+    )
+    expect(getOrganizationKanbanVisibilityIdsSignature(["a"])).not.toBe(
+      getOrganizationKanbanVisibilityIdsSignature(["b"])
+    )
+  })
+
   it("normalizes the URL-backed visibility mode", () => {
     expect(normalizeOrganizationKanbanVisibilityMode("hidden")).toBe("hidden")
     expect(normalizeOrganizationKanbanVisibilityMode("invalid")).toBe("visible")

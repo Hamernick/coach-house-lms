@@ -8,6 +8,10 @@ type OrganizationProject = {
   projectKind?: string
 }
 
+export function getOrganizationKanbanVisibilityIdsSignature(ids: string[]) {
+  return JSON.stringify(Array.from(new Set(ids)).sort())
+}
+
 export function normalizeOrganizationKanbanVisibilityMode(
   value: string | null | undefined
 ): OrganizationKanbanVisibilityMode {

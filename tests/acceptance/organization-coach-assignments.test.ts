@@ -9,6 +9,7 @@ import {
   filterProjectsByOrganizationCoach,
   filterByOrganizationCoachScope,
   getOrganizationCoachInitials,
+  getOrganizationCoachAssignmentsSignature,
   normalizeOrganizationCoachFilter,
 } from "@/features/organization-coach-assignments"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
@@ -62,6 +63,18 @@ describe("organization-coach-assignments feature contract", () => {
         avatarUrl: null,
       })
     ).toBe("PC")
+  })
+
+  it("treats recreated equivalent assignment props as stable", () => {
+    const current = [assignment(paula)]
+    const recreated = [assignment({ ...paula })]
+
+    expect(getOrganizationCoachAssignmentsSignature(current)).toBe(
+      getOrganizationCoachAssignmentsSignature(recreated)
+    )
+    expect(
+      getOrganizationCoachAssignmentsSignature(current)
+    ).not.toBe(getOrganizationCoachAssignmentsSignature([assignment(joel)]))
   })
 
   it("keeps writes developer-only and reads internal", () => {

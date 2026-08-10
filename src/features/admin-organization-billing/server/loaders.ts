@@ -7,6 +7,7 @@ import { resolveAdminOrganizationBillingPlan } from "../lib"
 import type { AdminOrganizationBillingState } from "../types"
 import {
   loadLatestAdminOrganizationBillingPayment,
+  MissingLinkedStripeSubscriptionError,
   resolveAdminOrganizationBillingContext,
   subscriptionCurrentPeriodEnd,
 } from "./context"
@@ -71,6 +72,16 @@ export async function loadAdminOrganizationBilling(
       },
     }
   } catch (error) {
+    if (error instanceof MissingLinkedStripeSubscriptionError) {
+      logger.warn("admin_organization_billing_link_unavailable", { orgId })
+      return {
+        mode: "unavailable",
+        message:
+          "The linked Stripe subscription was not found. Open Stripe to reconnect this account.",
+        orgId,
+      }
+    }
+
     logger.error("admin_organization_billing_load_failed", error, { orgId })
     return {
       mode: "unavailable",

@@ -787,6 +787,10 @@ describe("workspace canvas overlay drawer", () => {
   })
 
   it("round-trips every canonical workspace drawer URL", () => {
+    const drawerHookSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-accelerator-drawer.ts"
+    )
+
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=organization")
     ).toMatchObject({ tab: "organization" })
@@ -807,6 +811,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=finance")
     ).toEqual({ tab: "finance" })
+    expect(drawerHookSource).toContain('initialDrawerTab === "finance"')
+    expect(drawerHookSource).toContain('return { tab: "finance" }')
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=unknown")
     ).toBeNull()

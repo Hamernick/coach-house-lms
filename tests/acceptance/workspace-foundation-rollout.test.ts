@@ -80,6 +80,28 @@ describe("workspace foundation rollout", () => {
     ).toBe(false)
   })
 
+  it("allows every authenticated workspace identity with an explicit wildcard", () => {
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "*",
+        },
+      })
+    ).toBe(true)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        orgId: "org-2",
+        userId: "user-2",
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "*",
+        },
+      })
+    ).toBe(true)
+  })
+
   it("preserves legacy destinations when later drawer routes are disabled", () => {
     const baseRequest = {
       acceleratorGroup: null,

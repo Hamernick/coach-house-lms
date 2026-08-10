@@ -1,4 +1,4 @@
-import { Inter, Sora, Space_Grotesk } from "next/font/google"
+import { Inter, Sora } from "next/font/google"
 
 export const legacyHomeHeadingFont = Sora({
   subsets: ["latin"],
@@ -15,11 +15,4 @@ export const legacyHomeInterFont = Inter({
   preload: false,
 })
 
-const body = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-  preload: false,
-})
-
-export const LEGACY_HOME_BODY_CLASSNAME = body.className
+export const LEGACY_HOME_BODY_CLASSNAME = legacyHomeInterFont.className

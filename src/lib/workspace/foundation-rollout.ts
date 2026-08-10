@@ -7,28 +7,10 @@ import {
 
 export const WORKSPACE_FOUNDATION_ROLLOUT_ENABLED_ENV =
   "WORKSPACE_FOUNDATION_ROLLOUT_ENABLED"
-export const WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS_ENV =
-  "WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS"
-export const WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS_ENV =
-  "WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS"
 
 type WorkspaceFoundationRolloutEnvironment = Partial<
-  Record<
-    | typeof WORKSPACE_FOUNDATION_ROLLOUT_ENABLED_ENV
-    | typeof WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS_ENV
-    | typeof WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS_ENV,
-    string | undefined
-  >
+  Record<typeof WORKSPACE_FOUNDATION_ROLLOUT_ENABLED_ENV, string | undefined>
 >
-
-function parseIdentifierAllowlist(value: string | undefined) {
-  return new Set(
-    (value ?? "")
-      .split(",")
-      .map((entry) => entry.trim().toLowerCase())
-      .filter(Boolean)
-  )
-}
 
 export function isWorkspaceFoundationRolloutEnabled({
   environment,
@@ -42,33 +24,13 @@ export function isWorkspaceFoundationRolloutEnabled({
   const rolloutEnvironment = environment ?? {
     WORKSPACE_FOUNDATION_ROLLOUT_ENABLED:
       process.env.WORKSPACE_FOUNDATION_ROLLOUT_ENABLED,
-    WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS:
-      process.env.WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS,
-    WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS:
-      process.env.WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS,
   }
 
   if (rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_ENABLED !== "1") {
     return false
   }
 
-  const normalizedOrgId = orgId.trim().toLowerCase()
-  const normalizedUserId = userId.trim().toLowerCase()
-  if (!normalizedOrgId || !normalizedUserId) return false
-
-  const organizationAllowlist = parseIdentifierAllowlist(
-    rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS
-  )
-  const userAllowlist = parseIdentifierAllowlist(
-    rolloutEnvironment.WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS
-  )
-
-  return (
-    organizationAllowlist.has("*") ||
-    userAllowlist.has("*") ||
-    organizationAllowlist.has(normalizedOrgId) ||
-    userAllowlist.has(normalizedUserId)
-  )
+  return Boolean(orgId.trim() && userId.trim())
 }
 
 function appendOptionalParam(

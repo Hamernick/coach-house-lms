@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { getOrganizationKanbanVisibilityIdsSignature } from "../lib"
 import type { UpdateOrganizationKanbanVisibilityAction } from "../types"
 
 export function useOrganizationKanbanVisibilityController({
@@ -21,11 +22,14 @@ export function useOrganizationKanbanVisibilityController({
     string[]
   >([])
   const [, startTransition] = useTransition()
+  const initialHiddenOrganizationIdsRef = useRef(initialHiddenOrganizationIds)
+  initialHiddenOrganizationIdsRef.current = initialHiddenOrganizationIds
+  const initialHiddenOrganizationIdsSignature =
+    getOrganizationKanbanVisibilityIdsSignature(initialHiddenOrganizationIds)
 
-  useEffect(
-    () => setHiddenOrganizationIds(initialHiddenOrganizationIds),
-    [initialHiddenOrganizationIds]
-  )
+  useEffect(() => {
+    setHiddenOrganizationIds(initialHiddenOrganizationIdsRef.current)
+  }, [initialHiddenOrganizationIdsSignature])
 
   const hiddenOrganizationIdSet = useMemo(
     () => new Set(hiddenOrganizationIds),

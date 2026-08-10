@@ -6,12 +6,29 @@ export {
 } from "@/lib/organization-coach-scope"
 import type { OrganizationCoachOption } from "../types"
 import type {
+  OrganizationCoachAssignment,
   OrganizationCoachAssignmentCoverage,
   OrganizationCoachFilterValue,
 } from "../types"
 
 export const ORGANIZATION_COACH_FILTER_ALL = "all"
 export const ORGANIZATION_COACH_FILTER_UNASSIGNED = "unassigned"
+
+export function getOrganizationCoachAssignmentsSignature(
+  assignments: OrganizationCoachAssignment[]
+) {
+  return JSON.stringify(
+    assignments.map(({ assignedBy, coach, organizationId, updatedAt }) => [
+      organizationId,
+      assignedBy,
+      updatedAt,
+      coach.id,
+      coach.name,
+      coach.email,
+      coach.avatarUrl,
+    ])
+  )
+}
 
 export function getOrganizationCoachInitials(coach: OrganizationCoachOption) {
   return coach.name

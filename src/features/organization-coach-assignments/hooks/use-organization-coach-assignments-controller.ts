@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { getOrganizationCoachAssignmentsSignature } from "../lib"
 import type {
   OrganizationCoachAssignment,
   OrganizationCoachOption,
@@ -30,8 +31,14 @@ export function useOrganizationCoachAssignmentController({
   const [assignments, setAssignments] = useState(initialAssignments)
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+  const initialAssignmentsRef = useRef(initialAssignments)
+  initialAssignmentsRef.current = initialAssignments
+  const initialAssignmentsSignature =
+    getOrganizationCoachAssignmentsSignature(initialAssignments)
 
-  useEffect(() => setAssignments(initialAssignments), [initialAssignments])
+  useEffect(() => {
+    setAssignments(initialAssignmentsRef.current)
+  }, [initialAssignmentsSignature])
 
   const assignedCoachIds = useMemo(
     () => new Set(assignments.map((assignment) => assignment.coach.id)),

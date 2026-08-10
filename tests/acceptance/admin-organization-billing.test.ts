@@ -113,6 +113,13 @@ describe("admin organization billing", () => {
       ),
       "utf8"
     )
+    const loader = readFileSync(
+      join(
+        process.cwd(),
+        "src/features/admin-organization-billing/server/loaders.ts"
+      ),
+      "utf8"
+    )
     const route = readFileSync(
       join(process.cwd(), "src/app/(dashboard)/organizations/[id]/page.tsx"),
       "utf8"
@@ -132,6 +139,16 @@ describe("admin organization billing", () => {
     expect(actions).toContain("idempotencyKey")
     expect(context).toContain("client.invoicePayments.list")
     expect(context).toContain('status: "paid"')
+    expect(context).toContain("MissingLinkedStripeSubscriptionError")
+    expect(loader).toContain(
+      "error instanceof MissingLinkedStripeSubscriptionError"
+    )
+    expect(loader).toContain(
+      'logger.warn("admin_organization_billing_link_unavailable"'
+    )
+    expect(loader).toContain(
+      'logger.error("admin_organization_billing_load_failed"'
+    )
     expect(route).toContain('staff.accessLevel === "developer"')
     expect(route).toContain("<AdminOrganizationBillingPanel")
     expect(rightPanel).toContain("{adminBilling}")

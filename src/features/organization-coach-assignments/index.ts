@@ -10,6 +10,7 @@ export {
   filterByOrganizationCoachScope,
   filterProjectsByOrganizationCoach,
   getOrganizationCoachInitials,
+  getOrganizationCoachAssignmentsSignature,
   normalizeOrganizationCoachFilter,
   ORGANIZATION_COACH_FILTER_ALL,
   ORGANIZATION_COACH_FILTER_UNASSIGNED,

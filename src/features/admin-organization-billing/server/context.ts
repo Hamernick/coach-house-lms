@@ -32,6 +32,13 @@ export type LatestAdminOrganizationBillingPayment = {
   invoice: Stripe.Invoice
 }
 
+export class MissingLinkedStripeSubscriptionError extends Error {
+  constructor() {
+    super("The linked Stripe subscription was not found.")
+    this.name = "MissingLinkedStripeSubscriptionError"
+  }
+}
+
 function asMetadata(value: Json | null) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return value as Record<string, unknown>
@@ -39,6 +46,15 @@ function asMetadata(value: Json | null) {
 
 function stripeErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Stripe request failed."
+}
+
+function isStripeResourceMissingError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "resource_missing"
+  )
 }
 
 function orderConfigsByMode(configs: StripeRuntimeConfig[], mode: unknown) {
@@ -82,6 +98,7 @@ export async function resolveAdminOrganizationBillingContext({
   }
 
   let lastError: unknown = null
+  let everyLookupFailureWasMissing = true
   for (const config of configs) {
     try {
       const subscription = await config.client.subscriptions.retrieve(
@@ -90,7 +107,13 @@ export async function resolveAdminOrganizationBillingContext({
       return { config, record, subscription }
     } catch (error) {
       lastError = error
+      everyLookupFailureWasMissing =
+        everyLookupFailureWasMissing && isStripeResourceMissingError(error)
     }
+  }
+
+  if (lastError && everyLookupFailureWasMissing) {
+    throw new MissingLinkedStripeSubscriptionError()
   }
 
   throw new Error(

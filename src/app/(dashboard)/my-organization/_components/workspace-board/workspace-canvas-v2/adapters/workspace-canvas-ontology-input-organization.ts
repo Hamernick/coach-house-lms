@@ -8,6 +8,7 @@ import type {
 } from "@/features/workspace-ontology"
 import {
   getOrganizationDocumentsPath,
+  getWorkspaceDrawerPath,
   getWorkspaceEditorPath,
 } from "@/lib/workspace/routes"
 
@@ -155,7 +156,7 @@ export function buildWorkspaceOrganizationOntologyRoot({
             ? "No documents available"
             : `${documents.filter((node) => node.status === "complete").length}/${documents.length} available`,
         relationshipLabel: "Next step",
-        href: getOrganizationDocumentsPath(),
+        href: getWorkspaceDrawerPath({ tab: "documents" }),
         actionLabel: "Open vault",
         children: documents,
       },

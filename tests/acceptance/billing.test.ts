@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createBillingPortalSession } from "@/app/(dashboard)/billing/actions"
 import {
@@ -9,10 +9,71 @@ import {
   resetTestMocks,
   stripeBillingPortalCreateMock,
   stripeConstructorMock,
-  stripeSubscriptionRetrieveMock,
+  stripeSubscriptionSearchMock,
 } from "./test-utils"
 
 import { env } from "@/lib/env"
+
+const { resolveActiveOrganizationMock, resolveDevtoolsAudienceMock } =
+  vi.hoisted(() => ({
+    resolveActiveOrganizationMock: vi.fn(),
+    resolveDevtoolsAudienceMock: vi.fn(),
+  }))
+
+vi.mock("@/lib/organization/active-org", () => ({
+  resolveActiveOrganization: resolveActiveOrganizationMock,
+}))
+
+vi.mock("@/lib/devtools/audience", () => ({
+  resolveDevtoolsAudience: resolveDevtoolsAudienceMock,
+  resolveTesterMetadata: vi.fn(() => false),
+}))
+
+function activeSubscription(id = "sub_123") {
+  return {
+    id,
+    created: 1_700_000_000,
+    status: "active",
+    customer: "cus_123",
+    cancel_at: null,
+    canceled_at: null,
+    cancel_at_period_end: false,
+    metadata: {
+      kind: "organization",
+      org_user_id: "org_123",
+      user_id: "user-123",
+      plan_tier: "organization",
+    },
+    items: {
+      data: [
+        {
+          id: `si_${id}`,
+          price: { id: "price_org" },
+          quantity: 1,
+          current_period_end: 1_800_000_000,
+        },
+      ],
+    },
+  }
+}
+
+function billingSupabase() {
+  const subscriptionsTable = {
+    select: () => subscriptionsTable,
+    eq: () => subscriptionsTable,
+    not: () => subscriptionsTable,
+    order: () => subscriptionsTable,
+    limit: () => Promise.resolve({ data: [], error: null }),
+  }
+
+  return {
+    auth: {
+      getSession: () =>
+        Promise.resolve({ data: { session: { user: { id: "user-123" } } } }),
+    },
+    from: () => subscriptionsTable,
+  }
+}
 
 describe("billing portal flow", () => {
   const originalStripeSecret = env.STRIPE_SECRET_KEY
@@ -20,28 +81,21 @@ describe("billing portal flow", () => {
   beforeEach(() => {
     resetTestMocks()
     env.STRIPE_SECRET_KEY = originalStripeSecret
+    resolveActiveOrganizationMock.mockResolvedValue({
+      orgId: "org_123",
+      role: "owner",
+    })
+    resolveDevtoolsAudienceMock.mockResolvedValue({
+      isAdmin: false,
+      isTester: false,
+    })
+    stripeSubscriptionSearchMock.mockResolvedValue({ data: [] })
   })
 
   it("returns an error when Stripe is not configured", async () => {
     env.STRIPE_SECRET_KEY = undefined
 
-    const supabase = {
-      auth: {
-        getSession: () =>
-          Promise.resolve({ data: { session: { user: { id: "user-123" } } } }),
-      },
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            order: () => ({
-              limit: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
-            }),
-          }),
-        }),
-      }),
-    }
-
-    createSupabaseServerClientServerMock.mockReturnValue(supabase)
+    createSupabaseServerClientServerMock.mockReturnValue(billingSupabase())
 
     const result = await createBillingPortalSession()
 
@@ -52,28 +106,17 @@ describe("billing portal flow", () => {
   it("creates a billing portal session when Stripe is available", async () => {
     env.STRIPE_SECRET_KEY = "sk_test_acceptance"
 
-    const subscriptionsTable = {
-      select: () => subscriptionsTable,
-      eq: () => subscriptionsTable,
-      order: () => subscriptionsTable,
-      limit: () => subscriptionsTable,
-      maybeSingle: () =>
-        Promise.resolve({ data: { stripe_customer_id: "cus_123" }, error: null }),
-    }
-
-    const supabase = {
-      auth: {
-        getSession: () =>
-          Promise.resolve({ data: { session: { user: { id: "user-123" } } } }),
-      },
-      from: () => subscriptionsTable,
-    }
-
-    createSupabaseServerClientServerMock.mockReturnValue(supabase)
-    headersMock.mockResolvedValue({
-      get: (name: string) => (name === "origin" ? "https://app.test" : undefined),
+    createSupabaseServerClientServerMock.mockReturnValue(billingSupabase())
+    stripeSubscriptionSearchMock.mockResolvedValue({
+      data: [activeSubscription()],
     })
-    stripeBillingPortalCreateMock.mockResolvedValue({ url: "https://billing.example/session" })
+    headersMock.mockResolvedValue({
+      get: (name: string) =>
+        name === "origin" ? "https://app.test" : undefined,
+    })
+    stripeBillingPortalCreateMock.mockResolvedValue({
+      url: "https://billing.example/session",
+    })
 
     const result = await createBillingPortalSession()
 
@@ -85,53 +128,24 @@ describe("billing portal flow", () => {
       "billing_portal_session_created",
       expect.objectContaining({
         userId: "user-123",
-      }),
+      })
     )
     expect(loggerErrorMock).not.toHaveBeenCalled()
   })
 
-  it("falls back to the Stripe subscription when the local customer id is missing", async () => {
+  it("blocks the portal when duplicate active subscriptions exist", async () => {
     env.STRIPE_SECRET_KEY = "sk_test_acceptance"
-
-    const subscriptionsTable = {
-      select: () => subscriptionsTable,
-      eq: () => subscriptionsTable,
-      order: () => subscriptionsTable,
-      limit: () => subscriptionsTable,
-      maybeSingle: () =>
-        Promise.resolve({
-          data: {
-            stripe_customer_id: null,
-            stripe_subscription_id: "sub_123",
-            metadata: { stripe_mode: "test" },
-          },
-          error: null,
-        }),
-    }
-
-    const supabase = {
-      auth: {
-        getSession: () =>
-          Promise.resolve({ data: { session: { user: { id: "user-123" } } } }),
-      },
-      from: () => subscriptionsTable,
-    }
-
-    createSupabaseServerClientServerMock.mockReturnValue(supabase)
-    headersMock.mockResolvedValue({
-      get: (name: string) => (name === "origin" ? "https://app.test" : undefined),
+    createSupabaseServerClientServerMock.mockReturnValue(billingSupabase())
+    stripeSubscriptionSearchMock.mockResolvedValue({
+      data: [activeSubscription("sub_one"), activeSubscription("sub_two")],
     })
-    stripeSubscriptionRetrieveMock.mockResolvedValue({ customer: "cus_from_sub" })
-    stripeBillingPortalCreateMock.mockResolvedValue({ url: "https://billing.example/session" })
 
     const result = await createBillingPortalSession()
 
-    expect(stripeSubscriptionRetrieveMock).toHaveBeenCalledWith("sub_123")
-    expect(stripeBillingPortalCreateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        customer: "cus_from_sub",
-      }),
-    )
-    expect(result).toEqual({ url: "https://billing.example/session" })
+    expect(result).toEqual({
+      error:
+        "Multiple active subscriptions need support review before billing changes.",
+    })
+    expect(stripeBillingPortalCreateMock).not.toHaveBeenCalled()
   })
 })

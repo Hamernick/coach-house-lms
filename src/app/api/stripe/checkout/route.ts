@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
-import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import {
-  collectStripeCheckoutPriceDiagnostics,
-} from "@/lib/billing/stripe-checkout-diagnostics"
+  resolveDevtoolsAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
+import { collectStripeCheckoutPriceDiagnostics } from "@/lib/billing/stripe-checkout-diagnostics"
 import {
   resolveStripePriceIdForPlan,
   resolveStripeRuntimeConfigForAudience,
   type StripeBillingPlanTier,
 } from "@/lib/billing/stripe-runtime"
+import {
+  resolveOrganizationSubscriptionState,
+  transitionOrganizationPlan,
+} from "@/lib/billing/organization-plan-transition"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
@@ -38,12 +43,17 @@ function normalizeDetail(raw: string | null | undefined) {
   return value
 }
 
-function resolveCheckoutErrorCode(error: Stripe.errors.StripeError | null): CheckoutErrorCode {
+function resolveCheckoutErrorCode(
+  error: Stripe.errors.StripeError | null
+): CheckoutErrorCode {
   if (!error) return "checkout_failed"
   if (error.type === "StripeAuthenticationError") return "stripe_auth_error"
   if (error.type === "StripePermissionError") return "stripe_permission_error"
   if (error.type === "StripeInvalidRequestError") {
-    if (error.code === "resource_missing" && (error.param ?? "").includes("line_items")) {
+    if (
+      error.code === "resource_missing" &&
+      (error.param ?? "").includes("line_items")
+    ) {
       return "price_not_found"
     }
     return "stripe_invalid_request"
@@ -192,7 +202,10 @@ function buildLoginRedirect({
     checkoutContext,
   })
   const response = NextResponse.redirect(
-    new URL(`/login?source=${encodeURIComponent(source)}&redirect=${encodeURIComponent(nextPath)}`, request.url),
+    new URL(
+      `/login?source=${encodeURIComponent(source)}&redirect=${encodeURIComponent(nextPath)}`,
+      request.url
+    )
   )
   copySupabaseCookies(supabaseResponse, response)
   return response
@@ -203,13 +216,18 @@ export async function GET(request: NextRequest) {
   const supabase = createSupabaseRouteHandlerClient(request, supabaseResponse)
 
   const planParam = request.nextUrl.searchParams.get("plan")
-  const planTier: StripeBillingPlanTier = planParam === "operations_support" ? "operations_support" : "organization"
-  const planName = planTier === "operations_support" ? "Operations Support" : "Organization"
+  const planTier: StripeBillingPlanTier =
+    planParam === "operations_support" ? "operations_support" : "organization"
   const source = normalizeSource(request.nextUrl.searchParams.get("source"))
-  const redirectTarget = getSafeInternalRedirect(request.nextUrl.searchParams.get("redirect"))
+  const redirectTarget = getSafeInternalRedirect(
+    request.nextUrl.searchParams.get("redirect")
+  )
   const cancelTarget =
-    getSafeInternalRedirect(request.nextUrl.searchParams.get("cancel")) ?? redirectTarget
-  const checkoutContext = normalizeCheckoutContext(request.nextUrl.searchParams.get("context"))
+    getSafeInternalRedirect(request.nextUrl.searchParams.get("cancel")) ??
+    redirectTarget
+  const checkoutContext = normalizeCheckoutContext(
+    request.nextUrl.searchParams.get("context")
+  )
   const debugToken = createDebugToken()
 
   const {
@@ -234,7 +252,9 @@ export async function GET(request: NextRequest) {
     fallbackIsTester,
   })
 
-  const stripeConfig = resolveStripeRuntimeConfigForAudience({ isTester: audience.isTester })
+  const stripeConfig = resolveStripeRuntimeConfigForAudience({
+    isTester: audience.isTester,
+  })
   if (!stripeConfig) {
     return buildErrorRedirect({
       request,
@@ -247,7 +267,10 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  const priceId = resolveStripePriceIdForPlan({ config: stripeConfig, planTier })
+  const priceId = resolveStripePriceIdForPlan({
+    config: stripeConfig,
+    planTier,
+  })
   if (!priceId) {
     return buildErrorRedirect({
       request,
@@ -255,7 +278,10 @@ export async function GET(request: NextRequest) {
       returnTarget: cancelTarget ?? redirectTarget,
       planTier,
       source,
-      code: planTier === "operations_support" ? "operations_unavailable" : "missing_price",
+      code:
+        planTier === "operations_support"
+          ? "operations_unavailable"
+          : "missing_price",
       debugToken,
     })
   }
@@ -279,54 +305,52 @@ export async function GET(request: NextRequest) {
       successUrl.searchParams.set("context", checkoutContext)
     }
 
-    const checkout = await stripeConfig.client.checkout.sessions.create({
-      mode: "subscription",
-      allow_promotion_codes: true,
-      client_reference_id: userId,
-      customer_email: user.email ?? undefined,
-      line_items: [{ price: priceId, quantity: 1 }],
-      metadata: {
-        kind: "organization",
-        user_id: userId,
-        org_user_id: orgId,
-        planName,
-        plan_tier: planTier,
-        stripe_mode: stripeConfig.mode,
-        ...(checkoutContext ? { context: checkoutContext } : {}),
-        ...(redirectTarget ? { redirect_after_success: redirectTarget } : {}),
-      },
-      subscription_data: {
-        metadata: {
-          kind: "organization",
-          user_id: userId,
-          org_user_id: orgId,
-          planName,
-          plan_tier: planTier,
-          stripe_mode: stripeConfig.mode,
-          ...(checkoutContext ? { context: checkoutContext } : {}),
-          ...(redirectTarget ? { redirect_after_success: redirectTarget } : {}),
-        },
-      },
-      success_url: successUrl.toString(),
-      cancel_url: cancelTarget
-        ? buildInternalRedirectUrl({
-            request,
-            target: cancelTarget,
-            params: { cancelled: "true" },
-          }).toString()
-        : `${request.nextUrl.origin}/pricing?cancelled=true`,
+    const state = await resolveOrganizationSubscriptionState({
+      supabase,
+      config: stripeConfig,
+      orgId,
+    })
+    if (state.subscriptions.length > 0) {
+      const billingUrl = new URL("/billing", request.url)
+      billingUrl.searchParams.set("plan", planTier)
+      if (state.subscriptions.length > 1) {
+        billingUrl.searchParams.set("billing_error", "duplicate_subscriptions")
+      } else {
+        billingUrl.searchParams.set("requested_plan", planTier)
+      }
+      const response = NextResponse.redirect(billingUrl)
+      copySupabaseCookies(supabaseResponse, response)
+      return response
+    }
+
+    const cancelUrl = cancelTarget
+      ? buildInternalRedirectUrl({
+          request,
+          target: cancelTarget,
+          params: { cancelled: "true" },
+        }).toString()
+      : `${request.nextUrl.origin}/pricing?cancelled=true`
+    const result = await transitionOrganizationPlan({
+      state,
+      config: stripeConfig,
+      userId,
+      userEmail: user.email ?? null,
+      orgId,
+      planTier,
+      priceId,
+      origin: request.nextUrl.origin,
+      successUrl: successUrl.toString(),
+      cancelUrl,
+      source,
+      attempt: `${source}-${checkoutContext ?? "default"}-${Math.floor(Date.now() / 86_400_000)}`,
+      checkoutContext,
+      checkoutMetadata: redirectTarget
+        ? { redirect_after_success: redirectTarget }
+        : undefined,
     })
 
-    if (!checkout.url) {
-      return buildErrorRedirect({
-        request,
-        supabaseResponse,
-        returnTarget: cancelTarget ?? redirectTarget,
-        planTier,
-        source,
-        code: "session_url_missing",
-        debugToken,
-      })
+    if (result.kind !== "checkout") {
+      throw new Error("Unable to create a safe Stripe checkout session.")
     }
 
     await trackUserJourneyMilestone({
@@ -341,21 +365,23 @@ export async function GET(request: NextRequest) {
       metadata: {
         requestSource: source,
         checkoutContext,
-        checkoutSessionId: checkout.id,
         stripeMode: stripeConfig.mode,
         stripeTarget: stripeConfig.target,
+        checkoutSessionId: result.sessionId,
         hasRedirectTarget: Boolean(redirectTarget),
         hasCancelTarget: Boolean(cancelTarget),
       },
     })
 
-    const response = NextResponse.redirect(checkout.url)
+    const response = NextResponse.redirect(result.url)
     copySupabaseCookies(supabaseResponse, response)
     return response
   } catch (error) {
     const stripeError = error as Stripe.errors.StripeError | null
     const resolvedCode = resolveCheckoutErrorCode(stripeError)
-    const detail = normalizeDetail(stripeError?.code ?? stripeError?.type ?? null)
+    const detail = normalizeDetail(
+      stripeError?.code ?? stripeError?.type ?? null
+    )
     const stripePriceDiagnostics =
       resolvedCode === "price_not_found"
         ? await collectStripeCheckoutPriceDiagnostics({

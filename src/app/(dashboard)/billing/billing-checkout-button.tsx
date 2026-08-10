@@ -2,12 +2,16 @@ import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 
+import { startBillingPlanTransition } from "./actions"
+import { BillingPlanSubmitButton } from "./billing-plan-submit-button"
+
 type BillingCheckoutButtonProps = {
   plan: "organization" | "operations_support"
   children: ReactNode
   disabled?: boolean
   variant?: "default" | "secondary"
   className?: string
+  attempt?: string
 }
 
 export function BillingCheckoutButton({
@@ -16,6 +20,7 @@ export function BillingCheckoutButton({
   disabled = false,
   variant = "default",
   className,
+  attempt = "billing-plan-transition",
 }: BillingCheckoutButtonProps) {
   if (disabled) {
     return (
@@ -26,8 +31,12 @@ export function BillingCheckoutButton({
   }
 
   return (
-    <Button asChild className={className} variant={variant}>
-      <a href={`/api/stripe/checkout?plan=${plan}&source=billing`}>{children}</a>
-    </Button>
+    <form action={startBillingPlanTransition} className="w-full">
+      <input type="hidden" name="plan" value={plan} />
+      <input type="hidden" name="attempt" value={attempt} />
+      <BillingPlanSubmitButton className={className} variant={variant}>
+        {children}
+      </BillingPlanSubmitButton>
+    </form>
   )
 }

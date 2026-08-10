@@ -49,7 +49,7 @@ the relevant wave rather than inferred from merge status:
 | PR #126      | Organization render-loop and stale Stripe-link error repair |
 | PR #127      | Production font-build repair                                |
 
-The baseline is `origin/main` commit `4127d9c0` on 2026-08-10. A production
+The baseline is `origin/main` commit `2a2d887e` on 2026-08-10. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -83,8 +83,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 | Wave                                         | Status on 2026-08-10  | Scope                                                                                                                                               | Exit evidence                                                                                                                               | Rollback                                                                                                    |
 | -------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 0. Truth and release gates                   | Active                | Reconcile this PRD with current production, rank risks, define branch and release rules                                                             | Source-backed audit merged; no product-code change                                                                                          | Revert documentation only                                                                                   |
-| 1. Paying lifecycle                          | Next                  | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, recovery     | Stripe test-mode matrix; no duplicate subscription; database and member UI converge; controlled approved live canary                        | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
+| 0. Truth and release gates                   | Code complete         | Reconcile this PRD with current production, rank risks, define branch and release rules                                                             | Source-backed audit merged; no product-code change                                                                                          | Revert documentation only                                                                                   |
+| 1. Paying lifecycle                          | Active, Wave 1A local | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, recovery     | Stripe test-mode matrix; no duplicate subscription; database and member UI converge; controlled approved live canary                        | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
 | 2. Free signup and legal                     | Queued                | Signup, verification, login, onboarding, Terms, Privacy, required acceptance, consent evidence, authz                                               | Every signup surface covered; consent version/hash/UTC recorded; denial and retry tested; legal text approved                               | Disable new signup entry while preserving existing accounts and consent evidence                            |
 | 3. Data durability                           | Queued                | Organization, workspace, Finance, subscription, and onboarding writes under retry, concurrency, disconnect, stale revision, and partial failure     | No silent overwrite or data loss; idempotent retries; cache invalidation and rollback tests; final-schema RLS                               | Disable affected mutation; preserve rows and audit evidence; forward repair only                            |
 | 4. Existing release completion               | Queued, partly merged | Finance Activity/History, workspace documents drawer, organization pages, role access, deep links, map/profile regressions                          | Paid/free/admin/coach/member desktop and mobile journeys; refresh and cross-account isolation; no console errors                            | Disable narrow entry point without deleting persisted data                                                  |
@@ -92,6 +92,29 @@ wave, but unrelated scope does not accumulate in one PR.
 | 6. Theme and product-quality pass            | Queued                | Light/dark contrast, transparent organization/resource profile background, typography, responsive layout, accessibility, loading/empty/error states | Light/dark/mobile screenshots; automated accessibility and contrast checks; no visual regressions                                           | Revert token/surface changes only                                                                           |
 | 7. Qualified resources and varied guides     | Queued                | Promote verified resource cohorts, close evidence gaps, then publish basic category- and location-varied guides                                     | Exact candidate/complete/verified/publishable/promoted/public counts; cohort canary; guide relevance and broken-link checks                 | Unpublish cohort or guide without deleting evidence                                                         |
 | 8. Integrated production release             | Queued                | Combine verified waves, security review, support runbook, monitoring, canary, gradual rollout                                                       | Full `pnpm check:quality`; connected RLS; preview journeys; rollback rehearsal; paid/free canaries; production browser and monitoring proof | Wave-specific flags and forward repair; never destructive data rollback                                     |
+
+Wave 1A is a local release candidate on
+`fix/paid-subscription-plan-changes-20260810`; it is not merged, preview
+verified, or production verified. It centralizes subscription discovery,
+Checkout creation, existing-item plan changes, portal entry, idempotency, and
+member billing display around verified Stripe state. Existing plan changes use
+the exact subscription item with no proration, while ambiguous, canceling, or
+unverifiable state fails closed.
+
+A read-only live audit found `39` active Stripe organization subscriptions
+across `36` owner groups. Two owner groups have duplicate active subscriptions;
+the largest has three. Supabase has `49` active-like non-stub rows across `47`
+owner groups: `15` rows do not match a live-active Stripe subscription, `5`
+live-active Stripe subscriptions have no matching row, and `34` match. No live
+Stripe or Supabase mutation was made. Exact owner-by-owner repair remains a
+separate approval-gated action after the preventive code is released.
+
+Local Wave 1A validation passes the full repository quality gate: `2,039`
+acceptance tests with one intentional skip, fiscal and Finance RLS fixtures,
+the `108`-route production build, `30/30` visual tests, and performance budgets.
+Wave 1 remains active until the test-mode lifecycle matrix, hosted preview,
+controlled live canary, reconciliation, entitlement parity, and production
+monitoring gates pass.
 
 #### Wave branch rules
 

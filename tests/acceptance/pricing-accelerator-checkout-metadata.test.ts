@@ -6,6 +6,7 @@ import {
   headersMock,
   resetTestMocks,
   stripeCheckoutCreateMock,
+  stripeSubscriptionSearchMock,
 } from "./test-utils"
 
 const { requireServerSessionMock } = vi.hoisted(() => ({
@@ -31,14 +32,22 @@ describe("pricing checkout metadata", () => {
   beforeEach(() => {
     resetTestMocks()
     headersMock.mockResolvedValue({
-      get: (name: string) => (name.toLowerCase() === "origin" ? "https://example.test" : undefined),
+      get: (name: string) =>
+        name.toLowerCase() === "origin" ? "https://example.test" : undefined,
     })
+    stripeSubscriptionSearchMock.mockResolvedValue({ data: [] })
+
+    const subscriptionQuery = {
+      select: () => subscriptionQuery,
+      eq: () => subscriptionQuery,
+      not: () => subscriptionQuery,
+      order: () => subscriptionQuery,
+      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }
 
     requireServerSessionMock.mockResolvedValue({
       supabase: {
-        from: vi.fn(() => ({
-          upsert: vi.fn().mockResolvedValue({ data: null, error: null }),
-        })),
+        from: vi.fn(() => subscriptionQuery),
       },
       session: {
         user: {
@@ -50,7 +59,10 @@ describe("pricing checkout metadata", () => {
   })
 
   it("creates organization checkout with subscription mode and organization price", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/organization" })
+    stripeCheckoutCreateMock.mockResolvedValue({
+      id: "cs_organization",
+      url: "https://checkout.test/organization",
+    })
 
     const form = new FormData()
     form.set("checkoutMode", "organization")
@@ -59,7 +71,9 @@ describe("pricing checkout metadata", () => {
     expect(destination).toBe("https://checkout.test/organization")
     expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
 
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [
+      Record<string, unknown>,
+    ]
     expect(params.mode).toBe("subscription")
     expect(params.line_items).toEqual([{ price: "price_org", quantity: 1 }])
 
@@ -71,7 +85,9 @@ describe("pricing checkout metadata", () => {
       plan_tier: "organization",
     })
 
-    const subscriptionData = params.subscription_data as { metadata: Record<string, string> }
+    const subscriptionData = params.subscription_data as {
+      metadata: Record<string, string>
+    }
     expect(subscriptionData.metadata).toMatchObject({
       kind: "organization",
       user_id: "user-accelerator",
@@ -80,8 +96,11 @@ describe("pricing checkout metadata", () => {
     })
   })
 
-  it("creates operations support checkout with provided price id and operations metadata", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/operations" })
+  it("ignores a client-provided price ID and uses the configured operations price", async () => {
+    stripeCheckoutCreateMock.mockResolvedValue({
+      id: "cs_operations",
+      url: "https://checkout.test/operations",
+    })
 
     const form = new FormData()
     form.set("checkoutMode", "organization")
@@ -92,9 +111,11 @@ describe("pricing checkout metadata", () => {
     expect(destination).toBe("https://checkout.test/operations")
     expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
 
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [
+      Record<string, unknown>,
+    ]
     expect(params.mode).toBe("subscription")
-    expect(params.line_items).toEqual([{ price: "price_ops_custom", quantity: 1 }])
+    expect(params.line_items).toEqual([{ price: "price_ops", quantity: 1 }])
 
     const metadata = params.metadata as Record<string, string>
     expect(metadata).toMatchObject({
@@ -106,7 +127,10 @@ describe("pricing checkout metadata", () => {
   })
 
   it("uses operations support env price when plan name is operations and no explicit price id is provided", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/operations-default" })
+    stripeCheckoutCreateMock.mockResolvedValue({
+      id: "cs_operations_default",
+      url: "https://checkout.test/operations-default",
+    })
 
     const form = new FormData()
     form.set("checkoutMode", "organization")
@@ -116,12 +140,17 @@ describe("pricing checkout metadata", () => {
     expect(destination).toBe("https://checkout.test/operations-default")
     expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
 
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [
+      Record<string, unknown>,
+    ]
     expect(params.line_items).toEqual([{ price: "price_ops", quantity: 1 }])
   })
 
   it("treats legacy accelerator checkout mode as organization checkout", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/legacy" })
+    stripeCheckoutCreateMock.mockResolvedValue({
+      id: "cs_legacy",
+      url: "https://checkout.test/legacy",
+    })
 
     const form = new FormData()
     form.set("checkoutMode", "accelerator")
@@ -130,7 +159,9 @@ describe("pricing checkout metadata", () => {
     expect(destination).toBe("https://checkout.test/legacy")
     expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
 
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [
+      Record<string, unknown>,
+    ]
     expect(params.mode).toBe("subscription")
     expect(params.line_items).toEqual([{ price: "price_org", quantity: 1 }])
   })

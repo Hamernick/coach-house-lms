@@ -92,6 +92,8 @@ export const stripeConstructorMock = vi.fn()
 export const stripeCheckoutCreateMock = vi.fn()
 export const stripeCheckoutRetrieveMock = vi.fn()
 export const stripeSubscriptionRetrieveMock = vi.fn()
+export const stripeSubscriptionSearchMock = vi.fn()
+export const stripeSubscriptionUpdateMock = vi.fn()
 export const stripeBillingPortalCreateMock = vi.fn()
 
 class StripeMock {
@@ -108,6 +110,8 @@ class StripeMock {
   }
   subscriptions = {
     retrieve: stripeSubscriptionRetrieveMock,
+    search: stripeSubscriptionSearchMock,
+    update: stripeSubscriptionUpdateMock,
   }
 
   constructor(...args: unknown[]) {
@@ -135,6 +139,8 @@ export function resetTestMocks() {
   stripeCheckoutCreateMock.mockClear()
   stripeCheckoutRetrieveMock.mockClear()
   stripeSubscriptionRetrieveMock.mockClear()
+  stripeSubscriptionSearchMock.mockReset()
+  stripeSubscriptionUpdateMock.mockReset()
   stripeBillingPortalCreateMock.mockClear()
 }
 

@@ -22,7 +22,7 @@ describe("workspace foundation rollout", () => {
     vi.unstubAllEnvs()
   })
 
-  it("defaults off and requires the private kill switch plus an allowlist match", () => {
+  it("defaults off and requires the global kill switch", () => {
     expect(
       isWorkspaceFoundationRolloutEnabled({
         ...identity,
@@ -33,60 +33,18 @@ describe("workspace foundation rollout", () => {
       isWorkspaceFoundationRolloutEnabled({
         ...identity,
         environment: {
-          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-        },
-      })
-    ).toBe(false)
-    expect(
-      isWorkspaceFoundationRolloutEnabled({
-        ...identity,
-        environment: {
           WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "0",
-          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "org-1",
-          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "user-1",
         },
       })
     ).toBe(false)
   })
 
-  it("allows only a matching organization or user when enabled", () => {
+  it("enables every authenticated workspace identity", () => {
     expect(
       isWorkspaceFoundationRolloutEnabled({
         ...identity,
         environment: {
           WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "other, ORG-1 ",
-        },
-      })
-    ).toBe(true)
-    expect(
-      isWorkspaceFoundationRolloutEnabled({
-        ...identity,
-        environment: {
-          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: " USER-1 ",
-        },
-      })
-    ).toBe(true)
-    expect(
-      isWorkspaceFoundationRolloutEnabled({
-        ...identity,
-        environment: {
-          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "org-2",
-          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "user-2",
-        },
-      })
-    ).toBe(false)
-  })
-
-  it("allows every authenticated workspace identity with an explicit wildcard", () => {
-    expect(
-      isWorkspaceFoundationRolloutEnabled({
-        ...identity,
-        environment: {
-          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "*",
         },
       })
     ).toBe(true)
@@ -96,10 +54,27 @@ describe("workspace foundation rollout", () => {
         userId: "user-2",
         environment: {
           WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
-          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "*",
         },
       })
     ).toBe(true)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        orgId: "",
+        userId: "user-2",
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+        },
+      })
+    ).toBe(false)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        orgId: "org-2",
+        userId: "",
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+        },
+      })
+    ).toBe(false)
   })
 
   it("preserves legacy destinations when later drawer routes are disabled", () => {
@@ -156,7 +131,6 @@ describe("workspace foundation rollout", () => {
 
   it("keeps page mode default-off and preserves legacy editor routing", async () => {
     vi.stubEnv("WORKSPACE_FOUNDATION_ROLLOUT_ENABLED", "0")
-    vi.stubEnv("WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS", identity.orgId)
     const searchState = await resolveMyOrganizationPageSearchState(
       Promise.resolve({
         programId: "program-1",

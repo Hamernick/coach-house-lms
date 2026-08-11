@@ -26,6 +26,10 @@ const CHANGEABLE_STATUSES = new Set<Stripe.Subscription.Status>([
   "past_due",
 ])
 
+const RECENT_SUBSCRIPTION_WINDOW_SECONDS = 24 * 60 * 60
+const RECENT_SUBSCRIPTION_PAGE_LIMIT = 100
+const RECENT_SUBSCRIPTION_MAX_PAGES = 10
+
 type LocalSubscriptionReference = {
   stripe_subscription_id: string
 }
@@ -167,6 +171,42 @@ async function searchOrganizationSubscriptions({
   return results.flatMap((result) => result.data)
 }
 
+async function listRecentOrganizationSubscriptions({
+  client,
+  now = Date.now(),
+}: {
+  client: Stripe
+  now?: number
+}) {
+  const subscriptions: Stripe.Subscription[] = []
+  const createdAfter =
+    Math.floor(now / 1000) - RECENT_SUBSCRIPTION_WINDOW_SECONDS
+  let startingAfter: string | undefined
+
+  for (
+    let pageNumber = 0;
+    pageNumber < RECENT_SUBSCRIPTION_MAX_PAGES;
+    pageNumber += 1
+  ) {
+    const page = await client.subscriptions.list({
+      status: "all",
+      created: { gte: createdAfter },
+      limit: RECENT_SUBSCRIPTION_PAGE_LIMIT,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    })
+    subscriptions.push(...page.data)
+
+    if (!page.has_more) return subscriptions
+    const lastSubscription = page.data.at(-1)
+    if (!lastSubscription) {
+      throw new Error("Unable to verify recent Stripe subscriptions.")
+    }
+    startingAfter = lastSubscription.id
+  }
+
+  throw new Error("Too many recent Stripe subscriptions to verify safely.")
+}
+
 export async function resolveOrganizationSubscriptionState({
   supabase,
   config,
@@ -183,15 +223,18 @@ export async function resolveOrganizationSubscriptionState({
   const localIds = new Set(
     localReferences.map((reference) => reference.stripe_subscription_id)
   )
-  const [localSubscriptions, searchedSubscriptions] = await Promise.all([
-    retrieveLocalSubscriptions({ client: config.client, localIds }),
-    searchOrganizationSubscriptions({ client: config.client, orgId }),
-  ])
+  const [localSubscriptions, searchedSubscriptions, recentSubscriptions] =
+    await Promise.all([
+      retrieveLocalSubscriptions({ client: config.client, localIds }),
+      searchOrganizationSubscriptions({ client: config.client, orgId }),
+      listRecentOrganizationSubscriptions({ client: config.client }),
+    ])
   const deduped = new Map<string, Stripe.Subscription>()
 
   for (const subscription of [
     ...localSubscriptions,
     ...searchedSubscriptions,
+    ...recentSubscriptions,
   ]) {
     deduped.set(subscription.id, subscription)
   }

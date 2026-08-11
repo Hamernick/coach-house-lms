@@ -155,7 +155,9 @@ verified, or production verified. It centralizes subscription discovery,
 Checkout creation, existing-item plan changes, portal entry, idempotency, and
 member billing display around verified Stripe state. Existing plan changes use
 the exact subscription item with no proration, while ambiguous, canceling, or
-unverifiable state fails closed.
+unverifiable state fails closed. Subscription discovery combines local
+references, metadata Search, and an immediately consistent paginated List API
+window so Search propagation delay cannot reopen Checkout after a recent write.
 
 A read-only live audit found `39` active Stripe organization subscriptions
 across `36` owner groups. Two owner groups have duplicate active subscriptions;
@@ -165,7 +167,7 @@ live-active Stripe subscriptions have no matching row, and `34` match. No live
 Stripe or Supabase mutation was made. Exact owner-by-owner repair remains a
 separate approval-gated action after the preventive code is released.
 
-Local Wave 1A validation passes the full repository quality gate: `2,039`
+Local Wave 1A validation passes the full repository quality gate: `2,054`
 acceptance tests with one intentional skip, fiscal and Finance RLS fixtures,
 the `108`-route production build, `30/30` visual tests, and performance budgets.
 Wave 1 remains active until the test-mode lifecycle matrix, hosted preview,

@@ -73,6 +73,7 @@ function supabaseWithReferences(ids: string[]) {
 function stripeConfig({
   retrieve = vi.fn(),
   search = vi.fn().mockResolvedValue({ data: [] }),
+  list = vi.fn().mockResolvedValue({ data: [], has_more: false }),
   update = vi.fn(),
   checkout = vi.fn(),
 } = {}) {
@@ -86,7 +87,7 @@ function stripeConfig({
     coachingFullPriceId: null,
     coachingDiscountedPriceId: null,
     client: {
-      subscriptions: { retrieve, search, update },
+      subscriptions: { retrieve, search, list, update },
       checkout: { sessions: { create: checkout } },
     } as unknown as Stripe,
   }
@@ -117,6 +118,52 @@ describe("organization plan transition", () => {
 
     expect(state.subscriptions.map((item) => item.id)).toEqual(["sub_live"])
     expect(search).toHaveBeenCalledTimes(2)
+  })
+
+  it("finds a recent subscription before Stripe Search becomes consistent", async () => {
+    const recent = subscription({ id: "sub_recent" })
+    const list = vi.fn().mockResolvedValue({
+      data: [recent],
+      has_more: false,
+    })
+    const config = stripeConfig({ list })
+
+    const state = await resolveOrganizationSubscriptionState({
+      supabase: supabaseWithReferences([]) as never,
+      config,
+      orgId: "org_123",
+    })
+
+    expect(state.subscriptions.map((item) => item.id)).toEqual(["sub_recent"])
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "all",
+        created: { gte: expect.any(Number) },
+        limit: 100,
+      })
+    )
+  })
+
+  it("paginates recent subscriptions before deciding checkout is safe", async () => {
+    const first = subscription({ id: "sub_first", owner: "org_other" })
+    const second = subscription({ id: "sub_second" })
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({ data: [first], has_more: true })
+      .mockResolvedValueOnce({ data: [second], has_more: false })
+    const config = stripeConfig({ list })
+
+    const state = await resolveOrganizationSubscriptionState({
+      supabase: supabaseWithReferences([]) as never,
+      config,
+      orgId: "org_123",
+    })
+
+    expect(state.subscriptions.map((item) => item.id)).toEqual(["sub_second"])
+    expect(list).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ starting_after: "sub_first" })
+    )
   })
 
   it("rejects a local reference owned by another organization", async () => {

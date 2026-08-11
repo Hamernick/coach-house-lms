@@ -93,6 +93,7 @@ export const stripeCheckoutCreateMock = vi.fn()
 export const stripeCheckoutRetrieveMock = vi.fn()
 export const stripeSubscriptionRetrieveMock = vi.fn()
 export const stripeSubscriptionSearchMock = vi.fn()
+export const stripeSubscriptionListMock = vi.fn()
 export const stripeSubscriptionUpdateMock = vi.fn()
 export const stripeBillingPortalCreateMock = vi.fn()
 
@@ -111,6 +112,7 @@ class StripeMock {
   subscriptions = {
     retrieve: stripeSubscriptionRetrieveMock,
     search: stripeSubscriptionSearchMock,
+    list: stripeSubscriptionListMock,
     update: stripeSubscriptionUpdateMock,
   }
 
@@ -140,6 +142,8 @@ export function resetTestMocks() {
   stripeCheckoutRetrieveMock.mockClear()
   stripeSubscriptionRetrieveMock.mockClear()
   stripeSubscriptionSearchMock.mockReset()
+  stripeSubscriptionListMock.mockReset()
+  stripeSubscriptionListMock.mockResolvedValue({ data: [], has_more: false })
   stripeSubscriptionUpdateMock.mockReset()
   stripeBillingPortalCreateMock.mockClear()
 }

@@ -84,8 +84,9 @@ the relevant wave rather than inferred from merge status:
 | PR #135      | Read-only Workspace and Roadmap rendering                   |
 | PR #136      | Read-only People page synchronization                       |
 | PR #137      | Revision-safe Workspace board saves                         |
+| PR #138      | Workspace board production deployment record                |
 
-The baseline is `origin/main` commit `872c0f6c` on 2026-08-11. A production
+The baseline is `origin/main` commit `fa25b38d` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -141,10 +142,12 @@ wave, but unrelated scope does not accumulate in one PR.
   synchronization. Account-derived display data is still shown, but opening
   People no longer persists it over organization directory fields. Explicit
   People add, edit, invite, remove, and position actions remain available.
-- PR #137 is merged for revision-aware Workspace board and node-position saves.
-  Concurrent saves retry against the latest board state instead of silently
-  replacing it. PR #138 records the completed production proof and remains open
-  for non-author review.
+- PR #137 is merged and deployed through both production projects for
+  revision-aware Workspace board and node-position saves. Concurrent saves
+  retry against the latest board state instead of silently replacing it.
+  Focused concurrency coverage, the full quality gate, hosted CI, and both
+  Vercel previews pass. PR #138 records the deployment; authenticated
+  production smoke remains required.
 
 Wave 1A is a local release candidate on
 `fix/paid-subscription-plan-changes-20260810`; it is not merged, preview

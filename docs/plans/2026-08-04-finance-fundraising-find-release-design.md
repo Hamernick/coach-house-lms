@@ -170,7 +170,7 @@ live-active Stripe subscriptions have no matching row, and `34` match. No live
 Stripe or Supabase mutation was made. Exact owner-by-owner repair remains a
 separate approval-gated action after the preventive code is released.
 
-Local Wave 1A validation passes the full repository quality gate: `2,054`
+Local Wave 1A validation passes the full repository quality gate: `2,056`
 acceptance tests with one intentional skip, fiscal and Finance RLS fixtures,
 the `108`-route production build, `30/30` visual tests, and performance budgets.
 Wave 1 remains active until the test-mode lifecycle matrix, hosted preview,

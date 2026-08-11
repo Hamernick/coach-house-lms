@@ -166,6 +166,34 @@ describe("organization plan transition", () => {
     )
   })
 
+  it("fails closed when recent subscription listing is unavailable", async () => {
+    const config = stripeConfig({
+      list: vi.fn().mockRejectedValue(new Error("list unavailable")),
+    })
+
+    await expect(
+      resolveOrganizationSubscriptionState({
+        supabase: supabaseWithReferences([]) as never,
+        config,
+        orgId: "org_123",
+      })
+    ).rejects.toThrow("list unavailable")
+  })
+
+  it("fails closed when recent subscription pagination cannot advance", async () => {
+    const config = stripeConfig({
+      list: vi.fn().mockResolvedValue({ data: [], has_more: true }),
+    })
+
+    await expect(
+      resolveOrganizationSubscriptionState({
+        supabase: supabaseWithReferences([]) as never,
+        config,
+        orgId: "org_123",
+      })
+    ).rejects.toThrow("Unable to verify recent Stripe subscriptions.")
+  })
+
   it("rejects a local reference owned by another organization", async () => {
     const linkedToAnotherOwner = subscription({
       id: "sub_wrong_owner",

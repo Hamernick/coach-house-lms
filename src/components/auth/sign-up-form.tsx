@@ -27,6 +27,10 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { FIND_PATH } from "@/lib/find/routes"
+import {
+  createSignupLegalConsent,
+  LegalConsentField,
+} from "@/features/legal-consent"
 
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
 const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
@@ -150,6 +154,7 @@ export function SignUpForm({
       email: "",
       password: "",
       confirmPassword: "",
+      acceptedLegal: false,
     },
   })
 
@@ -177,10 +182,12 @@ export function SignUpForm({
     setCountdown(20)
 
     startTransition(async () => {
+      const legalConsent = createSignupLegalConsent()
       if (isTesterInstantSignup) {
         const createResult = await createTesterAccountAction({
           email: values.email,
           password: values.password,
+          legalConsent,
         })
 
         if (!createResult.ok) {
@@ -218,6 +225,7 @@ export function SignUpForm({
             ...(signUpMetadata ?? {}),
             account_intent: resolveLegacyAccountIntent(activeIntentFocus),
             onboarding_intent_focus: activeIntentFocus,
+            legal_consent: legalConsent,
           },
         },
       })
@@ -293,6 +301,18 @@ export function SignUpForm({
                 </FormControl>
                 <FormMessage />
               </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="acceptedLegal"
+            render={({ field, fieldState }) => (
+              <LegalConsentField
+                checked={field.value}
+                disabled={isPending}
+                onCheckedChange={field.onChange}
+                error={fieldState.error?.message}
+              />
             )}
           />
           {status !== "idle" ? (

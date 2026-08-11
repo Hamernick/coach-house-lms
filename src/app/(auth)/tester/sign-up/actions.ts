@@ -1,10 +1,15 @@
 "use server"
 
+import {
+  isCurrentSignupLegalConsent,
+  type SignupLegalConsent,
+} from "@/features/legal-consent"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 
 type CreateTesterAccountInput = {
   email: string
   password: string
+  legalConsent: SignupLegalConsent
 }
 
 type CreateTesterAccountResult =
@@ -19,14 +24,43 @@ function normalizePassword(value: string) {
   return value.trim()
 }
 
-function isEmailExistsError(error: { code?: string; message?: string } | null | undefined) {
+async function persistLegalConsent(
+  userId: string,
+  consent: SignupLegalConsent
+) {
+  const admin = createSupabaseAdminClient()
+  const { error } = await admin.from("platform_legal_acceptances").upsert(
+    {
+      user_id: userId,
+      document_version: consent.version,
+      terms_sha256: consent.termsSha256,
+      privacy_sha256: consent.privacySha256,
+      accepted_at: new Date().toISOString(),
+      source: "tester_signup",
+    },
+    {
+      onConflict: "user_id,document_version",
+      ignoreDuplicates: true,
+    }
+  )
+  return { ok: !error as boolean }
+}
+
+function isEmailExistsError(
+  error: { code?: string; message?: string } | null | undefined
+) {
   if (!error) return false
   if (error.code === "email_exists") return true
   const message = (error.message ?? "").toLowerCase()
-  return message.includes("already been registered") || message.includes("email exists")
+  return (
+    message.includes("already been registered") ||
+    message.includes("email exists")
+  )
 }
 
-function isRateLimitError(error: { code?: string; message?: string } | null | undefined) {
+function isRateLimitError(
+  error: { code?: string; message?: string } | null | undefined
+) {
   if (!error) return false
   const message = (error.message ?? "").toLowerCase()
   return message.includes("rate limit")
@@ -41,7 +75,9 @@ async function findUserByEmail(email: string) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
     if (error) return null
 
-    const match = (data.users ?? []).find((user) => (user.email ?? "").toLowerCase() === email)
+    const match = (data.users ?? []).find(
+      (user) => (user.email ?? "").toLowerCase() === email
+    )
     if (match) return match
     if (!data.users || data.users.length < perPage) return null
     page += 1
@@ -49,7 +85,7 @@ async function findUserByEmail(email: string) {
 }
 
 export async function createTesterAccountAction(
-  input: CreateTesterAccountInput,
+  input: CreateTesterAccountInput
 ): Promise<CreateTesterAccountResult> {
   const email = normalizeEmail(input.email)
   const password = normalizePassword(input.password)
@@ -60,6 +96,9 @@ export async function createTesterAccountAction(
   if (password.length < 8) {
     return { ok: false, error: "Password must be at least 8 characters." }
   }
+  if (!isCurrentSignupLegalConsent(input.legalConsent)) {
+    return { ok: false, error: "Accept the current Terms and Privacy Policy." }
+  }
 
   const admin = createSupabaseAdminClient()
 
@@ -69,6 +108,7 @@ export async function createTesterAccountAction(
       ...(existingBeforeCreate.user_metadata ?? {}),
       qa_tester: true,
       is_tester: true,
+      legal_consent: input.legalConsent,
     }
     await admin.auth.admin.updateUserById(existingBeforeCreate.id, {
       user_metadata: mergedMetadata,
@@ -81,25 +121,42 @@ export async function createTesterAccountAction(
         email,
         is_tester: true,
       },
-      { onConflict: "id" },
+      { onConflict: "id" }
     )
 
     if (existingProfileError) {
-      return { ok: false, error: "Tester account found, but profile sync failed. Try signing in again." }
+      return {
+        ok: false,
+        error:
+          "Tester account found, but profile sync failed. Try signing in again.",
+      }
+    }
+
+    if (
+      !(await persistLegalConsent(existingBeforeCreate.id, input.legalConsent))
+        .ok
+    ) {
+      return {
+        ok: false,
+        error:
+          "Tester account found, but legal acceptance could not be recorded.",
+      }
     }
 
     return { ok: true, created: false, userId: existingBeforeCreate.id }
   }
 
-  const { data: createdData, error: createError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      qa_tester: true,
-      is_tester: true,
-    },
-  })
+  const { data: createdData, error: createError } =
+    await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        qa_tester: true,
+        is_tester: true,
+        legal_consent: input.legalConsent,
+      },
+    })
 
   let userId = createdData.user?.id ?? null
   let created = Boolean(createdData.user)
@@ -114,18 +171,26 @@ export async function createTesterAccountAction(
     }
 
     if (!isEmailExistsError(createError ?? undefined)) {
-      return { ok: false, error: createError?.message ?? "Unable to create tester account." }
+      return {
+        ok: false,
+        error: createError?.message ?? "Unable to create tester account.",
+      }
     }
 
     const existing = await findUserByEmail(email)
     if (!existing?.id) {
-      return { ok: false, error: "An account already exists, but we could not access it right now." }
+      return {
+        ok: false,
+        error:
+          "An account already exists, but we could not access it right now.",
+      }
     }
 
     const mergedMetadata = {
       ...(existing.user_metadata ?? {}),
       qa_tester: true,
       is_tester: true,
+      legal_consent: input.legalConsent,
     }
     await admin.auth.admin.updateUserById(existing.id, {
       user_metadata: mergedMetadata,
@@ -142,11 +207,23 @@ export async function createTesterAccountAction(
       email,
       is_tester: true,
     },
-    { onConflict: "id" },
+    { onConflict: "id" }
   )
 
   if (profileError) {
-    return { ok: false, error: "Tester account created, but profile sync failed. Try signing in again." }
+    return {
+      ok: false,
+      error:
+        "Tester account created, but profile sync failed. Try signing in again.",
+    }
+  }
+
+  if (!(await persistLegalConsent(userId, input.legalConsent)).ok) {
+    return {
+      ok: false,
+      error:
+        "Tester account created, but legal acceptance could not be recorded.",
+    }
   }
 
   return { ok: true, created, userId }

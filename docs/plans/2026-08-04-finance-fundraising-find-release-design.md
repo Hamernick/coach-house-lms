@@ -118,7 +118,7 @@ wave, but unrelated scope does not accumulate in one PR.
 | Wave                                      | Status on 2026-08-11 | Scope                                                                                                                                                          | Exit evidence                                                                                                                                      | Rollback                                                                                   |
 | ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 1. Live stability and existing work close | Active               | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
-| 2. Signup, recovery, and legal            | Queued               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
+| 2. Signup, recovery, and legal            | Active               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
 | 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
 | 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
 | 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
@@ -146,6 +146,20 @@ wave, but unrelated scope does not accumulate in one PR.
   retry against the latest board state instead of silently replacing it.
   Focused concurrency coverage, the full quality gate, hosted CI, and both
   Vercel previews pass. Authenticated production smoke remains required.
+
+#### Wave 2 current evidence
+
+- Branch `feat/signup-legal-consent-20260811` adds public Terms and Privacy
+  routes plus an explicit required acceptance checkbox to normal and tester
+  signup.
+- Consent evidence is bound to the exact document content by version and
+  SHA-256 hashes, with an acceptance timestamp. A new append-only acceptance
+  table preserves that evidence behind RLS.
+- The legal text is a product draft pending qualified legal review. It is not
+  approved release copy.
+- Focused tests, the production build, fiscal and Finance RLS, isolated visual
+  regression, render smoke, and performance budgets pass locally. Connected
+  migration proof and hosted checks remain required.
 
 #### Wave branch rules
 

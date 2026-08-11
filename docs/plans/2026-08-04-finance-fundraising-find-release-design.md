@@ -83,8 +83,9 @@ the relevant wave rather than inferred from merge status:
 | PR #134      | Revision-safe organization document writes                  |
 | PR #135      | Read-only Workspace and Roadmap rendering                   |
 | PR #136      | Read-only People page synchronization                       |
+| PR #137      | Revision-safe Workspace board saves                         |
 
-The baseline is `origin/main` commit `b43da278` on 2026-08-11. A production
+The baseline is `origin/main` commit `872c0f6c` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -140,11 +141,11 @@ wave, but unrelated scope does not accumulate in one PR.
   synchronization. Account-derived display data is still shown, but opening
   People no longer persists it over organization directory fields. Explicit
   People add, edit, invite, remove, and position actions remain available.
-- Workspace board and node-position saves are revision-aware on the focused
-  `fix/workspace-board-concurrency-20260811` branch. Concurrent saves retry
-  against the latest board state instead of silently replacing it. Focused
-  concurrency coverage and the full quality gate pass. Hosted preview, merge,
-  deployment, and production proof remain required.
+- PR #137 is merged and deployed through both production projects for
+  revision-aware Workspace board and node-position saves. Concurrent saves
+  retry against the latest board state instead of silently replacing it.
+  Focused concurrency coverage, the full quality gate, hosted CI, and both
+  Vercel previews pass. Authenticated production smoke remains required.
 
 #### Wave branch rules
 

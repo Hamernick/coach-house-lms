@@ -365,8 +365,10 @@ describe("public find routes", () => {
     expect(sidebarSource).toContain("resolvePublicMapDrawerSnapPointIndex({")
     expect(sidebarSource).not.toContain("snapPoints.findIndex")
     expect(sidebarThemeSource).toContain(
-      '"dark border-input bg-input/35 text-foreground backdrop-blur-xl"'
+      "bg-background/88 text-foreground backdrop-blur-xl"
     )
+    expect(sidebarThemeSource).toContain("dark:border-input dark:bg-input/35")
+    expect(sidebarThemeSource).not.toContain('"dark border-input')
     expect(sidebarSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
     expect(statusPillSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
     expect(welcomeControlSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")

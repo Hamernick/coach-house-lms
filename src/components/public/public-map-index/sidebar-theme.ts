@@ -2,7 +2,7 @@ export const PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME =
   "border-r border-sidebar-border/70 bg-sidebar/86 text-sidebar-foreground shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/76"
 
 export const PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME =
-  "dark border-input bg-input/35 text-foreground backdrop-blur-xl"
+  "border border-border/70 bg-background/88 text-foreground backdrop-blur-xl supports-[backdrop-filter]:bg-background/76 dark:border-input dark:bg-input/35 dark:supports-[backdrop-filter]:bg-input/28"
 
 export const PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME =
   "rounded-2xl border border-border/75 bg-sidebar-accent/92 shadow-sm backdrop-blur-md"

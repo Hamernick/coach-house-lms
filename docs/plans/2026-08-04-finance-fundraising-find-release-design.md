@@ -81,8 +81,9 @@ the relevant wave rather than inferred from merge status:
 | PR #132      | Public Find light-mode contrast repair                       |
 | PR #133      | Parallel organization-detail server reads                   |
 | PR #134      | Revision-safe organization document writes                  |
+| PR #135      | Read-only Workspace and Roadmap rendering                    |
 
-The baseline is `origin/main` commit `e114e45d` on 2026-08-11. A production
+The baseline is `origin/main` commit `76460756` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -131,11 +132,14 @@ wave, but unrelated scope does not accumulate in one PR.
 - PR #134 is merged and production-verified for revision-safe organization
   document writes. The authenticated production Documents index rendered its
   existing files after deployment without a mutation.
-- Workspace and Roadmap render-time profile writes are removed on the focused
-  `fix/read-only-profile-cleanup-20260811` branch. Legacy content remains
-  normalized in memory. Focused coverage, the full quality gate, authenticated
-  rendering, and connected unchanged-revision proof pass. Hosted preview,
-  merge, deployment, and production proof remain required.
+- PR #135 is merged and production-verified for read-only Workspace and
+  Roadmap rendering. Legacy content remains normalized in memory, both routes
+  render, and their production reads leave the organization revision unchanged.
+- People-page member synchronization is read-only on the focused
+  `fix/people-page-read-only-20260811` branch. Account-derived display data is
+  still shown, but opening People no longer persists it over organization
+  directory fields. Focused coverage and the full quality gate pass. Hosted
+  preview, merge, deployment, and production proof remain required.
 
 #### Wave branch rules
 

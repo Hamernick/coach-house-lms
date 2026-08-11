@@ -147,7 +147,7 @@ describe("People profile write concurrency", () => {
     expect(writer).toContain("MAX_PROFILE_WRITE_ATTEMPTS = 4")
   })
 
-  it("guards automatic onboarding and directory synchronization writers", () => {
+  it("guards automatic onboarding writes and keeps directory reads read-only", () => {
     const onboarding = readSource("src/app/(dashboard)/onboarding/actions.ts")
     const onboardingWriter = readSource(
       "src/lib/onboarding/organization-profile-write.ts"
@@ -166,8 +166,9 @@ describe("People profile write concurrency", () => {
       ".upsert(\n        {\n          user_id: targetOrgId"
     )
     expect(invites).toContain("mutateOrganizationPeopleProfile<")
-    expect(memberDirectory).toContain("mutateOrganizationPeopleProfile<")
+    expect(memberDirectory).not.toContain("mutateOrganizationPeopleProfile<")
     expect(memberDirectory).toContain("...selfExisting")
+    expect(memberDirectory).toContain("const sync = synchronizeSelf(peopleRaw)")
     expect(memberDirectory).not.toContain(
       ".upsert({ user_id: orgId, profile: nextProfile }"
     )

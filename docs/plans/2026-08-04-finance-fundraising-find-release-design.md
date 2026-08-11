@@ -8,76 +8,32 @@ Last reviewed: 2026-08-11
 
 Primary owners: product, platform engineering, fiscal sponsorship operations
 
-### 2026-08-11 Finder And Builder Product Model Override
+### 2026-08-11 Find And Build Product Clarification
 
-This is the controlling product model. It supersedes any older language that
-describes Find, Build, and Fund as one required user journey.
+This is a settled product decision, not a new implementation wave or a plan to
+split the application into separate personas, routes, onboarding systems,
+permission systems, metrics, or test suites.
 
-Coach House has one shared account foundation and two distinct product tracks:
+Coach House is one product with two independent loops:
 
-- **Finder** is available to every public visitor and account. It supports
-  discovering nonprofits and resources, collecting them into My Map, organizing
-  lists, adding private notes and tags, and sharing or exporting selected public
-  information.
-- **Builder** is an added organization-building track. It supports organization
-  setup, the Accelerator, people, documents, programs, funding work, fiscal
-  sponsorship, and Finance.
+- **Find:** anyone can discover and collect nonprofits and resources in My Map.
+- **Build:** organization users can use the existing Accelerator, Workspace,
+  people, documents, programs, funding, fiscal sponsorship, and Finance tools.
 
-Builders retain the complete Finder experience, including collections and My
-Map. Finder users are never required to create an organization, enter the
-Accelerator, choose a paid Builder plan, or see Builder tasks. Adding Builder
-access never deletes, moves, or silently converts a person's Finder collections.
+Builders can use Find and My Map. Using Find does not make someone a Builder or
+require Builder onboarding. The existing account, navigation, security, and
+data architecture remain shared. Existing ownership rules remain intact:
+personal map preferences belong to the account, while organization work remains
+organization-owned and role-protected.
 
-The tracks share authentication, account settings, subscription billing, legal
-acceptance, design tokens, security, and operations. Their product data remains
-separate by default:
+The current Builder loop is already substantially built. It is not scheduled
+for a rebuild. Remaining Builder work is limited to live QA and fixing verified
+gaps. Paid billing is also treated as existing baseline behavior and is not an
+active rebuild project; reopen it only for a verified regression.
 
-- Finder collections are user-owned and may contain public nonprofit or
-  resource IDs.
-- Builder records are organization-owned and protected by organization roles.
-- A Finder collection does not become an organization, program, task,
-  opportunity, or Finance record without a future explicit user action.
-- Coach House subscription billing controls product access. It never supplies
-  Builder Finance activity.
-- Builder Finance displays source-labeled, read-only Stripe or other external
-  financial activity when approved and connected. Stripe or the external
-  provider manages the money; Coach House provides a simple graph, activity
-  list, history, export, and board-sharing view.
-
-Success is measured separately. Finder success means a person can quickly find,
-collect, organize, return to, share, and export useful nonprofits or resources.
-Builder success means an organization can complete its work, pursue funding,
-and understand and share current external financial activity. There is no
-required conversion from Finder to Builder and no combined completion score.
-
-#### Product entry and navigation contract
-
-- Public visitors enter Finder without organization onboarding.
-- Account creation preserves the Finder map, query, selection, and guest
-  collection exactly once.
-- Signed-in Finder users receive Find and My Map as primary destinations.
-- Builder access adds Workspace, Accelerator, funding, fiscal, and Finance
-  destinations without replacing Find or My Map.
-- Product copy may describe Coach House as offering Find, Build, and Fund, but
-  calls to action and onboarding must not imply that every person follows all
-  three.
-- Finder collection progress may be light and voluntary. It never ranks people
-  seeking urgent food, housing, legal, health, or safety support. Builder
-  Accelerator progress remains a separate organization journey.
-
-#### Product-model acceptance contract
-
-- Anonymous, signed-in Finder, free Builder, paid Builder, member, coach, and
-  admin journeys are tested independently.
-- Finder signup completes without creating an organization or opening Builder
-  onboarding.
-- Builders can use the same Finder and My Map features as Finder-only accounts.
-- Finder collections remain user-owned, durable across devices, and unchanged
-  when Builder access is added, removed, upgraded, or downgraded.
-- Builder organization and Finance authorization never derives from a Finder
-  collection or navigation visibility.
-- Analytics, empty states, onboarding, help text, and release canaries report
-  Finder and Builder outcomes separately.
+Finance displays source-labeled external activity. Stripe or another approved
+provider manages the money. Coach House provides the useful view: a simple
+graph, activity list, history, export, and board sharing.
 
 ### 2026-08-10 Production Stability Override
 
@@ -136,17 +92,15 @@ remaining candidates cannot be inserted into `/find` merely to reach 5,000.
 
 #### Ranked live risks
 
-| Priority | Risk                                                                | Current evidence                                                                                                                                               | Release requirement                                                                                                         |
-| -------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| P0       | Paid plan changes can create a second subscription                  | `/billing` links to `/api/stripe/checkout`; that route creates Checkout sessions while the separate pricing action contains existing-subscription update logic | One authoritative purchase/change path, duplicate prevention, tested proration, webhook convergence, and entitlement parity |
-| P0       | Paid lifecycle has no current end-to-end production proof           | Checkout, upgrade, downgrade, portal, cancellation, renewal, invoice, failed payment, recovery, and access must agree across Stripe and Supabase               | Test-mode journey matrix, controlled approved live canary, exact object verification, monitoring, and rollback              |
-| P0       | User data could be lost or appear stale                             | Workspace autosave, organization updates, Finance records, subscriptions, onboarding state, and cache invalidation cross server and client boundaries          | Retry, concurrency, stale-write, rollback, refresh, and reconnect proof with no silent overwrite                            |
-| P1       | Signup lacks current legal acceptance                               | No canonical Terms or Privacy pages and no versioned signup acceptance record                                                                                  | Reviewed pages, linked required checkbox, version/hash/UTC evidence, and every signup entry covered                         |
-| P1       | Existing features need role-complete live proof                     | Finance/documents drawers and organization fixes were released through several hotfixes                                                                        | Paid/free/admin/coach/member browser journeys with data continuity                                                          |
-| P1       | `/find` sends a large monolithic payload and shows stale loading UX | `853` records currently produce about `2.52 MB`; the client fetch uses `no-store` and “Loading the full resource directory…” skeletons                         | Compact index, bounded queries, detail on demand, stable cached refresh, and explicit performance budgets                   |
-| P1       | Light-mode contrast and profile surfaces are inconsistent           | Some map overlays force dark descendants and organization/resource surfaces require browser review                                                             | WCAG contrast, transparent/correct page background, and light/dark/mobile visual proof                                      |
-| P2       | Public guides lack useful variety                                   | Current guide content is concentrated on cooling centers                                                                                                       | Basic location-connected guides across several service categories after map stability                                       |
-| Deferred | NWS promotion and weather ranking                                   | Valuable but not required to stabilize the live product                                                                                                        | Reassess after Wave 8; do not block launch readiness                                                                        |
+| Priority | Risk                                                                | Current evidence                                                                                                                                      | Release requirement                                                                                       |
+| -------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| P0       | User data could be lost or appear stale                             | Workspace autosave, organization updates, Finance records, subscriptions, onboarding state, and cache invalidation cross server and client boundaries | Retry, concurrency, stale-write, rollback, refresh, and reconnect proof with no silent overwrite          |
+| P1       | Signup lacks current legal acceptance                               | No canonical Terms or Privacy pages and no versioned signup acceptance record                                                                         | Reviewed pages, linked required checkbox, version/hash/UTC evidence, and every signup entry covered       |
+| P1       | Existing features need role-complete live proof                     | Finance/documents drawers and organization fixes were released through several hotfixes                                                               | Paid/free/admin/coach/member browser journeys with data continuity                                        |
+| P1       | `/find` sends a large monolithic payload and shows stale loading UX | `853` records currently produce about `2.52 MB`; the client fetch uses `no-store` and “Loading the full resource directory…” skeletons                | Compact index, bounded queries, detail on demand, stable cached refresh, and explicit performance budgets |
+| P1       | Light-mode contrast and profile surfaces are inconsistent           | Some map overlays force dark descendants and organization/resource surfaces require browser review                                                    | WCAG contrast, transparent/correct page background, and light/dark/mobile visual proof                    |
+| P2       | Public guides lack useful variety                                   | Current guide content is concentrated on cooling centers                                                                                              | Basic location-connected guides across several service categories after map stability                     |
+| Deferred | NWS promotion and weather ranking                                   | Valuable but not required to stabilize the live product                                                                                               | Reassess after launch; do not block launch readiness                                                      |
 
 #### Execution waves
 
@@ -154,20 +108,15 @@ Each wave is separately scoped and integrated only after its own evidence is
 green. A critical production fix may use a smaller branch within the active
 wave, but unrelated scope does not accumulate in one PR.
 
-| Wave                                          | Status on 2026-08-11  | Scope                                                                                                                                                                | Exit evidence                                                                                                                                                  | Rollback                                                                                                    |
-| --------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 0. Product model and release truth            | Active                | Record the shared Finder layer, added Builder layer, current production baseline, risks, branch rules, and ordered release plan                                      | Authoritative PRD and Prototype Lab presentation agree; no product-code change                                                                                 | Revert documentation only                                                                                   |
-| 1. Paying lifecycle                           | Active                | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, and recovery                  | PR #129 updated from current main; Stripe test-mode matrix; no duplicate subscription; database/member UI convergence; approved live canary                    | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
-| 2. Shared data durability and authorization   | Queued                | Organization, workspace, onboarding, subscription, Finder collection, and Builder Finance behavior under retry, concurrency, disconnect, stale revision, and failure | No silent overwrite or data loss; idempotent retry; correct cache invalidation; final-schema RLS; user and organization isolation                              | Disable affected mutation; preserve rows and audit evidence; forward repair only                            |
-| 3. Signup, account recovery, and legal        | Queued                | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, safe return intent, and separate Finder/Builder onboarding         | Every signup surface covered; Finder signup creates no organization; consent version/hash/UTC recorded; denial/retry tested; legal text approved               | Disable new signup entry while preserving existing accounts and consent evidence                            |
-| 4. Existing release and product-quality close | Queued, partly merged | Workspace/Documents/Finance drawer entry, organization pages, role access, deep links, console errors, light-mode contrast, profile backgrounds, mobile, and a11y    | Finder/Builder/free/paid/admin/coach/member journeys; refresh and cross-account isolation; light/dark/mobile proof; no console or visual regressions           | Disable or revert the narrow surface without deleting persisted data                                        |
-| 5. Finder loading and `/find` performance     | Queued                | Compact index, bounds/cursor queries, detail on demand, stable cached refresh, current skeleton replacement, empty/error/retry states, selected/collected override   | Fast first useful render; route/payload/LCP/TTI budgets; complete paginated list; offline/stale/retry proof; collected items resolve outside current bounds    | Restore prior endpoint behind a compatibility reader; retain published records                              |
-| 6. Builder Finance read-only connections      | Queued                | Organization-scoped read-only Stripe activity, approved CSV/accounting imports, source classification, freshness, verification, and subscription-billing separation  | Connected and delayed/error fixtures reconcile; source/as-of state visible; no money movement, bank credentials, or subscription objects enter Finance         | Disable provider sync; retain imported records and CSV fallback                                             |
-| 7. Finder Collect / My Map alpha              | Queued                | Collect nonprofits and resources, typed lists, notes, tags, ordering, removal, share/export, guest import, cross-device persistence, and light voluntary progress    | Anonymous and signed-in journeys; durable user ownership; safe sharing/revocation; Builders retain identical Finder access; no Builder prompt for Finder users | Disable new collection writes; preserve prior favorites and typed rows                                      |
-| 8. Builder Finance graph, list, and reporting | Queued                | Simple live activity graph, activity list, History, filters, source/freshness labels, CSV/PDF export, and board sharing                                              | Empty/connected/loading/stale/error states; graph has text equivalent; exports reconcile and neutralize formulas; board access is explicit and revocable       | Disable reporting/export entry points; retain read-only history                                             |
-| 9. Qualified resources and varied guides      | Queued                | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` performance is stable                         | Exact complete/verified/publishable/promoted/public parity; cohort canary; guide relevance, sparse-area, freshness, and broken-link checks                     | Unpublish a cohort or guide without deleting evidence                                                       |
-| 10. Builder journey completion                | Queued                | Organization setup, Accelerator, people, documents, programs, funding opportunities, fiscal sponsorship, and reporting as one Builder-only journey                   | Free/paid Builder journeys preserve data across refresh and plan changes; role-complete funding and fiscal proof; no dependency on Finder completion           | Disable the affected Builder entry point; retain organization and audit rows                                |
-| 11. Integrated production release             | Queued                | Security review, support runbook, monitoring, rollback rehearsal, separate Finder and Builder canaries, and gradual rollout                                          | Full `pnpm check:quality`; connected RLS; hosted previews; production browser proof; separate Finder/Builder monitoring and rollback                           | Wave-specific flags and forward repair; never destructive data rollback                                     |
+| Wave                                      | Status on 2026-08-11 | Scope                                                                                                                                                          | Exit evidence                                                                                                                                      | Rollback                                                                                   |
+| ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1. Live stability and existing work close | Active               | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
+| 2. Signup, recovery, and legal            | Queued               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
+| 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
+| 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
+| 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
+| 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
+| 7. Integrated production release          | Queued               | Security review, support runbook, monitoring, rollback rehearsal, production smoke checks, and gradual rollout                                                 | Full quality gate; connected RLS where changed; hosted previews; production browser proof; clean monitoring                                        | Wave-specific flags and forward repair; never use a destructive data rollback              |
 
 #### Wave branch rules
 
@@ -185,22 +134,13 @@ wave, but unrelated scope does not accumulate in one PR.
 6. After a merge, fetch current `origin/main` before selecting the next wave's
    branch.
 
-#### Paying-user acceptance contract
+#### Existing billing baseline
 
-- A new eligible customer can purchase exactly one intended subscription and
-  receives the matching organization entitlement after verified webhook sync.
-- An existing customer changes plan by updating the existing subscription, not
-  by opening an unrelated second subscription. The UI states the effective
-  timing and approved proration behavior before confirmation.
-- Upgrade, downgrade, scheduled cancellation, cancellation reversal, renewal,
-  card update, failed payment, recovery, invoice access, and portal return all
-  converge across Stripe, the database, server authorization, and visible UI.
-- Retries and repeated webhooks are idempotent. A missing or stale linked Stripe
-  object degrades to a recoverable support state without crashing the page or
-  silently changing access.
-- Every live mutation verifies the exact customer, organization, subscription,
-  item, price, invoice, payment, mode, and expected before/after state. No real
-  customer mutation is used for ordinary QA.
+Paid billing is treated as working baseline behavior, not an active PRD wave.
+Do not rebuild it, update PR #129, or run a new full billing project from this
+plan. Monitor the existing flow and open focused work only when a verified
+production regression exists. Any such repair must preserve the existing
+subscription, customer, invoices, entitlements, and webhook history.
 
 #### Free-user and legal acceptance contract
 
@@ -213,33 +153,24 @@ wave, but unrelated scope does not accumulate in one PR.
   checkbox does not substitute for that approval.
 - Authentication, authorization, organization membership, and account recovery
   are tested independently. Navigation visibility never grants access.
-- Finder signup finishes without creating an organization or opening Builder
-  onboarding. Builder access is added without changing existing collections.
 
 #### Finder acceptance contract
 
-- Every visitor can browse the public map. Every signed-in account, including a
-  Builder, can use Collect and My Map.
-- Finder collections are user-owned, durable across devices, and independent of
-  organizations, Accelerator progress, funding work, and Finance.
-- A person can create, rename, reorder, remove, note, tag, share, unshare, and
-  export a collection with clear success, empty, loading, stale, and error states.
-- Guest collections import once after signup without duplicates or lost map
-  context. Private notes never enter public shares or anonymous payloads.
-- Finder surfaces never require or advertise Builder completion as the next
-  step. Essential-resource access is never ranked or blocked by progress.
+- The current saved-organizations feature is the implementation foundation; do
+  not replace it with a new collection system.
+- Every visitor can browse and collect locally. Every signed-in account,
+  including a Builder, can persist My Map across devices.
+- Collect works for public nonprofits and resources, supports removal, and uses
+  clear loading, empty, stale, and error states.
+- The alpha does not add lists, notes, tags, manual ordering, guest import, or a
+  separate Finder onboarding system.
 
-#### Builder acceptance contract
+#### Existing Builder baseline
 
-- Builder access adds organization setup, Workspace, Accelerator, funding,
-  fiscal sponsorship, and Finance while preserving Finder and My Map.
-- Builder writes are organization-scoped, role-authorized, revision-aware, and
-  independent of Finder collections.
-- Finance shows external activity only. Its graph, list, History, exports, and
-  board shares identify source, freshness, verification state, and reporting
-  period without implying that Coach House controls the money.
-- Adding, changing, or removing a Builder subscription does not delete Finder
-  collections or silently change organization data.
+Organization setup, Accelerator progress, people, documents, programs, board
+work, funding opportunities, fiscal sponsorship, and Finance already exist.
+Do not schedule a new “finish the Builder loop” build. Verify the current live
+journey and fix only observed gaps. Builders retain Find and My Map.
 
 #### Data, cache, and interface acceptance contract
 
@@ -2293,9 +2224,9 @@ an excuse to expand the product beyond this traceability table.
 | 2026-08-05 | Do not use hCaptcha                                                      | Approved                                    |
 | 2026-08-04 | Keep `/find/[slug]` canonical                                            | Recommended                                 |
 | 2026-08-04 | Weather promotes but never hides cooling centers                         | Recommended                                 |
-| 2026-08-11 | Finder is available to everyone; Builder is an added track               | Approved product model                      |
-| 2026-08-11 | Builders retain Finder, Collect, and My Map                              | Approved product model                      |
-| 2026-08-11 | Finder never requires Builder onboarding or completion                   | Approved product model                      |
+| 2026-08-11 | Find is universal; Build is the existing organization workflow           | Approved product model                      |
+| 2026-08-11 | Builders retain Find, Collect, and My Map                                | Approved product model                      |
+| 2026-08-11 | Using Find never requires Builder work                                   | Approved product model                      |
 | 2026-08-11 | Finance displays and exports external activity; it does not manage money | Approved product model                      |
 | 2026-08-11 | Defer NWS promotion until after the current launch path                  | Approved priority                           |
 

@@ -77,8 +77,11 @@ the relevant wave rather than inferred from merge status:
 | PR #127      | Production font-build repair                                |
 | PR #128      | Production-readiness waves and release gates                |
 | PR #130      | Self-hosted Inter build dependency                          |
+| PR #131      | Find and Build product and rollout clarification            |
+| PR #132      | Public Find light-mode contrast repair                       |
+| PR #133      | Parallel organization-detail server reads                   |
 
-The baseline is `origin/main` commit `e2f5921c` on 2026-08-11. A production
+The baseline is `origin/main` commit `46ab9301` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -117,6 +120,20 @@ wave, but unrelated scope does not accumulate in one PR.
 | 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
 | 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
 | 7. Integrated production release          | Queued               | Security review, support runbook, monitoring, rollback rehearsal, production smoke checks, and gradual rollout                                                 | Full quality gate; connected RLS where changed; hosted previews; production browser proof; clean monitoring                                        | Wave-specific flags and forward repair; never use a destructive data rollback              |
+
+#### Wave 1 current evidence
+
+- PR #132 is merged and production-verified for authenticated light/dark Find
+  surfaces on desktop and mobile.
+- PR #133 is merged and production-verified for organization-detail rendering
+  and recoverable missing Stripe-subscription links.
+- The organization document-safety repair is code complete on the focused
+  `fix/document-upload-atomicity-20260811` branch. It replaces stale
+  whole-profile upserts with revision-aware retries and commits document
+  references before removing replaced or deleted storage objects. Focused
+  concurrency and ordering tests, the full quality gate, and an authenticated
+  isolated Documents render pass. Hosted preview, merge, deployment, and
+  production proof remain required.
 
 #### Wave branch rules
 

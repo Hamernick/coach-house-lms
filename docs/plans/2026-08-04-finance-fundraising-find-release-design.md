@@ -149,9 +149,12 @@ wave, but unrelated scope does not accumulate in one PR.
   Vercel previews pass. PR #138 records the deployment; authenticated
   production smoke remains required.
 
-Wave 1A is a local release candidate on
-`fix/paid-subscription-plan-changes-20260810`; it is not merged, preview
-verified, or production verified. It centralizes subscription discovery,
+Wave 1A is a release candidate on
+`fix/paid-subscription-plan-changes-20260810`; it is not merged or production
+verified. Hosted quality and both Vercel deployments pass. Authenticated Chrome
+verified the `coachhouse` pricing preview; the second project still requires
+separate Vercel access, and member billing QA still requires test credentials.
+The branch centralizes subscription discovery,
 Checkout creation, existing-item plan changes, portal entry, idempotency, and
 member billing display around verified Stripe state. Existing plan changes use
 the exact subscription item with no proration, while ambiguous, canceling, or

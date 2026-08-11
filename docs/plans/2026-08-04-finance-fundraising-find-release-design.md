@@ -4,9 +4,80 @@ Status: active production stabilization; wave rollout in progress
 
 Created: 2026-08-04
 
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-11
 
 Primary owners: product, platform engineering, fiscal sponsorship operations
+
+### 2026-08-11 Finder And Builder Product Model Override
+
+This is the controlling product model. It supersedes any older language that
+describes Find, Build, and Fund as one required user journey.
+
+Coach House has one shared account foundation and two distinct product tracks:
+
+- **Finder** is available to every public visitor and account. It supports
+  discovering nonprofits and resources, collecting them into My Map, organizing
+  lists, adding private notes and tags, and sharing or exporting selected public
+  information.
+- **Builder** is an added organization-building track. It supports organization
+  setup, the Accelerator, people, documents, programs, funding work, fiscal
+  sponsorship, and Finance.
+
+Builders retain the complete Finder experience, including collections and My
+Map. Finder users are never required to create an organization, enter the
+Accelerator, choose a paid Builder plan, or see Builder tasks. Adding Builder
+access never deletes, moves, or silently converts a person's Finder collections.
+
+The tracks share authentication, account settings, subscription billing, legal
+acceptance, design tokens, security, and operations. Their product data remains
+separate by default:
+
+- Finder collections are user-owned and may contain public nonprofit or
+  resource IDs.
+- Builder records are organization-owned and protected by organization roles.
+- A Finder collection does not become an organization, program, task,
+  opportunity, or Finance record without a future explicit user action.
+- Coach House subscription billing controls product access. It never supplies
+  Builder Finance activity.
+- Builder Finance displays source-labeled, read-only Stripe or other external
+  financial activity when approved and connected. Stripe or the external
+  provider manages the money; Coach House provides a simple graph, activity
+  list, history, export, and board-sharing view.
+
+Success is measured separately. Finder success means a person can quickly find,
+collect, organize, return to, share, and export useful nonprofits or resources.
+Builder success means an organization can complete its work, pursue funding,
+and understand and share current external financial activity. There is no
+required conversion from Finder to Builder and no combined completion score.
+
+#### Product entry and navigation contract
+
+- Public visitors enter Finder without organization onboarding.
+- Account creation preserves the Finder map, query, selection, and guest
+  collection exactly once.
+- Signed-in Finder users receive Find and My Map as primary destinations.
+- Builder access adds Workspace, Accelerator, funding, fiscal, and Finance
+  destinations without replacing Find or My Map.
+- Product copy may describe Coach House as offering Find, Build, and Fund, but
+  calls to action and onboarding must not imply that every person follows all
+  three.
+- Finder collection progress may be light and voluntary. It never ranks people
+  seeking urgent food, housing, legal, health, or safety support. Builder
+  Accelerator progress remains a separate organization journey.
+
+#### Product-model acceptance contract
+
+- Anonymous, signed-in Finder, free Builder, paid Builder, member, coach, and
+  admin journeys are tested independently.
+- Finder signup completes without creating an organization or opening Builder
+  onboarding.
+- Builders can use the same Finder and My Map features as Finder-only accounts.
+- Finder collections remain user-owned, durable across devices, and unchanged
+  when Builder access is added, removed, upgraded, or downgraded.
+- Builder organization and Finance authorization never derives from a Finder
+  collection or navigation visibility.
+- Analytics, empty states, onboarding, help text, and release canaries report
+  Finder and Builder outcomes separately.
 
 ### 2026-08-10 Production Stability Override
 
@@ -48,8 +119,10 @@ the relevant wave rather than inferred from merge status:
 | PRs #124-125 | Workspace foundation enabled for all users                  |
 | PR #126      | Organization render-loop and stale Stripe-link error repair |
 | PR #127      | Production font-build repair                                |
+| PR #128      | Production-readiness waves and release gates                |
+| PR #130      | Self-hosted Inter build dependency                          |
 
-The baseline is `origin/main` commit `4127d9c0` on 2026-08-10. A production
+The baseline is `origin/main` commit `e2f5921c` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -81,17 +154,20 @@ Each wave is separately scoped and integrated only after its own evidence is
 green. A critical production fix may use a smaller branch within the active
 wave, but unrelated scope does not accumulate in one PR.
 
-| Wave                                         | Status on 2026-08-10  | Scope                                                                                                                                               | Exit evidence                                                                                                                               | Rollback                                                                                                    |
-| -------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 0. Truth and release gates                   | Active                | Reconcile this PRD with current production, rank risks, define branch and release rules                                                             | Source-backed audit merged; no product-code change                                                                                          | Revert documentation only                                                                                   |
-| 1. Paying lifecycle                          | Next                  | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, recovery     | Stripe test-mode matrix; no duplicate subscription; database and member UI converge; controlled approved live canary                        | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
-| 2. Free signup and legal                     | Queued                | Signup, verification, login, onboarding, Terms, Privacy, required acceptance, consent evidence, authz                                               | Every signup surface covered; consent version/hash/UTC recorded; denial and retry tested; legal text approved                               | Disable new signup entry while preserving existing accounts and consent evidence                            |
-| 3. Data durability                           | Queued                | Organization, workspace, Finance, subscription, and onboarding writes under retry, concurrency, disconnect, stale revision, and partial failure     | No silent overwrite or data loss; idempotent retries; cache invalidation and rollback tests; final-schema RLS                               | Disable affected mutation; preserve rows and audit evidence; forward repair only                            |
-| 4. Existing release completion               | Queued, partly merged | Finance Activity/History, workspace documents drawer, organization pages, role access, deep links, map/profile regressions                          | Paid/free/admin/coach/member desktop and mobile journeys; refresh and cross-account isolation; no console errors                            | Disable narrow entry point without deleting persisted data                                                  |
-| 5. Loading, caching, and `/find` performance | Queued                | Route loading, stale cache, compact map index, bounds/cursor queries, detail on demand, refresh recovery, current loading/empty/error UI            | Payload and route budgets; stable selected/saved items; fast first useful render; offline/stale/retry proof                                 | Restore prior endpoint behind compatibility reader; retain published records                                |
-| 6. Theme and product-quality pass            | Queued                | Light/dark contrast, transparent organization/resource profile background, typography, responsive layout, accessibility, loading/empty/error states | Light/dark/mobile screenshots; automated accessibility and contrast checks; no visual regressions                                           | Revert token/surface changes only                                                                           |
-| 7. Qualified resources and varied guides     | Queued                | Promote verified resource cohorts, close evidence gaps, then publish basic category- and location-varied guides                                     | Exact candidate/complete/verified/publishable/promoted/public counts; cohort canary; guide relevance and broken-link checks                 | Unpublish cohort or guide without deleting evidence                                                         |
-| 8. Integrated production release             | Queued                | Combine verified waves, security review, support runbook, monitoring, canary, gradual rollout                                                       | Full `pnpm check:quality`; connected RLS; preview journeys; rollback rehearsal; paid/free canaries; production browser and monitoring proof | Wave-specific flags and forward repair; never destructive data rollback                                     |
+| Wave                                          | Status on 2026-08-11  | Scope                                                                                                                                                                | Exit evidence                                                                                                                                                  | Rollback                                                                                                    |
+| --------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 0. Product model and release truth            | Active                | Record the shared Finder layer, added Builder layer, current production baseline, risks, branch rules, and ordered release plan                                      | Authoritative PRD and Prototype Lab presentation agree; no product-code change                                                                                 | Revert documentation only                                                                                   |
+| 1. Paying lifecycle                           | Active                | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, and recovery                  | PR #129 updated from current main; Stripe test-mode matrix; no duplicate subscription; database/member UI convergence; approved live canary                    | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
+| 2. Shared data durability and authorization   | Queued                | Organization, workspace, onboarding, subscription, Finder collection, and Builder Finance behavior under retry, concurrency, disconnect, stale revision, and failure | No silent overwrite or data loss; idempotent retry; correct cache invalidation; final-schema RLS; user and organization isolation                              | Disable affected mutation; preserve rows and audit evidence; forward repair only                            |
+| 3. Signup, account recovery, and legal        | Queued                | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, safe return intent, and separate Finder/Builder onboarding         | Every signup surface covered; Finder signup creates no organization; consent version/hash/UTC recorded; denial/retry tested; legal text approved               | Disable new signup entry while preserving existing accounts and consent evidence                            |
+| 4. Existing release and product-quality close | Queued, partly merged | Workspace/Documents/Finance drawer entry, organization pages, role access, deep links, console errors, light-mode contrast, profile backgrounds, mobile, and a11y    | Finder/Builder/free/paid/admin/coach/member journeys; refresh and cross-account isolation; light/dark/mobile proof; no console or visual regressions           | Disable or revert the narrow surface without deleting persisted data                                        |
+| 5. Finder loading and `/find` performance     | Queued                | Compact index, bounds/cursor queries, detail on demand, stable cached refresh, current skeleton replacement, empty/error/retry states, selected/collected override   | Fast first useful render; route/payload/LCP/TTI budgets; complete paginated list; offline/stale/retry proof; collected items resolve outside current bounds    | Restore prior endpoint behind a compatibility reader; retain published records                              |
+| 6. Builder Finance read-only connections      | Queued                | Organization-scoped read-only Stripe activity, approved CSV/accounting imports, source classification, freshness, verification, and subscription-billing separation  | Connected and delayed/error fixtures reconcile; source/as-of state visible; no money movement, bank credentials, or subscription objects enter Finance         | Disable provider sync; retain imported records and CSV fallback                                             |
+| 7. Finder Collect / My Map alpha              | Queued                | Collect nonprofits and resources, typed lists, notes, tags, ordering, removal, share/export, guest import, cross-device persistence, and light voluntary progress    | Anonymous and signed-in journeys; durable user ownership; safe sharing/revocation; Builders retain identical Finder access; no Builder prompt for Finder users | Disable new collection writes; preserve prior favorites and typed rows                                      |
+| 8. Builder Finance graph, list, and reporting | Queued                | Simple live activity graph, activity list, History, filters, source/freshness labels, CSV/PDF export, and board sharing                                              | Empty/connected/loading/stale/error states; graph has text equivalent; exports reconcile and neutralize formulas; board access is explicit and revocable       | Disable reporting/export entry points; retain read-only history                                             |
+| 9. Qualified resources and varied guides      | Queued                | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` performance is stable                         | Exact complete/verified/publishable/promoted/public parity; cohort canary; guide relevance, sparse-area, freshness, and broken-link checks                     | Unpublish a cohort or guide without deleting evidence                                                       |
+| 10. Builder journey completion                | Queued                | Organization setup, Accelerator, people, documents, programs, funding opportunities, fiscal sponsorship, and reporting as one Builder-only journey                   | Free/paid Builder journeys preserve data across refresh and plan changes; role-complete funding and fiscal proof; no dependency on Finder completion           | Disable the affected Builder entry point; retain organization and audit rows                                |
+| 11. Integrated production release             | Queued                | Security review, support runbook, monitoring, rollback rehearsal, separate Finder and Builder canaries, and gradual rollout                                          | Full `pnpm check:quality`; connected RLS; hosted previews; production browser proof; separate Finder/Builder monitoring and rollback                           | Wave-specific flags and forward repair; never destructive data rollback                                     |
 
 #### Wave branch rules
 
@@ -137,6 +213,33 @@ wave, but unrelated scope does not accumulate in one PR.
   checkbox does not substitute for that approval.
 - Authentication, authorization, organization membership, and account recovery
   are tested independently. Navigation visibility never grants access.
+- Finder signup finishes without creating an organization or opening Builder
+  onboarding. Builder access is added without changing existing collections.
+
+#### Finder acceptance contract
+
+- Every visitor can browse the public map. Every signed-in account, including a
+  Builder, can use Collect and My Map.
+- Finder collections are user-owned, durable across devices, and independent of
+  organizations, Accelerator progress, funding work, and Finance.
+- A person can create, rename, reorder, remove, note, tag, share, unshare, and
+  export a collection with clear success, empty, loading, stale, and error states.
+- Guest collections import once after signup without duplicates or lost map
+  context. Private notes never enter public shares or anonymous payloads.
+- Finder surfaces never require or advertise Builder completion as the next
+  step. Essential-resource access is never ranked or blocked by progress.
+
+#### Builder acceptance contract
+
+- Builder access adds organization setup, Workspace, Accelerator, funding,
+  fiscal sponsorship, and Finance while preserving Finder and My Map.
+- Builder writes are organization-scoped, role-authorized, revision-aware, and
+  independent of Finder collections.
+- Finance shows external activity only. Its graph, list, History, exports, and
+  board shares identify source, freshness, verification state, and reporting
+  period without implying that Coach House controls the money.
+- Adding, changing, or removing a Builder subscription does not delete Finder
+  collections or silently change organization data.
 
 #### Data, cache, and interface acceptance contract
 
@@ -146,7 +249,7 @@ wave, but unrelated scope does not accumulate in one PR.
   cannot resurrect stale UI or hide a successful write.
 - `/find` first renders a compact useful index. It does not download every
   detail field or show obsolete full-directory skeletons before interaction.
-- Selected and saved records remain resolvable outside the current bounds;
+- Selected and collected records remain resolvable outside the current bounds;
   public details load on demand and private contacts never enter anonymous list
   payloads.
 - Light and dark themes use the same semantic tokens. Organization and resource
@@ -204,16 +307,17 @@ provisioning, or transaction execution.
 
 ## Decision Summary
 
-Do not force-push or release the current staged tree.
-
-Rebuild the work as seven sequential, independently reviewable branches from
-the latest `origin/main`. Use the current branch only as a read-only donor for
-intent and selected hunks. Merge behind inactive flags where needed and hold
-the combined production rollout until Batch 7. Batch 1 may ship alone as an
-approved onboarding incident hotfix.
+Do not force-push or release the stale staged tree. The original seven batches
+below are retained as historical design and release evidence. Active work now
+follows the 2026-08-11 execution waves above, with each branch starting from the
+latest `origin/main`.
 
 The recommended product architecture is:
 
+- Keep Finder available to everyone and preserve Collect / My Map when Builder
+  access is added.
+- Treat Builder as an added organization track, never as the required next step
+  for Finder users.
 - Create Finance as its own workspace card and canonical identity. Do not reuse,
   rename, or replace `economic-engine`.
 - Add Finance to the existing workspace drawer with Overview, Opportunities,
@@ -830,6 +934,11 @@ Replace the split localStorage/auth-metadata model with typed tables:
 - polymorphic list items for public organization and external resource IDs;
 - private note and lightweight state such as saved, contacted, visited, or done;
 - optional shared public lists containing public item IDs only.
+
+These capabilities belong to Finder and are available to every signed-in
+account, including Builders. Rows are owned by the person, not by an
+organization. Adding or removing Builder access does not migrate or delete
+them. No collection creates Builder work without a separate explicit action.
 
 Do not gamify urgent resource access. Progress is useful for voluntary journeys
 such as “saved three opportunities” or “completed a neighborhood guide,” but
@@ -1904,15 +2013,11 @@ Playwright journeys, accessibility, visual states, build, and performance.
 Fixtures contain synthetic external records only; they never require live bank
 or payment-provider access.
 
-## Exactly Seven Merge Batches
+## Historical Seven Merge Batches
 
-Each branch starts from the latest merged `origin/main`, not from the stale
-working branch. After each merge, create the next branch from the new main.
-Copy only reviewed hunks and direct dependencies. Do not cherry-pick the giant
-snapshot commit. Each batch receives a focused PR, preview, runlog entry,
-rollback note, and merge verification before the next batch. Hold the combined
-production rollout until Batch 7 unless Batch 1 is separately approved as an
-incident hotfix.
+This section records the original release decomposition. It is not the active
+TODO order. The merged work remains valid evidence; all unfinished work follows
+the 2026-08-11 execution waves at the top of this document.
 
 ### Batch 1: Baseline Reconciliation And Onboarding Recovery
 
@@ -2117,6 +2222,10 @@ flowchart LR
 
 ## Objective Traceability
 
+This table records the original design request. The 2026-08-11 product-model
+override and active execution waves supersede its combined-journey and release
+order language where they conflict.
+
 | Requested outcome                       | Planned evidence                                                                   |
 | --------------------------------------- | ---------------------------------------------------------------------------------- |
 | Talk before acting                      | Approved scope recorded before implementation                                      |
@@ -2172,18 +2281,23 @@ an excuse to expand the product beyond this traceability table.
 
 ## Decision Log
 
-| Date       | Decision                                                           | Status                                      |
-| ---------- | ------------------------------------------------------------------ | ------------------------------------------- |
-| 2026-08-04 | Do not hard-push the staged tree                                   | Recommended                                 |
-| 2026-08-05 | Create a separate Finance card; do not reuse `economic-engine`     | Approved                                    |
-| 2026-08-05 | Keep four Finance drawer views for now                             | Approved                                    |
-| 2026-08-07 | Money movement stays in external bank and accounting systems       | Approved product boundary                   |
-| 2026-08-05 | Keep restricted funds organization/project isolated and UI-neutral | Approved boundary                           |
-| 2026-08-07 | Keep the counsel-approved fiscal document canonical                | Counsel approval confirmed by product owner |
-| 2026-08-07 | Record external payments; never execute disbursement in the app    | Approved product boundary                   |
-| 2026-08-05 | Do not use hCaptcha                                                | Approved                                    |
-| 2026-08-04 | Keep `/find/[slug]` canonical                                      | Recommended                                 |
-| 2026-08-04 | Weather promotes but never hides cooling centers                   | Recommended                                 |
+| Date       | Decision                                                                 | Status                                      |
+| ---------- | ------------------------------------------------------------------------ | ------------------------------------------- |
+| 2026-08-04 | Do not hard-push the staged tree                                         | Recommended                                 |
+| 2026-08-05 | Create a separate Finance card; do not reuse `economic-engine`           | Approved                                    |
+| 2026-08-05 | Keep four Finance drawer views for now                                   | Approved                                    |
+| 2026-08-07 | Money movement stays in external bank and accounting systems             | Approved product boundary                   |
+| 2026-08-05 | Keep restricted funds organization/project isolated and UI-neutral       | Approved boundary                           |
+| 2026-08-07 | Keep the counsel-approved fiscal document canonical                      | Counsel approval confirmed by product owner |
+| 2026-08-07 | Record external payments; never execute disbursement in the app          | Approved product boundary                   |
+| 2026-08-05 | Do not use hCaptcha                                                      | Approved                                    |
+| 2026-08-04 | Keep `/find/[slug]` canonical                                            | Recommended                                 |
+| 2026-08-04 | Weather promotes but never hides cooling centers                         | Recommended                                 |
+| 2026-08-11 | Finder is available to everyone; Builder is an added track               | Approved product model                      |
+| 2026-08-11 | Builders retain Finder, Collect, and My Map                              | Approved product model                      |
+| 2026-08-11 | Finder never requires Builder onboarding or completion                   | Approved product model                      |
+| 2026-08-11 | Finance displays and exports external activity; it does not manage money | Approved product model                      |
+| 2026-08-11 | Defer NWS promotion until after the current launch path                  | Approved priority                           |
 
 ## Primary References
 

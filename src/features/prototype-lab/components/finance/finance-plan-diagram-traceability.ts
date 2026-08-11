@@ -52,10 +52,10 @@ export const FINANCE_PLAN_DIAGRAM_TRACEABILITY = [
     viewId: "weather",
   },
   {
-    label: "Seven-batch dependencies",
+    label: "Historical seven-batch dependencies",
     sourceConnectionCount: 10,
     sourceKind: "flowchart",
-    sourceSection: "Exactly Seven Merge Batches",
+    sourceSection: "Historical Seven Merge Batches",
     viewId: "dependencies",
   },
 ] as const satisfies readonly FinancePlanDiagramTraceabilityEntry[]

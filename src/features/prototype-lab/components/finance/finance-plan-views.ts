@@ -46,10 +46,10 @@ export const FINANCE_PLANNING_VIEWS = [
   {
     id: "roadmap",
     label: "Roadmap",
-    title: "Seven-batch release roadmap",
+    title: "Historical seven-batch roadmap",
     summary:
-      "Approvals, research, merge order, proof gates, rollback, and production readiness.",
-    sourceSection: "Exactly Seven Merge Batches",
+      "Original merge order, proof gates, rollback, and production-readiness evidence.",
+    sourceSection: "Historical Seven Merge Batches",
     buildNodes: buildFinanceReleasePlanNodes,
     buildEdges: buildFinanceReleasePlanEdges,
     initialNodeIds: ["unsafe-tree-start", "batch-1-baseline-onboarding"],
@@ -58,10 +58,10 @@ export const FINANCE_PLANNING_VIEWS = [
   {
     id: "dependencies",
     label: "Dependencies",
-    title: "Cross-batch dependency map",
+    title: "Historical batch dependency map",
     summary:
-      "Shows which domain foundations must be proven before public Find and final Finance cutover.",
-    sourceSection: "Exactly Seven Merge Batches",
+      "Shows the original dependencies retained as release evidence; current work follows the active PRD waves.",
+    sourceSection: "Historical Seven Merge Batches",
     buildNodes: () => buildFinanceDiagramNodes(FINANCE_DEPENDENCY_NODES),
     buildEdges: () => buildFinanceDiagramEdges(FINANCE_DEPENDENCY_EDGES),
     initialNodeIds: FINANCE_DEPENDENCY_NAVIGATION[0].nodeIds,

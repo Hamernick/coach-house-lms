@@ -296,7 +296,7 @@ export const FINANCE_PRD_SECTION_COVERAGE = [
     ],
   },
   {
-    section: "Exactly Seven Merge Batches",
+    section: "Historical Seven Merge Batches",
     evidence: [
       {
         viewId: "dependencies",

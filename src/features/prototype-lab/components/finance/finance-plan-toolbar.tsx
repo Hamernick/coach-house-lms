@@ -93,11 +93,7 @@ export function FinancePlanToolbar({
         </SelectContent>
       </Select>
 
-      <FinancePlanCurrentFocusPill
-        onOpenBatch={(batchId) =>
-          onSelectPlanNode({ nodeId: batchId, viewId: "roadmap" })
-        }
-      />
+      <FinancePlanCurrentFocusPill />
 
       <Popover>
         <PopoverTrigger asChild>

@@ -1,4 +1,4 @@
-import { Inter, Sora } from "next/font/google"
+import { Sora } from "next/font/google"
 
 export const legacyHomeHeadingFont = Sora({
   subsets: ["latin"],
@@ -7,12 +7,6 @@ export const legacyHomeHeadingFont = Sora({
   preload: false,
 })
 
-export const legacyHomeInterFont = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-inter",
-  display: "swap",
-  preload: false,
-})
+export const legacyHomeInterFont = { className: "font-sans" } as const
 
 export const LEGACY_HOME_BODY_CLASSNAME = legacyHomeInterFont.className

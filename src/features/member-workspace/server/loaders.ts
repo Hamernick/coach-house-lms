@@ -7,7 +7,6 @@ import { loadAdminOrganizationSummaries } from "@/features/member-workspace/serv
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
-import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { MemberWorkspacePeoplePageData } from "../types"
 export { loadMemberWorkspaceProjectsPage } from "./project-loaders"
@@ -130,32 +129,8 @@ export async function loadMemberWorkspacePeoplePage(): Promise<MemberWorkspacePe
       }
     }
 
-    if (canEdit) {
-      const syncResult = await mutateOrganizationPeopleProfile<
-        OrgPerson,
-        OrgPerson[]
-      >({
-        supabase,
-        orgId,
-        mutate: (people) => {
-          const sync = synchronizeSelf(people)
-          return sync.changed
-            ? {
-                ok: true,
-                changed: true,
-                people: sync.people,
-                value: sync.people,
-              }
-            : { ok: true, changed: false, value: people }
-        },
-      })
-      if (!("error" in syncResult)) {
-        peopleRaw.splice(0, peopleRaw.length, ...syncResult.value)
-      }
-    } else {
-      const sync = synchronizeSelf(peopleRaw)
-      if (sync.changed) peopleRaw.splice(0, peopleRaw.length, ...sync.people)
-    }
+    const sync = synchronizeSelf(peopleRaw)
+    if (sync.changed) peopleRaw.splice(0, peopleRaw.length, ...sync.people)
   }
 
   const normalizedPeople = peopleRaw.map((person) => ({

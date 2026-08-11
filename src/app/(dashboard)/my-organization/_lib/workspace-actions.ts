@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 
 import { canEditOrganization } from "@/lib/organization/active-org"
-import type { Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -18,6 +17,7 @@ import {
   buildWorkspaceBoardStateWithPersistedNodePosition,
   mergeNewerPersistedWorkspaceNodeState,
 } from "./workspace-board-state-persistence"
+import { persistWorkspaceBoardState } from "./workspace-board-state-write"
 import type {
   WorkspaceBoardActionResult,
   WorkspaceCollaborationActionResult,
@@ -29,7 +29,6 @@ import {
   buildWorkspaceInviteExpiry,
   canInviteWorkspaceCollaborators,
   filterActiveWorkspaceInvites,
-  readWorkspaceBoardStateValue,
 } from "./workspace-state"
 import { WORKSPACE_COLLABORATION_INVITE_NOTIFICATION_TYPE } from "./workspace-collaboration-invite-helpers"
 import {
@@ -90,25 +89,6 @@ export async function saveWorkspaceBoardStateAction(
     // Local/dev environments may omit service-role credentials.
   }
 
-  const incomingBoardState = normalizeWorkspaceBoardState(input)
-  const currentBoardResult = await persistenceClient
-    .from("organization_workspace_boards")
-    .select("state")
-    .eq("org_id", activeOrg.orgId)
-    .maybeSingle<{ state: unknown }>()
-  const persistedBoardStateBeforeSave =
-    currentBoardResult.error || !currentBoardResult.data?.state
-      ? null
-      : readWorkspaceBoardStateValue(currentBoardResult.data.state)
-  const boardState = mergeNewerPersistedWorkspaceNodeState({
-    incoming: incomingBoardState,
-    persisted: persistedBoardStateBeforeSave,
-  })
-  const persistedBoardState: WorkspaceBoardState = {
-    ...boardState,
-    updatedAt: new Date().toISOString(),
-  }
-
   if (activeOrg.orgId === user.id) {
     const { error: organizationUpsertError } = await persistenceClient
       .from("organizations")
@@ -116,7 +96,7 @@ export async function saveWorkspaceBoardStateAction(
         {
           user_id: activeOrg.orgId,
         },
-        { onConflict: "user_id" }
+        { ignoreDuplicates: true, onConflict: "user_id" }
       )
 
     if (organizationUpsertError) {
@@ -124,36 +104,22 @@ export async function saveWorkspaceBoardStateAction(
     }
   }
 
-  const boardUpsertPayload = {
-    org_id: activeOrg.orgId,
-    state: persistedBoardState as Json,
-    updated_by: user.id,
-  }
-
-  let { error } = await persistenceClient
-    .from("organization_workspace_boards")
-    .upsert(boardUpsertPayload, { onConflict: "org_id" })
-
-  if (error?.code === "23503") {
-    const retryResult = await persistenceClient
-      .from("organization_workspace_boards")
-      .upsert(
-        {
-          ...boardUpsertPayload,
-          updated_by: null,
-        },
-        { onConflict: "org_id" }
-      )
-    error = retryResult.error
-  }
-
-  if (error) {
-    return { error: "Unable to save workspace layout." }
-  }
+  const incomingBoardState = normalizeWorkspaceBoardState(input)
+  const result = await persistWorkspaceBoardState({
+    buildState: (persisted) =>
+      mergeNewerPersistedWorkspaceNodeState({
+        incoming: incomingBoardState,
+        persisted,
+      }),
+    orgId: activeOrg.orgId,
+    supabase: persistenceClient,
+    userId: user.id,
+  })
+  if ("error" in result) return result
 
   revalidateWorkspaceBoardRoutes()
 
-  return { ok: true, boardState: persistedBoardState }
+  return result
 }
 
 export async function saveWorkspaceNodePositionAction(
@@ -179,29 +145,6 @@ export async function saveWorkspaceNodePositionAction(
     // Local/dev environments may omit service-role credentials.
   }
 
-  const currentBoardResult = await persistenceClient
-    .from("organization_workspace_boards")
-    .select("state")
-    .eq("org_id", activeOrg.orgId)
-    .maybeSingle<{ state: unknown }>()
-  if (currentBoardResult.error) {
-    return { error: "Unable to save workspace layout." }
-  }
-
-  const currentBoardState = currentBoardResult.data?.state
-    ? readWorkspaceBoardStateValue(currentBoardResult.data.state)
-    : normalizeWorkspaceBoardState(input.boardState)
-  const boardState = buildWorkspaceBoardStateWithPersistedNodePosition({
-    boardState: currentBoardState,
-    cardId: input.cardId,
-    x: Math.round(input.x),
-    y: Math.round(input.y),
-  })
-  const persistedBoardState: WorkspaceBoardState = {
-    ...boardState,
-    updatedAt: new Date().toISOString(),
-  }
-
   if (activeOrg.orgId === user.id) {
     const { error: organizationUpsertError } = await persistenceClient
       .from("organizations")
@@ -209,7 +152,7 @@ export async function saveWorkspaceNodePositionAction(
         {
           user_id: activeOrg.orgId,
         },
-        { onConflict: "user_id" }
+        { ignoreDuplicates: true, onConflict: "user_id" }
       )
 
     if (organizationUpsertError) {
@@ -217,36 +160,23 @@ export async function saveWorkspaceNodePositionAction(
     }
   }
 
-  const boardUpsertPayload = {
-    org_id: activeOrg.orgId,
-    state: persistedBoardState as Json,
-    updated_by: user.id,
-  }
-
-  let { error } = await persistenceClient
-    .from("organization_workspace_boards")
-    .upsert(boardUpsertPayload, { onConflict: "org_id" })
-
-  if (error?.code === "23503") {
-    const retryResult = await persistenceClient
-      .from("organization_workspace_boards")
-      .upsert(
-        {
-          ...boardUpsertPayload,
-          updated_by: null,
-        },
-        { onConflict: "org_id" }
-      )
-    error = retryResult.error
-  }
-
-  if (error) {
-    return { error: "Unable to save workspace layout." }
-  }
+  const result = await persistWorkspaceBoardState({
+    buildState: (persisted) =>
+      buildWorkspaceBoardStateWithPersistedNodePosition({
+        boardState: persisted ?? normalizeWorkspaceBoardState(input.boardState),
+        cardId: input.cardId,
+        x: Math.round(input.x),
+        y: Math.round(input.y),
+      }),
+    orgId: activeOrg.orgId,
+    supabase: persistenceClient,
+    userId: user.id,
+  })
+  if ("error" in result) return result
 
   revalidateWorkspaceBoardRoutes()
 
-  return { ok: true, boardState: persistedBoardState }
+  return result
 }
 
 export async function completeWorkspaceCanvasTutorialAction(): Promise<WorkspaceTutorialActionResult> {

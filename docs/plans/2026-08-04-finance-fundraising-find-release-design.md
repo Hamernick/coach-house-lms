@@ -4,9 +4,36 @@ Status: active production stabilization; wave rollout in progress
 
 Created: 2026-08-04
 
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-11
 
 Primary owners: product, platform engineering, fiscal sponsorship operations
+
+### 2026-08-11 Find And Build Product Clarification
+
+This is a settled product decision, not a new implementation wave or a plan to
+split the application into separate personas, routes, onboarding systems,
+permission systems, metrics, or test suites.
+
+Coach House is one product with two independent loops:
+
+- **Find:** anyone can discover and collect nonprofits and resources in My Map.
+- **Build:** organization users can use the existing Accelerator, Workspace,
+  people, documents, programs, funding, fiscal sponsorship, and Finance tools.
+
+Builders can use Find and My Map. Using Find does not make someone a Builder or
+require Builder onboarding. The existing account, navigation, security, and
+data architecture remain shared. Existing ownership rules remain intact:
+personal map preferences belong to the account, while organization work remains
+organization-owned and role-protected.
+
+The current Builder loop is already substantially built. It is not scheduled
+for a rebuild. Remaining Builder work is limited to live QA and fixing verified
+gaps. Paid billing is also treated as existing baseline behavior and is not an
+active rebuild project; reopen it only for a verified regression.
+
+Finance displays source-labeled external activity. Stripe or another approved
+provider manages the money. Coach House provides the useful view: a simple
+graph, activity list, history, export, and board sharing.
 
 ### 2026-08-10 Production Stability Override
 
@@ -48,8 +75,17 @@ the relevant wave rather than inferred from merge status:
 | PRs #124-125 | Workspace foundation enabled for all users                  |
 | PR #126      | Organization render-loop and stale Stripe-link error repair |
 | PR #127      | Production font-build repair                                |
+| PR #128      | Production-readiness waves and release gates                |
+| PR #130      | Self-hosted Inter build dependency                          |
+| PR #131      | Find and Build product and rollout clarification            |
+| PR #132      | Public Find light-mode contrast repair                      |
+| PR #133      | Parallel organization-detail server reads                   |
+| PR #134      | Revision-safe organization document writes                  |
+| PR #135      | Read-only Workspace and Roadmap rendering                   |
+| PR #136      | Read-only People page synchronization                       |
+| PR #137      | Revision-safe Workspace board saves                         |
 
-The baseline is `origin/main` commit `2a2d887e` on 2026-08-10. A production
+The baseline is `origin/main` commit `872c0f6c` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -63,17 +99,15 @@ remaining candidates cannot be inserted into `/find` merely to reach 5,000.
 
 #### Ranked live risks
 
-| Priority | Risk                                                                | Current evidence                                                                                                                                               | Release requirement                                                                                                         |
-| -------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| P0       | Paid plan changes can create a second subscription                  | `/billing` links to `/api/stripe/checkout`; that route creates Checkout sessions while the separate pricing action contains existing-subscription update logic | One authoritative purchase/change path, duplicate prevention, tested proration, webhook convergence, and entitlement parity |
-| P0       | Paid lifecycle has no current end-to-end production proof           | Checkout, upgrade, downgrade, portal, cancellation, renewal, invoice, failed payment, recovery, and access must agree across Stripe and Supabase               | Test-mode journey matrix, controlled approved live canary, exact object verification, monitoring, and rollback              |
-| P0       | User data could be lost or appear stale                             | Workspace autosave, organization updates, Finance records, subscriptions, onboarding state, and cache invalidation cross server and client boundaries          | Retry, concurrency, stale-write, rollback, refresh, and reconnect proof with no silent overwrite                            |
-| P1       | Signup lacks current legal acceptance                               | No canonical Terms or Privacy pages and no versioned signup acceptance record                                                                                  | Reviewed pages, linked required checkbox, version/hash/UTC evidence, and every signup entry covered                         |
-| P1       | Existing features need role-complete live proof                     | Finance/documents drawers and organization fixes were released through several hotfixes                                                                        | Paid/free/admin/coach/member browser journeys with data continuity                                                          |
-| P1       | `/find` sends a large monolithic payload and shows stale loading UX | `853` records currently produce about `2.52 MB`; the client fetch uses `no-store` and “Loading the full resource directory…” skeletons                         | Compact index, bounded queries, detail on demand, stable cached refresh, and explicit performance budgets                   |
-| P1       | Light-mode contrast and profile surfaces are inconsistent           | Some map overlays force dark descendants and organization/resource surfaces require browser review                                                             | WCAG contrast, transparent/correct page background, and light/dark/mobile visual proof                                      |
-| P2       | Public guides lack useful variety                                   | Current guide content is concentrated on cooling centers                                                                                                       | Basic location-connected guides across several service categories after map stability                                       |
-| Deferred | NWS promotion and weather ranking                                   | Valuable but not required to stabilize the live product                                                                                                        | Reassess after Wave 8; do not block launch readiness                                                                        |
+| Priority | Risk                                                                | Current evidence                                                                                                                                      | Release requirement                                                                                       |
+| -------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| P0       | User data could be lost or appear stale                             | Workspace autosave, organization updates, Finance records, subscriptions, onboarding state, and cache invalidation cross server and client boundaries | Retry, concurrency, stale-write, rollback, refresh, and reconnect proof with no silent overwrite          |
+| P1       | Signup lacks current legal acceptance                               | No canonical Terms or Privacy pages and no versioned signup acceptance record                                                                         | Reviewed pages, linked required checkbox, version/hash/UTC evidence, and every signup entry covered       |
+| P1       | Existing features need role-complete live proof                     | Finance/documents drawers and organization fixes were released through several hotfixes                                                               | Paid/free/admin/coach/member browser journeys with data continuity                                        |
+| P1       | `/find` sends a large monolithic payload and shows stale loading UX | `853` records currently produce about `2.52 MB`; the client fetch uses `no-store` and “Loading the full resource directory…” skeletons                | Compact index, bounded queries, detail on demand, stable cached refresh, and explicit performance budgets |
+| P1       | Light-mode contrast and profile surfaces are inconsistent           | Some map overlays force dark descendants and organization/resource surfaces require browser review                                                    | WCAG contrast, transparent/correct page background, and light/dark/mobile visual proof                    |
+| P2       | Public guides lack useful variety                                   | Current guide content is concentrated on cooling centers                                                                                              | Basic location-connected guides across several service categories after map stability                     |
+| Deferred | NWS promotion and weather ranking                                   | Valuable but not required to stabilize the live product                                                                                               | Reassess after launch; do not block launch readiness                                                      |
 
 #### Execution waves
 
@@ -81,17 +115,36 @@ Each wave is separately scoped and integrated only after its own evidence is
 green. A critical production fix may use a smaller branch within the active
 wave, but unrelated scope does not accumulate in one PR.
 
-| Wave                                         | Status on 2026-08-10  | Scope                                                                                                                                               | Exit evidence                                                                                                                               | Rollback                                                                                                    |
-| -------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 0. Truth and release gates                   | Code complete         | Reconcile this PRD with current production, rank risks, define branch and release rules                                                             | Source-backed audit merged; no product-code change                                                                                          | Revert documentation only                                                                                   |
-| 1. Paying lifecycle                          | Active, Wave 1A local | Purchase, existing-plan upgrade/downgrade, portal, renewal, cancellation, failed payment, invoice history, webhook sync, entitlements, recovery     | Stripe test-mode matrix; no duplicate subscription; database and member UI converge; controlled approved live canary                        | Disable change entry points; retain portal and existing subscription; reconcile append-only webhook history |
-| 2. Free signup and legal                     | Queued                | Signup, verification, login, onboarding, Terms, Privacy, required acceptance, consent evidence, authz                                               | Every signup surface covered; consent version/hash/UTC recorded; denial and retry tested; legal text approved                               | Disable new signup entry while preserving existing accounts and consent evidence                            |
-| 3. Data durability                           | Queued                | Organization, workspace, Finance, subscription, and onboarding writes under retry, concurrency, disconnect, stale revision, and partial failure     | No silent overwrite or data loss; idempotent retries; cache invalidation and rollback tests; final-schema RLS                               | Disable affected mutation; preserve rows and audit evidence; forward repair only                            |
-| 4. Existing release completion               | Queued, partly merged | Finance Activity/History, workspace documents drawer, organization pages, role access, deep links, map/profile regressions                          | Paid/free/admin/coach/member desktop and mobile journeys; refresh and cross-account isolation; no console errors                            | Disable narrow entry point without deleting persisted data                                                  |
-| 5. Loading, caching, and `/find` performance | Queued                | Route loading, stale cache, compact map index, bounds/cursor queries, detail on demand, refresh recovery, current loading/empty/error UI            | Payload and route budgets; stable selected/saved items; fast first useful render; offline/stale/retry proof                                 | Restore prior endpoint behind compatibility reader; retain published records                                |
-| 6. Theme and product-quality pass            | Queued                | Light/dark contrast, transparent organization/resource profile background, typography, responsive layout, accessibility, loading/empty/error states | Light/dark/mobile screenshots; automated accessibility and contrast checks; no visual regressions                                           | Revert token/surface changes only                                                                           |
-| 7. Qualified resources and varied guides     | Queued                | Promote verified resource cohorts, close evidence gaps, then publish basic category- and location-varied guides                                     | Exact candidate/complete/verified/publishable/promoted/public counts; cohort canary; guide relevance and broken-link checks                 | Unpublish cohort or guide without deleting evidence                                                         |
-| 8. Integrated production release             | Queued                | Combine verified waves, security review, support runbook, monitoring, canary, gradual rollout                                                       | Full `pnpm check:quality`; connected RLS; preview journeys; rollback rehearsal; paid/free canaries; production browser and monitoring proof | Wave-specific flags and forward repair; never destructive data rollback                                     |
+| Wave                                      | Status on 2026-08-11 | Scope                                                                                                                                                          | Exit evidence                                                                                                                                      | Rollback                                                                                   |
+| ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1. Live stability and existing work close | Active               | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
+| 2. Signup, recovery, and legal            | Queued               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
+| 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
+| 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
+| 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
+| 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
+| 7. Integrated production release          | Queued               | Security review, support runbook, monitoring, rollback rehearsal, production smoke checks, and gradual rollout                                                 | Full quality gate; connected RLS where changed; hosted previews; production browser proof; clean monitoring                                        | Wave-specific flags and forward repair; never use a destructive data rollback              |
+
+#### Wave 1 current evidence
+
+- PR #132 is merged and production-verified for authenticated light/dark Find
+  surfaces on desktop and mobile.
+- PR #133 is merged and production-verified for organization-detail rendering
+  and recoverable missing Stripe-subscription links.
+- PR #134 is merged and production-verified for revision-safe organization
+  document writes. The authenticated production Documents index rendered its
+  existing files after deployment without a mutation.
+- PR #135 is merged and production-verified for read-only Workspace and
+  Roadmap rendering. Legacy content remains normalized in memory, both routes
+  render, and their production reads leave the organization revision unchanged.
+- PR #136 is merged and production-deployed for read-only People-page member
+  synchronization. Account-derived display data is still shown, but opening
+  People no longer persists it over organization directory fields. Explicit
+  People add, edit, invite, remove, and position actions remain available.
+- PR #137 is merged for revision-aware Workspace board and node-position saves.
+  Concurrent saves retry against the latest board state instead of silently
+  replacing it. PR #138 records the completed production proof and remains open
+  for non-author review.
 
 Wave 1A is a local release candidate on
 `fix/paid-subscription-plan-changes-20260810`; it is not merged, preview
@@ -132,22 +185,13 @@ monitoring gates pass.
 6. After a merge, fetch current `origin/main` before selecting the next wave's
    branch.
 
-#### Paying-user acceptance contract
+#### Existing billing baseline
 
-- A new eligible customer can purchase exactly one intended subscription and
-  receives the matching organization entitlement after verified webhook sync.
-- An existing customer changes plan by updating the existing subscription, not
-  by opening an unrelated second subscription. The UI states the effective
-  timing and approved proration behavior before confirmation.
-- Upgrade, downgrade, scheduled cancellation, cancellation reversal, renewal,
-  card update, failed payment, recovery, invoice access, and portal return all
-  converge across Stripe, the database, server authorization, and visible UI.
-- Retries and repeated webhooks are idempotent. A missing or stale linked Stripe
-  object degrades to a recoverable support state without crashing the page or
-  silently changing access.
-- Every live mutation verifies the exact customer, organization, subscription,
-  item, price, invoice, payment, mode, and expected before/after state. No real
-  customer mutation is used for ordinary QA.
+Paid billing is treated as working baseline behavior, not an active PRD wave.
+Do not rebuild it, update PR #129, or run a new full billing project from this
+plan. Monitor the existing flow and open focused work only when a verified
+production regression exists. Any such repair must preserve the existing
+subscription, customer, invoices, entitlements, and webhook history.
 
 #### Free-user and legal acceptance contract
 
@@ -161,6 +205,24 @@ monitoring gates pass.
 - Authentication, authorization, organization membership, and account recovery
   are tested independently. Navigation visibility never grants access.
 
+#### Finder acceptance contract
+
+- The current saved-organizations feature is the implementation foundation; do
+  not replace it with a new collection system.
+- Every visitor can browse and collect locally. Every signed-in account,
+  including a Builder, can persist My Map across devices.
+- Collect works for public nonprofits and resources, supports removal, and uses
+  clear loading, empty, stale, and error states.
+- The alpha does not add lists, notes, tags, manual ordering, guest import, or a
+  separate Finder onboarding system.
+
+#### Existing Builder baseline
+
+Organization setup, Accelerator progress, people, documents, programs, board
+work, funding opportunities, fiscal sponsorship, and Finance already exist.
+Do not schedule a new “finish the Builder loop” build. Verify the current live
+journey and fix only observed gaps. Builders retain Find and My Map.
+
 #### Data, cache, and interface acceptance contract
 
 - Organization, workspace, Finance, billing, and onboarding writes are scoped
@@ -169,7 +231,7 @@ monitoring gates pass.
   cannot resurrect stale UI or hide a successful write.
 - `/find` first renders a compact useful index. It does not download every
   detail field or show obsolete full-directory skeletons before interaction.
-- Selected and saved records remain resolvable outside the current bounds;
+- Selected and collected records remain resolvable outside the current bounds;
   public details load on demand and private contacts never enter anonymous list
   payloads.
 - Light and dark themes use the same semantic tokens. Organization and resource
@@ -227,16 +289,17 @@ provisioning, or transaction execution.
 
 ## Decision Summary
 
-Do not force-push or release the current staged tree.
-
-Rebuild the work as seven sequential, independently reviewable branches from
-the latest `origin/main`. Use the current branch only as a read-only donor for
-intent and selected hunks. Merge behind inactive flags where needed and hold
-the combined production rollout until Batch 7. Batch 1 may ship alone as an
-approved onboarding incident hotfix.
+Do not force-push or release the stale staged tree. The original seven batches
+below are retained as historical design and release evidence. Active work now
+follows the 2026-08-11 execution waves above, with each branch starting from the
+latest `origin/main`.
 
 The recommended product architecture is:
 
+- Keep Finder available to everyone and preserve Collect / My Map when Builder
+  access is added.
+- Treat Builder as an added organization track, never as the required next step
+  for Finder users.
 - Create Finance as its own workspace card and canonical identity. Do not reuse,
   rename, or replace `economic-engine`.
 - Add Finance to the existing workspace drawer with Overview, Opportunities,
@@ -853,6 +916,11 @@ Replace the split localStorage/auth-metadata model with typed tables:
 - polymorphic list items for public organization and external resource IDs;
 - private note and lightweight state such as saved, contacted, visited, or done;
 - optional shared public lists containing public item IDs only.
+
+These capabilities belong to Finder and are available to every signed-in
+account, including Builders. Rows are owned by the person, not by an
+organization. Adding or removing Builder access does not migrate or delete
+them. No collection creates Builder work without a separate explicit action.
 
 Do not gamify urgent resource access. Progress is useful for voluntary journeys
 such as “saved three opportunities” or “completed a neighborhood guide,” but
@@ -1927,15 +1995,11 @@ Playwright journeys, accessibility, visual states, build, and performance.
 Fixtures contain synthetic external records only; they never require live bank
 or payment-provider access.
 
-## Exactly Seven Merge Batches
+## Historical Seven Merge Batches
 
-Each branch starts from the latest merged `origin/main`, not from the stale
-working branch. After each merge, create the next branch from the new main.
-Copy only reviewed hunks and direct dependencies. Do not cherry-pick the giant
-snapshot commit. Each batch receives a focused PR, preview, runlog entry,
-rollback note, and merge verification before the next batch. Hold the combined
-production rollout until Batch 7 unless Batch 1 is separately approved as an
-incident hotfix.
+This section records the original release decomposition. It is not the active
+TODO order. The merged work remains valid evidence; all unfinished work follows
+the 2026-08-11 execution waves at the top of this document.
 
 ### Batch 1: Baseline Reconciliation And Onboarding Recovery
 
@@ -2140,6 +2204,10 @@ flowchart LR
 
 ## Objective Traceability
 
+This table records the original design request. The 2026-08-11 product-model
+override and active execution waves supersede its combined-journey and release
+order language where they conflict.
+
 | Requested outcome                       | Planned evidence                                                                   |
 | --------------------------------------- | ---------------------------------------------------------------------------------- |
 | Talk before acting                      | Approved scope recorded before implementation                                      |
@@ -2195,18 +2263,23 @@ an excuse to expand the product beyond this traceability table.
 
 ## Decision Log
 
-| Date       | Decision                                                           | Status                                      |
-| ---------- | ------------------------------------------------------------------ | ------------------------------------------- |
-| 2026-08-04 | Do not hard-push the staged tree                                   | Recommended                                 |
-| 2026-08-05 | Create a separate Finance card; do not reuse `economic-engine`     | Approved                                    |
-| 2026-08-05 | Keep four Finance drawer views for now                             | Approved                                    |
-| 2026-08-07 | Money movement stays in external bank and accounting systems       | Approved product boundary                   |
-| 2026-08-05 | Keep restricted funds organization/project isolated and UI-neutral | Approved boundary                           |
-| 2026-08-07 | Keep the counsel-approved fiscal document canonical                | Counsel approval confirmed by product owner |
-| 2026-08-07 | Record external payments; never execute disbursement in the app    | Approved product boundary                   |
-| 2026-08-05 | Do not use hCaptcha                                                | Approved                                    |
-| 2026-08-04 | Keep `/find/[slug]` canonical                                      | Recommended                                 |
-| 2026-08-04 | Weather promotes but never hides cooling centers                   | Recommended                                 |
+| Date       | Decision                                                                 | Status                                      |
+| ---------- | ------------------------------------------------------------------------ | ------------------------------------------- |
+| 2026-08-04 | Do not hard-push the staged tree                                         | Recommended                                 |
+| 2026-08-05 | Create a separate Finance card; do not reuse `economic-engine`           | Approved                                    |
+| 2026-08-05 | Keep four Finance drawer views for now                                   | Approved                                    |
+| 2026-08-07 | Money movement stays in external bank and accounting systems             | Approved product boundary                   |
+| 2026-08-05 | Keep restricted funds organization/project isolated and UI-neutral       | Approved boundary                           |
+| 2026-08-07 | Keep the counsel-approved fiscal document canonical                      | Counsel approval confirmed by product owner |
+| 2026-08-07 | Record external payments; never execute disbursement in the app          | Approved product boundary                   |
+| 2026-08-05 | Do not use hCaptcha                                                      | Approved                                    |
+| 2026-08-04 | Keep `/find/[slug]` canonical                                            | Recommended                                 |
+| 2026-08-04 | Weather promotes but never hides cooling centers                         | Recommended                                 |
+| 2026-08-11 | Find is universal; Build is the existing organization workflow           | Approved product model                      |
+| 2026-08-11 | Builders retain Find, Collect, and My Map                                | Approved product model                      |
+| 2026-08-11 | Using Find never requires Builder work                                   | Approved product model                      |
+| 2026-08-11 | Finance displays and exports external activity; it does not manage money | Approved product model                      |
+| 2026-08-11 | Defer NWS promotion until after the current launch path                  | Approved priority                           |
 
 ## Primary References
 

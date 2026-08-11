@@ -1,21 +1,15 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
+import "@fontsource-variable/inter/wght.css"
 import "./globals.css"
 
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Inter, JetBrains_Mono } from "next/font/google"
+import { JetBrains_Mono } from "next/font/google"
 
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
 import { AppProviders } from "@/components/providers/app-providers"
 import { getLocale } from "@/lib/locale.server"
-
-const geistSans = Inter({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-  display: "swap",
-  preload: false,
-})
 
 const geistMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -34,8 +28,16 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/coach-house-logo-dark.png", type: "image/png", media: "(prefers-color-scheme: light)" },
-      { url: "/coach-house-logo-light.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      {
+        url: "/coach-house-logo-dark.png",
+        type: "image/png",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/coach-house-logo-light.png",
+        type: "image/png",
+        media: "(prefers-color-scheme: dark)",
+      },
     ],
     shortcut: "/favicon.ico",
     apple: "/coach-house-logo-dark.png",
@@ -53,7 +55,9 @@ export default async function RootLayout({
   return (
     <html lang={language} suppressHydrationWarning>
       <head />
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}>
+      <body
+        className={`${geistMono.variable} bg-background min-h-screen font-sans antialiased`}
+      >
         <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
         <Analytics />

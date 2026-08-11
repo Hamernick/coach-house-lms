@@ -78,12 +78,13 @@ the relevant wave rather than inferred from merge status:
 | PR #128      | Production-readiness waves and release gates                |
 | PR #130      | Self-hosted Inter build dependency                          |
 | PR #131      | Find and Build product and rollout clarification            |
-| PR #132      | Public Find light-mode contrast repair                       |
+| PR #132      | Public Find light-mode contrast repair                      |
 | PR #133      | Parallel organization-detail server reads                   |
 | PR #134      | Revision-safe organization document writes                  |
-| PR #135      | Read-only Workspace and Roadmap rendering                    |
+| PR #135      | Read-only Workspace and Roadmap rendering                   |
+| PR #136      | Read-only People page synchronization                       |
 
-The baseline is `origin/main` commit `76460756` on 2026-08-11. A production
+The baseline is `origin/main` commit `b43da278` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -135,11 +136,15 @@ wave, but unrelated scope does not accumulate in one PR.
 - PR #135 is merged and production-verified for read-only Workspace and
   Roadmap rendering. Legacy content remains normalized in memory, both routes
   render, and their production reads leave the organization revision unchanged.
-- People-page member synchronization is read-only on the focused
-  `fix/people-page-read-only-20260811` branch. Account-derived display data is
-  still shown, but opening People no longer persists it over organization
-  directory fields. Focused coverage and the full quality gate pass. Hosted
-  preview, merge, deployment, and production proof remain required.
+- PR #136 is merged and production-deployed for read-only People-page member
+  synchronization. Account-derived display data is still shown, but opening
+  People no longer persists it over organization directory fields. Explicit
+  People add, edit, invite, remove, and position actions remain available.
+- Workspace board and node-position saves are revision-aware on the focused
+  `fix/workspace-board-concurrency-20260811` branch. Concurrent saves retry
+  against the latest board state instead of silently replacing it. Focused
+  concurrency coverage and the full quality gate pass. Hosted preview, merge,
+  deployment, and production proof remain required.
 
 #### Wave branch rules
 

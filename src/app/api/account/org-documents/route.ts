@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import type { Database } from "@/lib/supabase"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { mutateOrganizationProfile } from "@/lib/organization/profile-mutation"
 import { createNotification } from "@/lib/notifications"
 
 const BUCKET = "org-documents"
@@ -12,10 +12,10 @@ const ALLOWED = new Set(["application/pdf"])
 const KIND_KEY_MAP = {
   "verification-letter": "verificationLetter",
   "articles-of-incorporation": "articlesOfIncorporation",
-  "bylaws": "bylaws",
+  bylaws: "bylaws",
   "state-registration": "stateRegistration",
   "good-standing-certificate": "goodStandingCertificate",
-  "w9": "w9",
+  w9: "w9",
   "tax-exempt-certificate": "taxExemptCertificate",
   "uei-confirmation": "ueiConfirmation",
   "sam-active-status": "samActiveStatus",
@@ -108,15 +108,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 })
     }
 
-    const { data: signed, error: signedError } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(
-        doc.path,
-        60 * 15,
-        downloadRequested
-          ? { download: typeof doc.name === "string" && doc.name.length > 0 ? doc.name : true }
-          : undefined,
-      )
+    const { data: signed, error: signedError } = await supabase.storage.from(BUCKET).createSignedUrl(
+      doc.path,
+      60 * 15,
+      downloadRequested
+        ? {
+            download: typeof doc.name === "string" && doc.name.length > 0 ? doc.name : true,
+          }
+        : undefined
+    )
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json({ error: signedError?.message ?? "Unable to access document" }, { status: 500 })
     }
@@ -153,25 +153,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Only PDF files are supported." }, { status: 400 })
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: `File too large. Max size is ${MAX_UPLOAD_MB} MB.` },
-      { status: 400 },
-    )
+    return NextResponse.json({ error: `File too large. Max size is ${MAX_UPLOAD_MB} MB.` }, { status: 400 })
   }
 
   try {
     const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    const profile = await loadProfile(supabase, orgId)
-    const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
-    const existing = documents[key]
-    const existingPath = isRecord(existing) && typeof existing.path === "string" ? existing.path : null
-
-    if (existingPath && isDocumentPathForKind(existingPath, orgId, key)) {
-      await supabase.storage.from(BUCKET).remove([existingPath])
     }
 
     const safeName = sanitizeFilename(file.name)
@@ -191,19 +179,33 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     }
 
-    const nextProfile = updateDocumentsProfile(profile, key, doc)
-    const { error: upsertError } = await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: orgId,
-          profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-        },
-        { onConflict: "user_id" },
-      )
+    const mutation = await mutateOrganizationProfile({
+      supabase,
+      orgId,
+      mutate: (profile) => {
+        const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
+        const existing = documents[key]
+        const existingPath = isRecord(existing) && typeof existing.path === "string" ? existing.path : null
 
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
+        return {
+          changed: true,
+          nextProfile: updateDocumentsProfile(profile, key, doc),
+          value: { existingPath },
+        }
+      },
+    })
+
+    if ("error" in mutation) {
+      await supabase.storage.from(BUCKET).remove([objectName])
+      return NextResponse.json({ error: mutation.error }, { status: mutation.status })
+    }
+
+    const { existingPath } = mutation.value
+    if (existingPath && existingPath !== objectName && isDocumentPathForKind(existingPath, orgId, key)) {
+      const { error: cleanupError } = await supabase.storage.from(BUCKET).remove([existingPath])
+      if (cleanupError) {
+        console.warn("Failed to remove replaced organization document")
+      }
     }
 
     const notifyResult = await createNotification(supabase, {
@@ -255,40 +257,40 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const profile = await loadProfile(supabase, orgId)
-    const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
-    const current = documents[key]
-    if (!isRecord(current) || typeof current.path !== "string") {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 })
-    }
-    if (!isDocumentPathForKind(current.path, orgId, key)) {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    const mutation = await mutateOrganizationProfile({
+      supabase,
+      orgId,
+      mutate: (profile) => {
+        const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
+        const current = documents[key]
+        if (!isRecord(current) || typeof current.path !== "string") {
+          return { error: "Document not found", status: 404 }
+        }
+        if (!isDocumentPathForKind(current.path, orgId, key)) {
+          return { error: "Document not found", status: 404 }
+        }
+
+        const doc: DocumentMeta = {
+          name: nextName,
+          path: String(current.path),
+          size: typeof current.size === "number" ? current.size : 0,
+          mime: typeof current.mime === "string" ? current.mime : "application/pdf",
+          updatedAt: new Date().toISOString(),
+        }
+
+        return {
+          changed: true,
+          nextProfile: updateDocumentsProfile(profile, key, doc),
+          value: doc,
+        }
+      },
+    })
+
+    if ("error" in mutation) {
+      return NextResponse.json({ error: mutation.error }, { status: mutation.status })
     }
 
-    const doc: DocumentMeta = {
-      name: nextName,
-      path: String(current.path),
-      size: typeof current.size === "number" ? current.size : 0,
-      mime: typeof current.mime === "string" ? current.mime : "application/pdf",
-      updatedAt: new Date().toISOString(),
-    }
-
-    const nextProfile = updateDocumentsProfile(profile, key, doc)
-    const { error: upsertError } = await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: orgId,
-          profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-        },
-        { onConflict: "user_id" },
-      )
-
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ document: doc }, { status: 200 })
+    return NextResponse.json({ document: mutation.value }, { status: 200 })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Update failed" }, { status: 500 })
   }
@@ -317,28 +319,32 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const profile = await loadProfile(supabase, orgId)
-    const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
-    const current = documents[key]
-    const path = isRecord(current) && typeof current.path === "string" ? current.path : null
+    const mutation = await mutateOrganizationProfile({
+      supabase,
+      orgId,
+      mutate: (profile) => {
+        const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
+        const current = documents[key]
+        const path = isRecord(current) && typeof current.path === "string" ? current.path : null
 
-    if (path && isDocumentPathForKind(path, orgId, key)) {
-      await supabase.storage.from(BUCKET).remove([path])
+        return {
+          changed: Boolean(current),
+          nextProfile: updateDocumentsProfile(profile, key, null),
+          value: { path },
+        }
+      },
+    })
+
+    if ("error" in mutation) {
+      return NextResponse.json({ error: mutation.error }, { status: mutation.status })
     }
 
-    const nextProfile = updateDocumentsProfile(profile, key, null)
-    const { error: upsertError } = await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: orgId,
-          profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-        },
-        { onConflict: "user_id" },
-      )
-
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
+    const { path } = mutation.value
+    if (path && isDocumentPathForKind(path, orgId, key)) {
+      const { error: cleanupError } = await supabase.storage.from(BUCKET).remove([path])
+      if (cleanupError) {
+        console.warn("Failed to remove deleted organization document")
+      }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 })

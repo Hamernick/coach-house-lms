@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server"
 import { revalidatePath } from "next/cache"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import type { Database } from "@/lib/supabase"
 import { ORG_MEDIA_BUCKET } from "@/lib/storage/org-media"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { mutateOrganizationProfile } from "@/lib/organization/profile-mutation"
 import { createNotification } from "@/lib/notifications"
 
 const MAX_BYTES = 15 * 1024 * 1024
@@ -44,9 +44,7 @@ function validatePdf(file: File): string | null {
 function getKind(searchParams: URLSearchParams): PublicDocumentKind | null {
   const kind = searchParams.get("kind")
   if (!kind) return null
-  return (Object.keys(KIND_KEY_MAP) as PublicDocumentKind[]).includes(kind as PublicDocumentKind)
-    ? (kind as PublicDocumentKind)
-    : null
+  return (Object.keys(KIND_KEY_MAP) as PublicDocumentKind[]).includes(kind as PublicDocumentKind) ? (kind as PublicDocumentKind) : null
 }
 
 function getAttachments(profile: Record<string, unknown>): Record<PublicDocumentKind, PublicDocumentMeta[]> {
@@ -71,25 +69,22 @@ function getAttachments(profile: Record<string, unknown>): Record<PublicDocument
   return output
 }
 
-function updateAttachmentsProfile(
-  profile: Record<string, unknown>,
-  kind: PublicDocumentKind,
-  nextList: PublicDocumentMeta[],
-) {
+function updateAttachmentsProfile(profile: Record<string, unknown>, kind: PublicDocumentKind, nextList: PublicDocumentMeta[]) {
   const current = isRecord(profile["publicAttachments"]) ? { ...(profile["publicAttachments"] as Record<string, unknown>) } : {}
   current[kind] = nextList
   return { ...profile, publicAttachments: current }
 }
 
-async function loadOrgRow(
-  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
-  userId: string,
-) {
+async function loadOrgRow(supabase: ReturnType<typeof createSupabaseRouteHandlerClient>, userId: string) {
   const { data: orgRow, error } = await supabase
     .from("organizations")
     .select("profile, public_slug, is_public")
     .eq("user_id", userId)
-    .maybeSingle<{ profile: Record<string, unknown> | null; public_slug: string | null; is_public: boolean | null }>()
+    .maybeSingle<{
+      profile: Record<string, unknown> | null
+      public_slug: string | null
+      is_public: boolean | null
+    }>()
 
   if (error) {
     throw new Error(error.message)
@@ -164,8 +159,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { profile, publicSlug } = await loadOrgRow(supabase, orgId)
-    const currentAttachments = getAttachments(profile)[kind]
+    const { publicSlug } = await loadOrgRow(supabase, orgId)
 
     const safeName = sanitizeFilename(file.name)
     const objectName = `${orgId}/public-documents/${kind}/${Date.now()}-${safeName}`
@@ -189,21 +183,23 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     }
 
-    const nextList = [...currentAttachments, doc].slice(-12)
-    const nextProfile = updateAttachmentsProfile(profile, kind, nextList)
-    const { error: upsertError } = await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: orgId,
-          profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-        },
-        { onConflict: "user_id" },
-      )
+    const mutation = await mutateOrganizationProfile({
+      supabase,
+      orgId,
+      mutate: (profile) => {
+        const currentAttachments = getAttachments(profile)[kind]
+        const nextList = [...currentAttachments, doc].slice(-12)
+        return {
+          changed: true,
+          nextProfile: updateAttachmentsProfile(profile, kind, nextList),
+          value: nextList,
+        }
+      },
+    })
 
-    if (upsertError) {
+    if ("error" in mutation) {
       await supabase.storage.from(ORG_MEDIA_BUCKET).remove([objectName])
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
+      return NextResponse.json({ error: mutation.error }, { status: mutation.status })
     }
 
     const notifyResult = await createNotification(supabase, {
@@ -221,7 +217,7 @@ export async function POST(request: NextRequest) {
     }
 
     revalidateOrgPaths(publicSlug)
-    return NextResponse.json({ document: doc, attachments: nextList }, { status: 200 })
+    return NextResponse.json({ document: doc, attachments: mutation.value }, { status: 200 })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Upload failed" }, { status: 500 })
   }
@@ -260,32 +256,33 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const { profile, publicSlug } = await loadOrgRow(supabase, orgId)
-    const currentAttachments = getAttachments(profile)[kind]
-    const nextList = currentAttachments.filter((doc) => doc.path !== path)
-    if (nextList.length === currentAttachments.length) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 })
+    const { publicSlug } = await loadOrgRow(supabase, orgId)
+    const mutation = await mutateOrganizationProfile({
+      supabase,
+      orgId,
+      mutate: (profile) => {
+        const currentAttachments = getAttachments(profile)[kind]
+        const nextList = currentAttachments.filter((doc) => doc.path !== path)
+        if (nextList.length === currentAttachments.length) {
+          return { error: "File not found", status: 404 }
+        }
+        return {
+          changed: true,
+          nextProfile: updateAttachmentsProfile(profile, kind, nextList),
+          value: nextList,
+        }
+      },
+    })
+
+    if ("error" in mutation) {
+      return NextResponse.json({ error: mutation.error }, { status: mutation.status })
     }
 
-    await supabase.storage.from(ORG_MEDIA_BUCKET).remove([path])
-
-    const nextProfile = updateAttachmentsProfile(profile, kind, nextList)
-    const { error: upsertError } = await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: orgId,
-          profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-        },
-        { onConflict: "user_id" },
-      )
-
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
-    }
+    const { error: cleanupError } = await supabase.storage.from(ORG_MEDIA_BUCKET).remove([path])
+    if (cleanupError) console.warn("Failed to remove deleted public document")
 
     revalidateOrgPaths(publicSlug)
-    return NextResponse.json({ ok: true, attachments: nextList }, { status: 200 })
+    return NextResponse.json({ ok: true, attachments: mutation.value }, { status: 200 })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Delete failed" }, { status: 500 })
   }

@@ -6,7 +6,7 @@ import { cleanupRoadmapTestSections, resolveRoadmapHeroUrl, resolveRoadmapSectio
 import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
-import { createSupabaseServerClient, type Json } from "@/lib/supabase"
+import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 
@@ -42,33 +42,8 @@ export async function StrategicRoadmapEditorPage({
       public_slug: string | null
     }>()
 
-  let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-
-  if (orgRow?.profile) {
-    let nextProfile = profile
-    let changed = false
-
-    const htmlCleanup = cleanupOrgProfileHtml(nextProfile)
-    if (htmlCleanup.changed) {
-      nextProfile = htmlCleanup.nextProfile
-      changed = true
-    }
-
-    const roadmapCleanup = cleanupRoadmapTestSections(nextProfile)
-    if (roadmapCleanup.changed) {
-      nextProfile = roadmapCleanup.nextProfile
-      changed = true
-    }
-
-    if (changed) {
-      const { error: cleanupError } = await supabase
-        .from("organizations")
-        .upsert({ user_id: orgId, profile: nextProfile as Json }, { onConflict: "user_id" })
-      if (!cleanupError) {
-        profile = nextProfile
-      }
-    }
-  }
+  const htmlCleanup = cleanupOrgProfileHtml(orgRow?.profile ?? {})
+  const profile = cleanupRoadmapTestSections(htmlCleanup.nextProfile).nextProfile
 
   const roadmapHomework = await resolveRoadmapHomework(orgId, supabase)
   const roadmapSections = resolveRoadmapSections(profile).map((section) => {

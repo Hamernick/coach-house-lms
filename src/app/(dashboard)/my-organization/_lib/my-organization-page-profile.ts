@@ -1,6 +1,5 @@
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { resolveRoadmapSections } from "@/lib/roadmap"
-import type { Json } from "@/lib/supabase"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 
 import { buildInitialOrganizationProfile } from "./helpers"
@@ -27,22 +26,7 @@ export async function loadMyOrganizationProfileContext({
       is_public: boolean | null
     }>()
 
-  let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-
-  if (orgRow?.profile) {
-    const { nextProfile, changed } = cleanupOrgProfileHtml(profile)
-    if (changed) {
-      const { error: cleanupError } = await supabase
-        .from("organizations")
-        .upsert(
-          { user_id: orgId, profile: nextProfile as Json },
-          { onConflict: "user_id" }
-        )
-      if (!cleanupError) {
-        profile = nextProfile
-      }
-    }
-  }
+  const profile = cleanupOrgProfileHtml(orgRow?.profile ?? {}).nextProfile
 
   const initialProfile = buildInitialOrganizationProfile({
     profile,

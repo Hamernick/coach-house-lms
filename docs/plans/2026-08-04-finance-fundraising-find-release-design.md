@@ -80,8 +80,9 @@ the relevant wave rather than inferred from merge status:
 | PR #131      | Find and Build product and rollout clarification            |
 | PR #132      | Public Find light-mode contrast repair                       |
 | PR #133      | Parallel organization-detail server reads                   |
+| PR #134      | Revision-safe organization document writes                  |
 
-The baseline is `origin/main` commit `46ab9301` on 2026-08-11. A production
+The baseline is `origin/main` commit `e114e45d` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -127,13 +128,14 @@ wave, but unrelated scope does not accumulate in one PR.
   surfaces on desktop and mobile.
 - PR #133 is merged and production-verified for organization-detail rendering
   and recoverable missing Stripe-subscription links.
-- The organization document-safety repair is code complete on the focused
-  `fix/document-upload-atomicity-20260811` branch. It replaces stale
-  whole-profile upserts with revision-aware retries and commits document
-  references before removing replaced or deleted storage objects. Focused
-  concurrency and ordering tests, the full quality gate, and an authenticated
-  isolated Documents render pass. Hosted preview, merge, deployment, and
-  production proof remain required.
+- PR #134 is merged and production-verified for revision-safe organization
+  document writes. The authenticated production Documents index rendered its
+  existing files after deployment without a mutation.
+- Workspace and Roadmap render-time profile writes are removed on the focused
+  `fix/read-only-profile-cleanup-20260811` branch. Legacy content remains
+  normalized in memory. Focused coverage, the full quality gate, authenticated
+  rendering, and connected unchanged-revision proof pass. Hosted preview,
+  merge, deployment, and production proof remain required.
 
 #### Wave branch rules
 

@@ -2865,9 +2865,10 @@ with class_ids as (
     ('electives', 1, 'financial-handbook', 'Financial Handbook'),
     ('electives', 2, 'due-diligence', 'Due Diligence'),
     ('electives', 3, 'retention-and-security', 'Retention and Security'),
-    ('electives', 4, 'naming-your-nfp', 'Naming your NFP'),
-    ('electives', 5, 'nfp-registration', 'NFP Registration'),
-    ('electives', 6, 'filing-1023', 'Filing 1023')
+    ('electives', 4, 'organization-setup', 'Organization setup'),
+    ('electives', 5, 'naming-your-nfp', 'Naming your NFP'),
+    ('electives', 6, 'nfp-registration', 'NFP Registration'),
+    ('electives', 7, 'filing-1023', 'Filing 1023')
   ) as t(class_slug, idx, slug, title)
 )
 insert into modules (class_id, idx, slug, title, is_published)

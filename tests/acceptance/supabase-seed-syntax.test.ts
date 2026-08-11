@@ -26,4 +26,19 @@ describe("Supabase seed syntax", () => {
     expect(seed).toContain("'introduction-idea-to-impact-accelerator'")
     expect(seed).toContain("'program-develop-a-pilot'")
   })
+
+  it("preserves the migrated elective module positions", () => {
+    const seed = readFileSync(join(process.cwd(), "supabase/seed.sql"), "utf8")
+
+    expect(seed).toContain(
+      "('electives', 4, 'organization-setup', 'Organization setup')"
+    )
+    expect(seed).toContain(
+      "('electives', 5, 'naming-your-nfp', 'Naming your NFP')"
+    )
+    expect(seed).toContain(
+      "('electives', 6, 'nfp-registration', 'NFP Registration')"
+    )
+    expect(seed).toContain("('electives', 7, 'filing-1023', 'Filing 1023')")
+  })
 })

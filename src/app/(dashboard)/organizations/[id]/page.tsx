@@ -86,29 +86,33 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     result.scope === "organization" || result.scope === "platform-admin"
   const canEditProjectDetails =
     result.scope === "organization" || result.scope === "platform-admin"
-  const canManageFiscalSponsorship =
-    result.scope === "platform-admin" &&
-    (await canManageFiscalSponsorshipForOrganization({
-      accessLevel: staff.accessLevel,
-      organizationId: result.organizationSummary.orgId,
-      supabase: staff.supabase,
-      userId: staff.userId,
-    }))
   const projectKind = getOrganizationAdminProjectKind(result.project.source)
   const canManageProjectTasks =
     result.scope === "organization" || result.scope === "platform-admin"
   const canDeleteProject =
     canEditProjectDetails && projectKind !== "organization_admin"
-  const fiscalSponsorshipWorkflowSummary =
-    await loadFiscalSponsorshipProjectWorkflowSummary(result.project.id)
+  const [
+    canManageFiscalSponsorship,
+    fiscalSponsorshipWorkflowSummary,
+    adminBilling,
+  ] = await Promise.all([
+    result.scope === "platform-admin"
+      ? canManageFiscalSponsorshipForOrganization({
+          accessLevel: staff.accessLevel,
+          organizationId: result.organizationSummary.orgId,
+          supabase: staff.supabase,
+          userId: staff.userId,
+        })
+      : Promise.resolve(false),
+    loadFiscalSponsorshipProjectWorkflowSummary(result.project.id),
+    staff.accessLevel === "developer"
+      ? loadAdminOrganizationBilling(result.organizationSummary.orgId)
+      : Promise.resolve(null),
+  ])
   const fiscalSponsorshipWorkflowData =
     "error" in fiscalSponsorshipWorkflowSummary
       ? null
       : fiscalSponsorshipWorkflowSummary
-  const adminBilling =
-    staff.accessLevel === "developer"
-      ? await loadAdminOrganizationBilling(result.organizationSummary.orgId)
-      : null
 
   return (
     <MemberWorkspaceProjectDetailPage

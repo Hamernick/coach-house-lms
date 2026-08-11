@@ -150,6 +150,13 @@ describe("admin organization billing", () => {
       'logger.error("admin_organization_billing_load_failed"'
     )
     expect(route).toContain('staff.accessLevel === "developer"')
+    expect(route).toContain("await Promise.all([")
+    expect(route).toContain(
+      "loadFiscalSponsorshipProjectWorkflowSummary(result.project.id)"
+    )
+    expect(route).toContain(
+      "loadAdminOrganizationBilling(result.organizationSummary.orgId)"
+    )
     expect(route).toContain("<AdminOrganizationBillingPanel")
     expect(rightPanel).toContain("{adminBilling}")
   })

@@ -1,0 +1,150 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+
+import type { Database, Json } from "@/lib/supabase"
+
+import type { WorkspaceBoardState } from "../_components/workspace-board/workspace-board-types"
+import { readWorkspaceBoardStateValue } from "./workspace-state"
+
+const MAX_WORKSPACE_BOARD_WRITE_ATTEMPTS = 4
+
+export const WORKSPACE_BOARD_WRITE_CONFLICT_ERROR =
+  "Workspace changed while you were saving. Refresh and try again."
+
+type WorkspaceBoardSnapshot = {
+  exists: boolean
+  revision: string | null
+  state: WorkspaceBoardState | null
+}
+
+type WorkspaceBoardSnapshotReadResult =
+  | { snapshot: WorkspaceBoardSnapshot }
+  | { error: string }
+
+type WorkspaceBoardSnapshotWriteResult =
+  | { status: "written" }
+  | { status: "conflict" }
+  | { status: "error"; error: string }
+
+export async function commitWorkspaceBoardState({
+  buildState,
+  maxAttempts = MAX_WORKSPACE_BOARD_WRITE_ATTEMPTS,
+  readSnapshot,
+  writeSnapshot,
+}: {
+  buildState: (
+    persistedState: WorkspaceBoardState | null
+  ) => WorkspaceBoardState
+  maxAttempts?: number
+  readSnapshot: () => Promise<WorkspaceBoardSnapshotReadResult>
+  writeSnapshot: (
+    snapshot: WorkspaceBoardSnapshot,
+    nextState: WorkspaceBoardState
+  ) => Promise<WorkspaceBoardSnapshotWriteResult>
+}): Promise<{ ok: true; boardState: WorkspaceBoardState } | { error: string }> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const readResult = await readSnapshot()
+    if ("error" in readResult) return readResult
+
+    const boardState = {
+      ...buildState(readResult.snapshot.state),
+      updatedAt: new Date().toISOString(),
+    }
+    const writeResult = await writeSnapshot(readResult.snapshot, boardState)
+    if (writeResult.status === "written") {
+      return { ok: true, boardState }
+    }
+    if (writeResult.status === "error") {
+      return { error: writeResult.error }
+    }
+  }
+
+  return { error: WORKSPACE_BOARD_WRITE_CONFLICT_ERROR }
+}
+
+function isForeignKeyViolation(error: { code?: string } | null) {
+  return error?.code === "23503"
+}
+
+function isUniqueViolation(error: { code?: string } | null) {
+  return error?.code === "23505"
+}
+
+export async function persistWorkspaceBoardState({
+  buildState,
+  orgId,
+  supabase,
+  userId,
+}: {
+  buildState: (
+    persistedState: WorkspaceBoardState | null
+  ) => WorkspaceBoardState
+  orgId: string
+  supabase: SupabaseClient<Database>
+  userId: string
+}) {
+  return commitWorkspaceBoardState({
+    buildState,
+    readSnapshot: async () => {
+      const { data, error } = await supabase
+        .from("organization_workspace_boards")
+        .select("state, updated_at")
+        .eq("org_id", orgId)
+        .maybeSingle<{ state: unknown; updated_at: string }>()
+
+      if (error) return { error: "Unable to save workspace layout." }
+      return {
+        snapshot: {
+          exists: Boolean(data),
+          revision: data?.updated_at ?? null,
+          state: data?.state ? readWorkspaceBoardStateValue(data.state) : null,
+        },
+      }
+    },
+    writeSnapshot: async (snapshot, nextState) => {
+      const state = nextState as unknown as Json
+
+      if (!snapshot.exists) {
+        const insertWithActor = (updatedBy: string | null) =>
+          supabase
+            .from("organization_workspace_boards")
+            .insert({ org_id: orgId, state, updated_by: updatedBy })
+            .select("updated_at")
+            .maybeSingle<{ updated_at: string }>()
+
+        let { data, error } = await insertWithActor(userId)
+        if (isForeignKeyViolation(error)) {
+          const fallbackResult = await insertWithActor(null)
+          data = fallbackResult.data
+          error = fallbackResult.error
+        }
+        if (isUniqueViolation(error)) return { status: "conflict" }
+        if (error) {
+          return { status: "error", error: "Unable to save workspace layout." }
+        }
+        return data ? { status: "written" } : { status: "conflict" }
+      }
+
+      const revision = snapshot.revision
+      if (!revision) return { status: "conflict" }
+      const updateWithActor = (updatedBy: string | null) =>
+        supabase
+          .from("organization_workspace_boards")
+          .update({ state, updated_by: updatedBy })
+          .eq("org_id", orgId)
+          .eq("updated_at", revision)
+          .select("updated_at")
+          .maybeSingle<{ updated_at: string }>()
+
+      let { data, error } = await updateWithActor(userId)
+      if (isForeignKeyViolation(error)) {
+        const fallbackResult = await updateWithActor(null)
+        data = fallbackResult.data
+        error = fallbackResult.error
+      }
+      if (error) {
+        return { status: "error", error: "Unable to save workspace layout." }
+      }
+      return data ? { status: "written" } : { status: "conflict" }
+    },
+  })
+}

@@ -125,8 +125,10 @@ describe("public map user location", () => {
       "absolute inset-0 flex items-center justify-center p-4"
     )
     expect(sidebarThemeSource).toContain(
-      '"dark border-input bg-input/35 text-foreground backdrop-blur-xl"'
+      "bg-background/88 text-foreground backdrop-blur-xl"
     )
+    expect(sidebarThemeSource).toContain("dark:border-input dark:bg-input/35")
+    expect(sidebarThemeSource).not.toContain('"dark border-input')
     expect(locationControlSource).toContain(
       "PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME"
     )

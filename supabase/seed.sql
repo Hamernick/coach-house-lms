@@ -17,7 +17,7 @@ with session_classes as (
 session_modules as (
   select * from (values
     -- session_number, idx, slug, title, lesson_description, resource_label, homework_instructions
-    (1, 1, 'intro-idea-to-impact-accelerator', 'Introduction: Idea to Impact Accelerator', 'Introduction to the accelerator: what we cover, why Coach House, and how it works.', 'link to our substack open NFP', null),
+    (1, 1, 'introduction-idea-to-impact-accelerator', 'Introduction: Idea to Impact Accelerator', 'Introduction to the accelerator: what we cover, why Coach House, and how it works.', 'link to our substack open NFP', null),
     (1, 2, 'start-with-your-why', 'Start with your why', 'How does your personal story relate to what you want to do?', null, 'Use this section to develop your origin story and connect it to your personal background. Write one to two pages and craft a background story that grounds your organizational why.'),
     (1, 3, 'what-is-the-need', 'What is the Need?', 'Using AI to explore how to establish a clearly articulated need statement.', null, 'Give thought to defining the need you are addressing as narrowly as possible in a brief statement or paragraph. Then move to the next module where you will refine the need statement with AI.'),
     (1, 4, 'ai-the-need', 'AI The Need', null, null, 'Use this section to develop your need statement. Be very clear about the problem, how serious it is, and any data that helps explain it. Do not yet describe your organization or solution.'),
@@ -27,7 +27,7 @@ session_modules as (
     (2, 3, 'values', 'Values', 'What do you believe?', null, 'Articulate the principles you feel so strongly about that you would not want to do the work without them. Describe the culture you want to build.'),
     (3, 1, 'theory-of-change', 'Theory of Change', 'Moving from why to what, one step ahead of program design.', null, 'Using your need, mission, vision, and values, work with AI to develop several IF-THEN-SO theory of change statements. Ensure the statement aligns with the larger organization and makes clear what you propose to do, what is likely to happen, and the long-term impact.'),
     (3, 2, 'systems-thinking', 'Systems Thinking', 'Applying a lens to consider the complex setting in which your program seeks to achieve its purpose.', 'Systems Thinking Questions', 'Using the systems thinking resource document, reflect on the questions and apply them to your organization. Share your description with AI and ask it to surface considerations you may have missed.'),
-    (4, 1, 'develop-a-pilot', 'Program: Develop a Pilot', 'Why pilot a program?', 'Optional Video: The story of SE CBA as a pilot', null),
+    (4, 1, 'program-develop-a-pilot', 'Program: Develop a Pilot', 'Why pilot a program?', 'Optional Video: The story of SE CBA as a pilot', null),
     (4, 2, 'program-models', 'Program Models', null, null, 'Decide which of the pilot models you will use as you design your program.'),
     (4, 3, 'designing-your-pilot', 'Designing your Pilot', null, null, 'Use the questions below to clarify your program. Drop them into AI, review the options it proposes, and iterate until you have a well-formed program description and, if needed, curricula for staff or volunteers.'),
     (4, 4, 'evaluation', 'Evaluation', null, null, null),
@@ -68,7 +68,7 @@ update classes set description = 'Where clarity begins: mission, vision, values,
 with sf_intro as (
   select m.id
   from classes c join modules m on m.class_id = c.id
-  where c.slug = 'strategic-foundations' and m.slug = 'intro-idea-to-impact-accelerator' limit 1
+  where c.slug = 'strategic-foundations' and m.slug = 'introduction-idea-to-impact-accelerator' limit 1
 )
 update modules m
 set description = 'Introduction to the accelerator: what we cover, why Coach House, and how it works.'
@@ -78,7 +78,7 @@ where m.id = t.id;
 with sf_intro as (
   select m.id
   from classes c join modules m on m.class_id = c.id
-  where c.slug = 'strategic-foundations' and m.slug = 'intro-idea-to-impact-accelerator' limit 1
+  where c.slug = 'strategic-foundations' and m.slug = 'introduction-idea-to-impact-accelerator' limit 1
 )
 update module_content mc
 set resources = jsonb_build_array(
@@ -199,7 +199,7 @@ with session_classes as (
 session_modules as (
   select * from (values
     -- session_number, idx, slug, title, lesson_description, resource_label, homework_instructions
-    (1, 1, 'intro-idea-to-impact-accelerator', 'Introduction: Idea to Impact Accelerator', 'Introduction to the accelerator: what we cover, why Coach House, and how it works.', 'link to our substack open NFP', null),
+    (1, 1, 'introduction-idea-to-impact-accelerator', 'Introduction: Idea to Impact Accelerator', 'Introduction to the accelerator: what we cover, why Coach House, and how it works.', 'link to our substack open NFP', null),
     (1, 2, 'start-with-your-why', 'Start with your why', 'How does your personal story relate to what you want to do?', null, 'Use this section to develop your origin story and connect it to your personal background. Write one to two pages and craft a background story that grounds your organizational why.'),
     (1, 3, 'what-is-the-need', 'What is the Need?', 'Using AI to explore how to establish a clearly articulated need statement.', null, 'Give thought to defining the need you are addressing as narrowly as possible in a brief statement or paragraph. Then move to the next module where you will refine the need statement with AI.'),
     (1, 4, 'ai-the-need', 'AI The Need', null, null, 'Use this section to develop your need statement. Be very clear about the problem, how serious it is, and any data that helps explain it. Do not yet describe your organization or solution.'),
@@ -209,7 +209,7 @@ session_modules as (
     (2, 3, 'values', 'Values', 'What do you believe?', null, 'Articulate the principles you feel so strongly about that you would not want to do the work without them. Describe the culture you want to build.'),
     (3, 1, 'theory-of-change', 'Theory of Change', 'Moving from why to what, one step ahead of program design.', null, 'Using your need, mission, vision, and values, work with AI to develop several IF-THEN-SO theory of change statements. Ensure the statement aligns with the larger organization and makes clear what you propose to do, what is likely to happen, and the long-term impact.'),
     (3, 2, 'systems-thinking', 'Systems Thinking', 'Applying a lens to consider the complex setting in which your program seeks to achieve its purpose.', 'Systems Thinking Questions', 'Using the systems thinking resource document, reflect on the questions and apply them to your organization. Share your description with AI and ask it to surface considerations you may have missed.'),
-    (4, 1, 'develop-a-pilot', 'Program: Develop a Pilot', 'Why pilot a program?', 'Optional Video: The story of SE CBA as a pilot', null),
+    (4, 1, 'program-develop-a-pilot', 'Program: Develop a Pilot', 'Why pilot a program?', 'Optional Video: The story of SE CBA as a pilot', null),
     (4, 2, 'program-models', 'Program Models', null, null, 'Decide which of the pilot models you will use as you design your program.'),
     (4, 3, 'designing-your-pilot', 'Designing your Pilot', null, null, 'Use the questions below to clarify your program. Drop them into AI, review the options it proposes, and iterate until you have a well-formed program description and, if needed, curricula for staff or volunteers.'),
     (4, 4, 'evaluation', 'Evaluation', null, null, null),

@@ -1,0 +1,154 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  FIND_RESOURCE_INDEX_VERSION,
+  serializeFindResourceIndexItem,
+} from "@/features/find-resource-index"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+
+function buildResourceItem(): ExternalResourceMapItem {
+  return {
+    id: "resource_map:service-food-1",
+    itemType: "external_resource",
+    title: "Community Food Pantry",
+    subtitle: "Neighborhood Resource Hub",
+    description: "Weekly groceries and meal support.",
+    latitude: 41.8781,
+    longitude: -87.6298,
+    address: "123 Pantry Ave, Chicago, IL 60601",
+    addressStreet: "123 Pantry Ave",
+    city: "Chicago",
+    state: "IL",
+    country: "United States",
+    orgCategory: null,
+    resourceCategories: ["food", "community"],
+    primaryResourceCategory: "food",
+    verificationStatus: "external_data",
+    sourceLabel: "City open data",
+    sourceUrl: "https://data.example.org/resources",
+    lastVerifiedAt: "2026-08-11T20:00:00.000Z",
+    visibility: "published",
+    markerImageUrl: "https://resource.example.org/logo.png",
+    aliases: ["NRH"],
+    deliveryModes: ["in_person"],
+    hoursLabel: "Weekdays 9-5",
+    availability: {
+      appointmentRequired: false,
+      label: "Weekdays 9-5",
+      nextCloseAt: null,
+      nextOpenAt: null,
+      notes: "Call before visiting.",
+      openNow: true,
+      sourceStatus: "available",
+      status: "available",
+      statusLabel: "Available",
+      temporaryClosedUntil: null,
+      timezone: "America/Chicago",
+    },
+    lastUpdatedAt: "2026-08-11T20:00:00.000Z",
+    links: [
+      {
+        id: "link-1",
+        label: "Website",
+        url: "https://resource.example.org",
+        type: "website",
+        domain: "resource.example.org",
+      },
+    ],
+    contacts: [
+      {
+        id: "contact-1",
+        label: "Pantry desk",
+        value: "+13125550123",
+        type: "phone",
+        url: "tel:+13125550123",
+      },
+    ],
+    services: [
+      {
+        id: "service-food-1",
+        title: "Community Food Pantry",
+        description: "Weekly groceries and meal support.",
+        eligibility: "Open to local residents.",
+      },
+    ],
+  }
+}
+
+describe("find resource index feature contract", () => {
+  it("serializes only fields needed to place, filter, and identify resources", () => {
+    const serialized = serializeFindResourceIndexItem(buildResourceItem())
+
+    expect(FIND_RESOURCE_INDEX_VERSION).toBe(1)
+    expect(serialized).toEqual({
+      id: "resource_map:service-food-1",
+      itemType: "external_resource",
+      title: "Community Food Pantry",
+      subtitle: "Neighborhood Resource Hub",
+      latitude: 41.8781,
+      longitude: -87.6298,
+      city: "Chicago",
+      state: "IL",
+      country: "United States",
+      resourceCategories: ["food", "community"],
+      primaryResourceCategory: "food",
+      verificationStatus: "external_data",
+      visibility: "published",
+      markerImageUrl: "https://resource.example.org/logo.png",
+      availability: {
+        status: "available",
+        statusLabel: "Available",
+        openNow: true,
+      },
+    })
+  })
+
+  it("excludes detail, contact, source, and street-address fields", () => {
+    const serialized = serializeFindResourceIndexItem(buildResourceItem())
+    const serializedKeys = Object.keys(serialized)
+
+    expect(serializedKeys).not.toEqual(
+      expect.arrayContaining([
+        "address",
+        "addressStreet",
+        "aliases",
+        "contacts",
+        "deliveryModes",
+        "description",
+        "hoursLabel",
+        "lastUpdatedAt",
+        "lastVerifiedAt",
+        "links",
+        "services",
+        "sourceLabel",
+        "sourceUrl",
+      ])
+    )
+    expect(JSON.stringify(serialized).length).toBeLessThan(700)
+  })
+
+  it("omits unknown availability and empty marker images", () => {
+    const item = buildResourceItem()
+    item.markerImageUrl = null
+    item.availability = {
+      appointmentRequired: false,
+      label: null,
+      nextCloseAt: null,
+      nextOpenAt: null,
+      notes: null,
+      openNow: null,
+      sourceStatus: null,
+      status: "unknown",
+      statusLabel: "Unknown",
+      temporaryClosedUntil: null,
+      timezone: null,
+    }
+
+    expect(serializeFindResourceIndexItem(item)).not.toHaveProperty(
+      "markerImageUrl"
+    )
+    expect(serializeFindResourceIndexItem(item)).not.toHaveProperty(
+      "availability"
+    )
+  })
+})

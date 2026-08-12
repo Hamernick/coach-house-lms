@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import {
+  COLLECTED_RESOURCES_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
   RECENT_ORGANIZATIONS_STORAGE_KEY,
   SAVED_QUERIES_STORAGE_KEY,
@@ -31,6 +32,7 @@ export function usePublicMapPreferences({
   initialViewer = null,
 }: UsePublicMapPreferencesOptions = {}) {
   const [favorites, setFavorites] = useState<string[]>([])
+  const [collectedResourceIds, setCollectedResourceIds] = useState<string[]>([])
   const [savedQueries, setSavedQueries] = useState<string[]>([])
   const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>(
     []
@@ -48,12 +50,17 @@ export function usePublicMapPreferences({
   useEffect(() => {
     if (typeof window === "undefined") return
     const localFavorites = readStoredArray(FAVORITES_STORAGE_KEY, 120)
+    const localCollectedResourceIds = readStoredArray(
+      COLLECTED_RESOURCES_STORAGE_KEY,
+      120
+    )
     const localSavedQueries = readStoredArray(SAVED_QUERIES_STORAGE_KEY, 40)
     const localRecentOrganizationIds = readStoredArray(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
       40
     )
     setFavorites(localFavorites)
+    setCollectedResourceIds(localCollectedResourceIds)
     setSavedQueries(localSavedQueries)
     setRecentOrganizationIds(localRecentOrganizationIds)
     setPreferenceMode("guest")
@@ -157,7 +164,9 @@ export function usePublicMapPreferences({
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    if (preferenceMode === "authenticated") return
+    if (preferenceMode === "unknown" || preferenceMode === "authenticated") {
+      return
+    }
     window.localStorage.setItem(
       FAVORITES_STORAGE_KEY,
       JSON.stringify(favorites)
@@ -171,6 +180,15 @@ export function usePublicMapPreferences({
       JSON.stringify(recentOrganizationIds)
     )
   }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (preferenceMode === "unknown") return
+    window.localStorage.setItem(
+      COLLECTED_RESOURCES_STORAGE_KEY,
+      JSON.stringify(collectedResourceIds)
+    )
+  }, [collectedResourceIds, preferenceMode])
 
   useEffect(() => {
     if (preferenceMode !== "authenticated") return
@@ -220,6 +238,7 @@ export function usePublicMapPreferences({
   }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
 
   return {
+    collectedResourceIds,
     favorites,
     savedQueries,
     recentOrganizationIds,
@@ -227,6 +246,7 @@ export function usePublicMapPreferences({
     preferencesSaveError,
     viewer,
     setFavorites,
+    setCollectedResourceIds,
     setSavedQueries,
     setRecentOrganizationIds,
   }

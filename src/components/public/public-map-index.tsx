@@ -49,6 +49,7 @@ import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-st
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import {
   useFilteredPublicMapItems,
+  usePublicMapCollectedResources,
   usePublicMapSavedOrganizations,
   usePublicMapSelectableItemMap,
 } from "./public-map-index/map-items-state"
@@ -128,7 +129,7 @@ export function PublicMapIndex({
       resolveInitialCameraTarget(initialOrganization)
     )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
-  const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
+  const pendingAuthOrgId: string | null = null
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
@@ -159,10 +160,12 @@ export function PublicMapIndex({
   const deferredQuery = useDeferredValue(query)
   const searchPending = deferredQuery !== query
   const {
+    collectedResourceIds,
     favorites,
     preferencesSaveError,
     viewer,
     setFavorites,
+    setCollectedResourceIds,
     setRecentOrganizationIds,
   } = usePublicMapPreferences({ initialViewer })
   const isAuthenticated = Boolean(viewer ?? initialViewer)
@@ -235,6 +238,12 @@ export function PublicMapIndex({
     favorites,
     organizationById,
   })
+  const { savedResources, toggleCollectedResource } =
+    usePublicMapCollectedResources({
+      collectedResourceIds,
+      resourceItems,
+      setCollectedResourceIds,
+    })
   const authAction = searchParams.get("auth_action")
   const authOrganizationId = searchParams.get("auth_org")
   const handleSameLocationSelectionChange = useCallback(
@@ -285,7 +294,6 @@ export function PublicMapIndex({
   const { authRedirectTo, handleSelectOrganization, toggleFavorite } =
     usePublicMapActions({
       organizationById,
-      isAuthenticated,
       searchParams,
       initialPublicSlug,
       selectedOrganization,
@@ -294,8 +302,6 @@ export function PublicMapIndex({
       setSidebarMode,
       setCameraTargetOrgId: handleSetCameraTargetOrgId,
       setRecentOrganizationIds,
-      setPendingAuthOrgId,
-      setAuthSheetOpen,
       setFavorites,
     })
   const {
@@ -404,8 +410,10 @@ export function PublicMapIndex({
       organizationCurationAction={organizationCurationAction}
       resourceMapCurationAction={resourceMapCurationAction}
       favorites={favorites}
+      collectedResourceIds={collectedResourceIds}
       guides={resourceGuides}
       savedOrganizations={savedOrganizations}
+      savedResources={savedResources}
       query={query}
       activeGroup={activeGroup}
       groupCounts={groupCounts}
@@ -423,6 +431,7 @@ export function PublicMapIndex({
       onActiveGroupChange={handleActiveGroupChange}
       onRetryResourceItems={retryResourceItems}
       onToggleFavorite={toggleFavorite}
+      onToggleCollectedResource={toggleCollectedResource}
       onGuideSelect={handleGuideSelect}
       onSelectOrganization={handleRailSelectOrganization}
       onSelectItem={handleSelectListItem}

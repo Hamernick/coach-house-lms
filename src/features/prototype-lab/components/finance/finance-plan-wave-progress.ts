@@ -171,12 +171,14 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-4-my-map",
     sequence: 4,
-    status: "queued",
+    status: "active",
     title: "Collect and My Map completion",
     criteria: defineCriteria(4, [
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Isolated local My Map implementation passes focused lint, 49 focused tests, full acceptance, RLS, build, visual, and performance gates; merge, deployment, and production smoke remain",
+        ],
+        state: "in_progress",
         title:
           "Let visitors collect and remove nonprofits and resources locally",
       },

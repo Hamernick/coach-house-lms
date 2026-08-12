@@ -10,27 +10,35 @@ import { Empty } from "@/components/ui/empty"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import { cn } from "@/lib/utils"
+import { PublicMapResourceListCard } from "./organization-list-resource-card"
 
 export function PublicMapOrganizationsRailSection({
   title,
   icon,
   organizations,
+  resources = [],
   emptyTitle,
   emptyDescription,
   className,
   onSelectOrganization,
   onToggleFavorite,
+  onSelectResource,
+  onToggleCollectedResource,
   removable = false,
 }: {
   title: string
   icon: ReactNode
   organizations: PublicMapOrganization[]
+  resources?: ExternalResourceMapItem[]
   emptyTitle: string
   emptyDescription: string
   className?: string
   onSelectOrganization: (organizationId: string) => void
   onToggleFavorite: (organizationId: string) => void
+  onSelectResource?: (resourceId: string) => void
+  onToggleCollectedResource?: (resourceId: string) => void
   removable?: boolean
 }) {
   return (
@@ -53,7 +61,7 @@ export function PublicMapOrganizationsRailSection({
         viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [scrollbar-width:thin]"
         contentClassName="p-4"
       >
-        {organizations.length === 0 ? (
+        {organizations.length === 0 && resources.length === 0 ? (
           <Empty
             className="border-border/70 bg-background/70 min-h-[220px] rounded-xl border"
             title={emptyTitle}
@@ -109,7 +117,7 @@ export function PublicMapOrganizationsRailSection({
                         variant="ghost"
                         size="icon"
                         className="border-border/70 bg-background/85 text-muted-foreground hover:bg-muted hover:text-foreground size-11 shrink-0 rounded-full border"
-                        aria-label={`Remove ${organization.name} from saved organizations`}
+                        aria-label={`Remove ${organization.name} from My Map`}
                         onClick={() => onToggleFavorite(organization.id)}
                       >
                         <MinusIcon className="size-4" aria-hidden />
@@ -119,6 +127,17 @@ export function PublicMapOrganizationsRailSection({
                 </article>
               )
             })}
+            {resources.map((resource) => (
+              <PublicMapResourceListCard
+                key={resource.id}
+                constrainedLayout
+                item={resource}
+                selected={false}
+                collected
+                onSelectItem={onSelectResource}
+                onToggleCollected={onToggleCollectedResource}
+              />
+            ))}
           </div>
         )}
       </ScrollArea>

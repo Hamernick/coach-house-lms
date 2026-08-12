@@ -1,0 +1,114 @@
+"use client"
+
+import { useCallback, type CSSProperties, type ReactNode } from "react"
+
+import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
+
+import { PublicMapLiquidGlassShell } from "./liquid-glass-shell"
+import { PublicMapMemberRail, type PublicMapMemberTab } from "./member-rail"
+import type { PublicMapSidebarProps } from "./sidebar-contract"
+import { PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME } from "./sidebar-theme"
+
+export function PublicMapRailPanel({
+  directoryRail,
+  directoryMode,
+  guides,
+  savedOrganizations,
+  savedResources,
+  onGuideSelect,
+  onSelectOrganization,
+  onSelectResource,
+  onToggleFavorite,
+  onToggleCollectedResource,
+}: {
+  directoryRail: ReactNode
+  directoryMode: "search" | "details"
+  guides: NonNullable<PublicMapSidebarProps["guides"]>
+  savedOrganizations: NonNullable<PublicMapSidebarProps["savedOrganizations"]>
+  savedResources: NonNullable<PublicMapSidebarProps["savedResources"]>
+  onGuideSelect: PublicMapSidebarProps["onGuideSelect"]
+  onSelectOrganization: PublicMapSidebarProps["onSelectOrganization"]
+  onSelectResource: PublicMapSidebarProps["onSelectItem"]
+  onToggleFavorite: PublicMapSidebarProps["toggleFavorite"]
+  onToggleCollectedResource: NonNullable<
+    PublicMapSidebarProps["toggleCollectedResource"]
+  >
+}) {
+  const providerStyle = { "--sidebar-width": "100%" } as CSSProperties
+
+  return (
+    <SidebarProvider
+      defaultOpen
+      className="h-full min-h-0 w-full bg-transparent"
+      style={providerStyle}
+    >
+      <PublicMapLiquidGlassShell
+        className={cn(
+          "pointer-events-auto h-full w-full",
+          PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME
+        )}
+      >
+        <Sidebar
+          collapsible="none"
+          className="text-sidebar-foreground h-full w-full overflow-hidden bg-transparent"
+        >
+          <PublicMapMemberRail
+            directoryRail={directoryRail}
+            directoryMode={directoryMode}
+            guides={guides}
+            savedOrganizations={savedOrganizations}
+            savedResources={savedResources}
+            onGuideSelect={onGuideSelect}
+            onSelectOrganization={onSelectOrganization}
+            onSelectResource={onSelectResource}
+            onToggleFavorite={onToggleFavorite}
+            onToggleCollectedResource={onToggleCollectedResource}
+          />
+        </Sidebar>
+      </PublicMapLiquidGlassShell>
+    </SidebarProvider>
+  )
+}
+
+export function usePublicMapDrawerSelectionHandlers({
+  onGuideSelect,
+  onSelectItem,
+  onSelectOrganization,
+  setActiveSnapIndex,
+  setDrawerTab,
+}: {
+  onGuideSelect: PublicMapSidebarProps["onGuideSelect"]
+  onSelectItem: PublicMapSidebarProps["onSelectItem"]
+  onSelectOrganization: PublicMapSidebarProps["onSelectOrganization"]
+  setActiveSnapIndex: (index: 0 | 1 | 2) => void
+  setDrawerTab: (tab: PublicMapMemberTab) => void
+}) {
+  const selectDirectory = useCallback(() => {
+    setDrawerTab("directory")
+    setActiveSnapIndex(1)
+  }, [setActiveSnapIndex, setDrawerTab])
+  const handleGuideSelect = useCallback(
+    (guideId: string) => {
+      onGuideSelect?.(guideId)
+      selectDirectory()
+    },
+    [onGuideSelect, selectDirectory]
+  )
+  const handleOrganizationSelect = useCallback(
+    (organizationId: string) => {
+      onSelectOrganization(organizationId)
+      selectDirectory()
+    },
+    [onSelectOrganization, selectDirectory]
+  )
+  const handleResourceSelect = useCallback(
+    (resourceId: string) => {
+      onSelectItem(resourceId)
+      selectDirectory()
+    },
+    [onSelectItem, selectDirectory]
+  )
+
+  return { handleGuideSelect, handleOrganizationSelect, handleResourceSelect }
+}

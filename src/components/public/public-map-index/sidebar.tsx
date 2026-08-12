@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type CSSProperties,
-} from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Button } from "@/components/ui/button"
@@ -18,17 +12,19 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
 import type { PublicMapGroupFilterKey } from "./category-filter"
 import type { SidebarMode } from "./constants"
-import { PublicMapLiquidGlassShell } from "./liquid-glass-shell"
 import {
   buildPublicMapDrawerSnapPoints,
   resolvePublicMapDrawerSnapPointIndex,
 } from "./sidebar-snap-points"
 import { PublicMapMemberRail, type PublicMapMemberTab } from "./member-rail"
+import {
+  PublicMapRailPanel,
+  usePublicMapDrawerSelectionHandlers,
+} from "./sidebar-member-panels"
 import {
   PublicMapDrawerDetailPanel,
   PublicMapDrawerSearchPanel,
@@ -44,7 +40,6 @@ import {
 import {
   PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
-  PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME,
 } from "./sidebar-theme"
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
@@ -102,8 +97,10 @@ export function PublicMapSidebar({
   organizationCurationAction,
   resourceMapCurationAction,
   favorites,
+  collectedResourceIds = [],
   guides = [],
-  savedOrganizations,
+  savedOrganizations = [],
+  savedResources = [],
   query,
   activeGroup,
   groupCounts,
@@ -115,6 +112,7 @@ export function PublicMapSidebar({
   setActiveGroup,
   retryResourceItems = noopPublicMapSidebarAction,
   toggleFavorite,
+  toggleCollectedResource = noopPublicMapSidebarAction,
   onSelectItem,
   onGuideSelect,
   onSelectOrganization,
@@ -122,7 +120,6 @@ export function PublicMapSidebar({
   onBackToSearch,
   setSidebarMode,
 }: PublicMapSidebarProps) {
-  const mapSidebarProviderStyle = { "--sidebar-width": "100%" } as CSSProperties
   const compact = panelPresentation === "drawer"
   const effectiveSidebarMode =
     compact && sidebarMode === "hidden"
@@ -179,22 +176,17 @@ export function PublicMapSidebar({
     },
     [setSidebarMode]
   )
-  const handleDrawerGuideSelect = useCallback(
-    (guideId: string) => {
-      onGuideSelect?.(guideId)
-      setDrawerTab("directory")
-      setActiveSnapIndex(1)
-    },
-    [onGuideSelect]
-  )
-  const handleDrawerOrganizationSelect = useCallback(
-    (organizationId: string) => {
-      onSelectOrganization(organizationId)
-      setDrawerTab("directory")
-      setActiveSnapIndex(1)
-    },
-    [onSelectOrganization]
-  )
+  const {
+    handleGuideSelect: handleDrawerGuideSelect,
+    handleOrganizationSelect: handleDrawerOrganizationSelect,
+    handleResourceSelect: handleDrawerResourceSelect,
+  } = usePublicMapDrawerSelectionHandlers({
+    onGuideSelect,
+    onSelectItem,
+    onSelectOrganization,
+    setActiveSnapIndex,
+    setDrawerTab,
+  })
   const {
     changeGroup: handleDrawerGroupChange,
     changeQuery: handleDrawerQueryChange,
@@ -207,67 +199,65 @@ export function PublicMapSidebar({
     setSidebarMode,
   })
 
+  const railDirectoryPanel =
+    effectiveSidebarMode === "search" ? (
+      <PublicMapRailSearchPanel
+        query={query}
+        searchContext={searchContext}
+        items={listItems}
+        organizations={filteredOrganizations}
+        selectedItemId={selectedItemId}
+        selectedOrgId={selectedOrganization?.id ?? null}
+        constrainedLayout={constrainedRailLayout}
+        activeGroup={activeGroup}
+        groupCounts={groupCounts}
+        resourceItemsLoadStatus={resourceItemsLoadStatus}
+        resourceItemsLoadError={resourceItemsLoadError}
+        searchPending={searchPending}
+        onQueryChange={setQuery}
+        onActiveGroupChange={setActiveGroup}
+        onHidePanel={() => setSidebarMode("hidden")}
+        onRetryResourceItems={retryResourceItems}
+        onSelectItem={onSelectItem}
+        onOpenDetails={(organizationId) =>
+          onOpenDetails(organizationId, {
+            preserveSearchContext: Boolean(searchContext),
+          })
+        }
+      />
+    ) : selectedOrganization ? (
+      <PublicMapRailDetailPanel
+        canManageResourceMap={canManageResourceMap}
+        organizationCurationAction={organizationCurationAction}
+        organization={selectedOrganization}
+        favorites={favorites}
+        onBack={onBackToSearch}
+        onToggleFavorite={toggleFavorite}
+      />
+    ) : selectedResourceItem ? (
+      <PublicMapResourceRailDetailPanel
+        canManageResourceMap={canManageResourceMap}
+        collected={collectedResourceIds.includes(selectedResourceItem.id)}
+        item={selectedResourceItem}
+        onBack={onBackToSearch}
+        onToggleCollected={toggleCollectedResource}
+        resourceMapCurationAction={resourceMapCurationAction}
+      />
+    ) : null
+
   const railPanel = (
-    <SidebarProvider
-      defaultOpen
-      className="h-full min-h-0 w-full bg-transparent"
-      style={mapSidebarProviderStyle}
-    >
-      <PublicMapLiquidGlassShell
-        className={cn(
-          "pointer-events-auto h-full w-full",
-          PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME
-        )}
-      >
-        <Sidebar
-          collapsible="none"
-          className="text-sidebar-foreground h-full w-full overflow-hidden bg-transparent"
-        >
-          {effectiveSidebarMode === "search" ? (
-            <PublicMapRailSearchPanel
-              query={query}
-              searchContext={searchContext}
-              items={listItems}
-              organizations={filteredOrganizations}
-              selectedItemId={selectedItemId}
-              selectedOrgId={selectedOrganization?.id ?? null}
-              constrainedLayout={constrainedRailLayout}
-              activeGroup={activeGroup}
-              groupCounts={groupCounts}
-              resourceItemsLoadStatus={resourceItemsLoadStatus}
-              resourceItemsLoadError={resourceItemsLoadError}
-              searchPending={searchPending}
-              onQueryChange={setQuery}
-              onActiveGroupChange={setActiveGroup}
-              onHidePanel={() => setSidebarMode("hidden")}
-              onRetryResourceItems={retryResourceItems}
-              onSelectItem={onSelectItem}
-              onOpenDetails={(organizationId) =>
-                onOpenDetails(organizationId, {
-                  preserveSearchContext: Boolean(searchContext),
-                })
-              }
-            />
-          ) : selectedOrganization ? (
-            <PublicMapRailDetailPanel
-              canManageResourceMap={canManageResourceMap}
-              organizationCurationAction={organizationCurationAction}
-              organization={selectedOrganization}
-              favorites={favorites}
-              onBack={onBackToSearch}
-              onToggleFavorite={toggleFavorite}
-            />
-          ) : selectedResourceItem ? (
-            <PublicMapResourceRailDetailPanel
-              canManageResourceMap={canManageResourceMap}
-              item={selectedResourceItem}
-              onBack={onBackToSearch}
-              resourceMapCurationAction={resourceMapCurationAction}
-            />
-          ) : null}
-        </Sidebar>
-      </PublicMapLiquidGlassShell>
-    </SidebarProvider>
+    <PublicMapRailPanel
+      directoryRail={railDirectoryPanel}
+      directoryMode={effectiveSidebarMode === "details" ? "details" : "search"}
+      guides={guides}
+      savedOrganizations={savedOrganizations}
+      savedResources={savedResources}
+      onGuideSelect={onGuideSelect}
+      onSelectOrganization={onSelectOrganization}
+      onSelectResource={onSelectItem}
+      onToggleFavorite={toggleFavorite}
+      onToggleCollectedResource={toggleCollectedResource}
+    />
   )
 
   const drawerDirectoryPanel =
@@ -307,8 +297,10 @@ export function PublicMapSidebar({
     ) : selectedResourceItem ? (
       <PublicMapResourceDrawerDetailPanel
         canManageResourceMap={canManageResourceMap}
+        collected={collectedResourceIds.includes(selectedResourceItem.id)}
         item={selectedResourceItem}
         onBack={onBackToSearch}
+        onToggleCollected={toggleCollectedResource}
         resourceMapCurationAction={resourceMapCurationAction}
       />
     ) : null
@@ -320,10 +312,13 @@ export function PublicMapSidebar({
       directoryMode={effectiveSidebarMode === "details" ? "details" : "search"}
       guides={guides}
       savedOrganizations={savedOrganizations}
+      savedResources={savedResources}
       onActiveTabChange={handleDrawerTabChange}
       onGuideSelect={handleDrawerGuideSelect}
       onSelectOrganization={handleDrawerOrganizationSelect}
+      onSelectResource={handleDrawerResourceSelect}
       onToggleFavorite={toggleFavorite}
+      onToggleCollectedResource={toggleCollectedResource}
     />
   )
 

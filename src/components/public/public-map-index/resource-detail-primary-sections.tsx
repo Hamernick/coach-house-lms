@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
+import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
 import { Button } from "@/components/ui/button"
@@ -89,13 +90,17 @@ function PublicMapResourceIdentityMedia({
 
 export function PublicMapResourceDetailChrome({
   canManageResourceMap = false,
+  collected = false,
   item,
   onBack,
+  onToggleCollected,
   resourceMapCurationAction,
 }: {
   canManageResourceMap?: boolean
+  collected?: boolean
   item: ExternalResourceMapItem
   onBack: () => void
+  onToggleCollected?: (resourceId: string) => void
   resourceMapCurationAction?: PublicMapResourceCurationAction
 }) {
   return (
@@ -123,6 +128,31 @@ export function PublicMapResourceDetailChrome({
             item={item}
             onComplete={onBack}
           />
+        ) : null}
+        {onToggleCollected ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+              collected
+                ? "border-sky-400/55 bg-sky-500/12 text-sky-600 hover:bg-sky-500/18 dark:border-sky-400/45 dark:bg-sky-400/14 dark:text-sky-300 dark:hover:bg-sky-400/20"
+                : PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
+            )}
+            onClick={() => onToggleCollected(item.id)}
+            aria-label={
+              collected
+                ? `Remove ${item.title} from My Map`
+                : `Collect ${item.title} in My Map`
+            }
+            aria-pressed={collected}
+          >
+            <BookmarkIcon
+              className={cn("size-4", collected && "fill-current")}
+              aria-hidden
+            />
+          </Button>
         ) : null}
       </div>
     </div>

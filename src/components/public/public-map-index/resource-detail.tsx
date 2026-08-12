@@ -21,15 +21,19 @@ import {
 
 export function PublicMapResourceDetail({
   canManageResourceMap = false,
+  collected = false,
   item,
   compact = false,
   onBack,
+  onToggleCollected,
   resourceMapCurationAction,
 }: {
   canManageResourceMap?: boolean
+  collected?: boolean
   item: ExternalResourceMapItem
   compact?: boolean
   onBack: () => void
+  onToggleCollected?: (resourceId: string) => void
   resourceMapCurationAction?: PublicMapResourceCurationAction
 }) {
   return (
@@ -42,8 +46,10 @@ export function PublicMapResourceDetail({
     >
       <PublicMapResourceDetailChrome
         canManageResourceMap={canManageResourceMap}
+        collected={collected}
         item={item}
         onBack={onBack}
+        onToggleCollected={onToggleCollected}
         resourceMapCurationAction={resourceMapCurationAction}
       />
       <PublicMapResourceIdentitySection item={item} />

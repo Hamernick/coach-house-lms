@@ -8,6 +8,8 @@ import {
   PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
   resolvePublicMapResourceCategoryColor,
 } from "@/lib/public-map/resource-categories"
+import { Button } from "@/components/ui/button"
+import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import { cn } from "@/lib/utils"
 import {
   buildPublicMapOrganizationListCardOwnerId,
@@ -40,11 +42,15 @@ export function PublicMapResourceListCard({
   item,
   selected,
   onSelectItem,
+  collected = false,
+  onToggleCollected,
 }: {
   constrainedLayout: boolean
   item: ExternalResourceMapItem
   selected: boolean
   onSelectItem?: (id: string) => void
+  collected?: boolean
+  onToggleCollected?: (id: string) => void
 }) {
   const selectableItemId = resolvePublicMapItemSelectableId(item)
   const metadataItems = buildResourceMetadataItems({ item })
@@ -152,11 +158,36 @@ export function PublicMapResourceListCard({
               ownerId={ownerId}
             />
           </div>
-          <PublicMapListViewButton
-            ownerId={ownerId}
-            onClick={openResourceDetails}
-            notes="Explicit right-aligned call-to-action button for opening resource details."
-          />
+          <div className="flex shrink-0 items-center gap-1">
+            {onToggleCollected ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="border-border/70 bg-background/85 text-muted-foreground hover:bg-muted hover:text-foreground size-11 rounded-full border"
+                aria-label={
+                  collected
+                    ? `Remove ${item.title} from My Map`
+                    : `Collect ${item.title} in My Map`
+                }
+                aria-pressed={collected}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onToggleCollected(item.id)
+                }}
+              >
+                <BookmarkIcon
+                  className={cn("size-4", collected && "fill-current")}
+                  aria-hidden
+                />
+              </Button>
+            ) : null}
+            <PublicMapListViewButton
+              ownerId={ownerId}
+              onClick={openResourceDetails}
+              notes="Explicit right-aligned call-to-action button for opening resource details."
+            />
+          </div>
         </div>
         {subtitle ? (
           <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed text-pretty">

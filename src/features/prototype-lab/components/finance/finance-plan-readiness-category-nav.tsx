@@ -25,6 +25,7 @@ import {
 } from "./finance-plan-readiness"
 import { FINANCE_PLAN_SECURITY_CONTROL_COUNTS } from "./finance-plan-security-controls"
 import { FINANCE_PLAN_TEST_MATRIX_COUNTS } from "./finance-plan-test-matrix"
+import { FINANCE_PLAN_WAVE_STATUS_COUNTS } from "./finance-plan-wave-progress"
 
 export type FinancePlanReadinessMode =
   | "batches"
@@ -35,8 +36,15 @@ export type FinancePlanReadinessMode =
   | "inputs"
   | "security"
   | "tests"
+  | "waves"
 
 const FINANCE_PLAN_READINESS_CATEGORIES = [
+  {
+    count: FINANCE_PLAN_WAVE_STATUS_COUNTS.total,
+    icon: FlagIcon,
+    label: "Current waves",
+    mode: "waves",
+  },
   {
     count: FINANCE_PLAN_OPEN_INPUT_COUNTS.total,
     icon: ListTodoIcon,
@@ -46,7 +54,7 @@ const FINANCE_PLAN_READINESS_CATEGORIES = [
   {
     count: FINANCE_PLAN_BATCH_READINESS_COUNTS.total,
     icon: GitMergeIcon,
-    label: "Batches",
+    label: "Historical batches",
     mode: "batches",
   },
   {

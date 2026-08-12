@@ -122,7 +122,7 @@ wave, but unrelated scope does not accumulate in one PR.
 
 | Wave                                      | Status on 2026-08-11 | Scope                                                                                                                                                          | Exit evidence                                                                                                                                      | Rollback                                                                                   |
 | ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1. Live stability and existing work close | Production verified  | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
+| 1. Live stability and existing work close | Active               | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
 | 2. Signup, recovery, and legal            | Active               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
 | 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
 | 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
@@ -134,7 +134,7 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **5/35 complete (14%)**, **2 in progress**, and
+revision. Current progress: **4/35 complete (11%)**, **3 in progress**, and
 **28 not started**.
 
 **Wave 1 — Live stability and existing work close**
@@ -143,7 +143,7 @@ revision. Current progress: **5/35 complete (14%)**, **2 in progress**, and
 - [x] `wave-1-criterion-2` **Complete:** Verify organization detail rendering and recoverable missing Stripe-subscription links in production — Evidence: PR #133 merged and production-verified.
 - [x] `wave-1-criterion-3` **Complete:** Verify revision-safe organization document writes and storage rollback behavior — Evidence: PR #134 merged and production-verified.
 - [x] `wave-1-criterion-4` **Complete:** Verify Workspace, Roadmap, and People reads preserve stored organization data — Evidence: PRs #135 and #136 merged with authenticated production read-safety proof.
-- [x] `wave-1-criterion-5` **Complete:** Complete revision-aware Workspace save smoke and the paid, free, member, coach, and admin journey matrix — Evidence: PRs #137 and #138 merged; production paid/member, free/admin, and tester-coach journeys passed without browser errors; the Workspace card save advanced its board revision, survived refresh, recorded the correct actor, and was restored exactly to its original position.
+- [ ] `wave-1-criterion-5` **In progress:** Complete revision-aware Workspace save smoke and the paid, free, member, coach, and admin journey matrix — Evidence: PRs #137 and #138 merged; authenticated production Workspace smoke remains.
 
 **Wave 2 — Signup, recovery, and legal**
 
@@ -213,13 +213,7 @@ revision. Current progress: **5/35 complete (14%)**, **2 in progress**, and
   revision-aware Workspace board and node-position saves. Concurrent saves
   retry against the latest board state instead of silently replacing it.
   Focused concurrency coverage, the full quality gate, hosted CI, and both
-  Vercel previews pass.
-- Authenticated production proof completed the paid/member, free/admin, and
-  tester-coach journeys with no browser warnings or errors. A Workspace card
-  save advanced the stored board revision, recorded the correct actor, and
-  persisted from `(866, 82)` to `(907, 107)` across refresh. The card was then
-  restored exactly to `(866, 82)`, the original session was restored, and the
-  temporary coach token session was revoked.
+  Vercel previews pass. Authenticated production smoke remains required.
 
 #### Wave branch rules
 

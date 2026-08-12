@@ -58,41 +58,35 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
       <div className="flex min-h-0 flex-1 px-[var(--shell-content-pad)] pb-[var(--shell-content-pad)]">
         <div
           data-legal-document-canvas=""
-          className="relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[#07111f] shadow-sm"
+          className="bg-background relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] shadow-sm"
         >
           <article
             id="legal-document-content"
             className="absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain"
           >
-            <header className="relative overflow-hidden bg-[#07111f] px-5 py-12 text-white sm:px-8 sm:py-16 lg:px-12 lg:py-20">
-              <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(55,104,151,0.35),transparent_38%),radial-gradient(circle_at_12%_90%,rgba(24,65,97,0.42),transparent_44%)]"
-                aria-hidden
-              />
-              <div className="relative mx-auto w-full max-w-5xl">
-                <p className="text-sm font-medium text-white/70">
+            <header className="px-5 pt-12 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
+              <div className="mx-auto w-full max-w-5xl">
+                <p className="text-muted-foreground text-sm font-medium">
                   Effective {document.effectiveDate} · Version{" "}
                   {document.version}
                 </p>
                 <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl">
                   {document.title}
                 </h1>
-                <p className="mt-4 max-w-3xl text-base leading-7 text-pretty text-white/75 sm:text-lg">
+                <p className="text-muted-foreground mt-4 max-w-3xl text-base leading-7 text-pretty sm:text-lg">
                   {document.description}
                 </p>
                 <nav
                   aria-label={`${document.title} sections`}
-                  className="mt-10 rounded-2xl border border-white/15 bg-black/25 p-5 shadow-lg backdrop-blur-sm sm:p-6"
+                  className="bg-muted/30 border-border/70 mt-10 rounded-2xl border p-5 sm:p-6"
                 >
-                  <h2 className="text-sm font-semibold text-white">
-                    On this page
-                  </h2>
-                  <ol className="mt-3 grid gap-x-8 gap-y-2 text-sm text-white/70 sm:grid-cols-2">
+                  <h2 className="text-sm font-semibold">On this page</h2>
+                  <ol className="text-muted-foreground mt-3 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
                     {document.sections.map((section, index) => (
                       <li key={section.id}>
                         <a
                           href={`#${section.id}`}
-                          className="focus-visible:ring-ring inline-flex min-h-6 rounded-sm underline-offset-4 hover:text-white hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                          className="hover:text-foreground focus-visible:ring-ring inline-flex min-h-6 rounded-sm underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                         >
                           {index + 1}. {section.heading}
                         </a>
@@ -103,7 +97,7 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
               </div>
             </header>
 
-            <div className="bg-background px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+            <div className="px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
               <div className="mx-auto w-full max-w-4xl">
                 <div className="space-y-10">
                   {document.sections.map((section) => (

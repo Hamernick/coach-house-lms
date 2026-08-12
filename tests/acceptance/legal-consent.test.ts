@@ -114,6 +114,8 @@ describe("legal consent", () => {
     expect(termsPage).toContain('canonical: "/terms"')
     expect(legalDocumentPage).toContain('data-legal-document-canvas=""')
     expect(legalDocumentPage).toContain("rounded-[28px]")
+    expect(legalDocumentPage).not.toContain("bg-[#07111f]")
+    expect(legalDocumentPage).not.toContain("radial-gradient")
     expect(legalDocumentPage).not.toContain("PublicHeader")
     expect(legalDocumentPage).not.toContain("PublicThemeToggle")
     expect(signUpForm).toContain("LegalConsentField")

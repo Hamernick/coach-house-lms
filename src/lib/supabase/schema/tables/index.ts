@@ -109,6 +109,7 @@ import type { PlatformEmailPreferencesTable } from "./platform_email_preferences
 import type { PlatformEmailConsentEventsTable } from "./platform_email_consent_events"
 import type { PlatformEmailLinksTable } from "./platform_email_links"
 import type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
+import type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
 
 export type { OrganizationsTable } from "./organizations"
 export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
@@ -221,6 +222,7 @@ export type { PlatformEmailPreferencesTable } from "./platform_email_preferences
 export type { PlatformEmailConsentEventsTable } from "./platform_email_consent_events"
 export type { PlatformEmailLinksTable } from "./platform_email_links"
 export type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
+export type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -334,4 +336,5 @@ export type PublicTables = {
   platform_email_consent_events: PlatformEmailConsentEventsTable
   platform_email_links: PlatformEmailLinksTable
   platform_email_link_clicks: PlatformEmailLinkClicksTable
+  platform_legal_acceptances: PlatformLegalAcceptancesTable
 }

@@ -82,26 +82,34 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     title: "Signup, recovery, and legal",
     criteria: defineCriteria(2, [
       {
-        evidence: ["PR #139 preview checks pass; legal review remains"],
+        evidence: [
+          "PR #156 provides current product-specific documents, canonical routes, and required acceptance; legal review is complete",
+        ],
         state: "in_progress",
         title:
           "Provide canonical Terms and Privacy pages with required acceptance on every signup surface",
       },
       {
-        evidence: ["PR #139 Supabase Preview passes; production is unchanged"],
+        evidence: [
+          "PR #156 binds signup to version 2026-08-12.1 and exact SHA-256 hashes; connected migration proof and production remain pending",
+        ],
         state: "in_progress",
         title:
           "Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "43 focused acceptance tests pass across direct signup, contextual entry, denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain",
+        ],
+        state: "in_progress",
         title:
           "Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The product owner reported legal review complete and the current copy approved for release on 2026-08-12",
+        ],
+        state: "complete",
         title: "Obtain qualified legal approval for Terms and Privacy copy",
       },
       {

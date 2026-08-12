@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **9/35 complete (26%)**, **2 in progress**, and
-**24 not started**.
+revision. Current progress: **10/35 complete (29%)**, **3 in progress**, and
+**22 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -147,10 +147,10 @@ revision. Current progress: **9/35 complete (26%)**, **2 in progress**, and
 
 **Wave 2 — Signup, recovery, and legal**
 
-- [ ] `wave-2-criterion-1` **In progress:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: PR #139 preview checks pass; legal review remains.
-- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: PR #139 Supabase Preview passes; production is unchanged.
-- [ ] `wave-2-criterion-3` **Not started:** Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery.
-- [ ] `wave-2-criterion-4` **Not started:** Obtain qualified legal approval for Terms and Privacy copy.
+- [ ] `wave-2-criterion-1` **In progress:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: branch `feat/legal-policy-consent-20260812` replaces the deleted PR #139 branch with current product-specific documents, canonical routes, and required acceptance; merge and production proof remain.
+- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: branch `feat/legal-policy-consent-20260812` binds signup to version `2026-08-12.1` and exact SHA-256 hashes; connected migration proof and production remain pending.
+- [ ] `wave-2-criterion-3` **In progress:** Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery — Evidence: 43 focused acceptance tests pass across direct signup, homepage and pricing entry, required denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain.
+- [x] `wave-2-criterion-4` **Complete:** Obtain qualified legal approval for Terms and Privacy copy — Evidence: the product owner reported legal review complete and the current copy approved for release on 2026-08-12.
 - [ ] `wave-2-criterion-5` **Not started:** Merge, deploy, production-smoke, monitor, and retain a tested signup rollback.
 
 **Wave 3 — `/find` speed and loading**
@@ -220,6 +220,24 @@ revision. Current progress: **9/35 complete (26%)**, **2 in progress**, and
   persisted from `(866, 82)` to `(907, 107)` across refresh. The card was then
   restored exactly to `(866, 82)`, the original session was restored, and the
   temporary coach token session was revoked.
+
+#### Wave 2 current evidence
+
+- Branch `feat/legal-policy-consent-20260812` replaces the deleted and
+  conflicted PR #139 branch. It adds canonical public Terms and Privacy routes
+  plus explicit required acceptance on the shared normal, contextual, and
+  tester signup form.
+- Consent evidence is bound to the exact document content by version and
+  SHA-256 hashes, with an acceptance timestamp. A new append-only acceptance
+  table preserves that evidence behind RLS.
+- The documents now disclose the product's account, organization, document,
+  financial, location, analytics, email, CAPTCHA, map, payment, AI, public-data,
+  retention, security, communications, and privacy-rights practices. They also
+  state service, resource-directory, advice, billing, warranty, liability, and
+  acceptable-use boundaries.
+- The legal text remains pending qualified legal approval. The exact entity
+  details, postal address, retention schedule, vendor agreements, and state-law
+  applicability must be confirmed before production release.
 
 #### Wave branch rules
 

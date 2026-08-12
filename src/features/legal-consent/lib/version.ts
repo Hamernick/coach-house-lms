@@ -1,0 +1,2 @@
+export const LEGAL_DOCUMENT_VERSION = "2026-08-12.1"
+export const LEGAL_DOCUMENT_EFFECTIVE_DATE = "August 12, 2026"

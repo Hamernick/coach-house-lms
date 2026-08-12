@@ -125,7 +125,7 @@ wave, but unrelated scope does not accumulate in one PR.
 | 1. Live stability and existing work close | Production verified  | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
 | 2. Signup, recovery, and legal            | Active               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
 | 3. `/find` speed and loading              | Active               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
-| 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
+| 4. Collect / My Map completion            | Active               | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
 | 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
 | 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
 | 7. Integrated production release          | Queued               | Security review, support runbook, monitoring, rollback rehearsal, production smoke checks, and gradual rollout                                                 | Full quality gate; connected RLS where changed; hosted previews; production browser proof; clean monitoring                                        | Wave-specific flags and forward repair; never use a destructive data rollback              |
@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **11/35 complete (31%)**, **3 in progress**, and
-**21 not started**.
+revision. Current progress: **11/35 complete (31%)**, **4 in progress**, and
+**20 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -163,7 +163,7 @@ revision. Current progress: **11/35 complete (31%)**, **3 in progress**, and
 
 **Wave 4 — Collect and My Map completion**
 
-- [ ] `wave-4-criterion-1` **Not started:** Let visitors collect and remove nonprofits and resources locally.
+- [ ] `wave-4-criterion-1` **In progress:** Let visitors collect and remove nonprofits and resources locally — Evidence: isolated local My Map implementation passes focused lint, 49 focused tests, full acceptance, RLS, build, visual, and performance gates; merge, deployment, and production smoke remain.
 - [ ] `wave-4-criterion-2` **Not started:** Persist signed-in collections across devices with safe idempotent replay.
 - [ ] `wave-4-criterion-3` **Not started:** Build My Map on the existing saved-organization foundation without separate Finder onboarding.
 - [ ] `wave-4-criterion-4` **Not started:** Keep collected records resolvable through loading, empty, stale, and error states.

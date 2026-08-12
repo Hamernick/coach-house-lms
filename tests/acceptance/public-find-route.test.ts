@@ -333,7 +333,7 @@ describe("public find routes", () => {
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })
 
-  it("uses the same Find, Guides, and Saved drawer for public and authenticated find", () => {
+  it("uses the same Find, Guides, and My Map drawer for public and authenticated find", () => {
     const chromeSource = readRoute(
       "src/components/public/public-map-index/public-map-index-chrome.tsx"
     )
@@ -403,7 +403,7 @@ describe("public find routes", () => {
     )
     expect(memberRailSource).toContain(">Find</span>")
     expect(memberRailSource).toContain(">Guides</span>")
-    expect(memberRailSource).toContain(">Saved</span>")
+    expect(memberRailSource).toContain(">My Map</span>")
   })
 
   it("wires category filtering through the search rail and map markers", () => {

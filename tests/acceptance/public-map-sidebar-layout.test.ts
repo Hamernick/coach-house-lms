@@ -20,6 +20,7 @@ import { PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR } from "@/components/public/pub
 import { resolveResourceIdentityTitle } from "@/components/public/public-map-index/resource-detail-primary-sections"
 import {
   filterPublicMapSavedOrganizations,
+  filterPublicMapSavedResources,
   PublicMapMemberRail,
 } from "@/components/public/public-map-index/member-rail"
 import { PublicMapSavedRail } from "@/components/public/public-map-index/saved-rail"
@@ -309,13 +310,21 @@ describe("public map sidebar layout", () => {
       join(process.cwd(), "src/components/public/public-map-index/sidebar.tsx"),
       "utf8"
     )
+    const sidebarMemberPanelsSource = readFileSync(
+      join(
+        process.cwd(),
+        "src/components/public/public-map-index/sidebar-member-panels.tsx"
+      ),
+      "utf8"
+    )
 
     expect(shellSource).toContain('@samasante/liquid-glass"')
     expect(shellSource).toContain("PUBLIC_MAP_LIQUID_GLASS_OPTICS")
     expect(shellSource).toContain('height: "100%"')
     expect(shellSource).toContain('width: "100%"')
     expect(shellSource).not.toContain("filterResolution")
-    expect(sidebarSource).toContain("PublicMapLiquidGlassShell")
+    expect(sidebarSource).toContain("PublicMapRailPanel")
+    expect(sidebarMemberPanelsSource).toContain("PublicMapLiquidGlassShell")
 
     const markup = renderToStaticMarkup(
       React.createElement(
@@ -1204,7 +1213,7 @@ describe("public map sidebar layout", () => {
     expect(directoryMarkup).not.toContain("NYC Cooling Centers")
     expect(memberRailMarkup).toContain(">Find<")
     expect(memberRailMarkup).toContain(">Guides<")
-    expect(memberRailMarkup).toContain(">Saved<")
+    expect(memberRailMarkup).toContain(">My Map<")
     expect(memberRailMarkup).not.toContain(">Recent<")
     expect(memberRailMarkup).not.toContain(">Joined<")
     expect(memberRailMarkup).not.toContain(">Alerts<")
@@ -1303,7 +1312,7 @@ describe("public map sidebar layout", () => {
     expect(memberRailMarkup).toContain("Directory")
   })
 
-  it("lets the saved tab search and category-filter saved organizations", () => {
+  it("lets My Map search and category-filter collected organizations", () => {
     const communityOrganization = buildOrganization({
       id: "community-org",
       name: "Atlas Collective",
@@ -1344,7 +1353,7 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(markup).toContain(">Saved<")
+    expect(markup).toContain(">My Map<")
     const savedRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapSavedRail, {
         savedOrganizations: [communityOrganization, healthOrganization],
@@ -1387,14 +1396,12 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(">Health<")
     expect(markup).toContain(">2<")
     expect(markup).toContain(">1<")
-    expect(markup).toContain("Saved organizations")
+    expect(markup).toContain("My Map")
     expect(markup).toContain("mx-2 min-h-0 flex-1 bg-transparent")
     expect(markup).not.toContain("bg-card/95")
     expect(markup).toContain("Atlas Collective")
     expect(markup).toContain("Harbor Health")
-    expect(markup).toContain(
-      'aria-label="Remove Atlas Collective from saved organizations"'
-    )
+    expect(markup).toContain('aria-label="Remove Atlas Collective from My Map"')
     expect(markup).toContain("lucide-minus")
     expect(markup).toContain("size-11 shrink-0 rounded-full")
     expect(markup).not.toContain(">Remove<")
@@ -1420,6 +1427,41 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("text-left font-normal whitespace-normal")
     expect(markup).toContain("w-full min-w-0 overflow-hidden")
     expect(markup).not.toContain("max-h-[52vh]")
+  })
+
+  it("shows collected resources in My Map and supports removal", () => {
+    const resource = buildResourceItem()
+
+    expect(
+      filterPublicMapSavedResources({
+        activeGroup: "food",
+        query: "pantry",
+        savedResources: [resource],
+      }).map((item) => item.id)
+    ).toEqual([resource.id])
+    expect(
+      filterPublicMapSavedResources({
+        activeGroup: "health",
+        query: "",
+        savedResources: [resource],
+      })
+    ).toEqual([])
+
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        savedOrganizations: [],
+        savedResources: [resource],
+        onSelectOrganization: () => {},
+        onSelectResource: () => {},
+        onToggleFavorite: () => {},
+        onToggleCollectedResource: () => {},
+      })
+    )
+
+    expect(markup).toContain(">My Map<")
+    expect(markup).toContain("Food pantry and meal support")
+    expect(markup).toContain('aria-label="Remove Seed Food Access from My Map"')
+    expect(markup).toContain('aria-pressed="true"')
   })
 
   it("uses the right rail directory detail view when a map organization is selected", () => {
@@ -1474,9 +1516,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain('data-slot="scroll-area"')
     expect(markup).toContain(organization.name)
     expect(markup).toContain('aria-label="Back to search"')
-    expect(markup).toContain(
-      'aria-label="Remove Atlas Collective from favorites"'
-    )
+    expect(markup).toContain('aria-label="Remove Atlas Collective from My Map"')
     expect(markup).toContain('aria-pressed="true"')
   })
 
@@ -1616,9 +1656,9 @@ describe("public map sidebar layout", () => {
     )
     expect(markup).toContain("scroll-fade-effect-y")
     expect(markup).toContain('aria-label="Share"')
-    expect(markup).toContain('aria-label="Add Atlas Collective to favorites"')
+    expect(markup).toContain('aria-label="Collect Atlas Collective in My Map"')
     expect(
-      markup.indexOf('aria-label="Add Atlas Collective to favorites"')
+      markup.indexOf('aria-label="Collect Atlas Collective in My Map"')
     ).toBeGreaterThan(markup.indexOf('aria-label="Share"'))
     expect(markup).not.toContain('aria-label="Search public organizations"')
     expect(markup).not.toContain('aria-label="Hide organization panel"')

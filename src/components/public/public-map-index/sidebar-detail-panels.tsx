@@ -50,13 +50,17 @@ export function PublicMapRailDetailPanel({
 
 export function PublicMapResourceRailDetailPanel({
   canManageResourceMap = false,
+  collected = false,
   item,
   onBack,
+  onToggleCollected,
   resourceMapCurationAction,
 }: {
   canManageResourceMap?: boolean
+  collected?: boolean
   item: ExternalResourceMapItem
   onBack: () => void
+  onToggleCollected?: (resourceId: string) => void
   resourceMapCurationAction?: PublicMapResourceCurationAction
 }) {
   return (
@@ -69,8 +73,10 @@ export function PublicMapResourceRailDetailPanel({
       >
         <PublicMapResourceDetail
           canManageResourceMap={canManageResourceMap}
+          collected={collected}
           item={item}
           onBack={onBack}
+          onToggleCollected={onToggleCollected}
           resourceMapCurationAction={resourceMapCurationAction}
         />
       </ScrollArea>
@@ -120,14 +126,18 @@ export function PublicMapDrawerDetailPanel({
 
 export function PublicMapResourceDrawerDetailPanel({
   canManageResourceMap = false,
+  collected = false,
   item,
   onBack,
+  onToggleCollected,
   resourceMapCurationAction,
 }: {
   canManageResourceMap?: boolean
+  collected?: boolean
   item: ExternalResourceMapItem
   drawerBodyScrollable?: boolean
   onBack: () => void
+  onToggleCollected?: (resourceId: string) => void
   resourceMapCurationAction?: PublicMapResourceCurationAction
 }) {
   return (
@@ -140,8 +150,10 @@ export function PublicMapResourceDrawerDetailPanel({
       <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 mx-auto w-full max-w-3xl motion-safe:duration-200">
         <PublicMapResourceDetail
           canManageResourceMap={canManageResourceMap}
+          collected={collected}
           item={item}
           onBack={onBack}
+          onToggleCollected={onToggleCollected}
           resourceMapCurationAction={resourceMapCurationAction}
           compact
         />

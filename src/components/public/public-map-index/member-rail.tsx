@@ -13,6 +13,7 @@ import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import { cn } from "@/lib/utils"
 
 import {
@@ -34,6 +35,7 @@ import {
   buildPublicMapSearchIndex,
   filterPublicMapOrganizationIds,
 } from "./search-index"
+import { publicMapListItemMatchesQuery } from "./map-items-state"
 
 const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
   "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
@@ -47,10 +49,29 @@ type PublicMapMemberRailProps = {
   directoryMode?: PublicMapDirectoryRailMode | null
   guides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
+  savedResources?: ExternalResourceMapItem[]
   onActiveTabChange?: (tab: PublicMapMemberTab) => void
   onGuideSelect?: (guideId: string) => void
   onSelectOrganization: (organizationId: string) => void
+  onSelectResource?: (resourceId: string) => void
   onToggleFavorite: (organizationId: string) => void
+  onToggleCollectedResource?: (resourceId: string) => void
+}
+
+export function filterPublicMapSavedResources({
+  activeGroup,
+  query,
+  savedResources,
+}: {
+  activeGroup: PublicMapGroupFilterKey
+  query: string
+  savedResources: ExternalResourceMapItem[]
+}) {
+  return savedResources.filter(
+    (item) =>
+      publicMapListItemMatchesQuery({ item, query }) &&
+      publicMapItemMatchesGroupFilter({ activeGroup, item })
+  )
 }
 
 export type PublicMapMemberTab = "directory" | "guides" | "saved"
@@ -97,10 +118,13 @@ export function PublicMapMemberRail({
   directoryMode = null,
   guides = [],
   savedOrganizations,
+  savedResources = [],
   onActiveTabChange,
   onGuideSelect,
   onSelectOrganization,
+  onSelectResource,
   onToggleFavorite,
+  onToggleCollectedResource,
 }: PublicMapMemberRailProps) {
   const hasDirectoryRail = Boolean(directoryRail)
   const hasGuides = Boolean(onGuideSelect)
@@ -124,8 +148,11 @@ export function PublicMapMemberRail({
     useState<PublicMapGroupFilterKey>("all")
   const previousHasDirectoryRailRef = useRef(hasDirectoryRail)
   const savedItems = useMemo(
-    () => savedOrganizations.map(buildPlatformOrganizationMapItem),
-    [savedOrganizations]
+    () => [
+      ...savedOrganizations.map(buildPlatformOrganizationMapItem),
+      ...savedResources,
+    ],
+    [savedOrganizations, savedResources]
   )
   const savedGroupCounts = useMemo(
     () => buildPublicMapGroupFilterCounts(savedItems),
@@ -139,6 +166,15 @@ export function PublicMapMemberRail({
         savedOrganizations,
       }),
     [savedActiveGroup, savedOrganizations, savedQuery]
+  )
+  const filteredSavedResources = useMemo(
+    () =>
+      filterPublicMapSavedResources({
+        activeGroup: savedActiveGroup,
+        query: savedQuery,
+        savedResources,
+      }),
+    [savedActiveGroup, savedQuery, savedResources]
   )
   const hasSavedFilters =
     savedQuery.trim().length > 0 || savedActiveGroup !== "all"
@@ -180,6 +216,12 @@ export function PublicMapMemberRail({
       setActiveTab("directory")
     }
   }
+  const handleSelectResource = (resourceId: string) => {
+    onSelectResource?.(resourceId)
+    if (hasDirectoryRail) {
+      setActiveTab("directory")
+    }
+  }
 
   return (
     <div
@@ -216,7 +258,7 @@ export function PublicMapMemberRail({
             value="saved"
             className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
           >
-            <span className="truncate">Saved</span>
+            <span className="truncate">My Map</span>
           </TabsTrigger>
         </TabsList>
 
@@ -264,7 +306,7 @@ export function PublicMapMemberRail({
             </div>
 
             <PublicMapOrganizationsRailSection
-              title="Saved organizations"
+              title="My Map"
               icon={
                 <BookmarkIcon
                   className="text-muted-foreground h-4 w-4"
@@ -272,19 +314,22 @@ export function PublicMapMemberRail({
                 />
               }
               organizations={filteredSavedOrganizations}
+              resources={filteredSavedResources}
               emptyTitle={
                 hasSavedFilters
-                  ? "No saved results"
-                  : "No saved organizations yet"
+                  ? "No collected results"
+                  : "Nothing collected yet"
               }
               emptyDescription={
                 hasSavedFilters
                   ? "Try a different search or category filter."
-                  : "Tap the heart on any organization to keep it here."
+                  : "Collect nonprofits and resources to keep them here."
               }
               className="mx-2 min-h-0 flex-1 bg-transparent"
               onSelectOrganization={handleSelectOrganization}
+              onSelectResource={handleSelectResource}
               onToggleFavorite={onToggleFavorite}
+              onToggleCollectedResource={onToggleCollectedResource}
               removable
             />
           </div>

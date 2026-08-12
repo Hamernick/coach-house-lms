@@ -52,8 +52,10 @@ type PublicMapSurfaceProps = {
   organizationCurationAction?: PublicMapOrganizationCurationAction
   resourceMapCurationAction?: PublicMapResourceCurationAction
   favorites: string[]
+  collectedResourceIds?: string[]
   guides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
+  savedResources?: ExternalResourceMapItem[]
   query: string
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts
@@ -70,6 +72,7 @@ type PublicMapSurfaceProps = {
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
   onRetryResourceItems: () => void
   onToggleFavorite: (orgId: string) => void
+  onToggleCollectedResource?: (resourceId: string) => void
   onGuideSelect?: (guideId: string) => void
   onSelectOrganization: (organizationId: string) => void
   onSelectItem: (itemId: string) => void
@@ -102,8 +105,10 @@ export function PublicMapSurface({
   organizationCurationAction,
   resourceMapCurationAction,
   favorites,
+  collectedResourceIds = [],
   guides = [],
   savedOrganizations,
+  savedResources = [],
   query,
   activeGroup,
   groupCounts,
@@ -120,6 +125,7 @@ export function PublicMapSurface({
   onActiveGroupChange,
   onRetryResourceItems,
   onToggleFavorite,
+  onToggleCollectedResource = () => undefined,
   onGuideSelect,
   onSelectOrganization,
   onSelectItem,
@@ -217,8 +223,10 @@ export function PublicMapSurface({
           organizationCurationAction={organizationCurationAction}
           resourceMapCurationAction={resourceMapCurationAction}
           favorites={favorites}
+          collectedResourceIds={collectedResourceIds}
           guides={guides}
           savedOrganizations={savedOrganizations}
+          savedResources={savedResources}
           query={query}
           activeGroup={activeGroup}
           groupCounts={groupCounts}
@@ -230,6 +238,7 @@ export function PublicMapSurface({
           setActiveGroup={onActiveGroupChange}
           retryResourceItems={onRetryResourceItems}
           toggleFavorite={onToggleFavorite}
+          toggleCollectedResource={onToggleCollectedResource}
           onGuideSelect={onGuideSelect}
           onSelectOrganization={onSelectOrganization}
           onSelectItem={onSelectItem}

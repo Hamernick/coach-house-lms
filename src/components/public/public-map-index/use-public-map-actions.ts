@@ -39,14 +39,16 @@ export function applyPublicMapOrganizationSelection({
     setCameraTargetOrgId(organizationId)
   }
   setRecentOrganizationIds((current) => {
-    const next = [organizationId, ...current.filter((entry) => entry !== organizationId)]
+    const next = [
+      organizationId,
+      ...current.filter((entry) => entry !== organizationId),
+    ]
     return next.slice(0, RECENT_ORGANIZATIONS_LIMIT)
   })
 }
 
 export function usePublicMapActions({
   organizationById,
-  isAuthenticated,
   searchParams,
   initialPublicSlug,
   selectedOrganization,
@@ -55,12 +57,9 @@ export function usePublicMapActions({
   setSidebarMode,
   setCameraTargetOrgId,
   setRecentOrganizationIds,
-  setPendingAuthOrgId,
-  setAuthSheetOpen,
   setFavorites,
 }: {
   organizationById: Map<string, PublicMapOrganization>
-  isAuthenticated: boolean
   searchParams: ReturnType<typeof useSearchParams>
   initialPublicSlug?: string
   selectedOrganization: PublicMapOrganization | null
@@ -69,8 +68,6 @@ export function usePublicMapActions({
   setSidebarMode: (mode: "search" | "details" | "hidden") => void
   setCameraTargetOrgId: (organizationId: string) => void
   setRecentOrganizationIds: React.Dispatch<React.SetStateAction<string[]>>
-  setPendingAuthOrgId: (organizationId: string) => void
-  setAuthSheetOpen: (open: boolean) => void
   setFavorites: React.Dispatch<React.SetStateAction<string[]>>
 }) {
   const handleSelectOrganization = useCallback(
@@ -100,17 +97,11 @@ export function usePublicMapActions({
       setRecentOrganizationIds,
       setSelectedOrgId,
       setSidebarMode,
-    ],
+    ]
   )
 
   const toggleFavorite = useCallback(
     (organizationId: string) => {
-      if (!isAuthenticated) {
-        setPendingAuthOrgId(organizationId)
-        setAuthSheetOpen(true)
-        return
-      }
-
       setFavorites((current) => {
         if (current.includes(organizationId)) {
           return current.filter((entry) => entry !== organizationId)
@@ -118,12 +109,7 @@ export function usePublicMapActions({
         return [organizationId, ...current].slice(0, 120)
       })
     },
-    [
-      isAuthenticated,
-      setAuthSheetOpen,
-      setFavorites,
-      setPendingAuthOrgId,
-    ],
+    [setFavorites]
   )
 
   const authRedirectTo = useMemo(() => {
@@ -136,12 +122,18 @@ export function usePublicMapActions({
 
     return buildMapHref({
       slug:
-        normalizeSlug(initialPublicSlug) || normalizeSlug(selectedOrganization?.publicSlug)
-          ? selectedOrganization?.publicSlug ?? initialPublicSlug
+        normalizeSlug(initialPublicSlug) ||
+        normalizeSlug(selectedOrganization?.publicSlug)
+          ? (selectedOrganization?.publicSlug ?? initialPublicSlug)
           : null,
       searchParams: baseRedirectParams,
     })
-  }, [initialPublicSlug, pendingAuthOrgId, searchParams, selectedOrganization?.publicSlug])
+  }, [
+    initialPublicSlug,
+    pendingAuthOrgId,
+    searchParams,
+    selectedOrganization?.publicSlug,
+  ])
 
   return { authRedirectTo, handleSelectOrganization, toggleFavorite }
 }

@@ -70,8 +70,8 @@ export function OrganizationDetailPanelChrome({
     : undefined
   const isFavorite = favorites.includes(organization.id)
   const favoriteLabel = isFavorite
-    ? `Remove ${organization.name} from favorites`
-    : `Add ${organization.name} to favorites`
+    ? `Remove ${organization.name} from My Map`
+    : `Collect ${organization.name} in My Map`
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">

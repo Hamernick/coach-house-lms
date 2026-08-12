@@ -47,7 +47,9 @@ async function stabilizeForScreenshot(page: Page) {
 async function waitForHomeCanvasHydration(page: Page) {
   await page.waitForFunction(() => {
     const panel = document.querySelector("[data-home-canvas-panel]")
-    return Object.keys(panel ?? {}).some((key) => key.startsWith("__reactProps$"))
+    return Object.keys(panel ?? {}).some((key) =>
+      key.startsWith("__reactProps$")
+    )
   })
 }
 
@@ -301,7 +303,7 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
     "active"
   )
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
-  await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
+  await expect(tabList.getByRole("tab", { name: "My Map" })).toBeVisible()
   await expect(
     drawer.getByRole("searchbox", {
       name: "Find organizations and resources",
@@ -323,7 +325,7 @@ test("public Find keeps its mobile drawer controls visible when collapsed", asyn
   await expect(tabList.getByRole("tab")).toHaveCount(3)
   await expect(tabList.getByRole("tab", { name: "Find" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
-  await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
+  await expect(tabList.getByRole("tab", { name: "My Map" })).toBeVisible()
   await expect(
     drawer.getByRole("searchbox", {
       name: "Find organizations and resources",

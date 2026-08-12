@@ -34,8 +34,10 @@ export type PublicMapSidebarProps = {
   organizationCurationAction?: PublicMapOrganizationCurationAction
   resourceMapCurationAction?: PublicMapResourceCurationAction
   favorites: string[]
+  collectedResourceIds?: string[]
   guides?: PublicMapResourceGuide[]
-  savedOrganizations: PublicMapOrganization[]
+  savedOrganizations?: PublicMapOrganization[]
+  savedResources?: ExternalResourceMapItem[]
   query: string
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts
@@ -47,6 +49,7 @@ export type PublicMapSidebarProps = {
   setActiveGroup: (group: PublicMapGroupFilterKey) => void
   retryResourceItems?: () => void
   toggleFavorite: (orgId: string) => void
+  toggleCollectedResource?: (resourceId: string) => void
   onSelectItem: (itemId: string) => void
   onGuideSelect?: (guideId: string) => void
   onSelectOrganization: (organizationId: string) => void

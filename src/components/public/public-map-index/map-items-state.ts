@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useCallback, useMemo, type Dispatch, type SetStateAction } from "react"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import {
@@ -197,4 +197,35 @@ export function usePublicMapSavedOrganizations({
         ),
     [favorites, organizationById]
   )
+}
+
+export function usePublicMapCollectedResources({
+  collectedResourceIds,
+  resourceItems,
+  setCollectedResourceIds,
+}: {
+  collectedResourceIds: string[]
+  resourceItems: ExternalResourceMapItem[]
+  setCollectedResourceIds: Dispatch<SetStateAction<string[]>>
+}) {
+  const savedResources = useMemo(() => {
+    const resourceById = new Map(resourceItems.map((item) => [item.id, item]))
+    return collectedResourceIds.flatMap((resourceId) => {
+      const item = resourceById.get(resourceId)
+      return item ? [item] : []
+    })
+  }, [collectedResourceIds, resourceItems])
+
+  const toggleCollectedResource = useCallback(
+    (resourceId: string) => {
+      setCollectedResourceIds((current) =>
+        current.includes(resourceId)
+          ? current.filter((entry) => entry !== resourceId)
+          : [resourceId, ...current].slice(0, 120)
+      )
+    },
+    [setCollectedResourceIds]
+  )
+
+  return { savedResources, toggleCollectedResource }
 }

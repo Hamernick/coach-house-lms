@@ -51,7 +51,7 @@ describe("public Find performance contract", () => {
     expect(source).toContain(
       "const initializeFrameId = window.requestAnimationFrame"
     )
-    expect(source).toContain("PUBLIC_MAP_INITIAL_PAINT_DELAY_MS = 1_000")
+    expect(source).toContain("PUBLIC_MAP_INITIAL_PAINT_DELAY_MS = 2_500")
     expect(source).toContain("initializeTimeoutId = window.setTimeout")
     expect(source).toContain("window.cancelAnimationFrame(initializeFrameId)")
     expect(source).toContain("window.clearTimeout(initializeTimeoutId)")

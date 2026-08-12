@@ -135,8 +135,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Add bounded or paginated loading with stable cached refresh behavior",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Stacked branch feat/find-detail-on-demand-20260811 returns a 2,783-byte sanitized detail by exact public ID, rejects malformed IDs, returns 404 for missing records, and repeats from cache in 46 ms locally; client selection and collection adoption remain open",
+        ],
+        state: "in_progress",
         title:
           "Load resource details on demand while preserving selected and collected records outside current bounds",
       },

@@ -6,6 +6,7 @@ import {
   FIND_RESOURCE_INDEX_VERSION,
   paginateFindResourceIndexItems,
   parseFindResourceIndexLimit,
+  resolveFindResourceDetailItem,
   serializeFindResourceIndexItem,
 } from "@/features/find-resource-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
@@ -222,5 +223,22 @@ describe("find resource index feature contract", () => {
       "resource:c",
       "resource:d",
     ])
+  })
+
+  it("returns one sanitized detail item by exact public ID", () => {
+    const item = buildResourceItem()
+    item.faviconUrl = "https://resource.example.org/favicon.ico"
+    item.logoUrl = "https://resource.example.org/logo.svg"
+
+    expect(resolveFindResourceDetailItem([item], item.id)).toMatchObject({
+      id: item.id,
+      title: item.title,
+    })
+    expect(resolveFindResourceDetailItem([item], item.id)).not.toHaveProperty(
+      "faviconUrl"
+    )
+    expect(
+      resolveFindResourceDetailItem([item], "resource_map:missing")
+    ).toBeNull()
   })
 })

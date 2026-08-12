@@ -1,4 +1,5 @@
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import { isPublicMapTechnicalSourceUrl } from "@/lib/public-map/resource-link-visibility"
 
 import type { FindResourceIndexItem, FindResourceIndexResponse } from "../types"
 
@@ -49,6 +50,96 @@ export function paginateFindResourceIndexItems({
       totalCount: orderedItems.length,
     },
   }
+}
+
+function serializeFindResourceDetailAvailability(
+  availability: ExternalResourceMapItem["availability"]
+) {
+  if (!availability) return undefined
+  if (availability.status === "unknown" && !availability.notes) {
+    return undefined
+  }
+  if (availability.status === "unknown") {
+    return {
+      notes: availability.notes,
+      status: availability.status,
+      statusLabel: availability.statusLabel,
+    } as ExternalResourceMapItem["availability"]
+  }
+
+  return availability
+}
+
+function serializeFindResourceDetailServices(
+  services: ExternalResourceMapItem["services"],
+  itemDescription: string | null
+) {
+  return (services ?? []).flatMap((service) => {
+    const description =
+      service.description === itemDescription ? null : service.description
+    const hasUsefulDetails = Boolean(
+      description ||
+      service.whoItHelps ||
+      service.eligibility ||
+      service.cost ||
+      service.languages?.length ||
+      service.intakeUrl ||
+      service.appointmentInfo ||
+      service.documentsNeeded?.length ||
+      service.accessibilityNotes ||
+      service.urgentAvailability ||
+      service.ageRange ||
+      service.serviceArea?.length
+    )
+    if (!hasUsefulDetails) return []
+
+    return [{ ...service, description }]
+  })
+}
+
+export function serializeFindResourceDetailItem(
+  item: ExternalResourceMapItem
+): ExternalResourceMapItem {
+  const {
+    aliases,
+    availability,
+    deliveryModes,
+    faviconUrl,
+    logoUrl,
+    markerImageUrl,
+    mission,
+    services,
+    sourceUrl,
+    values,
+    vision,
+    ...rest
+  } = item
+  const publicAvailability =
+    serializeFindResourceDetailAvailability(availability)
+  const publicServices = serializeFindResourceDetailServices(
+    services,
+    rest.description
+  )
+  const publicSourceUrl =
+    sourceUrl && isPublicMapTechnicalSourceUrl(sourceUrl) ? null : sourceUrl
+
+  return {
+    ...rest,
+    ...(aliases?.length ? { aliases } : null),
+    ...(publicAvailability ? { availability: publicAvailability } : null),
+    ...(deliveryModes?.length ? { deliveryModes } : null),
+    ...(markerImageUrl ? { markerImageUrl } : null),
+    ...(publicServices.length ? { services: publicServices } : null),
+    sourceUrl: publicSourceUrl,
+  }
+}
+
+export function resolveFindResourceDetailItem(
+  items: ExternalResourceMapItem[],
+  id: string
+) {
+  const matched = items.find((item) => item.id === id)
+  return matched ? serializeFindResourceDetailItem(matched) : null
 }
 
 export function serializeFindResourceIndexItem(

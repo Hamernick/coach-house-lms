@@ -19,6 +19,12 @@
   cursor instead of numeric offsets so cached refreshes do not skip records.
 - Share one five-minute server snapshot across page URLs so traversal does not
   repeat the complete public resource query for every page.
+- Reuse the existing public full-item sanitizer for detail lookup. Never return
+  the cached raw item directly from an API route.
+- Cache each sanitized detail response separately; the complete raw dataset is
+  larger than Next.js's per-entry data-cache limit.
+- Resolve production details by exact ID from the existing anonymous sanitized
+  view. Never query raw import or curation tables for this route.
 - Keep the existing full-item endpoint unchanged until detail-on-demand is
   available.
 - Keep acceptance coverage in `tests/acceptance/find-resource-index.test.ts`.

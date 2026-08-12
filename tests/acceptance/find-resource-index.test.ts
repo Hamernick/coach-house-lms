@@ -5,6 +5,7 @@ import {
   FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_VERSION,
   paginateFindResourceIndexItems,
+  parseFindResourceIndexCursor,
   parseFindResourceIndexLimit,
   resolveFindResourceDetailItem,
   serializeFindResourceIndexItem,
@@ -168,6 +169,21 @@ describe("find resource index feature contract", () => {
     expect(parseFindResourceIndexLimit("0")).toBeNull()
     expect(parseFindResourceIndexLimit("501")).toBeNull()
     expect(parseFindResourceIndexLimit("2.5")).toBeNull()
+  })
+
+  it("validates public and local cursors", () => {
+    expect(parseFindResourceIndexCursor(null)).toBeNull()
+    expect(
+      parseFindResourceIndexCursor(
+        "resource_map:0072e21f-c0ce-4544-9bd4-40a75be58794"
+      )
+    ).toBe("resource_map:0072e21f-c0ce-4544-9bd4-40a75be58794")
+    expect(parseFindResourceIndexCursor("local_resource_map:food-1")).toBe(
+      "local_resource_map:food-1"
+    )
+    expect(
+      parseFindResourceIndexCursor("resource_map:not-a-uuid")
+    ).toBeUndefined()
   })
 
   it("returns deterministic cursor pages without duplicates", () => {

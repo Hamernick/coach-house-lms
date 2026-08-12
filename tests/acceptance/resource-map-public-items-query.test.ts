@@ -19,6 +19,7 @@ import { resolveResourceAvailability } from "@/lib/public-map/resource-availabil
 import {
   fetchPublicResourceMapItemById,
   fetchPublicResourceMapItems,
+  fetchPublicResourceMapItemsPageById,
   isResourceMapPublicDbEnabled,
 } from "@/lib/queries/resource-map-public-items"
 
@@ -468,6 +469,40 @@ describe("fetchPublicResourceMapItems", () => {
     ).resolves.toBeNull()
 
     expect(createClientMock).not.toHaveBeenCalled()
+  })
+
+  it("loads one bounded index page directly from the sanitized view", async () => {
+    const cursorId = "0072e21f-c0ce-4544-9bd4-40a75be58794"
+    const nextId = "1072e21f-c0ce-4544-9bd4-40a75be58794"
+    const gt = vi.fn().mockResolvedValue({
+      data: [buildPublicResourceRow({ item_id: nextId })],
+      error: null,
+      count: 853,
+    })
+    const limit = vi.fn().mockReturnValue({ gt })
+    const order = vi.fn().mockReturnValue({ limit })
+    const select = vi.fn().mockReturnValue({ order })
+    const from = vi.fn().mockReturnValue({ select })
+    createClientMock.mockReturnValue({ from })
+
+    const page = await fetchPublicResourceMapItemsPageById({
+      cursor: `resource_map:${cursorId}`,
+      limit: 200,
+      options: {
+        enabled: true,
+        localEnginePreviewFile: null,
+        localPreviewFile: null,
+      },
+    })
+
+    expect(page).toMatchObject({
+      totalCount: 853,
+      items: [{ id: `resource_map:${nextId}` }],
+    })
+    expect(select).toHaveBeenCalledWith("*", { count: "exact" })
+    expect(order).toHaveBeenCalledWith("item_id", { ascending: true })
+    expect(limit).toHaveBeenCalledWith(201)
+    expect(gt).toHaveBeenCalledWith("item_id", cursorId)
   })
 
   it("loads more than 1,000 approved resources without truncation", async () => {

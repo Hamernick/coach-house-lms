@@ -4,6 +4,7 @@ export {
   FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_VERSION,
   paginateFindResourceIndexItems,
+  parseFindResourceIndexCursor,
   parseFindResourceIndexLimit,
   resolveFindResourceDetailItem,
   serializeFindResourceDetailItem,

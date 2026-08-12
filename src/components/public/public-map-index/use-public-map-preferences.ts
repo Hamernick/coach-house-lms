@@ -98,6 +98,10 @@ export function usePublicMapPreferences({
             ? payload.preferences
             : {}
         const nextFavorites = normalizeStringArray(preferences.favorites, 120)
+        const nextCollectedResourceIds = normalizeStringArray(
+          preferences.collectedResourceIds,
+          120
+        )
         const nextSavedQueries = normalizeStringArray(
           preferences.savedQueries,
           40
@@ -109,6 +113,11 @@ export function usePublicMapPreferences({
         const mergedFavorites = mergeUniqueStrings(
           nextFavorites,
           localFavorites,
+          120
+        )
+        const mergedCollectedResourceIds = mergeUniqueStrings(
+          nextCollectedResourceIds,
+          localCollectedResourceIds,
           120
         )
         const mergedSavedQueries = mergeUniqueStrings(
@@ -123,6 +132,10 @@ export function usePublicMapPreferences({
         )
         const shouldSyncMergedPreferences =
           !stringArraysEqual(mergedFavorites, nextFavorites) ||
+          !stringArraysEqual(
+            mergedCollectedResourceIds,
+            nextCollectedResourceIds
+          ) ||
           !stringArraysEqual(mergedSavedQueries, nextSavedQueries) ||
           !stringArraysEqual(
             mergedRecentOrganizationIds,
@@ -132,6 +145,7 @@ export function usePublicMapPreferences({
         if (!cancelled) {
           shouldSkipRemoteSyncRef.current = !shouldSyncMergedPreferences
           setFavorites(mergedFavorites)
+          setCollectedResourceIds(mergedCollectedResourceIds)
           setSavedQueries(mergedSavedQueries)
           setRecentOrganizationIds(mergedRecentOrganizationIds)
           setPreferenceMode("authenticated")
@@ -212,6 +226,7 @@ export function usePublicMapPreferences({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
+              collectedResourceIds,
               favorites,
               savedQueries,
               recentOrganizationIds,
@@ -235,7 +250,13 @@ export function usePublicMapPreferences({
         clearTimeout(saveTimerRef.current)
       }
     }
-  }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
+  }, [
+    collectedResourceIds,
+    favorites,
+    preferenceMode,
+    recentOrganizationIds,
+    savedQueries,
+  ])
 
   return {
     collectedResourceIds,

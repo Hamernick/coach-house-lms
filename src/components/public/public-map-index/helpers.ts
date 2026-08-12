@@ -2,6 +2,7 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapGroupKey } from "@/lib/public-map/groups"
 
 export type PublicMapPreferences = {
+  collectedResourceIds: string[]
   favorites: string[]
   savedQueries: string[]
   recentOrganizationIds: string[]

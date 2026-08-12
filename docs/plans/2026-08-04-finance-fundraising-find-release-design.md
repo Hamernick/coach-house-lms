@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **11/35 complete (31%)**, **4 in progress**, and
-**20 not started**.
+revision. Current progress: **13/35 complete (37%)**, **4 in progress**, and
+**18 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -163,9 +163,9 @@ revision. Current progress: **11/35 complete (31%)**, **4 in progress**, and
 
 **Wave 4 — Collect and My Map completion**
 
-- [ ] `wave-4-criterion-1` **In progress:** Let visitors collect and remove nonprofits and resources locally — Evidence: isolated local My Map implementation passes focused lint, 49 focused tests, full acceptance, RLS, build, visual, and performance gates; merge, deployment, and production smoke remain.
-- [ ] `wave-4-criterion-2` **Not started:** Persist signed-in collections across devices with safe idempotent replay.
-- [ ] `wave-4-criterion-3` **Not started:** Build My Map on the existing saved-organization foundation without separate Finder onboarding.
+- [x] `wave-4-criterion-1` **Complete:** Let visitors collect and remove nonprofits and resources locally — Evidence: PR #158 merged as `8f5196ab`; main quality and deployment passed, production `/find` returned `200`, and focused plus full release gates cover local collect, remove, persistence, and hydration.
+- [ ] `wave-4-criterion-2` **In progress:** Persist signed-in collections across devices with safe idempotent replay — Evidence: isolated account-sync implementation now normalizes, merges, and persists resource IDs through the existing authenticated preference endpoint; focused route and preference tests pass 6/6 plus lint.
+- [x] `wave-4-criterion-3` **Complete:** Build My Map on the existing saved-organization foundation without separate Finder onboarding — Evidence: PR #158 renamed and extended the existing saved-organization rail and drawer for nonprofits and resources, retained shared account/navigation behavior, and added no Finder onboarding.
 - [ ] `wave-4-criterion-4` **Not started:** Keep collected records resolvable through loading, empty, stale, and error states.
 - [ ] `wave-4-criterion-5` **Not started:** Verify guest, account, and Builder journeys with RLS, production monitoring, and rollback proof.
 

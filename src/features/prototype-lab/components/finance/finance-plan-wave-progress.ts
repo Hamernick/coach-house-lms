@@ -176,21 +176,25 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(4, [
       {
         evidence: [
-          "Isolated local My Map implementation passes focused lint, 49 focused tests, full acceptance, RLS, build, visual, and performance gates; merge, deployment, and production smoke remain",
+          "PR #158 merged as 8f5196ab; main quality and deployment passed, production /find returned 200, and focused plus full release gates cover local collect, remove, persistence, and hydration",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Let visitors collect and remove nonprofits and resources locally",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Isolated account-sync implementation normalizes, merges, and persists resource IDs through the existing authenticated preference endpoint; focused route and preference tests pass 6/6 plus lint",
+        ],
+        state: "in_progress",
         title:
           "Persist signed-in collections across devices with safe idempotent replay",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "PR #158 extended the existing saved-organization rail and drawer for nonprofits and resources while retaining shared account and navigation behavior and adding no Finder onboarding",
+        ],
+        state: "complete",
         title:
           "Build My Map on the existing saved-organization foundation without separate Finder onboarding",
       },

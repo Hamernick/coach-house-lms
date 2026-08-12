@@ -120,25 +120,25 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(3, [
       {
         evidence: [
-          "Branch feat/find-compact-index-20260811 serves all 853 production records in a 415,659-byte local index response, down 83.5%; production is unchanged",
+          "PRs #143-#146 merged through production commit 648b0885; the live anonymous index returned all 853 records in compact responses of 25,990-97,986 bytes",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Serve a compact anonymous resource index without private or detail-only fields",
       },
       {
         evidence: [
-          "Stacked branch feat/find-compact-client-20260811 queries at most 201 sanitized rows per request, returns all 853 records once across five stable cursor pages, and progressively publishes each page to Find; production proof remains open",
+          "Production returned all 853 unique records exactly once across five stable cursor pages of 200/200/200/200/53 records; Find visibly progressed from 618 to 871 combined results without losing map or directory context",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Add bounded or paginated loading with stable cached refresh behavior",
       },
       {
         evidence: [
-          "Stacked branch feat/find-compact-client-20260811 fetches the 2,783-byte sanitized detail only after selection and preserves later-page selections during progressive refresh until final reconciliation; production proof remains open",
+          "The live exact-item endpoint returned the selected index ID in a 2,783-byte sanitized response; focused selection and refresh coverage proves later-page records remain resolvable during progressive reconciliation",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Load resource details on demand while preserving selected and collected records outside current bounds",
       },

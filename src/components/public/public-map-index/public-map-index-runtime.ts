@@ -332,10 +332,19 @@ export function useInitializePublicMap({
       }
     }
 
-    void initializeMap()
+    let initializeTimeoutId: number | null = null
+    const initializeFrameId = window.requestAnimationFrame(() => {
+      initializeTimeoutId = window.setTimeout(() => {
+        void initializeMap()
+      }, 0)
+    })
 
     return () => {
       cancelled = true
+      window.cancelAnimationFrame(initializeFrameId)
+      if (initializeTimeoutId !== null) {
+        window.clearTimeout(initializeTimeoutId)
+      }
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null

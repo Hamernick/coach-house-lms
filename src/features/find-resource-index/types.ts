@@ -30,6 +30,12 @@ export type FindResourceIndexItem = {
 }
 
 export type FindResourceIndexResponse = {
-  version: 1
+  version: 2
   resourceItems: FindResourceIndexItem[]
+  page: {
+    hasMore: boolean
+    limit: number
+    nextCursor: string | null
+    totalCount: number
+  }
 }

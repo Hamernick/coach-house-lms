@@ -127,7 +127,9 @@ export function usePublicMapUserLocation({
   const [coordinates, setCoordinates] =
     useState<PublicMapUserCoordinates | null>(null)
   const [hasGrantedLocation, setHasGrantedLocation] = useState(false)
-  const [controlOpen, setControlOpen] = useState(false)
+  const [controlOpen, setControlOpen] = useState(
+    !suppressAutomaticEntrance && !welcomeOpen
+  )
   const entranceStartedRef = useRef(false)
   const requestSequenceRef = useRef(0)
   const userMovedMapRef = useRef(false)

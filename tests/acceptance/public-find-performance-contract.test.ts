@@ -57,6 +57,14 @@ describe("public Find performance contract", () => {
     expect(source).toContain("window.clearTimeout(initializeTimeoutId)")
   })
 
+  it("renders the intended location consent state in the initial shell", () => {
+    const source = readSource(
+      "src/components/public/public-map-index/use-public-map-user-location.ts"
+    )
+
+    expect(source).toContain("!suppressAutomaticEntrance && !welcomeOpen")
+  })
+
   it("enforces a dedicated first-load JavaScript budget for Find", () => {
     const source = readSource("scripts/performance-route-budgets.mjs")
 

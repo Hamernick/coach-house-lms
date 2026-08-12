@@ -111,7 +111,9 @@ describe("public map user location", () => {
     )
 
     expect(FALLBACK_ZOOM).toBe(1.5)
-    expect(hookSource).toContain("useState(false)")
+    expect(hookSource).toContain(
+      "!suppressAutomaticEntrance && !welcomeOpen"
+    )
     expect(hookSource).toContain("setControlOpen(!storedGrant)")
     expect(hookSource).toContain(
       "PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION = 180"

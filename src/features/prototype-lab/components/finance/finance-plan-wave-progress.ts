@@ -127,8 +127,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Serve a compact anonymous resource index without private or detail-only fields",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Stacked branch feat/find-bounded-loading-20260811 returns all 853 records once across five stable cursor pages; page one is 97,986 bytes and cached pages 2-5 complete in 25-38 ms locally; the client is unchanged",
+        ],
+        state: "in_progress",
         title:
           "Add bounded or paginated loading with stable cached refresh behavior",
       },

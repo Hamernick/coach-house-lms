@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **10/35 complete (29%)**, **3 in progress**, and
-**22 not started**.
+revision. Current progress: **11/35 complete (31%)**, **3 in progress**, and
+**21 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -147,11 +147,11 @@ revision. Current progress: **10/35 complete (29%)**, **3 in progress**, and
 
 **Wave 2 — Signup, recovery, and legal**
 
-- [ ] `wave-2-criterion-1` **In progress:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: branch `feat/legal-policy-consent-20260812` replaces the deleted PR #139 branch with current product-specific documents, canonical routes, and required acceptance; merge and production proof remain.
-- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: branch `feat/legal-policy-consent-20260812` binds signup to version `2026-08-12.1` and exact SHA-256 hashes; connected migration proof and production remain pending.
+- [x] `wave-2-criterion-1` **Complete:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: PR #156 merged as `9cacf375`; both production projects deployed, `/privacy` and `/terms` return canonical `200` pages with version `2026-08-12.1`, and the 43-test signup matrix proves required acceptance across direct and contextual entry surfaces.
+- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: migration `20260811160000` is applied in production; the table exists with zero rows, public-schema lint passes, and anonymous reads return `401`; one controlled signup record remains required to prove the live trigger end to end.
 - [ ] `wave-2-criterion-3` **In progress:** Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery — Evidence: 43 focused acceptance tests pass across direct signup, homepage and pricing entry, required denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain.
 - [x] `wave-2-criterion-4` **Complete:** Obtain qualified legal approval for Terms and Privacy copy — Evidence: the product owner reported legal review complete and the current copy approved for release on 2026-08-12.
-- [ ] `wave-2-criterion-5` **Not started:** Merge, deploy, production-smoke, monitor, and retain a tested signup rollback.
+- [ ] `wave-2-criterion-5` **In progress:** Merge, deploy, production-smoke, monitor, and retain a tested signup rollback — Evidence: PR #156, main CI, both Vercel production deployments, canonical route probes, migration parity, schema lint, and anonymous denial pass; the controlled signup smoke and tested rollback remain.
 
 **Wave 3 — `/find` speed and loading**
 

@@ -43,6 +43,19 @@ describe("public Find performance contract", () => {
     )
   })
 
+  it("lets the initial shell paint before starting Mapbox", () => {
+    const source = readSource(
+      "src/components/public/public-map-index/public-map-index-runtime.ts"
+    )
+
+    expect(source).toContain(
+      "const initializeFrameId = window.requestAnimationFrame"
+    )
+    expect(source).toContain("initializeTimeoutId = window.setTimeout")
+    expect(source).toContain("window.cancelAnimationFrame(initializeFrameId)")
+    expect(source).toContain("window.clearTimeout(initializeTimeoutId)")
+  })
+
   it("enforces a dedicated first-load JavaScript budget for Find", () => {
     const source = readSource("scripts/performance-route-budgets.mjs")
 

@@ -49,13 +49,9 @@ starts automatically on `main`.
 
 #### Progress contract
 
-Report the current PRD completion percentage only from the fixed 35-item
-current-wave completion checklist below: five equally weighted criteria for
-each of seven waves. Percentage is checked criteria divided by 35, rounded to
-the nearest whole percent. In-progress work remains unchecked until its named
-production evidence is complete. Do not calculate progress from the historical
-37-item batch tracker, merged branches, Prototype Lab nodes, or partial preview
-work.
+Do not report one PRD completion percentage. Prior percentages used different
+denominators: implemented feature scope, merged branches, Prototype Lab nodes,
+and production-readiness gates. They are not interchangeable.
 
 Track each wave as `queued`, `active`, `code complete`, `preview verified`, or
 `production verified`. A wave is complete only after its focused PR is merged,
@@ -88,9 +84,8 @@ the relevant wave rather than inferred from merge status:
 | PR #135      | Read-only Workspace and Roadmap rendering                   |
 | PR #136      | Read-only People page synchronization                       |
 | PR #137      | Revision-safe Workspace board saves                         |
-| PR #138      | Workspace production-deployment evidence                    |
 
-The baseline is `origin/main` commit `fa25b38d` on 2026-08-11. A production
+The baseline is `origin/main` commit `872c0f6c` on 2026-08-11. A production
 read of `/api/public/resource-map/items` returned `853` records in a
 `2,519,484`-byte response. That is a live endpoint snapshot, not a performance
 guarantee or proof that all records rendered correctly.
@@ -123,75 +118,12 @@ wave, but unrelated scope does not accumulate in one PR.
 | Wave                                      | Status on 2026-08-11 | Scope                                                                                                                                                          | Exit evidence                                                                                                                                      | Rollback                                                                                   |
 | ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 1. Live stability and existing work close | Active               | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
-| 2. Signup, recovery, and legal            | Active               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
+| 2. Signup, recovery, and legal            | Queued               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
 | 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
 | 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
 | 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
 | 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
 | 7. Integrated production release          | Queued               | Security review, support runbook, monitoring, rollback rehearsal, production smoke checks, and gradual rollout                                                 | Full quality gate; connected RLS where changed; hosted previews; production browser proof; clean monitoring                                        | Wave-specific flags and forward repair; never use a destructive data rollback              |
-
-#### Current-wave completion checklist
-
-Only checked criteria count toward the percentage. Criterion IDs and the
-35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **4/35 complete (11%)**, **3 in progress**, and
-**28 not started**.
-
-**Wave 1 — Live stability and existing work close**
-
-- [x] `wave-1-criterion-1` **Complete:** Verify authenticated Find in light and dark mode on desktop and mobile with no contrast regression — Evidence: PR #132 merged and production-verified.
-- [x] `wave-1-criterion-2` **Complete:** Verify organization detail rendering and recoverable missing Stripe-subscription links in production — Evidence: PR #133 merged and production-verified.
-- [x] `wave-1-criterion-3` **Complete:** Verify revision-safe organization document writes and storage rollback behavior — Evidence: PR #134 merged and production-verified.
-- [x] `wave-1-criterion-4` **Complete:** Verify Workspace, Roadmap, and People reads preserve stored organization data — Evidence: PRs #135 and #136 merged with authenticated production read-safety proof.
-- [ ] `wave-1-criterion-5` **In progress:** Complete revision-aware Workspace save smoke and the paid, free, member, coach, and admin journey matrix — Evidence: PRs #137 and #138 merged; authenticated production Workspace smoke remains.
-
-**Wave 2 — Signup, recovery, and legal**
-
-- [ ] `wave-2-criterion-1` **In progress:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: PR #139 preview checks pass; legal review remains.
-- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: PR #139 Supabase Preview passes; production is unchanged.
-- [ ] `wave-2-criterion-3` **Not started:** Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery.
-- [ ] `wave-2-criterion-4` **Not started:** Obtain qualified legal approval for Terms and Privacy copy.
-- [ ] `wave-2-criterion-5` **Not started:** Merge, deploy, production-smoke, monitor, and retain a tested signup rollback.
-
-**Wave 3 — `/find` speed and loading**
-
-- [ ] `wave-3-criterion-1` **Not started:** Serve a compact anonymous resource index without private or detail-only fields.
-- [ ] `wave-3-criterion-2` **Not started:** Add bounded or paginated loading with stable cached refresh behavior.
-- [ ] `wave-3-criterion-3` **Not started:** Load resource details on demand while preserving selected and collected records outside current bounds.
-- [ ] `wave-3-criterion-4` **Not started:** Verify loading, empty, error, offline, stale, and retry states without losing map context.
-- [ ] `wave-3-criterion-5` **Not started:** Meet payload, first-useful-render, LCP, and interaction budgets in preview and production.
-
-**Wave 4 — Collect and My Map completion**
-
-- [ ] `wave-4-criterion-1` **Not started:** Let visitors collect and remove nonprofits and resources locally.
-- [ ] `wave-4-criterion-2` **Not started:** Persist signed-in collections across devices with safe idempotent replay.
-- [ ] `wave-4-criterion-3` **Not started:** Build My Map on the existing saved-organization foundation without separate Finder onboarding.
-- [ ] `wave-4-criterion-4` **Not started:** Keep collected records resolvable through loading, empty, stale, and error states.
-- [ ] `wave-4-criterion-5` **Not started:** Verify guest, account, and Builder journeys with RLS, production monitoring, and rollback proof.
-
-**Wave 5 — Finance reporting completion**
-
-- [ ] `wave-5-criterion-1` **Not started:** Connect read-only external activity with explicit source and freshness labels.
-- [ ] `wave-5-criterion-2` **Not started:** Provide a simple accessible graph, text equivalent, Activity list, and History.
-- [ ] `wave-5-criterion-3` **Not started:** Reconcile visible reporting to authorized external records and correction history.
-- [ ] `wave-5-criterion-4` **Not started:** Verify accurate CSV and PDF exports.
-- [ ] `wave-5-criterion-5` **Not started:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback.
-
-**Wave 6 — Qualified resources and varied guides**
-
-- [ ] `wave-6-criterion-1` **Not started:** Report exact candidate, complete, verified, publishable, promoted, and public counts.
-- [ ] `wave-6-criterion-2` **Not started:** Close provider, eligibility, summary, access, contact, and comparison evidence gaps by cohort.
-- [ ] `wave-6-criterion-3` **Not started:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records.
-- [ ] `wave-6-criterion-4` **Not started:** Publish current location-connected guides across multiple service categories.
-- [ ] `wave-6-criterion-5` **Not started:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof.
-
-**Wave 7 — Integrated production release**
-
-- [ ] `wave-7-criterion-1` **Not started:** Pass the full quality gate, connected RLS where changed, and migration parity.
-- [ ] `wave-7-criterion-2` **Not started:** Complete security review, support runbook, ownership, and monitoring setup.
-- [ ] `wave-7-criterion-3` **Not started:** Verify hosted paid, free, member, coach, and admin journeys in light, dark, desktop, and mobile.
-- [ ] `wave-7-criterion-4` **Not started:** Rehearse rollback and complete controlled paid and free canaries with gradual rollout.
-- [ ] `wave-7-criterion-5` **Not started:** Verify production deployment, smoke checks, clean monitoring, and no unresolved P0 risk.
 
 #### Wave 1 current evidence
 

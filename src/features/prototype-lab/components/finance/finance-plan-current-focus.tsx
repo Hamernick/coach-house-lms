@@ -1,24 +1,40 @@
 import TargetIcon from "lucide-react/dist/esm/icons/target"
 import type { HTMLAttributes } from "react"
 
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import {
-  FINANCE_PLAN_COMPLETION_PERCENTAGE,
-  FINANCE_PLAN_CURRENT_WAVE,
-  FINANCE_PLAN_NEXT_CRITERION,
-  FINANCE_PLAN_WAVE_COUNTS,
-} from "./finance-plan-wave-progress"
+  FINANCE_PLAN_BATCH_PROGRESS,
+  FINANCE_PLAN_BATCH_WORK_COUNTS,
+} from "./finance-plan-batch-progress"
+import { FINANCE_RELEASE_PLAN_BATCHES } from "./finance-release-plan-batches"
+
+const activeBatch =
+  FINANCE_PLAN_BATCH_PROGRESS.find(
+    (batch) =>
+      batch.executionState === "in_progress" &&
+      batch.workItemCounts.complete < batch.workItemCounts.total
+  ) ??
+  FINANCE_PLAN_BATCH_PROGRESS.find((batch) => batch.executionState !== "merged")
+const activeBatchDefinition = FINANCE_RELEASE_PLAN_BATCHES.find(
+  (batch) => batch.id === activeBatch?.batchId
+)
+const nextWorkItem = activeBatch?.items.find(
+  (item) => item.state !== "complete"
+)
 
 export const FINANCE_PLAN_CURRENT_FOCUS = {
-  complete: FINANCE_PLAN_WAVE_COUNTS.complete,
-  nextStep:
-    FINANCE_PLAN_NEXT_CRITERION?.title ?? "Review the next production wave",
-  percentage: FINANCE_PLAN_COMPLETION_PERCENTAGE,
-  remaining: FINANCE_PLAN_WAVE_COUNTS.total - FINANCE_PLAN_WAVE_COUNTS.complete,
-  total: FINANCE_PLAN_WAVE_COUNTS.total,
-  waveId: FINANCE_PLAN_CURRENT_WAVE.id,
-  waveLabel: `Wave ${FINANCE_PLAN_CURRENT_WAVE.sequence}: ${FINANCE_PLAN_CURRENT_WAVE.title}`,
+  batchId: activeBatch?.batchId ?? FINANCE_RELEASE_PLAN_BATCHES[0].id,
+  batchLabel: activeBatchDefinition
+    ? `Batch ${activeBatchDefinition.sequence}: ${activeBatchDefinition.title}`
+    : "Release roadmap",
+  complete: FINANCE_PLAN_BATCH_WORK_COUNTS.complete,
+  nextStep: nextWorkItem?.title ?? "Review the next proof gate",
+  remaining:
+    FINANCE_PLAN_BATCH_WORK_COUNTS.total -
+    FINANCE_PLAN_BATCH_WORK_COUNTS.complete,
+  total: FINANCE_PLAN_BATCH_WORK_COUNTS.total,
 } as const
 
 const STATUS_LEGEND = [
@@ -51,20 +67,26 @@ export function FinancePlanStatusLegend({
   )
 }
 
-export function FinancePlanCurrentFocusPill() {
+export function FinancePlanCurrentFocusPill({
+  onOpenBatch,
+}: {
+  onOpenBatch: (batchId: string) => void
+}) {
   return (
-    <div
-      aria-label={`${FINANCE_PLAN_CURRENT_FOCUS.percentage}% complete. ${FINANCE_PLAN_CURRENT_FOCUS.waveLabel}`}
-      className="border-border bg-card pointer-events-auto flex h-11 max-w-80 shrink-0 items-center gap-2 rounded-full border px-3 shadow-sm"
+    <Button
+      className="bg-card pointer-events-auto h-11 max-w-80 shrink-0 justify-start rounded-full px-3 shadow-sm"
+      onClick={() => onOpenBatch(FINANCE_PLAN_CURRENT_FOCUS.batchId)}
       title={`Next: ${FINANCE_PLAN_CURRENT_FOCUS.nextStep}`}
+      type="button"
+      variant="outline"
     >
       <TargetIcon aria-hidden="true" className="size-4 shrink-0" />
       <span className="min-w-0 truncate text-xs">
-        {FINANCE_PLAN_CURRENT_FOCUS.waveLabel}
+        {FINANCE_PLAN_CURRENT_FOCUS.batchLabel}
       </span>
       <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-        {FINANCE_PLAN_CURRENT_FOCUS.percentage}%
+        {FINANCE_PLAN_CURRENT_FOCUS.complete}/{FINANCE_PLAN_CURRENT_FOCUS.total}
       </span>
-    </div>
+    </Button>
   )
 }

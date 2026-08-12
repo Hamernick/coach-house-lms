@@ -123,14 +123,6 @@ import {
   FINANCE_PLAN_OBJECTIVE_TRACEABILITY,
   FINANCE_PLAN_OBJECTIVE_TRACEABILITY_COUNT,
 } from "@/features/prototype-lab/components/finance/finance-plan-objective-traceability"
-import {
-  FINANCE_PLAN_COMPLETION_PERCENTAGE,
-  FINANCE_PLAN_CURRENT_WAVE,
-  FINANCE_PLAN_NEXT_CRITERION,
-  FINANCE_PLAN_WAVE_COUNTS,
-  FINANCE_PLAN_WAVES,
-  FINANCE_PLAN_WAVE_STATUS_COUNTS,
-} from "@/features/prototype-lab/components/finance/finance-plan-wave-progress"
 
 const FINANCE_COMPONENT_ROOT = "src/features/prototype-lab/components/finance"
 const FINANCE_PRD_PATH =
@@ -179,29 +171,6 @@ function readPrdBatchScopeItems() {
       .split(/\n- /gu)
       .map((item) => normalizeGateRequirement(item))
   )
-}
-
-function readPrdCurrentWaveCriteria() {
-  const prd = readFileSync(FINANCE_PRD_PATH, "utf8")
-  const section = prd.match(
-    /^#### Current-wave completion checklist\n\n[\s\S]*?\n\n([\s\S]*?)\n\n#### Wave 1 current evidence/m
-  )?.[1]
-  const stateByLabel = {
-    Complete: "complete",
-    "In progress": "in_progress",
-    "Not started": "not_started",
-  } as const
-
-  return [
-    ...(section ?? "").matchAll(
-      /^- \[([ x])\] `([^`]+)` \*\*(Complete|In progress|Not started):\*\* (.*?)(?: — Evidence: .*)?$/gm
-    ),
-  ].map((match) => ({
-    checked: match[1] === "x",
-    id: match[2],
-    state: stateByLabel[match[3] as keyof typeof stateByLabel],
-    title: normalizeGateRequirement(match[4]),
-  }))
 }
 
 function readFinancePrdGateRequirements() {
@@ -1157,56 +1126,7 @@ describe("finance release planning graph", () => {
     ])
   })
 
-  it("derives one durable percentage from 35 current-wave criteria", () => {
-    const sourceCriteria = readPrdCurrentWaveCriteria()
-    const trackedCriteria = FINANCE_PLAN_WAVES.flatMap((wave) => wave.criteria)
-
-    expect(FINANCE_PLAN_WAVES.map((wave) => wave.sequence)).toEqual([
-      1, 2, 3, 4, 5, 6, 7,
-    ])
-    expect(FINANCE_PLAN_WAVES.map((wave) => wave.criteria.length)).toEqual(
-      Array(7).fill(5)
-    )
-    expect(FINANCE_PLAN_WAVES.map((wave) => wave.status)).toEqual([
-      "active",
-      "active",
-      ...Array(5).fill("queued"),
-    ])
-    expect(FINANCE_PLAN_WAVE_STATUS_COUNTS).toEqual({
-      active: 2,
-      codeComplete: 0,
-      previewVerified: 0,
-      productionVerified: 0,
-      queued: 5,
-      total: 7,
-    })
-    expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
-      complete: 4,
-      inProgress: 3,
-      notStarted: 28,
-      total: 35,
-    })
-    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(11)
-    expect(sourceCriteria).toHaveLength(35)
-    expect(sourceCriteria.map((criterion) => criterion.id)).toEqual(
-      trackedCriteria.map((criterion) => criterion.id)
-    )
-    expect(sourceCriteria.map((criterion) => criterion.state)).toEqual(
-      trackedCriteria.map((criterion) => criterion.state)
-    )
-    expect(sourceCriteria.map((criterion) => criterion.title)).toEqual(
-      trackedCriteria.map((criterion) =>
-        normalizeGateRequirement(criterion.title)
-      )
-    )
-    expect(sourceCriteria.map((criterion) => criterion.checked)).toEqual(
-      trackedCriteria.map((criterion) => criterion.state === "complete")
-    )
-    expect(FINANCE_PLAN_CURRENT_WAVE.id).toBe("wave-1-live-stability")
-    expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-1-criterion-5")
-  })
-
-  it("preserves all seven historical batches and 37 scope items", () => {
+  it("derives all seven batches from 37 stateful PRD scope items", () => {
     const prdBatchScopeItems = readPrdBatchScopeItems()
     const workItems = FINANCE_PLAN_BATCH_PROGRESS.flatMap(
       (batch) => batch.items
@@ -1275,15 +1195,14 @@ describe("finance release planning graph", () => {
       roadmapNodes.find((node) => node.id === nodeId)?.data
 
     expect(FINANCE_PLAN_CURRENT_FOCUS).toMatchObject({
-      complete: 4,
-      percentage: 11,
-      remaining: 31,
-      total: 35,
-      waveId: "wave-1-live-stability",
-      waveLabel: "Wave 1: Live stability and existing work close",
+      batchId: FINANCE_RELEASE_PLAN_NODE_IDS.batch3,
+      batchLabel: "Batch 3: Fiscal sponsorship and project operations",
+      complete: 13,
+      remaining: 24,
+      total: 37,
     })
     expect(FINANCE_PLAN_CURRENT_FOCUS.nextStep).toContain(
-      "Complete revision-aware Workspace save smoke"
+      "Obtain non-author review and merge PR #120"
     )
     expect(
       getFinancePlanNodeStatusTone(
@@ -2189,18 +2108,14 @@ describe("finance release planning graph", () => {
     const readinessFailureSource = readFinanceSource(
       "finance-plan-readiness-failure-list.tsx"
     )
-    const waveProgressSource = readFinanceSource(
-      "finance-plan-wave-progress-list.tsx"
-    )
     expect(readinessNavigatorSource).not.toContain("<Dialog")
     expect(readinessNavigatorSource).toContain("<aside")
     expect(readinessNavigatorSource).toContain("<ScrollArea")
-    expect(readinessNavigatorSource).toContain("Current release progress")
-    expect(readinessNavigatorSource).toContain("% complete")
+    expect(readinessNavigatorSource).toContain("Release implementation plan")
+    expect(readinessNavigatorSource).toContain("steps left")
     expect(readinessNavigatorSource).toContain("Need from you")
     expect(readinessNavigatorSource).toContain("Research before coding")
-    expect(readinessCategorySource).toContain("Current waves")
-    expect(readinessCategorySource).toContain("Historical batches")
+    expect(readinessCategorySource).toContain("Batches")
     expect(readinessCategorySource).toContain("Gates")
     expect(readinessCategorySource).toContain("Tests")
     expect(readinessCategorySource).toContain("Security")
@@ -2229,7 +2144,7 @@ describe("finance release planning graph", () => {
     )
     expect(readinessNavigatorSource).toContain("data-finance-readiness-panel")
     expect(readinessNavigatorSource).toContain(
-      'useState<FinancePlanReadinessMode>("waves")'
+      'useState<FinancePlanReadinessMode>("batches")'
     )
     expect(readinessCategorySource).toContain('from "@/components/ui/select"')
     expect(readinessCategorySource).toContain("<SelectTrigger")
@@ -2237,10 +2152,6 @@ describe("finance release planning graph", () => {
       'from "@/components/ui/button"'
     )
     expect(readinessNavigatorSource).toContain("data-finance-readiness-mode")
-    expect(waveProgressSource).toContain("data-finance-wave")
-    expect(waveProgressSource).toContain("data-finance-wave-status")
-    expect(waveProgressSource).toContain("data-finance-wave-criterion")
-    expect(waveProgressSource).toContain("data-finance-wave-criterion-state")
     expect(readinessGateSource).toContain("data-finance-readiness-gate-state")
     expect(readinessGateSource).toContain(
       "data-finance-readiness-evidence-list"

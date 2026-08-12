@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 import type { FinancePlanningViewId } from "./finance-plan-diagram-data"
+import { FINANCE_PLAN_BATCH_WORK_COUNTS } from "./finance-plan-batch-progress"
 import { FINANCE_PLAN_DECISION_ITEM_COUNTS } from "./finance-plan-decision-progress"
 import {
   FINANCE_PLAN_COMPLETION,
@@ -74,13 +75,6 @@ import {
   FINANCE_PLAN_TEST_MATRIX_COUNTS,
   type FinancePlanTestArea,
 } from "./finance-plan-test-matrix"
-import { FinancePlanWaveProgressList } from "./finance-plan-wave-progress-list"
-import {
-  FINANCE_PLAN_COMPLETION_PERCENTAGE,
-  FINANCE_PLAN_WAVE_COUNTS,
-  FINANCE_PLAN_WAVES,
-  FINANCE_PLAN_WAVE_STATUS_COUNTS,
-} from "./finance-plan-wave-progress"
 
 type FinancePlanNodeTarget = {
   nodeId: string
@@ -132,10 +126,6 @@ function getDecisionStateIcon(state: FinancePlanDecisionItemState) {
 }
 
 function getModeDescription(mode: FinancePlanReadinessMode) {
-  if (mode === "waves") {
-    return `${FINANCE_PLAN_WAVE_COUNTS.complete} of ${FINANCE_PLAN_WAVE_COUNTS.total} fixed current-wave criteria are production-verified. In-progress work stays unchecked until its named release evidence is complete.`
-  }
-
   if (mode === "inputs") {
     return `${FINANCE_PLAN_OPEN_INPUT_COUNTS.decisions} decisions and ${FINANCE_PLAN_OPEN_INPUT_COUNTS.research} research tracks remain open; ${FINANCE_PLAN_DECISION_ITEM_COUNTS.approved} of ${FINANCE_PLAN_DECISION_ITEM_COUNTS.total} approval criteria approved and ${FINANCE_PLAN_RESEARCH_ITEM_COUNTS.verified} of ${FINANCE_PLAN_RESEARCH_ITEM_COUNTS.total} research items verified.`
   }
@@ -164,7 +154,7 @@ function getModeDescription(mode: FinancePlanReadinessMode) {
     return `${FINANCE_PLAN_FAILURE_STATE_COUNTS.verified} of ${FINANCE_PLAN_FAILURE_STATE_COUNTS.total} failure and empty states verified; ${FINANCE_PLAN_FAILURE_STATE_COUNTS.collecting} collecting proof and ${FINANCE_PLAN_FAILURE_STATE_COUNTS.notStarted} not started.`
   }
 
-  return `Historical seven-batch implementation record: ${FINANCE_PLAN_BATCH_READINESS_COUNTS.ready} ready, ${FINANCE_PLAN_BATCH_READINESS_COUNTS.blocked} blocked, ${FINANCE_PLAN_BATCH_READINESS_COUNTS.inProgress} in progress, and ${FINANCE_PLAN_BATCH_READINESS_COUNTS.merged} merged. It does not determine the current percentage.`
+  return `${FINANCE_PLAN_BATCH_READINESS_COUNTS.ready} batches ready, ${FINANCE_PLAN_BATCH_READINESS_COUNTS.blocked} blocked, ${FINANCE_PLAN_BATCH_READINESS_COUNTS.inProgress} in progress, and ${FINANCE_PLAN_BATCH_READINESS_COUNTS.merged} merged.`
 }
 
 function FinancePlanOpenInputGroup({
@@ -351,7 +341,10 @@ export function FinancePlanReadinessPanel({
   onSelectResponseTarget: (targetId: string) => void
   responseTargetId: string | null
 }) {
-  const [mode, setMode] = useState<FinancePlanReadinessMode>("waves")
+  const [mode, setMode] = useState<FinancePlanReadinessMode>("batches")
+  const remainingSteps =
+    FINANCE_PLAN_BATCH_WORK_COUNTS.total -
+    FINANCE_PLAN_BATCH_WORK_COUNTS.complete
 
   const handleInputSelect = (input: FinancePlanOpenInput) => {
     onSelect({ nodeId: input.nodeId, viewId: "roadmap" })
@@ -397,20 +390,21 @@ export function FinancePlanReadinessPanel({
       <header className="border-border/70 shrink-0 border-b p-4">
         <div className="flex items-start justify-between gap-3">
           <h2 className="min-w-0 text-sm font-semibold text-balance">
-            Current release progress
+            Release implementation plan
           </h2>
           <Badge
             className="shrink-0 rounded-full tabular-nums"
             variant="outline"
           >
-            {FINANCE_PLAN_COMPLETION_PERCENTAGE}% complete
+            {remainingSteps} steps left
           </Badge>
         </div>
 
         <p className="text-muted-foreground mt-1.5 text-xs leading-5 text-pretty">
-          {FINANCE_PLAN_WAVE_COUNTS.complete}/{FINANCE_PLAN_WAVE_COUNTS.total}{" "}
-          verified · {FINANCE_PLAN_WAVE_COUNTS.inProgress} in progress ·{" "}
-          {FINANCE_PLAN_WAVE_STATUS_COUNTS.active} active waves
+          {FINANCE_PLAN_BATCH_WORK_COUNTS.complete}/
+          {FINANCE_PLAN_BATCH_WORK_COUNTS.total} complete ·{" "}
+          {FINANCE_PLAN_OPEN_INPUT_COUNTS.decisions} decisions for you ·{" "}
+          {FINANCE_PLAN_OPEN_INPUT_COUNTS.research} research tracks for me
         </p>
 
         <FinancePlanReadinessCategoryNav mode={mode} onModeChange={setMode} />
@@ -423,9 +417,7 @@ export function FinancePlanReadinessPanel({
         <p className="border-border/70 text-muted-foreground border-b px-4 py-3 text-xs leading-5 text-pretty">
           {getModeDescription(mode)}
         </p>
-        {mode === "waves" ? (
-          <FinancePlanWaveProgressList waves={FINANCE_PLAN_WAVES} />
-        ) : mode === "failures" ? (
+        {mode === "failures" ? (
           <FinancePlanReadinessFailureList
             failureStates={FINANCE_PLAN_FAILURE_STATES}
             onSelect={handleFailureSelect}
@@ -468,7 +460,9 @@ export function FinancePlanReadinessPanel({
               description="Product, release, fiscal, and visual choices that cannot be assumed during implementation."
               inputs={FINANCE_PLAN_OPEN_DECISIONS}
               onSelect={handleInputSelect}
-              onSelectResponseTarget={(item) => onSelectResponseTarget(item.id)}
+              onSelectResponseTarget={(item) =>
+                onSelectResponseTarget(item.id)
+              }
               responseTargetId={responseTargetId}
               title="Need from you"
             />
@@ -476,7 +470,9 @@ export function FinancePlanReadinessPanel({
               description="Evidence and external verification that must be completed before coding each batch."
               inputs={FINANCE_PLAN_OPEN_RESEARCH}
               onSelect={handleInputSelect}
-              onSelectResponseTarget={(item) => onSelectResponseTarget(item.id)}
+              onSelectResponseTarget={(item) =>
+                onSelectResponseTarget(item.id)
+              }
               responseTargetId={responseTargetId}
               title="Research before coding"
             />
@@ -492,11 +488,11 @@ export function FinancePlanReadinessPanel({
             </p>
             <Button
               className="mt-4 min-h-11 rounded-full"
-              onClick={() => setMode("waves")}
+              onClick={() => setMode("batches")}
               type="button"
               variant="outline"
             >
-              Review current waves
+              Review batches
             </Button>
           </div>
         )}

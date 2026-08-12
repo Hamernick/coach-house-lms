@@ -27,6 +27,8 @@ import {
 export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
 
+const PUBLIC_MAP_INITIAL_PAINT_DELAY_MS = 1_000
+
 function applyPublicMapGlobePresentation(map: mapboxgl.Map) {
   map.setProjection("globe")
   applyPublicMapSpaceFog(map)
@@ -336,7 +338,7 @@ export function useInitializePublicMap({
     const initializeFrameId = window.requestAnimationFrame(() => {
       initializeTimeoutId = window.setTimeout(() => {
         void initializeMap()
-      }, 0)
+      }, PUBLIC_MAP_INITIAL_PAINT_DELAY_MS)
     })
 
     return () => {

@@ -23,6 +23,8 @@ export type FetchPublicResourceMapItemsOptions = {
 export const DEFAULT_RESOURCE_MAP_LOCAL_PREVIEW_LIMIT = 10000
 export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000
 export const RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500
+const RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function isResourceMapPublicDbEnabled(
   value = env.RESOURCE_MAP_PUBLIC_DB_ENABLED
@@ -262,4 +264,54 @@ export async function fetchPublicResourceMapItems(
   return fetchPublicResourceMapItemsUncached({
     limit: options.limit,
   })
+}
+
+export async function fetchPublicResourceMapItemById(
+  id: string,
+  options: FetchPublicResourceMapItemsOptions = {}
+): Promise<ExternalResourceMapItem | null> {
+  const normalizedId = id.trim()
+  if (!normalizedId) return null
+
+  const localPreviewFile = normalizeLocalPreviewFile(
+    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+  )
+  const localEnginePreviewFile = normalizeLocalPreviewFile(
+    options.localEnginePreviewFile
+  )
+  if (
+    localPreviewFile ||
+    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+  ) {
+    const items = await fetchPublicResourceMapItems(options)
+    return items.find((item) => item.id === normalizedId) ?? null
+  }
+
+  const enabled = options.enabled ?? isResourceMapPublicDbEnabled()
+  if (!enabled || !normalizedId.startsWith("resource_map:")) return null
+  const itemId = normalizedId.slice("resource_map:".length)
+  if (!RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN.test(itemId)) return null
+
+  const supabase = createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } }
+  )
+  const { data, error } = await supabase
+    .from("resource_map_public_items")
+    .select("*")
+    .eq("item_id", itemId)
+    .maybeSingle()
+  if (error || !data) {
+    if (error) {
+      console.warn("[resource-map] public item lookup unavailable", {
+        code: error.code,
+        message: error.message,
+      })
+    }
+    return null
+  }
+
+  const item = buildExternalResourceMapItemFromPublicRow(data)
+  return item && shouldShowPublicMapResourceItem(item) ? item : null
 }

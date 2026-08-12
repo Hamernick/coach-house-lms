@@ -14,9 +14,10 @@ vi.mock("@supabase/supabase-js", () => ({
 }))
 
 import { buildExternalResourceMapItemFromPublicRow } from "@/lib/public-map/resource-map-public-item-adapter"
-import { serializePublicResourceMapItem } from "@/app/api/public/resource-map/items/route"
+import { serializeFindResourceDetailItem } from "@/features/find-resource-index"
 import { resolveResourceAvailability } from "@/lib/public-map/resource-availability"
 import {
+  fetchPublicResourceMapItemById,
   fetchPublicResourceMapItems,
   isResourceMapPublicDbEnabled,
 } from "@/lib/queries/resource-map-public-items"
@@ -237,7 +238,7 @@ describe("resource map public item adapter", () => {
     )
     expect(item).not.toBeNull()
 
-    const serialized = serializePublicResourceMapItem({
+    const serialized = serializeFindResourceDetailItem({
       ...item!,
       aliases: [],
       availability: {
@@ -260,19 +261,19 @@ describe("resource map public item adapter", () => {
 
     expect(serialized.sourceUrl).toBeNull()
     expect(
-      serializePublicResourceMapItem({
+      serializeFindResourceDetailItem({
         ...item!,
         sourceUrl: overpassSourceUrl,
       }).sourceUrl
     ).toBeNull()
     expect(
-      serializePublicResourceMapItem({
+      serializeFindResourceDetailItem({
         ...item!,
         sourceUrl: socrataSourceUrl,
       }).sourceUrl
     ).toBeNull()
     expect(
-      serializePublicResourceMapItem({
+      serializeFindResourceDetailItem({
         ...item!,
         sourceUrl: wikidataSourceUrl,
       }).sourceUrl
@@ -425,6 +426,48 @@ describe("fetchPublicResourceMapItems", () => {
       expect.stringContaining("resource_map_import_records"),
       expect.anything()
     )
+  })
+
+  it("loads one detail item from the sanitized public view", async () => {
+    const itemId = "0072e21f-c0ce-4544-9bd4-40a75be58794"
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: buildPublicResourceRow({ item_id: itemId }),
+      error: null,
+    })
+    const eq = vi.fn().mockReturnValue({ maybeSingle })
+    const select = vi.fn().mockReturnValue({ eq })
+    const from = vi.fn().mockReturnValue({ select })
+    createClientMock.mockReturnValue({ from })
+
+    const item = await fetchPublicResourceMapItemById(
+      `resource_map:${itemId}`,
+      {
+        enabled: true,
+        localEnginePreviewFile: null,
+        localPreviewFile: null,
+      }
+    )
+
+    expect(item).toMatchObject({
+      id: `resource_map:${itemId}`,
+      title: "Community Food Pantry",
+    })
+    expect(from).toHaveBeenCalledWith("resource_map_public_items")
+    expect(select).toHaveBeenCalledWith("*")
+    expect(eq).toHaveBeenCalledWith("item_id", itemId)
+    expect(maybeSingle).toHaveBeenCalledOnce()
+  })
+
+  it("rejects malformed production item IDs without querying the view", async () => {
+    await expect(
+      fetchPublicResourceMapItemById("resource_map:missing", {
+        enabled: true,
+        localEnginePreviewFile: null,
+        localPreviewFile: null,
+      })
+    ).resolves.toBeNull()
+
+    expect(createClientMock).not.toHaveBeenCalled()
   })
 
   it("loads more than 1,000 approved resources without truncation", async () => {

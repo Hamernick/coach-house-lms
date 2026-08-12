@@ -5,10 +5,13 @@ export {
   FIND_RESOURCE_INDEX_VERSION,
   paginateFindResourceIndexItems,
   parseFindResourceIndexLimit,
+  resolveFindResourceDetailItem,
+  serializeFindResourceDetailItem,
   serializeFindResourceIndexItem,
 } from "./lib"
 export type {
   FindResourceIndexAvailability,
   FindResourceIndexItem,
   FindResourceIndexResponse,
+  FindResourceDetailResponse,
 } from "./types"

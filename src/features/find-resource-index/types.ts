@@ -1,4 +1,5 @@
 import type {
+  ExternalResourceMapItem,
   PublicMapItemVisibility,
   PublicMapVerificationStatus,
 } from "@/lib/public-map/resource-map-items"
@@ -38,4 +39,9 @@ export type FindResourceIndexResponse = {
     nextCursor: string | null
     totalCount: number
   }
+}
+
+export type FindResourceDetailResponse = {
+  version: 1
+  resourceItem: ExternalResourceMapItem
 }

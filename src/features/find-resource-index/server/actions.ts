@@ -1,8 +1,14 @@
 import { unstable_cache } from "next/cache"
 
-import { fetchPublicResourceMapItems } from "@/lib/queries/resource-map-public-items"
+import {
+  fetchPublicResourceMapItemById,
+  fetchPublicResourceMapItems,
+} from "@/lib/queries/resource-map-public-items"
 
-import { serializeFindResourceIndexItem } from "../lib"
+import {
+  resolveFindResourceDetailItem,
+  serializeFindResourceIndexItem,
+} from "../lib"
 
 const fetchFindResourceIndexItemsCached = unstable_cache(
   async () => {
@@ -13,6 +19,19 @@ const fetchFindResourceIndexItemsCached = unstable_cache(
   { revalidate: 300 }
 )
 
+const fetchFindResourceDetailItemCached = unstable_cache(
+  async (id: string) => {
+    const item = await fetchPublicResourceMapItemById(id)
+    return item ? resolveFindResourceDetailItem([item], id) : null
+  },
+  ["find-resource-detail-v2"],
+  { revalidate: 300 }
+)
+
 export async function fetchFindResourceIndexItems() {
   return fetchFindResourceIndexItemsCached()
+}
+
+export async function fetchFindResourceDetailItem(id: string) {
+  return fetchFindResourceDetailItemCached(id)
 }

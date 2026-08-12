@@ -1,18 +1,14 @@
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, vi } from "vitest"
-
-vi.mock("next/font/google", () => ({
-  Inter: () => ({ className: "font-inter", variable: "--font-inter" }),
-  Sora: () => ({ className: "font-sora", variable: "--font-sora" }),
-  Space_Grotesk: () => ({ className: "font-space-grotesk", variable: "--font-space-grotesk" }),
-}))
+import { describe, expect, it } from "vitest"
 
 import { LegacyHomeAcceleratorSection } from "@/components/public/legacy-home-sections/legacy-home-accelerator-section"
 
 describe("legacy home accelerator section", () => {
   it("renders the external-facing accelerator pitch and roadmap preview", () => {
-    const markup = renderToStaticMarkup(createElement(LegacyHomeAcceleratorSection))
+    const markup = renderToStaticMarkup(
+      createElement(LegacyHomeAcceleratorSection)
+    )
 
     expect(markup).toContain("Build the strategy before you chase the funding")
     expect(markup).toContain("Inside the accelerator")

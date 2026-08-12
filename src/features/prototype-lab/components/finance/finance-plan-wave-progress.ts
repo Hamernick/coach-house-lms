@@ -143,8 +143,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Load resource details on demand while preserving selected and collected records outside current bounds",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "PR #148 merged through production commit a149d763; focused component coverage passed 51/51 for loading, empty, unavailable, offline, stale, reconnect, and retry states while retaining the map shell",
+        ],
+        state: "complete",
         title:
           "Verify loading, empty, error, offline, stale, and retry states without losing map context",
       },

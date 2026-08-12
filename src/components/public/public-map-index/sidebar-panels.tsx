@@ -15,7 +15,10 @@ import { PublicMapOrganizationList } from "./organization-list"
 import { PublicMapSearchCard } from "./search-card"
 import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapListItem } from "./map-items-state"
-import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
+import {
+  PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
+  type PublicMapResourceItemsLoadStatus,
+} from "./use-resource-map-items"
 
 export {
   PublicMapDrawerDetailPanel,
@@ -134,10 +137,12 @@ function PublicMapOrganizationsStack({
 }
 
 function PublicMapSearchResultsStatus({
+  hasStaleResourceItems,
   resourceItemsLoadStatus,
   resultCount,
   searchPending,
 }: {
+  hasStaleResourceItems: boolean
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
   resultCount: number
   searchPending: boolean
@@ -148,9 +153,11 @@ function PublicMapSearchResultsStatus({
     ? `${resultLabel} · Updating map…`
     : resourceItemsLoadStatus === "loading"
       ? resultCount > 0
-        ? `${formattedCount} available · Loading full directory…`
-        : "Loading full directory…"
-      : resultLabel
+        ? `${formattedCount} available · Loading more…`
+        : "Loading resources…"
+      : resourceItemsLoadStatus === "error" && hasStaleResourceItems
+        ? `${resultLabel} · Last loaded results`
+        : resultLabel
 
   return (
     <div
@@ -172,17 +179,24 @@ function PublicMapSearchResultsStatus({
 
 function PublicMapResourceItemsErrorNotice({
   error,
+  hasStaleResourceItems,
   onRetry,
 }: {
   error: string | null
+  hasStaleResourceItems: boolean
   onRetry: () => void
 }) {
   if (!error) return null
+  const message = hasStaleResourceItems
+    ? error === PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
+      ? "You’re offline. Showing last loaded results."
+      : "Latest results are unavailable. Showing last loaded results."
+    : error
 
   return (
     <Alert className="border-destructive/30 bg-background/45 py-2.5">
       <AlertDescription className="col-start-1 flex w-full flex-row items-center justify-between gap-3">
-        <span className="text-pretty">{error}</span>
+        <span className="text-pretty">{message}</span>
         <Button
           type="button"
           variant="ghost"
@@ -266,6 +280,9 @@ export function PublicMapRailSearchPanel({
           className="shrink-0 pb-1.5"
         >
           <PublicMapSearchResultsStatus
+            hasStaleResourceItems={items.some(
+              (item) => item.itemType === "external_resource"
+            )}
             resourceItemsLoadStatus={resourceItemsLoadStatus}
             resultCount={items.length}
             searchPending={searchPending}
@@ -280,6 +297,9 @@ export function PublicMapRailSearchPanel({
           <div className="shrink-0 pb-2">
             <PublicMapResourceItemsErrorNotice
               error={resourceItemsLoadError}
+              hasStaleResourceItems={items.some(
+                (item) => item.itemType === "external_resource"
+              )}
               onRetry={onRetryResourceItems}
             />
           </div>
@@ -368,6 +388,9 @@ export function PublicMapDrawerSearchPanel({
       </div>
       <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2")}>
         <PublicMapSearchResultsStatus
+          hasStaleResourceItems={items.some(
+            (item) => item.itemType === "external_resource"
+          )}
           resourceItemsLoadStatus={resourceItemsLoadStatus}
           resultCount={items.length}
           searchPending={searchPending}
@@ -381,6 +404,9 @@ export function PublicMapDrawerSearchPanel({
           <div className="shrink-0 pb-2">
             <PublicMapResourceItemsErrorNotice
               error={resourceItemsLoadError}
+              hasStaleResourceItems={items.some(
+                (item) => item.itemType === "external_resource"
+              )}
               onRetry={onRetryResourceItems}
             />
           </div>

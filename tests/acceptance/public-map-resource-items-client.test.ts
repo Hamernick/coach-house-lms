@@ -167,6 +167,8 @@ describe("public map resource items client", () => {
     )
 
     expect(source).toContain('window.addEventListener("focus"')
+    expect(source).toContain('window.addEventListener("offline"')
+    expect(source).toContain('window.addEventListener("online"')
     expect(source).toContain('document.addEventListener("visibilitychange"')
     expect(source).toContain("PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS")
     expect(source).not.toContain('cache: "force-cache"')

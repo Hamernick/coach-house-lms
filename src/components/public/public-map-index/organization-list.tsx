@@ -22,7 +22,10 @@ import {
 } from "./organization-list-pagination"
 import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapGroupFilterKey } from "./category-filter"
-import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
+import {
+  PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
+  type PublicMapResourceItemsLoadStatus,
+} from "./use-resource-map-items"
 
 function buildPublicMapListItems({
   items,
@@ -42,9 +45,7 @@ function PublicMapOrganizationListSkeleton() {
       role="status"
       aria-live="polite"
     >
-      <p className="text-muted-foreground px-1 text-xs">
-        Loading the full resource directory…
-      </p>
+      <p className="text-muted-foreground px-1 text-xs">Loading resources…</p>
       <div className="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-3">
         {Array.from({ length: 4 }, (_, index) => (
           <div
@@ -134,20 +135,25 @@ function PublicMapOrganizationListComponent({
     const hasSearchQuery = normalizedQuery.length > 0
     const hasCategoryFilter = activeGroup !== "all"
     const loadFailed = loadStatus === "error"
-    const title = loadFailed
-      ? "Resource directory unavailable"
-      : hasSearchQuery
-        ? `No matches for “${normalizedQuery}”`
-        : hasCategoryFilter
-          ? "No resources in this category"
-          : "No resources available"
-    const description = loadFailed
-      ? (loadError ?? "The full resource directory could not load.")
-      : hasSearchQuery
-        ? "Try a shorter term or clear the search to browse every resource."
-        : hasCategoryFilter
-          ? "Show all categories or choose another category."
-          : "Try loading the directory again."
+    const loadOffline = loadError === PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
+    const title = loadOffline
+      ? "You’re offline"
+      : loadFailed
+        ? "Resource directory unavailable"
+        : hasSearchQuery
+          ? `No matches for “${normalizedQuery}”`
+          : hasCategoryFilter
+            ? "No resources in this category"
+            : "No resources available"
+    const description = loadOffline
+      ? "Connect to the internet, then try loading the directory again."
+      : loadFailed
+        ? (loadError ?? "The resource directory could not load.")
+        : hasSearchQuery
+          ? "Try a shorter term or clear the search to browse every resource."
+          : hasCategoryFilter
+            ? "Show all categories or choose another category."
+            : "Try loading the directory again."
     const action = loadFailed
       ? onRetryLoad
         ? { label: "Try again", onClick: onRetryLoad }

@@ -199,8 +199,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Build My Map on the existing saved-organization foundation without separate Finder onboarding",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Isolated resilience implementation retains resolved collected resource cards during loading and failed refreshes, replaces false-empty states with recovery feedback, permits confirmed unpublishing after successful refresh, and passes 78 focused tests plus lint",
+        ],
+        state: "in_progress",
         title:
           "Keep collected records resolvable through loading, empty, stale, and error states",
       },

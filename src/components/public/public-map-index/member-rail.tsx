@@ -11,6 +11,7 @@ import {
 
 import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
@@ -36,6 +37,7 @@ import {
   filterPublicMapOrganizationIds,
 } from "./search-index"
 import { publicMapListItemMatchesQuery } from "./map-items-state"
+import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
   "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
@@ -50,6 +52,10 @@ type PublicMapMemberRailProps = {
   guides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
+  unresolvedCollectedResourceCount?: number
+  resourceItemsLoadStatus?: PublicMapResourceItemsLoadStatus
+  resourceItemsLoadError?: string | null
+  onRetryResourceItems?: () => void
   onActiveTabChange?: (tab: PublicMapMemberTab) => void
   onGuideSelect?: (guideId: string) => void
   onSelectOrganization: (organizationId: string) => void
@@ -119,6 +125,10 @@ export function PublicMapMemberRail({
   guides = [],
   savedOrganizations,
   savedResources = [],
+  unresolvedCollectedResourceCount = 0,
+  resourceItemsLoadStatus = "ready",
+  resourceItemsLoadError = null,
+  onRetryResourceItems,
   onActiveTabChange,
   onGuideSelect,
   onSelectOrganization,
@@ -316,12 +326,21 @@ export function PublicMapMemberRail({
               organizations={filteredSavedOrganizations}
               resources={filteredSavedResources}
               emptyTitle={
-                hasSavedFilters
+                unresolvedCollectedResourceCount > 0 && !hasSavedFilters
+                  ? resourceItemsLoadStatus === "loading"
+                    ? "Loading My Map"
+                    : "Collected resources unavailable"
+                  : hasSavedFilters
                   ? "No collected results"
                   : "Nothing collected yet"
               }
               emptyDescription={
-                hasSavedFilters
+                unresolvedCollectedResourceCount > 0 && !hasSavedFilters
+                  ? resourceItemsLoadStatus === "loading"
+                    ? "Your collected resources will appear here."
+                    : resourceItemsLoadError ??
+                      "Try again to restore your collected resources."
+                  : hasSavedFilters
                   ? "Try a different search or category filter."
                   : "Collect nonprofits and resources to keep them here."
               }
@@ -332,6 +351,31 @@ export function PublicMapMemberRail({
               onToggleCollectedResource={onToggleCollectedResource}
               removable
             />
+            {unresolvedCollectedResourceCount > 0 ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="border-border/70 bg-background/80 text-muted-foreground mx-2 flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs"
+              >
+                <span className="min-w-0 break-words">
+                  {resourceItemsLoadStatus === "loading"
+                    ? "Loading collected resources…"
+                    : resourceItemsLoadError ??
+                      "Some collected resources are temporarily unavailable."}
+                </span>
+                {resourceItemsLoadStatus === "error" && onRetryResourceItems ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-11 shrink-0"
+                    onClick={onRetryResourceItems}
+                  >
+                    Try again
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </TabsContent>
       </Tabs>

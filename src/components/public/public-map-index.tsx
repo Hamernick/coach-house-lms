@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import {
@@ -238,10 +237,11 @@ export function PublicMapIndex({
     favorites,
     organizationById,
   })
-  const { savedResources, toggleCollectedResource } =
+  const { savedResources, toggleCollectedResource, unresolvedCollectedResourceCount } =
     usePublicMapCollectedResources({
       collectedResourceIds,
       resourceItems,
+      retainMissingResources: resourceItemsLoadStatus !== "ready",
       setCollectedResourceIds,
     })
   const authAction = searchParams.get("auth_action")
@@ -414,6 +414,7 @@ export function PublicMapIndex({
       guides={resourceGuides}
       savedOrganizations={savedOrganizations}
       savedResources={savedResources}
+      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
       query={query}
       activeGroup={activeGroup}
       groupCounts={groupCounts}

@@ -38,6 +38,7 @@ export type PublicMapSidebarProps = {
   guides?: PublicMapResourceGuide[]
   savedOrganizations?: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
+  unresolvedCollectedResourceCount?: number
   query: string
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts

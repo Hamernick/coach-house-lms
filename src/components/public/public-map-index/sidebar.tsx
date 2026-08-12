@@ -101,6 +101,7 @@ export function PublicMapSidebar({
   guides = [],
   savedOrganizations = [],
   savedResources = [],
+  unresolvedCollectedResourceCount = 0,
   query,
   activeGroup,
   groupCounts,
@@ -136,20 +137,17 @@ export function PublicMapSidebar({
     () => buildPublicMapDrawerSnapPoints(surfaceHeight),
     [surfaceHeight]
   )
-  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(0)
-  const [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
+  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(0), [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
   const activeSnapPoint = snapPoints[activeSnapIndex]
   const drawerIsFullscreen = activeSnapIndex === 2
   const drawerViewportHeight = drawerIsFullscreen
     ? "calc(100% - 1.625rem)"
     : `calc(${activeSnapPoint} - 1.625rem)`
-
   useEffect(() => {
     if (compact && sidebarMode === "hidden") {
       setSidebarMode("search")
     }
   }, [compact, setSidebarMode, sidebarMode])
-
   useEffect(() => {
     if (panelPresentation !== "drawer") return
     if (!panelOpen) {
@@ -252,6 +250,8 @@ export function PublicMapSidebar({
       guides={guides}
       savedOrganizations={savedOrganizations}
       savedResources={savedResources}
+      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount} onRetryResourceItems={retryResourceItems}
+      resourceItemsLoadStatus={resourceItemsLoadStatus} resourceItemsLoadError={resourceItemsLoadError}
       onGuideSelect={onGuideSelect}
       onSelectOrganization={onSelectOrganization}
       onSelectResource={onSelectItem}
@@ -313,6 +313,8 @@ export function PublicMapSidebar({
       guides={guides}
       savedOrganizations={savedOrganizations}
       savedResources={savedResources}
+      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount} onRetryResourceItems={retryResourceItems}
+      resourceItemsLoadStatus={resourceItemsLoadStatus} resourceItemsLoadError={resourceItemsLoadError}
       onActiveTabChange={handleDrawerTabChange}
       onGuideSelect={handleDrawerGuideSelect}
       onSelectOrganization={handleDrawerOrganizationSelect}

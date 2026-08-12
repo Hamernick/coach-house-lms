@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT,
+  FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_VERSION,
+  paginateFindResourceIndexItems,
+  parseFindResourceIndexLimit,
   serializeFindResourceIndexItem,
 } from "@/features/find-resource-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
@@ -79,7 +83,7 @@ describe("find resource index feature contract", () => {
   it("serializes only fields needed to place, filter, and identify resources", () => {
     const serialized = serializeFindResourceIndexItem(buildResourceItem())
 
-    expect(FIND_RESOURCE_INDEX_VERSION).toBe(1)
+    expect(FIND_RESOURCE_INDEX_VERSION).toBe(2)
     expect(serialized).toEqual({
       id: "resource_map:service-food-1",
       itemType: "external_resource",
@@ -150,5 +154,73 @@ describe("find resource index feature contract", () => {
     expect(serializeFindResourceIndexItem(item)).not.toHaveProperty(
       "availability"
     )
+  })
+
+  it("validates bounded page limits", () => {
+    expect(parseFindResourceIndexLimit(null)).toBe(
+      FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT
+    )
+    expect(parseFindResourceIndexLimit("1")).toBe(1)
+    expect(parseFindResourceIndexLimit("500")).toBe(
+      FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT
+    )
+    expect(parseFindResourceIndexLimit("0")).toBeNull()
+    expect(parseFindResourceIndexLimit("501")).toBeNull()
+    expect(parseFindResourceIndexLimit("2.5")).toBeNull()
+  })
+
+  it("returns deterministic cursor pages without duplicates", () => {
+    const item = serializeFindResourceIndexItem(buildResourceItem())
+    const items = ["resource:c", "resource:a", "resource:b"].map((id) => ({
+      ...item,
+      id,
+    }))
+
+    const firstPage = paginateFindResourceIndexItems({
+      cursor: null,
+      items,
+      limit: 2,
+    })
+    const secondPage = paginateFindResourceIndexItems({
+      cursor: firstPage.page.nextCursor,
+      items,
+      limit: 2,
+    })
+
+    expect(firstPage).toMatchObject({
+      version: 2,
+      resourceItems: [{ id: "resource:a" }, { id: "resource:b" }],
+      page: {
+        hasMore: true,
+        limit: 2,
+        nextCursor: "resource:b",
+        totalCount: 3,
+      },
+    })
+    expect(secondPage).toMatchObject({
+      resourceItems: [{ id: "resource:c" }],
+      page: {
+        hasMore: false,
+        nextCursor: null,
+        totalCount: 3,
+      },
+    })
+  })
+
+  it("resumes after a cursor that disappeared during refresh", () => {
+    const item = serializeFindResourceIndexItem(buildResourceItem())
+    const page = paginateFindResourceIndexItems({
+      cursor: "resource:b",
+      items: ["resource:a", "resource:c", "resource:d"].map((id) => ({
+        ...item,
+        id,
+      })),
+      limit: 2,
+    })
+
+    expect(page.resourceItems.map(({ id }) => id)).toEqual([
+      "resource:c",
+      "resource:d",
+    ])
   })
 })

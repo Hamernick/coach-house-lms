@@ -14,6 +14,11 @@
 - Keep `server/**` free of UI/component imports.
 - Keep the index transport compact and public-safe. Detail-only fields belong to
   the separate resource detail contract.
+- Bump the response version whenever paging semantics change.
+- Keep pages deterministically ordered by public item ID. Use the returned
+  cursor instead of numeric offsets so cached refreshes do not skip records.
+- Share one five-minute server snapshot across page URLs so traversal does not
+  repeat the complete public resource query for every page.
 - Keep the existing full-item endpoint unchanged until detail-on-demand is
   available.
 - Keep acceptance coverage in `tests/acceptance/find-resource-index.test.ts`.

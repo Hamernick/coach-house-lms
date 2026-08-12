@@ -100,6 +100,10 @@ describe("legal consent", () => {
       "src/components/auth/sign-up-form.tsx",
       "utf8"
     )
+    const legalDocumentPage = readFileSync(
+      "src/features/legal-consent/components/legal-document-page.tsx",
+      "utf8"
+    )
     const consentPanel = readFileSync(
       "src/features/legal-consent/components/legal-consent-panel.tsx",
       "utf8"
@@ -108,6 +112,10 @@ describe("legal consent", () => {
     expect(privacyPage).toContain('canonical: "/privacy"')
     expect(termsPage).toContain("TERMS_DOCUMENT")
     expect(termsPage).toContain('canonical: "/terms"')
+    expect(legalDocumentPage).toContain('data-legal-document-canvas=""')
+    expect(legalDocumentPage).toContain("rounded-[28px]")
+    expect(legalDocumentPage).not.toContain("PublicHeader")
+    expect(legalDocumentPage).not.toContain("PublicThemeToggle")
     expect(signUpForm).toContain("LegalConsentField")
     expect(consentPanel).toContain('href="/terms"')
     expect(consentPanel).toContain('href="/privacy"')

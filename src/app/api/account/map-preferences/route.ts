@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 type MapPreferences = {
+  collectedResourceIds: string[]
   favorites: string[]
   savedQueries: string[]
   recentOrganizationIds: string[]
@@ -28,6 +29,10 @@ function normalizeStringArray(value: unknown, limit = 80) {
 function parseMapPreferences(metadata: unknown): MapPreferences {
   const mapPreferences = isRecord(metadata) && isRecord(metadata.map_preferences) ? metadata.map_preferences : {}
   return {
+    collectedResourceIds: normalizeStringArray(
+      mapPreferences.collectedResourceIds,
+      120,
+    ),
     favorites: normalizeStringArray(mapPreferences.favorites, 120),
     savedQueries: normalizeStringArray(mapPreferences.savedQueries, 40),
     recentOrganizationIds: normalizeStringArray(
@@ -80,6 +85,10 @@ export async function PATCH(request: NextRequest) {
   const current = parseMapPreferences(user.user_metadata ?? {})
 
   const next: MapPreferences = {
+    collectedResourceIds:
+      "collectedResourceIds" in payloadRecord
+        ? normalizeStringArray(payloadRecord.collectedResourceIds, 120)
+        : current.collectedResourceIds,
     favorites:
       "favorites" in payloadRecord
         ? normalizeStringArray(payloadRecord.favorites, 120)

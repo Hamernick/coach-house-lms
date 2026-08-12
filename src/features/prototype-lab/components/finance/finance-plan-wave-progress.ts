@@ -83,15 +83,15 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(2, [
       {
         evidence: [
-          "PR #156 provides current product-specific documents, canonical routes, and required acceptance; legal review is complete",
+          "PR #156 merged as 9cacf375; both production projects deployed canonical version 2026-08-12.1 pages and the 43-test signup matrix proves required acceptance across direct and contextual entry surfaces",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Provide canonical Terms and Privacy pages with required acceptance on every signup surface",
       },
       {
         evidence: [
-          "PR #156 binds signup to version 2026-08-12.1 and exact SHA-256 hashes; connected migration proof and production remain pending",
+          "Migration 20260811160000 is applied in production; the table exists with zero rows, public-schema lint passes, and anonymous reads return 401; one controlled signup record remains",
         ],
         state: "in_progress",
         title:
@@ -113,8 +113,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
         title: "Obtain qualified legal approval for Terms and Privacy copy",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "PR #156, main CI, both production deployments, canonical route probes, migration parity, schema lint, and anonymous denial pass; controlled signup smoke and tested rollback remain",
+        ],
+        state: "in_progress",
         title:
           "Merge, deploy, production-smoke, monitor, and retain a tested signup rollback",
       },

@@ -1,11 +1,4 @@
-import { Sora } from "next/font/google"
-
-export const legacyHomeHeadingFont = Sora({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-heading",
-  preload: false,
-})
+export const legacyHomeHeadingFont = { className: "font-heading" } as const
 
 export const legacyHomeInterFont = { className: "font-sans" } as const
 

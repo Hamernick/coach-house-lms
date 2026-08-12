@@ -1,12 +1,6 @@
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, vi } from "vitest"
-
-vi.mock("next/font/google", () => ({
-  Inter: () => ({ className: "font-inter", variable: "--font-inter" }),
-  Sora: () => ({ className: "font-sora", variable: "--font-sora" }),
-  Space_Grotesk: () => ({ className: "font-space-grotesk", variable: "--font-space-grotesk" }),
-}))
+import { describe, expect, it } from "vitest"
 
 import { LegacyHomeHeroSection } from "@/components/public/legacy-home-sections/legacy-home-hero-section"
 

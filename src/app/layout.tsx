@@ -1,22 +1,15 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import "@fontsource-variable/inter/wght.css"
+import "@fontsource-variable/jetbrains-mono/wght.css"
 import "./globals.css"
 
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { JetBrains_Mono } from "next/font/google"
 
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
 import { AppProviders } from "@/components/providers/app-providers"
 import { getLocale } from "@/lib/locale.server"
-
-const geistMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: "swap",
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: {
@@ -55,9 +48,7 @@ export default async function RootLayout({
   return (
     <html lang={language} suppressHydrationWarning>
       <head />
-      <body
-        className={`${geistMono.variable} bg-background min-h-screen font-sans antialiased`}
-      >
+      <body className="bg-background min-h-screen font-sans antialiased">
         <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
         <Analytics />

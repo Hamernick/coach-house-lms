@@ -1,12 +1,9 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
-vi.mock("next/font/google", () => ({
-  Inter: () => ({ className: "font-inter", variable: "--font-inter" }),
-  Sora: () => ({ className: "font-sora", variable: "--font-sora" }),
-  Space_Grotesk: () => ({ className: "font-space-grotesk", variable: "--font-space-grotesk" }),
-}))
-
-import { parseInitialSection, resolveSectionAlias } from "@/components/public/home-canvas-preview-config"
+import {
+  parseInitialSection,
+  resolveSectionAlias,
+} from "@/components/public/home-canvas-preview-config"
 
 describe("home-canvas section id migration", () => {
   it("uses platform as the canonical section id", () => {

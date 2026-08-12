@@ -36,7 +36,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-1-live-stability",
     sequence: 1,
-    status: "active",
+    status: "production_verified",
     title: "Live stability and existing work close",
     criteria: defineCriteria(1, [
       {
@@ -67,9 +67,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "PRs #137 and #138 merged; authenticated production Workspace smoke remains",
+          "PRs #137 and #138 merged; authenticated production Workspace save, refresh, role-journey, and restoration proof passed",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Complete revision-aware Workspace save smoke and the paid, free, member, coach, and admin journey matrix",
       },

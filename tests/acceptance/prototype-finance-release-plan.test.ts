@@ -1168,25 +1168,25 @@ describe("finance release planning graph", () => {
       Array(7).fill(5)
     )
     expect(FINANCE_PLAN_WAVES.map((wave) => wave.status)).toEqual([
-      "active",
+      "production_verified",
       "active",
       ...Array(5).fill("queued"),
     ])
     expect(FINANCE_PLAN_WAVE_STATUS_COUNTS).toEqual({
-      active: 2,
+      active: 1,
       codeComplete: 0,
       previewVerified: 0,
-      productionVerified: 0,
+      productionVerified: 1,
       queued: 5,
       total: 7,
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
-      complete: 4,
-      inProgress: 3,
+      complete: 5,
+      inProgress: 2,
       notStarted: 28,
       total: 35,
     })
-    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(11)
+    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(14)
     expect(sourceCriteria).toHaveLength(35)
     expect(sourceCriteria.map((criterion) => criterion.id)).toEqual(
       trackedCriteria.map((criterion) => criterion.id)
@@ -1202,8 +1202,8 @@ describe("finance release planning graph", () => {
     expect(sourceCriteria.map((criterion) => criterion.checked)).toEqual(
       trackedCriteria.map((criterion) => criterion.state === "complete")
     )
-    expect(FINANCE_PLAN_CURRENT_WAVE.id).toBe("wave-1-live-stability")
-    expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-1-criterion-5")
+    expect(FINANCE_PLAN_CURRENT_WAVE.id).toBe("wave-2-signup-legal")
+    expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-2-criterion-1")
   })
 
   it("preserves all seven historical batches and 37 scope items", () => {
@@ -1275,15 +1275,15 @@ describe("finance release planning graph", () => {
       roadmapNodes.find((node) => node.id === nodeId)?.data
 
     expect(FINANCE_PLAN_CURRENT_FOCUS).toMatchObject({
-      complete: 4,
-      percentage: 11,
-      remaining: 31,
+      complete: 5,
+      percentage: 14,
+      remaining: 30,
       total: 35,
-      waveId: "wave-1-live-stability",
-      waveLabel: "Wave 1: Live stability and existing work close",
+      waveId: "wave-2-signup-legal",
+      waveLabel: "Wave 2: Signup, recovery, and legal",
     })
     expect(FINANCE_PLAN_CURRENT_FOCUS.nextStep).toContain(
-      "Complete revision-aware Workspace save smoke"
+      "Provide canonical Terms and Privacy pages"
     )
     expect(
       getFinancePlanNodeStatusTone(

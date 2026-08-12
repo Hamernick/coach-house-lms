@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 
 import {
   FIND_RESOURCE_INDEX_CACHE_CONTROL,
-  paginateFindResourceIndexItems,
+  FIND_RESOURCE_INDEX_VERSION,
+  parseFindResourceIndexCursor,
   parseFindResourceIndexLimit,
 } from "@/features/find-resource-index"
-import { fetchFindResourceIndexItems } from "../../../../../features/find-resource-index/server/actions"
+import { fetchFindResourceIndexPage } from "../../../../../features/find-resource-index/server/actions"
 
 export const revalidate = 300
 
@@ -19,13 +20,26 @@ export async function GET(request: Request) {
     )
   }
 
-  const cursor = searchParams.get("cursor")?.trim() || null
-  const resourceItems = await fetchFindResourceIndexItems()
-  const payload = paginateFindResourceIndexItems({
+  const cursor = parseFindResourceIndexCursor(searchParams.get("cursor"))
+  if (cursor === undefined) {
+    return NextResponse.json({ error: "invalid cursor" }, { status: 400 })
+  }
+  const page = await fetchFindResourceIndexPage({
     cursor,
-    items: resourceItems,
     limit,
   })
+  const hasMore = page.items.length > limit
+  const resourceItems = page.items.slice(0, limit)
+  const payload = {
+    version: FIND_RESOURCE_INDEX_VERSION,
+    resourceItems,
+    page: {
+      hasMore,
+      limit,
+      nextCursor: hasMore ? (resourceItems.at(-1)?.id ?? null) : null,
+      totalCount: page.totalCount,
+    },
+  }
 
   return NextResponse.json(payload, {
     headers: {

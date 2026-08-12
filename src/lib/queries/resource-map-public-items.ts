@@ -20,6 +20,11 @@ export type FetchPublicResourceMapItemsOptions = {
   limit?: number
 }
 
+export type FetchPublicResourceMapItemsPageResult = {
+  items: ExternalResourceMapItem[]
+  totalCount: number
+}
+
 export const DEFAULT_RESOURCE_MAP_LOCAL_PREVIEW_LIMIT = 10000
 export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000
 export const RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500
@@ -314,4 +319,74 @@ export async function fetchPublicResourceMapItemById(
 
   const item = buildExternalResourceMapItemFromPublicRow(data)
   return item && shouldShowPublicMapResourceItem(item) ? item : null
+}
+
+export async function fetchPublicResourceMapItemsPageById({
+  cursor,
+  limit,
+  options = {},
+}: {
+  cursor: string | null
+  limit: number
+  options?: FetchPublicResourceMapItemsOptions
+}): Promise<FetchPublicResourceMapItemsPageResult> {
+  const localPreviewFile = normalizeLocalPreviewFile(
+    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+  )
+  const localEnginePreviewFile = normalizeLocalPreviewFile(
+    options.localEnginePreviewFile
+  )
+  if (
+    localPreviewFile ||
+    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+  ) {
+    const items = (await fetchPublicResourceMapItems(options)).sort(
+      (left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
+    )
+    const startIndex = cursor ? items.findIndex((item) => item.id > cursor) : 0
+    return {
+      items:
+        startIndex === -1
+          ? []
+          : items.slice(startIndex, startIndex + limit + 1),
+      totalCount: items.length,
+    }
+  }
+
+  const enabled = options.enabled ?? isResourceMapPublicDbEnabled()
+  if (!enabled) return { items: [], totalCount: 0 }
+
+  const supabase = createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } }
+  )
+  let query = supabase
+    .from("resource_map_public_items")
+    .select("*", { count: "exact" })
+    .order("item_id", { ascending: true })
+    .limit(limit + 1)
+  if (cursor?.startsWith("resource_map:")) {
+    const itemId = cursor.slice("resource_map:".length)
+    if (RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN.test(itemId)) {
+      query = query.gt("item_id", itemId)
+    }
+  }
+
+  const { data, error, count } = await query
+  if (error || !data) {
+    console.warn("[resource-map] public item page unavailable", {
+      code: error?.code,
+      message: error?.message,
+    })
+    return { items: [], totalCount: 0 }
+  }
+
+  return {
+    items: data
+      .map(buildExternalResourceMapItemFromPublicRow)
+      .filter((item): item is ExternalResourceMapItem => item !== null)
+      .filter(shouldShowPublicMapResourceItem),
+    totalCount: count ?? data.length,
+  }
 }

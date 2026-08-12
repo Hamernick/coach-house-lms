@@ -8,6 +8,8 @@ export const FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT = 200
 export const FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT = 500
 export const FIND_RESOURCE_INDEX_CACHE_CONTROL =
   "public, s-maxage=300, stale-while-revalidate=600"
+const FIND_RESOURCE_INDEX_CURSOR_PATTERN =
+  /^(?:resource_map:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|local_resource_map:.+)$/i
 
 export function parseFindResourceIndexLimit(value: string | null) {
   if (value === null) return FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT
@@ -16,6 +18,14 @@ export function parseFindResourceIndexLimit(value: string | null) {
   const limit = Number(value)
   if (limit < 1 || limit > FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT) return null
   return limit
+}
+
+export function parseFindResourceIndexCursor(value: string | null) {
+  if (value === null || value.trim() === "") return null
+  const cursor = value.trim()
+  return cursor.length <= 256 && FIND_RESOURCE_INDEX_CURSOR_PATTERN.test(cursor)
+    ? cursor
+    : undefined
 }
 
 export function paginateFindResourceIndexItems({

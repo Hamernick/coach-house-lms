@@ -71,6 +71,7 @@ import {
   EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
   usePublicMapResourceItems,
 } from "./public-map-index/use-resource-map-items"
+import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
 import { usePublicMapUserLocation } from "./public-map-index/use-public-map-user-location"
 
 function useFocusPublicMapCameraTarget(
@@ -220,11 +221,16 @@ export function PublicMapIndex({
     organizationById,
     selectedOrgId,
   })
-  const selectedResourceItem = useMemo((): ExternalResourceMapItem | null => {
-    if (!selectedListItemId) return null
-    const item = selectableMapItemById.get(selectedListItemId)
-    return item?.itemType === "external_resource" ? item : null
-  }, [selectableMapItemById, selectedListItemId])
+  const selectedResourceIndexItem =
+    useMemo((): ExternalResourceMapItem | null => {
+      if (!selectedListItemId) return null
+      const item = selectableMapItemById.get(selectedListItemId)
+      return item?.itemType === "external_resource" ? item : null
+    }, [selectableMapItemById, selectedListItemId])
+  const selectedResourceItem = usePublicMapResourceItemDetail(
+    selectedResourceIndexItem,
+    resourceItemsEndpoint?.startsWith("/api/public/resource-map/index") ?? false
+  )
   const savedOrganizations = usePublicMapSavedOrganizations({
     favorites,
     organizationById,

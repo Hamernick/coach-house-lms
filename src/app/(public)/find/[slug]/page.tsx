@@ -15,7 +15,8 @@ import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
 import { completeMemberMapOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 
-const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT = "/api/public/resource-map/items"
+const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT =
+  "/api/public/resource-map/index?limit=200"
 
 export const revalidate = 300
 

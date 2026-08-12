@@ -128,7 +128,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Stacked branch feat/find-bounded-loading-20260811 returns all 853 records once across five stable cursor pages; page one is 97,986 bytes and cached pages 2-5 complete in 25-38 ms locally; the client is unchanged",
+          "Stacked branch feat/find-compact-client-20260811 queries at most 201 sanitized rows per request, returns all 853 records once across five stable cursor pages, and progressively publishes each page to Find; production proof remains open",
         ],
         state: "in_progress",
         title:
@@ -136,7 +136,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Stacked branch feat/find-detail-on-demand-20260811 returns a 2,783-byte sanitized detail by exact public ID, rejects malformed IDs, returns 404 for missing records, and repeats from cache in 46 ms locally; client selection and collection adoption remain open",
+          "Stacked branch feat/find-compact-client-20260811 fetches the 2,783-byte sanitized detail only after selection and preserves later-page selections during progressive refresh until final reconciliation; production proof remains open",
         ],
         state: "in_progress",
         title:

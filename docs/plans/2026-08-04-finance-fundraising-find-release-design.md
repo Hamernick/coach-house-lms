@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **8/35 complete (23%)**, **2 in progress**, and
-**25 not started**.
+revision. Current progress: **9/35 complete (26%)**, **2 in progress**, and
+**24 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -158,7 +158,7 @@ revision. Current progress: **8/35 complete (23%)**, **2 in progress**, and
 - [x] `wave-3-criterion-1` **Complete:** Serve a compact anonymous resource index without private or detail-only fields — Evidence: PRs #143-#146 merged through production commit `648b0885`; the live anonymous index returned all 853 records in compact responses of 25,990-97,986 bytes.
 - [x] `wave-3-criterion-2` **Complete:** Add bounded or paginated loading with stable cached refresh behavior — Evidence: production returned all 853 unique records exactly once across five stable cursor pages of 200/200/200/200/53 records, and `/find` visibly progressed from 618 to 871 combined results without losing its map or directory context.
 - [x] `wave-3-criterion-3` **Complete:** Load resource details on demand while preserving selected and collected records outside current bounds — Evidence: the live exact-item endpoint returned the selected index ID in a 2,783-byte sanitized response; focused selection/refresh coverage proves later-page records remain resolvable during progressive reconciliation.
-- [ ] `wave-3-criterion-4` **Not started:** Verify loading, empty, error, offline, stale, and retry states without losing map context.
+- [x] `wave-3-criterion-4` **Complete:** Verify loading, empty, error, offline, stale, and retry states without losing map context — Evidence: PR #148 merged through production commit `a149d763`; focused component coverage passed 51/51 for progressive loading, filtered and unfiltered empty states, unavailable and offline recovery, stale-result preservation, reconnect revalidation, and manual retry while retaining the map shell.
 - [ ] `wave-3-criterion-5` **Not started:** Meet payload, first-useful-render, LCP, and interaction budgets in preview and production.
 
 **Wave 4 — Collect and My Map completion**

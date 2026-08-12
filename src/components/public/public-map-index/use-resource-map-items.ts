@@ -20,6 +20,7 @@ type ResourceItemsLoad = {
 }
 
 const resourceItemsLoadByEndpoint = new Map<string, ResourceItemsLoad>()
+const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 200
 
 type FindResourceIndexPage = {
   hasMore?: unknown
@@ -138,7 +139,6 @@ export function loadPublicMapResourceItems(
         resourceItems.push(
           ...payload.resourceItems.map(normalizeLoadedResourceItem)
         )
-        for (const listener of listeners) listener([...resourceItems])
       }
 
       const nextCursor = payload.page?.nextCursor
@@ -149,6 +149,14 @@ export function loadPublicMapResourceItems(
       pageCount += 1
       if (pageCount > 100) {
         throw new Error("Resource map items exceeded the page limit")
+      }
+
+      const shouldPublishProgress =
+        pageCount === 1 ||
+        pageEndpoint === null ||
+        resourceItems.length % RESOURCE_ITEMS_PROGRESS_BATCH_SIZE === 0
+      if (shouldPublishProgress) {
+        for (const listener of listeners) listener([...resourceItems])
       }
     }
 

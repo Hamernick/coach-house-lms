@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 
-import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
-import { PricingSurface } from "@/components/public/pricing-surface"
+import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
 import { PublicMapIndex } from "@/components/public/public-map-index"
 import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import {
@@ -15,7 +14,7 @@ import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-la
 import { completeMemberMapOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 
 const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT =
-  "/api/public/resource-map/index?limit=200"
+  "/api/public/resource-map/index?limit=50"
 
 export const metadata: Metadata = {
   title: "Find organizations",
@@ -102,19 +101,15 @@ export default async function PublicFindPage() {
   }
 
   return (
-    <HomeCanvasPreview
-      initialSection="find"
-      pricingPanel={<PricingSurface embedded />}
-      findPanel={
-        <div className="relative h-full">
-          <PublicMapIndex
-            organizations={organizations}
-            resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
-            mapboxToken={publicToken}
-            viewer={viewerState.viewer}
-          />
-        </div>
-      }
-    />
+    <HomeCanvasFindShell>
+      <div className="relative h-full">
+        <PublicMapIndex
+          organizations={organizations}
+          resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
+          mapboxToken={publicToken}
+          viewer={viewerState.viewer}
+        />
+      </div>
+    </HomeCanvasFindShell>
   )
 }

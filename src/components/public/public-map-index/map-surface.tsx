@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import {
   useEffect,
   useLayoutEffect,
@@ -14,7 +15,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"
-import { PublicMapAuthSheet } from "./auth-sheet"
 import { resolvePublicMapSurfacePanelState } from "./map-surface-helpers"
 import {
   PublicMapLocationControl,
@@ -35,6 +35,10 @@ import type {
 } from "./category-filter"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
+
+const PublicMapAuthSheet = dynamic(() =>
+  import("./auth-sheet").then((module) => module.PublicMapAuthSheet)
+)
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -293,11 +297,13 @@ export function PublicMapSurface({
         </div>
       ) : null}
 
-      <PublicMapAuthSheet
-        open={authSheetOpen}
-        onOpenChange={onAuthSheetOpenChange}
-        redirectTo={authRedirectTo}
-      />
+      {authSheetOpen ? (
+        <PublicMapAuthSheet
+          open
+          onOpenChange={onAuthSheetOpenChange}
+          redirectTo={authRedirectTo}
+        />
+      ) : null}
     </div>
   )
 }

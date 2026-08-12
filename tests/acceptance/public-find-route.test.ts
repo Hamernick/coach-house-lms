@@ -532,7 +532,7 @@ describe("public find routes", () => {
     expect(sidebarPanelsSource).toContain(
       'data-public-map-search-results-status="true"'
     )
-    expect(sidebarPanelsSource).toContain("Loading full directory…")
+    expect(sidebarPanelsSource).toContain("Loading resources…")
     expect(organizationListSource).toContain(
       'data-public-map-search-loading="true"'
     )

@@ -16,6 +16,7 @@ import {
   PublicMapResourceDrawerDetailPanel,
 } from "@/components/public/public-map-index/sidebar-panels"
 import { resolvePublicMapResourceCategoryIcon } from "@/components/public/public-map-index/resource-category-icon"
+import { PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR } from "@/components/public/public-map-index/use-resource-map-items"
 import { resolveResourceIdentityTitle } from "@/components/public/public-map-index/resource-detail-primary-sections"
 import {
   filterPublicMapSavedOrganizations,
@@ -1726,15 +1727,52 @@ describe("public map sidebar layout", () => {
         loadError: "The full resource directory could not load.",
       })
     )
+    const offlineMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        ...baseProps,
+        query: "",
+        loadStatus: "error",
+        loadError: PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
+      })
+    )
 
     expect(loadingMarkup).toContain('data-public-map-search-loading="true"')
-    expect(loadingMarkup).toContain("Loading the full resource directory")
+    expect(loadingMarkup).toContain("Loading resources")
     expect(loadingMarkup.match(/data-slot="skeleton"/g)).toHaveLength(16)
     expect(emptyMarkup).toContain('data-public-map-search-empty="true"')
     expect(emptyMarkup).toContain("No matches for")
     expect(emptyMarkup).toContain("Clear search")
     expect(errorMarkup).toContain("Resource directory unavailable")
     expect(errorMarkup).toContain("Try again")
+    expect(offlineMarkup).toContain("You’re offline")
+    expect(offlineMarkup).toContain("Connect to the internet")
+  })
+
+  it("keeps stale results visible through offline recovery", () => {
+    const resource = buildResourceItem()
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapDrawerSearchPanel, {
+        query: "",
+        items: [resource],
+        organizations: [],
+        selectedItemId: null,
+        selectedOrgId: null,
+        activeGroup: "all",
+        groupCounts: buildPublicMapGroupFilterCounts([resource]),
+        resourceItemsLoadStatus: "error",
+        resourceItemsLoadError: PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
+        onQueryChange: () => {},
+        onActiveGroupChange: () => {},
+        onSelectItem: () => {},
+        onOpenDetails: () => {},
+        onRetryResourceItems: () => {},
+      })
+    )
+
+    expect(markup).toContain("Last loaded results")
+    expect(markup).toContain("Showing last loaded results")
+    expect(markup).toContain(resource.title)
+    expect(markup).toContain("Try again")
   })
 
   it("hides raw data API endpoints from public resource detail links", () => {

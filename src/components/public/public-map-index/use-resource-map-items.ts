@@ -8,6 +8,10 @@ import { warmPublicMapListItemSearchCache } from "./map-items-state"
 
 export const EMPTY_PUBLIC_MAP_RESOURCE_ITEMS: ExternalResourceMapItem[] = []
 export const PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+export const PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR =
+  "You’re offline. Connect to the internet and try again."
+export const PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR =
+  "The resource directory could not load."
 export type PublicMapResourceItemsLoadStatus = "loading" | "ready" | "error"
 
 type ResourceItemsLoad = {
@@ -207,7 +211,11 @@ export function usePublicMapResourceItems({
       } catch (error) {
         if (cancelled) return
         setStatus("error")
-        setError("The full resource directory could not load.")
+        setError(
+          navigator.onLine === false
+            ? PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
+            : PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR
+        )
         console.warn("[public-map] resource items unavailable", {
           message: error instanceof Error ? error.message : String(error),
         })
@@ -217,19 +225,36 @@ export function usePublicMapResourceItems({
     void loadResourceItems()
     const refreshVisibleResourceItems = () => {
       if (document.visibilityState === "hidden") return
+      if (navigator.onLine === false) {
+        setStatus("error")
+        setError(PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR)
+        return
+      }
       void loadResourceItems()
+    }
+    const markResourceItemsOffline = () => {
+      setStatus("error")
+      setError(PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR)
+    }
+    const refreshResourceItemsOnline = () => {
+      clearPublicMapResourceItemsCache(endpoint)
+      setLoadRequestId((current) => current + 1)
     }
     const refreshInterval = window.setInterval(
       refreshVisibleResourceItems,
       PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS
     )
     window.addEventListener("focus", refreshVisibleResourceItems)
+    window.addEventListener("offline", markResourceItemsOffline)
+    window.addEventListener("online", refreshResourceItemsOnline)
     document.addEventListener("visibilitychange", refreshVisibleResourceItems)
 
     return () => {
       cancelled = true
       window.clearInterval(refreshInterval)
       window.removeEventListener("focus", refreshVisibleResourceItems)
+      window.removeEventListener("offline", markResourceItemsOffline)
+      window.removeEventListener("online", refreshResourceItemsOnline)
       document.removeEventListener(
         "visibilitychange",
         refreshVisibleResourceItems

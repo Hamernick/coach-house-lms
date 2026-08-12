@@ -124,7 +124,7 @@ wave, but unrelated scope does not accumulate in one PR.
 | ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 1. Live stability and existing work close | Production verified  | Verify the existing Builder, Workspace, Documents, Finance, organization, role, deep-link, light-mode, mobile, stale-data, and error paths; fix only real gaps | Free/paid/member/coach/admin browser proof; refresh and cross-account isolation; no data loss, console errors, contrast failures, or broken routes | Disable or revert the narrow failed surface; preserve all stored data                      |
 | 2. Signup, recovery, and legal            | Active               | Direct and contextual signup, verification, login, recovery, Terms, Privacy, required acceptance, and safe return intent                                       | Every signup surface works; consent version/hash/UTC is stored; denial and retry work; legal text is approved                                      | Disable new signup while preserving accounts and consent evidence                          |
-| 3. `/find` speed and loading              | Queued               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
+| 3. `/find` speed and loading              | Active               | Compact index, bounded or paginated loading, detail on demand, stable cached refresh, current loading UI, empty/error/retry states, and collected-item lookup  | Fast first useful render; payload/LCP/TTI budgets; complete results; offline/stale/retry proof                                                     | Restore the prior compatible endpoint; retain published records                            |
 | 4. Collect / My Map completion            | Queued, partly built | Reuse the existing saved-organization foundation; rename the experience, collect/uncollect nonprofits and resources, show them in My Map, and persist them     | Visitors can collect locally; signed-in accounts persist across devices; Builders have the same My Map; no lists, notes, tags, ordering, or import | Disable new resource collection writes; preserve existing saved organizations              |
 | 5. Finance reporting completion           | Queued, partly built | Read-only external activity connection, simple graph, activity list, History, source/freshness labels, CSV/PDF export, and board sharing                       | Connected/loading/empty/stale/error states; graph has a text equivalent; reports reconcile; sharing is explicit and revocable                      | Disable sync or reporting entry points; retain read-only records and existing CSV fallback |
 | 6. Qualified resources and varied guides  | Queued               | Promote verified cohorts toward 5,000+ useful records, then publish category- and location-varied guides after `/find` is stable                               | Exact complete/verified/publishable/promoted/public parity; cohort canary; relevant current guides and working links                               | Unpublish a cohort or guide without deleting evidence                                      |
@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **5/35 complete (14%)**, **2 in progress**, and
-**28 not started**.
+revision. Current progress: **5/35 complete (14%)**, **3 in progress**, and
+**27 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -155,7 +155,7 @@ revision. Current progress: **5/35 complete (14%)**, **2 in progress**, and
 
 **Wave 3 — `/find` speed and loading**
 
-- [ ] `wave-3-criterion-1` **Not started:** Serve a compact anonymous resource index without private or detail-only fields.
+- [ ] `wave-3-criterion-1` **In progress:** Serve a compact anonymous resource index without private or detail-only fields — Evidence: branch `feat/find-compact-index-20260811` serves the full 853-record production dataset through a 415,659-byte local index response, down 83.5% from 2,519,680 bytes; production is unchanged.
 - [ ] `wave-3-criterion-2` **Not started:** Add bounded or paginated loading with stable cached refresh behavior.
 - [ ] `wave-3-criterion-3` **Not started:** Load resource details on demand while preserving selected and collected records outside current bounds.
 - [ ] `wave-3-criterion-4` **Not started:** Verify loading, empty, error, offline, stale, and retry states without losing map context.

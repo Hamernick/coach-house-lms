@@ -134,7 +134,7 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **5/35 complete (14%)**, **5 in progress**, and
+revision. Current progress: **8/35 complete (23%)**, **2 in progress**, and
 **25 not started**.
 
 **Wave 1 — Live stability and existing work close**
@@ -155,9 +155,9 @@ revision. Current progress: **5/35 complete (14%)**, **5 in progress**, and
 
 **Wave 3 — `/find` speed and loading**
 
-- [ ] `wave-3-criterion-1` **In progress:** Serve a compact anonymous resource index without private or detail-only fields — Evidence: branch `feat/find-compact-index-20260811` serves the full 853-record production dataset through a 415,659-byte local index response, down 83.5% from 2,519,680 bytes; production is unchanged.
-- [ ] `wave-3-criterion-2` **In progress:** Add bounded or paginated loading with stable cached refresh behavior — Evidence: stacked branch `feat/find-compact-client-20260811` queries at most 201 sanitized view rows per request, returns all 853 records exactly once across five deterministic 200-item cursor pages, and progressively publishes each page to `/find`; full production verification remains open.
-- [ ] `wave-3-criterion-3` **In progress:** Load resource details on demand while preserving selected and collected records outside current bounds — Evidence: stacked branch `feat/find-compact-client-20260811` fetches the 2,783-byte sanitized detail only after resource selection and merges progressive refresh pages with the prior directory so later-page selections persist until final reconciliation; production verification remains open.
+- [x] `wave-3-criterion-1` **Complete:** Serve a compact anonymous resource index without private or detail-only fields — Evidence: PRs #143-#146 merged through production commit `648b0885`; the live anonymous index returned all 853 records in compact responses of 25,990-97,986 bytes.
+- [x] `wave-3-criterion-2` **Complete:** Add bounded or paginated loading with stable cached refresh behavior — Evidence: production returned all 853 unique records exactly once across five stable cursor pages of 200/200/200/200/53 records, and `/find` visibly progressed from 618 to 871 combined results without losing its map or directory context.
+- [x] `wave-3-criterion-3` **Complete:** Load resource details on demand while preserving selected and collected records outside current bounds — Evidence: the live exact-item endpoint returned the selected index ID in a 2,783-byte sanitized response; focused selection/refresh coverage proves later-page records remain resolvable during progressive reconciliation.
 - [ ] `wave-3-criterion-4` **Not started:** Verify loading, empty, error, offline, stale, and retry states without losing map context.
 - [ ] `wave-3-criterion-5` **Not started:** Meet payload, first-useful-render, LCP, and interaction budgets in preview and production.
 

@@ -115,12 +115,14 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-3-find-performance",
     sequence: 3,
-    status: "queued",
+    status: "active",
     title: "/find speed and loading",
     criteria: defineCriteria(3, [
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Branch feat/find-compact-index-20260811 serves all 853 production records in a 415,659-byte local index response, down 83.5%; production is unchanged",
+        ],
+        state: "in_progress",
         title:
           "Serve a compact anonymous resource index without private or detail-only fields",
       },

@@ -1170,20 +1170,21 @@ describe("finance release planning graph", () => {
     expect(FINANCE_PLAN_WAVES.map((wave) => wave.status)).toEqual([
       "production_verified",
       "active",
-      ...Array(5).fill("queued"),
+      "active",
+      ...Array(4).fill("queued"),
     ])
     expect(FINANCE_PLAN_WAVE_STATUS_COUNTS).toEqual({
-      active: 1,
+      active: 2,
       codeComplete: 0,
       previewVerified: 0,
       productionVerified: 1,
-      queued: 5,
+      queued: 4,
       total: 7,
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
       complete: 5,
-      inProgress: 2,
-      notStarted: 28,
+      inProgress: 3,
+      notStarted: 27,
       total: 35,
     })
     expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(14)

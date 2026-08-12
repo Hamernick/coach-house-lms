@@ -98,8 +98,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "43 focused acceptance tests pass across direct signup, contextual entry, denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain",
+        ],
+        state: "in_progress",
         title:
           "Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery",
       },

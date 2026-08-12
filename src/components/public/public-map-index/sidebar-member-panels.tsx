@@ -16,6 +16,10 @@ export function PublicMapRailPanel({
   guides,
   savedOrganizations,
   savedResources,
+  unresolvedCollectedResourceCount,
+  resourceItemsLoadStatus,
+  resourceItemsLoadError,
+  onRetryResourceItems,
   onGuideSelect,
   onSelectOrganization,
   onSelectResource,
@@ -27,6 +31,14 @@ export function PublicMapRailPanel({
   guides: NonNullable<PublicMapSidebarProps["guides"]>
   savedOrganizations: NonNullable<PublicMapSidebarProps["savedOrganizations"]>
   savedResources: NonNullable<PublicMapSidebarProps["savedResources"]>
+  unresolvedCollectedResourceCount: number
+  resourceItemsLoadStatus: NonNullable<
+    PublicMapSidebarProps["resourceItemsLoadStatus"]
+  >
+  resourceItemsLoadError: string | null
+  onRetryResourceItems: NonNullable<
+    PublicMapSidebarProps["retryResourceItems"]
+  >
   onGuideSelect: PublicMapSidebarProps["onGuideSelect"]
   onSelectOrganization: PublicMapSidebarProps["onSelectOrganization"]
   onSelectResource: PublicMapSidebarProps["onSelectItem"]
@@ -59,6 +71,10 @@ export function PublicMapRailPanel({
             guides={guides}
             savedOrganizations={savedOrganizations}
             savedResources={savedResources}
+            unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
+            resourceItemsLoadStatus={resourceItemsLoadStatus}
+            resourceItemsLoadError={resourceItemsLoadError}
+            onRetryResourceItems={onRetryResourceItems}
             onGuideSelect={onGuideSelect}
             onSelectOrganization={onSelectOrganization}
             onSelectResource={onSelectResource}

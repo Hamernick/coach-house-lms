@@ -1,4 +1,10 @@
-import { useCallback, useMemo, type Dispatch, type SetStateAction } from "react"
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import {
@@ -202,19 +208,26 @@ export function usePublicMapSavedOrganizations({
 export function usePublicMapCollectedResources({
   collectedResourceIds,
   resourceItems,
+  retainMissingResources,
   setCollectedResourceIds,
 }: {
   collectedResourceIds: string[]
   resourceItems: ExternalResourceMapItem[]
+  retainMissingResources: boolean
   setCollectedResourceIds: Dispatch<SetStateAction<string[]>>
 }) {
+  const retainedResourcesRef = useRef<ExternalResourceMapItem[]>([])
   const savedResources = useMemo(() => {
-    const resourceById = new Map(resourceItems.map((item) => [item.id, item]))
-    return collectedResourceIds.flatMap((resourceId) => {
-      const item = resourceById.get(resourceId)
-      return item ? [item] : []
+    const resolvedResources = resolvePublicMapCollectedResources({
+      collectedResourceIds,
+      resourceItems,
+      retainedResources: retainMissingResources
+        ? retainedResourcesRef.current
+        : [],
     })
-  }, [collectedResourceIds, resourceItems])
+    retainedResourcesRef.current = resolvedResources
+    return resolvedResources
+  }, [collectedResourceIds, resourceItems, retainMissingResources])
 
   const toggleCollectedResource = useCallback(
     (resourceId: string) => {
@@ -227,5 +240,35 @@ export function usePublicMapCollectedResources({
     [setCollectedResourceIds]
   )
 
-  return { savedResources, toggleCollectedResource }
+  return {
+    savedResources,
+    toggleCollectedResource,
+    unresolvedCollectedResourceCount:
+      collectedResourceIds.length - savedResources.length,
+  }
+}
+
+export function resolvePublicMapCollectedResources({
+  collectedResourceIds,
+  resourceItems,
+  retainedResources = [],
+}: {
+  collectedResourceIds: string[]
+  resourceItems: ExternalResourceMapItem[]
+  retainedResources?: ExternalResourceMapItem[]
+}) {
+  const collectedResourceIdSet = new Set(collectedResourceIds)
+  const resourceById = new Map(
+    retainedResources
+      .filter((item) => collectedResourceIdSet.has(item.id))
+      .map((item) => [item.id, item] as const)
+  )
+  for (const item of resourceItems) {
+    if (collectedResourceIdSet.has(item.id)) resourceById.set(item.id, item)
+  }
+
+  return collectedResourceIds.flatMap((resourceId) => {
+    const item = resourceById.get(resourceId)
+    return item ? [item] : []
+  })
 }

@@ -23,6 +23,7 @@ import {
   filterPublicMapSavedResources,
   PublicMapMemberRail,
 } from "@/components/public/public-map-index/member-rail"
+import { resolvePublicMapCollectedResources } from "@/components/public/public-map-index/map-items-state"
 import { PublicMapSavedRail } from "@/components/public/public-map-index/saved-rail"
 import { PublicMapSidebar } from "@/components/public/public-map-index/sidebar"
 import { PublicMapShellSidebarPanel } from "@/components/public/public-map-index/sidebar-shell-panel"
@@ -1462,6 +1463,67 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("Food pantry and meal support")
     expect(markup).toContain('aria-label="Remove Seed Food Access from My Map"')
     expect(markup).toContain('aria-pressed="true"')
+  })
+
+  it("retains resolved My Map resources through empty and stale refreshes", () => {
+    const resource = buildResourceItem()
+    const initial = resolvePublicMapCollectedResources({
+      collectedResourceIds: [resource.id],
+      resourceItems: [resource],
+    })
+    const retained = resolvePublicMapCollectedResources({
+      collectedResourceIds: [resource.id],
+      resourceItems: [],
+      retainedResources: initial,
+    })
+
+    expect(retained).toEqual([resource])
+    expect(
+      resolvePublicMapCollectedResources({
+        collectedResourceIds: [resource.id],
+        resourceItems: [],
+        retainedResources: [],
+      })
+    ).toEqual([])
+    expect(
+      resolvePublicMapCollectedResources({
+        collectedResourceIds: [],
+        resourceItems: [],
+        retainedResources: retained,
+      })
+    ).toEqual([])
+  })
+
+  it("does not show a false-empty My Map while collected resources resolve", () => {
+    const loadingMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        savedOrganizations: [],
+        savedResources: [],
+        unresolvedCollectedResourceCount: 2,
+        resourceItemsLoadStatus: "loading",
+        onSelectOrganization: () => {},
+        onToggleFavorite: () => {},
+      })
+    )
+    const errorMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        savedOrganizations: [],
+        savedResources: [],
+        unresolvedCollectedResourceCount: 2,
+        resourceItemsLoadStatus: "error",
+        resourceItemsLoadError: PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
+        onRetryResourceItems: () => {},
+        onSelectOrganization: () => {},
+        onToggleFavorite: () => {},
+      })
+    )
+
+    expect(loadingMarkup).toContain("Loading My Map")
+    expect(loadingMarkup).toContain("Loading collected resources…")
+    expect(loadingMarkup).not.toContain("Nothing collected yet")
+    expect(errorMarkup).toContain("Collected resources unavailable")
+    expect(errorMarkup).toContain("You’re offline")
+    expect(errorMarkup).toContain("Try again")
   })
 
   it("uses the right rail directory detail view when a map organization is selected", () => {

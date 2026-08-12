@@ -56,6 +56,7 @@ type PublicMapSurfaceProps = {
   guides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
+  unresolvedCollectedResourceCount?: number
   query: string
   activeGroup: PublicMapGroupFilterKey
   groupCounts: PublicMapGroupFilterCounts
@@ -109,6 +110,7 @@ export function PublicMapSurface({
   guides = [],
   savedOrganizations,
   savedResources = [],
+  unresolvedCollectedResourceCount = 0,
   query,
   activeGroup,
   groupCounts,
@@ -227,6 +229,7 @@ export function PublicMapSurface({
           guides={guides}
           savedOrganizations={savedOrganizations}
           savedResources={savedResources}
+          unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
           query={query}
           activeGroup={activeGroup}
           groupCounts={groupCounts}

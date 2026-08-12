@@ -1,6 +1,6 @@
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
-import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
+import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 
 function FindRouteLoadingPanel() {
@@ -50,5 +50,9 @@ function FindRouteLoadingPanel() {
 }
 
 export default function PublicFindLoading() {
-  return <HomeCanvasPreview initialSection="find" findPanel={<FindRouteLoadingPanel />} />
+  return (
+    <HomeCanvasFindShell>
+      <FindRouteLoadingPanel />
+    </HomeCanvasFindShell>
+  )
 }

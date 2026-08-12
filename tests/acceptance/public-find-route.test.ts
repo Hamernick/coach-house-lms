@@ -191,7 +191,7 @@ describe("public find routes", () => {
   it("preserves selected organization detail wiring on slug routes", () => {
     const source = readRoute("src/app/(public)/find/[slug]/page.tsx")
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
-    const publicBranchIndex = source.indexOf("<HomeCanvasPreview")
+    const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
     const firstInitialSlugIndex = source.indexOf(
       "initialPublicSlug={matched.publicSlug}"
     )

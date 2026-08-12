@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  clearPublicMapResourceItemsCache,
   loadPublicMapResourceItems,
   mergeProgressiveResourceItems,
 } from "@/components/public/public-map-index/use-resource-map-items"
@@ -23,6 +24,7 @@ function buildResourceItemsResponse(resourceItems: unknown[]) {
 
 describe("public map resource items client", () => {
   afterEach(() => {
+    clearPublicMapResourceItemsCache()
     vi.restoreAllMocks()
   })
 
@@ -97,7 +99,7 @@ describe("public map resource items client", () => {
 
     const progressCounts: number[] = []
     const items = await loadPublicMapResourceItems(
-      "/api/public/resource-map/index?limit=200",
+      "/api/public/resource-map/index?limit=50",
       (loadedItems) => progressCounts.push(loadedItems.length)
     )
 
@@ -112,12 +114,36 @@ describe("public map resource items client", () => {
     })
     expect(fetchSpy).toHaveBeenNthCalledWith(
       2,
-      `/api/public/resource-map/index?limit=200&cursor=${encodeURIComponent(compactItem.id)}`,
+      `/api/public/resource-map/index?limit=50&cursor=${encodeURIComponent(compactItem.id)}`,
       {
         cache: "no-store",
         headers: { Accept: "application/json" },
       }
     )
+  })
+
+  it("publishes the first compact page immediately and batches later progress", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+    for (let index = 1; index <= 5; index += 1) {
+      fetchSpy.mockResolvedValueOnce(
+        buildJsonResponse({
+          resourceItems: [{ id: `resource_map:${index}` }],
+          page: {
+            hasMore: index < 5,
+            nextCursor: index < 5 ? `resource_map:${index}` : null,
+          },
+        })
+      )
+    }
+
+    const progressCounts: number[] = []
+    const items = await loadPublicMapResourceItems(
+      "/api/public/resource-map/index?limit=50&test=batched-progress",
+      (loadedItems) => progressCounts.push(loadedItems.length)
+    )
+
+    expect(items).toHaveLength(5)
+    expect(progressCounts).toEqual([1, 5])
   })
 
   it("deduplicates selected resource detail loads", async () => {

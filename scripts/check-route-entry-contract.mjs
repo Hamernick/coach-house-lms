@@ -17,9 +17,9 @@ const ROUTE_IMPORT_CONTRACTS = new Map([
   [
     "src/app/(public)/find/page.tsx",
     {
-      requireImports: ["@/components/public/home-canvas-preview"],
+      requireImports: ["@/components/public/home-canvas-find-shell"],
       forbidImports: ["@/components/public/public-header"],
-      requireSourcePatterns: [/<HomeCanvasPreview\b/u],
+      requireSourcePatterns: [/<HomeCanvasFindShell\b/u],
     },
   ],
 ])

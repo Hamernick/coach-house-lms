@@ -7,7 +7,7 @@ const DEFAULT_REGION_MAP_ID = 96
 const SOURCE_ID = "feeding-illinois-food-resources"
 const SOURCE_NAME =
   "Feeding Illinois / Greater Chicago Food Depository food partner locator"
-const METHOD_VERSION = "feeding-illinois-public-locator-v1"
+const METHOD_VERSION = "feeding-illinois-public-locator-v2-contact-phone"
 
 const PROGRAM_CATEGORY_RULES = [
   {
@@ -241,7 +241,7 @@ export function buildFeedingIllinoisRecord({
   const programs = displayPrograms(location)
   const categories = categoryFields(programs)
   const website = normalizeUrl(location.website)
-  const phone = readString(location.phone)
+  const phone = readString(location.phone, location.contactPhone)
   const email = readString(location.contactEmail)?.toLowerCase() ?? null
   const address = buildFullAddress(location)
   const schedule = buildHours(schedules)

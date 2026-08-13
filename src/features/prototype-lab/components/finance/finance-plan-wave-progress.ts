@@ -257,7 +257,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Branch feat/finance-board-sharing-20260813 adds explicit owner-managed Viewer, Manager, and No access states for existing board members; RLS requires current board membership and removes grants across membership changes, with focused action, loader, UI, and local RLS proof passing while merge, production proof, and rollback remain",
+          "PR #165 merged as 2387591e; main quality, the production migration, and both deployments passed, while focused sharing and RLS proof covers explicit Viewer, Manager, No access, role isolation, and failures; one authenticated production grant/revoke journey and a forward database rollback remain",
         ],
         state: "in_progress",
         title:
@@ -268,12 +268,14 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-6-resources-guides",
     sequence: 6,
-    status: "queued",
+    status: "active",
     title: "Qualified resources and varied guides",
     criteria: defineCriteria(6, [
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The 2026-08-13 read-only count refresh separates local and production snapshots: the expanded local curated artifact has 5,046 candidates and 741 complete, verified, publishable records; production has 2,184 staged records and exact parity at 853 verified, administrator-approved, publishable, promoted, and anonymous public rows",
+        ],
+        state: "complete",
         title:
           "Report exact candidate, complete, verified, publishable, promoted, and public counts",
       },

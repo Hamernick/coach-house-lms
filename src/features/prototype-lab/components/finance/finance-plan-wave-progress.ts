@@ -289,7 +289,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The guarded Cook County cooling-center dry run found 34/35 current local records passing the publication contract, including 25 matching unapproved staged rows, but selected zero publication candidates until refreshed fields, independent verification, and identified administrator review exist",
+          "The guarded Cook County cooling-center dry run found 34/35 current local records passing the publication contract; the existing-only refresh plan selected exactly 25 unapproved staging matches, skipped nine unstaged records, found zero protected matches, and made no write, while publication remains blocked until refreshed fields, independent verification, and identified administrator review exist",
         ],
         state: "in_progress",
         title:

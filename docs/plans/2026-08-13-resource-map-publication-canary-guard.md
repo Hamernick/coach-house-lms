@@ -2,7 +2,7 @@
 
 Date: 2026-08-13
 
-Status: read-only Wave 6 canary preparation. No review, verification,
+Status: read-only Wave 6 staging-refresh preparation. No review, verification,
 visibility, publication, database, or production state changed.
 
 ## Guard repair
@@ -49,3 +49,17 @@ Refresh only the 25 matching unapproved staging rows from the current retained
 local evidence. Then independently verify and present at most five exact IDs to
 an administrator for review. Promotion remains a separate approved production
 operation with count parity and reversible unpublish proof.
+
+## Existing-only refresh plan
+
+The staging importer now has an `--existing-only` refresh mode for this gate.
+It selects only publishable records belonging to the confirmed local source,
+reads rather than upserts the existing official source, caps the refresh at 25,
+skips unstaged rows, refuses approved, ready, or promoted matches, and requires
+`--apply` plus an exact source confirmation before any write. A second
+preflight prevents missing records from being inserted if staging changes.
+
+The connected dry run selected the expected 25 existing unapproved staging
+rows, reported nine unstaged publishable rows and zero protected matches, and
+made no write. The production refresh still requires a separate approved
+execution after this guard is merged.

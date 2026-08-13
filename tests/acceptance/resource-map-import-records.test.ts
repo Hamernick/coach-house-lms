@@ -193,6 +193,57 @@ describe("resource map import records", () => {
     ])
   })
 
+  it("plans an existing-only refresh without inserting or rewriting protected rows", async () => {
+    const { summarizeExistingOnlyPlan } = await import(
+      pathToFileURL(SCRIPT).href
+    )
+    const plan = summarizeExistingOnlyPlan([
+      null,
+      {
+        reconciled: false,
+        record: {
+          id: "refreshable",
+          promotion_status: "not_promoted",
+          review_status: "needs_review",
+        },
+      },
+      {
+        reconciled: false,
+        record: {
+          id: "promoted",
+          promotion_status: "promoted",
+          review_status: "needs_review",
+        },
+      },
+      {
+        reconciled: false,
+        record: {
+          id: "approved",
+          promotion_status: "not_promoted",
+          review_status: "approved",
+        },
+      },
+    ])
+
+    expect(plan.missing).toBe(1)
+    expect(plan.protected).toBe(2)
+    expect(plan.matched).toHaveLength(3)
+    expect(plan.refreshable).toEqual([
+      expect.objectContaining({
+        index: 1,
+        record: expect.objectContaining({ id: "refreshable" }),
+      }),
+    ])
+
+    const source = readFileSync(SCRIPT, "utf8")
+    expect(source).toContain("--existing-only requires --refresh-existing")
+    expect(source).toContain("--apply is required to refresh existing rows")
+    expect(source).toContain(
+      "--confirm-source must exactly match --source-slug"
+    )
+    expect(source).toContain("no new import records were inserted")
+  })
+
   it("drops explicit evidence whose refreshed field was removed", () => {
     const output = execFileSync(
       process.execPath,

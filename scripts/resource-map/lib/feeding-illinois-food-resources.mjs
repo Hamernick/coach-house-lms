@@ -7,7 +7,7 @@ const DEFAULT_REGION_MAP_ID = 96
 const SOURCE_ID = "feeding-illinois-food-resources"
 const SOURCE_NAME =
   "Feeding Illinois / Greater Chicago Food Depository food partner locator"
-const METHOD_VERSION = "feeding-illinois-public-locator-v3-network-intake"
+const METHOD_VERSION = "feeding-illinois-public-locator-v4-northern-intake"
 
 const NETWORK_INTAKE_BY_REGION_ID = new Map([
   [
@@ -15,6 +15,13 @@ const NETWORK_INTAKE_BY_REGION_ID = new Map([
     {
       label: "Find food through Greater Chicago Food Depository",
       url: "https://www.chicagosfoodbank.org/find-food/",
+    },
+  ],
+  [
+    2,
+    {
+      label: "Find food through Northern Illinois Food Bank",
+      url: "https://solvehungertoday.org/get-groceries-resources/",
     },
   ],
 ])

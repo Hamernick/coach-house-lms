@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **20/35 complete (57%)**, **6 in progress**, and
-**9 not started**.
+revision. Current progress: **20/35 complete (57%)**, **7 in progress**, and
+**8 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -180,7 +180,7 @@ revision. Current progress: **20/35 complete (57%)**, **6 in progress**, and
 **Wave 6 — Qualified resources and varied guides**
 
 - [x] `wave-6-criterion-1` **Complete:** Report exact candidate, complete, verified, publishable, promoted, and public counts — Evidence: the 2026-08-13 read-only count refresh reports the expanded local curated snapshot separately at `5,046` candidates and `741` complete/verified/publishable records. Exact production aggregates report `2,184` staged and parity at `853` verified, administrator-approved, publishable, promoted, and anonymous public rows; artifact hashes and reproduction steps are recorded.
-- [ ] `wave-6-criterion-2` **Not started:** Close provider, eligibility, summary, access, contact, and comparison evidence gaps by cohort.
+- [ ] `wave-6-criterion-2` **In progress:** Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source — Evidence: the first 106-listing Chicago housing group already has every required descriptive field. This pass raised listings with a second provider source from `92` to `99`; the remaining `7` stay held because five listings' provider pages reject automated checks, one provider has no website, and one provider site is dead. Nothing was approved or published.
 - [ ] `wave-6-criterion-3` **Not started:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records.
 - [ ] `wave-6-criterion-4` **Not started:** Publish current location-connected guides across multiple service categories.
 - [ ] `wave-6-criterion-5` **Not started:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof.
@@ -271,6 +271,9 @@ revision. Current progress: **20/35 complete (57%)**, **6 in progress**, and
   contract-complete, independently verified, publishable records.
 - Production has `2,184` staged records and exact parity at `853` verified,
   administrator-approved, publishable, promoted, and anonymous public rows.
+- The first Chicago housing repair raised listings with two sources from
+  `92/106` to `99/106`. The remaining seven stay hidden pending usable provider
+  evidence; no record was imported, approved, or published.
 - No raw intake queue, synthetic seed, local preview, or unverified discovery
   record was added to `/find`.
 

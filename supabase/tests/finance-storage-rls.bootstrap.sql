@@ -90,5 +90,33 @@ insert into public.organizations (user_id) values
   ('00000000-0000-0000-0000-000000000001'),
   ('00000000-0000-0000-0000-000000000002');
 
+create type public.organization_member_role
+  as enum ('owner', 'admin', 'staff', 'board', 'member');
+
+create table public.organization_memberships (
+  org_id uuid not null references public.organizations(user_id) on delete cascade,
+  member_id uuid not null references auth.users(id) on delete cascade,
+  role public.organization_member_role not null default 'member',
+  member_email text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (org_id, member_id)
+);
+
+create index organization_memberships_member_id_idx
+  on public.organization_memberships (member_id, org_id);
+
+insert into public.organization_memberships (
+  org_id,
+  member_id,
+  role,
+  member_email
+) values (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000003',
+  'board',
+  'board@example.org'
+);
+
 insert into public.platform_staff_members (user_id, access_level) values
   ('00000000-0000-0000-0000-000000000004', 'developer');

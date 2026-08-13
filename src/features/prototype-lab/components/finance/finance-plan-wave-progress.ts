@@ -250,14 +250,16 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Branch feat/finance-report-exports-20260813 adds authorized CSV and PDF history exports with signed cents, UTC timestamps, program, correction, verification, spreadsheet-formula safety, pagination, and bounded failure handling; nine focused tests and the production build pass, while merge, deployment, and production download proof remain",
+          "PR #164 merged as f6ceb0c4; main quality and both production deployments passed, authenticated production displays the CSV/PDF Export control, and nine focused tests parse the PDF and verify exact CSV fields, authorization, formula safety, pagination, routes, and bounded failures",
         ],
-        state: "in_progress",
+        state: "complete",
         title: "Verify accurate CSV and PDF exports",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Branch feat/finance-board-sharing-20260813 adds explicit owner-managed Viewer, Manager, and No access states for existing board members; RLS requires current board membership and removes grants across membership changes, with focused action, loader, UI, and local RLS proof passing while merge, production proof, and rollback remain",
+        ],
+        state: "in_progress",
         title:
           "Verify explicit revocable board sharing, role isolation, failure states, and production rollback",
       },

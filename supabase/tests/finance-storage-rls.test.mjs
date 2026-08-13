@@ -153,10 +153,13 @@ try {
   runSql(
     "supabase/migrations/20260808203000_add_finance_stripe_app_connection.sql"
   )
+  runSql(
+    "supabase/migrations/20260813153500_require_board_membership_for_finance_access.sql"
+  )
   runSql("supabase/tests/finance-storage-rls.assertions.sql")
 
   console.log(
-    "[finance-rls] Access, cross-tenant, direct-write, verification, correction, Stripe provider evidence, and immutable-evidence checks passed."
+    "[finance-rls] Board access, membership revocation, cross-tenant, direct-write, verification, correction, Stripe provider evidence, and immutable-evidence checks passed."
   )
 } finally {
   if (started) {

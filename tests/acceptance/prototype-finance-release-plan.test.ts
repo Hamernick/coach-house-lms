@@ -1181,12 +1181,12 @@ describe("finance release planning graph", () => {
       total: 7,
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
-      complete: 18,
+      complete: 19,
       inProgress: 6,
-      notStarted: 11,
+      notStarted: 10,
       total: 35,
     })
-    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(51)
+    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(54)
     expect(sourceCriteria).toHaveLength(35)
     expect(sourceCriteria.map((criterion) => criterion.id)).toEqual(
       trackedCriteria.map((criterion) => criterion.id)
@@ -1275,9 +1275,9 @@ describe("finance release planning graph", () => {
       roadmapNodes.find((node) => node.id === nodeId)?.data
 
     expect(FINANCE_PLAN_CURRENT_FOCUS).toMatchObject({
-      complete: 18,
-      percentage: 51,
-      remaining: 17,
+      complete: 19,
+      percentage: 54,
+      remaining: 16,
       total: 35,
       waveId: "wave-2-signup-legal",
       waveLabel: "Wave 2: Signup, recovery, and legal",

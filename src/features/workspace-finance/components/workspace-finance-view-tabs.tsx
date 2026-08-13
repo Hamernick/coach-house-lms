@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { normalizeWorkspaceFinanceInput } from "../lib"
 import { WORKSPACE_FINANCE_SAMPLE_INPUT } from "../lib/sample-data"
 import type {
+  WorkspaceFinanceAccessInput,
   WorkspaceFinanceCorrectionInput,
   WorkspaceFinanceDataState,
   WorkspaceFinanceOpportunityInput,
@@ -19,6 +20,7 @@ import type {
   WorkspaceFinanceView,
 } from "../types"
 import { WorkspaceFinanceActivityDashboard } from "./workspace-finance-activity-dashboard"
+import { WorkspaceFinanceAccessPopover } from "./workspace-finance-access-popover"
 import { WorkspaceFinanceConnections } from "./workspace-finance-connections"
 import { WorkspaceFinanceExportMenu } from "./workspace-finance-export-menu"
 import { WorkspaceFinanceHistory } from "./workspace-finance-history"
@@ -30,6 +32,7 @@ const SAMPLE_DATA_AVAILABLE =
   process.env.NEXT_PUBLIC_ENABLE_FINANCE_SAMPLE_DATA === "true"
 
 export function WorkspaceFinanceViewTabs({
+  access,
   initialView,
   programInputs,
   raisingPrograms,
@@ -39,6 +42,7 @@ export function WorkspaceFinanceViewTabs({
   recordsState,
   stripeConnection,
 }: {
+  access?: WorkspaceFinanceAccessInput
   initialView: WorkspaceFinanceView
   programInputs: WorkspaceFinanceProgramInput[]
   raisingPrograms: WorkspaceFinanceRaisingProgram[]
@@ -197,6 +201,9 @@ export function WorkspaceFinanceViewTabs({
               checked={sampleDataEnabled}
               onCheckedChange={setSampleDataEnabled}
             />
+          ) : null}
+          {access?.canManage ? (
+            <WorkspaceFinanceAccessPopover initialAccess={access} />
           ) : null}
           <WorkspaceFinanceExportMenu disabled={sampleDataEnabled} />
           <WorkspaceFinanceConnections

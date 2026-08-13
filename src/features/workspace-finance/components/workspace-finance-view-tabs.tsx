@@ -20,6 +20,7 @@ import type {
 } from "../types"
 import { WorkspaceFinanceActivityDashboard } from "./workspace-finance-activity-dashboard"
 import { WorkspaceFinanceConnections } from "./workspace-finance-connections"
+import { WorkspaceFinanceExportMenu } from "./workspace-finance-export-menu"
 import { WorkspaceFinanceHistory } from "./workspace-finance-history"
 import type { WorkspaceFinanceProgramAssignment } from "./workspace-finance-program-assignment-menu"
 import { WorkspaceFinanceSampleDataToggle } from "./workspace-finance-sample-data-toggle"
@@ -197,6 +198,7 @@ export function WorkspaceFinanceViewTabs({
               onCheckedChange={setSampleDataEnabled}
             />
           ) : null}
+          <WorkspaceFinanceExportMenu disabled={sampleDataEnabled} />
           <WorkspaceFinanceConnections
             disabled={sampleDataEnabled}
             onRecordCreated={handleRecordCreated}

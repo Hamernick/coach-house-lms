@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
 
-const MAX_BODY_BYTES = 750_000
+const MAX_BODY_BYTES = 1_500_000
 const MAX_REDIRECTS = 5
 const REQUEST_HEADERS = {
   Accept: "text/html,application/xhtml+xml",

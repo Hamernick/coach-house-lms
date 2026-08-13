@@ -1,7 +1,25 @@
 const SOURCE_ID = "211-metro-chicago-housing-services"
 const SOURCE_NAME = "211 Metro Chicago shelter and housing-services directory"
 const SOURCE_URL = "https://211metrochicago.org/search-for-resources/"
-const METHOD_VERSION = "211-metro-chicago-shelters-v2-program-titles"
+const METHOD_VERSION = "211-metro-chicago-shelters-v3-official-provider-links"
+
+const PROGRAM_WEBSITE_OVERRIDES = new Map([
+  [
+    "80919766",
+    "https://www.aidschicago.org/our-work/housing/permanent-housing/",
+  ],
+  ["80919768", "https://www.aidschicago.org/i-need/housing/"],
+  ["80919772", "https://www.aidschicago.org/i-need/housing/"],
+  ["80919773", "https://www.aidschicago.org/i-need/housing/"],
+  ["80919825", "https://www.familypromisechicagons.org/about"],
+  ["80919900", "https://www.csls.org/services"],
+  ["82808175", "https://childlink.org/programs/"],
+  ["86742794", "https://www.lpcschicago.org/what-we-do"],
+  [
+    "87878951",
+    "https://www.josselyn.org/community-programs/resiliency-center/",
+  ],
+])
 
 const PUBLIC_RESOURCE_SERVICE_PATTERN =
   /Domestic Violence Shelters|Youth Shelters|Community Shelters|Emergency Shelter Clearinghouses|Homeless Permanent Supportive Housing|Family Permanent Supportive Housing|Transitional Housing\/Shelter|Drop In Centers|Single Room Occupancy Housing|Rapid Re-Housing Programs/iu
@@ -281,7 +299,11 @@ export function buildMetroChicagoShelterRecord({
     program.site?.contact_email,
     program.agency?.email
   )?.toLowerCase()
-  const website = normalizeUrl(program.website ?? program.agency?.website)
+  const website = normalizeUrl(
+    PROGRAM_WEBSITE_OVERRIDES.get(String(programId)) ??
+      program.website ??
+      program.agency?.website
+  )
   const hours = normalizeHours(program)
   const description = buildDescription(program, agencyName)
   const eligibility =

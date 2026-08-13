@@ -280,10 +280,12 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Report exact candidate, complete, verified, publishable, promoted, and public counts",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The first 106-listing Chicago housing group has every required descriptive field; current provider-page checks raised listings with two sources from 92 to 99, while seven remain held and nothing was approved or published",
+        ],
+        state: "in_progress",
         title:
-          "Close provider, eligibility, summary, access, contact, and comparison evidence gaps by cohort",
+          "Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source",
       },
       {
         evidence: [],

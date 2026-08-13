@@ -73,6 +73,7 @@
     "resource-map:source-freshness": "node scripts/resource-map/check-source-freshness.mjs",
     "resource-map:enrich": "node scripts/resource-map/enrich-candidates.mjs",
     "resource-map:audit-enrichment": "node scripts/resource-map/audit-enrichment-readiness.mjs",
+    "resource-map:verify-provider-pages": "node scripts/resource-map/verify-provider-pages.mjs",
     "resource-map:enrich-library": "node scripts/resource-map/enrich-library-candidates.mjs",
     "resource-map:sync-library": "node scripts/resource-map/sync-library-public-records.mjs",
     "scaffold:feature": "node scripts/new-feature.mjs",

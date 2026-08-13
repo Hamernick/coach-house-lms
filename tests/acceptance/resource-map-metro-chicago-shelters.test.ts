@@ -135,4 +135,36 @@ describe("211 Metro Chicago shelter ingestion", () => {
     )
     expect(record.extractedFields.title).not.toContain("Administration Office")
   })
+
+  it.each([
+    [
+      80919766,
+      "https://www.aidschicago.org/our-work/housing/permanent-housing",
+    ],
+    [80919768, "https://www.aidschicago.org/i-need/housing"],
+    [80919772, "https://www.aidschicago.org/i-need/housing"],
+    [80919773, "https://www.aidschicago.org/i-need/housing"],
+    [80919900, "https://www.csls.org/services"],
+    [80919825, "https://www.familypromisechicagons.org/about"],
+    [82808175, "https://childlink.org/programs"],
+    [86742794, "https://www.lpcschicago.org/what-we-do"],
+    [87878951, "https://www.josselyn.org/community-programs/resiliency-center"],
+  ])(
+    "uses the current official provider page for program %s",
+    (id, website) => {
+      const record = buildMetroChicagoShelterRecord({
+        cityName: "Chicago",
+        fetchedAt: "2026-08-13T12:00:00.000Z",
+        program: { ...program, id },
+        rawApiUrl:
+          "https://api.211metrochicago.org/api/programs?category_id=142&page=1",
+        requestedCategoryId: 142,
+      })
+
+      expect(record.extractedFields.websiteUrl).toBe(website)
+      expect(record.extractedFields.links).toContainEqual(
+        expect.objectContaining({ url: website })
+      )
+    }
+  )
 })

@@ -281,7 +281,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The Chicago housing group increased from 92/106 to 99/106 listings with two sources; the first food repair increased contact coverage from 644/752 to 656/752 and listings with both contact information and two sources from 615/752 to 626/752; unresolved listings remain held and nothing was approved or published",
+          "The Chicago housing group increased from 92/106 to 99/106 listings with two sources; two food repairs increased listings with contact information or an intake link from 644/752 to 676/752 and listings with that access path and two sources from 615/752 to 645/752; unresolved listings remain held and nothing was approved or published",
         ],
         state: "in_progress",
         title:

@@ -7,7 +7,17 @@ const DEFAULT_REGION_MAP_ID = 96
 const SOURCE_ID = "feeding-illinois-food-resources"
 const SOURCE_NAME =
   "Feeding Illinois / Greater Chicago Food Depository food partner locator"
-const METHOD_VERSION = "feeding-illinois-public-locator-v2-contact-phone"
+const METHOD_VERSION = "feeding-illinois-public-locator-v3-network-intake"
+
+const NETWORK_INTAKE_BY_REGION_ID = new Map([
+  [
+    1,
+    {
+      label: "Find food through Greater Chicago Food Depository",
+      url: "https://www.chicagosfoodbank.org/find-food/",
+    },
+  ],
+])
 
 const PROGRAM_CATEGORY_RULES = [
   {
@@ -184,7 +194,13 @@ function buildHours(schedules) {
   }
 }
 
-function buildAccessInstructions({ address, phone, title, website }) {
+function buildAccessInstructions({
+  address,
+  intakeUrl,
+  phone,
+  title,
+  website,
+}) {
   const visit = address
     ? `Visit ${title} at ${address} during the listed schedule.`
     : `Contact ${title} for its current service location and schedule.`
@@ -192,7 +208,9 @@ function buildAccessInstructions({ address, phone, title, website }) {
     ? `Call ${phone} before traveling to confirm hours and availability.`
     : website
       ? "Check the provider website before traveling to confirm hours and availability."
-      : "Use the Feeding Illinois locator before traveling to confirm hours and availability."
+      : intakeUrl
+        ? "Use the linked food-bank finder before traveling to confirm hours and availability."
+        : "Use the Feeding Illinois locator before traveling to confirm hours and availability."
   return `${visit} ${confirm}`
 }
 
@@ -207,6 +225,7 @@ function buildFieldEvidence({ fields, fetchedAt, rawApiUrl, sourceUrl }) {
     ...(fields.phone ? ["extractedFields.phone"] : []),
     ...(fields.email ? ["extractedFields.email"] : []),
     ...(fields.websiteUrl ? ["extractedFields.websiteUrl"] : []),
+    ...(fields.intakeUrl ? ["extractedFields.intakeUrl"] : []),
     ...(fields.hours ? ["extractedFields.hours"] : []),
   ]
   return fieldPaths.map((fieldPath) => ({
@@ -243,6 +262,10 @@ export function buildFeedingIllinoisRecord({
   const website = normalizeUrl(location.website)
   const phone = readString(location.phone, location.contactPhone)
   const email = readString(location.contactEmail)?.toLowerCase() ?? null
+  const networkIntake =
+    !website && !phone && !email
+      ? (NETWORK_INTAKE_BY_REGION_ID.get(readNumber(location.regionId)) ?? null)
+      : null
   const address = buildFullAddress(location)
   const schedule = buildHours(schedules)
   const languages = splitValues(location.serviceLanguages)
@@ -253,6 +276,7 @@ export function buildFeedingIllinoisRecord({
   )}. Contact the provider before visiting to confirm current hours, availability, and any site-specific requirements.`
   const accessInstructions = buildAccessInstructions({
     address,
+    intakeUrl: networkIntake?.url,
     phone,
     title,
     website,
@@ -267,7 +291,16 @@ export function buildFeedingIllinoisRecord({
           url: website,
         },
       ]
-    : []
+    : networkIntake
+      ? [
+          {
+            isPrimary: true,
+            label: networkIntake.label,
+            type: "intake",
+            url: networkIntake.url,
+          },
+        ]
+      : []
   const fields = {
     ...categories,
     accessInstructions,
@@ -301,6 +334,7 @@ export function buildFeedingIllinoisRecord({
     foodPrograms: programs,
     hours: schedule.hours,
     hoursLabel: schedule.hoursLabel,
+    intakeUrl: networkIntake?.url ?? null,
     languages,
     latitude: readNumber(location.latitude),
     links: providerLinks,

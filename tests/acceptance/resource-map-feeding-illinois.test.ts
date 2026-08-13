@@ -153,4 +153,33 @@ describe("Feeding Illinois food-resource ingestion", () => {
       expect.objectContaining({ fieldPath: "extractedFields.phone" })
     )
   })
+
+  it("uses the official food-bank finder when a Cook County listing has no direct contact", () => {
+    const record = buildFeedingIllinoisRecord({
+      fetchedAt: "2026-08-13T12:00:00.000Z",
+      location: {
+        ...location,
+        contactEmail: null,
+        contactPhone: null,
+        phone: null,
+        regionId: 1,
+        website: null,
+      },
+      rawApiUrl: "https://api.accessfood.org/api/MapInformation/LocationSearch",
+      schedules,
+    })
+
+    expect(record.extractedFields.intakeUrl).toBe(
+      "https://www.chicagosfoodbank.org/find-food/"
+    )
+    expect(record.extractedFields.links).toContainEqual({
+      isPrimary: true,
+      label: "Find food through Greater Chicago Food Depository",
+      type: "intake",
+      url: "https://www.chicagosfoodbank.org/find-food/",
+    })
+    expect(record.extractedFields.accessInstructions).toContain(
+      "linked food-bank finder"
+    )
+  })
 })

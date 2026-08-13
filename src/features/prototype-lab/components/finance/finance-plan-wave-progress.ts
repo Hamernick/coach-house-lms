@@ -281,9 +281,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The Chicago housing group increased from 92/106 to 99/106 listings with two sources; three food repairs increased contact or intake coverage from 644/752 to 748/752 and access-plus-comparison coverage from 615/752 to 647/752; the Cook County immigrant/refugee cohort increased from 68/84 to 79/84 listings with two-source identity evidence, with unresolved listings held and nothing approved or published",
+          "PRs #167-#171 repaired the selected housing, food, and immigrant/refugee cohorts, with #171 hosted quality and both deployments passing: housing two-source coverage increased from 92/106 to 99/106, food contact or intake coverage from 644/752 to 748/752, and immigrant/refugee two-source identity coverage from 68/84 to 79/84; evidence failures remain explicitly held and nothing was approved or published",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source",
       },

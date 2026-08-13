@@ -134,7 +134,7 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **20/35 complete (57%)**, **7 in progress**, and
+revision. Current progress: **21/35 complete (60%)**, **6 in progress**, and
 **8 not started**.
 
 **Wave 1 — Live stability and existing work close**
@@ -180,7 +180,7 @@ revision. Current progress: **20/35 complete (57%)**, **7 in progress**, and
 **Wave 6 — Qualified resources and varied guides**
 
 - [x] `wave-6-criterion-1` **Complete:** Report exact candidate, complete, verified, publishable, promoted, and public counts — Evidence: the 2026-08-13 read-only count refresh reports the expanded local curated snapshot separately at `5,046` candidates and `741` complete/verified/publishable records. Exact production aggregates report `2,184` staged and parity at `853` verified, administrator-approved, publishable, promoted, and anonymous public rows; artifact hashes and reproduction steps are recorded.
-- [ ] `wave-6-criterion-2` **In progress:** Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source — Evidence: the Chicago housing group has every required descriptive field and increased from `92/106` to `99/106` listings with two sources, with seven held. Three food repairs increased contact or intake coverage from `644/752` to `748/752` and access-plus-comparison coverage from `615/752` to `647/752`. The Cook County immigrant/refugee cohort increased from `68/84` to `79/84` listings with two-source identity evidence; `74/79` service-eligible listings now have that evidence and five remain held. Nothing was approved or published.
+- [x] `wave-6-criterion-2` **Complete:** Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source — Evidence: PRs #167-#171 repaired the selected housing, food, and immigrant/refugee cohorts; #171 hosted quality and both deployments passed. Housing two-source coverage increased from `92/106` to `99/106`; food contact or intake coverage increased from `644/752` to `748/752` and access-plus-comparison coverage from `615/752` to `647/752`; immigrant/refugee two-source identity coverage increased from `68/84` to `79/84`, including `74/79` service-eligible listings. Records blocked by real provider evidence failures remain explicitly held. Nothing was approved or published.
 - [ ] `wave-6-criterion-3` **Not started:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records.
 - [ ] `wave-6-criterion-4` **Not started:** Publish current location-connected guides across multiple service categories.
 - [ ] `wave-6-criterion-5` **Not started:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof.
@@ -274,9 +274,15 @@ revision. Current progress: **20/35 complete (57%)**, **7 in progress**, and
 - The first Chicago housing repair raised listings with two sources from
   `92/106` to `99/106`. The remaining seven stay hidden pending usable provider
   evidence; no record was imported, approved, or published.
+- Three food repairs raised contact or verified intake coverage from `644/752`
+  to `748/752` and access-plus-comparison coverage from `615/752` to `647/752`.
+  Unresolved listings remain held.
 - The Cook County immigrant/refugee repair raised listings with two-source
   identity evidence from `68/84` to `79/84`. `74/79` service-eligible listings
   now have that evidence; five remain held behind provider-page failures.
+- Criterion 2 is complete because every selected cohort record now has either
+  repaired evidence or an explicit hold backed by a concrete source failure.
+  Completion does not override a hold or authorize publication.
 - No raw intake queue, synthetic seed, local preview, or unverified discovery
   record was added to `/find`.
 

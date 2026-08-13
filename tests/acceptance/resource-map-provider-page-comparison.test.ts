@@ -73,6 +73,73 @@ describe("resource-map provider page comparison", () => {
     expect(enriched.rawSnapshot.providerPageEvidence.contentHash).toBe("abc123")
   })
 
+  it("supports an established whole-token provider acronym", () => {
+    const acronymRecord = {
+      ...record,
+      extractedFields: {
+        ...record.extractedFields,
+        organizationName: "Hebrew Immigrant Aid Society of Chicago",
+        providerName: "Hebrew Immigrant Aid Society of Chicago",
+      },
+    }
+    const comparison = compareProviderPageSnapshot(
+      acronymRecord,
+      fetchedSnapshot({
+        pageTitle: "HIAS Chicago",
+        visibleText: "HIAS Chicago immigration and citizenship services",
+      })
+    )
+
+    expect(comparison.status).toBe("supported")
+    expect(comparison.matchedSignals).toContain("provider_name_acronym")
+  })
+
+  it("supports an established provider acronym in the same-site domain", () => {
+    const acronymRecord = {
+      ...record,
+      extractedFields: {
+        ...record.extractedFields,
+        organizationName: "Chinese American Service League",
+        providerName: "Chinese American Service League",
+        websiteUrl: "https://www.caslservice.org",
+      },
+    }
+    const comparison = compareProviderPageSnapshot(
+      acronymRecord,
+      fetchedSnapshot({
+        finalUrl: "https://www.caslservice.org/",
+        visibleText: "",
+        websiteUrl: "https://www.caslservice.org",
+      })
+    )
+
+    expect(comparison.status).toBe("supported")
+    expect(comparison.matchedSignals).toContain("provider_acronym_domain")
+  })
+
+  it("does not trust an acronym on a cross-site redirect domain", () => {
+    const acronymRecord = {
+      ...record,
+      extractedFields: {
+        ...record.extractedFields,
+        organizationName: "Chinese American Service League",
+        providerName: "Chinese American Service League",
+        websiteUrl: "https://www.caslservice.org",
+      },
+    }
+    const comparison = compareProviderPageSnapshot(
+      acronymRecord,
+      fetchedSnapshot({
+        finalUrl: "https://casl-example.net/",
+        visibleText: "",
+        websiteUrl: "https://www.caslservice.org",
+      })
+    )
+
+    expect(comparison.status).toBe("contradicted")
+    expect(comparison.matchedSignals).not.toContain("provider_acronym_domain")
+  })
+
   it("removes a provider link that redirects cross-site without an identity match", () => {
     const comparison = compareProviderPageSnapshot(
       record,

@@ -184,7 +184,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Isolated account-sync implementation normalizes, merges, and persists resource IDs through the existing authenticated preference endpoint; focused route and preference tests pass 6/6 plus lint",
+          "PR #159 merged as 6b2ac883; production Builder/admin collect survived reload, appeared in My Map, removed cleanly, and remained removed after reload; one independent second-client observation remains",
         ],
         state: "in_progress",
         title:
@@ -200,15 +200,17 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Isolated resilience implementation retains resolved collected resource cards during loading and failed refreshes, replaces false-empty states with recovery feedback, permits confirmed unpublishing after successful refresh, and passes 78 focused tests plus lint",
+          "PR #160 merged as ae0deda7; both production deployments passed, production My Map retained the collection through progressive reload, and focused plus full acceptance cover loading, empty, stale, error, retry, and confirmed unpublishing",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Keep collected records resolvable through loading, empty, stale, and error states",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Guest acceptance and production route proof pass; an authenticated Builder/admin completed a reversible production collect-reload-remove journey, all RLS suites pass, application console errors are empty, both deployments succeeded, and exact revert commits are recorded",
+        ],
+        state: "complete",
         title:
           "Verify guest, account, and Builder journeys with RLS, production monitoring, and rollback proof",
       },

@@ -132,4 +132,25 @@ describe("Feeding Illinois food-resource ingestion", () => {
     )
     expect(record.extractedFields.description).not.toContain("&amp")
   })
+
+  it("uses the source-provided contact phone when the location phone is empty", () => {
+    const record = buildFeedingIllinoisRecord({
+      fetchedAt: "2026-08-13T12:00:00.000Z",
+      location: {
+        ...location,
+        contactPhone: "312-900-5044",
+        phone: null,
+      },
+      rawApiUrl: "https://api.accessfood.org/api/MapInformation/LocationSearch",
+      schedules,
+    })
+
+    expect(record.extractedFields.phone).toBe("312-900-5044")
+    expect(record.extractedFields.accessInstructions).toContain(
+      "Call 312-900-5044"
+    )
+    expect(record.fieldEvidence).toContainEqual(
+      expect.objectContaining({ fieldPath: "extractedFields.phone" })
+    )
+  })
 })

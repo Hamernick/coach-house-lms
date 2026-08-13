@@ -402,33 +402,77 @@ describe("resource map import records", () => {
     expect(source).toContain("insertRowsInChunks")
   })
 
-  it("keeps official-source publication gated and auditable", async () => {
+  it("keeps official-source canaries behind stored review evidence", async () => {
     const source = readFileSync(VERIFY_AND_PUBLISH_SOURCE, "utf8")
-    const { buildVerifiedRecord } = await import(
-      pathToFileURL(VERIFY_AND_PUBLISH_SOURCE).href
-    )
-    const verified = buildVerifiedRecord(
+    const {
+      hasApprovedVerificationLedger,
+      storedApprovalGaps,
+      summarizeLocalDelta,
+    } = await import(pathToFileURL(VERIFY_AND_PUBLISH_SOURCE).href)
+    const ledger = [
       {
-        extracted_fields: {
-          enrichment: {
-            sourceComparisonCount: 2,
-            verification: { status: "needs_review" },
-          },
+        issues: [],
+        status: "completed",
+        structured_result: {
+          contradictions: [],
+          status: "approved",
+          unsupportedClaims: [],
         },
       },
-      "2026-07-15T15:00:00.000Z"
-    )
+    ]
 
-    expect(verified.extracted_fields.enrichment.verification.status).toBe(
-      "approved"
+    expect(hasApprovedVerificationLedger(ledger)).toBe(true)
+    expect(
+      summarizeLocalDelta(
+        [
+          {
+            extractedFields: {},
+            sourceId: "official-source",
+            sourceRecordId: "held-1",
+          },
+        ],
+        [{ source_record_id: "held-1" }],
+        "official-source"
+      )
+    ).toMatchObject({
+      held: 1,
+      matched: [],
+      missing: [],
+      publishable: 0,
+      total: 1,
+    })
+    expect(
+      storedApprovalGaps(
+        {
+          extracted_fields: {
+            enrichment: {
+              sourceComparisonCount: 2,
+              verification: { status: "needs_review" },
+            },
+          },
+          review_status: "needs_review",
+        },
+        ledger
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        "not_admin_approved",
+        "missing_identified_reviewer",
+        "missing_verification_time",
+        "enrichment_not_verified",
+      ])
     )
-    expect(verified.last_verified_at).toBe("2026-07-15T15:00:00.000Z")
     expect(source).toContain('source.trust_level !== "official"')
-    expect(source).toContain('actor.role !== "admin"')
     expect(source).toContain("analyzeResourceEnrichmentReadiness")
     expect(source).toContain("promote_resource_map_import_record")
-    expect(source).toContain('pass_type: "verification"')
-    expect(source).toContain("resource_map_curation_events")
+    expect(source).toContain("--confirm-source")
+    expect(source).toContain("Explicit --id values are required")
+    expect(source).not.toContain('resource_map_import_records")\n      .update')
+    expect(source).not.toContain("exposeVerifiedContactAndLinks")
+
+    const reviewSource = readFileSync(REVIEW_IMPORTS, "utf8")
+    expect(reviewSource).toContain("--actor-id is required with --apply")
+    expect(reviewSource).toContain('data.role !== "admin"')
   })
 
   it("links staged imports to raw ingestion records in the DB write path", () => {

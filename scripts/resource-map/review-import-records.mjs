@@ -180,6 +180,19 @@ async function applyReview({ admin, ids, status, reason, actorId }) {
   return afterRecords ?? []
 }
 
+async function requireAdminActor(admin, actorId) {
+  if (!actorId) throw new Error("--actor-id is required with --apply.")
+  const { data, error } = await admin
+    .from("profiles")
+    .select("id,role")
+    .eq("id", actorId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data || data.role !== "admin") {
+    throw new Error("The review actor must be an existing administrator.")
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.get("help")) {
@@ -218,6 +231,8 @@ async function main() {
     printRecords(records)
     return
   }
+
+  await requireAdminActor(admin, actorId)
 
   const updated = await applyReview({ admin, ids, status, reason, actorId })
   console.log(`Reviewed ${updated.length} staged import records as ${status}.`)

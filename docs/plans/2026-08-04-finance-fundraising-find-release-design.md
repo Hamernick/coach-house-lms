@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **21/35 complete (60%)**, **6 in progress**, and
-**8 not started**.
+revision. Current progress: **21/35 complete (60%)**, **7 in progress**, and
+**7 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -181,7 +181,7 @@ revision. Current progress: **21/35 complete (60%)**, **6 in progress**, and
 
 - [x] `wave-6-criterion-1` **Complete:** Report exact candidate, complete, verified, publishable, promoted, and public counts — Evidence: the 2026-08-13 read-only count refresh reports the expanded local curated snapshot separately at `5,046` candidates and `741` complete/verified/publishable records. Exact production aggregates report `2,184` staged and parity at `853` verified, administrator-approved, publishable, promoted, and anonymous public rows; artifact hashes and reproduction steps are recorded.
 - [x] `wave-6-criterion-2` **Complete:** Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source — Evidence: PRs #167-#171 repaired the selected housing, food, and immigrant/refugee cohorts; #171 hosted quality and both deployments passed. Housing two-source coverage increased from `92/106` to `99/106`; food contact or intake coverage increased from `644/752` to `748/752` and access-plus-comparison coverage from `615/752` to `647/752`; immigrant/refugee two-source identity coverage increased from `68/84` to `79/84`, including `74/79` service-eligible listings. Records blocked by real provider evidence failures remain explicitly held. Nothing was approved or published.
-- [ ] `wave-6-criterion-3` **Not started:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records.
+- [ ] `wave-6-criterion-3` **In progress:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records — Evidence: the guarded Cook County cooling-center dry run found `34/35` current local records passing the publication contract, with one held, `25` matching existing unapproved staging rows, and nine not yet staged. It selected zero publication candidates because staging still lacks the refreshed fields, independent verification ledger, and identified administrator review. The canary command can no longer manufacture those gates or expose contacts and links.
 - [ ] `wave-6-criterion-4` **Not started:** Publish current location-connected guides across multiple service categories.
 - [ ] `wave-6-criterion-5` **Not started:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof.
 

@@ -288,8 +288,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The guarded Cook County cooling-center dry run found 34/35 current local records passing the publication contract, including 25 matching unapproved staged rows, but selected zero publication candidates until refreshed fields, independent verification, and identified administrator review exist",
+        ],
+        state: "in_progress",
         title:
           "Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records",
       },

@@ -161,8 +161,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Verify loading, empty, error, offline, stale, and retry states without losing map context",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Production /find preserved the 1,900 KB route budget and reached 1.7s first contentful paint, but the bounded mobile Lighthouse run measured 4.7s LCP and 35.0s time to interactive with Mapbox script evaluation dominating main-thread work; focused correction and production rerun remain",
+        ],
+        state: "in_progress",
         title:
           "Meet payload, first-useful-render, LCP, and interaction budgets in preview and production",
       },
@@ -224,9 +226,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(5, [
       {
         evidence: [
-          "PR #121 released bounded read-only Stripe activity and source-labeled records; branch feat/finance-reporting-wave5-20260812 adds visible read-only source and last-sync states with 70 focused Finance tests passing; merge and production proof remain",
+          "PR #121 released bounded read-only Stripe activity and source-labeled records; PR #162 merged as 09810abd, main quality passed, both Vercel production deployments succeeded, and 70 focused Finance tests cover the released read-only source and freshness states",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Connect read-only external activity with explicit source and freshness labels",
       },

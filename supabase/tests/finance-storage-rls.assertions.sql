@@ -301,6 +301,48 @@ end;
 $$;
 reset role;
 
+update public.organization_memberships
+set role = 'member'
+where org_id = '00000000-0000-0000-0000-000000000001'
+  and member_id = '00000000-0000-0000-0000-000000000003';
+
+set role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-0000-0000-000000000003',
+  false
+);
+do $$
+begin
+  if (select count(*) from public.organization_finance_records) <> 0
+    or (select count(*) from public.organization_finance_access) <> 0 then
+    raise exception 'Former board member retained Finance access';
+  end if;
+end;
+$$;
+reset role;
+
+update public.organization_memberships
+set role = 'board'
+where org_id = '00000000-0000-0000-0000-000000000001'
+  and member_id = '00000000-0000-0000-0000-000000000003';
+
+set role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-0000-0000-000000000003',
+  false
+);
+do $$
+begin
+  if (select count(*) from public.organization_finance_records) <> 0
+    or (select count(*) from public.organization_finance_access) <> 0 then
+    raise exception 'Re-added board member inherited stale Finance access';
+  end if;
+end;
+$$;
+reset role;
+
 set role authenticated;
 select set_config(
   'request.jwt.claim.sub',

@@ -174,8 +174,8 @@ revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
 - [x] `wave-5-criterion-1` **Complete:** Connect read-only external activity with explicit source and freshness labels — Evidence: PR #121 released the bounded read-only Stripe activity connection and source-labeled records; PR #162 merged as `09810abd`, main quality passed, both Vercel production deployments succeeded, and production serves the Finance route with the released read-only source plus never-synced, running, successful, and failed freshness states covered by 70 focused Finance tests.
 - [x] `wave-5-criterion-2` **Complete:** Provide a simple accessible graph, text equivalent, Activity list, and History — Evidence: PR #121 merged as `a6016231` and deployed to both production projects; the source-composition rail exposes an accessible description plus visible labeled amounts, focused coverage passes, and authenticated production verification opened both Activity and History.
 - [x] `wave-5-criterion-3` **Complete:** Reconcile visible reporting to authorized external records and correction history — Evidence: merged reporting counts only verified, non-corrected USD inflows while retaining corrected originals and replacements in History; immutable correction storage, organization-scoped reads, focused correction coverage, and the connected Finance RLS matrix passed with PR #121 and its production deployment.
-- [ ] `wave-5-criterion-4` **In progress:** Verify accurate CSV and PDF exports — Evidence: branch `feat/finance-report-exports-20260813` adds owner and explicitly authorized board-member exports through the existing Finance read boundary. CSV preserves signed cents, UTC timestamps, program, correction, and verification fields while neutralizing user-controlled spreadsheet formulas; PDF provides the same authorized history in a paginated landscape report. Nine focused export, authorization, route, and failure tests plus the production build pass; merge, deployment, and production download proof remain.
-- [ ] `wave-5-criterion-5` **Not started:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback.
+- [x] `wave-5-criterion-4` **Complete:** Verify accurate CSV and PDF exports — Evidence: PR #164 merged as `f6ceb0c4`; main quality and both production deployments passed, and authenticated production displays the released CSV/PDF Export control. Nine focused tests parse the PDF and verify exact CSV fields, authorization, route behavior, formula neutralization, pagination, and bounded failures.
+- [ ] `wave-5-criterion-5` **In progress:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback — Evidence: branch `feat/finance-board-sharing-20260813` gives the owner a compact existing-board-member control for explicit Viewer, Manager, and No access states. Grants and revocations use the existing scoped table; RLS now requires current board membership and automatically removes a grant when membership is removed, added, or changes role so stale access cannot revive. Eight focused action, loader, failure, and UI tests, 30 existing Finance tests, local Finance RLS, targeted guardrails, and the production build pass; merge, deployment, authenticated production proof, and rollback remain.
 
 **Wave 6 — Qualified resources and varied guides**
 
@@ -254,6 +254,13 @@ revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
 - Branch `feat/finance-reporting-wave5-20260812` exposes the already-loaded
   Stripe sync timestamp as explicit freshness copy and preserves the read-only
   source label across connected, never-synced, syncing, and failed states.
+- PR #164 merged as `f6ceb0c4`; main quality and both production deployments
+  passed, and authenticated production shows the released CSV/PDF Export
+  control. Focused tests parse the PDF and verify exact CSV fields and safety.
+- Branch `feat/finance-board-sharing-20260813` adds explicit owner-managed
+  Viewer, Manager, and No access states for existing board members. Database
+  authorization requires current board membership and prevents stale grants
+  from surviving or reviving across membership changes.
 
 #### Wave branch rules
 

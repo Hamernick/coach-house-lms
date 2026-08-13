@@ -14,6 +14,7 @@ export function WorkspaceFinancePanel({
   return (
     <section aria-label="Finance" className="h-full min-h-0 overflow-hidden">
       <WorkspaceFinanceViewTabs
+        access={input.access}
         initialView={finance.initialView}
         programInputs={input.programs ?? []}
         raisingPrograms={finance.raisingPrograms}

@@ -1,6 +1,20 @@
 export type WorkspaceFinanceView = "activity" | "history"
 export type WorkspaceFinanceDataState = "idle" | "loading" | "ready" | "error"
 
+export type WorkspaceFinanceAccessLevel = "viewer" | "manager"
+
+export type WorkspaceFinanceAccessMember = {
+  accessLevel: WorkspaceFinanceAccessLevel | null
+  email: string
+  memberId: string
+}
+
+export type WorkspaceFinanceAccessInput = {
+  canManage: boolean
+  members: WorkspaceFinanceAccessMember[]
+  state: "ready" | "error"
+}
+
 export type WorkspaceFinanceProgramInput = {
   id: string
   title?: string | null
@@ -121,6 +135,7 @@ export type WorkspaceFinanceStripeConnectionInput = {
 }
 
 export type WorkspaceFinanceInput = {
+  access?: WorkspaceFinanceAccessInput
   initialView?: WorkspaceFinanceView | null
   programs?: WorkspaceFinanceProgramInput[]
   opportunities?: WorkspaceFinanceOpportunityInput[]

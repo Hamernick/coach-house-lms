@@ -86,7 +86,8 @@ export default async function MyOrganizationPage({
   }
   const acceleratorViewRequested = searchState.viewParam === "accelerator"
   const presentationMode =
-    searchState.modeParam === "present" || searchState.modeParam === "presentation"
+    searchState.modeParam === "present" ||
+    searchState.modeParam === "presentation"
   const { orgRow, profile, initialProfile, roadmapSections } =
     await measureServerStep(
       "workspace.content.load_profile_context",
@@ -383,6 +384,7 @@ export default async function MyOrganizationPage({
     { thresholdMs: 1_000 }
   )
   const financeInput = await loadOrganizationWorkspaceFinanceInput({
+    canManageAccess: role === "owner" && orgId === user.id,
     orgId,
     programs: organizationEditorData.programs,
     supabase,

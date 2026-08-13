@@ -154,32 +154,45 @@ describe("Feeding Illinois food-resource ingestion", () => {
     )
   })
 
-  it("uses the official food-bank finder when a Cook County listing has no direct contact", () => {
-    const record = buildFeedingIllinoisRecord({
-      fetchedAt: "2026-08-13T12:00:00.000Z",
-      location: {
-        ...location,
-        contactEmail: null,
-        contactPhone: null,
-        phone: null,
-        regionId: 1,
-        website: null,
-      },
-      rawApiUrl: "https://api.accessfood.org/api/MapInformation/LocationSearch",
-      schedules,
-    })
+  it.each([
+    [
+      1,
+      "Find food through Greater Chicago Food Depository",
+      "https://www.chicagosfoodbank.org/find-food/",
+    ],
+    [
+      2,
+      "Find food through Northern Illinois Food Bank",
+      "https://solvehungertoday.org/get-groceries-resources/",
+    ],
+  ])(
+    "uses the official food-bank finder for region %s when a listing has no direct contact",
+    (regionId, label, url) => {
+      const record = buildFeedingIllinoisRecord({
+        fetchedAt: "2026-08-13T12:00:00.000Z",
+        location: {
+          ...location,
+          contactEmail: null,
+          contactPhone: null,
+          phone: null,
+          regionId,
+          website: null,
+        },
+        rawApiUrl:
+          "https://api.accessfood.org/api/MapInformation/LocationSearch",
+        schedules,
+      })
 
-    expect(record.extractedFields.intakeUrl).toBe(
-      "https://www.chicagosfoodbank.org/find-food/"
-    )
-    expect(record.extractedFields.links).toContainEqual({
-      isPrimary: true,
-      label: "Find food through Greater Chicago Food Depository",
-      type: "intake",
-      url: "https://www.chicagosfoodbank.org/find-food/",
-    })
-    expect(record.extractedFields.accessInstructions).toContain(
-      "linked food-bank finder"
-    )
-  })
+      expect(record.extractedFields.intakeUrl).toBe(url)
+      expect(record.extractedFields.links).toContainEqual({
+        isPrimary: true,
+        label,
+        type: "intake",
+        url,
+      })
+      expect(record.extractedFields.accessInstructions).toContain(
+        "linked food-bank finder"
+      )
+    }
+  )
 })

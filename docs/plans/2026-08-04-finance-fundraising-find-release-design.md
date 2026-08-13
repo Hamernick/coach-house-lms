@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
-**13 not started**.
+revision. Current progress: **20/35 complete (57%)**, **6 in progress**, and
+**9 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -175,11 +175,11 @@ revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
 - [x] `wave-5-criterion-2` **Complete:** Provide a simple accessible graph, text equivalent, Activity list, and History — Evidence: PR #121 merged as `a6016231` and deployed to both production projects; the source-composition rail exposes an accessible description plus visible labeled amounts, focused coverage passes, and authenticated production verification opened both Activity and History.
 - [x] `wave-5-criterion-3` **Complete:** Reconcile visible reporting to authorized external records and correction history — Evidence: merged reporting counts only verified, non-corrected USD inflows while retaining corrected originals and replacements in History; immutable correction storage, organization-scoped reads, focused correction coverage, and the connected Finance RLS matrix passed with PR #121 and its production deployment.
 - [x] `wave-5-criterion-4` **Complete:** Verify accurate CSV and PDF exports — Evidence: PR #164 merged as `f6ceb0c4`; main quality and both production deployments passed, and authenticated production displays the released CSV/PDF Export control. Nine focused tests parse the PDF and verify exact CSV fields, authorization, route behavior, formula neutralization, pagination, and bounded failures.
-- [ ] `wave-5-criterion-5` **In progress:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback — Evidence: branch `feat/finance-board-sharing-20260813` gives the owner a compact existing-board-member control for explicit Viewer, Manager, and No access states. Grants and revocations use the existing scoped table; RLS now requires current board membership and automatically removes a grant when membership is removed, added, or changes role so stale access cannot revive. Eight focused action, loader, failure, and UI tests, 30 existing Finance tests, local Finance RLS, targeted guardrails, and the production build pass; merge, deployment, authenticated production proof, and rollback remain.
+- [ ] `wave-5-criterion-5` **In progress:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback — Evidence: PR #165 merged as `2387591e`; main quality, the production migration, and both production deployments passed. Owners can explicitly assign Viewer, Manager, or No access to existing board members; RLS requires current board membership and removes grants across membership changes so stale access cannot revive. Eight focused action, loader, failure, and UI tests, 30 existing Finance tests, and Finance RLS pass; one authenticated production grant/revoke journey and a forward database rollback remain.
 
 **Wave 6 — Qualified resources and varied guides**
 
-- [ ] `wave-6-criterion-1` **Not started:** Report exact candidate, complete, verified, publishable, promoted, and public counts.
+- [x] `wave-6-criterion-1` **Complete:** Report exact candidate, complete, verified, publishable, promoted, and public counts — Evidence: the 2026-08-13 read-only count refresh reports the expanded local curated snapshot separately at `5,046` candidates and `741` complete/verified/publishable records. Exact production aggregates report `2,184` staged and parity at `853` verified, administrator-approved, publishable, promoted, and anonymous public rows; artifact hashes and reproduction steps are recorded.
 - [ ] `wave-6-criterion-2` **Not started:** Close provider, eligibility, summary, access, contact, and comparison evidence gaps by cohort.
 - [ ] `wave-6-criterion-3` **Not started:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records.
 - [ ] `wave-6-criterion-4` **Not started:** Publish current location-connected guides across multiple service categories.
@@ -261,6 +261,18 @@ revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
   Viewer, Manager, and No access states for existing board members. Database
   authorization requires current board membership and prevents stale grants
   from surviving or reviving across membership changes.
+
+#### Wave 6 current evidence
+
+- The [2026-08-13 count refresh](./2026-08-13-resource-map-count-refresh.md)
+  separates local artifacts from production instead of combining unlike
+  snapshots into a false funnel.
+- The expanded local curated snapshot has `5,046` candidates and `741`
+  contract-complete, independently verified, publishable records.
+- Production has `2,184` staged records and exact parity at `853` verified,
+  administrator-approved, publishable, promoted, and anonymous public rows.
+- No raw intake queue, synthetic seed, local preview, or unverified discovery
+  record was added to `/find`.
 
 #### Wave branch rules
 

@@ -53,6 +53,12 @@ pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publish
   completed promotion return the existing canonical IDs.
 - Promoted contacts and links remain private. Staged field evidence is copied to
   canonical targets in the same transaction.
+- Plan a source canary with `pnpm resource-map:publish-source-canary --
+--source-slug <slug> --input <records.jsonl>`. The dry run compares current
+  local evidence with staging and consumes stored review state without writing.
+- Applied source canaries accept at most five explicit import IDs and require
+  `--publish --apply --confirm-source <slug>`. The command never creates review
+  or verification evidence and never changes contact or link visibility.
 
 Evidence collection and enrichment are dry-run-first. Network access requires
 `--network true`; local output persistence requires `--write`. Import, review, promotion,

@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-import { createHash } from "node:crypto"
 import { pathToFileURL } from "node:url"
 
 import { analyzeResourceEnrichmentReadiness } from "./lib/enrichment-quality.mjs"
 import { createResourceMapAdminClient } from "./lib/env.mjs"
 import { buildCanonicalPayload } from "./lib/promotion-payloads.mjs"
+import { readResourceMapRecords } from "./lib/read-records.mjs"
 
-const CONCURRENCY = 6
-const MAX_ATTEMPTS = 5
+const DEFAULT_LIMIT = 5
+const MAX_CANARY_SIZE = 5
+const LOOKUP_CHUNK_SIZE = 100
 
 function parseArgs(argv) {
   const args = new Map()
@@ -25,184 +26,138 @@ function parseArgs(argv) {
   return args
 }
 
-function stableHash(value) {
-  return createHash("sha256").update(JSON.stringify(value)).digest("hex")
+function normalizeLimit(value) {
+  const parsed = Number.parseInt(String(value ?? DEFAULT_LIMIT), 10)
+  if (!Number.isFinite(parsed)) return DEFAULT_LIMIT
+  return Math.min(Math.max(parsed, 1), MAX_CANARY_SIZE)
 }
 
-function wait(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds))
+function normalizeIds(value) {
+  return [
+    ...new Set(
+      String(value ?? "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    ),
+  ]
 }
 
-async function withRetry(operation) {
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    try {
-      return await operation()
-    } catch (error) {
-      const transient =
-        error instanceof TypeError && /fetch failed/iu.test(error.message)
-      if (!transient || attempt === MAX_ATTEMPTS) throw error
-      await wait(attempt * 1000)
-    }
+function chunks(values, size = LOOKUP_CHUNK_SIZE) {
+  const result = []
+  for (let index = 0; index < values.length; index += size) {
+    result.push(values.slice(index, index + size))
   }
-  throw new Error("Retry loop ended unexpectedly.")
+  return result
 }
 
 async function requireData(operation) {
-  const response = await withRetry(operation)
+  const response = await operation()
   if (response.error) throw response.error
   return response.data
 }
 
-async function mapConcurrent(values, operation, concurrency = CONCURRENCY) {
-  const results = new Array(values.length)
-  let nextIndex = 0
-  async function worker() {
-    while (nextIndex < values.length) {
-      const index = nextIndex
-      nextIndex += 1
-      results[index] = await operation(values[index], index)
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, values.length) }, worker)
-  )
-  return results
+function verificationResult(run) {
+  return run?.structured_result?.verification ?? run?.structured_result ?? {}
 }
 
-function readUrl(value) {
-  if (typeof value !== "string" || !value.trim()) return null
-  try {
-    const url = new URL(value.trim())
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : null
-  } catch {
-    return null
-  }
-}
-
-function sourceUrlsForRecord(record, fields) {
-  const raw = record.raw_snapshot ?? {}
-  return [
-    record.source_url,
-    fields.websiteUrl,
-    fields.website_url,
-    fields.intakeUrl,
-    fields.intake_url,
-    raw.rawApiUrl,
-    raw.raw_api_url,
-  ]
-    .map(readUrl)
-    .filter(Boolean)
-    .filter((value, index, values) => values.indexOf(value) === index)
-}
-
-export function buildVerifiedRecord(record, verifiedAt) {
-  const fields = structuredClone(record.extracted_fields ?? {})
-  const enrichment = fields.enrichment ?? {}
-  const previousVerification = enrichment.verification ?? {}
-  fields.enrichment = {
-    ...enrichment,
-    needsReview: false,
-    verification: {
-      ...previousVerification,
-      contradictions: [],
-      status: "approved",
-      unsupportedClaims: [],
-    },
-  }
-  return {
-    ...record,
-    extracted_fields: fields,
-    last_verified_at: record.last_verified_at ?? verifiedAt,
-    needs_review: false,
-  }
-}
-
-function buildVerificationLedger(record, actorId) {
-  const fields = record.extracted_fields
-  const enrichment = fields.enrichment
-  const verification = enrichment.verification
-  const sourceUrls = sourceUrlsForRecord(record, fields)
-  const promptVersion = `${enrichment.methodVersion ?? "source-specific"}-production-verification-v1`
-  const inputHash = stableHash({
-    rawSnapshot: record.raw_snapshot,
-    sourceRecordId: record.source_record_id,
-    sourceUrls,
-  })
-  return {
-    actor_id: actorId,
-    attempt_count: 1,
-    completed_at: record.last_verified_at,
-    import_record_id: record.id,
-    input_sha256: inputHash,
-    issues: [],
-    output_sha256: stableHash(verification),
-    pass_number: 1,
-    pass_type: "verification",
-    prompt_version: promptVersion,
-    provider: "deterministic",
-    source_urls: sourceUrls,
-    started_at: record.last_verified_at,
-    status: "completed",
-    structured_result: verification,
-  }
-}
-
-async function verifyRecord(admin, record, actorId, reason, verifiedAt) {
-  const verifiedRecord = buildVerifiedRecord(record, verifiedAt)
-  const ledger = buildVerificationLedger(verifiedRecord, actorId)
-  const reviewWasNew =
-    record.review_status !== "approved" || !record.reviewed_at
-
-  await requireData(() =>
-    admin
-      .from("resource_map_import_records")
-      .update({
-        extracted_fields: verifiedRecord.extracted_fields,
-        last_verified_at: verifiedRecord.last_verified_at,
-        needs_review: false,
-        promotion_status: "ready",
-        review_status: "approved",
-        reviewed_at: record.reviewed_at ?? verifiedAt,
-        reviewed_by: actorId,
-      })
-      .eq("id", record.id)
-  )
-
-  await requireData(() =>
-    admin.from("resource_map_enrichment_runs").upsert(ledger, {
-      ignoreDuplicates: true,
-      onConflict:
-        "import_record_id,pass_type,pass_number,input_sha256,prompt_version",
-    })
-  )
-
-  if (reviewWasNew) {
-    await requireData(() =>
-      admin.from("resource_map_curation_events").insert({
-        action: "approve",
-        actor_id: actorId,
-        after_state: {
-          lastVerifiedAt: verifiedRecord.last_verified_at,
-          reviewStatus: "approved",
-          verificationStatus: "approved",
-        },
-        before_state: {
-          reviewStatus: record.review_status,
-          verificationStatus:
-            record.extracted_fields?.enrichment?.verification?.status ?? null,
-        },
-        import_record_id: record.id,
-        reason,
-      })
+export function hasApprovedVerificationLedger(runs) {
+  return runs.some((run) => {
+    const result = verificationResult(run)
+    return (
+      run.status === "completed" &&
+      result.status === "approved" &&
+      Array.isArray(run.issues) &&
+      run.issues.length === 0 &&
+      (result.unsupportedClaims ?? result.unsupported_claims ?? []).length ===
+        0 &&
+      (result.contradictions ?? []).length === 0
     )
-  }
+  })
+}
 
+export function storedApprovalGaps(record, verificationRuns = []) {
+  const gaps = []
+  if (record.review_status !== "approved") gaps.push("not_admin_approved")
+  if (!record.reviewed_by || !record.reviewed_at) {
+    gaps.push("missing_identified_reviewer")
+  }
+  if (!record.last_verified_at) gaps.push("missing_verification_time")
+  const readiness = analyzeResourceEnrichmentReadiness(record)
+  gaps.push(...readiness.blockingGaps.map((gap) => gap.code))
+  if (!hasApprovedVerificationLedger(verificationRuns)) {
+    gaps.push("missing_approved_verification_ledger")
+  }
+  return [...new Set(gaps)]
+}
+
+async function loadVerificationRuns(admin, recordIds) {
+  const runs = []
+  for (const idChunk of chunks(recordIds)) {
+    const data =
+      (await requireData(() =>
+        admin
+          .from("resource_map_enrichment_runs")
+          .select("import_record_id,status,structured_result,issues")
+          .in("import_record_id", idChunk)
+          .eq("pass_type", "verification")
+      )) ?? []
+    runs.push(...data)
+  }
+  return runs
+}
+
+async function loadAcceptedMatches(admin, recordIds) {
+  const matches = []
+  for (const idChunk of chunks(recordIds)) {
+    const data =
+      (await requireData(() =>
+        admin
+          .from("resource_map_import_record_matches")
+          .select("import_record_id")
+          .in("import_record_id", idChunk)
+          .eq("match_status", "accepted")
+      )) ?? []
+    matches.push(...data)
+  }
+  return new Set(matches.map((match) => match.import_record_id))
+}
+
+function titleForRecord(record) {
+  const fields = record.extracted_fields ?? {}
+  return fields.serviceTitle ?? fields.title ?? record.source_record_id
+}
+
+function localSourceId(record) {
+  return record.sourceId ?? record.source_id ?? null
+}
+
+function localRecordId(record) {
+  return record.sourceRecordId ?? record.source_record_id ?? null
+}
+
+export function summarizeLocalDelta(localRecords, stagedRecords, sourceSlug) {
+  const sourceRecords = localRecords.filter(
+    (record) => localSourceId(record) === sourceSlug
+  )
+  const publishableRecords = sourceRecords.filter(
+    (record) => analyzeResourceEnrichmentReadiness(record).publishable
+  )
+  const stagedIds = new Set(
+    stagedRecords.map((record) => record.source_record_id)
+  )
+  const matched = publishableRecords.filter((record) =>
+    stagedIds.has(localRecordId(record))
+  )
+  const missing = publishableRecords.filter(
+    (record) => !stagedIds.has(localRecordId(record))
+  )
   return {
-    ...verifiedRecord,
-    promotion_status: "ready",
-    review_status: "approved",
-    reviewed_at: record.reviewed_at ?? verifiedAt,
-    reviewed_by: actorId,
+    held: sourceRecords.length - publishableRecords.length,
+    matched,
+    missing,
+    publishable: publishableRecords.length,
+    total: sourceRecords.length,
   }
 }
 
@@ -222,64 +177,33 @@ async function promoteRecord(admin, record) {
   return result
 }
 
-async function exposeVerifiedContactAndLinks(admin, promotionResults) {
-  const organizationIds = promotionResults
-    .map((result) => result.organization_id)
-    .filter(Boolean)
-  const serviceIds = promotionResults
-    .map((result) => result.service_id)
-    .filter(Boolean)
-  if (organizationIds.length === 0) return
-
-  for (let index = 0; index < organizationIds.length; index += 100) {
-    const organizationChunk = organizationIds.slice(index, index + 100)
-    await requireData(() =>
-      admin
-        .from("resource_map_contacts")
-        .update({ is_public: true })
-        .in("organization_id", organizationChunk)
-    )
-    await requireData(() =>
-      admin
-        .from("resource_map_links")
-        .update({ is_public: true })
-        .in("organization_id", organizationChunk)
-        .in("link_type", ["website", "intake", "apply", "referral"])
-    )
-  }
-  for (let index = 0; index < serviceIds.length; index += 100) {
-    const serviceChunk = serviceIds.slice(index, index + 100)
-    await requireData(() =>
-      admin
-        .from("resource_map_contacts")
-        .update({ is_public: true })
-        .in("service_id", serviceChunk)
-    )
-    await requireData(() =>
-      admin
-        .from("resource_map_links")
-        .update({ is_public: true })
-        .in("service_id", serviceChunk)
-        .in("link_type", ["website", "intake", "apply", "referral"])
-    )
-  }
-}
-
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const sourceSlug = String(args.get("source-slug") ?? "").trim()
-  const actorId = String(args.get("actor-id") ?? "").trim()
+  const input = String(args.get("input") ?? "").trim()
+  const requestedIds = normalizeIds(args.get("id") ?? args.get("ids"))
+  const limit = normalizeLimit(args.get("limit"))
   const apply = Boolean(args.get("apply"))
-  const concurrency = Math.max(
-    1,
-    Number.parseInt(String(args.get("concurrency") ?? CONCURRENCY), 10)
-  )
-  const reason = String(
-    args.get("reason") ??
-      "Approved after deterministic comparison of official source records."
-  ).slice(0, 1000)
-  if (!sourceSlug || !actorId) {
-    throw new Error("--source-slug and --actor-id are required.")
+  const publish = Boolean(args.get("publish"))
+  const confirmedSource = String(args.get("confirm-source") ?? "").trim()
+
+  if (!sourceSlug) throw new Error("--source-slug is required.")
+  if (apply) {
+    if (!publish) throw new Error("--publish is required with --apply.")
+    if (confirmedSource !== sourceSlug) {
+      throw new Error("--confirm-source must exactly match --source-slug.")
+    }
+    if (requestedIds.length === 0) {
+      throw new Error("Explicit --id values are required with --apply.")
+    }
+    if (requestedIds.length > MAX_CANARY_SIZE) {
+      throw new Error(
+        `A canary may contain at most ${MAX_CANARY_SIZE} records.`
+      )
+    }
+    if (input) {
+      throw new Error("--input is read-only and cannot be used with --apply.")
+    }
   }
 
   const admin = createResourceMapAdminClient()
@@ -294,57 +218,112 @@ async function main() {
   if (source.trust_level !== "official") {
     throw new Error(`${sourceSlug} is not marked as an official source.`)
   }
-  const actor = await requireData(() =>
-    admin.from("profiles").select("id,role").eq("id", actorId).maybeSingle()
-  )
-  if (!actor || actor.role !== "admin") {
-    throw new Error("The review actor must be an existing administrator.")
+
+  let query = admin
+    .from("resource_map_import_records")
+    .select("*")
+    .eq("source_id", source.id)
+    .neq("promotion_status", "promoted")
+    .order("created_at", { ascending: true })
+    .limit(1000)
+  if (requestedIds.length > 0) query = query.in("id", requestedIds)
+  const records = (await requireData(() => query)) ?? []
+  if (apply && records.length !== requestedIds.length) {
+    throw new Error(
+      `Expected ${requestedIds.length} requested unpromoted records; found ${records.length}.`
+    )
   }
 
-  const records =
-    (await requireData(() =>
-      admin
-        .from("resource_map_import_records")
-        .select("*")
-        .eq("source_id", source.id)
-        .neq("promotion_status", "promoted")
-        .order("created_at", { ascending: true })
-        .limit(1000)
-    )) ?? []
-  const verifiedAt = new Date().toISOString()
-  const eligible = records
-    .map((record) => buildVerifiedRecord(record, verifiedAt))
-    .filter((record) => analyzeResourceEnrichmentReadiness(record).publishable)
+  if (input) {
+    const local = summarizeLocalDelta(
+      readResourceMapRecords(input),
+      records,
+      sourceSlug
+    )
+    console.log(
+      `Local delta: ${local.publishable}/${local.total} ${sourceSlug} records pass the local publication contract; held ${local.held}; matched staged rows ${local.matched.length}; missing staged rows ${local.missing.length}.`
+    )
+    for (const record of local.matched.slice(0, limit)) {
+      const staged = records.find(
+        (item) => item.source_record_id === localRecordId(record)
+      )
+      console.log(
+        `- refresh ${staged?.id} - ${record.extractedFields?.serviceTitle ?? record.extractedFields?.title ?? localRecordId(record)}`
+      )
+    }
+  }
+
+  const runs = await loadVerificationRuns(
+    admin,
+    records.map((record) => record.id)
+  )
+  const runsByRecord = new Map()
+  for (const run of runs) {
+    const values = runsByRecord.get(run.import_record_id) ?? []
+    values.push(run)
+    runsByRecord.set(run.import_record_id, values)
+  }
+  const evaluated = records.map((record) => ({
+    gaps: storedApprovalGaps(record, runsByRecord.get(record.id) ?? []),
+    record,
+  }))
+  const eligible = evaluated.filter((item) => item.gaps.length === 0)
+  const selected = eligible.slice(
+    0,
+    requestedIds.length > 0 ? requestedIds.length : limit
+  )
+  const acceptedMatches = await loadAcceptedMatches(
+    admin,
+    selected.map((item) => item.record.id)
+  )
+
+  console.log(
+    `Canary plan: ${eligible.length}/${records.length} unpromoted ${sourceSlug} records retain complete admin review and verification evidence; selected ${selected.length}; accepted duplicate matches ${acceptedMatches.size}.`
+  )
+  for (const item of selected) {
+    const duplicate = acceptedMatches.has(item.record.id)
+      ? " [accepted duplicate: promotion will block]"
+      : ""
+    console.log(
+      `- ${item.record.id} - ${titleForRecord(item.record)}${duplicate}`
+    )
+  }
+  const blockedCounts = {}
+  for (const item of evaluated.filter((item) => item.gaps.length > 0)) {
+    for (const gap of item.gaps)
+      blockedCounts[gap] = (blockedCounts[gap] ?? 0) + 1
+  }
+  if (Object.keys(blockedCounts).length > 0) {
+    console.log(
+      `Held: ${Object.entries(blockedCounts)
+        .map(([gap, count]) => `${gap}=${count}`)
+        .join(", ")}.`
+    )
+  }
 
   if (!apply) {
     console.log(
-      `Dry run: ${eligible.length} of ${records.length} unpromoted ${sourceSlug} records pass every publication gate after identified deterministic verification.`
+      "Dry run only; no review, verification, visibility, or publication state changed."
     )
     return
   }
+  if (selected.length !== records.length) {
+    throw new Error(
+      "Every explicitly requested record must pass the stored publication gates."
+    )
+  }
 
-  const verifiedRecords = await mapConcurrent(
-    eligible,
-    (record) => verifyRecord(admin, record, actorId, reason, verifiedAt),
-    concurrency
-  )
-  const promotionResults = await mapConcurrent(
-    verifiedRecords,
-    (record) => promoteRecord(admin, record),
-    concurrency
-  )
-  await exposeVerifiedContactAndLinks(admin, promotionResults)
-  const promoted = promotionResults.filter(
-    (result) => result.promotion_result === "promoted"
-  ).length
-  const alreadyPromoted = promotionResults.filter(
-    (result) => result.promotion_result === "already_promoted"
-  ).length
-  const blocked = promotionResults.filter(
-    (result) => result.promotion_result === "blocked"
-  ).length
+  const results = []
+  for (const item of selected)
+    results.push(await promoteRecord(admin, item.record))
+  const counts = {}
+  for (const result of results) {
+    counts[result.promotion_result] = (counts[result.promotion_result] ?? 0) + 1
+  }
   console.log(
-    `Verified and published ${promoted} ${sourceSlug} records; ${alreadyPromoted} were already promoted and ${blocked} were blocked as accepted duplicates.`
+    `Canary result: ${Object.entries(counts)
+      .map(([status, count]) => `${status}=${count}`)
+      .join(", ")}. Contacts and links retain their stored private visibility.`
   )
 }
 

@@ -27,6 +27,18 @@ const NAME_STOP_WORDS = new Set([
   "the",
 ])
 
+const ACRONYM_STOP_WORDS = new Set([
+  "and",
+  "at",
+  "chicago",
+  "for",
+  "illinois",
+  "in",
+  "of",
+  "on",
+  "the",
+])
+
 function readString(...values) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim()
@@ -60,6 +72,20 @@ function meaningfulNameTokens(value) {
         )
     ),
   ]
+}
+
+function providerNameAcronym(value) {
+  const acronym = normalizeText(value)
+    .split(" ")
+    .filter(
+      (token) =>
+        token.length >= 2 &&
+        !ACRONYM_STOP_WORDS.has(token) &&
+        !/^\d+$/u.test(token)
+    )
+    .map((token) => token[0])
+    .join("")
+  return acronym.length >= 4 && acronym.length <= 10 ? acronym : null
 }
 
 function phoneDigits(value) {
@@ -273,9 +299,21 @@ export function compareProviderPageSnapshot(record, snapshot) {
     const normalized = normalizeText(name)
     return normalized.length >= 5 && text.includes(normalized)
   })
+  const pageTokens = new Set(normalizeText(text).split(" "))
+  const matchedAcronym = providerNames
+    .map(providerNameAcronym)
+    .find((acronym) => acronym && pageTokens.has(acronym))
   const phone = phoneDigits(fields.phone)
   const phoneMatch = phone.length === 7 && allDigits(text).includes(phone)
   const hostText = normalizeText(new URL(snapshot.finalUrl).hostname)
+  const crossSiteRedirect =
+    baseDomain(new URL(snapshot.websiteUrl).hostname) !==
+    baseDomain(new URL(snapshot.finalUrl).hostname)
+  const acronymDomainMatch = providerNames
+    .map(providerNameAcronym)
+    .some(
+      (acronym) => !crossSiteRedirect && acronym && hostText.includes(acronym)
+    )
   const domainTokenMatch = allTokens.some(
     (token) =>
       token.length >= 5 && hostText.includes(token) && text.includes(token)
@@ -287,16 +325,20 @@ export function compareProviderPageSnapshot(record, snapshot) {
     addressNumber && text.includes(addressNumber)
   )
   const supported =
-    exactName || phoneMatch || multiTokenMatch || domainTokenMatch
-  const crossSiteRedirect =
-    baseDomain(new URL(snapshot.websiteUrl).hostname) !==
-    baseDomain(new URL(snapshot.finalUrl).hostname)
+    exactName ||
+    Boolean(matchedAcronym) ||
+    acronymDomainMatch ||
+    phoneMatch ||
+    multiTokenMatch ||
+    domainTokenMatch
   return {
     ...snapshot,
     addressNumberMatch,
     crossSiteRedirect,
     matchedSignals: [
       exactName ? "exact_provider_name" : null,
+      matchedAcronym ? "provider_name_acronym" : null,
+      acronymDomainMatch ? "provider_acronym_domain" : null,
       phoneMatch ? "phone" : null,
       multiTokenMatch ? "provider_name_tokens" : null,
       domainTokenMatch ? "provider_domain" : null,

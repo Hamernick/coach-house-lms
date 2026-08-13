@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **13/35 complete (37%)**, **5 in progress**, and
-**17 not started**.
+revision. Current progress: **15/35 complete (43%)**, **4 in progress**, and
+**16 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -164,10 +164,10 @@ revision. Current progress: **13/35 complete (37%)**, **5 in progress**, and
 **Wave 4 — Collect and My Map completion**
 
 - [x] `wave-4-criterion-1` **Complete:** Let visitors collect and remove nonprofits and resources locally — Evidence: PR #158 merged as `8f5196ab`; main quality and deployment passed, production `/find` returned `200`, and focused plus full release gates cover local collect, remove, persistence, and hydration.
-- [ ] `wave-4-criterion-2` **In progress:** Persist signed-in collections across devices with safe idempotent replay — Evidence: isolated account-sync implementation now normalizes, merges, and persists resource IDs through the existing authenticated preference endpoint; focused route and preference tests pass 6/6 plus lint.
+- [ ] `wave-4-criterion-2` **In progress:** Persist signed-in collections across devices with safe idempotent replay — Evidence: PR #159 merged as `6b2ac883`; production authenticated Builder/admin collect survived reload, appeared in My Map, removed cleanly, and remained removed after reload. Route tests prove bounded account-backed idempotent replay; one independent second-client observation remains before cross-device completion.
 - [x] `wave-4-criterion-3` **Complete:** Build My Map on the existing saved-organization foundation without separate Finder onboarding — Evidence: PR #158 renamed and extended the existing saved-organization rail and drawer for nonprofits and resources, retained shared account/navigation behavior, and added no Finder onboarding.
-- [ ] `wave-4-criterion-4` **In progress:** Keep collected records resolvable through loading, empty, stale, and error states — Evidence: isolated resilience implementation retains resolved collected resource cards during loading and failed refreshes, replaces false-empty states with loading or recovery feedback, permits confirmed unpublishing after successful refresh, and passes 78 focused tests plus lint.
-- [ ] `wave-4-criterion-5` **Not started:** Verify guest, account, and Builder journeys with RLS, production monitoring, and rollback proof.
+- [x] `wave-4-criterion-4` **Complete:** Keep collected records resolvable through loading, empty, stale, and error states — Evidence: PR #160 merged as `ae0deda7`; both production deployments passed, production My Map retained the collected resource through progressive reload, and 78 focused plus 2,079 full acceptance tests cover loading, empty, stale, error, retry, and confirmed unpublishing behavior.
+- [x] `wave-4-criterion-5` **Complete:** Verify guest, account, and Builder journeys with RLS, production monitoring, and rollback proof — Evidence: guest acceptance and production route proof pass; an authenticated Builder/admin completed a reversible production collect-reload-remove journey with the account restored to zero collected resources; all RLS suites pass, application console errors are empty, both deployments succeeded, and non-destructive rollback is `git revert ae0deda7 6b2ac883 8f5196ab` in reverse dependency order.
 
 **Wave 5 — Finance reporting completion**
 

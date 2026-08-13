@@ -24,6 +24,7 @@ import {
   mapGrantsGovSearchResponse,
 } from "@/features/workspace-finance/lib/grants-gov"
 import { parseWorkspaceFinanceCsvPreview } from "@/features/workspace-finance/lib/csv-preview"
+import { formatWorkspaceFinanceSyncFreshness } from "@/features/workspace-finance/lib/sync-freshness"
 import { WORKSPACE_FINANCE_SAMPLE_INPUT } from "@/features/workspace-finance/lib/sample-data"
 import { loadWorkspaceFinanceReadModel } from "@/features/workspace-finance/server/read-model"
 
@@ -583,6 +584,9 @@ describe("workspace-finance feature contract", () => {
     expect(source).toContain("<WorkspaceFinanceStripeConnection")
     expect(stripe).toContain("Stripe")
     expect(stripe).toContain("Read-only transaction sync")
+    expect(stripe).toContain("Read-only source")
+    expect(stripe).toContain("formatWorkspaceFinanceSyncFreshness")
+    expect(stripe).toContain('aria-live="polite"')
     expect(stripe).toContain("Continue to Stripe")
     expect(stripe).not.toContain("OAuth")
     expect(source).toContain("Manual record")
@@ -601,6 +605,27 @@ describe("workspace-finance feature contract", () => {
       manualAction.indexOf("createSupabaseAdminClient()")
     )
     expect(manualAction).toContain('.eq("user_id", activeOrg.orgId)')
+  })
+
+  it("labels Stripe source freshness without implying money movement", () => {
+    expect(
+      formatWorkspaceFinanceSyncFreshness({
+        lastSyncedAt: "2026-08-12T18:30:00.000Z",
+        status: "succeeded",
+        locale: "en-US",
+      })
+    ).toMatch(/^Last synced Aug 12, 2026, /)
+    expect(
+      formatWorkspaceFinanceSyncFreshness({
+        lastSyncedAt: "2026-08-12T18:30:00.000Z",
+        status: "failed",
+        locale: "en-US",
+      })
+    ).toMatch(/^Sync failed · Last synced Aug 12, 2026, /)
+    expect(formatWorkspaceFinanceSyncFreshness({ status: "running" })).toBe(
+      "Sync in progress · Not synced yet"
+    )
+    expect(formatWorkspaceFinanceSyncFreshness({})).toBe("Not synced yet")
   })
 
   it("normalizes manual records without guessing reconciliation or corrections", () => {

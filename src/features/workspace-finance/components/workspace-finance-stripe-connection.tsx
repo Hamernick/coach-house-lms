@@ -21,6 +21,7 @@ import type {
   WorkspaceFinanceRecordInput,
   WorkspaceFinanceStripeConnectionInput,
 } from "../types"
+import { formatWorkspaceFinanceSyncFreshness } from "../lib/sync-freshness"
 
 const RECORD_TYPES = [
   { value: "donation", label: "Donations" },
@@ -30,8 +31,8 @@ const RECORD_TYPES = [
 ] as const
 
 function accountLabel(accountId: string | null | undefined) {
-  if (!accountId) return "Connected"
-  return `Connected · ${accountId.slice(-4)}`
+  if (!accountId) return "Read-only source"
+  return `Read-only source · Account ••••${accountId.slice(-4)}`
 }
 
 export function WorkspaceFinanceStripeConnection({
@@ -45,9 +46,14 @@ export function WorkspaceFinanceStripeConnection({
   }) => void
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [lastSyncedAt, setLastSyncedAt] = useState(
+    connection.lastSyncedAt ?? null
+  )
+  const [syncStatus, setSyncStatus] = useState(connection.lastSyncStatus)
   const [pending, startTransition] = useTransition()
 
   function sync() {
+    setSyncStatus("running")
     startTransition(async () => {
       try {
         const response = await fetch(
@@ -63,6 +69,8 @@ export function WorkspaceFinanceStripeConnection({
         if (!response.ok || !result.records || !result.syncedAt) {
           throw new Error(result.error || "Stripe could not be synced.")
         }
+        setLastSyncedAt(result.syncedAt)
+        setSyncStatus("succeeded")
         onSynced({ records: result.records, syncedAt: result.syncedAt })
         toast.success(
           result.imported
@@ -70,6 +78,7 @@ export function WorkspaceFinanceStripeConnection({
             : "Stripe is up to date"
         )
       } catch (error) {
+        setSyncStatus("failed")
         toast.error(
           error instanceof Error ? error.message : "Stripe could not be synced."
         )
@@ -90,6 +99,17 @@ export function WorkspaceFinanceStripeConnection({
               ? accountLabel(connection.accountId)
               : "Read-only transaction sync"}
           </span>
+          {connection.state === "connected" ? (
+            <span
+              aria-live="polite"
+              className="text-muted-foreground mt-0.5 block truncate text-xs"
+            >
+              {formatWorkspaceFinanceSyncFreshness({
+                lastSyncedAt,
+                status: syncStatus,
+              })}
+            </span>
+          ) : null}
         </span>
 
         {connection.state === "connected" ? (
@@ -101,7 +121,7 @@ export function WorkspaceFinanceStripeConnection({
             disabled={pending}
             onClick={sync}
           >
-            {pending ? "Syncing" : "Sync"}
+            {pending ? "Syncing…" : "Sync"}
           </Button>
         ) : connection.state === "not_connected" ? (
           <Button

@@ -219,24 +219,30 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-5-finance-reporting",
     sequence: 5,
-    status: "queued",
+    status: "active",
     title: "Finance reporting completion",
     criteria: defineCriteria(5, [
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "PR #121 released bounded read-only Stripe activity and source-labeled records; branch feat/finance-reporting-wave5-20260812 adds visible read-only source and last-sync states with 70 focused Finance tests passing; merge and production proof remain",
+        ],
+        state: "in_progress",
         title:
           "Connect read-only external activity with explicit source and freshness labels",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "PR #121 merged as a6016231 and deployed to both production projects; the source-composition rail exposes an accessible description plus visible labeled amounts, focused coverage passes, and authenticated production verification opened Activity and History",
+        ],
+        state: "complete",
         title:
           "Provide a simple accessible graph, text equivalent, Activity list, and History",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Merged reporting counts only verified, non-corrected USD inflows while retaining corrected originals and replacements in History; immutable correction storage, organization-scoped reads, focused correction coverage, and connected Finance RLS passed with PR #121 and production deployment",
+        ],
+        state: "complete",
         title:
           "Reconcile visible reporting to authorized external records and correction history",
       },

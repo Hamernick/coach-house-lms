@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **15/35 complete (43%)**, **4 in progress**, and
-**16 not started**.
+revision. Current progress: **17/35 complete (49%)**, **5 in progress**, and
+**13 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -171,9 +171,9 @@ revision. Current progress: **15/35 complete (43%)**, **4 in progress**, and
 
 **Wave 5 — Finance reporting completion**
 
-- [ ] `wave-5-criterion-1` **Not started:** Connect read-only external activity with explicit source and freshness labels.
-- [ ] `wave-5-criterion-2` **Not started:** Provide a simple accessible graph, text equivalent, Activity list, and History.
-- [ ] `wave-5-criterion-3` **Not started:** Reconcile visible reporting to authorized external records and correction history.
+- [ ] `wave-5-criterion-1` **In progress:** Connect read-only external activity with explicit source and freshness labels — Evidence: PR #121 released the bounded read-only Stripe activity connection and source-labeled records; branch `feat/finance-reporting-wave5-20260812` adds visible read-only source and last-sync states with 70 focused Finance tests passing. Merge and production proof remain.
+- [x] `wave-5-criterion-2` **Complete:** Provide a simple accessible graph, text equivalent, Activity list, and History — Evidence: PR #121 merged as `a6016231` and deployed to both production projects; the source-composition rail exposes an accessible description plus visible labeled amounts, focused coverage passes, and authenticated production verification opened both Activity and History.
+- [x] `wave-5-criterion-3` **Complete:** Reconcile visible reporting to authorized external records and correction history — Evidence: merged reporting counts only verified, non-corrected USD inflows while retaining corrected originals and replacements in History; immutable correction storage, organization-scoped reads, focused correction coverage, and the connected Finance RLS matrix passed with PR #121 and its production deployment.
 - [ ] `wave-5-criterion-4` **Not started:** Verify accurate CSV and PDF exports.
 - [ ] `wave-5-criterion-5` **Not started:** Verify explicit revocable board sharing, role isolation, failure states, and production rollback.
 
@@ -238,6 +238,22 @@ revision. Current progress: **15/35 complete (43%)**, **4 in progress**, and
 - The legal text remains pending qualified legal approval. The exact entity
   details, postal address, retention schedule, vendor agreements, and state-law
   applicability must be confirmed before production release.
+
+#### Wave 5 current evidence
+
+- PR #121 merged as `a6016231` with the Finance workspace release. GitHub
+  quality passed, and both Vercel production deployments completed
+  successfully on 2026-08-09.
+- The authenticated production rollout verified that Finance opens its Activity
+  and History views. The shipped source rail has a programmatic text equivalent
+  and visible source labels and amounts.
+- Raised, source composition, and program progress derive only from authorized,
+  verified, non-corrected USD inflows. Corrected originals and their verified
+  replacements remain linked and visible in History behind organization-scoped
+  RLS; the connected Finance matrix passed.
+- Branch `feat/finance-reporting-wave5-20260812` exposes the already-loaded
+  Stripe sync timestamp as explicit freshness copy and preserves the read-only
+  source label across connected, never-synced, syncing, and failed states.
 
 #### Wave branch rules
 

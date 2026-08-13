@@ -2,6 +2,7 @@
 import { pathToFileURL } from "node:url"
 
 import { createResourceMapAdminClient } from "./lib/env.mjs"
+import { analyzeResourceEnrichmentReadiness } from "./lib/enrichment-quality.mjs"
 import {
   buildNormalizedImportFields,
   resolveExtractedFields,
@@ -18,6 +19,7 @@ const LOOKUP_CHUNK_SIZE = 100
 const RECORD_WRITE_CHUNK_SIZE = 10
 const EVIDENCE_WRITE_CHUNK_SIZE = 200
 const TRANSIENT_FETCH_ATTEMPTS = 3
+const MAX_EXISTING_ONLY_REFRESH = 25
 
 function parseArgs(argv) {
   const args = new Map()
@@ -264,6 +266,18 @@ function readObject(value) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value
     : {}
+}
+
+function localSourceSlug(record) {
+  return record.sourceId ?? record.source_id ?? null
+}
+
+function selectExistingOnlyRows(rows, sourceSlug) {
+  return rows.filter(
+    (record) =>
+      localSourceSlug(record) === sourceSlug &&
+      analyzeResourceEnrichmentReadiness(record).publishable
+  )
 }
 
 function readEvidenceArray(record) {
@@ -608,6 +622,53 @@ export function resolveExistingAssignments(
   })
 }
 
+export function summarizeExistingOnlyPlan(assignments) {
+  const matched = assignments.flatMap((assignment, index) =>
+    assignment ? [{ ...assignment, index }] : []
+  )
+  const refreshable = matched.filter(
+    ({ record }) =>
+      record.promotion_status === "not_promoted" &&
+      record.review_status !== "approved"
+  )
+  return {
+    matched,
+    missing: assignments.length - matched.length,
+    protected: matched.length - refreshable.length,
+    refreshable,
+  }
+}
+
+async function loadExistingOfficialSource(admin, sourceSlug) {
+  const { data, error } = await retryTransientFetch(() =>
+    admin
+      .from("resource_map_sources")
+      .select("id,slug,trust_level")
+      .eq("slug", sourceSlug)
+      .maybeSingle()
+  )
+  if (error) throw error
+  if (!data) throw new Error(`Unknown resource source ${sourceSlug}.`)
+  if (data.trust_level !== "official") {
+    throw new Error(`${sourceSlug} is not marked as an official source.`)
+  }
+  return data
+}
+
+async function planExistingOnlyRefresh(admin, rows, source) {
+  const payload = rows.map((row) =>
+    buildImportRecord(row, source.id, null, null)
+  )
+  const existingRecords = await fetchExistingImportRecords(
+    admin,
+    source.id,
+    payload,
+    true
+  )
+  const assignments = resolveExistingAssignments(existingRecords, payload, true)
+  return summarizeExistingOnlyPlan(assignments)
+}
+
 async function refreshExistingAssignments(admin, assignments, payload) {
   let refreshed = 0
   let reconciled = 0
@@ -686,14 +747,67 @@ async function main() {
   const input = args.get("input")
   const dryRun = Boolean(args.get("dry-run"))
   const refreshExisting = Boolean(args.get("refresh-existing"))
+  const existingOnly = Boolean(args.get("existing-only"))
+  const apply = Boolean(args.get("apply"))
+  const sourceSlug = String(args.get("source-slug") ?? "").trim()
+  const confirmedSource = String(args.get("confirm-source") ?? "").trim()
 
   if (!input) {
     throw new Error(
-      "Usage: pnpm resource-map:import -- --input records.jsonl|records.json --source-slug source --source-name 'Source Name' [--refresh-existing] [--dry-run]"
+      "Usage: pnpm resource-map:import -- --input records.jsonl|records.json --source-slug source --source-name 'Source Name' [--refresh-existing] [--existing-only] [--dry-run]"
     )
   }
+  if (existingOnly && !refreshExisting) {
+    throw new Error("--existing-only requires --refresh-existing.")
+  }
+  if (existingOnly && !sourceSlug) {
+    throw new Error("--source-slug is required with --existing-only.")
+  }
+  if (existingOnly && !dryRun) {
+    if (!apply) throw new Error("--apply is required to refresh existing rows.")
+    if (confirmedSource !== sourceSlug) {
+      throw new Error("--confirm-source must exactly match --source-slug.")
+    }
+  }
 
-  const rows = readResourceMapRecords(input)
+  const inputRows = readResourceMapRecords(input)
+  let rows = existingOnly
+    ? selectExistingOnlyRows(inputRows, sourceSlug)
+    : inputRows
+  let admin
+  let existingSource
+  if (existingOnly) {
+    if (rows.length === 0) {
+      throw new Error(
+        `No publishable ${sourceSlug} records were found in the input.`
+      )
+    }
+    admin = createResourceMapAdminClient()
+    existingSource = await loadExistingOfficialSource(admin, sourceSlug)
+    const plan = await planExistingOnlyRefresh(admin, rows, existingSource)
+    console.log(
+      `Existing-only plan: ${plan.refreshable.length}/${rows.length} publishable ${sourceSlug} records can refresh existing unapproved staging rows; missing ${plan.missing}; protected ${plan.protected}.`
+    )
+    for (const assignment of plan.refreshable.slice(0, 5)) {
+      console.log(
+        `- refresh ${assignment.record.id} - ${assignment.record.source_record_id}`
+      )
+    }
+    if (plan.refreshable.length === 0) {
+      throw new Error("No existing staging rows are eligible for refresh.")
+    }
+    if (plan.refreshable.length > MAX_EXISTING_ONLY_REFRESH) {
+      throw new Error(
+        `An existing-only refresh may contain at most ${MAX_EXISTING_ONLY_REFRESH} records.`
+      )
+    }
+    if (plan.protected > 0) {
+      throw new Error(
+        "Existing-only refresh refuses inputs that match approved, ready, or promoted staging rows."
+      )
+    }
+    rows = plan.refreshable.map(({ index }) => rows[index])
+  }
   if (dryRun) {
     const rawSummary = summarizeRawPlan(rows, input, args)
     console.log(
@@ -705,8 +819,10 @@ async function main() {
     return
   }
 
-  const admin = createResourceMapAdminClient()
-  const sourceId = await upsertSource(admin, args)
+  admin ??= createResourceMapAdminClient()
+  const sourceId = existingOnly
+    ? existingSource.id
+    : await upsertSource(admin, args)
   const ingestionRun = await upsertIngestionRun(admin, {
     args,
     input,
@@ -794,6 +910,11 @@ async function main() {
     const missingIndexes = assignments.flatMap((assignment, index) =>
       assignment ? [] : [index]
     )
+    if (existingOnly && missingIndexes.length > 0) {
+      throw new Error(
+        "Existing staging rows changed after preflight; no new import records were inserted."
+      )
+    }
     const missingPayload = missingIndexes.map((index) => payload[index])
     const insertedRecords = await insertRowsInChunks({
       admin,

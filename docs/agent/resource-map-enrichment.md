@@ -59,6 +59,14 @@ pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publish
 - Applied source canaries accept at most five explicit import IDs and require
   `--publish --apply --confirm-source <slug>`. The command never creates review
   or verification evidence and never changes contact or link visibility.
+- Plan a bounded staging refresh with `resource-map:import -- --input
+<records.jsonl> --source-slug <slug> --refresh-existing --existing-only
+--dry-run`. This mode selects only publishable records from that exact local
+  source, reads an existing official source, caps the matched refresh at 25,
+  skips unstaged records, and refuses approved, ready, or promoted matches.
+  Applying the same plan additionally requires `--apply --confirm-source
+<slug>` and fails closed if any selected staging row disappears after
+  preflight; it never inserts a missing import record.
 
 Evidence collection and enrichment are dry-run-first. Network access requires
 `--network true`; local output persistence requires `--write`. Import, review, promotion,

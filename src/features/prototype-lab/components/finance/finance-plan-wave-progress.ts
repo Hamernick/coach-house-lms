@@ -249,8 +249,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Reconcile visible reporting to authorized external records and correction history",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Branch feat/finance-report-exports-20260813 adds authorized CSV and PDF history exports with signed cents, UTC timestamps, program, correction, verification, spreadsheet-formula safety, pagination, and bounded failure handling; nine focused tests and the production build pass, while merge, deployment, and production download proof remain",
+        ],
+        state: "in_progress",
         title: "Verify accurate CSV and PDF exports",
       },
       {

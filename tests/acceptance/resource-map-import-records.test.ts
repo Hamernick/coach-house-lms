@@ -34,6 +34,10 @@ const VERIFY_AND_PUBLISH_SOURCE = join(
   ROOT,
   "scripts/resource-map/verify-and-publish-source-records.mjs"
 )
+const VERIFY_COOK_COUNTY_COOLING = join(
+  ROOT,
+  "scripts/resource-map/verify-cook-county-cooling-records.mjs"
+)
 
 function withTempFile(
   fileName: string,
@@ -474,6 +478,21 @@ describe("resource map import records", () => {
 
     expect(hasApprovedVerificationLedger(ledger)).toBe(true)
     expect(
+      hasApprovedVerificationLedger([
+        { ...ledger[0], completed_at: "2026-08-12T00:00:00.000Z" },
+        {
+          completed_at: "2026-08-13T00:00:00.000Z",
+          issues: ["removed_from_current_official_source"],
+          status: "needs_review",
+          structured_result: {
+            contradictions: ["removed_from_current_official_source"],
+            status: "needs_review",
+            unsupportedClaims: [],
+          },
+        },
+      ])
+    ).toBe(false)
+    expect(
       summarizeLocalDelta(
         [
           {
@@ -524,6 +543,60 @@ describe("resource map import records", () => {
     const reviewSource = readFileSync(REVIEW_IMPORTS, "utf8")
     expect(reviewSource).toContain("--actor-id is required with --apply")
     expect(reviewSource).toContain('data.role !== "admin"')
+  })
+
+  it("verifies bounded Cook County canaries against the current official source", async () => {
+    const source = readFileSync(VERIFY_COOK_COUNTY_COOLING, "utf8")
+    const { buildVerificationPlan } = await import(
+      pathToFileURL(VERIFY_COOK_COUNTY_COOLING).href
+    )
+    const plan = buildVerificationPlan(
+      [
+        {
+          id: "current",
+          source_record_id: "current-source-id",
+          extracted_fields: {
+            address: "15350 Oak Park Ave",
+            hours: { label: "Monday - Friday" },
+            latitude: 41.6,
+            longitude: -87.7,
+            phone: "(708) 333-9530",
+            serviceTitle: "Bremen Township — Cooling Center",
+          },
+        },
+        {
+          id: "removed",
+          source_record_id: "removed-source-id",
+          extracted_fields: {
+            serviceTitle: "Removed Courthouse — Cooling Center",
+          },
+        },
+      ],
+      [
+        {
+          contactphone: "708-333-9530",
+          hours_of_operation: "Monday - Friday",
+          latitude: "41.6",
+          longitude: "-87.7",
+          name: "Bremen Township",
+          streetaddress: "15350 Oak Park Ave",
+        },
+      ],
+      "2026-08-13T23:10:30.535Z"
+    )
+
+    expect(plan[0].verification.status).toBe("approved")
+    expect(plan[0].issues).toEqual([])
+    expect(plan[1].verification.status).toBe("needs_review")
+    expect(plan[1].issues).toEqual(["removed_from_current_official_source"])
+    expect(source).toContain("const MAX_RECORDS = 5")
+    expect(source).toContain("Explicit --id values are required")
+    expect(source).toContain(
+      "--confirm-source must exactly match the Cook County source"
+    )
+    expect(source).toContain("Review and publication state remain unchanged")
+    expect(source).not.toContain("review_status:")
+    expect(source).not.toContain("promotion_status:")
   })
 
   it("links staged imports to raw ingestion records in the DB write path", () => {

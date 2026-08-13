@@ -62,18 +62,22 @@ function verificationResult(run) {
 }
 
 export function hasApprovedVerificationLedger(runs) {
-  return runs.some((run) => {
-    const result = verificationResult(run)
-    return (
-      run.status === "completed" &&
-      result.status === "approved" &&
-      Array.isArray(run.issues) &&
-      run.issues.length === 0 &&
-      (result.unsupportedClaims ?? result.unsupported_claims ?? []).length ===
-        0 &&
-      (result.contradictions ?? []).length === 0
+  const latest = [...runs].sort((left, right) =>
+    String(right.completed_at ?? right.created_at ?? "").localeCompare(
+      String(left.completed_at ?? left.created_at ?? "")
     )
-  })
+  )[0]
+  if (!latest) return false
+  const result = verificationResult(latest)
+  return (
+    latest.status === "completed" &&
+    result.status === "approved" &&
+    Array.isArray(latest.issues) &&
+    latest.issues.length === 0 &&
+    (result.unsupportedClaims ?? result.unsupported_claims ?? []).length ===
+      0 &&
+    (result.contradictions ?? []).length === 0
+  )
 }
 
 export function storedApprovalGaps(record, verificationRuns = []) {
@@ -98,7 +102,9 @@ async function loadVerificationRuns(admin, recordIds) {
       (await requireData(() =>
         admin
           .from("resource_map_enrichment_runs")
-          .select("import_record_id,status,structured_result,issues")
+          .select(
+            "import_record_id,status,structured_result,issues,completed_at,created_at"
+          )
           .in("import_record_id", idChunk)
           .eq("pass_type", "verification")
       )) ?? []

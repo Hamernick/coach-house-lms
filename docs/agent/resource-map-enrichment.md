@@ -49,6 +49,9 @@ pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publish
 - The RPC locks one import record and requires approved review, a real reviewer,
   a verification timestamp, two source comparisons, an approved completed
   verification ledger entry, and no unresolved claims.
+- Publication must evaluate only the latest stored verification result. A newer
+  source removal, contradiction, or needs-review result supersedes every older
+  approval.
 - Accepted duplicate matches atomically block new-record promotion. Retries of a
   completed promotion return the existing canonical IDs.
 - Promoted contacts and links remain private. Staged field evidence is copied to
@@ -67,6 +70,13 @@ pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publish
   Applying the same plan additionally requires `--apply --confirm-source
 <slug>` and fails closed if any selected staging row disappears after
   preflight; it never inserts a missing import record.
+- Verify a Cook County cooling-center canary against the current official
+  Socrata rows with `resource-map:verify-cook-county-cooling -- --id
+<uuid,...>`. The command accepts at most five exact unapproved/unpromoted
+  staging IDs, bounds the live response, compares name, address, hours, phone,
+  and coordinates, and is read-only by default. Storing the deterministic
+  ledger additionally requires `--apply --confirm-source
+cook-county-socrata-cooling-centers`; it never reviews or publishes records.
 
 Evidence collection and enrichment are dry-run-first. Network access requires
 `--network true`; local output persistence requires `--write`. Import, review, promotion,

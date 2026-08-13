@@ -61,5 +61,25 @@ preflight prevents missing records from being inserted if staging changes.
 
 The connected dry run selected the expected 25 existing unapproved staging
 rows, reported nine unstaged publishable rows and zero protected matches, and
-made no write. The production refresh still requires a separate approved
-execution after this guard is merged.
+made no write. The subsequent production execution is recorded below.
+
+## Production refresh and live-source correction
+
+After PR #174 merged with quality and both deployments green, the confirmed
+existing-only operation refreshed 25 unapproved staging rows, inserted zero new
+import records, preserved 25 raw payloads, and added 803 field-evidence rows.
+It did not review, promote, or publish any record. The public API remained at
+853 resources with zero Cook County cooling centers.
+
+The independent live-source check then found that Cook County's official
+Socrata dataset now contains 33 rows rather than the retained 35. Markham,
+Maywood, and Skokie courthouses were removed; LaGrange Park Public Library was
+added. Three of the first five canary records still match the current source,
+while Markham and Maywood must remain held.
+
+The next guard therefore consumes only the latest verification result, so a
+newer removal or contradiction supersedes any historical approval. The bounded
+Cook County verifier checks at most five exact staging IDs against current
+official fields and writes only a deterministic verification ledger after
+explicit source confirmation. Administrator review and publication remain
+separate operations.

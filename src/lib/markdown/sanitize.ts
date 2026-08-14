@@ -1,68 +1,92 @@
-const BLOCKLISTED_TAGS = [
-  "script",
-  "style",
-  "iframe",
-  "object",
-  "embed",
-  "link",
-  "meta",
-  "svg",
-  "math",
-  "form",
-  "input",
-  "button",
-  "textarea",
-  "select",
-  "option",
-  "base",
-  "template",
-]
-const EVENT_HANDLER_REGEX =
-  /\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi
-const DANGEROUS_PROTOCOL_REGEX = /(?:javascript|vbscript)\s*:/gi
-const URL_ATTRIBUTE_REGEX =
-  /\s+(href|src|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi
+import cleanHtml from "sanitize-html"
 
-function decodeNumericHtmlEntities(value: string): string {
-  return value
-    .replace(/&#x([0-9a-f]+);?/gi, (_, hex: string) =>
-      String.fromCodePoint(Number.parseInt(hex, 16)),
-    )
-    .replace(/&#([0-9]+);?/g, (_, decimal: string) =>
-      String.fromCodePoint(Number.parseInt(decimal, 10)),
-    )
+const RICH_TEXT_TAGS = [
+  "p",
+  "div",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "blockquote",
+  "pre",
+  "code",
+  "hr",
+  "br",
+  "ol",
+  "ul",
+  "li",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "s",
+  "del",
+  "u",
+  "sub",
+  "sup",
+  "span",
+  "mark",
+  "a",
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "th",
+  "td",
+  "img",
+]
+
+const SAFE_COLOR =
+  /^(?:#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%a-z]+\)|[a-z]+)$/i
+
+const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
+  allowedTags: RICH_TEXT_TAGS,
+  allowedAttributes: {
+    a: ["href", "target", "rel", "class"],
+    img: ["src", "alt", "title", "width", "height", "loading"],
+    ol: ["start", "type", "class"],
+    ul: ["class"],
+    p: ["style"],
+    div: ["style"],
+    h1: ["style"],
+    h2: ["style"],
+    h3: ["style"],
+    h4: ["style"],
+    h5: ["style"],
+    h6: ["style"],
+    span: ["style"],
+    mark: ["style", "data-color"],
+    th: ["colspan", "rowspan", "colwidth", "style"],
+    td: ["colspan", "rowspan", "colwidth", "style"],
+  },
+  allowedClasses: {
+    a: ["text-primary", "underline", "underline-offset-2"],
+    ol: ["list-decimal"],
+    ul: ["list-disc"],
+  },
+  allowedStyles: {
+    "*": {
+      "text-align": [/^(?:left|center|right|justify)$/],
+      color: [SAFE_COLOR],
+      "background-color": [SAFE_COLOR],
+    },
+  },
+  allowedSchemes: ["http", "https", "mailto", "tel"],
+  allowedSchemesByTag: {
+    a: ["http", "https", "mailto", "tel"],
+    img: ["http", "https"],
+  },
+  allowProtocolRelative: false,
+  nonTextTags: ["style", "script", "textarea", "option", "xmp", "noscript"],
 }
 
 export function sanitizeHtml(input: string): string {
   if (!input) return ""
-  let sanitized = input
-
-  for (const tag of BLOCKLISTED_TAGS) {
-    const pattern = new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi")
-    sanitized = sanitized.replace(pattern, "")
-    const selfClosing = new RegExp(`<${tag}\\b[^>]*\\/?>`, "gi")
-    sanitized = sanitized.replace(selfClosing, "")
-  }
-
-  sanitized = sanitized.replace(EVENT_HANDLER_REGEX, "")
-  sanitized = sanitized.replace(
-    URL_ATTRIBUTE_REGEX,
-    (match, attribute: string, doubleValue, singleValue, bareValue) => {
-      const value = String(doubleValue ?? singleValue ?? bareValue ?? "")
-      const normalized = decodeNumericHtmlEntities(value)
-        .replace(/[\u0000-\u0020]+/g, "")
-        .toLowerCase()
-      if (
-        normalized.startsWith("javascript:") ||
-        normalized.startsWith("vbscript:") ||
-        normalized.startsWith("data:text/html")
-      ) {
-        return ` ${attribute}="#"`
-      }
-      return match
-    },
+  return cleanHtml(input, RICH_TEXT_OPTIONS).replace(
+    /<(br|hr|img)([^>]*) \/>/gi,
+    "<$1$2>"
   )
-  sanitized = sanitized.replace(DANGEROUS_PROTOCOL_REGEX, "noop:")
-
-  return sanitized
 }

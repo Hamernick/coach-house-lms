@@ -131,6 +131,7 @@ async function createPlatformAdmin(adminClient, entry) {
     data: { user },
     error,
   } = await adminClient.auth.admin.createUser({
+    app_metadata: { legal_consent_exempt: "service_provisioned" },
     email: entry.email,
     password: entry.password,
     email_confirm: true,

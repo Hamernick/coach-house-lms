@@ -74,6 +74,7 @@ async function createAccount(key: AccountKey, name: string, suffix: string) {
   const email = `fiscal-auth-${key}-${suffix}@example.test`
   const password = `FiscalRoute-${suffix}-9!`
   const { data, error } = await admin.auth.admin.createUser({
+    app_metadata: { legal_consent_exempt: "service_provisioned" },
     email,
     email_confirm: true,
     password,

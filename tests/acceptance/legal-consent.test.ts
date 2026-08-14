@@ -165,4 +165,20 @@ describe("legal consent", () => {
     expect(testerAction).not.toContain("createSupabaseAdminClient")
     expect(testerAction).not.toContain("email_confirm")
   })
+
+  it("rejects public signup without current server-validated consent", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20260814090000_enforce_signup_legal_consent.sql",
+      "utf8"
+    )
+    expect(migration).toContain(
+      "raise exception 'Current Terms and Privacy Policy acceptance is required.'"
+    )
+    expect(migration).toContain("new.raw_app_meta_data")
+    expect(migration).toContain("legal_consent_exempt' = 'service_provisioned'")
+    expect(migration).not.toContain(
+      "new.raw_user_meta_data ->> 'legal_consent_exempt'"
+    )
+    expect(migration).toContain("coalesce(new.created_at, now())")
+  })
 })

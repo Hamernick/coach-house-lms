@@ -268,7 +268,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-6-resources-guides",
     sequence: 6,
-    status: "active",
+    status: "production_verified",
     title: "Qualified resources and varied guides",
     criteria: defineCriteria(6, [
       {
@@ -304,8 +304,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Publish current location-connected guides across multiple service categories",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The approved Bremen, Brookfield, and Calumet canaries remained present in the complete 856-row anonymous catalog, and their three exact detail routes plus the shared official Cook County source returned 200; a bounded production rehearsal hid only the approved Bremen service, verified the canonical public projection changed from 856 to 855 with that service absent, restored it in finally, and verified exact recovery to 856; the final service is published with no hidden, suppressed, or deleted marker, audited hide and restore events preserve both states, and /find, quality, and both production deployments are healthy",
+        ],
+        state: "complete",
         title:
           "Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof",
       },

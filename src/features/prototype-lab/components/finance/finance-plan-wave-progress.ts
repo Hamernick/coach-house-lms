@@ -329,7 +329,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "A standard security review of merged commit 6dcabc1b completed on 2026-08-14 with ten validated findings: three high, six medium, and one low; PR #191 completes production proof for the signup-consent boundary after the earlier merged remediation work; one medium risk, named backup ownership, alert delivery, and production retention evidence remain open",
+          "All ten findings from the 2026-08-14 security review are remediated; PR #193 merged as 19e47b24, main quality and both production deployments passed, local and production migration history match exactly through 20260814200500, the restricted recorder and blocked direct writes were verified live, the independent 15-minute retention job completed successfully, and one same-origin production canary recorded then cleaned back to zero; named primary and backup ownership, delivered alert evidence, a recorded production monitoring window, and the release rollback record remain open",
         ],
         state: "in_progress",
         title:

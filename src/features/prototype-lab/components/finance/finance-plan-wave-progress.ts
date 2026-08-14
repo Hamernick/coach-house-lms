@@ -289,9 +289,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The guarded Cook County operation refreshed 25 existing unapproved staging rows and inserted none; after PR #175 merged with quality and both deployments green, the bounded live verifier stored five deterministic results: Bremen Township, Brookfield Library, and Calumet Township passed against the current official source, while removed Markham and Maywood courthouse rows were held; a guarded dry run selected zero records, and publication remains blocked pending identified administrator review and a maximum-five-record canary",
+          "PRs #174-#175 refreshed existing staging and stored bounded verification without publishing unverified records; on 2026-08-13 the product owner approved only Bremen Township, Brookfield Library, and Calumet Township after all three matched the current 33-row official source, and the guarded production canary promoted exactly those three with zero duplicate matches; anonymous public parity increased only from 853 to 856, exact detail routes passed, three contacts and six links remained private, removed courthouse rows remained held, and PR #177 closed the obsolete bulk-detail endpoint before publication",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records",
       },

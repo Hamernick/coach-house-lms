@@ -91,9 +91,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Migration 20260811160000 is applied in production; the table exists with zero rows, public-schema lint passes, and anonymous reads return 401; one controlled signup record remains",
+          "PR #182 merged as e7e3b393; the connected production RLS fixture invoked the real signup trigger and verified version 2026-08-12.1, both hashes, user linkage, server UTC acceptance time, signup source, owner-only reads, denied mutations, and cleanup back to zero acceptance rows; PR #183 restored passing Supabase Preview seed validation",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS",
       },

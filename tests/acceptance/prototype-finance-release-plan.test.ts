@@ -1182,12 +1182,12 @@ describe("finance release planning graph", () => {
       total: 7,
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
-      complete: 24,
-      inProgress: 6,
+      complete: 25,
+      inProgress: 5,
       notStarted: 5,
       total: 35,
     })
-    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(69)
+    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(71)
     expect(sourceCriteria).toHaveLength(35)
     expect(sourceCriteria.map((criterion) => criterion.id)).toEqual(
       trackedCriteria.map((criterion) => criterion.id)
@@ -1204,7 +1204,7 @@ describe("finance release planning graph", () => {
       trackedCriteria.map((criterion) => criterion.state === "complete")
     )
     expect(FINANCE_PLAN_CURRENT_WAVE.id).toBe("wave-2-signup-legal")
-    expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-2-criterion-2")
+    expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-2-criterion-3")
   })
 
   it("preserves all seven historical batches and 37 scope items", () => {
@@ -1276,15 +1276,15 @@ describe("finance release planning graph", () => {
       roadmapNodes.find((node) => node.id === nodeId)?.data
 
     expect(FINANCE_PLAN_CURRENT_FOCUS).toMatchObject({
-      complete: 24,
-      percentage: 69,
-      remaining: 11,
+      complete: 25,
+      percentage: 71,
+      remaining: 10,
       total: 35,
       waveId: "wave-2-signup-legal",
       waveLabel: "Wave 2: Signup, recovery, and legal",
     })
     expect(FINANCE_PLAN_CURRENT_FOCUS.nextStep).toContain(
-      "Persist immutable consent version"
+      "Verify direct and contextual signup"
     )
     expect(
       getFinancePlanNodeStatusTone(

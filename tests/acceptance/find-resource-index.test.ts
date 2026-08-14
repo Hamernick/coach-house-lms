@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { GET as getLegacyResourceMapItems } from "@/app/api/public/resource-map/items/route"
 import {
   FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT,
@@ -82,6 +83,18 @@ function buildResourceItem(): ExternalResourceMapItem {
 }
 
 describe("find resource index feature contract", () => {
+  it("redirects the obsolete bulk-detail endpoint to the bounded index", () => {
+    const response = getLegacyResourceMapItems(
+      new Request("https://coachhouse.app/api/public/resource-map/items")
+    )
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe(
+      "https://coachhouse.app/api/public/resource-map/index?limit=200"
+    )
+    expect(response.headers.get("cache-control")).toBe("public, max-age=300")
+  })
+
   it("serializes only fields needed to place, filter, and identify resources", () => {
     const serialized = serializeFindResourceIndexItem(buildResourceItem())
 

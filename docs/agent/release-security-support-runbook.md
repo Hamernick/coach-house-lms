@@ -40,11 +40,12 @@ contains fixes for all three high findings and three lower-severity findings:
 - `/status` makes no unmeasured health claim.
 
 The roadmap rich-HTML follow-up now uses a parsed tag, attribute, style, and URL
-allowlist with encoded-protocol regression coverage. Three medium findings
-remain release follow-up: trusted-server enforcement of signup consent, bounded
-public roadmap analytics, and bounded page-health telemetry. Wave 7 remains
-open until those risks are fixed or explicitly accepted by a named
-security/privacy owner.
+allowlist with encoded-protocol regression coverage. Public roadmap analytics
+now accepts only validated events for public organizations and real sections,
+with atomic caps of 120 events per organization per minute and 5,000 per rolling
+day. Two medium findings remain release follow-up: trusted-server enforcement
+of signup consent and bounded page-health telemetry. Wave 7 remains open until
+those risks are fixed or explicitly accepted by a named security/privacy owner.
 
 ## Ownership
 

@@ -46,9 +46,14 @@ with atomic caps of 120 events per organization per minute and 5,000 per rolling
 day. Signup now rolls back account creation unless the database receives the
 current document evidence; only service-role-controlled app metadata can mark
 an account as explicitly provisioned without creating false consent evidence.
-One medium finding remains release follow-up: bounded page-health telemetry.
-Wave 7 remains open until that risk is fixed or explicitly accepted by a named
-security/privacy owner.
+PR #193 is the release candidate for the final medium finding. It routes
+page-health writes through one service-role-only database function, revokes
+direct service-role inserts, applies atomic global, anonymous, and per-user
+caps, and removes telemetry older than 30 days in bounded batches. Local quality,
+Supabase Preview, and rollback-only connected database proof pass. The finding
+remains open until merge, production deployment, migration parity, and focused
+production proof. Wave 7 also remains open for the ownership, alert, monitoring,
+and rollback evidence below.
 
 ## Ownership
 

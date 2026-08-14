@@ -71,6 +71,14 @@ const orgAdminEmail = `org-admin-${suffix}@example.com`
 const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
+const signupLegalConsent = {
+  version: "2026-08-12.1",
+  termsSha256:
+    "405e53cfa64e4dba9ecb4e04289d82ed0b8f20b70a233a4b310996d63493e5a2",
+  privacySha256:
+    "c4ff2282fa5033042d4bcee3ed26ac4b1a5863b4cabd1346084c3d6097853d92",
+  acceptedAt: new Date().toISOString(),
+}
 
 async function ensureProfile(id, role, fullName) {
   const { error } = await adminClient.from("profiles").upsert(
@@ -92,6 +100,7 @@ async function createUsers() {
     email: memberEmail,
     password,
     email_confirm: true,
+    user_metadata: { legal_consent: signupLegalConsent },
   })
   if (memberError) throw memberError
 
@@ -298,6 +307,81 @@ async function run() {
   })
 
   const results = []
+
+  if (await tableExists("platform_legal_acceptances")) {
+    const { data: ownAcceptance, error: ownAcceptanceError } =
+      await memberClient
+        .from("platform_legal_acceptances")
+        .select(
+          "id,user_id,document_version,terms_sha256,privacy_sha256,accepted_at,source"
+        )
+        .eq("user_id", member.id)
+        .eq("document_version", signupLegalConsent.version)
+        .maybeSingle()
+    results.push({
+      name: "signup trigger records the current immutable legal acceptance",
+      passed:
+        !ownAcceptanceError &&
+        ownAcceptance?.user_id === member.id &&
+        ownAcceptance?.document_version === signupLegalConsent.version &&
+        ownAcceptance?.terms_sha256 === signupLegalConsent.termsSha256 &&
+        ownAcceptance?.privacy_sha256 === signupLegalConsent.privacySha256 &&
+        ownAcceptance?.source === "signup" &&
+        typeof ownAcceptance?.accepted_at === "string" &&
+        new Date(ownAcceptance?.accepted_at).toISOString() ===
+          new Date(member.created_at).toISOString(),
+    })
+
+    const { data: otherAcceptance, error: otherAcceptanceError } =
+      await adminSessionClient
+        .from("platform_legal_acceptances")
+        .select("id")
+        .eq("user_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "authenticated users cannot read another legal acceptance",
+      passed: !otherAcceptanceError && !otherAcceptance,
+    })
+
+    const { data: anonAcceptance, error: anonAcceptanceError } =
+      await anonClient
+        .from("platform_legal_acceptances")
+        .select("id")
+        .eq("user_id", member.id)
+    results.push({
+      name: "anonymous users cannot read legal acceptances",
+      passed:
+        !!anonAcceptanceError ||
+        (Array.isArray(anonAcceptance) && anonAcceptance.length === 0),
+    })
+
+    const acceptanceId = ownAcceptance?.id ?? -1
+    const { error: acceptanceInsertError } = await memberClient
+      .from("platform_legal_acceptances")
+      .insert({
+        user_id: member.id,
+        document_version: "rls-write-probe",
+        terms_sha256: "a".repeat(64),
+        privacy_sha256: "b".repeat(64),
+        accepted_at: new Date().toISOString(),
+        source: "signup",
+      })
+    const { error: acceptanceUpdateError } = await memberClient
+      .from("platform_legal_acceptances")
+      .update({ accepted_at: new Date().toISOString() })
+      .eq("id", acceptanceId)
+    const { error: acceptanceDeleteError } = await memberClient
+      .from("platform_legal_acceptances")
+      .delete()
+      .eq("id", acceptanceId)
+    results.push({
+      name: "authenticated users cannot mutate immutable legal acceptances",
+      passed:
+        !!acceptanceInsertError &&
+        !!acceptanceUpdateError &&
+        !!acceptanceDeleteError,
+    })
+  }
 
   if (await tableExists("platform_staff_members")) {
     const [

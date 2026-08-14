@@ -148,6 +148,15 @@ describe("legal consent", () => {
       `consent ->> 'privacySha256' = '${PRIVACY_DOCUMENT.sha256}'`
     )
 
+    const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
+    expect(rlsSuite).toContain(
+      "signup trigger records the current immutable legal acceptance"
+    )
+    expect(rlsSuite).toContain(
+      "authenticated users cannot mutate immutable legal acceptances"
+    )
+    expect(rlsSuite).toContain("anonymous users cannot read legal acceptances")
+
     const testerAction = readFileSync(
       "src/app/(auth)/tester/sign-up/actions.ts",
       "utf8"

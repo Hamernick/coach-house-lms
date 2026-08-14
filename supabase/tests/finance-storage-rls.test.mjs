@@ -156,6 +156,9 @@ try {
   runSql(
     "supabase/migrations/20260813153500_require_board_membership_for_finance_access.sql"
   )
+  runSql(
+    "supabase/migrations/20260814061500_bind_finance_stripe_install_to_authorized_org.sql"
+  )
   runSql("supabase/tests/finance-storage-rls.assertions.sql")
 
   console.log(

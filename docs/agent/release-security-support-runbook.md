@@ -28,9 +28,8 @@ other Finance capabilities that are not released.
 ## Current Security Review
 
 The standard source review of merged commit `6dcabc1b` completed on 2026-08-14
-with ten validated findings: three high, six medium, and one low. The current
-remediation candidate contains fixes for all three high findings and three
-lower-severity findings:
+with ten validated findings: three high, six medium, and one low. PR #187
+contains fixes for all three high findings and three lower-severity findings:
 
 - public service-role tester provisioning is unavailable;
 - every legacy class API operation requires platform administration;
@@ -40,10 +39,12 @@ lower-severity findings:
 - post-authentication redirects remain on the application origin; and
 - `/status` makes no unmeasured health claim.
 
-Four medium findings remain release follow-up: trusted-server enforcement of
-signup consent, parsed roadmap HTML sanitization, bounded public roadmap
-analytics, and bounded page-health telemetry. Wave 7 remains open until those
-risks are fixed or explicitly accepted by a named security/privacy owner.
+The roadmap rich-HTML follow-up now uses a parsed tag, attribute, style, and URL
+allowlist with encoded-protocol regression coverage. Three medium findings
+remain release follow-up: trusted-server enforcement of signup consent, bounded
+public roadmap analytics, and bounded page-health telemetry. Wave 7 remains
+open until those risks are fixed or explicitly accepted by a named
+security/privacy owner.
 
 ## Ownership
 

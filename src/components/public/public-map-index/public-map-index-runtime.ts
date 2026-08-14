@@ -27,7 +27,7 @@ import {
 export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
 
-const PUBLIC_MAP_INITIAL_PAINT_DELAY_MS = 2_500
+const PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000
 
 function applyPublicMapGlobePresentation(map: mapboxgl.Map) {
   map.setProjection("globe")
@@ -334,15 +334,32 @@ export function useInitializePublicMap({
       }
     }
 
+    let initializationStarted = false
     let initializeTimeoutId: number | null = null
+    const mapContainer = containerRef.current
+    const startMap = () => {
+      if (cancelled || initializationStarted) return
+      initializationStarted = true
+      if (initializeTimeoutId !== null) {
+        window.clearTimeout(initializeTimeoutId)
+        initializeTimeoutId = null
+      }
+      void initializeMap()
+    }
+    mapContainer.addEventListener("pointerdown", startMap, {
+      once: true,
+      passive: true,
+    })
     const initializeFrameId = window.requestAnimationFrame(() => {
+      if (cancelled || initializationStarted) return
       initializeTimeoutId = window.setTimeout(() => {
-        void initializeMap()
-      }, PUBLIC_MAP_INITIAL_PAINT_DELAY_MS)
+        startMap()
+      }, PUBLIC_MAP_INTERACTION_READY_DELAY_MS)
     })
 
     return () => {
       cancelled = true
+      mapContainer.removeEventListener("pointerdown", startMap)
       window.cancelAnimationFrame(initializeFrameId)
       if (initializeTimeoutId !== null) {
         window.clearTimeout(initializeTimeoutId)

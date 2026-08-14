@@ -43,7 +43,7 @@ describe("public Find performance contract", () => {
     )
   })
 
-  it("lets the initial shell paint before starting Mapbox", () => {
+  it("keeps the shell interactive before automatic Mapbox startup", () => {
     const source = readSource(
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
@@ -51,8 +51,17 @@ describe("public Find performance contract", () => {
     expect(source).toContain(
       "const initializeFrameId = window.requestAnimationFrame"
     )
-    expect(source).toContain("PUBLIC_MAP_INITIAL_PAINT_DELAY_MS = 2_500")
+    expect(source).toContain(
+      "PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000"
+    )
     expect(source).toContain("initializeTimeoutId = window.setTimeout")
+    expect(source).toContain(
+      'mapContainer.addEventListener("pointerdown", startMap'
+    )
+    expect(source).toContain("if (cancelled || initializationStarted) return")
+    expect(source).toContain(
+      'mapContainer.removeEventListener("pointerdown", startMap)'
+    )
     expect(source).toContain("window.cancelAnimationFrame(initializeFrameId)")
     expect(source).toContain("window.clearTimeout(initializeTimeoutId)")
   })

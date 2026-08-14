@@ -43,9 +43,12 @@ The roadmap rich-HTML follow-up now uses a parsed tag, attribute, style, and URL
 allowlist with encoded-protocol regression coverage. Public roadmap analytics
 now accepts only validated events for public organizations and real sections,
 with atomic caps of 120 events per organization per minute and 5,000 per rolling
-day. Two medium findings remain release follow-up: trusted-server enforcement
-of signup consent and bounded page-health telemetry. Wave 7 remains open until
-those risks are fixed or explicitly accepted by a named security/privacy owner.
+day. Signup now rolls back account creation unless the database receives the
+current document evidence; only service-role-controlled app metadata can mark
+an account as explicitly provisioned without creating false consent evidence.
+One medium finding remains release follow-up: bounded page-health telemetry.
+Wave 7 remains open until that risk is fixed or explicitly accepted by a named
+security/privacy owner.
 
 ## Ownership
 

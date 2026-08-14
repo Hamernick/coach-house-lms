@@ -2,6 +2,17 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  record_public_roadmap_event: {
+    Args: {
+      p_org_id: string
+      p_section_id: string | null
+      p_event_type: "view" | "cta_click"
+      p_duration_ms: number | null
+      p_source: string | null
+      p_referrer: string | null
+    }
+    Returns: Json
+  }
   set_organization_coach_assignments: {
     Args: {
       p_organization_id: string

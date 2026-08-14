@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import type { PlatformOrganizationMapItem } from "@/lib/public-map/resource-map-items"
+import { buildPublicImageTransformUrl } from "@/lib/storage/public-url"
 import { cn } from "@/lib/utils"
 import { OrganizationListActivityPreview } from "./organization-list-activity-preview"
 import {
@@ -49,8 +50,15 @@ export function PublicMapPlatformOrganizationListCard({
     ? previewPrograms.slice(0, 2)
     : previewPrograms
   const fallbackInitials = buildInitials(org.name)
-  const avatarImageSrc = org.logoUrl ?? org.headerUrl ?? undefined
   const hasLogoImage = Boolean(org.logoUrl && org.logoUrl.trim().length > 0)
+  const avatarImageSrc = buildPublicImageTransformUrl(
+    org.logoUrl ?? org.headerUrl ?? undefined,
+    {
+      width: 144,
+      height: 144,
+      resize: hasLogoImage ? "contain" : "cover",
+    }
+  )
   const ownerId = buildPublicMapOrganizationListCardOwnerId(org.id)
   const openDetails = () =>
     onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id)

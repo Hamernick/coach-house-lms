@@ -161,8 +161,8 @@ describe("legal consent", () => {
       "src/app/(auth)/tester/sign-up/actions.ts",
       "utf8"
     )
-    expect(testerAction).toContain("isCurrentSignupLegalConsent")
-    expect(testerAction).toContain("ignoreDuplicates: true")
-    expect(testerAction).toContain("accepted_at: new Date().toISOString()")
+    expect(testerAction).toContain("Tester account provisioning is unavailable")
+    expect(testerAction).not.toContain("createSupabaseAdminClient")
+    expect(testerAction).not.toContain("email_confirm")
   })
 })

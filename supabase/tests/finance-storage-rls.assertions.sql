@@ -178,6 +178,7 @@ insert into public.organization_finance_stripe_install_intents (
 select public.complete_organization_finance_stripe_install(
   'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
   '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
   'acct_fixture',
   'usr_fixture',
   false
@@ -611,6 +612,10 @@ begin
 
   if has_function_privilege(
     'authenticated',
+    'public.complete_organization_finance_stripe_install(text,uuid,uuid,text,text,boolean)',
+    'EXECUTE'
+  ) or has_function_privilege(
+    'authenticated',
     'public.complete_organization_finance_stripe_install(text,uuid,text,text,boolean)',
     'EXECUTE'
   ) or has_function_privilege(
@@ -622,6 +627,10 @@ begin
   end if;
 
   if not has_function_privilege(
+    'service_role',
+    'public.complete_organization_finance_stripe_install(text,uuid,uuid,text,text,boolean)',
+    'EXECUTE'
+  ) or not has_function_privilege(
     'service_role',
     'public.complete_organization_finance_stripe_install(text,uuid,text,text,boolean)',
     'EXECUTE'

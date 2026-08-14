@@ -328,8 +328,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Pass the full quality gate, connected RLS where changed, and migration parity",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "A standard security review of merged commit 6dcabc1b completed on 2026-08-14 with ten validated findings: three high, six medium, and one low; the local remediation candidate closes every high finding plus the Finance tenant mismatch, auth redirect, and false status claim, and adds the support, ownership, monitoring, incident, and rollback runbook; four medium risks, named backup ownership, alert delivery, and production retention evidence remain open",
+        ],
+        state: "in_progress",
         title:
           "Complete security review, support runbook, ownership, and monitoring setup",
       },

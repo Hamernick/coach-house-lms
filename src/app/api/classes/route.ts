@@ -5,6 +5,7 @@ import { z } from "zod"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
 import { listClasses } from "@/lib/classes"
+import { requireAdmin } from "@/lib/admin/auth"
 
 const createClassSchema = z.object({
   title: z.string().min(1),
@@ -14,15 +15,26 @@ const createClassSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const page = Number.parseInt(request.nextUrl.searchParams.get("page") ?? "1", 10)
-  const pageSize = Number.parseInt(request.nextUrl.searchParams.get("pageSize") ?? "10", 10)
+  await requireAdmin()
+  const page = Number.parseInt(
+    request.nextUrl.searchParams.get("page") ?? "1",
+    10
+  )
+  const pageSize = Number.parseInt(
+    request.nextUrl.searchParams.get("pageSize") ?? "10",
+    10
+  )
 
-  const result = await listClasses({ page: Number.isFinite(page) ? page : 1, pageSize: Number.isFinite(pageSize) ? pageSize : 10 })
+  const result = await listClasses({
+    page: Number.isFinite(page) ? page : 1,
+    pageSize: Number.isFinite(pageSize) ? pageSize : 10,
+  })
 
   return NextResponse.json(result)
 }
 
 export async function POST(request: NextRequest) {
+  await requireAdmin()
   const body = await request.json()
   const parsed = createClassSchema.safeParse(body)
   if (!parsed.success) {

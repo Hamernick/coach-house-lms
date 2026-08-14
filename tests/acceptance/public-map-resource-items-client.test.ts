@@ -146,6 +146,40 @@ describe("public map resource items client", () => {
     expect(progressCounts).toEqual([1, 5])
   })
 
+  it("avoids repeated renders while draining the production-sized catalog", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+    const totalPages = 18
+    const pageSize = 50
+
+    for (let page = 0; page < totalPages; page += 1) {
+      const isFinalPage = page === totalPages - 1
+      const itemCount = isFinalPage ? 6 : pageSize
+      const resourceItems = Array.from({ length: itemCount }, (_, index) => ({
+        id: `resource_map:${page * pageSize + index}`,
+      }))
+      fetchSpy.mockResolvedValueOnce(
+        buildJsonResponse({
+          resourceItems,
+          page: {
+            hasMore: !isFinalPage,
+            nextCursor: isFinalPage
+              ? null
+              : resourceItems[resourceItems.length - 1]?.id,
+          },
+        })
+      )
+    }
+
+    const progressCounts: number[] = []
+    const items = await loadPublicMapResourceItems(
+      "/api/public/resource-map/index?limit=50&test=bounded-progress",
+      (loadedItems) => progressCounts.push(loadedItems.length)
+    )
+
+    expect(items).toHaveLength(856)
+    expect(progressCounts).toEqual([50, 856])
+  })
+
   it("deduplicates selected resource detail loads", async () => {
     const resourceItem = {
       id: "resource_map:detail-client-test",

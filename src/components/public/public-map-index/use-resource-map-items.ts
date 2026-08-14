@@ -20,7 +20,7 @@ type ResourceItemsLoad = {
 }
 
 const resourceItemsLoadByEndpoint = new Map<string, ResourceItemsLoad>()
-const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 200
+const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 1_000
 
 type FindResourceIndexPage = {
   hasMore?: unknown
@@ -214,7 +214,12 @@ export function usePublicMapResourceItems({
           }
         })
         if (cancelled) return
-        setResourceItems(payload)
+        setResourceItems((currentItems) => {
+          const alreadyPublished =
+            currentItems.length === payload.length &&
+            currentItems.every((item, index) => item === payload[index])
+          return alreadyPublished ? currentItems : payload
+        })
         setStatus("ready")
       } catch (error) {
         if (cancelled) return

@@ -173,7 +173,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
   {
     id: "wave-4-my-map",
     sequence: 4,
-    status: "active",
+    status: "production_verified",
     title: "Collect and My Map completion",
     criteria: defineCriteria(4, [
       {
@@ -186,9 +186,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "PR #159 merged as 6b2ac883; production Builder/admin collect survived reload, appeared in My Map, removed cleanly, and remained removed after reload; one independent second-client observation remains",
+          "PR #159 merged as 6b2ac883; production Builder/admin collect survived reload, appeared in My Map, removed cleanly, and remained removed after reload; route tests prove bounded account-backed idempotent replay; on 2026-08-14, the product owner explicitly waived the remaining independent second-client observation and accepted this evidence as sufficient, so no second-client test is claimed",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Persist signed-in collections across devices with safe idempotent replay",
       },

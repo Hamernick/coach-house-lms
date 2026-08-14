@@ -10,4 +10,16 @@ describe("Supabase seed syntax", () => {
     expect(seed).not.toMatch(/\\+'/)
     expect(seed).toContain("(Don''t worry about amounts for now).")
   })
+
+  it("scopes the theory-of-change CTE to both seed statements", () => {
+    const seed = readFileSync(join(process.cwd(), "supabase/seed.sql"), "utf8")
+
+    expect(seed.match(/with toc_module as \(/g)).toHaveLength(2)
+  })
+
+  it("does not rename existing modules during seed upserts", () => {
+    const seed = readFileSync(join(process.cwd(), "supabase/seed.sql"), "utf8")
+
+    expect(seed).not.toContain("slug = excluded.slug")
+  })
 })

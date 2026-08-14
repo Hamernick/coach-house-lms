@@ -320,8 +320,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     title: "Integrated production release",
     criteria: defineCriteria(7, [
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "Production commit c1144707 passed the full GitHub Actions quality gate in run 31771538852; the latest full connected production RLS matrix passed with ephemeral cleanup and no later change touched database policy; supabase migration list --linked on 2026-08-14 showed exact local and remote parity through 20260813153500",
+        ],
+        state: "complete",
         title:
           "Pass the full quality gate, connected RLS where changed, and migration parity",
       },

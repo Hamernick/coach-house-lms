@@ -28,6 +28,7 @@ export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
 
 const PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000
+const PUBLIC_MAP_COARSE_POINTER_MEDIA_QUERY = "(pointer: coarse)"
 
 function applyPublicMapGlobePresentation(map: mapboxgl.Map) {
   map.setProjection("globe")
@@ -336,6 +337,7 @@ export function useInitializePublicMap({
 
     let initializationStarted = false
     let initializeTimeoutId: number | null = null
+    let initializeFrameId: number | null = null
     const mapContainer = containerRef.current
     const startMap = () => {
       if (cancelled || initializationStarted) return
@@ -346,21 +348,36 @@ export function useInitializePublicMap({
       }
       void initializeMap()
     }
+    const startMapFromKeyboard = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return
+      event.preventDefault()
+      startMap()
+    }
     mapContainer.addEventListener("pointerdown", startMap, {
       once: true,
       passive: true,
     })
-    const initializeFrameId = window.requestAnimationFrame(() => {
-      if (cancelled || initializationStarted) return
-      initializeTimeoutId = window.setTimeout(() => {
-        startMap()
-      }, PUBLIC_MAP_INTERACTION_READY_DELAY_MS)
-    })
+    mapContainer.addEventListener("keydown", startMapFromKeyboard)
+
+    const hasCoarsePointer = window.matchMedia(
+      PUBLIC_MAP_COARSE_POINTER_MEDIA_QUERY
+    ).matches
+    if (!hasCoarsePointer) {
+      initializeFrameId = window.requestAnimationFrame(() => {
+        if (cancelled || initializationStarted) return
+        initializeTimeoutId = window.setTimeout(() => {
+          startMap()
+        }, PUBLIC_MAP_INTERACTION_READY_DELAY_MS)
+      })
+    }
 
     return () => {
       cancelled = true
       mapContainer.removeEventListener("pointerdown", startMap)
-      window.cancelAnimationFrame(initializeFrameId)
+      mapContainer.removeEventListener("keydown", startMapFromKeyboard)
+      if (initializeFrameId !== null) {
+        window.cancelAnimationFrame(initializeFrameId)
+      }
       if (initializeTimeoutId !== null) {
         window.clearTimeout(initializeTimeoutId)
       }

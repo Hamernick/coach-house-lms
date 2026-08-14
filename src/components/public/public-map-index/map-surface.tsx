@@ -267,6 +267,8 @@ export function PublicMapSurface({
               ref={containerRef}
               className="h-full w-full [&_.mapboxgl-ctrl-logo]:!hidden"
               aria-label="Public organization map"
+              role="region"
+              tabIndex={0}
             />
           </div>
           <div className="pointer-events-none absolute inset-0 hidden dark:block dark:bg-[linear-gradient(180deg,rgba(250,250,250,0.08),rgba(250,250,250,0.025)_28%,rgba(24,24,27,0.015)_58%,rgba(9,9,11,0.06))]" />

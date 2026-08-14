@@ -297,9 +297,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The current production catalog has 394 Chicago resources spanning food (201), community (114), housing (69), legal (31), family (23), and health (7); a focused implementation derives six Chicago guides from current public location and category fields with a minimum of five records per guide, while merge, deployment, live counts, link checks, and production browser proof remain",
+          "PR #179 merged as 729ec3f5 with quality and both production deployments passing, and the custom domain serves the released bundle; the canonical paginated public API returned all 856 resources and exact live Chicago guide counts for food (201), housing (69), legal (31), libraries/community centers (103), family (23), and health (7), with one exact item-detail route per guide returning 200; the guides use only current public location and category fields, require at least five matches, preserve cooling-center guides, and change no resource data",
         ],
-        state: "in_progress",
+        state: "complete",
         title:
           "Publish current location-connected guides across multiple service categories",
       },

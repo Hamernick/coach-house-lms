@@ -208,6 +208,9 @@ describe("page-health-monitor feature contract", () => {
     const recorder = readSource(
       "src/features/page-health-monitor/server/record.ts"
     )
+    const retentionMigration = readSource(
+      "supabase/migrations/20260814200500_schedule_page_health_retention.sql"
+    )
     const functions = readSource("src/lib/supabase/schema/functions.ts")
 
     expect(migration).toContain(
@@ -231,6 +234,19 @@ describe("page-health-monitor feature contract", () => {
     expect(recorder).toContain('reason: "rate_limited"')
     expect(recorder).not.toContain('.from("app_page_health_events").insert')
     expect(functions).toContain("record_page_health_event")
+    expect(retentionMigration).toContain(
+      "create or replace function public.purge_expired_page_health_events"
+    )
+    expect(retentionMigration).toContain(
+      "create extension if not exists pg_cron"
+    )
+    expect(retentionMigration).toContain("purge-expired-page-health-events")
+    expect(retentionMigration).toContain("'*/15 * * * *'")
+    expect(retentionMigration).toContain("limit p_batch_size")
+    expect(retentionMigration).toContain("p_batch_size > 500")
+    expect(retentionMigration).toContain(
+      "from public, anon, authenticated, service_role"
+    )
   })
 
   it("wires capture through provider, endpoint, and error boundaries", () => {

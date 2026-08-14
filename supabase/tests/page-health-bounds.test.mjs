@@ -130,10 +130,13 @@ try {
   runSql("supabase/tests/page-health-bounds-vulnerable.assertions.sql")
 
   runSql("supabase/migrations/20260814193000_bound_page_health_telemetry.sql")
+  runSql(
+    "supabase/migrations/20260814200500_schedule_page_health_retention.sql"
+  )
   runSql("supabase/tests/page-health-bounds.assertions.sql")
 
   console.log(
-    "[page-health-bounds] Pre-fix burst reproduced; bounded RPC, retention, and privileges passed."
+    "[page-health-bounds] Pre-fix burst reproduced; bounded RPC, scheduled retention, and privileges passed."
   )
 } finally {
   if (started) {

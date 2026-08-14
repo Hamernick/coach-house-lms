@@ -49,8 +49,9 @@ an account as explicitly provisioned without creating false consent evidence.
 PR #193 is the release candidate for the final medium finding. It routes
 page-health writes through one service-role-only database function, revokes
 direct service-role inserts, applies atomic global, anonymous, and per-user
-caps, and removes telemetry older than 30 days in bounded batches. Local quality,
-Supabase Preview, and rollback-only connected database proof pass. The finding
+caps, and schedules an independent 15-minute job that removes telemetry older
+than 30 days in bounded batches. Local quality, Supabase Preview, and
+rollback-only connected database proof pass. The finding
 remains open until merge, production deployment, migration parity, and focused
 production proof. Wave 7 also remains open for the ownership, alert, monitoring,
 and rollback evidence below.

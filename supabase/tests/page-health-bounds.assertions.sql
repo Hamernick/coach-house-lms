@@ -23,6 +23,14 @@ begin
   ) then
     raise exception 'service role cannot execute page-health recorder';
   end if;
+
+  if has_function_privilege(
+    'service_role',
+    'public.purge_expired_page_health_events(integer)',
+    'execute'
+  ) then
+    raise exception 'service role can execute page-health retention cleanup';
+  end if;
 end;
 $$;
 
@@ -48,6 +56,46 @@ end;
 $$;
 
 reset role;
+
+insert into public.app_page_health_events (
+  event_type,
+  severity,
+  source,
+  route_path,
+  occurred_at
+)
+select
+  'route_error',
+  'warning',
+  'client',
+  '/scheduled-expired-event',
+  now() - interval '31 days'
+from generate_series(1, 501);
+
+do $$
+declare
+  v_deleted integer;
+begin
+  v_deleted := public.purge_expired_page_health_events(500);
+
+  if v_deleted <> 500 then
+    raise exception 'scheduled retention did not delete one bounded batch';
+  end if;
+
+  if (
+    select count(*)
+    from public.app_page_health_events
+    where route_path = '/scheduled-expired-event'
+  ) <> 1 then
+    raise exception 'scheduled retention did not leave exactly one expired event';
+  end if;
+
+  v_deleted := public.purge_expired_page_health_events(500);
+  if v_deleted <> 1 then
+    raise exception 'scheduled retention did not drain the final expired event';
+  end if;
+end;
+$$;
 
 do $$
 declare

@@ -2,6 +2,14 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  record_page_health_event: {
+    Args: {
+      p_event: Json
+      p_user_id?: string | null
+      p_org_id?: string | null
+    }
+    Returns: Json
+  }
   record_public_roadmap_event: {
     Args: {
       p_org_id: string

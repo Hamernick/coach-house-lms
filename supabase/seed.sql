@@ -2339,6 +2339,10 @@ $MD$
 from toc_module t
 where m.id = t.id;
 
+with toc_module as (
+  select m.id from classes c join modules m on m.class_id = c.id
+  where c.slug = 'theory-of-change' and m.slug = 'theory-of-change' limit 1
+)
 insert into module_assignments (module_id, schema, complete_on_submit)
 select
   t.id,

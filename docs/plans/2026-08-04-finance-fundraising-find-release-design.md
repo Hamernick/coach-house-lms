@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **23/35 complete (66%)**, **6 in progress**, and
-**6 not started**.
+revision. Current progress: **24/35 complete (69%)**, **6 in progress**, and
+**5 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -183,7 +183,7 @@ revision. Current progress: **23/35 complete (66%)**, **6 in progress**, and
 - [x] `wave-6-criterion-2` **Complete:** Fix resource listings missing provider proof, eligibility, a clear summary, access steps, contact details, or a second source — Evidence: PRs #167-#171 repaired the selected housing, food, and immigrant/refugee cohorts; #171 hosted quality and both deployments passed. Housing two-source coverage increased from `92/106` to `99/106`; food contact or intake coverage increased from `644/752` to `748/752` and access-plus-comparison coverage from `615/752` to `647/752`; immigrant/refugee two-source identity coverage increased from `68/84` to `79/84`, including `74/79` service-eligible listings. Records blocked by real provider evidence failures remain explicitly held. Nothing was approved or published.
 - [x] `wave-6-criterion-3` **Complete:** Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records — Evidence: PRs #174-#175 refreshed existing staging and stored bounded live verification without importing, reviewing, or publishing unverified records. On 2026-08-13, the product owner reviewed and approved only Bremen Township, Brookfield Library, and Calumet Township; all three still matched the current 33-row official Cook County source. The guarded production canary selected exactly those three with zero accepted duplicate matches and promoted them atomically. Anonymous public parity increased only from 853 to 856, all three exact detail routes returned the intended records, and their three contacts plus six links remained private. Removed Markham and Maywood courthouse rows remain held. PR #177 and production CI also closed the obsolete bulk-detail endpoint before publication.
 - [x] `wave-6-criterion-4` **Complete:** Publish current location-connected guides across multiple service categories — Evidence: PR #179 merged as `729ec3f5`; quality and both production deployments passed, and the custom domain serves the released guide bundle. The canonical paginated public API returned all 856 resources and exact live Chicago guide counts for food (201), housing (69), legal (31), libraries/community centers (103), family (23), and health (7). One exact item-detail route per guide returned `200`. The six guides derive only from current public location and category fields, require at least five matches, preserve cooling-center guides, and change no resource data.
-- [ ] `wave-6-criterion-5` **Not started:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof.
+- [x] `wave-6-criterion-5` **Complete:** Complete cohort canary, count parity, broken-link checks, production monitoring, and reversible unpublish proof — Evidence: the approved Bremen, Brookfield, and Calumet canary records remained present in the complete 856-row anonymous catalog, and all three exact detail routes plus the shared official Cook County source returned `200`. A bounded production rehearsal hid only the approved Bremen service, verified the canonical public projection changed from 856 to 855 with that service absent, then restored it in `finally` and verified exact recovery to 856 with the service present. The final service is published with no hidden, suppressed, or deleted marker; audited `hide` and `restore` events preserve both states. `/find`, quality, and both production deployments are healthy.
 
 **Wave 7 — Integrated production release**
 

@@ -94,6 +94,22 @@ function itemStateMatches(item: PublicMapItem, states: readonly string[]) {
   return states.some((candidate) => state === candidate.toLowerCase())
 }
 
+function itemHasResourceCategory(
+  item: PublicMapItem,
+  categories: readonly PublicMapResourceCategoryKey[]
+) {
+  return categories.some((category) =>
+    item.resourceCategories.some(
+      (itemCategory) =>
+        itemCategory === category || itemCategory.startsWith(`${category}_`)
+    )
+  )
+}
+
+function isChicagoGuideItem(item: PublicMapItem) {
+  return itemCityMatches(item, ["Chicago"]) && itemStateMatches(item, ["IL"])
+}
+
 function isCoolingCenterGuideItem(item: PublicMapItem) {
   const cached = coolingCenterGuideMatchByItem.get(item)
   if (cached !== undefined) return cached
@@ -129,6 +145,77 @@ function isNycCoolingCenterItem(item: PublicMapItem) {
 }
 
 const PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS = [
+  {
+    id: "chicago-food-access",
+    title: "Chicago Food Access",
+    subtitle: "Food pantries, meals, and grocery support in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "food",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) && itemHasResourceCategory(item, ["food"]),
+  },
+  {
+    id: "chicago-housing-shelter",
+    title: "Chicago Housing and Shelter",
+    subtitle: "Shelter and housing-stability services in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "housing",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) && itemHasResourceCategory(item, ["housing"]),
+  },
+  {
+    id: "chicago-legal-help",
+    title: "Chicago Immigration and Legal Help",
+    subtitle: "Immigration and legal-aid services in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "legal",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) && itemHasResourceCategory(item, ["legal"]),
+  },
+  {
+    id: "chicago-libraries-community-centers",
+    title: "Chicago Libraries and Community Centers",
+    subtitle:
+      "Libraries and community centers with public services in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "community",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) &&
+      itemHasResourceCategory(item, [
+        "community_libraries",
+        "community_community_centers",
+      ]),
+  },
+  {
+    id: "chicago-family-support",
+    title: "Chicago Youth and Family Support",
+    subtitle: "Youth, caregiver, and family-support services in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "family",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) && itemHasResourceCategory(item, ["family"]),
+  },
+  {
+    id: "chicago-health-care",
+    title: "Chicago Health Care",
+    subtitle: "Health and mental-health services in Chicago.",
+    kicker: "Chicago guide",
+    minItems: 5,
+    primaryResourceCategory: "health",
+    visualVariant: "city",
+    matches: (item) =>
+      isChicagoGuideItem(item) && itemHasResourceCategory(item, ["health"]),
+  },
   {
     id: "nyc-cooling-centers",
     title: "NYC Cooling Centers",
@@ -345,16 +432,18 @@ export function buildPublicMapResourceGuides(
     const minItems = definition.minItems ?? 1
     if (guideItems.length < minItems) return []
 
-    return [{
-      id: definition.id,
-      title: definition.title,
-      subtitle: definition.subtitle,
-      kicker: definition.kicker,
-      itemCount: guideItems.length,
-      items: guideItems,
-      primaryResourceCategory:
-        definition.primaryResourceCategory ?? "emergency_cooling_centers",
-      visualVariant: definition.visualVariant,
-    } satisfies PublicMapResourceGuide]
+    return [
+      {
+        id: definition.id,
+        title: definition.title,
+        subtitle: definition.subtitle,
+        kicker: definition.kicker,
+        itemCount: guideItems.length,
+        items: guideItems,
+        primaryResourceCategory:
+          definition.primaryResourceCategory ?? "emergency_cooling_centers",
+        visualVariant: definition.visualVariant,
+      } satisfies PublicMapResourceGuide,
+    ]
   })
 }

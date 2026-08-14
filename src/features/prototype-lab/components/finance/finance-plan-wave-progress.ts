@@ -296,8 +296,10 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
           "Publish toward 5,000 useful resources without raw intake, synthetic seeds, or unverified discovery records",
       },
       {
-        evidence: [],
-        state: "not_started",
+        evidence: [
+          "The current production catalog has 394 Chicago resources spanning food (201), community (114), housing (69), legal (31), family (23), and health (7); a focused implementation derives six Chicago guides from current public location and category fields with a minimum of five records per guide, while merge, deployment, live counts, link checks, and production browser proof remain",
+        ],
+        state: "in_progress",
         title:
           "Publish current location-connected guides across multiple service categories",
       },

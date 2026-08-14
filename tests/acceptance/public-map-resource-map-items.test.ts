@@ -938,6 +938,59 @@ describe("public map resource map items", () => {
     expect(guideById.get("senior-cooling-centers")?.itemCount).toBe(3)
   })
 
+  it("builds current Chicago guides across verified service categories", () => {
+    const guideCategories = [
+      ["food", "chicago-food-access", "food"],
+      ["housing", "chicago-housing-shelter", "housing"],
+      ["legal", "chicago-legal-help", "legal"],
+      [
+        "community_libraries",
+        "chicago-libraries-community-centers",
+        "community",
+      ],
+      ["family", "chicago-family-support", "family"],
+      ["health", "chicago-health-care", "health"],
+    ] as const
+    const resources = guideCategories.flatMap(
+      ([category, , primaryCategory], categoryIndex) =>
+        Array.from({ length: category === "health" ? 5 : 6 }, (_, itemIndex) =>
+          buildGuideResourceItem(
+            `resource_map:chicago-${categoryIndex}-${itemIndex}`,
+            {
+              city: "Chicago",
+              state: "IL",
+              title: `Chicago ${category} resource ${itemIndex + 1}`,
+              resourceCategories: [category],
+              primaryResourceCategory: primaryCategory,
+            }
+          )
+        )
+    )
+    resources.push(
+      ...Array.from({ length: 4 }, (_, index) =>
+        buildGuideResourceItem(`resource_map:gary-food-${index}`, {
+          city: "Gary",
+          state: "IN",
+          title: `Gary food resource ${index + 1}`,
+          resourceCategories: ["food"],
+          primaryResourceCategory: "food",
+        })
+      )
+    )
+
+    const guideById = new Map(
+      buildPublicMapResourceGuides(resources).map((guide) => [guide.id, guide])
+    )
+
+    for (const [category, guideId, primaryCategory] of guideCategories) {
+      expect(guideById.get(guideId)).toMatchObject({
+        itemCount: category === "health" ? 5 : 6,
+        primaryResourceCategory: primaryCategory,
+      })
+    }
+    expect(guideById.has("gary-food-access")).toBe(false)
+  })
+
   it("builds marker features with resource colors and legacy org selection ids", () => {
     const organization = buildOrganization()
     const items = buildPublicMapItems({

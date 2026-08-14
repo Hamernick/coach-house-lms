@@ -1182,8 +1182,8 @@ describe("finance release planning graph", () => {
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
       complete: 22,
-      inProgress: 6,
-      notStarted: 7,
+      inProgress: 7,
+      notStarted: 6,
       total: 35,
     })
     expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(63)

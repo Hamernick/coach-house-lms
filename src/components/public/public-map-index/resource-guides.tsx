@@ -143,7 +143,7 @@ function PublicMapResourceGuidesHeader({ guideCount }: { guideCount: number }) {
           Guides
         </p>
         <p className="text-muted-foreground mt-1 text-sm text-pretty">
-          Cooling centers and heat relief groups
+          Current resources grouped by place and service
         </p>
       </div>
       <p className="text-muted-foreground shrink-0 text-xs tabular-nums">

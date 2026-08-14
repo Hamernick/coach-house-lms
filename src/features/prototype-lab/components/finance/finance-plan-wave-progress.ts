@@ -99,7 +99,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "43 focused acceptance tests pass across direct signup, contextual entry, denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain",
+          "43 focused acceptance tests pass across direct signup, contextual entry, denial, confirmation redirects, safe return, retry, and password recovery; production direct signup, email delivery, human confirmation, safe return, missing-consent denial, and cleanup pass, while contextual, retry, and recovery production journeys remain",
         ],
         state: "in_progress",
         title:
@@ -114,7 +114,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "PR #156, main CI, both production deployments, canonical route probes, migration parity, schema lint, and anonymous denial pass; controlled signup smoke and tested rollback remain",
+          "PR #191 merged as 6d8fe8ea; main quality, both production deployments, migration parity through 20260814090000, missing-consent denial, controlled signup, immutable acceptance, email confirmation, safe return, and cleanup pass; tested release rollback and sustained monitoring remain",
         ],
         state: "in_progress",
         title:
@@ -321,7 +321,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(7, [
       {
         evidence: [
-          "Production commit c1144707 passed the full GitHub Actions quality gate in run 31771538852; the latest full connected production RLS matrix passed with ephemeral cleanup and no later change touched database policy; supabase migration list --linked on 2026-08-14 showed exact local and remote parity through 20260813153500",
+          "Production commit 6d8fe8ea passed the full GitHub Actions quality gate in run 31830474146; the signup-consent PostgreSQL harness and Supabase Preview passed, and supabase migration list --linked on 2026-08-14 showed exact local and remote parity through 20260814090000",
         ],
         state: "complete",
         title:
@@ -329,7 +329,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "A standard security review of merged commit 6dcabc1b completed on 2026-08-14 with ten validated findings: three high, six medium, and one low; the local remediation candidate closes every high finding plus the Finance tenant mismatch, auth redirect, and false status claim, and adds the support, ownership, monitoring, incident, and rollback runbook; four medium risks, named backup ownership, alert delivery, and production retention evidence remain open",
+          "A standard security review of merged commit 6dcabc1b completed on 2026-08-14 with ten validated findings: three high, six medium, and one low; PR #191 completes production proof for the signup-consent boundary after the earlier merged remediation work; one medium risk, named backup ownership, alert delivery, and production retention evidence remain open",
         ],
         state: "in_progress",
         title:

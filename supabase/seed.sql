@@ -56,7 +56,6 @@ select
 from session_modules sm
 join class_lookup cl on cl.session_number = sm.session_number
 on conflict (class_id, idx) do update set
-  slug = excluded.slug,
   title = excluded.title,
   description = excluded.description,
   content_md = excluded.content_md,
@@ -2875,8 +2874,7 @@ select c.id, tm.idx, tm.slug, tm.title, true
 from target_modules tm
 join class_ids c on c.slug = tm.class_slug
 on conflict (class_id, idx) do update
-  set slug = excluded.slug,
-      title = excluded.title,
+  set title = excluded.title,
       is_published = true,
       description = coalesce(excluded.description, modules.description);
 

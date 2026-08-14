@@ -43,13 +43,16 @@ describe("public Find performance contract", () => {
     )
   })
 
-  it("keeps the shell interactive before automatic Mapbox startup", () => {
+  it("keeps the shell interactive before intentional Mapbox startup", () => {
     const source = readSource(
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
+    const surfaceSource = readSource(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
 
     expect(source).toContain(
-      "const initializeFrameId = window.requestAnimationFrame"
+      "initializeFrameId = window.requestAnimationFrame"
     )
     expect(source).toContain(
       "PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000"
@@ -58,12 +61,24 @@ describe("public Find performance contract", () => {
     expect(source).toContain(
       'mapContainer.addEventListener("pointerdown", startMap'
     )
+    expect(source).toContain(
+      'PUBLIC_MAP_COARSE_POINTER_MEDIA_QUERY = "(pointer: coarse)"'
+    )
+    expect(source).toContain("if (!hasCoarsePointer)")
+    expect(source).toContain(
+      'mapContainer.addEventListener("keydown", startMapFromKeyboard)'
+    )
     expect(source).toContain("if (cancelled || initializationStarted) return")
     expect(source).toContain(
       'mapContainer.removeEventListener("pointerdown", startMap)'
     )
+    expect(source).toContain(
+      'mapContainer.removeEventListener("keydown", startMapFromKeyboard)'
+    )
     expect(source).toContain("window.cancelAnimationFrame(initializeFrameId)")
     expect(source).toContain("window.clearTimeout(initializeTimeoutId)")
+    expect(surfaceSource).toContain('role="region"')
+    expect(surfaceSource).toContain("tabIndex={0}")
   })
 
   it("renders the intended location consent state in the initial shell", () => {

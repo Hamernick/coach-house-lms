@@ -201,6 +201,54 @@ describe("page-health-monitor feature contract", () => {
     expect(schemaTable).toContain("metadata: Json")
   })
 
+  it("bounds page-health writes and expires old telemetry", () => {
+    const migration = readSource(
+      "supabase/migrations/20260814193000_bound_page_health_telemetry.sql"
+    )
+    const recorder = readSource(
+      "src/features/page-health-monitor/server/record.ts"
+    )
+    const retentionMigration = readSource(
+      "supabase/migrations/20260814200500_schedule_page_health_retention.sql"
+    )
+    const functions = readSource("src/lib/supabase/schema/functions.ts")
+
+    expect(migration).toContain(
+      "create or replace function public.record_page_health_event"
+    )
+    expect(migration).toContain("pg_advisory_xact_lock")
+    expect(migration).toContain("v_minute_count >= 300")
+    expect(migration).toContain("v_day_count >= 5000")
+    expect(migration).toContain("v_anonymous_minute_count >= 120")
+    expect(migration).toContain("v_anonymous_day_count >= 2000")
+    expect(migration).toContain("v_user_minute_count >= 30")
+    expect(migration).toContain("v_user_day_count >= 250")
+    expect(migration).toContain("now() - interval '30 days'")
+    expect(migration).toContain("limit 500")
+    expect(migration).toContain("from public, anon, authenticated")
+    expect(migration).toContain("to service_role")
+    expect(migration).toContain(
+      "revoke insert, update on table public.app_page_health_events from service_role"
+    )
+    expect(recorder).toContain('.rpc("record_page_health_event"')
+    expect(recorder).toContain('reason: "rate_limited"')
+    expect(recorder).not.toContain('.from("app_page_health_events").insert')
+    expect(functions).toContain("record_page_health_event")
+    expect(retentionMigration).toContain(
+      "create or replace function public.purge_expired_page_health_events"
+    )
+    expect(retentionMigration).toContain(
+      "create extension if not exists pg_cron"
+    )
+    expect(retentionMigration).toContain("purge-expired-page-health-events")
+    expect(retentionMigration).toContain("'*/15 * * * *'")
+    expect(retentionMigration).toContain("limit p_batch_size")
+    expect(retentionMigration).toContain("p_batch_size > 500")
+    expect(retentionMigration).toContain(
+      "from public, anon, authenticated, service_role"
+    )
+  })
+
   it("wires capture through provider, endpoint, and error boundaries", () => {
     const provider = readSource("src/components/providers/app-providers.tsx")
     const apiRoute = readSource("src/app/api/telemetry/page-health/route.ts")

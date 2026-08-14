@@ -3262,11 +3262,9 @@ async function run() {
   }
 
   if (await tableExists("app_page_health_events")) {
-    const pageHealthEventId = randomUUID()
-    const { error: insertError } = await adminClient
+    const { error: directInsertError } = await adminClient
       .from("app_page_health_events")
       .insert({
-        id: pageHealthEventId,
         event_type: "route_error",
         route_path: "/workspace",
         severity: "critical",
@@ -3274,11 +3272,41 @@ async function run() {
         user_id: member.id,
       })
     results.push({
-      name: "service role can insert page health events",
-      passed: !insertError,
+      name: "service role cannot bypass bounded page health recorder",
+      passed:
+        directInsertError?.code === "42501" ||
+        /permission denied/i.test(directInsertError?.message ?? ""),
     })
 
-    if (!insertError) {
+    const { data: recordResult, error: recordError } = await adminClient.rpc(
+      "record_page_health_event",
+      {
+        p_event: {
+          eventType: "route_error",
+          routePath: "/workspace",
+          severity: "critical",
+          source: "client",
+        },
+        p_org_id: null,
+        p_user_id: member.id,
+      }
+    )
+    const pageHealthEventId =
+      recordResult &&
+      typeof recordResult === "object" &&
+      !Array.isArray(recordResult) &&
+      typeof recordResult.id === "string"
+        ? recordResult.id
+        : null
+    results.push({
+      name: "service role can record a bounded page health event",
+      passed:
+        !recordError &&
+        recordResult?.status === "recorded" &&
+        !!pageHealthEventId,
+    })
+
+    if (pageHealthEventId) {
       const { data: memberRows, error: memberReadError } = await memberClient
         .from("app_page_health_events")
         .select("id")
@@ -3326,10 +3354,12 @@ async function run() {
       passed: !!memberInsertError,
     })
 
-    await adminClient
-      .from("app_page_health_events")
-      .delete()
-      .eq("id", pageHealthEventId)
+    if (pageHealthEventId) {
+      await adminClient
+        .from("app_page_health_events")
+        .delete()
+        .eq("id", pageHealthEventId)
+    }
   }
 
   await runResourceMapRlsTests({

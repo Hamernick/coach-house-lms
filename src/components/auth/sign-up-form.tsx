@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
 import { clearOnboardingDraft } from "@/components/onboarding/onboarding-dialog/draft"
 import {
@@ -99,15 +98,10 @@ function isExistingAccountResponse(
   )
 }
 
-function resolveSignUpErrorMessage(
-  raw: string,
-  isTesterInstantSignup: boolean
-) {
+function resolveSignUpErrorMessage(raw: string) {
   const normalized = raw.toLowerCase()
   if (normalized.includes("email rate limit exceeded")) {
-    return isTesterInstantSignup
-      ? "Tester sign up is temporarily throttled. Retry in a moment."
-      : "Too many verification emails were requested. Wait a minute and retry. Internal testers can use /tester/sign-up."
+    return "Too many verification emails were requested. Wait a minute and retry."
   }
   return raw
 }
@@ -146,8 +140,6 @@ export function SignUpForm({
       }),
     [loginHref, resolvedRedirectTo]
   )
-  const isTesterInstantSignup = signUpMetadata?.qa_tester === true
-
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -183,37 +175,6 @@ export function SignUpForm({
 
     startTransition(async () => {
       const legalConsent = createSignupLegalConsent()
-      if (isTesterInstantSignup) {
-        const createResult = await createTesterAccountAction({
-          email: values.email,
-          password: values.password,
-          legalConsent,
-        })
-
-        if (!createResult.ok) {
-          setStatus("error")
-          setMessage(createResult.error)
-          return
-        }
-
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        })
-        if (signInError) {
-          setStatus("error")
-          setMessage(
-            "Tester account is ready, but we could not sign you in automatically. Please use sign in."
-          )
-          return
-        }
-
-        clearOnboardingDraft()
-        router.replace(resolvedRedirectTo)
-        router.refresh()
-        return
-      }
-
       const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
 
       const { data, error } = await supabase.auth.signUp({
@@ -232,9 +193,7 @@ export function SignUpForm({
 
       if (error) {
         setStatus("error")
-        setMessage(
-          resolveSignUpErrorMessage(error.message, isTesterInstantSignup)
-        )
+        setMessage(resolveSignUpErrorMessage(error.message))
         return
       }
 

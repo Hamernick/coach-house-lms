@@ -72,6 +72,9 @@
 
 - Structured logs for app/webhook flows.
 - No silent failures; all failures surface actionable context.
+- Release monitoring, incident response, support intake, ownership, and
+  rollback evidence follow
+  `docs/agent/release-security-support-runbook.md`.
 - Minimal analytics events:
   - page view
   - module view

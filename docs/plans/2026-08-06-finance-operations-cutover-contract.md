@@ -35,7 +35,7 @@ counsel/accounting approval already tracked by Gate 3.
 | Tracing             | `src/instrumentation.ts` enables OpenTelemetry only on Vercel or with an OTLP exporter | Verify exporter, retention, deployment tags, and alert delivery in each release environment      |
 | Hosting metrics     | Vercel Analytics, Speed Insights, and OTEL packages are installed                      | Current plan, rolling-release support, skew protection, and alert routing are unverified         |
 | Database operations | Supabase is authoritative storage                                                      | Backup/PITR, restore proof, log retention, and any log drain remain unverified                   |
-| Status page         | `/status` renders hard-coded “Operational” values                                      | Do not use it for incident truth until it is backed by measured checks and operator state        |
+| Status page         | `/status` explicitly says that measured public status is unavailable                   | Do not use it for incident truth until it is backed by measured checks and operator state        |
 | Feature flags       | Current flags are coarse environment booleans                                          | Add server-only Finance capability flags plus organization allowlists                            |
 | CI                  | GitHub Actions runs `pnpm check:quality`                                               | Branch protection, required review, preview, and production checks still need release-time proof |
 | Connect runtime     | Research 6 defines the contract; implementation does not exist                         | No Connect dashboard, alert, canary, or live readiness claim is currently valid                  |

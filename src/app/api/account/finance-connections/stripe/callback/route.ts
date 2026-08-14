@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
     {
       p_state_sha256: stateSha256,
       p_user_id: context.user.id,
+      p_org_id: context.activeOrg.orgId,
       p_stripe_account_id: accountId,
       p_stripe_user_id: stripeUserId,
       p_livemode: actualUrl.searchParams.get("livemode") !== "false",

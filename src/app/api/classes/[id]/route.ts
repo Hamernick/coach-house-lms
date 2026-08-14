@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
+import { requireAdmin } from "@/lib/admin/auth"
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -14,6 +15,7 @@ const updateSchema = z.object({
 })
 
 export async function GET(_request: Request, context: any) {
+  await requireAdmin()
   const { params } = context as { params: { id: string } }
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin
@@ -34,6 +36,7 @@ export async function GET(_request: Request, context: any) {
 }
 
 export async function PUT(request: Request, context: any) {
+  await requireAdmin()
   const { params } = context as { params: { id: string } }
   const body = await request.json()
   const parsed = updateSchema.safeParse(body)
@@ -45,7 +48,9 @@ export async function PUT(request: Request, context: any) {
   const admin = createSupabaseAdminClient()
   const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
     ...parsed.data,
-    ...(parsed.data.published !== undefined ? { is_published: parsed.data.published } : {}),
+    ...(parsed.data.published !== undefined
+      ? { is_published: parsed.data.published }
+      : {}),
   }
   delete (updatePayload as Record<string, unknown>).published
 
@@ -68,6 +73,7 @@ export async function PUT(request: Request, context: any) {
 }
 
 export async function DELETE(_request: Request, context: any) {
+  await requireAdmin()
   const { params } = context as { params: { id: string } }
   const admin = createSupabaseAdminClient()
   const { error } = await admin.from("classes").delete().eq("id", params.id)

@@ -23,6 +23,7 @@ export type PublicFunctions = {
     Args: {
       p_state_sha256: string
       p_user_id: string
+      p_org_id: string
       p_stripe_account_id: string
       p_stripe_user_id: string
       p_livemode: boolean

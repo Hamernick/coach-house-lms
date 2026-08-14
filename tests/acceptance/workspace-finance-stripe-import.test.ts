@@ -65,6 +65,21 @@ describe("workspace Finance Stripe import contract", () => {
     expect(callbackRoute).toContain(
       '"complete_organization_finance_stripe_install"'
     )
+    expect(callbackRoute).toContain("p_org_id: context.activeOrg.orgId")
+
+    const authorizationMigration = readFileSync(
+      join(
+        root,
+        "supabase/migrations/20260814061500_bind_finance_stripe_install_to_authorized_org.sql"
+      ),
+      "utf8"
+    )
+    expect(authorizationMigration).toContain("and org_id = p_org_id")
+    expect(authorizationMigration).toContain("access.access_level = 'manager'")
+    expect(authorizationMigration).toContain("membership.role = 'board'")
+    expect(authorizationMigration).toContain(
+      "Keep the released five-argument caller working"
+    )
   })
 
   it("syncs only through the connected account and atomic provider evidence", () => {

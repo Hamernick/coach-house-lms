@@ -134,8 +134,8 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **25/35 complete (71%)**, **5 in progress**, and
-**5 not started**.
+revision. Current progress: **26/35 complete (74%)**, **5 in progress**, and
+**4 not started**.
 
 **Wave 1 — Live stability and existing work close**
 
@@ -187,7 +187,7 @@ revision. Current progress: **25/35 complete (71%)**, **5 in progress**, and
 
 **Wave 7 — Integrated production release**
 
-- [ ] `wave-7-criterion-1` **Not started:** Pass the full quality gate, connected RLS where changed, and migration parity.
+- [x] `wave-7-criterion-1` **Complete:** Pass the full quality gate, connected RLS where changed, and migration parity — Evidence: production commit `c1144707` passed the full GitHub Actions quality gate in run `31771538852`; the latest full connected production RLS matrix passed with ephemeral cleanup and no later change touched database policy; `supabase migration list --linked` on 2026-08-14 showed exact local/remote parity through `20260813153500`.
 - [ ] `wave-7-criterion-2` **Not started:** Complete security review, support runbook, ownership, and monitoring setup.
 - [ ] `wave-7-criterion-3` **Not started:** Verify hosted paid, free, member, coach, and admin journeys in light, dark, desktop, and mobile.
 - [ ] `wave-7-criterion-4` **Not started:** Rehearse rollback and complete controlled paid and free canaries with gradual rollout.

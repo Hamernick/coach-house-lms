@@ -46,15 +46,16 @@ with atomic caps of 120 events per organization per minute and 5,000 per rolling
 day. Signup now rolls back account creation unless the database receives the
 current document evidence; only service-role-controlled app metadata can mark
 an account as explicitly provisioned without creating false consent evidence.
-PR #193 is the release candidate for the final medium finding. It routes
-page-health writes through one service-role-only database function, revokes
-direct service-role inserts, applies atomic global, anonymous, and per-user
-caps, and schedules an independent 15-minute job that removes telemetry older
-than 30 days in bounded batches. Local quality, Supabase Preview, and
-rollback-only connected database proof pass. The finding
-remains open until merge, production deployment, migration parity, and focused
-production proof. Wave 7 also remains open for the ownership, alert, monitoring,
-and rollback evidence below.
+PR #193 merged as `19e47b24` and closes the final medium finding. Page-health
+writes use one service-role-only database function with atomic global,
+anonymous, and per-user caps; direct service-role inserts and updates are
+revoked. Main quality, both production deployments, and exact migration parity
+through `20260814200500` passed. Production ran the independent 15-minute,
+500-row retention job successfully at `2026-08-14T20:30:00Z`. A same-origin
+production canary returned `201`, stored one normalized event, and was removed
+with zero rows remaining. All ten validated security findings are remediated.
+Wave 7 remains open for the ownership, alert, monitoring, and rollback evidence
+below.
 
 ## Ownership
 

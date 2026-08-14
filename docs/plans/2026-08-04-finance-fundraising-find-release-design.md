@@ -134,7 +134,7 @@ wave, but unrelated scope does not accumulate in one PR.
 
 Only checked criteria count toward the percentage. Criterion IDs and the
 35-item denominator are stable; changing either requires an explicit PRD
-revision. Current progress: **24/35 complete (69%)**, **6 in progress**, and
+revision. Current progress: **25/35 complete (71%)**, **5 in progress**, and
 **5 not started**.
 
 **Wave 1 — Live stability and existing work close**
@@ -148,7 +148,7 @@ revision. Current progress: **24/35 complete (69%)**, **6 in progress**, and
 **Wave 2 — Signup, recovery, and legal**
 
 - [x] `wave-2-criterion-1` **Complete:** Provide canonical Terms and Privacy pages with required acceptance on every signup surface — Evidence: PR #156 merged as `9cacf375`; both production projects deployed, `/privacy` and `/terms` return canonical `200` pages with version `2026-08-12.1`, and the 43-test signup matrix proves required acceptance across direct and contextual entry surfaces.
-- [ ] `wave-2-criterion-2` **In progress:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: migration `20260811160000` is applied in production; the table exists with zero rows, public-schema lint passes, and anonymous reads return `401`; one controlled signup record remains required to prove the live trigger end to end.
+- [x] `wave-2-criterion-2` **Complete:** Persist immutable consent version, content hashes, user, and UTC acceptance time under RLS — Evidence: PR #182 merged as `e7e3b393`; the connected production RLS fixture invoked the real signup trigger and verified version `2026-08-12.1`, both content hashes, user linkage, server UTC acceptance time, and `signup` source. The owner alone could read the row, authenticated mutations were denied, cleanup cascaded, and the acceptance count returned from `0` to `0`. PR #183 restored passing Supabase Preview seed validation.
 - [ ] `wave-2-criterion-3` **In progress:** Verify direct and contextual signup, email verification, safe return, denial, retry, and recovery — Evidence: 43 focused acceptance tests pass across direct signup, homepage and pricing entry, required denial, confirmation redirects, safe return, retry, and password recovery; hosted and production proof remain.
 - [x] `wave-2-criterion-4` **Complete:** Obtain qualified legal approval for Terms and Privacy copy — Evidence: the product owner reported legal review complete and the current copy approved for release on 2026-08-12.
 - [ ] `wave-2-criterion-5` **In progress:** Merge, deploy, production-smoke, monitor, and retain a tested signup rollback — Evidence: PR #156, main CI, both Vercel production deployments, canonical route probes, migration parity, schema lint, and anonymous denial pass; the controlled signup smoke and tested rollback remain.

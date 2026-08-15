@@ -111,9 +111,7 @@ describe("public map user location", () => {
     )
 
     expect(FALLBACK_ZOOM).toBe(1.5)
-    expect(hookSource).toContain(
-      "!suppressAutomaticEntrance && !welcomeOpen"
-    )
+    expect(hookSource).toContain("!suppressAutomaticEntrance && !welcomeOpen")
     expect(hookSource).toContain("setControlOpen(!storedGrant)")
     expect(hookSource).toContain(
       "PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION = 180"
@@ -152,6 +150,32 @@ describe("public map user location", () => {
     )
     expect(hookSource).toMatch(
       /const storedGrant = hasGrantedPublicMapLocation\(window\.sessionStorage\)[\s\S]*\.query\(\{ name: "geolocation" \}\)[\s\S]*requestPosition\("entrance"\)/
+    )
+  })
+
+  it("keeps a fast location result until the deferred map is ready", () => {
+    const indexSource = readSource("src/components/public/public-map-index.tsx")
+    const runtimeSource = readSource(
+      "src/components/public/public-map-index/public-map-index-runtime.ts"
+    )
+    const hookSource = readSource(
+      "src/components/public/public-map-index/use-public-map-user-location.ts"
+    )
+
+    expect(indexSource).toContain("mapStartRef")
+    expect(indexSource).toContain(
+      "onRequestMapStart: () => mapStartRef.current?.()"
+    )
+    expect(runtimeSource).toContain("mapStartRef.current = startMap")
+    expect(hookSource).toContain("shouldFocusLocationRef")
+    expect(hookSource).toMatch(
+      /shouldFocusLocationRef\.current =\s*source === "manual"[\s\S]*setCoordinates\(nextCoordinates\)[\s\S]*setStatus\("centered"\)/
+    )
+    expect(hookSource).toMatch(
+      /const handleConfirm = useCallback\(\(\) => \{\s*onRequestMapStart\(\)\s*requestPosition\("manual"\)/
+    )
+    expect(hookSource).not.toMatch(
+      /const nextCoordinates[\s\S]*?const map = mapRef\.current[\s\S]*?if \(!map \|\| !mapLoadedRef\.current\) return/
     )
   })
 

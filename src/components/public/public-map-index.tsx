@@ -107,6 +107,7 @@ export function PublicMapIndex({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const mapboxRef = useRef<PublicMapMapboxApi | null>(null)
+  const mapStartRef = useRef<(() => void) | null>(null)
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
   const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
@@ -123,20 +124,17 @@ export function PublicMapIndex({
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
     initialOrganization?.id ?? null
   )
-  const [cameraTarget, setCameraTarget] =
-    useState<PublicMapCameraTarget | null>(
-      resolveInitialCameraTarget(initialOrganization)
-    )
+  const [cameraTarget, setCameraTarget] = useState<PublicMapCameraTarget | null>(
+    resolveInitialCameraTarget(initialOrganization)
+  )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const pendingAuthOrgId: string | null = null
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
-  const [sameLocationSelection, setSameLocationSelection] =
-    useState<PublicMapSameLocationSelection | null>(null)
-  const [selectedListItemId, setSelectedListItemId] = useState<string | null>(
-    initialOrganization?.id ?? null
-  )
+  const [sameLocationSelection, setSameLocationSelection] = useState<PublicMapSameLocationSelection | null>(null)
+  const [selectedListItemId, setSelectedListItemId] =
+    useState<string | null>(initialOrganization?.id ?? null)
   const clearMapTransientSelection = useCallback(() => {
     setSameLocationSelection(null)
     setSelectedListItemId(null)
@@ -343,6 +341,7 @@ export function PublicMapIndex({
     containerRef,
     mapRef,
     mapboxRef,
+    mapStartRef,
     mapLoadedRef,
     hasResolvedInitialViewportRef,
     setInitialViewportResolved,
@@ -356,6 +355,7 @@ export function PublicMapIndex({
     mapRef,
     mapLoadedRef,
     mapLoadVersion,
+    onRequestMapStart: () => mapStartRef.current?.(),
     suppressAutomaticEntrance:
       Boolean(initialPublicSlug) || includeSeedResources,
     welcomeOpen: memberOnboardingOpen,

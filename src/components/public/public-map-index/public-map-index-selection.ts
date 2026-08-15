@@ -1,12 +1,23 @@
 "use client"
 
-import { useCallback, useEffect, type RefObject } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type RefObject,
+} from "react"
 import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
+import type {
+  ExternalResourceMapItem,
+  PublicMapItem,
+} from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { organizationHasMapLocation } from "./helpers"
 import {
+  focusOrganizationOnMap,
   ORGANIZATION_MARKER_OFFSET_Y,
   PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
 } from "./map-view-helpers"
@@ -34,6 +45,65 @@ export function resolveInitialCameraTarget(
   organization: PublicMapOrganization | null
 ): PublicMapCameraTarget | null {
   return organization ? { organizationId: organization.id, requestId: 0 } : null
+}
+
+export function useFocusPublicMapCameraTarget(
+  mapRef: RefObject<mapboxgl.Map | null>,
+  cameraTarget: PublicMapCameraTarget | null,
+  organizationById: Map<string, PublicMapOrganization>
+) {
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !cameraTarget) return
+    const organization = organizationById.get(cameraTarget.organizationId)
+    if (!organization || !organizationHasMapLocation(organization)) return
+    focusOrganizationOnMap({ map, organization })
+  }, [cameraTarget, mapRef, organizationById])
+}
+
+export function useSelectedResourceIndexItem(
+  selectableMapItemById: Map<string, PublicMapItem>,
+  selectedListItemId: string | null
+) {
+  return useMemo((): ExternalResourceMapItem | null => {
+    if (!selectedListItemId) return null
+    const item = selectableMapItemById.get(selectedListItemId)
+    return item?.itemType === "external_resource" ? item : null
+  }, [selectableMapItemById, selectedListItemId])
+}
+
+export function usePublicMapTransientSelection(initialItemId: string | null) {
+  const [sameLocationSelection, setSameLocationSelection] =
+    useState<PublicMapSameLocationSelection | null>(null)
+  const [selectedListItemId, setSelectedListItemId] = useState<string | null>(
+    initialItemId
+  )
+  const clearMapTransientSelection = useCallback(() => {
+    setSameLocationSelection(null)
+    setSelectedListItemId(null)
+  }, [])
+  return {
+    clearMapTransientSelection,
+    sameLocationSelection,
+    selectedListItemId,
+    setSameLocationSelection,
+    setSelectedListItemId,
+  }
+}
+
+export function usePublicMapSameLocationSelectionChange(
+  clearActiveGuide: () => void,
+  setSameLocationSelection: (
+    selection: PublicMapSameLocationSelection | null
+  ) => void
+) {
+  return useCallback(
+    (selection: PublicMapSameLocationSelection | null) => {
+      setSameLocationSelection(selection)
+      if (selection) clearActiveGuide()
+    },
+    [clearActiveGuide, setSameLocationSelection]
+  )
 }
 
 export function resolvePublicMapPresentationFlags(

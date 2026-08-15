@@ -69,6 +69,8 @@ export function usePublicMapOrganizationFilterState({
   organizationById,
   organizations,
   resourceItems,
+  resourceItemsEndpoint,
+  totalResourceCount,
 }: {
   activeGroup: PublicMapGroupFilterKey
   deferredQuery: string
@@ -77,6 +79,8 @@ export function usePublicMapOrganizationFilterState({
   organizationById: Map<string, PublicMapOrganization>
   organizations: PublicMapOrganization[]
   resourceItems?: ExternalResourceMapItem[]
+  resourceItemsEndpoint?: string
+  totalResourceCount: number
 }) {
   const queryMatchedOrganizations = usePublicMapFilteredOrganizations({
     deferredQuery,
@@ -104,6 +108,23 @@ export function usePublicMapOrganizationFilterState({
     () => buildPublicMapGroupFilterCounts(countItems),
     [countItems]
   )
+  const directoryCount = useMemo(
+    () =>
+      resourceItemsEndpoint
+        ? organizations.length + totalResourceCount
+        : buildPublicMapItems({
+            organizations,
+            includeSeedItems: includeSeedResources,
+            resourceItems,
+          }).length,
+    [
+      includeSeedResources,
+      organizations,
+      resourceItems,
+      resourceItemsEndpoint,
+      totalResourceCount,
+    ]
+  )
   const filteredItems = useMemo(
     () =>
       countItems.filter((item) =>
@@ -113,5 +134,5 @@ export function usePublicMapOrganizationFilterState({
   )
   const filteredOrganizations = queryMatchedOrganizations
 
-  return { filteredItems, filteredOrganizations, groupCounts }
+  return { directoryCount, filteredItems, filteredOrganizations, groupCounts }
 }

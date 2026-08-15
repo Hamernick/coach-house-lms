@@ -98,13 +98,18 @@ describe("public map resource items client", () => {
       )
 
     const progressCounts: number[] = []
+    const reportedTotalCounts: Array<number | null> = []
     const items = await loadPublicMapResourceItems(
       "/api/public/resource-map/index?limit=50",
-      (loadedItems) => progressCounts.push(loadedItems.length)
+      (loadedItems, totalCount) => {
+        progressCounts.push(loadedItems.length)
+        reportedTotalCounts.push(totalCount)
+      }
     )
 
     expect(items).toHaveLength(2)
     expect(progressCounts).toEqual([1, 2])
+    expect(reportedTotalCounts).toEqual([null, null])
     expect(items[0]).toMatchObject({
       id: compactItem.id,
       address: "Chicago, IL, United States",
@@ -165,19 +170,54 @@ describe("public map resource items client", () => {
             nextCursor: isFinalPage
               ? null
               : resourceItems[resourceItems.length - 1]?.id,
+            totalCount: 856,
           },
         })
       )
     }
 
     const progressCounts: number[] = []
+    const reportedTotalCounts: Array<number | null> = []
     const items = await loadPublicMapResourceItems(
       "/api/public/resource-map/index?limit=50&test=bounded-progress",
-      (loadedItems) => progressCounts.push(loadedItems.length)
+      (loadedItems, totalCount) => {
+        progressCounts.push(loadedItems.length)
+        reportedTotalCounts.push(totalCount)
+      }
     )
 
     expect(items).toHaveLength(856)
     expect(progressCounts).toEqual([50, 856])
+    expect(reportedTotalCounts).toEqual([856, 856])
+  })
+
+  it("keeps the map inventory total separate from progressive item pages", () => {
+    const indexSource = readFileSync(
+      join(process.cwd(), "src/components/public/public-map-index.tsx"),
+      "utf8"
+    )
+    const surfaceSource = readFileSync(
+      join(
+        process.cwd(),
+        "src/components/public/public-map-index/map-surface.tsx"
+      ),
+      "utf8"
+    )
+    const filterStateSource = readFileSync(
+      join(
+        process.cwd(),
+        "src/components/public/public-map-index/public-map-index-filter-state.ts"
+      ),
+      "utf8"
+    )
+
+    expect(indexSource).toContain("directoryCount={directoryCount}")
+    expect(indexSource).toContain("filteredItems={directoryListItems}")
+    expect(surfaceSource).toContain("directoryCount={directoryCount}")
+    expect(surfaceSource).not.toContain("directoryCount={filteredItems.length}")
+    expect(filterStateSource).toContain(
+      "organizations.length + totalResourceCount"
+    )
   })
 
   it("deduplicates selected resource detail loads", async () => {

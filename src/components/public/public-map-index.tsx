@@ -4,28 +4,21 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useMemo,
   useRef,
   useState,
-  type RefObject,
 } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
-import {
-  organizationHasMapLocation,
-  type PublicMapBounds,
-} from "./public-map-index/helpers"
+import { type PublicMapBounds } from "./public-map-index/helpers"
 import type { SidebarMode } from "./public-map-index/constants"
 import {
   useSyncPublicMapAuthFavorite,
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
 import {
-  focusOrganizationOnMap,
   resolveInitialPublicMapOrganization,
   resolveBounds,
   resolvePublicMapboxToken,
@@ -42,7 +35,6 @@ import { PublicMapSurface } from "./public-map-index/map-surface"
 import { usePublicMapMemberOnboardingMapOverlay } from "./public-map-index/member-onboarding-preview-controls"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
-import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import { usePublicMapMarkers } from "./public-map-index/use-public-map-markers"
 import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
@@ -62,8 +54,12 @@ import { usePublicMapResourceGuideState } from "./public-map-index/resource-guid
 import type { PublicMapIndexProps } from "./public-map-index/public-map-index-types"
 import {
   resolveInitialCameraTarget,
+  useFocusPublicMapCameraTarget,
   usePublicMapIndexNavigationHandlers,
   usePublicMapListItemSelection,
+  usePublicMapSameLocationSelectionChange,
+  usePublicMapTransientSelection,
+  useSelectedResourceIndexItem,
   useSyncPublicMapSelectedListItem,
   type PublicMapCameraTarget,
 } from "./public-map-index/public-map-index-selection"
@@ -74,19 +70,7 @@ import {
 import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
 import { usePublicMapUserLocation } from "./public-map-index/use-public-map-user-location"
 
-function useFocusPublicMapCameraTarget(
-  mapRef: RefObject<mapboxgl.Map | null>,
-  cameraTarget: PublicMapCameraTarget | null,
-  organizationById: Map<string, PublicMapOrganization>
-) {
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !cameraTarget) return
-    const organization = organizationById.get(cameraTarget.organizationId)
-    if (!organization || !organizationHasMapLocation(organization)) return
-    focusOrganizationOnMap({ map, organization })
-  }, [cameraTarget, mapRef, organizationById])
-}
+const pendingAuthOrgId: string | null = null
 
 export function PublicMapIndex({
   organizations,
@@ -128,19 +112,16 @@ export function PublicMapIndex({
       resolveInitialCameraTarget(initialOrganization)
     )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
-  const pendingAuthOrgId: string | null = null
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
-  const [sameLocationSelection, setSameLocationSelection] =
-    useState<PublicMapSameLocationSelection | null>(null)
-  const [selectedListItemId, setSelectedListItemId] = useState<string | null>(
-    initialOrganization?.id ?? null
-  )
-  const clearMapTransientSelection = useCallback(() => {
-    setSameLocationSelection(null)
-    setSelectedListItemId(null)
-  }, [])
+  const {
+    clearMapTransientSelection,
+    sameLocationSelection,
+    selectedListItemId,
+    setSameLocationSelection,
+    setSelectedListItemId,
+  } = usePublicMapTransientSelection(initialOrganization?.id ?? null)
   const {
     activeGroup,
     handleActiveGroupChange,
@@ -155,6 +136,7 @@ export function PublicMapIndex({
     resourceItems,
     retry: retryResourceItems,
     status: resourceItemsLoadStatus,
+    totalResourceCount,
   } = usePublicMapResourceItems({ initialResourceItems, resourceItemsEndpoint })
   const deferredQuery = useDeferredValue(query)
   const searchPending = deferredQuery !== query
@@ -176,6 +158,7 @@ export function PublicMapIndex({
     })
   const organizationById = usePublicMapOrganizationById(organizations)
   const {
+    directoryCount,
     filteredItems: filteredDirectoryListItems,
     filteredOrganizations,
     groupCounts,
@@ -187,6 +170,8 @@ export function PublicMapIndex({
     organizationById,
     organizations,
     resourceItems,
+    resourceItemsEndpoint,
+    totalResourceCount,
   })
   const mapFilteredOrganizations = usePublicMapFilteredOrganizations({
     deferredQuery,
@@ -223,12 +208,10 @@ export function PublicMapIndex({
     organizationById,
     selectedOrgId,
   })
-  const selectedResourceIndexItem =
-    useMemo((): ExternalResourceMapItem | null => {
-      if (!selectedListItemId) return null
-      const item = selectableMapItemById.get(selectedListItemId)
-      return item?.itemType === "external_resource" ? item : null
-    }, [selectableMapItemById, selectedListItemId])
+  const selectedResourceIndexItem = useSelectedResourceIndexItem(
+    selectableMapItemById,
+    selectedListItemId
+  )
   const selectedResourceItem = usePublicMapResourceItemDetail(
     selectedResourceIndexItem,
     resourceItemsEndpoint?.startsWith("/api/public/resource-map/index") ?? false
@@ -237,24 +220,23 @@ export function PublicMapIndex({
     favorites,
     organizationById,
   })
-  const { savedResources, toggleCollectedResource, unresolvedCollectedResourceCount } =
-    usePublicMapCollectedResources({
-      collectedResourceIds,
-      resourceItems,
-      retainMissingResources: resourceItemsLoadStatus !== "ready",
-      setCollectedResourceIds,
-    })
+  const {
+    savedResources,
+    toggleCollectedResource,
+    unresolvedCollectedResourceCount,
+  } = usePublicMapCollectedResources({
+    collectedResourceIds,
+    resourceItems,
+    retainMissingResources: resourceItemsLoadStatus !== "ready",
+    setCollectedResourceIds,
+  })
   const authAction = searchParams.get("auth_action")
   const authOrganizationId = searchParams.get("auth_org")
-  const handleSameLocationSelectionChange = useCallback(
-    (selection: PublicMapSameLocationSelection | null) => {
-      setSameLocationSelection(selection)
-      if (selection) {
-        clearActiveGuide()
-      }
-    },
-    [clearActiveGuide]
-  )
+  const handleSameLocationSelectionChange =
+    usePublicMapSameLocationSelectionChange(
+      clearActiveGuide,
+      setSameLocationSelection
+    )
   const sameLocationSearchContext = usePublicMapSameLocationSearchContext({
     itemBySelectableId: selectableMapItemById,
     sameLocationSelection,
@@ -401,6 +383,7 @@ export function PublicMapIndex({
     <PublicMapSurface
       containerRef={containerRef}
       sidebarMode={sidebarMode}
+      directoryCount={directoryCount}
       filteredItems={directoryListItems}
       filteredOrganizations={filteredOrganizations}
       selectedItemId={selectedListItemId}

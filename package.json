@@ -73,6 +73,7 @@
     "resource-map:review-matches": "node scripts/resource-map/review-match-candidates.mjs",
     "resource-map:promote": "node scripts/resource-map/promote-approved-records.mjs",
     "resource-map:publish-source-canary": "node scripts/resource-map/verify-and-publish-source-records.mjs",
+    "resource-map:verify-arcgis-source": "node scripts/resource-map/verify-arcgis-source-records.mjs",
     "resource-map:verify-cook-county-cooling": "node scripts/resource-map/verify-cook-county-cooling-records.mjs",
     "resource-map:source-freshness": "node scripts/resource-map/check-source-freshness.mjs",
     "resource-map:enrich": "node scripts/resource-map/enrich-candidates.mjs",

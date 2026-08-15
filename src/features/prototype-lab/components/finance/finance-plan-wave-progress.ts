@@ -130,7 +130,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(3, [
       {
         evidence: [
-          "PRs #143-#146 merged through production commit 648b0885; the live anonymous index returned all 853 records in compact responses of 25,990-97,986 bytes",
+          "PRs #143-#146 merged through production commit 648b0885; on 2026-08-15 the live anonymous index returned all 875 records in compact cursor responses of 36,318-98,701 bytes without private or detail-only fields",
         ],
         state: "complete",
         title:
@@ -138,9 +138,9 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Production returned all 853 unique records exactly once across five stable cursor pages of 200/200/200/200/53 records; Find visibly progressed from 618 to 871 combined results without losing map or directory context",
+          "A 2026-08-15 read-only production refresh returned all 875 unique records exactly once across five cursor pages of 200/200/200/200/75, but page totalCount still decreased 875/675/475/275/75 and the visible Active total can change with selection; PR #199 has green CI and previews but remains unmerged and needs reconciliation with current main, so production proof is still open",
         ],
-        state: "complete",
+        state: "in_progress",
         title:
           "Add bounded or paginated loading with stable cached refresh behavior",
       },
@@ -162,7 +162,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "Production /find preserved the 1,900 KB route budget and reached 1.7s first contentful paint, but the bounded mobile Lighthouse run measured 4.7s LCP and 35.0s time to interactive with Mapbox script evaluation dominating main-thread work; focused correction and production rerun remain",
+          "PRs #196-#198 merged through a23aac4e with main quality and both production deployments passing: idle mobile makes no Mapbox request until touch, initial transfer fell from 2.91 MB to 895 KB, FCP improved from 1.60s to 1.39s, avatars use bounded transforms, and the 17 remaining catalog drains now publish once; the latest production run still measured 38.84s TTI and 35.87s TBT before PR #198, so a standardized post-merge production rerun and monitoring window remain",
         ],
         state: "in_progress",
         title:
@@ -273,7 +273,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
     criteria: defineCriteria(6, [
       {
         evidence: [
-          "The 2026-08-13 read-only count refresh separates local and production snapshots: the expanded local curated artifact has 5,046 candidates and 741 complete, verified, publishable records; production has 2,184 staged records and exact parity at 853 verified, administrator-approved, publishable, promoted, and anonymous public rows",
+          "The local curated snapshot remains separate at 5,046 candidates and 741 complete, verified, publishable records; a 2026-08-15 read-only production refresh found 2,184 staged records, 875 administrator-approved and promoted rows, 1,309 held rows, and 875 unique anonymous public resources across five cursor pages",
         ],
         state: "complete",
         title:
@@ -289,7 +289,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "PRs #174-#175 refreshed existing staging and stored bounded verification without publishing unverified records; on 2026-08-13 the product owner approved only Bremen Township, Brookfield Library, and Calumet Township after all three matched the current 33-row official source, and the guarded production canary promoted exactly those three with zero duplicate matches; anonymous public parity increased only from 853 to 856, exact detail routes passed, three contacts and six links remained private, removed courthouse rows remained held, and PR #177 closed the obsolete bulk-detail endpoint before publication",
+          "After the product owner reviewed the held cohort, current official-source verification promoted only clean matches in bounded 3, 5, and 14-record Cook County batches: 22 current rows are public, Markham, Maywood, and Skokie remain held as removed, zero duplicate matches were accepted, all 22 contacts and 44 links remain private, and anonymous public resources increased from 853 to 875; PR #200 merged as 9fda00d2 with main quality and both production deployments passing, and its Maricopa verifier matched 3/3 exact rows in a read-only live dry run without writing verification, review, or publication state",
         ],
         state: "complete",
         title:
@@ -297,7 +297,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "PR #179 merged as 729ec3f5 with quality and both production deployments passing, and the custom domain serves the released bundle; the canonical paginated public API returned all 856 resources and exact live Chicago guide counts for food (201), housing (69), legal (31), libraries/community centers (103), family (23), and health (7), with one exact item-detail route per guide returning 200; the guides use only current public location and category fields, require at least five matches, preserve cooling-center guides, and change no resource data",
+          "PR #179 merged as 729ec3f5 with quality and both production deployments passing, and the custom domain serves the released bundle; the initial 856-resource release proved exact live Chicago guide counts for food (201), housing (69), legal (31), libraries/community centers (103), family (23), and health (7), with one exact item-detail route per guide returning 200; the same current-field queries now run against the 875-resource catalog, require at least five matches, preserve cooling-center guides, and change no resource data",
         ],
         state: "complete",
         title:
@@ -305,7 +305,7 @@ export const FINANCE_PLAN_WAVES: readonly FinancePlanWave[] = [
       },
       {
         evidence: [
-          "The approved Bremen, Brookfield, and Calumet canaries remained present in the complete 856-row anonymous catalog, and their three exact detail routes plus the shared official Cook County source returned 200; a bounded production rehearsal hid only the approved Bremen service, verified the canonical public projection changed from 856 to 855 with that service absent, restored it in finally, and verified exact recovery to 856; the final service is published with no hidden, suppressed, or deleted marker, audited hide and restore events preserve both states, and /find, quality, and both production deployments are healthy",
+          "The initial Bremen, Brookfield, and Calumet canaries passed exact detail and official-source checks, and the reversible production rehearsal changed the public projection from 856 to 855 and restored it exactly to 856 with audited hide and restore events; the current catalog contains all 22 verified Cook County rows at 875 total resources, keeps the three removed courthouse rows held, exposes none of their 22 contacts or 44 links, and preserves the original rollback proof",
         ],
         state: "complete",
         title:

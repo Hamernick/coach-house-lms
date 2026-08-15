@@ -155,9 +155,9 @@ export function loadPublicMapResourceItems(
           ...payload.resourceItems.map(normalizeLoadedResourceItem)
         )
       }
-      totalCount =
-        resolveFindResourceIndexTotalCount(payload.page?.totalCount) ??
-        totalCount
+      totalCount ??= resolveFindResourceIndexTotalCount(
+        payload.page?.totalCount
+      )
 
       const nextCursor = payload.page?.nextCursor
       pageEndpoint =

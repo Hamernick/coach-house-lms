@@ -170,7 +170,7 @@ describe("public map resource items client", () => {
             nextCursor: isFinalPage
               ? null
               : resourceItems[resourceItems.length - 1]?.id,
-            totalCount: 856,
+            totalCount: 856 - page * pageSize,
           },
         })
       )

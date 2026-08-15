@@ -1185,12 +1185,12 @@ describe("finance release planning graph", () => {
       total: 7,
     })
     expect(FINANCE_PLAN_WAVE_COUNTS).toEqual({
-      complete: 27,
-      inProgress: 5,
+      complete: 26,
+      inProgress: 6,
       notStarted: 3,
       total: 35,
     })
-    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(77)
+    expect(FINANCE_PLAN_COMPLETION_PERCENTAGE).toBe(74)
     expect(sourceCriteria).toHaveLength(35)
     expect(sourceCriteria.map((criterion) => criterion.id)).toEqual(
       trackedCriteria.map((criterion) => criterion.id)
@@ -1208,6 +1208,19 @@ describe("finance release planning graph", () => {
     )
     expect(FINANCE_PLAN_CURRENT_WAVE.id).toBe("wave-2-signup-legal")
     expect(FINANCE_PLAN_NEXT_CRITERION?.id).toBe("wave-2-criterion-3")
+    expect(FINANCE_PLAN_WAVES[2].criteria[1]).toMatchObject({
+      id: "wave-3-criterion-2",
+      state: "in_progress",
+    })
+    expect(FINANCE_PLAN_WAVES[2].criteria[1].evidence.join(" ")).toContain(
+      "PR #199"
+    )
+    expect(FINANCE_PLAN_WAVES[5].criteria[0].evidence.join(" ")).toContain(
+      "1,309 held rows"
+    )
+    expect(FINANCE_PLAN_WAVES[5].criteria[2].evidence.join(" ")).toContain(
+      "PR #200"
+    )
   })
 
   it("preserves all seven historical batches and 37 scope items", () => {
@@ -1279,9 +1292,9 @@ describe("finance release planning graph", () => {
       roadmapNodes.find((node) => node.id === nodeId)?.data
 
     expect(FINANCE_PLAN_CURRENT_FOCUS).toMatchObject({
-      complete: 27,
-      percentage: 77,
-      remaining: 8,
+      complete: 26,
+      percentage: 74,
+      remaining: 9,
       total: 35,
       waveId: "wave-2-signup-legal",
       waveLabel: "Wave 2: Signup, recovery, and legal",

@@ -76,7 +76,14 @@ pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publish
   staging IDs, bounds the live response, compares name, address, hours, phone,
   and coordinates, and is read-only by default. Storing the deterministic
   ledger additionally requires `--apply --confirm-source
-cook-county-socrata-cooling-centers`; it never reviews or publishes records.
+  cook-county-socrata-cooling-centers`; it never reviews or publishes records.
+- Verify supported ArcGIS canaries against their current official feature layer
+  with `resource-map:verify-arcgis-source -- --source-slug <slug> --id
+<uuid,...>`. The command accepts at most five exact unapproved/unpromoted
+  staging IDs and queries only their ArcGIS global IDs. It bounds live metadata
+  and feature responses and is read-only by default. Storing the deterministic
+  ledger additionally requires `--apply --confirm-source <slug>`; it never
+  reviews, approves, publishes, or changes public visibility.
 
 Evidence collection and enrichment are dry-run-first. Network access requires
 `--network true`; local output persistence requires `--write`. Import, review, promotion,

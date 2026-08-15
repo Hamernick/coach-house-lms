@@ -38,6 +38,10 @@ const VERIFY_COOK_COUNTY_COOLING = join(
   ROOT,
   "scripts/resource-map/verify-cook-county-cooling-records.mjs"
 )
+const VERIFY_ARCGIS_SOURCE = join(
+  ROOT,
+  "scripts/resource-map/verify-arcgis-source-records.mjs"
+)
 
 function withTempFile(
   fileName: string,
@@ -597,6 +601,140 @@ describe("resource map import records", () => {
     expect(source).toContain("Review and publication state remain unchanged")
     expect(source).not.toContain("review_status:")
     expect(source).not.toContain("promotion_status:")
+  })
+
+  it("verifies exact ArcGIS global IDs without reviewing or publishing", async () => {
+    const source = readFileSync(VERIFY_ARCGIS_SOURCE, "utf8")
+    const { buildVerificationPlan, validateArcGisLayerUrl } = await import(
+      pathToFileURL(VERIFY_ARCGIS_SOURCE).href
+    )
+    const currentId = "2caffc35-8749-47d9-bce6-a963bcec2f6b"
+    const removedId = "14483fad-adb5-4efa-8bbc-df4fbc378bc7"
+    const plan = buildVerificationPlan(
+      [
+        {
+          id: "current",
+          source_record_id: currentId,
+          extracted_fields: {
+            address: "6601 W. Thomas Rd. Phoenix AZ 85033",
+            hours: { label: "Mo-Fr 8am-6pm, Sa 8am-4pm" },
+            latitude: 33.47946361100003,
+            longitude: -112.20142232899997,
+            organizationName: "Mountain Park Health Center",
+            phone: "602-243-7277",
+            title: "Mountain Park Health Center — Hydration Station",
+          },
+        },
+        {
+          id: "removed",
+          source_record_id: removedId,
+          extracted_fields: { title: "Removed location" },
+        },
+      ],
+      [
+        {
+          attributes: {
+            Active: "Yes",
+            Address: "6601 W. Thomas Rd. Phoenix AZ 85033",
+            End_Date: "2026-09-30",
+            HeatRelief_Type: "Hydration Station",
+            Hours: "Mo-Fr 8am-6pm, Sa 8am-4pm",
+            Location: "Mountain Park Maryvale Clinic",
+            Organization: "Mountain Park Health Center",
+            PrimaryPhone: "602-243-7277",
+            Start_Date: "2026-05-18",
+            Status: 1,
+            globalid: `{${currentId}}`,
+          },
+          geometry: {
+            x: -112.20142232899997,
+            y: 33.47946361100003,
+          },
+        },
+      ],
+      "2026-08-14T20:00:00.000Z"
+    )
+
+    expect(plan[0].verification.status).toBe("approved")
+    expect(plan[0].issues).toEqual([])
+    expect(plan[1].verification.status).toBe("needs_review")
+    expect(plan[1].issues).toEqual(["removed_from_current_official_source"])
+    const changedPlan = buildVerificationPlan(
+      [
+        {
+          id: "changed",
+          source_record_id: currentId,
+          extracted_fields: {
+            address: "Old address",
+            hours: { label: "Mo-Fr 8am-6pm, Sa 8am-4pm" },
+            latitude: 33.47946361100003,
+            longitude: -112.20142232899997,
+            phone: "602-243-7277",
+            title: "Mountain Park Maryvale Clinic",
+          },
+        },
+      ],
+      [
+        {
+          ...plan[0].liveFeature,
+          attributes: { ...plan[0].liveFeature.attributes, Active: "No" },
+        },
+      ],
+      "2026-08-14T20:00:00.000Z"
+    )
+    expect(changedPlan[0].issues).toEqual([
+      "address_changed",
+      "inactive_in_current_official_source",
+    ])
+    expect(
+      validateArcGisLayerUrl(
+        "https://services1.arcgis.com/example/arcgis/rest/services/Test/FeatureServer/0/query?where=1%3D1"
+      )
+    ).toBe(
+      "https://services1.arcgis.com/example/arcgis/rest/services/Test/FeatureServer/0"
+    )
+    expect(() =>
+      validateArcGisLayerUrl(
+        "https://example.com/arcgis/rest/services/Test/FeatureServer/0/query"
+      )
+    ).toThrow("not an allowed HTTPS ArcGIS URL")
+    expect(source).toContain("const MAX_RECORDS = 5")
+    expect(source).toContain('data.trust_level !== "official"')
+    expect(source).toContain(
+      "--confirm-source must exactly match --source-slug"
+    )
+    expect(source).toContain("Review and publication state remain unchanged")
+    expect(source).not.toContain(
+      'resource_map_import_records\")\n      .update'
+    )
+    expect(source).not.toContain("review_status:")
+    expect(source).not.toContain("promotion_status:")
+  })
+
+  it("rejects ArcGIS verification batches larger than five before connecting", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        VERIFY_ARCGIS_SOURCE,
+        "--source-slug",
+        "maricopa-arcgis-heat-relief-network",
+        "--id",
+        [
+          "00000000-0000-4000-8000-000000000001",
+          "00000000-0000-4000-8000-000000000002",
+          "00000000-0000-4000-8000-000000000003",
+          "00000000-0000-4000-8000-000000000004",
+          "00000000-0000-4000-8000-000000000005",
+          "00000000-0000-4000-8000-000000000006",
+        ].join(","),
+      ],
+      { encoding: "utf8" }
+    )
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain(
+      "Verification may contain at most 5 records"
+    )
   })
 
   it("links staged imports to raw ingestion records in the DB write path", () => {

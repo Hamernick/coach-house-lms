@@ -24,7 +24,6 @@ type WorkspaceCanvasSurfaceV2BootstrapProps = Pick<
   | "presentationMode"
   | "seed"
   | "workspaceDataDrawerCanEdit"
-  | "workspaceFoundationEnabled"
 >
 
 export function useWorkspaceCanvasSurfaceV2Bootstrap({
@@ -41,7 +40,6 @@ export function useWorkspaceCanvasSurfaceV2Bootstrap({
   presentationMode,
   seed,
   workspaceDataDrawerCanEdit,
-  workspaceFoundationEnabled,
 }: WorkspaceCanvasSurfaceV2BootstrapProps) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const [isFlowReady, setIsFlowReady] = useState(false)
@@ -78,9 +76,7 @@ export function useWorkspaceCanvasSurfaceV2Bootstrap({
     presentationMode,
     tutorialActive: tutorialActiveFromBoard,
     uiPreferencesScope: viewport.uiPreferencesScope,
-    workspaceDataDrawerCanEdit:
-      workspaceFoundationEnabled && workspaceDataDrawerCanEdit,
-    workspaceFoundationEnabled,
+    workspaceDataDrawerCanEdit,
   })
   const nodeLookups = Runtime.useWorkspaceCanvasSurfaceNodeLookups({
     boardNodes: boardState.nodes,

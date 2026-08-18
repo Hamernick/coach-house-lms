@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type DragEvent,
-} from "react"
+import { useCallback, useMemo, useState, type DragEvent } from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
   Background,
@@ -69,7 +64,6 @@ export function WorkspaceCanvasSurfaceV2View({
   allowEditing,
   peopleCanvasInteractionEnabled,
   workspaceDataDrawerCanEdit,
-  workspaceFoundationEnabled,
   nodesDraggable,
   tutorialActive,
   layoutAnimating,
@@ -208,39 +202,33 @@ export function WorkspaceCanvasSurfaceV2View({
       >
         <WorkspaceCanvasOverlayDrawerContainerProvider
           container={flowFrameContainer}
-          onOpenDataDrawer={
-            workspaceFoundationEnabled ? onOpenWorkspaceDataDrawer : null
-          }
+          onOpenDataDrawer={onOpenWorkspaceDataDrawer}
         >
           {shortcutItems.length > 0 ? (
             <WorkspaceCardShortcutRail
               items={shortcutItems}
               dataAction={
-                workspaceFoundationEnabled ? (
-                  <WorkspaceCanvasOverlayDrawer
-                    people={workspaceDataDrawerPeople}
-                    placedPersonIds={placedWorkspacePersonIds}
-                    viewerId={workspaceDataDrawerViewerId}
-                    organizationEditorData={workspaceDataDrawerOrganization}
-                    financeInput={workspaceDataDrawerFinance}
-                    documentsTab={workspaceDataDrawerDocuments}
-                    acceleratorInput={workspaceAcceleratorDrawerInput}
-                    acceleratorRoadmapSections={
-                      workspaceAcceleratorDrawerRoadmapSections
-                    }
-                    acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
-                    acceleratorPaywallHref={
-                      workspaceAcceleratorDrawerPaywallHref
-                    }
-                    request={workspaceDataDrawerRequest}
-                    canEdit={workspaceDataDrawerCanEdit}
-                    uiPreferencesScope={uiPreferencesScope}
-                    peopleCanvasActions={{
-                      add: handleAddWorkspacePeopleToCanvas,
-                      remove: onRemoveWorkspacePersonFromCanvas,
-                    }}
-                  />
-                ) : null
+                <WorkspaceCanvasOverlayDrawer
+                  people={workspaceDataDrawerPeople}
+                  placedPersonIds={placedWorkspacePersonIds}
+                  viewerId={workspaceDataDrawerViewerId}
+                  organizationEditorData={workspaceDataDrawerOrganization}
+                  financeInput={workspaceDataDrawerFinance}
+                  documentsTab={workspaceDataDrawerDocuments}
+                  acceleratorInput={workspaceAcceleratorDrawerInput}
+                  acceleratorRoadmapSections={
+                    workspaceAcceleratorDrawerRoadmapSections
+                  }
+                  acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
+                  acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
+                  request={workspaceDataDrawerRequest}
+                  canEdit={workspaceDataDrawerCanEdit}
+                  uiPreferencesScope={uiPreferencesScope}
+                  peopleCanvasActions={{
+                    add: handleAddWorkspacePeopleToCanvas,
+                    remove: onRemoveWorkspacePersonFromCanvas,
+                  }}
+                />
               }
             />
           ) : null}

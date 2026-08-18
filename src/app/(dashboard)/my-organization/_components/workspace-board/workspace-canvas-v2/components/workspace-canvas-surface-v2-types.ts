@@ -24,7 +24,6 @@ export type WorkspaceCanvasSurfaceV2Props = {
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
   financeInput: WorkspaceFinanceInput
-  workspaceFoundationEnabled: boolean
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
   tutorialRestartRequestKey: number

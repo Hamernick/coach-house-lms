@@ -773,8 +773,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(cardHeaderSource).toContain("event.preventDefault()")
     expect(pageStateSource).toContain("const organizationEditorRequested =")
     expect(pageStateSource).toContain("initialProfileTab:")
-    expect(pageSource).toContain("showLegacyEditor")
-    expect(pageSource).toContain("renderMyOrganizationEditorView")
+    expect(pageSource).toContain("resolveInitialWorkspaceDrawerData")
+    expect(pageSource).not.toContain("showLegacyEditor")
     expect(profileHeaderControlsSource).toContain("View map profile")
     expect(profileHeaderControlsSource).toContain(
       'className="absolute top-6 right-6 flex gap-2"'

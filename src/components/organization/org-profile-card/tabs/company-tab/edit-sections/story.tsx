@@ -1,14 +1,11 @@
 "use client"
 
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
 
 import {
   FormRow,
   ProfileField,
 } from "@/components/organization/org-profile-card/shared"
-import { ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH } from "@/components/organization/org-profile-card/validation"
 import type { CompanyEditProps } from "../types"
 
 const STORY_FIELDS = [
@@ -53,51 +50,36 @@ const NARRATIVE_FIELDS = [
   },
 ] as const
 
-function StoryTextField({
+function StoryCoreDocumentField({
   company,
   errors,
   field,
-  onInputChange,
-}: Pick<CompanyEditProps, "company" | "errors" | "onInputChange"> & {
+  onUpdate,
+  onDirty,
+}: Pick<CompanyEditProps, "company" | "errors" | "onUpdate" | "onDirty"> & {
   field: (typeof STORY_FIELDS)[number] | typeof THEORY_FIELD
 }) {
   const value = company[field.name] ?? ""
   const error = errors[field.name] ?? ""
-  const count = value.length
-  const overLimit = count > ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH
 
   return (
     <ProfileField label={field.label} focusKey={field.name}>
-      <Textarea
-        id={field.name}
-        name={field.name}
+      <RichTextEditor
         value={value}
-        onChange={onInputChange}
-        rows={4}
-        maxLength={ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH}
+        onChange={(nextValue) => {
+          onUpdate({ [field.name]: nextValue })
+          onDirty()
+        }}
+        ariaLabel={field.label}
         placeholder={field.placeholder}
-        aria-invalid={Boolean(error)}
-        aria-describedby={`${field.name}-limit${error ? ` ${field.name}-error` : ""}`}
+        mode="compact"
+        minHeight={160}
+        maxHeight={360}
+        stableScrollbars
+        preserveImages
+        editorClassName="min-h-[160px]"
       />
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        {error ? (
-          <p id={`${field.name}-error`} className="text-destructive">
-            {error}
-          </p>
-        ) : (
-          <span aria-hidden />
-        )}
-        <p
-          id={`${field.name}-limit`}
-          className={cn(
-            "text-muted-foreground ml-auto tabular-nums",
-            overLimit && "text-destructive font-medium"
-          )}
-        >
-          {count.toLocaleString()} /{" "}
-          {ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH.toLocaleString()}
-        </p>
-      </div>
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
     </ProfileField>
   )
 }
@@ -139,7 +121,6 @@ function StoryNarrativeField({
 export function StorySection({
   company,
   errors,
-  onInputChange,
   onUpdate,
   onDirty,
 }: CompanyEditProps) {
@@ -150,12 +131,13 @@ export function StorySection({
     >
       <div className="grid gap-4 md:grid-cols-2">
         {STORY_FIELDS.map((field) => (
-          <StoryTextField
+          <StoryCoreDocumentField
             key={field.name}
             company={company}
             errors={errors}
             field={field}
-            onInputChange={onInputChange}
+            onUpdate={onUpdate}
+            onDirty={onDirty}
           />
         ))}
         {NARRATIVE_FIELDS.map((field) => (
@@ -168,11 +150,12 @@ export function StorySection({
             onDirty={onDirty}
           />
         ))}
-        <StoryTextField
+        <StoryCoreDocumentField
           company={company}
           errors={errors}
           field={THEORY_FIELD}
-          onInputChange={onInputChange}
+          onUpdate={onUpdate}
+          onDirty={onDirty}
         />
       </div>
     </FormRow>

@@ -92,17 +92,27 @@ describe("buildStoryFields", () => {
     ])
   })
 
-  it("normalizes empty values to empty strings while preserving label order", () => {
+  it("omits empty story fields", () => {
     const fields = buildStoryFields(buildOrganization())
 
-    expect(fields.map((field) => field.label)).toEqual([
-      "Origin story",
-      "Need statement",
-      "Mission",
-      "Vision",
-      "Values",
-      "Theory of change",
+    expect(fields).toEqual([])
+  })
+
+  it("keeps image-only story fields while omitting empty markup", () => {
+    const fields = buildStoryFields(
+      buildOrganization({
+        originStory: "<p><br></p>",
+        needStatement:
+          '<img src="https://example.org/need.png" alt="Community need map">',
+      })
+    )
+
+    expect(fields).toEqual([
+      {
+        label: "Need statement",
+        value:
+          '<img src="https://example.org/need.png" alt="Community need map">',
+      },
     ])
-    expect(fields.every((field) => field.value === "")).toBe(true)
   })
 })

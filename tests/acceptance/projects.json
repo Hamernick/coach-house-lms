@@ -20,6 +20,7 @@
       "tests/acceptance/billing-checkout-button.test.ts",
       "tests/acceptance/board-reminders-cron-route.test.ts",
       "tests/acceptance/coaching-schedule-route.test.ts",
+      "tests/acceptance/core-documents-publication.test.ts",
       "tests/acceptance/devtools-audience.test.ts",
       "tests/acceptance/documents-banner.test.ts",
       "tests/acceptance/documents-index-sort-state.test.ts",

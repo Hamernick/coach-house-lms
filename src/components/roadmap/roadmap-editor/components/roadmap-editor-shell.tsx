@@ -7,6 +7,7 @@ import { RoadmapBudgetTableEditor } from "@/components/roadmap/roadmap-budget-ta
 import { RoadmapCalendar } from "@/components/roadmap/roadmap-calendar"
 import { RoadmapSectionPanel } from "@/components/roadmap/roadmap-section-panel"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
+import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "@/lib/roadmap/public-organization-profile-sections"
 
 import { DEFAULT_PLACEHOLDER, ROADMAP_TOOLBAR_ID } from "../constants"
 import type { RoadmapDraft } from "../types"
@@ -70,6 +71,10 @@ export function RoadmapEditorShell({
   savingId,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
+  const controlsPublicProfile = PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(
+    activeSection.id
+  )
+
   return (
     <>
       {showRightRail ? (
@@ -88,7 +93,8 @@ export function RoadmapEditorShell({
           title={headerTitle}
           subtitle={headerSubtitle}
           icon={SectionIcon}
-          status={status}
+          status={controlsPublicProfile ? activeSection.status : status}
+          controlsPublicProfile={controlsPublicProfile}
           canEdit={canEdit}
           onStatusChange={onStatusChange}
           statusSelectDisabled={statusSelectDisabled}

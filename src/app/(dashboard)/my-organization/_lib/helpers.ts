@@ -2,7 +2,7 @@ import type { ModuleCardStatus } from "@/lib/accelerator/progress"
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import {
   resolveOrganizationNarrativeRevisions,
-  resolveOrganizationNarratives,
+  resolveOrganizationCoreDocuments,
 } from "@/lib/roadmap"
 import type {
   BrandTypographyConfig,
@@ -181,7 +181,7 @@ export function buildInitialOrganizationProfile({
     postal: profile["address_postal"],
     country: profile["address_country"],
   })
-  const narratives = resolveOrganizationNarratives(profile)
+  const coreDocuments = resolveOrganizationCoreDocuments(profile)
 
   return {
     name: String(profile["name"] ?? ""),
@@ -218,16 +218,12 @@ export function buildInitialOrganizationProfile({
     tiktok: String(profile["tiktok"] ?? ""),
     newsletter: String(profile["newsletter"] ?? ""),
     github: String(profile["github"] ?? ""),
-    vision: narratives.vision,
-    mission: narratives.mission,
-    need: String(profile["need"] ?? ""),
-    values: narratives.values,
-    originStory: String(
-      profile["originStory"] ?? profile["origin_story"] ?? ""
-    ),
-    theoryOfChange: String(
-      profile["theoryOfChange"] ?? profile["theory_of_change"] ?? ""
-    ),
+    vision: coreDocuments.vision,
+    mission: coreDocuments.mission,
+    need: coreDocuments.need,
+    values: coreDocuments.values,
+    originStory: coreDocuments.originStory,
+    theoryOfChange: coreDocuments.theoryOfChange,
     programs: String(profile["programs"] ?? ""),
     reports: String(profile["reports"] ?? ""),
     boilerplate: String(profile["boilerplate"] ?? ""),

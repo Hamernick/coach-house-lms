@@ -20,11 +20,14 @@ import { normalizeExternalUrl } from "@/lib/organization/urls"
 import {
   findOrganizationNarrativeRevisionConflict,
   normalizeOrganizationNarrativeHtml,
+  resolveOrganizationCoreDocuments,
   type OrganizationNarratives,
+  type OrganizationCoreDocuments,
   type OrganizationNarrativeRevisions,
   resolveOrganizationNarrativeRevisions,
   resolveOrganizationNarratives,
   updateOrganizationNarratives,
+  updateOrganizationCoreDocuments,
 } from "@/lib/roadmap"
 import {
   canEditOrganization,
@@ -161,6 +164,18 @@ export async function updateOrganizationProfileAction(
     if (normalized !== currentNarratives[key])
       narrativeUpdates[key] = normalized
   }
+  const currentCoreDocuments = resolveOrganizationCoreDocuments(current)
+  const coreDocumentUpdates: Partial<OrganizationCoreDocuments> = {}
+  for (const key of ["need", "originStory", "theoryOfChange"] as const) {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) continue
+    const value = payload[key]
+    const normalized = normalizeOrganizationNarrativeHtml(
+      typeof value === "string" ? value : ""
+    )
+    if (normalized !== currentCoreDocuments[key]) {
+      coreDocumentUpdates[key] = normalized
+    }
+  }
   const narrativeConflict = findOrganizationNarrativeRevisionConflict({
     profile: current,
     updates: narrativeUpdates,
@@ -190,6 +205,7 @@ export async function updateOrganizationProfileAction(
   for (const [k, v] of Object.entries(payload)) {
     if (k === "narrativeRevisions") continue
     if (k === "mission" || k === "vision" || k === "values") continue
+    if (k === "need" || k === "originStory" || k === "theoryOfChange") continue
     // Store EIN in both the column and profile for now (column is canonical)
     if (k === "ein") {
       next[k] = v ?? null
@@ -227,6 +243,7 @@ export async function updateOrganizationProfileAction(
   }
 
   next = updateOrganizationNarratives(next, narrativeUpdates).nextProfile
+  next = updateOrganizationCoreDocuments(next, coreDocumentUpdates).nextProfile
 
   const addressMapping: Array<[keyof OrgProfilePayload, string]> = [
     ["addressStreet", "address_street"],

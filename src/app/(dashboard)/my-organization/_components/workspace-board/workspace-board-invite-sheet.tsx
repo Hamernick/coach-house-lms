@@ -1,6 +1,12 @@
 "use client"
 
-import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react"
+import {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react"
 import UserPlus2Icon from "lucide-react/dist/esm/icons/user-plus-2"
 
 import {
@@ -43,6 +49,7 @@ import type {
   WorkspaceDurationUnit,
   WorkspaceMemberOption,
 } from "./workspace-board-types"
+import { useWorkspaceBoardAccessManagementActions } from "./use-workspace-board-access-management-actions"
 
 async function copyInviteLink(link: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -63,6 +70,7 @@ export function WorkspaceBoardInviteSheet({
   organizationAccessState,
   triggerClassName,
   triggerContent,
+  triggerLabel = "Invite",
   triggerAriaLabel,
   triggerSize = "sm",
   triggerVariant = "outline",
@@ -74,25 +82,33 @@ export function WorkspaceBoardInviteSheet({
   organizationAccessState?: WorkspaceBoardOrganizationAccessSnapshot
   triggerClassName?: string
   triggerContent?: ReactNode
+  triggerLabel?: string
   triggerAriaLabel?: string
   triggerSize?: "sm" | "icon" | "default"
   triggerVariant?: "outline" | "ghost" | "secondary" | "default"
 }) {
   const [open, setOpen] = useState(false)
-  const [inviteAudience, setInviteAudience] = useState<WorkspaceInviteAudience>("team")
-  const [inviteAccessLevel, setInviteAccessLevel] = useState<WorkspaceInviteAccessLevel>("viewer")
+  const [inviteAudience, setInviteAudience] =
+    useState<WorkspaceInviteAudience>("team")
+  const [inviteAccessLevel, setInviteAccessLevel] =
+    useState<WorkspaceInviteAccessLevel>("viewer")
   const [selectedMemberId, setSelectedMemberId] = useState<string>("")
   const [teamInviteEmail, setTeamInviteEmail] = useState("")
   const [durationValue, setDurationValue] = useState<number>(4)
-  const [durationUnit, setDurationUnit] = useState<WorkspaceDurationUnit>("hours")
+  const [durationUnit, setDurationUnit] =
+    useState<WorkspaceDurationUnit>("hours")
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [origin, setOrigin] = useState("")
   const [isPending, startTransition] = useTransition()
-  const fallbackOrganizationAccessState = useWorkspaceBoardOrganizationAccessState({
-    enabled: open && !organizationAccessState,
-  })
+  const fallbackOrganizationAccessState =
+    useWorkspaceBoardOrganizationAccessState({
+      enabled: open && !organizationAccessState,
+    })
   const resolvedOrganizationAccessState =
     organizationAccessState ?? fallbackOrganizationAccessState
+  const accessManagementActions = useWorkspaceBoardAccessManagementActions(
+    resolvedOrganizationAccessState.refresh
+  )
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -113,16 +129,16 @@ export function WorkspaceBoardInviteSheet({
         invite,
         status: resolveInviteStatus(invite, nowMs),
       })),
-    [invites, nowMs],
+    [invites, nowMs]
   )
 
   const activeInvites = useMemo(
     () => inviteRows.filter((entry) => entry.status === "active"),
-    [inviteRows],
+    [inviteRows]
   )
   const historicalInvites = useMemo(
     () => inviteRows.filter((entry) => entry.status !== "active").slice(0, 8),
-    [inviteRows],
+    [inviteRows]
   )
 
   const memberOptions = useMemo(() => {
@@ -130,7 +146,10 @@ export function WorkspaceBoardInviteSheet({
     return members.filter((member) => !invited.has(member.userId))
   }, [activeInvites, members])
 
-  const canOpenInviteSheet = canInvite || resolvedOrganizationAccessState.canInviteTeam
+  const canOpenInviteSheet =
+    triggerLabel === "Manage access" ||
+    canInvite ||
+    resolvedOrganizationAccessState.canInviteTeam
 
   const handleCreate = () => {
     if (!selectedMemberId) {
@@ -161,7 +180,7 @@ export function WorkspaceBoardInviteSheet({
       toast.success(
         result.notificationSent
           ? "Collaboration invite created and notification sent"
-          : "Collaboration invite created",
+          : "Collaboration invite created"
       )
     })
   }
@@ -184,14 +203,14 @@ export function WorkspaceBoardInviteSheet({
         return
       }
 
-        if ("invite" in result) {
-          if (result.emailSent) {
-            toast.success(
+      if ("invite" in result) {
+        if (result.emailSent) {
+          toast.success(
             result.outcome === "external_invite_resent"
               ? "Invite email sent again"
               : inviteAccessLevel === "viewer"
                 ? "Viewer invite emailed"
-                : "Editor invite emailed",
+                : "Editor invite emailed"
           )
         } else {
           const link = origin
@@ -200,12 +219,15 @@ export function WorkspaceBoardInviteSheet({
 
           try {
             await copyInviteLink(link)
-            toast.warning("Invite created, but email delivery failed. Link copied instead.", {
-              description: resolveOrganizationInviteEmailDeliveryDescription({
-                emailError: result.emailError,
-                kind: "external_invite",
-              }),
-            })
+            toast.warning(
+              "Invite created, but email delivery failed. Link copied instead.",
+              {
+                description: resolveOrganizationInviteEmailDeliveryDescription({
+                  emailError: result.emailError,
+                  kind: "external_invite",
+                }),
+              }
+            )
           } catch {
             toast.warning("Invite created, but email delivery failed.", {
               description: resolveOrganizationInviteEmailDeliveryDescription({
@@ -298,27 +320,24 @@ export function WorkspaceBoardInviteSheet({
           {triggerContent ?? (
             <>
               <UserPlus2Icon className="h-3.5 w-3.5" aria-hidden />
-              Invite
+              {triggerLabel}
             </>
           )}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Workspace collaboration</SheetTitle>
+          <SheetTitle>Manage workspace access</SheetTitle>
           <SheetDescription>
-            Choose between full team access and timed workspace collaboration.
+            Invite people, manage team roles, or grant temporary collaboration.
           </SheetDescription>
         </SheetHeader>
 
         <WorkspaceBoardInviteSheetBody
           canInviteTemporary={canInvite}
-          canInviteTeam={resolvedOrganizationAccessState.canInviteTeam}
           isPending={isPending}
-          organizationAccessLoading={resolvedOrganizationAccessState.loading}
-          organizationAccessMessage={resolvedOrganizationAccessState.inviteCapabilityMessage}
-          organizationInvites={resolvedOrganizationAccessState.invites}
-          organizationRequests={resolvedOrganizationAccessState.requests}
+          organizationAccessState={resolvedOrganizationAccessState}
+          accessManagementActions={accessManagementActions}
           inviteUrlBase={origin}
           memberOptions={memberOptions}
           inviteAudience={inviteAudience}
@@ -340,11 +359,17 @@ export function WorkspaceBoardInviteSheet({
           onRevoke={handleRevoke}
           onCopyOrganizationInviteLink={handleCopyOrganizationInviteLink}
           onRevokeOrganizationInvite={handleRevokeOrganizationInvite}
-          onRevokeOrganizationAccessRequest={handleRevokeOrganizationAccessRequest}
+          onRevokeOrganizationAccessRequest={
+            handleRevokeOrganizationAccessRequest
+          }
         />
 
-        <SheetFooter className="border-t border-border/60 bg-background/90">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+        <SheetFooter className="border-border/60 bg-background/90 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
             Close
           </Button>
         </SheetFooter>

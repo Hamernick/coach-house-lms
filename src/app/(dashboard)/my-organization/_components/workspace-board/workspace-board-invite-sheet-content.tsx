@@ -1,11 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
-import type {
-  OrganizationAccessInvite,
-  OrganizationAccessRequest,
-} from "@/app/actions/organization-access"
-
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 import Clock4Icon from "lucide-react/dist/esm/icons/clock-4"
@@ -16,11 +10,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  listWorkspaceCoachInviteShortcuts,
-} from "../../_lib/workspace-collaboration-invite-helpers"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import {
   clampDurationValue,
@@ -35,27 +32,24 @@ import {
   type WorkspaceInviteAudience,
 } from "./workspace-board-invite-sheet-helpers"
 import {
-  matchesCoachShortcutMember,
-  toCoachInviteTargetOption,
-  toInviteTargetOption,
   type InviteRow,
+  useWorkspaceInviteTargets,
   WorkspaceTemporaryInvitePicker,
 } from "./workspace-board-invite-sheet-content-support"
 import { WorkspaceBoardInviteSheetTeamSection } from "./workspace-board-invite-sheet-team-section"
+import type { WorkspaceBoardOrganizationAccessSnapshot } from "./workspace-board-organization-access-state"
 import type {
   WorkspaceCollaborationInviteStatus,
   WorkspaceDurationUnit,
   WorkspaceMemberOption,
 } from "./workspace-board-types"
+import type { WorkspaceBoardAccessManagementActions } from "./use-workspace-board-access-management-actions"
 
 export function WorkspaceBoardInviteSheetBody({
   canInviteTemporary,
-  canInviteTeam,
   isPending,
-  organizationAccessLoading,
-  organizationAccessMessage,
-  organizationInvites,
-  organizationRequests,
+  organizationAccessState,
+  accessManagementActions,
   inviteUrlBase,
   memberOptions,
   inviteAudience,
@@ -80,12 +74,9 @@ export function WorkspaceBoardInviteSheetBody({
   onRevokeOrganizationAccessRequest,
 }: {
   canInviteTemporary: boolean
-  canInviteTeam: boolean
   isPending: boolean
-  organizationAccessLoading: boolean
-  organizationAccessMessage?: string | null
-  organizationInvites: OrganizationAccessInvite[]
-  organizationRequests: OrganizationAccessRequest[]
+  organizationAccessState: WorkspaceBoardOrganizationAccessSnapshot
+  accessManagementActions: WorkspaceBoardAccessManagementActions
   inviteUrlBase: string
   memberOptions: WorkspaceMemberOption[]
   inviteAudience: WorkspaceInviteAudience
@@ -109,59 +100,46 @@ export function WorkspaceBoardInviteSheetBody({
   onRevokeOrganizationInvite: (inviteId: string) => void
   onRevokeOrganizationAccessRequest: (requestId: string) => void
 }) {
-  const coachShortcuts = useMemo(() => listWorkspaceCoachInviteShortcuts(), [])
-  const coachTargets = useMemo(
-    () => coachShortcuts.map(toCoachInviteTargetOption),
-    [coachShortcuts],
+  const {
+    coachTargets,
+    memberTargets,
+    normalizedSelectedMemberId,
+    selectedMember,
+  } = useWorkspaceInviteTargets(memberOptions, selectedMemberId)
+  const accessCopy = resolveWorkspaceInviteAccessCopy(
+    inviteAudience,
+    inviteAccessLevel
   )
-  const memberTargets = useMemo(
-    () =>
-      memberOptions
-        .filter(
-          (member) =>
-            !coachShortcuts.some((shortcut) =>
-              matchesCoachShortcutMember({ member, shortcut }),
-            ),
-        )
-        .map(toInviteTargetOption),
-    [coachShortcuts, memberOptions],
+  const accessAvailable = isWorkspaceInviteAccessAvailable(
+    inviteAudience,
+    inviteAccessLevel
   )
-  const inviteTargets = useMemo(
-    () => [...coachTargets, ...memberTargets],
-    [coachTargets, memberTargets],
-  )
-  const normalizedSelectedMemberId = inviteTargets.some((member) => member.id === selectedMemberId)
-    ? selectedMemberId
-    : undefined
-  const selectedMember = normalizedSelectedMemberId
-    ? inviteTargets.find((member) => member.id === normalizedSelectedMemberId) ?? null
-    : null
-  const accessCopy = resolveWorkspaceInviteAccessCopy(inviteAudience, inviteAccessLevel)
-  const accessAvailable = isWorkspaceInviteAccessAvailable(inviteAudience, inviteAccessLevel)
   const isTeamInvite = inviteAudience === "team"
 
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
-      <section className="space-y-3 rounded-lg border border-border/60 bg-background/30 p-3">
+      <section className="border-border/60 bg-background/30 space-y-3 rounded-lg border p-3">
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Invite type
           </p>
           <Tabs
             value={inviteAudience}
-            onValueChange={(value) => onInviteAudienceChange(value as WorkspaceInviteAudience)}
+            onValueChange={(value) =>
+              onInviteAudienceChange(value as WorkspaceInviteAudience)
+            }
             className="gap-0"
           >
-            <TabsList className="w-fit max-w-full gap-1 self-start rounded-full border border-border/60 bg-background/70 p-1">
+            <TabsList className="border-border/60 bg-background/70 w-fit max-w-full gap-1 self-start rounded-full border p-1">
               <TabsTrigger
                 value="team"
-                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
+                className="data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full px-3 py-1.5 text-xs"
               >
                 Team
               </TabsTrigger>
               <TabsTrigger
                 value="temporary"
-                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
+                className="data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full px-3 py-1.5 text-xs"
               >
                 Temporary
               </TabsTrigger>
@@ -172,7 +150,7 @@ export function WorkspaceBoardInviteSheetBody({
         <div className="space-y-2">
           <Label
             htmlFor="workspace-invite-access"
-            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+            className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
           >
             Access
           </Label>
@@ -184,7 +162,7 @@ export function WorkspaceBoardInviteSheetBody({
           >
             <SelectTrigger
               id="workspace-invite-access"
-              className="w-full bg-background/70 sm:w-[180px]"
+              className="bg-background/70 w-full sm:w-[180px]"
             >
               <SelectValue />
             </SelectTrigger>
@@ -193,9 +171,11 @@ export function WorkspaceBoardInviteSheetBody({
               <SelectItem value="editor">Editor</SelectItem>
             </SelectContent>
           </Select>
-          <div className="rounded-md border border-border/60 bg-background/60 px-3 py-2">
-            <p className="text-sm font-medium text-foreground">{accessCopy.title}</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          <div className="border-border/60 bg-background/60 rounded-md border px-3 py-2">
+            <p className="text-foreground text-sm font-medium">
+              {accessCopy.title}
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs leading-5">
               {accessCopy.description}
             </p>
           </div>
@@ -203,12 +183,9 @@ export function WorkspaceBoardInviteSheetBody({
 
         {isTeamInvite ? (
           <WorkspaceBoardInviteSheetTeamSection
-            canInviteTeam={canInviteTeam}
             isPending={isPending}
-            organizationAccessLoading={organizationAccessLoading}
-            organizationAccessMessage={organizationAccessMessage}
-            organizationInvites={organizationInvites}
-            organizationRequests={organizationRequests}
+            organizationAccessState={organizationAccessState}
+            accessManagementActions={accessManagementActions}
             inviteUrlBase={inviteUrlBase}
             inviteAccessLevel={inviteAccessLevel}
             teamInviteEmail={teamInviteEmail}
@@ -216,7 +193,9 @@ export function WorkspaceBoardInviteSheetBody({
             onCreateTeamInvite={onCreateTeamInvite}
             onCopyOrganizationInviteLink={onCopyOrganizationInviteLink}
             onRevokeOrganizationInvite={onRevokeOrganizationInvite}
-            onRevokeOrganizationAccessRequest={onRevokeOrganizationAccessRequest}
+            onRevokeOrganizationAccessRequest={
+              onRevokeOrganizationAccessRequest
+            }
           />
         ) : accessAvailable ? (
           <>
@@ -233,28 +212,38 @@ export function WorkspaceBoardInviteSheetBody({
                 <Label htmlFor="workspace-invite-duration">Duration</Label>
                 <div
                   id="workspace-invite-duration"
-                  className="grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-1 rounded-md border border-border/60 bg-background/70 p-1"
+                  className="border-border/60 bg-background/70 grid grid-cols-[2.25rem_1fr_2.25rem] items-center gap-1 rounded-md border p-1"
                 >
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => onDurationValueChange(clampDurationValue(durationValue - 1))}
+                    onClick={() =>
+                      onDurationValueChange(
+                        clampDurationValue(durationValue - 1)
+                      )
+                    }
                     disabled={!canInviteTemporary}
                     aria-label="Decrease invite duration"
                   >
                     <ChevronDownIcon className="h-4 w-4" aria-hidden />
                   </Button>
                   <div className="flex min-w-0 flex-col items-center justify-center">
-                    <span className="text-2xl font-semibold tabular-nums leading-none">{durationValue}</span>
+                    <span className="text-2xl leading-none font-semibold tabular-nums">
+                      {durationValue}
+                    </span>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => onDurationValueChange(clampDurationValue(durationValue + 1))}
+                    onClick={() =>
+                      onDurationValueChange(
+                        clampDurationValue(durationValue + 1)
+                      )
+                    }
                     disabled={!canInviteTemporary}
                     aria-label="Increase invite duration"
                   >
@@ -264,7 +253,12 @@ export function WorkspaceBoardInviteSheetBody({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="workspace-invite-unit">Unit</Label>
-                <Select value={durationUnit} onValueChange={(value) => onDurationUnitChange(value as WorkspaceDurationUnit)}>
+                <Select
+                  value={durationUnit}
+                  onValueChange={(value) =>
+                    onDurationUnitChange(value as WorkspaceDurationUnit)
+                  }
+                >
                   <SelectTrigger id="workspace-invite-unit" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -283,95 +277,107 @@ export function WorkspaceBoardInviteSheetBody({
               onClick={onCreate}
               disabled={isPending || !canInviteTemporary || !selectedMemberId}
             >
-              {isPending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              {isPending ? (
+                <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+              ) : null}
               Create temporary invite
             </Button>
           </>
         ) : (
-          <div className="rounded-md border border-dashed border-border/60 bg-background/40 px-3 py-3 text-sm text-muted-foreground">
-            Temporary viewer access is not available yet. Use the Team tab for read-only invites, or switch to Editor for timed collaboration.
+          <div className="border-border/60 bg-background/40 text-muted-foreground rounded-md border border-dashed px-3 py-3 text-sm">
+            Temporary viewer access is not available yet. Use the Team tab for
+            read-only invites, or switch to Editor for timed collaboration.
           </div>
         )}
       </section>
 
       {!isTeamInvite ? (
         <section className="space-y-2">
-        <h3 className="text-sm font-medium">Active invites</h3>
-        {activeInvites.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border/60 px-3 py-2 text-xs text-muted-foreground">
-            No active invites.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {activeInvites.map(({ invite, status }) => (
-              <li
-                key={invite.id}
-                className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-background/30 px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium">
-                      {invite.userName?.trim() || invite.userEmail || invite.userId}
-                    </p>
-                    <Badge variant="outline" className={statusTone(status)}>
-                      {statusLabel(status)}
-                    </Badge>
-                  </div>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock4Icon className="h-3 w-3" aria-hidden />
-                    {formatDuration(invite.durationValue, invite.durationUnit)} · {formatRemaining(invite.expiresAt)}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => onRevoke(invite.id)}
-                  disabled={isPending || !canInviteTemporary}
-                  aria-label="Revoke invite"
+          <h3 className="text-sm font-medium">Active invites</h3>
+          {activeInvites.length === 0 ? (
+            <p className="border-border/60 text-muted-foreground rounded-md border border-dashed px-3 py-2 text-xs">
+              No active invites.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {activeInvites.map(({ invite, status }) => (
+                <li
+                  key={invite.id}
+                  className="border-border/60 bg-background/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
                 >
-                  <XIcon className="h-3.5 w-3.5" aria-hidden />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium">
+                        {invite.userName?.trim() ||
+                          invite.userEmail ||
+                          invite.userId}
+                      </p>
+                      <Badge variant="outline" className={statusTone(status)}>
+                        {statusLabel(status)}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+                      <Clock4Icon className="h-3 w-3" aria-hidden />
+                      {formatDuration(
+                        invite.durationValue,
+                        invite.durationUnit
+                      )}{" "}
+                      · {formatRemaining(invite.expiresAt)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onRevoke(invite.id)}
+                    disabled={isPending || !canInviteTemporary}
+                    aria-label="Revoke invite"
+                  >
+                    <XIcon className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
 
       {!isTeamInvite ? (
         <section className="space-y-2">
-        <h3 className="text-sm font-medium">Invite history</h3>
-        {historicalInvites.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border/60 px-3 py-2 text-xs text-muted-foreground">
-            No recent expired or revoked invites.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {historicalInvites.map(({ invite, status }) => (
-              <li
-                key={invite.id}
-                className="rounded-md border border-border/60 bg-background/20 px-3 py-2"
-              >
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium">
-                    {invite.userName?.trim() || invite.userEmail || invite.userId}
+          <h3 className="text-sm font-medium">Invite history</h3>
+          {historicalInvites.length === 0 ? (
+            <p className="border-border/60 text-muted-foreground rounded-md border border-dashed px-3 py-2 text-xs">
+              No recent expired or revoked invites.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {historicalInvites.map(({ invite, status }) => (
+                <li
+                  key={invite.id}
+                  className="border-border/60 bg-background/20 rounded-md border px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium">
+                      {invite.userName?.trim() ||
+                        invite.userEmail ||
+                        invite.userId}
+                    </p>
+                    <Badge variant="outline" className={statusTone(status)}>
+                      {statusLabel(status)}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {formatDuration(invite.durationValue, invite.durationUnit)}{" "}
+                    ·{" "}
+                    {status === "revoked"
+                      ? `Revoked ${formatTimestamp(invite.revokedAt)}`
+                      : `Expired ${formatTimestamp(invite.expiresAt)}`}
                   </p>
-                  <Badge variant="outline" className={statusTone(status)}>
-                    {statusLabel(status)}
-                  </Badge>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatDuration(invite.durationValue, invite.durationUnit)} ·{" "}
-                  {status === "revoked"
-                    ? `Revoked ${formatTimestamp(invite.revokedAt)}`
-                    : `Expired ${formatTimestamp(invite.expiresAt)}`}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
     </div>

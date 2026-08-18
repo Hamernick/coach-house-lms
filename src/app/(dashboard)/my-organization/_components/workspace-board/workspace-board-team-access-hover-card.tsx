@@ -1,12 +1,8 @@
 "use client"
 
-import Link from "next/link"
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { HoverCardContent } from "@/components/ui/hover-card"
-import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 import { WorkspaceBoardInviteSheet } from "./workspace-board-invite-sheet"
 import type { WorkspaceBoardOrganizationAccessSnapshot } from "./workspace-board-organization-access-state"
@@ -241,17 +237,8 @@ export function WorkspaceBoardTeamAccessHoverCard({
             organizationAccessState={organizationAccessState}
             triggerVariant="ghost"
             triggerClassName="h-8 rounded-md px-2.5"
+            triggerLabel="Manage access"
           />
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="h-8 rounded-md px-2.5"
-          >
-            <Link href={getWorkspaceEditorPath({ tab: "people" })}>
-              Manage members
-            </Link>
-          </Button>
         </div>
       </div>
     </HoverCardContent>

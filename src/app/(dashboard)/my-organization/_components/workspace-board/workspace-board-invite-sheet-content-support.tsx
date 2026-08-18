@@ -1,5 +1,7 @@
 "use client"
 
+import { useMemo } from "react"
+
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
@@ -17,7 +19,10 @@ import {
 } from "@/components/ui/command"
 import { Label } from "@/components/ui/label"
 
-import type { WorkspaceCoachInviteShortcut } from "../../_lib/workspace-collaboration-invite-helpers"
+import {
+  listWorkspaceCoachInviteShortcuts,
+  type WorkspaceCoachInviteShortcut,
+} from "../../_lib/workspace-collaboration-invite-helpers"
 import type { WorkspaceMemberOption } from "./workspace-board-types"
 
 export type InviteRow = {
@@ -37,10 +42,7 @@ export type InviteTargetOption = {
 }
 
 export function toInitials(value: string) {
-  const parts = value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
+  const parts = value.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return "?"
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
   return `${parts[0]!.slice(0, 1)}${parts.at(-1)!.slice(0, 1)}`.toUpperCase()
@@ -56,7 +58,10 @@ export function formatMemberRole(role: WorkspaceMemberOption["role"]) {
 export function resolveMemberOptionCopy(member: WorkspaceMemberOption) {
   const trimmedName = member.name?.trim() || null
   const trimmedEmail = member.email?.trim() || null
-  const primary = trimmedName || trimmedEmail || (member.isOwner ? "Organization owner" : "Team member")
+  const primary =
+    trimmedName ||
+    trimmedEmail ||
+    (member.isOwner ? "Organization owner" : "Team member")
   const secondary =
     trimmedName && trimmedEmail
       ? trimmedEmail
@@ -80,18 +85,20 @@ export function WorkspaceMemberOptionRow({
 }) {
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2">
-      <Avatar className="size-7 shrink-0 border border-border/60">
-        {option.avatarUrl ? <AvatarImage src={option.avatarUrl} alt={option.primary} /> : null}
+      <Avatar className="border-border/60 size-7 shrink-0 border">
+        {option.avatarUrl ? (
+          <AvatarImage src={option.avatarUrl} alt={option.primary} />
+        ) : null}
         <AvatarFallback className="text-[10px] font-medium">
           {option.initials}
         </AvatarFallback>
       </Avatar>
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium text-foreground">
+          <span className="text-foreground truncate text-sm font-medium">
             {option.primary}
           </span>
-          <span className="truncate text-xs text-muted-foreground">
+          <span className="text-muted-foreground truncate text-xs">
             {option.secondary}
           </span>
         </span>
@@ -100,13 +107,17 @@ export function WorkspaceMemberOptionRow({
             {option.badgeLabel}
           </Badge>
         ) : null}
-        {selected ? <CheckIcon className="text-foreground" aria-hidden /> : null}
+        {selected ? (
+          <CheckIcon className="text-foreground" aria-hidden />
+        ) : null}
       </span>
     </span>
   )
 }
 
-export function toInviteTargetOption(member: WorkspaceMemberOption): InviteTargetOption {
+export function toInviteTargetOption(
+  member: WorkspaceMemberOption
+): InviteTargetOption {
   const { primary, secondary, initials } = resolveMemberOptionCopy(member)
   return {
     id: member.userId,
@@ -120,7 +131,9 @@ export function toInviteTargetOption(member: WorkspaceMemberOption): InviteTarge
   }
 }
 
-export function toCoachInviteTargetOption(shortcut: WorkspaceCoachInviteShortcut): InviteTargetOption {
+export function toCoachInviteTargetOption(
+  shortcut: WorkspaceCoachInviteShortcut
+): InviteTargetOption {
   return {
     id: shortcut.id,
     primary: shortcut.fullName,
@@ -151,6 +164,50 @@ export function matchesCoachShortcutMember({
   )
 }
 
+export function useWorkspaceInviteTargets(
+  memberOptions: WorkspaceMemberOption[],
+  selectedMemberId: string
+) {
+  const coachShortcuts = useMemo(() => listWorkspaceCoachInviteShortcuts(), [])
+  const coachTargets = useMemo(
+    () => coachShortcuts.map(toCoachInviteTargetOption),
+    [coachShortcuts]
+  )
+  const memberTargets = useMemo(
+    () =>
+      memberOptions
+        .filter(
+          (member) =>
+            !coachShortcuts.some((shortcut) =>
+              matchesCoachShortcutMember({ member, shortcut })
+            )
+        )
+        .map(toInviteTargetOption),
+    [coachShortcuts, memberOptions]
+  )
+  const inviteTargets = useMemo(
+    () => [...coachTargets, ...memberTargets],
+    [coachTargets, memberTargets]
+  )
+  const normalizedSelectedMemberId = inviteTargets.some(
+    (member) => member.id === selectedMemberId
+  )
+    ? selectedMemberId
+    : undefined
+  const selectedMember = normalizedSelectedMemberId
+    ? (inviteTargets.find(
+        (member) => member.id === normalizedSelectedMemberId
+      ) ?? null)
+    : null
+
+  return {
+    coachTargets,
+    memberTargets,
+    normalizedSelectedMemberId,
+    selectedMember,
+  }
+}
+
 export function WorkspaceTemporaryInvitePicker({
   coachTargets,
   memberTargets,
@@ -168,7 +225,7 @@ export function WorkspaceTemporaryInvitePicker({
     <div className="grid gap-2">
       <Label htmlFor="workspace-invite-member">Reviewer</Label>
       {selectedTarget ? (
-        <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-3 py-2">
+        <div className="border-border/60 bg-background/60 flex items-center gap-2 rounded-md border px-3 py-2">
           <div className="min-w-0 flex-1">
             <WorkspaceMemberOptionRow option={selectedTarget} />
           </div>
@@ -184,7 +241,7 @@ export function WorkspaceTemporaryInvitePicker({
           </Button>
         </div>
       ) : null}
-      <Command className="rounded-md border border-border/60 bg-background/70">
+      <Command className="border-border/60 bg-background/70 rounded-md border">
         <CommandInput
           id="workspace-invite-member"
           placeholder="Search teammates or invite Joel / Paula…"
@@ -230,8 +287,9 @@ export function WorkspaceTemporaryInvitePicker({
           </CommandGroup>
         </CommandList>
       </Command>
-      <p className="text-xs leading-5 text-muted-foreground">
-        Temporary invites are best for live reviews. Joel and Paula stay pinned here, and their invites route through the notifications center.
+      <p className="text-muted-foreground text-xs leading-5">
+        Temporary invites are best for live reviews. Joel and Paula stay pinned
+        here, and their invites route through the notifications center.
       </p>
     </div>
   )

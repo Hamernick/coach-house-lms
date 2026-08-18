@@ -200,6 +200,7 @@ export function useInitializePublicMap({
   containerRef,
   mapRef,
   mapboxRef,
+  mapStartRef,
   mapLoadedRef,
   hasResolvedInitialViewportRef,
   setInitialViewportResolved,
@@ -213,6 +214,7 @@ export function useInitializePublicMap({
   containerRef: RefObject<HTMLDivElement | null>
   mapRef: RefObject<mapboxgl.Map | null>
   mapboxRef: RefObject<PublicMapMapboxApi | null>
+  mapStartRef: RefObject<(() => void) | null>
   mapLoadedRef: RefObject<boolean>
   hasResolvedInitialViewportRef: RefObject<boolean>
   setInitialViewportResolved: (resolved: boolean) => void
@@ -348,6 +350,7 @@ export function useInitializePublicMap({
       }
       void initializeMap()
     }
+    mapStartRef.current = startMap
     const startMapFromKeyboard = (event: KeyboardEvent) => {
       if (event.key !== "Enter" && event.key !== " ") return
       event.preventDefault()
@@ -373,6 +376,7 @@ export function useInitializePublicMap({
 
     return () => {
       cancelled = true
+      if (mapStartRef.current === startMap) mapStartRef.current = null
       mapContainer.removeEventListener("pointerdown", startMap)
       mapContainer.removeEventListener("keydown", startMapFromKeyboard)
       if (initializeFrameId !== null) {
@@ -395,6 +399,7 @@ export function useInitializePublicMap({
     mapLoadedRef,
     mapRef,
     mapboxRef,
+    mapStartRef,
     setAppliedBounds,
     setInitialViewportResolved,
     setMapLoadVersion,

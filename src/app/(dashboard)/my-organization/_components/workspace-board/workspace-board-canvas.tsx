@@ -49,14 +49,12 @@ export function WorkspaceBoardCanvas({
   onInitialOnboardingSubmit,
   organizationEditorData,
   financeInput,
-  workspaceFoundationEnabled,
 }: {
   initialFocusCardId?: WorkspaceCardId | null
   seed: WorkspaceSeedData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
   financeInput: WorkspaceFinanceInput
-  workspaceFoundationEnabled: boolean
 }) {
   const presentationMode = seed.presentationMode
   const hydratedSeedBoardState = useMemo(() => {
@@ -365,7 +363,6 @@ export function WorkspaceBoardCanvas({
         journeyGuideState={journeyGuideState}
         organizationEditorData={organizationEditorData}
         financeInput={financeInput}
-        workspaceFoundationEnabled={workspaceFoundationEnabled}
         onInitialOnboardingSubmit={onInitialOnboardingSubmit}
         onInvitesChange={setInvites}
         onSizeChange={handleSizeChange}

@@ -22,7 +22,6 @@ import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
-import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 export type OrgPerson = {
   id: string
@@ -35,14 +34,6 @@ export type OrgPerson = {
   pos?: { x: number; y: number } | null
   tags?: string[]
 } & Partial<Record<PersonSocialPlatform, string | null>>
-
-const EXTENDED_PERSON_SOCIAL_PLATFORMS = [
-  "instagram",
-  "facebook",
-  "twitter",
-  "youtube",
-  "tiktok",
-] as const satisfies readonly PersonSocialPlatform[]
 
 function resolvePeopleAvatarCleanupPath(
   previous: string | null | undefined,
@@ -88,9 +79,6 @@ async function resolvePeopleManagementAccess(
 export async function upsertPersonAction(
   person: Omit<OrgPerson, "id"> & { id?: string }
 ) {
-  const extendedSocialWriteRequested = EXTENDED_PERSON_SOCIAL_PLATFORMS.some(
-    (platform) => person[platform] !== undefined
-  )
   const socialLinkError = findPersonSocialLinkError(person)
   if (socialLinkError) return { error: socialLinkError }
 
@@ -101,12 +89,6 @@ export async function upsertPersonAction(
     userId
   )
   if (!canManagePeople) return { error: "Forbidden" }
-  if (
-    extendedSocialWriteRequested &&
-    !isWorkspaceFoundationRolloutEnabled({ orgId, userId })
-  ) {
-    return { error: "Not available." }
-  }
 
   const id =
     person.id && person.id.length > 0
@@ -234,14 +216,6 @@ export async function updatePersonCategoryAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
-  if (
-    !isWorkspaceFoundationRolloutEnabled({
-      orgId,
-      userId: session.user.id,
-    })
-  ) {
-    return { error: "Not available." }
-  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,
@@ -284,14 +258,6 @@ export async function updatePersonTagsAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
-  if (
-    !isWorkspaceFoundationRolloutEnabled({
-      orgId,
-      userId: session.user.id,
-    })
-  ) {
-    return { error: "Not available." }
-  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,

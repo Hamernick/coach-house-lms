@@ -41,12 +41,10 @@ import {
   redirectLegacyMyOrganizationTab,
   resolveMyOrganizationPageSearchState,
 } from "./my-organization-page-search"
-import { getOnboarding } from "./my-organization-page-state"
-import { resolveWorkspaceFoundationPageMode } from "./my-organization-page-rollout"
 import {
-  renderMyOrganizationEditorView,
-  resolveLegacyEditorTab,
-} from "./my-organization-page-legacy-editor"
+  getOnboarding,
+  resolveInitialWorkspaceDrawerData,
+} from "./my-organization-page-state"
 import {
   loadMyOrganizationFiscalSponsorshipWorkflow,
   resolveFiscalApplicantPrefillIdentity,
@@ -69,21 +67,19 @@ export default async function MyOrganizationPage({
   const isAdmin = profileAudience.isAdmin
   const { userMeta, needsInitialOnboarding } = getOnboarding(requestContext)
   const canEdit = isAdmin || canEditOrganization(role)
-  const {
-    enabled: workspaceFoundationEnabled,
-    initialDrawerData,
-    legacyDestination,
-    showLegacyEditor,
-  } = resolveWorkspaceFoundationPageMode({
+  const { initialDrawerData } = resolveInitialWorkspaceDrawerData({
+    acceleratorGroupParam: searchState.acceleratorGroupParam,
+    acceleratorModuleParam: searchState.acceleratorModuleParam,
+    acceleratorStepParam: searchState.acceleratorStepParam,
+    drawerParam: searchState.drawerParam,
+    focusParam: searchState.focusParam,
     needsInitialOnboarding,
-    orgId,
-    searchState,
-    userId: user.id,
+    programIdParam: searchState.programIdParam,
+    roadmapSectionParam: searchState.roadmapSectionParam,
+    tabParam: searchState.tabParam,
+    viewParam: searchState.viewParam,
   })
-  if (legacyDestination) redirect(legacyDestination)
-  if (workspaceFoundationEnabled) {
-    redirectLegacyMyOrganizationTab(searchState.tabParam)
-  }
+  redirectLegacyMyOrganizationTab(searchState.tabParam)
   const acceleratorViewRequested = searchState.viewParam === "accelerator"
   const presentationMode =
     searchState.modeParam === "present" ||
@@ -144,9 +140,7 @@ export default async function MyOrganizationPage({
           orgUserId: orgId,
           isAdmin,
         }),
-        workspaceFoundationEnabled
-          ? loadOrganizationPeopleTaxonomy({ orgId, supabase })
-          : Promise.resolve({ segments: [], tags: [] }),
+        loadOrganizationPeopleTaxonomy({ orgId, supabase }),
       ]),
     { thresholdMs: 1_000 }
   )
@@ -208,16 +202,6 @@ export default async function MyOrganizationPage({
     acceleratorRoadmapModules,
   })
   const viewer = buildWorkspaceViewer(user)
-  if (showLegacyEditor) {
-    return renderMyOrganizationEditorView({
-      canEdit,
-      initialProfile,
-      initialProgramId: searchState.programIdParam || null,
-      initialTab: resolveLegacyEditorTab(searchState.tabParam),
-      peopleNormalized,
-      programs: programsResult,
-    })
-  }
   const moduleGroupMetaById = buildModuleGroupMetaById(
     acceleratorProgressSummary.groups
   )
@@ -399,7 +383,6 @@ export default async function MyOrganizationPage({
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}
       financeInput={financeInput}
-      workspaceFoundationEnabled={workspaceFoundationEnabled}
     />
   )
 }

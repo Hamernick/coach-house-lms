@@ -8,7 +8,6 @@ import {
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import type { OrganizationPeopleSegment } from "@/lib/people/segments"
-import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 type SessionSupabase = Awaited<
   ReturnType<typeof requireServerSession>
@@ -35,9 +34,6 @@ async function resolveSegmentManagementAccess(
   userId: string
 ) {
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-  if (!isWorkspaceFoundationRolloutEnabled({ orgId, userId })) {
-    return { orgId, canManageSegments: false }
-  }
   if (canEditOrganization(role)) return { orgId, canManageSegments: true }
 
   const { data: profileRow } = await supabase

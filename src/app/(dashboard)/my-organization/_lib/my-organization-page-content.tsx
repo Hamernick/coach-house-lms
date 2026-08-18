@@ -79,7 +79,11 @@ export default async function MyOrganizationPage({
     tabParam: searchState.tabParam,
     viewParam: searchState.viewParam,
   })
-  redirectLegacyMyOrganizationTab(searchState.tabParam)
+  redirectLegacyMyOrganizationTab({
+    tabParam: searchState.tabParam,
+    focusParam: searchState.focusParam,
+    roadmapSectionParam: searchState.roadmapSectionParam,
+  })
   const acceleratorViewRequested = searchState.viewParam === "accelerator"
   const presentationMode =
     searchState.modeParam === "present" ||

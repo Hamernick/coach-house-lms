@@ -28,12 +28,15 @@ On the first turn of every new chat, before changing files:
 ## Required Validation Gates
 
 - `pnpm lint`
+- `pnpm check:npm-supply-chain`
+- `pnpm check:large-files`
 - `pnpm check:structure`
 - `pnpm check:routes`
 - `pnpm check:features`
 - `pnpm check:feature-scaffold`
 - `pnpm check:thresholds`
 - `pnpm check:boundaries`
+- `pnpm check:deprecated-imports`
 - `pnpm check:workspace-storage`
 - `pnpm check:interaction-locks`
 - `pnpm check:react-grab`
@@ -53,6 +56,8 @@ On the first turn of every new chat, before changing files:
 - Update snapshots via `pnpm snapshots:update` when intended.
 - Mirror CI locally:
   - `pnpm check:quality`
+- Local `check:quality` and `check:prepush` write stage timings and acceptance
+  inventory to ignored `test-results/quality-gate/*.json` artifacts.
 - Add targeted edge cases for touched behavior.
 - Visual baselines:
   - Update intentionally changed screenshots with `pnpm test:visual:update`.
@@ -73,9 +78,14 @@ On the first turn of every new chat, before changing files:
 
 - Single environment: `prod` (Supabase + Stripe test/live modes).
 - Migrations must be versioned and reversible.
-- GitHub Actions should execute `pnpm check:quality` as the canonical quality gate command (single source of truth for required checks).
-- CI should install Playwright Chromium and enforce visual regression checks.
-- Branch protection should require `quality` before merge.
+- `pnpm check:quality` is the canonical local gate and runs every required stage
+  serially with timing evidence.
+- GitHub Actions runs the same stage manifest in parallel static, acceptance,
+  RLS, build, and visual lanes; the aggregate `quality` job must require all
+  five results.
+- CI should install Playwright Chromium only in the visual lane and enforce
+  visual regression checks.
+- Branch protection should require the aggregate `quality` job before merge.
 - Enable CODEOWNERS review enforcement for protected branches.
 - Feature flags are required for risky rollouts.
 
@@ -109,6 +119,11 @@ On the first turn of every new chat, before changing files:
   - `pnpm test:visual:update`
   - `pnpm check:perf`
   - `pnpm check:quality`
+  - `pnpm check:quality:static`
+  - `pnpm check:quality:acceptance`
+  - `pnpm check:quality:rls`
+  - `pnpm check:quality:build`
+  - `pnpm check:quality:visual`
   - `pnpm scaffold:feature <feature-name>`
   - `pnpm db:push`
   - `pnpm create:admin`

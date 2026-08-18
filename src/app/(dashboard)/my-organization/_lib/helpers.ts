@@ -1,7 +1,6 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import {
-  organizationNarrativeHtmlToPlainText,
   resolveOrganizationNarrativeRevisions,
   resolveOrganizationCoreDocuments,
 } from "@/lib/roadmap"
@@ -221,14 +220,10 @@ export function buildInitialOrganizationProfile({
     github: String(profile["github"] ?? ""),
     vision: coreDocuments.vision,
     mission: coreDocuments.mission,
-    need: organizationNarrativeHtmlToPlainText(coreDocuments.need),
+    need: coreDocuments.need,
     values: coreDocuments.values,
-    originStory: organizationNarrativeHtmlToPlainText(
-      coreDocuments.originStory
-    ),
-    theoryOfChange: organizationNarrativeHtmlToPlainText(
-      coreDocuments.theoryOfChange
-    ),
+    originStory: coreDocuments.originStory,
+    theoryOfChange: coreDocuments.theoryOfChange,
     programs: String(profile["programs"] ?? ""),
     reports: String(profile["reports"] ?? ""),
     boilerplate: String(profile["boilerplate"] ?? ""),

@@ -61,9 +61,6 @@ export function PublicMapOrganizationDetail({
   compact = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
-  const [expandedStoryFields, setExpandedStoryFields] = useState<
-    Record<string, boolean>
-  >({})
 
   const profileImageSrc =
     normalizeImageSrc(organization.logoUrl) ??
@@ -135,16 +132,7 @@ export function PublicMapOrganizationDetail({
         brandKitDownloadHref={brandKitDownloadHref}
       />
 
-      <OrganizationDetailOriginSection
-        storyFields={storyFields}
-        expandedStoryFields={expandedStoryFields}
-        onToggleField={(fieldLabel) =>
-          setExpandedStoryFields((previous) => ({
-            ...previous,
-            [fieldLabel]: !previous[fieldLabel],
-          }))
-        }
-      />
+      <OrganizationDetailOriginSection storyFields={storyFields} />
 
       <OrganizationDetailContactSection contactRows={contactRows} />
 

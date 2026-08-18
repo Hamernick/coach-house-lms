@@ -17,7 +17,10 @@ import {
   inferPublicMapGroups,
   type PublicMapGroupKey,
 } from "@/lib/public-map/groups"
-import { resolvePublicOrganizationProfileNarratives } from "@/lib/roadmap"
+import {
+  organizationNarrativeHtmlToPlainText,
+  resolvePublicOrganizationProfileNarratives,
+} from "@/lib/roadmap"
 
 export type PublicMapProgramPreview = {
   id: string
@@ -268,6 +271,8 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
       const profile = (row.profile ?? {}) as Record<string, unknown>
       const narratives = resolvePublicOrganizationProfileNarratives(profile)
       const { mission, vision, values } = narratives
+      const missionPlainText =
+        organizationNarrativeHtmlToPlainText(mission).trim()
       const programs = topProgramsByOrgId.get(row.user_id) ?? []
       const activityLinks = activityLinksByOrgId.get(row.user_id) ?? []
       const groups = inferPublicMapGroups({
@@ -280,7 +285,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
         description:
           typeof profile["description"] === "string"
             ? profile["description"].trim() || null
-            : mission || null,
+            : missionPlainText || null,
         programs: activityLinks,
       })
 
@@ -299,7 +304,8 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
         name: readProfileString(profile, "name") ?? "Organization",
         tagline: readProfileString(profile, "tagline"),
         description:
-          (readProfileString(profile, "description") ?? mission) || null,
+          (readProfileString(profile, "description") ?? missionPlainText) ||
+          null,
         boilerplate: readProfileString(profile, "boilerplate"),
         vision: vision || null,
         mission: mission || null,
@@ -404,7 +410,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
 const fetchPublicMapOrganizationsCached = unstable_cache(
   async (): Promise<PublicMapOrganization[]> =>
     fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v7"],
+  ["public-map-organizations-v8"],
   { revalidate: 300, tags: ["public-map-organizations"] }
 )
 

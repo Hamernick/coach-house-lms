@@ -1,5 +1,5 @@
 import {
-  organizationNarrativeHtmlToPlainText,
+  normalizeOrganizationNarrativeHtml,
   resolveLegacyOrganizationNarratives,
 } from "./organization-narratives"
 import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "./public-organization-profile-sections"
@@ -46,14 +46,14 @@ export function resolvePublicOrganizationProfileNarratives(
   const resolveSection = (sectionId: string, legacyValue: string) => {
     const section = sectionById.get(sectionId)
     if (!section || section.lastUpdated === null) {
-      return legacyValue
+      return normalizeOrganizationNarrativeHtml(legacyValue)
     }
     const content = section.publicProfileStatusControlled
       ? section.status === "complete"
         ? section.content
-        : section.publishedContent ?? ""
+        : (section.publishedContent ?? "")
       : resolveLegacyPublicProfileSectionContent(normalizedProfile, section)
-    return organizationNarrativeHtmlToPlainText(content).trim()
+    return normalizeOrganizationNarrativeHtml(content)
   }
 
   return {

@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils"
 
 import { PublicMapMediaImage } from "./media-image"
 import {
-  truncateAtWordBoundary,
   type OrganizationDetailContactRow,
   type OrganizationDetailStoryField,
 } from "./organization-detail-helpers"
@@ -38,8 +37,6 @@ type DetailBrandKitProps = {
 
 type DetailOriginProps = {
   storyFields: OrganizationDetailStoryField[]
-  expandedStoryFields: Record<string, boolean>
-  onToggleField: (fieldLabel: string) => void
 }
 
 export function OrganizationDetailBrandKitSection({
@@ -133,23 +130,14 @@ function OrganizationDetailLogoCard({
 
 export function OrganizationDetailOriginSection({
   storyFields,
-  expandedStoryFields,
-  onToggleField,
 }: DetailOriginProps) {
+  if (storyFields.length === 0) return null
+
   return (
     <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
       <h3 className="text-base font-semibold">Organization story</h3>
       <Accordion type="single" collapsible className="mt-1 w-full">
         {storyFields.map((field) => {
-          const hasCopy = field.value.length > 0
-          const expanded = Boolean(expandedStoryFields[field.label])
-          const needsToggle = hasCopy && field.value.length > 260
-          const copy = hasCopy
-            ? expanded
-              ? field.value
-              : truncateAtWordBoundary(field.value, 260)
-            : "Not provided yet."
-
           return (
             <AccordionItem
               key={field.label}
@@ -160,29 +148,27 @@ export function OrganizationDetailOriginSection({
                 {field.label}
               </AccordionTrigger>
               <AccordionContent>
-                <p className="text-foreground text-sm leading-relaxed break-words whitespace-pre-wrap">
-                  {copy}
-                  {needsToggle ? (
-                    <>
-                      {" "}
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        className="text-primary h-auto px-0 py-0 text-sm"
-                        onClick={() => onToggleField(field.label)}
-                      >
-                        {expanded ? "View less" : "View more"}
-                      </Button>
-                    </>
-                  ) : null}
-                </p>
+                <OrganizationDetailStoryContent value={field.value} />
               </AccordionContent>
             </AccordionItem>
           )
         })}
       </Accordion>
     </section>
+  )
+}
+
+export function OrganizationDetailStoryContent({ value }: { value: string }) {
+  return (
+    <div
+      className={cn(
+        "prose prose-sm dark:prose-invert text-foreground max-w-none overflow-x-auto text-sm leading-relaxed break-words",
+        "prose-p:my-2 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
+        "prose-img:h-auto prose-img:max-w-full prose-img:rounded-xl prose-img:border prose-img:border-border/60"
+      )}
+      // Public narrative HTML is sanitized by resolvePublicOrganizationProfileNarratives.
+      dangerouslySetInnerHTML={{ __html: value }}
+    />
   )
 }
 

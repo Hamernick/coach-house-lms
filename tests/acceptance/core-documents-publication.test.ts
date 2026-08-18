@@ -28,12 +28,12 @@ describe("Core Documents publication", () => {
         theory_of_change: "Legacy theory",
       })
     ).toEqual({
-      originStory: "Legacy origin",
-      needStatement: "Legacy need",
-      mission: "Legacy mission",
-      vision: "Legacy vision",
-      values: "Care\nTrust",
-      theoryOfChange: "Legacy theory",
+      originStory: "<p>Legacy origin</p>",
+      needStatement: "<p>Legacy need</p>",
+      mission: "<p>Legacy mission</p>",
+      vision: "<p>Legacy vision</p>",
+      values: "<p>Care<br>Trust</p>",
+      theoryOfChange: "<p>Legacy theory</p>",
     })
   })
 
@@ -119,7 +119,7 @@ describe("Core Documents publication", () => {
     expect(
       resolvePublicOrganizationProfileNarratives(drafting.nextProfile)
         .needStatement
-    ).toBe("Current public need")
+    ).toBe("<p>Current public need</p>")
 
     const republished = updateRoadmapSection(drafting.nextProfile, "need", {
       status: "complete",
@@ -128,7 +128,7 @@ describe("Core Documents publication", () => {
     expect(
       resolvePublicOrganizationProfileNarratives(republished.nextProfile)
         .needStatement
-    ).toBe("Private replacement")
+    ).toBe("<p>Private replacement</p>")
   })
 
   it("keeps legacy public content stable when publication controls activate", () => {
@@ -146,7 +146,7 @@ describe("Core Documents publication", () => {
     expect(
       resolvePublicOrganizationProfileNarratives(drafting.nextProfile)
         .needStatement
-    ).toBe("Legacy public need")
+    ).toBe("<p>Legacy public need</p>")
   })
 
   it("activates draft privacy when a legacy document is edited", () => {
@@ -173,7 +173,7 @@ describe("Core Documents publication", () => {
     )
     expect(
       resolvePublicOrganizationProfileNarratives(edited.nextProfile).mission
-    ).toBe("Current public mission")
+    ).toBe("<p>Current public mission</p>")
   })
 
   it("routes all six profile and homework narratives through Core Documents", () => {
@@ -237,19 +237,55 @@ describe("Core Documents publication", () => {
         },
       })
     ).toEqual({
-      originStory: "Public origin",
-      needStatement: "Public need",
-      mission: "Public mission",
-      vision: "Public vision",
-      values: "- Care\n- Trust",
-      theoryOfChange: "Public theory",
+      originStory: "<p>Public <strong>origin</strong></p>",
+      needStatement: "<p>Public need</p>",
+      mission: "<p>Public mission</p>",
+      vision: "<p>Public vision</p>",
+      values: "<ul><li>Care</li><li>Trust</li></ul>",
+      theoryOfChange: "<p>Public theory</p>",
     })
+  })
+
+  it("preserves rich text and image-only public Core Documents", () => {
+    const narratives = resolvePublicOrganizationProfileNarratives({
+      roadmap: {
+        sections: [
+          {
+            id: "origin_story",
+            content:
+              '<h2 style="text-align:center">Our beginning</h2><p><em>Built together.</em></p>',
+            status: "complete",
+            lastUpdated: "2026-08-18T18:00:00.000Z",
+            publicProfileStatusControlled: true,
+          },
+          {
+            id: "need",
+            content:
+              '<img src="https://example.org/need.png" alt="Community need map" onerror="alert(1)"><script>alert(1)</script>',
+            status: "complete",
+            lastUpdated: "2026-08-18T18:00:00.000Z",
+            publicProfileStatusControlled: true,
+          },
+        ],
+      },
+    })
+
+    expect(narratives.originStory).toContain("<h2")
+    expect(narratives.originStory).toContain("<em>Built together.</em>")
+    expect(narratives.needStatement).toContain(
+      '<img src="https://example.org/need.png" alt="Community need map">'
+    )
+    expect(narratives.needStatement).not.toContain("onerror")
+    expect(narratives.needStatement).not.toContain("script")
   })
 
   it("uses the new labels, keeps colors, and refreshes the public map", () => {
     const panel = readSource("src/components/roadmap/roadmap-section-panel.tsx")
     const editor = readSource(
       "src/components/roadmap/roadmap-editor/hooks/use-roadmap-editor-state.ts"
+    )
+    const editorShell = readSource(
+      "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
     )
     const action = readSource("src/actions/roadmap.ts")
     const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
@@ -266,10 +302,29 @@ describe("Core Documents publication", () => {
     )
     expect(editor).toContain("expectedLastUpdated: activeSection.lastUpdated")
     expect(editor).toContain("content: draft.content")
+    expect(editorShell).toContain(
+      "status={controlsPublicProfile ? activeSection.status : status}"
+    )
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
     expect(action).toContain('revalidatePath("/find")')
     expect(publicMapQuery).toContain(
       "resolvePublicOrganizationProfileNarratives(profile)"
     )
+  })
+
+  it("hydrates organization profile editors with canonical rich HTML", () => {
+    const helpers = readSource(
+      "src/app/(dashboard)/my-organization/_lib/helpers.ts"
+    )
+    const storyEditor = readSource(
+      "src/components/organization/org-profile-card/tabs/company-tab/edit-sections/story.tsx"
+    )
+
+    expect(helpers).not.toContain("organizationNarrativeHtmlToPlainText")
+    expect(helpers).toContain("need: coreDocuments.need")
+    expect(helpers).toContain("originStory: coreDocuments.originStory")
+    expect(storyEditor).toContain("<RichTextEditor")
+    expect(storyEditor).toContain("preserveImages")
+    expect(storyEditor).not.toContain("<Textarea")
   })
 })

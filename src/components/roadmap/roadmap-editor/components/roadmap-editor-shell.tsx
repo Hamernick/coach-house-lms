@@ -71,6 +71,10 @@ export function RoadmapEditorShell({
   savingId,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
+  const controlsPublicProfile = PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(
+    activeSection.id
+  )
+
   return (
     <>
       {showRightRail ? (
@@ -89,8 +93,8 @@ export function RoadmapEditorShell({
           title={headerTitle}
           subtitle={headerSubtitle}
           icon={SectionIcon}
-          status={status}
-          controlsPublicProfile={PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(activeSection.id)}
+          status={controlsPublicProfile ? activeSection.status : status}
+          controlsPublicProfile={controlsPublicProfile}
           canEdit={canEdit}
           onStatusChange={onStatusChange}
           statusSelectDisabled={statusSelectDisabled}

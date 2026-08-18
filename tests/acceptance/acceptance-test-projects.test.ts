@@ -7,6 +7,7 @@ import {
   compareAcceptanceProjectManifests,
 } from "../../scripts/sync-acceptance-projects.mjs"
 import acceptanceConfig from "../../vitest.config"
+import acceptanceProjectsConfig from "../../vitest.projects.config"
 
 const ROOT = process.cwd()
 const MANIFEST_PATH = path.join(ROOT, "tests/acceptance/projects.json")
@@ -89,22 +90,31 @@ describe("acceptance test projects", () => {
   })
 
   it("keeps the full command as the checked union of all projects", async () => {
-    const packageJson = JSON.parse(
-      await readFile(path.join(ROOT, "package.json"), "utf8")
-    )
+    const [packageJson, actualManifest] = await Promise.all([
+      readFile(path.join(ROOT, "package.json"), "utf8").then(JSON.parse),
+      readManifest(),
+    ])
     const fullCommand = packageJson.scripts["test:acceptance"]
 
     expect(fullCommand).toContain("check:acceptance-projects")
     expect(fullCommand).not.toContain("--project")
+    expect(acceptanceConfig.test?.include?.slice().sort()).toEqual(
+      ACCEPTANCE_PROJECT_NAMES.flatMap(
+        (name) => actualManifest.projects[name]
+      ).sort()
+    )
     for (const projectName of ACCEPTANCE_PROJECT_NAMES) {
       expect(packageJson.scripts[`test:acceptance:${projectName}`]).toContain(
         `--project ${projectName}`
+      )
+      expect(packageJson.scripts[`test:acceptance:${projectName}`]).toContain(
+        "vitest.projects.config.ts"
       )
     }
   })
 
   it("keeps heavy server mocks out of the contract project", () => {
-    const projects = acceptanceConfig.test
+    const projects = acceptanceProjectsConfig.test
       ?.projects as InlineAcceptanceProject[]
     const contractProject = projects.find(
       (project) => project.test?.name === "contract"
@@ -124,5 +134,6 @@ describe("acceptance test projects", () => {
 
   it("keeps the existing shared eight-worker ceiling", () => {
     expect(acceptanceConfig.test?.maxWorkers).toBe(8)
+    expect(acceptanceProjectsConfig.test?.maxWorkers).toBe(8)
   })
 })

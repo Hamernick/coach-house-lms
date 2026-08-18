@@ -36,20 +36,28 @@ that:
 - checked-in categories match the documented rules; and
 - manifest drift fails before any acceptance project runs.
 
-The full acceptance command runs the manifest check and then all four Vitest
-projects. Focused commands run the same check before selecting one project.
+The full acceptance command runs the manifest check and then the complete
+manifest union through the existing single-project scheduler and global setup.
+Focused commands run the same check before selecting one of the four projects.
+This keeps the required gate's proven scheduling behavior while exposing safe,
+faster development lanes.
 
 ## Setup Isolation
 
 `behavior`, `integration`, and `cli` retain the existing acceptance setup so
 their Next.js, Supabase, admin, logger, and Stripe mocks are unchanged.
 
-`contract` receives no global setup file. Its classifier only admits tests that
-read repository files and import no application module or mocked Next.js,
-Supabase, Stripe, admin, or server-only runtime, so source-only checks do not
-initialize unrelated server mocks. If a contract later imports one of those
-modules, manifest validation fails and requires an explicit reviewed
+The focused `contract` project receives no global setup file. Its classifier
+only admits tests that read repository files and import no application module or
+mocked Next.js, Supabase, Stripe, admin, or server-only runtime, so source-only
+feedback does not initialize unrelated server mocks. If a contract later imports
+one of those modules, manifest validation fails and requires an explicit reviewed
 reclassification.
+
+The required full union retains the original global setup. A draft that ran all
+four projects together repeatedly pushed existing five-second dynamic-import
+tests past their timeout after lint and snapshot work. Retaining the original
+full scheduler avoids introducing that local reliability regression.
 
 ## Alternatives Rejected
 
@@ -63,7 +71,8 @@ reclassification.
 
 - `scripts/sync-acceptance-projects.mjs`: classify, generate, and validate.
 - `tests/acceptance/projects.json`: checked project membership.
-- `vitest.config.ts`: four inline projects with shared aliases and worker bounds.
+- `vitest.config.ts`: checked full union with the original scheduler and setup.
+- `vitest.projects.config.ts`: four focused projects with shared worker bounds.
 - `package.json`: full, focused, check, and manifest-update commands.
 - `tests/acceptance/acceptance-test-projects.test.ts`: parity and setup contracts.
 - `docs/agent/workflow-quality.md`: command and coverage contract.
@@ -77,7 +86,8 @@ reclassification.
   focused regression file; any resulting increase must be explained exactly.
 - Running all four focused commands produces the same file/test union as the
   full command.
-- The contract project runs without `tests/acceptance/test-utils.ts`.
+- The focused contract project runs without
+  `tests/acceptance/test-utils.ts`.
 - No existing acceptance file is edited solely to make the split pass.
 - The canonical local and hosted quality gates remain required.
 

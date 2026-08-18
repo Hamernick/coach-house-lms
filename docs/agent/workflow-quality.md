@@ -65,8 +65,9 @@ On the first turn of every new chat, before changing files:
 - Use `pnpm test:acceptance:<project>` for focused development feedback. These
   commands do not replace the complete `pnpm test:acceptance` merge gate.
 - Run `pnpm test:acceptance:manifest:update` after adding or changing an
-  acceptance file, then review its project assignment. Source-only `contract`
-  tests intentionally avoid the application/server mock setup.
+  acceptance file, then review its project assignment. The focused source-only
+  `contract` command avoids the application/server mock setup; the required full
+  union retains its proven single-project scheduler and setup.
 - Add targeted edge cases for touched behavior.
 - Visual baselines:
   - Update intentionally changed screenshots with `pnpm test:visual:update`.

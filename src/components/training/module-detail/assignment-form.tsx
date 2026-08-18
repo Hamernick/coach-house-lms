@@ -1,7 +1,12 @@
 import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 import type { ModuleAssignmentField, ModuleResource } from "../types"
@@ -21,7 +26,10 @@ type AssignmentFormProps = {
   fields: ModuleAssignmentField[]
   initialValues: AssignmentValues
   pending: boolean
-  onSubmit: (values: AssignmentValues, options?: { silent?: boolean }) => void | Promise<unknown>
+  onSubmit: (
+    values: AssignmentValues,
+    options?: { silent?: boolean }
+  ) => void | Promise<unknown>
   roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
   mode?: "standard" | "stepper"
   activeSectionId?: string
@@ -53,7 +61,9 @@ export function AssignmentForm(props: AssignmentFormProps) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Homework</CardTitle>
-          <CardDescription>No assignment data yet — check back soon.</CardDescription>
+          <CardDescription>
+            No assignment data yet — check back soon.
+          </CardDescription>
         </CardHeader>
       </Card>
     )
@@ -96,9 +106,14 @@ function AssignmentFormInner({
     moduleId,
     onSubmit,
   })
-  const hasMeta = Boolean(showStatusBadge || helperText || errorMessage || statusNote || autoSaving)
+  const hasMeta = Boolean(
+    showStatusBadge || helperText || errorMessage || statusNote || autoSaving
+  )
 
-  const { baseSections, tabSections } = useMemo(() => buildAssignmentSections(fields), [fields])
+  const { baseSections, tabSections } = useMemo(
+    () => buildAssignmentSections(fields),
+    [fields]
+  )
   const {
     shouldUseTabs,
     useInlineTabs,
@@ -115,12 +130,17 @@ function AssignmentFormInner({
   })
   const { fieldAnswered, overall } = useAssignmentProgress(tabSections, values)
   const showProgressPanel = !isStepper && overall.total > 1
-  const activeSectionIndex = tabSections.findIndex((section) => section.id === activeSectionKey)
-  const activeSectionForNavigation = activeSectionIndex >= 0 ? tabSections[activeSectionIndex] : null
+  const activeSectionIndex = tabSections.findIndex(
+    (section) => section.id === activeSectionKey
+  )
+  const activeSectionForNavigation =
+    activeSectionIndex >= 0 ? tabSections[activeSectionIndex] : null
   const nextSectionForNavigation =
     activeSectionIndex >= 0 ? tabSections[activeSectionIndex + 1] : null
   const canGoPreviousStep =
-    typeof currentStep === "number" && currentStep > 1 && Boolean(onStepPrevious)
+    typeof currentStep === "number" &&
+    currentStep > 1 &&
+    Boolean(onStepPrevious)
   const canGoNextStep =
     typeof currentStep === "number" &&
     typeof totalSteps === "number" &&
@@ -147,7 +167,7 @@ function AssignmentFormInner({
       isAcceleratorShell,
       richTextMinHeight,
       updateValue,
-    ],
+    ]
   )
 
   const progressPanel = (
@@ -178,16 +198,18 @@ function AssignmentFormInner({
               "grid items-start gap-6",
               headerSlot && showProgressPanel
                 ? "md:grid-cols-[minmax(240px,_360px)_minmax(0,_1fr)] xl:grid-cols-[minmax(260px,_420px)_minmax(0,_1fr)]"
-                : "",
+                : ""
             )}
           >
             {headerSlot ? (
-              <div className="min-w-0 w-full md:justify-self-start md:max-w-[320px]">
+              <div className="w-full min-w-0 md:max-w-[320px] md:justify-self-start">
                 {headerSlot}
               </div>
             ) : null}
             {showProgressPanel ? (
-              <div className={`min-w-0 ${headerSlot ? "" : "md:col-span-2"}`}>{progressPanel}</div>
+              <div className={`min-w-0 ${headerSlot ? "" : "md:col-span-2"}`}>
+                {progressPanel}
+              </div>
             ) : null}
           </div>
         ) : null
@@ -200,14 +222,30 @@ function AssignmentFormInner({
           "self-start",
           isStepper
             ? "flex min-h-0 flex-1 flex-col self-stretch overflow-hidden"
-            : "space-y-3",
+            : "space-y-3"
         )}
       >
         <div
           className={cn(
-            isStepper && "min-h-0 flex-1 overflow-y-auto overscroll-contain pb-5 pr-1",
+            isStepper &&
+              "min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-5"
           )}
         >
+          {isStepper ? (
+            <AssignmentFormSubmitRow
+              isStepper
+              hasMeta={hasMeta}
+              helperText={helperText}
+              errorMessage={errorMessage}
+              statusNote={statusNote}
+              autoSaving={autoSaving}
+              nextHref={null}
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              pending={pending}
+              onRetry={() => onSubmit(values)}
+            />
+          ) : null}
           <AssignmentFieldsContent
             isStepper={isStepper}
             shouldUseTabs={shouldUseTabs}
@@ -236,6 +274,8 @@ function AssignmentFormInner({
             nextHref={nextHref}
             currentStep={currentStep}
             totalSteps={totalSteps}
+            pending={pending}
+            onRetry={() => onSubmit(values)}
           />
         ) : showStepNavigation ? (
           <AssignmentStepNavigation

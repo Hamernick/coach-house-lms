@@ -1,40 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { assignmentValuesEqual, type AssignmentValues } from "../../utils"
+import {
+  buildAssignmentDraft,
+  getAssignmentDraftStorageKey,
+  normalizeValuesToInitialSchema,
+  readAssignmentDraft,
+  serializeAssignmentValues,
+} from "../assignment-draft"
 
 type UseAssignmentFormValuesParams = {
   initialValues: AssignmentValues
   moduleId: string
-  onSubmit: (values: AssignmentValues, options?: { silent?: boolean }) => void | Promise<unknown>
+  onSubmit: (
+    values: AssignmentValues,
+    options?: { silent?: boolean }
+  ) => void | Promise<unknown>
 }
 
 type UseAssignmentFormValuesResult = {
   values: AssignmentValues
   autoSaving: boolean
   updateValue: (name: string, value: AssignmentValues[string]) => void
-}
-
-function getAutoSaveStorageKey(moduleId: string) {
-  return `assignment-autosave-${moduleId}`
-}
-
-function serializeAssignmentValues(values: AssignmentValues) {
-  return JSON.stringify(values)
-}
-
-function normalizeValuesToInitialSchema({
-  values,
-  initialValues,
-}: {
-  values: AssignmentValues
-  initialValues: AssignmentValues
-}): AssignmentValues {
-  const normalized: AssignmentValues = {}
-  for (const key of Object.keys(initialValues)) {
-    normalized[key] =
-      key in values ? values[key] : initialValues[key]
-  }
-  return normalized
 }
 
 export function useAssignmentFormValues({
@@ -60,7 +47,8 @@ export function useAssignmentFormValues({
     if (moduleChanged) {
       moduleIdRef.current = moduleId
       initialValuesRef.current = initialValues
-      lastSubmittedSignatureRef.current = serializeAssignmentValues(initialValues)
+      lastSubmittedSignatureRef.current =
+        serializeAssignmentValues(initialValues)
       inFlightSubmitSignatureRef.current = null
       setValues(initialValues)
       return
@@ -70,7 +58,10 @@ export function useAssignmentFormValues({
       return
     }
 
-    const canReplace = assignmentValuesEqual(valuesRef.current, initialValuesRef.current)
+    const canReplace = assignmentValuesEqual(
+      valuesRef.current,
+      initialValuesRef.current
+    )
     initialValuesRef.current = initialValues
     lastSubmittedSignatureRef.current = serializeAssignmentValues(initialValues)
     if (canReplace) {
@@ -80,32 +71,35 @@ export function useAssignmentFormValues({
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    const storageKey = getAutoSaveStorageKey(moduleId)
+    const storageKey = getAssignmentDraftStorageKey(moduleId)
 
     try {
       const raw = window.localStorage.getItem(storageKey)
       if (!raw) return
 
-      const parsed = JSON.parse(raw) as { values?: AssignmentValues }
-      if (!parsed?.values) return
-
-      const nextValues = normalizeValuesToInitialSchema({
-        values: parsed.values as AssignmentValues,
+      const nextValues = readAssignmentDraft({
+        raw,
         initialValues: initialValuesRef.current,
       })
-      setValues((prev) => (assignmentValuesEqual(nextValues, prev) ? prev : nextValues))
+      if (!nextValues) return
+      setValues((prev) =>
+        assignmentValuesEqual(nextValues, prev) ? prev : nextValues
+      )
     } catch {
       // ignore storage errors
     }
   }, [moduleId])
 
-  const updateValue = useCallback((name: string, value: AssignmentValues[string]) => {
-    setValues((prev) => ({ ...prev, [name]: value }))
-  }, [])
+  const updateValue = useCallback(
+    (name: string, value: AssignmentValues[string]) => {
+      setValues((prev) => ({ ...prev, [name]: value }))
+    },
+    []
+  )
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    const storageKey = getAutoSaveStorageKey(moduleId)
+    const storageKey = getAssignmentDraftStorageKey(moduleId)
     const normalizedValues = normalizeValuesToInitialSchema({
       values,
       initialValues,
@@ -116,14 +110,13 @@ export function useAssignmentFormValues({
       return
     }
 
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify({ values: normalizedValues }))
-    } catch {
-      // ignore storage errors
-    }
-
     if (assignmentValuesEqual(normalizedValues, initialValues)) {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+      try {
+        window.localStorage.removeItem(storageKey)
+      } catch {
+        // ignore storage errors
+      }
       const initialSignature = serializeAssignmentValues(initialValues)
       lastSubmittedSignatureRef.current = initialSignature
       if (inFlightSubmitSignatureRef.current === initialSignature) {
@@ -131,6 +124,15 @@ export function useAssignmentFormValues({
       }
       setAutoSaving(false)
       return
+    }
+
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        buildAssignmentDraft({ initialValues, values: normalizedValues })
+      )
+    } catch {
+      // ignore storage errors
     }
 
     const nextSignature = serializeAssignmentValues(normalizedValues)
@@ -148,8 +150,10 @@ export function useAssignmentFormValues({
       inFlightSubmitSignatureRef.current = nextSignature
       setAutoSaving(true)
       Promise.resolve(onSubmit(normalizedValues, { silent: true }))
-        .then(() => {
-          lastSubmittedSignatureRef.current = nextSignature
+        .then((saved) => {
+          if (saved !== false) {
+            lastSubmittedSignatureRef.current = nextSignature
+          }
         })
         .catch((error) => {
           console.error("Autosave failed", error)

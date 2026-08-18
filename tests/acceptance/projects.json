@@ -187,7 +187,6 @@
       "tests/acceptance/workspace-ontology-root-layout.test.ts",
       "tests/acceptance/workspace-people-optimistic-mutations.test.ts",
       "tests/acceptance/workspace-people-table-preferences.test.ts",
-      "tests/acceptance/workspace-routes.test.ts",
       "tests/acceptance/workspace-view-helpers.test.ts",
       "tests/acceptance/workspace-view-seed.test.ts"
     ],
@@ -420,6 +419,7 @@
       "tests/acceptance/workspace-ontology.test.ts",
       "tests/acceptance/workspace-organization-overview-programs.test.ts",
       "tests/acceptance/workspace-route-aliases.test.ts",
+      "tests/acceptance/workspace-routes.test.ts",
       "tests/acceptance/workspace-storage-adapters.test.ts",
       "tests/acceptance/workspace-tutorial-callout.test.ts"
     ]

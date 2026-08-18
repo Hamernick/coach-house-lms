@@ -114,12 +114,14 @@ export function usePublicMapUserLocation({
   mapRef,
   mapLoadedRef,
   mapLoadVersion,
+  onRequestMapStart,
   suppressAutomaticEntrance,
   welcomeOpen,
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
   mapLoadedRef: RefObject<boolean>
   mapLoadVersion: number
+  onRequestMapStart: () => void
   suppressAutomaticEntrance: boolean
   welcomeOpen: boolean
 }) {
@@ -132,6 +134,7 @@ export function usePublicMapUserLocation({
   )
   const entranceStartedRef = useRef(false)
   const requestSequenceRef = useRef(0)
+  const shouldFocusLocationRef = useRef(false)
   const userMovedMapRef = useRef(false)
 
   useEffect(() => {
@@ -228,6 +231,10 @@ export function usePublicMapUserLocation({
     const map = mapRef.current
     if (!map || !mapLoadedRef.current || !coordinates) return
     syncUserLocationLayers(map, coordinates)
+    if (shouldFocusLocationRef.current) {
+      shouldFocusLocationRef.current = false
+      focusUserLocation(map, coordinates)
+    }
   }, [coordinates, mapLoadVersion, mapLoadedRef, mapRef])
 
   useEffect(
@@ -266,17 +273,13 @@ export function usePublicMapUserLocation({
             return
           }
 
-          const map = mapRef.current
-          if (!map || !mapLoadedRef.current) return
+          shouldFocusLocationRef.current =
+            source === "manual" || !userMovedMapRef.current
           markPublicMapLocationGranted(window.sessionStorage)
           setHasGrantedLocation(true)
           setCoordinates(nextCoordinates)
-          syncUserLocationLayers(map, nextCoordinates)
           setStatus("centered")
           setControlOpen(false)
-          if (source === "manual" || !userMovedMapRef.current) {
-            focusUserLocation(map, nextCoordinates)
-          }
         },
         (error) => {
           if (requestSequenceRef.current !== requestSequence) return
@@ -286,7 +289,7 @@ export function usePublicMapUserLocation({
         PUBLIC_MAP_GEOLOCATION_OPTIONS
       )
     },
-    [mapLoadedRef, mapRef]
+    []
   )
 
   useEffect(() => {
@@ -388,8 +391,9 @@ export function usePublicMapUserLocation({
   }, [coordinates, mapRef, status])
 
   const handleConfirm = useCallback(() => {
+    onRequestMapStart()
     requestPosition("manual")
-  }, [requestPosition])
+  }, [onRequestMapStart, requestPosition])
 
   return {
     active: coordinates !== null,

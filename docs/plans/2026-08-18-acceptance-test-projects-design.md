@@ -22,11 +22,13 @@ Clean `origin/main` baseline:
 Commit a generated, reviewable manifest with four mutually exclusive groups:
 
 1. `behavior`: focused behavior with zero or one application-module import;
-2. `contract`: repository-source readers that import no application module;
+2. `contract`: repository-source readers that import no application or mocked
+   server-runtime module;
 3. `cli`: tests that invoke child processes; and
 4. `integration`: behavior spanning at least two application modules.
 
-A deterministic script owns classification and validates that:
+A deterministic TypeScript-syntax parser owns classification and validates
+that:
 
 - every `tests/acceptance/**/*.test.ts` file appears exactly once;
 - every manifest entry still exists;
@@ -43,9 +45,11 @@ projects. Focused commands run the same check before selecting one project.
 their Next.js, Supabase, admin, logger, and Stripe mocks are unchanged.
 
 `contract` receives no global setup file. Its classifier only admits tests that
-read repository files and import no application module, so source-only checks do
-not initialize unrelated server mocks. If a contract later imports application
-code, manifest validation fails and requires an explicit reviewed reclassification.
+read repository files and import no application module or mocked Next.js,
+Supabase, Stripe, admin, or server-only runtime, so source-only checks do not
+initialize unrelated server mocks. If a contract later imports one of those
+modules, manifest validation fails and requires an explicit reviewed
+reclassification.
 
 ## Alternatives Rejected
 

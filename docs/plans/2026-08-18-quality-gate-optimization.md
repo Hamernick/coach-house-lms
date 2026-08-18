@@ -125,7 +125,9 @@ Rollback: revert workflow orchestration; local scripts remain valid.
 
 ### PR 3: Classify acceptance work without reducing it
 
-Implementation status: follow-up after hosted timing evidence is available.
+Implementation status: implemented on
+`chore/acceptance-test-projects-20260818`; the checked manifest preserves exact
+union parity, and clean hosted timing remains required before review.
 
 Create explicit Vitest projects or configs for:
 

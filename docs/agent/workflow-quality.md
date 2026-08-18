@@ -58,6 +58,16 @@ On the first turn of every new chat, before changing files:
   - `pnpm check:quality`
 - Local `check:quality` and `check:prepush` write stage timings and acceptance
   inventory to ignored `test-results/quality-gate/*.json` artifacts.
+- Acceptance tests are classified by the checked
+  `tests/acceptance/projects.json` manifest. Every test file must appear exactly
+  once across `behavior`, `contract`, `cli`, and `integration`; manifest drift
+  fails before Vitest starts.
+- Use `pnpm test:acceptance:<project>` for focused development feedback. These
+  commands do not replace the complete `pnpm test:acceptance` merge gate.
+- Run `pnpm test:acceptance:manifest:update` after adding or changing an
+  acceptance file, then review its project assignment. The focused source-only
+  `contract` command avoids the application/server mock setup; the required full
+  union retains its proven single-project scheduler and setup.
 - Add targeted edge cases for touched behavior.
 - Visual baselines:
   - Update intentionally changed screenshots with `pnpm test:visual:update`.
@@ -115,6 +125,13 @@ On the first turn of every new chat, before changing files:
   - `pnpm check:raw-buttons`
   - `pnpm check:workspace-surfaces`
   - `pnpm check:prepush`
+  - `pnpm check:acceptance-projects`
+  - `pnpm test:acceptance`
+  - `pnpm test:acceptance:behavior`
+  - `pnpm test:acceptance:contract`
+  - `pnpm test:acceptance:cli`
+  - `pnpm test:acceptance:integration`
+  - `pnpm test:acceptance:manifest:update`
   - `pnpm test:visual`
   - `pnpm test:visual:update`
   - `pnpm check:perf`

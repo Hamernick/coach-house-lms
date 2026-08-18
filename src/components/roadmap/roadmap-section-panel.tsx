@@ -16,6 +16,7 @@ type RoadmapSectionPanelProps = {
   icon: ComponentType<{ className?: string }>
   headerControlsTop?: ReactNode
   status: RoadmapSectionStatus
+  controlsPublicProfile?: boolean
   canEdit?: boolean
   onStatusChange?: (status: RoadmapSectionStatus) => void
   statusSelectDisabled?: boolean
@@ -37,6 +38,7 @@ export function RoadmapSectionPanel({
   icon: Icon,
   headerControlsTop,
   status,
+  controlsPublicProfile = false,
   canEdit = true,
   onStatusChange,
   statusSelectDisabled = false,
@@ -52,8 +54,19 @@ export function RoadmapSectionPanel({
   editorProps,
 }: RoadmapSectionPanelProps) {
   const statusLabel = useMemo(
-    () => (status === "complete" ? "Complete" : status === "in_progress" ? "In progress" : "Not started"),
-    [status],
+    () =>
+      controlsPublicProfile
+        ? status === "complete"
+          ? "Public"
+          : status === "in_progress"
+            ? "Draft"
+            : "Not started"
+        : status === "complete"
+          ? "Complete"
+          : status === "in_progress"
+            ? "In progress"
+            : "Not started",
+    [controlsPublicProfile, status],
   )
   const statusDotClass = useMemo(
     () => (status === "complete" ? "bg-emerald-500" : status === "in_progress" ? "bg-amber-500" : "bg-border"),
@@ -114,7 +127,7 @@ export function RoadmapSectionPanel({
                 >
                   <SelectTrigger
                     className="h-7 rounded-full border border-border/60 bg-muted/40 px-2.5 text-xs font-medium text-muted-foreground shadow-none"
-                    aria-label="Roadmap section status"
+                    aria-label={controlsPublicProfile ? "Core document publication status" : "Roadmap section status"}
                   >
                     <span className="flex items-center gap-2">
                       <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", statusDotClass)} />
@@ -123,8 +136,8 @@ export function RoadmapSectionPanel({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="not_started">Not started</SelectItem>
-                    <SelectItem value="in_progress">In progress</SelectItem>
-                    <SelectItem value="complete">Complete</SelectItem>
+                    <SelectItem value="in_progress">{controlsPublicProfile ? "Draft" : "In progress"}</SelectItem>
+                    <SelectItem value="complete">{controlsPublicProfile ? "Public" : "Complete"}</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (

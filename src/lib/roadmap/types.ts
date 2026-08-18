@@ -27,6 +27,8 @@ export type RoadmapHomeworkLink = {
 
 export type RoadmapSection = RoadmapSectionDefinition & {
   content: string
+  publishedContent?: string
+  publicProfileStatusControlled?: boolean
   budgetRows?: BudgetTableRow[]
   storageExtras?: Record<string, unknown>
   imageUrl?: string
@@ -49,6 +51,8 @@ export type StoredSection = {
   subtitle?: unknown
   slug?: unknown
   content?: unknown
+  publishedContent?: unknown
+  publicProfileStatusControlled?: unknown
   budgetRows?: unknown
   imageUrl?: unknown
   lastUpdated?: unknown

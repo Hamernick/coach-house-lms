@@ -45,6 +45,8 @@ const STORED_SECTION_KEYS = new Set([
   "subtitle",
   "slug",
   "content",
+  "publishedContent",
+  "publicProfileStatusControlled",
   "budgetRows",
   "imageUrl",
   "lastUpdated",
@@ -138,6 +140,12 @@ export function buildRoadmapSection(
   const subtitleIsTemplate =
     effectiveStoredSubtitle.length === 0 && templateSubtitle.length > 0
   const content = typeof stored?.content === "string" ? stored.content : ""
+  const publishedContent =
+    typeof stored?.publishedContent === "string"
+      ? stored.publishedContent
+      : undefined
+  const publicProfileStatusControlled =
+    stored?.publicProfileStatusControlled === true ? true : undefined
   const budgetRows = normalizeRoadmapBudgetRows(stored?.budgetRows)
   const imageUrlRaw = normalizeText(stored?.imageUrl)
   const imageUrl = imageUrlRaw.length > 0 ? imageUrlRaw : undefined
@@ -196,6 +204,8 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
+    publishedContent,
+    publicProfileStatusControlled,
     budgetRows,
     storageExtras,
     imageUrl,
@@ -281,6 +291,12 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
+    ...(section.publishedContent !== undefined
+      ? { publishedContent: section.publishedContent }
+      : {}),
+    ...(section.publicProfileStatusControlled
+      ? { publicProfileStatusControlled: true }
+      : {}),
     ...(section.id === "budget" || (section.budgetRows?.length ?? 0) > 0
       ? { budgetRows: section.budgetRows ?? [] }
       : {}),

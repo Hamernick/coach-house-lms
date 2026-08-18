@@ -17,7 +17,7 @@ import {
   inferPublicMapGroups,
   type PublicMapGroupKey,
 } from "@/lib/public-map/groups"
-import { resolveOrganizationNarrativePlainText } from "@/lib/roadmap"
+import { resolvePublicOrganizationProfileNarratives } from "@/lib/roadmap"
 
 export type PublicMapProgramPreview = {
   id: string
@@ -266,9 +266,8 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
   return orgRows
     .map((row) => {
       const profile = (row.profile ?? {}) as Record<string, unknown>
-      const mission = resolveOrganizationNarrativePlainText(profile, "mission")
-      const vision = resolveOrganizationNarrativePlainText(profile, "vision")
-      const values = resolveOrganizationNarrativePlainText(profile, "values")
+      const narratives = resolvePublicOrganizationProfileNarratives(profile)
+      const { mission, vision, values } = narratives
       const programs = topProgramsByOrgId.get(row.user_id) ?? []
       const activityLinks = activityLinksByOrgId.get(row.user_id) ?? []
       const groups = inferPublicMapGroups({
@@ -305,18 +304,9 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
         vision: vision || null,
         mission: mission || null,
         values: values || null,
-        needStatement: readProfileString(
-          profile,
-          "need",
-          "needStatement",
-          "need_statement"
-        ),
-        originStory: readProfileString(profile, "origin_story", "originStory"),
-        theoryOfChange: readProfileString(
-          profile,
-          "theory_of_change",
-          "theoryOfChange"
-        ),
+        needStatement: narratives.needStatement || null,
+        originStory: narratives.originStory || null,
+        theoryOfChange: narratives.theoryOfChange || null,
         formationStatus: readProfileFormationStatus(profile),
         contactName: readProfileString(
           profile,
@@ -414,7 +404,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
 const fetchPublicMapOrganizationsCached = unstable_cache(
   async (): Promise<PublicMapOrganization[]> =>
     fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v6"],
+  ["public-map-organizations-v7"],
   { revalidate: 300, tags: ["public-map-organizations"] }
 )
 

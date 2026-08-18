@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -8,6 +8,7 @@ import type { Json } from "@/lib/supabase"
 import type { BudgetTableRow } from "@/lib/modules"
 import {
   ROADMAP_SECTION_LIMIT,
+  PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS,
   getOrganizationNarrativeKeyForSectionId,
   getRoadmapWorkspaceRevalidationPaths,
   normalizeOrganizationNarrativeHtml,
@@ -62,6 +63,14 @@ function revalidateRoadmapWorkspacePaths({
   })) {
     revalidatePath(path)
   }
+}
+
+function revalidatePublicOrganizationProfile(sectionId: string | null) {
+  if (!sectionId || !PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(sectionId)) {
+    return
+  }
+  revalidateTag("public-map-organizations", "max")
+  revalidatePath("/find")
 }
 
 export async function saveRoadmapSectionAction({
@@ -125,7 +134,8 @@ export async function saveRoadmapSectionAction({
     previousSection.lastUpdated !== expectedLastUpdated
   ) {
     return {
-      error: "This roadmap section was updated elsewhere. Reload before saving.",
+      error:
+        "This roadmap section was updated elsewhere. Reload before saving.",
     }
   }
 
@@ -200,6 +210,7 @@ export async function saveRoadmapSectionAction({
     publicSlug: orgRow?.public_slug,
     sectionSlug: section.slug,
   })
+  revalidatePublicOrganizationProfile(section.id)
 
   if (isNewSection) {
     const notifyResult = await createNotification(supabase, {
@@ -307,6 +318,7 @@ export async function deleteRoadmapSectionAction(
     publicSlug: orgRow?.public_slug,
     sectionSlug: previousSection?.slug,
   })
+  revalidatePublicOrganizationProfile(previousSection?.id ?? null)
 
   return { ok: true }
 }

@@ -19,6 +19,46 @@ import { syncMappedAnswersToOrganizationProfile } from "./_lib/profile-sync"
 import { extractOrgKeyMappings, sanitizeAnswers } from "./_lib/sanitize"
 import type { AnswersPayload, ModuleMeta, SubmissionStatus } from "./_lib/types"
 
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id: moduleId } = await context.params
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 })
+  }
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { data: submission, error } = await supabase
+    .from("assignment_submissions" satisfies keyof Database["public"]["Tables"])
+    .select("answers, status, updated_at")
+    .eq("module_id", moduleId)
+    .eq("user_id", user.id)
+    .maybeSingle<{
+      answers: Record<string, unknown>
+      status: SubmissionStatus
+      updated_at: string | null
+    }>()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({
+    answers: submission?.answers ?? null,
+    status: submission?.status ?? null,
+    updatedAt: submission?.updated_at ?? null,
+  })
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
@@ -133,31 +173,25 @@ export async function POST(
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
-  if (Object.keys(orgKeyMapping).length > 0 && !canEditOrganization(role)) {
-    return NextResponse.json(
-      {
-        error: "Homework saved, but you cannot update this organization.",
-        submissionSaved: true,
-      },
-      { status: 403 }
-    )
-  }
-
-  const profileSync = await syncMappedAnswersToOrganizationProfile({
-    supabase,
-    organizationId: orgId,
-    sanitizedAnswers,
-    orgKeyMapping,
-  })
-  if ("error" in profileSync) {
-    return NextResponse.json(
-      {
-        error: "Homework saved, but organization details did not update.",
-        details: profileSync.error,
-        submissionSaved: true,
-      },
-      { status: 500 }
-    )
+  let warning: string | null = null
+  if (Object.keys(orgKeyMapping).length > 0) {
+    if (!canEditOrganization(role)) {
+      warning = "Saved. You cannot update this organization's shared details."
+    } else {
+      const profileSync = await syncMappedAnswersToOrganizationProfile({
+        supabase,
+        organizationId: orgId,
+        sanitizedAnswers,
+        orgKeyMapping,
+      })
+      if ("error" in profileSync) {
+        console.error(
+          "Homework saved but organization profile sync failed",
+          profileSync.error
+        )
+        warning = "Saved. Organization details could not update."
+      }
+    }
   }
 
   const completionMode = parseAssignmentCompletionMode(assignmentRow.schema)
@@ -205,9 +239,11 @@ export async function POST(
   })
 
   return NextResponse.json({
+    submissionSaved: true,
     status: submissionRows?.status ?? desiredStatus,
     answers: submissionRows?.answers ?? sanitizedAnswers,
     updatedAt: submissionRows?.updated_at ?? null,
     completeOnSubmit: completedOnSubmit,
+    warning,
   })
 }

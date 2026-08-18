@@ -2,7 +2,8 @@
 
 Date: 2026-08-18
 
-Status: Proposed implementation sequence. No required coverage is removed.
+Status: PRs 1-2 implemented on `chore/quality-gate-optimization-20260818`.
+PRs 3-8 remain sequenced follow-up work. No required coverage is removed.
 
 ## Decision
 
@@ -80,6 +81,8 @@ Playwright, TypeScript, and Vitest processes are recorded.
 
 ### PR 1: Record gate timing and suite composition
 
+Implementation status: included in the first mergeable wave.
+
 Add a small quality runner that preserves the current command order while
 recording command name, start, finish, result, and wall time. Emit a concise
 console summary and a JSON artifact in CI.
@@ -98,6 +101,8 @@ Validation:
 Rollback: restore the existing package script; no test organization changes.
 
 ### PR 2: Parallelize independent CI lanes
+
+Implementation status: included in the first mergeable wave.
 
 Split GitHub Actions into these jobs:
 
@@ -119,6 +124,8 @@ minutes without changing test content.
 Rollback: revert workflow orchestration; local scripts remain valid.
 
 ### PR 3: Classify acceptance work without reducing it
+
+Implementation status: follow-up after hosted timing evidence is available.
 
 Create explicit Vitest projects or configs for:
 

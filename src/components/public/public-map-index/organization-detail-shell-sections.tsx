@@ -335,7 +335,7 @@ export function OrganizationDetailActionLinks({
               onClick={() => void handleCopyAction(action)}
               disabled={copyingActionKey === action.key}
               className={cn(
-                "h-20 min-h-20 rounded-xl px-3 text-sm",
+                "h-16 min-h-16 rounded-xl px-3 text-sm",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
               )}
             >
@@ -350,7 +350,7 @@ export function OrganizationDetailActionLinks({
             asChild
             variant="ghost"
             className={cn(
-              "h-20 min-h-20 rounded-xl px-3 text-sm",
+              "h-16 min-h-16 rounded-xl px-3 text-sm",
               PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
             )}
           >

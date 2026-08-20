@@ -163,6 +163,7 @@ describe("public map detail section chrome", () => {
     expect(
       markup.match(/data-public-map-organization-action-icon="true"/g)
     ).toHaveLength(4)
+    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(4)
     expect(markup).toContain(
       "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
     )

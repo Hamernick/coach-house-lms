@@ -52,3 +52,7 @@ supabase/.temp/
 playwright-report/
 test-results/
 /tmp/
+
+# Graphify's full repository graph is generated locally. At current scale,
+# graph.json exceeds this repository's tracked-file budget.
+/graphify-out/

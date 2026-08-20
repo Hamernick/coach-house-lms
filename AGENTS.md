@@ -41,6 +41,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Workspace canvas node shell anatomy and React Flow boundary: `docs/agent/workspace-node-frame-contract.md`
 - React Grab pasted-component ownership workflow: `docs/agent/react-grab-execution-contract.md`
 - Public resource source verification, AI enrichment, review, and publication gates: `docs/agent/resource-map-enrichment.md`
+- Local Graphify build, scope, query, and update workflow: `docs/agent/graphify.md`
 
 ## Existing Supporting Docs
 
@@ -48,3 +49,17 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Schema: `docs/DB_SCHEMA.md`
 - Next.js runbook: `docs/NEXTJS_RUNBOOK.md`
 - Codex runbook: `docs/CODEX_RUNBOOK.md`
+
+## graphify
+
+This project uses a local knowledge graph at `graphify-out/`. Follow `docs/agent/graphify.md` when it is missing or stale.
+
+When the user types `$graphify`, use the installed Graphify skill and repository runbook before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- This repository approves full-root extraction after `.graphifyignore`; do not narrow the corpus to one source subdirectory because of Graphify's generic size warning.
+- Local graphify-out/ changes are expected after incremental updates; graph output is ignored by Git and is not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

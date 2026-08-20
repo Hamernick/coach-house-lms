@@ -6,6 +6,7 @@ import {
   OrganizationDetailActivitiesSection,
   OrganizationDetailBrandKitSection,
   OrganizationDetailOriginSection,
+  OrganizationDetailStoryContent,
 } from "@/components/public/public-map-index/organization-detail-sections"
 import { PublicMapOrganizationDetail } from "@/components/public/public-map-index/organization-detail"
 import { OrganizationDetailResourceLinksSection } from "@/components/public/public-map-index/organization-detail-resource-links-section"
@@ -151,17 +152,40 @@ describe("OrganizationDetailOriginSection", () => {
         storyFields: [
           {
             label: "Origin story",
-            value: "Started after repeated service gaps.",
+            value:
+              '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> after repeated service gaps.</p><img src="https://example.org/story.png" alt="Founding team">',
           },
         ],
-        expandedStoryFields: {},
-        onToggleField: () => {},
       })
     )
 
     expect(markup).toContain(">Organization story<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
+  })
+
+  it("preserves sanitized rich layout and images after expansion", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(OrganizationDetailStoryContent, {
+        value:
+          '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> together.</p><img src="https://example.org/story.png" alt="Founding team">',
+      })
+    )
+
+    expect(markup).toContain('<h2 style="text-align:center">')
+    expect(markup).toContain("<strong>Started</strong>")
+    expect(markup).toContain('alt="Founding team"')
+  })
+
+  it("renders nothing when no public story fields have content", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(OrganizationDetailOriginSection, {
+        storyFields: [],
+      })
+    )
+
+    expect(markup).toBe("")
+    expect(markup).not.toContain("Not provided yet.")
   })
 })
 

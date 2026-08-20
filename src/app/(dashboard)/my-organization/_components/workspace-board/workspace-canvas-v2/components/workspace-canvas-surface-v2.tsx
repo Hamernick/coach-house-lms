@@ -46,11 +46,12 @@ export function WorkspaceCanvasSurfaceV2({
   onDisconnectAllConnections,
   onToggleCardVisibility,
   onTutorialCompletionExitHandled,
-  workspaceFoundationEnabled,
 }: WorkspaceCanvasSurfaceV2Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const [isFlowReady, setIsFlowReady] = useState(false)
-  const [vaultViewMode, setVaultViewMode] = useState(WORKSPACE_CANVAS_V2_VAULT_MODE)
+  const [vaultViewMode, setVaultViewMode] = useState(
+    WORKSPACE_CANVAS_V2_VAULT_MODE
+  )
   const {
     request: ontologyActionRequest,
     openAction: handleOpenOntologyAction,
@@ -101,7 +102,6 @@ export function WorkspaceCanvasSurfaceV2({
     tutorialActive: tutorialActiveFromBoard,
     uiPreferencesScope,
     workspaceDataDrawerCanEdit,
-    workspaceFoundationEnabled,
   })
   const {
     acceleratorWorkspaceNode,
@@ -396,7 +396,6 @@ export function WorkspaceCanvasSurfaceV2({
     allowEditing,
     peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction,
     workspaceDataDrawerCanEdit,
-    workspaceFoundationEnabled,
     nodesDraggable:
       allowEditing || allowPeopleCanvasInteraction || tutorialActive,
     tutorialActive,

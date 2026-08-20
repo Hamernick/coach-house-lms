@@ -28,12 +28,15 @@ On the first turn of every new chat, before changing files:
 ## Required Validation Gates
 
 - `pnpm lint`
+- `pnpm check:npm-supply-chain`
+- `pnpm check:large-files`
 - `pnpm check:structure`
 - `pnpm check:routes`
 - `pnpm check:features`
 - `pnpm check:feature-scaffold`
 - `pnpm check:thresholds`
 - `pnpm check:boundaries`
+- `pnpm check:deprecated-imports`
 - `pnpm check:workspace-storage`
 - `pnpm check:interaction-locks`
 - `pnpm check:react-grab`
@@ -53,6 +56,18 @@ On the first turn of every new chat, before changing files:
 - Update snapshots via `pnpm snapshots:update` when intended.
 - Mirror CI locally:
   - `pnpm check:quality`
+- Local `check:quality` and `check:prepush` write stage timings and acceptance
+  inventory to ignored `test-results/quality-gate/*.json` artifacts.
+- Acceptance tests are classified by the checked
+  `tests/acceptance/projects.json` manifest. Every test file must appear exactly
+  once across `behavior`, `contract`, `cli`, and `integration`; manifest drift
+  fails before Vitest starts.
+- Use `pnpm test:acceptance:<project>` for focused development feedback. These
+  commands do not replace the complete `pnpm test:acceptance` merge gate.
+- Run `pnpm test:acceptance:manifest:update` after adding or changing an
+  acceptance file, then review its project assignment. The focused source-only
+  `contract` command avoids the application/server mock setup; the required full
+  union retains its proven single-project scheduler and setup.
 - Add targeted edge cases for touched behavior.
 - Visual baselines:
   - Update intentionally changed screenshots with `pnpm test:visual:update`.
@@ -73,9 +88,14 @@ On the first turn of every new chat, before changing files:
 
 - Single environment: `prod` (Supabase + Stripe test/live modes).
 - Migrations must be versioned and reversible.
-- GitHub Actions should execute `pnpm check:quality` as the canonical quality gate command (single source of truth for required checks).
-- CI should install Playwright Chromium and enforce visual regression checks.
-- Branch protection should require `quality` before merge.
+- `pnpm check:quality` is the canonical local gate and runs every required stage
+  serially with timing evidence.
+- GitHub Actions runs the same stage manifest in parallel static, acceptance,
+  RLS, build, and visual lanes; the aggregate `quality` job must require all
+  five results.
+- CI should install Playwright Chromium only in the visual lane and enforce
+  visual regression checks.
+- Branch protection should require the aggregate `quality` job before merge.
 - Enable CODEOWNERS review enforcement for protected branches.
 - Feature flags are required for risky rollouts.
 
@@ -105,10 +125,22 @@ On the first turn of every new chat, before changing files:
   - `pnpm check:raw-buttons`
   - `pnpm check:workspace-surfaces`
   - `pnpm check:prepush`
+  - `pnpm check:acceptance-projects`
+  - `pnpm test:acceptance`
+  - `pnpm test:acceptance:behavior`
+  - `pnpm test:acceptance:contract`
+  - `pnpm test:acceptance:cli`
+  - `pnpm test:acceptance:integration`
+  - `pnpm test:acceptance:manifest:update`
   - `pnpm test:visual`
   - `pnpm test:visual:update`
   - `pnpm check:perf`
   - `pnpm check:quality`
+  - `pnpm check:quality:static`
+  - `pnpm check:quality:acceptance`
+  - `pnpm check:quality:rls`
+  - `pnpm check:quality:build`
+  - `pnpm check:quality:visual`
   - `pnpm scaffold:feature <feature-name>`
   - `pnpm db:push`
   - `pnpm create:admin`

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
 import { classifyLintPushFiles } from "../../scripts/lint-push-range.mjs"
+import { QUALITY_GATE_PROFILES } from "../../scripts/run-quality-gate.mjs"
 
 describe("pre-push lint optimization", () => {
   it("skips lint when a push changes only non-lintable files", () => {
@@ -55,10 +56,12 @@ describe("pre-push lint optimization", () => {
 
     expect(lint).toContain("--cache-strategy content")
     expect(lint).not.toContain("--concurrency")
-    expect(prepush).toContain("pnpm lint:push")
-    expect(prepush).not.toContain("pnpm lint &&")
-    expect(quality).toContain("pnpm lint")
-    expect(quality).not.toContain("pnpm lint:push")
+    expect(prepush).toBe("node scripts/run-quality-gate.mjs prepush")
+    expect(quality).toBe("node scripts/run-quality-gate.mjs full")
+    expect(QUALITY_GATE_PROFILES.prepush).toContain("lint:push")
+    expect(QUALITY_GATE_PROFILES.prepush).not.toContain("lint")
+    expect(QUALITY_GATE_PROFILES.full).toContain("lint")
+    expect(QUALITY_GATE_PROFILES.full).not.toContain("lint:push")
   })
 
   it("passes the pushed remote name into the hook guard", () => {

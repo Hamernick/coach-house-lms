@@ -17,6 +17,7 @@ import {
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { buildPublicMapResourceLinks } from "@/lib/public-map/resource-links"
 import type { PublicMapOrganizationResourceLink } from "@/lib/public-map/resource-links"
+import { stripHtml } from "@/lib/markdown/convert"
 
 export type PublicMapSocialKey = keyof Pick<
   PublicMapOrganization,
@@ -219,7 +220,13 @@ export function buildStoryFields(
       label: "Theory of change",
       value: normalizeText(organization.theoryOfChange),
     },
-  ]
+  ].filter((field) => hasRenderableNarrativeContent(field.value))
+}
+
+export function hasRenderableNarrativeContent(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  return stripHtml(trimmed).trim().length > 0 || /<img\b/i.test(trimmed)
 }
 
 export function buildContactRows(

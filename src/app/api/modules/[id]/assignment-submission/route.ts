@@ -19,6 +19,12 @@ import { syncMappedAnswersToOrganizationProfile } from "./_lib/profile-sync"
 import { extractOrgKeyMappings, sanitizeAnswers } from "./_lib/sanitize"
 import type { AnswersPayload, ModuleMeta, SubmissionStatus } from "./_lib/types"
 
+async function revalidatePublicOrganizationProfile() {
+  const { revalidatePath, revalidateTag } = await import("next/cache")
+  revalidateTag("public-map-organizations", "max")
+  revalidatePath("/find")
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
@@ -190,6 +196,8 @@ export async function POST(
           profileSync.error
         )
         warning = "Saved. Organization details could not update."
+      } else {
+        await revalidatePublicOrganizationProfile()
       }
     }
   }

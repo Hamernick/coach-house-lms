@@ -339,26 +339,52 @@ export function useRoadmapEditorState({
       if (!canEdit) return
       if (!activeSection) return
       if (savingId || isPending) return
+      const draft =
+        draftsRef.current[activeSection.id] ?? createDraft(activeSection)
+      const draftIsDirty = isRoadmapDraftDirty(activeSection, draft)
       setSavingId(activeSection.id)
       startTransition(async () => {
-        const result = await saveRoadmapSectionAction({
-          sectionId: activeSection.id,
-          status: nextStatus,
-        })
+        try {
+          const result = await saveRoadmapSectionAction({
+            sectionId: activeSection.id,
+            expectedLastUpdated: activeSection.lastUpdated,
+            status: nextStatus,
+            ...(draftIsDirty
+              ? {
+                  title: draft.title,
+                  subtitle: draft.subtitle,
+                  content: draft.content,
+                  budgetRows:
+                    activeSection.id === "budget"
+                      ? draft.budgetRows
+                      : undefined,
+                  imageUrl: draft.imageUrl,
+                }
+              : {}),
+          })
 
-        if ("error" in result) {
-          setSavingId(null)
-          toast.error(result.error)
-          return
-        }
+          if ("error" in result) {
+            toast.error(result.error)
+            return
+          }
 
-        const nextSection = result.section
-        setSections((prev) =>
-          prev.map((section) =>
-            section.id === nextSection.id ? nextSection : section
+          const nextSection = result.section
+          setSections((prev) =>
+            prev.map((section) =>
+              section.id === nextSection.id ? nextSection : section
+            )
           )
-        )
-        setSavingId(null)
+          setDrafts((prev) => ({
+            ...prev,
+            [nextSection.id]: createDraft(nextSection),
+          }))
+        } catch {
+          toast.error(
+            "The roadmap could not save. Your draft is still available; retry or refresh."
+          )
+        } finally {
+          setSavingId(null)
+        }
       })
     },
     [activeSection, canEdit, isPending, savingId]

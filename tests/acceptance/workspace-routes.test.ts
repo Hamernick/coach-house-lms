@@ -16,6 +16,7 @@ import {
   getWorkspaceRoadmapSectionPath,
   normalizeWorkspaceDrawerTab,
 } from "@/lib/workspace/routes"
+import { getLegacyMyOrganizationTabDestination } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-search"
 
 const ROOT = process.cwd()
 
@@ -77,6 +78,30 @@ describe("workspace routes", () => {
     expect(getWorkspaceRoadmapDrawerPath("origin-story")).toBe(
       "/workspace?drawer=roadmap&section=origin-story"
     )
+  })
+
+  it("preserves legacy document and roadmap deep-link parameters", () => {
+    expect(
+      getLegacyMyOrganizationTabDestination({
+        tabParam: "documents",
+        focusParam: "w9",
+        roadmapSectionParam: null,
+      })
+    ).toBe("/workspace?drawer=documents&focus=w9")
+    expect(
+      getLegacyMyOrganizationTabDestination({
+        tabParam: "roadmap",
+        focusParam: "",
+        roadmapSectionParam: "origin-story",
+      })
+    ).toBe("/workspace?drawer=roadmap&section=origin-story")
+    expect(
+      getLegacyMyOrganizationTabDestination({
+        tabParam: "company",
+        focusParam: "mission",
+        roadmapSectionParam: null,
+      })
+    ).toBeNull()
   })
 
   it("builds the accelerator paywall link with a source", () => {

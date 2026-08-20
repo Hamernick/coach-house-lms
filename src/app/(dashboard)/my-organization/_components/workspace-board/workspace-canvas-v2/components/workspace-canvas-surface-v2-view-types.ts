@@ -31,7 +31,6 @@ export type WorkspaceCanvasSurfaceV2ViewProps = {
   allowEditing: boolean
   peopleCanvasInteractionEnabled: boolean
   workspaceDataDrawerCanEdit: boolean
-  workspaceFoundationEnabled: boolean
   nodesDraggable: boolean
   tutorialActive: boolean
   layoutAnimating: boolean

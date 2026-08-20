@@ -414,7 +414,7 @@ describe("Mission, Vision, and Values integration guardrails", () => {
     expect(route).toContain("organizationId: orgId")
     expect(route).toContain("submissionSaved: true")
     expect(route).not.toContain("organizationId: user.id")
-    expect(sync).toContain("updateOrganizationNarratives")
+    expect(sync).toContain("updateOrganizationCoreDocuments")
     expect(sync).toContain('.eq("updated_at", organizationRow.updated_at)')
   })
 

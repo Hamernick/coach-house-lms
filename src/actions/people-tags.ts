@@ -15,7 +15,6 @@ import {
   type OrganizationPeopleTag,
   type OrganizationPeopleTagColor,
 } from "@/lib/people/tags"
-import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 type SessionSupabase = Awaited<
   ReturnType<typeof requireServerSession>
@@ -37,9 +36,6 @@ async function resolveTagManagementAccess(
   userId: string
 ) {
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-  if (!isWorkspaceFoundationRolloutEnabled({ orgId, userId })) {
-    return { orgId, canManageTags: false }
-  }
   if (canEditOrganization(role)) return { orgId, canManageTags: true }
 
   const { data: profileRow } = await supabase

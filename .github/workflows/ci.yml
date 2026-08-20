@@ -11,33 +11,132 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
+  static:
+    name: static
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10.28.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Static quality
+        run: pnpm check:quality:static
+      - name: Upload timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-timing-static-${{ github.run_id }}
+          path: test-results/quality-gate/static.json
+          if-no-files-found: warn
+          retention-days: 14
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  acceptance:
+    name: acceptance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Acceptance
+        run: pnpm check:quality:acceptance
+      - name: Upload timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-timing-acceptance-${{ github.run_id }}
+          path: test-results/quality-gate/acceptance.json
+          if-no-files-found: warn
+          retention-days: 14
 
+  rls:
+    name: rls
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: RLS
+        run: pnpm check:quality:rls
+      - name: Upload timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-timing-rls-${{ github.run_id }}
+          path: test-results/quality-gate/rls.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Build and performance budgets
+        run: pnpm check:quality:build
+      - name: Upload timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-timing-build-${{ github.run_id }}
+          path: test-results/quality-gate/build.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  visual:
+    name: visual
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
-
-      - name: Quality gate
-        run: pnpm check:quality
-
+      - name: Visual regression
+        run: pnpm check:quality:visual
+      - name: Upload timing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-timing-visual-${{ github.run_id }}
+          path: test-results/quality-gate/visual.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload visual regression failures
         if: failure()
         uses: actions/upload-artifact@v4
@@ -45,3 +144,33 @@ jobs:
           name: visual-regression-failures-${{ github.run_id }}
           path: test-results
           if-no-files-found: ignore
+
+  quality:
+    name: quality
+    if: always()
+    needs:
+      - static
+      - acceptance
+      - rls
+      - build
+      - visual
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every quality lane
+        env:
+          ACCEPTANCE_RESULT: ${{ needs.acceptance.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          RLS_RESULT: ${{ needs.rls.result }}
+          STATIC_RESULT: ${{ needs.static.result }}
+          VISUAL_RESULT: ${{ needs.visual.result }}
+        run: |
+          printf 'static=%s\n' "$STATIC_RESULT"
+          printf 'acceptance=%s\n' "$ACCEPTANCE_RESULT"
+          printf 'rls=%s\n' "$RLS_RESULT"
+          printf 'build=%s\n' "$BUILD_RESULT"
+          printf 'visual=%s\n' "$VISUAL_RESULT"
+          test "$STATIC_RESULT" = success
+          test "$ACCEPTANCE_RESULT" = success
+          test "$RLS_RESULT" = success
+          test "$BUILD_RESULT" = success
+          test "$VISUAL_RESULT" = success

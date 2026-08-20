@@ -444,6 +444,11 @@ describe("public map sidebar layout", () => {
       "data-public-map-sidebar-section",
       "rail-status-header"
     )
+    const resultsStatusClassName = extractClassNameByAttribute(
+      markup,
+      "data-public-map-search-results-status",
+      "true"
+    )
     const categoryFilterClassName = extractClassNameByAttribute(
       markup,
       "aria-label",
@@ -454,6 +459,8 @@ describe("public map sidebar layout", () => {
     expect(shellClassName).toContain("px-3")
     expect(shellClassName).toContain("overflow-hidden")
     expect(statusHeaderClassName).toContain("shrink-0")
+    expect(resultsStatusClassName.split(" ")).toContain("px-1.5")
+    expect(resultsStatusClassName.split(" ")).not.toContain("px-1")
     expect(categoryFilterClassName).toContain("overflow-x-auto")
     expect(categoryFilterClassName).not.toContain("scroll-fade-effect-x")
     expect(categoryFilterClassName).toContain("[scrollbar-width:none]")

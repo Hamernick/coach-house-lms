@@ -1,11 +1,9 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import type { PlatformOrganizationMapItem } from "@/lib/public-map/resource-map-items"
 import { buildPublicImageTransformUrl } from "@/lib/storage/public-url"
 import { cn } from "@/lib/utils"
-import { OrganizationListActivityPreview } from "./organization-list-activity-preview"
 import {
   buildPublicMapOrganizationListCardOwnerId,
   buildPublicMapOrganizationListCardOwnerProps,
@@ -14,7 +12,6 @@ import {
 import {
   buildInitials,
   buildLocationMetadataItems,
-  buildProgramPreviewCards,
   PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
   PUBLIC_MAP_LIST_CARD_PERF_STYLE,
   PublicMapListMetadataStrip,
@@ -35,21 +32,10 @@ export function PublicMapPlatformOrganizationListCard({
   onSelectOrg: (id: string) => void
 }) {
   const org = item.organization
-  const location = formatCompactOrganizationLocation({
-    city: org.city,
-    state: org.state,
-    country: org.country,
-  })
-  const locationMetadataItems = buildLocationMetadataItems({
-    location,
+  const categoryMetadataItems = buildLocationMetadataItems({
     primaryGroup: org.primaryGroup,
     isOnlineOnly: org.isOnlineOnly,
-    constrainedLayout,
   })
-  const previewPrograms = buildProgramPreviewCards(org)
-  const visiblePreviewPrograms = constrainedLayout
-    ? previewPrograms.slice(0, 2)
-    : previewPrograms
   const fallbackInitials = buildInitials(org.name)
   const hasLogoImage = Boolean(org.logoUrl && org.logoUrl.trim().length > 0)
   const avatarImageSrc = buildPublicImageTransformUrl(
@@ -96,8 +82,8 @@ export function PublicMapPlatformOrganizationListCard({
     >
       <div
         className={cn(
-          "relative z-10 flex h-full min-w-0 flex-col",
-          constrainedLayout ? "gap-2 p-3" : "gap-2 p-4"
+          "relative z-10 flex h-full min-w-0 flex-col justify-center",
+          constrainedLayout ? "p-3" : "p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -143,7 +129,7 @@ export function PublicMapPlatformOrganizationListCard({
           </Avatar>
           <div className="min-w-0 flex-1 pt-0.5">
             <p
-              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
+              className="text-foreground truncate text-base leading-snug font-semibold"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -153,9 +139,9 @@ export function PublicMapPlatformOrganizationListCard({
               {org.name}
             </p>
             <PublicMapListMetadataStrip
-              itemKeyPrefix="location"
-              items={locationMetadataItems}
-              notes="Inline metadata strip for the organization list card."
+              itemKeyPrefix="category"
+              items={categoryMetadataItems}
+              notes="Primary category for the organization list card."
               ownerId={ownerId}
             />
           </div>
@@ -165,13 +151,6 @@ export function PublicMapPlatformOrganizationListCard({
             notes="Explicit right-aligned call-to-action button for opening organization details."
           />
         </div>
-
-        <OrganizationListActivityPreview
-          constrainedLayout={constrainedLayout}
-          ownerId={ownerId}
-          previewPrograms={visiblePreviewPrograms}
-          programPreview={org.programPreview}
-        />
       </div>
     </article>
   )

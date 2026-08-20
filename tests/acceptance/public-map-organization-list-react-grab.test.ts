@@ -187,34 +187,31 @@ describe("public map organization list react grab", () => {
     expect(markup).not.toContain("Add Atlas Collective to favorites")
     expect(markup).toContain('data-react-grab-surface-slot="body"')
     expect(markup).toContain(
-      "relative z-10 flex h-full min-w-0 flex-col gap-2 p-3"
+      "relative z-10 flex h-full min-w-0 flex-col justify-center p-3"
     )
-    expect(markup).not.toContain("gap-3 p-3")
-    expect(markup).not.toContain("gap-4 p-4")
     expect(roomyMarkup).toContain(
-      "relative z-10 flex h-full min-w-0 flex-col gap-2 p-4"
+      "relative z-10 flex h-full min-w-0 flex-col justify-center p-4"
     )
     expect(markup).toContain('data-react-grab-surface-slot="identity-row"')
     expect(markup).toContain('data-react-grab-surface-slot="avatar"')
     expect(markup).toContain('data-react-grab-surface-slot="title"')
     expect(markup).toContain('data-react-grab-surface-slot="location"')
-    expect(markup).toContain('data-react-grab-surface-slot="featured-program"')
-    expect(markup).toContain(
-      'data-react-grab-surface-slot="program-preview-grid"'
+    expect(markup).not.toContain(
+      'data-react-grab-surface-slot="featured-program"'
     )
-    expect(markup).toContain(
-      'data-react-grab-surface-slot="program-preview-card"'
+    expect(markup).not.toContain(
+      'data-react-grab-surface-slot="program-preview-grid"'
     )
     expect(markup).toContain('data-react-grab-surface-slot="meta-row"')
     expect(markup).toContain('data-react-grab-surface-slot="view-button"')
-    expect(markup).toContain("h-[19.25rem]")
+    expect(markup).toContain("h-20")
+    expect(markup).toContain(
+      "text-foreground truncate text-base leading-snug font-semibold"
+    )
     expect(markup).toContain(
       "text-muted-foreground mt-0.5 flex max-w-full items-center"
     )
-    expect(markup).toContain("Program")
-    expect(markup).toContain("Weekly")
-    expect(markup).toContain("Weekly mutual-aid meals")
-    expect(markup).toContain("https://example.com/kitchen")
-    expect(markup).not.toContain("Featured Programs")
+    expect(markup).toContain(">Community<")
+    expect(markup).not.toContain("Weekly mutual-aid meals")
   })
 })

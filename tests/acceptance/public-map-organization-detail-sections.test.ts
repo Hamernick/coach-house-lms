@@ -126,19 +126,20 @@ describe("public map detail section chrome", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapOrganizationDetail, {
         organization,
-        favorites: [],
-        onBack: () => {},
-        onToggleFavorite: () => {},
       })
     )
 
     expect(sectionMarkup).toContain(
-      `<section class="${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
+      `<section class="relative ${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
     )
     expect(markup).toContain(
       '<h3 class="text-base font-semibold">Brand kit</h3>'
     )
-    expect(markup).toContain(">Download<")
+    expect(markup).toContain(
+      'data-public-map-resource-category-icon="community"'
+    )
+    expect(markup).toContain('aria-label="Download brand kit"')
+    expect(markup).not.toContain(">Download<")
     expect(markup).toContain("Primary logo")
     expect(markup).toContain("Logo mark")
     expect(markup).toContain("https://example.org/mark.png")

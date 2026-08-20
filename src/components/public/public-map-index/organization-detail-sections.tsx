@@ -61,22 +61,24 @@ export function OrganizationDetailBrandKitSection({
   if (!brandKitDownloadHref && logoCards.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <div className="flex items-center justify-between gap-2">
+    <section className={cn("relative", PUBLIC_MAP_DETAIL_SECTION_CLASSNAME)}>
+      <div className="min-w-0 pr-12">
         <h3 className="text-base font-semibold">Brand kit</h3>
         {brandKitDownloadHref ? (
           <Button
             asChild
             variant="ghost"
-            size="sm"
-            className={cn(
-              "min-h-11 rounded-lg px-3 text-sm",
-              PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
-            )}
+            size="icon"
+            className="text-muted-foreground hover:text-foreground absolute top-1 right-1 size-11 rounded-full border border-transparent bg-transparent hover:bg-transparent dark:hover:bg-transparent"
           >
-            <a href={brandKitDownloadHref} target="_blank" rel="noreferrer">
-              <DownloadIcon className="h-3.5 w-3.5" aria-hidden />
-              Download
+            <a
+              href={brandKitDownloadHref}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Download brand kit"
+              title="Download brand kit"
+            >
+              <DownloadIcon className="size-3" aria-hidden />
             </a>
           </Button>
         ) : null}
@@ -85,7 +87,7 @@ export function OrganizationDetailBrandKitSection({
       {logoCards.length > 0 ? (
         <div
           className={cn(
-            "mt-2 grid gap-2",
+            "mt-1.5 grid gap-2",
             logoCards.length > 1 ? "grid-cols-2" : "grid-cols-1"
           )}
         >

@@ -9,7 +9,14 @@ import WifiIcon from "lucide-react/dist/esm/icons/wifi"
 import { ShareButton } from "@/components/shared/share-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
+import {
+  PUBLIC_MAP_GROUP_LABELS,
+  type PublicMapGroupKey,
+} from "@/lib/public-map/groups"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
+  type PublicMapResourceTopLevelCategoryKey,
+} from "@/lib/public-map/resource-categories"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -23,6 +30,7 @@ import {
   PublicMapOrganizationAdminActions,
   type PublicMapOrganizationCurationAction,
 } from "./organization-detail-admin-actions"
+import { PublicMapResourceCategoryIcon } from "./resource-category-icon"
 import {
   PUBLIC_MAP_DETAIL_BODY_CLASSNAME,
   PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME,
@@ -30,17 +38,32 @@ import {
   PUBLIC_MAP_DETAIL_IDENTITY_CLASSNAME,
   PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_DETAIL_TITLE_CLASSNAME,
+  PUBLIC_MAP_FILTER_PILL_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
-  PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME,
 } from "./sidebar-theme"
 
 type DetailPanelChromeProps = {
   canManageResourceMap?: boolean
+  className?: string
   organizationCurationAction?: PublicMapOrganizationCurationAction
   organization: PublicMapOrganization
   favorites: string[]
   onBack: () => void
   onToggleFavorite: (organizationId: string) => void
+}
+
+const ORGANIZATION_GROUP_CATEGORY_MAP: Record<
+  PublicMapGroupKey,
+  PublicMapResourceTopLevelCategoryKey
+> = {
+  education: "education",
+  community: "community",
+  health: "health",
+  housing: "housing",
+  funding: "finance",
+  workforce: "employment",
+  climate: "environment",
+  global: "international",
 }
 
 type DetailIdentityProps = {
@@ -59,6 +82,61 @@ type DetailAboutProps = {
 
 export function OrganizationDetailPanelChrome({
   canManageResourceMap = false,
+  className,
+  organizationCurationAction,
+  organization,
+  favorites,
+  onBack,
+  onToggleFavorite,
+}: DetailPanelChromeProps) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3",
+        className
+      )}
+    >
+      <OrganizationDetailBackButton onBack={onBack} />
+      <OrganizationDetailHeaderActions
+        canManageResourceMap={canManageResourceMap}
+        organizationCurationAction={organizationCurationAction}
+        organization={organization}
+        favorites={favorites}
+        onBack={onBack}
+        onToggleFavorite={onToggleFavorite}
+      />
+    </div>
+  )
+}
+
+export function OrganizationDetailBackButton({
+  className,
+  onBack,
+}: {
+  className?: string
+  onBack: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={onBack}
+      className={cn(
+        PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+        PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME,
+        className
+      )}
+      aria-label="Back to search"
+    >
+      <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+    </Button>
+  )
+}
+
+export function OrganizationDetailHeaderActions({
+  canManageResourceMap = false,
+  className,
   organizationCurationAction,
   organization,
   favorites,
@@ -74,65 +152,47 @@ export function OrganizationDetailPanelChrome({
     : `Collect ${organization.name} in My Map`
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
+    <div className={cn("flex items-center gap-1.5", className)}>
+      {canManageResourceMap && organizationCurationAction ? (
+        <PublicMapOrganizationAdminActions
+          curationAction={organizationCurationAction}
+          organization={organization}
+          onComplete={onBack}
+        />
+      ) : null}
+      {shareUrl ? (
+        <ShareButton
+          url={shareUrl}
+          title={organization.name}
+          iconOnly
+          buttonVariant="ghost"
+          buttonSize="icon"
           className={cn(
             PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
             PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
           )}
-          aria-label="Back to search"
-        >
-          <ArrowLeftIcon className="h-4 w-4" aria-hidden />
-        </Button>
-        <p className="text-foreground text-sm font-medium">Organization</p>
-      </div>
-      <div className="flex items-center gap-1.5">
-        {canManageResourceMap && organizationCurationAction ? (
-          <PublicMapOrganizationAdminActions
-            curationAction={organizationCurationAction}
-            organization={organization}
-            onComplete={onBack}
-          />
-        ) : null}
-        {shareUrl ? (
-          <ShareButton
-            url={shareUrl}
-            title={organization.name}
-            iconOnly
-            buttonVariant="ghost"
-            buttonSize="icon"
-            className={cn(
-              PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
-              PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
-            )}
-          />
-        ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={cn(
-            PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
-            isFavorite
-              ? "border-sky-400/55 bg-sky-500/12 text-sky-600 hover:bg-sky-500/18 dark:border-sky-400/45 dark:bg-sky-400/14 dark:text-sky-300 dark:hover:bg-sky-400/20"
-              : PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
-          )}
-          onClick={() => onToggleFavorite(organization.id)}
-          aria-label={favoriteLabel}
-          aria-pressed={isFavorite}
-          title={favoriteLabel}
-        >
-          <HeartIcon
-            className={cn("h-4 w-4", isFavorite && "fill-current")}
-            aria-hidden
-          />
-        </Button>
-      </div>
+        />
+      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className={cn(
+          PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+          isFavorite
+            ? "border-sky-400/55 bg-sky-500/12 text-sky-600 hover:bg-sky-500/18 dark:border-sky-400/45 dark:bg-sky-400/14 dark:text-sky-300 dark:hover:bg-sky-400/20"
+            : PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
+        )}
+        onClick={() => onToggleFavorite(organization.id)}
+        aria-label={favoriteLabel}
+        aria-pressed={isFavorite}
+        title={favoriteLabel}
+      >
+        <HeartIcon
+          className={cn("h-4 w-4", isFavorite && "fill-current")}
+          aria-hidden
+        />
+      </Button>
     </div>
   )
 }
@@ -143,6 +203,8 @@ export function OrganizationDetailIdentitySection({
   profileInitials,
   location,
 }: DetailIdentityProps) {
+  const category = ORGANIZATION_GROUP_CATEGORY_MAP[organization.primaryGroup]
+
   return (
     <div className={PUBLIC_MAP_DETAIL_IDENTITY_CLASSNAME}>
       <Avatar className="border-border/70 bg-muted/25 size-20 shrink-0 rounded-2xl border shadow-sm sm:size-24">
@@ -173,15 +235,25 @@ export function OrganizationDetailIdentitySection({
         <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
           <span
             className={cn(
-              "inline-flex min-h-6 items-center rounded-full px-2.5 py-1 text-xs leading-none",
-              PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME
+              PUBLIC_MAP_FILTER_PILL_CLASSNAME,
+              "text-muted-foreground inline-flex items-center gap-1.5"
             )}
           >
+            <PublicMapResourceCategoryIcon
+              category={category}
+              className="size-3"
+              style={{ color: PUBLIC_MAP_RESOURCE_CATEGORY_COLORS[category] }}
+            />
             {PUBLIC_MAP_GROUP_LABELS[organization.primaryGroup]}
           </span>
           {organization.isOnlineOnly ? (
-            <span className="border-primary/45 bg-primary/10 text-primary inline-flex min-h-6 items-center rounded-full border px-2.5 py-1 text-xs leading-none">
-              <WifiIcon className="mr-1 size-3.5" aria-hidden />
+            <span
+              className={cn(
+                PUBLIC_MAP_FILTER_PILL_CLASSNAME,
+                "text-muted-foreground inline-flex items-center gap-1.5"
+              )}
+            >
+              <WifiIcon className="text-primary size-3 shrink-0" aria-hidden />
               Online resource
             </span>
           ) : null}

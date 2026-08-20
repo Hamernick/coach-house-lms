@@ -7,6 +7,7 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import { PublicMapOrganizationDetail } from "./organization-detail"
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
+import { OrganizationDetailPanelChrome } from "./organization-detail-shell-sections"
 import { PublicMapResourceDetail } from "./resource-detail"
 import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 
@@ -17,6 +18,7 @@ type PublicMapRailDetailPanelProps = {
   favorites: string[]
   onBack: () => void
   onToggleFavorite: (orgId: string) => void
+  showHeaderControls?: boolean
 }
 
 export function PublicMapRailDetailPanel({
@@ -26,23 +28,28 @@ export function PublicMapRailDetailPanel({
   favorites,
   onBack,
   onToggleFavorite,
+  showHeaderControls = true,
 }: PublicMapRailDetailPanelProps) {
   return (
     <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
-      <ScrollArea
-        data-public-map-sidebar-section="rail-detail-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
-        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-        contentClassName="pb-3 pr-1"
-      >
-        <PublicMapOrganizationDetail
+      {showHeaderControls ? (
+        <OrganizationDetailPanelChrome
           canManageResourceMap={canManageResourceMap}
+          className="shrink-0 px-5"
           organizationCurationAction={organizationCurationAction}
           organization={organization}
           favorites={favorites}
           onBack={onBack}
           onToggleFavorite={onToggleFavorite}
         />
+      ) : null}
+      <ScrollArea
+        data-public-map-sidebar-section="rail-detail-scroll"
+        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
+        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+        contentClassName="pb-3 pr-1"
+      >
+        <PublicMapOrganizationDetail organization={organization} />
       </ScrollArea>
     </SidebarContent>
   )
@@ -92,6 +99,7 @@ type PublicMapDrawerDetailPanelProps = {
   drawerBodyScrollable?: boolean
   onBack: () => void
   onToggleFavorite: (orgId: string) => void
+  showHeaderControls?: boolean
 }
 
 export function PublicMapDrawerDetailPanel({
@@ -101,26 +109,32 @@ export function PublicMapDrawerDetailPanel({
   favorites,
   onBack,
   onToggleFavorite,
+  showHeaderControls = true,
 }: PublicMapDrawerDetailPanelProps) {
   return (
-    <ScrollArea
-      data-public-map-sidebar-section="drawer-detail-scroll"
-      className="h-full min-h-0 flex-1 overflow-hidden px-2 sm:px-4"
-      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-      contentClassName="min-h-full pb-[max(env(safe-area-inset-bottom),1rem)]"
-    >
-      <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 mx-auto w-full max-w-3xl motion-safe:duration-200">
-        <PublicMapOrganizationDetail
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      {showHeaderControls ? (
+        <OrganizationDetailPanelChrome
           canManageResourceMap={canManageResourceMap}
+          className="shrink-0 px-6 sm:px-10"
           organizationCurationAction={organizationCurationAction}
           organization={organization}
           favorites={favorites}
           onBack={onBack}
           onToggleFavorite={onToggleFavorite}
-          compact
         />
-      </div>
-    </ScrollArea>
+      ) : null}
+      <ScrollArea
+        data-public-map-sidebar-section="drawer-detail-scroll"
+        className="h-full min-h-0 flex-1 overflow-hidden px-2 sm:px-4"
+        viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+        contentClassName="min-h-full pb-[max(env(safe-area-inset-bottom),1rem)]"
+      >
+        <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 mx-auto w-full max-w-3xl motion-safe:duration-200">
+          <PublicMapOrganizationDetail organization={organization} compact />
+        </div>
+      </ScrollArea>
+    </div>
   )
 }
 

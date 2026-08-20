@@ -1144,6 +1144,12 @@ describe("public map sidebar layout", () => {
     )
     const memberRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapMemberRail, {
+        directoryHeaderStart: React.createElement("span", {
+          "data-public-map-test-header-start": "",
+        }),
+        directoryHeaderEnd: React.createElement("span", {
+          "data-public-map-test-header-end": "",
+        }),
         directoryRail: React.createElement(
           "div",
           { "data-public-map-right-rail-section": "directory-search" },
@@ -1257,6 +1263,15 @@ describe("public map sidebar layout", () => {
     )
     expect(memberRailMarkup).toContain("data-[state=active]:bg-transparent")
     expect(memberRailMarkup).toContain("data-[state=active]:shadow-none")
+    expect(memberRailMarkup).toContain('data-public-map-tab-header=""')
+    expect(
+      memberRailMarkup.indexOf('data-public-map-test-header-start=""')
+    ).toBeLessThan(memberRailMarkup.indexOf('data-public-map-tab-list=""'))
+    expect(
+      memberRailMarkup.indexOf('data-public-map-tab-list=""')
+    ).toBeLessThan(
+      memberRailMarkup.indexOf('data-public-map-test-header-end=""')
+    )
     expect(memberRailMarkup).not.toContain("data-[state=active]:bg-muted/55")
     expect(memberRailMarkup).not.toContain("h-6 min-h-0 min-w-0 rounded-full")
 
@@ -1775,6 +1790,15 @@ describe("public map sidebar layout", () => {
     )
     expect(organizationDetailMarkup).toContain(
       'data-public-map-profile="organization"'
+    )
+    expect(organizationDetailMarkup).not.toContain(">Organization</p>")
+    expect(organizationDetailMarkup).toContain('aria-label="Back to search"')
+    expect(
+      organizationDetailMarkup.indexOf('aria-label="Back to search"')
+    ).toBeLessThan(
+      organizationDetailMarkup.indexOf(
+        'data-public-map-sidebar-section="drawer-detail-scroll"'
+      )
     )
     expect(organizationDetailMarkup).toContain(
       "mx-auto w-full max-w-3xl space-y-4"

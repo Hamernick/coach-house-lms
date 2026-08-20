@@ -35,29 +35,17 @@ import {
   OrganizationDetailAboutSection,
   OrganizationDetailActionLinks,
   OrganizationDetailIdentitySection,
-  OrganizationDetailPanelChrome,
   OrganizationDetailSocialsSection,
 } from "./organization-detail-shell-sections"
-import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
 import { PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME } from "./sidebar-theme"
 
 type PublicMapOrganizationDetailProps = {
-  canManageResourceMap?: boolean
-  organizationCurationAction?: PublicMapOrganizationCurationAction
   organization: PublicMapOrganization
-  favorites: string[]
-  onBack: () => void
-  onToggleFavorite: (organizationId: string) => void
   compact?: boolean
 }
 
 export function PublicMapOrganizationDetail({
-  canManageResourceMap = false,
-  organizationCurationAction,
   organization,
-  favorites,
-  onBack,
-  onToggleFavorite,
   compact = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
@@ -95,18 +83,10 @@ export function PublicMapOrganizationDetail({
       data-public-map-profile="organization"
       className={cn(
         PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME,
+        "[&_*]:shadow-none",
         compact ? "mb-[max(env(safe-area-inset-bottom),0.75rem)]" : "mb-3"
       )}
     >
-      <OrganizationDetailPanelChrome
-        canManageResourceMap={canManageResourceMap}
-        organizationCurationAction={organizationCurationAction}
-        organization={organization}
-        favorites={favorites}
-        onBack={onBack}
-        onToggleFavorite={onToggleFavorite}
-      />
-
       <OrganizationDetailIdentitySection
         organization={organization}
         profileImageSrc={profileImageSrc}
@@ -123,14 +103,15 @@ export function PublicMapOrganizationDetail({
         onToggle={() => setAboutExpanded((previous) => !previous)}
       />
 
-      <OrganizationDetailFormationSection formationStatus={formationStatus} />
+      <div className="grid grid-cols-2 gap-4 [&>section]:min-w-0 [&>section:only-child]:col-span-2">
+        <OrganizationDetailFormationSection formationStatus={formationStatus} />
+        <OrganizationDetailBrandKitSection
+          organization={organization}
+          brandKitDownloadHref={brandKitDownloadHref}
+        />
+      </div>
 
       <OrganizationDetailSocialsSection socials={socials} />
-
-      <OrganizationDetailBrandKitSection
-        organization={organization}
-        brandKitDownloadHref={brandKitDownloadHref}
-      />
 
       <OrganizationDetailOriginSection storyFields={storyFields} />
 

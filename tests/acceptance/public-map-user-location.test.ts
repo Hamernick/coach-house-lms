@@ -30,7 +30,7 @@ describe("public map user location", () => {
     expect(resolvePublicMapLocationPermissionAction("denied")).toBe("denied")
   })
 
-  it("uses one low-accuracy location request with bounded caching", () => {
+  it("uses low-accuracy location requests with bounded caching", () => {
     expect(PUBLIC_MAP_GEOLOCATION_OPTIONS).toEqual({
       enableHighAccuracy: false,
       timeout: 7_000,
@@ -99,12 +99,7 @@ describe("public map user location", () => {
     expect(hookSource).toContain(
       "const [controlOpen, setControlOpen] = useState(false)"
     )
-    expect(hookSource).toMatch(
-      /entranceStartedRef\.current \|\|[\s\S]*?welcomeOpen \|\|[\s\S]*?typeof window === "undefined"/
-    )
-    expect(hookSource).not.toMatch(
-      /entranceStartedRef\.current \|\|[\s\S]{0,240}!mapLoadedRef\.current/
-    )
+    expect(hookSource).not.toContain("entranceStartedRef")
     expect(hookSource).toMatch(
       /setStatus\("checking"\)[\s\S]*?\.query\(\{ name: "geolocation" \}\)/
     )
@@ -114,6 +109,12 @@ describe("public map user location", () => {
     expect(hookSource).not.toContain(
       "if (!coordinates && entranceStartedRef.current) setControlOpen(true)"
     )
+    expect(hookSource).toContain(
+      'source === "entrance" && attempt === 0 && error.code !== 1'
+    )
+    expect(hookSource).toContain("readPosition(1)")
+    expect(hookSource.match(/if \(storedGrant\) \{/g)).toHaveLength(3)
+    expect(hookSource.match(/requestPosition\("entrance"\)/g)).toHaveLength(3)
   })
 
   it("keeps the location indicator unchanged under night lighting", () => {

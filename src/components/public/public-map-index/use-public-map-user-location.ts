@@ -129,7 +129,6 @@ export function usePublicMapUserLocation({
     useState<PublicMapUserCoordinates | null>(null)
   const [hasGrantedLocation, setHasGrantedLocation] = useState(false)
   const [controlOpen, setControlOpen] = useState(false)
-  const entranceStartedRef = useRef(false)
   const requestSequenceRef = useRef(0)
   const shouldFocusLocationRef = useRef(false)
   const userMovedMapRef = useRef(false)
@@ -231,39 +230,46 @@ export function usePublicMapUserLocation({
     requestSequenceRef.current = requestSequence
     setStatus("requesting")
 
-    window.navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (requestSequenceRef.current !== requestSequence) return
-        const nextCoordinates = normalizePublicMapUserCoordinates({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        })
-        if (!nextCoordinates) {
-          setStatus("error")
-          setControlOpen(true)
-          return
-        }
+    function readPosition(attempt: number) {
+      window.navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (requestSequenceRef.current !== requestSequence) return
+          const nextCoordinates = normalizePublicMapUserCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+          if (!nextCoordinates) {
+            setStatus("error")
+            setControlOpen(true)
+            return
+          }
 
-        shouldFocusLocationRef.current =
-          source === "manual" || !userMovedMapRef.current
-        markPublicMapLocationGranted(window.sessionStorage)
-        setHasGrantedLocation(true)
-        setCoordinates(nextCoordinates)
-        setStatus("centered")
-        setControlOpen(false)
-      },
-      (error) => {
-        if (requestSequenceRef.current !== requestSequence) return
-        setStatus(resolveUserLocationStatusFromError(error))
-        setControlOpen(true)
-      },
-      PUBLIC_MAP_GEOLOCATION_OPTIONS
-    )
+          shouldFocusLocationRef.current =
+            source === "manual" || !userMovedMapRef.current
+          markPublicMapLocationGranted(window.sessionStorage)
+          setHasGrantedLocation(true)
+          setCoordinates(nextCoordinates)
+          setStatus("centered")
+          setControlOpen(false)
+        },
+        (error) => {
+          if (requestSequenceRef.current !== requestSequence) return
+          if (source === "entrance" && attempt === 0 && error.code !== 1) {
+            readPosition(1)
+            return
+          }
+          setStatus(resolveUserLocationStatusFromError(error))
+          setControlOpen(true)
+        },
+        PUBLIC_MAP_GEOLOCATION_OPTIONS
+      )
+    }
+
+    readPosition(0)
   }, [])
 
   useEffect(() => {
     if (
-      entranceStartedRef.current ||
       suppressAutomaticEntrance ||
       welcomeOpen ||
       typeof window === "undefined"
@@ -271,7 +277,6 @@ export function usePublicMapUserLocation({
       return
     }
 
-    entranceStartedRef.current = true
     const storedGrant = hasGrantedPublicMapLocation(window.sessionStorage)
     if (storedGrant) {
       setHasGrantedLocation(true)
@@ -290,8 +295,12 @@ export function usePublicMapUserLocation({
     }
 
     if (!("permissions" in window.navigator)) {
+      if (storedGrant) {
+        requestPosition("entrance")
+        return
+      }
       setStatus("prompt")
-      setControlOpen(!storedGrant)
+      setControlOpen(true)
       return
     }
 
@@ -313,18 +322,18 @@ export function usePublicMapUserLocation({
       })
       .catch(() => {
         if (cancelled) return
+        if (storedGrant) {
+          requestPosition("entrance")
+          return
+        }
         setStatus("prompt")
-        setControlOpen(!storedGrant)
+        setControlOpen(true)
       })
 
     return () => {
       cancelled = true
     }
-  }, [
-    requestPosition,
-    suppressAutomaticEntrance,
-    welcomeOpen,
-  ])
+  }, [requestPosition, suppressAutomaticEntrance, welcomeOpen])
 
   useEffect(() => {
     if (suppressAutomaticEntrance || welcomeOpen) {

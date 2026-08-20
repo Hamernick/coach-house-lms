@@ -9,6 +9,15 @@ export function resolvePublicMapDirectoryStatusCount(count: number) {
   return normalizedCount.toLocaleString()
 }
 
+export function resolvePublicMapDirectoryCount(
+  organizationCount: number,
+  totalResourceCount: number | null
+) {
+  return totalResourceCount === null
+    ? null
+    : organizationCount + totalResourceCount
+}
+
 export function PublicMapDirectoryStatusHeader({
   label = "Resources",
 }: {
@@ -32,10 +41,11 @@ export function PublicMapDirectoryStatusPill({
   label = "Resources",
 }: {
   className?: string
-  count: number
+  count: number | null
   label?: string
 }) {
-  const countLabel = resolvePublicMapDirectoryStatusCount(count)
+  const countLabel =
+    count === null ? null : resolvePublicMapDirectoryStatusCount(count)
 
   return (
     <span
@@ -44,13 +54,25 @@ export function PublicMapDirectoryStatusPill({
         "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
         className
       )}
-      aria-label={`${label} directory status: active, ${countLabel}`}
+      aria-label={
+        countLabel === null
+          ? `${label} directory status: loading`
+          : `${label} directory status: active, ${countLabel}`
+      }
     >
       <span aria-hidden="true" className="inline-flex shrink-0">
         <StatusIndicator state="active" size="sm" className="shrink-0 gap-0" />
       </span>
       <span>Active</span>
-      <span className="tabular-nums">{countLabel}</span>
+      {countLabel === null ? (
+        <span
+          data-public-map-directory-count-loading="true"
+          className="bg-muted-foreground/20 h-3 w-8 animate-pulse rounded-full motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+      ) : (
+        <span className="tabular-nums">{countLabel}</span>
+      )}
     </span>
   )
 }

@@ -22,6 +22,9 @@ describe("find-map feature", () => {
     )
 
     expect(routeSource).toContain("<FindMapLoadingState />")
+    expect(routeSource).toContain("fetchPublicMapViewerState()")
+    expect(routeSource).toContain("<AuthenticatedFindShell")
+    expect(routeSource).toContain("resolveDashboardLayoutState()")
     expect(routeSource).toContain("showAuthActions={false}")
     expect(routeSource).not.toContain("Skeleton")
     expect(markup).toContain('data-find-map-loading-state="layout-preserving"')

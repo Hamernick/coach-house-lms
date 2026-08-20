@@ -210,8 +210,8 @@ export function usePublicMapResourceItems({
   resourceItemsEndpoint?: string
 }) {
   const [resourceItems, setResourceItems] = useState(initialResourceItems)
-  const [totalResourceCount, setTotalResourceCount] = useState(
-    initialResourceItems.length
+  const [totalResourceCount, setTotalResourceCount] = useState<number | null>(
+    resourceItemsEndpoint ? null : initialResourceItems.length
   )
   const [status, setStatus] = useState<PublicMapResourceItemsLoadStatus>(
     resourceItemsEndpoint ? "loading" : "ready"

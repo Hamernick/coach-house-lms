@@ -3,6 +3,7 @@ import { join } from "node:path"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { resolvePublicMapDirectoryCount } from "@/components/public/public-map-index/directory-status-pill"
 import {
   clearPublicMapResourceItemsCache,
   loadPublicMapResourceItems,
@@ -260,9 +261,9 @@ describe("public map resource items client", () => {
       "utf8"
     )
 
-    expect(indexSource).toContain(
-      "directoryCount={organizations.length + totalResourceCount}"
-    )
+    expect(resolvePublicMapDirectoryCount(19, null)).toBeNull()
+    expect(resolvePublicMapDirectoryCount(19, 5_046)).toBe(5_065)
+    expect(indexSource).toContain("resolvePublicMapDirectoryCount(")
     expect(indexSource).toContain("filteredItems={directoryListItems}")
     expect(surfaceSource).toContain("directoryCount={directoryCount}")
     expect(surfaceSource).not.toContain("directoryCount={filteredItems.length}")

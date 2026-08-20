@@ -76,7 +76,7 @@ describe("buildStoryFields", () => {
 
     expect(fields.map((field) => field.label)).toEqual([
       "Origin story",
-      "Need statement",
+      "Need",
       "Mission",
       "Vision",
       "Values",
@@ -109,7 +109,7 @@ describe("buildStoryFields", () => {
 
     expect(fields).toEqual([
       {
-        label: "Need statement",
+        label: "Need",
         value:
           '<img src="https://example.org/need.png" alt="Community need map">',
       },

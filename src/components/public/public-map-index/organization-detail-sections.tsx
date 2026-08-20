@@ -166,7 +166,7 @@ export function OrganizationDetailStoryContent({ value }: { value: string }) {
       className={cn(
         "prose prose-sm dark:prose-invert text-foreground max-w-none overflow-x-auto text-sm leading-relaxed break-words",
         "prose-p:my-2 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
-        "prose-img:h-auto prose-img:max-w-full prose-img:rounded-xl prose-img:border prose-img:border-border/60"
+        "prose-img:my-4 prose-img:h-auto prose-img:max-w-full prose-img:rounded-lg prose-img:border prose-img:border-border/60"
       )}
       // Public narrative HTML is sanitized by resolvePublicOrganizationProfileNarratives.
       dangerouslySetInnerHTML={{ __html: value }}

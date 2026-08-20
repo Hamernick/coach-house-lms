@@ -205,6 +205,9 @@ describe("OrganizationDetailOriginSection", () => {
     expect(markup).toContain('<h2 style="text-align:center">')
     expect(markup).toContain("<strong>Started</strong>")
     expect(markup).toContain('alt="Founding team"')
+    expect(markup).toContain("prose-img:my-4")
+    expect(markup).toContain("prose-img:rounded-lg")
+    expect(markup).not.toContain("prose-img:rounded-xl")
   })
 
   it("renders nothing when no public story fields have content", () => {

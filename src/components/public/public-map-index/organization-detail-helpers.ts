@@ -210,7 +210,7 @@ export function buildStoryFields(
   return [
     { label: "Origin story", value: normalizeText(organization.originStory) },
     {
-      label: "Need statement",
+      label: "Need",
       value: normalizeText(organization.needStatement),
     },
     { label: "Mission", value: normalizeText(organization.mission) },

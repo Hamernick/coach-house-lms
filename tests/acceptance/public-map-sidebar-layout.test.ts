@@ -1263,6 +1263,12 @@ describe("public map sidebar layout", () => {
     )
     expect(memberRailMarkup).toContain("data-[state=active]:bg-transparent")
     expect(memberRailMarkup).toContain("data-[state=active]:shadow-none")
+    expect(memberRailMarkup).toContain(
+      "group-data-[orientation=horizontal]/tabs:after:bottom-0"
+    )
+    expect(memberRailMarkup).not.toContain(
+      "group-data-[orientation=horizontal]/tabs:after:bottom-[-5px]"
+    )
     expect(memberRailMarkup).toContain('data-public-map-tab-header=""')
     expect(
       memberRailMarkup.indexOf('data-public-map-test-header-start=""')

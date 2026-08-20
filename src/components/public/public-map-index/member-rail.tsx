@@ -43,7 +43,7 @@ const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
   "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
 
 const PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME =
-  "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
+  "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none group-data-[orientation=horizontal]/tabs:after:bottom-0 hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
 
 type PublicMapMemberRailProps = {
   activeTab?: PublicMapMemberTab

@@ -15,7 +15,9 @@ export const PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR =
 export type PublicMapResourceItemsLoadStatus = "loading" | "ready" | "error"
 
 type ResourceItemsLoad = {
-  listeners: Set<(items: ExternalResourceMapItem[]) => void>
+  listeners: Set<
+    (items: ExternalResourceMapItem[], totalCount: number | null) => void
+  >
   promise: Promise<ExternalResourceMapItem[]>
 }
 
@@ -25,6 +27,13 @@ const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 1_000
 type FindResourceIndexPage = {
   hasMore?: unknown
   nextCursor?: unknown
+  totalCount?: unknown
+}
+
+function resolveFindResourceIndexTotalCount(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : null
 }
 
 function isFindResourceIndexItem(
@@ -106,7 +115,10 @@ export function clearPublicMapResourceItemsCache(endpoint?: string) {
 
 export function loadPublicMapResourceItems(
   endpoint: string,
-  onProgress?: (items: ExternalResourceMapItem[]) => void
+  onProgress?: (
+    items: ExternalResourceMapItem[],
+    totalCount: number | null
+  ) => void
 ) {
   const cached = resourceItemsLoadByEndpoint.get(endpoint)
   if (cached) {
@@ -114,13 +126,16 @@ export function loadPublicMapResourceItems(
     return cached.promise
   }
 
-  const listeners = new Set<(items: ExternalResourceMapItem[]) => void>()
+  const listeners = new Set<
+    (items: ExternalResourceMapItem[], totalCount: number | null) => void
+  >()
   if (onProgress) listeners.add(onProgress)
 
   const promise = (async () => {
     const resourceItems: ExternalResourceMapItem[] = []
     let pageEndpoint: string | null = endpoint
     let pageCount = 0
+    let totalCount: number | null = null
 
     while (pageEndpoint) {
       const response = await fetch(pageEndpoint, {
@@ -140,6 +155,9 @@ export function loadPublicMapResourceItems(
           ...payload.resourceItems.map(normalizeLoadedResourceItem)
         )
       }
+      totalCount ??= resolveFindResourceIndexTotalCount(
+        payload.page?.totalCount
+      )
 
       const nextCursor = payload.page?.nextCursor
       pageEndpoint =
@@ -156,7 +174,9 @@ export function loadPublicMapResourceItems(
         pageEndpoint === null ||
         resourceItems.length % RESOURCE_ITEMS_PROGRESS_BATCH_SIZE === 0
       if (shouldPublishProgress) {
-        for (const listener of listeners) listener([...resourceItems])
+        for (const listener of listeners) {
+          listener([...resourceItems], totalCount)
+        }
       }
     }
 
@@ -183,6 +203,9 @@ export function usePublicMapResourceItems({
   resourceItemsEndpoint?: string
 }) {
   const [resourceItems, setResourceItems] = useState(initialResourceItems)
+  const [totalResourceCount, setTotalResourceCount] = useState(
+    initialResourceItems.length
+  )
   const [status, setStatus] = useState<PublicMapResourceItemsLoadStatus>(
     resourceItemsEndpoint ? "loading" : "ready"
   )
@@ -192,6 +215,7 @@ export function usePublicMapResourceItems({
   useEffect(() => {
     if (resourceItemsEndpoint) return
     setResourceItems(initialResourceItems)
+    setTotalResourceCount(initialResourceItems.length)
     setStatus("ready")
     setError(null)
   }, [initialResourceItems, resourceItemsEndpoint])
@@ -206,13 +230,17 @@ export function usePublicMapResourceItems({
       setStatus("loading")
       setError(null)
       try {
-        const payload = await loadPublicMapResourceItems(endpoint, (items) => {
-          if (!cancelled) {
-            setResourceItems((currentItems) =>
-              mergeProgressiveResourceItems(currentItems, items)
-            )
+        const payload = await loadPublicMapResourceItems(
+          endpoint,
+          (items, totalCount) => {
+            if (!cancelled) {
+              setResourceItems((currentItems) =>
+                mergeProgressiveResourceItems(currentItems, items)
+              )
+              setTotalResourceCount(totalCount ?? items.length)
+            }
           }
-        })
+        )
         if (cancelled) return
         setResourceItems((currentItems) => {
           const alreadyPublished =
@@ -281,5 +309,5 @@ export function usePublicMapResourceItems({
     setLoadRequestId((current) => current + 1)
   }, [resourceItemsEndpoint])
 
-  return { error, resourceItems, retry, status }
+  return { error, resourceItems, retry, status, totalResourceCount }
 }

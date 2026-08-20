@@ -128,7 +128,6 @@ export function PublicMapIndex({
     resolveInitialCameraTarget(initialOrganization)
   )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
-  const pendingAuthOrgId: string | null = null
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
@@ -153,9 +152,9 @@ export function PublicMapIndex({
     resourceItems,
     retry: retryResourceItems,
     status: resourceItemsLoadStatus,
+    totalResourceCount,
   } = usePublicMapResourceItems({ initialResourceItems, resourceItemsEndpoint })
   const deferredQuery = useDeferredValue(query)
-  const searchPending = deferredQuery !== query
   const {
     collectedResourceIds,
     favorites,
@@ -295,7 +294,7 @@ export function PublicMapIndex({
       searchParams,
       initialPublicSlug,
       selectedOrganization,
-      pendingAuthOrgId,
+      pendingAuthOrgId: null,
       setSelectedOrgId,
       setSidebarMode,
       setCameraTargetOrgId: handleSetCameraTargetOrgId,
@@ -394,13 +393,13 @@ export function PublicMapIndex({
   })
 
   useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
-
   const directoryListItems =
     activeSearchContext?.items ?? filteredDirectoryListItems
   const mapSurface = (
     <PublicMapSurface
       containerRef={containerRef}
       sidebarMode={sidebarMode}
+      directoryCount={organizations.length + totalResourceCount}
       filteredItems={directoryListItems}
       filteredOrganizations={filteredOrganizations}
       selectedItemId={selectedListItemId}
@@ -420,7 +419,7 @@ export function PublicMapIndex({
       groupCounts={groupCounts}
       resourceItemsLoadStatus={resourceItemsLoadStatus}
       resourceItemsLoadError={resourceItemsLoadError}
-      searchPending={searchPending}
+      searchPending={deferredQuery !== query}
       searchContext={activeSearchContext}
       tokenAvailable={tokenAvailable}
       mapError={mapError}
@@ -444,6 +443,5 @@ export function PublicMapIndex({
       mapOverlay={memberOnboardingMapOverlay}
     />
   )
-
   return <PublicMapIndexChrome mapSurface={mapSurface} />
 }

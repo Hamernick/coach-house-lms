@@ -43,6 +43,7 @@ const PublicMapAuthSheet = dynamic(() =>
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
   sidebarMode: SidebarMode
+  directoryCount: number
   filteredItems: PublicMapListItem[]
   filteredOrganizations: PublicMapOrganization[]
   selectedItemId: string | null
@@ -97,6 +98,7 @@ type PublicMapSurfaceProps = {
 export function PublicMapSurface({
   containerRef,
   sidebarMode,
+  directoryCount,
   filteredItems,
   filteredOrganizations,
   selectedItemId,
@@ -274,7 +276,7 @@ export function PublicMapSurface({
           <div className="pointer-events-none absolute inset-0 hidden dark:block dark:bg-[linear-gradient(180deg,rgba(250,250,250,0.08),rgba(250,250,250,0.025)_28%,rgba(24,24,27,0.015)_58%,rgba(9,9,11,0.06))]" />
           <PublicMapLocationControl
             {...locationControl}
-            directoryCount={filteredItems.length}
+            directoryCount={directoryCount}
           />
 
           <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">

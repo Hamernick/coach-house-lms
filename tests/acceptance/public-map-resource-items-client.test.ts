@@ -165,19 +165,46 @@ describe("public map resource items client", () => {
             nextCursor: isFinalPage
               ? null
               : resourceItems[resourceItems.length - 1]?.id,
+            totalCount: 856 - page * pageSize,
           },
         })
       )
     }
 
     const progressCounts: number[] = []
+    const reportedTotalCounts: Array<number | null> = []
     const items = await loadPublicMapResourceItems(
       "/api/public/resource-map/index?limit=50&test=bounded-progress",
-      (loadedItems) => progressCounts.push(loadedItems.length)
+      (loadedItems, totalCount) => {
+        progressCounts.push(loadedItems.length)
+        reportedTotalCounts.push(totalCount)
+      }
     )
 
     expect(items).toHaveLength(856)
     expect(progressCounts).toEqual([50, 856])
+    expect(reportedTotalCounts).toEqual([856, 856])
+  })
+
+  it("keeps the map inventory total separate from filtered result lists", () => {
+    const indexSource = readFileSync(
+      join(process.cwd(), "src/components/public/public-map-index.tsx"),
+      "utf8"
+    )
+    const surfaceSource = readFileSync(
+      join(
+        process.cwd(),
+        "src/components/public/public-map-index/map-surface.tsx"
+      ),
+      "utf8"
+    )
+
+    expect(indexSource).toContain(
+      "directoryCount={organizations.length + totalResourceCount}"
+    )
+    expect(indexSource).toContain("filteredItems={directoryListItems}")
+    expect(surfaceSource).toContain("directoryCount={directoryCount}")
+    expect(surfaceSource).not.toContain("directoryCount={filteredItems.length}")
   })
 
   it("deduplicates selected resource detail loads", async () => {

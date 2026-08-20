@@ -80,6 +80,35 @@ type DetailAboutProps = {
   onToggle: () => void
 }
 
+function OrganizationDetailActionLinkContent({
+  action,
+}: {
+  action: OrganizationDetailActionLink
+}) {
+  const Icon = action.icon
+
+  return (
+    <span
+      data-public-map-organization-action-content="true"
+      className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
+    >
+      <span
+        data-public-map-organization-action-icon="true"
+        className="inline-flex size-5 shrink-0 items-center justify-center"
+        aria-hidden
+      >
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <span
+        data-public-map-organization-action-label="true"
+        className="leading-none"
+      >
+        {action.label}
+      </span>
+    </span>
+  )
+}
+
 export function OrganizationDetailPanelChrome({
   canManageResourceMap = false,
   className,
@@ -297,8 +326,6 @@ export function OrganizationDetailActionLinks({
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {actionLinks.map((action) => {
-        const Icon = action.icon
-
         if (action.kind === "copy") {
           return (
             <Button
@@ -308,14 +335,11 @@ export function OrganizationDetailActionLinks({
               onClick={() => void handleCopyAction(action)}
               disabled={copyingActionKey === action.key}
               className={cn(
-                "min-h-20 rounded-xl px-3 text-sm",
+                "h-20 min-h-20 rounded-xl px-3 text-sm",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
               )}
             >
-              <span className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center">
-                <Icon className="h-4.5 w-4.5" aria-hidden />
-                <span>{action.label}</span>
-              </span>
+              <OrganizationDetailActionLinkContent action={action} />
             </Button>
           )
         }
@@ -326,7 +350,7 @@ export function OrganizationDetailActionLinks({
             asChild
             variant="ghost"
             className={cn(
-              "min-h-20 rounded-xl px-3 text-sm",
+              "h-20 min-h-20 rounded-xl px-3 text-sm",
               PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
             )}
           >
@@ -334,10 +358,8 @@ export function OrganizationDetailActionLinks({
               href={action.href}
               target={action.external ? "_blank" : undefined}
               rel={action.external ? "noreferrer" : undefined}
-              className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center"
             >
-              <Icon className="h-4.5 w-4.5" aria-hidden />
-              <span>{action.label}</span>
+              <OrganizationDetailActionLinkContent action={action} />
             </a>
           </Button>
         )

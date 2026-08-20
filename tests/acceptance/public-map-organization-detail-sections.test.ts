@@ -144,6 +144,34 @@ describe("public map detail section chrome", () => {
     expect(markup).toContain("Logo mark")
     expect(markup).toContain("https://example.org/mark.png")
   })
+
+  it("uses one icon size and label gap for every profile action", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationDetail, {
+        organization: buildOrganization({
+          website: "https://example.org",
+          email: "hello@example.org",
+          phone: "+1 312 555 0100",
+          brandKitAvailable: true,
+        }),
+      })
+    )
+
+    expect(
+      markup.match(/data-public-map-organization-action-content="true"/g)
+    ).toHaveLength(4)
+    expect(
+      markup.match(/data-public-map-organization-action-icon="true"/g)
+    ).toHaveLength(4)
+    expect(markup).toContain(
+      "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
+    )
+    expect(markup).toContain(
+      "inline-flex size-5 shrink-0 items-center justify-center"
+    )
+    expect(markup).not.toContain("gap-0.5 text-center")
+    expect(markup).not.toContain("h-4.5 w-4.5")
+  })
 })
 
 describe("OrganizationDetailOriginSection", () => {

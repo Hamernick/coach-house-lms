@@ -102,6 +102,9 @@ describe("public map pin markers", () => {
     const markerSource = readRepoFile(
       "src/components/public/public-map-index/use-public-map-markers.ts"
     )
+    const markerArtworkSource = readRepoFile(
+      "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
+    )
     const archiveSource = readRepoFile(
       "docs/archive/public-map-markers-2026-08-02.md"
     )
@@ -110,8 +113,9 @@ describe("public map pin markers", () => {
     expect(mapSource).not.toContain("usePublicMapClusteredMarkers")
     expect(markerSource).not.toContain("public-map-cluster")
     expect(markerSource).not.toContain("clusterClient")
-    expect(markerSource).toContain("ensurePublicMapPinMarkerImages")
-    expect(markerSource).not.toContain("ensurePublicMapMarkerImages")
+    expect(markerSource).toContain("syncPublicMapMarkerArtwork")
+    expect(markerArtworkSource).toContain("ensurePublicMapPinMarkerImages")
+    expect(markerArtworkSource).not.toContain("ensurePublicMapMarkerImages")
     expect(markerSource).toContain("Promise.all(profileImageLoads)")
     expect(archiveSource).toContain(
       "refs/codex/snapshots/find-markers-before-20260802T143539"

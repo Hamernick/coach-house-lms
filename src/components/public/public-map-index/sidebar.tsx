@@ -44,6 +44,48 @@ import {
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
+function PublicMapSidebarOpenButton({
+  hidden,
+  onOpen,
+}: {
+  hidden: boolean
+  onOpen: () => void
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        hidden
+          ? "pointer-events-auto opacity-100"
+          : "pointer-events-none -translate-x-1 opacity-0"
+      )}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onOpen}
+        className={cn(
+          "h-10 rounded-full px-3 shadow-sm backdrop-blur-xl",
+          PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
+        )}
+      >
+        <SearchIcon className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Open resource map panel</span>
+      </Button>
+    </div>
+  )
+}
+
+function resetDrawer(
+  setActiveSnapIndex: (value: 0) => void,
+  setDrawerTab: (value: "directory") => void,
+  setSidebarMode: PublicMapSidebarProps["setSidebarMode"]
+) {
+  setActiveSnapIndex(0)
+  setDrawerTab("directory")
+  setSidebarMode("search")
+}
+
 export function PublicMapSidebar({
   sidebarMode,
   sidebarWidth,
@@ -120,12 +162,6 @@ export function PublicMapSidebar({
 
     setActiveSnapIndex(effectiveSidebarMode === "details" ? 1 : 0)
   }, [effectiveSidebarMode, panelOpen, panelPresentation])
-
-  function resetDrawerToSearch() {
-    setActiveSnapIndex(0)
-    setDrawerTab("directory")
-    setSidebarMode("search")
-  }
   const listItems = searchContext?.items ?? filteredItems
   const handleDrawerTabChange = useCallback(
     (nextTab: PublicMapMemberTab) => {
@@ -168,7 +204,6 @@ export function PublicMapSidebar({
     organization: selectedOrganization,
     organizationCurationAction,
   })
-
   const railDirectoryPanel =
     effectiveSidebarMode === "search" ? (
       <PublicMapRailSearchPanel
@@ -215,7 +250,6 @@ export function PublicMapSidebar({
         resourceMapCurationAction={resourceMapCurationAction}
       />
     ) : null
-
   const railPanel = (
     <PublicMapRailPanel
       directoryHeaderStart={organizationDetailHeaderSlots.start}
@@ -308,27 +342,10 @@ export function PublicMapSidebar({
 
   return (
     <>
-      <div
-        className={cn(
-          "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          effectiveSidebarMode === "hidden"
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none -translate-x-1 opacity-0"
-        )}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setSidebarMode("search")}
-          className={cn(
-            "h-10 rounded-full px-3 shadow-sm backdrop-blur-xl",
-            PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
-          )}
-        >
-          <SearchIcon className="h-4 w-4" aria-hidden />
-          <span className="sr-only">Open resource map panel</span>
-        </Button>
-      </div>
+      <PublicMapSidebarOpenButton
+        hidden={effectiveSidebarMode === "hidden"}
+        onOpen={() => setSidebarMode("search")}
+      />
 
       {panelPresentation === "drawer" ? (
         <Drawer
@@ -358,7 +375,7 @@ export function PublicMapSidebar({
           shouldScaleBackground={false}
           onOpenChange={(open) => {
             if (!open) {
-              resetDrawerToSearch()
+              resetDrawer(setActiveSnapIndex, setDrawerTab, setSidebarMode)
               return
             }
             if (effectiveSidebarMode === "hidden") {

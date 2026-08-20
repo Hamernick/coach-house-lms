@@ -22,7 +22,9 @@ describe("public Find performance contract", () => {
   })
 
   it("uses a dedicated shell that excludes hidden home and authentication panels", () => {
-    const source = readSource("src/components/public/home-canvas-find-shell.tsx")
+    const source = readSource(
+      "src/components/public/home-canvas-find-shell.tsx"
+    )
 
     expect(source).toContain("HomeCanvasPreviewHeader")
     expect(source).toContain("HomeCanvasPreviewSidebar")
@@ -51,12 +53,8 @@ describe("public Find performance contract", () => {
       "src/components/public/public-map-index/map-surface.tsx"
     )
 
-    expect(source).toContain(
-      "initializeFrameId = window.requestAnimationFrame"
-    )
-    expect(source).toContain(
-      "PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000"
-    )
+    expect(source).toContain("initializeFrameId = window.requestAnimationFrame")
+    expect(source).toContain("PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000")
     expect(source).toContain("initializeTimeoutId = window.setTimeout")
     expect(source).toContain(
       'mapContainer.addEventListener("pointerdown", startMap'
@@ -86,7 +84,13 @@ describe("public Find performance contract", () => {
       "src/components/public/public-map-index/use-public-map-user-location.ts"
     )
 
-    expect(source).toContain("!suppressAutomaticEntrance && !welcomeOpen")
+    expect(source).toContain(
+      "const [controlOpen, setControlOpen] = useState(false)"
+    )
+    expect(source).toContain(
+      "const storedGrant = hasGrantedPublicMapLocation(window.sessionStorage)"
+    )
+    expect(source).toContain("setControlOpen(!storedGrant)")
   })
 
   it("enforces a dedicated first-load JavaScript budget for Find", () => {

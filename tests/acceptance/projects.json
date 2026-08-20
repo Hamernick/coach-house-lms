@@ -341,6 +341,7 @@
       "tests/acceptance/program-wizard-media.test.ts",
       "tests/acceptance/prototype-finance-plan-response-inbox.test.ts",
       "tests/acceptance/prototype-finance-release-plan.test.ts",
+      "tests/acceptance/public-home-map-preview-selection.test.ts",
       "tests/acceptance/public-map-actions.test.ts",
       "tests/acceptance/public-map-cluster-runtime.test.ts",
       "tests/acceptance/public-map-index-helpers.test.ts",

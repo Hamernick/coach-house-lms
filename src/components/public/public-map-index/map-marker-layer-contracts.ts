@@ -403,7 +403,6 @@ export function ensurePublicMapMarkerLayers({
     PUBLIC_MAP_SELECTED_MARKER_LAYER_ID,
   ].every((layerId) => Boolean(getMapLayerSafely(map, layerId)))
 }
-
 export function setPublicMapMarkerSourceData({
   map,
   sourceData,
@@ -419,7 +418,6 @@ export function setPublicMapMarkerSourceData({
   source.setData(sourceData)
   return true
 }
-
 export function syncPublicMapMarkerSelection({
   activeSameLocationGroupKey,
   map,

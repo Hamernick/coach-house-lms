@@ -13,6 +13,8 @@ export const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   containIntrinsicSize: "308px",
 } as const
 
+export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "h-[19.25rem]"
+
 export function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return "O"
@@ -86,7 +88,7 @@ export function PublicMapListMetadataStrip({
   return (
     <div
       className={cn(
-        "text-muted-foreground mt-1.5 flex max-w-full items-center gap-2 text-sm leading-relaxed",
+        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-sm leading-relaxed",
         className
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({

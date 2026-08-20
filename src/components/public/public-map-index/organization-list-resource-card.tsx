@@ -18,6 +18,7 @@ import {
 } from "./react-grab"
 import {
   buildResourceMetadataItems,
+  PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
   PUBLIC_MAP_LIST_CARD_PERF_STYLE,
   PublicMapListMetadataStrip,
   PublicMapListViewButton,
@@ -68,7 +69,8 @@ export function PublicMapResourceListCard({
       key={item.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "group text-foreground relative h-full w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
+        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
+        PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
         "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
         "motion-reduce:transition-none",
         selected
@@ -151,7 +153,6 @@ export function PublicMapResourceListCard({
               {cardTitle}
             </p>
             <PublicMapListMetadataStrip
-              className="mt-1"
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."

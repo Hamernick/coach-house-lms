@@ -189,6 +189,10 @@ describe("public map organization list react grab", () => {
     )
     expect(markup).toContain('data-react-grab-surface-slot="meta-row"')
     expect(markup).toContain('data-react-grab-surface-slot="view-button"')
+    expect(markup).toContain("h-[19.25rem]")
+    expect(markup).toContain(
+      "text-muted-foreground mt-0.5 flex max-w-full items-center"
+    )
     expect(markup).toContain("Program")
     expect(markup).toContain("Weekly")
     expect(markup).toContain("Weekly mutual-aid meals")

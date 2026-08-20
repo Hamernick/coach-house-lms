@@ -97,7 +97,7 @@ export function PublicMapResourceListCard({
       <div
         className={cn(
           "relative z-10 flex h-full min-w-0 flex-col",
-          constrainedLayout ? "gap-3 p-3" : "gap-4 p-4"
+          constrainedLayout ? "gap-2 p-3" : "gap-2 p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,

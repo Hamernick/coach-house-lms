@@ -52,7 +52,7 @@ function PublicMapOrganizationListSkeleton() {
           <div
             key={index}
             className={cn(
-              "border-border/50 flex flex-col gap-4 rounded-2xl border p-4",
+              "border-border/50 flex flex-col gap-2 rounded-2xl border p-4",
               PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
             )}
             aria-hidden="true"

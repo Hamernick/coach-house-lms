@@ -161,6 +161,16 @@ describe("public map organization list react grab", () => {
         onOpenDetails: () => {},
       })
     )
+    const roomyMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        organizations: [buildOrganization()],
+        selectedOrgId: null,
+        query: "",
+        constrainedLayout: false,
+        onSelectOrg: () => {},
+        onOpenDetails: () => {},
+      })
+    )
 
     expect(markup).toContain(
       'data-react-grab-anchor="PublicMapOrganizationListCard"'
@@ -176,6 +186,14 @@ describe("public map organization list react grab", () => {
     )
     expect(markup).not.toContain("Add Atlas Collective to favorites")
     expect(markup).toContain('data-react-grab-surface-slot="body"')
+    expect(markup).toContain(
+      "relative z-10 flex h-full min-w-0 flex-col gap-2 p-3"
+    )
+    expect(markup).not.toContain("gap-3 p-3")
+    expect(markup).not.toContain("gap-4 p-4")
+    expect(roomyMarkup).toContain(
+      "relative z-10 flex h-full min-w-0 flex-col gap-2 p-4"
+    )
     expect(markup).toContain('data-react-grab-surface-slot="identity-row"')
     expect(markup).toContain('data-react-grab-surface-slot="avatar"')
     expect(markup).toContain('data-react-grab-surface-slot="title"')

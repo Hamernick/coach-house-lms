@@ -20,17 +20,31 @@ import type { CanvasSectionId } from "@/components/public/home-canvas-preview-co
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-export function HomeCanvasFindShell({ children }: { children: ReactNode }) {
+export function HomeCanvasFindShell({
+  children,
+  showAuthActions = true,
+}: {
+  children: ReactNode
+  showAuthActions?: boolean
+}) {
   return (
     <RightRailProvider>
       <HomeCanvasSidebarSlotProvider>
-        <HomeCanvasFindShellContent>{children}</HomeCanvasFindShellContent>
+        <HomeCanvasFindShellContent showAuthActions={showAuthActions}>
+          {children}
+        </HomeCanvasFindShellContent>
       </HomeCanvasSidebarSlotProvider>
     </RightRailProvider>
   )
 }
 
-function HomeCanvasFindShellContent({ children }: { children: ReactNode }) {
+function HomeCanvasFindShellContent({
+  children,
+  showAuthActions,
+}: {
+  children: ReactNode
+  showAuthActions: boolean
+}) {
   const router = useRouter()
   const hasRightRail = useRightRailPresence()
   const hasSidebarSlot = useHomeCanvasSidebarPresence()
@@ -52,7 +66,7 @@ function HomeCanvasFindShellContent({ children }: { children: ReactNode }) {
           "--sidebar-width": "23rem",
         } as CSSProperties
       }
-      className="text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)] [--shell-bg:var(--background)] [--shell-border:var(--border)] [--shell-rail:var(--background)] [--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)] [--shell-content-pad:1rem] [--shell-rail-gap:1rem] [--shell-rail-item-gap:0.5rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-right-rail-width:20rem] sm:[--shell-content-pad:1.25rem]"
+      className="text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)] [--shell-bg:var(--background)] [--shell-border:var(--border)] [--shell-content-pad:1rem] [--shell-rail-gap:1rem] [--shell-rail-item-gap:0.5rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-rail:var(--background)] [--shell-right-rail-width:20rem] [--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)] sm:[--shell-content-pad:1.25rem]"
     >
       <div className="flex min-h-0 flex-1">
         {hasSidebarSlot ? (
@@ -70,6 +84,7 @@ function HomeCanvasFindShellContent({ children }: { children: ReactNode }) {
               onRightOpenChange={handleRightOpenChangeUser}
               railToggleClassName="text-muted-foreground size-10 rounded-md border border-[color:var(--shell-border)] hover:bg-foreground/5 hover:text-foreground md:size-8"
               rightOpen={rightOpen}
+              showAuthActions={showAuthActions}
               showShellSidebar={hasSidebarSlot}
               showRightRailToggle={hasRightRail}
             />

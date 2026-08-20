@@ -14,6 +14,7 @@ import type { Database } from "@/lib/supabase/types"
 
 export type FetchPublicResourceMapItemsOptions = {
   enabled?: boolean
+  ignoreLocalPreviewFile?: boolean
   includeDiscoveryCandidates?: boolean
   localEnginePreviewFile?: string | null
   localPreviewFile?: string | null
@@ -225,9 +226,11 @@ export async function fetchPublicResourceMapItems(
   const includeDiscoveryCandidates =
     options.includeDiscoveryCandidates ??
     isResourceMapLocalDiscoveryPreviewEnabled()
-  const localPreviewFile = normalizeLocalPreviewFile(
-    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
-  )
+  const localPreviewFile = options.ignoreLocalPreviewFile
+    ? null
+    : normalizeLocalPreviewFile(
+        options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+      )
   if (localPreviewFile) {
     try {
       return await fetchLocalResourceMapPreviewItems({

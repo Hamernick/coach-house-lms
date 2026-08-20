@@ -131,6 +131,7 @@ type HomeCanvasPreviewHeaderProps = {
   onRightOpenChange: (open: boolean) => void
   railToggleClassName: string
   rightOpen: boolean
+  showAuthActions?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
 }
@@ -141,6 +142,7 @@ export function HomeCanvasPreviewHeader({
   onRightOpenChange,
   railToggleClassName,
   rightOpen,
+  showAuthActions = true,
   showShellSidebar,
   showRightRailToggle,
 }: HomeCanvasPreviewHeaderProps) {
@@ -154,20 +156,24 @@ export function HomeCanvasPreviewHeader({
         textClassName="hidden sm:flex"
       />
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-        <HomeCanvasLoginButton
-          activeSection={activeSection}
-          changeSection={changeSection}
-        />
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          className="rounded-full"
-          aria-current={activeSection === "signup" ? "page" : undefined}
-          onClick={() => changeSection("signup")}
-        >
-          Sign up
-        </Button>
+        {showAuthActions ? (
+          <>
+            <HomeCanvasLoginButton
+              activeSection={activeSection}
+              changeSection={changeSection}
+            />
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="rounded-full"
+              aria-current={activeSection === "signup" ? "page" : undefined}
+              onClick={() => changeSection("signup")}
+            >
+              Sign up
+            </Button>
+          </>
+        ) : null}
         <PublicThemeToggle
           variant="outline"
           size="icon"

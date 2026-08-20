@@ -48,6 +48,8 @@ export type PublicMapPointProperties = {
   isSaved?: boolean
   markerRelevanceTier?: 0 | 1 | 2 | 3
   markerSortKey?: number
+  markerOverviewOffset?: [number, number]
+  markerOverviewOffsetIndex?: number
   sameLocationKey: string
   sameLocationCount: number
   sameLocationLabel: string | null

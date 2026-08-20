@@ -39,10 +39,10 @@ export function HomeCanvasProductNavigator({
     >
       <Button
         asChild
-        variant="ghost"
+        variant={null}
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
+          "h-9 rounded-full px-3 text-white",
           activeSection === "hero" && "bg-white text-black"
         )}
       >
@@ -68,10 +68,10 @@ export function HomeCanvasProductNavigator({
       </Button>
       <Button
         type="button"
-        variant="ghost"
+        variant={null}
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
+          "h-9 rounded-full px-3 text-white",
           activeSection === "platform" && "bg-white text-black"
         )}
         aria-pressed={activeSection === "platform"}
@@ -81,10 +81,10 @@ export function HomeCanvasProductNavigator({
       </Button>
       <Button
         type="button"
-        variant="ghost"
+        variant={null}
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
+          "h-9 rounded-full px-3 text-white",
           activeSection === "accelerator" && "bg-white text-black"
         )}
         aria-pressed={activeSection === "accelerator"}

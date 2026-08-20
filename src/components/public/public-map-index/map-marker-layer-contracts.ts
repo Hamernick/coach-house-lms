@@ -8,6 +8,7 @@ import {
 } from "@/lib/public-map/public-map-geojson"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 import type { PublicMapMarkerRelevanceTier } from "@/lib/public-map/public-map-marker-relevance"
+import { PUBLIC_MAP_MARKER_OVERVIEW_OFFSETS } from "@/lib/public-map/public-map-marker-overview-offsets"
 
 import {
   resolveRelevantUnselectedPointFilter,
@@ -83,6 +84,30 @@ const PUBLIC_MAP_MARKER_ICON_SIZE = [
   16,
   1.56,
 ] as mapboxgl.ExpressionSpecification
+const PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET = [
+  "step",
+  ["zoom"],
+  [
+    "match",
+    ["coalesce", ["get", "markerOverviewOffsetIndex"], 0],
+    ...PUBLIC_MAP_MARKER_OVERVIEW_OFFSETS.flatMap((offset, index) => [
+      index,
+      ["literal", offset],
+    ]),
+    ["literal", [0, 8.5]],
+  ],
+  4.5,
+  ["literal", [0, 8.5]],
+] as mapboxgl.ExpressionSpecification
+const PUBLIC_MAP_MARKER_OVERVIEW_TEXT_OPACITY = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  3.5,
+  0,
+  5.5,
+  1,
+] as mapboxgl.ExpressionSpecification
 export const PUBLIC_MAP_SELECTED_MARKER_ICON_SIZE = [
   "interpolate",
   ["linear"],
@@ -140,11 +165,13 @@ function ensureMarkerLayer({
   kind,
   map,
   maxRelevanceTier,
+  showLabels,
   theme,
 }: {
   kind: "normal" | "saved" | "selected"
   map: mapboxgl.Map
   maxRelevanceTier: PublicMapMarkerRelevanceTier
+  showLabels: boolean
   theme: PublicMapTheme
 }) {
   const selected = kind === "selected"
@@ -186,14 +213,16 @@ function ensureMarkerLayer({
       "icon-anchor": "bottom",
       "icon-offset": selected
         ? PUBLIC_MAP_SELECTED_MARKER_ICON_OFFSET
-        : PUBLIC_MAP_MARKER_ICON_OFFSET,
+        : saved
+          ? PUBLIC_MAP_MARKER_ICON_OFFSET
+          : PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET,
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
       "icon-padding": 2,
       "icon-pitch-alignment": "viewport",
       "icon-rotation-alignment": "viewport",
-      "text-field": PUBLIC_MAP_MARKER_LABEL_EXPRESSION,
-      "text-font": PUBLIC_MAP_LABEL_FONT,
+      "text-field": showLabels ? PUBLIC_MAP_MARKER_LABEL_EXPRESSION : "",
+      ...(showLabels ? { "text-font": PUBLIC_MAP_LABEL_FONT } : {}),
       "text-size": PUBLIC_MAP_MARKER_LABEL_SIZE,
       "text-anchor": "top",
       "text-offset": selected ? [0, 0.52] : [0, 0.45],
@@ -206,6 +235,8 @@ function ensureMarkerLayer({
     },
     paint: {
       "icon-opacity": 1,
+      "text-opacity":
+        selected || saved ? 1 : PUBLIC_MAP_MARKER_OVERVIEW_TEXT_OPACITY,
       "text-color": labelPaint.color,
       "text-halo-color": labelPaint.haloColor,
       "text-halo-width": labelPaint.haloWidth,
@@ -217,10 +248,12 @@ function ensureMarkerLayer({
 function refreshMarkerLayerContracts({
   map,
   maxRelevanceTier,
+  showLabels,
   theme,
 }: {
   map: mapboxgl.Map
   maxRelevanceTier: PublicMapMarkerRelevanceTier
+  showLabels: boolean
   theme: PublicMapTheme
 }) {
   const paint = resolveLabelPaint(theme)
@@ -284,7 +317,9 @@ function refreshMarkerLayerContracts({
       "icon-offset",
       selected
         ? PUBLIC_MAP_SELECTED_MARKER_ICON_OFFSET
-        : PUBLIC_MAP_MARKER_ICON_OFFSET
+        : kind === "saved"
+          ? PUBLIC_MAP_MARKER_ICON_OFFSET
+          : PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET
     )
     setMapLayoutPropertySafely(map, layerId, "icon-padding", 2)
     setMapLayoutPropertySafely(map, layerId, "icon-pitch-alignment", "viewport")
@@ -298,7 +333,7 @@ function refreshMarkerLayerContracts({
       map,
       layerId,
       "text-field",
-      PUBLIC_MAP_MARKER_LABEL_EXPRESSION
+      showLabels ? PUBLIC_MAP_MARKER_LABEL_EXPRESSION : ""
     )
     setMapLayoutPropertySafely(map, layerId, "text-anchor", "top")
     setMapLayoutPropertySafely(
@@ -318,6 +353,12 @@ function refreshMarkerLayerContracts({
       PUBLIC_MAP_MARKER_SORT_KEY_EXPRESSION
     )
     setMapPaintPropertySafely(map, layerId, "text-color", paint.color)
+    setMapPaintPropertySafely(
+      map,
+      layerId,
+      "text-opacity",
+      selected || kind === "saved" ? 1 : PUBLIC_MAP_MARKER_OVERVIEW_TEXT_OPACITY
+    )
     setMapPaintPropertySafely(map, layerId, "text-halo-color", paint.haloColor)
     setMapPaintPropertySafely(map, layerId, "text-halo-width", paint.haloWidth)
     setMapPaintPropertySafely(map, layerId, "text-halo-blur", paint.haloBlur)
@@ -327,20 +368,34 @@ function refreshMarkerLayerContracts({
 export function ensurePublicMapMarkerLayers({
   map,
   maxRelevanceTier = 0,
+  showLabels = true,
   theme = "light",
 }: {
   map: mapboxgl.Map
   maxRelevanceTier?: PublicMapMarkerRelevanceTier
+  showLabels?: boolean
   theme?: PublicMapTheme
 }) {
   if (!canAttachToMap(map) || !ensureMarkerSource(map)) return false
 
   removeMapLayerSafely(map, PUBLIC_MAP_MARKER_LABEL_LAYER_ID)
   removeMapLayerSafely(map, PUBLIC_MAP_SELECTED_MARKER_LABEL_LAYER_ID)
-  ensureMarkerLayer({ kind: "normal", map, maxRelevanceTier, theme })
-  ensureMarkerLayer({ kind: "saved", map, maxRelevanceTier, theme })
-  ensureMarkerLayer({ kind: "selected", map, maxRelevanceTier, theme })
-  refreshMarkerLayerContracts({ map, maxRelevanceTier, theme })
+  ensureMarkerLayer({
+    kind: "normal",
+    map,
+    maxRelevanceTier,
+    showLabels,
+    theme,
+  })
+  ensureMarkerLayer({ kind: "saved", map, maxRelevanceTier, showLabels, theme })
+  ensureMarkerLayer({
+    kind: "selected",
+    map,
+    maxRelevanceTier,
+    showLabels,
+    theme,
+  })
+  refreshMarkerLayerContracts({ map, maxRelevanceTier, showLabels, theme })
 
   return [
     PUBLIC_MAP_MARKER_LAYER_ID,

@@ -23,14 +23,19 @@ import { useIsMobile } from "@/hooks/use-mobile"
 export function HomeCanvasFindShell({
   children,
   showAuthActions = true,
+  sidebarFallback = null,
 }: {
   children: ReactNode
   showAuthActions?: boolean
+  sidebarFallback?: ReactNode
 }) {
   return (
     <RightRailProvider>
       <HomeCanvasSidebarSlotProvider>
-        <HomeCanvasFindShellContent showAuthActions={showAuthActions}>
+        <HomeCanvasFindShellContent
+          showAuthActions={showAuthActions}
+          sidebarFallback={sidebarFallback}
+        >
           {children}
         </HomeCanvasFindShellContent>
       </HomeCanvasSidebarSlotProvider>
@@ -41,14 +46,17 @@ export function HomeCanvasFindShell({
 function HomeCanvasFindShellContent({
   children,
   showAuthActions,
+  sidebarFallback,
 }: {
   children: ReactNode
   showAuthActions: boolean
+  sidebarFallback: ReactNode
 }) {
   const router = useRouter()
   const hasRightRail = useRightRailPresence()
   const hasSidebarSlot = useHomeCanvasSidebarPresence()
   const sidebarSlotContent = useHomeCanvasSidebarContent()
+  const showSidebarShell = hasSidebarSlot || sidebarFallback !== null
   const isMobile = useIsMobile()
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
     useAppShellRightRailState({ hasRightRail, isMobile })
@@ -63,16 +71,16 @@ function HomeCanvasFindShellContent({
       data-shell-root
       style={
         {
-          "--sidebar-width": "23rem",
+          "--sidebar-width": sidebarFallback === null ? "23rem" : "15rem",
         } as CSSProperties
       }
       className="text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)] [--shell-bg:var(--background)] [--shell-border:var(--border)] [--shell-content-pad:1rem] [--shell-rail-gap:1rem] [--shell-rail-item-gap:0.5rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-rail:var(--background)] [--shell-right-rail-width:20rem] [--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)] sm:[--shell-content-pad:1.25rem]"
     >
       <div className="flex min-h-0 flex-1">
-        {hasSidebarSlot ? (
+        {showSidebarShell ? (
           <HomeCanvasPreviewSidebar
             showFindSidebarShell
-            sidebarSlotContent={sidebarSlotContent}
+            sidebarSlotContent={sidebarSlotContent ?? sidebarFallback}
           />
         ) : null}
 
@@ -85,7 +93,7 @@ function HomeCanvasFindShellContent({
               railToggleClassName="text-muted-foreground size-10 rounded-md border border-[color:var(--shell-border)] hover:bg-foreground/5 hover:text-foreground md:size-8"
               rightOpen={rightOpen}
               showAuthActions={showAuthActions}
-              showShellSidebar={hasSidebarSlot}
+              showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
             />
 

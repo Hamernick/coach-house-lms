@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
 import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
-import { FindMapLoadingState } from "@/features/find-map"
+import { FindMapLoadingSidebar, FindMapLoadingState } from "@/features/find-map"
 import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
 export default async function FindLoadingVisualRegressionPage() {
@@ -11,7 +11,10 @@ export default async function FindLoadingVisualRegressionPage() {
   }
 
   return (
-    <HomeCanvasFindShell showAuthActions={false}>
+    <HomeCanvasFindShell
+      showAuthActions={false}
+      sidebarFallback={<FindMapLoadingSidebar />}
+    >
       <FindMapLoadingState />
     </HomeCanvasFindShell>
   )

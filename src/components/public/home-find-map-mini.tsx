@@ -261,20 +261,21 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
   }, [mapTheme, previewFeatures])
 
   return (
-    <div
+    <figure
       data-home-map-preview=""
       data-home-map-marker-count={previewFeatures.length}
       data-home-map-status={status}
       data-home-map-controls-position="bottom-right"
-      role="img"
-      aria-label="Public organizations and community resources on a rotating globe"
-      className="absolute inset-0 overflow-hidden bg-[#05070d] [&_.mapboxgl-canvas]:pointer-events-none [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
+      className="absolute inset-0 m-0 overflow-hidden bg-[#05070d] [&_.mapboxgl-canvas]:pointer-events-none [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
     >
+      <figcaption className="sr-only">
+        Public organizations and community resources on a rotating globe
+      </figcaption>
       <div
         ref={mapContainerRef}
         data-home-map-preview-map=""
         className={`absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none ${status === "ready" ? "opacity-100" : "opacity-0"}`}
       />
-    </div>
+    </figure>
   )
 }

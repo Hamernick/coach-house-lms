@@ -137,6 +137,12 @@ describe("public home canvas", () => {
     expect(previewSource).toContain(
       'data-home-map-controls-position="bottom-right"'
     )
+    expect(previewSource).toContain("<figure")
+    expect(previewSource).toContain('<figcaption className="sr-only">')
+    expect(previewSource).not.toContain('role="img"')
+    expect(previewSource).not.toContain(
+      'aria-label="Public organizations and community resources on a rotating globe"'
+    )
     expect(previewSource).toContain("className={`absolute inset-0")
     expect(previewSource).not.toContain("mapboxgl-map absolute inset-0")
     expect(previewSource).toContain("[&_.mapboxgl-ctrl-attrib]:!text-[10px]")

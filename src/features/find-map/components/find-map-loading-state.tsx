@@ -5,6 +5,30 @@ import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "@/components/public/public-m
 import { cn } from "@/lib/utils"
 
 const LOADING_CATEGORY_LABELS = ["All", "Basic needs", "Health", "Learning"]
+const LOADING_SIDEBAR_ROW_WIDTHS = ["w-28", "w-36", "w-24", "w-32"]
+
+export function FindMapLoadingSidebar() {
+  return (
+    <div
+      data-find-map-loading-sidebar=""
+      className="flex min-h-0 flex-1 flex-col gap-4 px-3 py-4"
+      aria-hidden
+    >
+      <div className="border-border/60 bg-muted/30 h-9 rounded-lg border" />
+      <div className="flex flex-col gap-2">
+        {LOADING_SIDEBAR_ROW_WIDTHS.map((width) => (
+          <div
+            key={width}
+            className="flex h-9 items-center gap-3 rounded-lg px-2"
+          >
+            <div className="bg-muted-foreground/15 size-4 rounded" />
+            <div className={cn("bg-muted-foreground/15 h-3 rounded", width)} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function FindLoadingMapArtwork() {
   return (

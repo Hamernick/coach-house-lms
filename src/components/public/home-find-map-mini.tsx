@@ -3,81 +3,74 @@
 import "mapbox-gl/dist/mapbox-gl.css"
 
 import { useEffect, useRef, useState } from "react"
+import { useTheme } from "next-themes"
 import type mapboxgl from "mapbox-gl"
 
 import {
-  createHomeFindMapMarkerImage,
-  HOME_MAP_MARKER_IMAGE_PIXEL_RATIO,
-} from "@/components/public/home-find-map-marker-canvas"
-import { applyPublicMapSpaceFog } from "@/components/public/public-map-index/constants"
-import type { PublicMapGroupKey } from "@/lib/public-map/groups"
-
-const HOME_MAP_STYLE = "mapbox://styles/mapbox/satellite-v9"
-const HOME_MAP_CENTER: [number, number] = [-96.5, 38.4]
-const HOME_MAP_ZOOM = 3.15
-const HOME_MAP_SOURCE_ID = "home-map-preview-points"
-const HOME_MAP_LAYER_ID = "home-map-preview-markers"
-
-const HOME_MAP_MARKERS = [
-  {
-    key: "home-map-community",
-    label: "Community arts",
-    primaryGroup: "community",
-    selected: true,
-  },
-  {
-    key: "home-map-education",
-    label: "Education",
-    primaryGroup: "education",
-    selected: false,
-  },
-  {
-    key: "home-map-health",
-    label: "Health access",
-    primaryGroup: "health",
-    selected: false,
-  },
-  {
-    key: "home-map-funding",
-    label: "Funding",
-    primaryGroup: "funding",
-    selected: false,
-  },
-] satisfies ReadonlyArray<{
-  key: string
-  label: string
-  primaryGroup: PublicMapGroupKey
-  selected: boolean
-}>
-
-const HOME_MAP_POINTS = [
-  [-122.3321, 47.6062, "home-map-community"],
-  [-122.6765, 45.5231, "home-map-health"],
-  [-122.4194, 37.7749, "home-map-education"],
-  [-118.2437, 34.0522, "home-map-community"],
-  [-104.9903, 39.7392, "home-map-funding"],
-  [-96.797, 32.7767, "home-map-education"],
-  [-87.6298, 41.8781, "home-map-health"],
-  [-83.0458, 42.3314, "home-map-community"],
-  [-84.388, 33.749, "home-map-funding"],
-  [-80.1918, 25.7617, "home-map-health"],
-  [-74.006, 40.7128, "home-map-community"],
-  [-71.0589, 42.3601, "home-map-education"],
-] as const
+  applyPublicMapBasemapConfig,
+  applyPublicMapSpaceFog,
+  PUBLIC_MAP_STANDARD_STYLE,
+  resolvePublicMapBasemapConfig,
+} from "@/components/public/public-map-index/constants"
+import {
+  FALLBACK_CENTER,
+  FALLBACK_ZOOM,
+} from "@/components/public/public-map-index/map-view-helpers"
+import { startSpinningMapGlobe } from "@/components/public/public-map-index/spinning-globe"
+import { syncPublicMapMarkerArtwork } from "@/components/public/public-map-index/sync-public-map-marker-artwork"
+import type { PublicMapPointFeature } from "@/lib/public-map/public-map-geojson"
+import { registerPublicMapPinStyleImageMissingHandler } from "@/lib/public-map/public-map-pin-marker-images"
+import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 
 type PreviewStatus = "unavailable" | "loading" | "ready"
+
+const HOME_MAP_DEVELOPMENT_FALLBACK_STYLE = {
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/positron",
+} as const
+function isMapboxAuthorizationError(event: mapboxgl.ErrorEvent) {
+  const error = event.error as Error & { status?: number; url?: string }
+  return (
+    (error.status === 401 || error.status === 403) &&
+    (error.url?.includes("api.mapbox.com") ?? true)
+  )
+}
 
 export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const [previewFeatures, setPreviewFeatures] = useState<
+    PublicMapPointFeature[]
+  >([])
+  const previewFeaturesRef = useRef(previewFeatures)
+  const mapTheme = normalizePublicMapTheme(useTheme().resolvedTheme)
   const [status, setStatus] = useState<PreviewStatus>(
     mapboxToken?.startsWith("pk.") ? "loading" : "unavailable"
   )
+  previewFeaturesRef.current = previewFeatures
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void fetch("/api/public/home-map-preview", {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { features?: PublicMapPointFeature[] } | null) => {
+        if (payload?.features && payload.features.length > 0) {
+          setPreviewFeatures(payload.features)
+        }
+      })
+      .catch(() => {})
+
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     const container = mapContainerRef.current
     const token = mapboxToken?.trim() ?? ""
     if (!container || !token.startsWith("pk.")) {
+      setStatus("unavailable")
       return
     }
 
@@ -85,7 +78,24 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
     let startTimer: number | null = null
     let loadTimer: number | null = null
     let resizeObserver: ResizeObserver | null = null
+    let rotation: ReturnType<typeof startSpinningMapGlobe> | null = null
+    let stopStyleImageMissing = () => {}
     let mapReady = false
+    let developmentFallbackActive =
+      process.env.NODE_ENV !== "production" &&
+      ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    let previewVisible = false
+
+    setStatus("loading")
+
+    const visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        previewVisible = entries.some((entry) => entry.isIntersecting)
+        rotation?.refresh()
+      },
+      { threshold: 0.01 }
+    )
+    visibilityObserver.observe(container)
 
     const initialize = async () => {
       try {
@@ -98,9 +108,18 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
 
         const map = new mapboxgl.Map({
           container: mapContainerRef.current,
-          style: HOME_MAP_STYLE,
-          center: HOME_MAP_CENTER,
-          zoom: HOME_MAP_ZOOM,
+          style: developmentFallbackActive
+            ? HOME_MAP_DEVELOPMENT_FALLBACK_STYLE[mapTheme]
+            : PUBLIC_MAP_STANDARD_STYLE,
+          ...(developmentFallbackActive
+            ? {}
+            : {
+                config: {
+                  basemap: resolvePublicMapBasemapConfig(mapTheme),
+                },
+              }),
+          center: FALLBACK_CENTER,
+          zoom: FALLBACK_ZOOM,
           projection: "globe",
           interactive: false,
           attributionControl: false,
@@ -114,128 +133,149 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
           "bottom-right"
         )
 
-        const markReady = () => {
+        const syncGlobe = () => {
           if (cancelled || mapRef.current !== map) return
+
+          map.setProjection("globe")
+          if (!developmentFallbackActive) {
+            applyPublicMapBasemapConfig(map, mapTheme)
+          }
+          applyPublicMapSpaceFog(map)
+          const { profileImageLoads, updated } = syncPublicMapMarkerArtwork({
+            features: previewFeaturesRef.current,
+            map,
+            maxRelevanceTier: 3,
+            showLabels: false,
+            theme: mapTheme,
+          })
+          if (!updated) return
+          void Promise.all(profileImageLoads)
+
+          requestAnimationFrame(() => {
+            if (mapRef.current === map) map.resize()
+          })
+        }
+
+        const markGlobeReady = () => {
+          if (cancelled || mapRef.current !== map || mapReady) return
+          if (!map.areTilesLoaded()) return
+
           mapReady = true
           if (loadTimer !== null) {
             window.clearTimeout(loadTimer)
             loadTimer = null
           }
-
-          applyPublicMapSpaceFog(map)
-          for (const definition of HOME_MAP_MARKERS) {
-            const image = createHomeFindMapMarkerImage({
-              label: definition.label,
-              primaryGroup: definition.primaryGroup,
-              selected: definition.selected,
-            })
-            if (!image || map.hasImage(definition.key)) continue
-            map.addImage(definition.key, image, {
-              pixelRatio: HOME_MAP_MARKER_IMAGE_PIXEL_RATIO,
-            })
-          }
-
-          if (!map.getSource(HOME_MAP_SOURCE_ID)) {
-            map.addSource(HOME_MAP_SOURCE_ID, {
-              type: "geojson",
-              data: {
-                type: "FeatureCollection",
-                features: HOME_MAP_POINTS.map(
-                  ([longitude, latitude, markerImageKey]) => ({
-                    type: "Feature",
-                    properties: { markerImageKey },
-                    geometry: {
-                      type: "Point",
-                      coordinates: [longitude, latitude],
-                    },
-                  })
-                ),
-              },
-            })
-          }
-
-          if (!map.getLayer(HOME_MAP_LAYER_ID)) {
-            map.addLayer({
-              id: HOME_MAP_LAYER_ID,
-              type: "symbol",
-              source: HOME_MAP_SOURCE_ID,
-              layout: {
-                "icon-image": ["get", "markerImageKey"],
-                "icon-size": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  2,
-                  0.9,
-                  4.5,
-                  1.3,
-                ],
-                "icon-allow-overlap": true,
-                "icon-ignore-placement": true,
-              },
-            })
-          }
-
-          map.resize()
+          rotation = startSpinningMapGlobe({
+            map,
+            shouldRotate: () => previewVisible,
+          })
           setStatus("ready")
         }
 
-        map.once("load", markReady)
-        map.on("error", () => {
-          if (!cancelled && mapRef.current === map && !mapReady) {
+        const activateDevelopmentFallback = () => {
+          if (
+            process.env.NODE_ENV === "production" ||
+            developmentFallbackActive
+          ) {
+            return false
+          }
+
+          developmentFallbackActive = true
+          mapReady = false
+          rotation?.stop()
+          rotation = null
+          setStatus("loading")
+          map.setStyle(HOME_MAP_DEVELOPMENT_FALLBACK_STYLE[mapTheme])
+          if (loadTimer !== null) window.clearTimeout(loadTimer)
+          loadTimer = window.setTimeout(() => {
+            if (!cancelled && mapRef.current === map && !mapReady) {
+              setStatus("unavailable")
+            }
+          }, 20_000)
+          return true
+        }
+
+        const handleMapError = (event: mapboxgl.ErrorEvent) => {
+          if (
+            isMapboxAuthorizationError(event) &&
+            activateDevelopmentFallback()
+          ) {
+            return
+          }
+
+          if (!mapReady) {
             setStatus("unavailable")
           }
+        }
+
+        stopStyleImageMissing = registerPublicMapPinStyleImageMissingHandler({
+          map,
+          theme: mapTheme,
         })
+        map.on("style.load", syncGlobe)
+        map.on("load", syncGlobe)
+        map.on("idle", markGlobeReady)
+        map.on("error", handleMapError)
 
         resizeObserver = new ResizeObserver(() => map.resize())
         resizeObserver.observe(mapContainerRef.current)
-        loadTimer = window.setTimeout(() => {
-          if (!cancelled && mapRef.current === map && !mapReady) {
-            setStatus("unavailable")
-          }
-        }, 12_000)
+        loadTimer = window.setTimeout(
+          () => {
+            if (!cancelled && mapRef.current === map && !mapReady) {
+              setStatus("unavailable")
+            }
+          },
+          developmentFallbackActive ? 20_000 : 12_000
+        )
       } catch {
         if (!cancelled) setStatus("unavailable")
       }
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return
-        observer.disconnect()
-        startTimer = window.setTimeout(() => void initialize(), 120)
-      },
-      { rootMargin: "160px" }
-    )
-    observer.observe(container)
+    startTimer = window.setTimeout(() => void initialize(), 60)
 
     return () => {
       cancelled = true
-      observer.disconnect()
+      visibilityObserver.disconnect()
       if (startTimer !== null) window.clearTimeout(startTimer)
       if (loadTimer !== null) window.clearTimeout(loadTimer)
       resizeObserver?.disconnect()
+      rotation?.stop()
+      stopStyleImageMissing()
       mapRef.current?.remove()
       mapRef.current = null
     }
-  }, [mapboxToken])
+  }, [mapTheme, mapboxToken])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const { profileImageLoads } = syncPublicMapMarkerArtwork({
+      features: previewFeatures,
+      map,
+      maxRelevanceTier: 3,
+      showLabels: false,
+      theme: mapTheme,
+    })
+    void Promise.all(profileImageLoads)
+  }, [mapTheme, previewFeatures])
 
   return (
-    <div
+    <figure
       data-home-map-preview=""
+      data-home-map-marker-count={previewFeatures.length}
       data-home-map-status={status}
       data-home-map-controls-position="bottom-right"
-      className="absolute inset-0 overflow-hidden bg-[#07111f] [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
+      className="absolute inset-0 m-0 overflow-hidden bg-[#05070d] [&_.mapboxgl-canvas]:pointer-events-none [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
     >
-      <span className="sr-only">
-        Coach House public map preview showing organizations and community
-        resources across the United States
-      </span>
+      <figcaption className="sr-only">
+        Public organizations and community resources on a rotating globe
+      </figcaption>
       <div
         ref={mapContainerRef}
         data-home-map-preview-map=""
         className={`absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none ${status === "ready" ? "opacity-100" : "opacity-0"}`}
       />
-    </div>
+    </figure>
   )
 }

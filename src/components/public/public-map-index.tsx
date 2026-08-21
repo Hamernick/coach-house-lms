@@ -73,6 +73,7 @@ import {
 } from "./public-map-index/use-resource-map-items"
 import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
 import { usePublicMapUserLocation } from "./public-map-index/use-public-map-user-location"
+import { resolvePublicMapDirectoryCount } from "./public-map-index/directory-status-pill"
 
 function useFocusPublicMapCameraTarget(
   mapRef: RefObject<mapboxgl.Map | null>,
@@ -399,7 +400,7 @@ export function PublicMapIndex({
     <PublicMapSurface
       containerRef={containerRef}
       sidebarMode={sidebarMode}
-      directoryCount={organizations.length + totalResourceCount}
+      directoryCount={resolvePublicMapDirectoryCount(organizations.length, totalResourceCount)}
       filteredItems={directoryListItems}
       filteredOrganizations={filteredOrganizations}
       selectedItemId={selectedListItemId}

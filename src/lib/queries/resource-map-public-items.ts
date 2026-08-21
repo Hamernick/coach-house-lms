@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs"
-import { readFile } from "node:fs/promises"
+import { readFile, stat } from "node:fs/promises"
 import { isAbsolute, resolve } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
@@ -14,6 +14,7 @@ import type { Database } from "@/lib/supabase/types"
 
 export type FetchPublicResourceMapItemsOptions = {
   enabled?: boolean
+  ignoreLocalPreviewFile?: boolean
   includeDiscoveryCandidates?: boolean
   localEnginePreviewFile?: string | null
   localPreviewFile?: string | null
@@ -30,6 +31,16 @@ export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000
 export const RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500
 const RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+type LocalResourceMapPreviewCacheEntry = {
+  signature: string
+  itemsPromise: Promise<ExternalResourceMapItem[]>
+}
+
+const localResourceMapPreviewCache = new Map<
+  string,
+  LocalResourceMapPreviewCacheEntry
+>()
 
 export function isResourceMapPublicDbEnabled(
   value = env.RESOURCE_MAP_PUBLIC_DB_ENABLED
@@ -103,6 +114,41 @@ function parseLocalPreviewRows(raw: string): unknown[] {
     })
 }
 
+export function clearResourceMapLocalPreviewCache() {
+  localResourceMapPreviewCache.clear()
+}
+
+async function loadLocalResourceMapPreviewItems(filePath: string) {
+  const fileMetadata = await stat(filePath)
+  const signature = `${fileMetadata.mtimeMs}:${fileMetadata.size}`
+  const cached = localResourceMapPreviewCache.get(filePath)
+  if (cached?.signature === signature) return cached.itemsPromise
+
+  const itemsPromise = readFile(filePath, "utf8").then((raw) =>
+    parseLocalPreviewRows(raw)
+      .map((row, index) =>
+        row && typeof row === "object"
+          ? buildExternalResourceMapItemFromLocalPreviewRecord(
+              row as Record<string, unknown>,
+              index
+            )
+          : null
+      )
+      .filter((item): item is ExternalResourceMapItem => item !== null)
+  )
+  const entry = { signature, itemsPromise }
+  localResourceMapPreviewCache.set(filePath, entry)
+
+  try {
+    return await itemsPromise
+  } catch (error) {
+    if (localResourceMapPreviewCache.get(filePath) === entry) {
+      localResourceMapPreviewCache.delete(filePath)
+    }
+    throw error
+  }
+}
+
 async function fetchLocalResourceMapPreviewItems({
   filePath,
   includeDiscoveryCandidates = false,
@@ -112,17 +158,7 @@ async function fetchLocalResourceMapPreviewItems({
   includeDiscoveryCandidates?: boolean
   limit?: number
 }) {
-  const raw = await readFile(filePath, "utf8")
-  return parseLocalPreviewRows(raw)
-    .map((row, index) =>
-      row && typeof row === "object"
-        ? buildExternalResourceMapItemFromLocalPreviewRecord(
-            row as Record<string, unknown>,
-            index
-          )
-        : null
-    )
-    .filter((item): item is ExternalResourceMapItem => item !== null)
+  return (await loadLocalResourceMapPreviewItems(filePath))
     .filter(
       (item) =>
         includeDiscoveryCandidates || shouldShowPublicMapResourceItem(item)
@@ -225,9 +261,11 @@ export async function fetchPublicResourceMapItems(
   const includeDiscoveryCandidates =
     options.includeDiscoveryCandidates ??
     isResourceMapLocalDiscoveryPreviewEnabled()
-  const localPreviewFile = normalizeLocalPreviewFile(
-    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
-  )
+  const localPreviewFile = options.ignoreLocalPreviewFile
+    ? null
+    : normalizeLocalPreviewFile(
+        options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+      )
   if (localPreviewFile) {
     try {
       return await fetchLocalResourceMapPreviewItems({

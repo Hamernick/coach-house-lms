@@ -444,6 +444,11 @@ describe("public map sidebar layout", () => {
       "data-public-map-sidebar-section",
       "rail-status-header"
     )
+    const resultsStatusClassName = extractClassNameByAttribute(
+      markup,
+      "data-public-map-search-results-status",
+      "true"
+    )
     const categoryFilterClassName = extractClassNameByAttribute(
       markup,
       "aria-label",
@@ -454,6 +459,8 @@ describe("public map sidebar layout", () => {
     expect(shellClassName).toContain("px-3")
     expect(shellClassName).toContain("overflow-hidden")
     expect(statusHeaderClassName).toContain("shrink-0")
+    expect(resultsStatusClassName.split(" ")).toContain("px-1.5")
+    expect(resultsStatusClassName.split(" ")).not.toContain("px-1")
     expect(categoryFilterClassName).toContain("overflow-x-auto")
     expect(categoryFilterClassName).not.toContain("scroll-fade-effect-x")
     expect(categoryFilterClassName).toContain("[scrollbar-width:none]")
@@ -646,27 +653,23 @@ describe("public map sidebar layout", () => {
       "grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))]"
     )
     expect(cardGridClassName.split(" ")).toContain("items-stretch")
-    expect(markup).toContain("grid-cols-2")
-    expect(markup).not.toContain("grid-cols-3")
+    expect(markup).not.toContain("grid-cols-2")
     expect(markup).toContain("w-full max-w-full min-w-0")
     expect(markup).toContain("overflow-hidden")
     expect(markup).toContain("cursor-pointer")
     expect(markup).not.toContain(organization.tagline)
     expect(markup).not.toContain(organization.description ?? "")
     expect(markup).toContain("gap-x-1.5 gap-y-0")
-    expect(markup).toContain("•")
+    expect(markup).not.toContain("•")
     expect(markup).toContain(">View<")
     expect(markup).toContain("flex min-w-0 items-center")
     expect(markup).toContain(
       "ml-auto h-11 min-w-11 shrink-0 justify-end self-center"
     )
-    expect(markup).toContain("text-base leading-snug font-semibold text-pretty")
+    expect(markup).toContain("truncate text-base leading-snug font-semibold")
     expect(markup).toContain("text-sm leading-relaxed")
-    expect(markup).toContain(">Program<")
-    expect(markup).toContain(">Weekly<")
-    expect(markup).toContain("Weekly mutual-aid meals")
-    expect(markup).toContain("https://example.com/kitchen")
-    expect(markup).not.toContain("Featured Programs")
+    expect(markup).toContain(">Community<")
+    expect(markup).not.toContain("Weekly mutual-aid meals")
     expect(markup).toContain("border-transparent bg-transparent shadow-none")
     expect(markup).toContain(
       "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
@@ -686,11 +689,6 @@ describe("public map sidebar layout", () => {
     expect(
       markup.indexOf('data-react-grab-surface-slot="view-button"')
     ).toBeGreaterThan(markup.indexOf('data-react-grab-surface-slot="location"'))
-    expect(
-      markup.indexOf('data-react-grab-surface-slot="view-button"')
-    ).toBeLessThan(
-      markup.indexOf('data-react-grab-surface-slot="featured-program"')
-    )
     expect(markup).not.toContain(
       "rounded-full border border-transparent bg-transparent"
     )
@@ -717,9 +715,9 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain("Seed Food Access")
-    expect(markup).toContain("Food pantry and meal support")
-    expect(markup).toContain(">Food</p>")
-    expect(markup).toContain(">Chicago, IL</span>")
+    expect(markup).not.toContain("Food pantry and meal support")
+    expect(markup).toContain(">Food</span>")
+    expect(markup).not.toContain("Chicago, IL")
     expect(markup).not.toContain(">Water<")
     const resourceCardIndex = markup.indexOf(
       'aria-label="Open details for Seed Food Access"'
@@ -738,24 +736,20 @@ describe("public map sidebar layout", () => {
       'data-react-grab-surface-slot="title"',
       resourceCardIndex
     )
-    const primaryCategoryIndex = markup.indexOf(
-      ">Food</p>",
-      resourceTitleSlotIndex
-    )
     const resourceNameIndex = markup.indexOf(
       "Seed Food Access",
       resourceTitleSlotIndex
     )
-    const resourceCityIndex = markup.indexOf(
-      "Chicago, IL",
+    const primaryCategoryIndex = markup.indexOf(
+      ">Food</span>",
       resourceTitleSlotIndex
     )
-    expect(primaryCategoryIndex).toBeGreaterThan(resourceTitleSlotIndex)
-    expect(resourceNameIndex).toBeGreaterThan(primaryCategoryIndex)
-    expect(resourceCityIndex).toBeGreaterThan(resourceNameIndex)
-    expect(organizationMetadataClassName.split(" ")).toContain("mt-1.5")
-    expect(resourceMetadataClassName.split(" ")).toContain("mt-1")
-    expect(resourceMetadataClassName.split(" ")).not.toContain("mt-1.5")
+    expect(resourceNameIndex).toBeGreaterThan(resourceTitleSlotIndex)
+    expect(primaryCategoryIndex).toBeGreaterThan(resourceNameIndex)
+    expect(markup).not.toContain("Chicago, IL")
+    expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
+    expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
+    expect(markup.match(/h-20/g)).toHaveLength(2)
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -1051,7 +1045,6 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(markup).toContain(">Chicago, IL<")
     expect(markup).toContain(">Web resource<")
     expect(markup).not.toContain(">Community<")
     expect(markup).not.toContain("rounded-md border-border/70 bg-background/85")
@@ -1076,7 +1069,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain('data-slot="avatar"')
   })
 
-  it("shortens all-caps location labels to a readable city-and-state-code format on list cards", () => {
+  it("shows only the primary category beneath organization names", () => {
     const organization = buildOrganization({
       city: "CHICAGO",
       state: "IL",
@@ -1093,7 +1086,7 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(markup).toContain(">Chicago, IL<")
+    expect(markup).toContain(">Community<")
     expect(markup).not.toContain("CHICAGO")
     expect(markup).not.toContain("UNITED STATES")
   })
@@ -1144,6 +1137,12 @@ describe("public map sidebar layout", () => {
     )
     const memberRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapMemberRail, {
+        directoryHeaderStart: React.createElement("span", {
+          "data-public-map-test-header-start": "",
+        }),
+        directoryHeaderEnd: React.createElement("span", {
+          "data-public-map-test-header-end": "",
+        }),
         directoryRail: React.createElement(
           "div",
           { "data-public-map-right-rail-section": "directory-search" },
@@ -1207,7 +1206,7 @@ describe("public map sidebar layout", () => {
     expect(directoryMarkup).not.toContain("users online")
     expect(directoryMarkup).toContain('data-public-map-list-pagination="true"')
     expect(directoryMarkup).toContain("Showing 1 of 1 resources")
-    expect(directoryMarkup).toContain("grid-cols-2")
+    expect(directoryMarkup).not.toContain("grid-cols-2")
     expect(directoryMarkup).not.toContain(
       'data-public-map-sidebar-section="resource-guides"'
     )
@@ -1257,6 +1256,21 @@ describe("public map sidebar layout", () => {
     )
     expect(memberRailMarkup).toContain("data-[state=active]:bg-transparent")
     expect(memberRailMarkup).toContain("data-[state=active]:shadow-none")
+    expect(memberRailMarkup).toContain(
+      "group-data-[orientation=horizontal]/tabs:after:bottom-0"
+    )
+    expect(memberRailMarkup).not.toContain(
+      "group-data-[orientation=horizontal]/tabs:after:bottom-[-5px]"
+    )
+    expect(memberRailMarkup).toContain('data-public-map-tab-header=""')
+    expect(
+      memberRailMarkup.indexOf('data-public-map-test-header-start=""')
+    ).toBeLessThan(memberRailMarkup.indexOf('data-public-map-tab-list=""'))
+    expect(
+      memberRailMarkup.indexOf('data-public-map-tab-list=""')
+    ).toBeLessThan(
+      memberRailMarkup.indexOf('data-public-map-test-header-end=""')
+    )
     expect(memberRailMarkup).not.toContain("data-[state=active]:bg-muted/55")
     expect(memberRailMarkup).not.toContain("h-6 min-h-0 min-w-0 rounded-full")
 
@@ -1460,7 +1474,9 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain(">My Map<")
-    expect(markup).toContain("Food pantry and meal support")
+    expect(markup).toContain("Seed Food Access")
+    expect(markup).toContain(">Food<")
+    expect(markup).not.toContain("Food pantry and meal support")
     expect(markup).toContain('aria-label="Remove Seed Food Access from My Map"')
     expect(markup).toContain('aria-pressed="true"')
   })
@@ -1776,6 +1792,15 @@ describe("public map sidebar layout", () => {
     expect(organizationDetailMarkup).toContain(
       'data-public-map-profile="organization"'
     )
+    expect(organizationDetailMarkup).not.toContain(">Organization</p>")
+    expect(organizationDetailMarkup).toContain('aria-label="Back to search"')
+    expect(
+      organizationDetailMarkup.indexOf('aria-label="Back to search"')
+    ).toBeLessThan(
+      organizationDetailMarkup.indexOf(
+        'data-public-map-sidebar-section="drawer-detail-scroll"'
+      )
+    )
     expect(organizationDetailMarkup).toContain(
       "mx-auto w-full max-w-3xl space-y-4"
     )
@@ -1840,7 +1865,7 @@ describe("public map sidebar layout", () => {
 
     expect(loadingMarkup).toContain('data-public-map-search-loading="true"')
     expect(loadingMarkup).toContain("Loading resources")
-    expect(loadingMarkup.match(/data-slot="skeleton"/g)).toHaveLength(16)
+    expect(loadingMarkup.match(/data-slot="skeleton"/g)).toHaveLength(12)
     expect(emptyMarkup).toContain('data-public-map-search-empty="true"')
     expect(emptyMarkup).toContain("No matches for")
     expect(emptyMarkup).toContain("Clear search")

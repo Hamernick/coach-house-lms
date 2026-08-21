@@ -16,6 +16,7 @@ import {
   PublicMapAllCategoryIcon,
   PublicMapResourceCategoryIcon,
 } from "./resource-category-icon"
+import { PUBLIC_MAP_FILTER_PILL_CLASSNAME } from "./sidebar-theme"
 
 export type PublicMapGroupFilterKey =
   | PublicMapResourceTopLevelCategoryKey
@@ -130,7 +131,8 @@ export function PublicMapCategoryFilter({
             aria-pressed={selected}
             disabled={disabled}
             className={cn(
-              "group border-input bg-input/30 h-7 shrink-0 gap-1.5 rounded-full border px-2.5 text-[11px] leading-none backdrop-blur",
+              PUBLIC_MAP_FILTER_PILL_CLASSNAME,
+              "group shrink-0 gap-1.5",
               "text-muted-foreground transition-[background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
               "focus-visible:!bg-input/50 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
               "disabled:pointer-events-none disabled:opacity-35 motion-reduce:transition-none",

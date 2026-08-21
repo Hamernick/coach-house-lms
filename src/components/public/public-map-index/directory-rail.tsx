@@ -16,6 +16,7 @@ import {
   resolvePublicMapDirectoryStatusCount,
 } from "./directory-status-pill"
 import { PublicMapOrganizationDetail } from "./organization-detail"
+import { OrganizationDetailPanelChrome } from "./organization-detail-shell-sections"
 import { PublicMapOrganizationList } from "./organization-list"
 import { PublicMapResourceDetail } from "./resource-detail"
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
@@ -141,6 +142,15 @@ export function PublicMapDirectoryRail({
         data-public-map-right-rail-section="directory-detail"
         className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       >
+        <OrganizationDetailPanelChrome
+          canManageResourceMap={canManageResourceMap}
+          className="shrink-0 px-4 pr-6"
+          organizationCurationAction={organizationCurationAction}
+          organization={selectedOrganization}
+          favorites={favorites}
+          onBack={onBackToSearch}
+          onToggleFavorite={onToggleFavorite}
+        />
         <ScrollArea
           data-public-map-right-rail-section="directory-detail-scroll"
           className="h-full min-h-0 flex-1 overflow-hidden pr-2"
@@ -148,13 +158,8 @@ export function PublicMapDirectoryRail({
           contentClassName="pb-2"
         >
           <PublicMapOrganizationDetail
-            canManageResourceMap={canManageResourceMap}
-            organizationCurationAction={organizationCurationAction}
             organization={selectedOrganization}
-            favorites={favorites}
             compact
-            onBack={onBackToSearch}
-            onToggleFavorite={onToggleFavorite}
           />
         </ScrollArea>
       </div>

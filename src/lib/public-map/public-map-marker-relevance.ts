@@ -3,6 +3,7 @@ import {
   parsePublicMapOrganizationIds,
   type PublicMapPointFeature,
 } from "./public-map-geojson"
+import { normalizePublicMapMarkerOverviewOffsetIndex } from "./public-map-marker-overview-offsets"
 export type PublicMapMarkerRelevanceTier = 0 | 1 | 2 | 3
 type PublicMapMarkerUserCoordinates = {
   latitude: number
@@ -10,7 +11,7 @@ type PublicMapMarkerUserCoordinates = {
 }
 
 const PUBLIC_MAP_MARKER_RELEVANCE_LEVELS = [
-  { limit: 1, tier: 0, tileZoom: 4 },
+  { limit: 3, tier: 0, tileZoom: 4 },
   { limit: 1, tier: 1, tileZoom: 7 },
   { limit: 2, tier: 2, tileZoom: 10 },
 ] as const
@@ -170,6 +171,9 @@ export function buildPublicMapMarkerRelevance({
       properties: {
         ...feature.properties,
         isSaved: isSavedFeature(feature, favoriteOrganizationIds),
+        markerOverviewOffsetIndex: normalizePublicMapMarkerOverviewOffsetIndex(
+          hashMarkerIdentity(feature.properties.itemId)
+        ),
         markerRelevanceTier:
           relevanceTierByItemId.get(feature.properties.itemId) ?? 3,
         markerSortKey: stableOrder,

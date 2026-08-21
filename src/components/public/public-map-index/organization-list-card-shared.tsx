@@ -1,17 +1,17 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
-import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
 import { buildPublicMapOrganizationListCardSurfaceProps } from "./react-grab"
 
 export const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   contentVisibility: "auto",
-  containIntrinsicSize: "308px",
+  containIntrinsicSize: "80px",
 } as const
+
+export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "h-20"
 
 export function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -20,54 +20,14 @@ export function buildInitials(name: string) {
   return `${parts[0]!.slice(0, 1)}${parts[1]!.slice(0, 1)}`.toUpperCase()
 }
 
-export function buildProgramPreviewCards(org: PublicMapOrganization) {
-  return org.programs
-    .filter((program) =>
-      Boolean(program.imageUrl && program.imageUrl.trim().length > 0)
-    )
-    .slice(0, 3)
-}
-
 export function buildLocationMetadataItems({
-  location,
   primaryGroup,
   isOnlineOnly,
-  constrainedLayout,
 }: {
-  location: string
   primaryGroup: PublicMapOrganization["primaryGroup"]
   isOnlineOnly: boolean
-  constrainedLayout: boolean
 }) {
-  const items = [
-    location,
-    isOnlineOnly ? "Web resource" : null,
-    PUBLIC_MAP_GROUP_LABELS[primaryGroup],
-  ].filter((item): item is string => Boolean(item && item.trim().length > 0))
-
-  const maxItems = constrainedLayout ? 2 : 3
-  return items.slice(0, maxItems)
-}
-
-export function buildResourceMetadataItems({
-  item,
-}: {
-  item: ExternalResourceMapItem
-}) {
-  const location = formatCompactOrganizationLocation({
-    city: item.city,
-    state: item.state,
-    country: item.country,
-  })
-  const availabilityStatus =
-    item.availability && item.availability.status !== "unknown"
-      ? item.availability.statusLabel
-      : null
-  const items = [item.title, location, availabilityStatus].filter(
-    (entry): entry is string => Boolean(entry && entry.trim().length > 0)
-  )
-
-  return items.slice(0, 4)
+  return [isOnlineOnly ? "Web resource" : PUBLIC_MAP_GROUP_LABELS[primaryGroup]]
 }
 
 export function PublicMapListMetadataStrip({
@@ -86,7 +46,7 @@ export function PublicMapListMetadataStrip({
   return (
     <div
       className={cn(
-        "text-muted-foreground mt-1.5 flex max-w-full items-center gap-2 text-sm leading-relaxed",
+        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-sm leading-relaxed",
         className
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({

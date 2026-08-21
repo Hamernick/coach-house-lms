@@ -71,6 +71,8 @@ describe("public home canvas", () => {
     expect(source).toContain("grid-cols-3 rounded-full")
     expect(source).toContain("backdrop-blur-xl")
     expect(source).toContain('data-public-home-product-navigator=""')
+    expect(source.match(/variant=\{null\}/g)).toHaveLength(3)
+    expect(source).not.toContain("hover:")
     expect(shellSource).toContain("<HomeCanvasPreviewSidebar")
     expect(shellSource).toContain("showFindSidebarShell ? (")
     expect(shellSource).toContain("<ShellRightRail")
@@ -100,16 +102,30 @@ describe("public home canvas", () => {
     const previewSource = readSource(
       "src/components/public/home-find-map-mini.tsx"
     )
-    const markerSource = readSource(
+    const assetPath = join(ROOT, "public/home/find-map-preview.webp")
+    const obsoleteMarkerPath = join(
+      ROOT,
       "src/components/public/home-find-map-marker-canvas.ts"
     )
-    const assetPath = join(ROOT, "public/home/find-map-preview.webp")
 
     expect(existsSync(assetPath)).toBe(false)
+    expect(existsSync(obsoleteMarkerPath)).toBe(false)
     expect(previewSource).toContain('import("mapbox-gl")')
-    expect(previewSource).toContain("createHomeFindMapMarkerImage")
-    expect(previewSource).not.toContain("public-map-marker-canvas")
-    expect(previewSource).toContain("HOME_MAP_POINTS")
+    expect(previewSource).toContain("PUBLIC_MAP_STANDARD_STYLE")
+    expect(previewSource).toContain("HOME_MAP_DEVELOPMENT_FALLBACK_STYLE")
+    expect(previewSource).toContain("https://tiles.openfreemap.org/styles/dark")
+    expect(previewSource).toContain('map.on("idle", markGlobeReady)')
+    expect(previewSource).toContain('process.env.NODE_ENV === "production"')
+    expect(previewSource).toContain(
+      '["localhost", "127.0.0.1"].includes(window.location.hostname)'
+    )
+    expect(previewSource).not.toContain('status !== "ready"')
+    expect(previewSource).toContain("startSpinningMapGlobe")
+    expect(previewSource).toContain("syncPublicMapMarkerArtwork")
+    expect(previewSource.match(/showLabels: false/g)).toHaveLength(2)
+    expect(previewSource).toContain("PublicMapPointFeature[]")
+    expect(previewSource).not.toContain("HOME_MAP_POINTS")
+    expect(previewSource).not.toContain("satellite-v9")
     expect(previewSource).toContain("interactive: false")
     expect(previewSource).toContain('logoPosition: "bottom-left"')
     expect(previewSource).toContain(
@@ -120,6 +136,12 @@ describe("public home canvas", () => {
     )
     expect(previewSource).toContain(
       'data-home-map-controls-position="bottom-right"'
+    )
+    expect(previewSource).toContain("<figure")
+    expect(previewSource).toContain('<figcaption className="sr-only">')
+    expect(previewSource).not.toContain('role="img"')
+    expect(previewSource).not.toContain(
+      'aria-label="Public organizations and community resources on a rotating globe"'
     )
     expect(previewSource).toContain("className={`absolute inset-0")
     expect(previewSource).not.toContain("mapboxgl-map absolute inset-0")
@@ -135,10 +157,34 @@ describe("public home canvas", () => {
     expect(previewSource).not.toContain("HomeMapSelectedPreview")
     expect(previewSource).not.toContain("data-home-map-selected-preview")
     expect(previewSource).not.toContain("Public resource map")
-    expect(markerSource).toContain("PUBLIC_MAP_GROUP_ACCENTS")
-    expect(markerSource).toContain("HOME_MAP_MARKER_BACKING_SCALE = 4")
-    expect(markerSource).toContain("HOME_MAP_MARKER_IMAGE_PIXEL_RATIO = 8")
-    expect(markerSource).not.toContain("resource-categories")
+    expect(previewSource).not.toContain("geolocation")
+    expect(previewSource).not.toContain("usePublicMapUserLocation")
+  })
+
+  it("builds the home globe from a capped published marker preview", () => {
+    const routeSource = readSource("src/app/(public)/page.tsx")
+    const previewComponentSource = readSource(
+      "src/components/public/home-find-map-mini.tsx"
+    )
+    const previewDataSource = readSource(
+      "src/lib/public-map/home-map-preview.ts"
+    )
+    const previewQuerySource = readSource("src/lib/queries/home-map-preview.ts")
+
+    expect(routeSource).not.toContain("fetchPublicMapOrganizations")
+    expect(routeSource).not.toContain("fetchPublicResourceMapItems")
+    expect(previewComponentSource).toContain(
+      'fetch("/api/public/home-map-preview"'
+    )
+    expect(previewQuerySource).toContain("fetchPublicResourceMapItems")
+    expect(previewQuerySource).toContain("ignoreLocalPreviewFile: true")
+    expect(previewQuerySource).toContain("includeDiscoveryCandidates: false")
+    expect(previewDataSource).toContain("HOME_MAP_PREVIEW_MARKER_LIMIT = 36")
+    expect(previewDataSource).toContain("resolveCandidateSpreadScore")
+    expect(previewDataSource).toContain("markerOverviewOffsetIndex")
+    expect(previewDataSource).toContain('item.visibility === "published"')
+    expect(previewDataSource).toContain("includeSeedItems: false")
+    expect(previewDataSource).not.toContain("resource-seed-items")
   })
 
   it("keeps public fiscal sponsorship actions active", () => {
@@ -146,9 +192,7 @@ describe("public home canvas", () => {
       "src/components/public/home-canvas-product-panels.tsx"
     )
 
-    expect(source).toContain(
-      'openFlowHref="/?section=signup&intent=fund"'
-    )
+    expect(source).toContain('openFlowHref="/?section=signup&intent=fund"')
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {

@@ -416,6 +416,9 @@ describe("public find routes", () => {
     const categoryFilterSource = readRoute(
       "src/components/public/public-map-index/category-filter.tsx"
     )
+    const sidebarThemeSource = readRoute(
+      "src/components/public/public-map-index/sidebar-theme.ts"
+    )
     const resourceCategoryIconSource = readRoute(
       "src/components/public/public-map-index/resource-category-icon.tsx"
     )
@@ -468,9 +471,10 @@ describe("public find routes", () => {
     )
     expect(categoryFilterSource).toContain("aria-pressed={selected}")
     expect(categoryFilterSource).toContain("resolvePublicMapGroupFilterParam")
-    expect(categoryFilterSource).toContain("border-input bg-input/30")
-    expect(categoryFilterSource).toContain("rounded-full border px-2.5")
-    expect(categoryFilterSource).toContain("backdrop-blur")
+    expect(categoryFilterSource).toContain("PUBLIC_MAP_FILTER_PILL_CLASSNAME")
+    expect(sidebarThemeSource).toContain("border-input bg-input/30")
+    expect(sidebarThemeSource).toContain("rounded-full border px-2.5")
+    expect(sidebarThemeSource).toContain("backdrop-blur")
     expect(categoryFilterSource).not.toContain("shadow-sm backdrop-blur")
     expect(categoryFilterSource).toContain("!bg-input/50 text-foreground")
     expect(categoryFilterSource).toContain('selected ? "text-foreground"')
@@ -518,12 +522,15 @@ describe("public find routes", () => {
     const resourceItemsSource = readRoute(
       "src/components/public/public-map-index/use-resource-map-items.ts"
     )
+    const drawerSearchHandlersSource = readRoute(
+      "src/components/public/public-map-index/use-public-map-drawer-search-handlers.ts"
+    )
 
     expect(sidebarSource).toContain("handleDrawerSearchEngage")
     expect(sidebarSource).toContain(
       "data-public-map-drawer-snap-index={activeSnapIndex}"
     )
-    expect(sidebarSource).toContain(
+    expect(drawerSearchHandlersSource).toContain(
       "setActiveSnapIndex((current) => (current === 0 ? 1 : current))"
     )
     expect(searchCardSource).toContain('aria-label="Clear search"')
@@ -596,6 +603,9 @@ describe("public find routes", () => {
     const markerSource = readRoute(
       "src/components/public/public-map-index/use-public-map-markers.ts"
     )
+    const markerArtworkSource = readRoute(
+      "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
+    )
 
     expect(markerSource).toContain("const resolvedMapItems = mapItems ?? []")
     expect(markerSource).toContain(
@@ -606,7 +616,8 @@ describe("public find routes", () => {
       "buildPublicMapPointFeatures(organizationsRef.current, {"
     )
     expect(markerSource).toContain("features: pointFeatures")
-    expect(markerSource).toContain("setPublicMapMarkerSourceData")
+    expect(markerSource).toContain("syncPublicMapMarkerArtwork")
+    expect(markerArtworkSource).toContain("setPublicMapMarkerSourceData")
     expect(markerSource).not.toContain("createPublicMapClusterClient")
     expect(markerSource).not.toContain("getClusters")
   })

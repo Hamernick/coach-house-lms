@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
 
-import type { PublicMapGroupFilterKey } from "./category-filter"
-import type { SidebarMode } from "./constants"
 import {
   buildPublicMapDrawerSnapPoints,
   resolvePublicMapDrawerSnapPointIndex,
@@ -37,6 +35,8 @@ import {
   noopPublicMapSidebarAction,
   type PublicMapSidebarProps,
 } from "./sidebar-contract"
+import { buildOrganizationDetailHeaderSlots } from "./organization-detail-header-slots"
+import { usePublicMapDrawerSearchHandlers } from "./use-public-map-drawer-search-handlers"
 import {
   PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
@@ -44,42 +44,46 @@ import {
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
-function usePublicMapDrawerSearchHandlers({
-  setActiveGroup,
-  setActiveSnapIndex,
-  setDrawerTab,
-  setQuery,
-  setSidebarMode,
+function PublicMapSidebarOpenButton({
+  hidden,
+  onOpen,
 }: {
-  setActiveGroup: (group: PublicMapGroupFilterKey) => void
-  setActiveSnapIndex: (
-    value: 0 | 1 | 2 | ((current: 0 | 1 | 2) => 0 | 1 | 2)
-  ) => void
-  setDrawerTab: (tab: PublicMapMemberTab) => void
-  setQuery: (value: string) => void
-  setSidebarMode: (mode: SidebarMode) => void
+  hidden: boolean
+  onOpen: () => void
 }) {
-  const engageSearch = useCallback(() => {
-    setDrawerTab("directory")
-    setSidebarMode("search")
-    setActiveSnapIndex((current) => (current === 0 ? 1 : current))
-  }, [setActiveSnapIndex, setDrawerTab, setSidebarMode])
-  const changeQuery = useCallback(
-    (value: string) => {
-      setQuery(value)
-      engageSearch()
-    },
-    [engageSearch, setQuery]
+  return (
+    <div
+      className={cn(
+        "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        hidden
+          ? "pointer-events-auto opacity-100"
+          : "pointer-events-none -translate-x-1 opacity-0"
+      )}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onOpen}
+        className={cn(
+          "h-10 rounded-full px-3 shadow-sm backdrop-blur-xl",
+          PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
+        )}
+      >
+        <SearchIcon className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Open resource map panel</span>
+      </Button>
+    </div>
   )
-  const changeGroup = useCallback(
-    (group: PublicMapGroupFilterKey) => {
-      setActiveGroup(group)
-      engageSearch()
-    },
-    [engageSearch, setActiveGroup]
-  )
+}
 
-  return { changeGroup, changeQuery, engageSearch }
+function resetDrawer(
+  setActiveSnapIndex: (value: 0) => void,
+  setDrawerTab: (value: "directory") => void,
+  setSidebarMode: PublicMapSidebarProps["setSidebarMode"]
+) {
+  setActiveSnapIndex(0)
+  setDrawerTab("directory")
+  setSidebarMode("search")
 }
 
 export function PublicMapSidebar({
@@ -137,7 +141,8 @@ export function PublicMapSidebar({
     () => buildPublicMapDrawerSnapPoints(surfaceHeight),
     [surfaceHeight]
   )
-  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(0), [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
+  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(0),
+    [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
   const activeSnapPoint = snapPoints[activeSnapIndex]
   const drawerIsFullscreen = activeSnapIndex === 2
   const drawerViewportHeight = drawerIsFullscreen
@@ -157,12 +162,6 @@ export function PublicMapSidebar({
 
     setActiveSnapIndex(effectiveSidebarMode === "details" ? 1 : 0)
   }, [effectiveSidebarMode, panelOpen, panelPresentation])
-
-  function resetDrawerToSearch() {
-    setActiveSnapIndex(0)
-    setDrawerTab("directory")
-    setSidebarMode("search")
-  }
   const listItems = searchContext?.items ?? filteredItems
   const handleDrawerTabChange = useCallback(
     (nextTab: PublicMapMemberTab) => {
@@ -196,7 +195,15 @@ export function PublicMapSidebar({
     setQuery,
     setSidebarMode,
   })
-
+  const organizationDetailHeaderSlots = buildOrganizationDetailHeaderSlots({
+    active: effectiveSidebarMode === "details",
+    canManageResourceMap,
+    favorites,
+    onBack: onBackToSearch,
+    onToggleFavorite: toggleFavorite,
+    organization: selectedOrganization,
+    organizationCurationAction,
+  })
   const railDirectoryPanel =
     effectiveSidebarMode === "search" ? (
       <PublicMapRailSearchPanel
@@ -231,6 +238,7 @@ export function PublicMapSidebar({
         favorites={favorites}
         onBack={onBackToSearch}
         onToggleFavorite={toggleFavorite}
+        showHeaderControls={false}
       />
     ) : selectedResourceItem ? (
       <PublicMapResourceRailDetailPanel
@@ -242,16 +250,19 @@ export function PublicMapSidebar({
         resourceMapCurationAction={resourceMapCurationAction}
       />
     ) : null
-
   const railPanel = (
     <PublicMapRailPanel
+      directoryHeaderStart={organizationDetailHeaderSlots.start}
+      directoryHeaderEnd={organizationDetailHeaderSlots.end}
       directoryRail={railDirectoryPanel}
       directoryMode={effectiveSidebarMode === "details" ? "details" : "search"}
       guides={guides}
       savedOrganizations={savedOrganizations}
       savedResources={savedResources}
-      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount} onRetryResourceItems={retryResourceItems}
-      resourceItemsLoadStatus={resourceItemsLoadStatus} resourceItemsLoadError={resourceItemsLoadError}
+      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
+      onRetryResourceItems={retryResourceItems}
+      resourceItemsLoadStatus={resourceItemsLoadStatus}
+      resourceItemsLoadError={resourceItemsLoadError}
       onGuideSelect={onGuideSelect}
       onSelectOrganization={onSelectOrganization}
       onSelectResource={onSelectItem}
@@ -293,6 +304,7 @@ export function PublicMapSidebar({
         favorites={favorites}
         onBack={onBackToSearch}
         onToggleFavorite={toggleFavorite}
+        showHeaderControls={false}
       />
     ) : selectedResourceItem ? (
       <PublicMapResourceDrawerDetailPanel
@@ -308,13 +320,17 @@ export function PublicMapSidebar({
   const drawerPanel = (
     <PublicMapMemberRail
       activeTab={drawerTab}
+      directoryHeaderStart={organizationDetailHeaderSlots.start}
+      directoryHeaderEnd={organizationDetailHeaderSlots.end}
       directoryRail={drawerDirectoryPanel}
       directoryMode={effectiveSidebarMode === "details" ? "details" : "search"}
       guides={guides}
       savedOrganizations={savedOrganizations}
       savedResources={savedResources}
-      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount} onRetryResourceItems={retryResourceItems}
-      resourceItemsLoadStatus={resourceItemsLoadStatus} resourceItemsLoadError={resourceItemsLoadError}
+      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
+      onRetryResourceItems={retryResourceItems}
+      resourceItemsLoadStatus={resourceItemsLoadStatus}
+      resourceItemsLoadError={resourceItemsLoadError}
       onActiveTabChange={handleDrawerTabChange}
       onGuideSelect={handleDrawerGuideSelect}
       onSelectOrganization={handleDrawerOrganizationSelect}
@@ -326,27 +342,10 @@ export function PublicMapSidebar({
 
   return (
     <>
-      <div
-        className={cn(
-          "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          effectiveSidebarMode === "hidden"
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none -translate-x-1 opacity-0"
-        )}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setSidebarMode("search")}
-          className={cn(
-            "h-10 rounded-full px-3 shadow-sm backdrop-blur-xl",
-            PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
-          )}
-        >
-          <SearchIcon className="h-4 w-4" aria-hidden />
-          <span className="sr-only">Open resource map panel</span>
-        </Button>
-      </div>
+      <PublicMapSidebarOpenButton
+        hidden={effectiveSidebarMode === "hidden"}
+        onOpen={() => setSidebarMode("search")}
+      />
 
       {panelPresentation === "drawer" ? (
         <Drawer
@@ -376,7 +375,7 @@ export function PublicMapSidebar({
           shouldScaleBackground={false}
           onOpenChange={(open) => {
             if (!open) {
-              resetDrawerToSearch()
+              resetDrawer(setActiveSnapIndex, setDrawerTab, setSidebarMode)
               return
             }
             if (effectiveSidebarMode === "hidden") {

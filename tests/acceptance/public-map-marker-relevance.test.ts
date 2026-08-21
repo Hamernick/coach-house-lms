@@ -57,7 +57,7 @@ function buildFeature({
 }
 
 describe("public map marker relevance", () => {
-  it("progressively reveals one, two, then every nearby category marker", () => {
+  it("shows three nearby category markers on the overview globe", () => {
     const features = [
       buildFeature({ id: "food-a", latitude: 41.88, longitude: -87.63 }),
       buildFeature({ id: "food-b", latitude: 41.881, longitude: -87.631 }),
@@ -70,10 +70,15 @@ describe("public map marker relevance", () => {
         (feature) => (feature.properties.markerRelevanceTier ?? 3) <= tier
       ).length
 
-    expect(countAtTier(0)).toBe(1)
-    expect(countAtTier(1)).toBe(1)
-    expect(countAtTier(2)).toBe(2)
+    expect(countAtTier(0)).toBe(3)
+    expect(countAtTier(1)).toBe(3)
+    expect(countAtTier(2)).toBe(3)
     expect(countAtTier(3)).toBe(4)
+    expect(
+      new Set(
+        relevant.map((feature) => feature.properties.markerOverviewOffsetIndex)
+      ).size
+    ).toBe(4)
   })
 
   it("reserves overview representation for each resource category", () => {

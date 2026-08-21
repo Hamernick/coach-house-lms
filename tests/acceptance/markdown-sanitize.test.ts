@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
@@ -53,10 +54,45 @@ describe("sanitizeHtml", () => {
 
     expect(sanitized).not.toMatch(/href="(?:javascript|data:)/i)
     expect(sanitized).not.toContain("background-image")
-    expect(sanitized).toContain('style="color:#123456"')
+    expect(sanitized).not.toMatch(/(?:background-)?color/i)
+    expect(sanitized).toContain("<span>styled</span>")
     expect(sanitized).toContain('href="/roadmap"')
     expect(sanitized).toContain('href="#section"')
     expect(sanitized).toContain('href="mailto:hello@example.com"')
     expect(sanitized).toContain('href="tel:+13125550100"')
+  })
+
+  it("removes pasted theme colors without flattening rich text", () => {
+    const sanitized = sanitizeHtml(
+      [
+        '<h2 style="color:#000;background-color:#fff;text-align:center">Vision</h2>',
+        '<p><span style="color:rgb(0, 0, 0);font-size:18px"><strong>Visible</strong> in every theme.</span></p>',
+        '<mark style="background-color:#ffff00">Highlighted text</mark>',
+        '<ul><li><a href="https://example.com">Useful link</a></li></ul>',
+        '<img src="https://example.com/vision.jpg" alt="Vision workshop">',
+      ].join("")
+    )
+
+    expect(sanitized).toContain(
+      '<h2 style="text-align:center">Vision</h2>'
+    )
+    expect(sanitized).toContain("<strong>Visible</strong>")
+    expect(sanitized).toContain("Highlighted text")
+    expect(sanitized).toContain("<ul><li>")
+    expect(sanitized).toContain('href="https://example.com"')
+    expect(sanitized).toContain('alt="Vision workshop"')
+    expect(sanitized).not.toMatch(/(?:background-)?color|font-size|<mark/i)
+  })
+
+  it("does not register free-form color parsing in the rich text editor", () => {
+    const extensionsSource = readFileSync(
+      "src/components/rich-text-editor/extensions.ts",
+      "utf8"
+    )
+
+    expect(extensionsSource).not.toMatch(
+      /extension-(?:color|highlight|text-style)/
+    )
+    expect(extensionsSource).not.toMatch(/\b(?:Color|Highlight|TextStyle),/)
   })
 })

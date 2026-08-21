@@ -70,8 +70,8 @@ describe("public map organization curation", () => {
     const publicMapIndex = readSource(
       "src/components/public/public-map-index.tsx"
     )
-    const organizationDetail = readSource(
-      "src/components/public/public-map-index/organization-detail.tsx"
+    const organizationHeaderSlots = readSource(
+      "src/components/public/public-map-index/organization-detail-header-slots.tsx"
     )
     const organizationChrome = readSource(
       "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
@@ -85,8 +85,14 @@ describe("public map organization curation", () => {
     expect(findPage).toContain("organizationCurationAction={")
     expect(findSlugPage).toContain("organizationCurationAction={")
     expect(publicMapIndex).toContain("organizationCurationAction")
-    expect(organizationDetail).toContain("canManageResourceMap?: boolean")
-    expect(organizationDetail).toContain("organizationCurationAction")
+    expect(organizationHeaderSlots).toContain(
+      "canManageResourceMap={canManageResourceMap}"
+    )
+    expect(organizationHeaderSlots).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
+    expect(organizationChrome).toContain("canManageResourceMap?: boolean")
+    expect(organizationChrome).toContain("organizationCurationAction")
     expect(organizationChrome).toContain("PublicMapOrganizationAdminActions")
     expect(organizationChrome).toContain(
       "canManageResourceMap && organizationCurationAction"

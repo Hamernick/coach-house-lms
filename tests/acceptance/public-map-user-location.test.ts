@@ -30,7 +30,7 @@ describe("public map user location", () => {
     expect(resolvePublicMapLocationPermissionAction("denied")).toBe("denied")
   })
 
-  it("uses one low-accuracy location request with bounded caching", () => {
+  it("uses low-accuracy location requests with bounded caching", () => {
     expect(PUBLIC_MAP_GEOLOCATION_OPTIONS).toEqual({
       enableHighAccuracy: false,
       timeout: 7_000,
@@ -91,6 +91,32 @@ describe("public map user location", () => {
     expect(runtimeSource).not.toContain("getCurrentPosition")
   })
 
+  it("checks permission before the deferred map starts without flashing consent", () => {
+    const hookSource = readSource(
+      "src/components/public/public-map-index/use-public-map-user-location.ts"
+    )
+
+    expect(hookSource).toContain(
+      "const [controlOpen, setControlOpen] = useState(false)"
+    )
+    expect(hookSource).not.toContain("entranceStartedRef")
+    expect(hookSource).toMatch(
+      /setStatus\("checking"\)[\s\S]*?\.query\(\{ name: "geolocation" \}\)/
+    )
+    expect(hookSource).not.toContain(
+      "else if (hasRunPublicMapLocationEntrance(window.sessionStorage))"
+    )
+    expect(hookSource).not.toContain(
+      "if (!coordinates && entranceStartedRef.current) setControlOpen(true)"
+    )
+    expect(hookSource).toContain(
+      'source === "entrance" && attempt === 0 && error.code !== 1'
+    )
+    expect(hookSource).toContain("readPosition(1)")
+    expect(hookSource.match(/if \(storedGrant\) \{/g)).toHaveLength(3)
+    expect(hookSource.match(/requestPosition\("entrance"\)/g)).toHaveLength(3)
+  })
+
   it("keeps the location indicator unchanged under night lighting", () => {
     const hookSource = readSource(
       "src/components/public/public-map-index/use-public-map-user-location.ts"
@@ -103,6 +129,9 @@ describe("public map user location", () => {
     const hookSource = readSource(
       "src/components/public/public-map-index/use-public-map-user-location.ts"
     )
+    const rotationSource = readSource(
+      "src/components/public/public-map-index/spinning-globe.ts"
+    )
     const locationControlSource = readSource(
       "src/components/public/public-map-index/location-control.tsx"
     )
@@ -111,16 +140,19 @@ describe("public map user location", () => {
     )
 
     expect(FALLBACK_ZOOM).toBe(1.5)
-    expect(hookSource).toContain("!suppressAutomaticEntrance && !welcomeOpen")
+    expect(hookSource).toContain('setStatus("prompt")')
     expect(hookSource).toContain("setControlOpen(!storedGrant)")
-    expect(hookSource).toContain(
+    expect(rotationSource).toContain(
       "PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION = 180"
     )
-    expect(hookSource).toContain(
-      'window.matchMedia("(prefers-reduced-motion: reduce)").matches'
+    expect(rotationSource).toContain('"(prefers-reduced-motion: reduce)"')
+    expect(rotationSource).toContain('map.on("moveend", spinGlobe)')
+    expect(rotationSource).toContain(
+      "const rotationLatitude = map.getCenter().lat"
     )
-    expect(hookSource).toContain('map.on("moveend", spinGlobe)')
-    expect(hookSource).toContain("if (!event.originalEvent) return")
+    expect(rotationSource).toContain("!event.originalEvent")
+    expect(rotationSource).toContain('document.visibilityState !== "hidden"')
+    expect(hookSource).toContain("startSpinningMapGlobe")
     expect(locationControlSource).toContain(
       "absolute inset-0 flex items-center justify-center p-4"
     )

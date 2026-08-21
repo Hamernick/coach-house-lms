@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { PublicMapPlatformOrganizationListCard } from "./organization-list-platform-card"
 import { PublicMapResourceListCard } from "./organization-list-resource-card"
+import { PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME } from "./organization-list-card-shared"
 import {
   PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
   PUBLIC_MAP_LIST_PAGE_SIZE,
@@ -50,7 +51,10 @@ function PublicMapOrganizationListSkeleton() {
         {Array.from({ length: 4 }, (_, index) => (
           <div
             key={index}
-            className="border-border/50 flex min-h-28 flex-col gap-4 rounded-2xl border p-4"
+            className={cn(
+              "border-border/50 flex flex-col justify-center rounded-2xl border p-4",
+              PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
+            )}
             aria-hidden="true"
           >
             <div className="flex items-center gap-4">
@@ -60,7 +64,6 @@ function PublicMapOrganizationListSkeleton() {
                 <Skeleton className="h-3 w-2/5 animate-none" />
               </div>
             </div>
-            <Skeleton className="h-3 w-4/5 animate-none" />
           </div>
         ))}
       </div>

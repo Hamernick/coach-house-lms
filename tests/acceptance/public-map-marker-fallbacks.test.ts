@@ -1008,7 +1008,7 @@ describe("public map marker fallbacks", () => {
 
   it("registers pin marker images before swapping unclustered source data", () => {
     const markerSource = readRepoFile(
-      "src/components/public/public-map-index/use-public-map-markers.ts"
+      "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
     )
 
     expect(

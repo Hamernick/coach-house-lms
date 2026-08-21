@@ -43,7 +43,7 @@ const PublicMapAuthSheet = dynamic(() =>
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
   sidebarMode: SidebarMode
-  directoryCount: number
+  directoryCount: number | null
   filteredItems: PublicMapListItem[]
   filteredOrganizations: PublicMapOrganization[]
   selectedItemId: string | null

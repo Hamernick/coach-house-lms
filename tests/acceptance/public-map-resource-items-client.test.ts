@@ -3,6 +3,7 @@ import { join } from "node:path"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { resolvePublicMapDirectoryCount } from "@/components/public/public-map-index/directory-status-pill"
 import {
   clearPublicMapResourceItemsCache,
   loadPublicMapResourceItems,
@@ -186,6 +187,67 @@ describe("public map resource items client", () => {
     expect(reportedTotalCounts).toEqual([856, 856])
   })
 
+  it("drains the complete 5,046-item local preview within the safety bound", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+    const totalCount = 5_046
+    const pageSize = 50
+    const totalPages = Math.ceil(totalCount / pageSize)
+
+    for (let page = 0; page < totalPages; page += 1) {
+      const pageStart = page * pageSize
+      const itemCount = Math.min(pageSize, totalCount - pageStart)
+      const resourceItems = Array.from({ length: itemCount }, (_, index) => ({
+        id: `resource_map:${pageStart + index}`,
+      }))
+      const isFinalPage = page === totalPages - 1
+      fetchSpy.mockResolvedValueOnce(
+        buildJsonResponse({
+          resourceItems,
+          page: {
+            hasMore: !isFinalPage,
+            nextCursor: isFinalPage
+              ? null
+              : resourceItems[resourceItems.length - 1]?.id,
+            totalCount,
+          },
+        })
+      )
+    }
+
+    const reportedTotalCounts: Array<number | null> = []
+    const items = await loadPublicMapResourceItems(
+      "/api/public/resource-map/index?limit=50&test=local-preview",
+      (_loadedItems, reportedTotalCount) =>
+        reportedTotalCounts.push(reportedTotalCount)
+    )
+
+    expect(items).toHaveLength(totalCount)
+    expect(fetchSpy).toHaveBeenCalledTimes(totalPages)
+    expect(reportedTotalCounts.every((count) => count === totalCount)).toBe(
+      true
+    )
+  })
+
+  it("stops a repeated cursor instead of draining indefinitely", async () => {
+    const repeatedCursor = "resource_map:repeated"
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      buildJsonResponse({
+        resourceItems: [{ id: repeatedCursor }],
+        page: {
+          hasMore: true,
+          nextCursor: repeatedCursor,
+          totalCount: 2,
+        },
+      })
+    )
+
+    await expect(
+      loadPublicMapResourceItems(
+        "/api/public/resource-map/index?limit=50&test=repeated-cursor"
+      )
+    ).rejects.toThrow("Resource map items repeated a page cursor")
+  })
+
   it("keeps the map inventory total separate from filtered result lists", () => {
     const indexSource = readFileSync(
       join(process.cwd(), "src/components/public/public-map-index.tsx"),
@@ -199,9 +261,9 @@ describe("public map resource items client", () => {
       "utf8"
     )
 
-    expect(indexSource).toContain(
-      "directoryCount={organizations.length + totalResourceCount}"
-    )
+    expect(resolvePublicMapDirectoryCount(19, null)).toBeNull()
+    expect(resolvePublicMapDirectoryCount(19, 5_046)).toBe(5_065)
+    expect(indexSource).toContain("resolvePublicMapDirectoryCount(")
     expect(indexSource).toContain("filteredItems={directoryListItems}")
     expect(surfaceSource).toContain("directoryCount={directoryCount}")
     expect(surfaceSource).not.toContain("directoryCount={filteredItems.length}")

@@ -126,22 +126,52 @@ describe("public map detail section chrome", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapOrganizationDetail, {
         organization,
-        favorites: [],
-        onBack: () => {},
-        onToggleFavorite: () => {},
       })
     )
 
     expect(sectionMarkup).toContain(
-      `<section class="${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
+      `<section class="relative ${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
     )
     expect(markup).toContain(
       '<h3 class="text-base font-semibold">Brand kit</h3>'
     )
-    expect(markup).toContain(">Download<")
+    expect(markup).toContain(
+      'data-public-map-resource-category-icon="community"'
+    )
+    expect(markup).toContain('aria-label="Download brand kit"')
+    expect(markup).not.toContain(">Download<")
     expect(markup).toContain("Primary logo")
     expect(markup).toContain("Logo mark")
     expect(markup).toContain("https://example.org/mark.png")
+  })
+
+  it("uses one icon size and label gap for every profile action", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationDetail, {
+        organization: buildOrganization({
+          website: "https://example.org",
+          email: "hello@example.org",
+          phone: "+1 312 555 0100",
+          brandKitAvailable: true,
+        }),
+      })
+    )
+
+    expect(
+      markup.match(/data-public-map-organization-action-content="true"/g)
+    ).toHaveLength(4)
+    expect(
+      markup.match(/data-public-map-organization-action-icon="true"/g)
+    ).toHaveLength(4)
+    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(4)
+    expect(markup).toContain(
+      "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
+    )
+    expect(markup).toContain(
+      "inline-flex size-5 shrink-0 items-center justify-center"
+    )
+    expect(markup).not.toContain("gap-0.5 text-center")
+    expect(markup).not.toContain("h-4.5 w-4.5")
   })
 })
 
@@ -162,6 +192,7 @@ describe("OrganizationDetailOriginSection", () => {
     expect(markup).toContain(">Organization story<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
+    expect(markup).toContain("pt-1 pb-[3px]")
   })
 
   it("preserves sanitized rich layout and images after expansion", () => {
@@ -175,6 +206,10 @@ describe("OrganizationDetailOriginSection", () => {
     expect(markup).toContain('<h2 style="text-align:center">')
     expect(markup).toContain("<strong>Started</strong>")
     expect(markup).toContain('alt="Founding team"')
+    expect(markup).toContain("[&amp;_img]:my-4")
+    expect(markup).toContain("[&amp;_img]:rounded-lg")
+    expect(markup).toContain("[&amp;_img]:overflow-hidden")
+    expect(markup).not.toContain("prose-img:")
   })
 
   it("renders nothing when no public story fields have content", () => {

@@ -17,6 +17,7 @@ import { buildExternalResourceMapItemFromPublicRow } from "@/lib/public-map/reso
 import { serializeFindResourceDetailItem } from "@/features/find-resource-index"
 import { resolveResourceAvailability } from "@/lib/public-map/resource-availability"
 import {
+  clearResourceMapLocalPreviewCache,
   fetchPublicResourceMapItemById,
   fetchPublicResourceMapItems,
   fetchPublicResourceMapItemsPageById,
@@ -377,6 +378,7 @@ describe("resource map availability", () => {
 
 describe("fetchPublicResourceMapItems", () => {
   afterEach(() => {
+    clearResourceMapLocalPreviewCache()
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -675,6 +677,59 @@ describe("fetchPublicResourceMapItems", () => {
           expect.objectContaining({ visibility: "superadmin_preview" }),
         ])
       )
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it("keeps cached local preview pages coherent and invalidates changed files", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "resource-map-page-cache-"))
+    const previewFile = join(directory, "preview.jsonl")
+    const buildPreviewRows = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        JSON.stringify({
+          sourceRecordId: `cached-resource-${index + 1}`,
+          sourceName: "Local cache test",
+          sourceUrl: `https://example.org/resource-${index + 1}`,
+          extractedFields: {
+            organizationName: `Cached organization ${index + 1}`,
+            title: `Cached resource ${index + 1}`,
+            description: "Locally reviewed public resource.",
+            category: "food pantry",
+          },
+        })
+      ).join("\n")
+
+    try {
+      writeFileSync(previewFile, buildPreviewRows(3))
+      const options = {
+        enabled: true,
+        includeDiscoveryCandidates: true,
+        localPreviewFile: previewFile,
+      }
+
+      const firstPage = await fetchPublicResourceMapItemsPageById({
+        cursor: null,
+        limit: 1,
+        options,
+      })
+      const secondPage = await fetchPublicResourceMapItemsPageById({
+        cursor: firstPage.items[0]?.id ?? null,
+        limit: 1,
+        options,
+      })
+
+      expect(firstPage.totalCount).toBe(3)
+      expect(secondPage.totalCount).toBe(3)
+
+      writeFileSync(previewFile, buildPreviewRows(4))
+      const refreshedPage = await fetchPublicResourceMapItemsPageById({
+        cursor: null,
+        limit: 1,
+        options,
+      })
+
+      expect(refreshedPage.totalCount).toBe(4)
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }

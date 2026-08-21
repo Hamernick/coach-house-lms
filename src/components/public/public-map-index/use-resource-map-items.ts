@@ -23,6 +23,7 @@ type ResourceItemsLoad = {
 
 const resourceItemsLoadByEndpoint = new Map<string, ResourceItemsLoad>()
 const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 1_000
+const RESOURCE_ITEMS_MAX_PAGE_COUNT = 200
 
 type FindResourceIndexPage = {
   hasMore?: unknown
@@ -136,8 +137,14 @@ export function loadPublicMapResourceItems(
     let pageEndpoint: string | null = endpoint
     let pageCount = 0
     let totalCount: number | null = null
+    const requestedPageEndpoints = new Set<string>()
 
     while (pageEndpoint) {
+      if (requestedPageEndpoints.has(pageEndpoint)) {
+        throw new Error("Resource map items repeated a page cursor")
+      }
+      requestedPageEndpoints.add(pageEndpoint)
+
       const response = await fetch(pageEndpoint, {
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -165,7 +172,7 @@ export function loadPublicMapResourceItems(
           ? appendResourceCursor(endpoint, nextCursor)
           : null
       pageCount += 1
-      if (pageCount > 100) {
+      if (pageEndpoint && pageCount >= RESOURCE_ITEMS_MAX_PAGE_COUNT) {
         throw new Error("Resource map items exceeded the page limit")
       }
 
@@ -203,8 +210,8 @@ export function usePublicMapResourceItems({
   resourceItemsEndpoint?: string
 }) {
   const [resourceItems, setResourceItems] = useState(initialResourceItems)
-  const [totalResourceCount, setTotalResourceCount] = useState(
-    initialResourceItems.length
+  const [totalResourceCount, setTotalResourceCount] = useState<number | null>(
+    resourceItemsEndpoint ? null : initialResourceItems.length
   )
   const [status, setStatus] = useState<PublicMapResourceItemsLoadStatus>(
     resourceItemsEndpoint ? "loading" : "ready"

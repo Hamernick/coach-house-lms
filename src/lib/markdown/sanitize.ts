@@ -27,7 +27,6 @@ const RICH_TEXT_TAGS = [
   "sub",
   "sup",
   "span",
-  "mark",
   "a",
   "table",
   "thead",
@@ -39,8 +38,7 @@ const RICH_TEXT_TAGS = [
   "img",
 ]
 
-const SAFE_COLOR =
-  /^(?:#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%a-z]+\)|[a-z]+)$/i
+const SAFE_TEXT_ALIGNMENT = /^(?:left|center|right|justify)$/
 
 const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
   allowedTags: RICH_TEXT_TAGS,
@@ -57,8 +55,6 @@ const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
     h4: ["style"],
     h5: ["style"],
     h6: ["style"],
-    span: ["style"],
-    mark: ["style", "data-color"],
     th: ["colspan", "rowspan", "colwidth", "style"],
     td: ["colspan", "rowspan", "colwidth", "style"],
   },
@@ -68,11 +64,16 @@ const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
     ul: ["list-disc"],
   },
   allowedStyles: {
-    "*": {
-      "text-align": [/^(?:left|center|right|justify)$/],
-      color: [SAFE_COLOR],
-      "background-color": [SAFE_COLOR],
-    },
+    p: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    div: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h1: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h2: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h3: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h4: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h5: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    h6: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    th: { "text-align": [SAFE_TEXT_ALIGNMENT] },
+    td: { "text-align": [SAFE_TEXT_ALIGNMENT] },
   },
   allowedSchemes: ["http", "https", "mailto", "tel"],
   allowedSchemesByTag: {

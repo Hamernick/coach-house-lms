@@ -43,10 +43,12 @@ const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
   "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
 
 const PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME =
-  "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
+  "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none group-data-[orientation=horizontal]/tabs:after:bottom-0 hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
 
 type PublicMapMemberRailProps = {
   activeTab?: PublicMapMemberTab
+  directoryHeaderEnd?: ReactNode
+  directoryHeaderStart?: ReactNode
   directoryRail?: ReactNode
   directoryMode?: PublicMapDirectoryRailMode | null
   guides?: PublicMapResourceGuide[]
@@ -120,6 +122,8 @@ export function filterPublicMapSavedOrganizations({
 
 export function PublicMapMemberRail({
   activeTab: controlledActiveTab,
+  directoryHeaderEnd = null,
+  directoryHeaderStart = null,
   directoryRail = null,
   directoryMode = null,
   guides = [],
@@ -188,6 +192,9 @@ export function PublicMapMemberRail({
   )
   const hasSavedFilters =
     savedQuery.trim().length > 0 || savedActiveGroup !== "all"
+  const showDirectoryHeaderControls =
+    activeTab === "directory" &&
+    Boolean(directoryHeaderStart || directoryHeaderEnd)
 
   useEffect(() => {
     const didAddDirectoryRail =
@@ -243,34 +250,48 @@ export function PublicMapMemberRail({
         onValueChange={(value) => setActiveTab(value as PublicMapMemberTab)}
         className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
       >
-        <TabsList
-          data-public-map-tab-list=""
-          variant="line"
-          className={cn("shrink-0", PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME)}
+        <div
+          data-public-map-tab-header=""
+          className={cn(
+            "grid shrink-0 grid-cols-[minmax(2.75rem,1fr)_auto_minmax(2.75rem,1fr)] items-center gap-1 px-2",
+            showDirectoryHeaderControls ? "min-h-11" : "h-7"
+          )}
         >
-          {hasDirectoryRail ? (
-            <TabsTrigger
-              value="directory"
-              className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
-            >
-              <span className="truncate">Find</span>
-            </TabsTrigger>
-          ) : null}
-          {hasGuides ? (
-            <TabsTrigger
-              value="guides"
-              className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
-            >
-              <span className="truncate">Guides</span>
-            </TabsTrigger>
-          ) : null}
-          <TabsTrigger
-            value="saved"
-            className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+          <div className="flex min-w-0 items-center justify-start">
+            {showDirectoryHeaderControls ? directoryHeaderStart : null}
+          </div>
+          <TabsList
+            data-public-map-tab-list=""
+            variant="line"
+            className={cn("shrink-0", PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME)}
           >
-            <span className="truncate">My Map</span>
-          </TabsTrigger>
-        </TabsList>
+            {hasDirectoryRail ? (
+              <TabsTrigger
+                value="directory"
+                className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+              >
+                <span className="truncate">Find</span>
+              </TabsTrigger>
+            ) : null}
+            {hasGuides ? (
+              <TabsTrigger
+                value="guides"
+                className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+              >
+                <span className="truncate">Guides</span>
+              </TabsTrigger>
+            ) : null}
+            <TabsTrigger
+              value="saved"
+              className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+            >
+              <span className="truncate">My Map</span>
+            </TabsTrigger>
+          </TabsList>
+          <div className="flex min-w-0 items-center justify-end">
+            {showDirectoryHeaderControls ? directoryHeaderEnd : null}
+          </div>
+        </div>
 
         {hasDirectoryRail ? (
           <TabsContent
@@ -331,18 +352,18 @@ export function PublicMapMemberRail({
                     ? "Loading My Map"
                     : "Collected resources unavailable"
                   : hasSavedFilters
-                  ? "No collected results"
-                  : "Nothing collected yet"
+                    ? "No collected results"
+                    : "Nothing collected yet"
               }
               emptyDescription={
                 unresolvedCollectedResourceCount > 0 && !hasSavedFilters
                   ? resourceItemsLoadStatus === "loading"
                     ? "Your collected resources will appear here."
-                    : resourceItemsLoadError ??
-                      "Try again to restore your collected resources."
+                    : (resourceItemsLoadError ??
+                      "Try again to restore your collected resources.")
                   : hasSavedFilters
-                  ? "Try a different search or category filter."
-                  : "Collect nonprofits and resources to keep them here."
+                    ? "Try a different search or category filter."
+                    : "Collect nonprofits and resources to keep them here."
               }
               className="mx-2 min-h-0 flex-1 bg-transparent"
               onSelectOrganization={handleSelectOrganization}
@@ -360,8 +381,8 @@ export function PublicMapMemberRail({
                 <span className="min-w-0 break-words">
                   {resourceItemsLoadStatus === "loading"
                     ? "Loading collected resources…"
-                    : resourceItemsLoadError ??
-                      "Some collected resources are temporarily unavailable."}
+                    : (resourceItemsLoadError ??
+                      "Some collected resources are temporarily unavailable.")}
                 </span>
                 {resourceItemsLoadStatus === "error" && onRetryResourceItems ? (
                   <Button

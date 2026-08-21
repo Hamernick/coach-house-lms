@@ -17,25 +17,12 @@ import {
   buildPublicMapOrganizationListCardSurfaceProps,
 } from "./react-grab"
 import {
-  buildResourceMetadataItems,
+  PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
   PUBLIC_MAP_LIST_CARD_PERF_STYLE,
   PublicMapListMetadataStrip,
   PublicMapListViewButton,
 } from "./organization-list-card-shared"
 import { PublicMapResourceCategoryIcon } from "./resource-category-icon"
-
-function normalizeResourceListCardText(value: string | null | undefined) {
-  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
-}
-
-function resolveResourceListCardSubtitle(item: ExternalResourceMapItem) {
-  const subtitle = item.subtitle?.trim()
-  if (!subtitle) return null
-  return normalizeResourceListCardText(subtitle) ===
-    normalizeResourceListCardText(item.title)
-    ? null
-    : subtitle
-}
 
 export function PublicMapResourceListCard({
   constrainedLayout,
@@ -53,14 +40,13 @@ export function PublicMapResourceListCard({
   onToggleCollected?: (id: string) => void
 }) {
   const selectableItemId = resolvePublicMapItemSelectableId(item)
-  const metadataItems = buildResourceMetadataItems({ item })
+  const metadataItems = [
+    PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory],
+  ]
   const ownerId = buildPublicMapOrganizationListCardOwnerId(selectableItemId)
   const markerColor = resolvePublicMapResourceCategoryColor(
     item.primaryResourceCategory
   )
-  const cardTitle =
-    PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory]
-  const subtitle = resolveResourceListCardSubtitle(item)
   const openResourceDetails = () => onSelectItem?.(selectableItemId)
 
   return (
@@ -68,7 +54,8 @@ export function PublicMapResourceListCard({
       key={item.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "group text-foreground relative h-full w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
+        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
+        PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
         "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
         "motion-reduce:transition-none",
         selected
@@ -94,8 +81,8 @@ export function PublicMapResourceListCard({
     >
       <div
         className={cn(
-          "relative z-10 flex h-full min-w-0 flex-col",
-          constrainedLayout ? "gap-3 p-3" : "gap-4 p-4"
+          "relative z-10 flex h-full min-w-0 flex-col justify-center",
+          constrainedLayout ? "p-3" : "p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -141,17 +128,16 @@ export function PublicMapResourceListCard({
           </span>
           <div className="min-w-0 flex-1 pt-0.5">
             <p
-              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
+              className="text-foreground truncate text-base leading-snug font-semibold"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
                 notes: "Primary resource category text block.",
               })}
             >
-              {cardTitle}
+              {item.title}
             </p>
             <PublicMapListMetadataStrip
-              className="mt-1"
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."
@@ -189,11 +175,6 @@ export function PublicMapResourceListCard({
             />
           </div>
         </div>
-        {subtitle ? (
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed text-pretty">
-            {subtitle}
-          </p>
-        ) : null}
       </div>
     </article>
   )

@@ -11,6 +11,8 @@ import type { PublicMapSidebarProps } from "./sidebar-contract"
 import { PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME } from "./sidebar-theme"
 
 export function PublicMapRailPanel({
+  directoryHeaderEnd,
+  directoryHeaderStart,
   directoryRail,
   directoryMode,
   guides,
@@ -26,6 +28,8 @@ export function PublicMapRailPanel({
   onToggleFavorite,
   onToggleCollectedResource,
 }: {
+  directoryHeaderEnd?: ReactNode
+  directoryHeaderStart?: ReactNode
   directoryRail: ReactNode
   directoryMode: "search" | "details"
   guides: NonNullable<PublicMapSidebarProps["guides"]>
@@ -36,9 +40,7 @@ export function PublicMapRailPanel({
     PublicMapSidebarProps["resourceItemsLoadStatus"]
   >
   resourceItemsLoadError: string | null
-  onRetryResourceItems: NonNullable<
-    PublicMapSidebarProps["retryResourceItems"]
-  >
+  onRetryResourceItems: NonNullable<PublicMapSidebarProps["retryResourceItems"]>
   onGuideSelect: PublicMapSidebarProps["onGuideSelect"]
   onSelectOrganization: PublicMapSidebarProps["onSelectOrganization"]
   onSelectResource: PublicMapSidebarProps["onSelectItem"]
@@ -66,6 +68,8 @@ export function PublicMapRailPanel({
           className="text-sidebar-foreground h-full w-full overflow-hidden bg-transparent"
         >
           <PublicMapMemberRail
+            directoryHeaderEnd={directoryHeaderEnd}
+            directoryHeaderStart={directoryHeaderStart}
             directoryRail={directoryRail}
             directoryMode={directoryMode}
             guides={guides}

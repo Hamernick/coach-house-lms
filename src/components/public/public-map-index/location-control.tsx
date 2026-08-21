@@ -50,7 +50,7 @@ export function PublicMapLocationControl({
   onControlClick,
   onOpenChange,
   status,
-}: PublicMapLocationControlState & { directoryCount: number }) {
+}: PublicMapLocationControlState & { directoryCount: number | null }) {
   const isPending = status === "checking" || status === "requesting"
   const isConsentPrompt = status === "idle" || status === "prompt"
   const label = resolveLocationControlLabel({ active, status })

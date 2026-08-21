@@ -271,7 +271,6 @@ export function PublicMapDrawerSearchPanel({
         <PublicMapDirectoryHome
           counts={discoveryGroupCounts}
           featuredGuides={featuredGuides}
-          items={items}
           onCategorySelect={onActiveGroupChange}
           onGuideSelect={onGuideSelect ?? noopPublicMapSearchAction}
           onToggleSavedGuide={onToggleSavedGuide}

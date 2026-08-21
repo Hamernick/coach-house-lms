@@ -3,6 +3,11 @@ export type PublicMapClaimTargetKind =
   | "resource_map_organization"
   | "new"
 
+export type PublicMapClaimListingOption = {
+  id: string
+  name: string
+}
+
 export type PublicMapClaimStatus =
   | "new"
   | "reviewing"

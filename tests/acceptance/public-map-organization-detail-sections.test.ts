@@ -192,6 +192,7 @@ describe("OrganizationDetailOriginSection", () => {
     expect(markup).toContain(">Organization story<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
+    expect(markup).toContain("pt-1 pb-[3px]")
   })
 
   it("preserves sanitized rich layout and images after expansion", () => {
@@ -205,9 +206,10 @@ describe("OrganizationDetailOriginSection", () => {
     expect(markup).toContain('<h2 style="text-align:center">')
     expect(markup).toContain("<strong>Started</strong>")
     expect(markup).toContain('alt="Founding team"')
-    expect(markup).toContain("prose-img:my-4")
-    expect(markup).toContain("prose-img:rounded-lg")
-    expect(markup).not.toContain("prose-img:rounded-xl")
+    expect(markup).toContain("[&amp;_img]:my-4")
+    expect(markup).toContain("[&amp;_img]:rounded-lg")
+    expect(markup).toContain("[&amp;_img]:overflow-hidden")
+    expect(markup).not.toContain("prose-img:")
   })
 
   it("renders nothing when no public story fields have content", () => {

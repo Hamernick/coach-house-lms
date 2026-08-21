@@ -26,7 +26,11 @@ import {
   buildPublicMapSelectableItemMap,
   resolvePublicMapListItemsFromSelectableIds,
 } from "@/components/public/public-map-index/map-items-state"
-import { buildPublicMapResourceGuides } from "@/components/public/public-map-index/resource-guides"
+import {
+  buildPublicMapResourceGuides,
+  buildPublicMapSavedResourceGuides,
+  filterPublicMapFeaturedResourceGuides,
+} from "@/components/public/public-map-index/resource-guides"
 import {
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_CITY_ANCHORS,
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_ITEMS,
@@ -379,6 +383,36 @@ describe("public map resource map items", () => {
         })
       )
     ).toEqual(expect.arrayContaining(["animals"]))
+  })
+
+  it("supports exact subcategory filters without widening to the parent", () => {
+    const dentalItem = buildGuideResourceItem("dental", {
+      resourceCategories: ["health", "health_dental"],
+      primaryResourceCategory: "health_dental",
+    })
+    const mentalHealthItem = buildGuideResourceItem("mental-health", {
+      resourceCategories: ["health", "health_mental_health"],
+      primaryResourceCategory: "health_mental_health",
+    })
+
+    expect(
+      publicMapItemMatchesGroupFilter({
+        activeGroup: "health",
+        item: dentalItem,
+      })
+    ).toBe(true)
+    expect(
+      publicMapItemMatchesGroupFilter({
+        activeGroup: "health_dental",
+        item: dentalItem,
+      })
+    ).toBe(true)
+    expect(
+      publicMapItemMatchesGroupFilter({
+        activeGroup: "health_dental",
+        item: mentalHealthItem,
+      })
+    ).toBe(false)
   })
 
   it("derives resource display names for civic-owner cooling center rows", () => {
@@ -989,6 +1023,34 @@ describe("public map resource map items", () => {
       })
     }
     expect(guideById.has("gary-food-access")).toBe(false)
+
+    const featuredGuides = filterPublicMapFeaturedResourceGuides(
+      Array.from(guideById.values())
+    )
+    expect(featuredGuides.map((guide) => guide.id)).toEqual([
+      "chicago-food-access",
+      "chicago-housing-shelter",
+      "chicago-health-care",
+      "cooling-heat-relief",
+    ])
+    expect(
+      featuredGuides.every((guide) => guide.imageUrl?.endsWith(".webp"))
+    ).toBe(true)
+  })
+
+  it("retains saved guides when their current public item gate is unavailable", () => {
+    expect(
+      buildPublicMapSavedResourceGuides({
+        guides: [],
+        savedGuideIds: ["chicago-food-access"],
+      })
+    ).toMatchObject([
+      {
+        id: "chicago-food-access",
+        itemCount: 0,
+        available: false,
+      },
+    ])
   })
 
   it("builds marker features with resource colors and legacy org selection ids", () => {

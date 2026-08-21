@@ -275,6 +275,7 @@ export function buildExternalResourceMapItemFromPublicRow(
   return {
     id: `resource_map:${itemId}`,
     itemType: "external_resource",
+    resourceOrganizationId: readStringOrNull(row.organization_id),
     title,
     subtitle: resolvePublicResourceSubtitle({
       subtitle:

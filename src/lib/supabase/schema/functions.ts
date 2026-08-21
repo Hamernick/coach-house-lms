@@ -2,6 +2,28 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  submit_public_map_claim_request: {
+    Args: {
+      p_target_kind: string
+      p_target_id: string | null
+      p_listing_name: string
+      p_claimant_name: string
+      p_claimant_email: string
+      p_message: string | null
+      p_submission_key: string
+      p_risk_key: string
+      p_email_target_key: string
+    }
+    Returns: Json
+  }
+  deliver_public_map_claim_request: {
+    Args: {
+      p_claim_id: string
+      p_owner_id: string
+      p_project_id?: string | null
+    }
+    Returns: Json
+  }
   record_page_health_event: {
     Args: {
       p_event: Json

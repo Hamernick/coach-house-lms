@@ -130,6 +130,15 @@ export function ResourceMapAdminReviewPage({
             </dd>
           </div>
         </dl>
+        <Link
+          href="/admin/platform/resource-map?view=claims"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "h-11 sm:h-8"
+          )}
+        >
+          Claim Requests
+        </Link>
       </header>
 
       <div

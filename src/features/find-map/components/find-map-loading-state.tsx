@@ -4,7 +4,6 @@ import SearchIcon from "lucide-react/dist/esm/icons/search"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "@/components/public/public-map-index/sidebar-theme"
 import { cn } from "@/lib/utils"
 
-const LOADING_CATEGORY_LABELS = ["All", "Basic needs", "Health", "Learning"]
 const LOADING_SIDEBAR_ROW_WIDTHS = ["w-28", "w-36", "w-24", "w-32"]
 
 export function FindMapLoadingSidebar() {
@@ -106,14 +105,15 @@ function FindLoadingDrawer() {
       data-find-map-loading-drawer=""
       className={cn(
         PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-        "absolute inset-x-0 bottom-0 z-20 h-[168px] overflow-hidden rounded-t-[28px] border shadow-sm"
+        "absolute inset-x-0 bottom-0 z-20 min-h-[336px] overflow-hidden rounded-t-[28px] border shadow-sm"
       )}
+      style={{ height: "clamp(336px, 56%, calc(100% - 88px))" }}
       aria-hidden
     >
-      <div className="flex justify-center px-4 pt-3 pb-2">
+      <div className="flex h-11 items-center justify-center px-4">
         <div className="bg-foreground/18 h-1.5 w-12 rounded-full" />
       </div>
-      <div className="flex h-[141.5px] min-h-0 flex-col gap-3 overflow-hidden">
+      <div className="flex h-[calc(100%_-_2.75rem)] min-h-0 flex-col gap-3 overflow-hidden">
         <div className="text-muted-foreground mx-auto flex h-7 shrink-0 items-center justify-center text-xs">
           <span className="text-foreground border-foreground mr-4 border-b px-2 py-1 font-medium">
             Find
@@ -127,20 +127,26 @@ function FindLoadingDrawer() {
               <SearchIcon className="size-4 shrink-0" aria-hidden />
               <span className="truncate">Find organizations and resources</span>
             </div>
-            <div className="-mx-1 flex min-w-0 gap-1 overflow-hidden px-1 pb-0.5">
-              {LOADING_CATEGORY_LABELS.map((label, index) => (
-                <div
-                  key={label}
-                  className={cn(
-                    "border-input bg-input/30 text-muted-foreground flex h-7 shrink-0 items-center rounded-full border px-2.5 text-[11px]",
-                    index === 0 && "bg-input/50 text-foreground"
-                  )}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
           </div>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-2.5 pt-1">
+          <div className="bg-muted-foreground/15 h-6 w-28 shrink-0 rounded" />
+          {["basic-needs", "health"].map((group) => (
+            <div key={group} className="flex flex-col gap-2">
+              <div className="bg-muted-foreground/10 h-3 w-20 rounded-full" />
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div
+                    key={index}
+                    className="border-input bg-input/20 flex h-14 items-center gap-2.5 rounded-xl border px-2.5"
+                  >
+                    <span className="bg-muted-foreground/10 size-8 rounded-full" />
+                    <span className="bg-muted-foreground/10 h-3 w-16 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

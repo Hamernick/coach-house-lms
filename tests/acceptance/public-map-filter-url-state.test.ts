@@ -15,6 +15,7 @@ describe("public map filter URL state", () => {
 
     expect(state).toEqual({
       activeGroup: "housing",
+      activeGuideId: null,
       query: "mutual aid",
     })
   })
@@ -25,6 +26,19 @@ describe("public map filter URL state", () => {
     ).toMatchObject({ activeGroup: "all" })
     expect(resolvePublicMapFilterUrlState(new URLSearchParams())).toEqual({
       activeGroup: "all",
+      activeGuideId: null,
+      query: "",
+    })
+  })
+
+  it("hydrates a supported resource subcategory from the URL", () => {
+    expect(
+      resolvePublicMapFilterUrlState(
+        new URLSearchParams("category=health_mental_health")
+      )
+    ).toEqual({
+      activeGroup: "health_mental_health",
+      activeGuideId: null,
       query: "",
     })
   })
@@ -36,6 +50,7 @@ describe("public map filter URL state", () => {
 
     const params = buildPublicMapFilterSearchParams({
       activeGroup: "all",
+      activeGuideId: null,
       query: "   ",
       searchParams: new URLSearchParams(
         "q=old&category=health&member_onboarding=1"
@@ -49,6 +64,7 @@ describe("public map filter URL state", () => {
     expect(
       buildPublicMapFilterHref({
         activeGroup: "environment",
+        activeGuideId: null,
         pathname: "/find/atlas",
         query: " solar grants ",
         searchParams: new URLSearchParams("member_onboarding=1"),
@@ -56,5 +72,25 @@ describe("public map filter URL state", () => {
     ).toBe(
       "/find/atlas?member_onboarding=1&q=solar+grants&category=environment"
     )
+  })
+
+  it("hydrates and serializes only allowlisted guide IDs", () => {
+    expect(
+      resolvePublicMapFilterUrlState(
+        new URLSearchParams("guide=chicago-food-access")
+      )
+    ).toMatchObject({ activeGuideId: "chicago-food-access" })
+    expect(
+      resolvePublicMapFilterUrlState(new URLSearchParams("guide=made-up"))
+    ).toMatchObject({ activeGuideId: null })
+    expect(
+      buildPublicMapFilterHref({
+        activeGroup: "all",
+        activeGuideId: "chicago-food-access",
+        pathname: "/find",
+        query: "",
+        searchParams: new URLSearchParams("q=old"),
+      })
+    ).toBe("/find?guide=chicago-food-access")
   })
 })

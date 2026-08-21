@@ -29,6 +29,7 @@ import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-item
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
 import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import type { PublicMapResourceGuide } from "./resource-guides"
+import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
 import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
@@ -55,11 +56,15 @@ type PublicMapSurfaceProps = {
   favorites: string[]
   collectedResourceIds?: string[]
   guides?: PublicMapResourceGuide[]
+  featuredGuides?: PublicMapResourceGuide[]
+  savedGuideIds?: PublicMapResourceGuideId[]
+  savedGuides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
   unresolvedCollectedResourceCount?: number
   query: string
   activeGroup: PublicMapGroupFilterKey
+  discoveryGroupCounts?: PublicMapGroupFilterCounts
   groupCounts: PublicMapGroupFilterCounts
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
   resourceItemsLoadError?: string | null
@@ -76,6 +81,7 @@ type PublicMapSurfaceProps = {
   onToggleFavorite: (orgId: string) => void
   onToggleCollectedResource?: (resourceId: string) => void
   onGuideSelect?: (guideId: string) => void
+  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
   onSelectOrganization: (organizationId: string) => void
   onSelectItem: (itemId: string) => void
   onOpenOrgDetails: (
@@ -110,12 +116,16 @@ export function PublicMapSurface({
   favorites,
   collectedResourceIds = [],
   guides = [],
+  featuredGuides = [],
+  savedGuideIds = [],
+  savedGuides = [],
   savedOrganizations,
   savedResources = [],
   unresolvedCollectedResourceCount = 0,
   query,
   activeGroup,
   groupCounts,
+  discoveryGroupCounts = groupCounts,
   resourceItemsLoadStatus,
   resourceItemsLoadError = null,
   searchPending,
@@ -131,6 +141,7 @@ export function PublicMapSurface({
   onToggleFavorite,
   onToggleCollectedResource = () => undefined,
   onGuideSelect,
+  onToggleSavedGuide,
   onSelectOrganization,
   onSelectItem,
   onOpenOrgDetails,
@@ -229,11 +240,15 @@ export function PublicMapSurface({
           favorites={favorites}
           collectedResourceIds={collectedResourceIds}
           guides={guides}
+          featuredGuides={featuredGuides}
+          savedGuideIds={savedGuideIds}
+          savedGuides={savedGuides}
           savedOrganizations={savedOrganizations}
           savedResources={savedResources}
           unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
           query={query}
           activeGroup={activeGroup}
+          discoveryGroupCounts={discoveryGroupCounts}
           groupCounts={groupCounts}
           resourceItemsLoadStatus={resourceItemsLoadStatus}
           resourceItemsLoadError={resourceItemsLoadError}
@@ -245,6 +260,7 @@ export function PublicMapSurface({
           toggleFavorite={onToggleFavorite}
           toggleCollectedResource={onToggleCollectedResource}
           onGuideSelect={onGuideSelect}
+          onToggleSavedGuide={onToggleSavedGuide}
           onSelectOrganization={onSelectOrganization}
           onSelectItem={onSelectItem}
           onOpenDetails={onOpenOrgDetails}

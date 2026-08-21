@@ -6,6 +6,7 @@ import {
   COLLECTED_RESOURCES_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
   RECENT_ORGANIZATIONS_STORAGE_KEY,
+  SAVED_GUIDES_STORAGE_KEY,
   SAVED_QUERIES_STORAGE_KEY,
   type PreferenceMode,
 } from "./constants"
@@ -17,6 +18,7 @@ import {
   stringArraysEqual,
   type PublicMapPreferences,
 } from "./helpers"
+import { normalizePublicMapResourceGuideIds } from "@/lib/public-map/resource-guide-ids"
 
 type PublicMapViewer = { id: string; email: string | null } | null
 
@@ -34,6 +36,9 @@ export function usePublicMapPreferences({
   const [favorites, setFavorites] = useState<string[]>([])
   const [collectedResourceIds, setCollectedResourceIds] = useState<string[]>([])
   const [savedQueries, setSavedQueries] = useState<string[]>([])
+  const [savedGuideIds, setSavedGuideIds] = useState(
+    normalizePublicMapResourceGuideIds([])
+  )
   const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>(
     []
   )
@@ -55,6 +60,9 @@ export function usePublicMapPreferences({
       120
     )
     const localSavedQueries = readStoredArray(SAVED_QUERIES_STORAGE_KEY, 40)
+    const localSavedGuideIds = normalizePublicMapResourceGuideIds(
+      readStoredArray(SAVED_GUIDES_STORAGE_KEY, 40)
+    )
     const localRecentOrganizationIds = readStoredArray(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
       40
@@ -62,6 +70,7 @@ export function usePublicMapPreferences({
     setFavorites(localFavorites)
     setCollectedResourceIds(localCollectedResourceIds)
     setSavedQueries(localSavedQueries)
+    setSavedGuideIds(localSavedGuideIds)
     setRecentOrganizationIds(localRecentOrganizationIds)
     setPreferenceMode("guest")
     setViewer(initialViewer)
@@ -106,6 +115,9 @@ export function usePublicMapPreferences({
           preferences.savedQueries,
           40
         )
+        const nextSavedGuideIds = normalizePublicMapResourceGuideIds(
+          preferences.savedGuideIds
+        )
         const nextRecentOrganizationIds = normalizeStringArray(
           preferences.recentOrganizationIds,
           40
@@ -125,6 +137,9 @@ export function usePublicMapPreferences({
           localSavedQueries,
           40
         )
+        const mergedSavedGuideIds = normalizePublicMapResourceGuideIds(
+          mergeUniqueStrings(nextSavedGuideIds, localSavedGuideIds, 40)
+        )
         const mergedRecentOrganizationIds = mergeUniqueStrings(
           nextRecentOrganizationIds,
           localRecentOrganizationIds,
@@ -137,6 +152,7 @@ export function usePublicMapPreferences({
             nextCollectedResourceIds
           ) ||
           !stringArraysEqual(mergedSavedQueries, nextSavedQueries) ||
+          !stringArraysEqual(mergedSavedGuideIds, nextSavedGuideIds) ||
           !stringArraysEqual(
             mergedRecentOrganizationIds,
             nextRecentOrganizationIds
@@ -147,6 +163,7 @@ export function usePublicMapPreferences({
           setFavorites(mergedFavorites)
           setCollectedResourceIds(mergedCollectedResourceIds)
           setSavedQueries(mergedSavedQueries)
+          setSavedGuideIds(mergedSavedGuideIds)
           setRecentOrganizationIds(mergedRecentOrganizationIds)
           setPreferenceMode("authenticated")
           setPreferencesSaveError(null)
@@ -190,10 +207,20 @@ export function usePublicMapPreferences({
       JSON.stringify(savedQueries)
     )
     window.localStorage.setItem(
+      SAVED_GUIDES_STORAGE_KEY,
+      JSON.stringify(savedGuideIds)
+    )
+    window.localStorage.setItem(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
       JSON.stringify(recentOrganizationIds)
     )
-  }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
+  }, [
+    favorites,
+    preferenceMode,
+    recentOrganizationIds,
+    savedGuideIds,
+    savedQueries,
+  ])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -228,6 +255,7 @@ export function usePublicMapPreferences({
             body: JSON.stringify({
               collectedResourceIds,
               favorites,
+              savedGuideIds,
               savedQueries,
               recentOrganizationIds,
             } satisfies PublicMapPreferences),
@@ -255,18 +283,21 @@ export function usePublicMapPreferences({
     favorites,
     preferenceMode,
     recentOrganizationIds,
+    savedGuideIds,
     savedQueries,
   ])
 
   return {
     collectedResourceIds,
     favorites,
+    savedGuideIds,
     savedQueries,
     recentOrganizationIds,
     preferenceMode,
     preferencesSaveError,
     viewer,
     setFavorites,
+    setSavedGuideIds,
     setCollectedResourceIds,
     setSavedQueries,
     setRecentOrganizationIds,

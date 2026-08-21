@@ -7,6 +7,14 @@ export type PublicMapDrawerSnapPointIndex = 0 | 1 | 2
 
 const PUBLIC_MAP_DRAWER_COLLAPSED_HEIGHT = 168
 
+export function resolveNextPublicMapDrawerSnapPointIndex(
+  currentIndex: PublicMapDrawerSnapPointIndex
+): PublicMapDrawerSnapPointIndex {
+  if (currentIndex === 0) return 1
+  if (currentIndex === 1) return 2
+  return 1
+}
+
 export function buildPublicMapDrawerSnapPoints(
   surfaceHeight: number
 ): PublicMapDrawerSnapPoints {

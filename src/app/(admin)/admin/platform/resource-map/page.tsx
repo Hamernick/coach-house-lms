@@ -8,6 +8,12 @@ import {
   reviewResourceMapImportRecordFormAction,
   setResourceMapPublicVisibilityFormAction,
 } from "@/features/resource-map-admin"
+import {
+  PublicMapClaimAdminPage,
+  loadPublicMapClaimQueue,
+  retryPublicMapClaimDeliveryFormAction,
+  updatePublicMapClaimStatusFormAction,
+} from "@/features/public-map-claims"
 
 export const metadata: Metadata = {
   title: "Resource Map Review",
@@ -28,6 +34,23 @@ export default async function AdminPlatformResourceMapPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const view = readSearchParam(resolvedSearchParams?.view)
+  if (view === "claims") {
+    const claimPage = readPage(resolvedSearchParams?.page)
+    const claimPageSize = 50
+    const claimQueue = await loadPublicMapClaimQueue({
+      limit: claimPageSize,
+      offset: (claimPage - 1) * claimPageSize,
+    })
+    return (
+      <PublicMapClaimAdminPage
+        queue={claimQueue}
+        selectedClaimId={readSearchParam(resolvedSearchParams?.claim)}
+        retryDeliveryAction={retryPublicMapClaimDeliveryFormAction}
+        updateStatusAction={updatePublicMapClaimStatusFormAction}
+      />
+    )
+  }
   const page = readPage(resolvedSearchParams?.page)
   const pageSize = 50
   const queue = await loadResourceMapAdminReviewQueue({

@@ -14,7 +14,11 @@ import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import {
+  buildPlatformOrganizationMapItem,
+  type ExternalResourceMapItem,
+} from "@/lib/public-map/resource-map-items"
+import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
 import { cn } from "@/lib/utils"
 
 import {
@@ -22,22 +26,25 @@ import {
   type PublicMapGroupFilterKey,
 } from "./category-filter"
 import {
-  buildPlatformOrganizationMapItem,
-  publicMapItemMatchesGroupFilter,
-} from "@/lib/public-map/resource-map-items"
+  filterPublicMapSavedGuides,
+  filterPublicMapSavedOrganizations,
+  filterPublicMapSavedResources,
+} from "./member-rail-filters"
 import type { PublicMapDirectoryRailMode } from "./directory-rail"
 import { PublicMapOrganizationsRailSection } from "./member-rail-organization-section"
 import {
   PublicMapGuidesRail,
+  PublicMapResourceGuides,
   type PublicMapResourceGuide,
 } from "./resource-guides"
 import { PublicMapSearchCard } from "./search-card"
-import {
-  buildPublicMapSearchIndex,
-  filterPublicMapOrganizationIds,
-} from "./search-index"
-import { publicMapListItemMatchesQuery } from "./map-items-state"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
+
+export {
+  filterPublicMapSavedGuides,
+  filterPublicMapSavedOrganizations,
+  filterPublicMapSavedResources,
+} from "./member-rail-filters"
 
 const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
   "mx-auto h-7 w-fit max-w-full min-w-0 justify-center gap-0 self-center p-0"
@@ -52,6 +59,8 @@ type PublicMapMemberRailProps = {
   directoryRail?: ReactNode
   directoryMode?: PublicMapDirectoryRailMode | null
   guides?: PublicMapResourceGuide[]
+  savedGuideIds?: PublicMapResourceGuideId[]
+  savedGuides?: PublicMapResourceGuide[]
   savedOrganizations: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
   unresolvedCollectedResourceCount?: number
@@ -60,65 +69,15 @@ type PublicMapMemberRailProps = {
   onRetryResourceItems?: () => void
   onActiveTabChange?: (tab: PublicMapMemberTab) => void
   onGuideSelect?: (guideId: string) => void
+  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
   onSelectOrganization: (organizationId: string) => void
   onSelectResource?: (resourceId: string) => void
   onToggleFavorite: (organizationId: string) => void
   onToggleCollectedResource?: (resourceId: string) => void
 }
 
-export function filterPublicMapSavedResources({
-  activeGroup,
-  query,
-  savedResources,
-}: {
-  activeGroup: PublicMapGroupFilterKey
-  query: string
-  savedResources: ExternalResourceMapItem[]
-}) {
-  return savedResources.filter(
-    (item) =>
-      publicMapListItemMatchesQuery({ item, query }) &&
-      publicMapItemMatchesGroupFilter({ activeGroup, item })
-  )
-}
-
 export type PublicMapMemberTab = "directory" | "guides" | "saved"
-
-export function filterPublicMapSavedOrganizations({
-  activeGroup,
-  query,
-  savedOrganizations,
-}: {
-  activeGroup: PublicMapGroupFilterKey
-  query: string
-  savedOrganizations: PublicMapOrganization[]
-}) {
-  if (savedOrganizations.length === 0) return []
-
-  const savedOrganizationById = new Map(
-    savedOrganizations.map((organization) => [organization.id, organization])
-  )
-  const filteredIds = filterPublicMapOrganizationIds({
-    searchIndex: buildPublicMapSearchIndex(savedOrganizations),
-    query,
-    appliedBounds: null,
-    favorites: savedOrganizations.map((organization) => organization.id),
-    activeGroup: "all",
-    sortByFavorites: false,
-  })
-
-  return filteredIds
-    .map((organizationId) => savedOrganizationById.get(organizationId) ?? null)
-    .filter((organization): organization is PublicMapOrganization =>
-      Boolean(organization)
-    )
-    .filter((organization) =>
-      publicMapItemMatchesGroupFilter({
-        activeGroup,
-        item: buildPlatformOrganizationMapItem(organization),
-      })
-    )
-}
+type PublicMapSavedKind = "all" | "organizations" | "resources" | "guides"
 
 export function PublicMapMemberRail({
   activeTab: controlledActiveTab,
@@ -127,6 +86,8 @@ export function PublicMapMemberRail({
   directoryRail = null,
   directoryMode = null,
   guides = [],
+  savedGuideIds = [],
+  savedGuides = [],
   savedOrganizations,
   savedResources = [],
   unresolvedCollectedResourceCount = 0,
@@ -135,6 +96,7 @@ export function PublicMapMemberRail({
   onRetryResourceItems,
   onActiveTabChange,
   onGuideSelect,
+  onToggleSavedGuide,
   onSelectOrganization,
   onSelectResource,
   onToggleFavorite,
@@ -160,6 +122,7 @@ export function PublicMapMemberRail({
   const [savedQuery, setSavedQuery] = useState("")
   const [savedActiveGroup, setSavedActiveGroup] =
     useState<PublicMapGroupFilterKey>("all")
+  const [savedKind, setSavedKind] = useState<PublicMapSavedKind>("all")
   const previousHasDirectoryRailRef = useRef(hasDirectoryRail)
   const savedItems = useMemo(
     () => [
@@ -190,8 +153,19 @@ export function PublicMapMemberRail({
       }),
     [savedActiveGroup, savedQuery, savedResources]
   )
+  const filteredSavedGuides = useMemo(
+    () =>
+      filterPublicMapSavedGuides({
+        activeGroup: savedActiveGroup,
+        guides: savedGuides,
+        query: savedQuery,
+      }),
+    [savedActiveGroup, savedGuides, savedQuery]
+  )
   const hasSavedFilters =
-    savedQuery.trim().length > 0 || savedActiveGroup !== "all"
+    savedQuery.trim().length > 0 ||
+    savedActiveGroup !== "all" ||
+    savedKind !== "all"
   const showDirectoryHeaderControls =
     activeTab === "directory" &&
     Boolean(directoryHeaderStart || directoryHeaderEnd)
@@ -310,6 +284,8 @@ export function PublicMapMemberRail({
             <PublicMapGuidesRail
               guides={guides}
               onGuideSelect={handleGuideSelect}
+              onToggleSavedGuide={onToggleSavedGuide}
+              savedGuideIds={savedGuideIds}
             />
           </TabsContent>
         ) : null}
@@ -336,6 +312,36 @@ export function PublicMapMemberRail({
               />
             </div>
 
+            <div
+              className="mx-2 flex shrink-0 items-center gap-1 overflow-x-auto"
+              role="group"
+              aria-label="Filter My Map items"
+            >
+              {(
+                [
+                  ["all", "All"],
+                  ["organizations", "Organizations"],
+                  ["resources", "Resources"],
+                  ["guides", "Guides"],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-9 shrink-0 rounded-full px-3 text-xs",
+                    savedKind === value && "bg-accent text-accent-foreground"
+                  )}
+                  aria-pressed={savedKind === value}
+                  onClick={() => setSavedKind(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+
             <PublicMapOrganizationsRailSection
               title="My Map"
               icon={
@@ -344,15 +350,35 @@ export function PublicMapMemberRail({
                   aria-hidden
                 />
               }
-              organizations={filteredSavedOrganizations}
-              resources={filteredSavedResources}
+              organizations={
+                savedKind === "all" || savedKind === "organizations"
+                  ? filteredSavedOrganizations
+                  : []
+              }
+              resources={
+                savedKind === "all" || savedKind === "resources"
+                  ? filteredSavedResources
+                  : []
+              }
+              leadingContent={
+                (savedKind === "all" || savedKind === "guides") &&
+                filteredSavedGuides.length > 0 ? (
+                  <PublicMapResourceGuides
+                    guides={filteredSavedGuides}
+                    onGuideSelect={handleGuideSelect}
+                    onToggleSavedGuide={onToggleSavedGuide}
+                    savedGuideIds={savedGuideIds}
+                    showHeader={false}
+                  />
+                ) : null
+              }
               emptyTitle={
                 unresolvedCollectedResourceCount > 0 && !hasSavedFilters
                   ? resourceItemsLoadStatus === "loading"
                     ? "Loading My Map"
                     : "Collected resources unavailable"
                   : hasSavedFilters
-                    ? "No collected results"
+                    ? "No saved results"
                     : "Nothing collected yet"
               }
               emptyDescription={
@@ -362,8 +388,8 @@ export function PublicMapMemberRail({
                     : (resourceItemsLoadError ??
                       "Try again to restore your collected resources.")
                   : hasSavedFilters
-                    ? "Try a different search or category filter."
-                    : "Collect nonprofits and resources to keep them here."
+                    ? "Try a different search, category, or item filter."
+                    : "Collect nonprofits, resources, and guides to keep them here."
               }
               className="mx-2 min-h-0 flex-1 bg-transparent"
               onSelectOrganization={handleSelectOrganization}

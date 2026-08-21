@@ -4,12 +4,13 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
+  PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER,
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
   PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
   PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
-  publicMapResourceCategoryMatchesTopLevel,
+  isPublicMapResourceCategoryKey,
+  resolvePublicMapResourceTopLevelCategory,
   type PublicMapResourceCategoryKey,
-  type PublicMapResourceTopLevelCategoryKey,
 } from "@/lib/public-map/resource-categories"
 import { cn } from "@/lib/utils"
 import {
@@ -18,15 +19,18 @@ import {
 } from "./resource-category-icon"
 import { PUBLIC_MAP_FILTER_PILL_CLASSNAME } from "./sidebar-theme"
 
-export type PublicMapGroupFilterKey =
-  | PublicMapResourceTopLevelCategoryKey
-  | "all"
+export type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
 
 export type PublicMapGroupFilterCounts = Record<PublicMapGroupFilterKey, number>
 
 export const PUBLIC_MAP_GROUP_FILTER_ORDER = [
   "all",
   ...PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
+] satisfies PublicMapGroupFilterKey[]
+
+const PUBLIC_MAP_GROUP_FILTER_COUNT_ORDER = [
+  "all",
+  ...PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER,
 ] satisfies PublicMapGroupFilterKey[]
 
 function resolvePublicMapGroupFilterLabel(key: PublicMapGroupFilterKey) {
@@ -42,7 +46,7 @@ function resolvePublicMapGroupFilterAccent(key: PublicMapGroupFilterKey) {
 export function isPublicMapGroupFilterKey(
   value: string | null | undefined
 ): value is PublicMapGroupFilterKey {
-  return PUBLIC_MAP_GROUP_FILTER_ORDER.some((key) => key === value)
+  return value === "all" || isPublicMapResourceCategoryKey(value)
 }
 
 export function resolvePublicMapGroupFilterParam(
@@ -55,30 +59,21 @@ export function buildPublicMapGroupFilterCounts(
   items: Array<{ resourceCategories?: readonly PublicMapResourceCategoryKey[] }>
 ): PublicMapGroupFilterCounts {
   const counts = Object.fromEntries(
-    PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => [key, 0])
+    PUBLIC_MAP_GROUP_FILTER_COUNT_ORDER.map((key) => [key, 0])
   ) as PublicMapGroupFilterCounts
 
   counts.all = items.length
   for (const item of items) {
-    const matchedTopLevelCategories =
-      new Set<PublicMapResourceTopLevelCategoryKey>()
+    const matchedCategories = new Set<PublicMapResourceCategoryKey>()
     const categories =
       item.resourceCategories && item.resourceCategories.length > 0
         ? item.resourceCategories
         : (["community"] as const)
     for (const category of categories) {
-      for (const topLevelCategory of PUBLIC_MAP_RESOURCE_CATEGORY_ORDER) {
-        if (
-          publicMapResourceCategoryMatchesTopLevel({
-            category,
-            topLevelCategory,
-          })
-        ) {
-          matchedTopLevelCategories.add(topLevelCategory)
-        }
-      }
+      matchedCategories.add(category)
+      matchedCategories.add(resolvePublicMapResourceTopLevelCategory(category))
     }
-    for (const category of matchedTopLevelCategories) {
+    for (const category of matchedCategories) {
       counts[category] += 1
     }
   }
@@ -117,7 +112,11 @@ export function PublicMapCategoryFilter({
     >
       {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
         const count = counts[key]
-        const selected = activeGroup === key
+        const selected =
+          activeGroup === key ||
+          (activeGroup !== "all" &&
+            key !== "all" &&
+            resolvePublicMapResourceTopLevelCategory(activeGroup) === key)
         const label = resolvePublicMapGroupFilterLabel(key)
         const accent = resolvePublicMapGroupFilterAccent(key)
         const disabled = key !== "all" && count === 0

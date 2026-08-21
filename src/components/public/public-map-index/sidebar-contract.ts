@@ -11,6 +11,7 @@ import type { PublicMapPanelPresentation } from "./map-view-helpers"
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
 import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import type { PublicMapResourceGuide } from "./resource-guides"
+import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
 import type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
@@ -36,11 +37,15 @@ export type PublicMapSidebarProps = {
   favorites: string[]
   collectedResourceIds?: string[]
   guides?: PublicMapResourceGuide[]
+  featuredGuides?: PublicMapResourceGuide[]
+  savedGuideIds?: PublicMapResourceGuideId[]
+  savedGuides?: PublicMapResourceGuide[]
   savedOrganizations?: PublicMapOrganization[]
   savedResources?: ExternalResourceMapItem[]
   unresolvedCollectedResourceCount?: number
   query: string
   activeGroup: PublicMapGroupFilterKey
+  discoveryGroupCounts?: PublicMapGroupFilterCounts
   groupCounts: PublicMapGroupFilterCounts
   resourceItemsLoadStatus?: PublicMapResourceItemsLoadStatus
   resourceItemsLoadError?: string | null
@@ -53,6 +58,7 @@ export type PublicMapSidebarProps = {
   toggleCollectedResource?: (resourceId: string) => void
   onSelectItem: (itemId: string) => void
   onGuideSelect?: (guideId: string) => void
+  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
   onSelectOrganization: (organizationId: string) => void
   onOpenDetails: OpenDetails
   onBackToSearch: () => void

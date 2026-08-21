@@ -102,9 +102,12 @@ describe("app shell navigation performance", () => {
     )
 
     expect(publicMapSource).toContain("useDeferredValue")
-    expect(publicMapSource).toContain("deferredQuery: query")
+    expect(publicMapSource).toContain("deferredQuery,")
     expect(publicMapSource).toContain(
-      "filteredOrganizations: mapFilteredOrganizations"
+      "filteredMapItems: filterState.filteredItems"
+    )
+    expect(publicMapSource).toContain(
+      "organizations: filterState.filteredOrganizations"
     )
     expect(publicMapSource).toContain("query,")
     expect(searchIndexSource).not.toContain("new Map(organizations.map")

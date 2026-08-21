@@ -1,6 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import type { PlatformOrganizationMapItem } from "@/lib/public-map/resource-map-items"
 import { buildPublicImageTransformUrl } from "@/lib/storage/public-url"
 import { cn } from "@/lib/utils"
@@ -14,27 +15,32 @@ import {
   buildLocationMetadataItems,
   PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
   PUBLIC_MAP_LIST_CARD_PERF_STYLE,
+  PublicMapHighlightedText,
   PublicMapListMetadataStrip,
-  PublicMapListViewButton,
 } from "./organization-list-card-shared"
 
 export function PublicMapPlatformOrganizationListCard({
   constrainedLayout,
   item,
   selected,
+  query,
   onOpenDetails,
   onSelectOrg,
 }: {
   constrainedLayout: boolean
   item: PlatformOrganizationMapItem
   selected: boolean
+  query?: string
   onOpenDetails?: (id: string) => void
   onSelectOrg: (id: string) => void
 }) {
   const org = item.organization
   const categoryMetadataItems = buildLocationMetadataItems({
+    city: org.city,
+    country: org.country,
     primaryGroup: org.primaryGroup,
     isOnlineOnly: org.isOnlineOnly,
+    state: org.state,
   })
   const fallbackInitials = buildInitials(org.name)
   const hasLogoImage = Boolean(org.logoUrl && org.logoUrl.trim().length > 0)
@@ -55,24 +61,9 @@ export function PublicMapPlatformOrganizationListCard({
       key={org.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
-        PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
-        "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
-        "motion-reduce:transition-none",
-        selected
-          ? "border-primary/35 bg-accent text-accent-foreground dark:bg-accent/50"
-          : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
+        "text-foreground relative w-full max-w-full min-w-0 overflow-hidden bg-transparent",
+        PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
       )}
-      role="button"
-      tabIndex={0}
-      aria-label={`Open details for ${org.name}`}
-      onClick={openDetails}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return
-        if (event.key !== "Enter" && event.key !== " ") return
-        event.preventDefault()
-        openDetails()
-      }}
       {...buildPublicMapOrganizationListCardOwnerProps({
         ownerId,
         slot: "card",
@@ -80,9 +71,18 @@ export function PublicMapPlatformOrganizationListCard({
           "Clicking the non-action parts of the card opens the organization detail panel.",
       })}
     >
-      <div
+      <Button
+        type="button"
+        variant="ghost"
+        data-public-map-result-trigger="true"
+        aria-label={`Open details for ${org.name}`}
+        onClick={openDetails}
         className={cn(
-          "relative z-10 flex h-full min-w-0 flex-col justify-center",
+          "group relative z-10 flex h-full w-full min-w-0 justify-start rounded-none text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
+          "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
+          selected
+            ? "bg-accent text-accent-foreground dark:bg-accent/50"
+            : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
           constrainedLayout ? "p-3" : "p-4"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -136,22 +136,18 @@ export function PublicMapPlatformOrganizationListCard({
                 notes: "Organization name text block.",
               })}
             >
-              {org.name}
+              <PublicMapHighlightedText query={query} text={org.name} />
             </p>
             <PublicMapListMetadataStrip
               itemKeyPrefix="category"
               items={categoryMetadataItems}
               notes="Primary category for the organization list card."
               ownerId={ownerId}
+              query={query}
             />
           </div>
-          <PublicMapListViewButton
-            ownerId={ownerId}
-            onClick={openDetails}
-            notes="Explicit right-aligned call-to-action button for opening organization details."
-          />
         </div>
-      </div>
+      </Button>
     </article>
   )
 }

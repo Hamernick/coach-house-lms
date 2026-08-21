@@ -29,12 +29,23 @@ export function ShareButton({
   const [busy, setBusy] = useState(false)
 
   async function handleShare() {
-    const target = url || (typeof window !== "undefined" ? window.location.href : "")
-    if (!target) return
+    const rawTarget =
+      url || (typeof window !== "undefined" ? window.location.href : "")
+    if (!rawTarget) return
+    const target =
+      typeof window !== "undefined"
+        ? new URL(rawTarget, window.location.origin).toString()
+        : rawTarget
     try {
       setBusy(true)
-      if (typeof navigator !== "undefined" && "share" in navigator && typeof navigator.share === "function") {
-        await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({ title, url: target })
+      if (
+        typeof navigator !== "undefined" &&
+        "share" in navigator &&
+        typeof navigator.share === "function"
+      ) {
+        await (
+          navigator as Navigator & { share: (data: ShareData) => Promise<void> }
+        ).share({ title, url: target })
         toast.success("Link ready to share")
       } else if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(target)
@@ -61,7 +72,10 @@ export function ShareButton({
       variant={buttonVariant}
       onClick={handleShare}
       disabled={busy}
-      className={cn(iconOnly ? "" : "inline-flex items-center gap-2", className)}
+      className={cn(
+        iconOnly ? "" : "inline-flex items-center gap-2",
+        className
+      )}
       aria-label={label}
       title={label}
     >

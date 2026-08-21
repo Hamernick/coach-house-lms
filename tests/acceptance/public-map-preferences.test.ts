@@ -32,8 +32,10 @@ describe("public map preferences", () => {
     expect(surfaceSource).not.toContain("isSavingPreferences")
     expect(preferencesSource).toContain('method: "PATCH"')
     expect(preferencesSource).toContain("COLLECTED_RESOURCES_STORAGE_KEY")
+    expect(preferencesSource).toContain("SAVED_GUIDES_STORAGE_KEY")
     expect(preferencesSource).toContain("mergedCollectedResourceIds")
     expect(preferencesSource).toContain("collectedResourceIds,")
+    expect(preferencesSource).toContain("savedGuideIds,")
     expect(preferencesSource).toContain(
       'if (preferenceMode === "unknown" || preferenceMode === "authenticated")'
     )

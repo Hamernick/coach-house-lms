@@ -1,6 +1,6 @@
 "use client"
 
-import { memo } from "react"
+import { memo, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
@@ -79,6 +79,7 @@ function PublicMapOrganizationListComponent({
   query,
   constrainedLayout = false,
   incrementalLoading = false,
+  leadingContent,
   initialVisibleCount = PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
   pageSize = PUBLIC_MAP_LIST_PAGE_SIZE,
   activeGroup = "all",
@@ -98,6 +99,7 @@ function PublicMapOrganizationListComponent({
   query?: string
   constrainedLayout?: boolean
   incrementalLoading?: boolean
+  leadingContent?: ReactNode
   initialVisibleCount?: number
   pageSize?: number
   activeGroup?: PublicMapGroupFilterKey
@@ -173,7 +175,7 @@ function PublicMapOrganizationListComponent({
             ? { label: "Try again", onClick: onRetryLoad }
             : null
 
-    return (
+    const emptyState = (
       <Empty
         data-public-map-search-empty="true"
         variant="subtle"
@@ -196,6 +198,17 @@ function PublicMapOrganizationListComponent({
         }
       />
     )
+
+    if (!leadingContent) return emptyState
+
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-2">
+        <div className="divide-border/60 bg-background/85 border-input divide-y overflow-hidden rounded-2xl border backdrop-blur-xl">
+          {leadingContent}
+        </div>
+        {emptyState}
+      </div>
+    )
   }
 
   return (
@@ -206,8 +219,9 @@ function PublicMapOrganizationListComponent({
     >
       <div
         data-public-map-organization-list-section="card-grid"
-        className="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-stretch gap-3"
+        className="divide-border/60 bg-background/85 border-input grid w-full min-w-0 grid-cols-1 items-stretch divide-y overflow-hidden rounded-2xl border backdrop-blur-xl"
       >
+        {leadingContent}
         {visibleItems.map((item) => {
           const selectableItemId = resolvePublicMapItemSelectableId(item)
           const selected = resolvedSelectedItemId === selectableItemId
@@ -218,6 +232,7 @@ function PublicMapOrganizationListComponent({
                 key={item.id}
                 item={item}
                 selected={selected}
+                query={query}
                 constrainedLayout={constrainedLayout}
                 onSelectItem={onSelectItem}
               />
@@ -229,6 +244,7 @@ function PublicMapOrganizationListComponent({
               key={item.id}
               item={item}
               selected={selected}
+              query={query}
               constrainedLayout={constrainedLayout}
               onSelectOrg={onSelectOrg}
               onOpenDetails={onOpenDetails}

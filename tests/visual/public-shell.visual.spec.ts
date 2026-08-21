@@ -291,6 +291,38 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
   page,
 }) => {
   test.setTimeout(60_000)
+  await page.route("**/api/public/resource-map/index?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        page: {
+          hasMore: false,
+          limit: 200,
+          nextCursor: null,
+          totalCount: 1,
+        },
+        resourceItems: [
+          {
+            city: "Chicago",
+            country: "United States",
+            id: "resource_map:visual-food-pantry",
+            itemType: "external_resource",
+            latitude: 41.881,
+            longitude: -87.629,
+            primaryResourceCategory: "food",
+            resourceCategories: ["food"],
+            state: "IL",
+            subtitle: "Community food access",
+            title: "Visual Test Food Pantry",
+            verificationStatus: "external_data",
+            visibility: "published",
+          },
+        ],
+        version: 2,
+      },
+      status: 200,
+    })
+  })
   await page.goto("/find")
 
   const drawer = page.getByRole("dialog", { name: "Resource map panel" })

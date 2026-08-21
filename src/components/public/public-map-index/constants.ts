@@ -27,6 +27,7 @@ export const FAVORITES_STORAGE_KEY = "public-map:favorites:v1"
 export const COLLECTED_RESOURCES_STORAGE_KEY =
   "public-map:collected-resources:v1"
 export const SAVED_QUERIES_STORAGE_KEY = "public-map:saved-queries:v1"
+export const SAVED_GUIDES_STORAGE_KEY = "public-map:saved-guides:v1"
 export const RECENT_ORGANIZATIONS_STORAGE_KEY =
   "public-map:recent-organizations:v1"
 export const RECENT_ORGANIZATIONS_LIMIT = 40

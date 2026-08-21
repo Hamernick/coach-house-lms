@@ -37,6 +37,7 @@ import type { ResourceMapImportRecordMatchesTable } from "./resource_map_import_
 import type { ResourceMapFieldEvidenceTable } from "./resource_map_field_evidence"
 import type { ResourceMapCurationEventsTable } from "./resource_map_curation_events"
 import type { PublicMapOrganizationCurationEventsTable } from "./public_map_organization_curation_events"
+import type { PublicMapClaimRequestsTable } from "./public_map_claim_requests"
 import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
@@ -150,6 +151,7 @@ export type { ResourceMapImportRecordMatchesTable } from "./resource_map_import_
 export type { ResourceMapFieldEvidenceTable } from "./resource_map_field_evidence"
 export type { ResourceMapCurationEventsTable } from "./resource_map_curation_events"
 export type { PublicMapOrganizationCurationEventsTable } from "./public_map_organization_curation_events"
+export type { PublicMapClaimRequestsTable } from "./public_map_claim_requests"
 export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
@@ -264,6 +266,7 @@ export type PublicTables = {
   resource_map_field_evidence: ResourceMapFieldEvidenceTable
   resource_map_curation_events: ResourceMapCurationEventsTable
   public_map_organization_curation_events: PublicMapOrganizationCurationEventsTable
+  public_map_claim_requests: PublicMapClaimRequestsTable
   accelerator_purchases: AcceleratorPurchasesTable
   elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable

@@ -49,7 +49,7 @@ describe("find-map feature", () => {
     expect(sidebarMarkup).toContain('aria-hidden="true"')
     expect(markup).toContain('data-find-map-loading-state="layout-preserving"')
     expect(markup).toContain('data-find-map-loading-drawer=""')
-    expect(markup).toContain("h-[168px]")
+    expect(markup).toContain("min-h-[336px]")
     expect(markup).toContain("rounded-t-[28px]")
     expect(markup).toContain("Find organizations and resources")
     expect(markup).toContain("Loading resources…")

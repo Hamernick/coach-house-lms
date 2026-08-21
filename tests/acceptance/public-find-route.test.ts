@@ -85,14 +85,30 @@ describe("public find routes", () => {
     }
   })
 
+  it("starts resource discovery with the measured 200-item page size", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+
+    for (const routeFile of routeFiles) {
+      expect(readRoute(routeFile)).toContain(
+        '"/api/public/resource-map/index?limit=200"'
+      )
+    }
+  })
+
   it("wires onboarding-locked free/member users into the map-native intro", () => {
     const routeFiles = [
       "src/app/(public)/find/page.tsx",
       "src/app/(public)/find/[slug]/page.tsx",
     ]
-    const publicMapSource = readRoute(
-      "src/components/public/public-map-index.tsx"
-    )
+    const publicMapSource = [
+      readRoute("src/components/public/public-map-index.tsx"),
+      readRoute(
+        "src/components/public/public-map-index/public-map-index-state.ts"
+      ),
+    ].join("\n")
     const previewControlsSource = readRoute(
       "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
     )
@@ -111,7 +127,9 @@ describe("public find routes", () => {
     }
 
     expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
-    expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
+    expect(publicMapSource).toContain(
+      "mapOverlay={memberOnboardingState.overlay}"
+    )
     expect(mapSurfaceSource).toContain('data-public-map-overlay-layer=""')
     expect(mapSurfaceSource).toContain(
       'className="pointer-events-none absolute inset-0"'
@@ -133,9 +151,12 @@ describe("public find routes", () => {
       "src/app/(public)/find/page.tsx",
       "src/app/(public)/find/[slug]/page.tsx",
     ]
-    const publicMapSource = readRoute(
-      "src/components/public/public-map-index.tsx"
-    )
+    const publicMapSource = [
+      readRoute("src/components/public/public-map-index.tsx"),
+      readRoute(
+        "src/components/public/public-map-index/public-map-index-state.ts"
+      ),
+    ].join("\n")
     const previewControlsSource = readRoute(
       "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
     )
@@ -152,7 +173,9 @@ describe("public find routes", () => {
     }
 
     expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
-    expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
+    expect(publicMapSource).toContain(
+      "mapOverlay={memberOnboardingState.overlay}"
+    )
     expect(previewControlsSource).toContain(
       "PublicMapMemberOnboardingPreviewToggle"
     )
@@ -218,9 +241,10 @@ describe("public find routes", () => {
     const mapSurfaceSource = readRoute(
       "src/components/public/public-map-index/map-surface.tsx"
     )
-    const sidebarSource = readRoute(
-      "src/components/public/public-map-index/sidebar.tsx"
-    )
+    const sidebarSource = [
+      readRoute("src/components/public/public-map-index/sidebar.tsx"),
+      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
+    ].join("\n")
     expect(publicMapSelectionSource).toContain(
       "const handleBackToSearch = useCallback"
     )
@@ -273,9 +297,10 @@ describe("public find routes", () => {
     const publicMapChromeSource = readRoute(
       "src/components/public/public-map-index/public-map-index-chrome.tsx"
     )
-    const sidebarSource = readRoute(
-      "src/components/public/public-map-index/sidebar.tsx"
-    )
+    const sidebarSource = [
+      readRoute("src/components/public/public-map-index/sidebar.tsx"),
+      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
+    ].join("\n")
     const mapViewHelpersSource = readRoute(
       "src/components/public/public-map-index/map-view-helpers.ts"
     )
@@ -340,9 +365,10 @@ describe("public find routes", () => {
     const memberRailSource = readRoute(
       "src/components/public/public-map-index/member-rail.tsx"
     )
-    const sidebarSource = readRoute(
-      "src/components/public/public-map-index/sidebar.tsx"
-    )
+    const sidebarSource = [
+      readRoute("src/components/public/public-map-index/sidebar.tsx"),
+      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
+    ].join("\n")
     const sidebarThemeSource = readRoute(
       "src/components/public/public-map-index/sidebar-theme.ts"
     )
@@ -455,9 +481,11 @@ describe("public find routes", () => {
     expect(filterUrlHookSource).toContain("initialFilterState.activeGroup")
     expect(filterStateSource).toContain("buildPublicMapGroupFilterCounts")
     expect(filterStateSource).toContain("buildPublicMapItems")
-    expect(publicMapSource).toContain("organizations: mapFilteredOrganizations")
     expect(publicMapSource).toContain(
-      "filteredOrganizations={filteredOrganizations}"
+      "organizations: filterState.filteredOrganizations"
+    )
+    expect(publicMapSource).toContain(
+      "filteredOrganizations={filterState.filteredOrganizations}"
     )
     expect(searchCardSource).toContain("PublicMapCategoryFilter")
     expect(categoryFilterSource).toContain(
@@ -507,14 +535,15 @@ describe("public find routes", () => {
   })
 
   it("expands search into a responsive, stateful drawer experience", () => {
-    const sidebarSource = readRoute(
-      "src/components/public/public-map-index/sidebar.tsx"
-    )
+    const sidebarSource = [
+      readRoute("src/components/public/public-map-index/sidebar.tsx"),
+      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
+    ].join("\n")
     const searchCardSource = readRoute(
       "src/components/public/public-map-index/search-card.tsx"
     )
-    const sidebarPanelsSource = readRoute(
-      "src/components/public/public-map-index/sidebar-panels.tsx"
+    const searchResultsStatusSource = readRoute(
+      "src/components/public/public-map-index/search-results-status.tsx"
     )
     const organizationListSource = readRoute(
       "src/components/public/public-map-index/organization-list.tsx"
@@ -536,10 +565,10 @@ describe("public find routes", () => {
     expect(searchCardSource).toContain('aria-label="Clear search"')
     expect(searchCardSource).toContain("onFocus={onSearchEngage}")
     expect(searchCardSource).toContain("aria-busy={searchPending}")
-    expect(sidebarPanelsSource).toContain(
+    expect(searchResultsStatusSource).toContain(
       'data-public-map-search-results-status="true"'
     )
-    expect(sidebarPanelsSource).toContain("Loading resources…")
+    expect(searchResultsStatusSource).toContain("Loading resources…")
     expect(organizationListSource).toContain(
       'data-public-map-search-loading="true"'
     )

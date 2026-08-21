@@ -86,7 +86,33 @@ describe("account map preferences route", () => {
           favorites: ["organization-1"],
           savedQueries: ["food access"],
           recentOrganizationIds: ["organization-2"],
+          savedGuideIds: [],
         },
+      },
+    })
+  })
+
+  it("persists only allowlisted guide IDs", async () => {
+    const { supabase, updateUser } = buildSupabaseStub()
+    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
+
+    const { PATCH } = await import("@/app/api/account/map-preferences/route")
+    const response = await PATCH(
+      buildPatchRequest({
+        savedGuideIds: [
+          "chicago-food-access",
+          "made-up-guide",
+          "chicago-food-access",
+        ],
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(updateUser).toHaveBeenCalledWith({
+      data: {
+        map_preferences: expect.objectContaining({
+          savedGuideIds: ["chicago-food-access"],
+        }),
       },
     })
   })

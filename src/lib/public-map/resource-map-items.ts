@@ -5,6 +5,7 @@ import { publicMapTextContainsCategoryAlias } from "./resource-category-alias-ma
 import type { PublicMapGroupKey } from "./groups"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS,
+  isPublicMapResourceTopLevelCategoryKey,
   publicMapResourceCategoryMatchesTopLevel,
   resolvePublicMapResourceCategoryColor,
   resolvePublicMapResourceTopLevelCategory,
@@ -136,6 +137,7 @@ export type ExternalResourceMapItem = PublicMapBaseItem & {
   itemType: "external_resource"
   organization?: never
   orgCategory: null
+  resourceOrganizationId?: string | null
   verificationStatus: PublicMapVerificationStatus
 }
 
@@ -143,7 +145,7 @@ export type PublicMapItem =
   | PlatformOrganizationMapItem
   | ExternalResourceMapItem
 
-type PublicMapGroupFilterKey = PublicMapResourceTopLevelCategoryKey | "all"
+type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
 
 const GROUP_RESOURCE_CATEGORY_FALLBACKS: Record<
   PublicMapGroupKey,
@@ -277,12 +279,16 @@ export function publicMapItemMatchesGroupFilter({
 }) {
   if (activeGroup === "all") return true
 
-  return item.resourceCategories.some((category) =>
-    publicMapResourceCategoryMatchesTopLevel({
-      category,
-      topLevelCategory: activeGroup,
-    })
-  )
+  if (isPublicMapResourceTopLevelCategoryKey(activeGroup)) {
+    return item.resourceCategories.some((category) =>
+      publicMapResourceCategoryMatchesTopLevel({
+        category,
+        topLevelCategory: activeGroup,
+      })
+    )
+  }
+
+  return item.resourceCategories.includes(activeGroup)
 }
 
 export function resolvePublicMapItemMarkerColor(item: PublicMapItem) {

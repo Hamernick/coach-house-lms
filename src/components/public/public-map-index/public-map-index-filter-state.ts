@@ -10,11 +10,7 @@ import {
   buildPublicMapGroupFilterCounts,
   type PublicMapGroupFilterKey,
 } from "./category-filter"
-import { publicMapListItemMatchesQuery } from "./map-items-state"
-import {
-  buildPublicMapSearchIndex,
-  filterPublicMapOrganizationIds,
-} from "./search-index"
+import { rankPublicMapListItems } from "./map-items-state"
 
 export function usePublicMapOrganizationById(
   organizations: PublicMapOrganization[]
@@ -41,24 +37,20 @@ export function usePublicMapFilteredOrganizations({
   organizationById: Map<string, PublicMapOrganization>
   organizations: PublicMapOrganization[]
 }) {
-  const searchIndex = useMemo(
-    () => buildPublicMapSearchIndex(organizations),
-    [organizations]
+  return useMemo(
+    () =>
+      rankPublicMapListItems({
+        favorites,
+        items: buildPublicMapItems({ organizations }),
+        query: deferredQuery,
+      }).flatMap((item) =>
+        item.itemType === "platform_organization" &&
+        organizationById.has(item.organization.id)
+          ? [item.organization]
+          : []
+      ),
+    [deferredQuery, favorites, organizationById, organizations]
   )
-  return useMemo(() => {
-    const filteredIds = filterPublicMapOrganizationIds({
-      searchIndex,
-      query: deferredQuery,
-      appliedBounds: null,
-      favorites,
-      activeGroup: "all",
-    })
-    return filteredIds
-      .map((organizationId) => organizationById.get(organizationId) ?? null)
-      .filter((organization): organization is PublicMapOrganization =>
-        Boolean(organization)
-      )
-  }, [deferredQuery, favorites, organizationById, searchIndex])
 }
 
 export function usePublicMapOrganizationFilterState({
@@ -66,7 +58,6 @@ export function usePublicMapOrganizationFilterState({
   deferredQuery,
   favorites,
   includeSeedResources,
-  organizationById,
   organizations,
   resourceItems,
 }: {
@@ -74,31 +65,30 @@ export function usePublicMapOrganizationFilterState({
   deferredQuery: string
   favorites: string[]
   includeSeedResources: boolean
-  organizationById: Map<string, PublicMapOrganization>
   organizations: PublicMapOrganization[]
   resourceItems?: ExternalResourceMapItem[]
 }) {
-  const queryMatchedOrganizations = usePublicMapFilteredOrganizations({
-    deferredQuery,
-    favorites,
-    organizationById,
-    organizations,
-  })
-  const countItems = useMemo(
+  const discoveryItems = useMemo(
     () =>
       buildPublicMapItems({
-        organizations: queryMatchedOrganizations,
+        organizations,
         includeSeedItems: includeSeedResources,
         resourceItems,
-      }).filter((item) =>
-        publicMapListItemMatchesQuery({ item, query: deferredQuery })
-      ),
-    [
-      deferredQuery,
-      includeSeedResources,
-      queryMatchedOrganizations,
-      resourceItems,
-    ]
+      }),
+    [includeSeedResources, organizations, resourceItems]
+  )
+  const discoveryGroupCounts = useMemo(
+    () => buildPublicMapGroupFilterCounts(discoveryItems),
+    [discoveryItems]
+  )
+  const countItems = useMemo(
+    () =>
+      rankPublicMapListItems({
+        favorites,
+        items: discoveryItems,
+        query: deferredQuery,
+      }),
+    [deferredQuery, discoveryItems, favorites]
   )
   const groupCounts = useMemo(
     () => buildPublicMapGroupFilterCounts(countItems),
@@ -111,7 +101,14 @@ export function usePublicMapOrganizationFilterState({
       ),
     [activeGroup, countItems]
   )
-  const filteredOrganizations = queryMatchedOrganizations
+  const filteredOrganizations = filteredItems.flatMap((item) =>
+    item.itemType === "platform_organization" ? [item.organization] : []
+  )
 
-  return { filteredItems, filteredOrganizations, groupCounts }
+  return {
+    discoveryGroupCounts,
+    filteredItems,
+    filteredOrganizations,
+    groupCounts,
+  }
 }

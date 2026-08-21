@@ -291,6 +291,38 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
   page,
 }) => {
   test.setTimeout(60_000)
+  await page.route("**/api/public/resource-map/index?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        page: {
+          hasMore: false,
+          limit: 200,
+          nextCursor: null,
+          totalCount: 1,
+        },
+        resourceItems: [
+          {
+            city: "Chicago",
+            country: "United States",
+            id: "resource_map:visual-food-pantry",
+            itemType: "external_resource",
+            latitude: 41.881,
+            longitude: -87.629,
+            primaryResourceCategory: "food",
+            resourceCategories: ["food"],
+            state: "IL",
+            subtitle: "Community food access",
+            title: "Visual Test Food Pantry",
+            verificationStatus: "external_data",
+            visibility: "published",
+          },
+        ],
+        version: 2,
+      },
+      status: 200,
+    })
+  })
   await page.goto("/find")
 
   const drawer = page.getByRole("dialog", { name: "Resource map panel" })
@@ -309,14 +341,63 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
       name: "Find organizations and resources",
     })
   ).toBeVisible()
+  await expect(
+    drawer.getByRole("heading", { name: "Find Nearby" })
+  ).toBeVisible()
+  await expect(drawer.getByLabel("Filter resources by category")).toHaveCount(0)
+  const searchInput = drawer.getByRole("searchbox", {
+    name: "Find organizations and resources",
+  })
+  expect(
+    await searchInput.evaluate(
+      (element) =>
+        getComputedStyle(element.closest(".text-card-foreground")!)
+          .borderBottomWidth
+    )
+  ).toBe("0px")
+  await searchInput.fill("food")
   await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
+  await expect(drawer.getByRole("button", { name: "Cancel" })).toBeVisible()
+  const resultTriggers = drawer.locator(
+    '[data-public-map-result-trigger="true"]'
+  )
+  await expect(resultTriggers.first()).toBeVisible()
+  await expect(
+    drawer.locator('[data-public-map-organization-list-section="card-grid"]')
+  ).toHaveClass(/divide-y/)
+
+  await searchInput.press("ArrowDown")
+  await expect(page.locator(":focus")).toHaveAttribute(
+    "data-public-map-result-trigger",
+    "true"
+  )
+  const firstFocusedLabel = await page
+    .locator(":focus")
+    .getAttribute("aria-label")
+  await page.keyboard.press("ArrowDown")
+  await expect(page.locator(":focus")).not.toHaveAttribute(
+    "aria-label",
+    firstFocusedLabel ?? ""
+  )
+  await page.keyboard.press("Escape")
+  await expect(searchInput).toBeFocused()
+  await searchInput.press("Escape")
+  await expect(searchInput).toHaveValue("")
+  await searchInput.press("Escape")
+  await expect(
+    drawer.getByRole("heading", { name: "Find Nearby" })
+  ).toBeVisible()
 })
 
-test("public Find keeps its mobile drawer controls visible when collapsed", async ({
+test("public Find resizes its mobile drawer through the accessible handle", async ({
   page,
 }) => {
   test.setTimeout(60_000)
-  await page.setViewportSize({ width: 320, height: 700 })
+  const consoleErrors: string[] = []
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text())
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/find")
 
   const drawer = page.locator('[data-slot="drawer-content"]')
@@ -331,10 +412,36 @@ test("public Find keeps its mobile drawer controls visible when collapsed", asyn
       name: "Find organizations and resources",
     })
   ).toBeVisible()
-  await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
+  const resizeControl = drawer.getByRole("button", {
+    name: "Resize resource map panel to full height",
+  })
+  await expect(resizeControl).toBeVisible()
+  const resizeControlHeight = await resizeControl.evaluate((element) =>
+    Math.round(element.getBoundingClientRect().height)
+  )
+  const restingBackground = await resizeControl.evaluate(
+    (element) => getComputedStyle(element).backgroundColor
+  )
+  expect(resizeControlHeight).toBe(23)
+  await resizeControl.hover()
+  await expect
+    .poll(() =>
+      resizeControl.evaluate(
+        (element) => getComputedStyle(element).backgroundColor
+      )
+    )
+    .toBe(restingBackground)
+  await resizeControl.click()
+  const returnToMiddleControl = drawer.getByRole("button", {
+    name: "Resize resource map panel to middle height",
+  })
+  await expect(returnToMiddleControl).toBeVisible()
+  await returnToMiddleControl.click()
+  await expect(resizeControl).toBeVisible()
   await expect(
     page.locator('header button[aria-label="Open Find, Guides, and Saved"]')
   ).toHaveCount(0)
+  expect(consoleErrors).toEqual([])
 })
 
 for (const width of [768, 1024]) {

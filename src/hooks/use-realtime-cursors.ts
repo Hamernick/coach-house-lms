@@ -37,8 +37,6 @@ const useThrottleCallback = <Params extends unknown[], Return>(
   )
 }
 
-const supabase = createClient()
-
 const EVENT_NAME = "realtime-cursor-move"
 
 type CursorEventPayload = {
@@ -168,6 +166,7 @@ export const useRealtimeCursors = ({
       return
     }
 
+    const supabase = createClient()
     const channel = supabase.channel(safeRoomName)
     setConnectionState(
       resolveRealtimeCursorConnectionState({

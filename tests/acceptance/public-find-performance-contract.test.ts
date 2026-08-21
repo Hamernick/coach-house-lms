@@ -8,14 +8,24 @@ function readSource(relativePath: string) {
 }
 
 describe("public Find performance contract", () => {
-  it("uses 50-item compact pages without pre-rendering the pricing surface", () => {
+  it("uses Supabase's lockless browser auth coordination", () => {
+    const packageJson = JSON.parse(readSource("package.json")) as {
+      dependencies?: Record<string, string>
+    }
+    const clientSource = readSource("src/lib/supabase/client.ts")
+
+    expect(packageJson.dependencies?.["@supabase/supabase-js"]).toBe("2.107.0")
+    expect(clientSource).not.toMatch(/\block\s*:/)
+  })
+
+  it("uses measured 200-item pages without pre-rendering the pricing surface", () => {
     for (const route of [
       "src/app/(public)/find/page.tsx",
       "src/app/(public)/find/[slug]/page.tsx",
     ]) {
       const source = readSource(route)
 
-      expect(source).toContain("/api/public/resource-map/index?limit=50")
+      expect(source).toContain("/api/public/resource-map/index?limit=200")
       expect(source).not.toContain("PricingSurface")
       expect(source).not.toContain("pricingPanel=")
     }
@@ -43,6 +53,18 @@ describe("public Find performance contract", () => {
     expect(source).not.toContain(
       'import { PublicMapAuthSheet } from "./auth-sheet"'
     )
+  })
+
+  it("loads resource detail panels only after a result is opened", () => {
+    const sidebarSource = readSource(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const panelsSource = readSource(
+      "src/components/public/public-map-index/sidebar-panels.tsx"
+    )
+
+    expect(sidebarSource).toContain('import("./sidebar-detail-panels")')
+    expect(panelsSource).not.toContain('from "./sidebar-detail-panels"')
   })
 
   it("keeps the shell interactive before intentional Mapbox startup", () => {

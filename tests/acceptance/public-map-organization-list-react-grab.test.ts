@@ -187,11 +187,10 @@ describe("public map organization list react grab", () => {
     expect(markup).not.toContain("Add Atlas Collective to favorites")
     expect(markup).toContain('data-react-grab-surface-slot="body"')
     expect(markup).toContain(
-      "relative z-10 flex h-full min-w-0 flex-col justify-center p-3"
+      "group relative z-10 flex h-full w-full min-w-0 justify-start"
     )
-    expect(roomyMarkup).toContain(
-      "relative z-10 flex h-full min-w-0 flex-col justify-center p-4"
-    )
+    expect(markup).toContain("p-3")
+    expect(roomyMarkup).toContain("p-4")
     expect(markup).toContain('data-react-grab-surface-slot="identity-row"')
     expect(markup).toContain('data-react-grab-surface-slot="avatar"')
     expect(markup).toContain('data-react-grab-surface-slot="title"')
@@ -203,7 +202,8 @@ describe("public map organization list react grab", () => {
       'data-react-grab-surface-slot="program-preview-grid"'
     )
     expect(markup).toContain('data-react-grab-surface-slot="meta-row"')
-    expect(markup).toContain('data-react-grab-surface-slot="view-button"')
+    expect(markup).not.toContain('data-react-grab-surface-slot="view-button"')
+    expect(markup).toContain('data-public-map-result-trigger="true"')
     expect(markup).toContain("h-20")
     expect(markup).toContain(
       "text-foreground truncate text-base leading-snug font-semibold"

@@ -14,6 +14,21 @@ type SubmitRpcResult = {
   status?: unknown
 }
 
+async function resolveClaimableListing(targetId: string) {
+  const admin = createSupabaseAdminClient()
+  const { data, error } = await admin
+    .from("resource_map_public_items")
+    .select("organization_id, organization_name, platform_org_id, source_label")
+    .eq("organization_id", targetId)
+    .is("platform_org_id", null)
+    .not("source_label", "is", null)
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data?.organization_name || !data.source_label) return null
+  return { id: data.organization_id, name: data.organization_name }
+}
+
 function asRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -67,12 +82,15 @@ export async function submitPublicMapClaimRequest({
     return { code: "invalid", ok: false }
   }
 
-  const input = parsed.data
+  const listing = await resolveClaimableListing(parsed.data.targetId)
+  if (!listing) return { code: "invalid", ok: false }
+
+  const input = { ...parsed.data, listingName: listing.name }
   const riskKey = hashPublicMapClaimRisk(
     `risk:${readPublicMapClaimRiskIdentity(request)}`
   )
   const emailTargetKey = hashPublicMapClaimRisk(
-    `email-target:${input.claimantEmail.toLowerCase()}:${input.targetKind}:${input.targetId ?? input.listingName.toLowerCase()}`
+    `email-target:${input.claimantEmail.toLowerCase()}:${input.targetKind}:${listing.id}`
   )
   if (!riskKey || !emailTargetKey) {
     return { code: "unavailable", ok: false }
@@ -81,7 +99,7 @@ export async function submitPublicMapClaimRequest({
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin.rpc("submit_public_map_claim_request", {
     p_target_kind: input.targetKind,
-    p_target_id: input.targetId ?? null,
+    p_target_id: listing.id,
     p_listing_name: input.listingName,
     p_claimant_name: input.claimantName,
     p_claimant_email: input.claimantEmail,

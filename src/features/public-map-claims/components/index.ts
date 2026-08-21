@@ -1,4 +1,1 @@
-export {
-  PublicMapClaimDialog,
-  type PublicMapClaimListingOption,
-} from "./public-map-claim-dialog"
+export { PublicMapClaimDialog } from "./public-map-claim-dialog"

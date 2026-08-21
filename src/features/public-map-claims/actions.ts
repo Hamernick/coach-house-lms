@@ -6,6 +6,7 @@ import {
 } from "./server/actions"
 import { loadPublicMapClaimQueue as loadQueue } from "./server/loaders"
 import { submitPublicMapClaimRequest as submitClaim } from "./server/submission"
+import { searchPublicMapClaimListings as searchListings } from "./server/search"
 
 export async function loadPublicMapClaimQueue(options?: {
   limit?: number
@@ -19,6 +20,10 @@ export async function submitPublicMapClaimRequest(input: {
   value: unknown
 }) {
   return submitClaim(input)
+}
+
+export async function searchPublicMapClaimListings(query: string) {
+  return searchListings(query)
 }
 
 export async function retryPublicMapClaimDeliveryFormAction(

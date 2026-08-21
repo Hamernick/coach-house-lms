@@ -2,10 +2,25 @@ import { NextResponse } from "next/server"
 
 import {
   isSameOriginRequest,
+  searchPublicMapClaimListings,
   submitPublicMapClaimRequest,
 } from "@/features/public-map-claims"
 
 const MAX_BODY_BYTES = 16_384
+
+export async function GET(request: Request) {
+  try {
+    const query = new URL(request.url).searchParams.get("query") ?? ""
+    const listingOptions = await searchPublicMapClaimListings(query)
+    return NextResponse.json({ listingOptions })
+  } catch (error) {
+    console.error("[public-map-claims] Search failed.", error)
+    return NextResponse.json(
+      { error: "Listing search is temporarily unavailable." },
+      { status: 503 }
+    )
+  }
+}
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) {

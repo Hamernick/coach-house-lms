@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo, useRef, useState, type FormEvent } from "react"
+import Link from "next/link"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
-import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
-import PlusIcon from "lucide-react/dist/esm/icons/plus"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,56 +13,69 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/lib/toast"
 
-import type { PublicMapClaimTargetKind } from "../types"
+import type { PublicMapClaimListingOption } from "../types"
 
-export type PublicMapClaimListingOption = {
-  id: string
-  name: string
-  targetKind: Exclude<PublicMapClaimTargetKind, "new">
-}
-
-type ClaimMode = "claim" | "new"
+type ClaimListingSearchStatus = "idle" | "loading" | "ready" | "error"
 
 function createSubmissionKey() {
   return crypto.randomUUID()
 }
 
-export function PublicMapClaimDialog({
-  listingOptions,
-}: {
-  listingOptions: PublicMapClaimListingOption[]
-}) {
+export function PublicMapClaimDialog() {
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<ClaimMode>("claim")
   const [listingQuery, setListingQuery] = useState("")
+  const [listingOptions, setListingOptions] = useState<
+    PublicMapClaimListingOption[]
+  >([])
+  const [searchStatus, setSearchStatus] =
+    useState<ClaimListingSearchStatus>("idle")
   const [selectedListing, setSelectedListing] =
     useState<PublicMapClaimListingOption | null>(null)
   const [dirty, setDirty] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const submissionKeyRef = useRef(createSubmissionKey())
 
-  const filteredListings = useMemo(() => {
+  useEffect(() => {
     const query = listingQuery.trim().toLocaleLowerCase()
-    if (!query) return []
-    return listingOptions
-      .filter((listing) => listing.name.toLocaleLowerCase().includes(query))
-      .slice(0, 8)
-  }, [listingOptions, listingQuery])
+    if (query.length < 2 || selectedListing) return
 
-  function begin(nextMode: ClaimMode) {
-    setMode(nextMode)
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/public/organization-claims?query=${encodeURIComponent(query)}`,
+          { signal: controller.signal }
+        )
+        const result = (await response.json().catch(() => null)) as {
+          listingOptions?: PublicMapClaimListingOption[]
+        } | null
+        if (!response.ok) throw new Error("Listing search failed.")
+        setListingOptions(
+          Array.isArray(result?.listingOptions) ? result.listingOptions : []
+        )
+        setSearchStatus("ready")
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return
+        setListingOptions([])
+        setSearchStatus("error")
+      }
+    }, 200)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [listingQuery, selectedListing])
+
+  function begin() {
     setListingQuery("")
+    setListingOptions([])
+    setSearchStatus("idle")
     setSelectedListing(null)
     setDirty(false)
     submissionKeyRef.current = createSubmissionKey()
@@ -79,7 +91,7 @@ export function PublicMapClaimDialog({
     event.preventDefault()
     const form = event.currentTarget
     if (!form.reportValidity()) return
-    if (mode === "claim" && !selectedListing) {
+    if (!selectedListing) {
       form.querySelector<HTMLInputElement>("#claim-listing-search")?.focus()
       return
     }
@@ -91,12 +103,11 @@ export function PublicMapClaimDialog({
         body: JSON.stringify({
           claimantEmail: formData.get("claimantEmail"),
           claimantName: formData.get("claimantName"),
-          listingName:
-            selectedListing?.name ?? formData.get("listingName") ?? "",
+          listingName: selectedListing.name,
           message: formData.get("message"),
           submissionKey: submissionKeyRef.current,
-          targetId: selectedListing?.id ?? null,
-          targetKind: selectedListing?.targetKind ?? "new",
+          targetId: selectedListing.id,
+          targetKind: "resource_map_organization",
           website: formData.get("website"),
         }),
         headers: { "Content-Type": "application/json" },
@@ -131,48 +142,34 @@ export function PublicMapClaimDialog({
     }
   }
 
+  const showSearchStatus = listingQuery.trim().length >= 2 && !selectedListing
+  const noSearchResults =
+    searchStatus === "ready" && listingOptions.length === 0
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-auto w-full flex-col gap-0.5 rounded-xl py-4 text-center"
-          >
-            <span className="text-muted-foreground text-sm">
-              Have an NFP on Coach House?
-            </span>
-            <span className="flex items-center gap-1 text-sm font-medium">
-              Claim or manage it
-              <ArrowUpRightIcon aria-hidden className="size-3.5" />
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="w-64">
-          <DropdownMenuItem
-            className="min-h-11"
-            onSelect={() => begin("claim")}
-          >
-            <BuildingIcon aria-hidden />
-            Claim an existing listing
-          </DropdownMenuItem>
-          <DropdownMenuItem className="min-h-11" onSelect={() => begin("new")}>
-            <PlusIcon aria-hidden />
-            Add a missing nonprofit
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-auto w-full flex-col gap-0.5 rounded-xl py-4 text-center"
+        onClick={begin}
+      >
+        <span className="text-muted-foreground text-sm">
+          Have an NFP listed on Coach House?
+        </span>
+        <span className="flex items-center gap-1 text-sm font-medium">
+          Claim or manage it
+          <ArrowUpRightIcon aria-hidden className="size-3.5" />
+        </span>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-h-[min(44rem,calc(100dvh-2rem))] overflow-y-auto sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {mode === "claim" ? "Claim a listing" : "Add a nonprofit"}
-            </DialogTitle>
+            <DialogTitle>Claim a listing</DialogTitle>
             <DialogDescription>
-              Send a request for Coach House to review. This does not change
-              ownership or public access automatically.
+              Request access to an imported public listing. Coach House verifies
+              each request before changing ownership.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -180,57 +177,65 @@ export function PublicMapClaimDialog({
             onChange={() => setDirty(true)}
             onSubmit={handleSubmit}
           >
-            {mode === "claim" ? (
-              <div className="grid gap-2">
-                <Label htmlFor="claim-listing-search">Nonprofit</Label>
-                <Input
-                  id="claim-listing-search"
-                  value={selectedListing?.name ?? listingQuery}
-                  onChange={(event) => {
-                    setSelectedListing(null)
-                    setListingQuery(event.target.value)
-                  }}
-                  autoComplete="off"
-                  placeholder="Search listings"
-                  required
-                />
-                {filteredListings.length > 0 && !selectedListing ? (
-                  <div className="bg-popover grid max-h-48 overflow-y-auto rounded-md border p-1 shadow-sm">
-                    {filteredListings.map((listing) => (
-                      <button
-                        key={`${listing.targetKind}:${listing.id}`}
-                        type="button"
-                        className="hover:bg-accent focus-visible:bg-accent min-h-10 truncate rounded-sm px-2 text-left text-sm outline-none"
-                        onClick={() => {
-                          setSelectedListing(listing)
-                          setListingQuery(listing.name)
-                        }}
-                      >
-                        {listing.name}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {listingQuery.trim() && filteredListings.length === 0 ? (
+            <div className="grid gap-2">
+              <Label htmlFor="claim-listing-search">Nonprofit</Label>
+              <Input
+                id="claim-listing-search"
+                value={selectedListing?.name ?? listingQuery}
+                onChange={(event) => {
+                  const query = event.target.value
+                  setSelectedListing(null)
+                  setListingOptions([])
+                  setListingQuery(query)
+                  setSearchStatus(query.trim().length >= 2 ? "loading" : "idle")
+                }}
+                autoComplete="off"
+                maxLength={80}
+                placeholder="Search listings…"
+                required
+              />
+              {listingOptions.length > 0 && !selectedListing ? (
+                <div className="bg-popover grid max-h-48 overflow-y-auto rounded-md border p-1 shadow-sm">
+                  {listingOptions.map((listing) => (
+                    <button
+                      key={listing.id}
+                      type="button"
+                      className="hover:bg-accent focus-visible:bg-accent min-h-11 truncate rounded-sm px-2 text-left text-sm outline-none"
+                      onClick={() => {
+                        setSelectedListing(listing)
+                        setListingQuery(listing.name)
+                        setSearchStatus("idle")
+                      }}
+                    >
+                      {listing.name}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {showSearchStatus &&
+              (searchStatus === "loading" ||
+                searchStatus === "error" ||
+                noSearchResults) ? (
+                <div className="grid gap-1" role="status">
                   <p className="text-muted-foreground text-xs">
-                    No listing found. Close this form and choose Add a missing
-                    nonprofit.
+                    {searchStatus === "loading"
+                      ? "Searching imported listings…"
+                      : searchStatus === "error"
+                        ? "Unable to search listings. Try again."
+                        : "No claimable listing found."}
                   </p>
-                ) : null}
-              </div>
-            ) : (
-              <div className="grid gap-2">
-                <Label htmlFor="claim-listing-name">Nonprofit name</Label>
-                <Input
-                  id="claim-listing-name"
-                  name="listingName"
-                  minLength={2}
-                  maxLength={160}
-                  autoComplete="organization"
-                  required
-                />
-              </div>
-            )}
+                  {noSearchResults ? (
+                    <Link
+                      href="/sign-up?intent=build&source=find_claim"
+                      className="text-foreground focus-visible:ring-ring inline-flex min-h-11 items-center rounded-sm text-sm font-medium underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none"
+                      onClick={() => setDirty(false)}
+                    >
+                      Create your nonprofit on Coach House
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="claim-name">Your name</Label>
               <Input

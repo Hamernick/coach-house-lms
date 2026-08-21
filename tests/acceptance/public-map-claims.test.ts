@@ -20,8 +20,8 @@ describe("public-map-claims feature contract", () => {
       listingName: "Neighborhood Pantry",
       message: "I founded this nonprofit.",
       submissionKey: "f9ff4f91-a252-46aa-b19d-c7b8b8bf2021",
-      targetKind: "new",
-      targetId: null,
+      targetKind: "resource_map_organization",
+      targetId: "a74bfebe-7af2-4980-a371-0a7967eda380",
       website: "",
     })
 
@@ -33,7 +33,18 @@ describe("public-map-claims feature contract", () => {
         listingName: "N",
         message: "x".repeat(2_001),
         submissionKey: "invalid",
+        targetKind: "resource_map_organization",
+        targetId: "not-a-uuid",
+      }).success
+    ).toBe(false)
+    expect(
+      parsePublicMapClaimInput({
+        claimantEmail: "person@example.org",
+        claimantName: "Casey Founder",
+        listingName: "Neighborhood Pantry",
+        submissionKey: "f9ff4f91-a252-46aa-b19d-c7b8b8bf2021",
         targetKind: "new",
+        targetId: null,
       }).success
     ).toBe(false)
   })
@@ -104,11 +115,23 @@ describe("public-map-claims feature contract", () => {
       "src/features/public-map-claims/server/loaders.ts"
     )
     const route = readSource("src/app/api/public/organization-claims/route.ts")
+    const search = readSource("src/features/public-map-claims/server/search.ts")
+    const submission = readSource(
+      "src/features/public-map-claims/server/submission.ts"
+    )
 
     expect(dialog).toContain("closeButton: true")
     expect(dialog).toContain("Discard this request?")
-    expect(dialog).toContain("Claim an existing listing")
-    expect(dialog).toContain("Add a missing nonprofit")
+    expect(dialog).toContain("Claim a listing")
+    expect(dialog).toContain('href="/sign-up?intent=build&source=find_claim"')
+    expect(dialog).toContain("?query=${encodeURIComponent(query)}")
+    expect(dialog).not.toContain("Add a missing nonprofit")
+    expect(search).toContain('.from("resource_map_public_items")')
+    expect(search).toContain('.is("platform_org_id", null)')
+    expect(search).toContain('.not("source_label", "is", null)')
+    expect(submission).toContain('.from("resource_map_public_items")')
+    expect(submission).toContain('.is("platform_org_id", null)')
+    expect(submission).toContain('.not("source_label", "is", null)')
     expect(loader).toContain("await requireAdmin()")
     expect(route).toContain("MAX_BODY_BYTES = 16_384")
     expect(route).toContain('"Retry-After"')

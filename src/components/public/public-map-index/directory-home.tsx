@@ -13,7 +13,6 @@ import {
   PublicMapResourceGuides,
   type PublicMapResourceGuide,
 } from "./resource-guides"
-import type { PublicMapListItem } from "./map-items-state"
 
 const PublicMapClaimDialog = lazy(() =>
   import("@/features/public-map-claims").then((module) => ({
@@ -21,38 +20,9 @@ const PublicMapClaimDialog = lazy(() =>
   }))
 )
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-function buildClaimListingOptions(items: PublicMapListItem[]) {
-  const options = items.flatMap((item) => {
-    const id =
-      item.itemType === "platform_organization"
-        ? item.organization.id
-        : item.resourceOrganizationId
-    if (!id || !UUID_PATTERN.test(id)) return []
-    return [
-      {
-        id,
-        name: item.title,
-        targetKind:
-          item.itemType === "platform_organization"
-            ? ("platform_organization" as const)
-            : ("resource_map_organization" as const),
-      },
-    ]
-  })
-  return [
-    ...new Map(
-      options.map((option) => [`${option.targetKind}:${option.id}`, option])
-    ).values(),
-  ]
-}
-
 export function PublicMapDirectoryHome({
   counts,
   featuredGuides,
-  items,
   onCategorySelect,
   onGuideSelect,
   onToggleSavedGuide,
@@ -61,7 +31,6 @@ export function PublicMapDirectoryHome({
 }: {
   counts: PublicMapGroupFilterCounts
   featuredGuides: PublicMapResourceGuide[]
-  items: PublicMapListItem[]
   onCategorySelect: (category: PublicMapGroupFilterKey) => void
   onGuideSelect: (guideId: string) => void
   onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
@@ -96,9 +65,7 @@ export function PublicMapDirectoryHome({
       ) : null}
       <div className="pt-1">
         <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
-          <PublicMapClaimDialog
-            listingOptions={buildClaimListingOptions(items)}
-          />
+          <PublicMapClaimDialog />
         </Suspense>
       </div>
     </div>

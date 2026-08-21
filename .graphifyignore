@@ -1,0 +1,33 @@
+# Keep the graph focused on active, authored architecture.
+graphify-out/
+.agents/
+.claude/
+.cursor/
+deprecated/
+public/
+supabase/seed.sql
+tests/fixtures/
+src/app/**/visual-regression/
+design-qa.md
+notes.md
+.solargraph.yml
+
+# Semantic follow-up should use canonical documentation, not historical logs.
+docs/*
+!docs/agent/
+!docs/agent/**
+!docs/OVERVIEW.md
+!docs/DB_SCHEMA.md
+!docs/NEXTJS_RUNBOOK.md
+!docs/CODEX_RUNBOOK.md
+docs/agent/HANDOFF.md
+
+# Binary assets are not part of the baseline code architecture graph.
+*.gif
+*.ico
+*.jpeg
+*.jpg
+*.pdf
+*.png
+*.svg
+*.webp

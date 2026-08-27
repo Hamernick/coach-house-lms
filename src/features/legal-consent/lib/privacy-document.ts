@@ -11,7 +11,7 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
     "This Policy explains what personal information Coach House handles, why we use it, how it is disclosed, and the choices available to you.",
   effectiveDate: LEGAL_DOCUMENT_EFFECTIVE_DATE,
   version: LEGAL_DOCUMENT_VERSION,
-  sha256: "c4ff2282fa5033042d4bcee3ed26ac4b1a5863b4cabd1346084c3d6097853d92",
+  sha256: "4110a62f34947f3950dc75b7e6ffab87f60d9abfe48b44625c8150da5e845e62",
   sections: [
     {
       id: "scope",
@@ -34,7 +34,7 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
         "Communications, including support requests, survey or feedback responses, email preferences, and messages you send through the service.",
         "Device, network, and usage information, including IP address, browser and device characteristics, pages and features used, referring pages, timestamps, errors, performance measurements, authentication events, and security logs.",
         "Location information when you choose a location feature, plus organization addresses, service areas, map searches, and map viewport requests.",
-        "Information from integrations and third-party sources, such as payment status from Stripe, authentication events from Supabase, public resource directories, provider websites, public records, and information supplied by an organization administrator.",
+        "Information from integrations and third-party sources, such as payment status from Stripe, authentication events from Supabase, basic identity and profile information from Google when you choose Google Sign-In, public resource directories, provider websites, public records, and information supplied by an organization administrator.",
       ],
     },
     {
@@ -78,6 +78,7 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
       ],
       items: [
         "Supabase provides authentication, database, storage, and related infrastructure.",
+        "Google provides optional account sign-in. When you choose Google Sign-In, Google provides your verified email address, name, profile image, and Google account identifier so we can create, authenticate, secure, and link your Coach House account. Google also receives the site origin, OAuth client identifier, and device and network information needed to complete sign-in. Google Sign-In does not give Coach House access to Google Drive, Calendar, contacts, or email content.",
         "Vercel provides hosting, logs, performance monitoring, and privacy-oriented site analytics.",
         "Stripe processes payments and provides subscription, invoice, and transaction status. Stripe receives payment information directly under its own policy.",
         "Mapbox provides maps, geocoding, tiles, and map interactions and receives map requests and associated device and network information.",
@@ -87,6 +88,14 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
         "Professional advisers, auditors, insurers, contractors, and support providers may receive information when reasonably necessary and subject to confidentiality or legal duties.",
         "Government authorities or other parties may receive information when we reasonably believe disclosure is legally required or necessary to protect rights, safety, security, users, or the public.",
         "A successor may receive information as part of a merger, financing, reorganization, bankruptcy, or transfer of all or part of the service, subject to appropriate protections and notice where required.",
+      ],
+    },
+    {
+      id: "google-sign-in",
+      heading: "Google Sign-In",
+      body: [
+        "Google Sign-In is optional. Coach House uses the basic Google identity information described above only to create, authenticate, secure, support, and link your Coach House account. We do not use Google identity information for advertising or sell it.",
+        "You can use email and password instead. You may manage or revoke Coach House access through your Google Account, but revocation does not automatically delete your Coach House account or records we must retain. Google handles information under its own privacy policy, and Coach House's use of information received from Google follows applicable Google API Services User Data Policy requirements, including Limited Use requirements where applicable.",
       ],
     },
     {

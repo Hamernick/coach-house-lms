@@ -39,6 +39,7 @@
       "tests/acceptance/fiscal-sponsorship-w9-transitions.test.ts",
       "tests/acceptance/geocode-address.test.ts",
       "tests/acceptance/global-search-helpers.test.ts",
+      "tests/acceptance/google-auth.test.ts",
       "tests/acceptance/home-canvas-behavior.test.ts",
       "tests/acceptance/home-canvas-preview-panels.test.ts",
       "tests/acceptance/home-canvas-section-id-migration.test.ts",

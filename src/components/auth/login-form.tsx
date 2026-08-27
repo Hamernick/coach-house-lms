@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -24,6 +25,12 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/auth/password-input"
+
+const GoogleAuthPanel = dynamic(
+  () =>
+    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
+  { ssr: false }
+)
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -255,6 +262,7 @@ export function LoginForm({
           </Button>
         </form>
       </Form>
+      <GoogleAuthPanel mode="login" redirectTo={resolvedRedirectTo} />
       <div className="text-muted-foreground flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm">
         <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
           Need an account? Sign up

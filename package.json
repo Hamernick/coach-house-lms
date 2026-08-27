@@ -189,6 +189,7 @@
     "elkjs": "0.9.3",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.24",
+    "google-auth-library": "^10.9.1",
     "gsap": "^3.14.2",
     "iconoir-react": "^7.11.1",
     "input-otp": "^1.4.2",

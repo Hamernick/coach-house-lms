@@ -9,7 +9,11 @@ import {
   resolveGoogleAuthErrorMessage,
   sanitizeGoogleSignupMetadata,
 } from "../lib"
-import type { GoogleAuthMode, GoogleSignupInput } from "../types"
+import type {
+  GoogleAuthMode,
+  GoogleLinkValidationResult,
+  GoogleSignupInput,
+} from "../types"
 
 function encodeBase64Url(bytes: Uint8Array) {
   let binary = ""
@@ -44,6 +48,7 @@ type UseGoogleAuthControllerInput = {
   intentFocus?: GoogleSignupInput["intentFocus"]
   signUpMetadata?: Record<string, unknown>
   disabled?: boolean
+  onSuccess?: () => void | Promise<void>
 }
 
 export function useGoogleAuthController({
@@ -53,6 +58,7 @@ export function useGoogleAuthController({
   intentFocus,
   signUpMetadata,
   disabled = false,
+  onSuccess,
 }: UseGoogleAuthControllerInput) {
   const supabase = useSupabaseClient()
   const router = useRouter()
@@ -104,6 +110,25 @@ export function useGoogleAuthController({
           }
         }
 
+        if (mode === "link") {
+          const linkResponse = await fetch("/api/auth/google/link", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ credential, nonce }),
+          })
+          const linkResult = (await linkResponse.json().catch(() => ({
+            ok: false,
+            code: "unavailable",
+          }))) as GoogleLinkValidationResult
+
+          if (!linkResponse.ok || !linkResult.ok) {
+            setErrorMessage(
+              resolveGoogleAuthErrorMessage({ mode, result: linkResult })
+            )
+            return
+          }
+        }
+
         const { error } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: credential,
@@ -112,6 +137,27 @@ export function useGoogleAuthController({
 
         if (error) {
           setErrorMessage(resolveGoogleAuthErrorMessage({ mode }))
+          return
+        }
+
+        if (mode === "link") {
+          const { data: identitiesData, error: identitiesError } =
+            await supabase.auth.getUserIdentities()
+
+          if (
+            identitiesError ||
+            !identitiesData.identities.some(
+              (identity) => identity.provider === "google"
+            )
+          ) {
+            setErrorMessage(resolveGoogleAuthErrorMessage({ mode }))
+            return
+          }
+        }
+
+        await onSuccess?.()
+        if (mode === "link") {
+          router.refresh()
           return
         }
 
@@ -128,6 +174,7 @@ export function useGoogleAuthController({
       intentFocus,
       isPending,
       mode,
+      onSuccess,
       redirectTo,
       router,
       signUpMetadata,
@@ -163,7 +210,12 @@ export function useGoogleAuthController({
         type: "standard",
         theme: "outline",
         size: "large",
-        text: mode === "signup" ? "signup_with" : "signin_with",
+        text:
+          mode === "signup"
+            ? "signup_with"
+            : mode === "link"
+              ? "continue_with"
+              : "signin_with",
         shape: "rectangular",
         logo_alignment: "left",
         width: Math.min(400, Math.max(220, element.clientWidth)),

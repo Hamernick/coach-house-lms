@@ -4,7 +4,10 @@ Adds feature-flagged Google Identity Services sign-in and signup to the shared
 auth forms. Google signup verifies the ID token and nonce server-side,
 preprovisions the Supabase user with current legal and onboarding metadata, and
 then links the Google identity through Supabase. Google login does not bypass
-the signup consent gate for new users.
+the signup consent gate for new users. Signed-in users can connect the Google
+account matching their confirmed Coach House email from Account settings >
+Security; this adds an alternate login method and is not multi-factor
+authentication.
 
 ## Runtime configuration
 

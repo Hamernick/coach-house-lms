@@ -1,4 +1,6 @@
 import type {
+  GoogleAuthMode,
+  GoogleLinkValidationResult,
   GoogleSignupMetadataValue,
   GoogleSignupProvisionResult,
 } from "../types"
@@ -35,11 +37,27 @@ export function resolveGoogleAuthErrorMessage({
   mode,
   result,
 }: {
-  mode: "login" | "signup"
-  result?: GoogleSignupProvisionResult
+  mode: GoogleAuthMode
+  result?: GoogleLinkValidationResult | GoogleSignupProvisionResult
 }) {
   if (mode === "login") {
     return "Unable to sign in with Google. If this is your first visit, create an account first."
+  }
+
+  if (mode === "link") {
+    if (result?.ok === false && result.code === "email_mismatch") {
+      return "Choose the Google account that matches your Coach House email."
+    }
+
+    if (result?.ok === false && result.code === "unauthorized") {
+      return "Your session expired. Sign in again before connecting Google."
+    }
+
+    if (result?.ok === false && result.code === "invalid") {
+      return "Google could not verify this account. Please try again."
+    }
+
+    return "Unable to connect Google. Please try again."
   }
 
   if (result?.ok === false && result.code === "invalid") {

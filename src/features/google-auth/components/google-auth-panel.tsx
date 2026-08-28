@@ -29,7 +29,7 @@ declare global {
               type: "standard"
               theme: "outline"
               size: "large"
-              text: "signin_with" | "signup_with"
+              text: "continue_with" | "signin_with" | "signup_with"
               shape: "rectangular"
               logo_alignment: "left"
               width: number
@@ -48,6 +48,8 @@ type GoogleAuthPanelProps = {
   accountIntent?: string
   intentFocus?: GoogleSignupInput["intentFocus"]
   signUpMetadata?: Record<string, unknown>
+  showDivider?: boolean
+  onSuccess?: () => void | Promise<void>
 }
 
 export function GoogleAuthPanel({
@@ -57,6 +59,8 @@ export function GoogleAuthPanel({
   accountIntent,
   intentFocus,
   signUpMetadata,
+  showDivider = true,
+  onSuccess,
 }: GoogleAuthPanelProps) {
   const buttonRef = useRef<HTMLDivElement>(null)
   const {
@@ -73,6 +77,7 @@ export function GoogleAuthPanel({
     accountIntent,
     intentFocus,
     signUpMetadata,
+    onSuccess,
   })
   const isConfigured =
     process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
@@ -87,14 +92,16 @@ export function GoogleAuthPanel({
 
   return (
     <div className="space-y-3">
-      <div className="relative" aria-hidden="true">
-        <div className="absolute inset-0 flex items-center">
-          <span className="border-border w-full border-t" />
+      {showDivider ? (
+        <div className="relative" aria-hidden="true">
+          <div className="absolute inset-0 flex items-center">
+            <span className="border-border w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background text-muted-foreground px-2">Or</span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">Or</span>
-        </div>
-      </div>
+      ) : null}
       <Script
         id="google-identity-services"
         src="https://accounts.google.com/gsi/client"
@@ -117,7 +124,11 @@ export function GoogleAuthPanel({
         ) : (
           <div
             ref={buttonRef}
-            className={isPending ? "pointer-events-none opacity-60" : undefined}
+            className={
+              isPending
+                ? "pointer-events-none overflow-hidden rounded-md opacity-60"
+                : "overflow-hidden rounded-md"
+            }
             aria-hidden={isPending || undefined}
           />
         )}
@@ -128,7 +139,11 @@ export function GoogleAuthPanel({
           >
             <LoaderCircleIcon className="size-4 animate-spin" aria-hidden />
             <span>
-              {mode === "signup" ? "Creating account…" : "Signing in…"}
+              {mode === "signup"
+                ? "Creating account…"
+                : mode === "link"
+                  ? "Connecting…"
+                  : "Signing in…"}
             </span>
           </div>
         ) : null}

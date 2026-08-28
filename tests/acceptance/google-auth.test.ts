@@ -32,6 +32,12 @@ describe("google-auth feature contract", () => {
         result: { ok: false, code: "invalid" },
       })
     ).toContain("could not verify")
+    expect(
+      resolveGoogleAuthErrorMessage({
+        mode: "link",
+        result: { ok: false, code: "email_mismatch" },
+      })
+    ).toContain("matches your Coach House email")
   })
 
   it("verifies Google identity and nonce before provisioning", () => {
@@ -76,6 +82,65 @@ describe("google-auth feature contract", () => {
     expect(panel).toContain("NEXT_PUBLIC_GOOGLE_AUTH_ENABLED")
     expect(panel).toContain("https://accounts.google.com/gsi/client")
     expect(panel).toContain("renderButton")
+    expect(panel).toContain('"overflow-hidden rounded-md"')
     expect(panel).toContain('role="alert"')
+  })
+
+  it("links only the matching Google identity from Account Security", () => {
+    const linking = readFileSync(
+      "src/features/google-auth/server/google-account-linking.ts",
+      "utf8"
+    )
+    const route = readFileSync("src/app/api/auth/google/link/route.ts", "utf8")
+    const controller = readFileSync(
+      "src/features/google-auth/hooks/use-google-auth-controller.ts",
+      "utf8"
+    )
+    const connection = readFileSync(
+      "src/features/google-auth/components/google-account-connection.tsx",
+      "utf8"
+    )
+    const desktopSecurity = readFileSync(
+      "src/components/account-settings/sections/desktop/security.tsx",
+      "utf8"
+    )
+    const mobileSecurity = readFileSync(
+      "src/components/account-settings/sections/mobile-sections.tsx",
+      "utf8"
+    )
+
+    expect(linking).toContain("supabase.auth.getUser()")
+    expect(linking).toContain("user.email_confirmed_at")
+    expect(linking).toContain("verifyIdToken")
+    expect(linking).toContain("payload.email_verified !== true")
+    expect(linking).toContain("payload.nonce !== expectedNonce")
+    expect(linking).toContain(
+      "normalizeEmail(payload.email) !== normalizeEmail(user.email)"
+    )
+    expect(route).toContain("validateGoogleAccountLink(input)")
+    expect(controller).toContain('fetch("/api/auth/google/link"')
+    expect(controller).toContain("supabase.auth.getUserIdentities()")
+    expect(controller).toContain('identity.provider === "google"')
+    expect(connection).toContain("This is not two-factor")
+    expect(connection).toContain("getUserIdentities()")
+    expect(connection).toContain('src="/brand/google-g.png"')
+    expect(desktopSecurity).toContain("GoogleAccountConnection")
+    expect(mobileSecurity).toContain("GoogleAccountConnection")
+  })
+
+  it("keeps unknown Google login behind the legal-consent insert gate", () => {
+    const triggerMigration = readFileSync(
+      "supabase/migrations/20260811160000_add_signup_legal_acceptances.sql",
+      "utf8"
+    )
+    const migration = readFileSync(
+      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "utf8"
+    )
+
+    expect(triggerMigration).toContain("after insert on auth.users")
+    expect(migration).toContain(
+      "raise exception 'Current Terms and Privacy Policy acceptance is required.'"
+    )
   })
 })

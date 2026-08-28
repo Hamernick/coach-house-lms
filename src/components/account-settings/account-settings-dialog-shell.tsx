@@ -233,6 +233,7 @@ export function AccountSettingsDialogShell({
                   <SecuritySection
                     newPassword={newPassword}
                     confirmPassword={confirmPassword}
+                    email={email}
                     isUpdatingPassword={isUpdatingPassword}
                     onNewPasswordChange={onNewPasswordChange}
                     onConfirmPasswordChange={onConfirmPasswordChange}

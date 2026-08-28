@@ -1,4 +1,4 @@
-export type GoogleAuthMode = "login" | "signup"
+export type GoogleAuthMode = "link" | "login" | "signup"
 
 export type GoogleSignupIntentFocus = "build" | "find" | "fund" | "support"
 
@@ -16,3 +16,10 @@ export type GoogleSignupInput = {
 export type GoogleSignupProvisionResult =
   | { ok: true }
   | { ok: false; code: "invalid" | "unavailable" }
+
+export type GoogleLinkValidationResult =
+  | { ok: true }
+  | {
+      ok: false
+      code: "email_mismatch" | "invalid" | "unauthorized" | "unavailable"
+    }

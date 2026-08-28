@@ -128,6 +128,10 @@ describe("legal consent", () => {
       "supabase/migrations/20260811160000_add_signup_legal_acceptances.sql",
       "utf8"
     )
+    const currentConsentMigration = readFileSync(
+      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "utf8"
+    )
     expect(migration).toContain("references auth.users(id) on delete cascade")
     expect(migration).toContain("unique (user_id, document_version)")
     expect(migration).toContain(
@@ -138,14 +142,17 @@ describe("legal consent", () => {
     )
     expect(migration).toContain("using ((select auth.uid()) = user_id)")
     expect(migration).toContain("after insert on auth.users")
-    expect(migration).toContain(
+    expect(currentConsentMigration).toContain(
       `consent ->> 'version' = '${TERMS_DOCUMENT.version}'`
     )
-    expect(migration).toContain(
+    expect(currentConsentMigration).toContain(
       `consent ->> 'termsSha256' = '${TERMS_DOCUMENT.sha256}'`
     )
-    expect(migration).toContain(
+    expect(currentConsentMigration).toContain(
       `consent ->> 'privacySha256' = '${PRIVACY_DOCUMENT.sha256}'`
+    )
+    expect(currentConsentMigration).toContain(
+      "consent ->> 'version' = '2026-08-12.1'"
     )
 
     const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
@@ -168,7 +175,7 @@ describe("legal consent", () => {
 
   it("rejects public signup without current server-validated consent", () => {
     const migration = readFileSync(
-      "supabase/migrations/20260814090000_enforce_signup_legal_consent.sql",
+      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
       "utf8"
     )
     expect(migration).toContain(

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -30,6 +31,12 @@ import {
   createSignupLegalConsent,
   LegalConsentField,
 } from "@/features/legal-consent"
+
+const GoogleAuthPanel = dynamic(
+  () =>
+    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
+  { ssr: false }
+)
 
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
 const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
@@ -149,6 +156,10 @@ export function SignUpForm({
       acceptedLegal: false,
     },
   })
+  const acceptedLegal = form.watch("acceptedLegal")
+  const googleAuthConfigured =
+    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
+    Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
 
   useEffect(() => {
     if (status !== "success") return
@@ -314,6 +325,19 @@ export function SignUpForm({
           </Button>
         </form>
       </Form>
+      <GoogleAuthPanel
+        mode="signup"
+        redirectTo={resolvedRedirectTo}
+        disabled={!acceptedLegal || isPending}
+        accountIntent={resolveLegacyAccountIntent(activeIntentFocus)}
+        intentFocus={activeIntentFocus}
+        signUpMetadata={signUpMetadata}
+      />
+      {googleAuthConfigured && !acceptedLegal ? (
+        <p className="text-muted-foreground text-center text-xs">
+          Accept the Terms and Privacy Policy above to continue with Google.
+        </p>
+      ) : null}
       <div className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
         <Link href={resolvedLoginHref} className={authInlineLinkClassName}>

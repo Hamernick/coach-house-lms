@@ -7,7 +7,10 @@ import SearchIcon from "lucide-react/dist/esm/icons/search"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
+import {
+  buildPublicMapDrawerSnapPoints,
+  resolvePublicMapDrawerVisibleHeight,
+} from "./sidebar-snap-points"
 import { PublicMapMemberRail, type PublicMapMemberTab } from "./member-rail"
 import {
   PublicMapRailPanel,
@@ -127,6 +130,7 @@ export function PublicMapSidebar({
   onSelectOrganization,
   onOpenDetails,
   onBackToSearch,
+  onDrawerInsetChange,
   setSidebarMode,
 }: PublicMapSidebarProps) {
   const compact = panelPresentation === "drawer"
@@ -164,6 +168,25 @@ export function PublicMapSidebar({
     }
     setActiveSnapIndex(1)
   }, [effectiveSidebarMode, panelOpen, panelPresentation])
+  useEffect(() => {
+    const drawerInset =
+      panelPresentation === "drawer" && panelOpen && !drawerIsFullscreen
+        ? resolvePublicMapDrawerVisibleHeight({
+            snapPoint: activeSnapPoint,
+            surfaceHeight,
+          })
+        : 0
+
+    onDrawerInsetChange?.(drawerInset)
+  }, [
+    activeSnapPoint,
+    drawerIsFullscreen,
+    onDrawerInsetChange,
+    panelOpen,
+    panelPresentation,
+    surfaceHeight,
+  ])
+  useEffect(() => () => onDrawerInsetChange?.(0), [onDrawerInsetChange])
   const listItems = searchContext?.items ?? filteredItems
   const handleDrawerTabChange = useCallback(
     (nextTab: PublicMapMemberTab) => {
@@ -326,7 +349,6 @@ export function PublicMapSidebar({
         favorites={favorites}
         onBack={onBackToSearch}
         onToggleFavorite={toggleFavorite}
-        showHeaderControls={false}
       />
     ) : selectedResourceItem ? (
       <PublicMapResourceDrawerDetailPanel
@@ -339,31 +361,39 @@ export function PublicMapSidebar({
       />
     ) : null
 
-  const drawerPanel = (
-    <PublicMapMemberRail
-      activeTab={drawerTab}
-      directoryHeaderStart={organizationDetailHeaderSlots.start}
-      directoryHeaderEnd={organizationDetailHeaderSlots.end}
-      directoryRail={drawerDirectoryPanel}
-      directoryMode={effectiveSidebarMode === "details" ? "details" : "search"}
-      guides={guides}
-      savedGuideIds={savedGuideIds}
-      savedGuides={savedGuides}
-      savedOrganizations={savedOrganizations}
-      savedResources={savedResources}
-      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
-      onRetryResourceItems={retryResourceItems}
-      resourceItemsLoadStatus={resourceItemsLoadStatus}
-      resourceItemsLoadError={resourceItemsLoadError}
-      onActiveTabChange={handleDrawerTabChange}
-      onGuideSelect={handleDrawerGuideSelect}
-      onToggleSavedGuide={onToggleSavedGuide}
-      onSelectOrganization={handleDrawerOrganizationSelect}
-      onSelectResource={handleDrawerResourceSelect}
-      onToggleFavorite={toggleFavorite}
-      onToggleCollectedResource={toggleCollectedResource}
-    />
-  )
+  const drawerPanel =
+    effectiveSidebarMode === "details" ? (
+      <div
+        data-public-map-drawer-panel="details"
+        className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        {drawerDirectoryPanel}
+      </div>
+    ) : (
+      <PublicMapMemberRail
+        activeTab={drawerTab}
+        directoryHeaderStart={organizationDetailHeaderSlots.start}
+        directoryHeaderEnd={organizationDetailHeaderSlots.end}
+        directoryRail={drawerDirectoryPanel}
+        directoryMode="search"
+        guides={guides}
+        savedGuideIds={savedGuideIds}
+        savedGuides={savedGuides}
+        savedOrganizations={savedOrganizations}
+        savedResources={savedResources}
+        unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
+        onRetryResourceItems={retryResourceItems}
+        resourceItemsLoadStatus={resourceItemsLoadStatus}
+        resourceItemsLoadError={resourceItemsLoadError}
+        onActiveTabChange={handleDrawerTabChange}
+        onGuideSelect={handleDrawerGuideSelect}
+        onToggleSavedGuide={onToggleSavedGuide}
+        onSelectOrganization={handleDrawerOrganizationSelect}
+        onSelectResource={handleDrawerResourceSelect}
+        onToggleFavorite={toggleFavorite}
+        onToggleCollectedResource={toggleCollectedResource}
+      />
+    )
 
   return (
     <>

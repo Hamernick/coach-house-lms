@@ -1,10 +1,11 @@
 "use client"
 
-import { memo, type ReactNode } from "react"
+import { memo, type CSSProperties, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
   buildPlatformOrganizationMapItem,
   resolvePublicMapItemSelectableId,
@@ -79,6 +80,7 @@ function PublicMapOrganizationListComponent({
   query,
   constrainedLayout = false,
   incrementalLoading = false,
+  scrollable = false,
   leadingContent,
   initialVisibleCount = PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
   pageSize = PUBLIC_MAP_LIST_PAGE_SIZE,
@@ -99,6 +101,7 @@ function PublicMapOrganizationListComponent({
   query?: string
   constrainedLayout?: boolean
   incrementalLoading?: boolean
+  scrollable?: boolean
   leadingContent?: ReactNode
   initialVisibleCount?: number
   pageSize?: number
@@ -215,52 +218,78 @@ function PublicMapOrganizationListComponent({
     <div
       data-public-map-organization-list-section="list-stack"
       aria-busy={loadStatus === "loading"}
-      className="flex w-full max-w-full min-w-0 flex-col gap-2"
+      className={cn(
+        "mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-2",
+        scrollable && "min-h-0 flex-1"
+      )}
     >
-      <div
-        data-public-map-organization-list-section="card-grid"
-        className="divide-border/60 bg-background/85 border-input grid w-full min-w-0 grid-cols-1 items-stretch divide-y overflow-hidden rounded-2xl border backdrop-blur-xl"
+      <ScrollFadeEffect
+        enabled={scrollable}
+        orientation="vertical"
+        data-public-map-organization-list-section="rounded-scroll"
+        data-public-map-organization-list-scroll={
+          scrollable ? "true" : undefined
+        }
+        style={
+          scrollable
+            ? ({
+                "--mask-height": "1.5rem",
+                "--scroll-buffer": "1rem",
+              } as CSSProperties)
+            : undefined
+        }
+        className={cn(
+          "divide-border/60 bg-background/85 border-input w-full min-w-0 rounded-2xl border backdrop-blur-xl",
+          scrollable
+            ? "min-h-0 flex-1 [scroll-padding-bottom:max(env(safe-area-inset-bottom),0.75rem)] overflow-x-hidden overscroll-contain pr-1 pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch]"
+            : "overflow-hidden"
+        )}
       >
-        {leadingContent}
-        {visibleItems.map((item) => {
-          const selectableItemId = resolvePublicMapItemSelectableId(item)
-          const selected = resolvedSelectedItemId === selectableItemId
+        <div
+          data-public-map-organization-list-section="card-grid"
+          className="divide-border/60 grid w-full min-w-0 shrink-0 grid-cols-1 items-stretch divide-y"
+        >
+          {leadingContent}
+          {visibleItems.map((item) => {
+            const selectableItemId = resolvePublicMapItemSelectableId(item)
+            const selected = resolvedSelectedItemId === selectableItemId
 
-          if (item.itemType === "external_resource") {
+            if (item.itemType === "external_resource") {
+              return (
+                <PublicMapResourceListCard
+                  key={item.id}
+                  item={item}
+                  selected={selected}
+                  query={query}
+                  constrainedLayout={constrainedLayout}
+                  onSelectItem={onSelectItem}
+                />
+              )
+            }
+
             return (
-              <PublicMapResourceListCard
+              <PublicMapPlatformOrganizationListCard
                 key={item.id}
                 item={item}
                 selected={selected}
                 query={query}
                 constrainedLayout={constrainedLayout}
-                onSelectItem={onSelectItem}
+                onSelectOrg={onSelectOrg}
+                onOpenDetails={onOpenDetails}
               />
             )
-          }
-
-          return (
-            <PublicMapPlatformOrganizationListCard
-              key={item.id}
-              item={item}
-              selected={selected}
-              query={query}
-              constrainedLayout={constrainedLayout}
-              onSelectOrg={onSelectOrg}
-              onOpenDetails={onOpenDetails}
-            />
-          )
-        })}
-      </div>
-      <PublicMapOrganizationListPaginationFooter
-        hasMoreOrganizations={hasMoreOrganizations}
-        loadMoreSentinelRef={loadMoreSentinelRef}
-        loadNextPage={loadNextPage}
-        nextPageCount={nextPageCount}
-        organizationCount={listItems.length}
-        paginationEnabled={paginationEnabled}
-        visibleCount={visibleItems.length}
-      />
+          })}
+        </div>
+        <PublicMapOrganizationListPaginationFooter
+          hasMoreOrganizations={hasMoreOrganizations}
+          loadMoreSentinelRef={loadMoreSentinelRef}
+          loadNextPage={loadNextPage}
+          nextPageCount={nextPageCount}
+          organizationCount={listItems.length}
+          paginationEnabled={paginationEnabled}
+          visibleCount={visibleItems.length}
+        />
+      </ScrollFadeEffect>
     </div>
   )
 }

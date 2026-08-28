@@ -981,31 +981,37 @@
 
 .scroll-fade-effect-y[data-scroll-fade-managed="true"],
 .scroll-fade-effect-x[data-scroll-fade-managed="true"] {
-  animation: none;
+  animation: none !important;
+}
+
+.scroll-fade-effect-y[data-scroll-fade-managed="true"][data-scroll-fade-start="hidden"][data-scroll-fade-end="hidden"],
+.scroll-fade-effect-x[data-scroll-fade-managed="true"][data-scroll-fade-start="hidden"][data-scroll-fade-end="hidden"] {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
 
 .scroll-fade-effect-y[data-scroll-fade-managed="true"] {
-  --top-mask-height: 0px;
-  --bottom-mask-height: 0px;
+  --top-mask-height: 0px !important;
+  --bottom-mask-height: 0px !important;
 }
 
 .scroll-fade-effect-y[data-scroll-fade-start="visible"] {
-  --top-mask-height: var(--mask-height);
+  --top-mask-height: var(--mask-height) !important;
 }
 
 .scroll-fade-effect-y[data-scroll-fade-end="visible"] {
-  --bottom-mask-height: var(--mask-height);
+  --bottom-mask-height: var(--mask-height) !important;
 }
 
 .scroll-fade-effect-x[data-scroll-fade-managed="true"] {
-  --left-mask-width: 0px;
-  --right-mask-width: 0px;
+  --left-mask-width: 0px !important;
+  --right-mask-width: 0px !important;
 }
 
 .scroll-fade-effect-x[data-scroll-fade-start="visible"] {
-  --left-mask-width: var(--mask-width);
+  --left-mask-width: var(--mask-width) !important;
 }
 
 .scroll-fade-effect-x[data-scroll-fade-end="visible"] {
-  --right-mask-width: var(--mask-width);
+  --right-mask-width: var(--mask-width) !important;
 }

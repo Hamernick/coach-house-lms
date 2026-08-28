@@ -38,11 +38,14 @@ export type PublicMapResourceGuideDefinition = {
 export const PUBLIC_MAP_RESOURCE_GUIDE_IMAGE_URLS: Partial<
   Record<PublicMapResourceGuideId, string>
 > = {
-  "chicago-food-access": "/images/public-map/guides/chicago-food-access.webp",
+  "chicago-food-access":
+    "/images/public-map/guides/chicago-food-access-cover.webp",
   "chicago-housing-shelter":
-    "/images/public-map/guides/chicago-housing-shelter.webp",
-  "chicago-health-care": "/images/public-map/guides/chicago-health-care.webp",
-  "cooling-heat-relief": "/images/public-map/guides/cooling-heat-relief.webp",
+    "/images/public-map/guides/chicago-housing-shelter-cover.webp",
+  "chicago-health-care":
+    "/images/public-map/guides/chicago-health-care-cover.webp",
+  "cooling-heat-relief":
+    "/images/public-map/guides/cooling-heat-relief-cover.webp",
 }
 
 const guideItemCorpusByItem = new WeakMap<PublicMapItem, string>()

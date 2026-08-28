@@ -314,17 +314,20 @@ export function PersonProfileFormFields({
               socialLinks[platform.key]
             )
             return (
-              <Field key={platform.key} orientation="responsive">
-                <FieldLabel htmlFor={`${formId}-${platform.key}`}>
+              <Field key={platform.key} className="gap-2">
+                <FieldLabel
+                  htmlFor={`${formId}-${platform.key}`}
+                  className="flex items-center gap-2"
+                >
                   <PersonSocialBrandIcon
                     platform={platform.key}
-                    className="size-4 shrink-0"
+                    className="shrink-0"
                     aria-hidden
                   />
                   {platform.label}
                 </FieldLabel>
-                <FieldControl>
-                  <InputGroup>
+                <FieldControl className="min-w-0">
+                  <InputGroup className="min-w-0">
                     <InputGroupInput
                       id={`${formId}-${platform.key}`}
                       name={platform.key}
@@ -337,7 +340,7 @@ export function PersonProfileFormFields({
                       aria-invalid={Boolean(linkError)}
                       readOnly={readOnly}
                     />
-                    <InputGroupAddon>
+                    <InputGroupAddon className="shrink-0">
                       <InputGroupButton
                         type="button"
                         disabled={!href}

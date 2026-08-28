@@ -32,6 +32,10 @@ describe("people table controls", () => {
       "src/components/people/person-profile-form-fields.tsx",
       "utf8"
     )
+    const socialBrandIconSource = readFileSync(
+      "src/components/people/person-social-brand-icon.tsx",
+      "utf8"
+    )
 
     expect(dialogSource).toContain("onSubmit={handleSubmit}")
     expect(dialogSource).toContain('className="flex min-h-0 flex-1 flex-col"')
@@ -49,6 +53,28 @@ describe("people table controls", () => {
     expect(fieldsSource).toContain("PERSON_SOCIAL_PLATFORMS.filter")
     expect(fieldsSource).toContain("extendedSocialLinksEnabled")
     expect(fieldsSource).toContain("PersonSocialBrandIcon")
+    expect(fieldsSource).toContain(
+      '<Field key={platform.key} className="gap-2">'
+    )
+    expect(fieldsSource).toContain('className="flex items-center gap-2"')
+    expect(fieldsSource).toContain(
+      '<FieldControl className="min-w-0">'
+    )
+    expect(fieldsSource).toContain('<InputGroup className="min-w-0">')
+    expect(fieldsSource).toContain(
+      '<InputGroupAddon className="shrink-0">'
+    )
+    expect(socialBrandIconSource).toContain('src="/brand/linkedin-in.png"')
+    expect(socialBrandIconSource).toContain('src="/brand/instagram-glyph.png"')
+    expect(socialBrandIconSource).toContain(
+      '"border-border/70 bg-muted/60 inline-flex aspect-square size-5 shrink-0 items-center justify-center rounded-md border"'
+    )
+    expect(socialBrandIconSource).toContain(
+      'className="h-3 w-auto object-contain"'
+    )
+    expect(fieldsSource).not.toContain('className="size-4 shrink-0"')
+    expect(socialBrandIconSource).not.toContain("LinkedinIcon")
+    expect(socialBrandIconSource).not.toContain("siInstagram")
     expect(dialogSource).toContain("linkedin: socialLinks.linkedin")
     expect(fieldsSource).toContain("Profile photo")
     expect(fieldsSource).toContain("ManagerSelect")

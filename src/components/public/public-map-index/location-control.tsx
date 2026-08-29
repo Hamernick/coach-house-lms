@@ -101,8 +101,8 @@ export function PublicMapLocationControl({
                 <>
                   <p className="text-sm font-semibold">Use your location?</p>
                   <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                    Coach House uses it only to center this map. Your location
-                    is not saved.
+                    Coach House uses your location to center the map and show
+                    local weather. Your location is not saved.
                   </p>
                   <div className="mt-3 flex items-center gap-2">
                     <Button

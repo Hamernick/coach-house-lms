@@ -77,6 +77,7 @@ function installPublicMapDebugProbe(map: mapboxgl.Map) {
 
 export function usePublicMapMarkers({
   activeSameLocationGroupKey,
+  boostCoolingCenters = false,
   favorites,
   mapItems,
   mapLoadedRef,
@@ -90,6 +91,7 @@ export function usePublicMapMarkers({
   userCoordinates,
 }: {
   activeSameLocationGroupKey: string | null
+  boostCoolingCenters?: boolean
   favorites: string[]
   mapItems?: PublicMapItem[]
   mapLoadedRef: RefObject<boolean>
@@ -111,6 +113,7 @@ export function usePublicMapMarkers({
   const selectedOrganizationIdRef = useRef(selectedOrganizationId)
   const favoritesRef = useRef(favorites)
   const userCoordinatesRef = useRef(userCoordinates)
+  const boostCoolingCentersRef = useRef(boostCoolingCenters)
   const shouldUseMapItems = resolvedMapItems.length > 0
   const sourceDataVersion = shouldUseMapItems
     ? buildPublicMapItemDataVersion(resolvedMapItems, { markerTheme })
@@ -121,6 +124,7 @@ export function usePublicMapMarkers({
     userCoordinates
       ? `${userCoordinates.longitude.toFixed(5)}:${userCoordinates.latitude.toFixed(5)}`
       : "no-user-location",
+    boostCoolingCenters ? "heat-active" : "heat-inactive",
   ].join("|relevance:")
 
   organizationsRef.current = organizations
@@ -131,6 +135,7 @@ export function usePublicMapMarkers({
   selectedOrganizationIdRef.current = selectedOrganizationId
   favoritesRef.current = favorites
   userCoordinatesRef.current = userCoordinates
+  boostCoolingCentersRef.current = boostCoolingCenters
 
   useEffect(() => {
     const map = mapRef.current
@@ -156,6 +161,7 @@ export function usePublicMapMarkers({
             markerTheme,
           })
     const pointFeatures = buildPublicMapMarkerRelevance({
+      boostCoolingCenters: boostCoolingCentersRef.current,
       favoriteOrganizationIds: new Set(favoritesRef.current),
       features: rawPointFeatures,
       userCoordinates: userCoordinatesRef.current,

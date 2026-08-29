@@ -12,6 +12,10 @@ import {
 } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  FindMapWeatherCard,
+  type FindMapWeatherSnapshot,
+} from "@/features/find-map"
 import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"
@@ -72,6 +76,7 @@ type PublicMapSurfaceProps = {
   tokenAvailable: boolean
   mapError: string | null
   locationControl: PublicMapLocationControlState
+  weather?: FindMapWeatherSnapshot | null
   preferencesSaveError: string | null
   authSheetOpen: boolean
   authRedirectTo: string
@@ -132,6 +137,7 @@ export function PublicMapSurface({
   tokenAvailable,
   mapError,
   locationControl,
+  weather = null,
   preferencesSaveError,
   authSheetOpen,
   authRedirectTo,
@@ -296,6 +302,10 @@ export function PublicMapSurface({
           />
 
           <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+            <FindMapWeatherCard
+              weather={weather}
+              className={PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME}
+            />
             {mapError ? (
               <Alert
                 className={cn(

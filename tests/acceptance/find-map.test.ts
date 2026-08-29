@@ -9,7 +9,13 @@ import {
   FIND_MAP_FEATURE_NAME,
   FindMapLoadingSidebar,
   FindMapLoadingState,
+  FindMapWeatherCard,
+  buildFindMapWeatherCell,
+  buildFindMapWeatherResponse,
+  normalizeNwsHeatEvent,
+  parseFindMapWeatherCell,
 } from "@/features/find-map"
+import { resolveNwsGridFreshness } from "@/features/find-map/server/weather"
 
 const ROOT = process.cwd()
 
@@ -57,5 +63,150 @@ describe("find-map feature", () => {
     expect(markup).toContain("motion-reduce:animate-none")
     expect(markup).not.toContain('data-slot="skeleton"')
     expect(markup.match(/animate-spin/g)).toHaveLength(1)
+  })
+
+  it("coarsens location before weather requests", () => {
+    expect(
+      buildFindMapWeatherCell({ latitude: 41.8781, longitude: -87.6298 })
+    ).toEqual({ latitude: 41.9, longitude: -87.65 })
+    expect(
+      parseFindMapWeatherCell({ latitude: 41.9, longitude: -87.65 })
+    ).toEqual({ latitude: 41.9, longitude: -87.65 })
+    expect(
+      parseFindMapWeatherCell({ latitude: 41.8781, longitude: -87.6298 })
+    ).toBeNull()
+  })
+
+  it("normalizes current and legacy NWS heat events", () => {
+    expect(normalizeNwsHeatEvent("Heat Advisory")).toBe("Heat Advisory")
+    expect(normalizeNwsHeatEvent("Excessive Heat Warning")).toBe(
+      "Extreme Heat Warning"
+    )
+    expect(normalizeNwsHeatEvent("Wind Advisory")).toBeNull()
+  })
+
+  it("accepts a current NWS forecast cycle without trusting an old grid", () => {
+    const now = Date.parse("2026-08-28T17:30:00.000Z")
+
+    expect(
+      resolveNwsGridFreshness(
+        { properties: { updateTime: "2026-08-28T08:20:00.000Z" } },
+        now
+      )
+    ).toBe("fresh")
+    expect(
+      resolveNwsGridFreshness(
+        { properties: { updateTime: "2026-08-28T05:00:00.000Z" } },
+        now
+      )
+    ).toBe("stale")
+  })
+
+  it("builds compact weather data and detects two forecast heat hours", () => {
+    const now = Date.parse("2026-08-27T12:00:00.000Z")
+    const response = buildFindMapWeatherResponse({
+      alerts: { features: [] },
+      alertsAvailable: true,
+      freshness: "fresh",
+      now,
+      point: {
+        properties: {
+          relativeLocation: {
+            properties: { city: "Chicago", state: "IL" },
+          },
+          timeZone: "America/Chicago",
+        },
+      },
+      grid: {
+        properties: {
+          updateTime: "2026-08-27T11:45:00.000Z",
+          temperature: {
+            values: [{ validTime: "2026-08-27T12:00:00Z/PT2H", value: 38 }],
+          },
+          heatIndex: {
+            values: [{ validTime: "2026-08-27T12:00:00Z/PT2H", value: 38 }],
+          },
+          maxTemperature: {
+            values: [{ validTime: "2026-08-27T06:00:00Z/PT18H", value: 39 }],
+          },
+          minTemperature: {
+            values: [{ validTime: "2026-08-27T06:00:00Z/PT18H", value: 24 }],
+          },
+        },
+      },
+    })
+
+    expect(response).toMatchObject({
+      signal: "forecast_threshold",
+      snapshot: {
+        city: "Chicago",
+        state: "IL",
+        temperatureFahrenheit: 100,
+        highFahrenheit: 102,
+        lowFahrenheit: 75,
+      },
+    })
+    const markup = renderToStaticMarkup(
+      createElement(FindMapWeatherCard, { weather: response.snapshot })
+    )
+    expect(markup).toContain("Chicago, IL")
+    expect(markup).toContain("100°")
+    expect(markup).toContain("H 102° L 75°")
+    expect(markup).toContain('data-react-grab-anchor="FindMapWeatherCard"')
+    expect(markup).toContain(
+      'data-react-grab-owner-id="find-map-weather-card:current-location"'
+    )
+    expect(markup).toContain('data-react-grab-surface-slot="location"')
+    expect(markup).toContain('data-react-grab-surface-slot="temperatures"')
+    expect(markup).toContain("pointer-events-auto")
+  })
+
+  it("does not use a stale forecast to boost cooling resources", () => {
+    const now = Date.parse("2026-08-28T17:30:00.000Z")
+    const response = buildFindMapWeatherResponse({
+      alerts: { features: [] },
+      alertsAvailable: true,
+      freshness: "stale",
+      now,
+      point: {
+        properties: {
+          relativeLocation: {
+            properties: { city: "Chicago", state: "IL" },
+          },
+          timeZone: "America/Chicago",
+        },
+      },
+      grid: {
+        properties: {
+          updateTime: "2026-08-28T05:00:00.000Z",
+          temperature: {
+            values: [{ validTime: "2026-08-28T17:00:00Z/PT2H", value: 38 }],
+          },
+          heatIndex: {
+            values: [{ validTime: "2026-08-28T17:00:00Z/PT2H", value: 38 }],
+          },
+          maxTemperature: {
+            values: [{ validTime: "2026-08-28T06:00:00Z/PT18H", value: 39 }],
+          },
+          minTemperature: {
+            values: [{ validTime: "2026-08-28T06:00:00Z/PT18H", value: 24 }],
+          },
+        },
+      },
+    })
+
+    expect(response.signal).toBe("unknown")
+    expect(response.snapshot?.freshness).toBe("stale")
+
+    const markup = renderToStaticMarkup(
+      createElement(FindMapWeatherCard, { weather: response.snapshot })
+    )
+    expect(markup).toContain("Chicago, IL")
+    expect(markup).toContain("100°")
+    expect(markup).toContain("H 102° L 75°")
+    expect(markup).toContain('data-weather-freshness="stale"')
+    expect(markup).toContain("Weather data may be delayed.")
+    expect(markup).toContain("w-fit")
+    expect(markup).not.toContain("w-[11rem]")
   })
 })

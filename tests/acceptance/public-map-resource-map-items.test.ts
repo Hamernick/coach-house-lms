@@ -1094,6 +1094,22 @@ describe("public map resource map items", () => {
     ])
   })
 
+  it("excludes malformed resource coordinates from marker features", () => {
+    const features = buildPublicMapItemPointFeatures([
+      buildGuideResourceItem("valid"),
+      buildGuideResourceItem("origin", { latitude: 0, longitude: 0 }),
+      buildGuideResourceItem("invalid-latitude", { latitude: -86 }),
+      buildGuideResourceItem("invalid-longitude", { longitude: -181 }),
+      buildGuideResourceItem("not-finite", {
+        longitude: Number.POSITIVE_INFINITY,
+      }),
+    ])
+
+    expect(features.map((feature) => feature.properties.itemId)).toEqual([
+      "valid",
+    ])
+  })
+
   it("resolves selectable resources into shared list rows", () => {
     const organization = buildOrganization()
     const items = buildPublicMapItems({

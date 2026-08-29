@@ -28,7 +28,7 @@ import { PublicMapSurface } from "./public-map-index/map-surface"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import { usePublicMapMarkers } from "./public-map-index/use-public-map-markers"
+import { usePublicMapWeatherMarkers } from "./public-map-index/use-public-map-weather-markers"
 import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import { usePublicMapSelectableItemMap } from "./public-map-index/map-items-state"
@@ -47,7 +47,6 @@ import {
   usePublicMapIndexNavigationHandlers,
   usePublicMapListItemSelection,
   useSyncPublicMapSelectedListItem,
-  type PublicMapCameraTarget,
 } from "./public-map-index/public-map-index-selection"
 import {
   EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
@@ -98,10 +97,9 @@ export function PublicMapIndex({
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
     initialOrganization?.id ?? null
   )
-  const [cameraTarget, setCameraTarget] =
-    useState<PublicMapCameraTarget | null>(
-      resolveInitialCameraTarget(initialOrganization)
-    )
+  const [cameraTarget, setCameraTarget] = useState(
+    resolveInitialCameraTarget(initialOrganization)
+  )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
@@ -317,7 +315,6 @@ export function PublicMapIndex({
     setAppliedBounds,
     theme: mapTheme,
   })
-
   const locationControl = usePublicMapUserLocation({
     mapRef,
     mapLoadedRef,
@@ -327,8 +324,7 @@ export function PublicMapIndex({
       Boolean(initialPublicSlug) || includeSeedResources,
     welcomeOpen: memberOnboardingState.isOpen,
   })
-
-  usePublicMapMarkers({
+  const weather = usePublicMapWeatherMarkers({
     favorites,
     mapRef,
     mapLoadedRef,
@@ -399,6 +395,7 @@ export function PublicMapIndex({
       tokenAvailable={tokenAvailable}
       mapError={mapError}
       locationControl={locationControl}
+      weather={weather?.snapshot ?? null}
       preferencesSaveError={preferencesSaveError}
       authSheetOpen={authSheetOpen}
       authRedirectTo={authRedirectTo}

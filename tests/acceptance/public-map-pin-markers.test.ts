@@ -56,6 +56,8 @@ describe("public map pin markers", () => {
     expect(layerSource).toContain(
       "PUBLIC_MAP_MARKER_ICON_OFFSET: [number, number] = [0, 8.5]"
     )
+    expect(layerSource).not.toContain("PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET")
+    expect(layerSource).not.toContain("PUBLIC_MAP_MARKER_OVERVIEW_OFFSETS")
     expect(layerSource).toContain("selected ? [0, 0.52] : [0, 0.45]")
     expect(layerSource).toContain('["get", "designation"]')
     expect(layerSource).toContain('"text-optional": true')
@@ -102,6 +104,9 @@ describe("public map pin markers", () => {
     const markerSource = readRepoFile(
       "src/components/public/public-map-index/use-public-map-markers.ts"
     )
+    const weatherMarkerSource = readRepoFile(
+      "src/components/public/public-map-index/use-public-map-weather-markers.ts"
+    )
     const markerArtworkSource = readRepoFile(
       "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
     )
@@ -109,8 +114,9 @@ describe("public map pin markers", () => {
       "docs/archive/public-map-markers-2026-08-02.md"
     )
 
-    expect(mapSource).toContain("usePublicMapMarkers")
+    expect(mapSource).toContain("usePublicMapWeatherMarkers")
     expect(mapSource).not.toContain("usePublicMapClusteredMarkers")
+    expect(weatherMarkerSource).toContain("usePublicMapMarkers")
     expect(markerSource).not.toContain("public-map-cluster")
     expect(markerSource).not.toContain("clusterClient")
     expect(markerSource).toContain("syncPublicMapMarkerArtwork")

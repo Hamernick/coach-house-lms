@@ -22,6 +22,14 @@ export function FindMapWeatherCard({
 
   const freshnessDescription =
     weather.freshness === "stale" ? " Weather data may be delayed." : ""
+  const temperatureLabel = `${weather.temperatureFahrenheit}°`
+  const temperatureLength = Array.from(temperatureLabel).length
+  const temperatureTextClassName =
+    temperatureLength >= 5
+      ? "text-[10px] sm:text-xs"
+      : temperatureLength >= 4
+        ? "text-xs sm:text-sm"
+        : "text-sm"
 
   return (
     <Card
@@ -37,8 +45,9 @@ export function FindMapWeatherCard({
       aria-label={`Current temperature: ${weather.temperatureFahrenheit} degrees.${freshnessDescription}`}
       role="status"
       data-weather-freshness={weather.freshness}
+      data-weather-temperature-length={temperatureLength}
       className={cn(
-        "pointer-events-auto h-10 min-w-14 shrink-0 gap-0 overflow-hidden rounded-xl py-0 shadow-sm",
+        "pointer-events-auto size-10 shrink-0 gap-0 overflow-hidden rounded-xl py-0 shadow-sm sm:size-11",
         className
       )}
     >
@@ -50,9 +59,16 @@ export function FindMapWeatherCard({
           slot: "temperature",
           surfaceKind: "content",
         })}
-        className="flex h-full w-full items-center justify-center px-3 py-0 text-sm leading-none font-semibold tabular-nums first:pt-0"
+        className="flex size-full min-w-0 items-center justify-center p-0 leading-none font-semibold tabular-nums first:pt-0"
       >
-        {weather.temperatureFahrenheit}°
+        <span
+          className={cn(
+            "max-w-full tracking-tight whitespace-nowrap",
+            temperatureTextClassName
+          )}
+        >
+          {temperatureLabel}
+        </span>
       </CardContent>
     </Card>
   )

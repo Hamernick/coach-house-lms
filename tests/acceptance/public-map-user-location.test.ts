@@ -215,9 +215,15 @@ describe("public map user location", () => {
     )
   })
 
-  it("renders the control at map top-left and Welcome at top-center", () => {
+  it("keeps mobile map controls in separate safe-area overlay zones", () => {
     const locationControlSource = readSource(
       "src/components/public/public-map-index/location-control.tsx"
+    )
+    const mapSurfaceSource = readSource(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
+    const sidebarSource = readSource(
+      "src/components/public/public-map-index/sidebar.tsx"
     )
     const welcomeControlSource = readSource(
       "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
@@ -228,6 +234,7 @@ describe("public map user location", () => {
 
     expect(locationControlSource).toContain("safe-area-inset-top")
     expect(locationControlSource).toContain("safe-area-inset-left")
+    expect(locationControlSource).toContain("data-public-map-location-controls")
     expect(locationControlSource).toContain("absolute inset-0 z-[60]")
     expect(locationControlSource).toContain("Location timed out")
     expect(locationControlSource).toContain(
@@ -250,6 +257,19 @@ describe("public map user location", () => {
     expect(welcomeControlSource).toContain('"Welcome"')
     expect(welcomeControlSource).toContain('"Hide welcome"')
     expect(welcomeControlSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(welcomeControlSource).toContain("top-[max(4.25rem")
+    expect(welcomeControlSource).toContain("sm:top-[max(0.75rem")
+    expect(welcomeControlSource).toContain("data-public-map-welcome-control")
+    expect(mapSurfaceSource).toContain("data-public-map-status-overlays")
+    expect(mapSurfaceSource).toContain("safe-area-inset-top")
+    expect(mapSurfaceSource).toContain("safe-area-inset-right")
+    expect(mapSurfaceSource).toContain("max-w-[calc(100%_-_2rem)]")
+    expect(sidebarSource).toContain("safe-area-inset-bottom")
+    expect(sidebarSource).toContain("safe-area-inset-left")
+    expect(sidebarSource).toContain("data-public-map-sidebar-open-control")
+    expect(sidebarSource).not.toContain(
+      '"absolute top-4 left-4 z-20 transition-[opacity,transform]'
+    )
   })
 
   it("limits geolocation to same-origin find routes", () => {

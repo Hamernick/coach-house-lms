@@ -160,10 +160,23 @@ describe("find-map feature", () => {
     )
     expect(markup).toContain('data-react-grab-surface-slot="temperature"')
     expect(markup).toContain("pointer-events-auto")
-    expect(markup).toContain("h-10")
-    expect(markup).toContain("min-w-14")
+    expect(markup).toContain("size-10")
+    expect(markup).toContain("sm:size-11")
     expect(markup).toContain("rounded-xl")
     expect(markup).toContain("first:pt-0")
+    expect(markup).toContain('data-weather-temperature-length="4"')
+    expect(markup).toContain("text-xs sm:text-sm")
+
+    const singleDigitMarkup = renderToStaticMarkup(
+      createElement(FindMapWeatherCard, {
+        weather: response.snapshot
+          ? { ...response.snapshot, temperatureFahrenheit: 7 }
+          : null,
+      })
+    )
+    expect(singleDigitMarkup).toContain("7°")
+    expect(singleDigitMarkup).toContain('data-weather-temperature-length="2"')
+    expect(singleDigitMarkup).toContain("text-sm")
   })
 
   it("does not use a stale forecast to boost cooling resources", () => {
@@ -211,6 +224,6 @@ describe("find-map feature", () => {
     expect(markup).not.toContain("H 102° L 75°")
     expect(markup).toContain('data-weather-freshness="stale"')
     expect(markup).toContain("Weather data may be delayed.")
-    expect(markup).toContain("min-w-14")
+    expect(markup).toContain("size-10")
   })
 })

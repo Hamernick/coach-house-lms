@@ -76,7 +76,10 @@ export function PublicMapLocationControl({
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[60]">
-      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] flex items-center gap-2">
+      <div
+        data-public-map-location-controls="true"
+        className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] flex items-center gap-2"
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

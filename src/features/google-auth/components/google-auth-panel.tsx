@@ -7,6 +7,7 @@ import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import { Button } from "@/components/ui/button"
 
 import { useGoogleAuthController } from "../hooks/use-google-auth-controller"
+import { resolveGoogleAuthCapabilities } from "../lib"
 import type { GoogleAuthMode, GoogleSignupInput } from "../types"
 
 declare global {
@@ -79,9 +80,12 @@ export function GoogleAuthPanel({
     signUpMetadata,
     onSuccess,
   })
-  const isConfigured =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+  const isConfigured = resolveGoogleAuthCapabilities({
+    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    linkingEnabled: process.env.NEXT_PUBLIC_GOOGLE_LINKING_ENABLED,
+    loginEnabled: process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED,
+    signupEnabled: process.env.NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED,
+  })[mode]
 
   useEffect(() => {
     if (!buttonRef.current) return

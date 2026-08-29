@@ -8,6 +8,28 @@ import type {
 const MAX_METADATA_KEYS = 20
 const MAX_METADATA_STRING_LENGTH = 256
 
+export type GoogleAuthCapabilityConfiguration = {
+  clientId?: string
+  linkingEnabled?: string
+  loginEnabled?: string
+  signupEnabled?: string
+}
+
+export function resolveGoogleAuthCapabilities({
+  clientId,
+  linkingEnabled,
+  loginEnabled,
+  signupEnabled,
+}: GoogleAuthCapabilityConfiguration): Record<GoogleAuthMode, boolean> {
+  const hasClientId = Boolean(clientId)
+
+  return {
+    link: hasClientId && linkingEnabled === "true",
+    login: hasClientId && loginEnabled === "true",
+    signup: hasClientId && signupEnabled === "true",
+  }
+}
+
 export function sanitizeGoogleSignupMetadata(
   value: Record<string, unknown> | undefined
 ) {
@@ -62,6 +84,10 @@ export function resolveGoogleAuthErrorMessage({
 
   if (result?.ok === false && result.code === "invalid") {
     return "Google could not verify this account. Please try again."
+  }
+
+  if (result?.ok === false && result.code === "existing_account") {
+    return "A Coach House account already uses this email. Sign in with Google instead."
   }
 
   return "Unable to create your account with Google. Please try again."

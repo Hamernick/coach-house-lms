@@ -11,12 +11,16 @@ authentication.
 
 ## Runtime configuration
 
-- `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<public Google OAuth web client ID>`
+- `NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED=true`
+- `NEXT_PUBLIC_GOOGLE_LINKING_ENABLED=true`
+- `NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED=true`
 - Supabase Google provider configured with the same client ID and its secret
 
-Keep the feature disabled until the database migration, application code,
-Google client, and Supabase provider configuration are deployed together.
+Enable login and linking before signup. After any Google-only account exists,
+keep login available even if signup must be rolled back. The public flags
+control product exposure; server validation and the database legal-consent
+trigger remain the security boundaries.
 
 ## Ownership
 

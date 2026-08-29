@@ -8,6 +8,7 @@ import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import { Button } from "@/components/ui/button"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 
+import { resolveGoogleAuthCapabilities } from "../lib"
 import { GoogleAuthPanel } from "./google-auth-panel"
 
 type GoogleConnectionStatus = "error" | "linked" | "loading" | "unlinked"
@@ -22,9 +23,12 @@ export function GoogleAccountConnection({
   const supabase = useSupabaseClient()
   const [isActiveViewport, setIsActiveViewport] = useState(false)
   const [status, setStatus] = useState<GoogleConnectionStatus>("loading")
-  const isConfigured =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+  const isConfigured = resolveGoogleAuthCapabilities({
+    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    linkingEnabled: process.env.NEXT_PUBLIC_GOOGLE_LINKING_ENABLED,
+    loginEnabled: process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED,
+    signupEnabled: process.env.NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED,
+  }).link
   const titleId = `google-account-connection-${viewport}-title`
 
   useEffect(() => {
@@ -72,7 +76,7 @@ export function GoogleAccountConnection({
             alt=""
             width={48}
             height={48}
-            className="-ml-3 -mt-3"
+            className="-mt-3 -ml-3"
           />
           <h4 id={titleId} className="font-medium">
             Google

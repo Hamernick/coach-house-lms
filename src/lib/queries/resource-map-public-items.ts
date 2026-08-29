@@ -368,9 +368,11 @@ export async function fetchPublicResourceMapItemsPageById({
   limit: number
   options?: FetchPublicResourceMapItemsOptions
 }): Promise<FetchPublicResourceMapItemsPageResult> {
-  const localPreviewFile = normalizeLocalPreviewFile(
-    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
-  )
+  const localPreviewFile = options.ignoreLocalPreviewFile
+    ? null
+    : normalizeLocalPreviewFile(
+        options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+      )
   const localEnginePreviewFile = normalizeLocalPreviewFile(
     options.localEnginePreviewFile
   )

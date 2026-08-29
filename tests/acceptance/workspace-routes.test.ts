@@ -30,6 +30,7 @@ describe("workspace routes", () => {
       "finance",
       "people",
       "documents",
+      "tools",
       "accelerator",
       "roadmap",
     ])
@@ -44,6 +45,9 @@ describe("workspace routes", () => {
     )
     expect(getWorkspaceDrawerPath({ tab: "finance" })).toBe(
       "/workspace?drawer=finance"
+    )
+    expect(getWorkspaceDrawerPath({ tab: "tools" })).toBe(
+      "/workspace?drawer=tools"
     )
     expect(
       getWorkspaceDrawerPath({

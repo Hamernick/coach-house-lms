@@ -11,6 +11,7 @@ import {
   WorkspaceFinancePanel,
   type WorkspaceFinanceInput,
 } from "@/features/workspace-finance"
+import { WorkspaceToolsPanel } from "@/features/workspace-tools"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
@@ -40,7 +41,7 @@ function WorkspaceDrawerTabTrigger({
     <TabsTrigger
       value={value}
       onClick={onOpen}
-      className="h-7 min-w-0 flex-1 gap-2 px-2 py-1 text-left after:hidden sm:flex-none"
+      className="h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
     >
       {children}
     </TabsTrigger>
@@ -115,7 +116,7 @@ export function WorkspaceDrawerTabs({
         <TabsList
           variant="line"
           ref={tabsListRef}
-          className="h-7 w-full min-w-0 self-end p-0 group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto"
+          className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"
         >
           <WorkspaceDrawerTabTrigger
             value="organization"
@@ -131,6 +132,9 @@ export function WorkspaceDrawerTabs({
           </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="documents" onOpen={handleTabOpen}>
             Documents
+          </WorkspaceDrawerTabTrigger>
+          <WorkspaceDrawerTabTrigger value="tools" onOpen={handleTabOpen}>
+            Tools
           </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="accelerator" onOpen={handleTabOpen}>
             Accelerator
@@ -234,6 +238,20 @@ export function WorkspaceDrawerTabs({
                 }
               />
             </div>
+          ) : null}
+        </TabsContent>
+        <TabsContent
+          value="tools"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
+        >
+          {tab === "tools" ? (
+            <WorkspaceToolsPanel
+              input={{
+                stripeConnection: financeInput.stripeConnection ?? {
+                  state: "not_configured",
+                },
+              }}
+            />
           ) : null}
         </TabsContent>
         <TabsContent

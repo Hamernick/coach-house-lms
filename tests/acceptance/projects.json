@@ -189,6 +189,7 @@
       "tests/acceptance/workspace-ontology-root-layout.test.ts",
       "tests/acceptance/workspace-people-optimistic-mutations.test.ts",
       "tests/acceptance/workspace-people-table-preferences.test.ts",
+      "tests/acceptance/workspace-tools.test.ts",
       "tests/acceptance/workspace-view-helpers.test.ts",
       "tests/acceptance/workspace-view-seed.test.ts"
     ],

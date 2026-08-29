@@ -3,21 +3,35 @@ import { join } from "node:path"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   FIND_MAP_FEATURE_NAME,
   FindMapLoadingSidebar,
   FindMapLoadingState,
-  FindMapWeatherCard,
+} from "@/features/find-map"
+import { FindMapWeatherCard } from "@/features/find-map/client"
+import {
   buildFindMapWeatherCell,
   buildFindMapWeatherResponse,
   normalizeNwsHeatEvent,
   parseFindMapWeatherCell,
-} from "@/features/find-map"
-import { resolveNwsGridFreshness } from "@/features/find-map/server/weather"
+  parseFindMapWeatherResponse,
+} from "@/features/find-map/lib"
+import {
+  FIND_MAP_WEATHER_REFRESH_MS,
+  resolveFindMapWeatherRetryDelay,
+} from "@/features/find-map/use-find-map-weather"
+import {
+  fetchFindMapWeather,
+  resolveNwsGridFreshness,
+} from "@/features/find-map/server/weather"
 
 const ROOT = process.cwd()
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe("find-map feature", () => {
   it("exposes a stable public feature entrypoint", () => {
@@ -77,6 +91,39 @@ describe("find-map feature", () => {
     ).toBeNull()
   })
 
+  it("rejects cross-format and oversized weather proxy requests", async () => {
+    const { POST } = await import("@/app/api/public/find/weather/route")
+    const unsupported = await POST(
+      new Request("http://localhost/api/public/find/weather", {
+        body: "{}",
+        headers: { "Content-Type": "text/plain" },
+        method: "POST",
+      })
+    )
+    const oversized = await POST(
+      new Request("http://localhost/api/public/find/weather", {
+        body: "{}",
+        headers: {
+          "Content-Length": "257",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
+    )
+    const chunkedOversized = await POST(
+      new Request("http://localhost/api/public/find/weather", {
+        body: JSON.stringify({ padding: "x".repeat(257) }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+    )
+
+    expect(unsupported.status).toBe(415)
+    expect(unsupported.headers.get("x-content-type-options")).toBe("nosniff")
+    expect(oversized.status).toBe(413)
+    expect(chunkedOversized.status).toBe(413)
+  })
+
   it("normalizes current and legacy NWS heat events", () => {
     expect(normalizeNwsHeatEvent("Heat Advisory")).toBe("Heat Advisory")
     expect(normalizeNwsHeatEvent("Excessive Heat Warning")).toBe(
@@ -90,16 +137,111 @@ describe("find-map feature", () => {
 
     expect(
       resolveNwsGridFreshness(
-        { properties: { updateTime: "2026-08-28T08:20:00.000Z" } },
+        { properties: { updateTime: "2026-08-28T12:00:00.000Z" } },
         now
       )
     ).toBe("fresh")
     expect(
       resolveNwsGridFreshness(
-        { properties: { updateTime: "2026-08-28T05:00:00.000Z" } },
+        { properties: { updateTime: "2026-08-28T11:00:00.000Z" } },
         now
       )
     ).toBe("stale")
+  })
+
+  it("uses the nearest recent NWS observation for the displayed temperature", async () => {
+    const now = Date.now()
+    const currentTime = new Date(now - 10 * 60 * 1000).toISOString()
+    const intervalStart = new Date(now - 60 * 60 * 1000).toISOString()
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes("/points/40.05,-80.05")) {
+        return Response.json({
+          properties: {
+            forecastGridData: "https://api.weather.gov/gridpoints/TST/1,2",
+            observationStations:
+              "https://api.weather.gov/gridpoints/TST/1,2/stations",
+            relativeLocation: {
+              properties: { city: "Test City", state: "PA" },
+            },
+            timeZone: "America/New_York",
+          },
+        })
+      }
+      if (url.includes("/alerts/active")) {
+        return Response.json({ features: [] })
+      }
+      if (url.endsWith("/gridpoints/TST/1,2")) {
+        return Response.json({
+          properties: {
+            temperature: {
+              uom: "wmoUnit:degC",
+              values: [{ validTime: `${intervalStart}/PT3H`, value: 20 }],
+            },
+            updateTime: currentTime,
+          },
+        })
+      }
+      if (url.endsWith("/gridpoints/TST/1,2/stations")) {
+        return Response.json({
+          features: [{ properties: { stationIdentifier: "KTST" } }],
+        })
+      }
+      if (url.includes("/stations/KTST/observations/latest")) {
+        return Response.json({
+          properties: {
+            temperature: { unitCode: "wmoUnit:degC", value: 25 },
+            timestamp: currentTime,
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const response = await fetchFindMapWeather({
+      latitude: 40.05,
+      longitude: -80.05,
+    })
+
+    expect(response).toMatchObject({
+      signal: "none",
+      snapshot: {
+        temperatureFahrenheit: 77,
+        temperatureSource: "observation",
+      },
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(5)
+  })
+
+  it("does not follow non-NWS provider links", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes("/points/40.10,-80.10")) {
+        return Response.json({
+          properties: {
+            forecastGridData: "https://example.com/grid",
+            observationStations: "https://example.com/stations",
+          },
+        })
+      }
+      if (url.includes("/alerts/active")) {
+        return Response.json({ features: [] })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const response = await fetchFindMapWeather({
+      latitude: 40.1,
+      longitude: -80.1,
+    })
+
+    expect(response).toEqual({ signal: "unknown", snapshot: null })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).not.toContain(
+      "https://example.com/grid"
+    )
   })
 
   it("builds compact weather data and detects two forecast heat hours", () => {
@@ -144,6 +286,7 @@ describe("find-map feature", () => {
         temperatureFahrenheit: 100,
         highFahrenheit: 102,
         lowFahrenheit: 75,
+        temperatureSource: "forecast",
       },
     })
     const markup = renderToStaticMarkup(
@@ -152,7 +295,9 @@ describe("find-map feature", () => {
     expect(markup).toContain("100°")
     expect(markup).not.toContain("Chicago, IL")
     expect(markup).not.toContain("H 102° L 75°")
-    expect(markup).toContain('aria-label="Current temperature: 100 degrees."')
+    expect(markup).toContain(
+      'aria-label="Current forecast temperature: 100 degrees."'
+    )
     expect(markup).toContain('role="status"')
     expect(markup).toContain('data-react-grab-anchor="FindMapWeatherCard"')
     expect(markup).toContain(
@@ -165,6 +310,7 @@ describe("find-map feature", () => {
     expect(markup).toContain("rounded-xl")
     expect(markup).toContain("first:pt-0")
     expect(markup).toContain('data-weather-temperature-length="4"')
+    expect(markup).toContain('data-weather-temperature-source="forecast"')
     expect(markup).toContain("text-xs sm:text-sm")
 
     const singleDigitMarkup = renderToStaticMarkup(
@@ -177,6 +323,166 @@ describe("find-map feature", () => {
     expect(singleDigitMarkup).toContain("7°")
     expect(singleDigitMarkup).toContain('data-weather-temperature-length="2"')
     expect(singleDigitMarkup).toContain("text-sm")
+  })
+
+  it("prefers a recent observation without requiring place or daily ranges", () => {
+    const now = Date.parse("2026-08-27T12:00:00.000Z")
+    const response = buildFindMapWeatherResponse({
+      alerts: { features: [] },
+      alertsAvailable: true,
+      freshness: "fresh",
+      grid: {
+        properties: {
+          updateTime: "2026-08-27T11:45:00.000Z",
+          temperature: {
+            uom: "wmoUnit:degC",
+            values: [{ validTime: "2026-08-27T12:00:00Z/PT2H", value: 38 }],
+          },
+        },
+      },
+      now,
+      observation: {
+        properties: {
+          temperature: { unitCode: "wmoUnit:degC", value: 26 },
+          timestamp: "2026-08-27T11:50:00.000Z",
+        },
+      },
+      point: { properties: {} },
+    })
+
+    expect(response).toEqual({
+      signal: "forecast_threshold",
+      snapshot: {
+        freshness: "fresh",
+        signal: "forecast_threshold",
+        temperatureFahrenheit: 79,
+        temperatureSource: "observation",
+        updatedAt: "2026-08-27T11:50:00.000Z",
+      },
+    })
+    const markup = renderToStaticMarkup(
+      createElement(FindMapWeatherCard, { weather: response.snapshot })
+    )
+    expect(markup).toContain(
+      'aria-label="Current observed temperature: 79 degrees."'
+    )
+    expect(markup).toContain('data-weather-temperature-source="observation"')
+  })
+
+  it("rejects stale observations and malformed or non-actual heat alerts", () => {
+    const now = Date.parse("2026-08-27T12:00:00.000Z")
+    const response = buildFindMapWeatherResponse({
+      alerts: {
+        features: [
+          {
+            properties: {
+              ends: "2026-08-27T14:00:00.000Z",
+              event: "Heat Advisory",
+              messageType: "Alert",
+              onset: "2026-08-27T10:00:00.000Z",
+              status: "Exercise",
+            },
+          },
+        ],
+      },
+      alertsAvailable: true,
+      freshness: "fresh",
+      grid: {
+        properties: {
+          updateTime: "2026-08-27T11:45:00.000Z",
+          temperature: {
+            values: [{ validTime: "2026-08-27T12:00:00Z/PT2H", value: 20 }],
+          },
+        },
+      },
+      now,
+      observation: {
+        properties: {
+          temperature: { unitCode: "wmoUnit:degC", value: 31 },
+          timestamp: "2026-08-27T09:00:00.000Z",
+        },
+      },
+      point: { properties: {} },
+    })
+
+    expect(response).toMatchObject({
+      signal: "none",
+      snapshot: {
+        temperatureFahrenheit: 68,
+        temperatureSource: "forecast",
+      },
+    })
+  })
+
+  it("accepts only active actual heat alerts", () => {
+    const now = Date.parse("2026-08-27T12:00:00.000Z")
+    const response = buildFindMapWeatherResponse({
+      alerts: {
+        features: [
+          {
+            properties: {
+              ends: "2026-08-27T14:00:00.000Z",
+              event: "Heat Advisory",
+              messageType: "Alert",
+              onset: "2026-08-27T10:00:00.000Z",
+              status: "Actual",
+            },
+          },
+        ],
+      },
+      alertsAvailable: true,
+      freshness: "stale",
+      grid: null,
+      now,
+      observation: {
+        properties: {
+          temperature: { unitCode: "wmoUnit:degC", value: 30 },
+          timestamp: "2026-08-27T11:45:00.000Z",
+        },
+      },
+      point: { properties: {} },
+    })
+
+    expect(response.signal).toBe("official_alert")
+    expect(response.snapshot?.temperatureSource).toBe("observation")
+  })
+
+  it("validates weather responses and bounds retry scheduling", () => {
+    expect(
+      parseFindMapWeatherResponse({
+        signal: "none",
+        snapshot: {
+          freshness: "fresh",
+          signal: "none",
+          temperatureFahrenheit: 72,
+          temperatureSource: "observation",
+          updatedAt: "2026-08-27T12:00:00.000Z",
+        },
+      })
+    ).toMatchObject({ snapshot: { temperatureFahrenheit: 72 } })
+    expect(
+      parseFindMapWeatherResponse({
+        signal: "none",
+        snapshot: { temperatureFahrenheit: "72" },
+      })
+    ).toBeNull()
+    expect(
+      parseFindMapWeatherResponse({
+        signal: "none",
+        snapshot: {
+          freshness: "fresh",
+          signal: "threshold",
+          temperatureFahrenheit: 72,
+          temperatureSource: "forecast",
+          updatedAt: "2026-08-27T12:00:00.000Z",
+        },
+      })
+    ).toBeNull()
+    expect(resolveFindMapWeatherRetryDelay(1)).toBe(15_000)
+    expect(resolveFindMapWeatherRetryDelay(2)).toBe(30_000)
+    expect(resolveFindMapWeatherRetryDelay(4)).toBe(120_000)
+    expect(resolveFindMapWeatherRetryDelay(20)).toBe(120_000)
+    expect(FIND_MAP_WEATHER_REFRESH_MS).toBe(600_000)
   })
 
   it("does not use a stale forecast to boost cooling resources", () => {
@@ -224,6 +530,7 @@ describe("find-map feature", () => {
     expect(markup).not.toContain("H 102° L 75°")
     expect(markup).toContain('data-weather-freshness="stale"')
     expect(markup).toContain("Weather data may be delayed.")
+    expect(markup).toContain("Current forecast temperature")
     expect(markup).toContain("size-10")
   })
 })

@@ -5,8 +5,10 @@ import type {
   FindMapWeatherSignal,
 } from "../types"
 
-const CELL_SIZE = 0.05
-const HEAT_THRESHOLD_CELSIUS = 37.78
+const HEAT_THRESHOLD_CELSIUS = ((100 - 32) * 5) / 9
+const OBSERVATION_MAX_AGE_MS = 90 * 60 * 1000
+const OBSERVATION_FUTURE_TOLERANCE_MS = 5 * 60 * 1000
+const CELSIUS_UNIT_CODE = "wmoUnit:degC"
 const HEAT_EVENTS = new Map([
   ["heat advisory", "Heat Advisory"],
   ["extreme heat watch", "Extreme Heat Watch"],
@@ -30,6 +32,11 @@ function readString(value: unknown) {
 
 function readNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function readTimestamp(value: unknown) {
+  const timestamp = readString(value)
+  return timestamp && Number.isFinite(Date.parse(timestamp)) ? timestamp : null
 }
 
 function parseDuration(value: string) {
@@ -60,6 +67,8 @@ function parseInterval(entry: NwsValue): NwsInterval | null {
 
 function readIntervals(value: unknown) {
   const record = readRecord(value)
+  const unitCode = readString(record?.["uom"])
+  if (unitCode && unitCode !== CELSIUS_UNIT_CODE) return []
   const entries = record?.["values"]
   return Array.isArray(entries)
     ? entries
@@ -102,6 +111,21 @@ function dailyValue(intervals: NwsInterval[], now: number, timezone: string) {
   return matching?.value ?? null
 }
 
+function readObservationTemperature(observation: unknown, now: number) {
+  const properties = readRecord(readRecord(observation)?.["properties"])
+  const temperature = readRecord(properties?.["temperature"])
+  const unitCode = readString(temperature?.["unitCode"])
+  const value = readNumber(temperature?.["value"])
+  const updatedAt = readTimestamp(properties?.["timestamp"])
+  if (unitCode !== CELSIUS_UNIT_CODE || value === null || !updatedAt)
+    return null
+  const age = now - Date.parse(updatedAt)
+  if (age < -OBSERVATION_FUTURE_TOLERANCE_MS || age > OBSERVATION_MAX_AGE_MS) {
+    return null
+  }
+  return { updatedAt, value }
+}
+
 function hasForecastHeatThreshold(
   properties: Record<string, unknown>,
   now: number
@@ -127,52 +151,13 @@ export function normalizeNwsHeatEvent(value: unknown) {
   return HEAT_EVENTS.get(readString(value).toLowerCase()) ?? null
 }
 
-export function buildFindMapWeatherCell({
-  latitude,
-  longitude,
-}: FindMapWeatherCell): FindMapWeatherCell | null {
-  if (
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude) ||
-    latitude < -90 ||
-    latitude > 90 ||
-    longitude < -180 ||
-    longitude > 180
-  ) {
-    return null
-  }
-  return {
-    latitude: Number((Math.round(latitude / CELL_SIZE) * CELL_SIZE).toFixed(2)),
-    longitude: Number(
-      (Math.round(longitude / CELL_SIZE) * CELL_SIZE).toFixed(2)
-    ),
-  }
-}
-
-export function parseFindMapWeatherCell(value: unknown) {
-  const record = readRecord(value)
-  const cell = buildFindMapWeatherCell({
-    latitude: readNumber(record?.["latitude"]) ?? Number.NaN,
-    longitude: readNumber(record?.["longitude"]) ?? Number.NaN,
-  })
-  if (!cell) return null
-  const latitude = readNumber(record?.["latitude"])
-  const longitude = readNumber(record?.["longitude"])
-  return latitude !== null &&
-    longitude !== null &&
-    Math.abs(latitude - cell.latitude) < 0.000001 &&
-    Math.abs(longitude - cell.longitude) < 0.000001
-    ? cell
-    : null
-}
-
 function hasActiveHeatAlert(alerts: unknown, now: number) {
   const features = readRecord(alerts)?.["features"]
   if (!Array.isArray(features)) return false
   return features.some((feature) => {
     const properties = readRecord(readRecord(feature)?.["properties"])
     if (!normalizeNwsHeatEvent(properties?.["event"])) return false
-    if (readString(properties?.["status"]).toLowerCase() === "test")
+    if (readString(properties?.["status"]).toLowerCase() !== "actual")
       return false
     if (readString(properties?.["messageType"]).toLowerCase() === "cancel")
       return false
@@ -183,8 +168,10 @@ function hasActiveHeatAlert(alerts: unknown, now: number) {
       readString(properties?.["ends"] ?? properties?.["expires"])
     )
     return (
-      (!Number.isFinite(starts) || starts <= now) &&
-      (!Number.isFinite(ends) || now < ends)
+      Number.isFinite(starts) &&
+      Number.isFinite(ends) &&
+      starts <= now &&
+      now < ends
     )
   })
 }
@@ -195,6 +182,7 @@ export function buildFindMapWeatherResponse({
   freshness,
   grid,
   now = Date.now(),
+  observation,
   point,
 }: {
   alerts: unknown
@@ -202,6 +190,7 @@ export function buildFindMapWeatherResponse({
   freshness: FindMapWeatherFreshness
   grid: unknown
   now?: number
+  observation?: unknown
   point: unknown
 }): FindMapWeatherResponse {
   const pointProperties = readRecord(readRecord(point)?.["properties"])
@@ -209,7 +198,7 @@ export function buildFindMapWeatherResponse({
   const relativeLocation = readRecord(pointProperties?.["relativeLocation"])
   const place = readRecord(relativeLocation?.["properties"])
   const timezone = readString(pointProperties?.["timeZone"])
-  const temperature = gridProperties
+  const forecastTemperature = gridProperties
     ? valueAt(readIntervals(gridProperties["temperature"]), now)
     : undefined
   const high = gridProperties
@@ -232,26 +221,33 @@ export function buildFindMapWeatherResponse({
         : "unknown"
   const city = readString(place?.["city"])
   const state = readString(place?.["state"])
-  const updatedAt = readString(gridProperties?.["updateTime"])
+  const observationTemperature = readObservationTemperature(observation, now)
+  const temperature = observationTemperature?.value ?? forecastTemperature
+  const temperatureSource = observationTemperature
+    ? ("observation" as const)
+    : ("forecast" as const)
+  const updatedAt =
+    observationTemperature?.updatedAt ??
+    readTimestamp(gridProperties?.["updateTime"])
+  const snapshotFreshness = observationTemperature ? "fresh" : freshness
 
   return {
     signal,
     snapshot:
-      city &&
-      state &&
-      timezone &&
-      temperature !== undefined &&
-      high !== null &&
-      low !== null &&
-      updatedAt
+      temperature !== undefined && updatedAt
         ? {
-            city,
-            state,
+            ...(city ? { city } : null),
+            ...(state ? { state } : null),
             temperatureFahrenheit: celsiusToRoundedFahrenheit(temperature),
-            highFahrenheit: celsiusToRoundedFahrenheit(high),
-            lowFahrenheit: celsiusToRoundedFahrenheit(low),
+            ...(high === null
+              ? null
+              : { highFahrenheit: celsiusToRoundedFahrenheit(high) }),
+            ...(low === null
+              ? null
+              : { lowFahrenheit: celsiusToRoundedFahrenheit(low) }),
+            temperatureSource,
             signal,
-            freshness,
+            freshness: snapshotFreshness,
             updatedAt,
           }
         : null,

@@ -48,8 +48,8 @@ function buildResourceItem(): ExternalResourceMapItem {
       notes: "Call before visiting.",
       openNow: true,
       sourceStatus: "available",
-      status: "available",
-      statusLabel: "Available",
+      status: "open",
+      statusLabel: "Open",
       temporaryClosedUntil: null,
       timezone: "America/Chicago",
     },
@@ -116,8 +116,8 @@ describe("find resource index feature contract", () => {
       visibility: "published",
       markerImageUrl: "https://resource.example.org/logo.png",
       availability: {
-        status: "available",
-        statusLabel: "Available",
+        status: "open",
+        statusLabel: "Open",
         openNow: true,
       },
     })
@@ -189,6 +189,54 @@ describe("find resource index feature contract", () => {
       isFindResourceWeatherEligible(
         item,
         Date.parse("2026-08-27T18:00:00.000Z")
+      )
+    ).toBe(false)
+    item.availability = {
+      ...item.availability,
+      openNow: false,
+      status: "open",
+    }
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T18:00:00.000Z")
+      )
+    ).toBe(false)
+    item.availability = {
+      ...item.availability,
+      openNow: true,
+      status: "appointment_required",
+    }
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T18:00:00.000Z")
+      )
+    ).toBe(false)
+  })
+
+  it("requires daily verification for active seasonal cooling resources", () => {
+    const item = buildResourceItem()
+    item.resourceCategories = ["emergency_cooling_centers"]
+    item.primaryResourceCategory = "emergency_cooling_centers"
+    item.lastVerifiedAt = "2026-08-26T12:00:00.000Z"
+    item.availability = {
+      ...item.availability!,
+      sourceStatus: "seasonal",
+      status: "open",
+      openNow: true,
+    }
+
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T11:59:00.000Z")
+      )
+    ).toBe(true)
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T12:01:00.000Z")
       )
     ).toBe(false)
   })

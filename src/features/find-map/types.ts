@@ -8,12 +8,15 @@ export type FindMapWeatherSignal =
 
 export type FindMapWeatherFreshness = "fresh" | "stale"
 
+export type FindMapWeatherTemperatureSource = "observation" | "forecast"
+
 export type FindMapWeatherSnapshot = {
-  city: string
-  state: string
+  city?: string
+  state?: string
   temperatureFahrenheit: number
-  highFahrenheit: number
-  lowFahrenheit: number
+  highFahrenheit?: number
+  lowFahrenheit?: number
+  temperatureSource: FindMapWeatherTemperatureSource
   signal: FindMapWeatherSignal
   freshness: FindMapWeatherFreshness
   updatedAt: string

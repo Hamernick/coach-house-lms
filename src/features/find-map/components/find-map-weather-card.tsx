@@ -22,6 +22,10 @@ export function FindMapWeatherCard({
 
   const freshnessDescription =
     weather.freshness === "stale" ? " Weather data may be delayed." : ""
+  const temperatureDescription =
+    weather.temperatureSource === "observation"
+      ? "Current observed temperature"
+      : "Current forecast temperature"
   const temperatureLabel = `${weather.temperatureFahrenheit}°`
   const temperatureLength = Array.from(temperatureLabel).length
   const temperatureTextClassName =
@@ -42,9 +46,10 @@ export function FindMapWeatherCard({
         notes:
           "Compact current-location weather summary on the public Find map.",
       })}
-      aria-label={`Current temperature: ${weather.temperatureFahrenheit} degrees.${freshnessDescription}`}
+      aria-label={`${temperatureDescription}: ${weather.temperatureFahrenheit} degrees.${freshnessDescription}`}
       role="status"
       data-weather-freshness={weather.freshness}
+      data-weather-temperature-source={weather.temperatureSource}
       data-weather-temperature-length={temperatureLength}
       className={cn(
         "pointer-events-auto size-10 shrink-0 gap-0 overflow-hidden rounded-xl py-0 shadow-sm sm:size-11",

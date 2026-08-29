@@ -197,13 +197,18 @@ export function isFindResourceWeatherEligible(
   }
   const verifiedAt = Date.parse(item.lastVerifiedAt)
   if (!Number.isFinite(verifiedAt) || verifiedAt > now) return false
-  const sourceStatus = item.availability?.sourceStatus
+  const availabilityStatus = item.availability?.status
   if (
-    item.availability?.status === "closed" ||
-    item.availability?.status === "temporarily_closed" ||
-    sourceStatus === "closed" ||
-    sourceStatus === "temporarily_closed"
+    item.availability?.openNow !== true ||
+    availabilityStatus === "closed" ||
+    availabilityStatus === "temporarily_closed" ||
+    availabilityStatus === "appointment_required" ||
+    availabilityStatus === "unknown"
   ) {
+    return false
+  }
+  const sourceStatus = item.availability?.sourceStatus
+  if (sourceStatus === "closed" || sourceStatus === "temporarily_closed") {
     return false
   }
   const maximumAge =

@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
+  buildLocationFeedback,
   hasGrantedPublicMapLocation,
   hasRunPublicMapLocationEntrance,
   markPublicMapLocationGranted,
@@ -33,12 +34,15 @@ describe("public map user location", () => {
   it("uses low-accuracy location requests with bounded caching", () => {
     expect(PUBLIC_MAP_GEOLOCATION_OPTIONS).toEqual({
       enableHighAccuracy: false,
-      timeout: 7_000,
+      timeout: 15_000,
       maximumAge: 300_000,
     })
     expect(resolveUserLocationStatusFromError({ code: 1 })).toBe("denied")
     expect(resolveUserLocationStatusFromError({ code: 2 })).toBe("unavailable")
-    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("error")
+    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("timed_out")
+    expect(buildLocationFeedback("timed_out")?.message).toContain(
+      "location request timed out"
+    )
   })
 
   it("rejects invalid coordinates", () => {
@@ -110,7 +114,7 @@ describe("public map user location", () => {
       "if (!coordinates && entranceStartedRef.current) setControlOpen(true)"
     )
     expect(hookSource).toContain(
-      'source === "entrance" && attempt === 0 && error.code !== 1'
+      'source === "entrance" && attempt === 0 && error.code === 2'
     )
     expect(hookSource).toContain("readPosition(1)")
     expect(hookSource.match(/if \(storedGrant\) \{/g)).toHaveLength(3)
@@ -224,6 +228,13 @@ describe("public map user location", () => {
 
     expect(locationControlSource).toContain("safe-area-inset-top")
     expect(locationControlSource).toContain("safe-area-inset-left")
+    expect(locationControlSource).toContain("absolute inset-0 z-[60]")
+    expect(locationControlSource).toContain("Location timed out")
+    expect(locationControlSource).toContain(
+      "public-map-location-card:current-location"
+    )
+    expect(locationControlSource).toContain("getReactGrabOwnerProps")
+    expect(locationControlSource).toContain("getReactGrabLinkedSurfaceProps")
     expect(locationControlSource).toContain("PublicMapDirectoryStatusPill")
     expect(locationControlSource).toContain(
       "PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME"

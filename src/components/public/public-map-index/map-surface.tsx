@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   FindMapWeatherCard,
   type FindMapWeatherSnapshot,
-} from "@/features/find-map"
+} from "@/features/find-map/client"
 import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"

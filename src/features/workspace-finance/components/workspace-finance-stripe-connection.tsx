@@ -1,7 +1,7 @@
 "use client"
 
-import CircleDollarSignIcon from "lucide-react/dist/esm/icons/circle-dollar-sign"
 import { useState, useTransition } from "react"
+import { siStripe } from "simple-icons"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -89,8 +89,15 @@ export function WorkspaceFinanceStripeConnection({
   return (
     <>
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
-          <CircleDollarSignIcon aria-hidden="true" className="size-4" />
+        <span className="border-border/70 bg-muted/60 flex size-10 shrink-0 items-center justify-center rounded-lg border">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            focusable="false"
+            className="size-5 shrink-0 text-[#635bff]"
+          >
+            <path fill="currentColor" d={siStripe.path} />
+          </svg>
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">Stripe</span>

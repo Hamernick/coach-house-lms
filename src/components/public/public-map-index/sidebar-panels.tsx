@@ -309,12 +309,7 @@ export function PublicMapDrawerSearchPanel({
               />
             </div>
           ) : null}
-          <div
-            data-public-map-sidebar-section="drawer-organizations-scroll"
-            className={cn(
-              "scroll-fade-effect-y min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
-            )}
-          >
+          <div className="min-h-0 flex-1 overflow-hidden">
             <PublicMapOrganizationsStack
               items={items}
               organizations={organizations}
@@ -324,7 +319,8 @@ export function PublicMapDrawerSearchPanel({
               activeGroup={activeGroup}
               resourceItemsLoadStatus={resourceItemsLoadStatus}
               resourceItemsLoadError={resourceItemsLoadError}
-              className="pt-2 pb-1"
+              className="h-full pt-2"
+              scrollable
               leadingContent={
                 <PublicMapSearchShortcuts
                   activeGroup={activeGroup}

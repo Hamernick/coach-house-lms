@@ -27,7 +27,7 @@ export function PublicMapSearchResultsStatus({
     <div
       data-public-map-search-results-status="true"
       data-public-map-directory-status-header="true"
-      className="flex h-8 min-w-0 shrink-0 items-center justify-between gap-3 px-1.5"
+      className="mx-auto flex h-8 w-full max-w-3xl min-w-0 shrink-0 items-center justify-between gap-3 px-1.5"
     >
       <p className="text-muted-foreground text-xs font-medium">Resources</p>
       <p

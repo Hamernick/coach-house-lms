@@ -10,7 +10,7 @@ export const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   containIntrinsicSize: "80px",
 } as const
 
-export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "h-20"
+export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "min-h-20"
 
 export function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -80,7 +80,7 @@ export function PublicMapListMetadataStrip({
   return (
     <div
       className={cn(
-        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 overflow-hidden text-sm leading-snug",
+        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-sm leading-snug",
         className
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -90,7 +90,7 @@ export function PublicMapListMetadataStrip({
       })}
     >
       <div
-        className="flex min-w-0 flex-1 items-center gap-x-1.5 overflow-hidden"
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5"
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
           slot: "location",
@@ -100,17 +100,14 @@ export function PublicMapListMetadataStrip({
         {items.map((item, index) => (
           <span
             key={`${itemKeyPrefix}-meta-${index}`}
-            className={cn(
-              "inline-flex min-w-0 items-center",
-              index === 0 ? "max-w-[55%]" : "max-w-[45%]"
-            )}
+            className="inline-flex max-w-full min-w-0 items-center"
           >
             {index > 0 ? (
               <span aria-hidden className="text-muted-foreground/70 mr-1.5">
                 •
               </span>
             ) : null}
-            <span className="min-w-0 truncate">
+            <span className="min-w-0 text-pretty break-words">
               <PublicMapHighlightedText query={query} text={item} />
             </span>
           </span>

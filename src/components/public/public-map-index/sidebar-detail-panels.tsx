@@ -2,8 +2,10 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { SidebarContent } from "@/components/ui/sidebar"
+import { useScrollFadeEffect } from "@/lib/scroll-fade-effect"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import type { ReactNode } from "react"
 
 import { PublicMapOrganizationDetail } from "./organization-detail"
 import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
@@ -19,6 +21,26 @@ type PublicMapRailDetailPanelProps = {
   onBack: () => void
   onToggleFavorite: (orgId: string) => void
   showHeaderControls?: boolean
+}
+
+function PublicMapDrawerDetailScrollViewport({
+  children,
+}: {
+  children: ReactNode
+}) {
+  const scrollFadeRef = useScrollFadeEffect(true, "vertical")
+
+  return (
+    <div
+      ref={scrollFadeRef}
+      data-public-map-sidebar-section="drawer-detail-scroll"
+      className="scroll-fade-effect-y h-full min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:px-4"
+    >
+      <div className="box-border min-h-full w-full max-w-full min-w-0 pb-[max(env(safe-area-inset-bottom),1rem)]">
+        {children}
+      </div>
+    </div>
+  )
 }
 
 export function PublicMapRailDetailPanel({
@@ -124,16 +146,11 @@ export function PublicMapDrawerDetailPanel({
           onToggleFavorite={onToggleFavorite}
         />
       ) : null}
-      <ScrollArea
-        data-public-map-sidebar-section="drawer-detail-scroll"
-        className="h-full min-h-0 flex-1 overflow-hidden px-2 sm:px-4"
-        viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-        contentClassName="min-h-full pb-[max(env(safe-area-inset-bottom),1rem)]"
-      >
+      <PublicMapDrawerDetailScrollViewport>
         <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 mx-auto w-full max-w-3xl motion-safe:duration-200">
           <PublicMapOrganizationDetail organization={organization} compact />
         </div>
-      </ScrollArea>
+      </PublicMapDrawerDetailScrollViewport>
     </div>
   )
 }
@@ -155,12 +172,7 @@ export function PublicMapResourceDrawerDetailPanel({
   resourceMapCurationAction?: PublicMapResourceCurationAction
 }) {
   return (
-    <ScrollArea
-      data-public-map-sidebar-section="drawer-detail-scroll"
-      className="h-full min-h-0 flex-1 overflow-hidden px-2 sm:px-4"
-      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-      contentClassName="min-h-full pb-[max(env(safe-area-inset-bottom),1rem)]"
-    >
+    <PublicMapDrawerDetailScrollViewport>
       <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 mx-auto w-full max-w-3xl motion-safe:duration-200">
         <PublicMapResourceDetail
           canManageResourceMap={canManageResourceMap}
@@ -172,6 +184,6 @@ export function PublicMapResourceDrawerDetailPanel({
           compact
         />
       </div>
-    </ScrollArea>
+    </PublicMapDrawerDetailScrollViewport>
   )
 }

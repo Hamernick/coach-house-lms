@@ -129,6 +129,7 @@ export function PublicMapOrganizationsStack({
   query,
   resourceItemsLoadError = null,
   resourceItemsLoadStatus,
+  scrollable = false,
   selectedItemId,
   selectedOrgId = null,
 }: {
@@ -146,13 +147,18 @@ export function PublicMapOrganizationsStack({
   query: string
   resourceItemsLoadError?: string | null
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
+  scrollable?: boolean
   selectedItemId: string | null
   selectedOrgId?: string | null
 }) {
   return (
     <div
       data-public-map-sidebar-section="organization-stack"
-      className={cn("flex w-full max-w-full min-w-0 flex-col gap-3", className)}
+      className={cn(
+        "flex w-full max-w-full min-w-0 flex-col gap-3",
+        scrollable && "min-h-0 flex-1 overflow-hidden",
+        className
+      )}
     >
       <PublicMapOrganizationList
         items={items}
@@ -165,6 +171,7 @@ export function PublicMapOrganizationsStack({
         loadError={resourceItemsLoadError}
         constrainedLayout={constrainedLayout}
         incrementalLoading
+        scrollable={scrollable}
         leadingContent={leadingContent}
         onClearCategory={onClearCategory}
         onClearQuery={onClearQuery}

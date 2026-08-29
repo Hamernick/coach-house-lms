@@ -42,31 +42,36 @@ export function PublicMapDirectoryHome({
       data-public-map-directory-home=""
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)] [-webkit-overflow-scrolling:touch]"
     >
-      <section className="flex flex-col gap-3 pb-4">
-        <h2 className="text-foreground px-0.5 text-xl font-semibold tracking-tight">
-          Find Nearby
-        </h2>
-        <PublicMapNearbyCategoryGrid
-          counts={counts}
-          loading={resourceItemsLoadStatus === "loading"}
-          onSelect={onCategorySelect}
-        />
-      </section>
-      {featuredGuides.length > 0 ? (
-        <div className="pb-5">
-          <PublicMapResourceGuides
-            guides={featuredGuides}
-            onGuideSelect={onGuideSelect}
-            onToggleSavedGuide={onToggleSavedGuide}
-            presentation="featured"
-            savedGuideIds={savedGuideIds}
+      <div
+        data-public-map-directory-home-content=""
+        className="mx-auto w-full max-w-3xl"
+      >
+        <section className="flex flex-col gap-3 pb-4">
+          <h2 className="text-foreground px-0.5 text-xl font-semibold tracking-tight">
+            Find Nearby
+          </h2>
+          <PublicMapNearbyCategoryGrid
+            counts={counts}
+            loading={resourceItemsLoadStatus === "loading"}
+            onSelect={onCategorySelect}
           />
+        </section>
+        {featuredGuides.length > 0 ? (
+          <div className="pb-5">
+            <PublicMapResourceGuides
+              guides={featuredGuides}
+              onGuideSelect={onGuideSelect}
+              onToggleSavedGuide={onToggleSavedGuide}
+              presentation="featured"
+              savedGuideIds={savedGuideIds}
+            />
+          </div>
+        ) : null}
+        <div className="pt-1">
+          <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
+            <PublicMapClaimDialog />
+          </Suspense>
         </div>
-      ) : null}
-      <div className="pt-1">
-        <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
-          <PublicMapClaimDialog />
-        </Suspense>
       </div>
     </div>
   )

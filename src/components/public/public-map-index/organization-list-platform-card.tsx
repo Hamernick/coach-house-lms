@@ -78,7 +78,7 @@ export function PublicMapPlatformOrganizationListCard({
         aria-label={`Open details for ${org.name}`}
         onClick={openDetails}
         className={cn(
-          "group relative z-10 flex h-full w-full min-w-0 justify-start rounded-none text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
+          "group relative z-10 flex min-h-20 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
           "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
           selected
             ? "bg-accent text-accent-foreground dark:bg-accent/50"

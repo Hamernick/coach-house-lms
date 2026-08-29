@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import type { CSSProperties } from "react"
 
 import { Button } from "@/components/ui/button"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
   PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER,
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -18,6 +20,9 @@ import {
   PublicMapResourceCategoryIcon,
 } from "./resource-category-icon"
 import { PUBLIC_MAP_FILTER_PILL_CLASSNAME } from "./sidebar-theme"
+
+const PUBLIC_MAP_CATEGORY_FILTER_SOURCE =
+  "src/components/public/public-map-index/category-filter.tsx"
 
 export type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
 
@@ -92,23 +97,21 @@ export function PublicMapCategoryFilter({
   compact?: boolean
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
 }) {
-  const [hasScrolledCategories, setHasScrolledCategories] = useState(false)
-
   return (
-    <div
+    <ScrollFadeEffect
+      orientation="horizontal"
       className={cn(
-        "-mx-1 flex min-w-0 gap-1 overflow-x-auto px-1 pb-0.5",
-        hasScrolledCategories &&
-          "scroll-fade-effect-x [--mask-width:1.25rem] [--scroll-buffer:1rem]",
+        "scroll-fade-effect-x mx-auto flex w-full max-w-3xl min-w-0 gap-1 overflow-x-auto px-1 pb-0.5",
         "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         compact ? "pt-0.5" : "pt-1"
       )}
+      style={
+        {
+          "--mask-width": "1.25rem",
+          "--scroll-buffer": "1rem",
+        } as CSSProperties
+      }
       aria-label="Filter resources by category"
-      onScroll={(event) => {
-        if (!hasScrolledCategories && event.currentTarget.scrollLeft > 0) {
-          setHasScrolledCategories(true)
-        }
-      }}
     >
       {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
         const count = counts[key]
@@ -123,6 +126,15 @@ export function PublicMapCategoryFilter({
 
         return (
           <Button
+            {...getReactGrabOwnerProps({
+              ownerId: `public-map-category-filter:${key}`,
+              component: "PublicMapCategoryFilterButton",
+              source: PUBLIC_MAP_CATEGORY_FILTER_SOURCE,
+              slot: "button",
+              variant: selected ? "selected" : "default",
+              primitiveImport: "@/components/ui/button",
+              notes: "Filters the public Find directory by resource category.",
+            })}
             key={key}
             type="button"
             variant="ghost"
@@ -142,6 +154,7 @@ export function PublicMapCategoryFilter({
             onClick={() => onActiveGroupChange(key)}
           >
             <span
+              key="icon"
               data-public-map-category-filter-icon=""
               className="inline-flex size-4 items-center justify-center"
               aria-hidden
@@ -165,8 +178,9 @@ export function PublicMapCategoryFilter({
                 />
               )}
             </span>
-            <span>{label}</span>
+            <span key="label">{label}</span>
             <span
+              key="count"
               className={cn(
                 "tabular-nums",
                 selected ? "text-foreground" : "text-muted-foreground/72"
@@ -177,6 +191,6 @@ export function PublicMapCategoryFilter({
           </Button>
         )
       })}
-    </div>
+    </ScrollFadeEffect>
   )
 }

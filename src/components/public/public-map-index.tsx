@@ -19,9 +19,8 @@ import {
 import {
   type PublicMapMapboxApi,
   useInitializePublicMap,
-  useResolveInitialPublicMapViewport,
+  usePublicMapCameraLifecycle,
   resolvePublicMapSelectedOrganization,
-  useSyncSidebarCameraPadding,
 } from "./public-map-index/public-map-index-runtime"
 import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
@@ -113,6 +112,7 @@ export function PublicMapIndex({
   )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
+  const [drawerInsetBottom, setDrawerInsetBottom] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
@@ -343,18 +343,16 @@ export function PublicMapIndex({
       Boolean(initialPublicSlug) || includeSeedResources,
     welcomeOpen: memberOnboardingState.isOpen,
   })
-  useResolveInitialPublicMapViewport({
-    mapRef,
-    mapLoadedRef,
+  usePublicMapCameraLifecycle({
+    drawerInsetBottom,
     hasResolvedInitialViewportRef,
     initialOrganization,
+    initialViewportResolved,
+    mapLoadedRef,
+    mapLoadVersion,
+    mapRef,
     preferNationalFallback: includeSeedResources && !initialPublicSlug,
     setInitialViewportResolved,
-  })
-  useSyncSidebarCameraPadding({
-    mapRef,
-    mapLoadedRef,
-    initialViewportResolved,
     sidebarInsetLeft,
   })
   useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
@@ -416,6 +414,7 @@ export function PublicMapIndex({
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
+      onDrawerInsetChange={setDrawerInsetBottom}
       mapOverlay={memberOnboardingState.overlay}
     />
   )

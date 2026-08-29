@@ -83,13 +83,17 @@ export function resolveSyncedPublicMapSelectedOrgId({
 export function useSyncSidebarCameraPadding({
   mapRef,
   mapLoadedRef,
+  mapLoadVersion,
   initialViewportResolved,
   sidebarInsetLeft,
+  drawerInsetBottom,
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
   mapLoadedRef: RefObject<boolean>
+  mapLoadVersion: number
   initialViewportResolved: boolean
   sidebarInsetLeft: number
+  drawerInsetBottom: number
 }) {
   const hasAppliedInitialPaddingRef = useRef(false)
   const lastMapRef = useRef<mapboxgl.Map | null>(null)
@@ -103,20 +107,34 @@ export function useSyncSidebarCameraPadding({
       hasAppliedInitialPaddingRef.current = false
     }
 
-    const duration = hasAppliedInitialPaddingRef.current ? 320 : 0
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+    const duration =
+      hasAppliedInitialPaddingRef.current && !reducedMotion ? 320 : 0
     hasAppliedInitialPaddingRef.current = true
 
     const frame = requestAnimationFrame(() => {
       if (mapRef.current !== map) return
       map.easeTo({
-        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
+        padding: resolvePublicMapCameraPadding(
+          sidebarInsetLeft,
+          drawerInsetBottom
+        ),
         duration,
-        essential: true,
+        essential: !reducedMotion,
       })
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [initialViewportResolved, mapLoadedRef, mapRef, sidebarInsetLeft])
+  }, [
+    drawerInsetBottom,
+    initialViewportResolved,
+    mapLoadedRef,
+    mapLoadVersion,
+    mapRef,
+    sidebarInsetLeft,
+  ])
 }
 
 function markInitialViewportResolved({
@@ -133,6 +151,7 @@ function markInitialViewportResolved({
 export function useResolveInitialPublicMapViewport({
   mapRef,
   mapLoadedRef,
+  mapLoadVersion,
   hasResolvedInitialViewportRef,
   initialOrganization,
   preferNationalFallback = false,
@@ -140,6 +159,7 @@ export function useResolveInitialPublicMapViewport({
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
   mapLoadedRef: RefObject<boolean>
+  mapLoadVersion: number
   hasResolvedInitialViewportRef: RefObject<boolean>
   initialOrganization: PublicMapOrganization | null
   preferNationalFallback?: boolean
@@ -188,10 +208,53 @@ export function useResolveInitialPublicMapViewport({
     hasResolvedInitialViewportRef,
     initialOrganization,
     mapLoadedRef,
+    mapLoadVersion,
     mapRef,
     preferNationalFallback,
     setInitialViewportResolved,
   ])
+}
+
+export function usePublicMapCameraLifecycle({
+  drawerInsetBottom,
+  hasResolvedInitialViewportRef,
+  initialOrganization,
+  initialViewportResolved,
+  mapLoadedRef,
+  mapLoadVersion,
+  mapRef,
+  preferNationalFallback,
+  setInitialViewportResolved,
+  sidebarInsetLeft,
+}: {
+  drawerInsetBottom: number
+  hasResolvedInitialViewportRef: RefObject<boolean>
+  initialOrganization: PublicMapOrganization | null
+  initialViewportResolved: boolean
+  mapLoadedRef: RefObject<boolean>
+  mapLoadVersion: number
+  mapRef: RefObject<mapboxgl.Map | null>
+  preferNationalFallback: boolean
+  setInitialViewportResolved: (resolved: boolean) => void
+  sidebarInsetLeft: number
+}) {
+  useResolveInitialPublicMapViewport({
+    hasResolvedInitialViewportRef,
+    initialOrganization,
+    mapLoadedRef,
+    mapLoadVersion,
+    mapRef,
+    preferNationalFallback,
+    setInitialViewportResolved,
+  })
+  useSyncSidebarCameraPadding({
+    drawerInsetBottom,
+    initialViewportResolved,
+    mapLoadedRef,
+    mapLoadVersion,
+    mapRef,
+    sidebarInsetLeft,
+  })
 }
 
 export function useInitializePublicMap({

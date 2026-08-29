@@ -176,7 +176,7 @@ export function resolveWorkspaceDataDrawerRequest(
   const tab = normalizeWorkspaceDrawerTab(
     destination.searchParams.get("drawer")
   )
-  if (tab === "people" || tab === "finance" || tab === "tools") return { tab }
+  if (tab === "people" || tab === "finance") return { tab }
   if (tab === "documents") {
     return {
       tab,

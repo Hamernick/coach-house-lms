@@ -24,7 +24,9 @@ async function stabilizeForScreenshot(page: Page) {
 
       [data-home-canvas-hero-media],
       [data-home-canvas-hero-copy] > *,
-      [data-home-canvas-reveal] {
+      [data-home-canvas-reveal],
+      [data-marketplace-intro],
+      [data-marketplace-hero-line] {
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
@@ -53,16 +55,23 @@ async function waitForHomeCanvasHydration(page: Page) {
   })
 }
 
-test("map-first public home", async ({ page }) => {
+async function waitForMarketplaceLiveCount(page: Page) {
+  await expect(
+    page.locator("[data-marketplace-live-count]")
+  ).not.toHaveAttribute("data-marketplace-live-count", "loading")
+}
+
+test("marketplace public home", async ({ page }) => {
   await page.goto("/")
-  await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
+  await page.waitForSelector("[data-marketplace-hero]", { state: "visible" })
+  await waitForMarketplaceLiveCount(page)
   await stabilizeForScreenshot(page)
 
-  const hero = page.locator("[data-public-home-hero]")
-  await expect(page.locator("[data-home-map-preview]")).toHaveAttribute(
-    "data-home-map-controls-position",
-    "bottom-right"
-  )
+  const hero = page.locator("[data-marketplace-hero]")
+  await expect(hero.locator("[data-home-map-preview]")).toHaveCount(0)
+  await expect(
+    page.locator("[data-public-marketplace-home] [data-home-map-preview]")
+  ).toHaveCount(0)
   await expect(hero).toHaveScreenshot("public-home-map-hero.png", {
     animations: "disabled",
     caret: "hide",
@@ -73,7 +82,8 @@ test("map-first public home", async ({ page }) => {
 
 test("public home keeps the app shell", async ({ page }) => {
   await page.goto("/")
-  await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
+  await page.waitForSelector("[data-marketplace-hero]", { state: "visible" })
+  await waitForMarketplaceLiveCount(page)
   await stabilizeForScreenshot(page)
 
   await expect(page).toHaveScreenshot("public-home-shell.png", {
@@ -85,7 +95,7 @@ test("public home keeps the app shell", async ({ page }) => {
 })
 
 test("public home canvas product navigator", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await page.waitForSelector("[data-public-home-product-navigator]", {
     state: "visible",
   })
@@ -110,24 +120,24 @@ test("public home mobile hero", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
-  await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
+  await page.waitForSelector("[data-marketplace-hero]", { state: "visible" })
   await page.waitForLoadState("networkidle")
   await stabilizeForScreenshot(page)
 
-  const panel = page.locator('[data-home-canvas-panel="hero"]')
-  const navigator = page.locator("[data-public-home-product-navigator]")
-  const copy = page.locator("[data-home-canvas-hero-copy]")
-  const navigatorBox = await navigator.boundingBox()
-  const copyBox = await copy.boundingBox()
-  expect(navigatorBox).not.toBeNull()
-  expect(copyBox).not.toBeNull()
-  expect(copyBox!.y).toBeGreaterThanOrEqual(
-    navigatorBox!.y + navigatorBox!.height
+  const panel = page.locator("[data-marketplace-scroll]")
+  const hero = page.locator("[data-marketplace-hero]")
+  await expect(page.locator("#marketplace-hero-title")).toContainText(
+    "Build and collect NFPs."
   )
   expect(
     await panel.evaluate(
       (element) => element.scrollWidth <= element.clientWidth
     )
+  ).toBe(true)
+  await expect(hero).toBeVisible()
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  expect(
+    await page.evaluate(() => document.body.scrollHeight === innerHeight)
   ).toBe(true)
 })
 
@@ -139,16 +149,8 @@ test("public home short mobile hero clears the product navigator", async ({
   await page.goto("/")
   await stabilizeForScreenshot(page)
 
-  const panel = page.locator('[data-home-canvas-panel="hero"]')
-  const navigator = page.locator("[data-public-home-product-navigator]")
-  const copy = page.locator("[data-home-canvas-hero-copy]")
-  const navigatorBox = await navigator.boundingBox()
-  const copyBox = await copy.boundingBox()
-  expect(navigatorBox).not.toBeNull()
-  expect(copyBox).not.toBeNull()
-  expect(copyBox!.y).toBeGreaterThanOrEqual(
-    navigatorBox!.y + navigatorBox!.height
-  )
+  const panel = page.locator("[data-marketplace-scroll]")
+  const collect = page.locator("[data-marketplace-collect]")
   expect(
     await panel.evaluate(
       (element) => element.scrollHeight > element.clientHeight
@@ -159,12 +161,13 @@ test("public home short mobile hero clears the product navigator", async ({
     element.scrollTo({ top: element.scrollHeight })
   )
   const panelBottomBox = await panel.boundingBox()
-  const copyBottomBox = await copy.boundingBox()
+  const collectBottomBox = await collect.boundingBox()
   expect(panelBottomBox).not.toBeNull()
-  expect(copyBottomBox).not.toBeNull()
-  expect(copyBottomBox!.y + copyBottomBox!.height).toBeLessThanOrEqual(
+  expect(collectBottomBox).not.toBeNull()
+  expect(collectBottomBox!.y + collectBottomBox!.height).toBeLessThanOrEqual(
     panelBottomBox!.y + panelBottomBox!.height + 1
   )
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
 test("public home landscape hero remains reachable", async ({ page }) => {
@@ -172,7 +175,7 @@ test("public home landscape hero remains reachable", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const panel = page.locator('[data-home-canvas-panel="hero"]')
+  const panel = page.locator("[data-marketplace-scroll]")
   await expect(panel).toBeVisible()
   await expect
     .poll(() =>
@@ -184,14 +187,15 @@ test("public home landscape hero remains reachable", async ({ page }) => {
     element.scrollTo({ top: element.scrollHeight })
   )
   const panelBox = await panel.boundingBox()
-  const copyBox = await page
-    .locator("[data-home-canvas-hero-copy]")
+  const collectBox = await page
+    .locator("[data-marketplace-collect]")
     .boundingBox()
   expect(panelBox).not.toBeNull()
-  expect(copyBox).not.toBeNull()
-  expect(copyBox!.y + copyBox!.height).toBeLessThanOrEqual(
+  expect(collectBox).not.toBeNull()
+  expect(collectBox!.y + collectBox!.height).toBeLessThanOrEqual(
     panelBox!.y + panelBox!.height + 1
   )
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
 test("pricing is embedded in Build", async ({ page }) => {

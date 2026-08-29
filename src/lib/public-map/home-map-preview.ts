@@ -10,7 +10,7 @@ import {
 } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
-export const HOME_MAP_PREVIEW_MARKER_LIMIT = 36
+export const HOME_MAP_PREVIEW_MARKER_LIMIT = 18
 
 function hashPreviewIdentity(value: string) {
   let hash = 2166136261
@@ -113,8 +113,8 @@ export function selectHomeMapPreviewFeatures(
       )
       const categoryCount = selectedCategoryCounts.get(category) ?? 0
       if (
-        categoryCount < bestCategoryCount ||
-        (categoryCount === bestCategoryCount && score > bestScore)
+        score > bestScore ||
+        (score === bestScore && categoryCount < bestCategoryCount)
       ) {
         bestIndex = index
         bestCategoryCount = categoryCount
@@ -136,7 +136,7 @@ export function selectHomeMapPreviewFeatures(
       properties: {
         ...feature.properties,
         isSaved: false,
-        markerOverviewOffsetIndex: selected.length,
+        markerOverviewOffsetIndex: 0,
         markerRelevanceTier: 0,
       },
     })

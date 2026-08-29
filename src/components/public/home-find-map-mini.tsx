@@ -9,39 +9,86 @@ import type mapboxgl from "mapbox-gl"
 import {
   applyPublicMapBasemapConfig,
   applyPublicMapSpaceFog,
-  PUBLIC_MAP_STANDARD_STYLE,
   resolvePublicMapBasemapConfig,
+  resolvePublicMapStyleForTheme,
 } from "@/components/public/public-map-index/constants"
 import {
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
 } from "@/components/public/public-map-index/map-view-helpers"
-import { startSpinningMapGlobe } from "@/components/public/public-map-index/spinning-globe"
 import { syncPublicMapMarkerArtwork } from "@/components/public/public-map-index/sync-public-map-marker-artwork"
 import type { PublicMapPointFeature } from "@/lib/public-map/public-map-geojson"
 import { registerPublicMapPinStyleImageMissingHandler } from "@/lib/public-map/public-map-pin-marker-images"
 import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 
 type PreviewStatus = "unavailable" | "loading" | "ready"
+type HomeMapCameraMode = "preview-bounds" | "collection-globe"
 
-const HOME_MAP_DEVELOPMENT_FALLBACK_STYLE = {
-  dark: "https://tiles.openfreemap.org/styles/dark",
-  light: "https://tiles.openfreemap.org/styles/positron",
-} as const
-function isMapboxAuthorizationError(event: mapboxgl.ErrorEvent) {
-  const error = event.error as Error & { status?: number; url?: string }
-  return (
-    (error.status === 401 || error.status === 403) &&
-    (error.url?.includes("api.mapbox.com") ?? true)
+const HOME_MAP_PREVIEW_MAX_ZOOM = 7
+const HOME_MAP_COLLECTION_MAX_ZOOM = 2.15
+
+function fitHomeMapToPreviewFeatures({
+  container,
+  features,
+  map,
+  cameraMode,
+}: {
+  container: HTMLDivElement
+  features: PublicMapPointFeature[]
+  map: mapboxgl.Map
+  cameraMode: HomeMapCameraMode
+}) {
+  if (features.length === 0) return
+
+  const longitudes = features.map((feature) => feature.geometry.coordinates[0])
+  const latitudes = features.map((feature) => feature.geometry.coordinates[1])
+  map.fitBounds(
+    [
+      [Math.min(...longitudes), Math.min(...latitudes)],
+      [Math.max(...longitudes), Math.max(...latitudes)],
+    ],
+    {
+      duration: 0,
+      maxZoom:
+        cameraMode === "collection-globe"
+          ? HOME_MAP_COLLECTION_MAX_ZOOM
+          : HOME_MAP_PREVIEW_MAX_ZOOM,
+      padding:
+        cameraMode === "collection-globe"
+          ? Math.max(
+              40,
+              Math.min(container.clientWidth, container.clientHeight) * 0.12
+            )
+          : {
+              top: 72,
+              right: 72,
+              bottom: Math.min(180, container.clientHeight * 0.22),
+              left: Math.min(320, container.clientWidth * 0.24),
+            },
+    }
   )
 }
 
-export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
+export function HomeFindMapMini({
+  cameraMode = "preview-bounds",
+  deferUntilVisible = false,
+  interactive = false,
+  mapboxToken,
+  onMarkerCountChange,
+}: {
+  cameraMode?: HomeMapCameraMode
+  deferUntilVisible?: boolean
+  interactive?: boolean
+  mapboxToken?: string
+  onMarkerCountChange?: (count: number) => void
+}) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const mapReadyRef = useRef(false)
   const [previewFeatures, setPreviewFeatures] = useState<
     PublicMapPointFeature[]
   >([])
+  const [canInitialize, setCanInitialize] = useState(!deferUntilVisible)
   const previewFeaturesRef = useRef(previewFeatures)
   const mapTheme = normalizePublicMapTheme(useTheme().resolvedTheme)
   const [status, setStatus] = useState<PreviewStatus>(
@@ -50,8 +97,28 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
   previewFeaturesRef.current = previewFeatures
 
   useEffect(() => {
+    const container = mapContainerRef.current
+    if (!deferUntilVisible || canInitialize || !container) return
+    if (!("IntersectionObserver" in window)) {
+      setCanInitialize(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setCanInitialize(true)
+        observer.disconnect()
+      },
+      { rootMargin: "320px 0px", threshold: 0.01 }
+    )
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [canInitialize, deferUntilVisible])
+
+  useEffect(() => {
     const controller = new AbortController()
-    void fetch("/api/public/home-map-preview", {
+    void fetch("/api/public/home-map-preview?v=5", {
       headers: { Accept: "application/json" },
       signal: controller.signal,
     })
@@ -59,14 +126,16 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
       .then((payload: { features?: PublicMapPointFeature[] } | null) => {
         if (payload?.features && payload.features.length > 0) {
           setPreviewFeatures(payload.features)
+          onMarkerCountChange?.(payload.features.length)
         }
       })
       .catch(() => {})
 
     return () => controller.abort()
-  }, [])
+  }, [onMarkerCountChange])
 
   useEffect(() => {
+    if (!canInitialize) return
     const container = mapContainerRef.current
     const token = mapboxToken?.trim() ?? ""
     if (!container || !token.startsWith("pk.")) {
@@ -78,24 +147,10 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
     let startTimer: number | null = null
     let loadTimer: number | null = null
     let resizeObserver: ResizeObserver | null = null
-    let rotation: ReturnType<typeof startSpinningMapGlobe> | null = null
     let stopStyleImageMissing = () => {}
-    let mapReady = false
-    let developmentFallbackActive =
-      process.env.NODE_ENV !== "production" &&
-      ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    let previewVisible = false
 
+    mapReadyRef.current = false
     setStatus("loading")
-
-    const visibilityObserver = new IntersectionObserver(
-      (entries) => {
-        previewVisible = entries.some((entry) => entry.isIntersecting)
-        rotation?.refresh()
-      },
-      { threshold: 0.01 }
-    )
-    visibilityObserver.observe(container)
 
     const initialize = async () => {
       try {
@@ -108,20 +163,15 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
 
         const map = new mapboxgl.Map({
           container: mapContainerRef.current,
-          style: developmentFallbackActive
-            ? HOME_MAP_DEVELOPMENT_FALLBACK_STYLE[mapTheme]
-            : PUBLIC_MAP_STANDARD_STYLE,
-          ...(developmentFallbackActive
-            ? {}
-            : {
-                config: {
-                  basemap: resolvePublicMapBasemapConfig(mapTheme),
-                },
-              }),
+          style: resolvePublicMapStyleForTheme(mapTheme),
+          config: {
+            basemap: resolvePublicMapBasemapConfig(mapTheme),
+          },
           center: FALLBACK_CENTER,
           zoom: FALLBACK_ZOOM,
           projection: "globe",
-          interactive: false,
+          interactive,
+          cooperativeGestures: interactive,
           attributionControl: false,
           fadeDuration: 0,
           logoPosition: "bottom-left",
@@ -137,9 +187,7 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
           if (cancelled || mapRef.current !== map) return
 
           map.setProjection("globe")
-          if (!developmentFallbackActive) {
-            applyPublicMapBasemapConfig(map, mapTheme)
-          }
+          applyPublicMapBasemapConfig(map, mapTheme)
           applyPublicMapSpaceFog(map)
           const { profileImageLoads, updated } = syncPublicMapMarkerArtwork({
             features: previewFeaturesRef.current,
@@ -149,6 +197,12 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
             theme: mapTheme,
           })
           if (!updated) return
+          fitHomeMapToPreviewFeatures({
+            container,
+            features: previewFeaturesRef.current,
+            map,
+            cameraMode,
+          })
           void Promise.all(profileImageLoads)
 
           requestAnimationFrame(() => {
@@ -157,53 +211,20 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
         }
 
         const markGlobeReady = () => {
-          if (cancelled || mapRef.current !== map || mapReady) return
+          if (cancelled || mapRef.current !== map || mapReadyRef.current) return
           if (!map.areTilesLoaded()) return
+          if (previewFeaturesRef.current.length === 0) return
 
-          mapReady = true
+          mapReadyRef.current = true
           if (loadTimer !== null) {
             window.clearTimeout(loadTimer)
             loadTimer = null
           }
-          rotation = startSpinningMapGlobe({
-            map,
-            shouldRotate: () => previewVisible,
-          })
           setStatus("ready")
         }
 
-        const activateDevelopmentFallback = () => {
-          if (
-            process.env.NODE_ENV === "production" ||
-            developmentFallbackActive
-          ) {
-            return false
-          }
-
-          developmentFallbackActive = true
-          mapReady = false
-          rotation?.stop()
-          rotation = null
-          setStatus("loading")
-          map.setStyle(HOME_MAP_DEVELOPMENT_FALLBACK_STYLE[mapTheme])
-          if (loadTimer !== null) window.clearTimeout(loadTimer)
-          loadTimer = window.setTimeout(() => {
-            if (!cancelled && mapRef.current === map && !mapReady) {
-              setStatus("unavailable")
-            }
-          }, 20_000)
-          return true
-        }
-
         const handleMapError = (event: mapboxgl.ErrorEvent) => {
-          if (
-            isMapboxAuthorizationError(event) &&
-            activateDevelopmentFallback()
-          ) {
-            return
-          }
-
-          if (!mapReady) {
+          if (event.error && !mapReadyRef.current) {
             setStatus("unavailable")
           }
         }
@@ -219,14 +240,11 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
 
         resizeObserver = new ResizeObserver(() => map.resize())
         resizeObserver.observe(mapContainerRef.current)
-        loadTimer = window.setTimeout(
-          () => {
-            if (!cancelled && mapRef.current === map && !mapReady) {
-              setStatus("unavailable")
-            }
-          },
-          developmentFallbackActive ? 20_000 : 12_000
-        )
+        loadTimer = window.setTimeout(() => {
+          if (!cancelled && mapRef.current === map && !mapReadyRef.current) {
+            setStatus("unavailable")
+          }
+        }, 12_000)
       } catch {
         if (!cancelled) setStatus("unavailable")
       }
@@ -236,45 +254,65 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
 
     return () => {
       cancelled = true
-      visibilityObserver.disconnect()
       if (startTimer !== null) window.clearTimeout(startTimer)
       if (loadTimer !== null) window.clearTimeout(loadTimer)
       resizeObserver?.disconnect()
-      rotation?.stop()
       stopStyleImageMissing()
       mapRef.current?.remove()
       mapRef.current = null
+      mapReadyRef.current = false
     }
-  }, [mapTheme, mapboxToken])
+  }, [cameraMode, canInitialize, interactive, mapTheme, mapboxToken])
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
-    const { profileImageLoads } = syncPublicMapMarkerArtwork({
+    const container = mapContainerRef.current
+    if (!map || !container || previewFeatures.length === 0) return
+    const { profileImageLoads, updated } = syncPublicMapMarkerArtwork({
       features: previewFeatures,
       map,
       maxRelevanceTier: 3,
       showLabels: false,
       theme: mapTheme,
     })
+    if (!updated) return
+    fitHomeMapToPreviewFeatures({
+      container,
+      features: previewFeatures,
+      map,
+      cameraMode,
+    })
     void Promise.all(profileImageLoads)
-  }, [mapTheme, previewFeatures])
+    const markPreviewReady = () => {
+      if (mapRef.current !== map) return
+      mapReadyRef.current = true
+      setStatus("ready")
+    }
+    if (map.areTilesLoaded()) {
+      requestAnimationFrame(markPreviewReady)
+      return
+    }
+    map.once("idle", markPreviewReady)
+    return () => map.off("idle", markPreviewReady)
+  }, [cameraMode, mapTheme, previewFeatures])
 
   return (
     <figure
       data-home-map-preview=""
       data-home-map-marker-count={previewFeatures.length}
       data-home-map-status={status}
+      data-home-map-camera={cameraMode}
+      data-home-map-interactive={interactive ? "true" : "false"}
       data-home-map-controls-position="bottom-right"
-      className="absolute inset-0 m-0 overflow-hidden bg-[#05070d] [&_.mapboxgl-canvas]:pointer-events-none [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
+      className={`absolute inset-0 m-0 overflow-hidden bg-[#05070d] [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white ${interactive ? "[&_.mapboxgl-canvas]:pointer-events-auto" : "[&_.mapboxgl-canvas]:pointer-events-none"}`}
     >
       <figcaption className="sr-only">
-        Public organizations and community resources on a rotating globe
+        Public organizations and community resources across the map
       </figcaption>
       <div
         ref={mapContainerRef}
         data-home-map-preview-map=""
-        className={`absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none ${status === "ready" ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 transition-opacity duration-200 ease-out motion-reduce:transition-none ${status === "ready" ? "opacity-100" : "opacity-0"}`}
       />
     </figure>
   )

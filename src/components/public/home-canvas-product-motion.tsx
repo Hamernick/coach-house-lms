@@ -18,23 +18,13 @@ export function HomeCanvasHeroMotion({ children }: { children: ReactNode }) {
 
     const context = gsap.context(() => {
       gsap.fromTo(
-        "[data-home-canvas-hero-media]",
-        { autoAlpha: 0.72, scale: 1.06 },
-        {
-          autoAlpha: 1,
-          duration: 0.8,
-          ease: "power3.out",
-          scale: 1,
-        }
-      )
-      gsap.fromTo(
         "[data-home-canvas-hero-copy] > *",
-        { autoAlpha: 0, y: 28 },
+        { autoAlpha: 0, y: 12 },
         {
           autoAlpha: 1,
-          duration: 0.62,
+          duration: 0.4,
           ease: "power3.out",
-          stagger: 0.07,
+          stagger: 0.04,
           y: 0,
         }
       )

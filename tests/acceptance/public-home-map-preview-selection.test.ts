@@ -40,7 +40,7 @@ function buildFeature({
 }
 
 describe("public home map preview selection", () => {
-  it("chooses a deterministic geographically spread preview", () => {
+  it("chooses a deterministic geographically anchored preview", () => {
     const corners = [
       buildFeature({ id: "northwest", latitude: 60, longitude: -120 }),
       buildFeature({ id: "northeast", latitude: 60, longitude: 120 }),
@@ -66,7 +66,7 @@ describe("public home map preview selection", () => {
     ).toEqual(new Set(corners.map((feature) => feature.properties.itemId)))
     expect(
       selected.map((feature) => feature.properties.markerOverviewOffsetIndex)
-    ).toEqual([0, 1, 2, 3])
+    ).toEqual([0, 0, 0, 0])
   })
 
   it("excludes invalid coordinates", () => {
@@ -81,39 +81,39 @@ describe("public home map preview selection", () => {
     ])
   })
 
-  it("balances category groups before repeating them", () => {
+  it("prioritizes geographic spread over category balancing", () => {
     const selected = selectHomeMapPreviewFeatures(
       [
-        ...Array.from({ length: 8 }, (_, index) =>
-          buildFeature({
-            category: "food_food_pantries",
-            id: `food-${index}`,
-            latitude: 40 + index,
-            longitude: -120 + index * 8,
-          })
-        ),
+        buildFeature({
+          category: "food_food_pantries",
+          id: "food-west",
+          latitude: 40,
+          longitude: -120,
+        }),
+        buildFeature({
+          category: "food_food_pantries",
+          id: "food-east",
+          latitude: 40,
+          longitude: -70,
+        }),
         buildFeature({
           category: "health_primary_care",
           id: "health",
-          latitude: 41.88,
-          longitude: -87.63,
+          latitude: 40,
+          longitude: -95,
         }),
         buildFeature({
           category: "legal_legal_aid",
           id: "legal",
-          latitude: 41.89,
-          longitude: -87.64,
+          latitude: 40.01,
+          longitude: -95.01,
         }),
       ],
-      3
+      2
     )
 
     expect(
-      new Set(
-        selected.map(
-          (feature) => feature.properties.primaryResourceCategory.split("_")[0]
-        )
-      )
-    ).toEqual(new Set(["food", "health", "legal"]))
+      new Set(selected.map((feature) => feature.properties.itemId))
+    ).toEqual(new Set(["food-west", "food-east"]))
   })
 })

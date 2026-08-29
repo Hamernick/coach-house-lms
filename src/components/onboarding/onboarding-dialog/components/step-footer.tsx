@@ -70,7 +70,14 @@ export function StepFooter({
         <div className="flex min-w-0 items-center gap-2">
           <Button
             type={isLastStep ? "submit" : "button"}
-            onClick={isLastStep ? undefined : onNext}
+            onClick={
+              isLastStep
+                ? undefined
+                : (event) => {
+                    event.preventDefault()
+                    onNext()
+                  }
+            }
             disabled={
               submitting ||
               (currentStepId === "intent" && !intentFocus) ||

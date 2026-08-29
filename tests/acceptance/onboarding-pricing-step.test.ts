@@ -1,4 +1,10 @@
-import { createElement } from "react"
+import {
+  Children,
+  createElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -73,6 +79,52 @@ describe("onboarding pricing step", () => {
 })
 
 describe("onboarding step footer", () => {
+  it("prevents a non-final step click from submitting after the step advances", () => {
+    const calls: string[] = []
+    const footer = StepFooter({
+      step: 0,
+      totalSteps: 2,
+      submitting: false,
+      currentStepId: "intent",
+      onboardingMode: "post_signup_access",
+      intentFocus: "build",
+      slugStatus: "idle",
+      formationStatus: "",
+      accountStepReady: false,
+      builderPlanTier: "free",
+      onPrev: () => undefined,
+      onNext: () => calls.push("next"),
+    })
+
+    function findButton(element: ReactElement): ReactElement | null {
+      const props = element.props as {
+        children?: ReactNode
+        onClick?: unknown
+        type?: string
+      }
+      if (props.type === "button" && typeof props.onClick === "function") {
+        return element
+      }
+
+      for (const child of Children.toArray(props.children)) {
+        if (!isValidElement(child)) continue
+
+        const match = findButton(child)
+        if (match) return match
+      }
+
+      return null
+    }
+
+    const button = findButton(footer)
+    expect(button?.props.type).toBe("button")
+    button?.props.onClick({
+      preventDefault: () => calls.push("preventDefault"),
+    })
+
+    expect(calls).toEqual(["preventDefault", "next"])
+  })
+
   it("uses a workspace-specific submit label for the paid post-signup pricing step", () => {
     const markup = renderToStaticMarkup(
       createElement(StepFooter, {

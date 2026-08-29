@@ -11,7 +11,6 @@ import {
   WorkspaceFinancePanel,
   type WorkspaceFinanceInput,
 } from "@/features/workspace-finance"
-import { WorkspaceToolsPanel } from "@/features/workspace-tools"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
@@ -133,9 +132,6 @@ export function WorkspaceDrawerTabs({
           <WorkspaceDrawerTabTrigger value="documents" onOpen={handleTabOpen}>
             Documents
           </WorkspaceDrawerTabTrigger>
-          <WorkspaceDrawerTabTrigger value="tools" onOpen={handleTabOpen}>
-            Tools
-          </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="accelerator" onOpen={handleTabOpen}>
             Accelerator
           </WorkspaceDrawerTabTrigger>
@@ -238,20 +234,6 @@ export function WorkspaceDrawerTabs({
                 }
               />
             </div>
-          ) : null}
-        </TabsContent>
-        <TabsContent
-          value="tools"
-          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
-        >
-          {tab === "tools" ? (
-            <WorkspaceToolsPanel
-              input={{
-                stripeConnection: financeInput.stripeConnection ?? {
-                  state: "not_configured",
-                },
-              }}
-            />
           ) : null}
         </TabsContent>
         <TabsContent

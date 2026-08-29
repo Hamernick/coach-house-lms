@@ -10,7 +10,6 @@ export const WORKSPACE_DRAWER_TABS = [
   WORKSPACE_FINANCE_DRAWER_TAB,
   "people",
   "documents",
-  "tools",
   "accelerator",
   "roadmap",
 ] as const

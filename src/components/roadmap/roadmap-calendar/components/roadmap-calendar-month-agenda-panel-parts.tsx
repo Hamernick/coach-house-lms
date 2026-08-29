@@ -82,9 +82,11 @@ export function formatAgendaHeading({
 export const RoadmapCalendarAddEventMenu = memo(
   function RoadmapCalendarAddEventMenu({
     disabled,
+    iconOnly = false,
     onOpenCreate,
   }: {
     disabled: boolean
+    iconOnly?: boolean
     onOpenCreate: OpenCreateHandler
   }) {
     return (
@@ -93,8 +95,13 @@ export const RoadmapCalendarAddEventMenu = memo(
           <Button
             type="button"
             variant="outline"
-            className="h-8 justify-start rounded-full px-3 text-sm font-medium shadow-none"
+            size={iconOnly ? "icon" : "default"}
+            className={cn(
+              "rounded-full shadow-none",
+              iconOnly ? "size-8" : "h-8 justify-start px-3 text-sm font-medium"
+            )}
             disabled={disabled}
+            aria-label={iconOnly ? "Add event" : undefined}
             title={
               disabled
                 ? "Only organization owners, admins, or allowed staff can add calendar events."
@@ -104,7 +111,7 @@ export const RoadmapCalendarAddEventMenu = memo(
             <span className="bg-muted text-muted-foreground inline-flex size-5 items-center justify-center rounded-full">
               <PlusIcon data-icon="inline-start" aria-hidden />
             </span>
-            Add event
+            {iconOnly ? null : "Add event"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">

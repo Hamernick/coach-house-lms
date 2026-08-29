@@ -22,7 +22,8 @@ import {
 import { useRoadmapEditorLayoutMetrics } from "@/components/roadmap/roadmap-editor/hooks/use-roadmap-editor-layout-metrics"
 import type { RoadmapDraft } from "@/components/roadmap/roadmap-editor/types"
 import { Button } from "@/components/ui/button"
-import type { RoadmapSection } from "@/lib/roadmap"
+import { CircularProgress } from "@/components/ui/circular-progress"
+import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 import {
   getWorkspaceRoadmapDrawerPath,
   WORKSPACE_ROADMAP_PATH,
@@ -52,6 +53,18 @@ const ROADMAP_TOC_TITLE_CLASS_NAME =
 
 export const ROADMAP_NAVIGATOR_HEADER_BUTTON_CLASS_NAME =
   "hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"
+
+export function resolveRoadmapNavigatorProgressPercent(
+  statuses: RoadmapSectionStatus[]
+) {
+  if (statuses.length === 0) return 0
+
+  const completedCount = statuses.filter(
+    (status) => status === "complete"
+  ).length
+
+  return Math.round((completedCount / statuses.length) * 100)
+}
 
 const ROADMAP_NAVIGATOR_HEADER_BUTTON_REACT_GRAB_PROPS =
   getReactGrabLinkedSurfaceProps({
@@ -101,6 +114,15 @@ export function RoadmapNavigatorSection({
   const resolvedDrafts = useMemo(
     () => drafts ?? createDraftMap(sections),
     [drafts, sections]
+  )
+  const roadmapProgressPercent = useMemo(
+    () =>
+      resolveRoadmapNavigatorProgressPercent(
+        sections.map((section) =>
+          resolveRoadmapSectionStatus(section, resolvedDrafts[section.id])
+        )
+      ),
+    [resolvedDrafts, sections]
   )
   const { tocIndicator, sectionsListRef } = useRoadmapEditorLayoutMetrics({
     activeId: activeSectionId ?? "",
@@ -167,6 +189,7 @@ export function RoadmapNavigatorSection({
       {showHeader ? (
         <header className="flex min-h-8 items-center">
           <RoadmapNavigatorHeaderButton
+            aria-label={`Core Documents, ${roadmapProgressPercent}% complete`}
             aria-controls="roadmap-section-picker-trigger"
             aria-expanded={!resolvedCollapsed}
             onClick={handleCollapsedChange}
@@ -177,6 +200,13 @@ export function RoadmapNavigatorSection({
                 ROADMAP_TOC_TITLE_CLASS_NAME
               )}
             >
+              <CircularProgress
+                decorative
+                value={roadmapProgressPercent}
+                size={18}
+                strokeWidth={2}
+                className="size-[18px] shrink-0 [&_svg]:!size-[18px]"
+              />
               <span className="truncate">Core Documents</span>
             </span>
             <ChevronDownIcon

@@ -37,7 +37,7 @@ export function WorkspaceCanvasOverlayOrganizationPanel({
   return (
     <div
       data-workspace-organization-drawer-panel="true"
-      className="mx-auto box-border flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col p-2 sm:p-3"
+      className="mx-auto box-border flex h-full min-h-0 w-full max-w-3xl min-w-0 flex-col p-2 sm:p-3"
     >
       <MyOrganizationEditorView
         key={

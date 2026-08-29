@@ -72,7 +72,7 @@ export function RoadmapSectionPanel({
     () => (status === "complete" ? "bg-emerald-500" : status === "in_progress" ? "bg-amber-500" : "bg-border"),
     [status],
   )
-  const headerPaddingClass = headerVariant === "calendar" ? "pt-0" : "pt-2 sm:pt-4"
+  const headerPaddingClass = headerVariant === "calendar" ? "pt-6" : "pt-2 sm:pt-4"
   const headerTextSpacing = headerVariant === "calendar" ? "space-y-0.5" : "space-y-1"
 
   return (
@@ -86,7 +86,7 @@ export function RoadmapSectionPanel({
         <div className={cn("w-full", headerPaddingClass)}>
           <div
             className={cn(
-              "mx-auto flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between",
+              "mx-auto flex w-full flex-col gap-6 sm:flex-row sm:items-center sm:gap-3 sm:justify-between",
               contentMaxWidth,
             )}
           >

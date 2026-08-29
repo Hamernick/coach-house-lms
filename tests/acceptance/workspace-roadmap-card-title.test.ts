@@ -3,6 +3,8 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { resolveRoadmapNavigatorProgressPercent } from "@/components/roadmap/roadmap-navigator-section"
+
 const ROOT = process.cwd()
 
 function readSource(relativePath: string) {
@@ -10,6 +12,21 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace roadmap card title", () => {
+  it("calculates completed Core Documents progress", () => {
+    expect(resolveRoadmapNavigatorProgressPercent([])).toBe(0)
+    expect(
+      resolveRoadmapNavigatorProgressPercent([
+        "complete",
+        "complete",
+        "in_progress",
+        "not_started",
+      ])
+    ).toBe(50)
+    expect(
+      resolveRoadmapNavigatorProgressPercent(["complete", "complete"])
+    ).toBe(100)
+  })
+
   it("keeps the workspace card title concise while the roadmap navigator uses the Core Documents label", () => {
     const toc = readSource(
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-toc.tsx"
@@ -48,6 +65,15 @@ describe("workspace roadmap card title", () => {
     expect(navigator).toContain("<header")
     expect(navigator).toContain(
       '<span className="truncate">Core Documents</span>'
+    )
+    expect(navigator).toContain(
+      'import { CircularProgress } from "@/components/ui/circular-progress"'
+    )
+    expect(navigator).toContain("value={roadmapProgressPercent}")
+    expect(navigator).toContain("size={18}")
+    expect(navigator).toContain("strokeWidth={2}")
+    expect(navigator).toContain(
+      "Core Documents, ${roadmapProgressPercent}% complete"
     )
     expect(navigator).not.toContain(
       'import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"'

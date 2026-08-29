@@ -62,5 +62,6 @@ export type PublicMapSidebarProps = {
   onSelectOrganization: (organizationId: string) => void
   onOpenDetails: OpenDetails
   onBackToSearch: () => void
+  onDrawerInsetChange?: (value: number) => void
   setSidebarMode: (mode: SidebarMode) => void
 }

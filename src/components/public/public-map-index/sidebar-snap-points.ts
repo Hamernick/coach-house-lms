@@ -46,6 +46,20 @@ function parseSnapPointPixels(
   return Number.isFinite(pixels) ? pixels : null
 }
 
+export function resolvePublicMapDrawerVisibleHeight({
+  snapPoint,
+  surfaceHeight,
+}: {
+  snapPoint: number | string
+  surfaceHeight: number
+}) {
+  const safeSurfaceHeight = Math.max(0, Math.round(surfaceHeight))
+  const pixels = parseSnapPointPixels(snapPoint, safeSurfaceHeight)
+
+  if (pixels == null) return 0
+  return Math.round(clamp(pixels, 0, safeSurfaceHeight))
+}
+
 export function resolvePublicMapDrawerSnapPointIndex({
   snapPoint,
   snapPoints,

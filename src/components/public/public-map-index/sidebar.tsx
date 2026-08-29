@@ -7,7 +7,10 @@ import SearchIcon from "lucide-react/dist/esm/icons/search"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
+import {
+  buildPublicMapDrawerSnapPoints,
+  resolvePublicMapDrawerVisibleHeight,
+} from "./sidebar-snap-points"
 import { PublicMapMemberRail, type PublicMapMemberTab } from "./member-rail"
 import {
   PublicMapRailPanel,
@@ -127,6 +130,7 @@ export function PublicMapSidebar({
   onSelectOrganization,
   onOpenDetails,
   onBackToSearch,
+  onDrawerInsetChange,
   setSidebarMode,
 }: PublicMapSidebarProps) {
   const compact = panelPresentation === "drawer"
@@ -164,6 +168,25 @@ export function PublicMapSidebar({
     }
     setActiveSnapIndex(1)
   }, [effectiveSidebarMode, panelOpen, panelPresentation])
+  useEffect(() => {
+    const drawerInset =
+      panelPresentation === "drawer" && panelOpen && !drawerIsFullscreen
+        ? resolvePublicMapDrawerVisibleHeight({
+            snapPoint: activeSnapPoint,
+            surfaceHeight,
+          })
+        : 0
+
+    onDrawerInsetChange?.(drawerInset)
+  }, [
+    activeSnapPoint,
+    drawerIsFullscreen,
+    onDrawerInsetChange,
+    panelOpen,
+    panelPresentation,
+    surfaceHeight,
+  ])
+  useEffect(() => () => onDrawerInsetChange?.(0), [onDrawerInsetChange])
   const listItems = searchContext?.items ?? filteredItems
   const handleDrawerTabChange = useCallback(
     (nextTab: PublicMapMemberTab) => {

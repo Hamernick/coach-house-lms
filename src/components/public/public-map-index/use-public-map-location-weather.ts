@@ -1,29 +1,32 @@
 "use client"
 
-import type { RefObject } from "react"
+import { useState, type RefObject } from "react"
 import type mapboxgl from "mapbox-gl"
 
+import type { FindMapWeatherResponse } from "@/features/find-map/client"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-same-location"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { useFindMapWeather } from "../../../features/find-map/use-find-map-weather"
 
 import { usePublicMapMarkers } from "./use-public-map-markers"
+import { usePublicMapUserLocation } from "./use-public-map-user-location"
 
-export function usePublicMapWeatherMarkers({
+export function usePublicMapLocationWeather({
   activeSameLocationGroupKey,
   favorites,
   mapItems,
   mapLoadedRef,
   mapLoadVersion,
   mapRef,
+  mapStartRef,
   markerTheme,
   onOpenSameLocationGroup,
   onSelectOrganization,
   organizations,
   selectedOrganizationId,
-  userCoordinates,
+  suppressAutomaticEntrance,
+  welcomeOpen,
 }: {
   activeSameLocationGroupKey: string | null
   favorites: string[]
@@ -31,14 +34,25 @@ export function usePublicMapWeatherMarkers({
   mapLoadedRef: RefObject<boolean>
   mapLoadVersion: number
   mapRef: RefObject<mapboxgl.Map | null>
+  mapStartRef: RefObject<(() => void) | null>
   markerTheme: PublicMapTheme
   onOpenSameLocationGroup: (group: PublicMapSameLocationSelection) => void
   onSelectOrganization: (organizationId: string) => void
   organizations: PublicMapOrganization[]
   selectedOrganizationId: string | null
-  userCoordinates: { latitude: number; longitude: number } | null
+  suppressAutomaticEntrance: boolean
+  welcomeOpen: boolean
 }) {
-  const weather = useFindMapWeather(userCoordinates)
+  const [weather, setWeather] = useState<FindMapWeatherResponse | null>(null)
+  const locationControl = usePublicMapUserLocation({
+    mapRef,
+    mapLoadedRef,
+    mapLoadVersion,
+    onRequestMapStart: () => mapStartRef.current?.(),
+    suppressAutomaticEntrance,
+    welcomeOpen,
+  })
+
   usePublicMapMarkers({
     activeSameLocationGroupKey,
     boostCoolingCenters:
@@ -54,7 +68,8 @@ export function usePublicMapWeatherMarkers({
     onSelectOrganization,
     organizations,
     selectedOrganizationId,
-    userCoordinates,
+    userCoordinates: locationControl.coordinates,
   })
-  return weather
+
+  return { locationControl, setWeather, weather }
 }

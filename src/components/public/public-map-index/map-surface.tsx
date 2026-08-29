@@ -12,9 +12,9 @@ import {
 } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  FindMapWeatherCard,
-  type FindMapWeatherSnapshot,
+import type {
+  FindMapWeatherResponse,
+  FindMapWeatherSnapshot,
 } from "@/features/find-map/client"
 import { cn } from "@/lib/utils"
 
@@ -43,6 +43,20 @@ import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 const PublicMapAuthSheet = dynamic(() =>
   import("./auth-sheet").then((module) => module.PublicMapAuthSheet)
+)
+const FindMapWeatherCard = dynamic(
+  () =>
+    import("@/features/find-map/client").then(
+      (module) => module.FindMapWeatherCard
+    ),
+  { ssr: false }
+)
+const PublicMapWeatherController = dynamic(
+  () =>
+    import("./public-map-weather-controller").then(
+      (module) => module.PublicMapWeatherController
+    ),
+  { ssr: false }
 )
 
 type PublicMapSurfaceProps = {
@@ -77,6 +91,7 @@ type PublicMapSurfaceProps = {
   mapError: string | null
   locationControl: PublicMapLocationControlState
   weather?: FindMapWeatherSnapshot | null
+  onWeatherChange: (weather: FindMapWeatherResponse | null) => void
   preferencesSaveError: string | null
   authSheetOpen: boolean
   authRedirectTo: string
@@ -138,6 +153,7 @@ export function PublicMapSurface({
   mapError,
   locationControl,
   weather = null,
+  onWeatherChange,
   preferencesSaveError,
   authSheetOpen,
   authRedirectTo,
@@ -299,6 +315,10 @@ export function PublicMapSurface({
           <PublicMapLocationControl
             {...locationControl}
             directoryCount={directoryCount}
+          />
+          <PublicMapWeatherController
+            coordinates={locationControl.coordinates}
+            onWeatherChange={onWeatherChange}
           />
 
           <div

@@ -28,7 +28,6 @@ import { PublicMapSurface } from "./public-map-index/map-surface"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import { usePublicMapWeatherMarkers } from "./public-map-index/use-public-map-weather-markers"
 import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import { usePublicMapSelectableItemMap } from "./public-map-index/map-items-state"
@@ -53,7 +52,7 @@ import {
   usePublicMapResourceItems,
 } from "./public-map-index/use-resource-map-items"
 import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
-import { usePublicMapUserLocation } from "./public-map-index/use-public-map-user-location"
+import { usePublicMapLocationWeather } from "./public-map-index/use-public-map-location-weather"
 import { resolvePublicMapDirectoryCount } from "./public-map-index/directory-status-pill"
 import {
   useFocusPublicMapCameraTarget,
@@ -253,7 +252,6 @@ export function PublicMapIndex({
     searchParams,
     setFavorites,
   })
-
   const { authRedirectTo, handleSelectOrganization, toggleFavorite } =
     usePublicMapActions({
       organizationById,
@@ -299,7 +297,6 @@ export function PublicMapIndex({
     setSelectedListItemId,
     setSelectedOrgId,
   })
-
   useInitializePublicMap({
     token,
     tokenAvailable,
@@ -315,31 +312,24 @@ export function PublicMapIndex({
     setAppliedBounds,
     theme: mapTheme,
   })
-  const locationControl = usePublicMapUserLocation({
+  const { locationControl, setWeather, weather } = usePublicMapLocationWeather({
+    activeSameLocationGroupKey: sameLocationSelection?.key ?? null,
+    favorites,
     mapRef,
     mapLoadedRef,
+    mapItems: visibleMapItems,
     mapLoadVersion,
-    onRequestMapStart: () => mapStartRef.current?.(),
+    mapStartRef,
+    markerTheme: mapTheme,
+    onOpenSameLocationGroup: handleOpenSameLocationGroup,
+    onSelectOrganization: handleSelectMapMarker,
+    organizations: filterState.filteredOrganizations,
+    selectedOrganizationId:
+      selectedListItemId ?? selectedOrganization?.id ?? null,
     suppressAutomaticEntrance:
       Boolean(initialPublicSlug) || includeSeedResources,
     welcomeOpen: memberOnboardingState.isOpen,
   })
-  const weather = usePublicMapWeatherMarkers({
-    favorites,
-    mapRef,
-    mapLoadedRef,
-    organizations: filterState.filteredOrganizations,
-    mapItems: visibleMapItems,
-    mapLoadVersion,
-    markerTheme: mapTheme,
-    selectedOrganizationId:
-      selectedListItemId ?? selectedOrganization?.id ?? null,
-    userCoordinates: locationControl.coordinates,
-    activeSameLocationGroupKey: sameLocationSelection?.key ?? null,
-    onSelectOrganization: handleSelectMapMarker,
-    onOpenSameLocationGroup: handleOpenSameLocationGroup,
-  })
-
   useResolveInitialPublicMapViewport({
     mapRef,
     mapLoadedRef,
@@ -348,14 +338,12 @@ export function PublicMapIndex({
     preferNationalFallback: includeSeedResources && !initialPublicSlug,
     setInitialViewportResolved,
   })
-
   useSyncSidebarCameraPadding({
     mapRef,
     mapLoadedRef,
     initialViewportResolved,
     sidebarInsetLeft,
   })
-
   useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
   const directoryListItems =
     activeSearchContext?.items ?? filterState.filteredItems
@@ -396,6 +384,7 @@ export function PublicMapIndex({
       mapError={mapError}
       locationControl={locationControl}
       weather={weather?.snapshot ?? null}
+      onWeatherChange={setWeather}
       preferencesSaveError={preferencesSaveError}
       authSheetOpen={authSheetOpen}
       authRedirectTo={authRedirectTo}

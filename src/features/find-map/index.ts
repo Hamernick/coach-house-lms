@@ -1,8 +1,8 @@
-export { AuthenticatedFindShell } from "./components/authenticated-find-shell"
 export {
+  AuthenticatedFindShell,
   FindMapLoadingSidebar,
   FindMapLoadingState,
-} from "./components/find-map-loading-state"
+} from "./components"
 export { FIND_MAP_FEATURE_NAME } from "./lib"
 export { fetchPublicMapViewerState } from "./viewer-state"
 export type { PublicMapViewerState } from "./viewer-state"

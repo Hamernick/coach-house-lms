@@ -191,6 +191,9 @@ describe("public map user location", () => {
 
   it("keeps a fast location result until the deferred map is ready", () => {
     const indexSource = readSource("src/components/public/public-map-index.tsx")
+    const locationWeatherSource = readSource(
+      "src/components/public/public-map-index/use-public-map-location-weather.ts"
+    )
     const runtimeSource = readSource(
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
@@ -199,7 +202,7 @@ describe("public map user location", () => {
     )
 
     expect(indexSource).toContain("mapStartRef")
-    expect(indexSource).toContain(
+    expect(locationWeatherSource).toContain(
       "onRequestMapStart: () => mapStartRef.current?.()"
     )
     expect(runtimeSource).toContain("mapStartRef.current = startMap")

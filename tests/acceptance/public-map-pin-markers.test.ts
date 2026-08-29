@@ -104,8 +104,14 @@ describe("public map pin markers", () => {
     const markerSource = readRepoFile(
       "src/components/public/public-map-index/use-public-map-markers.ts"
     )
-    const weatherMarkerSource = readRepoFile(
-      "src/components/public/public-map-index/use-public-map-weather-markers.ts"
+    const locationWeatherSource = readRepoFile(
+      "src/components/public/public-map-index/use-public-map-location-weather.ts"
+    )
+    const mapSurfaceSource = readRepoFile(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
+    const weatherControllerSource = readRepoFile(
+      "src/components/public/public-map-index/public-map-weather-controller.tsx"
     )
     const markerArtworkSource = readRepoFile(
       "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
@@ -114,9 +120,11 @@ describe("public map pin markers", () => {
       "docs/archive/public-map-markers-2026-08-02.md"
     )
 
-    expect(mapSource).toContain("usePublicMapWeatherMarkers")
+    expect(mapSource).toContain("usePublicMapLocationWeather")
     expect(mapSource).not.toContain("usePublicMapClusteredMarkers")
-    expect(weatherMarkerSource).toContain("usePublicMapMarkers")
+    expect(locationWeatherSource).toContain("usePublicMapMarkers")
+    expect(mapSurfaceSource).toContain("PublicMapWeatherController")
+    expect(weatherControllerSource).toContain("useFindMapWeather")
     expect(markerSource).not.toContain("public-map-cluster")
     expect(markerSource).not.toContain("clusterClient")
     expect(markerSource).toContain("syncPublicMapMarkerArtwork")

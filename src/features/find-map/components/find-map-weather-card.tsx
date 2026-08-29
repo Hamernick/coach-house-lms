@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   getReactGrabLinkedSurfaceProps,
   getReactGrabOwnerProps,
@@ -34,43 +34,25 @@ export function FindMapWeatherCard({
         notes:
           "Compact current-location weather summary on the public Find map.",
       })}
-      aria-label={`${weather.city}, ${weather.state}: ${weather.temperatureFahrenheit} degrees. High ${weather.highFahrenheit}, low ${weather.lowFahrenheit}.${freshnessDescription}`}
+      aria-label={`Current temperature: ${weather.temperatureFahrenheit} degrees.${freshnessDescription}`}
+      role="status"
       data-weather-freshness={weather.freshness}
       className={cn(
-        "pointer-events-auto w-fit max-w-44 gap-0 overflow-hidden rounded-2xl py-0 shadow-sm",
+        "pointer-events-auto size-12 shrink-0 gap-0 overflow-hidden rounded-full py-0 shadow-sm",
         className
       )}
     >
-      <CardHeader
-        {...getReactGrabLinkedSurfaceProps({
-          ownerId: FIND_MAP_WEATHER_CARD_OWNER_ID,
-          component: "FindMapWeatherCard",
-          source: FIND_MAP_WEATHER_CARD_SOURCE,
-          slot: "location",
-          surfaceKind: "content",
-        })}
-        className="min-w-0 gap-0 px-3 pt-2 pb-0.5"
-      >
-        <CardTitle className="truncate text-xs font-medium">
-          {weather.city}, {weather.state}
-        </CardTitle>
-      </CardHeader>
       <CardContent
         {...getReactGrabLinkedSurfaceProps({
           ownerId: FIND_MAP_WEATHER_CARD_OWNER_ID,
           component: "FindMapWeatherCard",
           source: FIND_MAP_WEATHER_CARD_SOURCE,
-          slot: "temperatures",
+          slot: "temperature",
           surfaceKind: "content",
         })}
-        className="flex flex-col items-start gap-1 px-3 pt-0 pb-2 text-xs tabular-nums"
+        className="flex size-full items-center justify-center p-0 text-sm leading-none font-semibold tabular-nums"
       >
-        <span className="text-sm leading-none font-semibold">
-          {weather.temperatureFahrenheit}°
-        </span>
-        <span className="text-muted-foreground leading-none">
-          H {weather.highFahrenheit}° L {weather.lowFahrenheit}°
-        </span>
+        {weather.temperatureFahrenheit}°
       </CardContent>
     </Card>
   )

@@ -149,16 +149,19 @@ describe("find-map feature", () => {
     const markup = renderToStaticMarkup(
       createElement(FindMapWeatherCard, { weather: response.snapshot })
     )
-    expect(markup).toContain("Chicago, IL")
     expect(markup).toContain("100°")
-    expect(markup).toContain("H 102° L 75°")
+    expect(markup).not.toContain("Chicago, IL")
+    expect(markup).not.toContain("H 102° L 75°")
+    expect(markup).toContain('aria-label="Current temperature: 100 degrees."')
+    expect(markup).toContain('role="status"')
     expect(markup).toContain('data-react-grab-anchor="FindMapWeatherCard"')
     expect(markup).toContain(
       'data-react-grab-owner-id="find-map-weather-card:current-location"'
     )
-    expect(markup).toContain('data-react-grab-surface-slot="location"')
-    expect(markup).toContain('data-react-grab-surface-slot="temperatures"')
+    expect(markup).toContain('data-react-grab-surface-slot="temperature"')
     expect(markup).toContain("pointer-events-auto")
+    expect(markup).toContain("size-12")
+    expect(markup).toContain("rounded-full")
   })
 
   it("does not use a stale forecast to boost cooling resources", () => {
@@ -201,12 +204,11 @@ describe("find-map feature", () => {
     const markup = renderToStaticMarkup(
       createElement(FindMapWeatherCard, { weather: response.snapshot })
     )
-    expect(markup).toContain("Chicago, IL")
     expect(markup).toContain("100°")
-    expect(markup).toContain("H 102° L 75°")
+    expect(markup).not.toContain("Chicago, IL")
+    expect(markup).not.toContain("H 102° L 75°")
     expect(markup).toContain('data-weather-freshness="stale"')
     expect(markup).toContain("Weather data may be delayed.")
-    expect(markup).toContain("w-fit")
-    expect(markup).not.toContain("w-[11rem]")
+    expect(markup).toContain("size-12")
   })
 })

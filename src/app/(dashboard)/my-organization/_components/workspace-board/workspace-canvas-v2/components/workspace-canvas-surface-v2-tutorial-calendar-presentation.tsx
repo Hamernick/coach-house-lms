@@ -317,7 +317,7 @@ export function WorkspaceTutorialCalendarPresentation({
       style={{ width: WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH }}
     >
       <div
-        className="bg-background/95 w-[22rem] overflow-hidden rounded-[24px] border-0 p-0 shadow-none backdrop-blur-xl"
+        className="bg-background/95 w-[26rem] overflow-hidden rounded-[24px] border-0 p-0 shadow-none backdrop-blur-xl"
         {...getReactGrabLinkedSurfaceProps({
           ownerId: `workspace-canvas-tutorial-panel:${tutorialStepId}`,
           component: "WorkspaceCanvasTutorialPanel",
@@ -327,6 +327,7 @@ export function WorkspaceTutorialCalendarPresentation({
         })}
       >
         <RoadmapCalendarMonthAgendaPanel
+          compactHeaderControls
           month={month}
           selectedDate={selectedDate}
           events={events}

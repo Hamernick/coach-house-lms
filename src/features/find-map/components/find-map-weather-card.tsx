@@ -38,7 +38,7 @@ export function FindMapWeatherCard({
       role="status"
       data-weather-freshness={weather.freshness}
       className={cn(
-        "pointer-events-auto size-12 shrink-0 gap-0 overflow-hidden rounded-full py-0 shadow-sm",
+        "pointer-events-auto h-10 min-w-14 shrink-0 gap-0 overflow-hidden rounded-xl py-0 shadow-sm",
         className
       )}
     >
@@ -50,7 +50,7 @@ export function FindMapWeatherCard({
           slot: "temperature",
           surfaceKind: "content",
         })}
-        className="flex size-full items-center justify-center p-0 text-sm leading-none font-semibold tabular-nums first:pt-0"
+        className="flex h-full w-full items-center justify-center px-3 py-0 text-sm leading-none font-semibold tabular-nums first:pt-0"
       >
         {weather.temperatureFahrenheit}°
       </CardContent>

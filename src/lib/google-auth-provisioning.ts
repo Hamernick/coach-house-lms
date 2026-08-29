@@ -11,7 +11,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 export type GoogleSignupProvisionResult =
   | { ok: true }
-  | { ok: false; code: "invalid" | "unavailable" }
+  | { ok: false; code: "existing_account" | "invalid" | "unavailable" }
 
 const metadataValueSchema = z.union([
   z.string().max(256),
@@ -54,7 +54,7 @@ export async function preprovisionGoogleSignup(
   input: unknown
 ): Promise<GoogleSignupProvisionResult> {
   if (
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== "true" ||
+    process.env.NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED !== "true" ||
     !env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   ) {
     return { ok: false, code: "unavailable" }
@@ -103,7 +103,11 @@ export async function preprovisionGoogleSignup(
       },
     })
 
-    if (error && !isExistingUserError(error)) {
+    if (error && isExistingUserError(error)) {
+      return { ok: false, code: "existing_account" }
+    }
+
+    if (error) {
       return { ok: false, code: "unavailable" }
     }
 

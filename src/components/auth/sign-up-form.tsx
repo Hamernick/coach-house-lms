@@ -31,6 +31,7 @@ import {
   createSignupLegalConsent,
   LegalConsentField,
 } from "@/features/legal-consent"
+import { resolveGoogleAuthCapabilities } from "@/features/google-auth"
 
 const GoogleAuthPanel = dynamic(
   () =>
@@ -157,9 +158,12 @@ export function SignUpForm({
     },
   })
   const acceptedLegal = form.watch("acceptedLegal")
-  const googleAuthConfigured =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
-    Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+  const googleAuthConfigured = resolveGoogleAuthCapabilities({
+    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    linkingEnabled: process.env.NEXT_PUBLIC_GOOGLE_LINKING_ENABLED,
+    loginEnabled: process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED,
+    signupEnabled: process.env.NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED,
+  }).signup
 
   useEffect(() => {
     if (status !== "success") return

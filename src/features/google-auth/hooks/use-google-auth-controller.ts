@@ -13,6 +13,7 @@ import type {
   GoogleAuthMode,
   GoogleLinkValidationResult,
   GoogleSignupInput,
+  GoogleSignupProvisionResult,
 } from "../types"
 
 function encodeBase64Url(bytes: Uint8Array) {
@@ -89,17 +90,12 @@ export function useGoogleAuthController({
               signUpMetadata: sanitizeGoogleSignupMetadata(signUpMetadata),
             }),
           })
-          const provisionResult = provisionResponse.ok
-            ? ({ ok: true } as const)
-            : ({
-                ok: false,
-                code:
-                  provisionResponse.status === 400
-                    ? ("invalid" as const)
-                    : ("unavailable" as const),
-              } as const)
+          const provisionResult = (await provisionResponse.json().catch(() => ({
+            ok: false,
+            code: "unavailable",
+          }))) as GoogleSignupProvisionResult
 
-          if (!provisionResult.ok) {
+          if (!provisionResponse.ok || !provisionResult.ok) {
             setErrorMessage(
               resolveGoogleAuthErrorMessage({
                 mode,

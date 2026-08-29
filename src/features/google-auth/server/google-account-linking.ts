@@ -23,7 +23,7 @@ export async function validateGoogleAccountLink(
   input: unknown
 ): Promise<GoogleLinkValidationResult> {
   if (
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== "true" ||
+    process.env.NEXT_PUBLIC_GOOGLE_LINKING_ENABLED !== "true" ||
     !env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   ) {
     return { ok: false, code: "unavailable" }

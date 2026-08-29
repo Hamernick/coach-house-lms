@@ -15,7 +15,7 @@ export type GoogleSignupInput = {
 
 export type GoogleSignupProvisionResult =
   | { ok: true }
-  | { ok: false; code: "invalid" | "unavailable" }
+  | { ok: false; code: "existing_account" | "invalid" | "unavailable" }
 
 export type GoogleLinkValidationResult =
   | { ok: true }

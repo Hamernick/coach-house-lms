@@ -1,12 +1,40 @@
+import { randomUUID } from "node:crypto"
+
 import { validateGoogleAccountLink } from "@/features/google-auth"
+import { logger } from "@/lib/logger"
+
+function respond(
+  result: { ok: boolean; code?: string },
+  status: number,
+  requestId: string
+) {
+  const context = {
+    capability: "link",
+    outcome: result.ok ? "success" : (result.code ?? "unavailable"),
+    requestId,
+    status,
+  }
+
+  if (result.ok) {
+    logger.info("google_auth_result", context)
+  } else {
+    logger.warn("google_auth_result", context)
+  }
+
+  return Response.json(result, {
+    headers: { "x-request-id": requestId },
+    status,
+  })
+}
 
 export async function POST(request: Request) {
+  const requestId = randomUUID()
   let input: unknown
 
   try {
     input = await request.json()
   } catch {
-    return Response.json({ ok: false, code: "invalid" }, { status: 400 })
+    return respond({ ok: false, code: "invalid" }, 400, requestId)
   }
 
   const result = await validateGoogleAccountLink(input)
@@ -20,5 +48,5 @@ export async function POST(request: Request) {
           ? 409
           : 503
 
-  return Response.json(result, { status })
+  return respond(result, status, requestId)
 }

@@ -356,7 +356,7 @@ export function PublicMapResourceGuides({
           "min-w-0 items-stretch gap-3",
           presentation === "featured"
             ? "scrollbar-none flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain pb-1"
-            : "grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))]"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
         )}
       >
         {guides.map((guide, index) => (
@@ -395,7 +395,7 @@ export function PublicMapGuidesRail({
   return (
     <div
       data-public-map-member-rail-section="guides-panel"
-      className="flex h-full min-h-0 flex-col gap-3 overflow-hidden px-3"
+      className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-3 overflow-hidden px-3"
     >
       <div
         data-public-map-member-rail-section="guides-header"

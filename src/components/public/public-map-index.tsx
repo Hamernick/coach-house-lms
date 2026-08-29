@@ -19,16 +19,15 @@ import {
 import {
   type PublicMapMapboxApi,
   useInitializePublicMap,
-  useResolveInitialPublicMapViewport,
+  usePublicMapCameraLifecycle,
   resolvePublicMapSelectedOrganization,
-  useSyncSidebarCameraPadding,
 } from "./public-map-index/public-map-index-runtime"
 import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import { usePublicMapMarkers } from "./public-map-index/use-public-map-markers"
+import { usePublicMapWeatherMarkers } from "./public-map-index/use-public-map-weather-markers"
 import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import { usePublicMapSelectableItemMap } from "./public-map-index/map-items-state"
@@ -88,7 +87,6 @@ export function PublicMapIndex({
   const mapLoadedRef = useRef(false)
   const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
   const token = resolvePublicMapboxToken(mapboxToken)
-  const tokenAvailable = Boolean(token)
   const [mapError, setMapError] = useState<string | null>(null)
   const [sidebarMode, setSidebarMode] = useInitialSidebarMode(initialPublicSlug)
   const initialOrganization = resolveInitialPublicMapOrganization({
@@ -104,6 +102,7 @@ export function PublicMapIndex({
     )
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
+  const [drawerInsetBottom, setDrawerInsetBottom] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
@@ -255,7 +254,6 @@ export function PublicMapIndex({
     searchParams,
     setFavorites,
   })
-
   const { authRedirectTo, handleSelectOrganization, toggleFavorite } =
     usePublicMapActions({
       organizationById,
@@ -304,7 +302,7 @@ export function PublicMapIndex({
 
   useInitializePublicMap({
     token,
-    tokenAvailable,
+    tokenAvailable: Boolean(token),
     containerRef,
     mapRef,
     mapboxRef,
@@ -327,8 +325,7 @@ export function PublicMapIndex({
       Boolean(initialPublicSlug) || includeSeedResources,
     welcomeOpen: memberOnboardingState.isOpen,
   })
-
-  usePublicMapMarkers({
+  const weather = usePublicMapWeatherMarkers({
     favorites,
     mapRef,
     mapLoadedRef,
@@ -344,19 +341,16 @@ export function PublicMapIndex({
     onOpenSameLocationGroup: handleOpenSameLocationGroup,
   })
 
-  useResolveInitialPublicMapViewport({
-    mapRef,
-    mapLoadedRef,
+  usePublicMapCameraLifecycle({
+    drawerInsetBottom,
     hasResolvedInitialViewportRef,
     initialOrganization,
+    initialViewportResolved,
+    mapLoadedRef,
+    mapLoadVersion,
+    mapRef,
     preferNationalFallback: includeSeedResources && !initialPublicSlug,
     setInitialViewportResolved,
-  })
-
-  useSyncSidebarCameraPadding({
-    mapRef,
-    mapLoadedRef,
-    initialViewportResolved,
     sidebarInsetLeft,
   })
 
@@ -396,9 +390,10 @@ export function PublicMapIndex({
       resourceItemsLoadError={resourceItemsLoadError}
       searchPending={deferredQuery !== query}
       searchContext={activeSearchContext}
-      tokenAvailable={tokenAvailable}
+      tokenAvailable={Boolean(token)}
       mapError={mapError}
       locationControl={locationControl}
+      weather={weather?.snapshot ?? null}
       preferencesSaveError={preferencesSaveError}
       authSheetOpen={authSheetOpen}
       authRedirectTo={authRedirectTo}
@@ -416,6 +411,7 @@ export function PublicMapIndex({
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
+      onDrawerInsetChange={setDrawerInsetBottom}
       mapOverlay={memberOnboardingState.overlay}
     />
   )

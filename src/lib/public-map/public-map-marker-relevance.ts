@@ -3,7 +3,6 @@ import {
   parsePublicMapOrganizationIds,
   type PublicMapPointFeature,
 } from "./public-map-geojson"
-import { normalizePublicMapMarkerOverviewOffsetIndex } from "./public-map-marker-overview-offsets"
 export type PublicMapMarkerRelevanceTier = 0 | 1 | 2 | 3
 type PublicMapMarkerUserCoordinates = {
   latitude: number
@@ -11,7 +10,7 @@ type PublicMapMarkerUserCoordinates = {
 }
 
 const PUBLIC_MAP_MARKER_RELEVANCE_LEVELS = [
-  { limit: 3, tier: 0, tileZoom: 4 },
+  { limit: 1, tier: 0, tileZoom: 3 },
   { limit: 1, tier: 1, tileZoom: 7 },
   { limit: 2, tier: 2, tileZoom: 10 },
 ] as const
@@ -79,14 +78,22 @@ function hashMarkerIdentity(value: string) {
 }
 
 function compareRepresentativeCandidates({
+  boostCoolingCenters,
   first,
   second,
   userCoordinates,
 }: {
+  boostCoolingCenters: boolean
   first: PublicMapPointFeature
   second: PublicMapPointFeature
   userCoordinates: PublicMapMarkerUserCoordinates | null
 }) {
+  if (boostCoolingCenters) {
+    const weatherEligibilityDifference =
+      Number(second.properties.weatherEligible === true) -
+      Number(first.properties.weatherEligible === true)
+    if (weatherEligibilityDifference !== 0) return weatherEligibilityDifference
+  }
   const distanceDifference =
     resolveDistanceScore({
       coordinates: first.geometry.coordinates as [number, number],
@@ -115,10 +122,12 @@ function isSavedFeature(
 }
 
 export function buildPublicMapMarkerRelevance({
+  boostCoolingCenters = false,
   favoriteOrganizationIds = new Set<string>(),
   features,
   userCoordinates = null,
 }: {
+  boostCoolingCenters?: boolean
   favoriteOrganizationIds?: ReadonlySet<string>
   features: PublicMapPointFeature[]
   userCoordinates?: PublicMapMarkerUserCoordinates | null
@@ -147,6 +156,7 @@ export function buildPublicMapMarkerRelevance({
       candidates
         .sort((first, second) =>
           compareRepresentativeCandidates({
+            boostCoolingCenters,
             first,
             second,
             userCoordinates,
@@ -171,9 +181,6 @@ export function buildPublicMapMarkerRelevance({
       properties: {
         ...feature.properties,
         isSaved: isSavedFeature(feature, favoriteOrganizationIds),
-        markerOverviewOffsetIndex: normalizePublicMapMarkerOverviewOffsetIndex(
-          hashMarkerIdentity(feature.properties.itemId)
-        ),
         markerRelevanceTier:
           relevanceTierByItemId.get(feature.properties.itemId) ?? 3,
         markerSortKey: stableOrder,

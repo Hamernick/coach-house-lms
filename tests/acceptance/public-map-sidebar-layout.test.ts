@@ -176,7 +176,7 @@ function extractClassNameByAttribute(
 }
 
 describe("public map sidebar layout", () => {
-  it("keeps category pills flat and delays overflow fades until scrolling", () => {
+  it("keeps category pills flat with an overflow-aware horizontal fade", () => {
     const organization = buildOrganization()
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapCategoryFilter, {
@@ -207,8 +207,21 @@ describe("public map sidebar layout", () => {
     )
     expect(selectedFilterIconClassName).not.toContain("bg-")
     expect(selectedFilterIconClassName).not.toContain("rounded")
-    expect(filterRowClassName).not.toContain("scroll-fade-effect-x")
-    expect(filterRowClassName).toContain("overflow-x-auto")
+    expect(filterRowClassName.split(/\s+/)).toContain("scroll-fade-effect-x")
+    expect(filterRowClassName.split(/\s+/)).toContain("overflow-x-auto")
+    expect(markup).toContain('data-orientation="horizontal"')
+    expect(markup).toContain(
+      'style="--mask-width:1.25rem;--scroll-buffer:1rem"'
+    )
+    expect(
+      readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8")
+    ).toContain("animation: none !important")
+    expect(filterRowClassName).toContain("mx-auto")
+    expect(filterRowClassName).toContain("w-full")
+    expect(filterRowClassName).toContain("max-w-3xl")
+    expect(markup).toContain(
+      'data-react-grab-anchor="PublicMapCategoryFilterButton"'
+    )
   })
 
   it("suppresses duplicate resource subtitles in the result list", () => {
@@ -461,8 +474,15 @@ describe("public map sidebar layout", () => {
     expect(statusHeaderClassName).toContain("shrink-0")
     expect(resultsStatusClassName.split(" ")).toContain("px-1.5")
     expect(resultsStatusClassName.split(" ")).not.toContain("px-1")
+    expect(resultsStatusClassName).toContain("mx-auto")
+    expect(resultsStatusClassName).toContain("w-full")
+    expect(resultsStatusClassName).toContain("max-w-3xl")
     expect(categoryFilterClassName).toContain("overflow-x-auto")
-    expect(categoryFilterClassName).not.toContain("scroll-fade-effect-x")
+    expect(categoryFilterClassName).toContain("mx-auto")
+    expect(categoryFilterClassName).toContain("w-full")
+    expect(categoryFilterClassName).toContain("max-w-3xl")
+    expect(categoryFilterClassName).toContain("scroll-fade-effect-x")
+    expect(markup).toContain('data-orientation="horizontal"')
     expect(categoryFilterClassName).toContain("[scrollbar-width:none]")
     expect(categoryFilterClassName).toContain(
       "[&amp;::-webkit-scrollbar]:hidden"
@@ -650,6 +670,7 @@ describe("public map sidebar layout", () => {
     expect(listStackClassName.split(" ")).toContain("gap-2")
     expect(listStackClassName.split(" ")).not.toContain("gap-2.5")
     expect(cardGridClassName.split(" ")).toContain("grid")
+    expect(cardGridClassName.split(" ")).toContain("shrink-0")
     expect(cardGridClassName.split(" ")).toContain("grid-cols-1")
     expect(cardGridClassName.split(" ")).toContain("divide-y")
     expect(cardGridClassName.split(" ")).toContain("items-stretch")
@@ -660,7 +681,10 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain('role="button"')
     expect(markup).not.toContain(organization.tagline)
     expect(markup).not.toContain(organization.description ?? "")
-    expect(markup).toContain("gap-x-1.5 overflow-hidden")
+    expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
+    expect(markup).toContain("min-w-0 text-pretty break-words")
+    expect(markup).not.toContain("max-w-[55%]")
+    expect(markup).not.toContain("max-w-[45%]")
     expect(markup).toContain("•")
     expect(markup).not.toContain(">View<")
     expect(markup).toContain("flex min-w-0 items-center")
@@ -668,7 +692,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("text-sm leading-snug")
     expect(markup).toContain(">Community<")
     expect(markup).not.toContain("Weekly mutual-aid meals")
-    expect(markup).toContain("rounded-none text-left whitespace-normal")
+    expect(markup).toContain("rounded-xl text-left whitespace-normal")
     expect(markup).toContain(
       "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
     )
@@ -742,7 +766,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("Chicago, IL")
     expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
     expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(markup.match(/h-20/g)).toHaveLength(2)
+    expect(markup.match(/min-h-20/g)).toHaveLength(4)
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -754,7 +778,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain('data-public-map-icon-mode="stroke"')
     expect(markup).not.toContain('data-public-map-filled-icon="true"')
     expect(markup).toContain('data-public-map-resource-category-icon="food"')
-    expect(markup).toContain("rounded-none text-left whitespace-normal")
+    expect(markup).toContain("rounded-xl text-left whitespace-normal")
     expect(markup).not.toContain('aria-label="Resource marker preview"')
     expect(markup).not.toContain("PublicMapResourcePreviewPopover")
   })
@@ -1285,6 +1309,9 @@ describe("public map sidebar layout", () => {
       'data-public-map-member-rail-section="guides-panel"'
     )
     expect(guidesRailMarkup).toContain(
+      "mx-auto flex h-full min-h-0 w-full max-w-3xl"
+    )
+    expect(guidesRailMarkup).toContain(
       'data-public-map-member-rail-section="guides-header"'
     )
     expect(guidesRailMarkup).toContain(
@@ -1306,7 +1333,7 @@ describe("public map sidebar layout", () => {
       'data-public-map-resource-guides-grid="true"'
     )
     expect(guidesRailMarkup).toContain(
-      "grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))]"
+      "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
     )
     expect(guidesRailMarkup).toContain("items-stretch gap-3")
     expect(guidesRailMarkup).toContain("NYC Cooling Centers")
@@ -1417,6 +1444,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(
       'data-public-map-member-rail-section="saved-panel"'
     )
+    expect(markup).toContain("mx-auto flex h-full min-h-0 w-full max-w-3xl")
     expect(markup).toContain(
       'data-public-map-member-rail-section="saved-search-controls"'
     )
@@ -1763,7 +1791,7 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain('aria-label="Hide organization panel"')
   })
 
-  it("keeps drawer search and detail bodies scrollable at every snap point", () => {
+  it("keeps the drawer result list and detail bodies scrollable at every snap point", () => {
     const organization = buildOrganization()
     const resource = buildResourceItem()
     const items = [buildPlatformOrganizationMapItem(organization), resource]
@@ -1801,12 +1829,30 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(searchMarkup).toContain(
+    const resultListScrollClassName = extractClassNameByAttribute(
+      searchMarkup,
+      "data-public-map-organization-list-scroll",
+      "true"
+    )
+    const resultListStackClassName = extractClassNameByAttribute(
+      searchMarkup,
+      "data-public-map-organization-list-section",
+      "list-stack"
+    )
+    expect(searchMarkup).not.toContain(
       'data-public-map-sidebar-section="drawer-organizations-scroll"'
     )
-    expect(searchMarkup).toContain("overflow-y-auto")
-    expect(searchMarkup).toContain("overscroll-contain")
-    expect(searchMarkup).toContain("[-webkit-overflow-scrolling:touch]")
+    expect(resultListStackClassName).toContain("mx-auto")
+    expect(resultListStackClassName).toContain("max-w-3xl")
+    expect(resultListStackClassName).toContain("min-h-0 flex-1")
+    expect(resultListScrollClassName).toContain("overflow-y-auto")
+    expect(resultListScrollClassName).toContain("rounded-2xl")
+    expect(resultListScrollClassName).toContain("border")
+    expect(resultListScrollClassName).toContain("scroll-fade-effect-y")
+    expect(resultListScrollClassName).toContain("overscroll-contain")
+    expect(resultListScrollClassName).toContain(
+      "[-webkit-overflow-scrolling:touch]"
+    )
     expect(organizationDetailMarkup).toContain(
       'data-public-map-sidebar-section="drawer-detail-scroll"'
     )
@@ -1863,7 +1909,7 @@ describe("public map sidebar layout", () => {
       kicker: "Chicago guide",
       itemCount: 1,
       items: [resource],
-      imageUrl: "/images/public-map/guides/chicago-food-access.webp",
+      imageUrl: "/images/public-map/guides/chicago-food-access-cover.webp",
       primaryResourceCategory: "food",
       visualVariant: "city",
     } satisfies PublicMapResourceGuide
@@ -1888,6 +1934,8 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain('data-public-map-directory-home=""')
+    expect(markup).toContain('data-public-map-directory-home-content=""')
+    expect(markup).toContain("mx-auto w-full max-w-3xl")
     expect(markup).toContain(">Find Nearby</h2>")
     expect(markup).toContain(">Basic needs</h3>")
     expect(markup).toContain(">Health</h3>")

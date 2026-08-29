@@ -119,7 +119,7 @@ export function AppShellCalendarAction() {
       />
     ) : null
   const calendarBody = calendarHasOpened ? (
-    <RoadmapCalendar hideHeaderCopy />
+    <RoadmapCalendar hideHeaderCopy compactHeaderControls />
   ) : null
 
   if (isMobile) {
@@ -174,7 +174,7 @@ export function AppShellCalendarAction() {
           align="end"
           sideOffset={8}
           collisionPadding={16}
-          className="bg-background/95 data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 w-[min(23.5rem,calc(100vw-1rem))] overflow-hidden rounded-[30px] border-0 p-0 shadow-none backdrop-blur-xl data-[state=closed]:hidden motion-reduce:data-[state=closed]:animate-none motion-reduce:data-[state=open]:animate-none"
+          className="bg-background/95 data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 w-[min(26rem,calc(100vw-1rem))] overflow-hidden rounded-[30px] border-0 p-0 shadow-none backdrop-blur-xl data-[state=closed]:hidden motion-reduce:data-[state=closed]:animate-none motion-reduce:data-[state=open]:animate-none"
         >
           {calendarBody}
         </PopoverContent>

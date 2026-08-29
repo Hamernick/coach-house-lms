@@ -49,11 +49,36 @@ export function useScrollFadeEffect(
       element.addEventListener("scroll", update, { passive: true })
       window.addEventListener("resize", update)
       const frame = window.requestAnimationFrame(update)
+      const resizeObserver =
+        typeof ResizeObserver === "undefined"
+          ? null
+          : new ResizeObserver(update)
+      const observeContent = () => {
+        resizeObserver?.observe(element)
+        Array.from(element.children).forEach((child) => {
+          resizeObserver?.observe(child)
+        })
+      }
+      const mutationObserver =
+        typeof MutationObserver === "undefined"
+          ? null
+          : new MutationObserver(() => {
+              observeContent()
+              update()
+            })
+
+      observeContent()
+      mutationObserver?.observe(element, {
+        childList: true,
+        subtree: true,
+      })
 
       cleanupRef.current = () => {
         element.removeEventListener("scroll", update)
         window.removeEventListener("resize", update)
         window.cancelAnimationFrame(frame)
+        resizeObserver?.disconnect()
+        mutationObserver?.disconnect()
         delete element.dataset.scrollFadeManaged
         delete element.dataset.scrollFadeStart
         delete element.dataset.scrollFadeEnd

@@ -6,10 +6,7 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import {
-  ORGANIZATION_MARKER_OFFSET_Y,
-  PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-} from "./map-view-helpers"
+import { PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM } from "./map-view-helpers"
 import { useSyncSelectedOrganization } from "./public-map-index-runtime"
 import {
   shouldRenderPublicMapDesktopSidebar,
@@ -87,7 +84,6 @@ export function usePublicMapListItemSelection({
       map.flyTo({
         center: [item.longitude, item.latitude],
         zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-        offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
         duration: 780,
         essential: true,
       })

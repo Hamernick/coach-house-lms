@@ -8,7 +8,6 @@ import {
 } from "@/lib/public-map/public-map-geojson"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 import type { PublicMapMarkerRelevanceTier } from "@/lib/public-map/public-map-marker-relevance"
-import { PUBLIC_MAP_MARKER_OVERVIEW_OFFSETS } from "@/lib/public-map/public-map-marker-overview-offsets"
 
 import {
   resolveRelevantUnselectedPointFilter,
@@ -83,21 +82,6 @@ const PUBLIC_MAP_MARKER_ICON_SIZE = [
   1.5,
   16,
   1.56,
-] as mapboxgl.ExpressionSpecification
-const PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET = [
-  "step",
-  ["zoom"],
-  [
-    "match",
-    ["coalesce", ["get", "markerOverviewOffsetIndex"], 0],
-    ...PUBLIC_MAP_MARKER_OVERVIEW_OFFSETS.flatMap((offset, index) => [
-      index,
-      ["literal", offset],
-    ]),
-    ["literal", [0, 8.5]],
-  ],
-  4.5,
-  ["literal", [0, 8.5]],
 ] as mapboxgl.ExpressionSpecification
 const PUBLIC_MAP_MARKER_OVERVIEW_TEXT_OPACITY = [
   "interpolate",
@@ -213,9 +197,7 @@ function ensureMarkerLayer({
       "icon-anchor": "bottom",
       "icon-offset": selected
         ? PUBLIC_MAP_SELECTED_MARKER_ICON_OFFSET
-        : saved
-          ? PUBLIC_MAP_MARKER_ICON_OFFSET
-          : PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET,
+        : PUBLIC_MAP_MARKER_ICON_OFFSET,
       "icon-allow-overlap": true,
       "icon-ignore-placement": true,
       "icon-padding": 2,
@@ -317,9 +299,7 @@ function refreshMarkerLayerContracts({
       "icon-offset",
       selected
         ? PUBLIC_MAP_SELECTED_MARKER_ICON_OFFSET
-        : kind === "saved"
-          ? PUBLIC_MAP_MARKER_ICON_OFFSET
-          : PUBLIC_MAP_MARKER_OVERVIEW_ICON_OFFSET
+        : PUBLIC_MAP_MARKER_ICON_OFFSET
     )
     setMapLayoutPropertySafely(map, layerId, "icon-padding", 2)
     setMapLayoutPropertySafely(map, layerId, "icon-pitch-alignment", "viewport")

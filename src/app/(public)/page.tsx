@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
+import { HomeMarketplacePage } from "@/components/public/home-marketplace-page"
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 import { PricingSurface } from "@/components/public/pricing-surface"
 import {
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     absolute: "Coach House",
   },
   description:
-    "Build, find, and fund nonprofit work with one shared workspace, a public resource map, centralized documents, and fiscal sponsorship for qualified projects.",
+    "Build organizations, collect work you believe in, and keep your nonprofit network close on Coach House.",
 }
 
 export const runtime = "nodejs"
@@ -76,11 +77,16 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
     if (user) redirect(DEFAULT_POST_AUTH_REDIRECT)
   }
 
+  if (!initialSection) {
+    return <HomeMarketplacePage />
+  }
+
+  const mapboxToken = getPublicMapboxToken()
   return (
     <HomeCanvasPreview
       initialSection={initialSection}
       loginRedirectTo={loginRedirectTo}
-      mapboxToken={getPublicMapboxToken()}
+      mapboxToken={mapboxToken}
       pricingPanel={<PricingSurface embedded />}
       signupIntentFocus={signupIntentFocus}
       signupPlanTier={signupPlanTier}

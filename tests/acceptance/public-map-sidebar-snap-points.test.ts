@@ -7,6 +7,7 @@ import {
   buildPublicMapDrawerSnapPoints,
   resolveNextPublicMapDrawerSnapPointIndex,
   resolvePublicMapDrawerSnapPointIndex,
+  resolvePublicMapDrawerVisibleHeight,
 } from "@/components/public/public-map-index/sidebar-snap-points"
 
 describe("buildPublicMapDrawerSnapPoints", () => {
@@ -20,6 +21,33 @@ describe("buildPublicMapDrawerSnapPoints", () => {
 
   it("returns stable fallback pixel snaps before measurement", () => {
     expect(buildPublicMapDrawerSnapPoints(0)).toEqual(["168px", "336px", 1])
+  })
+
+  it("resolves the drawer height covering the map at each snap", () => {
+    expect(
+      resolvePublicMapDrawerVisibleHeight({
+        snapPoint: "549px",
+        surfaceHeight: 980,
+      })
+    ).toBe(549)
+    expect(
+      resolvePublicMapDrawerVisibleHeight({
+        snapPoint: 1,
+        surfaceHeight: 980,
+      })
+    ).toBe(980)
+    expect(
+      resolvePublicMapDrawerVisibleHeight({
+        snapPoint: "1200px",
+        surfaceHeight: 980,
+      })
+    ).toBe(980)
+    expect(
+      resolvePublicMapDrawerVisibleHeight({
+        snapPoint: "invalid",
+        surfaceHeight: 980,
+      })
+    ).toBe(0)
   })
 
   it("cycles compact to middle to full and returns full to middle", () => {

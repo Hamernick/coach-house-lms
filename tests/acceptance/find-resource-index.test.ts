@@ -5,6 +5,7 @@ import {
   FIND_RESOURCE_INDEX_DEFAULT_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_MAX_PAGE_LIMIT,
   FIND_RESOURCE_INDEX_VERSION,
+  isFindResourceWeatherEligible,
   paginateFindResourceIndexItems,
   parseFindResourceIndexCursor,
   parseFindResourceIndexLimit,
@@ -169,6 +170,27 @@ describe("find resource index feature contract", () => {
     expect(serializeFindResourceIndexItem(item)).not.toHaveProperty(
       "availability"
     )
+  })
+
+  it("marks only current, available cooling resources as weather eligible", () => {
+    const item = buildResourceItem()
+    item.resourceCategories = ["emergency_cooling_centers", "environment"]
+    item.primaryResourceCategory = "emergency_cooling_centers"
+    item.lastVerifiedAt = "2026-08-27T12:00:00.000Z"
+
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T18:00:00.000Z")
+      )
+    ).toBe(true)
+    item.availability = { ...item.availability!, status: "closed" }
+    expect(
+      isFindResourceWeatherEligible(
+        item,
+        Date.parse("2026-08-27T18:00:00.000Z")
+      )
+    ).toBe(false)
   })
 
   it("validates bounded page limits", () => {

@@ -21,7 +21,7 @@ export function WorkspaceAcceleratorBanner() {
   return (
     <section
       {...WORKSPACE_ACCELERATOR_BANNER_OWNER_PROPS}
-      className="border-border/70 rounded-2xl border bg-zinc-100/80 px-4 py-4 text-center sm:px-5 sm:py-5 dark:bg-zinc-900/30"
+      className="border-border/70 mx-auto mt-4 w-full max-w-3xl rounded-2xl border bg-zinc-100/80 px-4 py-4 text-center sm:px-5 sm:py-5 dark:bg-zinc-900/30"
     >
       <div className="mx-auto flex max-w-[68ch] min-w-0 flex-col items-center">
         <span className="border-border/70 bg-background text-muted-foreground inline-flex size-12 shrink-0 origin-center items-center justify-center rounded-2xl border shadow-xs motion-safe:animate-[soft-pop_600ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">

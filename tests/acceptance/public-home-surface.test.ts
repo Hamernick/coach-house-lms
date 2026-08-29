@@ -9,12 +9,94 @@ function readSource(relativePath: string) {
 }
 
 describe("public home canvas", () => {
-  it("keeps the established shell as the home route owner", () => {
+  it("installs the marketplace home while preserving the archived canvas routes", () => {
     const routeSource = readSource("src/app/(public)/page.tsx")
+    const archiveSource = readSource("src/app/(public)/home-canvas/page.tsx")
 
+    expect(routeSource).toContain("<HomeMarketplacePage")
+    expect(routeSource).toContain("if (!initialSection)")
     expect(routeSource).toContain("<HomeCanvasPreview")
     expect(routeSource).toContain("<PricingSurface embedded />")
+    expect(archiveSource).toContain("<HomeCanvasPreview")
     expect(routeSource).not.toContain("HomePageSurface")
+  })
+
+  it("keeps the viewport fixed and scrolls the two-section story inside the rounded frame", () => {
+    const pageSource = readSource(
+      "src/components/public/home-marketplace-page.tsx"
+    )
+    const motionSource = readSource(
+      "src/components/public/home-marketplace-motion.tsx"
+    )
+    const heroSource = readSource(
+      "src/components/public/home-marketplace-hero.tsx"
+    )
+    const collectSource = readSource(
+      "src/components/public/home-marketplace-collect-section.tsx"
+    )
+
+    expect(pageSource).toContain("h-svh min-h-0 flex-col overflow-hidden")
+    expect(pageSource).toContain("rounded-[28px]")
+    expect(pageSource).toContain("border bg-[#006bff]")
+    expect(pageSource).toContain("<HomeMarketplaceHero")
+    expect(pageSource).toContain("<HomeMarketplaceCollectSection")
+    expect(motionSource).toContain("overflow-y-auto overscroll-y-none")
+    expect(motionSource).toContain("bg-[#006bff]")
+    expect(motionSource).toContain("touch-pan-y")
+    expect(motionSource).toContain("[-webkit-overflow-scrolling:touch]")
+    expect(motionSource).not.toContain("scroll-smooth")
+    expect(heroSource).toContain("Build &amp;")
+    expect(heroSource).toContain("Collect NFP&apos;s.")
+    expect(heroSource).toContain("Collect NFPs")
+    expect(heroSource).toContain("active resources")
+    expect(heroSource).toContain(
+      "Collect basic resources provided by NFP&apos;s in your area or build"
+    )
+    expect(heroSource.match(/touch-manipulation rounded-full/g)).toHaveLength(2)
+    expect(heroSource).not.toContain("Network of resources")
+    expect(heroSource).not.toContain("live map points")
+    expect(heroSource).toContain('fetch("/api/public/home-map-preview?v=5"')
+    expect(heroSource).toContain("data-marketplace-live-count")
+    expect(heroSource).toContain("data-marketplace-live-pulse")
+    expect(heroSource).toContain("motion-safe:animate-ping")
+    expect(heroSource).toContain("rounded-full border border-white/18")
+    expect(heroSource).toContain("whitespace-nowrap text-white/76")
+    expect(heroSource).toContain("bg-[#003f9e]/28 px-3.5 py-1.5")
+    expect(heroSource).toContain("has-[>svg]:pr-5 has-[>svg]:pl-6")
+    expect(heroSource).not.toContain("HomeFindMapMini")
+    expect(heroSource).not.toContain("HomeFindMapMini")
+    expect(heroSource).not.toContain("HomeMarketplaceHeroStage")
+    expect(heroSource).not.toContain("data-marketplace-stage")
+    expect(heroSource).not.toContain("data-marketplace-network-card")
+    expect(heroSource).not.toContain("Operating layer")
+    expect(heroSource).toContain("data-marketplace-hero-sticky")
+    expect(heroSource).toContain("flex-col items-center justify-center")
+    expect(heroSource).not.toContain("pt-[clamp(3.25rem,8vh,6.5rem)]")
+    expect(heroSource).toContain("data-marketplace-hero-grid")
+    expect(heroSource).toContain("<GridPattern")
+    expect(heroSource).toContain("[perspective:1200px]")
+    expect(heroSource).toContain("data-marketplace-hero-grid-plane")
+    expect(heroSource).toContain("[transform:rotateX(67deg)]")
+    expect(heroSource).not.toContain("[transform:rotate(-7deg)]")
+    expect(heroSource).toContain("text-center sm:px-10")
+    expect(heroSource).not.toContain("lg:grid-cols")
+    expect(heroSource).not.toContain("left-[62%]")
+    expect(heroSource).not.toContain("Featured now")
+    expect(heroSource).toContain("bg-[#006bff]")
+    expect(heroSource).not.toContain("bg-[#050505]")
+    expect(collectSource).not.toContain("<HomeFindMapMini")
+    expect(collectSource).not.toContain("data-marketplace-product-stage")
+    expect(collectSource).not.toContain("data-marketplace-map-card")
+    expect(collectSource).not.toContain("data-marketplace-collection-card")
+    expect(collectSource).not.toContain("data-marketplace-map-link")
+    expect(collectSource).not.toContain("data-marketplace-collect-copy")
+    expect(collectSource).not.toContain("Keep the work close.")
+    expect(collectSource).not.toContain(
+      "One map for every update, need, and next move."
+    )
+    expect(collectSource).not.toContain("Open your map")
+    expect(collectSource).not.toContain("PlusIcon")
+    expect(collectSource).not.toContain("<Button")
   })
 
   it("leads with the real map and presents the complete product story inside canvas panels", () => {
@@ -87,7 +169,7 @@ describe("public home canvas", () => {
     expect(headerSource).toContain('onClick={() => changeSection("signup")}')
   })
 
-  it("uses GSAP for focused reveals and respects reduced motion", () => {
+  it("uses GSAP for restrained copy reveals and respects reduced motion", () => {
     const source = readSource(
       "src/components/public/home-canvas-product-motion.tsx"
     )
@@ -96,6 +178,37 @@ describe("public home canvas", () => {
     expect(source).toContain("prefers-reduced-motion: reduce")
     expect(source).toContain("IntersectionObserver")
     expect(source).toContain('ease: "power3.out"')
+    expect(source).not.toContain('"[data-home-canvas-hero-media]"')
+    expect(source).not.toContain("scale: 1.06")
+  })
+
+  it("gives the marketplace hero visible GSAP choreography", () => {
+    const motionSource = readSource(
+      "src/components/public/home-marketplace-motion.tsx"
+    )
+    const heroSource = readSource(
+      "src/components/public/home-marketplace-hero.tsx"
+    )
+
+    expect(motionSource).toContain('import { gsap } from "gsap"')
+    expect(motionSource).toContain("prefers-reduced-motion: reduce")
+    expect(motionSource).toContain('"[data-marketplace-hero-line]"')
+    expect(motionSource).toContain("{ autoAlpha: 0, y: 64 }")
+    expect(motionSource).not.toContain("data-marketplace-hero-visual")
+    expect(motionSource).toContain(
+      'import { ScrollTrigger } from "gsap/ScrollTrigger"'
+    )
+    expect(motionSource).toContain("scrub: true")
+    expect(motionSource).toContain("invalidateOnRefresh: true")
+    expect(motionSource).toContain("yPercent: -8")
+    expect(motionSource).not.toContain("scale: 0.96")
+    expect(motionSource).not.toContain("[data-marketplace-stage-shell]")
+    expect(motionSource).not.toContain("[data-marketplace-network-card]")
+    expect(motionSource).not.toContain("[data-marketplace-map-card]")
+    expect(motionSource).not.toContain("[data-marketplace-collection-card]")
+    expect(motionSource).not.toContain("[data-marketplace-map-link]")
+    expect(motionSource).not.toContain("[data-marketplace-collect-copy]")
+    expect(heroSource.match(/data-marketplace-hero-line/g)).toHaveLength(2)
   })
 
   it("uses a bounded live product vignette instead of a raster map capture", () => {
@@ -111,22 +224,23 @@ describe("public home canvas", () => {
     expect(existsSync(assetPath)).toBe(false)
     expect(existsSync(obsoleteMarkerPath)).toBe(false)
     expect(previewSource).toContain('import("mapbox-gl")')
-    expect(previewSource).toContain("PUBLIC_MAP_STANDARD_STYLE")
-    expect(previewSource).toContain("HOME_MAP_DEVELOPMENT_FALLBACK_STYLE")
-    expect(previewSource).toContain("https://tiles.openfreemap.org/styles/dark")
+    expect(previewSource).toContain("resolvePublicMapStyleForTheme")
+    expect(previewSource).toContain("resolvePublicMapBasemapConfig")
     expect(previewSource).toContain('map.on("idle", markGlobeReady)')
-    expect(previewSource).toContain('process.env.NODE_ENV === "production"')
-    expect(previewSource).toContain(
-      '["localhost", "127.0.0.1"].includes(window.location.hostname)'
-    )
     expect(previewSource).not.toContain('status !== "ready"')
-    expect(previewSource).toContain("startSpinningMapGlobe")
+    expect(previewSource).not.toContain("startSpinningMapGlobe")
+    expect(previewSource).not.toContain("openfreemap.org")
+    expect(previewSource).toContain("fitHomeMapToPreviewFeatures")
+    expect(previewSource).toContain("HOME_MAP_PREVIEW_MAX_ZOOM = 7")
+    expect(previewSource).toContain('cameraMode = "preview-bounds"')
+    expect(previewSource).toContain("data-home-map-camera={cameraMode}")
+    expect(previewSource).toContain('"collection-globe"')
     expect(previewSource).toContain("syncPublicMapMarkerArtwork")
     expect(previewSource.match(/showLabels: false/g)).toHaveLength(2)
     expect(previewSource).toContain("PublicMapPointFeature[]")
     expect(previewSource).not.toContain("HOME_MAP_POINTS")
     expect(previewSource).not.toContain("satellite-v9")
-    expect(previewSource).toContain("interactive: false")
+    expect(previewSource).toContain("interactive = false")
     expect(previewSource).toContain('logoPosition: "bottom-left"')
     expect(previewSource).toContain(
       "new mapboxgl.AttributionControl({ compact: false })"
@@ -174,14 +288,21 @@ describe("public home canvas", () => {
     expect(routeSource).not.toContain("fetchPublicMapOrganizations")
     expect(routeSource).not.toContain("fetchPublicResourceMapItems")
     expect(previewComponentSource).toContain(
-      'fetch("/api/public/home-map-preview"'
+      'fetch("/api/public/home-map-preview?v=5"'
     )
-    expect(previewQuerySource).toContain("fetchPublicResourceMapItems")
+    expect(previewQuerySource).toContain("fetchPublicResourceMapItemsPageById")
     expect(previewQuerySource).toContain("ignoreLocalPreviewFile: true")
     expect(previewQuerySource).toContain("includeDiscoveryCandidates: false")
-    expect(previewDataSource).toContain("HOME_MAP_PREVIEW_MARKER_LIMIT = 36")
+    expect(previewQuerySource).toContain(
+      "HOME_MAP_PREVIEW_RESOURCE_LIMIT = 5_000"
+    )
+    expect(previewQuerySource).toContain(
+      "HOME_MAP_PREVIEW_RESOURCE_PAGE_SIZE = 500"
+    )
+    expect(previewQuerySource).toContain("public-home-map-preview-v13")
+    expect(previewDataSource).toContain("HOME_MAP_PREVIEW_MARKER_LIMIT = 18")
     expect(previewDataSource).toContain("resolveCandidateSpreadScore")
-    expect(previewDataSource).toContain("markerOverviewOffsetIndex")
+    expect(previewDataSource).toContain("markerOverviewOffsetIndex: 0")
     expect(previewDataSource).toContain('item.visibility === "published"')
     expect(previewDataSource).toContain("includeSeedItems: false")
     expect(previewDataSource).not.toContain("resource-seed-items")
@@ -195,12 +316,17 @@ describe("public home canvas", () => {
     expect(source).toContain('openFlowHref="/?section=signup&intent=fund"')
   })
 
-  it("only serializes a public Mapbox token into the home preview", () => {
+  it("only serializes a public Mapbox token into the archived canvas preview", () => {
     const tokenSource = readSource("src/lib/mapbox/token.ts")
     const routeSource = readSource("src/app/(public)/page.tsx")
 
     expect(tokenSource).toContain("getPublicMapboxToken")
     expect(tokenSource).toContain('startsWith("pk.")')
-    expect(routeSource).toContain("mapboxToken={getPublicMapboxToken()}")
+    expect(routeSource).toContain("const mapboxToken = getPublicMapboxToken()")
+    expect(routeSource).toContain("return <HomeMarketplacePage />")
+    expect(routeSource).not.toContain(
+      "<HomeMarketplacePage mapboxToken={getPublicMapboxToken()} />"
+    )
+    expect(routeSource.match(/mapboxToken=\{mapboxToken\}/g)).toHaveLength(1)
   })
 })

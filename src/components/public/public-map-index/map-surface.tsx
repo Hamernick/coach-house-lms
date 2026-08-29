@@ -13,6 +13,8 @@ import {
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
+import { FindMapWeatherCard } from "../../../features/find-map/components/find-map-weather-card"
+import type { FindMapWeatherSnapshot } from "../../../features/find-map/types"
 
 import type { SidebarMode } from "./constants"
 import { resolvePublicMapSurfacePanelState } from "./map-surface-helpers"
@@ -72,6 +74,7 @@ type PublicMapSurfaceProps = {
   tokenAvailable: boolean
   mapError: string | null
   locationControl: PublicMapLocationControlState
+  weather: FindMapWeatherSnapshot | null
   preferencesSaveError: string | null
   authSheetOpen: boolean
   authRedirectTo: string
@@ -92,6 +95,7 @@ type PublicMapSurfaceProps = {
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
   onSidebarInsetChange?: (value: number) => void
+  onDrawerInsetChange?: (value: number) => void
   searchContext?: PublicMapSidebarSearchContext | null
   mapOverlay?: ReactNode
   renderDesktopSidebar?: boolean
@@ -132,6 +136,7 @@ export function PublicMapSurface({
   tokenAvailable,
   mapError,
   locationControl,
+  weather,
   preferencesSaveError,
   authSheetOpen,
   authRedirectTo,
@@ -149,6 +154,7 @@ export function PublicMapSurface({
   onSidebarModeChange,
   onAuthSheetOpenChange,
   onSidebarInsetChange,
+  onDrawerInsetChange,
   searchContext = null,
   mapOverlay = null,
   renderDesktopSidebar = true,
@@ -265,6 +271,7 @@ export function PublicMapSurface({
           onSelectItem={onSelectItem}
           onOpenDetails={onOpenOrgDetails}
           onBackToSearch={onBackToSearch}
+          onDrawerInsetChange={onDrawerInsetChange}
           setSidebarMode={onSidebarModeChange}
         />
       ) : null}
@@ -295,7 +302,11 @@ export function PublicMapSurface({
             directoryCount={directoryCount}
           />
 
-          <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+          <div className="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+            <FindMapWeatherCard
+              weather={weather}
+              className={PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME}
+            />
             {mapError ? (
               <Alert
                 className={cn(

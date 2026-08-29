@@ -178,7 +178,37 @@ export function serializeFindResourceIndexItem(
     primaryResourceCategory: item.primaryResourceCategory,
     verificationStatus: item.verificationStatus,
     visibility: item.visibility,
+    ...(isFindResourceWeatherEligible(item) ? { weatherEligible: true } : null),
     ...(item.markerImageUrl ? { markerImageUrl: item.markerImageUrl } : null),
     ...(availability ? { availability } : null),
   }
+}
+
+export function isFindResourceWeatherEligible(
+  item: ExternalResourceMapItem,
+  now = Date.now()
+) {
+  if (
+    item.visibility !== "published" ||
+    !item.resourceCategories.includes("emergency_cooling_centers") ||
+    !item.lastVerifiedAt
+  ) {
+    return false
+  }
+  const verifiedAt = Date.parse(item.lastVerifiedAt)
+  if (!Number.isFinite(verifiedAt) || verifiedAt > now) return false
+  const sourceStatus = item.availability?.sourceStatus
+  if (
+    item.availability?.status === "closed" ||
+    item.availability?.status === "temporarily_closed" ||
+    sourceStatus === "closed" ||
+    sourceStatus === "temporarily_closed"
+  ) {
+    return false
+  }
+  const maximumAge =
+    sourceStatus === "seasonal" || sourceStatus === "limited"
+      ? 24 * 60 * 60 * 1000
+      : 30 * 24 * 60 * 60 * 1000
+  return now - verifiedAt <= maximumAge
 }

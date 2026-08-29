@@ -50,7 +50,7 @@ export function FindMapWeatherCard({
           slot: "temperature",
           surfaceKind: "content",
         })}
-        className="flex size-full items-center justify-center p-0 text-sm leading-none font-semibold tabular-nums"
+        className="flex size-full items-center justify-center p-0 text-sm leading-none font-semibold tabular-nums first:pt-0"
       >
         {weather.temperatureFahrenheit}°
       </CardContent>

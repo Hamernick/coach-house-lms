@@ -162,6 +162,7 @@ describe("find-map feature", () => {
     expect(markup).toContain("pointer-events-auto")
     expect(markup).toContain("size-12")
     expect(markup).toContain("rounded-full")
+    expect(markup).toContain("first:pt-0")
   })
 
   it("does not use a stale forecast to boost cooling resources", () => {

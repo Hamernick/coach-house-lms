@@ -18,6 +18,11 @@
     "minimumConsecutiveHours": 2,
     "windowHours": 24
   },
+  "temperature": {
+    "observationMaximumAgeSeconds": 5400,
+    "preferredSource": "observation",
+    "fallbackSource": "forecast"
+  },
   "cacheSeconds": {
     "pointFresh": 86400,
     "pointStaleIfError": 604800,
@@ -72,6 +77,24 @@
       "id": "malformed-forecast",
       "input": { "metric": "unknown", "celsius": [null] },
       "expectedSignal": "none"
+    },
+    {
+      "id": "recent-observation",
+      "input": {
+        "ageSeconds": 600,
+        "celsius": 26,
+        "unitCode": "wmoUnit:degC"
+      },
+      "expectedTemperatureSource": "observation"
+    },
+    {
+      "id": "stale-observation",
+      "input": {
+        "ageSeconds": 5401,
+        "celsius": 26,
+        "unitCode": "wmoUnit:degC"
+      },
+      "expectedTemperatureSource": "forecast"
     },
     {
       "id": "fresh-upstream-failure-with-stale-cache",

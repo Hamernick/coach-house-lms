@@ -51,11 +51,18 @@ function collectModuleSpecifiers(sourceFile) {
   const specifiers = []
 
   function visit(node) {
-    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
       specifiers.push(node.moduleSpecifier.text)
     }
 
-    if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+    if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
       specifiers.push(node.moduleSpecifier.text)
     }
 
@@ -122,39 +129,55 @@ function applyBoundaryRules({ sourceFilePath, specifier }) {
 
   const isUiPrimitive = sourceFilePath.startsWith("src/components/ui/")
   const isComponent = sourceFilePath.startsWith("src/components/")
-  const isLibLayer = sourceFilePath.startsWith("src/lib/") || sourceFilePath.startsWith("src/actions/")
+  const isLibLayer =
+    sourceFilePath.startsWith("src/lib/") ||
+    sourceFilePath.startsWith("src/actions/")
   const isFeatureLayer = sourceFilePath.startsWith("src/features/")
   const featureAlias = parseFeatureAlias(specifier)
 
   if (isUiPrimitive && !isUiAllowedAlias(specifier)) {
     errors.push(
-      `${sourceFilePath}: UI primitives may only import from '@/components/ui/**' and '@/lib/**' (found '${specifier}')`,
+      `${sourceFilePath}: UI primitives may only import from '@/components/ui/**' and '@/lib/**' (found '${specifier}')`
     )
   }
 
-  if (isLibLayer && (specifier.startsWith("@/components/") || specifier.startsWith("@/app/"))) {
-    errors.push(`${sourceFilePath}: src/lib and src/actions cannot import UI/routes (found '${specifier}')`)
-  }
-
-  if (isComponent && !isUiPrimitive && specifier.startsWith("@/app/") && !isAppActionImport(specifier)) {
+  if (
+    isLibLayer &&
+    (specifier.startsWith("@/components/") || specifier.startsWith("@/app/"))
+  ) {
     errors.push(
-      `${sourceFilePath}: components may not import route modules from src/app (found '${specifier}'). Use shared actions/lib modules.`,
+      `${sourceFilePath}: src/lib and src/actions cannot import UI/routes (found '${specifier}')`
     )
   }
 
-  if (!sourceFilePath.startsWith("src/app/") && isRoutePrivateSpecifier(specifier)) {
+  if (
+    isComponent &&
+    !isUiPrimitive &&
+    specifier.startsWith("@/app/") &&
+    !isAppActionImport(specifier)
+  ) {
     errors.push(
-      `${sourceFilePath}: route-private modules ('_components'/'_lib') cannot be imported outside src/app routes (found '${specifier}')`,
+      `${sourceFilePath}: components may not import route modules from src/app (found '${specifier}'). Use shared actions/lib modules.`
+    )
+  }
+
+  if (
+    !sourceFilePath.startsWith("src/app/") &&
+    isRoutePrivateSpecifier(specifier)
+  ) {
+    errors.push(
+      `${sourceFilePath}: route-private modules ('_components'/'_lib') cannot be imported outside src/app routes (found '${specifier}')`
     )
   }
 
   if (featureAlias && !isFeatureLayer) {
     const isPublicEntrypoint =
       featureAlias.rest.length === 0 ||
-      (featureAlias.rest.length === 1 && featureAlias.rest[0] === "index")
+      (featureAlias.rest.length === 1 &&
+        ["client", "index"].includes(featureAlias.rest[0]))
     if (!isPublicEntrypoint) {
       errors.push(
-        `${sourceFilePath}: imports from features must use public entrypoint ('@/features/${featureAlias.featureName}'). Found '${specifier}'.`,
+        `${sourceFilePath}: imports from features must use a public entrypoint ('@/features/${featureAlias.featureName}' or its client entrypoint). Found '${specifier}'.`
       )
     }
   }
@@ -165,7 +188,9 @@ function applyBoundaryRules({ sourceFilePath, specifier }) {
 async function run() {
   const stats = await fs.stat(SRC_ROOT).catch(() => null)
   if (!stats || !stats.isDirectory()) {
-    console.error("Unable to run import boundary checks: src directory not found")
+    console.error(
+      "Unable to run import boundary checks: src directory not found"
+    )
     process.exit(1)
   }
 
@@ -183,13 +208,15 @@ async function run() {
       sourceText,
       ts.ScriptTarget.Latest,
       true,
-      resolveScriptKind(extension),
+      resolveScriptKind(extension)
     )
 
     const specifiers = collectModuleSpecifiers(sourceFile)
 
     for (const specifier of specifiers) {
-      errors.push(...applyBoundaryRules({ sourceFilePath: repoRelative, specifier }))
+      errors.push(
+        ...applyBoundaryRules({ sourceFilePath: repoRelative, specifier })
+      )
     }
   }
 

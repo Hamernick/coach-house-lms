@@ -9,7 +9,7 @@ export const performanceRouteBudgets = [
     routeKey: "/(public)/find/page",
     urlLabel: "/find",
     shell: "public find",
-    maxFirstLoadKB: 1900,
+    maxFirstLoadKB: 1975,
   },
   {
     routeKey: "/(community)/community/page",

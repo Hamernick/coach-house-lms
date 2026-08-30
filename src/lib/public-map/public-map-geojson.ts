@@ -30,6 +30,7 @@ export const PUBLIC_MAP_MARKER_IMAGE_SELECTED_FALLBACK_KEY =
 export const PUBLIC_MAP_ORGANIZATION_ID_SEPARATOR = "|"
 export const PUBLIC_MAP_MARKER_SPRITE_VERSION =
   "pin-v12-shopping-basket-community-fridges"
+const PUBLIC_MAP_MAX_LATITUDE = 85.051129
 
 export type PublicMapPointProperties = {
   itemId: string
@@ -45,6 +46,7 @@ export type PublicMapPointProperties = {
   markerImageUrl: string | null
   markerStyleKey: PublicMapMarkerStyleKey
   verificationStatus: PublicMapItem["verificationStatus"] | "verified_platform"
+  weatherEligible?: boolean
   isSaved?: boolean
   markerRelevanceTier?: 0 | 1 | 2 | 3
   markerSortKey?: number
@@ -171,7 +173,14 @@ function organizationHasMapLocation<
 } {
   return (
     typeof organization.latitude === "number" &&
-    typeof organization.longitude === "number"
+    Number.isFinite(organization.latitude) &&
+    organization.latitude >= -PUBLIC_MAP_MAX_LATITUDE &&
+    organization.latitude <= PUBLIC_MAP_MAX_LATITUDE &&
+    typeof organization.longitude === "number" &&
+    Number.isFinite(organization.longitude) &&
+    organization.longitude >= -180 &&
+    organization.longitude <= 180 &&
+    !(organization.latitude === 0 && organization.longitude === 0)
   )
 }
 
@@ -281,7 +290,7 @@ function mapItemHasMapLocation(item: PublicMapItem): item is PublicMapItem & {
   latitude: number
   longitude: number
 } {
-  return typeof item.latitude === "number" && typeof item.longitude === "number"
+  return organizationHasMapLocation(item)
 }
 
 function toSameLocationCapableMapItem(item: PublicMapItem) {
@@ -361,6 +370,9 @@ export function buildPublicMapItemPointFeatures(
           markerImageUrl: leadItem.markerImageUrl ?? null,
           markerStyleKey,
           verificationStatus: leadItem.verificationStatus,
+          weatherEligible: group.organizations.some(
+            (item) => itemById.get(item.id)?.weatherEligible === true
+          ),
           isSaved: false,
           markerRelevanceTier: 3,
           markerSortKey: 0,

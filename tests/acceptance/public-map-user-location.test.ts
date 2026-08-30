@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
+  buildLocationFeedback,
   hasGrantedPublicMapLocation,
   hasRunPublicMapLocationEntrance,
   markPublicMapLocationGranted,
@@ -33,12 +34,15 @@ describe("public map user location", () => {
   it("uses low-accuracy location requests with bounded caching", () => {
     expect(PUBLIC_MAP_GEOLOCATION_OPTIONS).toEqual({
       enableHighAccuracy: false,
-      timeout: 7_000,
+      timeout: 15_000,
       maximumAge: 300_000,
     })
     expect(resolveUserLocationStatusFromError({ code: 1 })).toBe("denied")
     expect(resolveUserLocationStatusFromError({ code: 2 })).toBe("unavailable")
-    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("error")
+    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("timed_out")
+    expect(buildLocationFeedback("timed_out")?.message).toContain(
+      "location request timed out"
+    )
   })
 
   it("rejects invalid coordinates", () => {
@@ -110,7 +114,7 @@ describe("public map user location", () => {
       "if (!coordinates && entranceStartedRef.current) setControlOpen(true)"
     )
     expect(hookSource).toContain(
-      'source === "entrance" && attempt === 0 && error.code !== 1'
+      'source === "entrance" && attempt === 0 && error.code === 2'
     )
     expect(hookSource).toContain("readPosition(1)")
     expect(hookSource.match(/if \(storedGrant\) \{/g)).toHaveLength(3)
@@ -187,6 +191,9 @@ describe("public map user location", () => {
 
   it("keeps a fast location result until the deferred map is ready", () => {
     const indexSource = readSource("src/components/public/public-map-index.tsx")
+    const locationWeatherSource = readSource(
+      "src/components/public/public-map-index/use-public-map-location-weather.ts"
+    )
     const runtimeSource = readSource(
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
@@ -195,7 +202,7 @@ describe("public map user location", () => {
     )
 
     expect(indexSource).toContain("mapStartRef")
-    expect(indexSource).toContain(
+    expect(locationWeatherSource).toContain(
       "onRequestMapStart: () => mapStartRef.current?.()"
     )
     expect(runtimeSource).toContain("mapStartRef.current = startMap")
@@ -211,9 +218,15 @@ describe("public map user location", () => {
     )
   })
 
-  it("renders the control at map top-left and Welcome at top-center", () => {
+  it("keeps mobile map controls in separate safe-area overlay zones", () => {
     const locationControlSource = readSource(
       "src/components/public/public-map-index/location-control.tsx"
+    )
+    const mapSurfaceSource = readSource(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
+    const sidebarSource = readSource(
+      "src/components/public/public-map-index/sidebar.tsx"
     )
     const welcomeControlSource = readSource(
       "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
@@ -224,6 +237,14 @@ describe("public map user location", () => {
 
     expect(locationControlSource).toContain("safe-area-inset-top")
     expect(locationControlSource).toContain("safe-area-inset-left")
+    expect(locationControlSource).toContain("data-public-map-location-controls")
+    expect(locationControlSource).toContain("absolute inset-0 z-[60]")
+    expect(locationControlSource).toContain("Location timed out")
+    expect(locationControlSource).toContain(
+      "public-map-location-card:current-location"
+    )
+    expect(locationControlSource).toContain("getReactGrabOwnerProps")
+    expect(locationControlSource).toContain("getReactGrabLinkedSurfaceProps")
     expect(locationControlSource).toContain("PublicMapDirectoryStatusPill")
     expect(locationControlSource).toContain(
       "PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME"
@@ -239,6 +260,19 @@ describe("public map user location", () => {
     expect(welcomeControlSource).toContain('"Welcome"')
     expect(welcomeControlSource).toContain('"Hide welcome"')
     expect(welcomeControlSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
+    expect(welcomeControlSource).toContain("top-[max(4.25rem")
+    expect(welcomeControlSource).toContain("sm:top-[max(0.75rem")
+    expect(welcomeControlSource).toContain("data-public-map-welcome-control")
+    expect(mapSurfaceSource).toContain("data-public-map-status-overlays")
+    expect(mapSurfaceSource).toContain("safe-area-inset-top")
+    expect(mapSurfaceSource).toContain("safe-area-inset-right")
+    expect(mapSurfaceSource).toContain("max-w-[calc(100%_-_2rem)]")
+    expect(sidebarSource).toContain("safe-area-inset-bottom")
+    expect(sidebarSource).toContain("safe-area-inset-left")
+    expect(sidebarSource).toContain("data-public-map-sidebar-open-control")
+    expect(sidebarSource).not.toContain(
+      '"absolute top-4 left-4 z-20 transition-[opacity,transform]'
+    )
   })
 
   it("limits geolocation to same-origin find routes", () => {

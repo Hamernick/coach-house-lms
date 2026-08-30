@@ -12,6 +12,10 @@ import {
 } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import type {
+  FindMapWeatherResponse,
+  FindMapWeatherSnapshot,
+} from "@/features/find-map/client"
 import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"
@@ -39,6 +43,20 @@ import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 const PublicMapAuthSheet = dynamic(() =>
   import("./auth-sheet").then((module) => module.PublicMapAuthSheet)
+)
+const FindMapWeatherCard = dynamic(
+  () =>
+    import("@/features/find-map/client").then(
+      (module) => module.FindMapWeatherCard
+    ),
+  { ssr: false }
+)
+const PublicMapWeatherController = dynamic(
+  () =>
+    import("./public-map-weather-controller").then(
+      (module) => module.PublicMapWeatherController
+    ),
+  { ssr: false }
 )
 
 type PublicMapSurfaceProps = {
@@ -72,6 +90,8 @@ type PublicMapSurfaceProps = {
   tokenAvailable: boolean
   mapError: string | null
   locationControl: PublicMapLocationControlState
+  weather?: FindMapWeatherSnapshot | null
+  onWeatherChange: (weather: FindMapWeatherResponse | null) => void
   preferencesSaveError: string | null
   authSheetOpen: boolean
   authRedirectTo: string
@@ -132,6 +152,8 @@ export function PublicMapSurface({
   tokenAvailable,
   mapError,
   locationControl,
+  weather = null,
+  onWeatherChange,
   preferencesSaveError,
   authSheetOpen,
   authRedirectTo,
@@ -294,8 +316,19 @@ export function PublicMapSurface({
             {...locationControl}
             directoryCount={directoryCount}
           />
+          <PublicMapWeatherController
+            coordinates={locationControl.coordinates}
+            onWeatherChange={onWeatherChange}
+          />
 
-          <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+          <div
+            data-public-map-status-overlays="true"
+            className="pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] right-[max(1rem,env(safe-area-inset-right))] z-20 flex max-w-[calc(100%_-_2rem)] flex-col items-end gap-2"
+          >
+            <FindMapWeatherCard
+              weather={weather}
+              className={PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME}
+            />
             {mapError ? (
               <Alert
                 className={cn(

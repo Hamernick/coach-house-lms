@@ -1599,6 +1599,20 @@ describe("public map WebGL data", () => {
     expect(features[1]?.properties.sameLocationCount).toBe(1)
   })
 
+  it("excludes malformed organization coordinates from marker features", () => {
+    const features = buildPublicMapPointFeatures([
+      buildOrganization({ id: "valid" }),
+      buildOrganization({ id: "origin", latitude: 0, longitude: 0 }),
+      buildOrganization({ id: "invalid-latitude", latitude: 86 }),
+      buildOrganization({ id: "invalid-longitude", longitude: 181 }),
+      buildOrganization({ id: "not-finite", latitude: Number.NaN }),
+    ])
+
+    expect(
+      features.map((feature) => feature.properties.organizationId)
+    ).toEqual(["valid"])
+  })
+
   it("derives a stable cluster data version from normalized marker inputs", () => {
     const organizations = [
       buildOrganization({

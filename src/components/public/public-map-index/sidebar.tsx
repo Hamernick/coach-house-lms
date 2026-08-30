@@ -65,8 +65,9 @@ function PublicMapSidebarOpenButton({
 }) {
   return (
     <div
+      data-public-map-sidebar-open-control="true"
       className={cn(
-        "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         hidden
           ? "pointer-events-auto opacity-100"
           : "pointer-events-none -translate-x-1 opacity-0"

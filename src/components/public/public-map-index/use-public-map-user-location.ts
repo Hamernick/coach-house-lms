@@ -254,7 +254,7 @@ export function usePublicMapUserLocation({
         },
         (error) => {
           if (requestSequenceRef.current !== requestSequence) return
-          if (source === "entrance" && attempt === 0 && error.code !== 1) {
+          if (source === "entrance" && attempt === 0 && error.code === 2) {
             readPosition(1)
             return
           }

@@ -112,7 +112,10 @@ function PublicMapMemberOnboardingPreviewToggle({
   onToggle: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-30 -translate-x-1/2">
+    <div
+      data-public-map-welcome-control="true"
+      className="pointer-events-none absolute top-[max(4.25rem,calc(env(safe-area-inset-top)_+_3.25rem))] left-1/2 z-30 -translate-x-1/2 sm:top-[max(0.75rem,env(safe-area-inset-top))]"
+    >
       <Button
         type="button"
         variant="outline"

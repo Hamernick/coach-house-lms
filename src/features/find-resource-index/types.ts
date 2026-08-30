@@ -26,6 +26,7 @@ export type FindResourceIndexItem = {
   primaryResourceCategory: PublicMapResourceCategoryKey
   verificationStatus: PublicMapVerificationStatus
   visibility: PublicMapItemVisibility
+  weatherEligible?: boolean
   markerImageUrl?: string | null
   availability?: FindResourceIndexAvailability
 }

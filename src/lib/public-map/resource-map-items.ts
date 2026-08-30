@@ -109,6 +109,7 @@ type PublicMapBaseItem = {
   sourceUrl: string | null
   lastVerifiedAt: string | null
   visibility: PublicMapItemVisibility
+  weatherEligible?: boolean
   markerImageUrl?: string | null
   logoUrl?: string | null
   faviconUrl?: string | null

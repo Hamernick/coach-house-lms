@@ -1070,8 +1070,8 @@ describe("finance release planning graph", () => {
       pointFresh: 86400,
       pointStaleIfError: 604800,
     })
-    expect(fixture.cases).toHaveLength(12)
-    expect(new Set(fixture.cases.map(({ id }) => id)).size).toBe(12)
+    expect(fixture.cases).toHaveLength(14)
+    expect(new Set(fixture.cases.map(({ id }) => id)).size).toBe(14)
   })
 
   it("locks the Stripe Connect account, event, and environment contract", () => {

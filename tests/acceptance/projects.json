@@ -379,6 +379,7 @@
       "tests/acceptance/workspace-accelerator-header-picker.test.ts",
       "tests/acceptance/workspace-accelerator-step-node-card-helpers.test.ts",
       "tests/acceptance/workspace-accelerator-tutorial-policy.test.ts",
+      "tests/acceptance/workspace-board-access-management.test.ts",
       "tests/acceptance/workspace-board-activity-heatmap.test.ts",
       "tests/acceptance/workspace-board-calendar-card-strip-data.test.ts",
       "tests/acceptance/workspace-board-canvas-helpers.test.ts",

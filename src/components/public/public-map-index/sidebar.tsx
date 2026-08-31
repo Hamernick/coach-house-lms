@@ -26,6 +26,7 @@ import {
 } from "./sidebar-contract"
 import {
   resolveEffectivePublicMapSidebarMode,
+  resolveInitialPublicMapDrawerSnapPointIndex,
   resolvePublicMapDrawerViewportHeight,
 } from "./sidebar-state-helpers"
 import { buildOrganizationDetailHeaderSlots } from "./organization-detail-header-slots"
@@ -148,8 +149,10 @@ export function PublicMapSidebar({
     () => buildPublicMapDrawerSnapPoints(surfaceHeight),
     [surfaceHeight]
   )
-  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(1),
-    [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
+  const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(
+    resolveInitialPublicMapDrawerSnapPointIndex(effectiveSidebarMode)
+  )
+  const [drawerTab, setDrawerTab] = useState<PublicMapMemberTab>("directory")
   const activeSnapPoint = snapPoints[activeSnapIndex]
   const drawerIsFullscreen = activeSnapIndex === 2
   const drawerViewportHeight = resolvePublicMapDrawerViewportHeight({
@@ -167,7 +170,9 @@ export function PublicMapSidebar({
       setActiveSnapIndex(0)
       return
     }
-    setActiveSnapIndex(1)
+    if (effectiveSidebarMode === "details") {
+      setActiveSnapIndex(1)
+    }
   }, [effectiveSidebarMode, panelOpen, panelPresentation])
   useEffect(() => {
     const drawerInset =

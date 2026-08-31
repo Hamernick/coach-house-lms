@@ -27,6 +27,7 @@ import { resolvePublicMapCollectedResources } from "@/components/public/public-m
 import { PublicMapSavedRail } from "@/components/public/public-map-index/saved-rail"
 import { PublicMapSidebar } from "@/components/public/public-map-index/sidebar"
 import { PublicMapShellSidebarPanel } from "@/components/public/public-map-index/sidebar-shell-panel"
+import { resolveInitialPublicMapDrawerSnapPointIndex } from "@/components/public/public-map-index/sidebar-state-helpers"
 import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
 import {
   buildPublicMapGroupFilterCounts,
@@ -539,6 +540,12 @@ describe("public map sidebar layout", () => {
       "Search organizations, activities, or resources"
     )
     expect(markup).not.toContain("border-white/30")
+  })
+
+  it("starts the mobile drawer at its collapsed snap point", () => {
+    expect(resolveInitialPublicMapDrawerSnapPointIndex("search")).toBe(0)
+    expect(resolveInitialPublicMapDrawerSnapPointIndex("hidden")).toBe(0)
+    expect(resolveInitialPublicMapDrawerSnapPointIndex("details")).toBe(1)
   })
 
   it("keeps search context outside the organization list scroll viewport and fades only the list", () => {

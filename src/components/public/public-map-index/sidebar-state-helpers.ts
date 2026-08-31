@@ -1,4 +1,11 @@
 import type { PublicMapSidebarProps } from "./sidebar-contract"
+import type { SidebarMode } from "./constants"
+
+export function resolveInitialPublicMapDrawerSnapPointIndex(
+  effectiveSidebarMode: SidebarMode
+): 0 | 1 {
+  return effectiveSidebarMode === "details" ? 1 : 0
+}
 
 export function resetPublicMapDrawer(
   setActiveSnapIndex: (value: 0) => void,

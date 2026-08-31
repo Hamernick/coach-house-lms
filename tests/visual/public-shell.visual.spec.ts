@@ -412,32 +412,41 @@ test("public Find resizes its mobile drawer through the accessible handle", asyn
       name: "Find organizations and resources",
     })
   ).toBeVisible()
-  const resizeControl = drawer.getByRole("button", {
-    name: "Resize resource map panel to full height",
+  await expect(drawer).toHaveAttribute("data-public-map-drawer-snap-index", "0")
+  const resizeToMiddleControl = drawer.getByRole("button", {
+    name: "Resize resource map panel to middle height",
   })
-  await expect(resizeControl).toBeVisible()
-  const resizeControlHeight = await resizeControl.evaluate((element) =>
+  await expect(resizeToMiddleControl).toBeVisible()
+  const resizeControlHeight = await resizeToMiddleControl.evaluate((element) =>
     Math.round(element.getBoundingClientRect().height)
   )
-  const restingBackground = await resizeControl.evaluate(
+  const restingBackground = await resizeToMiddleControl.evaluate(
     (element) => getComputedStyle(element).backgroundColor
   )
   expect(resizeControlHeight).toBe(23)
-  await resizeControl.hover()
+  await resizeToMiddleControl.hover()
   await expect
     .poll(() =>
-      resizeControl.evaluate(
+      resizeToMiddleControl.evaluate(
         (element) => getComputedStyle(element).backgroundColor
       )
     )
     .toBe(restingBackground)
-  await resizeControl.click()
+  await resizeToMiddleControl.click()
+  await expect(drawer).toHaveAttribute("data-public-map-drawer-snap-index", "1")
+  const resizeToFullControl = drawer.getByRole("button", {
+    name: "Resize resource map panel to full height",
+  })
+  await expect(resizeToFullControl).toBeVisible()
+  await resizeToFullControl.click()
+  await expect(drawer).toHaveAttribute("data-public-map-drawer-snap-index", "2")
   const returnToMiddleControl = drawer.getByRole("button", {
     name: "Resize resource map panel to middle height",
   })
   await expect(returnToMiddleControl).toBeVisible()
   await returnToMiddleControl.click()
-  await expect(resizeControl).toBeVisible()
+  await expect(drawer).toHaveAttribute("data-public-map-drawer-snap-index", "1")
+  await expect(resizeToFullControl).toBeVisible()
   await expect(
     page.locator('header button[aria-label="Open Find, Guides, and Saved"]')
   ).toHaveCount(0)

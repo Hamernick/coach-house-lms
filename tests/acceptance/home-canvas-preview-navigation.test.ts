@@ -60,8 +60,8 @@ describe("home canvas preview navigation", () => {
     expect(source).toContain(
       "const { isMobile, openMobile, toggleSidebar } = useSidebar()"
     )
-    expect(source).toContain('"Close Find, Guides, and Saved"')
-    expect(source).toContain('"Open Find, Guides, and Saved"')
+    expect(source).toContain('sidebarLabel = "Find, Guides, and Saved"')
+    expect(source).toContain('openMobile ? `Close ${label}` : `Open ${label}`')
     expect(source).toContain("aria-expanded={openMobile}")
     expect(source).toContain("onClick={toggleSidebar}")
     expect(source).toContain("size-11")

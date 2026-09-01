@@ -10,7 +10,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: false,
         pathname: "/accelerator",
-      }),
+      })
     ).toBe("/onboarding?source=onboarding")
   })
 
@@ -21,7 +21,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: false,
         pathname: "/onboarding",
-      }),
+      })
     ).toBeNull()
   })
 
@@ -32,7 +32,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: true,
         pathname: "/admin",
-      }),
+      })
     ).toBeNull()
   })
 
@@ -43,7 +43,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "find",
         isAdminContext: false,
         pathname: "/community",
-      }),
+      })
     ).toBe("/find?member_onboarding=1&source=onboarding")
   })
 
@@ -54,7 +54,19 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "find",
         isAdminContext: false,
         pathname: "/find",
-      }),
+      })
+    ).toBeNull()
+  })
+
+  it("keeps explicitly public app-shell content available during onboarding", () => {
+    expect(
+      resolveAppShellOnboardingRedirectTarget({
+        onboardingLocked: true,
+        onboardingIntentFocus: "build",
+        isAdminContext: false,
+        pathname: "/documentation",
+        allowOnboardingLockedContent: true,
+      })
     ).toBeNull()
   })
 })

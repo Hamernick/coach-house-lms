@@ -24,10 +24,12 @@ export function HomeCanvasFindShell({
   children,
   showAuthActions = true,
   sidebarFallback = null,
+  sidebarLabel = "Find, Guides, and Saved",
 }: {
   children: ReactNode
   showAuthActions?: boolean
   sidebarFallback?: ReactNode
+  sidebarLabel?: string
 }) {
   return (
     <RightRailProvider>
@@ -35,6 +37,7 @@ export function HomeCanvasFindShell({
         <HomeCanvasFindShellContent
           showAuthActions={showAuthActions}
           sidebarFallback={sidebarFallback}
+          sidebarLabel={sidebarLabel}
         >
           {children}
         </HomeCanvasFindShellContent>
@@ -47,10 +50,12 @@ function HomeCanvasFindShellContent({
   children,
   showAuthActions,
   sidebarFallback,
+  sidebarLabel,
 }: {
   children: ReactNode
   showAuthActions: boolean
   sidebarFallback: ReactNode
+  sidebarLabel: string
 }) {
   const router = useRouter()
   const hasRightRail = useRightRailPresence()
@@ -95,6 +100,7 @@ function HomeCanvasFindShellContent({
               showAuthActions={showAuthActions}
               showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
+              sidebarLabel={sidebarLabel}
             />
 
             <div className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-0">

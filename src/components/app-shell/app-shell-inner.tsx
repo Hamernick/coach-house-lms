@@ -79,6 +79,7 @@ export function AppShellInner({
   children,
   breadcrumbs,
   sidebarHeaderContent,
+  contextualNavigation,
   sidebarTree,
   user,
   isAdmin,
@@ -105,6 +106,7 @@ export function AppShellInner({
   brandHref: brandHrefOverride,
   showWorkspaceHome = true,
   showMemberWorkspace,
+  allowOnboardingLockedContent = false,
 }: AppShellProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -212,6 +214,7 @@ export function AppShellInner({
     onboardingIntentFocus,
     isAdminContext,
     pathname,
+    allowOnboardingLockedContent,
   })
   const routeTransitionRef = useAppShellRouteTransition({
     enabled: !onboardingRedirectTarget,
@@ -313,6 +316,7 @@ export function AppShellInner({
                 showCoachScheduling={!isAcceleratorContext}
                 showWorkspaceHome={showWorkspaceHome}
                 showMemberWorkspace={showMemberWorkspaceNav}
+                contextualNavigation={contextualNavigation}
               />
             </Sidebar>
 

@@ -36,6 +36,29 @@ export type DocumentationSource = {
   note: string
 }
 
+export type FoundationGuide = {
+  slug: "quickstart" | "key-concepts"
+  title: string
+  description: string
+  eyebrow: string
+  answer: string
+  readingTime: string
+  reviewedDate: string
+  sections: Array<{
+    id: string
+    title: string
+    introduction: string
+    entries: Array<{
+      title: string
+      description: string
+      detail?: string
+    }>
+  }>
+  stages: DocumentationStageGuidance[]
+  checklist: string[]
+  sources: DocumentationSource[]
+}
+
 export type MissionArticle = {
   slug: "best-practices/mission"
   title: string

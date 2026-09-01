@@ -10,13 +10,13 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Quickstart",
         description: "Choose the next step for your nonprofit stage.",
-        href: `${DOCUMENTATION_PATH}#quickstart`,
+        href: `${DOCUMENTATION_PATH}/quickstart`,
         status: "live",
       },
       {
         title: "Key concepts",
         description: "Learn the terms that shape nonprofit decisions.",
-        href: `${DOCUMENTATION_PATH}#key-concepts`,
+        href: `${DOCUMENTATION_PATH}/key-concepts`,
         status: "live",
       },
     ],

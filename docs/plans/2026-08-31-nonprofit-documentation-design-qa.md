@@ -10,6 +10,12 @@
   `/private/tmp/coach-house-documentation-home-final-2048x1150.png`
 - Article capture:
   `/private/tmp/coach-house-documentation-mission-desktop.png`
+- Quickstart comparison capture:
+  `/private/tmp/coach-house-documentation-quickstart-2048.png`
+- Quickstart mobile capture:
+  `/private/tmp/coach-house-documentation-quickstart-390.png`
+- Key Concepts tablet capture:
+  `/private/tmp/coach-house-documentation-key-concepts-768.png`
 - Source pixels: 3584 × 2010.
 - First implementation pixels: 2048 × 1150.
 - Post-fix and article pixels: 1792 × 952, limited by the connected browser
@@ -74,15 +80,21 @@ structure, active rail state, and desktop on-page contents.
   `/documentation/best-practices/mission` and rendered the complete article.
 - The article exposed one H1, ordered H2/H3 structure, breadcrumbs, stage
   regions, a checklist, primary-source links, and an on-page contents nav.
+- Quickstart and Key Concepts expose the same stage-complete article contract,
+  canonical metadata, Article and Breadcrumb structured data, review metadata,
+  and official IRS source links.
+- The active documentation link now exposes `aria-current="page"` in addition
+  to the visible selected treatment.
 - Planned items are non-interactive rather than dead links.
 - The shell provides a skip link, visible focus styling, semantic links, and a
   single native article scroll owner.
-- Browser console errors checked after the home-to-Mission journey: none.
-- The connected browser's mobile viewport capture became unavailable after the
-  desktop comparison. Mobile structure remains inherited from the tested public
-  sidebar sheet and uses responsive single-column layout classes; a fresh
-  mobile visual capture remains a release-level follow-up, not an observed
-  visual defect.
+- Browser QA found no horizontal overflow at 390px, 768px, 1440px, or 2048px.
+  The 390px layout collapses to one readable article column; the 768px layout
+  preserves the rail and article hierarchy; the 1440px and 2048px layouts add
+  the sticky on-page contents without widening the reading measure.
+- Browser console errors checked after the Quickstart and Key Concepts journey:
+  none. The only warning came from the local React Grab browser extension and
+  is not application output.
 
 ## Comparison history
 
@@ -104,14 +116,22 @@ confidently and every rail title remaining legible. No actionable P0, P1, or P2
 visual differences remain. Dev-only React Grab and Next.js controls are local
 verification overlays and are not product UI.
 
+### Pass 3
+
+The reference and Quickstart implementation were reviewed together at the
+2048px target. The implementation preserves the source's quiet black canvas,
+narrow persistent rail, restrained dividers, high-contrast editorial title,
+and secondary contents column while retaining Coach House shell geometry.
+Fresh 390px and 768px captures show readable wrapping, complete content
+containment, and no horizontal overflow. No actionable P0, P1, or P2 visual
+differences remain.
+
 ## Findings
 
 No actionable P0, P1, or P2 findings remain.
 
 ## Follow-up polish
 
-- Capture 390px and 768px screenshots in a fresh browser session before the
-  release PR's visual-baseline decision.
 - Revisit documentation search after enough live articles exist to produce
   useful results.
 

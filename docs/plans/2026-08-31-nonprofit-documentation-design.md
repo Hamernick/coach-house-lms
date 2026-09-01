@@ -8,9 +8,9 @@ feel like a first-class Coach House canvas: calm, authoritative, easy to scan,
 and useful without an account.
 
 Phase 1 establishes the page system, adaptive navigation, documentation home,
-and one complete Mission article. Later phases expand the library, add search,
-connect Marketplace resources, and implement the Brand Identity tool from the
-user-provided design.
+Quickstart, Key Concepts, and one complete Mission article. Later phases expand
+the library, add search, connect Marketplace resources, and implement the Brand
+Identity tool from the user-provided design.
 
 ## Audience and editorial standard
 
@@ -79,13 +79,13 @@ generic placeholder.
 The documentation uses the existing canvas and rail framework. It never adds a
 second permanent left rail.
 
-| Viewer | Shell | Global navigation | Documentation behavior |
-| --- | --- | --- | --- |
-| Anonymous | Public canvas shell | Coach House brand, theme, log in, sign up | Full public content; documentation sections occupy the rail |
-| Signed-in free | App shell | Find, resource links, upgrade and account controls | Full public content; documentation sections appear below global navigation |
-| Signed-in paid | App shell | Workspace, Find, resource links, entitled destinations | Same content; no content fork or paywall |
-| Admin or staff | App shell | Existing privileged destinations plus resource links | Same public article content |
-| Onboarding locked | App shell | Existing restricted account state | Documentation remains reachable because it is public reference material |
+| Viewer            | Shell               | Global navigation                                      | Documentation behavior                                                     |
+| ----------------- | ------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Anonymous         | Public canvas shell | Coach House brand, theme, log in, sign up              | Full public content; documentation sections occupy the rail                |
+| Signed-in free    | App shell           | Find, resource links, upgrade and account controls     | Full public content; documentation sections appear below global navigation |
+| Signed-in paid    | App shell           | Workspace, Find, resource links, entitled destinations | Same content; no content fork or paywall                                   |
+| Admin or staff    | App shell           | Existing privileged destinations plus resource links   | Same public article content                                                |
+| Onboarding locked | App shell           | Existing restricted account state                      | Documentation remains reachable because it is public reference material    |
 
 The existing authenticated resource slot links to `Documentation` for every
 account state. This keeps the library in the main rail without changing the
@@ -171,6 +171,8 @@ There are no invisible AI-only pages or unsupported claims.
 
 - Adaptive rail and authenticated main-navigation entry.
 - Documentation home.
+- Complete Quickstart and Key Concepts guides using the shared stage-specific
+  article contract.
 - Complete Mission article demonstrating the final article standard.
 - Anonymous, free, paid, onboarding-locked, mobile, desktop, dark, and light
   shell behavior.

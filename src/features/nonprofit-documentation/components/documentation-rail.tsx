@@ -60,6 +60,9 @@ export function DocumentationRail({
                 <Link
                   href={DOCUMENTATION_PATH}
                   className="flex items-center gap-2"
+                  aria-current={
+                    pathname === DOCUMENTATION_PATH ? "page" : undefined
+                  }
                 >
                   <BookOpenTextIcon className="size-4 shrink-0" aria-hidden />
                   <span className="truncate">Home</span>
@@ -97,6 +100,7 @@ export function DocumentationRail({
                           href={item.href}
                           className="flex min-w-0 items-center gap-2"
                           title={item.description}
+                          aria-current={active ? "page" : undefined}
                         >
                           <span className="truncate">{item.title}</span>
                           {item.external ? (

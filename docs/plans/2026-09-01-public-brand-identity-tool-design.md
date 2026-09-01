@@ -39,7 +39,7 @@ and should survive refreshes and return visits.
 1. Foundation: organization name, tagline, introduction, purpose, and audience.
 2. Marks: primary logo and mark uploads, light/dark specimens, scale, and usage notes.
 3. Color palette: four named colors, computed color values, proportions, and contrast checks.
-4. Typography: safe font choices, a base size, a modular ratio, and a live type scale.
+4. Typography: at least 30 grouped system-font choices with portable fallbacks, a base size, a modular ratio, and a live type scale.
 5. Applications: editable campaign copy and live social/header compositions.
 6. Assets: optional application photography and six illustration slots.
 7. Exports: ZIP package, CSS tokens, JSON data, usage notes, originals, and print view.

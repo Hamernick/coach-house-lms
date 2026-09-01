@@ -9,7 +9,6 @@ export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,
   BRAND_IDENTITY_SECTIONS,
-  BRAND_FONT_OPTIONS,
   DEFAULT_BRAND_IDENTITY_DRAFT,
   buildBrandTokens,
   contrastRating,
@@ -23,3 +22,8 @@ export {
   sanitizeBrandDraft,
   typeScale,
 } from "./brand-identity"
+export {
+  BRAND_FONT_GROUPS,
+  BRAND_FONT_OPTIONS,
+  brandFontStack,
+} from "./brand-fonts"

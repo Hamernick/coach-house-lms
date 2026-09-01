@@ -10,12 +10,16 @@ import {
   MISSION_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_IDENTITY_PATH,
+  BRAND_FONT_GROUPS,
+  BRAND_FONT_OPTIONS,
   DEFAULT_BRAND_IDENTITY_DRAFT,
   buildBrandTokens,
+  brandFontStack,
   contrastRating,
   contrastRatio,
   normalizeHex,
   normalizeProportions,
+  sanitizeBrandDraft,
   typeScale,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
@@ -114,6 +118,28 @@ describe("nonprofit documentation feature", () => {
     const tokens = buildBrandTokens(DEFAULT_BRAND_IDENTITY_DRAFT)
     expect(tokens).toContain("--brand-canvas: #F3F0E8;")
     expect(tokens).toContain("--brand-type-h1: 31.25px;")
+  })
+
+  it("uses clear palette names and a broad, portable font library", () => {
+    expect(DEFAULT_BRAND_IDENTITY_DRAFT.colors[0].name).toBe("Warm canvas")
+    expect(BRAND_FONT_OPTIONS.length).toBeGreaterThanOrEqual(30)
+    expect(BRAND_FONT_GROUPS.map((group) => group.label)).toEqual([
+      "Sans serif",
+      "Serif",
+      "Display",
+      "Monospace",
+    ])
+    expect(brandFontStack("Georgia")).toBe("Georgia, serif")
+
+    const migrated = sanitizeBrandDraft({
+      ...DEFAULT_BRAND_IDENTITY_DRAFT,
+      colors: DEFAULT_BRAND_IDENTITY_DRAFT.colors.map((color) =>
+        color.id === "canvas"
+          ? { ...color, name: ["Community", "cream"].join(" ") }
+          : color
+      ),
+    })
+    expect(migrated.colors[0].name).toBe("Warm canvas")
   })
 
   it("creates a valid browser ZIP archive for public downloads", () => {

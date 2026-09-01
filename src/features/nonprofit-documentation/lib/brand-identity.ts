@@ -1,4 +1,5 @@
 import type { BrandIdentityColor, BrandIdentityDraft } from "../types"
+import { BRAND_FONT_OPTIONS, brandFontStack } from "./brand-fonts"
 
 export const BRAND_IDENTITY_PATH =
   "/documentation/toolbox/brand-identity" as const
@@ -15,14 +16,6 @@ export const BRAND_IDENTITY_SECTIONS = [
   { id: "exports", label: "Exports" },
 ] as const
 
-export const BRAND_FONT_OPTIONS = [
-  { value: "Arial", label: "Arial" },
-  { value: "Georgia", label: "Georgia" },
-  { value: "Helvetica", label: "Helvetica" },
-  { value: "Trebuchet MS", label: "Trebuchet MS" },
-  { value: "Verdana", label: "Verdana" },
-] as const
-
 export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
   version: 1,
   organizationName: "Your nonprofit",
@@ -36,7 +29,7 @@ export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
   logoGuidance:
     "Keep the logo clear, legible, and unchanged. Leave open space around it and use the strongest available contrast.",
   colors: [
-    { id: "canvas", name: "Community cream", value: "#F3F0E8", proportion: 50 },
+    { id: "canvas", name: "Warm canvas", value: "#F3F0E8", proportion: 50 },
     { id: "brand", name: "Mission green", value: "#214E3B", proportion: 30 },
     { id: "utility", name: "White", value: "#FFFFFF", proportion: 10 },
     { id: "ink", name: "Ink", value: "#111310", proportion: 10 },
@@ -149,6 +142,11 @@ export function sanitizeBrandDraft(value: unknown): BrandIdentityDraft {
         return {
           ...fallback,
           ...(saved ?? {}),
+          name:
+            fallback.id === "canvas" &&
+            saved?.name === ["Community", "cream"].join(" ")
+              ? fallback.name
+              : (saved?.name ?? fallback.name),
           value: normalizeHex(saved?.value ?? fallback.value, fallback.value),
           proportion: Math.max(
             0,
@@ -163,6 +161,16 @@ export function sanitizeBrandDraft(value: unknown): BrandIdentityDraft {
     ...candidate,
     version: 1,
     colors,
+    headingFont: BRAND_FONT_OPTIONS.some(
+      (option) => option.value === candidate.headingFont
+    )
+      ? candidate.headingFont!
+      : DEFAULT_BRAND_IDENTITY_DRAFT.headingFont,
+    bodyFont: BRAND_FONT_OPTIONS.some(
+      (option) => option.value === candidate.bodyFont
+    )
+      ? candidate.bodyFont!
+      : DEFAULT_BRAND_IDENTITY_DRAFT.bodyFont,
     baseSize: Math.min(20, Math.max(14, Number(candidate.baseSize ?? 16))),
     typeRatio: Math.min(
       1.5,
@@ -179,8 +187,8 @@ export function buildBrandTokens(draft: BrandIdentityDraft) {
   return [
     ":root {",
     ...colorLines,
-    `  --brand-font-heading: "${draft.headingFont}", sans-serif;`,
-    `  --brand-font-body: "${draft.bodyFont}", sans-serif;`,
+    `  --brand-font-heading: ${brandFontStack(draft.headingFont)};`,
+    `  --brand-font-body: ${brandFontStack(draft.bodyFont)};`,
     `  --brand-type-base: ${draft.baseSize}px;`,
     `  --brand-type-ratio: ${draft.typeRatio};`,
     `  --brand-type-display: ${scale.display.toFixed(2)}px;`,

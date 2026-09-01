@@ -102,10 +102,10 @@ export function DocumentationHome() {
                 </p>
               </div>
               <Link
-                href={`${DOCUMENTATION_PATH}/best-practices/mission`}
+                href={`${DOCUMENTATION_PATH}/quickstart`}
                 className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
               >
-                Start with mission
+                Open the quickstart
                 <ArrowRightIcon className="size-4" aria-hidden />
               </Link>
             </div>
@@ -251,6 +251,13 @@ export function DocumentationHome() {
           >
             Use precise language
           </h2>
+          <Link
+            href={`${DOCUMENTATION_PATH}/key-concepts`}
+            className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
+          >
+            Read all key concepts
+            <ArrowRightIcon className="size-4" aria-hidden />
+          </Link>
           <dl className="mt-6 divide-y border-y">
             {concepts.map(([term, definition]) => (
               <div

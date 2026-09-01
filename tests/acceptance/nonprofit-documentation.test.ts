@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest"
 import {
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
+  KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
+  QUICKSTART_GUIDE,
 } from "@/features/nonprofit-documentation"
 
 const ROOT = process.cwd()
@@ -41,12 +43,37 @@ describe("nonprofit documentation feature", () => {
       ])
     )
     expect(items.find((item) => item.title === "Map")?.href).toBe("/")
+    expect(items.find((item) => item.title === "Quickstart")?.href).toBe(
+      "/documentation/quickstart"
+    )
+    expect(items.find((item) => item.title === "Key concepts")?.href).toBe(
+      "/documentation/key-concepts"
+    )
     const brandIdentity = items.find((item) => item.title === "Brand identity")
     expect(brandIdentity).toMatchObject({ status: "design-pending" })
     expect(brandIdentity).not.toHaveProperty("href")
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
     )
+  })
+
+  it("publishes complete stage-specific foundation guides", () => {
+    for (const guide of [QUICKSTART_GUIDE, KEY_CONCEPTS_GUIDE]) {
+      expect(guide.stages.map((stage) => stage.id)).toEqual([
+        "exploring",
+        "forming",
+        "operating",
+        "growing",
+      ])
+      expect(guide.sections.length).toBeGreaterThanOrEqual(2)
+      expect(guide.checklist.length).toBeGreaterThanOrEqual(6)
+      expect(guide.sources.length).toBeGreaterThanOrEqual(3)
+      expect(
+        guide.sources.every((source) =>
+          source.url.startsWith("https://www.irs.gov/")
+        )
+      ).toBe(true)
+    }
   })
 
   it("provides complete stage-specific mission guidance", () => {
@@ -90,6 +117,12 @@ describe("nonprofit documentation feature", () => {
     const missionRoute = readSource(
       "src/app/(public)/documentation/best-practices/mission/page.tsx"
     )
+    const quickstartRoute = readSource(
+      "src/app/(public)/documentation/quickstart/page.tsx"
+    )
+    const conceptsRoute = readSource(
+      "src/app/(public)/documentation/key-concepts/page.tsx"
+    )
     const home = readSource(
       "src/features/nonprofit-documentation/components/documentation-home.tsx"
     )
@@ -99,11 +132,19 @@ describe("nonprofit documentation feature", () => {
 
     expect(homeRoute).toContain("<DocumentationHome />")
     expect(missionRoute).toContain("<MissionArticlePage />")
+    expect(quickstartRoute).toContain(
+      "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
+    )
+    expect(conceptsRoute).toContain(
+      "<FoundationGuidePage guide={KEY_CONCEPTS_GUIDE} />"
+    )
     expect(missionRoute).toContain(
       'canonical: "/documentation/best-practices/mission"'
     )
     expect(home).toContain('"@type": "CollectionPage"')
     expect(mission).toContain('"@type": "Article"')
     expect(mission).toContain('"@type": "BreadcrumbList"')
+    expect(quickstartRoute).toContain('canonical: "/documentation/quickstart"')
+    expect(conceptsRoute).toContain('canonical: "/documentation/key-concepts"')
   })
 })

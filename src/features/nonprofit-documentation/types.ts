@@ -90,6 +90,7 @@ export type MissionArticle = {
 
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
+  role: "Background" | "Primary" | "Secondary" | "Text"
   name: string
   value: string
   proportion: number

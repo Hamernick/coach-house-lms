@@ -89,13 +89,13 @@ export function MarksSection({
                 src={assetUrls["primary-logo"]}
                 background={canvas}
                 foreground={foregroundFor(canvas)}
-                label={`Logo on ${draft.colors[0]?.name ?? "light canvas"}`}
+                label={`Logo on ${draft.colors[0]?.role ?? "Background"}`}
               />
               <LogoPanel
                 src={assetUrls["primary-logo"]}
                 background={brand}
                 foreground={foregroundFor(brand)}
-                label={`Logo on ${draft.colors[1]?.name ?? "brand color"}`}
+                label={`Logo on ${draft.colors[1]?.role ?? "Primary"}`}
               />
             </div>
           </BrandIdentitySubsection>

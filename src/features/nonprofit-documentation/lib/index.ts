@@ -10,6 +10,7 @@ export {
   BRAND_IDENTITY_PATH,
   BRAND_IDENTITY_SECTIONS,
   DEFAULT_BRAND_IDENTITY_DRAFT,
+  brandColorLabel,
   buildBrandTokens,
   contrastRating,
   contrastRatio,

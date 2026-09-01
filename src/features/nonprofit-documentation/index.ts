@@ -17,6 +17,7 @@ export {
   BRAND_FONT_OPTIONS,
   BRAND_IDENTITY_PATH,
   DEFAULT_BRAND_IDENTITY_DRAFT,
+  brandColorLabel,
   buildBrandTokens,
   brandFontStack,
   contrastRating,

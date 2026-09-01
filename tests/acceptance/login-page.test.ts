@@ -40,7 +40,7 @@ describe("login page", () => {
     const { default: LoginPage } = await import("@/app/(auth)/login/page")
     const destination = await captureRedirect(() => LoginPage({}))
 
-    expect(destination).toBe("/?section=login")
+    expect(destination).toBe("/home-canvas?section=login")
   })
 
   it("preserves the confirmed-email notice for signed-out visitors", async () => {
@@ -60,11 +60,11 @@ describe("login page", () => {
           redirect: "/onboarding?source=home_signup",
           notice: "email_confirmed_sign_in",
         }),
-      }),
+      })
     )
 
     expect(destination).toBe(
-      "/?section=login&redirect=%2Fonboarding%3Fsource%3Dhome_signup&notice=email_confirmed_sign_in",
+      "/home-canvas?section=login&redirect=%2Fonboarding%3Fsource%3Dhome_signup&notice=email_confirmed_sign_in"
     )
   })
 })

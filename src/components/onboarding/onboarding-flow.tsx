@@ -6,13 +6,9 @@ import { useSearchParams } from "next/navigation"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { OnboardingDialogContent } from "./onboarding-dialog/components"
-import {
-  writeOnboardingDraftSnapshot,
-} from "./onboarding-dialog/draft-writer"
+import { writeOnboardingDraftSnapshot } from "./onboarding-dialog/draft-writer"
 import type { SaveOnboardingDraftExtra } from "./onboarding-dialog/draft-writer"
-import {
-  resolveOnboardingPricingPlanOverride,
-} from "./onboarding-dialog/helpers"
+import { resolveOnboardingPricingPlanOverride } from "./onboarding-dialog/helpers"
 import { useOnboardingAvatar } from "./onboarding-dialog/hooks/use-onboarding-avatar"
 import { useAutoSubmitPaidPricingReturn } from "./onboarding-dialog/hooks/use-auto-submit-paid-pricing-return"
 import { useOnboardingDefaults } from "./onboarding-dialog/hooks/use-onboarding-defaults"
@@ -20,7 +16,6 @@ import { useOnboardingCarryForwardRefs } from "./onboarding-dialog/hooks/use-onb
 import { useOnboardingDraftState } from "./onboarding-dialog/hooks/use-onboarding-draft-state"
 import { useOnboardingFieldHandlers } from "./onboarding-dialog/hooks/use-onboarding-field-handlers"
 import {
-  buildInitialAccountValues,
   useOnboardingAccountStateSync,
   useOnboardingStateSnapshot,
   useOnboardingStepFocus,
@@ -28,9 +23,11 @@ import {
 import { useOnboardingProgress } from "./onboarding-dialog/hooks/use-onboarding-progress"
 import { useSlugAvailability } from "./onboarding-dialog/hooks/use-slug-availability"
 import {
-  isOnboardingAccountStepReady,
-  type OnboardingAccountValues,
-} from "./onboarding-dialog/state-helpers"
+  buildAccountValuesFromDefaults,
+  useEffectiveOnboardingStepIds,
+  useOnboardingAccountSetupState,
+  useResolvedOnboardingSteps,
+} from "./onboarding-dialog/hooks/use-onboarding-flow-derived-state"
 import type {
   FormationStatus,
   IntentFocus,
@@ -42,8 +39,6 @@ import type {
 import {
   buildOnboardingFormHandlers,
   buildOnboardingStepControls,
-  filterOnboardingSteps,
-  resolveEffectiveVisibleStepIds,
   useApplyPricingEntryPoint,
   useSyncOnboardingServerError,
 } from "./onboarding-flow-support"
@@ -68,6 +63,7 @@ export function OnboardingFlow({
   defaultRoleInterest,
   defaultFirstName,
   defaultLastName,
+  defaultPersonHandle,
   defaultPhone,
   defaultPublicEmail,
   defaultTitle,
@@ -79,29 +75,13 @@ export function OnboardingFlow({
   onSubmit,
   visibleStepIds,
 }: OnboardingFlowProps) {
-  const effectiveVisibleStepIds = React.useMemo(
-    () => resolveEffectiveVisibleStepIds({ mode, visibleStepIds }),
-    [mode, visibleStepIds],
+  const effectiveVisibleStepIds = useEffectiveOnboardingStepIds(
+    mode,
+    visibleStepIds
   )
   const intentFocusOverride: IntentFocus | null =
     mode === "workspace_setup" ? "build" : null
-  const {
-    initialOrgName,
-    initialOrgSlug,
-    initialFormationStatus,
-    initialIntentFocus,
-    initialRoleInterest,
-    initialFirstName,
-    initialLastName,
-    initialPhone,
-    initialPublicEmail,
-    initialTitle,
-    initialLinkedin,
-    initialAvatarUrl,
-    initialOptInUpdates,
-    initialNewsletterOptIn,
-    resolveDraftFieldValue,
-  } = useOnboardingDefaults({
+  const onboardingDefaults = useOnboardingDefaults({
     defaultEmail,
     defaultOrgName,
     defaultOrgSlug,
@@ -110,6 +90,7 @@ export function OnboardingFlow({
     defaultRoleInterest,
     defaultFirstName,
     defaultLastName,
+    defaultPersonHandle,
     defaultPhone,
     defaultPublicEmail,
     defaultTitle,
@@ -118,8 +99,27 @@ export function OnboardingFlow({
     defaultOptInUpdates,
     defaultNewsletterOptIn,
   })
+  const {
+    initialOrgName,
+    initialOrgSlug,
+    initialFormationStatus,
+    initialIntentFocus,
+    initialRoleInterest,
+    initialFirstName,
+    initialLastName,
+    initialPersonHandle,
+    initialPhone,
+    initialPublicEmail,
+    initialTitle,
+    initialLinkedin,
+    initialAvatarUrl,
+    initialOptInUpdates,
+    initialNewsletterOptIn,
+    resolveDraftFieldValue,
+  } = onboardingDefaults
   const searchParams = useSearchParams()
-  const checkoutPlanOverride = resolveOnboardingPricingPlanOverride(searchParams)
+  const checkoutPlanOverride =
+    resolveOnboardingPricingPlanOverride(searchParams)
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
@@ -127,37 +127,51 @@ export function OnboardingFlow({
   const [orgNameValue, setOrgNameValue] = useState(initialOrgName)
   const [orgSlugInputValue, setOrgSlugInputValue] = useState(initialOrgSlug)
   const [slugValue, setSlugValue] = useState(initialOrgSlug)
-  const [formationStatus, setFormationStatus] = useState<FormationStatus | "">(initialFormationStatus)
-  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(
-    intentFocusOverride ?? initialIntentFocus,
+  const [formationStatus, setFormationStatus] = useState<FormationStatus | "">(
+    initialFormationStatus
   )
-  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(initialRoleInterest)
+  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(
+    intentFocusOverride ?? initialIntentFocus
+  )
+  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(
+    initialRoleInterest
+  )
   const builderPlanTier: PricingPlanTier =
     checkoutPlanOverride ?? defaultBuilderPlanTier ?? "free"
   const [submitting, setSubmitting] = useState(false)
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null)
-  const [accountStepReady, setAccountStepReady] = useState(() =>
-    isOnboardingAccountStepReady({ firstName: initialFirstName, lastName: initialLastName }),
-  )
-  const [accountValues, setAccountValues] = useState(() =>
-    buildInitialAccountValues({
-      firstName: initialFirstName, lastName: initialLastName, phone: initialPhone,
-      publicEmail: initialPublicEmail, title: initialTitle, linkedin: initialLinkedin,
-      optInUpdates: initialOptInUpdates, newsletterOptIn: initialNewsletterOptIn,
-    }),
-  )
-  const latestOrganizationValuesRef = useRef({ orgName: initialOrgName, orgSlug: initialOrgSlug })
+  const {
+    accountValues,
+    setAccountValues,
+    setAccountStepReady,
+    accountStepReady,
+    personHandleStatus,
+    personHandleHint,
+  } = useOnboardingAccountSetupState({
+    open,
+    initialPersonHandle,
+    initialValues: buildAccountValuesFromDefaults(onboardingDefaults),
+  })
+  const latestOrganizationValuesRef = useRef({
+    orgName: initialOrgName,
+    orgSlug: initialOrgSlug,
+  })
   const latestAccountValuesRef = useRef(accountValues)
   const formRef = useRef<HTMLFormElement | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
-  const steps = React.useMemo(
-    () => filterOnboardingSteps({ intentFocus, visibleStepIds: effectiveVisibleStepIds }),
-    [effectiveVisibleStepIds, intentFocus],
-  )
-  const currentStep = steps[Math.max(0, Math.min(step, steps.length - 1))]
+  const { steps, currentStep, stepProgress } = useResolvedOnboardingSteps({
+    intentFocus,
+    visibleStepIds: effectiveVisibleStepIds,
+    step,
+  })
   const { slugStatus, slugHint } = useSlugAvailability({ open, slugValue })
-  const { syncProgress } = useOnboardingProgress({ open, formRef, intentFocus, formationStatus, slugStatus })
-  const stepProgress = React.useMemo(() => Math.round(((step + 1) / Math.max(steps.length, 1)) * 100), [step, steps.length])
+  const { syncProgress } = useOnboardingProgress({
+    open,
+    formRef,
+    intentFocus,
+    formationStatus,
+    slugStatus,
+  })
   const saveDraft = (extra?: SaveOnboardingDraftExtra) =>
     writeOnboardingDraftSnapshot({
       formRef,
@@ -273,6 +287,8 @@ export function OnboardingFlow({
     intentFocus,
     slugStatus,
     slugHint,
+    personHandleStatus,
+    personHandleHint,
     builderPlanTier,
     syncOrganizationStateFromForm,
     syncAccountStateFromForm,
@@ -344,8 +360,11 @@ export function OnboardingFlow({
       initialOrgSlug={initialOrgSlug}
       slugStatus={slugStatus}
       slugHint={slugHint}
+      personHandleStatus={personHandleStatus}
+      personHandleHint={personHandleHint}
       initialFirstName={initialFirstName}
       initialLastName={initialLastName}
+      initialPersonHandle={initialPersonHandle}
       initialPhone={initialPhone}
       initialPublicEmail={initialPublicEmail}
       initialTitle={initialTitle}

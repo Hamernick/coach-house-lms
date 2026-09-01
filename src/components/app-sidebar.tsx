@@ -247,7 +247,7 @@ function FreeAccountUpgradeCta() {
     <div className="group-data-[collapsible=icon]:hidden">
       <Button asChild size="sm" className="w-full justify-between px-3">
         <Link
-          href="/find?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2Ffind&paywall_preview=1"
+          href="/?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2F&paywall_preview=1"
           prefetch={false}
         >
           <span className="truncate">Upgrade account</span>

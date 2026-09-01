@@ -70,7 +70,7 @@ function revalidatePublicOrganizationProfile(sectionId: string | null) {
     return
   }
   revalidateTag("public-map-organizations", "max")
-  revalidatePath("/find")
+  revalidatePath("/")
 }
 
 export async function saveRoadmapSectionAction({

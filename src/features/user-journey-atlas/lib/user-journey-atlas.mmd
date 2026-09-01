@@ -3,10 +3,10 @@
 %% Title<br/>route: ROUTE_OR_SURFACE<br/>file: RELATIVE_FILE_PATH<br/>desc: SHORT_DESCRIPTION
 flowchart LR
   subgraph public["Public entry files"]
-    public_home["Public home<br/>route: /<br/>file: src/app/(public)/page.tsx<br/>desc: Resolves auth callbacks and mounts the home canvas."]
-    pricing_data["Pricing tiers<br/>route: /?section=pricing<br/>file: src/components/public/pricing-surface-data.ts<br/>desc: Defines Individual, Organization, and Operations Support CTA hrefs."]
-    home_canvas["Home canvas shell<br/>route: /?section=signup<br/>file: src/components/public/home-canvas-preview.tsx<br/>desc: Hosts the public panels and same-page navigation state."]
-    home_signup_panel["Embedded signup panel<br/>route: /?section=signup&intent=build&plan={PLAN}<br/>file: src/components/public/home-canvas-preview-panels.tsx<br/>desc: Locks paid pricing selections to the Build account path."]
+    public_home["Public Find entry<br/>route: /<br/>file: src/app/(public)/page.tsx<br/>desc: Composes the canonical public Find route."]
+    pricing_data["Pricing tiers<br/>route: /home-canvas?section=pricing<br/>file: src/components/public/pricing-surface-data.ts<br/>desc: Defines Individual, Organization, and Operations Support CTA hrefs."]
+    home_canvas["Home canvas shell<br/>route: /home-canvas?section=signup<br/>file: src/components/public/home-canvas-preview.tsx<br/>desc: Hosts the public panels and same-page navigation state."]
+    home_signup_panel["Embedded signup panel<br/>route: /home-canvas?section=signup&intent=build&plan={PLAN}<br/>file: src/components/public/home-canvas-preview-panels.tsx<br/>desc: Locks paid pricing selections to the Build account path."]
     section_link_controller["Canvas section link controller<br/>route: same-page section links<br/>file: src/components/public/home-canvas-section-link-controller.ts<br/>desc: Converts pricing CTA clicks into immediate canvas state updates."]
   end
 
@@ -65,15 +65,15 @@ flowchart LR
   end
 
   subgraph find["Find and free member files"]
-    find_route["Find route<br/>route: /find<br/>file: src/app/(public)/find/page.tsx<br/>desc: Authenticated-safe public directory route for free and paid users."]
-    public_map["Public map index<br/>route: /find<br/>file: src/components/public/public-map-index.tsx<br/>desc: Renders the map, list, saved organizations, and member rail."]
-    member_onboarding["Member onboarding overlay<br/>route: /find?member_onboarding=1<br/>file: src/components/public/public-map-index/member-onboarding-overlay.tsx<br/>desc: First-run path for free users who chose Find, Fund, or Support."]
+    find_route["Find route composition<br/>route: /<br/>file: src/features/find-map/components/public-find-route.tsx<br/>desc: Authenticated-safe public directory composition for free and paid users."]
+    public_map["Public map index<br/>route: /<br/>file: src/components/public/public-map-index.tsx<br/>desc: Renders the map, list, saved organizations, and member rail."]
+    member_onboarding["Member onboarding overlay<br/>route: /?member_onboarding=1<br/>file: src/components/public/public-map-index/member-onboarding-overlay.tsx<br/>desc: First-run path for free users who chose Find, Fund, or Support."]
   end
 
   subgraph upgrade["Upgrade and paywall files"]
     app_sidebar["App sidebar<br/>route: sidebar upgrade CTA<br/>file: src/components/app-sidebar.tsx<br/>desc: Shows the authenticated upgrade CTA in the shell."]
-    paywall_config["Paywall config<br/>route: /find?paywall=organization<br/>file: src/components/paywall/paywall-overlay/config.ts<br/>desc: Builds Organization and Operations Support upgrade checkout hrefs."]
-    paywall_overlay["Paywall overlay<br/>route: /find?paywall=organization&source=sidebar_upgrade<br/>file: src/components/paywall/paywall-overlay.tsx<br/>desc: Displays the upgrade dialog before Stripe checkout."]
+    paywall_config["Paywall config<br/>route: /?paywall=organization<br/>file: src/components/paywall/paywall-overlay/config.ts<br/>desc: Builds Organization and Operations Support upgrade checkout hrefs."]
+    paywall_overlay["Paywall overlay<br/>route: /?paywall=organization&source=sidebar_upgrade<br/>file: src/components/paywall/paywall-overlay.tsx<br/>desc: Displays the upgrade dialog before Stripe checkout."]
   end
 
   subgraph invites["Invite and access files"]
@@ -99,7 +99,7 @@ flowchart LR
     atlas_panel["Canvas atlas panel<br/>route: user journey prototype<br/>file: src/features/user-journey-atlas/components/user-journey-atlas-panel.tsx<br/>desc: Parses and displays Mermaid nodes as workspace-canvas-style tiles."]
   end
 
-  public_home -->|renders| home_canvas
+  public_home -->|composes| find_route
   pricing_data -->|CTA hrefs| home_signup_panel
   home_canvas -->|panel content| home_signup_panel
   home_signup_panel -->|same-page click| section_link_controller

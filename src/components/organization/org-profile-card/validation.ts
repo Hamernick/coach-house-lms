@@ -56,6 +56,7 @@ export const organizationProfileSchema = z.object({
   brandMarkUrl: urlInput.or(z.literal("")),
   headerUrl: urlInput.or(z.literal("")),
   publicUrl: urlInput.or(z.literal("")),
+  donateUrl: urlInput.or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
   facebook: z.string().max(200).optional().or(z.literal("")),
   linkedin: z.string().max(200).optional().or(z.literal("")),

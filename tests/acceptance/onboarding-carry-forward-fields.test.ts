@@ -15,6 +15,7 @@ describe("onboarding carry-forward field map", () => {
       accountValues: {
         firstName: "Caleb",
         lastName: "Hamernick",
+        personHandle: "caleb",
         phone: "773-333-3333",
         publicEmail: "contact@daerdy.com",
         title: "Founder",
@@ -32,6 +33,7 @@ describe("onboarding carry-forward field map", () => {
       orgSlug: "bright-futures-collective",
       firstName: "Caleb",
       lastName: "Hamernick",
+      personHandle: "caleb",
       phone: "773-333-3333",
       publicEmail: "contact@daerdy.com",
       title: "Founder",

@@ -78,7 +78,7 @@ export function CanvasAuthPanel({
     planTier: signupPlanTier,
     source: "home_signup",
   })
-  const builderLoginHref = "/?section=login"
+  const builderLoginHref = "/home-canvas?section=login"
   const shouldLockBuilderIntent = signupPlanTier !== null
   const defaultIntentFocus = signupIntentFocus ?? "build"
 
@@ -89,7 +89,7 @@ export function CanvasAuthPanel({
           <LoginPanel
             redirectTo={loginRedirectTo ?? DEFAULT_POST_AUTH_REDIRECT}
             className="max-w-none space-y-5"
-            signUpHref="/?section=signup"
+            signUpHref="/home-canvas?section=signup"
           />
         ) : (
           <>

@@ -8,9 +8,9 @@ function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
-describe("public home canvas", () => {
-  it("keeps the established shell as the home route owner", () => {
-    const routeSource = readSource("src/app/(public)/page.tsx")
+describe("public marketing canvas", () => {
+  it("keeps the established shell at the home-canvas route", () => {
+    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
 
     expect(routeSource).toContain("<HomeCanvasPreview")
     expect(routeSource).toContain("<PricingSurface embedded />")
@@ -42,8 +42,8 @@ describe("public home canvas", () => {
     )
     expect(source).not.toContain("HomeFundingPreview")
     expect(source).toContain("data-public-home-build-pricing")
-    expect(source).toContain('action="/find"')
-    expect(source).toContain('href="/?section=platform"')
+    expect(source).toContain('action="/"')
+    expect(source).toContain('href="/home-canvas?section=platform"')
   })
 
   it("keeps Find, Build, and Fund centered over the rounded canvas", () => {
@@ -60,7 +60,7 @@ describe("public home canvas", () => {
       "src/components/public/home-canvas-preview-shell.tsx"
     )
 
-    expect(source).toContain('href="/find"')
+    expect(source).toContain('href="/"')
     expect(source).toContain(
       'aria-current={activeSection === "hero" ? "true" : undefined}'
     )
@@ -162,7 +162,7 @@ describe("public home canvas", () => {
   })
 
   it("builds the home globe from a capped published marker preview", () => {
-    const routeSource = readSource("src/app/(public)/page.tsx")
+    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
     const previewComponentSource = readSource(
       "src/components/public/home-find-map-mini.tsx"
     )
@@ -192,12 +192,14 @@ describe("public home canvas", () => {
       "src/components/public/home-canvas-product-panels.tsx"
     )
 
-    expect(source).toContain('openFlowHref="/?section=signup&intent=fund"')
+    expect(source).toContain(
+      'openFlowHref="/home-canvas?section=signup&intent=fund"'
+    )
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {
     const tokenSource = readSource("src/lib/mapbox/token.ts")
-    const routeSource = readSource("src/app/(public)/page.tsx")
+    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
 
     expect(tokenSource).toContain("getPublicMapboxToken")
     expect(tokenSource).toContain('startsWith("pk.")')

@@ -2,13 +2,14 @@ import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
 export type IntentFocus = "build" | "find" | "fund" | "support"
-export type RoleInterest =
-  | "staff"
-  | "operator"
-  | "volunteer"
-  | "board_member"
+export type RoleInterest = "staff" | "operator" | "volunteer" | "board_member"
 
-export type OnboardingStepId = "intent" | "pricing" | "org" | "account" | "community"
+export type OnboardingStepId =
+  | "intent"
+  | "pricing"
+  | "org"
+  | "account"
+  | "community"
 export type OnboardingSlugStatus =
   | "idle"
   | "checking"
@@ -48,6 +49,7 @@ export type OnboardingFlowDefaults = {
   defaultRoleInterest?: RoleInterest | null
   defaultFirstName?: string | null
   defaultLastName?: string | null
+  defaultPersonHandle?: string | null
   defaultPhone?: string | null
   defaultPublicEmail?: string | null
   defaultTitle?: string | null

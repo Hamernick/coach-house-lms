@@ -238,7 +238,7 @@ describe("organization profile persistence validation", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/workspace")
     expect(revalidatePathMock).toHaveBeenCalledWith("/my-organization")
     expect(revalidatePathMock).toHaveBeenCalledWith("/organization")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/find")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/")
   })
 
   it("preserves Brand Kit and unknown fields during an MVV save", async () => {

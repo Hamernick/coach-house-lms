@@ -10,7 +10,11 @@ import { publicSharingEnabled } from "@/lib/feature-flags"
 
 export const revalidate = 300
 
-export default async function PublicRoadmapPage({ params }: { params: Promise<{ org: string }> }) {
+export default async function PublicRoadmapPage({
+  params,
+}: {
+  params: Promise<{ org: string }>
+}) {
   const { org } = await params
   const slug = String(org)
   if (!publicSharingEnabled) return notFound()
@@ -45,19 +49,32 @@ export default async function PublicRoadmapPage({ params }: { params: Promise<{ 
     return hasUserTitle || hasUserSubtitle
   })
 
-  const orgName = typeof profile["name"] === "string" && profile["name"].trim().length > 0 ? (profile["name"] as string) : "Coach House organization"
+  const orgName =
+    typeof profile["name"] === "string" && profile["name"].trim().length > 0
+      ? (profile["name"] as string)
+      : "Coach House organization"
   const subtitle =
-    typeof profile["tagline"] === "string" && profile["tagline"].trim().length > 0
+    typeof profile["tagline"] === "string" &&
+    profile["tagline"].trim().length > 0
       ? (profile["tagline"] as string)
       : "Strategic Roadmap"
-  const logoUrl = typeof profile["logoUrl"] === "string" ? (profile["logoUrl"] as string).trim() : ""
+  const logoUrl =
+    typeof profile["logoUrl"] === "string"
+      ? (profile["logoUrl"] as string).trim()
+      : ""
 
   const shareUrl = `/${slug}/roadmap`
   const slideSections = sections.map((section) => ({
     id: section.id,
     slug: section.slug,
-    eyebrow: ROADMAP_SECTION_IDS.includes(section.id) ? section.templateTitle : null,
-    title: section.titleIsTemplate || section.title.trim() === section.templateTitle.trim() ? "" : section.title,
+    eyebrow: ROADMAP_SECTION_IDS.includes(section.id)
+      ? section.templateTitle
+      : null,
+    title:
+      section.titleIsTemplate ||
+      section.title.trim() === section.templateTitle.trim()
+        ? ""
+        : section.title,
     subtitle:
       section.subtitleIsTemplate ||
       (section.subtitle ?? "").trim() === section.templateSubtitle.trim()
@@ -72,19 +89,22 @@ export default async function PublicRoadmapPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen">
       <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-border/70 bg-card/75 px-3 py-2 text-xs text-muted-foreground sm:text-sm">
-          Public roadmap pages are now linked from the map index.
-          {" "}
-          <Link href="/find" className="font-medium text-primary underline underline-offset-4">
-            Open /find
+        <div className="border-border/70 bg-card/75 text-muted-foreground rounded-xl border px-3 py-2 text-xs sm:text-sm">
+          Public roadmap pages are now linked from the map index.{" "}
+          <Link
+            href="/"
+            className="text-primary font-medium underline underline-offset-4"
+          >
+            Open Find
           </Link>
         </div>
       </div>
       {slideSections.length === 0 ? (
         <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center px-6 py-12">
           <p className="text-lg font-semibold">Roadmap coming soon</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This organization has enabled their roadmap, but hasn&apos;t published any sections yet. Check back for updates.
+          <p className="text-muted-foreground mt-2 text-sm">
+            This organization has enabled their roadmap, but hasn&apos;t
+            published any sections yet. Check back for updates.
           </p>
         </div>
       ) : (
@@ -99,7 +119,10 @@ export default async function PublicRoadmapPage({ params }: { params: Promise<{ 
           />
           <RoadmapAnalyticsTracker
             orgSlug={slug}
-            sections={sections.map((section) => ({ slug: section.slug, id: section.id }))}
+            sections={sections.map((section) => ({
+              slug: section.slug,
+              id: section.id,
+            }))}
           />
         </>
       )}

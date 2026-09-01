@@ -7,7 +7,7 @@ import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { FIND_PATH } from "@/lib/find/routes"
-import { resolveDashboardLayoutState } from "../_lib/dashboard-layout-state"
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
 import { completeOnboardingAction } from "./actions"
 
 export const dynamic = "force-dynamic"

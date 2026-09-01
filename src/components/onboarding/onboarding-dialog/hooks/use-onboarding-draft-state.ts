@@ -1,11 +1,22 @@
-import { useCallback, useEffect, type Dispatch, type RefObject, type SetStateAction } from "react"
+import {
+  useCallback,
+  useEffect,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from "react"
 
 import {
   applyDraftFlagsToForm,
   applyDraftValuesToForm,
   readOnboardingDraft,
 } from "@/components/onboarding/onboarding-dialog/draft"
-import { isFormationStatus, isIntentFocus, isRoleInterest, slugify } from "@/components/onboarding/onboarding-dialog/helpers"
+import {
+  isFormationStatus,
+  isIntentFocus,
+  isRoleInterest,
+  slugify,
+} from "@/components/onboarding/onboarding-dialog/helpers"
 import { resolveOnboardingSteps } from "@/components/onboarding/onboarding-dialog/constants"
 import {
   isOnboardingAccountStepReady,
@@ -66,7 +77,7 @@ export function useOnboardingDraftState({
       const allowedStepIds = new Set(visibleStepIds)
       return steps.filter((candidate) => allowedStepIds.has(candidate.id))
     },
-    [visibleStepIds],
+    [visibleStepIds]
   )
 
   const applyDraftAccountState = useCallback(
@@ -81,12 +92,21 @@ export function useOnboardingDraftState({
 
       const firstName = resolveDraftFieldValue("firstName", values?.firstName)
       const lastName = resolveDraftFieldValue("lastName", values?.lastName)
+      const personHandle = resolveDraftFieldValue(
+        "personHandle",
+        values?.personHandle
+      )
       const phone = resolveDraftFieldValue("phone", values?.phone)
-      const publicEmail = resolveDraftFieldValue("publicEmail", values?.publicEmail)
+      const publicEmail = resolveDraftFieldValue(
+        "publicEmail",
+        values?.publicEmail
+      )
       const title = resolveDraftFieldValue("title", values?.title)
       const linkedin = resolveDraftFieldValue("linkedin", values?.linkedin)
       const optInUpdates =
-        typeof flags?.optInUpdates === "boolean" ? flags.optInUpdates : undefined
+        typeof flags?.optInUpdates === "boolean"
+          ? flags.optInUpdates
+          : undefined
       const newsletterOptIn =
         typeof flags?.newsletterOptIn === "boolean"
           ? flags.newsletterOptIn
@@ -96,6 +116,7 @@ export function useOnboardingDraftState({
         ...previous,
         firstName,
         lastName,
+        personHandle,
         phone,
         publicEmail,
         title,
@@ -107,10 +128,11 @@ export function useOnboardingDraftState({
         isOnboardingAccountStepReady({
           firstName,
           lastName,
-        }),
+          personHandle,
+        })
       )
     },
-    [resolveDraftFieldValue, setAccountStepReady, setAccountValues],
+    [resolveDraftFieldValue, setAccountStepReady, setAccountValues]
   )
 
   const rehydrateVisibleDraftFields = useCallback(() => {
@@ -122,12 +144,17 @@ export function useOnboardingDraftState({
     const form = formRef.current
     applyDraftValuesToForm(form, draft.values, resolveDraftFieldValue)
 
-    const draftOrgName = resolveDraftFieldValue("orgName", draft.values?.orgName)
+    const draftOrgName = resolveDraftFieldValue(
+      "orgName",
+      draft.values?.orgName
+    )
     if (draftOrgName) {
       setOrgNameValue(draftOrgName)
     }
 
-    const draftOrgSlug = slugify(resolveDraftFieldValue("orgSlug", draft.values?.orgSlug))
+    const draftOrgSlug = slugify(
+      resolveDraftFieldValue("orgSlug", draft.values?.orgSlug)
+    )
     if (draftOrgSlug) {
       setSlugValue(draftOrgSlug)
       setOrgSlugInputValue(draftOrgSlug)
@@ -140,7 +167,10 @@ export function useOnboardingDraftState({
       setIntentFocus(draftIntentFocus)
     }
 
-    const draftRoleInterest = resolveDraftFieldValue("roleInterest", draft.values?.roleInterest)
+    const draftRoleInterest = resolveDraftFieldValue(
+      "roleInterest",
+      draft.values?.roleInterest
+    )
     if (isRoleInterest(draftRoleInterest)) {
       setRoleInterest(draftRoleInterest)
     }
@@ -178,7 +208,7 @@ export function useOnboardingDraftState({
       setStep(
         visibleStepIndex >= 0
           ? visibleStepIndex
-          : Math.max(0, Math.min(visibleSteps.length - 1, draft.step)),
+          : Math.max(0, Math.min(visibleSteps.length - 1, draft.step))
       )
     }
     if (isFormationStatus(draft.formationStatus)) {
@@ -225,7 +255,10 @@ export function useOnboardingDraftState({
       }
     }
 
-    const roleFromValues = resolveDraftFieldValue("roleInterest", draft.values?.roleInterest)
+    const roleFromValues = resolveDraftFieldValue(
+      "roleInterest",
+      draft.values?.roleInterest
+    )
     if (isRoleInterest(roleFromValues)) {
       setRoleInterest(roleFromValues)
     }

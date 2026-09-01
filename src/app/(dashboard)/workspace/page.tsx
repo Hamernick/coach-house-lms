@@ -5,7 +5,7 @@ import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-conte
 import { measureServerStep } from "@/lib/performance/server-timing"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
-import { resolveDashboardLayoutState } from "../_lib/dashboard-layout-state"
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
 import MyOrganizationPageContent from "../my-organization/_lib/my-organization-page-content"
 import type { MyOrganizationSearchParams } from "../my-organization/_lib/types"
 

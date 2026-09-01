@@ -241,7 +241,7 @@ export function buildPlatformOrganizationMapItem(
     verificationStatus: "verified_platform",
     sourceLabel: "Coach House organization profile",
     sourceUrl: organization.publicSlug
-      ? `/find/${encodeURIComponent(organization.publicSlug)}`
+      ? `/${encodeURIComponent(organization.publicSlug)}`
       : null,
     lastVerifiedAt: null,
     visibility: "published",

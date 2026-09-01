@@ -306,7 +306,7 @@ describe("Core Documents publication", () => {
       "status={controlsPublicProfile ? activeSection.status : status}"
     )
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
-    expect(action).toContain('revalidatePath("/find")')
+    expect(action).toContain('revalidatePath("/")')
     expect(publicMapQuery).toContain(
       "resolvePublicOrganizationProfileNarratives(profile)"
     )

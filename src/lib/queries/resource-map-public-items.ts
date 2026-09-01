@@ -359,6 +359,72 @@ export async function fetchPublicResourceMapItemById(
   return item && shouldShowPublicMapResourceItem(item) ? item : null
 }
 
+export async function fetchPublicResourceMapItemsByIds(
+  ids: string[],
+  options: FetchPublicResourceMapItemsOptions = {}
+): Promise<ExternalResourceMapItem[]> {
+  const normalizedIds = Array.from(
+    new Set(ids.map((id) => id.trim()).filter(Boolean))
+  ).slice(0, 120)
+  if (normalizedIds.length === 0) return []
+
+  const localPreviewFile = normalizeLocalPreviewFile(
+    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+  )
+  const localEnginePreviewFile = normalizeLocalPreviewFile(
+    options.localEnginePreviewFile
+  )
+  if (
+    localPreviewFile ||
+    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+  ) {
+    const requestedIds = new Set(normalizedIds)
+    return (await fetchPublicResourceMapItems(options)).filter((item) =>
+      requestedIds.has(item.id)
+    )
+  }
+
+  const enabled = options.enabled ?? isResourceMapPublicDbEnabled()
+  if (!enabled) return []
+  const itemIds = normalizedIds.flatMap((id) => {
+    if (!id.startsWith("resource_map:")) return []
+    const itemId = id.slice("resource_map:".length)
+    return RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN.test(itemId) ? [itemId] : []
+  })
+  if (itemIds.length === 0) return []
+
+  const supabase = createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } }
+  )
+  const { data, error } = await supabase
+    .from("resource_map_public_items")
+    .select("*")
+    .in("item_id", itemIds)
+    .returns<ResourceMapPublicItemsView["Row"][]>()
+  if (error) {
+    console.warn("[resource-map] public item batch lookup unavailable", {
+      code: error.code,
+      message: error.message,
+    })
+    return []
+  }
+
+  const itemById = new Map(
+    (data ?? []).flatMap((row) => {
+      const item = buildExternalResourceMapItemFromPublicRow(row)
+      return item && shouldShowPublicMapResourceItem(item)
+        ? ([[item.id, item]] as const)
+        : []
+    })
+  )
+  return normalizedIds.flatMap((id) => {
+    const item = itemById.get(id)
+    return item ? [item] : []
+  })
+}
+
 export async function fetchPublicResourceMapItemsPageById({
   cursor,
   limit,

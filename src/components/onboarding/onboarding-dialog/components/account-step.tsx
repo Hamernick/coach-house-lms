@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  normalizePublicHandle,
+  type PublicHandleAvailabilityStatus,
+} from "@/features/public-profiles/client"
 
 type AccountStepProps = {
   step: number
@@ -19,6 +23,9 @@ type AccountStepProps = {
   submitting: boolean
   initialFirstName: string
   initialLastName: string
+  initialPersonHandle: string
+  personHandleStatus: PublicHandleAvailabilityStatus
+  personHandleHint: string | null
   initialPhone: string
   initialPublicEmail: string
   initialTitle: string
@@ -37,6 +44,9 @@ export function AccountStep({
   submitting,
   initialFirstName,
   initialLastName,
+  initialPersonHandle,
+  personHandleStatus,
+  personHandleHint,
   initialPhone,
   initialPublicEmail,
   initialTitle,
@@ -48,10 +58,23 @@ export function AccountStep({
   const avatarHintId = "onboarding-avatar-hint"
   const firstNameErrorId = "onboarding-first-name-error"
   const lastNameErrorId = "onboarding-last-name-error"
+  const personHandleErrorId = "onboarding-person-handle-error"
+  const personHandleHintId = "onboarding-person-handle-hint"
+  const personHandleStatusId = "onboarding-person-handle-status"
   const phoneHintId = "onboarding-phone-hint"
   const publicEmailHintId = "onboarding-public-email-hint"
   const showFirstNameError = attemptedStep === step && Boolean(errors.firstName)
   const showLastNameError = attemptedStep === step && Boolean(errors.lastName)
+  const showPersonHandleError =
+    attemptedStep === step && Boolean(errors.personHandle)
+  const personHandleDescription = [
+    showPersonHandleError ? personHandleErrorId : personHandleHintId,
+    personHandleStatus === "available" || personHandleStatus === "checking"
+      ? personHandleStatusId
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
 
   return (
     <div className="space-y-5 py-5" data-onboarding-step-id="account">
@@ -145,6 +168,64 @@ export function AccountStep({
             </p>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="personHandle">Username</Label>
+        <div className="border-border/70 bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5">
+          <span className="text-muted-foreground shrink-0 text-sm">
+            coachhouse.app/
+          </span>
+          <Input
+            id="personHandle"
+            name="personHandle"
+            autoCapitalize="none"
+            autoComplete="username"
+            inputMode="text"
+            spellCheck={false}
+            placeholder="your-name"
+            defaultValue={initialPersonHandle}
+            className="h-9 min-w-[8rem] flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 sm:text-sm"
+            aria-invalid={showPersonHandleError}
+            aria-describedby={personHandleDescription}
+            onChange={(event) => {
+              event.currentTarget.value = normalizePublicHandle(
+                event.currentTarget.value
+              )
+            }}
+          />
+          {personHandleStatus === "available" ? (
+            <span
+              id={personHandleStatusId}
+              className="text-xs font-medium text-emerald-700 dark:text-emerald-300"
+              role="status"
+            >
+              Available
+            </span>
+          ) : personHandleStatus === "checking" ? (
+            <span
+              id={personHandleStatusId}
+              className="text-muted-foreground text-xs"
+              role="status"
+            >
+              Checking…
+            </span>
+          ) : null}
+        </div>
+        {showPersonHandleError ? (
+          <p
+            id={personHandleErrorId}
+            className="text-destructive text-xs"
+            role="alert"
+          >
+            {errors.personHandle}
+          </p>
+        ) : (
+          <p id={personHandleHintId} className="text-muted-foreground text-xs">
+            {personHandleHint ??
+              "Claims your profile URL. Your profile stays private until you publish it."}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-2">

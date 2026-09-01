@@ -182,7 +182,7 @@ describe("resource-map-admin feature contract", () => {
     expect(actions).toContain("reviewResourceMapImportMatchAction")
     expect(actions).toContain("markResourceMapImportPromotedAction")
     expect(actions).toContain("assertResourceMapImportReadyForApproval")
-    expect(actions).toContain('revalidatePath("/find")')
+    expect(actions).toContain('revalidatePath("/")')
     expect(actions).toContain('action: "promote"')
     expect(actions).toContain('"contact_visibility"')
     expect(actions).toContain('"link_visibility"')
@@ -213,8 +213,10 @@ describe("resource-map-admin feature contract", () => {
   })
 
   it("renders profile hide/delete controls only through the super-admin find surface", () => {
-    const findPage = readSource("src/app/(public)/find/page.tsx")
-    const findSlugPage = readSource("src/app/(public)/find/[slug]/page.tsx")
+    const findPage = readSource(
+      "src/features/find-map/components/public-find-route.tsx"
+    )
+    const findSlugPage = findPage
     const publicMapIndex = readSource(
       "src/components/public/public-map-index.tsx"
     )
@@ -602,8 +604,10 @@ describe("resource-map-admin feature contract", () => {
     const loaders = readSource(
       "src/features/resource-map-admin/server/loaders.ts"
     )
-    const findPage = readSource("src/app/(public)/find/page.tsx")
-    const findSlugPage = readSource("src/app/(public)/find/[slug]/page.tsx")
+    const findPage = readSource(
+      "src/features/find-map/components/public-find-route.tsx"
+    )
+    const findSlugPage = findPage
 
     expect(
       existsSync(

@@ -13,17 +13,23 @@ function getFallback(name: string) {
 }
 
 function formatLocation(org: CommunityOrganization) {
-  const parts = [org.city, org.state, org.country].filter((part) => part && part.trim().length > 0)
+  const parts = [org.city, org.state, org.country].filter(
+    (part) => part && part.trim().length > 0
+  )
   return parts.join(", ")
 }
 
-export function CommunityOrganizationList({ organizations }: { organizations: CommunityOrganization[] }) {
+export function CommunityOrganizationList({
+  organizations,
+}: {
+  organizations: CommunityOrganization[]
+}) {
   if (!organizations.length) {
     return (
       <Empty
         title="No public organizations yet"
         description="Once nonprofits publish their profiles you'll see them featured here."
-        className="border bg-card/60"
+        className="bg-card/60 border"
       />
     )
   }
@@ -31,25 +37,34 @@ export function CommunityOrganizationList({ organizations }: { organizations: Co
   return (
     <div className="grid gap-4">
       {organizations.map((org, index) => (
-        <div key={org.id} className="rounded-2xl border bg-card/70 p-4">
+        <div key={org.id} className="bg-card/70 rounded-2xl border p-4">
           <div className="flex items-center gap-4">
-            <Avatar className="size-12 border border-border/60">
+            <Avatar className="border-border/60 size-12 border">
               <AvatarImage src={org.logoUrl ?? undefined} alt={org.name} />
               <AvatarFallback>{getFallback(org.name)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">{org.name}</h3>
+                <h3 className="text-foreground text-base font-semibold tracking-tight sm:text-lg">
+                  {org.name}
+                </h3>
                 {org.publicSlug ? (
-                  <Link href={`/find/${encodeURIComponent(org.publicSlug)}`} className="text-xs font-medium text-primary underline underline-offset-4">
+                  <Link
+                    href={`/${encodeURIComponent(org.publicSlug)}`}
+                    className="text-primary text-xs font-medium underline underline-offset-4"
+                  >
                     View profile
                   </Link>
                 ) : null}
               </div>
               {org.tagline ? (
-                <p className="truncate text-sm text-muted-foreground">{org.tagline}</p>
+                <p className="text-muted-foreground truncate text-sm">
+                  {org.tagline}
+                </p>
               ) : null}
-              <p className="text-xs text-muted-foreground/80">{formatLocation(org) || "Location coming soon"}</p>
+              <p className="text-muted-foreground/80 text-xs">
+                {formatLocation(org) || "Location coming soon"}
+              </p>
             </div>
             <div className="flex gap-2">
               {org.website ? (
@@ -57,7 +72,7 @@ export function CommunityOrganizationList({ organizations }: { organizations: Co
                   href={org.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/50 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="border-border/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors"
                 >
                   <span className="text-xs font-semibold">WWW</span>
                   <span className="sr-only">Website</span>
@@ -66,7 +81,7 @@ export function CommunityOrganizationList({ organizations }: { organizations: Co
               {org.email ? (
                 <a
                   href={`mailto:${org.email}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/50 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="border-border/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors"
                 >
                   <span className="text-xs font-semibold">@</span>
                   <span className="sr-only">Email</span>
@@ -74,7 +89,9 @@ export function CommunityOrganizationList({ organizations }: { organizations: Co
               ) : null}
             </div>
           </div>
-          {index !== organizations.length - 1 ? <Separator className="mt-4" /> : null}
+          {index !== organizations.length - 1 ? (
+            <Separator className="mt-4" />
+          ) : null}
         </div>
       ))}
     </div>

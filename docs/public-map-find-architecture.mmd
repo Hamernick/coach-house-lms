@@ -1,10 +1,17 @@
 flowchart TD
-  %% /find public map architecture, generated 2026-04-26.
+  %% Canonical root Find architecture, updated 2026-09-01.
 
   subgraph Routes["Next.js App Router"]
-    FindPage["src/app/(public)/find/page.tsx<br/>PublicFindPage"]
-    FindSlugPage["src/app/(public)/find/[slug]/page.tsx<br/>PublicFindOrganizationPage"]
-    FindLoading["src/app/(public)/find/loading.tsx<br/>route skeleton"]
+    RootFindPage["src/app/(public)/page.tsx<br/>canonical / Find route"]
+    RootLoading["PublicFindRouteLoading<br/>Suspense fallback"]
+    LegacyFindPage["src/app/(public)/find/page.tsx<br/>308 compatibility redirect"]
+    LegacyFindSlug["src/app/(public)/find/[slug]/page.tsx<br/>308 to /?organization=slug"]
+    HandlePage["src/app/[org]/page.tsx<br/>public person or organization profile"]
+  end
+
+  subgraph FindComposition["src/features/find-map"]
+    PublicFindRoute["PublicFindRoute<br/>server composition"]
+    AuthenticatedFindShell["AuthenticatedFindShell<br/>signed-in app shell"]
   end
 
   subgraph ServerData["Server Data"]
@@ -15,8 +22,7 @@ flowchart TD
   end
 
   subgraph PublicShell["Public Page Shell"]
-    HomeCanvasPreview["src/components/public/home-canvas-preview.tsx<br/>public shell + section routing"]
-    PricingSurface["src/components/public/pricing-surface<br/>embedded pricing panel"]
+    HomeCanvasFindShell["src/components/public/home-canvas-find-shell.tsx<br/>signed-out Find shell"]
     MemberOnboarding["src/components/public/public-map-index/member-onboarding-overlay.tsx<br/>optional onboarding overlay"]
   end
 
@@ -96,21 +102,22 @@ flowchart TD
     LegacyRuntimeSupport["public-map-cluster-runtime-support.ts<br/>deleted"]
   end
 
-  FindPage --> PublicMapQuery
-  FindSlugPage --> PublicMapQuery
-  FindPage --> ViewerState
-  FindSlugPage --> ViewerState
+  RootFindPage --> RootLoading
+  RootFindPage --> PublicFindRoute
+  LegacyFindPage -.308.-> RootFindPage
+  LegacyFindSlug -.308 with organization query.-> RootFindPage
+  HandlePage -.reserved handles excluded.-> RootFindPage
+  PublicFindRoute --> PublicMapQuery
+  PublicFindRoute --> ViewerState
   PublicMapQuery --> Supabase
   ViewerState --> Supabase
-  FindPage --> MapboxToken
-  FindSlugPage --> MapboxToken
+  PublicFindRoute --> MapboxToken
 
-  FindPage --> HomeCanvasPreview
-  FindSlugPage --> HomeCanvasPreview
-  FindLoading --> HomeCanvasPreview
-  HomeCanvasPreview --> PricingSurface
-  HomeCanvasPreview --> PublicMapIndex
-  HomeCanvasPreview --> MemberOnboarding
+  PublicFindRoute --> HomeCanvasFindShell
+  PublicFindRoute --> AuthenticatedFindShell
+  HomeCanvasFindShell --> PublicMapIndex
+  AuthenticatedFindShell --> PublicMapIndex
+  AuthenticatedFindShell --> MemberOnboarding
 
   PublicMapIndex --> StatePrefs
   PublicMapIndex --> DerivedData
@@ -176,7 +183,8 @@ flowchart TD
   ClusterWorker --> Comlink
   MarkerImages --> MarkerStyle
 
-  FindMapTest --> FindPage
+  FindMapTest --> RootFindPage
+  FindMapTest --> PublicFindRoute
   WebglDataTest --> GeoJson
   WebglDataTest --> ClusterClient
   WebglDataTest --> Bounds

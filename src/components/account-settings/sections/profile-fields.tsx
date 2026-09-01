@@ -1,6 +1,18 @@
-import { Field, FieldControl, FieldDescription, FieldGroup, FieldLabel, FieldMessage } from "@/components/ui/field"
+import {
+  Field,
+  FieldControl,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldMessage,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  PublicProfileAffiliationSettings,
+  PublicProfileIdentitySettings,
+  PublicProfileSavedCollectionSettings,
+} from "@/features/public-profiles/client"
 import type { AccountSettingsErrorKey } from "../types"
 import { ProfileAvatarField } from "./profile-avatar-field"
 
@@ -64,17 +76,23 @@ export function ProfileFields({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor={`${idPrefix}-first-name`}>First name</FieldLabel>
+            <FieldLabel htmlFor={`${idPrefix}-first-name`}>
+              First name
+            </FieldLabel>
             <FieldControl className="col-span-1">
               <Input
                 id={`${idPrefix}-first-name`}
                 placeholder="First name"
                 value={firstName}
                 aria-invalid={Boolean(errors.firstName)}
-                onChange={(event) => onFirstNameChange(event.currentTarget.value)}
+                onChange={(event) =>
+                  onFirstNameChange(event.currentTarget.value)
+                }
               />
             </FieldControl>
-            {errors.firstName ? <FieldMessage>{errors.firstName}</FieldMessage> : null}
+            {errors.firstName ? (
+              <FieldMessage>{errors.firstName}</FieldMessage>
+            ) : null}
           </Field>
 
           <Field>
@@ -85,10 +103,14 @@ export function ProfileFields({
                 placeholder="Last name"
                 value={lastName}
                 aria-invalid={Boolean(errors.lastName)}
-                onChange={(event) => onLastNameChange(event.currentTarget.value)}
+                onChange={(event) =>
+                  onLastNameChange(event.currentTarget.value)
+                }
               />
             </FieldControl>
-            {errors.lastName ? <FieldMessage>{errors.lastName}</FieldMessage> : null}
+            {errors.lastName ? (
+              <FieldMessage>{errors.lastName}</FieldMessage>
+            ) : null}
           </Field>
         </div>
 
@@ -151,7 +173,9 @@ export function ProfileFields({
               onChange={(event) => onContactChange(event.currentTarget.value)}
             />
           </FieldControl>
-          <FieldDescription>Optional contact details you want visible in internal member views.</FieldDescription>
+          <FieldDescription>
+            Optional contact details you want visible in internal member views.
+          </FieldDescription>
         </Field>
 
         <Field>
@@ -165,8 +189,23 @@ export function ProfileFields({
               onChange={(event) => onAboutChange(event.currentTarget.value)}
             />
           </FieldControl>
-          <FieldDescription>Optional short bio for your internal member profile.</FieldDescription>
+          <FieldDescription>
+            Optional short bio for your internal member profile.
+          </FieldDescription>
         </Field>
+
+        <PublicProfileIdentitySettings
+          avatarUrl={avatarUrl}
+          displayName={[firstName, lastName].filter(Boolean).join(" ")}
+          headline={title}
+          idPrefix={`${idPrefix}-public-profile`}
+        />
+
+        <PublicProfileAffiliationSettings
+          idPrefix={`${idPrefix}-public-affiliations`}
+        />
+
+        <PublicProfileSavedCollectionSettings />
       </FieldGroup>
     </div>
   )

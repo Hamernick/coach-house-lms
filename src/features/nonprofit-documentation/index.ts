@@ -2,6 +2,7 @@ export {
   DocumentationHome,
   DocumentationRail,
   DocumentationShell,
+  BrandIdentityTool,
   FoundationGuidePage,
   MissionArticlePage,
 } from "./components"
@@ -12,6 +13,14 @@ export {
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   QUICKSTART_GUIDE,
+  BRAND_IDENTITY_PATH,
+  DEFAULT_BRAND_IDENTITY_DRAFT,
+  buildBrandTokens,
+  contrastRating,
+  contrastRatio,
+  normalizeHex,
+  normalizeProportions,
+  typeScale,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -20,4 +29,8 @@ export type {
   DocumentationStageGuidance,
   FoundationGuide,
   MissionArticle,
+  BrandIdentityColor,
+  BrandIdentityDraft,
+  BrandAssetId,
+  StoredBrandAsset,
 } from "./types"

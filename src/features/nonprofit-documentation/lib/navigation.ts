@@ -75,7 +75,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Brand identity",
         description: "Create a usable nonprofit brand system.",
-        status: "design-pending",
+        href: `${DOCUMENTATION_PATH}/toolbox/brand-identity`,
+        status: "live",
       },
       {
         title: "Social media",

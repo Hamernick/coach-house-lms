@@ -4,14 +4,17 @@ import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 
 import type { BrandIdentityDraft } from "../../types"
-import { BRAND_FONT_OPTIONS, typeScale } from "../../lib/brand-identity"
+import { BRAND_FONT_GROUPS, brandFontStack } from "../../lib/brand-fonts"
+import { typeScale } from "../../lib/brand-identity"
 import { BrandIdentitySection } from "./brand-identity-section"
 
 const TYPE_EXAMPLES = [
@@ -74,10 +77,19 @@ export function TypographySection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BRAND_FONT_OPTIONS.map((font) => (
-                <SelectItem key={font.value} value={font.value}>
-                  {font.label}
-                </SelectItem>
+              {BRAND_FONT_GROUPS.map((group) => (
+                <SelectGroup key={group.label}>
+                  <SelectLabel>{group.label}</SelectLabel>
+                  {group.options.map((font) => (
+                    <SelectItem
+                      key={font.value}
+                      value={font.value}
+                      style={{ fontFamily: font.stack }}
+                    >
+                      {font.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -92,10 +104,19 @@ export function TypographySection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BRAND_FONT_OPTIONS.map((font) => (
-                <SelectItem key={font.value} value={font.value}>
-                  {font.label}
-                </SelectItem>
+              {BRAND_FONT_GROUPS.map((group) => (
+                <SelectGroup key={group.label}>
+                  <SelectLabel>{group.label}</SelectLabel>
+                  {group.options.map((font) => (
+                    <SelectItem
+                      key={font.value}
+                      value={font.value}
+                      style={{ fontFamily: font.stack }}
+                    >
+                      {font.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -106,13 +127,13 @@ export function TypographySection({
         <p className="text-sm font-semibold">Type system</p>
         <p
           className="mt-6 text-3xl leading-tight font-semibold tracking-[-0.04em] sm:text-5xl"
-          style={{ fontFamily: draft.headingFont }}
+          style={{ fontFamily: brandFontStack(draft.headingFont) }}
         >
           {draft.organizationName}: {draft.tagline}
         </p>
         <p
           className="text-muted-foreground mt-5 max-w-2xl text-base leading-7"
-          style={{ fontFamily: draft.bodyFont }}
+          style={{ fontFamily: brandFontStack(draft.bodyFont) }}
         >
           {draft.introduction}
         </p>
@@ -165,7 +186,9 @@ export function TypographySection({
                 <p
                   className="max-w-full leading-tight"
                   style={{
-                    fontFamily: heading ? draft.headingFont : draft.bodyFont,
+                    fontFamily: brandFontStack(
+                      heading ? draft.headingFont : draft.bodyFont
+                    ),
                     fontSize: `${size}px`,
                     fontWeight: heading ? 600 : 400,
                   }}

@@ -87,3 +87,42 @@ export type MissionArticle = {
   measures: string[]
   sources: DocumentationSource[]
 }
+
+export type BrandIdentityColor = {
+  id: "canvas" | "brand" | "utility" | "ink"
+  name: string
+  value: string
+  proportion: number
+}
+
+export type BrandIdentityDraft = {
+  version: 1
+  organizationName: string
+  tagline: string
+  introduction: string
+  purpose: string
+  audience: string
+  logoGuidance: string
+  colors: BrandIdentityColor[]
+  headingFont: string
+  bodyFont: string
+  baseSize: number
+  typeRatio: number
+  campaignHeadline: string
+  campaignBody: string
+  updatedAt: string
+}
+
+export type BrandAssetId =
+  | "primary-logo"
+  | "brand-mark"
+  | "application-image"
+  | `illustration-${1 | 2 | 3 | 4 | 5 | 6}`
+
+export type StoredBrandAsset = {
+  id: BrandAssetId
+  name: string
+  type: string
+  blob: Blob
+  updatedAt: string
+}

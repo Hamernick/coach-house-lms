@@ -9,7 +9,16 @@ import {
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   QUICKSTART_GUIDE,
+  BRAND_IDENTITY_PATH,
+  DEFAULT_BRAND_IDENTITY_DRAFT,
+  buildBrandTokens,
+  contrastRating,
+  contrastRatio,
+  normalizeHex,
+  normalizeProportions,
+  typeScale,
 } from "@/features/nonprofit-documentation"
+import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
 const ROOT = process.cwd()
 
@@ -50,11 +59,73 @@ describe("nonprofit documentation feature", () => {
       "/documentation/key-concepts"
     )
     const brandIdentity = items.find((item) => item.title === "Brand identity")
-    expect(brandIdentity).toMatchObject({ status: "design-pending" })
-    expect(brandIdentity).not.toHaveProperty("href")
+    expect(brandIdentity).toMatchObject({
+      status: "live",
+      href: "/documentation/toolbox/brand-identity",
+    })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
     )
+  })
+
+  it("publishes the public brand identity builder without an auth boundary", () => {
+    const route = readSource(
+      "src/app/(public)/documentation/toolbox/brand-identity/page.tsx"
+    )
+    const tool = readSource(
+      "src/features/nonprofit-documentation/components/brand-identity/brand-identity-tool.tsx"
+    )
+    const hook = readSource(
+      "src/features/nonprofit-documentation/hooks/use-brand-identity-tool.ts"
+    )
+
+    expect(BRAND_IDENTITY_PATH).toBe("/documentation/toolbox/brand-identity")
+    expect(route).toContain("<BrandIdentityTool />")
+    expect(route).toContain(
+      'canonical: "/documentation/toolbox/brand-identity"'
+    )
+    expect(tool).toContain('"@type": "WebApplication"')
+    expect(tool).toContain("No account required")
+    expect(tool).toContain("Private to this browser")
+    expect(tool).toContain("<DocumentationSurface")
+    expect(hook).toContain("window.localStorage")
+    expect(hook).toContain("loadBrandAssets")
+    expect(tool).not.toContain("hasActiveSubscription")
+  })
+
+  it("computes valid accessible brand values and portable tokens", () => {
+    expect(normalizeHex("#abc")).toBe("#AABBCC")
+    expect(contrastRatio("#000000", "#FFFFFF")).toBeCloseTo(21, 5)
+    expect(contrastRating(7)).toBe("AAA")
+    expect(contrastRating(4.5)).toBe("AA")
+    expect(contrastRating(4.49)).toBe("Fail")
+
+    const proportions = normalizeProportions([
+      ...DEFAULT_BRAND_IDENTITY_DRAFT.colors.slice(0, 3),
+      { ...DEFAULT_BRAND_IDENTITY_DRAFT.colors[3], proportion: 30 },
+    ])
+    expect(
+      proportions.reduce((sum, color) => sum + color.proportion, 0)
+    ).toBeCloseTo(100, 2)
+
+    const scale = typeScale(16, 1.25)
+    expect(scale.body).toBe(16)
+    expect(scale.h1).toBeCloseTo(31.25, 2)
+    const tokens = buildBrandTokens(DEFAULT_BRAND_IDENTITY_DRAFT)
+    expect(tokens).toContain("--brand-canvas: #F3F0E8;")
+    expect(tokens).toContain("--brand-type-h1: 31.25px;")
+  })
+
+  it("creates a valid browser ZIP archive for public downloads", () => {
+    const archive = createBrowserZip([
+      { name: "README.txt", data: new TextEncoder().encode("Coach House") },
+      { name: "brand/tokens.css", data: new TextEncoder().encode(":root {}") },
+    ])
+    const view = new DataView(archive.buffer)
+
+    expect(view.getUint32(0, true)).toBe(0x04034b50)
+    expect(view.getUint32(archive.length - 22, true)).toBe(0x06054b50)
+    expect(view.getUint16(archive.length - 12, true)).toBe(2)
   })
 
   it("publishes complete stage-specific foundation guides", () => {

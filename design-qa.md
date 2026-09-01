@@ -1,60 +1,45 @@
-# Workspace Ontology Design QA
+# Brand Identity Builder Design QA
 
-- Source visual truth: `/Users/calebhamernick/Downloads/IMG_2411 2.PNG`
-- Initial implementation evidence: `/Users/calebhamernick/Downloads/Screenshot 2026-07-19 at 11.19.19 AM.png`
-- Previous implementation evidence: `tests/visual/workspace-ontology.visual.spec.ts-snapshots/workspace-ontology-board-dark.png`
-- Current implementation evidence: `tests/visual/workspace-ontology.visual.spec.ts-snapshots/workspace-ontology-board.png`
-- Viewport: 1184 × 672 CSS pixels for the rendered comparison fixture
-- State: dark theme, two expanded managed roots, six generated nodes, one cross-area relationship
+## Comparison target
 
-## Previous full-view comparison
+- Source visual truth: `/Users/calebhamernick/Downloads/IMG_2762.PNG` through `/Users/calebhamernick/Downloads/IMG_2776.PNG`.
+- Implementation capture: `http://localhost:3010/documentation/toolbox/brand-identity` in Chrome, with focused evidence at `#foundation` and `#color-palette`.
+- Full-view comparison: source `IMG_2762.PNG` and the implementation foundation capture were opened together in one comparison input.
+- Focused comparison: source `IMG_2766.PNG` and the implementation palette capture were opened together in one comparison input.
+- Viewport: 1920 x 1080 CSS pixels for both desktop comparisons; implementation additionally verified at 390 x 844 CSS pixels.
+- Pixel density: browser-controlled CSS viewport; no density mismatch was visible in the comparison input.
+- State: anonymous visitor, light theme, default content, no uploaded assets.
 
-The reference and revised fixture were inspected together. Both now use a left-to-right dependency graph: sources on the left, successive work columns on the right, vertically stacked siblings, orthogonal connectors, compact dark cards, and restrained edge treatment. The initial implementation instead placed roots above descendants, spread siblings into long horizontal rows, and added redundant colored side rails.
+## Findings
 
-## Focused comparison
+- No actionable P0, P1, or P2 differences remain.
+- The Coach House public rail and rounded canvas intentionally replace the source site's unbranded outer page because the requested tool must live inside the existing public canvas/rail framework.
+- The source's narrow section index, restrained content width, long-form vertical rhythm, quiet borders, editable specimens, palette blocks, and export actions are preserved inside that shell.
 
-- Typography: the existing Geist/shadcn type system remains slightly tighter than the reference, but preserves the same title/meta hierarchy and truncates long real-world values within measured bounds.
-- Spacing and layout: managed roots share a left lane; every tested child begins to the right of its root; dense 120-node and six-domain graphs remain collision-free.
-- Colors and tokens: neutral product tokens replace decorative category rails. Status still uses icon, color, and text together.
-- Image quality: generated ontology nodes contain no raster imagery. Existing primary workspace cards retain their real product imagery; no placeholder or code-drawn assets were added.
-- Copy: directional fixture copy now says connected work continues to the right.
-- Icons: existing product icon components remain optically centered in restrained tiles.
-- Behavior and accessibility: selection actions, keyboard labels, 44px action targets, reduced motion, truncation, and non-color status cues remain intact.
+## Required fidelity surfaces
+
+- Fonts and typography: the interface uses Coach House's established sans-serif hierarchy; generated guide typography remains user-selectable. Heading weight, compact labels, readable body copy, and scale contrast match the source's editorial character.
+- Spacing and layout rhythm: the desktop uses a narrow sticky index beside a focused reading column with generous section spacing. Mobile collapses to one column and a sticky section selector without horizontal overflow.
+- Colors and visual tokens: the tool keeps the source's quiet neutral canvas and strong black controls while using editable nonprofit-specific palette defaults. Light and dark application states remain legible.
+- Image quality and asset fidelity: no source artwork is imitated or replaced. Real user-uploaded logos, marks, campaign images, and illustrations render from original browser-local files.
+- Copy and content: Folk-specific brand copy is replaced with clear nonprofit guidance, examples, privacy boundaries, accessibility thresholds, and export descriptions.
+
+## Interaction and responsive evidence
+
+- Organization name editing persisted after a browser reload and was restored to the default before handoff.
+- ZIP export completed and surfaced `Brand package downloaded`.
+- At 390 x 844, the desktop section index is hidden and the `Jump to brand guide section` control is visible.
+- The public route exposes Login and Sign up but does not require either action.
+- Browser console check found zero application errors. The only observed warning was the repository's existing React Grab update notice.
 
 ## Comparison history
 
-### Pass 1: blocked
+- Initial implementation review found the requested Coach House shell adaptation, source-derived editorial layout, and core tool states aligned without an actionable fidelity defect.
+- Focused palette comparison confirmed equivalent hierarchy, two-column specimen treatment, restrained radii, editable values, and generous whitespace. No visual fix was required.
+- Mobile capture confirmed a readable one-column composition and reachable primary actions. No P0, P1, or P2 issue was found.
 
-- P0 — Expanded branches overlapped primary cards and each other.
-- P1 — Graph depth ran downward while siblings formed spreadsheet-like horizontal rows.
-- P1 — Colored category rails duplicated meaning and dominated the compact cards.
-- P2 — Relationship labels appeared too early and competed with node titles.
+## Follow-up polish
 
-Fixes applied: changed ELK and Dagre to rightward ranks, replaced dense row wrapping with bounded vertical sibling columns, stacked expanded root scenes into collision-free horizontal lanes, moved root and node handles to right-to-left routing, removed category rails/dots from generated nodes, and reserved relationship labels for full detail.
+- P3: add polished Coach House example assets only when approved brand artwork is available; the current empty upload state is intentionally truthful.
 
-### Pass 2: passed for the previous implementation
-
-The revised dark fixture matches the reference's horizontal graph grammar. Automated geometry checks found no node overlap, no child left of its root, no content escaping measured cards, and no ontology accent rail.
-
-### Pass 3: passed for the current rendered fixture
-
-- Changed the live scene contract after Pass 2: root controls now sit in measured normal flow; generated nodes use one 64px height; all visible primary roots join a temporary horizontal open scene; node and edge presence transitions are coordinated; and the camera includes the complete settled graph.
-- Removed a confirmed drag snapback caused by collapsed roots receiving stale managed coordinates. Transient pointer positions now stay outside React render state, scene positions commit once, and generated edges are hidden during transform interpolation so they cannot visibly detach from moving cards.
-- Active dragging cancels pending automatic fitting. Static performance coverage verifies that active position changes do not enter controlled React state.
-- Dark relationship labels now use compact token-based glass pills with a full radius, consistent 8px by 4px padding, restrained border/shadow, and an explicit darker translucent blur treatment.
-- Cross-area links use dedicated bottom source and target handles, creating a label corridor below the cards. Rendered geometry verifies that the label intersects neither a node nor a root expansion control.
-- Expanded multi-root scenes now wrap within a 4,800px layout band instead of becoming an unbounded horizontal strip. Combined six-root, nine-person, and two-utility geometry coverage verifies collision-free placement, while People connects only to staff-tree roots instead of duplicating every report-to edge.
-- Added rendered geometry and interaction coverage for toggle containment, horizontal atomic scenes, clear label corridors, paired node/edge exits and entrances, restored saved positions, and complete-scene camera fitting. All seven focused light, dark, transition, and bounds visual tests pass.
-- The local fixture route is verified. The authenticated production workspace remains unverified because the current Chrome connection exposes no browser instance.
-
-### Pass 4: removed the floating ontology control panel
-
-- Removed the canvas overlay, search/filter/help/structure/undo runtime, feature export, fixture mount, and obsolete visual baseline.
-- Root-card branch toggles remain the only structure controls. Selecting a generated node still exposes expansion, pinning, and exact-destination actions in its contextual toolbar.
-- The canvas now presents only the ontology itself, without a floating card competing with primary content.
-
-## Residual P3 polish
-
-- A final authenticated screenshot with the user's full production-sized data set would validate the exact content density, but the same layout engine passed 120-node and six-domain collision coverage.
-
-final result: passed for the deterministic fixture; authenticated production-data validation pending
+final result: passed

@@ -76,6 +76,7 @@
       "tests/acceptance/member-workspace.test.ts",
       "tests/acceptance/module-right-rail.test.ts",
       "tests/acceptance/my-organization-accelerator-timeline.test.ts",
+      "tests/acceptance/nonprofit-documentation.test.ts",
       "tests/acceptance/onboarding-actions.test.ts",
       "tests/acceptance/onboarding-carry-forward-fields.test.ts",
       "tests/acceptance/onboarding-defaults.test.ts",

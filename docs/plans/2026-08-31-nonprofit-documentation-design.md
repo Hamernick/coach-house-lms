@@ -82,13 +82,15 @@ second permanent left rail.
 | Viewer | Shell | Global navigation | Documentation behavior |
 | --- | --- | --- | --- |
 | Anonymous | Public canvas shell | Coach House brand, theme, log in, sign up | Full public content; documentation sections occupy the rail |
-| Signed-in free | App shell | Find, Documentation, upgrade and account controls | Full public content; documentation sections appear below global navigation |
-| Signed-in paid | App shell | Workspace, Find, Documentation, entitled destinations | Same content; no content fork or paywall |
-| Admin or staff | App shell | Existing privileged destinations plus Documentation | Same public article content |
+| Signed-in free | App shell | Find, resource links, upgrade and account controls | Full public content; documentation sections appear below global navigation |
+| Signed-in paid | App shell | Workspace, Find, resource links, entitled destinations | Same content; no content fork or paywall |
+| Admin or staff | App shell | Existing privileged destinations plus resource links | Same public article content |
 | Onboarding locked | App shell | Existing restricted account state | Documentation remains reachable because it is public reference material |
 
-`Documentation` is added to the authenticated main navigation for every account
-state. Entitlements continue to control Workspace and paid destinations only.
+The existing authenticated resource slot links to `Documentation` for every
+account state. This keeps the library in the main rail without changing the
+shared primary-navigation chunk. Entitlements continue to control Workspace and
+paid destinations only.
 
 ## Page design
 

@@ -8,6 +8,7 @@ export type AppShellProps = {
   children: ReactNode
   breadcrumbs?: ReactNode
   sidebarHeaderContent?: ReactNode
+  contextualNavigation?: ReactNode
   sidebarTree: SidebarClass[]
   user?: {
     name: string | null
@@ -40,4 +41,5 @@ export type AppShellProps = {
   brandHref?: string
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  allowOnboardingLockedContent?: boolean
 }

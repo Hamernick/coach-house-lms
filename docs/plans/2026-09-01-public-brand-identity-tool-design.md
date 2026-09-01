@@ -38,7 +38,7 @@ and should survive refreshes and return visits.
 
 1. Foundation: organization name, tagline, introduction, purpose, and audience.
 2. Marks: primary logo and mark uploads, light/dark specimens, scale, and usage notes.
-3. Color palette: four named colors, computed color values, proportions, and contrast checks.
+3. Color palette: four fixed functional roles, optional user-defined names, exact computed color values, proportions, and contrast checks. The tool never infers or invents a color name from a selected value.
 4. Typography: at least 30 grouped system-font choices with portable fallbacks, a base size, a modular ratio, and a live type scale.
 5. Applications: editable campaign copy and live social/header compositions.
 6. Assets: optional application photography and six illustration slots.

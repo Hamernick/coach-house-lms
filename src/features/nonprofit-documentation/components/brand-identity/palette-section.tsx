@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 
 import type { BrandIdentityColor, BrandIdentityDraft } from "../../types"
 import {
+  brandColorLabel,
   contrastRating,
   contrastRatio,
   foregroundFor,
@@ -46,7 +47,7 @@ export function PaletteSection({
       id="color-palette"
       eyebrow="A usable system"
       title="Color palette"
-      description="Name each color by its role, set an intentional proportion, and check real contrast before using a pair for text."
+      description="Use each color for its fixed role, add your own name only if you have one, and treat HEX and RGB as the source of truth."
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {draft.colors.map((color) => {
@@ -58,7 +59,12 @@ export function PaletteSection({
               style={{ backgroundColor: value, color: foregroundFor(value) }}
             >
               <div className="min-h-40 p-4">
-                <p className="text-sm font-semibold">{color.name}</p>
+                <p className="text-sm font-semibold">{color.role}</p>
+                {color.name.trim() ? (
+                  <p className="mt-1 text-xs break-words opacity-80">
+                    {color.name.trim()}
+                  </p>
+                ) : null}
                 <dl className="mt-16 grid grid-cols-[3rem_1fr] gap-y-1 font-mono text-[0.68rem] opacity-80">
                   <dt>HEX</dt>
                   <dd>{value}</dd>
@@ -68,28 +74,36 @@ export function PaletteSection({
               </div>
               <div className="bg-background text-foreground grid grid-cols-[1fr_7rem] gap-3 border-t p-3">
                 <div>
-                  <Label htmlFor={`color-name-${color.id}`} className="sr-only">
-                    Color name
+                  <Label
+                    htmlFor={`color-name-${color.id}`}
+                    className="text-muted-foreground text-xs"
+                  >
+                    Custom name (optional)
                   </Label>
                   <Input
                     id={`color-name-${color.id}`}
+                    name={`${color.id}-color-name`}
                     value={color.name}
+                    placeholder="Add your own name…"
+                    className="mt-1"
                     onChange={(event) =>
                       updateColor(color.id, { name: event.target.value })
                     }
-                    aria-label={`${color.id} color name`}
+                    aria-label={`${color.role} custom color name`}
                   />
                 </div>
                 <div>
                   <Label
                     htmlFor={`color-value-${color.id}`}
-                    className="sr-only"
+                    className="text-muted-foreground text-xs"
                   >
-                    Hex value
+                    HEX
                   </Label>
                   <Input
                     id={`color-value-${color.id}`}
+                    name={`${color.id}-hex-value`}
                     value={color.value}
+                    className="mt-1"
                     onChange={(event) =>
                       updateColor(color.id, { value: event.target.value })
                     }
@@ -98,7 +112,7 @@ export function PaletteSection({
                         value: normalizeHex(event.target.value, value),
                       })
                     }
-                    aria-label={`${color.name} hex value`}
+                    aria-label={`${color.role} hex value`}
                   />
                 </div>
               </div>
@@ -123,7 +137,7 @@ export function PaletteSection({
               }}
             >
               <span className="truncate text-xs font-semibold">
-                {color.name}
+                {brandColorLabel(color)}
               </span>
               <span className="text-xl font-semibold">
                 {Math.round(color.proportion)}%
@@ -135,7 +149,7 @@ export function PaletteSection({
           {draft.colors.map((color) => (
             <div key={color.id}>
               <Label htmlFor={`color-proportion-${color.id}`}>
-                {color.name}
+                {brandColorLabel(color)}
               </Label>
               <Input
                 id={`color-proportion-${color.id}`}
@@ -179,7 +193,7 @@ export function PaletteSection({
                   Aa
                 </span>
                 <span className="truncate">
-                  {foreground.name} on {background.name}
+                  {brandColorLabel(foreground)} on {brandColorLabel(background)}
                 </span>
                 <span className="text-muted-foreground text-right font-mono">
                   {ratio.toFixed(1)}:1

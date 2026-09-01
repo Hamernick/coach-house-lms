@@ -29,10 +29,34 @@ export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
   logoGuidance:
     "Keep the logo clear, legible, and unchanged. Leave open space around it and use the strongest available contrast.",
   colors: [
-    { id: "canvas", name: "Warm canvas", value: "#F3F0E8", proportion: 50 },
-    { id: "brand", name: "Mission green", value: "#214E3B", proportion: 30 },
-    { id: "utility", name: "White", value: "#FFFFFF", proportion: 10 },
-    { id: "ink", name: "Ink", value: "#111310", proportion: 10 },
+    {
+      id: "canvas",
+      role: "Background",
+      name: "",
+      value: "#F3F0E8",
+      proportion: 50,
+    },
+    {
+      id: "brand",
+      role: "Primary",
+      name: "",
+      value: "#214E3B",
+      proportion: 30,
+    },
+    {
+      id: "utility",
+      role: "Secondary",
+      name: "",
+      value: "#FFFFFF",
+      proportion: 10,
+    },
+    {
+      id: "ink",
+      role: "Text",
+      name: "",
+      value: "#111310",
+      proportion: 10,
+    },
   ],
   headingFont: "Georgia",
   bodyFont: "Arial",
@@ -45,6 +69,18 @@ export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
 }
 
 const HEX_PATTERN = /^#?([\da-f]{3}|[\da-f]{6})$/i
+
+const LEGACY_DEFAULT_COLOR_NAMES: Record<BrandIdentityColor["id"], string[]> = {
+  canvas: ["Community cream", "Warm canvas"],
+  brand: ["Mission green"],
+  utility: ["White"],
+  ink: ["Ink"],
+}
+
+export function brandColorLabel(color: BrandIdentityColor) {
+  const customName = color.name.trim()
+  return customName ? `${color.role} — ${customName}` : color.role
+}
 
 export function normalizeHex(value: string, fallback = "#000000") {
   const trimmed = value.trim()
@@ -142,11 +178,12 @@ export function sanitizeBrandDraft(value: unknown): BrandIdentityDraft {
         return {
           ...fallback,
           ...(saved ?? {}),
-          name:
-            fallback.id === "canvas" &&
-            saved?.name === ["Community", "cream"].join(" ")
-              ? fallback.name
-              : (saved?.name ?? fallback.name),
+          role: fallback.role,
+          name: LEGACY_DEFAULT_COLOR_NAMES[fallback.id].includes(
+            saved?.name ?? ""
+          )
+            ? ""
+            : (saved?.name ?? fallback.name),
           value: normalizeHex(saved?.value ?? fallback.value, fallback.value),
           proportion: Math.max(
             0,

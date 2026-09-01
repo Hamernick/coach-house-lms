@@ -1,5 +1,9 @@
 import type { BrandIdentityDraft, StoredBrandAsset } from "../types"
-import { buildBrandTokens, normalizeHex } from "./brand-identity"
+import {
+  brandColorLabel,
+  buildBrandTokens,
+  normalizeHex,
+} from "./brand-identity"
 
 type ZipEntry = { name: string; data: Uint8Array }
 
@@ -98,7 +102,7 @@ function safeName(value: string) {
 
 function readme(draft: BrandIdentityDraft) {
   const colors = draft.colors
-    .map((color) => `- ${color.name}: ${normalizeHex(color.value)}`)
+    .map((color) => `- ${brandColorLabel(color)}: ${normalizeHex(color.value)}`)
     .join("\n")
   return `${draft.organizationName} brand guide
 

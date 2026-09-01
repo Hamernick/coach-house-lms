@@ -13,6 +13,7 @@ import {
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
   DEFAULT_BRAND_IDENTITY_DRAFT,
+  brandColorLabel,
   buildBrandTokens,
   brandFontStack,
   contrastRating,
@@ -120,8 +121,27 @@ describe("nonprofit documentation feature", () => {
     expect(tokens).toContain("--brand-type-h1: 31.25px;")
   })
 
-  it("uses clear palette names and a broad, portable font library", () => {
-    expect(DEFAULT_BRAND_IDENTITY_DRAFT.colors[0].name).toBe("Warm canvas")
+  it("uses fixed palette roles, optional names, and portable fonts", () => {
+    expect(
+      DEFAULT_BRAND_IDENTITY_DRAFT.colors.map(({ role, name }) => ({
+        role,
+        name,
+      }))
+    ).toEqual([
+      { role: "Background", name: "" },
+      { role: "Primary", name: "" },
+      { role: "Secondary", name: "" },
+      { role: "Text", name: "" },
+    ])
+    expect(brandColorLabel(DEFAULT_BRAND_IDENTITY_DRAFT.colors[0])).toBe(
+      "Background"
+    )
+    expect(
+      brandColorLabel({
+        ...DEFAULT_BRAND_IDENTITY_DRAFT.colors[0],
+        name: "Harbor Blue",
+      })
+    ).toBe("Background — Harbor Blue")
     expect(BRAND_FONT_OPTIONS.length).toBeGreaterThanOrEqual(30)
     expect(BRAND_FONT_GROUPS.map((group) => group.label)).toEqual([
       "Sans serif",
@@ -131,15 +151,18 @@ describe("nonprofit documentation feature", () => {
     ])
     expect(brandFontStack("Georgia")).toBe("Georgia, serif")
 
-    const migrated = sanitizeBrandDraft({
-      ...DEFAULT_BRAND_IDENTITY_DRAFT,
-      colors: DEFAULT_BRAND_IDENTITY_DRAFT.colors.map((color) =>
-        color.id === "canvas"
-          ? { ...color, name: ["Community", "cream"].join(" ") }
-          : color
-      ),
-    })
-    expect(migrated.colors[0].name).toBe("Warm canvas")
+    for (const legacyName of ["Community cream", "Warm canvas"]) {
+      const migrated = sanitizeBrandDraft({
+        ...DEFAULT_BRAND_IDENTITY_DRAFT,
+        colors: DEFAULT_BRAND_IDENTITY_DRAFT.colors.map((color) =>
+          color.id === "canvas" ? { ...color, name: legacyName } : color
+        ),
+      })
+      expect(migrated.colors[0]).toMatchObject({
+        role: "Background",
+        name: "",
+      })
+    }
   })
 
   it("creates a valid browser ZIP archive for public downloads", () => {

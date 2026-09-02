@@ -70,7 +70,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Partnerships",
         description: "Build relationships with clear shared value.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/partnerships`,
+        status: "live",
       },
     ],
   },

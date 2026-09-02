@@ -390,6 +390,69 @@ export type SustainabilityPlanAction = {
   evidence: string
 }
 
+export type PartnershipModelId =
+  | "referral"
+  | "co-delivery"
+  | "shared-resource"
+  | "joint-campaign"
+  | "strategic-alliance"
+
+export type PartnershipTermMonths = 3 | 6 | 12 | 18 | 24
+
+export type PartnershipReviewMonths = 1 | 3 | 6 | 12
+
+export type PartnershipBriefDraft = {
+  version: 1
+  organizationName: string
+  partnerName: string
+  partnershipName: string
+  stage: DocumentationStageId
+  model: PartnershipModelId
+  termMonths: PartnershipTermMonths
+  reviewEveryMonths: PartnershipReviewMonths
+  sharedPurpose: string
+  communityRole: string
+  organizationContribution: string
+  partnerContribution: string
+  jointActivities: string
+  intendedResult: string
+  decisionRights: string
+  financialTerms: string
+  dataBoundaries: string
+  communicationRhythm: string
+  conflictPath: string
+  closeoutPlan: string
+  organizationLead: string
+  partnerLead: string
+  hasConflictReview: boolean
+  hasDataReview: boolean
+  hasAccessibilityPlan: boolean
+  hasAuthorizedApproval: boolean
+}
+
+export type PartnershipBriefSummary = {
+  draftedAreaCount: number
+  totalAreaCount: number
+  reviewMomentCount: number
+  safeguardCount: number
+  totalSafeguardCount: number
+  hasReviewableBrief: boolean
+}
+
+export type PartnershipBriefAction = {
+  id: string
+  phase:
+    | "Purpose"
+    | "People"
+    | "Work"
+    | "Governance"
+    | "Safeguards"
+    | "Learning"
+    | "Closeout"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

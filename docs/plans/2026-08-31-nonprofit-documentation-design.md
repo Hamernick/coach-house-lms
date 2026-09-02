@@ -53,7 +53,7 @@ are clearly labeled as illustrative.
 - Sustainability
 - Partnerships
 
-### The toolbox
+### Tools
 
 - Brand identity
 - Social media
@@ -124,7 +124,7 @@ without copying its brand:
 2. A large Quickstart feature with the four nonprofit stages and a clear start
    action.
 3. Two audience paths: Start a nonprofit and Strengthen an organization.
-4. Best Practices and Toolbox card groups with concise descriptions.
+4. Best Practices and Tools card groups with concise descriptions.
 5. A sources-and-review statement explaining how high-stakes guidance is
    maintained.
 
@@ -183,7 +183,7 @@ There are no invisible AI-only pages or unsupported claims.
 - Add primary-source review and cross-linking for legal and compliance content.
 - Add documentation search once enough content exists to justify it.
 
-### Phase 3: toolbox and resources
+### Phase 3: tools and resources
 
 - Publish operational tool pages in coherent batches.
 - Build Marketplace around vetted resources, discounts, and tools.

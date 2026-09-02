@@ -40,8 +40,8 @@ export function DocumentationHome() {
   const bestPractices = DOCUMENTATION_NAVIGATION.find(
     (section) => section.id === "best-practices"
   )
-  const toolbox = DOCUMENTATION_NAVIGATION.find(
-    (section) => section.id === "toolbox"
+  const tools = DOCUMENTATION_NAVIGATION.find(
+    (section) => section.id === "tools"
   )
 
   return (
@@ -273,32 +273,46 @@ export function DocumentationHome() {
           </dl>
         </section>
 
-        <section className="mt-16" aria-labelledby="toolbox-title">
+        <section className="mt-16" aria-labelledby="tools-title">
           <div className="flex items-center gap-3">
             <WrenchIcon className="text-muted-foreground size-5" aria-hidden />
             <h2
-              id="toolbox-title"
+              id="tools-title"
               className="text-2xl font-semibold tracking-[-0.025em]"
             >
-              The toolbox
+              Tools
             </h2>
           </div>
           <div className="mt-6 grid gap-x-8 border-t sm:grid-cols-2 lg:grid-cols-3">
-            {toolbox?.items.map((item) => (
-              <div key={item.title} className="border-b py-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold">{item.title}</h3>
-                  {item.status === "design-pending" ? (
-                    <span className="text-muted-foreground text-xs">
-                      Design reserved
-                    </span>
-                  ) : null}
-                </div>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
-                  {item.description}
-                </p>
-              </div>
-            ))}
+            {tools?.items.map((item) => {
+              const content = (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-semibold">{item.title}</h3>
+                    {item.href ? (
+                      <ArrowRightIcon className="size-4" aria-hidden />
+                    ) : null}
+                  </div>
+                  <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    {item.description}
+                  </p>
+                </>
+              )
+
+              return item.href ? (
+                <Link
+                  key={item.title}
+                  href={item.href}
+                  className="hover:bg-muted/45 focus-visible:bg-muted/45 border-b px-3 py-5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <article key={item.title} className="border-b px-3 py-5">
+                  {content}
+                </article>
+              )
+            })}
           </div>
         </section>
 

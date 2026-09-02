@@ -1,3 +1,14 @@
+type BrandFontOption = {
+  value: string
+  label: string
+  stack: string
+}
+
+type BrandFontGroup = {
+  label: string
+  options: readonly BrandFontOption[]
+}
+
 export const BRAND_FONT_GROUPS = [
   {
     label: "Sans serif",
@@ -180,10 +191,11 @@ export const BRAND_FONT_GROUPS = [
       { value: "Monaco", label: "Monaco", stack: "Monaco, Menlo, monospace" },
     ],
   },
-] as const
+] as const satisfies readonly BrandFontGroup[]
 
-export const BRAND_FONT_OPTIONS = BRAND_FONT_GROUPS.flatMap(
-  (group) => group.options
+export const BRAND_FONT_OPTIONS = BRAND_FONT_GROUPS.reduce<BrandFontOption[]>(
+  (options, group) => [...options, ...group.options],
+  []
 )
 
 export function brandFontStack(value: string) {

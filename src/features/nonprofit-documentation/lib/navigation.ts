@@ -34,7 +34,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Compliance",
         description: "Build a reliable federal and state compliance rhythm.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/compliance`,
+        status: "live",
       },
       {
         title: "Fundraising",
@@ -69,13 +70,13 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
     ],
   },
   {
-    id: "toolbox",
-    title: "The toolbox",
+    id: "tools",
+    title: "Tools",
     items: [
       {
         title: "Brand identity",
         description: "Create a usable nonprofit brand system.",
-        href: `${DOCUMENTATION_PATH}/toolbox/brand-identity`,
+        href: `${DOCUMENTATION_PATH}/tools/brand-identity`,
         status: "live",
       },
       {

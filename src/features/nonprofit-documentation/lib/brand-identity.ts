@@ -2,7 +2,7 @@ import type { BrandIdentityColor, BrandIdentityDraft } from "../types"
 import { BRAND_FONT_OPTIONS, brandFontStack } from "./brand-fonts"
 
 export const BRAND_IDENTITY_PATH =
-  "/documentation/toolbox/brand-identity" as const
+  "/documentation/tools/brand-identity" as const
 
 export const BRAND_IDENTITY_STORAGE_KEY =
   "coach-house:documentation:brand-identity:v1"

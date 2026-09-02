@@ -252,5 +252,8 @@ export const FRAMEWORKS_ARTICLE: BestPracticeArticle = {
     title: "Marketing",
     href: "/documentation/best-practices/marketing",
   },
-  next: { title: "Measuring impact" },
+  next: {
+    title: "Measuring impact",
+    href: "/documentation/best-practices/measuring-impact",
+  },
 }

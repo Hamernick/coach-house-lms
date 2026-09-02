@@ -14,6 +14,7 @@ import { HomeCanvasLoginButton } from "@/components/public/home-canvas-login-but
 import type { CanvasSectionId } from "@/components/public/home-canvas-preview-config"
 import { Button } from "@/components/ui/button"
 import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
+import { BuildCollectPublicHeader } from "@/features/build-collect-navigation"
 import { cn } from "@/lib/utils"
 
 function HomeCanvasMobileSidebarTrigger() {
@@ -150,30 +151,18 @@ export function HomeCanvasPreviewHeader({
     activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
 
   return (
-    <header className="text-muted-foreground flex min-h-14 shrink-0 items-center justify-between gap-2 px-[var(--shell-content-pad)] py-2 text-sm">
-      <HomeCanvasBrandLink
-        className={cn("shrink-0 py-1", showShellSidebar && "md:hidden")}
-        textClassName="hidden sm:flex"
-      />
-      <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-        {showAuthActions ? (
-          <>
-            <HomeCanvasLoginButton
-              activeSection={activeSection}
-              changeSection={changeSection}
-            />
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              className="rounded-full"
-              aria-current={activeSection === "signup" ? "page" : undefined}
-              onClick={() => changeSection("signup")}
-            >
-              Sign up
-            </Button>
-          </>
-        ) : null}
+    <BuildCollectPublicHeader
+      activeArea={activeSection === "find" ? "collect" : "build"}
+      hideBrandOnDesktop={showShellSidebar}
+      authAction={
+        showAuthActions ? (
+          <HomeCanvasLoginButton
+            activeSection={activeSection}
+            changeSection={changeSection}
+          />
+        ) : undefined
+      }
+      themeAction={
         <PublicThemeToggle
           variant="outline"
           size="icon"
@@ -182,27 +171,31 @@ export function HomeCanvasPreviewHeader({
             showShellSidebar && "hidden md:inline-flex"
           )}
         />
-        {showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null}
-        {showRightRailToggle ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className={railToggleClassName}
-            aria-controls={RIGHT_RAIL_ID}
-            aria-expanded={rightOpen}
-            aria-label={`${rightOpen ? "Close" : "Open"} ${rightRailLabel}`}
-            title={rightRailLabel}
-            onClick={() => onRightOpenChange(!rightOpen)}
-          >
-            {rightOpen ? (
-              <PanelRightCloseIcon className="h-4 w-4" />
-            ) : (
-              <PanelRightOpenIcon className="h-4 w-4" />
-            )}
-          </Button>
-        ) : null}
-      </div>
-    </header>
+      }
+      shellActions={
+        <>
+          {showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null}
+          {showRightRailToggle ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={railToggleClassName}
+              aria-controls={RIGHT_RAIL_ID}
+              aria-expanded={rightOpen}
+              aria-label={`${rightOpen ? "Close" : "Open"} ${rightRailLabel}`}
+              title={rightRailLabel}
+              onClick={() => onRightOpenChange(!rightOpen)}
+            >
+              {rightOpen ? (
+                <PanelRightCloseIcon className="h-4 w-4" />
+              ) : (
+                <PanelRightOpenIcon className="h-4 w-4" />
+              )}
+            </Button>
+          ) : null}
+        </>
+      }
+    />
   )
 }
 

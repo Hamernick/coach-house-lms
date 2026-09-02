@@ -41,6 +41,104 @@ pnpm resource-map:verify-provider-pages -- --input <records.jsonl> --output <ver
 pnpm resource-map:audit-enrichment -- --input <enriched.jsonl> --require-publishable
 ```
 
+For IRS EO discovery, use the separate private queue:
+
+```bash
+pnpm resource-map:eo-import -- --input <eo1.csv,eo2.csv,...> --write
+pnpm resource-map:eo-run -- --batch 250 --write
+pnpm resource-map:eo-resolve-websites -- --candidates <search-candidates.jsonl> --network true --write
+pnpm resource-map:eo-collect-service-evidence -- --ein <ein> --max-records 1 --max-pages 3 --network true --write
+pnpm resource-map:eo-run -- --resume --results <research-results.jsonl> --write
+pnpm resource-map:eo-build-private-drafts -- --max-records 25 --write
+pnpm resource-map:eo-plan-benchmark -- --input <eo1.csv,eo2.csv,...> --sample 10000 --write
+pnpm resource-map:eo-plan-work -- --package-size 25 --write
+pnpm resource-map:eo-work-lease -- --action status --plan <plan-directory>
+pnpm resource-map:eo-plan-search -- --package <package.json>
+pnpm resource-map:eo-plan-owned-discovery -- --plan <search-plan.json> --evidence-documents <evidence.jsonl> --directory-records <directory-records.jsonl>
+```
+
+IRS filing rows prove identity only. Their address is never a service location,
+their NTEE code is only a discovery hint, and every generated row remains
+`publicDisplayEligible: false`. EO commands never import to Supabase, review,
+approve, promote, publish, deploy, or make model calls.
+
+Website search results enter the private resolver as bounded candidate URLs.
+The resolver rejects social networks and nonprofit directories as primary
+provider websites, safely fetches at most three provider candidates per record,
+reuses fresh 30-day evidence, and requires a strong provider-name/domain or
+contact match. Search snippets are discovery hints only. Resolver output stops
+at `website_matched` or `held`; it does not infer services from identity.
+For a strong match, provider-linked social profiles, visible email/phone
+contacts, same-site service/access page candidates, and image candidates may be
+retained as private evidence. Images remain explicitly non-publishable until
+rights and suitability are reviewed; linked pages are not service claims.
+
+The service-evidence collector checks the confirmed provider page first, then
+follows only retained same-site links from that supported identity. It fetches
+at most three pages per record by default, seeds its cache from fresh website
+resolution evidence, and reuses a versioned 30-day service cache. Deterministic
+patterns retain source URL, fetch time, content hash, and bounded snippets for
+service, access, eligibility, hours, and service-area candidates. A row advances
+to `evidence_fetched` only when explicit service evidence exists; access, hours,
+or eligibility text alone leaves it `website_matched`. No candidate becomes a
+structured claim, enters review, or becomes public automatically.
+
+The private-draft builder converts retained evidence into source-linked field
+candidates without summarizing or promoting it. It keeps service, access,
+eligibility, hours, service-area, contact, social, and media candidates private;
+marks media rights unreviewed; and explicitly leaves service locations and
+coordinates empty. IRS filing addresses are excluded. Every draft remains
+`readyForReview: false`, `publicDisplayEligible: false`, and
+`publicationBlocked: true` pending location evidence, independent verification,
+and human review.
+
+The benchmark planner operates on the complete deduplicated IRS corpus, not the
+direct-service shortlist. It produces an ignored, deterministic cohort balanced
+by filing state and NTEE major group, with per-stratum population weights for
+full-corpus projections. Its signed manifest records source fingerprints, exact
+counts, output hashes, and zero network, AI, database, review, or publication
+activity. Persisted benchmark rows remain identity-only and publication-blocked.
+
+Resource-map research progress is append-only. State transitions are limited
+to the versioned control-plane graph and require source evidence, a SHA-256 input
+hash, an idempotency key, and a tamper-evident event hash. Duplicate replay is a
+no-op; altered, skipped, or out-of-order events fail closed. The IRS files are
+the immutable identity base, so the ledger stores state changes rather than
+duplicating an `unseen` row for every EIN.
+
+Discovery execution uses immutable signed work packages. Packages contain 25
+records by default and hard limits for searches, HTTP requests, rendered pages,
+model calls, retained bytes, duration, and attempts. Local workers claim packages
+atomically, append heartbeats, and finish with hashed completion or failure
+receipts. Expired claims and retry failures are archived instead of deleted;
+terminal contract failures and exhausted retries enter a dead-letter directory.
+No lease operation grants database, review, publication, or deployment access.
+
+Provider discovery uses a replaceable adapter waterfall: local evidence cache,
+authoritative directory index, search API, then sandboxed browser. Common Crawl
+may look up history for a URL already discovered elsewhere; its URL index is not
+an organization-name full-text search adapter. Adapter rows are bounded and
+normalized before use. Search snippets remain non-evidentiary. Fetch planning
+deduplicates exact normalized URLs across EINs, enforces total and exact-host
+budgets, requires robots evaluation, and emits stage telemetry without EINs,
+URLs, or queries as metric labels. The planner itself has no network capability.
+
+The local-evidence and authoritative-directory adapters are offline and
+dry-run-first. Directory intake accepts only government, provider, 211, or
+food-bank source kinds with both provider and source URLs. It admits exact EIN
+matches or exact normalized provider name plus filing state; name-only or fuzzy
+matches are prohibited. Adapter misses remain nonterminal so later search tiers
+can run. Successful rows retain source URL, source kind, content hash, and match
+method while remaining private and publication-blocked.
+
+Owned discovery prohibits paid providers and commercial search-page scraping.
+It combines exact-match private evidence, reviewed public-directory links, and
+at most two deterministic `.org` hypotheses for distinctive names. Evidence is
+content-addressed with two-character shard keys for bounded local lookup. Domain
+hypotheses are never evidence and remain unverified until the existing provider
+comparison verifies identity. The planner deduplicates URLs across EINs and
+emits exact-host budgets and robots checks without performing network calls.
+
 ## Atomic promotion
 
 - Apply `20260714201500_resource_map_atomic_promotion.sql` before promotion.

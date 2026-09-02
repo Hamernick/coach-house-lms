@@ -84,6 +84,33 @@ describe("roadmap editor status indicators", () => {
     expect(uiState.status).toBe("in_progress")
   })
 
+  it("keeps the complete calendar panel aligned to the standard content width", () => {
+    const calendarSection = makeSection({
+      id: "board_calendar",
+      title: "Calendar",
+      slug: "calendar",
+    })
+    const budgetSection = makeSection({
+      id: "budget",
+      title: "Budget",
+      slug: "budget",
+    })
+
+    const calendarUiState = deriveRoadmapEditorSectionUi({
+      sections: [calendarSection],
+      activeId: calendarSection.id,
+      drafts: { [calendarSection.id]: createDraft(calendarSection) },
+    })
+    const budgetUiState = deriveRoadmapEditorSectionUi({
+      sections: [budgetSection],
+      activeId: budgetSection.id,
+      drafts: { [budgetSection.id]: createDraft(budgetSection) },
+    })
+
+    expect(calendarUiState.contentMaxWidth).toBe("max-w-3xl")
+    expect(budgetUiState.contentMaxWidth).toBe("max-w-none")
+  })
+
   it("normalizes legacy completed section status to complete", () => {
     const sections = resolveRoadmapSections({
       roadmap: {

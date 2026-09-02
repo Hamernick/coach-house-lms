@@ -141,7 +141,7 @@ describe("workspace canvas overlay drawer", () => {
       tabsViewSource.match(
         /mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col/g
       ) ?? []
-    ).toHaveLength(6)
+    ).toHaveLength(7)
     expect(source).toContain(
       "data-[vaul-drawer-direction=bottom]:rounded-t-[20px]"
     )
@@ -355,18 +355,20 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain('value="people"')
     expect(source).toContain('value="documents"')
     expect(source).toContain('value="finance"')
-    expect(source).not.toContain('value="tools"')
+    expect(source).toContain('value="tools"')
     expect(source).not.toContain('<WorkspaceDrawerTabTrigger value="roadmap">')
     const organizationTabIndex = source.indexOf('value="organization"')
     const peopleTabIndex = source.indexOf('value="people"')
     const documentsTabIndex = source.indexOf('value="documents"')
     const financeTabIndex = source.indexOf('value="finance"')
+    const toolsTabIndex = source.indexOf('value="tools"')
     const acceleratorTabIndex = source.indexOf('value="accelerator"')
     expect(organizationTabIndex).toBeGreaterThanOrEqual(0)
     expect(financeTabIndex).toBeGreaterThan(organizationTabIndex)
     expect(peopleTabIndex).toBeGreaterThan(financeTabIndex)
     expect(documentsTabIndex).toBeGreaterThan(peopleTabIndex)
-    expect(acceleratorTabIndex).toBeGreaterThan(documentsTabIndex)
+    expect(toolsTabIndex).toBeGreaterThan(documentsTabIndex)
+    expect(acceleratorTabIndex).toBeGreaterThan(toolsTabIndex)
     expect(source).toContain("<TabsList")
     expect(source).toContain('variant="line"')
     expect(source).toContain("ref={tabsListRef}")
@@ -435,12 +437,13 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain(
       "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
     )
-    expect(source.match(/max-w-7xl/g)).toHaveLength(6)
+    expect(source.match(/max-w-7xl/g)).toHaveLength(7)
     expect(source).toContain('value="finance"')
     expect(source).toContain('{tab === "finance" ? (')
     expect(source).toContain("<WorkspaceFinancePanel")
     expect(source).toContain("input={financeInput}")
-    expect(source).not.toContain("WorkspaceToolsPanel")
+    expect(source).toContain("WorkspaceToolsPanel")
+    expect(source).toContain("financeInput.stripeConnection")
     expect(source).not.toContain("buildWorkspaceFinanceProgramInputs(")
     expect(source).not.toContain("programs.map((program)")
     expect(source).toContain("WorkspacePeopleDrawerPanel")
@@ -761,7 +764,7 @@ describe("workspace canvas overlay drawer", () => {
       "target.focus({ preventScroll: true })"
     )
     expect(panelSource).toContain(
-      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col p-2 sm:p-3"'
+      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-3xl min-w-0 flex-col p-2 sm:p-3"'
     )
     expect(controllerSource).toContain(
       "organizationEditorData.initialProfileTab"
@@ -815,10 +818,11 @@ describe("workspace canvas overlay drawer", () => {
     ).toEqual({ tab: "finance" })
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=tools")
-    ).toBeNull()
+    ).toEqual({ tab: "tools" })
     expect(drawerHookSource).toContain('initialDrawerTab === "finance"')
     expect(drawerHookSource).toContain('return { tab: "finance" }')
-    expect(drawerHookSource).not.toContain('initialDrawerTab === "tools"')
+    expect(drawerHookSource).toContain('initialDrawerTab === "tools"')
+    expect(drawerHookSource).toContain('return { tab: "tools" }')
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=unknown")
     ).toBeNull()

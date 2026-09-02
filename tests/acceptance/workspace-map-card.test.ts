@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import {
   buildWorkspaceMapLocationLabel,
@@ -7,6 +9,8 @@ import {
   resolveWorkspaceMapChecklist,
   resolveWorkspaceMapCompletionSummary,
 } from "@/features/workspace-map-card"
+
+const ROOT = process.cwd()
 
 const COMPLETE_PROFILE = {
   name: "Atlas Org",
@@ -32,7 +36,7 @@ describe("workspace-map-card feature contract", () => {
         profile: COMPLETE_PROFILE as never,
         companyHref: "   ",
         presentationMode: false,
-      }),
+      })
     ).toEqual({
       orgId: "org_123",
       title: "Map",
@@ -55,16 +59,16 @@ describe("workspace-map-card feature contract", () => {
         },
         width: 96,
         height: 96,
-      }),
+      })
     ).toBe(
-      "https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+0f172a(-84.38800,33.74900)/-84.38800,33.74900,4.2,0/96x96?access_token=pk.test-token&logo=false&attribution=false",
+      "https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+0f172a(-84.38800,33.74900)/-84.38800,33.74900,4.2,0/96x96?access_token=pk.test-token&logo=false&attribution=false"
     )
   })
 
   it("derives a readable location label from structured profile address fields", () => {
-    expect(buildWorkspaceMapLocationLabel(COMPLETE_PROFILE as never, "Fallback")).toBe(
-      "123 Main St, Atlanta, GA, 30303, USA",
-    )
+    expect(
+      buildWorkspaceMapLocationLabel(COMPLETE_PROFILE as never, "Fallback")
+    ).toBe("123 Main St, Atlanta, GA, 30303, USA")
   })
 
   it("builds checklist items and completion summary from company profile readiness", () => {
@@ -98,10 +102,30 @@ describe("workspace-map-card feature contract", () => {
       } as never,
     })
 
-    expect(checklist.map((item) => [item.id, item.complete, item.href])).toEqual([
+    expect(
+      checklist.map((item) => [item.id, item.complete, item.href])
+    ).toEqual([
       ["story", false, "/workspace?view=editor&tab=company"],
       ["identity", false, "/workspace?view=editor&tab=company"],
       ["logo", false, "/workspace?view=editor&tab=company"],
     ])
+  })
+
+  it("keeps map failures recoverable and user-safe", () => {
+    const source = readFileSync(
+      join(
+        ROOT,
+        "src/features/workspace-map-card/components/workspace-map-card-panel.tsx"
+      ),
+      "utf8"
+    )
+
+    expect(source).toContain("Map Preview Unavailable")
+    expect(source).toContain("retryMap")
+    expect(source).toContain("Try Again")
+    expect(source).toContain("Your workspace and checklist remain available.")
+    expect(source).toContain("workspace-map-card:error")
+    expect(source).not.toContain("Add NEXT_PUBLIC_MAPBOX_TOKEN")
+    expect(source).not.toContain('setMapError("Location access')
   })
 })

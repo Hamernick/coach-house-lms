@@ -967,6 +967,80 @@ async function run() {
   }
 
   // Programs write access for members
+  if (
+    orgAccessReady &&
+    (await tableExists("google_drive_connections")) &&
+    (await tableExists("organization_external_documents"))
+  ) {
+    const documentId = randomUUID()
+    const { error: seedError } = await adminClient
+      .from("organization_external_documents")
+      .insert({
+        id: documentId,
+        org_id: member.id,
+        provider_file_id: `drive-file-${suffix}`,
+        name: "Drive document",
+        mime_type: "application/vnd.google-apps.document",
+        web_view_link: "https://docs.google.com/document/d/test",
+        status: "available",
+        attached_by: member.id,
+      })
+    results.push({
+      name: "service role can create Google Drive document metadata",
+      passed: !seedError,
+    })
+
+    for (const [label, client] of [
+      ["owner", memberClient],
+      ["staff", staffClient],
+      ["board", boardClient],
+    ]) {
+      const { data, error } = await client
+        .from("organization_external_documents")
+        .select("id")
+        .eq("id", documentId)
+        .maybeSingle()
+      results.push({
+        name: `${label} can read organization Google Drive metadata`,
+        passed: !!data && !error,
+      })
+    }
+
+    const { data: unrelatedRead, error: unrelatedReadError } =
+      await adminSessionClient
+        .from("organization_external_documents")
+        .select("id")
+        .eq("id", documentId)
+    results.push({
+      name: "unrelated authenticated user cannot read Google Drive metadata",
+      passed:
+        !!unrelatedReadError ||
+        (Array.isArray(unrelatedRead) && unrelatedRead.length === 0),
+    })
+
+    const { error: ownerWriteError } = await memberClient
+      .from("organization_external_documents")
+      .update({ name: "Forbidden rename" })
+      .eq("id", documentId)
+    results.push({
+      name: "authenticated users cannot write Google Drive metadata directly",
+      passed: !!ownerWriteError,
+    })
+
+    const { error: credentialReadError } = await memberClient
+      .from("google_drive_connections")
+      .select("id")
+    results.push({
+      name: "authenticated users cannot read Google Drive credentials",
+      passed: !!credentialReadError,
+    })
+
+    await adminClient
+      .from("organization_external_documents")
+      .delete()
+      .eq("id", documentId)
+  }
+
   if (orgAccessReady) {
     const { data: createdProgram, error: staffProgramError } = await staffClient
       .from("programs")

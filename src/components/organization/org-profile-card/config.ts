@@ -123,6 +123,7 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandMarkUrl: source.brandMarkUrl ?? "",
     headerUrl: source.headerUrl ?? "",
     publicUrl: source.publicUrl ?? "",
+    donateUrl: source.donateUrl ?? "",
     twitter: source.twitter ?? "",
     facebook: source.facebook ?? "",
     linkedin: source.linkedin ?? "",

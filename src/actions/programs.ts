@@ -303,7 +303,7 @@ async function revalidateOrganizationProgramViews(
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
-  revalidatePath("/find")
+  revalidatePath("/")
   try {
     const { data, error } = await supabase
       .from("organizations")
@@ -322,7 +322,7 @@ async function revalidateOrganizationProgramViews(
     if (isPublic) revalidatePath("/community")
     if (slug) {
       revalidatePath(`/${slug}`)
-      revalidatePath(`/find/${slug}`)
+      revalidatePath(`/${slug}`)
     }
   } catch {
     // Swallow revalidation errors; they should not block program writes.

@@ -2,6 +2,50 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  public_handle_availability: {
+    Args: { p_handle: string }
+    Returns: Json
+  }
+  claim_person_public_handle: {
+    Args: { p_handle: string }
+    Returns: Json
+  }
+  save_public_person_profile: {
+    Args: {
+      p_display_name: string
+      p_headline: string | null
+      p_bio: string | null
+      p_location_label: string | null
+      p_website_url: string | null
+      p_avatar_url: string | null
+      p_is_public: boolean
+      p_show_organizations: boolean
+      p_show_program_activity: boolean
+      p_show_saved_locations: boolean
+    }
+    Returns: Json
+  }
+  set_person_public_affiliation: {
+    Args: {
+      p_organization_id: string
+      p_visible: boolean
+    }
+    Returns: Json
+  }
+  save_person_public_saved_collection: {
+    Args: {
+      p_collection_id: string | null
+      p_name: string
+      p_is_public: boolean
+      p_item_kinds: string[]
+      p_item_ids: string[]
+    }
+    Returns: Json
+  }
+  delete_person_public_saved_collection: {
+    Args: { p_collection_id: string }
+    Returns: Json
+  }
   submit_public_map_claim_request: {
     Args: {
       p_target_kind: string

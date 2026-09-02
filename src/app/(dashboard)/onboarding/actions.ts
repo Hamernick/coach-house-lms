@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation"
 
+import { validatePublicHandle } from "@/features/public-profiles"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { markOrganizationSetupModuleCompleted } from "@/lib/accelerator/organization-setup"
 import { writeOnboardingOrganizationProfile } from "@/lib/onboarding/organization-profile-write"
@@ -97,6 +98,10 @@ export async function completeOnboardingAction(form: FormData) {
     builderPlanTierRaw === "operations_support"
       ? builderPlanTierRaw
       : "free"
+  const builderAccessSelectionOnly =
+    intentFocus === "build" && onboardingMode === "post_signup_access"
+  const personHandleRaw = String(form.get("personHandle") || "").trim()
+  const personHandleValidation = validatePublicHandle(personHandleRaw)
 
   const formationStatusRaw = String(form.get("formationStatus") || "").trim()
   const formationStatus =
@@ -211,6 +216,20 @@ export async function completeOnboardingAction(form: FormData) {
     }
   }
 
+  if (!builderAccessSelectionOnly && !personHandleValidation.valid) {
+    redirect(
+      buildOnboardingErrorRedirect({
+        intentFocus,
+        error:
+          personHandleValidation.code === "reserved"
+            ? "reserved_person_handle"
+            : personHandleRaw
+              ? "invalid_person_handle"
+              : "missing_person_handle",
+      })
+    )
+  }
+
   let avatarUrl: string | null = null
   const avatar = form.get("avatar")
   if (avatar instanceof File && avatar.size > 0) {
@@ -244,6 +263,44 @@ export async function completeOnboardingAction(form: FormData) {
     )
   }
 
+  if (!builderAccessSelectionOnly && personHandleValidation.valid) {
+    const { data: handleClaimData, error: handleClaimError } =
+      await supabase.rpc("claim_person_public_handle", {
+        p_handle: personHandleValidation.handle,
+      })
+
+    if (handleClaimError) {
+      console.error("completeOnboardingAction: handle claim failed", {
+        userId: user.id,
+        message: handleClaimError.message,
+      })
+      throw supabaseErrorToError(
+        handleClaimError,
+        "Unable to save your username."
+      )
+    }
+
+    const handleClaim =
+      handleClaimData &&
+      typeof handleClaimData === "object" &&
+      !Array.isArray(handleClaimData)
+        ? (handleClaimData as Record<string, unknown>)
+        : null
+    if (handleClaim?.ok !== true) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error:
+            handleClaim?.code === "reserved"
+              ? "reserved_person_handle"
+              : handleClaim?.code === "invalid"
+                ? "invalid_person_handle"
+                : "person_handle_taken",
+        })
+      )
+    }
+  }
+
   if (requiresOrganizationSetup) {
     const organizationWrite = await writeOnboardingOrganizationProfile({
       avatarUrl,
@@ -273,8 +330,6 @@ export async function completeOnboardingAction(form: FormData) {
     }
   }
 
-  const builderAccessSelectionOnly =
-    intentFocus === "build" && onboardingMode === "post_signup_access"
   const onboardingUpdatedAt = new Date().toISOString()
 
   // Builder access selection precedes required organization and account setup.
@@ -369,63 +424,6 @@ export async function completeOnboardingAction(form: FormData) {
       intentFocus,
       onboardingMode,
       roleInterest,
-    },
-  })
-
-  redirect(`${FIND_PATH}?member_onboarding=0&source=member_onboarding`)
-}
-
-export async function completeMemberMapOnboardingAction(form: FormData) {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-  if (!user)
-    redirect(
-      `/login?redirect=${encodeURIComponent(`${FIND_PATH}?member_onboarding=1`)}`
-    )
-
-  const intentFocusRaw = String(form.get("intentFocus") || "").trim()
-  const intentFocus =
-    intentFocusRaw === "find" ||
-    intentFocusRaw === "fund" ||
-    intentFocusRaw === "support"
-      ? intentFocusRaw
-      : "find"
-
-  const { error: updateUserError } = await supabase.auth.updateUser({
-    data: {
-      onboarding_completed: true,
-      onboarding_completed_at: new Date().toISOString(),
-      onboarding_intent_focus: intentFocus,
-    },
-  })
-
-  if (updateUserError) {
-    console.error(
-      "completeMemberMapOnboardingAction: auth metadata update failed",
-      {
-        userId: user.id,
-        message: updateUserError.message,
-      }
-    )
-    throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
-  }
-
-  await trackUserJourneyMilestone({
-    userId: user.id,
-    orgId: user.id,
-    eventName: "member_onboarding_completed",
-    journey: "member_onboarding",
-    source: "member_map_onboarding_action",
-    surface: "find_map_onboarding",
-    checkpoint: "member_onboarding_completed",
-    metadata: {
-      intentFocus,
     },
   })
 

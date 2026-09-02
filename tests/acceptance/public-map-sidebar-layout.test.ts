@@ -16,6 +16,7 @@ import {
 } from "@/components/public/public-map-index/sidebar-detail-panels"
 import { PublicMapDrawerSearchPanel } from "@/components/public/public-map-index/sidebar-panels"
 import { resolvePublicMapResourceCategoryIcon } from "@/components/public/public-map-index/resource-category-icon"
+import { PublicMapFailureState } from "@/components/public/public-map-index/map-failure-state"
 import { PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR } from "@/components/public/public-map-index/use-resource-map-items"
 import { resolveResourceIdentityTitle } from "@/components/public/public-map-index/resource-detail-primary-sections"
 import {
@@ -1969,6 +1970,79 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain('aria-label="Share Chicago Food Access"')
     expect(markup).not.toContain(">Resources</p>")
     expect(markup).not.toContain("pb-3 border-border/60 border-b")
+  })
+
+  it("renders actionable empty and failure states on the discovery home", () => {
+    const groupCounts = buildPublicMapGroupFilterCounts([])
+    const baseProps = {
+      query: "",
+      items: [],
+      organizations: [],
+      selectedItemId: null,
+      activeGroup: "all" as const,
+      featuredGuides: [],
+      savedGuideIds: [],
+      discoveryGroupCounts: groupCounts,
+      groupCounts,
+      onQueryChange: () => {},
+      onActiveGroupChange: () => {},
+      onSelectItem: () => {},
+      onOpenDetails: () => {},
+      onGuideSelect: () => {},
+      onToggleSavedGuide: () => {},
+      onRetryResourceItems: () => {},
+    }
+    const emptyMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDrawerSearchPanel, {
+        ...baseProps,
+        resourceItemsLoadStatus: "ready",
+      })
+    )
+    const errorMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDrawerSearchPanel, {
+        ...baseProps,
+        resourceItemsLoadStatus: "error",
+      })
+    )
+
+    expect(emptyMarkup).toContain('data-public-map-directory-empty="empty"')
+    expect(emptyMarkup).toContain("No nearby resources yet")
+    expect(emptyMarkup).toContain(">Start searching</button>")
+    expect(emptyMarkup).not.toContain(">Find Nearby</h2>")
+    expect(errorMarkup).toContain('data-public-map-directory-empty="error"')
+    expect(errorMarkup).toContain("We couldn’t load nearby resources")
+    expect(errorMarkup).toContain(">Try again</button>")
+    expect(errorMarkup).not.toContain('data-public-map-search-empty="true"')
+  })
+
+  it("renders polished, map-owned recovery states for configuration and runtime failures", () => {
+    const configurationMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapFailureState, {
+        reason: "configuration",
+        onBrowseDirectory: () => {},
+      })
+    )
+    const runtimeMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapFailureState, {
+        reason: "runtime",
+        onBrowseDirectory: () => {},
+        onRetry: () => {},
+      })
+    )
+
+    expect(configurationMarkup).toContain(
+      'data-public-map-failure-state="configuration"'
+    )
+    expect(configurationMarkup).toContain("The map couldn’t load")
+    expect(configurationMarkup).toContain(">Browse directory</button>")
+    expect(configurationMarkup).not.toContain("MAPBOX_TOKEN")
+    expect(configurationMarkup).not.toContain(">Try map again</button>")
+    expect(runtimeMarkup).toContain('data-public-map-failure-state="runtime"')
+    expect(runtimeMarkup).toContain(">Try map again</button>")
+    expect(runtimeMarkup).toContain(
+      'data-react-grab-owner-source="src/components/public/public-map-index/map-failure-state.tsx"'
+    )
+    expect(runtimeMarkup).toContain('role="alert"')
   })
 
   it("renders actionable loading, empty, and failure states for search", () => {

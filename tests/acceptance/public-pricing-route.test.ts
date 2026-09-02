@@ -13,9 +13,11 @@ describe("public pricing route", () => {
           plan: "organization",
           embed: "1",
         }),
-      }),
+      })
     )
 
-    expect(destination).toBe("/?section=pricing&source=campaign&plan=organization")
+    expect(destination).toBe(
+      "/home-canvas?section=pricing&source=campaign&plan=organization"
+    )
   })
 })

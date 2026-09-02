@@ -62,7 +62,7 @@ function HomeCanvasFindShellContent({
     useAppShellRightRailState({ hasRightRail, isMobile })
 
   function navigateToSection(section: CanvasSectionId) {
-    router.push(`/?section=${section}`)
+    router.push(`/home-canvas?section=${section}`)
   }
 
   return (
@@ -97,7 +97,10 @@ function HomeCanvasFindShellContent({
               showRightRailToggle={hasRightRail}
             />
 
-            <div className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-0">
+            <div
+              data-public-find-content-frame=""
+              className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-[var(--shell-content-pad)]"
+            >
               <div className="relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
                 <div className="absolute inset-0 overflow-hidden overscroll-contain">
                   {children}

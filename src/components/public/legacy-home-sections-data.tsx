@@ -6,9 +6,16 @@ import MapIcon from "lucide-react/dist/esm/icons/map"
 import Notebook from "lucide-react/dist/esm/icons/notebook"
 import PanelTop from "lucide-react/dist/esm/icons/panel-top"
 
-const SUBSTACK_PUBLICATION_URL = (process.env.NEXT_PUBLIC_SUBSTACK_PUBLICATION_URL ?? "https://substack.com").trim()
+const SUBSTACK_PUBLICATION_URL = (
+  process.env.NEXT_PUBLIC_SUBSTACK_PUBLICATION_URL ?? "https://substack.com"
+).trim()
 
-export const HERO_FLIP_WORDS = ["sustainable", "fundable", "resilient", "community-led"]
+export const HERO_FLIP_WORDS = [
+  "sustainable",
+  "fundable",
+  "resilient",
+  "community-led",
+]
 
 function DiscordLogo({ className }: { className?: string }) {
   return (
@@ -58,7 +65,8 @@ export const PRODUCT_HIGHLIGHTS: Highlight[] = [
     href: "/organization",
     eyebrow: "Platform",
     title: "Platform",
-    description: "Strategic roadmap, organization profile, and funding-readiness tools in one shared workspace.",
+    description:
+      "Strategic roadmap, organization profile, and funding-readiness tools in one shared workspace.",
     seed: "news-platform",
     icon: <PanelTop className="h-5 w-5" aria-hidden />,
     size: "m",
@@ -77,10 +85,11 @@ export const PRODUCT_HIGHLIGHTS: Highlight[] = [
     size: "s",
   },
   {
-    href: "/?section=accelerator",
+    href: "/home-canvas?section=accelerator",
     eyebrow: "Curriculum",
     title: "Accelerator + coaching",
-    description: "Guided assignments, clear pacing, and 1:1 sessions to help your team make steady progress each week.",
+    description:
+      "Guided assignments, clear pacing, and 1:1 sessions to help your team make steady progress each week.",
     seed: "news-accelerator",
     icon: <GraduationCap className="h-5 w-5" aria-hidden />,
     size: "l",
@@ -88,7 +97,8 @@ export const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
     eyebrow: "Support",
     title: "Fiscal Sponsorship",
-    description: "Access shared operational infrastructure while you build programs and funding readiness.",
+    description:
+      "Access shared operational infrastructure while you build programs and funding readiness.",
     seed: "news-fiscal-sponsorship",
     icon: <CircleDollarSign className="h-5 w-5" aria-hidden />,
     modal: "fiscal-sponsorship",
@@ -97,7 +107,8 @@ export const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
     eyebrow: "NFP map",
     title: "Community map",
-    description: "Explore the network of nonprofits building alongside Coach House.",
+    description:
+      "Explore the network of nonprofits building alongside Coach House.",
     seed: "news-map",
     icon: <MapIcon className="h-5 w-5" aria-hidden />,
     badge: "Coming soon",
@@ -107,7 +118,8 @@ export const PRODUCT_HIGHLIGHTS: Highlight[] = [
     href: "https://coach-house.gitbook.io/coach-house",
     eyebrow: "Documentation",
     title: "Documentation",
-    description: "Open Source tools, frameworks, and best practices for nonprofits.",
+    description:
+      "Open Source tools, frameworks, and best practices for nonprofits.",
     seed: "news-docs",
     icon: <Notebook className="h-5 w-5" aria-hidden />,
     external: true,
@@ -154,7 +166,8 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
     href: SUBSTACK_PUBLICATION_URL,
     eyebrow: "Substack · Jan 2026",
     title: "Funding roadmaps funders actually read",
-    subtitle: "How we structure nonprofit plans so funders can assess timing, outcomes, and execution risk quickly.",
+    subtitle:
+      "How we structure nonprofit plans so funders can assess timing, outcomes, and execution risk quickly.",
     seed: "news-funding-roadmaps",
     external: true,
   },
@@ -162,7 +175,8 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
     href: SUBSTACK_PUBLICATION_URL,
     eyebrow: "Substack · Jan 2026",
     title: "From formation to funding",
-    subtitle: "A practical path from legal structure and governance to funder-ready operations.",
+    subtitle:
+      "A practical path from legal structure and governance to funder-ready operations.",
     seed: "news-formation-funding",
     external: true,
   },
@@ -170,7 +184,8 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
     href: SUBSTACK_PUBLICATION_URL,
     eyebrow: "Substack · Jan 2026",
     title: "Discovery tools for grassroots organizations",
-    subtitle: "What visibility infrastructure should look like for grassroots teams seeking trust and support.",
+    subtitle:
+      "What visibility infrastructure should look like for grassroots teams seeking trust and support.",
     seed: "news-grassroots-discovery",
     external: true,
   },
@@ -181,13 +196,15 @@ export const PHOTO_STRIP = [
     id: "photo-1",
     label: "Studio gathering",
     className: "h-72 w-[var(--first-card)] sm:h-80 lg:h-96",
-    imageUrl: "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Paula.png",
+    imageUrl:
+      "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Paula.png",
   },
   {
     id: "photo-2",
     label: "Demo night",
     className: "h-72 w-[var(--first-card)] sm:h-80 lg:h-96",
-    imageUrl: "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Joel.png",
+    imageUrl:
+      "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Joel.png",
   },
   {
     id: "photo-3",

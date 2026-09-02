@@ -13,12 +13,32 @@ import {
 } from "@/components/public/public-map-index/constants"
 
 const ROOT = process.cwd()
+const PUBLIC_FIND_ROUTE =
+  "src/features/find-map/components/public-find-route.tsx"
 
 function readRoute(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
 describe("public find routes", () => {
+  it("owns Find at the root and permanently redirects legacy links", () => {
+    const rootRoute = readRoute("src/app/(public)/page.tsx")
+    const findRoute = readRoute(PUBLIC_FIND_ROUTE)
+    const nextConfig = readRoute("next.config.ts")
+    const sitemap = readRoute("src/app/sitemap.ts")
+
+    expect(rootRoute).toContain("<PublicFindRoute")
+    expect(rootRoute).toContain('alternates: { canonical: "/" }')
+    expect(findRoute).toContain("FIND_ORGANIZATION_QUERY_KEY")
+    expect(findRoute).toContain("initialPublicSlug={initialPublicSlug}")
+    expect(nextConfig).toContain('source: "/find"')
+    expect(nextConfig).toContain('destination: "/"')
+    expect(nextConfig).toContain('source: "/find/:slug"')
+    expect(nextConfig).toContain('destination: "/?organization=:slug"')
+    expect(nextConfig.match(/permanent: true/g)).toHaveLength(2)
+    expect(sitemap).toContain("fetchPublishedPublicHandles")
+  })
+
   it("uses the Mapbox Standard day and night basemap with streets", () => {
     expect(PUBLIC_MAP_STANDARD_STYLE).toBe("mapbox://styles/mapbox/standard")
     expect(MAP_STYLE).toBe(PUBLIC_MAP_STANDARD_STYLE)
@@ -73,10 +93,7 @@ describe("public find routes", () => {
   })
 
   it("does not render the workspace onboarding card on the map", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
 
     for (const routeFile of routeFiles) {
       const source = readRoute(routeFile)
@@ -86,10 +103,7 @@ describe("public find routes", () => {
   })
 
   it("starts resource discovery with the measured 200-item page size", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
 
     for (const routeFile of routeFiles) {
       expect(readRoute(routeFile)).toContain(
@@ -99,10 +113,7 @@ describe("public find routes", () => {
   })
 
   it("wires onboarding-locked free/member users into the map-native intro", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
     const publicMapSource = [
       readRoute("src/components/public/public-map-index.tsx"),
       readRoute(
@@ -147,10 +158,7 @@ describe("public find routes", () => {
   })
 
   it("lets platform admins preview the map intro from authenticated find", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
     const publicMapSource = [
       readRoute("src/components/public/public-map-index.tsx"),
       readRoute(
@@ -194,38 +202,35 @@ describe("public find routes", () => {
   })
 
   it("renders authenticated users inside the app shell without moving find under workspace", () => {
-    const source = readRoute("src/app/(public)/find/page.tsx")
+    const source = readRoute(PUBLIC_FIND_ROUTE)
     expect(source).toContain("AuthenticatedFindShell")
     expect(source).toContain('presentationMode="app-shell"')
     expect(source).not.toContain("/workspace/find")
   })
 
   it("never mixes synthetic resource seeds into live find routes", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
 
     for (const routeFile of routeFiles) {
       expect(readRoute(routeFile)).not.toContain("includeSeedResources")
     }
   })
 
-  it("preserves selected organization detail wiring on slug routes", () => {
-    const source = readRoute("src/app/(public)/find/[slug]/page.tsx")
+  it("preserves selected organization detail wiring on the root query route", () => {
+    const source = readRoute(PUBLIC_FIND_ROUTE)
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
     const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
     const firstInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={matched.publicSlug}"
+      "initialPublicSlug={initialPublicSlug}"
     )
     const secondInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={matched.publicSlug}",
+      "initialPublicSlug={initialPublicSlug}",
       firstInitialSlugIndex + 1
     )
 
     expect(authenticatedBranchIndex).toBeGreaterThan(-1)
     expect(publicBranchIndex).toBeGreaterThan(-1)
-    expect(source).toContain("organizationDetail")
+    expect(source).toContain("organizationDetail={Boolean(initialPublicSlug)}")
     expect(firstInitialSlugIndex).toBeGreaterThan(authenticatedBranchIndex)
     expect(firstInitialSlugIndex).toBeLessThan(publicBranchIndex)
     expect(secondInitialSlugIndex).toBeGreaterThan(publicBranchIndex)
@@ -255,10 +260,7 @@ describe("public find routes", () => {
   })
 
   it("restores the saved sidebar preference in authenticated find", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
     const shellSource = readRoute(
       "src/features/find-map/components/authenticated-find-shell.tsx"
     )
@@ -281,10 +283,7 @@ describe("public find routes", () => {
   })
 
   it("lets authenticated find use the full app-shell canvas instead of a bordered map frame", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
     const shellSource = readRoute(
       "src/features/find-map/components/authenticated-find-shell.tsx"
     )
@@ -652,10 +651,7 @@ describe("public find routes", () => {
   })
 
   it("does not render the member profile card in public or authenticated find rails", () => {
-    const routeFiles = [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]
+    const routeFiles = [PUBLIC_FIND_ROUTE]
     const publicMapSource = readRoute(
       "src/components/public/public-map-index.tsx"
     )

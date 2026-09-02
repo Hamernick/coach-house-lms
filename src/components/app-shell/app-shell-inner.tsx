@@ -35,6 +35,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { FIND_PATH } from "@/lib/find/routes"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
@@ -224,10 +225,10 @@ export function AppShellInner({
       ? isAcceleratorContext
         ? "/accelerator"
         : derivedContext === "public"
-          ? "/find"
+          ? FIND_PATH
           : canShowMemberWorkspace
             ? "/workspace"
-            : "/find"
+            : FIND_PATH
       : "/")
   useReleaseInteractionLocksOnRouteChange(pathname, searchParamsKey)
   useOnboardingRedirectTarget(onboardingRedirectTarget)

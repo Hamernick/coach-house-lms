@@ -3,6 +3,7 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
+import { FIND_ORGANIZATION_QUERY_KEY, FIND_PATH } from "@/lib/find/routes"
 import {
   buildPublicMapOrganizationFeatureCollection,
   type PublicMapFeatureCollection,
@@ -97,9 +98,12 @@ export function buildMapHref({
   searchParams: URLSearchParams
 }) {
   const nextParams = new URLSearchParams(searchParams)
+  nextParams.delete(FIND_ORGANIZATION_QUERY_KEY)
+  if (slug) {
+    nextParams.set(FIND_ORGANIZATION_QUERY_KEY, slug)
+  }
   const query = nextParams.toString()
-  const pathname = slug ? `/find/${slug}` : "/find"
-  return query.length > 0 ? `${pathname}?${query}` : pathname
+  return query.length > 0 ? `${FIND_PATH}?${query}` : FIND_PATH
 }
 
 export function removeAuthParams(searchParams: URLSearchParams) {

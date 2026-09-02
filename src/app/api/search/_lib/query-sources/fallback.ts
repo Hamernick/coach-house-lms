@@ -318,7 +318,7 @@ async function addCommunityResults({
         id: `org-public-${org.user_id}`,
         label: name || org.public_slug || "Organization",
         subtitle: tagline || location || "Community organization",
-        href: `/find/${org.public_slug}`,
+        href: `/${encodeURIComponent(org.public_slug ?? "")}`,
         group: "Community",
         image: logoUrl || undefined,
         keywords: [org.public_slug ?? "", tagline, location].filter(Boolean),

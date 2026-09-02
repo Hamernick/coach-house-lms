@@ -15,6 +15,7 @@ export type OnboardingFlowDefaults = {
   defaultRoleInterest?: RoleInterest | null
   defaultFirstName?: string | null
   defaultLastName?: string | null
+  defaultPersonHandle?: string | null
   defaultPhone?: string | null
   defaultPublicEmail?: string | null
   defaultTitle?: string | null
@@ -49,25 +50,37 @@ export function buildOnboardingFlowDefaults({
   builderPlanTier?: PricingPlanTier | null
 }): OnboardingFlowDefaults {
   const normalizedDisplayName = normalizeString(displayName)
-  const parsedDisplayParts = normalizedDisplayName ? normalizedDisplayName.split(/\s+/) : []
+  const parsedDisplayParts = normalizedDisplayName
+    ? normalizedDisplayName.split(/\s+/)
+    : []
   const fallbackFirstName = parsedDisplayParts[0] ?? ""
   const fallbackLastName = parsedDisplayParts.slice(1).join(" ")
-  const metadataIntentFocus = normalizeString(userMetadata?.onboarding_intent_focus)
-  const metadataRoleInterest = normalizeString(userMetadata?.onboarding_role_interest)
+  const metadataIntentFocus = normalizeString(
+    userMetadata?.onboarding_intent_focus
+  )
+  const metadataRoleInterest = normalizeString(
+    userMetadata?.onboarding_role_interest
+  )
   const metadataPhone = normalizeString(userMetadata?.phone)
   const metadataFirstName = normalizeString(userMetadata?.first_name)
   const metadataLastName = normalizeString(userMetadata?.last_name)
   const metadataOptInUpdates =
-    typeof userMetadata?.marketing_opt_in === "boolean" ? userMetadata.marketing_opt_in : null
+    typeof userMetadata?.marketing_opt_in === "boolean"
+      ? userMetadata.marketing_opt_in
+      : null
   const metadataNewsletterOptIn =
-    typeof userMetadata?.newsletter_opt_in === "boolean" ? userMetadata.newsletter_opt_in : null
+    typeof userMetadata?.newsletter_opt_in === "boolean"
+      ? userMetadata.newsletter_opt_in
+      : null
   const orgPeople = Array.isArray(orgProfile?.org_people)
     ? (orgProfile.org_people as Array<Record<string, unknown>>)
     : []
   const currentEmail = normalizeString(email).toLowerCase()
   const ownerPerson =
     orgPeople.find((person) => normalizeString(person?.id) === userId) ??
-    orgPeople.find((person) => normalizeString(person?.email).toLowerCase() === currentEmail) ??
+    orgPeople.find(
+      (person) => normalizeString(person?.email).toLowerCase() === currentEmail
+    ) ??
     null
 
   const formationStatus = normalizeString(orgProfile?.formationStatus)
@@ -106,8 +119,10 @@ export function buildOnboardingFlowDefaults({
         : null,
     defaultFirstName: metadataFirstName || fallbackFirstName || null,
     defaultLastName: metadataLastName || fallbackLastName || null,
+    defaultPersonHandle: null,
     defaultPhone,
-    defaultPublicEmail: orgEmail || ownerEmail || normalizeString(email) || null,
+    defaultPublicEmail:
+      orgEmail || ownerEmail || normalizeString(email) || null,
     defaultTitle: ownerTitle || null,
     defaultLinkedin: orgLinkedin || ownerLinkedin || null,
     defaultAvatarUrl: normalizeString(avatarUrl) || null,

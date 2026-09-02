@@ -54,7 +54,7 @@ async function waitForHomeCanvasHydration(page: Page) {
 }
 
 test("map-first public home", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await stabilizeForScreenshot(page)
 
@@ -72,7 +72,7 @@ test("map-first public home", async ({ page }) => {
 })
 
 test("public home keeps the app shell", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await stabilizeForScreenshot(page)
 
@@ -85,7 +85,7 @@ test("public home keeps the app shell", async ({ page }) => {
 })
 
 test("public home canvas product navigator", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await page.waitForSelector("[data-public-home-product-navigator]", {
     state: "visible",
   })
@@ -109,7 +109,7 @@ test("public home canvas product navigator", async ({ page }) => {
 test("public home mobile hero", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await page.waitForLoadState("networkidle")
   await stabilizeForScreenshot(page)
@@ -136,7 +136,7 @@ test("public home short mobile hero clears the product navigator", async ({
 }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
+  await page.goto("/home-canvas")
   await stabilizeForScreenshot(page)
 
   const panel = page.locator('[data-home-canvas-panel="hero"]')
@@ -170,7 +170,7 @@ test("public home short mobile hero clears the product navigator", async ({
 test("public home landscape hero remains reachable", async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/")
+  await page.goto("/home-canvas")
 
   const panel = page.locator('[data-home-canvas-panel="hero"]')
   await expect(panel).toBeVisible()
@@ -195,7 +195,7 @@ test("public home landscape hero remains reachable", async ({ page }) => {
 })
 
 test("pricing is embedded in Build", async ({ page }) => {
-  await page.goto("/?section=platform")
+  await page.goto("/home-canvas?section=platform")
   await page.waitForSelector("[data-public-home-build-pricing]", {
     state: "attached",
   })
@@ -216,7 +216,7 @@ test("pricing is embedded in Build", async ({ page }) => {
 test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/?section=platform")
+  await page.goto("/home-canvas?section=platform")
   await stabilizeForScreenshot(page)
 
   const preview = page.locator("[data-public-home-workspace-preview]")
@@ -239,7 +239,9 @@ test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
 
 test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
   test.setTimeout(60_000)
-  await page.goto("/?section=accelerator", { waitUntil: "domcontentloaded" })
+  await page.goto("/home-canvas?section=accelerator", {
+    waitUntil: "domcontentloaded",
+  })
   await page.waitForSelector(
     '[data-fiscal-sponsorship-surface="workspace-card"]',
     { state: "visible" }
@@ -261,7 +263,7 @@ test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
 test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/?section=accelerator")
+  await page.goto("/home-canvas?section=accelerator")
   const fiscalCard = page.locator(
     '[data-fiscal-sponsorship-surface="workspace-card"]'
   )
@@ -323,7 +325,7 @@ test("public Find uses the shared tabs in its permanent drawer", async ({
       status: 200,
     })
   })
-  await page.goto("/find")
+  await page.goto("/")
 
   const drawer = page.getByRole("dialog", { name: "Resource map panel" })
   await expect(drawer).toBeVisible({ timeout: 45_000 })
@@ -398,7 +400,7 @@ test("public Find resizes its mobile drawer through the accessible handle", asyn
     if (message.type() === "error") consoleErrors.push(message.text())
   })
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto("/find")
+  await page.goto("/")
 
   const drawer = page.locator('[data-slot="drawer-content"]')
   await expect(drawer).toBeVisible({ timeout: 30_000 })
@@ -453,13 +455,36 @@ test("public Find resizes its mobile drawer through the accessible handle", asyn
   expect(consoleErrors).toEqual([])
 })
 
+test("public Find keeps balanced desktop frame gutters", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  const contentFrame = page.locator("[data-public-find-content-frame]").last()
+  await expect(contentFrame).toBeVisible()
+  const gutters = await contentFrame.evaluate((element) => {
+    const style = window.getComputedStyle(element)
+    const frame = element.firstElementChild?.getBoundingClientRect()
+
+    return {
+      frameLeft: frame?.left ?? null,
+      frameRight: frame ? window.innerWidth - frame.right : null,
+      paddingLeft: Number.parseFloat(style.paddingLeft),
+      paddingRight: Number.parseFloat(style.paddingRight),
+    }
+  })
+
+  expect(gutters.paddingLeft).toBeGreaterThan(0)
+  expect(gutters.paddingLeft).toBe(gutters.paddingRight)
+  expect(gutters.frameLeft).toBe(gutters.frameRight)
+})
+
 for (const width of [768, 1024]) {
   test(`public Find keeps one directory drawer at ${width}px`, async ({
     page,
   }) => {
     test.setTimeout(60_000)
     await page.setViewportSize({ width, height: 800 })
-    await page.goto("/find")
+    await page.goto("/")
 
     await expect(page.locator("[data-public-map-tab-list]")).toBeVisible()
     await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(1)

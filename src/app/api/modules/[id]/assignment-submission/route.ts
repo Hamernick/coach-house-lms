@@ -22,7 +22,7 @@ import type { AnswersPayload, ModuleMeta, SubmissionStatus } from "./_lib/types"
 async function revalidatePublicOrganizationProfile() {
   const { revalidatePath, revalidateTag } = await import("next/cache")
   revalidateTag("public-map-organizations", "max")
-  revalidatePath("/find")
+  revalidatePath("/")
 }
 
 export async function GET(

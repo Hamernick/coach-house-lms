@@ -154,7 +154,7 @@ describe("buildMapHref", () => {
         slug: "alpha-org",
         searchParams: new URLSearchParams("auth_action=save"),
       })
-    ).toBe("/find/alpha-org?auth_action=save")
+    ).toBe("/?auth_action=save&organization=alpha-org")
   })
 })
 

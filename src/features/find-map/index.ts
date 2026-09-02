@@ -2,6 +2,9 @@ export {
   AuthenticatedFindShell,
   FindMapLoadingSidebar,
   FindMapLoadingState,
+  PublicFindRoute,
+  PublicFindRouteLoading,
+  type PublicFindRouteProps,
 } from "./components"
 export { FIND_MAP_FEATURE_NAME } from "./lib"
 export { fetchPublicMapViewerState } from "./viewer-state"

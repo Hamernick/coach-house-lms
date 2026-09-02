@@ -8,26 +8,37 @@ import {
 } from "@/components/onboarding/onboarding-dialog/state-helpers"
 
 describe("onboarding state helpers", () => {
-  it("only marks the account step ready when both first and last names are present", () => {
+  it("only marks the account step ready when names and username are present", () => {
     expect(
       isOnboardingAccountStepReady({
         firstName: "",
         lastName: "",
-      }),
+        personHandle: "",
+      })
     ).toBe(false)
 
     expect(
       isOnboardingAccountStepReady({
         firstName: "Jordan",
         lastName: "",
-      }),
+        personHandle: "jordan-rivers",
+      })
     ).toBe(false)
 
     expect(
       isOnboardingAccountStepReady({
         firstName: "Jordan",
         lastName: "Rivers",
-      }),
+        personHandle: "",
+      })
+    ).toBe(false)
+
+    expect(
+      isOnboardingAccountStepReady({
+        firstName: "Jordan",
+        lastName: "Rivers",
+        personHandle: "jordan-rivers",
+      })
     ).toBe(true)
   })
 
@@ -43,8 +54,10 @@ describe("onboarding state helpers", () => {
         intentFocus: "build",
         slugStatus: "idle",
         slugHint: null,
+        personHandleStatus: "idle",
+        personHandleHint: null,
         builderPlanTier: "free",
-      }),
+      })
     ).toEqual({})
 
     expect(
@@ -55,8 +68,10 @@ describe("onboarding state helpers", () => {
         intentFocus: "build",
         slugStatus: "idle",
         slugHint: null,
+        personHandleStatus: "idle",
+        personHandleHint: null,
         builderPlanTier: "organization",
-      }),
+      })
     ).toEqual({})
   })
 
@@ -64,6 +79,7 @@ describe("onboarding state helpers", () => {
     const form = new FormData()
     form.set("firstName", "James")
     form.set("lastName", "Smith")
+    form.set("personHandle", "james-smith")
     form.set("phone", "773-333-3333")
     form.set("publicEmail", "contact@daerdy.com")
     form.set("title", "Founder")
@@ -73,6 +89,7 @@ describe("onboarding state helpers", () => {
     expect(readOnboardingAccountValues(form)).toEqual({
       firstName: "James",
       lastName: "Smith",
+      personHandle: "james-smith",
       phone: "773-333-3333",
       publicEmail: "contact@daerdy.com",
       title: "Founder",

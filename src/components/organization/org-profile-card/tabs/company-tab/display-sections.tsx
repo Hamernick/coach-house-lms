@@ -206,6 +206,17 @@ export function NewsletterPreview({ company }: CompanyViewProps) {
   )
 }
 
+export function DonationPreview({ company }: CompanyViewProps) {
+  if (!(typeof company.donateUrl === "string" && company.donateUrl.trim())) {
+    return null
+  }
+  return (
+    <FormRow title="Donation page">
+      <BrandLink href={company.donateUrl} />
+    </FormRow>
+  )
+}
+
 export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
   if (!hasAnyBrandLink) {
     return null
@@ -250,6 +261,7 @@ export function ViewModeSections(props: CompanyViewProps) {
     { id: "story", node: StoryPreview(props) },
     { id: "website", node: WebsitePreview(props) },
     { id: "newsletter", node: NewsletterPreview(props) },
+    { id: "donation", node: DonationPreview(props) },
     { id: "social", node: SocialPreview(props) },
     { id: "brand-kit", node: BrandKitPreview(props) },
   ].filter((section) => Boolean(section.node))

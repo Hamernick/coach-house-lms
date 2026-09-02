@@ -7,7 +7,7 @@ vi.mock("@/components/auth/login-panel", () => ({
     createElement(
       "div",
       { "data-login-redirect-to": props.redirectTo },
-      "Login panel",
+      "Login panel"
     ),
 }))
 
@@ -26,7 +26,7 @@ vi.mock("@/components/auth/sign-up-form", () => ({
         "data-default-intent-focus": props.defaultIntentFocus,
         "data-locked-intent-focus": props.lockedIntentFocus,
       },
-      "Sign up form",
+      "Sign up form"
     ),
 }))
 
@@ -44,7 +44,7 @@ import { CanvasAuthPanel } from "@/components/public/home-canvas-preview-panels"
 describe("home canvas auth panel", () => {
   it("routes returning users from the login panel back into the workspace", () => {
     const markup = renderToStaticMarkup(
-      createElement(CanvasAuthPanel, { mode: "login" }),
+      createElement(CanvasAuthPanel, { mode: "login" })
     )
 
     expect(markup).toContain('data-login-redirect-to="/workspace"')
@@ -56,28 +56,30 @@ describe("home canvas auth panel", () => {
       createElement(CanvasAuthPanel, {
         loginRedirectTo: "/api/stripe/checkout?plan=organization",
         mode: "login",
-      }),
+      })
     )
 
     expect(markup).toContain(
-      'data-login-redirect-to="/api/stripe/checkout?plan=organization"',
+      'data-login-redirect-to="/api/stripe/checkout?plan=organization"'
     )
   })
 
   it("defaults free signup to post-confirmation onboarding", () => {
     const markup = renderToStaticMarkup(
-      createElement(CanvasAuthPanel, { mode: "signup" }),
+      createElement(CanvasAuthPanel, { mode: "signup" })
     )
 
     expect(markup).toContain("After email verification")
-    expect(markup).toContain("building, finding, funding, or supporting nonprofit work")
+    expect(markup).toContain(
+      "building, finding, funding, or supporting nonprofit work"
+    )
     expect(markup).toContain('data-default-intent-focus="build"')
     expect(markup).not.toContain("data-locked-intent-focus")
     expect(markup).toContain(
-      'data-builder-redirect-to="/onboarding?source=home_signup"',
+      'data-builder-redirect-to="/onboarding?source=home_signup"'
     )
     expect(markup).toContain(
-      'data-member-redirect-to="/find?member_onboarding=1&amp;source=home_signup"',
+      'data-member-redirect-to="/?member_onboarding=1&amp;source=home_signup"'
     )
     expect(markup).toContain('class="mb-3 space-y-1"')
     expect(markup).not.toContain('class="mb-5 space-y-1"')
@@ -89,7 +91,7 @@ describe("home canvas auth panel", () => {
       createElement(CanvasAuthPanel, {
         mode: "signup",
         signupPlanTier: "organization",
-      }),
+      })
     )
 
     expect(markup).toContain("continue with Organization")
@@ -97,13 +99,13 @@ describe("home canvas auth panel", () => {
     expect(markup).toContain('data-default-intent-focus="build"')
     expect(markup).toContain('data-locked-intent-focus="build"')
     expect(markup).toContain(
-      "data-builder-redirect-to=\"/api/stripe/checkout?plan=organization&amp;source=home_signup",
+      'data-builder-redirect-to="/api/stripe/checkout?plan=organization&amp;source=home_signup'
     )
     expect(markup).toContain(
-      "redirect=%2Fonboarding%3Fsource%3Donboarding_pricing",
+      "redirect=%2Fonboarding%3Fsource%3Donboarding_pricing"
     )
     expect(markup).toContain(
-      "cancel=%2Fonboarding%3Fsource%3Donboarding_pricing",
+      "cancel=%2Fonboarding%3Fsource%3Donboarding_pricing"
     )
   })
 })

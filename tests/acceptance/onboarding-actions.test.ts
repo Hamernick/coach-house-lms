@@ -113,6 +113,10 @@ describe("completeOnboardingAction", () => {
   it("sends completed member onboarding to find", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: { ok: true, code: "claimed", handle: "ada-lovelace" },
+      error: null,
+    })
     createSupabaseServerClientServerMock.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -134,6 +138,7 @@ describe("completeOnboardingAction", () => {
         }
         throw new Error(`Unexpected table lookup: ${table}`)
       }),
+      rpc: rpcMock,
     })
 
     const form = new FormData()
@@ -141,6 +146,7 @@ describe("completeOnboardingAction", () => {
     form.set("onboardingMode", "post_signup_access")
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
+    form.set("personHandle", "ada-lovelace")
 
     const { completeOnboardingAction } =
       await import("@/app/(dashboard)/onboarding/actions")
@@ -151,9 +157,10 @@ describe("completeOnboardingAction", () => {
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(updateUserMock).toHaveBeenCalled()
-    expect(destination).toBe(
-      "/find?member_onboarding=0&source=member_onboarding"
-    )
+    expect(rpcMock).toHaveBeenCalledWith("claim_person_public_handle", {
+      p_handle: "ada-lovelace",
+    })
+    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
   })
 
   it("saves free workspace setup changes to the active organization", async () => {
@@ -210,6 +217,10 @@ describe("completeOnboardingAction", () => {
     })
     const moduleProgressUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: { ok: true, code: "claimed", handle: "ada-lovelace" },
+      error: null,
+    })
 
     createSupabaseServerClientServerMock.mockResolvedValue({
       auth: {
@@ -287,6 +298,7 @@ describe("completeOnboardingAction", () => {
         }
         throw new Error(`Unexpected table lookup: ${table}`)
       }),
+      rpc: rpcMock,
     })
 
     const form = new FormData()
@@ -298,6 +310,7 @@ describe("completeOnboardingAction", () => {
     form.set("orgSlug", "bright-futures-collective")
     form.set("firstName", "Ada")
     form.set("lastName", "Lovelace")
+    form.set("personHandle", "ada-lovelace")
 
     const { completeOnboardingAction } =
       await import("@/app/(dashboard)/onboarding/actions")
@@ -307,6 +320,9 @@ describe("completeOnboardingAction", () => {
 
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
+    expect(rpcMock).toHaveBeenCalledWith("claim_person_public_handle", {
+      p_handle: "ada-lovelace",
+    })
     expect(membershipsEqMock).toHaveBeenCalledWith("member_id", "user_123")
     expect(organizationsSlugCountQueryMock).toHaveBeenCalledWith(
       "user_id",

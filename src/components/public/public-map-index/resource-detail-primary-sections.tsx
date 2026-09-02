@@ -7,6 +7,7 @@ import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TrackedResourceShareButton } from "@/features/public-profiles/client"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
   resolvePublicMapResourceCategoryColor,
@@ -122,6 +123,14 @@ export function PublicMapResourceDetailChrome({
         <p className="text-foreground text-sm font-medium">Resource</p>
       </div>
       <div className="flex items-center gap-1.5">
+        <TrackedResourceShareButton
+          resourceId={item.id}
+          resourceTitle={item.title}
+          className={cn(
+            PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+            PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME
+          )}
+        />
         {canManageResourceMap && resourceMapCurationAction ? (
           <PublicMapResourceAdminActions
             curationAction={resourceMapCurationAction}

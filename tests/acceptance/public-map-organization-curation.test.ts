@@ -41,7 +41,7 @@ describe("public map organization curation", () => {
     expect(action).toContain("before_state")
     expect(action).toContain("after_state")
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
-    expect(action).toContain('revalidatePath("/find")')
+    expect(action).toContain('revalidatePath("/")')
     expect(action).not.toContain(".delete(")
 
     expect(migration).toContain(
@@ -65,8 +65,10 @@ describe("public map organization curation", () => {
   })
 
   it("passes org curation only through the authenticated super-admin find shell", () => {
-    const findPage = readSource("src/app/(public)/find/page.tsx")
-    const findSlugPage = readSource("src/app/(public)/find/[slug]/page.tsx")
+    const findPage = readSource(
+      "src/features/find-map/components/public-find-route.tsx"
+    )
+    const findSlugPage = findPage
     const publicMapIndex = readSource(
       "src/components/public/public-map-index.tsx"
     )

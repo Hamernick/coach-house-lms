@@ -18,13 +18,27 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/find/:path*",
+        source: "/",
         headers: [
           {
             key: "Permissions-Policy",
             value: "geolocation=(self)",
           },
         ],
+      },
+    ]
+  },
+  async redirects() {
+    return [
+      {
+        source: "/find",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/find/:slug",
+        destination: "/?organization=:slug",
+        permanent: true,
       },
     ]
   },

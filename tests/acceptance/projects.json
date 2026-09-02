@@ -365,6 +365,7 @@
       "tests/acceptance/public-map-user-location.test.ts",
       "tests/acceptance/public-map-webgl-data.test.ts",
       "tests/acceptance/public-pricing-sign-up-links.test.ts",
+      "tests/acceptance/public-profiles.test.ts",
       "tests/acceptance/public-status-page.test.ts",
       "tests/acceptance/react-grab-loader.test.ts",
       "tests/acceptance/resend-email.test.ts",

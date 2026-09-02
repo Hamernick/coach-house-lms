@@ -97,7 +97,7 @@ export function OrganizationStep({
         <Label htmlFor="orgSlug">Organization URL</Label>
         <div className="border-border/70 bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5">
           <span className="text-muted-foreground shrink-0 text-sm">
-            coachhouse.org/
+            coachhouse.app/
           </span>
           <Input
             id="orgSlug"

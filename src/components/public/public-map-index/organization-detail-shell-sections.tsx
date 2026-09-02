@@ -173,7 +173,7 @@ export function OrganizationDetailHeaderActions({
   onToggleFavorite,
 }: DetailPanelChromeProps) {
   const shareUrl = organization.publicSlug
-    ? `/find/${encodeURIComponent(organization.publicSlug)}`
+    ? `/${encodeURIComponent(organization.publicSlug)}`
     : undefined
   const isFavorite = favorites.includes(organization.id)
   const favoriteLabel = isFavorite

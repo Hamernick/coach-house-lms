@@ -15,11 +15,18 @@ const PAGE_LAYOUT_BUDGET_ALLOWLIST = new Set()
 const PAGE_LAYOUT_BUDGET_ALLOWLIST_MAX = 0
 const ROUTE_IMPORT_CONTRACTS = new Map([
   [
+    "src/app/(public)/page.tsx",
+    {
+      requireImports: ["@/features/find-map"],
+      forbidImports: ["@/components/public/public-header"],
+      requireSourcePatterns: [/<PublicFindRoute\b/u],
+    },
+  ],
+  [
     "src/app/(public)/find/page.tsx",
     {
-      requireImports: ["@/components/public/home-canvas-find-shell"],
-      forbidImports: ["@/components/public/public-header"],
-      requireSourcePatterns: [/<HomeCanvasFindShell\b/u],
+      requireImports: ["next/navigation", "@/lib/find/routes"],
+      requireSourcePatterns: [/permanentRedirect\b/u],
     },
   ],
 ])

@@ -94,7 +94,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Networking",
         description: "Build a relationship system around the mission.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/networking`,
+        status: "live",
       },
       {
         title: "HR",

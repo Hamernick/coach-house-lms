@@ -64,7 +64,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Sustainability",
         description: "Balance mission, people, money, and capacity.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/sustainability`,
+        status: "live",
       },
       {
         title: "Partnerships",

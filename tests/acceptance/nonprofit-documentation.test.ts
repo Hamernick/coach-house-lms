@@ -14,6 +14,7 @@ import {
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DEFAULT_MEASUREMENT_PLAN,
+  DEFAULT_SUSTAINABILITY_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
@@ -22,6 +23,7 @@ import {
   FRAMEWORKS_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
+  SUSTAINABILITY_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
   buildComplianceCsv,
@@ -37,6 +39,9 @@ import {
   buildMeasurementPlanActions,
   buildMeasurementPlanCsv,
   buildMeasurementReviewPrompt,
+  buildSustainabilityActions,
+  buildSustainabilityCsv,
+  buildSustainabilityReviewPrompt,
   buildBrandTokens,
   brandFontStack,
   commonFederalFilingPath,
@@ -50,12 +55,14 @@ import {
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeMeasurementPlan,
+  sanitizeSustainabilityPlan,
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
+  summarizeSustainabilityPlan,
   recommendedFramework,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
@@ -125,6 +132,12 @@ describe("nonprofit documentation feature", () => {
       status: "live",
       href: "/documentation/best-practices/measuring-impact",
     })
+    expect(items.find((item) => item.title === "Sustainability")).toMatchObject(
+      {
+        status: "live",
+        href: "/documentation/best-practices/sustainability",
+      }
+    )
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
     )
@@ -681,6 +694,107 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit sustainability guidance", () => {
+    expect(SUSTAINABILITY_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(SUSTAINABILITY_ARTICLE.framework).toHaveLength(7)
+    expect(SUSTAINABILITY_ARTICLE.checklist.length).toBeGreaterThanOrEqual(11)
+    expect(SUSTAINABILITY_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(7)
+    expect(SUSTAINABILITY_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(SUSTAINABILITY_ARTICLE.sources.length).toBeGreaterThanOrEqual(9)
+    expect(SUSTAINABILITY_ARTICLE.answer).toContain(
+      "maintain valued mission benefits"
+    )
+    expect(SUSTAINABILITY_ARTICLE.disclaimer).toContain("do not determine")
+    expect(
+      SUSTAINABILITY_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "Internal Revenue Service",
+        "Ready.gov",
+        "National Council of Nonprofits",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local sustainability scenario", () => {
+    const draft = {
+      ...DEFAULT_SUSTAINABILITY_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      initiativeName: "Neighborhood legal navigation pilot",
+      stage: "operating" as const,
+      direction: "stabilize" as const,
+      horizonMonths: 12 as const,
+      unrestrictedCash: 45_000,
+      expectedUnrestrictedRevenue: 150_000,
+      restrictedFunds: 120_000,
+      monthlyCoreCosts: 9_000,
+      monthlyProgramCosts: 6_000,
+      weeklyAvailableHours: 120,
+      weeklyCommittedHours: 132,
+      missionPriority: "Maintain trusted bilingual navigation.",
+      essentialCommitments: "Navigators, supervision, access, and systems.",
+      fundingAssumptions: "Restricted grant excludes shared costs.",
+      peopleDependencies: "Two staff hold key referral knowledge.",
+      systemsDependencies: "Scheduling, records, and partners.",
+      adaptationTriggers: "Pause expansion if capacity remains negative.",
+      continuityOwner: "Executive director and board treasurer.",
+      reviewRhythm: "Monthly staff and quarterly board review.",
+      hasBoardFinancialReview: true,
+      hasRestrictionReview: true,
+      hasContinuityPlan: false,
+    }
+    expect(summarizeSustainabilityPlan(draft)).toEqual({
+      monthlyPlannedCost: 15_000,
+      horizonPlannedCost: 180_000,
+      flexibleResources: 195_000,
+      projectedFlexibleBalance: 15_000,
+      startingRunwayMonths: 3,
+      weeklyCapacityBalance: -12,
+      draftedAreaCount: 8,
+      totalAreaCount: 8,
+      hasReviewableScenario: true,
+    })
+    expect(buildSustainabilityActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "capacity-gap",
+      "governance-review",
+    ])
+    expect(buildSustainabilityReviewPrompt(draft)).toContain(
+      "Do not invent revenue, expenses, cash timing, restrictions"
+    )
+    expect(buildSustainabilityReviewPrompt(draft)).toContain(
+      "does not validate sustainability, solvency, liquidity"
+    )
+    expect(buildSustainabilityCsv(draft)).toContain('"Area","Working scenario"')
+    expect(
+      buildSustainabilityCsv({ ...draft, initiativeName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeSustainabilityPlan({
+        stage: "unknown",
+        direction: "always-grow",
+        horizonMonths: 15,
+        unrestrictedCash: -2,
+        weeklyCommittedHours: 200_000,
+        missionPriority: "a".repeat(900),
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      direction: "stabilize",
+      horizonMonths: 12,
+      unrestrictedCash: 0,
+      weeklyCommittedHours: 100_000,
+      missionPriority: "a".repeat(800),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -718,6 +832,9 @@ describe("nonprofit documentation feature", () => {
     const measuringImpactRoute = readSource(
       "src/app/(public)/documentation/best-practices/measuring-impact/page.tsx"
     )
+    const sustainabilityRoute = readSource(
+      "src/app/(public)/documentation/best-practices/sustainability/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -752,6 +869,10 @@ describe("nonprofit documentation feature", () => {
     expect(measuringImpactRoute).toContain("<MeasuringImpactArticlePage />")
     expect(measuringImpactRoute).toContain(
       'canonical: "/documentation/best-practices/measuring-impact"'
+    )
+    expect(sustainabilityRoute).toContain("<SustainabilityArticlePage />")
+    expect(sustainabilityRoute).toContain(
+      'canonical: "/documentation/best-practices/sustainability"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

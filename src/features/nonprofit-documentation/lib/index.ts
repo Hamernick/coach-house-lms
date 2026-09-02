@@ -10,6 +10,7 @@ export { FUNDRAISING_ARTICLE } from "./fundraising-article"
 export { MARKETING_ARTICLE } from "./marketing-article"
 export { FRAMEWORKS_ARTICLE } from "./frameworks-article"
 export { MEASURING_IMPACT_ARTICLE } from "./measuring-impact-article"
+export { SUSTAINABILITY_ARTICLE } from "./sustainability-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -68,6 +69,18 @@ export {
   sanitizeMeasurementPlan,
   summarizeMeasurementPlan,
 } from "./measurement-plan"
+export {
+  DEFAULT_SUSTAINABILITY_PLAN,
+  SUSTAINABILITY_DIRECTIONS,
+  SUSTAINABILITY_HORIZONS,
+  SUSTAINABILITY_PLAN_STORAGE_KEY,
+  buildSustainabilityActions,
+  buildSustainabilityCsv,
+  buildSustainabilityReviewPrompt,
+  sanitizeSustainabilityPlan,
+  sustainabilityDirectionLabel,
+  summarizeSustainabilityPlan,
+} from "./sustainability-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

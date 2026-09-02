@@ -274,5 +274,8 @@ export const MEASURING_IMPACT_ARTICLE: BestPracticeArticle = {
     title: "Frameworks",
     href: "/documentation/best-practices/frameworks",
   },
-  next: { title: "Sustainability" },
+  next: {
+    title: "Sustainability",
+    href: "/documentation/best-practices/sustainability",
+  },
 }

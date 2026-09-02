@@ -169,6 +169,61 @@ export type FundraisingPlanAction = {
   evidence: string
 }
 
+export type MarketingObjectiveId =
+  | "service-access"
+  | "community-awareness"
+  | "event-participation"
+  | "volunteer-recruitment"
+  | "donor-engagement"
+  | "partner-development"
+
+export type MarketingChannelId =
+  | "email"
+  | "website"
+  | "social"
+  | "partners"
+  | "events"
+  | "media"
+
+export type MarketingChannelCadence = Record<MarketingChannelId, number>
+
+export type MarketingPlanDraft = {
+  version: 1
+  organizationName: string
+  campaignName: string
+  stage: DocumentationStageId
+  objective: MarketingObjectiveId
+  primaryAudience: string
+  mainMessage: string
+  proofPoint: string
+  invitation: string
+  channelCadence: MarketingChannelCadence
+  hasStoryPermissionProcess: boolean
+  hasContentReviewProcess: boolean
+  hasLinkTrackingConvention: boolean
+}
+
+export type MarketingPlanSummary = {
+  activeChannelCount: number
+  monthlyOutputs: number
+  ninetyDayOutputs: number
+  weeklyPace: number
+  hasCoreBrief: boolean
+}
+
+export type MarketingPlanAction = {
+  id: string
+  phase:
+    | "Foundation"
+    | "Audience"
+    | "Content"
+    | "Distribution"
+    | "Governance"
+    | "Measurement"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

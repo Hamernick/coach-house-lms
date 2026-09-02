@@ -11,17 +11,22 @@ import {
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
+  DEFAULT_MARKETING_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   FUNDRAISING_ARTICLE,
+  MARKETING_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
   buildComplianceCsv,
   buildComplianceTasks,
   buildFundraisingActions,
   buildFundraisingCsv,
+  buildMarketingActions,
+  buildMarketingAiPrompt,
+  buildMarketingCsv,
   buildBrandTokens,
   brandFontStack,
   commonFederalFilingPath,
@@ -32,9 +37,11 @@ import {
   normalizeProportions,
   sanitizeComplianceRhythm,
   sanitizeFundraisingPlan,
+  sanitizeMarketingPlan,
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
+  summarizeMarketingPlan,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
@@ -88,6 +95,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Fundraising")).toMatchObject({
       status: "live",
       href: "/documentation/best-practices/fundraising",
+    })
+    expect(items.find((item) => item.title === "Marketing")).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/marketing",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -380,6 +391,102 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit marketing guidance", () => {
+    expect(MARKETING_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(MARKETING_ARTICLE.framework).toHaveLength(7)
+    expect(MARKETING_ARTICLE.checklist.length).toBeGreaterThanOrEqual(9)
+    expect(MARKETING_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(6)
+    expect(MARKETING_ARTICLE.measures.length).toBeGreaterThanOrEqual(6)
+    expect(MARKETING_ARTICLE.sources.length).toBeGreaterThanOrEqual(9)
+    expect(MARKETING_ARTICLE.answer).toContain("specific audience")
+    expect(MARKETING_ARTICLE.disclaimer).toContain("does not determine")
+    expect(MARKETING_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "U.S. Department of Justice",
+        "World Wide Web Consortium",
+        "Federal Trade Commission",
+        "U.S. Copyright Office",
+        "Internal Revenue Service",
+        "Google Analytics Help",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local 90-day marketing plan", () => {
+    const draft = {
+      ...DEFAULT_MARKETING_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      campaignName: "Know your options",
+      stage: "operating" as const,
+      objective: "service-access" as const,
+      primaryAudience: "Adults in three service ZIP codes",
+      mainMessage: "Free navigation appointments are available.",
+      proofPoint: "The reviewed program page confirms current availability.",
+      invitation: "Review eligibility and request an appointment.",
+      channelCadence: {
+        email: 1,
+        website: 1,
+        social: 8,
+        partners: 2,
+        events: 1,
+        media: 0,
+      },
+      hasStoryPermissionProcess: true,
+      hasContentReviewProcess: true,
+      hasLinkTrackingConvention: true,
+    }
+    expect(summarizeMarketingPlan(draft)).toEqual({
+      activeChannelCount: 5,
+      monthlyOutputs: 13,
+      ninetyDayOutputs: 39,
+      weeklyPace: 3,
+      hasCoreBrief: true,
+    })
+    expect(buildMarketingActions(draft).map(({ id }) => id)).toEqual(
+      expect.arrayContaining([
+        "operating-rhythm",
+        "operating-learn",
+        "channel-email",
+        "channel-website",
+        "channel-social",
+        "channel-partners",
+        "channel-events",
+      ])
+    )
+    expect(buildMarketingAiPrompt(draft)).toContain(
+      "Do not invent facts, statistics, quotes, outcomes, dates, permissions"
+    )
+    expect(buildMarketingAiPrompt(draft)).toContain(
+      "Primary audience: Adults in three service ZIP codes"
+    )
+    expect(buildMarketingCsv(draft)).toContain(
+      '"Channel","Planned outputs per month","Planned outputs in 90 days"'
+    )
+    expect(
+      buildMarketingCsv({ ...draft, campaignName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeMarketingPlan({
+        stage: "unknown",
+        objective: "go-viral",
+        primaryAudience: "a".repeat(400),
+        channelCadence: { social: 400, email: -2 },
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      objective: "community-awareness",
+      primaryAudience: "a".repeat(280),
+      channelCadence: expect.objectContaining({ social: 100, email: 0 }),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -408,6 +515,9 @@ describe("nonprofit documentation feature", () => {
     const fundraisingRoute = readSource(
       "src/app/(public)/documentation/best-practices/fundraising/page.tsx"
     )
+    const marketingRoute = readSource(
+      "src/app/(public)/documentation/best-practices/marketing/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -430,6 +540,10 @@ describe("nonprofit documentation feature", () => {
     expect(fundraisingRoute).toContain("<FundraisingArticlePage />")
     expect(fundraisingRoute).toContain(
       'canonical: "/documentation/best-practices/fundraising"'
+    )
+    expect(marketingRoute).toContain("<MarketingArticlePage />")
+    expect(marketingRoute).toContain(
+      'canonical: "/documentation/best-practices/marketing"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

@@ -13,6 +13,7 @@ import {
   DEFAULT_FUNDRAISING_PLAN,
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
+  DEFAULT_MEASUREMENT_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
@@ -20,6 +21,7 @@ import {
   FUNDRAISING_ARTICLE,
   FRAMEWORKS_ARTICLE,
   MARKETING_ARTICLE,
+  MEASURING_IMPACT_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
   buildComplianceCsv,
@@ -32,6 +34,9 @@ import {
   buildMarketingActions,
   buildMarketingAiPrompt,
   buildMarketingCsv,
+  buildMeasurementPlanActions,
+  buildMeasurementPlanCsv,
+  buildMeasurementReviewPrompt,
   buildBrandTokens,
   brandFontStack,
   commonFederalFilingPath,
@@ -44,11 +49,13 @@ import {
   sanitizeFundraisingPlan,
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
+  sanitizeMeasurementPlan,
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
+  summarizeMeasurementPlan,
   recommendedFramework,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
@@ -111,6 +118,12 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Frameworks")).toMatchObject({
       status: "live",
       href: "/documentation/best-practices/frameworks",
+    })
+    expect(
+      items.find((item) => item.title === "Measuring impact")
+    ).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/measuring-impact",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -579,6 +592,95 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit impact guidance", () => {
+    expect(MEASURING_IMPACT_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(MEASURING_IMPACT_ARTICLE.framework).toHaveLength(7)
+    expect(MEASURING_IMPACT_ARTICLE.checklist.length).toBeGreaterThanOrEqual(10)
+    expect(MEASURING_IMPACT_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(7)
+    expect(MEASURING_IMPACT_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(MEASURING_IMPACT_ARTICLE.sources.length).toBeGreaterThanOrEqual(8)
+    expect(MEASURING_IMPACT_ARTICLE.answer).toContain("intended user and use")
+    expect(MEASURING_IMPACT_ARTICLE.disclaimer).toContain("do not determine")
+    expect(
+      MEASURING_IMPACT_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "AmeriCorps",
+        "Federal Trade Commission",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local measurement plan", () => {
+    const draft = {
+      ...DEFAULT_MEASUREMENT_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      programName: "Neighborhood legal navigation pilot",
+      stage: "forming" as const,
+      decision: "assess-near-term-outcome" as const,
+      outcomeStatement: "Participants better understand available options.",
+      evaluationQuestion: "How does understanding change within 30 days?",
+      indicatorDefinition: "Number and percentage who name a next step.",
+      method: "mixed-methods" as const,
+      dataSource: "Appointment records, follow-up, and interviews.",
+      collectionSchedule: "Follow up after 30 days and review quarterly.",
+      expectedRespondents: 40,
+      minutesPerResponse: 5,
+      cyclesPerYear: 4,
+      disaggregationPlan: "Review safe relevant variation and missingness.",
+      limitations: "Respondents may differ from people not reached.",
+      owner: "Program director and participant advisory group.",
+      actionRule: "Investigate access barriers before expansion.",
+      hasDataMinimizationReview: true,
+      hasAccessibleVoluntaryProcess: true,
+      hasParticipantInterpretation: true,
+    }
+    expect(summarizeMeasurementPlan(draft)).toEqual({
+      draftedAreaCount: 8,
+      totalAreaCount: 8,
+      annualResponses: 160,
+      annualRespondentHours: 13.3,
+      hasDecisionReadyChain: true,
+    })
+    expect(buildMeasurementPlanActions(draft).map(({ id }) => id)).toEqual([
+      "stage-forming",
+    ])
+    expect(buildMeasurementReviewPrompt(draft)).toContain(
+      "Do not invent facts, statistics, definitions, baselines, benchmarks"
+    )
+    expect(buildMeasurementReviewPrompt(draft)).toContain(
+      "does not validate the method, data, causality"
+    )
+    expect(buildMeasurementPlanCsv(draft)).toContain(
+      '\"Area\",\"Working plan\"'
+    )
+    expect(
+      buildMeasurementPlanCsv({ ...draft, programName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeMeasurementPlan({
+        stage: "unknown",
+        decision: "make-us-successful",
+        expectedRespondents: -4,
+        minutesPerResponse: 5000,
+        outcomeStatement: "a".repeat(900),
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      decision: "improve-delivery",
+      expectedRespondents: 0,
+      minutesPerResponse: 1440,
+      outcomeStatement: "a".repeat(800),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -613,6 +715,9 @@ describe("nonprofit documentation feature", () => {
     const frameworksRoute = readSource(
       "src/app/(public)/documentation/best-practices/frameworks/page.tsx"
     )
+    const measuringImpactRoute = readSource(
+      "src/app/(public)/documentation/best-practices/measuring-impact/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -643,6 +748,10 @@ describe("nonprofit documentation feature", () => {
     expect(frameworksRoute).toContain("<FrameworksArticlePage />")
     expect(frameworksRoute).toContain(
       'canonical: "/documentation/best-practices/frameworks"'
+    )
+    expect(measuringImpactRoute).toContain("<MeasuringImpactArticlePage />")
+    expect(measuringImpactRoute).toContain(
+      'canonical: "/documentation/best-practices/measuring-impact"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

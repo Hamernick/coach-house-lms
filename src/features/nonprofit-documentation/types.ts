@@ -271,6 +271,70 @@ export type LogicModelAction = {
   evidence: string
 }
 
+export type MeasurementDecisionId =
+  | "improve-delivery"
+  | "understand-reach"
+  | "assess-near-term-outcome"
+  | "assess-intermediate-outcome"
+  | "report-accountability"
+  | "consider-expansion"
+
+export type MeasurementOutcomeLevel =
+  | "implementation"
+  | "output"
+  | "near-term"
+  | "intermediate"
+  | "long-term-contribution"
+
+export type MeasurementMethodId =
+  | "administrative-records"
+  | "survey"
+  | "interview-listening"
+  | "observation"
+  | "partner-data"
+  | "public-data"
+  | "mixed-methods"
+
+export type MeasurementPlanDraft = {
+  version: 1
+  organizationName: string
+  programName: string
+  stage: DocumentationStageId
+  decision: MeasurementDecisionId
+  outcomeLevel: MeasurementOutcomeLevel
+  outcomeStatement: string
+  evaluationQuestion: string
+  indicatorDefinition: string
+  method: MeasurementMethodId
+  dataSource: string
+  collectionSchedule: string
+  expectedRespondents: number
+  minutesPerResponse: number
+  cyclesPerYear: number
+  disaggregationPlan: string
+  limitations: string
+  owner: string
+  actionRule: string
+  hasDataMinimizationReview: boolean
+  hasAccessibleVoluntaryProcess: boolean
+  hasParticipantInterpretation: boolean
+}
+
+export type MeasurementPlanSummary = {
+  draftedAreaCount: number
+  totalAreaCount: number
+  annualResponses: number
+  annualRespondentHours: number
+  hasDecisionReadyChain: boolean
+}
+
+export type MeasurementPlanAction = {
+  id: string
+  phase: "Purpose" | "Definition" | "Evidence" | "Ethics" | "Use"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

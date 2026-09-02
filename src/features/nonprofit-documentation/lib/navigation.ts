@@ -58,7 +58,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Measuring impact",
         description: "Connect activities, outcomes, and evidence.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/measuring-impact`,
+        status: "live",
       },
       {
         title: "Sustainability",

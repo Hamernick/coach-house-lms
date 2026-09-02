@@ -455,6 +455,29 @@ test("public Find resizes its mobile drawer through the accessible handle", asyn
   expect(consoleErrors).toEqual([])
 })
 
+test("public Find keeps balanced desktop frame gutters", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+
+  const contentFrame = page.locator("[data-public-find-content-frame]").last()
+  await expect(contentFrame).toBeVisible()
+  const gutters = await contentFrame.evaluate((element) => {
+    const style = window.getComputedStyle(element)
+    const frame = element.firstElementChild?.getBoundingClientRect()
+
+    return {
+      frameLeft: frame?.left ?? null,
+      frameRight: frame ? window.innerWidth - frame.right : null,
+      paddingLeft: Number.parseFloat(style.paddingLeft),
+      paddingRight: Number.parseFloat(style.paddingRight),
+    }
+  })
+
+  expect(gutters.paddingLeft).toBeGreaterThan(0)
+  expect(gutters.paddingLeft).toBe(gutters.paddingRight)
+  expect(gutters.frameLeft).toBe(gutters.frameRight)
+})
+
 for (const width of [768, 1024]) {
   test(`public Find keeps one directory drawer at ${width}px`, async ({
     page,

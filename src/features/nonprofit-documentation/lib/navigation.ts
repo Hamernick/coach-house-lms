@@ -40,7 +40,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Fundraising",
         description: "Develop ethical, durable sources of support.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/fundraising`,
+        status: "live",
       },
       {
         title: "Marketing",

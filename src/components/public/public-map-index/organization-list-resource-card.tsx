@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import {
   resolvePublicMapItemSelectableId,
   type ExternalResourceMapItem,
@@ -9,6 +11,7 @@ import {
   resolvePublicMapResourceCategoryColor,
 } from "@/lib/public-map/resource-categories"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import { cn } from "@/lib/utils"
 import {
@@ -23,6 +26,80 @@ import {
   PublicMapListMetadataStrip,
 } from "./organization-list-card-shared"
 import { PublicMapResourceCategoryIcon } from "./resource-category-icon"
+import { normalizeResourceImageSrc } from "./resource-detail-helpers"
+
+const PUBLIC_MAP_RESOURCE_LIST_CARD_PERF_STYLE = {
+  ...PUBLIC_MAP_LIST_CARD_PERF_STYLE,
+  containIntrinsicSize: "112px",
+} as const
+
+function PublicMapResourceListMedia({
+  constrainedLayout,
+  item,
+  markerColor,
+  ownerId,
+}: {
+  constrainedLayout: boolean
+  item: ExternalResourceMapItem
+  markerColor: string
+  ownerId: string
+}) {
+  const imageSrc = normalizeResourceImageSrc(
+    item.markerImageUrl ?? item.logoUrl ?? item.faviconUrl
+  )
+  const [loaded, setLoaded] = useState(false)
+  const [errored, setErrored] = useState(false)
+  const showImage = Boolean(imageSrc && !errored)
+
+  return (
+    <span
+      className={cn(
+        "border-border/60 bg-muted/35 relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm",
+        constrainedLayout ? "size-24" : "size-28"
+      )}
+      {...buildPublicMapOrganizationListCardSurfaceProps({
+        ownerId,
+        slot: "media",
+        surfaceKind: "indicator",
+        notes: "Asset-forward provider image with category fallback.",
+      })}
+    >
+      <span
+        className="inline-flex size-9 items-center justify-center rounded-full"
+        style={{ backgroundColor: markerColor }}
+        aria-hidden
+      >
+        <PublicMapResourceCategoryIcon
+          category={item.primaryResourceCategory}
+          className="size-4.5 text-white"
+        />
+      </span>
+      {showImage ? (
+        <>
+          {!loaded ? (
+            <Skeleton className="bg-muted/45 absolute inset-0" aria-hidden />
+          ) : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageSrc!}
+            alt={`${item.title} image`}
+            loading="lazy"
+            decoding="async"
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none",
+              loaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setLoaded(true)}
+            onError={() => {
+              setErrored(true)
+              setLoaded(false)
+            }}
+          />
+        </>
+      ) : null}
+    </span>
+  )
+}
 
 export function PublicMapResourceListCard({
   constrainedLayout,
@@ -55,11 +132,13 @@ export function PublicMapResourceListCard({
     item.primaryResourceCategory
   )
   const openResourceDetails = () => onSelectItem?.(selectableItemId)
+  const serviceOutcome =
+    item.services?.[0]?.title ?? item.subtitle ?? item.description
 
   return (
     <article
       key={item.id}
-      style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
+      style={PUBLIC_MAP_RESOURCE_LIST_CARD_PERF_STYLE}
       className={cn(
         "text-foreground relative w-full max-w-full min-w-0 overflow-hidden bg-transparent",
         PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
@@ -78,12 +157,12 @@ export function PublicMapResourceListCard({
         aria-label={`Open details for ${item.title}`}
         onClick={openResourceDetails}
         className={cn(
-          "group relative z-10 flex min-h-20 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
+          "group relative z-10 flex min-h-28 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
           "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
           selected
             ? "bg-accent text-accent-foreground dark:bg-accent/50"
             : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-          constrainedLayout ? "p-3" : "p-4"
+          constrainedLayout ? "p-2.5" : "p-3"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -94,7 +173,7 @@ export function PublicMapResourceListCard({
       >
         <div
           className={cn(
-            "flex min-w-0 items-center",
+            "flex min-w-0 items-stretch",
             constrainedLayout ? "gap-3" : "gap-4"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -104,33 +183,20 @@ export function PublicMapResourceListCard({
               "Top identity row containing the resource marker, title, and metadata.",
           })}
         >
-          <span
-            className={cn(
-              "mt-0.5 inline-flex shrink-0 items-center justify-center rounded-full shadow-sm",
-              constrainedLayout ? "size-11" : "size-12"
-            )}
-            style={{ backgroundColor: markerColor }}
-            {...buildPublicMapOrganizationListCardSurfaceProps({
-              ownerId,
-              slot: "avatar",
-              surfaceKind: "indicator",
-              notes: "Resource category marker surface.",
-            })}
-          >
-            <PublicMapResourceCategoryIcon
-              category={item.primaryResourceCategory}
-              className="size-5 text-white"
-              aria-hidden
-            />
-          </span>
+          <PublicMapResourceListMedia
+            constrainedLayout={constrainedLayout}
+            item={item}
+            markerColor={markerColor}
+            ownerId={ownerId}
+          />
           <div
             className={cn(
-              "min-w-0 flex-1 pt-0.5",
+              "flex min-w-0 flex-1 flex-col justify-center py-1",
               onToggleCollected && "pr-12"
             )}
           >
             <p
-              className="text-foreground truncate text-base leading-snug font-semibold"
+              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -139,7 +205,13 @@ export function PublicMapResourceListCard({
             >
               <PublicMapHighlightedText query={query} text={item.title} />
             </p>
+            {serviceOutcome ? (
+              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-snug text-pretty">
+                <PublicMapHighlightedText query={query} text={serviceOutcome} />
+              </p>
+            ) : null}
             <PublicMapListMetadataStrip
+              className="mt-1.5"
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."

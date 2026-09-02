@@ -272,5 +272,8 @@ export const MARKETING_ARTICLE: BestPracticeArticle = {
     title: "Fundraising",
     href: "/documentation/best-practices/fundraising",
   },
-  next: { title: "Frameworks" },
+  next: {
+    title: "Frameworks",
+    href: "/documentation/best-practices/frameworks",
+  },
 }

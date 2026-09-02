@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { PublicProfileSettings } from "@/features/public-profiles/client"
 import {
   CommunicationsSection,
   DangerSection,
@@ -158,10 +159,20 @@ export function AccountSettingsDialogShell({
                   variant="ghost"
                   size="sm"
                   className="h-auto px-1 text-sm text-primary disabled:opacity-50"
-                  onClick={onSave}
-                  disabled={!isDirty || isSaving}
+                  onClick={
+                    mobilePage === "public-profile" ? requestClose : onSave
+                  }
+                  disabled={
+                    mobilePage === "public-profile"
+                      ? false
+                      : !isDirty || isSaving
+                  }
                 >
-                  {isSaving ? "Saving…" : "Save"}
+                  {mobilePage === "public-profile"
+                    ? "Done"
+                    : isSaving
+                      ? "Saving…"
+                      : "Save"}
                 </Button>
               </div>
             )}
@@ -174,6 +185,11 @@ export function AccountSettingsDialogShell({
                   label="Profile"
                   active={tab === "profile"}
                   onClick={() => onTabChange("profile")}
+                />
+                <SideLink
+                  label="Public profile"
+                  active={tab === "public-profile"}
+                  onClick={() => onTabChange("public-profile")}
                 />
                 <SideLink
                   label="Communications"
@@ -220,6 +236,15 @@ export function AccountSettingsDialogShell({
                   />
                 )}
 
+                {tab === "public-profile" && (
+                  <PublicProfileSettings
+                    avatarUrl={avatarUrl}
+                    displayName={[firstName, lastName].filter(Boolean).join(" ")}
+                    headline={title}
+                    idPrefix="desktop-public-profile"
+                  />
+                )}
+
                 {tab === "communications" && (
                   <CommunicationsSection
                     marketingOptIn={marketingOptIn}
@@ -253,6 +278,7 @@ export function AccountSettingsDialogShell({
 
           <DesktopFooter
             justSaved={justSaved}
+            selfManaged={tab === "public-profile"}
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}

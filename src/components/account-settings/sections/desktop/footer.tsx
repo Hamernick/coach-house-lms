@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/button"
 
 export function DesktopFooter({
   justSaved,
+  selfManaged,
   isDirty,
   isSaving,
   onSave,
   onDone,
 }: {
   justSaved: boolean
+  selfManaged?: boolean
   isDirty: boolean
   isSaving: boolean
   onSave: () => void
@@ -15,7 +17,7 @@ export function DesktopFooter({
 }) {
   return (
     <div className="hidden items-center justify-end gap-2 border-t px-4 py-3 md:flex">
-      {justSaved ? (
+      {justSaved || selfManaged ? (
         <Button onClick={onDone}>Done</Button>
       ) : (
         <Button onClick={onSave} disabled={isSaving || !isDirty}>{isSaving ? "Saving..." : "Save changes"}</Button>

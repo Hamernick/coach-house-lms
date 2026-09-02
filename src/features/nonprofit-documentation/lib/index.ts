@@ -11,6 +11,7 @@ export { MARKETING_ARTICLE } from "./marketing-article"
 export { FRAMEWORKS_ARTICLE } from "./frameworks-article"
 export { MEASURING_IMPACT_ARTICLE } from "./measuring-impact-article"
 export { SUSTAINABILITY_ARTICLE } from "./sustainability-article"
+export { PARTNERSHIPS_ARTICLE } from "./partnerships-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -81,6 +82,19 @@ export {
   sustainabilityDirectionLabel,
   summarizeSustainabilityPlan,
 } from "./sustainability-plan"
+export {
+  DEFAULT_PARTNERSHIP_BRIEF,
+  PARTNERSHIP_BRIEF_STORAGE_KEY,
+  PARTNERSHIP_MODELS,
+  PARTNERSHIP_REVIEW_INTERVALS,
+  PARTNERSHIP_TERMS,
+  buildPartnershipBriefActions,
+  buildPartnershipBriefCsv,
+  buildPartnershipReviewPrompt,
+  partnershipModelLabel,
+  sanitizePartnershipBrief,
+  summarizePartnershipBrief,
+} from "./partnership-brief"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

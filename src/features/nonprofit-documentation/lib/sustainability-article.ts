@@ -281,5 +281,8 @@ export const SUSTAINABILITY_ARTICLE: BestPracticeArticle = {
     title: "Measuring impact",
     href: "/documentation/best-practices/measuring-impact",
   },
-  next: { title: "Partnerships" },
+  next: {
+    title: "Partnerships",
+    href: "/documentation/best-practices/partnerships",
+  },
 }

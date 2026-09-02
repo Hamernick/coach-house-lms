@@ -14,6 +14,7 @@ import {
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DEFAULT_MEASUREMENT_PLAN,
+  DEFAULT_PARTNERSHIP_BRIEF,
   DEFAULT_SUSTAINABILITY_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
@@ -23,6 +24,7 @@ import {
   FRAMEWORKS_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
+  PARTNERSHIPS_ARTICLE,
   SUSTAINABILITY_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
@@ -39,6 +41,9 @@ import {
   buildMeasurementPlanActions,
   buildMeasurementPlanCsv,
   buildMeasurementReviewPrompt,
+  buildPartnershipBriefActions,
+  buildPartnershipBriefCsv,
+  buildPartnershipReviewPrompt,
   buildSustainabilityActions,
   buildSustainabilityCsv,
   buildSustainabilityReviewPrompt,
@@ -55,6 +60,7 @@ import {
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeMeasurementPlan,
+  sanitizePartnershipBrief,
   sanitizeSustainabilityPlan,
   sanitizeBrandDraft,
   typeScale,
@@ -62,6 +68,7 @@ import {
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
+  summarizePartnershipBrief,
   summarizeSustainabilityPlan,
   recommendedFramework,
 } from "@/features/nonprofit-documentation"
@@ -138,6 +145,10 @@ describe("nonprofit documentation feature", () => {
         href: "/documentation/best-practices/sustainability",
       }
     )
+    expect(items.find((item) => item.title === "Partnerships")).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/partnerships",
+    })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
     )
@@ -795,6 +806,104 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit partnership guidance", () => {
+    expect(PARTNERSHIPS_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(PARTNERSHIPS_ARTICLE.framework).toHaveLength(7)
+    expect(PARTNERSHIPS_ARTICLE.checklist.length).toBeGreaterThanOrEqual(13)
+    expect(PARTNERSHIPS_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(PARTNERSHIPS_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(PARTNERSHIPS_ARTICLE.sources.length).toBeGreaterThanOrEqual(10)
+    expect(PARTNERSHIPS_ARTICLE.answer).toContain("shared public purpose")
+    expect(PARTNERSHIPS_ARTICLE.disclaimer).toContain("do not recommend")
+    expect(
+      PARTNERSHIPS_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "Internal Revenue Service",
+        "U.S. Department of Justice",
+        "Federal Trade Commission",
+        "National Council of Nonprofits",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local partnership brief", () => {
+    const draft = {
+      ...DEFAULT_PARTNERSHIP_BRIEF,
+      organizationName: "Willow Street Family Resource Network",
+      partnerName: "Harbor County Legal Aid",
+      partnershipName: "Neighborhood legal navigation pathway",
+      stage: "operating" as const,
+      model: "co-delivery" as const,
+      termMonths: 12 as const,
+      reviewEveryMonths: 3 as const,
+      sharedPurpose: "Create an accessible legal-navigation pathway.",
+      communityRole: "Resident advisors review access and findings.",
+      organizationContribution: "Bilingual navigation and trusted space.",
+      partnerContribution: "Legal expertise and qualified referrals.",
+      jointActivities: "Training, workshops, referrals, and review.",
+      intendedResult: "Residents complete an appropriate next step.",
+      decisionRights: "Each party controls its services and records.",
+      financialTerms: "Each party tracks full cost.",
+      dataBoundaries: "Aggregate learning only without reviewed authority.",
+      communicationRhythm: "Monthly lead and quarterly community review.",
+      conflictPath: "Escalate material issues to authorized leaders.",
+      closeoutPlan: "Decide at month ten and protect open referrals.",
+      organizationLead: "Program director.",
+      partnerLead: "Partnerships attorney.",
+      hasConflictReview: true,
+      hasDataReview: true,
+      hasAccessibilityPlan: true,
+      hasAuthorizedApproval: false,
+    }
+    expect(summarizePartnershipBrief(draft)).toEqual({
+      draftedAreaCount: 14,
+      totalAreaCount: 14,
+      reviewMomentCount: 4,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+      hasReviewableBrief: true,
+    })
+    expect(buildPartnershipBriefActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-safeguards",
+    ])
+    expect(buildPartnershipReviewPrompt(draft)).toContain(
+      "Do not invent facts, partner interest, authority, consent"
+    )
+    expect(buildPartnershipReviewPrompt(draft)).toContain(
+      "does not recommend a partner, score trust or equity"
+    )
+    expect(buildPartnershipBriefCsv(draft)).toContain(
+      '"Area","Working partnership brief"'
+    )
+    expect(
+      buildPartnershipBriefCsv({ ...draft, partnerName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizePartnershipBrief({
+        stage: "unknown",
+        model: "automatic-merger",
+        termMonths: 60,
+        reviewEveryMonths: 2,
+        sharedPurpose: "a".repeat(1100),
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      model: "referral",
+      termMonths: 6,
+      reviewEveryMonths: 3,
+      sharedPurpose: "a".repeat(1000),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -835,6 +944,9 @@ describe("nonprofit documentation feature", () => {
     const sustainabilityRoute = readSource(
       "src/app/(public)/documentation/best-practices/sustainability/page.tsx"
     )
+    const partnershipsRoute = readSource(
+      "src/app/(public)/documentation/best-practices/partnerships/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -873,6 +985,10 @@ describe("nonprofit documentation feature", () => {
     expect(sustainabilityRoute).toContain("<SustainabilityArticlePage />")
     expect(sustainabilityRoute).toContain(
       'canonical: "/documentation/best-practices/sustainability"'
+    )
+    expect(partnershipsRoute).toContain("<PartnershipsArticlePage />")
+    expect(partnershipsRoute).toContain(
+      'canonical: "/documentation/best-practices/partnerships"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

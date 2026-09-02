@@ -1971,6 +1971,49 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("pb-3 border-border/60 border-b")
   })
 
+  it("renders actionable empty and failure states on the discovery home", () => {
+    const groupCounts = buildPublicMapGroupFilterCounts([])
+    const baseProps = {
+      query: "",
+      items: [],
+      organizations: [],
+      selectedItemId: null,
+      activeGroup: "all" as const,
+      featuredGuides: [],
+      savedGuideIds: [],
+      discoveryGroupCounts: groupCounts,
+      groupCounts,
+      onQueryChange: () => {},
+      onActiveGroupChange: () => {},
+      onSelectItem: () => {},
+      onOpenDetails: () => {},
+      onGuideSelect: () => {},
+      onToggleSavedGuide: () => {},
+      onRetryResourceItems: () => {},
+    }
+    const emptyMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDrawerSearchPanel, {
+        ...baseProps,
+        resourceItemsLoadStatus: "ready",
+      })
+    )
+    const errorMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDrawerSearchPanel, {
+        ...baseProps,
+        resourceItemsLoadStatus: "error",
+      })
+    )
+
+    expect(emptyMarkup).toContain('data-public-map-directory-empty="empty"')
+    expect(emptyMarkup).toContain("No nearby resources yet")
+    expect(emptyMarkup).toContain(">Start searching</button>")
+    expect(emptyMarkup).not.toContain(">Find Nearby</h2>")
+    expect(errorMarkup).toContain('data-public-map-directory-empty="error"')
+    expect(errorMarkup).toContain("We couldn’t load nearby resources")
+    expect(errorMarkup).toContain(">Try again</button>")
+    expect(errorMarkup).not.toContain('data-public-map-search-empty="true"')
+  })
+
   it("renders actionable loading, empty, and failure states for search", () => {
     const baseProps = {
       items: [],

@@ -686,7 +686,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("overflow-hidden")
     expect(markup).toContain('data-public-map-result-trigger="true"')
     expect(markup).not.toContain('role="button"')
-    expect(markup).not.toContain(organization.tagline)
+    expect(markup).toContain(organization.tagline)
     expect(markup).not.toContain(organization.description ?? "")
     expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
     expect(markup).toContain("min-w-0 text-pretty break-words")
@@ -694,8 +694,10 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("max-w-[45%]")
     expect(markup).toContain("•")
     expect(markup).not.toContain(">View<")
-    expect(markup).toContain("flex min-w-0 items-center")
-    expect(markup).toContain("truncate text-base leading-snug font-semibold")
+    expect(markup).toContain("flex min-w-0 items-stretch")
+    expect(markup).toContain(
+      "line-clamp-2 text-base leading-snug font-semibold"
+    )
     expect(markup).toContain("text-sm leading-snug")
     expect(markup).toContain(">Community<")
     expect(markup).not.toContain("Weekly mutual-aid meals")
@@ -742,7 +744,7 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain("Seed Food Access")
-    expect(markup).not.toContain("Food pantry and meal support")
+    expect(markup).toContain("pantry and meal support")
     expect(markup).toContain(">Food</mark>")
     expect(markup).toContain("Chicago, IL")
     expect(markup).not.toContain(">Water<")
@@ -771,9 +773,10 @@ describe("public map sidebar layout", () => {
     expect(resourceNameIndex).toBeGreaterThan(resourceTitleSlotIndex)
     expect(primaryCategoryIndex).toBeGreaterThan(resourceNameIndex)
     expect(markup).toContain("Chicago, IL")
-    expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(markup.match(/min-h-20/g)).toHaveLength(4)
+    expect(organizationMetadataClassName.split(" ")).toContain("mt-1.5")
+    expect(resourceMetadataClassName.split(" ")).toContain("mt-1.5")
+    expect(markup.match(/min-h-20/g)).toHaveLength(2)
+    expect(markup).toContain("min-h-28")
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -788,6 +791,34 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("rounded-xl text-left whitespace-normal")
     expect(markup).not.toContain('aria-label="Resource marker preview"')
     expect(markup).not.toContain("PublicMapResourcePreviewPopover")
+  })
+
+  it("renders asset-forward resource cards with a resilient category fallback", () => {
+    const resource = buildResourceItem({
+      markerImageUrl: "https://example.org/provider-photo.jpg",
+    })
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        items: [resource],
+        organizations: [],
+        selectedItemId: null,
+        selectedOrgId: null,
+        query: "",
+        constrainedLayout: true,
+        onSelectItem: () => {},
+        onSelectOrg: () => {},
+        onOpenDetails: () => {},
+      })
+    )
+
+    expect(markup).toContain("min-h-28")
+    expect(markup).toContain("size-24")
+    expect(markup).toContain('data-react-grab-surface-slot="media"')
+    expect(markup).toContain('src="https://example.org/provider-photo.jpg"')
+    expect(markup).toContain('alt="Seed Food Access image"')
+    expect(markup).toContain('loading="lazy"')
+    expect(markup).toContain("line-clamp-2")
+    expect(markup).toContain('data-public-map-resource-category-icon="food"')
   })
 
   it("opens seed resources in the shared right-rail detail surface", () => {
@@ -1532,7 +1563,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(">My Map<")
     expect(markup).toContain("Seed Food Access")
     expect(markup).toContain(">Food<")
-    expect(markup).not.toContain("Food pantry and meal support")
+    expect(markup).toContain("Food pantry and meal support")
     expect(markup).toContain('aria-label="Remove Seed Food Access from My Map"')
     expect(markup).toContain('aria-pressed="true"')
   })

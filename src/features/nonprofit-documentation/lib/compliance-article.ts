@@ -240,5 +240,8 @@ export const COMPLIANCE_ARTICLE: BestPracticeArticle = {
     title: "Mission",
     href: "/documentation/best-practices/mission",
   },
-  next: { title: "Fundraising" },
+  next: {
+    title: "Fundraising",
+    href: "/documentation/best-practices/fundraising",
+  },
 }

@@ -10,14 +10,18 @@ import {
   COMPLIANCE_ARTICLE,
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_COMPLIANCE_RHYTHM,
+  DEFAULT_FUNDRAISING_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
+  FUNDRAISING_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
   buildComplianceCsv,
   buildComplianceTasks,
+  buildFundraisingActions,
+  buildFundraisingCsv,
   buildBrandTokens,
   brandFontStack,
   commonFederalFilingPath,
@@ -27,8 +31,10 @@ import {
   normalizeHex,
   normalizeProportions,
   sanitizeComplianceRhythm,
+  sanitizeFundraisingPlan,
   sanitizeBrandDraft,
   typeScale,
+  summarizeFundraisingPlan,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
@@ -78,6 +84,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Compliance")).toMatchObject({
       status: "live",
       href: "/documentation/best-practices/compliance",
+    })
+    expect(items.find((item) => item.title === "Fundraising")).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/fundraising",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -289,6 +299,87 @@ describe("nonprofit documentation feature", () => {
     expect(sanitizeComplianceRhythm({ stateCode: "XX" }).stateCode).toBe("")
   })
 
+  it("publishes complete source-backed fundraising guidance", () => {
+    expect(FUNDRAISING_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(FUNDRAISING_ARTICLE.framework).toHaveLength(7)
+    expect(FUNDRAISING_ARTICLE.checklist.length).toBeGreaterThanOrEqual(9)
+    expect(FUNDRAISING_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(6)
+    expect(FUNDRAISING_ARTICLE.measures.length).toBeGreaterThanOrEqual(6)
+    expect(FUNDRAISING_ARTICLE.sources.length).toBeGreaterThanOrEqual(8)
+    expect(FUNDRAISING_ARTICLE.answer).toContain("honoring every promise")
+    expect(FUNDRAISING_ARTICLE.disclaimer).toContain("does not determine")
+    expect(
+      FUNDRAISING_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Internal Revenue Service",
+        "Grants.gov",
+        "SAM.gov",
+        "Association of Fundraising Professionals",
+        "National Council of Nonprofits",
+      ])
+    )
+  })
+
+  it("builds a transparent device-local fundraising plan", () => {
+    const draft = {
+      ...DEFAULT_FUNDRAISING_PLAN,
+      organizationName: "East Harbor Youth Arts",
+      stage: "operating" as const,
+      fundingGoal: 120_000,
+      committedFunds: 30_000,
+      channelTargets: {
+        individuals: 35_000,
+        foundations: 25_000,
+        government: 10_000,
+        corporate: 10_000,
+        events: 10_000,
+      },
+      hasCaseForSupport: true,
+      hasGiftAcknowledgmentProcess: true,
+    }
+    expect(summarizeFundraisingPlan(draft)).toEqual({
+      fundingNeed: 90_000,
+      plannedTotal: 90_000,
+      remainingGap: 0,
+      overplannedAmount: 0,
+      monthlyPace: 7_500,
+    })
+    expect(buildFundraisingActions(draft).map(({ id }) => id)).toEqual(
+      expect.arrayContaining([
+        "operating-review",
+        "channel-individuals",
+        "channel-foundations",
+        "channel-government",
+        "channel-corporate",
+        "channel-events",
+      ])
+    )
+    expect(buildFundraisingCsv(draft)).toContain(
+      '"Channel","Planned amount","Share of fundraising need"'
+    )
+    expect(
+      buildFundraisingCsv({ ...draft, organizationName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeFundraisingPlan({
+        stage: "unknown",
+        periodMonths: 7,
+        fundingGoal: -100,
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      periodMonths: 12,
+      fundingGoal: 0,
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -314,6 +405,9 @@ describe("nonprofit documentation feature", () => {
     const complianceRoute = readSource(
       "src/app/(public)/documentation/best-practices/compliance/page.tsx"
     )
+    const fundraisingRoute = readSource(
+      "src/app/(public)/documentation/best-practices/fundraising/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -333,6 +427,10 @@ describe("nonprofit documentation feature", () => {
     expect(homeRoute).toContain("<DocumentationHome />")
     expect(missionRoute).toContain("<MissionArticlePage />")
     expect(complianceRoute).toContain("<ComplianceArticlePage />")
+    expect(fundraisingRoute).toContain("<FundraisingArticlePage />")
+    expect(fundraisingRoute).toContain(
+      'canonical: "/documentation/best-practices/fundraising"'
+    )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

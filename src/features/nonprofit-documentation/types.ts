@@ -133,6 +133,42 @@ export type ComplianceTask = {
   evidence: string
 }
 
+export type FundraisingChannelId =
+  | "individuals"
+  | "foundations"
+  | "government"
+  | "corporate"
+  | "events"
+
+export type FundraisingChannelTargets = Record<FundraisingChannelId, number>
+
+export type FundraisingPlanDraft = {
+  version: 1
+  organizationName: string
+  stage: DocumentationStageId
+  periodMonths: 3 | 6 | 12 | 18
+  fundingGoal: number
+  committedFunds: number
+  channelTargets: FundraisingChannelTargets
+  hasCaseForSupport: boolean
+  hasGiftAcknowledgmentProcess: boolean
+}
+
+export type FundraisingPlanSummary = {
+  fundingNeed: number
+  plannedTotal: number
+  remainingGap: number
+  overplannedAmount: number
+  monthlyPace: number
+}
+
+export type FundraisingPlanAction = {
+  id: string
+  phase: "Foundation" | "Relationships" | "Ask" | "Stewardship" | "Systems"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

@@ -6,6 +6,7 @@ export {
   FoundationGuidePage,
   MissionArticlePage,
   ComplianceArticlePage,
+  FundraisingArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -15,6 +16,7 @@ export {
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   COMPLIANCE_ARTICLE,
+  FUNDRAISING_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -37,6 +39,13 @@ export {
   nominalAnnualReturnDueDate,
   sanitizeComplianceRhythm,
   stateNameFor,
+  DEFAULT_FUNDRAISING_PLAN,
+  FUNDRAISING_CHANNELS,
+  FUNDRAISING_PLAN_STORAGE_KEY,
+  buildFundraisingActions,
+  buildFundraisingCsv,
+  sanitizeFundraisingPlan,
+  summarizeFundraisingPlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -49,6 +58,11 @@ export type {
   ComplianceReceiptsBand,
   ComplianceRhythmDraft,
   ComplianceTask,
+  FundraisingChannelId,
+  FundraisingChannelTargets,
+  FundraisingPlanDraft,
+  FundraisingPlanSummary,
+  FundraisingPlanAction,
   BrandIdentityColor,
   BrandIdentityDraft,
   BrandAssetId,

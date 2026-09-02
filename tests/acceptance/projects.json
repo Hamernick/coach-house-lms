@@ -190,6 +190,7 @@
       "tests/acceptance/workspace-ontology-root-layout.test.ts",
       "tests/acceptance/workspace-people-optimistic-mutations.test.ts",
       "tests/acceptance/workspace-people-table-preferences.test.ts",
+      "tests/acceptance/workspace-roadmap-card-title.test.ts",
       "tests/acceptance/workspace-tools.test.ts",
       "tests/acceptance/workspace-view-helpers.test.ts",
       "tests/acceptance/workspace-view-seed.test.ts"
@@ -257,8 +258,7 @@
       "tests/acceptance/workspace-board-state-actions.test.ts",
       "tests/acceptance/workspace-canvas-surface-v2-viewport-controls.test.ts",
       "tests/acceptance/workspace-node-frame-contract.test.ts",
-      "tests/acceptance/workspace-people-taxonomy-persistence.test.ts",
-      "tests/acceptance/workspace-roadmap-card-title.test.ts"
+      "tests/acceptance/workspace-people-taxonomy-persistence.test.ts"
     ],
     "cli": [
       "tests/acceptance/resource-map-admin.test.ts",

@@ -19,9 +19,9 @@ import {
 import {
   type PublicMapMapboxApi,
   useInitializePublicMap,
-  usePublicMapCameraLifecycle,
   resolvePublicMapSelectedOrganization,
 } from "./public-map-index/public-map-index-runtime"
+import { usePublicMapCameraLifecycle } from "./public-map-index/public-map-camera-lifecycle"
 import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"

@@ -84,7 +84,10 @@ describe("public marketing canvas", () => {
     expect(sidebarSource).not.toContain("SIDEBAR_CANVAS_NAV")
     expect(sidebarSource).not.toContain("About")
     expect(sidebarSource).not.toContain("Sign up")
-    expect(headerSource).toContain('onClick={() => changeSection("signup")}')
+    expect(headerSource).toContain("<BuildCollectPublicHeader")
+    expect(headerSource).toContain(
+      'activeArea={activeSection === "find" ? "collect" : "build"}'
+    )
   })
 
   it("uses GSAP for focused reveals and respects reduced motion", () => {

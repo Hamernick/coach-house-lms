@@ -335,6 +335,61 @@ export type MeasurementPlanAction = {
   evidence: string
 }
 
+export type SustainabilityDirectionId =
+  | "maintain"
+  | "stabilize"
+  | "transition"
+  | "grow"
+  | "responsible-close"
+
+export type SustainabilityHorizonMonths = 6 | 12 | 18 | 24 | 36
+
+export type SustainabilityPlanDraft = {
+  version: 1
+  organizationName: string
+  initiativeName: string
+  stage: DocumentationStageId
+  direction: SustainabilityDirectionId
+  horizonMonths: SustainabilityHorizonMonths
+  unrestrictedCash: number
+  expectedUnrestrictedRevenue: number
+  restrictedFunds: number
+  monthlyCoreCosts: number
+  monthlyProgramCosts: number
+  weeklyAvailableHours: number
+  weeklyCommittedHours: number
+  missionPriority: string
+  essentialCommitments: string
+  fundingAssumptions: string
+  peopleDependencies: string
+  systemsDependencies: string
+  adaptationTriggers: string
+  continuityOwner: string
+  reviewRhythm: string
+  hasBoardFinancialReview: boolean
+  hasRestrictionReview: boolean
+  hasContinuityPlan: boolean
+}
+
+export type SustainabilityPlanSummary = {
+  monthlyPlannedCost: number
+  horizonPlannedCost: number
+  flexibleResources: number
+  projectedFlexibleBalance: number
+  startingRunwayMonths: number
+  weeklyCapacityBalance: number
+  draftedAreaCount: number
+  totalAreaCount: number
+  hasReviewableScenario: boolean
+}
+
+export type SustainabilityPlanAction = {
+  id: string
+  phase: "Mission" | "Money" | "People" | "Continuity" | "Governance"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

@@ -199,6 +199,7 @@ test("pricing is embedded in Build", async ({ page }) => {
   await page.waitForSelector("[data-public-home-build-pricing]", {
     state: "attached",
   })
+  await waitForHomeCanvasHydration(page)
   await stabilizeForScreenshot(page)
 
   const pricing = page.locator("[data-public-home-build-pricing]")

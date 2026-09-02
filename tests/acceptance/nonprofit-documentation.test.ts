@@ -16,6 +16,7 @@ import {
   DEFAULT_MEASUREMENT_PLAN,
   DEFAULT_PARTNERSHIP_BRIEF,
   DEFAULT_SUSTAINABILITY_PLAN,
+  DEFAULT_SOCIAL_MEDIA_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
@@ -26,6 +27,7 @@ import {
   MEASURING_IMPACT_ARTICLE,
   PARTNERSHIPS_ARTICLE,
   SUSTAINABILITY_ARTICLE,
+  SOCIAL_MEDIA_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
   buildComplianceCsv,
@@ -47,6 +49,10 @@ import {
   buildSustainabilityActions,
   buildSustainabilityCsv,
   buildSustainabilityReviewPrompt,
+  buildSocialMediaActions,
+  buildSocialMediaCsv,
+  buildSocialMediaReviewPrompt,
+  buildTrackedSocialUrl,
   buildBrandTokens,
   brandFontStack,
   commonFederalFilingPath,
@@ -62,6 +68,7 @@ import {
   sanitizeMeasurementPlan,
   sanitizePartnershipBrief,
   sanitizeSustainabilityPlan,
+  sanitizeSocialMediaPlan,
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
@@ -70,6 +77,7 @@ import {
   summarizeMeasurementPlan,
   summarizePartnershipBrief,
   summarizeSustainabilityPlan,
+  summarizeSocialMediaPlan,
   recommendedFramework,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
@@ -148,6 +156,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Partnerships")).toMatchObject({
       status: "live",
       href: "/documentation/best-practices/partnerships",
+    })
+    expect(items.find((item) => item.title === "Social media")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/social-media",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -904,6 +916,135 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit social media guidance", () => {
+    expect(SOCIAL_MEDIA_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(SOCIAL_MEDIA_ARTICLE.slug).toBe("tools/social-media")
+    expect(SOCIAL_MEDIA_ARTICLE.framework).toHaveLength(7)
+    expect(SOCIAL_MEDIA_ARTICLE.checklist.length).toBeGreaterThanOrEqual(12)
+    expect(SOCIAL_MEDIA_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(SOCIAL_MEDIA_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(SOCIAL_MEDIA_ARTICLE.sources.length).toBeGreaterThanOrEqual(9)
+    expect(SOCIAL_MEDIA_ARTICLE.answer).toContain("specific audience need")
+    expect(SOCIAL_MEDIA_ARTICLE.disclaimer).toContain("do not publish")
+    expect(
+      SOCIAL_MEDIA_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Internal Revenue Service",
+        "Federal Trade Commission",
+        "World Wide Web Consortium",
+        "U.S. Department of Justice",
+        "U.S. Copyright Office",
+        "LinkedIn Help",
+        "YouTube Help",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local social media brief", () => {
+    const draft = {
+      ...DEFAULT_SOCIAL_MEDIA_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      campaignName: "Know your options",
+      stage: "operating" as const,
+      objective: "service-access" as const,
+      campaignWeeks: 8 as const,
+      primaryAudience: "Adults in three service ZIP codes.",
+      desiredAction: "Request a navigation appointment.",
+      destinationUrl: "https://example.org/appointments?language=en",
+      mainMessage: "Free bilingual navigation appointments are available.",
+      sourceEvidence: "Reviewed program page dated August 28, 2026.",
+      storyPermissionContext: "No participant story or image is used.",
+      voiceGuidance: "Plain, calm, specific, and bilingual.",
+      postCopy: "Review eligibility for a free navigation appointment.",
+      visualDescription: "A text-led service information card.",
+      alternativeText: "Free navigation appointment service card.",
+      captionsPlan: "Reviewed open captions and a transcript for video.",
+      linkLabel: "Review eligibility and request an appointment",
+      responseProtocol: "Move service questions to the secure request form.",
+      approvalOwner: "Program director.",
+      escalationOwner: "Executive director.",
+      previewChannel: "instagram" as const,
+      channelCadence: {
+        instagram: 2,
+        facebook: 1,
+        linkedin: 1,
+        tiktok: 0,
+        youtube: 0,
+        bluesky: 0,
+        other: 0,
+      },
+      hasStoryPermissionReview: true,
+      hasClaimSourceReview: true,
+      hasAccessibilityReview: true,
+      hasApprovalEscalationPlan: false,
+    }
+    expect(summarizeSocialMediaPlan(draft)).toEqual({
+      activeChannelCount: 3,
+      weeklyOutputs: 4,
+      campaignOutputs: 32,
+      draftedAreaCount: 15,
+      totalAreaCount: 15,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+    })
+    expect(buildSocialMediaActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-safeguards",
+    ])
+    expect(buildSocialMediaReviewPrompt(draft)).toContain(
+      "Do not invent facts, outcomes, quotes, dates, links, permissions"
+    )
+    expect(buildSocialMediaReviewPrompt(draft)).toContain(
+      "Do not publish, approve, score, predict performance"
+    )
+    expect(
+      buildTrackedSocialUrl(
+        draft.destinationUrl,
+        draft.previewChannel,
+        draft.campaignName
+      )
+    ).toEqual({
+      ok: true,
+      url: "https://example.org/appointments?language=en&utm_source=instagram&utm_medium=social&utm_campaign=know-your-options",
+    })
+    expect(
+      buildTrackedSocialUrl("javascript:alert(1)", "other", "Test")
+    ).toEqual({
+      ok: false,
+      error: "Only HTTP and HTTPS destinations are used.",
+    })
+    expect(buildSocialMediaCsv(draft)).toContain(
+      '"Channel","User-entered outputs per week","Campaign outputs"'
+    )
+    expect(
+      buildSocialMediaCsv({ ...draft, campaignName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeSocialMediaPlan({
+        stage: "unknown",
+        objective: "go-viral",
+        campaignWeeks: 52,
+        previewChannel: "x",
+        primaryAudience: "a".repeat(600),
+        channelCadence: { instagram: 400, facebook: -2 },
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      objective: "community-education",
+      campaignWeeks: 8,
+      previewChannel: "instagram",
+      primaryAudience: "a".repeat(400),
+      channelCadence: expect.objectContaining({ instagram: 100, facebook: 0 }),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -947,6 +1088,9 @@ describe("nonprofit documentation feature", () => {
     const partnershipsRoute = readSource(
       "src/app/(public)/documentation/best-practices/partnerships/page.tsx"
     )
+    const socialMediaRoute = readSource(
+      "src/app/(public)/documentation/tools/social-media/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -989,6 +1133,10 @@ describe("nonprofit documentation feature", () => {
     expect(partnershipsRoute).toContain("<PartnershipsArticlePage />")
     expect(partnershipsRoute).toContain(
       'canonical: "/documentation/best-practices/partnerships"'
+    )
+    expect(socialMediaRoute).toContain("<SocialMediaArticlePage />")
+    expect(socialMediaRoute).toContain(
+      'canonical: "/documentation/tools/social-media"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

@@ -12,6 +12,7 @@ export { FRAMEWORKS_ARTICLE } from "./frameworks-article"
 export { MEASURING_IMPACT_ARTICLE } from "./measuring-impact-article"
 export { SUSTAINABILITY_ARTICLE } from "./sustainability-article"
 export { PARTNERSHIPS_ARTICLE } from "./partnerships-article"
+export { SOCIAL_MEDIA_ARTICLE } from "./social-media-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -95,6 +96,21 @@ export {
   sanitizePartnershipBrief,
   summarizePartnershipBrief,
 } from "./partnership-brief"
+export {
+  DEFAULT_SOCIAL_MEDIA_PLAN,
+  SOCIAL_MEDIA_CAMPAIGN_WEEKS,
+  SOCIAL_MEDIA_CHANNELS,
+  SOCIAL_MEDIA_OBJECTIVES,
+  SOCIAL_MEDIA_PLAN_STORAGE_KEY,
+  buildSocialMediaActions,
+  buildSocialMediaCsv,
+  buildSocialMediaReviewPrompt,
+  buildTrackedSocialUrl,
+  sanitizeSocialMediaPlan,
+  socialMediaChannelLabel,
+  socialMediaObjectiveLabel,
+  summarizeSocialMediaPlan,
+} from "./social-media-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

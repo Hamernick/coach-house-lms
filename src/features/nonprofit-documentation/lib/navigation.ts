@@ -88,7 +88,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Social media",
         description: "Plan channels, content, and governance.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/social-media`,
+        status: "live",
       },
       {
         title: "Networking",

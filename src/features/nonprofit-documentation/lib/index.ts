@@ -7,6 +7,7 @@ export {
 export { MISSION_ARTICLE } from "./mission-article"
 export { COMPLIANCE_ARTICLE } from "./compliance-article"
 export { FUNDRAISING_ARTICLE } from "./fundraising-article"
+export { MARKETING_ARTICLE } from "./marketing-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -26,6 +27,18 @@ export {
   sanitizeFundraisingPlan,
   summarizeFundraisingPlan,
 } from "./fundraising-plan"
+export {
+  DEFAULT_MARKETING_PLAN,
+  MARKETING_CHANNELS,
+  MARKETING_OBJECTIVES,
+  MARKETING_PLAN_STORAGE_KEY,
+  buildMarketingActions,
+  buildMarketingAiPrompt,
+  buildMarketingCsv,
+  marketingObjectiveLabel,
+  sanitizeMarketingPlan,
+  summarizeMarketingPlan,
+} from "./marketing-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

@@ -46,7 +46,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Marketing",
         description: "Reach the people your work is designed to serve.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/best-practices/marketing`,
+        status: "live",
       },
       {
         title: "Frameworks",

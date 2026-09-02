@@ -262,5 +262,8 @@ export const FUNDRAISING_ARTICLE: BestPracticeArticle = {
     title: "Compliance",
     href: "/documentation/best-practices/compliance",
   },
-  next: { title: "Marketing" },
+  next: {
+    title: "Marketing",
+    href: "/documentation/best-practices/marketing",
+  },
 }

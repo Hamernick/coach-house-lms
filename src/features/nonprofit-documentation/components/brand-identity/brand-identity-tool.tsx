@@ -82,7 +82,7 @@ export function BrandIdentityTool() {
           <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
-                The toolbox · Public tool
+                Tools · Public tool
               </p>
               <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-balance sm:text-5xl">
                 Brand Identity Builder

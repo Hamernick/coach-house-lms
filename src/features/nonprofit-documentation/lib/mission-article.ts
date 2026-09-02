@@ -1,7 +1,8 @@
-import type { MissionArticle } from "../types"
+import type { BestPracticeArticle } from "../types"
 
-export const MISSION_ARTICLE: MissionArticle = {
+export const MISSION_ARTICLE: BestPracticeArticle = {
   slug: "best-practices/mission",
+  navigationTitle: "Mission",
   title: "Write a mission that guides real decisions",
   description:
     "A practical, stage-specific guide to defining a nonprofit mission that connects purpose, people, activities, and measurable change.",
@@ -10,6 +11,17 @@ export const MISSION_ARTICLE: MissionArticle = {
     "A useful nonprofit mission names who the organization serves, the change it exists to create, and the distinctive work it will do—clearly enough to guide programs, budgets, partnerships, and what the organization declines.",
   readingTime: "9 minute read",
   reviewedDate: "August 31, 2026",
+  publishedDate: "2026-08-31",
+  modifiedDate: "2026-08-31",
+  labels: {
+    definition: "What a mission is",
+    stages: "Use the mission differently as you mature",
+    example: "Fictional example",
+    framework: "A five-step mission framework",
+    checklist: "Mission quality checklist",
+    mistakes: "Common mistakes",
+    measures: "What to measure",
+  },
   definition:
     "A mission is the organization’s durable reason for acting. It is broader than a program but more specific than a vision. A vision describes the future you hope to see; the mission defines your organization’s contribution to that future.",
   whyItMatters: [
@@ -17,6 +29,8 @@ export const MISSION_ARTICLE: MissionArticle = {
     "For organizations seeking recognition under section 501(c)(3), the IRS evaluates both exempt purposes and the activities used to advance them. A slogan alone does not establish that connection.",
     "Specificity makes measurement possible: you can identify the people reached, the work delivered, and the change the work is intended to support.",
   ],
+  importantNote:
+    "A public mission statement supports clarity, but it does not replace purpose clauses, activity descriptions, or state-specific legal review.",
   stages: [
     {
       id: "exploring",
@@ -79,7 +93,9 @@ export const MISSION_ARTICLE: MissionArticle = {
     name: "Illustrative example: Riverbend Cooling Network",
     context:
       "A fictional neighborhood coalition is responding to dangerous summer heat among older adults and medically vulnerable residents.",
+    weakLabel: "Too broad",
     weak: "We help communities thrive through innovative support.",
+    strongLabel: "Decision-ready",
     strong:
       "Riverbend Cooling Network reduces heat-related harm for older and medically vulnerable residents in Riverbend County by coordinating trusted cooling spaces, transportation, and neighbor outreach.",
     reason:
@@ -151,6 +167,8 @@ export const MISSION_ARTICLE: MissionArticle = {
         "Coordinate it with organizing documents and exemption materials, then obtain qualified state-specific counsel when needed.",
     },
   ],
+  measuresIntroduction:
+    "A mission is useful when it changes choices and connects work to evidence. Start with a small review set.",
   measures: [
     "Mission-fit decisions: the share of proposed programs, grants, and partnerships approved, revised, referred, or declined after review.",
     "Activity alignment: the share of spending and staff time connected to mission-serving activities or necessary support functions.",
@@ -178,4 +196,10 @@ export const MISSION_ARTICLE: MissionArticle = {
       note: "Questions used to connect activities, beneficiaries, funding, and exempt purposes.",
     },
   ],
+  disclaimer:
+    "Educational guidance only. Confirm current federal and state requirements with the responsible agency or a qualified professional.",
+  next: {
+    title: "Compliance",
+    href: "/documentation/best-practices/compliance",
+  },
 }

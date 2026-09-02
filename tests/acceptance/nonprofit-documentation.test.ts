@@ -4,22 +4,29 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
+  BRAND_FONT_GROUPS,
+  BRAND_FONT_OPTIONS,
+  BRAND_IDENTITY_PATH,
+  COMPLIANCE_ARTICLE,
+  DEFAULT_BRAND_IDENTITY_DRAFT,
+  DEFAULT_COMPLIANCE_RHYTHM,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   QUICKSTART_GUIDE,
-  BRAND_IDENTITY_PATH,
-  BRAND_FONT_GROUPS,
-  BRAND_FONT_OPTIONS,
-  DEFAULT_BRAND_IDENTITY_DRAFT,
   brandColorLabel,
+  buildComplianceCsv,
+  buildComplianceTasks,
   buildBrandTokens,
   brandFontStack,
+  commonFederalFilingPath,
   contrastRating,
   contrastRatio,
+  nominalAnnualReturnDueDate,
   normalizeHex,
   normalizeProportions,
+  sanitizeComplianceRhythm,
   sanitizeBrandDraft,
   typeScale,
 } from "@/features/nonprofit-documentation"
@@ -37,7 +44,7 @@ describe("nonprofit documentation feature", () => {
     expect(DOCUMENTATION_NAVIGATION.map((section) => section.title)).toEqual([
       "Get started",
       "Best practices",
-      "The toolbox",
+      "Tools",
       "Resources",
     ])
 
@@ -66,7 +73,11 @@ describe("nonprofit documentation feature", () => {
     const brandIdentity = items.find((item) => item.title === "Brand identity")
     expect(brandIdentity).toMatchObject({
       status: "live",
-      href: "/documentation/toolbox/brand-identity",
+      href: "/documentation/tools/brand-identity",
+    })
+    expect(items.find((item) => item.title === "Compliance")).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/compliance",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -75,6 +86,9 @@ describe("nonprofit documentation feature", () => {
 
   it("publishes the public brand identity builder without an auth boundary", () => {
     const route = readSource(
+      "src/app/(public)/documentation/tools/brand-identity/page.tsx"
+    )
+    const legacyRoute = readSource(
       "src/app/(public)/documentation/toolbox/brand-identity/page.tsx"
     )
     const tool = readSource(
@@ -84,11 +98,10 @@ describe("nonprofit documentation feature", () => {
       "src/features/nonprofit-documentation/hooks/use-brand-identity-tool.ts"
     )
 
-    expect(BRAND_IDENTITY_PATH).toBe("/documentation/toolbox/brand-identity")
+    expect(BRAND_IDENTITY_PATH).toBe("/documentation/tools/brand-identity")
     expect(route).toContain("<BrandIdentityTool />")
-    expect(route).toContain(
-      'canonical: "/documentation/toolbox/brand-identity"'
-    )
+    expect(route).toContain('canonical: "/documentation/tools/brand-identity"')
+    expect(legacyRoute).toContain("redirect(BRAND_IDENTITY_PATH)")
     expect(tool).toContain('"@type": "WebApplication"')
     expect(tool).toContain("No account required")
     expect(tool).toContain("Private to this browser")
@@ -215,6 +228,67 @@ describe("nonprofit documentation feature", () => {
     ).toBe(true)
   })
 
+  it("publishes complete source-backed compliance guidance", () => {
+    expect(COMPLIANCE_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(COMPLIANCE_ARTICLE.framework).toHaveLength(6)
+    expect(COMPLIANCE_ARTICLE.checklist.length).toBeGreaterThanOrEqual(8)
+    expect(COMPLIANCE_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(5)
+    expect(COMPLIANCE_ARTICLE.measures.length).toBeGreaterThanOrEqual(5)
+    expect(COMPLIANCE_ARTICLE.sources.length).toBeGreaterThanOrEqual(7)
+    expect(COMPLIANCE_ARTICLE.disclaimer).toContain(
+      "does not determine whether"
+    )
+    expect(
+      COMPLIANCE_ARTICLE.sources.every((source) =>
+        source.url.startsWith("https://www.irs.gov/")
+      )
+    ).toBe(true)
+  })
+
+  it("builds a cautious device-local compliance planning rhythm", () => {
+    expect(
+      commonFederalFilingPath("normally-50k-or-less", "under-500k").form
+    ).toBe("Form 990-N may be available")
+    expect(commonFederalFilingPath("under-200k", "under-500k").form).toBe(
+      "Form 990-EZ or Form 990"
+    )
+    expect(commonFederalFilingPath("under-200k", "500k-or-more").form).toBe(
+      "Form 990"
+    )
+    expect(nominalAnnualReturnDueDate("2026-12-31")).toEqual({
+      iso: "2027-05-15",
+      label: "May 15, 2027",
+    })
+
+    const draft = {
+      ...DEFAULT_COMPLIANCE_RHYTHM,
+      stateCode: "NY",
+      taxYearEnd: "2026-12-31",
+      hasEmployees: true,
+    }
+    const tasks = buildComplianceTasks(draft)
+    expect(tasks.map((task) => task.id)).toEqual(
+      expect.arrayContaining([
+        "federal-annual-return",
+        "state-entity-report",
+        "charitable-solicitation",
+        "employment-taxes",
+      ])
+    )
+    expect(
+      tasks.find((task) => task.id === "state-entity-report")?.task
+    ).toContain("New York")
+    expect(buildComplianceCsv(draft)).toContain(
+      '"Category","Status","Task","Timing","Evidence"'
+    )
+    expect(sanitizeComplianceRhythm({ stateCode: "XX" }).stateCode).toBe("")
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -237,6 +311,9 @@ describe("nonprofit documentation feature", () => {
     const missionRoute = readSource(
       "src/app/(public)/documentation/best-practices/mission/page.tsx"
     )
+    const complianceRoute = readSource(
+      "src/app/(public)/documentation/best-practices/compliance/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -249,9 +326,13 @@ describe("nonprofit documentation feature", () => {
     const mission = readSource(
       "src/features/nonprofit-documentation/components/mission-article.tsx"
     )
+    const article = readSource(
+      "src/features/nonprofit-documentation/components/best-practice-article.tsx"
+    )
 
     expect(homeRoute).toContain("<DocumentationHome />")
     expect(missionRoute).toContain("<MissionArticlePage />")
+    expect(complianceRoute).toContain("<ComplianceArticlePage />")
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )
@@ -262,9 +343,13 @@ describe("nonprofit documentation feature", () => {
       'canonical: "/documentation/best-practices/mission"'
     )
     expect(home).toContain('"@type": "CollectionPage"')
-    expect(mission).toContain('"@type": "Article"')
-    expect(mission).toContain('"@type": "BreadcrumbList"')
+    expect(mission).toContain("<BestPracticeArticlePage")
+    expect(article).toContain('"@type": "Article"')
+    expect(article).toContain('"@type": "BreadcrumbList"')
     expect(quickstartRoute).toContain('canonical: "/documentation/quickstart"')
     expect(conceptsRoute).toContain('canonical: "/documentation/key-concepts"')
+    expect(complianceRoute).toContain(
+      'canonical: "/documentation/best-practices/compliance"'
+    )
   })
 })

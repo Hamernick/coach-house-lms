@@ -1,11 +1,11 @@
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
-import type { MissionArticle } from "../types"
+import type { BestPracticeArticle } from "../types"
 
-type MissionSectionProps = { article: MissionArticle }
+type ArticleSectionProps = { article: BestPracticeArticle }
 
-export function MissionCoreSections({ article }: MissionSectionProps) {
+export function BestPracticeCoreSections({ article }: ArticleSectionProps) {
   return (
     <>
       <section
@@ -17,7 +17,7 @@ export function MissionCoreSections({ article }: MissionSectionProps) {
           id="definition-title"
           className="text-2xl font-semibold tracking-[-0.025em]"
         >
-          What a mission is
+          {article.labels.definition}
         </h2>
         <p className="text-muted-foreground mt-4 text-base leading-7">
           {article.definition}
@@ -47,16 +47,14 @@ export function MissionCoreSections({ article }: MissionSectionProps) {
           ))}
         </ul>
         <div className="mt-7 border-l-2 border-amber-500 bg-amber-500/8 px-5 py-4 text-sm leading-6">
-          <strong>Important distinction:</strong> a public mission statement
-          supports clarity, but it does not replace purpose clauses, activity
-          descriptions, or state-specific legal review.
+          <strong>Important distinction:</strong> {article.importantNote}
         </div>
       </section>
     </>
   )
 }
 
-export function MissionStagesSection({ article }: MissionSectionProps) {
+export function BestPracticeStagesSection({ article }: ArticleSectionProps) {
   return (
     <section
       id="stages"
@@ -70,7 +68,7 @@ export function MissionStagesSection({ article }: MissionSectionProps) {
         id="stages-title"
         className="mt-2 text-2xl font-semibold tracking-[-0.025em]"
       >
-        Use the mission differently as you mature
+        {article.labels.stages}
       </h2>
       <div className="mt-7 divide-y border-y">
         {article.stages.map((stage, index) => (
@@ -81,8 +79,8 @@ export function MissionStagesSection({ article }: MissionSectionProps) {
           >
             <div className="grid gap-4 sm:grid-cols-[8rem_1fr] sm:gap-8">
               <div>
-                <span className="text-muted-foreground font-mono text-xs">
-                  0{index + 1}
+                <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                  {String(index + 1).padStart(2, "0")}
                 </span>
                 <h3 id={`${stage.id}-title`} className="mt-2 font-semibold">
                   {stage.label}
@@ -118,7 +116,9 @@ export function MissionStagesSection({ article }: MissionSectionProps) {
   )
 }
 
-export function MissionExampleAndFramework({ article }: MissionSectionProps) {
+export function BestPracticeExampleAndFramework({
+  article,
+}: ArticleSectionProps) {
   return (
     <>
       <section
@@ -127,7 +127,7 @@ export function MissionExampleAndFramework({ article }: MissionSectionProps) {
         aria-labelledby="example-title"
       >
         <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-          Fictional example
+          {article.labels.example}
         </p>
         <h2
           id="example-title"
@@ -141,12 +141,14 @@ export function MissionExampleAndFramework({ article }: MissionSectionProps) {
         <div className="bg-border mt-6 grid gap-px overflow-hidden border sm:grid-cols-2">
           <div className="bg-background p-5">
             <p className="text-muted-foreground text-xs font-semibold uppercase">
-              Too broad
+              {article.example.weakLabel}
             </p>
             <p className="mt-3 text-sm leading-6">“{article.example.weak}”</p>
           </div>
           <div className="bg-background p-5">
-            <p className="text-xs font-semibold uppercase">Decision-ready</p>
+            <p className="text-xs font-semibold uppercase">
+              {article.example.strongLabel}
+            </p>
             <p className="mt-3 text-sm leading-6">“{article.example.strong}”</p>
           </div>
         </div>
@@ -164,7 +166,7 @@ export function MissionExampleAndFramework({ article }: MissionSectionProps) {
           id="framework-title"
           className="text-2xl font-semibold tracking-[-0.025em]"
         >
-          A five-step mission framework
+          {article.labels.framework}
         </h2>
         <ol className="mt-6 divide-y border-y">
           {article.framework.map((step, index) => (
@@ -172,8 +174,8 @@ export function MissionExampleAndFramework({ article }: MissionSectionProps) {
               key={step.title}
               className="grid gap-4 py-6 sm:grid-cols-[2rem_1fr]"
             >
-              <span className="text-muted-foreground font-mono text-xs">
-                0{index + 1}
+              <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                {String(index + 1).padStart(2, "0")}
               </span>
               <div>
                 <h3 className="font-semibold">{step.title}</h3>
@@ -192,7 +194,9 @@ export function MissionExampleAndFramework({ article }: MissionSectionProps) {
   )
 }
 
-export function MissionChecklistAndMistakes({ article }: MissionSectionProps) {
+export function BestPracticeChecklistAndMistakes({
+  article,
+}: ArticleSectionProps) {
   return (
     <>
       <section
@@ -204,7 +208,7 @@ export function MissionChecklistAndMistakes({ article }: MissionSectionProps) {
           id="checklist-title"
           className="text-2xl font-semibold tracking-[-0.025em]"
         >
-          Mission quality checklist
+          {article.labels.checklist}
         </h2>
         <ul className="bg-border mt-6 grid gap-px overflow-hidden border sm:grid-cols-2">
           {article.checklist.map((item) => (
@@ -228,7 +232,7 @@ export function MissionChecklistAndMistakes({ article }: MissionSectionProps) {
           id="mistakes-title"
           className="text-2xl font-semibold tracking-[-0.025em]"
         >
-          Common mistakes
+          {article.labels.mistakes}
         </h2>
         <dl className="mt-6 divide-y border-y">
           {article.mistakes.map((item) => (
@@ -245,7 +249,9 @@ export function MissionChecklistAndMistakes({ article }: MissionSectionProps) {
   )
 }
 
-export function MissionMeasuresAndSources({ article }: MissionSectionProps) {
+export function BestPracticeMeasuresAndSources({
+  article,
+}: ArticleSectionProps) {
   return (
     <>
       <section
@@ -257,11 +263,10 @@ export function MissionMeasuresAndSources({ article }: MissionSectionProps) {
           id="measures-title"
           className="text-2xl font-semibold tracking-[-0.025em]"
         >
-          What to measure
+          {article.labels.measures}
         </h2>
         <p className="text-muted-foreground mt-3 text-sm leading-6">
-          A mission is useful when it changes choices and connects work to
-          evidence. Start with a small review set.
+          {article.measuresIntroduction}
         </p>
         <ol className="mt-6 space-y-4">
           {article.measures.map((item, index) => (
@@ -269,8 +274,8 @@ export function MissionMeasuresAndSources({ article }: MissionSectionProps) {
               key={item}
               className="grid grid-cols-[2rem_1fr] gap-3 text-sm leading-6"
             >
-              <span className="text-muted-foreground font-mono text-xs">
-                0{index + 1}
+              <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                {String(index + 1).padStart(2, "0")}
               </span>
               <span>{item}</span>
             </li>
@@ -306,7 +311,7 @@ export function MissionMeasuresAndSources({ article }: MissionSectionProps) {
                 href={source.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-start gap-2 font-semibold underline-offset-4 hover:underline"
+                className="focus-visible:ring-ring inline-flex min-h-11 items-start gap-2 py-2 font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
               >
                 {source.title}
                 <ExternalLinkIcon
@@ -324,8 +329,7 @@ export function MissionMeasuresAndSources({ article }: MissionSectionProps) {
           ))}
         </ul>
         <p className="text-muted-foreground mt-5 text-xs leading-5">
-          Educational guidance only. Confirm current federal and state
-          requirements with the responsible agency or a qualified professional.
+          {article.disclaimer}
         </p>
       </section>
     </>

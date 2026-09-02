@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Publish `/documentation/toolbox/brand-identity` as a public, device-local brand
+Publish `/documentation/tools/brand-identity` as a public, device-local brand
 system builder for U.S. nonprofit teams. Anyone can complete the guide, preview
 the system, upload their own assets, and download a portable brand package
 without creating an account or purchasing a plan.

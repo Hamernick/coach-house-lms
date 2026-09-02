@@ -5,6 +5,8 @@ export {
   BrandIdentityTool,
   FoundationGuidePage,
   MissionArticlePage,
+  ComplianceArticlePage,
+  BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
 export {
@@ -12,6 +14,7 @@ export {
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
+  COMPLIANCE_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -26,6 +29,14 @@ export {
   normalizeProportions,
   sanitizeBrandDraft,
   typeScale,
+  DEFAULT_COMPLIANCE_RHYTHM,
+  US_STATE_OPTIONS,
+  buildComplianceCsv,
+  buildComplianceTasks,
+  commonFederalFilingPath,
+  nominalAnnualReturnDueDate,
+  sanitizeComplianceRhythm,
+  stateNameFor,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -33,7 +44,11 @@ export type {
   DocumentationSource,
   DocumentationStageGuidance,
   FoundationGuide,
-  MissionArticle,
+  BestPracticeArticle,
+  ComplianceAssetsBand,
+  ComplianceReceiptsBand,
+  ComplianceRhythmDraft,
+  ComplianceTask,
   BrandIdentityColor,
   BrandIdentityDraft,
   BrandAssetId,

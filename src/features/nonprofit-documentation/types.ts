@@ -15,7 +15,7 @@ export type DocumentationNavItem = {
 }
 
 export type DocumentationNavSection = {
-  id: "get-started" | "best-practices" | "toolbox" | "resources"
+  id: "get-started" | "best-practices" | "tools" | "resources"
   title: string
   items: DocumentationNavItem[]
 }
@@ -59,21 +59,36 @@ export type FoundationGuide = {
   sources: DocumentationSource[]
 }
 
-export type MissionArticle = {
-  slug: "best-practices/mission"
+export type BestPracticeArticle = {
+  slug: `best-practices/${string}`
+  navigationTitle: string
   title: string
   description: string
   eyebrow: string
   answer: string
   readingTime: string
   reviewedDate: string
+  publishedDate: string
+  modifiedDate: string
+  labels: {
+    definition: string
+    stages: string
+    example: string
+    framework: string
+    checklist: string
+    mistakes: string
+    measures: string
+  }
   definition: string
   whyItMatters: string[]
+  importantNote: string
   stages: DocumentationStageGuidance[]
   example: {
     name: string
     context: string
+    weakLabel: string
     weak: string
+    strongLabel: string
     strong: string
     reason: string
   }
@@ -84,8 +99,38 @@ export type MissionArticle = {
   }>
   checklist: string[]
   mistakes: Array<{ mistake: string; correction: string }>
+  measuresIntroduction: string
   measures: string[]
   sources: DocumentationSource[]
+  disclaimer: string
+  previous?: { title: string; href: string }
+  next?: { title: string; href?: string }
+}
+
+export type ComplianceReceiptsBand =
+  | "normally-50k-or-less"
+  | "under-200k"
+  | "200k-or-more"
+
+export type ComplianceAssetsBand = "under-500k" | "500k-or-more"
+
+export type ComplianceRhythmDraft = {
+  version: 1
+  stateCode: string
+  taxYearEnd: string
+  receiptsBand: ComplianceReceiptsBand
+  assetsBand: ComplianceAssetsBand
+  solicitsContributions: boolean
+  hasEmployees: boolean
+}
+
+export type ComplianceTask = {
+  id: string
+  category: "Federal" | "State" | "Governance" | "Records" | "Employment"
+  status: "Common requirement" | "Conditional" | "Recommended practice"
+  task: string
+  timing: string
+  evidence: string
 }
 
 export type BrandIdentityColor = {

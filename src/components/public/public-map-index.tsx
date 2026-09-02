@@ -62,6 +62,17 @@ import {
   useSelectedPublicMapResource,
 } from "./public-map-index/public-map-index-state"
 
+function usePublicMapRetryState() {
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [retryVersion, setRetryVersion] = useState(0)
+  const retryMap = useCallback(() => {
+    setMapError(null)
+    setRetryVersion((current) => current + 1)
+  }, [])
+
+  return { mapError, retryMap, retryVersion, setMapError }
+}
+
 export function PublicMapIndex({
   organizations,
   mapboxToken,
@@ -87,7 +98,8 @@ export function PublicMapIndex({
   const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
   const token = resolvePublicMapboxToken(mapboxToken)
   const tokenAvailable = Boolean(token)
-  const [mapError, setMapError] = useState<string | null>(null)
+  const { mapError, retryMap, retryVersion, setMapError } =
+    usePublicMapRetryState()
   const [sidebarMode, setSidebarMode] = useInitialSidebarMode(initialPublicSlug)
   const initialOrganization = resolveInitialPublicMapOrganization({
     organizations,
@@ -310,6 +322,7 @@ export function PublicMapIndex({
     setMapLoadVersion,
     setMapError,
     setAppliedBounds,
+    retryVersion,
     theme: mapTheme,
   })
   const { locationControl, setWeather, weather } = usePublicMapLocationWeather({
@@ -391,6 +404,7 @@ export function PublicMapIndex({
       onQueryChange={handleQueryChange}
       onActiveGroupChange={handleActiveGroupChange}
       onRetryResourceItems={retryResourceItems}
+      onRetryMap={retryMap}
       onToggleFavorite={toggleFavorite}
       onToggleCollectedResource={toggleCollectedResource}
       onGuideSelect={handleGuideSelect}

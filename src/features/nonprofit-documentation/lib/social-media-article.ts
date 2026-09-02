@@ -292,5 +292,8 @@ export const SOCIAL_MEDIA_ARTICLE: BestPracticeArticle = {
     title: "Brand identity",
     href: "/documentation/tools/brand-identity",
   },
-  next: { title: "Networking" },
+  next: {
+    title: "Networking",
+    href: "/documentation/tools/networking",
+  },
 }

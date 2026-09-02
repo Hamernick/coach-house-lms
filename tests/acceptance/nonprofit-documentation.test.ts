@@ -14,6 +14,7 @@ import {
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DEFAULT_MEASUREMENT_PLAN,
+  DEFAULT_NETWORKING_PLAN,
   DEFAULT_PARTNERSHIP_BRIEF,
   DEFAULT_SUSTAINABILITY_PLAN,
   DEFAULT_SOCIAL_MEDIA_PLAN,
@@ -25,6 +26,7 @@ import {
   FRAMEWORKS_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
+  NETWORKING_ARTICLE,
   PARTNERSHIPS_ARTICLE,
   SUSTAINABILITY_ARTICLE,
   SOCIAL_MEDIA_ARTICLE,
@@ -43,6 +45,9 @@ import {
   buildMeasurementPlanActions,
   buildMeasurementPlanCsv,
   buildMeasurementReviewPrompt,
+  buildNetworkingActions,
+  buildNetworkingCsv,
+  buildNetworkingReviewPrompt,
   buildPartnershipBriefActions,
   buildPartnershipBriefCsv,
   buildPartnershipReviewPrompt,
@@ -66,6 +71,7 @@ import {
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeMeasurementPlan,
+  sanitizeNetworkingPlan,
   sanitizePartnershipBrief,
   sanitizeSustainabilityPlan,
   sanitizeSocialMediaPlan,
@@ -75,6 +81,7 @@ import {
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
+  summarizeNetworkingPlan,
   summarizePartnershipBrief,
   summarizeSustainabilityPlan,
   summarizeSocialMediaPlan,
@@ -160,6 +167,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Social media")).toMatchObject({
       status: "live",
       href: "/documentation/tools/social-media",
+    })
+    expect(items.find((item) => item.title === "Networking")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/networking",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1045,6 +1056,153 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit networking guidance", () => {
+    expect(NETWORKING_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(NETWORKING_ARTICLE.slug).toBe("tools/networking")
+    expect(NETWORKING_ARTICLE.framework).toHaveLength(7)
+    expect(NETWORKING_ARTICLE.checklist.length).toBeGreaterThanOrEqual(12)
+    expect(NETWORKING_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(NETWORKING_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(NETWORKING_ARTICLE.sources.length).toBeGreaterThanOrEqual(10)
+    expect(NETWORKING_ARTICLE.answer).toContain(
+      "repeatable relationship practice"
+    )
+    expect(NETWORKING_ARTICLE.disclaimer).toContain("do not identify")
+    expect(
+      NETWORKING_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "CDC and Agency for Toxic Substances and Disease Registry",
+        "Agency for Toxic Substances and Disease Registry",
+        "University of Kansas Community Tool Box",
+        "Federal Trade Commission",
+        "U.S. Department of Justice",
+        "Internal Revenue Service",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local nonprofit relationship map", () => {
+    const draft = {
+      ...DEFAULT_NETWORKING_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      initiativeName: "Current referral pathway review",
+      stage: "operating" as const,
+      objective: "referral-pathway" as const,
+      reviewWeeks: 8 as const,
+      networkingPurpose: "Improve the current referral pathway.",
+      communityAccountability: "Resident advisors shape and review decisions.",
+      existingAssets: "Resident advisors and bilingual navigators.",
+      relationshipGaps: "Disability-led access review and capacity updates.",
+      invitation: "Request a bounded listening conversation.",
+      followUpRhythm: "Close loops within three business days.",
+      accessPlan: "Offer accessible English and Spanish options.",
+      dataBoundary: "Store minimum organization-level context only.",
+      planOwner: "Community partnerships manager.",
+      escalationPath: "Escalate sensitive commitments before acting.",
+      relationships: [
+        {
+          id: "resident-circle",
+          label: "Resident advisory circle",
+          category: "community" as const,
+          engagement: "listen" as const,
+          purpose: "Define referral barriers.",
+          theirContext: "Residents hold direct experience.",
+          responsibleOffer: "Compensation and decision follow-up.",
+          nextStep: "Review the listening questions.",
+          owner: "Community partnerships manager",
+          reviewTiming: "Before outreach",
+        },
+        {
+          id: "legal-aid",
+          label: "County legal-aid intake team",
+          category: "peer-nonprofit" as const,
+          engagement: "coordinate" as const,
+          purpose: "Clarify referral fit and capacity.",
+          theirContext: "Eligibility and professional duties apply.",
+          responsibleOffer: "Reviewed navigation information.",
+          nextStep: "Hold an intake-pathway review.",
+          owner: "Program director",
+          reviewTiming: "Within three weeks",
+        },
+        {
+          id: "funder",
+          label: "Regional funder program team",
+          category: "funder" as const,
+          engagement: "learn" as const,
+          purpose: "Learn current funding fit.",
+          theirContext: "Priorities and timing require confirmation.",
+          responsibleOffer: "Concise need and learning context.",
+          nextStep: "Request a brief fit conversation.",
+          owner: "Executive director",
+          reviewTiming: "After resident review",
+        },
+      ],
+      hasCommunityVoiceReview: true,
+      hasConsentDataReview: true,
+      hasAccessibilityReview: true,
+      hasAuthorityConflictReview: false,
+    }
+    expect(summarizeNetworkingPlan(draft)).toEqual({
+      relationshipCount: 3,
+      representedCategoryCount: 3,
+      representedEngagementCount: 3,
+      nextStepCount: 3,
+      draftedAreaCount: 10,
+      totalAreaCount: 10,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+    })
+    expect(buildNetworkingActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-reviews",
+    ])
+    expect(buildNetworkingReviewPrompt(draft)).toContain(
+      "Do not invent people, organizations, relationships, authority, consent"
+    )
+    expect(buildNetworkingReviewPrompt(draft)).toContain(
+      "Do not contact, rank, score, endorse, approve, or select anyone"
+    )
+    expect(buildNetworkingCsv(draft)).toContain(
+      '"Relationship label","Category","Engagement","Purpose"'
+    )
+    expect(
+      buildNetworkingCsv({ ...draft, organizationName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+
+    const sanitized = sanitizeNetworkingPlan({
+      stage: "unknown",
+      objective: "collect-every-contact",
+      reviewWeeks: 52,
+      networkingPurpose: "a".repeat(900),
+      relationships: Array.from({ length: 12 }, (_, index) => ({
+        id: `bad id ${index}`,
+        label: "b".repeat(300),
+        category: "celebrity",
+        engagement: "score",
+      })),
+    })
+    expect(sanitized).toMatchObject({
+      stage: "exploring",
+      objective: "community-listening",
+      reviewWeeks: 8,
+      networkingPurpose: "a".repeat(700),
+    })
+    expect(sanitized.relationships).toHaveLength(8)
+    expect(sanitized.relationships[0]).toMatchObject({
+      id: "badid0",
+      label: "b".repeat(160),
+      category: "community",
+      engagement: "listen",
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1090,6 +1248,9 @@ describe("nonprofit documentation feature", () => {
     )
     const socialMediaRoute = readSource(
       "src/app/(public)/documentation/tools/social-media/page.tsx"
+    )
+    const networkingRoute = readSource(
+      "src/app/(public)/documentation/tools/networking/page.tsx"
     )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
@@ -1137,6 +1298,10 @@ describe("nonprofit documentation feature", () => {
     expect(socialMediaRoute).toContain("<SocialMediaArticlePage />")
     expect(socialMediaRoute).toContain(
       'canonical: "/documentation/tools/social-media"'
+    )
+    expect(networkingRoute).toContain("<NetworkingArticlePage />")
+    expect(networkingRoute).toContain(
+      'canonical: "/documentation/tools/networking"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

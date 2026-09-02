@@ -526,6 +526,92 @@ export type SocialMediaPlanAction = {
   evidence: string
 }
 
+export type NetworkingObjectiveId =
+  | "community-listening"
+  | "referral-pathway"
+  | "peer-learning"
+  | "funding-relationships"
+  | "advocacy-policy"
+  | "volunteer-talent"
+
+export type NetworkingRelationshipCategoryId =
+  | "community"
+  | "peer-nonprofit"
+  | "public-agency"
+  | "funder"
+  | "business-professional"
+  | "advocate-media"
+  | "other"
+
+export type NetworkingEngagementId =
+  | "listen"
+  | "learn"
+  | "exchange"
+  | "coordinate"
+  | "collaborate"
+
+export type NetworkingRelationshipDraft = {
+  id: string
+  label: string
+  category: NetworkingRelationshipCategoryId
+  engagement: NetworkingEngagementId
+  purpose: string
+  theirContext: string
+  responsibleOffer: string
+  nextStep: string
+  owner: string
+  reviewTiming: string
+}
+
+export type NetworkingPlanDraft = {
+  version: 1
+  organizationName: string
+  initiativeName: string
+  stage: DocumentationStageId
+  objective: NetworkingObjectiveId
+  reviewWeeks: 4 | 8 | 12
+  networkingPurpose: string
+  communityAccountability: string
+  existingAssets: string
+  relationshipGaps: string
+  invitation: string
+  followUpRhythm: string
+  accessPlan: string
+  dataBoundary: string
+  planOwner: string
+  escalationPath: string
+  relationships: NetworkingRelationshipDraft[]
+  hasCommunityVoiceReview: boolean
+  hasConsentDataReview: boolean
+  hasAccessibilityReview: boolean
+  hasAuthorityConflictReview: boolean
+}
+
+export type NetworkingPlanSummary = {
+  relationshipCount: number
+  representedCategoryCount: number
+  representedEngagementCount: number
+  nextStepCount: number
+  draftedAreaCount: number
+  totalAreaCount: number
+  safeguardCount: number
+  totalSafeguardCount: number
+}
+
+export type NetworkingPlanAction = {
+  id: string
+  phase:
+    | "Purpose"
+    | "Community"
+    | "Map"
+    | "Exchange"
+    | "Follow-up"
+    | "Safeguards"
+    | "Learning"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

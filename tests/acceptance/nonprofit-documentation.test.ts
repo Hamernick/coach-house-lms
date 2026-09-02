@@ -11,12 +11,14 @@ import {
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
+  DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   FUNDRAISING_ARTICLE,
+  FRAMEWORKS_ARTICLE,
   MARKETING_ARTICLE,
   QUICKSTART_GUIDE,
   brandColorLabel,
@@ -24,6 +26,9 @@ import {
   buildComplianceTasks,
   buildFundraisingActions,
   buildFundraisingCsv,
+  buildLogicModelActions,
+  buildLogicModelCsv,
+  buildLogicModelReviewPrompt,
   buildMarketingActions,
   buildMarketingAiPrompt,
   buildMarketingCsv,
@@ -37,11 +42,14 @@ import {
   normalizeProportions,
   sanitizeComplianceRhythm,
   sanitizeFundraisingPlan,
+  sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
+  summarizeLogicModel,
   summarizeMarketingPlan,
+  recommendedFramework,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
@@ -99,6 +107,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Marketing")).toMatchObject({
       status: "live",
       href: "/documentation/best-practices/marketing",
+    })
+    expect(items.find((item) => item.title === "Frameworks")).toMatchObject({
+      status: "live",
+      href: "/documentation/best-practices/frameworks",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -487,6 +499,86 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit framework guidance", () => {
+    expect(FRAMEWORKS_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(FRAMEWORKS_ARTICLE.framework).toHaveLength(5)
+    expect(FRAMEWORKS_ARTICLE.checklist.length).toBeGreaterThanOrEqual(9)
+    expect(FRAMEWORKS_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(6)
+    expect(FRAMEWORKS_ARTICLE.measures.length).toBeGreaterThanOrEqual(6)
+    expect(FRAMEWORKS_ARTICLE.sources.length).toBeGreaterThanOrEqual(8)
+    expect(FRAMEWORKS_ARTICLE.answer).toContain("structured way")
+    expect(FRAMEWORKS_ARTICLE.disclaimer).toContain("do not determine")
+    expect(
+      FRAMEWORKS_ARTICLE.sources.map(({ publisher }) => publisher)
+    ).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "AmeriCorps",
+        "U.S. Agency for International Development",
+        "Minnesota Department of Health",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local logic model", () => {
+    const draft = {
+      ...DEFAULT_LOGIC_MODEL_DRAFT,
+      organizationName: "Willow Street Family Resource Network",
+      programName: "Neighborhood legal navigation pilot",
+      stage: "forming" as const,
+      primaryQuestion: "plan-program" as const,
+      need: "Residents report uncertainty about trusted help.",
+      people: "Adults in three service ZIP codes.",
+      inputs: "Two trained navigators and partner referrals.",
+      activities: "Offer bilingual navigation appointments.",
+      outputs: "Appointments and referrals completed.",
+      nearTermOutcomes: "Residents better understand their options.",
+      intermediateOutcomes: "More residents complete timely next steps.",
+      longTermContribution: "More timely problem resolution.",
+      assumptions: "Appointments and referrals have sufficient capacity.",
+      context: "Rules, housing conditions, and legal capacity may change.",
+      learningQuestion: "Which barriers prevent referral completion?",
+    }
+    expect(summarizeLogicModel(draft)).toEqual({
+      draftedAreaCount: 11,
+      totalAreaCount: 11,
+      causalLinkCount: 5,
+      hasCompletePathway: true,
+    })
+    expect(recommendedFramework(draft.primaryQuestion).id).toBe("logic-model")
+    expect(buildLogicModelActions(draft).map(({ id }) => id)).toEqual([
+      "forming-align",
+      "framework-logic-model",
+    ])
+    expect(buildLogicModelReviewPrompt(draft)).toContain(
+      "Do not invent facts, statistics, quotes, outcomes, causal relationships"
+    )
+    expect(buildLogicModelReviewPrompt(draft)).toContain(
+      "This review does not validate causality"
+    )
+    expect(buildLogicModelCsv(draft)).toContain('"Area","Working draft"')
+    expect(
+      buildLogicModelCsv({ ...draft, programName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+    expect(
+      sanitizeLogicModelDraft({
+        stage: "unknown",
+        primaryQuestion: "make-us-successful",
+        need: "a".repeat(900),
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      primaryQuestion: "plan-program",
+      need: "a".repeat(800),
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -518,6 +610,9 @@ describe("nonprofit documentation feature", () => {
     const marketingRoute = readSource(
       "src/app/(public)/documentation/best-practices/marketing/page.tsx"
     )
+    const frameworksRoute = readSource(
+      "src/app/(public)/documentation/best-practices/frameworks/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -544,6 +639,10 @@ describe("nonprofit documentation feature", () => {
     expect(marketingRoute).toContain("<MarketingArticlePage />")
     expect(marketingRoute).toContain(
       'canonical: "/documentation/best-practices/marketing"'
+    )
+    expect(frameworksRoute).toContain("<FrameworksArticlePage />")
+    expect(frameworksRoute).toContain(
+      'canonical: "/documentation/best-practices/frameworks"'
     )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"

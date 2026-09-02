@@ -51,8 +51,9 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       },
       {
         title: "Frameworks",
-        description: "Turn strategy into repeatable operating systems.",
-        status: "planned",
+        description: "Choose a useful model and test its assumptions.",
+        href: `${DOCUMENTATION_PATH}/best-practices/frameworks`,
+        status: "live",
       },
       {
         title: "Measuring impact",

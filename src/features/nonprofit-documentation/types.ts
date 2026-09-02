@@ -224,6 +224,53 @@ export type MarketingPlanAction = {
   evidence: string
 }
 
+export type FrameworkQuestionId =
+  | "understand-system"
+  | "explain-change"
+  | "plan-program"
+  | "clarify-ownership"
+  | "learn-and-adapt"
+
+export type NonprofitFrameworkId =
+  | "systems-map"
+  | "theory-of-change"
+  | "logic-model"
+  | "responsibility-map"
+  | "learning-cycle"
+
+export type LogicModelDraft = {
+  version: 1
+  organizationName: string
+  programName: string
+  stage: DocumentationStageId
+  primaryQuestion: FrameworkQuestionId
+  need: string
+  people: string
+  inputs: string
+  activities: string
+  outputs: string
+  nearTermOutcomes: string
+  intermediateOutcomes: string
+  longTermContribution: string
+  assumptions: string
+  context: string
+  learningQuestion: string
+}
+
+export type LogicModelSummary = {
+  draftedAreaCount: number
+  totalAreaCount: number
+  causalLinkCount: number
+  hasCompletePathway: boolean
+}
+
+export type LogicModelAction = {
+  id: string
+  phase: "Context" | "Pathway" | "Evidence" | "Governance"
+  action: string
+  evidence: string
+}
+
 export type BrandIdentityColor = {
   id: "canvas" | "brand" | "utility" | "ink"
   role: "Background" | "Primary" | "Secondary" | "Text"

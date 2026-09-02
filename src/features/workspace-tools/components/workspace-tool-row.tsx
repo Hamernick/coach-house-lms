@@ -7,13 +7,16 @@ import { Badge } from "@/components/ui/badge"
 import { WorkspaceFinanceStripeConnection } from "@/features/workspace-finance"
 
 import type { WorkspaceToolDefinition, WorkspaceToolsInput } from "../types"
+import { GoogleDriveConnection } from "./google-drive-connection"
 import { WorkspaceToolBrandIcon } from "./workspace-tool-brand-icon"
 
 export function WorkspaceToolRow({
   tool,
+  onGoogleDriveConnectionChange,
   stripeConnection,
 }: {
   tool: WorkspaceToolDefinition
+  onGoogleDriveConnectionChange: (connected: boolean) => void
   stripeConnection: WorkspaceToolsInput["stripeConnection"]
 }) {
   const router = useRouter()
@@ -26,6 +29,15 @@ export function WorkspaceToolRow({
           onSynced={() => router.refresh()}
         />
       </div>
+    )
+  }
+
+  if (tool.id === "google-drive") {
+    return (
+      <GoogleDriveConnection
+        brand={<WorkspaceToolBrandIcon toolId={tool.id} />}
+        onConnectionChange={onGoogleDriveConnectionChange}
+      />
     )
   }
 

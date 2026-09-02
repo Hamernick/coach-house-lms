@@ -56,18 +56,36 @@ describe("workspace-tools feature contract", () => {
     expect(stripeSource).toContain("siStripe.path")
   })
 
-  it("keeps Google Drive visibly unconfigured and non-interactive", () => {
+  it("owns the Google Drive connection UI without Documents file selection", () => {
     const rowSource = readSource(
       "src/features/workspace-tools/components/workspace-tool-row.tsx"
+    )
+    const connectionSource = readSource(
+      "src/features/workspace-tools/components/google-drive-connection.tsx"
     )
     const panelSource = readSource(
       "src/features/workspace-tools/components/workspace-tools-panel.tsx"
     )
 
-    expect(rowSource).toContain("Setup required")
-    expect(rowSource).toContain("No Drive data is shared yet.")
+    expect(rowSource).toContain("GoogleDriveConnection")
     expect(rowSource).toContain("WorkspaceToolBrandIcon")
-    expect(rowSource).not.toContain("Connect Google")
+    expect(connectionSource).toContain(
+      '"/api/integrations/google-drive/connection"'
+    )
+    expect(connectionSource).toContain(
+      '"/api/integrations/google-drive/connect"'
+    )
+    expect(connectionSource).toContain(
+      '"/api/integrations/google-drive/disconnect"'
+    )
+    expect(connectionSource).toContain("Disconnect Google Drive?")
+    expect(connectionSource).toContain("/workspace?drawer=tools")
+    expect(connectionSource).toContain("googleDriveErrorTitle")
+    expect(connectionSource).toContain("<Alert")
+    expect(connectionSource).toContain("Try Again")
+    expect(connectionSource).toContain("rounded-2xl")
+    expect(connectionSource).toContain("workspace-tools:google-drive-error")
+    expect(connectionSource).not.toContain("picker-token")
     expect(panelSource).toContain('type="search"')
     expect(panelSource).toContain("No tools found")
     expect(panelSource).toContain("Clear search")

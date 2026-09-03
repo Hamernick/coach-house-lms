@@ -302,5 +302,5 @@ export const HR_ARTICLE: BestPracticeArticle = {
     title: "Networking",
     href: "/documentation/tools/networking",
   },
-  next: { title: "Finance" },
+  next: { title: "Finance", href: "/documentation/tools/finance" },
 }

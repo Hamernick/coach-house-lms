@@ -15,6 +15,7 @@ export { PARTNERSHIPS_ARTICLE } from "./partnerships-article"
 export { SOCIAL_MEDIA_ARTICLE } from "./social-media-article"
 export { NETWORKING_ARTICLE } from "./networking-article"
 export { HR_ARTICLE } from "./hr-article"
+export { FINANCE_ARTICLE } from "./finance-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -144,6 +145,17 @@ export {
   sanitizeHrPlan,
   summarizeHrPlan,
 } from "./hr-plan"
+export {
+  DEFAULT_FINANCE_PLAN,
+  FINANCE_CYCLE,
+  FINANCE_PERIODS,
+  FINANCE_PLAN_STORAGE_KEY,
+  buildFinanceActions,
+  buildFinanceCsv,
+  buildFinanceReviewPrompt,
+  sanitizeFinancePlan,
+  summarizeFinancePlan,
+} from "./finance-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

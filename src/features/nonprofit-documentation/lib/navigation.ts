@@ -106,7 +106,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Finance",
         description: "Build budgets, controls, and reporting habits.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/finance`,
+        status: "live",
       },
       {
         title: "Legal",

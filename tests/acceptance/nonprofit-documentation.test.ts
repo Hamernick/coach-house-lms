@@ -11,6 +11,7 @@ import {
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
+  DEFAULT_FINANCE_PLAN,
   DEFAULT_HR_PLAN,
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
@@ -24,6 +25,7 @@ import {
   KEY_CONCEPTS_GUIDE,
   MISSION_ARTICLE,
   FUNDRAISING_ARTICLE,
+  FINANCE_ARTICLE,
   FRAMEWORKS_ARTICLE,
   HR_ARTICLE,
   MARKETING_ARTICLE,
@@ -38,6 +40,9 @@ import {
   buildComplianceTasks,
   buildFundraisingActions,
   buildFundraisingCsv,
+  buildFinanceActions,
+  buildFinanceCsv,
+  buildFinanceReviewPrompt,
   buildHrActions,
   buildHrCsv,
   buildHrReviewPrompt,
@@ -73,6 +78,7 @@ import {
   normalizeProportions,
   sanitizeComplianceRhythm,
   sanitizeFundraisingPlan,
+  sanitizeFinancePlan,
   sanitizeHrPlan,
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
@@ -84,6 +90,7 @@ import {
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
+  summarizeFinancePlan,
   summarizeHrPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
@@ -182,6 +189,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "HR")).toMatchObject({
       status: "live",
       href: "/documentation/tools/hr",
+    })
+    expect(items.find((item) => item.title === "Finance")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/finance",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1316,6 +1327,116 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit finance guidance", () => {
+    expect(FINANCE_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(FINANCE_ARTICLE.slug).toBe("tools/finance")
+    expect(FINANCE_ARTICLE.framework).toHaveLength(7)
+    expect(FINANCE_ARTICLE.checklist.length).toBeGreaterThanOrEqual(12)
+    expect(FINANCE_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(FINANCE_ARTICLE.measures.length).toBeGreaterThanOrEqual(8)
+    expect(FINANCE_ARTICLE.sources.length).toBeGreaterThanOrEqual(12)
+    expect(FINANCE_ARTICLE.answer).toContain("restricted")
+    expect(FINANCE_ARTICLE.disclaimer).toContain("do not provide accounting")
+    expect(FINANCE_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Internal Revenue Service",
+        "Electronic Code of Federal Regulations",
+        "National Council of Nonprofits",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local operating-finance plan", () => {
+    const draft = {
+      ...DEFAULT_FINANCE_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      stage: "operating" as const,
+      periodMonths: 12 as const,
+      beginningUnrestrictedCash: 48_000,
+      beginningRestrictedCash: 72_000,
+      plannedUnrestrictedInflows: 164_000,
+      plannedRestrictedInflows: 210_000,
+      plannedUnrestrictedOutflows: 188_000,
+      plannedRestrictedOutflows: 204_000,
+      missionCommitments: "Current navigation commitments.",
+      fullCostAssumptions: "Direct and shared full costs.",
+      revenueEvidence: "Signed, conditional, and forecast sources separated.",
+      restrictionTracking: "Source terms traced through remaining balances.",
+      cashTiming: "Receipts and payments mapped by date.",
+      budgetOwnership: "Staff prepare; board approves.",
+      purchaseApproval: "Documented authority and thresholds.",
+      paymentReimbursement: "Request, approval, payment, and recording split.",
+      bankReconciliation: "Monthly reconciliation and independent review.",
+      payrollTaxHandoff: "Provider and internal responsibilities documented.",
+      bookkeepingAlignment: "Budget categories map to accounts and programs.",
+      reportingRhythm: "Monthly close and quarterly board review.",
+      recordsBoundary: "Approved systems and limited access.",
+      varianceTriggers: "Material changes return for authorized review.",
+      hasApprovedAuthorityReview: true,
+      hasRestrictionAwardReview: true,
+      hasAccountingPayrollTaxReview: true,
+      hasIndependentReconciliationReview: false,
+    }
+    expect(summarizeFinancePlan(draft)).toEqual({
+      totalBeginningCash: 120_000,
+      totalPlannedInflows: 374_000,
+      totalPlannedOutflows: 392_000,
+      projectedUnrestrictedCash: 24_000,
+      projectedRestrictedCash: 78_000,
+      projectedTotalCash: 102_000,
+      averageMonthlyUnrestrictedOutflow: 188_000 / 12,
+      unrestrictedCoverageMonths: 24_000 / (188_000 / 12),
+      draftedAreaCount: 14,
+      totalAreaCount: 14,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+      cycleStepCount: 6,
+      totalCycleStepCount: 6,
+    })
+    expect(buildFinanceActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-safeguards",
+    ])
+    expect(buildFinanceReviewPrompt(draft)).toContain(
+      "Do not determine accounting treatment, tax, payroll"
+    )
+    expect(buildFinanceReviewPrompt(draft)).toContain(
+      "Do not approve transactions, change the budget, move money"
+    )
+    expect(buildFinanceCsv(draft)).toContain(
+      '"Area","Working nonprofit operating-finance plan"'
+    )
+    expect(
+      buildFinanceCsv({ ...draft, organizationName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+
+    expect(
+      sanitizeFinancePlan({
+        stage: "unknown",
+        periodMonths: 60,
+        organizationName: "o".repeat(200),
+        missionCommitments: "m".repeat(1_200),
+        beginningUnrestrictedCash: -20,
+        plannedRestrictedInflows: Number.POSITIVE_INFINITY,
+        hasApprovedAuthorityReview: "yes",
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      periodMonths: 12,
+      organizationName: "o".repeat(120),
+      missionCommitments: "m".repeat(900),
+      beginningUnrestrictedCash: 0,
+      plannedRestrictedInflows: 0,
+      hasApprovedAuthorityReview: false,
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1367,6 +1488,9 @@ describe("nonprofit documentation feature", () => {
     )
     const hrRoute = readSource(
       "src/app/(public)/documentation/tools/hr/page.tsx"
+    )
+    const financeRoute = readSource(
+      "src/app/(public)/documentation/tools/finance/page.tsx"
     )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
@@ -1421,6 +1545,8 @@ describe("nonprofit documentation feature", () => {
     )
     expect(hrRoute).toContain("<HrArticlePage />")
     expect(hrRoute).toContain('canonical: "/documentation/tools/hr"')
+    expect(financeRoute).toContain("<FinanceArticlePage />")
+    expect(financeRoute).toContain('canonical: "/documentation/tools/finance"')
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

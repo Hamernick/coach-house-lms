@@ -124,7 +124,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "CRM",
         description: "Choose and maintain a useful relationship record.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/crm`,
+        status: "live",
       },
     ],
   },

@@ -10,6 +10,7 @@ import {
   COMPLIANCE_ARTICLE,
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_CAMPAIGN_PLAN,
+  DEFAULT_CRM_PLAN,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
   DEFAULT_FINANCE_PLAN,
@@ -32,6 +33,7 @@ import {
   HR_ARTICLE,
   LEGAL_ARTICLE,
   CAMPAIGNS_ARTICLE,
+  CRM_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
   NETWORKING_ARTICLE,
@@ -79,6 +81,9 @@ import {
   buildCampaignActions,
   buildCampaignCsv,
   buildCampaignReviewPrompt,
+  buildCrmActions,
+  buildCrmCsv,
+  buildCrmReviewPrompt,
   brandFontStack,
   commonFederalFilingPath,
   contrastRating,
@@ -100,12 +105,14 @@ import {
   sanitizeSocialMediaPlan,
   sanitizeBrandDraft,
   sanitizeCampaignPlan,
+  sanitizeCrmPlan,
   typeScale,
   summarizeFundraisingPlan,
   summarizeFinancePlan,
   summarizeHrPlan,
   summarizeLegalPlan,
   summarizeCampaignPlan,
+  summarizeCrmPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
@@ -215,6 +222,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Campaigns")).toMatchObject({
       status: "live",
       href: "/documentation/tools/campaigns",
+    })
+    expect(items.find((item) => item.title === "CRM")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/crm",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1668,6 +1679,158 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit CRM guidance", () => {
+    expect(CRM_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(CRM_ARTICLE.slug).toBe("tools/crm")
+    expect(CRM_ARTICLE.framework).toHaveLength(7)
+    expect(CRM_ARTICLE.checklist.length).toBeGreaterThanOrEqual(15)
+    expect(CRM_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(CRM_ARTICLE.measures.length).toBeGreaterThanOrEqual(8)
+    expect(CRM_ARTICLE.sources.length).toBeGreaterThanOrEqual(14)
+    expect(CRM_ARTICLE.answer).toContain("governed relationship record")
+    expect(CRM_ARTICLE.importantNote).toContain("HIPAA and FERPA")
+    expect(CRM_ARTICLE.disclaimer).toContain("do not collect, import, identify")
+    expect(CRM_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Federal Trade Commission",
+        "National Institute of Standards and Technology",
+        "Cybersecurity and Infrastructure Security Agency",
+        "Internal Revenue Service",
+        "Federal Communications Commission",
+        "U.S. Department of Health and Human Services",
+        "U.S. Department of Education",
+        "U.S. Department of Justice",
+        "World Wide Web Consortium",
+        "USAGov",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local CRM field and stewardship plan", () => {
+    const draft = {
+      ...DEFAULT_CRM_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      planName: "Shared relationship record pilot",
+      stage: "forming" as const,
+      relationshipContext: "mixed" as const,
+      reviewMonths: 3 as const,
+      systemPurpose: "Support named relationship decisions.",
+      peopleAndDecisions: "Affected people and accountable owners review it.",
+      recordBoundary: "Keep protected case details in another system.",
+      collectionNoticeConsent: "Record source, notice, and permission review.",
+      communicationPreferences: "Honor channel choices and suppressions.",
+      identityDeduplication: "Use a stable ID and human duplicate review.",
+      relationshipLifecycle: "Use neutral stages and dated next actions.",
+      accessRoles: "Give named roles minimum access.",
+      dataQualityCorrection: "Route corrections and stale records to owners.",
+      retentionDeletion: "Review preservation, retention, and deletion.",
+      integrationsExports: "Inventory fields, flows, owners, and exit paths.",
+      securityIncident: "Use strong access and a tested incident path.",
+      accessibilityLanguage: "Offer accessible and language-aware choices.",
+      reportingDecision: "Use process evidence for named decisions.",
+      vendorMigration: "Test with fictional records and reconcile migration.",
+      fields: [
+        {
+          id: "contact-preference",
+          label: "Contact preference status",
+          category: "contact-preference" as const,
+          purpose: "Honor a current channel choice.",
+          source: "Direct instruction with date and source.",
+          sensitivity: "restricted" as const,
+          accessRole: "Communication operators",
+          retentionReview: "Review when purpose or systems change.",
+        },
+        {
+          id: "access-support",
+          label: "Access support requested",
+          category: "program-service" as const,
+          purpose: "Route a current access request.",
+          source: "Voluntary direct request.",
+          sensitivity: "high-risk" as const,
+          accessRole: "Program access coordinator",
+          retentionReview: "Review after fulfillment.",
+        },
+      ],
+      hasMinimumNecessaryReview: true,
+      hasNoticePreferenceReview: true,
+      hasAccessIntegrationReview: true,
+      hasRetentionIncidentReview: true,
+      hasLegalSectorReview: true,
+    }
+
+    expect(summarizeCrmPlan(draft)).toEqual({
+      draftedAreaCount: 15,
+      totalAreaCount: 15,
+      lifecycleStepCount: 7,
+      totalLifecycleStepCount: 7,
+      safeguardCount: 5,
+      totalSafeguardCount: 5,
+      fieldCount: 2,
+      completeFieldCount: 2,
+      representedCategoryCount: 2,
+      highRiskFieldCount: 1,
+    })
+    expect(buildCrmActions(draft).map(({ id }) => id)).toEqual([
+      "stage-forming",
+    ])
+    expect(buildCrmReviewPrompt(draft)).toContain(
+      "Do not import, identify, enrich"
+    )
+    expect(buildCrmReviewPrompt(draft)).toContain(
+      "Remove all real names, contact details"
+    )
+    expect(buildCrmCsv(draft)).toContain(
+      '"Record","Label","Category","Purpose or value"'
+    )
+    expect(buildCrmCsv({ ...draft, planName: "=SUM(A1:A2)" })).toContain(
+      "'=SUM(A1:A2)"
+    )
+
+    expect(
+      sanitizeCrmPlan({
+        stage: "unknown",
+        relationshipContext: "sales",
+        reviewMonths: 24,
+        organizationName: "o".repeat(200),
+        systemPurpose: "p".repeat(1_200),
+        fields: Array.from({ length: 20 }, (_, index) => ({
+          id: `field ${index}`,
+          label: `Field ${index}`,
+          category: "secret",
+          sensitivity: "critical",
+        })),
+        hasMinimumNecessaryReview: "yes",
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      relationshipContext: "fundraising",
+      reviewMonths: 6,
+      organizationName: "o".repeat(120),
+      systemPurpose: "p".repeat(800),
+      hasMinimumNecessaryReview: false,
+      fields: expect.arrayContaining([
+        expect.objectContaining({
+          id: "field0",
+          category: "identity",
+          sensitivity: "standard",
+        }),
+      ]),
+    })
+    expect(
+      sanitizeCrmPlan({
+        fields: Array.from({ length: 20 }, (_, index) => ({
+          label: `Field ${index}`,
+        })),
+      }).fields
+    ).toHaveLength(8)
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1728,6 +1891,9 @@ describe("nonprofit documentation feature", () => {
     )
     const campaignsRoute = readSource(
       "src/app/(public)/documentation/tools/campaigns/page.tsx"
+    )
+    const crmRoute = readSource(
+      "src/app/(public)/documentation/tools/crm/page.tsx"
     )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
@@ -1790,6 +1956,9 @@ describe("nonprofit documentation feature", () => {
     expect(campaignsRoute).toContain(
       'canonical: "/documentation/tools/campaigns"'
     )
+    expect(crmRoute).toContain("<CrmArticlePage />")
+    expect(crmRoute).toContain('canonical: "/documentation/tools/crm"')
+    expect(crmRoute).not.toContain("ensureUser")
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

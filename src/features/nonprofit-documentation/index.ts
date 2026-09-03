@@ -14,6 +14,7 @@ export {
   PartnershipsArticlePage,
   SocialMediaArticlePage,
   NetworkingArticlePage,
+  HrArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -31,6 +32,7 @@ export {
   PARTNERSHIPS_ARTICLE,
   SOCIAL_MEDIA_ARTICLE,
   NETWORKING_ARTICLE,
+  HR_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -143,6 +145,17 @@ export {
   networkingObjectiveLabel,
   sanitizeNetworkingPlan,
   summarizeNetworkingPlan,
+  DEFAULT_HR_PLAN,
+  HR_LIFECYCLE,
+  HR_PLAN_STORAGE_KEY,
+  HR_RELATIONSHIPS,
+  HR_REVIEW_DAYS,
+  buildHrActions,
+  buildHrCsv,
+  buildHrReviewPrompt,
+  hrRelationshipLabel,
+  sanitizeHrPlan,
+  summarizeHrPlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -206,3 +219,9 @@ export type {
   BrandAssetId,
   StoredBrandAsset,
 } from "./types"
+export type {
+  HrRelationshipId,
+  HrPlanDraft,
+  HrPlanSummary,
+  HrPlanAction,
+} from "./hr-types"

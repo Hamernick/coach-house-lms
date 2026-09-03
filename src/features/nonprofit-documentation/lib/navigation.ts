@@ -112,7 +112,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Legal",
         description: "Understand common legal decisions and referrals.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/legal`,
+        status: "live",
       },
       {
         title: "Campaigns",

@@ -59,6 +59,16 @@ test("Workspace Tools shows a connected Drive account", async ({ page }) => {
   const fixture = page.locator("[data-workspace-tools-visual-fixture]")
   await expect(fixture).toContainText("caleb@example.org")
   await expect(fixture).toContainText("Connected")
+  const connectionSwitch = fixture.getByRole("switch", {
+    name: "Google Drive connection",
+  })
+  await expect(connectionSwitch).toBeChecked()
+  await connectionSwitch.click()
+  await expect(
+    page.getByRole("alertdialog", { name: "Disconnect Google Drive?" })
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Cancel" }).click()
+  await expect(connectionSwitch).toBeChecked()
   await expect(fixture).toHaveScreenshot(
     "workspace-tools-drive-connected.png",
     {
@@ -75,7 +85,12 @@ test("Workspace Tools Drive state fits a mobile viewport", async ({ page }) => {
   await openToolsFixture(page, "disconnected")
 
   const fixture = page.locator("[data-workspace-tools-visual-fixture]")
-  await expect(fixture.getByRole("button", { name: "Connect" })).toBeVisible()
+  const connectionSwitch = fixture.getByRole("switch", {
+    name: "Google Drive connection",
+  })
+  await expect(connectionSwitch).toBeVisible()
+  await expect(connectionSwitch).not.toBeChecked()
+  await expect(fixture).toContainText("Not connected")
   await expect(fixture).toHaveScreenshot("workspace-tools-drive-mobile.png", {
     animations: "disabled",
     caret: "hide",

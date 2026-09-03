@@ -69,6 +69,7 @@ test("Workspace Tools shows a connected Drive account", async ({ page }) => {
   ).toBeVisible()
   await page.getByRole("button", { name: "Cancel" }).click()
   await expect(connectionSwitch).toBeChecked()
+  await expect(connectionSwitch).toBeFocused()
   await expect(fixture).toHaveScreenshot(
     "workspace-tools-drive-connected.png",
     {

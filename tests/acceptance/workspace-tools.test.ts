@@ -82,6 +82,8 @@ describe("workspace-tools feature contract", () => {
     expect(connectionSource).toContain('aria-label="Google Drive connection"')
     expect(connectionSource).toContain("checked={connected}")
     expect(connectionSource).toContain("onCheckedChange")
+    expect(connectionSource).toContain("onCloseAutoFocus")
+    expect(connectionSource).toContain("connectionControlRef.current?.focus()")
     expect(connectionSource).not.toContain("Disconnect…")
     expect(connectionSource).toContain("/workspace?drawer=tools")
     expect(connectionSource).toContain("googleDriveErrorTitle")

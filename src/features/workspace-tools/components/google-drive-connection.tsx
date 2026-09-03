@@ -3,7 +3,7 @@
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import TriangleAlertIcon from "lucide-react/dist/esm/icons/triangle-alert"
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useId, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
@@ -96,6 +96,7 @@ export function GoogleDriveConnection({
 }) {
   const connectionControlId = useId()
   const connectionDescriptionId = `${connectionControlId}-description`
+  const connectionControlRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -285,6 +286,7 @@ export function GoogleDriveConnection({
                         : "Not connected"}
                 </span>
                 <Switch
+                  ref={connectionControlRef}
                   id={connectionControlId}
                   aria-label="Google Drive connection"
                   aria-describedby={connectionDescriptionId}
@@ -304,7 +306,12 @@ export function GoogleDriveConnection({
                   open={disconnectOpen}
                   onOpenChange={setDisconnectOpen}
                 >
-                  <AlertDialogContent>
+                  <AlertDialogContent
+                    onCloseAutoFocus={(event) => {
+                      event.preventDefault()
+                      connectionControlRef.current?.focus()
+                    }}
+                  >
                     <AlertDialogHeader>
                       <AlertDialogTitle>
                         Disconnect Google Drive?

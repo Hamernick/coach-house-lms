@@ -100,7 +100,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "HR",
         description: "Support staff and volunteers responsibly.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/hr`,
+        status: "live",
       },
       {
         title: "Finance",

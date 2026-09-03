@@ -299,5 +299,5 @@ export const NETWORKING_ARTICLE: BestPracticeArticle = {
     title: "Social media",
     href: "/documentation/tools/social-media",
   },
-  next: { title: "HR" },
+  next: { title: "HR", href: "/documentation/tools/hr" },
 }

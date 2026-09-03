@@ -14,6 +14,7 @@ export { SUSTAINABILITY_ARTICLE } from "./sustainability-article"
 export { PARTNERSHIPS_ARTICLE } from "./partnerships-article"
 export { SOCIAL_MEDIA_ARTICLE } from "./social-media-article"
 export { NETWORKING_ARTICLE } from "./networking-article"
+export { HR_ARTICLE } from "./hr-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -130,6 +131,19 @@ export {
   sanitizeNetworkingPlan,
   summarizeNetworkingPlan,
 } from "./networking-plan"
+export {
+  DEFAULT_HR_PLAN,
+  HR_LIFECYCLE,
+  HR_PLAN_STORAGE_KEY,
+  HR_RELATIONSHIPS,
+  HR_REVIEW_DAYS,
+  buildHrActions,
+  buildHrCsv,
+  buildHrReviewPrompt,
+  hrRelationshipLabel,
+  sanitizeHrPlan,
+  summarizeHrPlan,
+} from "./hr-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

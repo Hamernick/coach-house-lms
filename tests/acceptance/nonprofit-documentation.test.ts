@@ -11,6 +11,7 @@ import {
   DEFAULT_BRAND_IDENTITY_DRAFT,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
+  DEFAULT_HR_PLAN,
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DEFAULT_MEASUREMENT_PLAN,
@@ -24,6 +25,7 @@ import {
   MISSION_ARTICLE,
   FUNDRAISING_ARTICLE,
   FRAMEWORKS_ARTICLE,
+  HR_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
   NETWORKING_ARTICLE,
@@ -36,6 +38,9 @@ import {
   buildComplianceTasks,
   buildFundraisingActions,
   buildFundraisingCsv,
+  buildHrActions,
+  buildHrCsv,
+  buildHrReviewPrompt,
   buildLogicModelActions,
   buildLogicModelCsv,
   buildLogicModelReviewPrompt,
@@ -68,6 +73,7 @@ import {
   normalizeProportions,
   sanitizeComplianceRhythm,
   sanitizeFundraisingPlan,
+  sanitizeHrPlan,
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeMeasurementPlan,
@@ -78,6 +84,7 @@ import {
   sanitizeBrandDraft,
   typeScale,
   summarizeFundraisingPlan,
+  summarizeHrPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
@@ -171,6 +178,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Networking")).toMatchObject({
       status: "live",
       href: "/documentation/tools/networking",
+    })
+    expect(items.find((item) => item.title === "HR")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/hr",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1203,6 +1214,108 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit HR guidance", () => {
+    expect(HR_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(HR_ARTICLE.slug).toBe("tools/hr")
+    expect(HR_ARTICLE.framework).toHaveLength(7)
+    expect(HR_ARTICLE.checklist.length).toBeGreaterThanOrEqual(12)
+    expect(HR_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(HR_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(HR_ARTICLE.sources.length).toBeGreaterThanOrEqual(10)
+    expect(HR_ARTICLE.answer).toContain("necessary work")
+    expect(HR_ARTICLE.disclaimer).toContain("do not create a job description")
+    expect(HR_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "U.S. Department of Labor",
+        "Internal Revenue Service",
+        "U.S. Equal Employment Opportunity Commission",
+        "Occupational Safety and Health Administration",
+        "U.S. Citizenship and Immigration Services",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local role and people-practices brief", () => {
+    const draft = {
+      ...DEFAULT_HR_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      roleTitle: "Community Navigation Coordinator",
+      stage: "operating" as const,
+      relationship: "employee" as const,
+      reviewDays: 90 as const,
+      missionNeed: "Participants need current navigation and follow-up.",
+      roleOutcomes: "Navigation steps and follow-ups are accurate and timely.",
+      essentialFunctions: "Appointments, records, referrals, and supervision.",
+      qualifications: "Job-related communication and record skills.",
+      scheduleLocation: "Twenty-four hours with a published core schedule.",
+      compensationResources: "Pay range and full cost require approval.",
+      recruitmentAccess: "Accessible opportunity and accommodation contact.",
+      selectionProcess:
+        "Consistent questions, rubric, and authorized decision.",
+      onboardingTraining:
+        "Forms, systems, training, contacts, and first review.",
+      supervisionFeedback: "Weekly supervision and two-way workload review.",
+      accommodationsAccess: "Prompt individualized request and review path.",
+      safetyReporting:
+        "Training, protected reporting, response, and follow-up.",
+      recordsBoundary: "Separated approved systems and role-based access.",
+      ownerBackup: "Program director with executive director backup.",
+      transitionPlan: "Fair review, access, records, equipment, and handoff.",
+      hasClassificationCompensationReview: true,
+      hasFairAccessibleProcessReview: true,
+      hasSafetyReportingReview: true,
+      hasRecordsAuthorityReview: false,
+    }
+    expect(summarizeHrPlan(draft)).toEqual({
+      draftedAreaCount: 15,
+      totalAreaCount: 15,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+      lifecycleStepCount: 6,
+      totalLifecycleStepCount: 6,
+    })
+    expect(buildHrActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-safeguards",
+    ])
+    expect(buildHrReviewPrompt(draft)).toContain(
+      "Do not decide or imply worker classification, exemption, wage"
+    )
+    expect(buildHrReviewPrompt(draft)).toContain(
+      "Do not rank, score, screen, recommend, approve, reject, hire"
+    )
+    expect(buildHrCsv(draft)).toContain(
+      '"Area","Working role and people-practices brief"'
+    )
+    expect(buildHrCsv({ ...draft, roleTitle: "=SUM(A1:A2)" })).toContain(
+      "'=SUM(A1:A2)"
+    )
+
+    expect(
+      sanitizeHrPlan({
+        stage: "unknown",
+        relationship: "free-labor",
+        reviewDays: 365,
+        roleTitle: "r".repeat(200),
+        essentialFunctions: "e".repeat(1_100),
+        hasSafetyReportingReview: "yes",
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      relationship: "employee",
+      reviewDays: 90,
+      roleTitle: "r".repeat(120),
+      essentialFunctions: "e".repeat(900),
+      hasSafetyReportingReview: false,
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1251,6 +1364,9 @@ describe("nonprofit documentation feature", () => {
     )
     const networkingRoute = readSource(
       "src/app/(public)/documentation/tools/networking/page.tsx"
+    )
+    const hrRoute = readSource(
+      "src/app/(public)/documentation/tools/hr/page.tsx"
     )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
@@ -1303,6 +1419,8 @@ describe("nonprofit documentation feature", () => {
     expect(networkingRoute).toContain(
       'canonical: "/documentation/tools/networking"'
     )
+    expect(hrRoute).toContain("<HrArticlePage />")
+    expect(hrRoute).toContain('canonical: "/documentation/tools/hr"')
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

@@ -8,11 +8,6 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  PublicProfileAffiliationSettings,
-  PublicProfileIdentitySettings,
-  PublicProfileSavedCollectionSettings,
-} from "@/features/public-profiles/client"
 import type { AccountSettingsErrorKey } from "../types"
 import { ProfileAvatarField } from "./profile-avatar-field"
 
@@ -194,18 +189,6 @@ export function ProfileFields({
           </FieldDescription>
         </Field>
 
-        <PublicProfileIdentitySettings
-          avatarUrl={avatarUrl}
-          displayName={[firstName, lastName].filter(Boolean).join(" ")}
-          headline={title}
-          idPrefix={`${idPrefix}-public-profile`}
-        />
-
-        <PublicProfileAffiliationSettings
-          idPrefix={`${idPrefix}-public-affiliations`}
-        />
-
-        <PublicProfileSavedCollectionSettings />
       </FieldGroup>
     </div>
   )

@@ -147,9 +147,14 @@ export function useAccountSettingsDialogState({
   useEffect(() => {
     dirtyRef.current = false
     setDirty(false)
-    setMobilePage("menu")
     setJustSaved(false)
-  }, [open])
+    if (open) {
+      _setTab(initialTab)
+      setMobilePage(initialTab === "profile" ? "menu" : initialTab)
+    } else {
+      setMobilePage("menu")
+    }
+  }, [initialTab, open])
 
   useAccountSettingsProfileLoader({
     open,

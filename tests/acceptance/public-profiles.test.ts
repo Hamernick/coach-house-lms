@@ -102,6 +102,43 @@ describe("public-profiles feature contract", () => {
     expect(identitySettings).toContain("Profile unpublished.")
   })
 
+  it("gives existing users a dedicated public profile activation path", () => {
+    const tabTypes = readSource("src/components/account-settings/types.ts")
+    const shell = readSource(
+      "src/components/account-settings/account-settings-dialog-shell.tsx"
+    )
+    const profileFields = readSource(
+      "src/components/account-settings/sections/profile-fields.tsx"
+    )
+    const navUser = readSource("src/components/nav-user.tsx")
+    const accountMenu = readSource(
+      "src/components/nav-user/nav-user-menu-content.tsx"
+    )
+    const publicProfileSettings = readSource(
+      "src/features/public-profiles/components/public-profile-settings.tsx"
+    )
+    const identitySettings = readSource(
+      "src/features/public-profiles/components/public-profile-identity-settings.tsx"
+    )
+
+    expect(tabTypes).toContain('| "public-profile"')
+    expect(shell).toContain('label="Public profile"')
+    expect(shell).toContain('tab === "public-profile"')
+    expect(shell).toContain("<PublicProfileSettings")
+    expect(shell).toContain("onDone={requestClose}")
+    expect(shell).not.toContain('onDone={() => onOpenChange(false)}')
+    expect(profileFields).not.toContain("PublicProfileIdentitySettings")
+    expect(navUser).toContain("initialTab={settingsInitialTab}")
+    expect(accountMenu).toContain('onOpenSettings("public-profile")')
+    expect(publicProfileSettings).toContain("Claim your Coach House address")
+    expect(publicProfileSettings).toContain("PublicProfileAffiliationSettings")
+    expect(publicProfileSettings).toContain(
+      "PublicProfileSavedCollectionSettings"
+    )
+    expect(identitySettings).toContain("View profile")
+    expect(identitySettings).toContain('<Link href={`/${currentHandle}`}>')
+  })
+
   it("checks organization URLs against the same global namespace", () => {
     const organizationAvailability = readSource(
       "src/app/api/public/organizations/slug-available/route.ts"

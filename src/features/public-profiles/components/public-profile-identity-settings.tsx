@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -222,6 +223,11 @@ export function PublicProfileIdentitySettings({
           <Badge variant={savedIsPublic ? "default" : "secondary"}>
             {savedIsPublic ? "Published" : "Private"}
           </Badge>
+          {savedIsPublic && currentHandle ? (
+            <Button asChild size="sm" variant="outline" className="ml-auto">
+              <Link href={`/${currentHandle}`}>View profile</Link>
+            </Button>
+          ) : null}
         </div>
         <p className="text-muted-foreground text-sm">
           Reserve your profile URL now. Nothing becomes public until you

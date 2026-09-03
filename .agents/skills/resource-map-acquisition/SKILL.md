@@ -88,12 +88,30 @@ Plan owned discovery only after the offline tiers:
 
 ```bash
 pnpm resource-map:eo-plan-owned-discovery -- --plan <search-plan.json> --evidence-documents <evidence.jsonl> --directory-records <directory-records.jsonl>
+pnpm resource-map:eo-plan-owned-discovery -- --plan <search-plan.json> --evidence-documents <evidence.jsonl> --directory-records <directory-records.jsonl> --write
 ```
 
 This planner must remain network-free, paid-provider-free, and dry-run-first.
-Never treat a deterministic domain hypothesis as evidence. Any future crawler
-must obey the signed total and exact-host budgets, evaluate robots first, retain
-source provenance, and feed the existing provider verification gate.
+Never treat a deterministic domain hypothesis as evidence. Regenerate older
+fetch plans that predate schema version 2. Inspect the signed plan before a
+crawl with:
+
+```bash
+pnpm resource-map:eo-run-owned-crawler -- --fetch-plan <fetch-plan.json>
+```
+
+That command performs no network or writes. Live execution additionally needs
+the matching signed search plan, both explicit execution gates, and the exact
+fetch-plan hash:
+
+```bash
+pnpm resource-map:eo-run-owned-crawler -- --fetch-plan <fetch-plan.json> --search-plan <search-plan.json> --network true --write --confirm-plan <fetch-plan-hash>
+```
+
+The crawler must obey the signed total, retained-byte, and exact-host budgets,
+evaluate robots first, reject private destinations, revalidate every redirect,
+retain only normalized private evidence, and feed the existing provider
+verification gate. Never edit crawler receipts or checkpoints by hand.
 
 1. Inspect `data/resource-map/.engine/eo/latest-report.json` and
    `checkpoint.json`. If the private candidate pool is absent, ask for the EO

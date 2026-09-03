@@ -79,6 +79,7 @@
     "resource-map:eo-plan-search": "node scripts/resource-map/plan-irs-eo-search-discovery.mjs",
     "resource-map:eo-run-search-adapter": "node scripts/resource-map/run-irs-eo-search-adapter.mjs",
     "resource-map:eo-plan-owned-discovery": "node scripts/resource-map/plan-irs-eo-owned-discovery.mjs",
+    "resource-map:eo-run-owned-crawler": "node scripts/resource-map/run-irs-eo-owned-crawler.mjs",
     "data:discover": "node scripts/resource-map/data-discover.mjs",
     "data:ingest": "node scripts/resource-map/data-ingest.mjs",
     "data:check-links": "node scripts/resource-map/check-links.mjs",

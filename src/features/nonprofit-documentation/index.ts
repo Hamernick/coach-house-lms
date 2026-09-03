@@ -15,6 +15,7 @@ export {
   SocialMediaArticlePage,
   NetworkingArticlePage,
   HrArticlePage,
+  FinanceArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -33,6 +34,7 @@ export {
   SOCIAL_MEDIA_ARTICLE,
   NETWORKING_ARTICLE,
   HR_ARTICLE,
+  FINANCE_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -156,6 +158,15 @@ export {
   hrRelationshipLabel,
   sanitizeHrPlan,
   summarizeHrPlan,
+  DEFAULT_FINANCE_PLAN,
+  FINANCE_CYCLE,
+  FINANCE_PERIODS,
+  FINANCE_PLAN_STORAGE_KEY,
+  buildFinanceActions,
+  buildFinanceCsv,
+  buildFinanceReviewPrompt,
+  sanitizeFinancePlan,
+  summarizeFinancePlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -225,3 +236,9 @@ export type {
   HrPlanSummary,
   HrPlanAction,
 } from "./hr-types"
+export type {
+  FinancePeriodMonths,
+  FinancePlanDraft,
+  FinancePlanSummary,
+  FinancePlanAction,
+} from "./finance-types"

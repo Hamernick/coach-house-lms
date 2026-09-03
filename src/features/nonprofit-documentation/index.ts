@@ -20,6 +20,7 @@ export {
   CampaignsArticlePage,
   CrmArticlePage,
   BestPracticeArticlePage,
+  MarketplacePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
 export {
@@ -212,6 +213,22 @@ export {
   crmRelationshipContextLabel,
   sanitizeCrmPlan,
   summarizeCrmPlan,
+  DEFAULT_MARKETPLACE_FILTERS,
+  MARKETPLACE_COST_MODELS,
+  MARKETPLACE_FUNCTIONS,
+  MARKETPLACE_RESOURCES,
+  MARKETPLACE_RESOURCE_TYPES,
+  MARKETPLACE_SHORTLIST_STORAGE_KEY,
+  MARKETPLACE_STAGES,
+  buildMarketplaceShortlistCsv,
+  filterMarketplaceResources,
+  marketplaceCostLabel,
+  marketplaceFunctionLabel,
+  marketplaceStageLabel,
+  marketplaceTypeLabel,
+  projectMarketplaceCommunityProfiles,
+  sanitizeMarketplaceFilters,
+  sanitizeMarketplaceShortlist,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -309,3 +326,11 @@ export type {
   CrmPlanSummary,
   CrmRelationshipContextId,
 } from "./crm-types"
+export type {
+  MarketplaceCommunityProfile,
+  MarketplaceCostModel,
+  MarketplaceFilters,
+  MarketplaceFunction,
+  MarketplaceResource,
+  MarketplaceResourceType,
+} from "./marketplace-types"

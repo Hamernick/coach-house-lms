@@ -20,6 +20,24 @@ export { LEGAL_ARTICLE } from "./legal-article"
 export { CAMPAIGNS_ARTICLE } from "./campaigns-article"
 export { CRM_ARTICLE } from "./crm-article"
 export {
+  DEFAULT_MARKETPLACE_FILTERS,
+  MARKETPLACE_COST_MODELS,
+  MARKETPLACE_FUNCTIONS,
+  MARKETPLACE_RESOURCES,
+  MARKETPLACE_RESOURCE_TYPES,
+  MARKETPLACE_SHORTLIST_STORAGE_KEY,
+  MARKETPLACE_STAGES,
+  buildMarketplaceShortlistCsv,
+  filterMarketplaceResources,
+  marketplaceCostLabel,
+  marketplaceFunctionLabel,
+  marketplaceStageLabel,
+  marketplaceTypeLabel,
+  projectMarketplaceCommunityProfiles,
+  sanitizeMarketplaceFilters,
+  sanitizeMarketplaceShortlist,
+} from "./marketplace-directory"
+export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
   buildComplianceCsv,

@@ -35,6 +35,7 @@ import {
   CAMPAIGNS_ARTICLE,
   CRM_ARTICLE,
   MARKETING_ARTICLE,
+  MARKETPLACE_RESOURCES,
   MEASURING_IMPACT_ARTICLE,
   NETWORKING_ARTICLE,
   PARTNERSHIPS_ARTICLE,
@@ -61,6 +62,7 @@ import {
   buildMarketingActions,
   buildMarketingAiPrompt,
   buildMarketingCsv,
+  buildMarketplaceShortlistCsv,
   buildMeasurementPlanActions,
   buildMeasurementPlanCsv,
   buildMeasurementReviewPrompt,
@@ -98,6 +100,8 @@ import {
   sanitizeLegalPlan,
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
+  sanitizeMarketplaceFilters,
+  sanitizeMarketplaceShortlist,
   sanitizeMeasurementPlan,
   sanitizeNetworkingPlan,
   sanitizePartnershipBrief,
@@ -121,6 +125,8 @@ import {
   summarizeSustainabilityPlan,
   summarizeSocialMediaPlan,
   recommendedFramework,
+  filterMarketplaceResources,
+  projectMarketplaceCommunityProfiles,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
@@ -227,9 +233,128 @@ describe("nonprofit documentation feature", () => {
       status: "live",
       href: "/documentation/tools/crm",
     })
+    expect(items.find((item) => item.title === "Marketplace")).toMatchObject({
+      status: "live",
+      href: "/documentation/marketplace",
+    })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
     )
+  })
+
+  it("publishes a source-backed, non-ranked Marketplace catalog", () => {
+    expect(MARKETPLACE_RESOURCES).toHaveLength(15)
+    expect(new Set(MARKETPLACE_RESOURCES.map(({ id }) => id)).size).toBe(15)
+    expect(new Set(MARKETPLACE_RESOURCES.map(({ url }) => url)).size).toBe(14)
+    expect(MARKETPLACE_RESOURCES.map(({ type }) => type)).toEqual(
+      expect.arrayContaining([
+        "coaching",
+        "software",
+        "discount",
+        "funding",
+        "learning",
+        "people",
+        "professional-support",
+      ])
+    )
+    for (const resource of MARKETPLACE_RESOURCES) {
+      expect(resource.url).toMatch(/^https:\/\//)
+      expect(resource.reviewedDate).toBe("2026-09-03")
+      expect(resource.reviewByDate >= resource.reviewedDate).toBe(true)
+      expect(resource.description.length).toBeGreaterThan(50)
+      expect(resource.eligibility.length).toBeGreaterThan(20)
+      expect(resource.stages.length).toBeGreaterThan(0)
+      expect(resource.functions.length).toBeGreaterThan(0)
+    }
+  })
+
+  it("filters, sanitizes, and exports Marketplace work safely", () => {
+    const filters = sanitizeMarketplaceFilters({
+      query: "donor",
+      type: "software",
+      function: "fundraising",
+      stage: "operating",
+      cost: "paid-or-varies",
+    })
+    expect(
+      filterMarketplaceResources(MARKETPLACE_RESOURCES, filters).map(
+        ({ id }) => id
+      )
+    ).toEqual(["little-green-light", "givebutter"])
+    expect(
+      sanitizeMarketplaceFilters({
+        query: "q".repeat(200),
+        type: "advertisement",
+        function: "ranking",
+        stage: "mature",
+        cost: "guaranteed-free",
+      })
+    ).toEqual({
+      query: "q".repeat(100),
+      type: "all",
+      function: "all",
+      stage: "all",
+      cost: "all",
+    })
+    expect(
+      sanitizeMarketplaceShortlist([
+        "givebutter",
+        "not-published",
+        "givebutter",
+        42,
+      ])
+    ).toEqual(["givebutter"])
+
+    const formulaResource = {
+      ...MARKETPLACE_RESOURCES[0]!,
+      id: "formula-test",
+      name: "=SUM(A1:A2)",
+    }
+    expect(
+      buildMarketplaceShortlistCsv(["formula-test"], [formulaResource])
+    ).toContain("'=SUM(A1:A2)")
+  })
+
+  it("projects only safe, explicitly public Map profile fields", () => {
+    const source = {
+      id: "organization-1",
+      name: "Public Organization",
+      publicSlug: "public-organization",
+      tagline: "A public tagline.",
+      description: "A public description.",
+      city: "Detroit",
+      state: "MI",
+      country: "United States",
+      isOnlineOnly: false,
+      primaryGroup: "community",
+      programCount: 2,
+      email: "private@example.org",
+      phone: "555-0100",
+      addressStreet: "Private street",
+      latitude: 42,
+      longitude: -83,
+    }
+    const [profile] = projectMarketplaceCommunityProfiles([source])
+
+    expect(profile).toEqual({
+      id: "organization-1",
+      name: "Public Organization",
+      slug: "public-organization",
+      summary: "A public tagline.",
+      location: "Detroit, MI",
+      delivery: "Local or hybrid",
+      group: "community",
+      programCount: 2,
+    })
+    expect(profile).not.toHaveProperty("email")
+    expect(profile).not.toHaveProperty("phone")
+    expect(profile).not.toHaveProperty("addressStreet")
+    expect(profile).not.toHaveProperty("latitude")
+    expect(
+      projectMarketplaceCommunityProfiles([
+        { ...source, id: "private-shape", publicSlug: null },
+      ])
+    ).toEqual([])
   })
 
   it("publishes the public brand identity builder without an auth boundary", () => {
@@ -1895,6 +2020,15 @@ describe("nonprofit documentation feature", () => {
     const crmRoute = readSource(
       "src/app/(public)/documentation/tools/crm/page.tsx"
     )
+    const marketplaceRoute = readSource(
+      "src/app/(public)/documentation/marketplace/page.tsx"
+    )
+    const marketplacePage = readSource(
+      "src/features/nonprofit-documentation/components/marketplace-page.tsx"
+    )
+    const marketplaceData = readSource(
+      "src/features/nonprofit-documentation/lib/marketplace-resources.ts"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -1959,6 +2093,17 @@ describe("nonprofit documentation feature", () => {
     expect(crmRoute).toContain("<CrmArticlePage />")
     expect(crmRoute).toContain('canonical: "/documentation/tools/crm"')
     expect(crmRoute).not.toContain("ensureUser")
+    expect(marketplaceRoute).toContain("<MarketplacePage")
+    expect(marketplaceRoute).toContain(
+      'canonical: "/documentation/marketplace"'
+    )
+    expect(marketplaceRoute).not.toContain("ensureUser")
+    expect(marketplacePage).toContain('"@type": "CollectionPage"')
+    expect(marketplacePage).toContain('"@type": "ItemList"')
+    expect(marketplacePage).toContain('"@type": "BreadcrumbList"')
+    expect(marketplacePage).toContain("People are not inventory")
+    expect(marketplaceData).not.toContain("listCoachingCoaches")
+    expect(marketplaceData).not.toContain("coaching_coaches")
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

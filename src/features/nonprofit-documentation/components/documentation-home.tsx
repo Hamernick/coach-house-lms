@@ -4,6 +4,8 @@ import BookMarkedIcon from "lucide-react/dist/esm/icons/book-marked"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CompassIcon from "lucide-react/dist/esm/icons/compass"
 import LibraryIcon from "lucide-react/dist/esm/icons/library"
+import MapIcon from "lucide-react/dist/esm/icons/map"
+import StoreIcon from "lucide-react/dist/esm/icons/store"
 import WrenchIcon from "lucide-react/dist/esm/icons/wrench"
 
 import { DOCUMENTATION_NAVIGATION, DOCUMENTATION_PATH } from "../lib"
@@ -42,6 +44,9 @@ export function DocumentationHome() {
   )
   const tools = DOCUMENTATION_NAVIGATION.find(
     (section) => section.id === "tools"
+  )
+  const resources = DOCUMENTATION_NAVIGATION.find(
+    (section) => section.id === "resources"
   )
 
   return (
@@ -312,6 +317,45 @@ export function DocumentationHome() {
                   {content}
                 </article>
               )
+            })}
+          </div>
+        </section>
+
+        <section className="mt-16" aria-labelledby="resources-title">
+          <div className="flex items-center gap-3">
+            <StoreIcon className="text-muted-foreground size-5" aria-hidden />
+            <h2
+              id="resources-title"
+              className="text-2xl font-semibold tracking-[-0.025em]"
+            >
+              Resources
+            </h2>
+          </div>
+          <div className="mt-6 grid border-t sm:grid-cols-2">
+            {resources?.items.map((item) => {
+              const Icon = item.title === "Map" ? MapIcon : StoreIcon
+              return item.href ? (
+                <Link
+                  key={item.title}
+                  href={item.href}
+                  className="hover:bg-muted/45 focus-visible:bg-muted/45 group min-h-44 border-r border-b p-5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <Icon
+                      className="text-muted-foreground size-5"
+                      aria-hidden
+                    />
+                    <ArrowRightIcon
+                      className="size-4 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </div>
+                  <h3 className="mt-5 font-semibold">{item.title}</h3>
+                  <p className="text-muted-foreground mt-2 max-w-md text-sm leading-6">
+                    {item.description}
+                  </p>
+                </Link>
+              ) : null
             })}
           </div>
         </section>

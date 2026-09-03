@@ -21,6 +21,13 @@
   persist in IndexedDB and never leave the browser. Keep ZIP generation
   client-side and preserve the portable JSON, CSS-token, usage-note, and asset
   contract.
+- Marketplace catalog entries require a direct official source, visible review
+  and recheck dates, qualified cost language, and no ranking or endorsement.
+  Shortlists stay in local storage and exports remain formula-safe.
+- Community previews may project only safe fields from organizations already
+  published on Map. Never expose private profiles, contact details, exact
+  addresses, coordinates, source queues, or individual coach records without an
+  explicit public-profile opt-in model.
 - Import other features only through their public entrypoint (`@/features/<name>`).
 - Keep `lib/**` pure: no React, no UI imports, no route imports.
 - Keep shared UI in `src/components/ui/**`; avoid one-off primitives here.

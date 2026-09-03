@@ -1,7 +1,7 @@
 "use client"
 
 import SearchIcon from "lucide-react/dist/esm/icons/search"
-import type { ReactNode } from "react"
+import { useCallback, useState, type ReactNode } from "react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,13 @@ type WorkspaceToolsPanelProps = {
 }
 
 export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
+  const [googleDriveConnected, setGoogleDriveConnected] = useState<
+    boolean | null
+  >(null)
+  const handleGoogleDriveConnectionChange = useCallback(
+    (connected: boolean) => setGoogleDriveConnected(connected),
+    []
+  )
   const {
     availableTools,
     clearQuery,
@@ -31,7 +38,7 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
     query,
     setQuery,
     stripeConnection,
-  } = useWorkspaceToolsController(input)
+  } = useWorkspaceToolsController(input, googleDriveConnected)
   const hasResults = installedTools.length > 0 || availableTools.length > 0
 
   return (
@@ -70,6 +77,7 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
             <WorkspaceToolRow
               key={tool.id}
               tool={tool}
+              onGoogleDriveConnectionChange={handleGoogleDriveConnectionChange}
               stripeConnection={stripeConnection}
             />
           ))}
@@ -82,6 +90,7 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
             <WorkspaceToolRow
               key={tool.id}
               tool={tool}
+              onGoogleDriveConnectionChange={handleGoogleDriveConnectionChange}
               stripeConnection={stripeConnection}
             />
           ))}

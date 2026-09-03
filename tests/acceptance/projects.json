@@ -293,6 +293,8 @@
       "tests/acceptance/fiscal-sponsorship-native-signing.test.ts",
       "tests/acceptance/fiscal-sponsorship-w9.test.ts",
       "tests/acceptance/global-search-query-source-concurrency.test.ts",
+      "tests/acceptance/google-drive-routes.test.ts",
+      "tests/acceptance/google-drive.test.ts",
       "tests/acceptance/home-canvas-preview-navigation.test.ts",
       "tests/acceptance/home-canvas-route-link-helpers.test.ts",
       "tests/acceptance/legal-consent.test.ts",

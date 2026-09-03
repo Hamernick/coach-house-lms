@@ -120,6 +120,9 @@ import type { PlatformEmailConsentEventsTable } from "./platform_email_consent_e
 import type { PlatformEmailLinksTable } from "./platform_email_links"
 import type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 import type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
+import type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
+import type { GoogleDriveConnectionsTable } from "./google_drive_connections"
+import type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
 
 export type { OrganizationsTable } from "./organizations"
 export type { PublicHandleReservationsTable } from "./public_handle_reservations"
@@ -243,6 +246,9 @@ export type { PlatformEmailConsentEventsTable } from "./platform_email_consent_e
 export type { PlatformEmailLinksTable } from "./platform_email_links"
 export type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 export type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
+export type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
+export type { GoogleDriveConnectionsTable } from "./google_drive_connections"
+export type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -367,4 +373,7 @@ export type PublicTables = {
   platform_email_links: PlatformEmailLinksTable
   platform_email_link_clicks: PlatformEmailLinkClicksTable
   platform_legal_acceptances: PlatformLegalAcceptancesTable
+  google_drive_oauth_intents: GoogleDriveOauthIntentsTable
+  google_drive_connections: GoogleDriveConnectionsTable
+  organization_external_documents: OrganizationExternalDocumentsTable
 }

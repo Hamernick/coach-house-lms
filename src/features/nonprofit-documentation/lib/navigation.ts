@@ -118,7 +118,8 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Campaigns",
         description: "Plan focused, measurable public efforts.",
-        status: "planned",
+        href: `${DOCUMENTATION_PATH}/tools/campaigns`,
+        status: "live",
       },
       {
         title: "CRM",

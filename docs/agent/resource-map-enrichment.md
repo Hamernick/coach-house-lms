@@ -55,6 +55,8 @@ pnpm resource-map:eo-plan-work -- --package-size 25 --write
 pnpm resource-map:eo-work-lease -- --action status --plan <plan-directory>
 pnpm resource-map:eo-plan-search -- --package <package.json>
 pnpm resource-map:eo-plan-owned-discovery -- --plan <search-plan.json> --evidence-documents <evidence.jsonl> --directory-records <directory-records.jsonl>
+pnpm resource-map:eo-run-owned-crawler -- --fetch-plan <fetch-plan.json>
+pnpm resource-map:eo-run-owned-crawler -- --fetch-plan <fetch-plan.json> --search-plan <search-plan.json> --network true --write --confirm-plan <fetch-plan-hash>
 ```
 
 IRS filing rows prove identity only. Their address is never a service location,
@@ -115,7 +117,8 @@ terminal contract failures and exhausted retries enter a dead-letter directory.
 No lease operation grants database, review, publication, or deployment access.
 
 Provider discovery uses a replaceable adapter waterfall: local evidence cache,
-authoritative directory index, search API, then sandboxed browser. Common Crawl
+authoritative directory index, self-hosted evidence, deterministic domain
+hypotheses, bounded public crawler, then sandboxed browser. Common Crawl
 may look up history for a URL already discovered elsewhere; its URL index is not
 an organization-name full-text search adapter. Adapter rows are bounded and
 normalized before use. Search snippets remain non-evidentiary. Fetch planning
@@ -138,6 +141,18 @@ content-addressed with two-character shard keys for bounded local lookup. Domain
 hypotheses are never evidence and remain unverified until the existing provider
 comparison verifies identity. The planner deduplicates URLs across EINs and
 emits exact-host budgets and robots checks without performing network calls.
+
+The owned crawler accepts only the current signed fetch-plan schema and verifies
+its signed parent search plan before live work. Dry runs make no requests and
+write nothing. Live execution requires `--network true`, `--write`, and exact
+plan-hash confirmation. It rejects local or private network destinations,
+revalidates DNS and every redirect, obeys robots, paces exact hosts, and enforces
+signed request, response-byte, retained-byte, timeout, and redirect limits. It
+never retains raw responses. Normalized page evidence and provider-linked
+signals are stored only in ignored private files with mode `0600`, hash-chained
+receipts, and resumable checkpoints. Crawler output remains unverified and
+publication-blocked; identity comparison, service extraction, review, import,
+and publication are later gates.
 
 ## Atomic promotion
 

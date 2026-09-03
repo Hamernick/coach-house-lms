@@ -266,6 +266,7 @@
       "tests/acceptance/resource-map-enrichment-quality.test.ts",
       "tests/acceptance/resource-map-import-records.test.ts",
       "tests/acceptance/resource-map-irs-eo-acquisition.test.ts",
+      "tests/acceptance/resource-map-irs-eo-owned-crawler.test.ts",
       "tests/acceptance/resource-map-irs-eo-owned-discovery.test.ts",
       "tests/acceptance/resource-map-irs-eo-private-drafts.test.ts",
       "tests/acceptance/resource-map-irs-eo-research-control-plane.test.ts",

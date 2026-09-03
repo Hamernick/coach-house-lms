@@ -17,6 +17,7 @@ export {
   HrArticlePage,
   FinanceArticlePage,
   LegalArticlePage,
+  CampaignsArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -37,6 +38,7 @@ export {
   HR_ARTICLE,
   FINANCE_ARTICLE,
   LEGAL_ARTICLE,
+  CAMPAIGNS_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -181,6 +183,16 @@ export {
   legalUrgencyLabel,
   sanitizeLegalPlan,
   summarizeLegalPlan,
+  CAMPAIGN_PATHWAY,
+  CAMPAIGN_PLAN_STORAGE_KEY,
+  CAMPAIGN_TYPES,
+  DEFAULT_CAMPAIGN_PLAN,
+  buildCampaignActions,
+  buildCampaignCsv,
+  buildCampaignReviewPrompt,
+  campaignTypeLabel,
+  sanitizeCampaignPlan,
+  summarizeCampaignPlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -263,3 +275,9 @@ export type {
   LegalPlanSummary,
   LegalPlanAction,
 } from "./legal-types"
+export type {
+  CampaignPlanAction,
+  CampaignPlanDraft,
+  CampaignPlanSummary,
+  CampaignTypeId,
+} from "./campaign-types"

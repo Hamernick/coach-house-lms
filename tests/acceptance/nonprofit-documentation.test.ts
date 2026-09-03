@@ -9,6 +9,7 @@ import {
   BRAND_IDENTITY_PATH,
   COMPLIANCE_ARTICLE,
   DEFAULT_BRAND_IDENTITY_DRAFT,
+  DEFAULT_CAMPAIGN_PLAN,
   DEFAULT_COMPLIANCE_RHYTHM,
   DEFAULT_FUNDRAISING_PLAN,
   DEFAULT_FINANCE_PLAN,
@@ -30,6 +31,7 @@ import {
   FRAMEWORKS_ARTICLE,
   HR_ARTICLE,
   LEGAL_ARTICLE,
+  CAMPAIGNS_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
   NETWORKING_ARTICLE,
@@ -74,6 +76,9 @@ import {
   buildSocialMediaReviewPrompt,
   buildTrackedSocialUrl,
   buildBrandTokens,
+  buildCampaignActions,
+  buildCampaignCsv,
+  buildCampaignReviewPrompt,
   brandFontStack,
   commonFederalFilingPath,
   contrastRating,
@@ -94,11 +99,13 @@ import {
   sanitizeSustainabilityPlan,
   sanitizeSocialMediaPlan,
   sanitizeBrandDraft,
+  sanitizeCampaignPlan,
   typeScale,
   summarizeFundraisingPlan,
   summarizeFinancePlan,
   summarizeHrPlan,
   summarizeLegalPlan,
+  summarizeCampaignPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
@@ -204,6 +211,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Legal")).toMatchObject({
       status: "live",
       href: "/documentation/tools/legal",
+    })
+    expect(items.find((item) => item.title === "Campaigns")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/campaigns",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1550,6 +1561,113 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit campaign guidance", () => {
+    expect(CAMPAIGNS_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(CAMPAIGNS_ARTICLE.slug).toBe("tools/campaigns")
+    expect(CAMPAIGNS_ARTICLE.framework).toHaveLength(7)
+    expect(CAMPAIGNS_ARTICLE.checklist.length).toBeGreaterThanOrEqual(14)
+    expect(CAMPAIGNS_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(CAMPAIGNS_ARTICLE.measures.length).toBeGreaterThanOrEqual(8)
+    expect(CAMPAIGNS_ARTICLE.sources.length).toBeGreaterThanOrEqual(14)
+    expect(CAMPAIGNS_ARTICLE.answer).toContain("observable action")
+    expect(CAMPAIGNS_ARTICLE.importantNote).toContain("501(c)(3)")
+    expect(CAMPAIGNS_ARTICLE.disclaimer).toContain(
+      "do not create, approve, publish"
+    )
+    expect(CAMPAIGNS_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Centers for Disease Control and Prevention",
+        "Internal Revenue Service",
+        "Federal Trade Commission",
+        "Federal Communications Commission",
+        "U.S. Department of Justice",
+        "World Wide Web Consortium",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local nonprofit campaign brief", () => {
+    const draft = {
+      ...DEFAULT_CAMPAIGN_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      campaignName: "Appointments without the guesswork",
+      stage: "operating" as const,
+      campaignType: "service-access" as const,
+      startDate: "2026-10-05",
+      endDate: "2026-11-15",
+      objective: "Support a service-access decision.",
+      primaryAudience: "Defined residents in three ZIP codes.",
+      audienceEvidence: "Listening and program evidence with limits.",
+      desiredAction: "Use the reviewed request path.",
+      mainMessage: "Appointments are free and language support is available.",
+      supportingEvidence: "Current program sources and claim limits.",
+      offerDestination: "Reviewed mobile service page and phone option.",
+      channelRoles: "Distinct partner, email, social, print, and event roles.",
+      timelineMilestones: "Review, test, launch, live checks, and closeout.",
+      budgetCapacity: "Authorized cost, service threshold, and pause rule.",
+      ownersApprovals: "Named source, access, spending, and response owners.",
+      accessibilityLanguage: "Reviewed language and disability access paths.",
+      consentPrivacy: "Permission, list source, opt-out, and data limits.",
+      complianceReview: "Current tax, legal, funding, and channel review.",
+      responseEscalation: "Routine, private, correction, and pause paths.",
+      measurementPlan: "Delivery, actions, access, cost, and limits.",
+      learningDecision: "Record a maintain, revise, pause, or stop decision.",
+      hasClaimReview: true,
+      hasAccessibilityReview: true,
+      hasConsentPrivacyReview: true,
+      hasLegalChannelReview: true,
+      hasDeliveryCapacityReview: true,
+    }
+    expect(summarizeCampaignPlan(draft)).toEqual({
+      draftedAreaCount: 17,
+      totalAreaCount: 17,
+      pathwayStepCount: 7,
+      totalPathwayStepCount: 7,
+      safeguardCount: 5,
+      totalSafeguardCount: 5,
+      durationDays: 42,
+    })
+    expect(buildCampaignActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+    ])
+    expect(buildCampaignReviewPrompt(draft)).toContain(
+      "Do not publish, send, target"
+    )
+    expect(buildCampaignReviewPrompt(draft)).toContain(
+      "Do not invent audience research"
+    )
+    expect(buildCampaignCsv(draft)).toContain(
+      '"Area","Working nonprofit campaign brief"'
+    )
+    expect(
+      buildCampaignCsv({ ...draft, campaignName: "=SUM(A1:A2)" })
+    ).toContain("'=SUM(A1:A2)")
+
+    expect(
+      sanitizeCampaignPlan({
+        stage: "unknown",
+        campaignType: "viral",
+        organizationName: "o".repeat(200),
+        audienceEvidence: "e".repeat(1_200),
+        startDate: "tomorrow",
+        hasClaimReview: "yes",
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      campaignType: "awareness-education",
+      organizationName: "o".repeat(120),
+      audienceEvidence: "e".repeat(900),
+      startDate: "",
+      hasClaimReview: false,
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1608,6 +1726,9 @@ describe("nonprofit documentation feature", () => {
     const legalRoute = readSource(
       "src/app/(public)/documentation/tools/legal/page.tsx"
     )
+    const campaignsRoute = readSource(
+      "src/app/(public)/documentation/tools/campaigns/page.tsx"
+    )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
     )
@@ -1665,6 +1786,10 @@ describe("nonprofit documentation feature", () => {
     expect(financeRoute).toContain('canonical: "/documentation/tools/finance"')
     expect(legalRoute).toContain("<LegalArticlePage />")
     expect(legalRoute).toContain('canonical: "/documentation/tools/legal"')
+    expect(campaignsRoute).toContain("<CampaignsArticlePage />")
+    expect(campaignsRoute).toContain(
+      'canonical: "/documentation/tools/campaigns"'
+    )
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

@@ -17,6 +17,7 @@ export { NETWORKING_ARTICLE } from "./networking-article"
 export { HR_ARTICLE } from "./hr-article"
 export { FINANCE_ARTICLE } from "./finance-article"
 export { LEGAL_ARTICLE } from "./legal-article"
+export { CAMPAIGNS_ARTICLE } from "./campaigns-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -171,6 +172,18 @@ export {
   sanitizeLegalPlan,
   summarizeLegalPlan,
 } from "./legal-plan"
+export {
+  CAMPAIGN_PATHWAY,
+  CAMPAIGN_PLAN_STORAGE_KEY,
+  CAMPAIGN_TYPES,
+  DEFAULT_CAMPAIGN_PLAN,
+  buildCampaignActions,
+  buildCampaignCsv,
+  buildCampaignReviewPrompt,
+  campaignTypeLabel,
+  sanitizeCampaignPlan,
+  summarizeCampaignPlan,
+} from "./campaign-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

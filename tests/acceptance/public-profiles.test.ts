@@ -125,6 +125,8 @@ describe("public-profiles feature contract", () => {
     expect(shell).toContain('label="Public profile"')
     expect(shell).toContain('tab === "public-profile"')
     expect(shell).toContain("<PublicProfileSettings")
+    expect(shell).toContain("onDone={requestClose}")
+    expect(shell).not.toContain('onDone={() => onOpenChange(false)}')
     expect(profileFields).not.toContain("PublicProfileIdentitySettings")
     expect(navUser).toContain("initialTab={settingsInitialTab}")
     expect(accountMenu).toContain('onOpenSettings("public-profile")')

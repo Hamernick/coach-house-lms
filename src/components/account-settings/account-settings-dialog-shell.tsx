@@ -282,7 +282,7 @@ export function AccountSettingsDialogShell({
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}
-            onDone={() => onOpenChange(false)}
+            onDone={requestClose}
           />
 
       <MobileMenu

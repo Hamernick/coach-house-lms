@@ -16,6 +16,7 @@ export { SOCIAL_MEDIA_ARTICLE } from "./social-media-article"
 export { NETWORKING_ARTICLE } from "./networking-article"
 export { HR_ARTICLE } from "./hr-article"
 export { FINANCE_ARTICLE } from "./finance-article"
+export { LEGAL_ARTICLE } from "./legal-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -156,6 +157,20 @@ export {
   sanitizeFinancePlan,
   summarizeFinancePlan,
 } from "./finance-plan"
+export {
+  DEFAULT_LEGAL_PLAN,
+  LEGAL_MATTER_CATEGORIES,
+  LEGAL_MATTER_PATHWAY,
+  LEGAL_MATTER_URGENCIES,
+  LEGAL_PLAN_STORAGE_KEY,
+  buildLegalActions,
+  buildLegalCsv,
+  buildLegalReviewPrompt,
+  legalCategoryLabel,
+  legalUrgencyLabel,
+  sanitizeLegalPlan,
+  summarizeLegalPlan,
+} from "./legal-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

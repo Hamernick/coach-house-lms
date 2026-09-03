@@ -13,6 +13,7 @@ import {
   DEFAULT_FUNDRAISING_PLAN,
   DEFAULT_FINANCE_PLAN,
   DEFAULT_HR_PLAN,
+  DEFAULT_LEGAL_PLAN,
   DEFAULT_LOGIC_MODEL_DRAFT,
   DEFAULT_MARKETING_PLAN,
   DEFAULT_MEASUREMENT_PLAN,
@@ -28,6 +29,7 @@ import {
   FINANCE_ARTICLE,
   FRAMEWORKS_ARTICLE,
   HR_ARTICLE,
+  LEGAL_ARTICLE,
   MARKETING_ARTICLE,
   MEASURING_IMPACT_ARTICLE,
   NETWORKING_ARTICLE,
@@ -46,6 +48,9 @@ import {
   buildHrActions,
   buildHrCsv,
   buildHrReviewPrompt,
+  buildLegalActions,
+  buildLegalCsv,
+  buildLegalReviewPrompt,
   buildLogicModelActions,
   buildLogicModelCsv,
   buildLogicModelReviewPrompt,
@@ -80,6 +85,7 @@ import {
   sanitizeFundraisingPlan,
   sanitizeFinancePlan,
   sanitizeHrPlan,
+  sanitizeLegalPlan,
   sanitizeLogicModelDraft,
   sanitizeMarketingPlan,
   sanitizeMeasurementPlan,
@@ -92,6 +98,7 @@ import {
   summarizeFundraisingPlan,
   summarizeFinancePlan,
   summarizeHrPlan,
+  summarizeLegalPlan,
   summarizeLogicModel,
   summarizeMarketingPlan,
   summarizeMeasurementPlan,
@@ -193,6 +200,10 @@ describe("nonprofit documentation feature", () => {
     expect(items.find((item) => item.title === "Finance")).toMatchObject({
       status: "live",
       href: "/documentation/tools/finance",
+    })
+    expect(items.find((item) => item.title === "Legal")).toMatchObject({
+      status: "live",
+      href: "/documentation/tools/legal",
     })
     expect(items.filter((item) => item.status !== "live" && item.href)).toEqual(
       []
@@ -1437,6 +1448,108 @@ describe("nonprofit documentation feature", () => {
     })
   })
 
+  it("publishes complete source-backed nonprofit legal guidance", () => {
+    expect(LEGAL_ARTICLE.stages.map((stage) => stage.id)).toEqual([
+      "exploring",
+      "forming",
+      "operating",
+      "growing",
+    ])
+    expect(LEGAL_ARTICLE.slug).toBe("tools/legal")
+    expect(LEGAL_ARTICLE.framework).toHaveLength(7)
+    expect(LEGAL_ARTICLE.checklist.length).toBeGreaterThanOrEqual(12)
+    expect(LEGAL_ARTICLE.mistakes.length).toBeGreaterThanOrEqual(8)
+    expect(LEGAL_ARTICLE.measures.length).toBeGreaterThanOrEqual(7)
+    expect(LEGAL_ARTICLE.sources.length).toBeGreaterThanOrEqual(14)
+    expect(LEGAL_ARTICLE.answer).toContain("qualified counsel")
+    expect(LEGAL_ARTICLE.importantNote).toContain("immediate danger")
+    expect(LEGAL_ARTICLE.disclaimer).toContain("do not provide legal advice")
+    expect(LEGAL_ARTICLE.sources.map(({ publisher }) => publisher)).toEqual(
+      expect.arrayContaining([
+        "Coach House",
+        "Internal Revenue Service",
+        "U.S. Department of Justice",
+        "Federal Trade Commission",
+        "American Bar Association",
+      ])
+    )
+  })
+
+  it("builds a guarded device-local legal matter and referral brief", () => {
+    const draft = {
+      ...DEFAULT_LEGAL_PLAN,
+      organizationName: "Willow Street Family Resource Network",
+      matterTitle: "Proposed related-party storefront lease",
+      stage: "operating" as const,
+      category: "property-insurance-risk" as const,
+      urgency: "dated-response" as const,
+      decisionQuestion: "Whether to enter the proposed lease.",
+      knownFacts: "Original proposal and dated communications retained.",
+      assumptionsUnknowns: "Local approvals and material terms remain open.",
+      affectedPeople: "Participants, workers, directors, and counterparties.",
+      jurisdictionsLocations:
+        "State, municipal, and federal interfaces mapped.",
+      timelineDeadlines: "Received and requested dates copied exactly.",
+      governingDocuments: "Current bylaws, delegations, draft, and sources.",
+      actionsCommunications: "Signature and announcement paused for review.",
+      authorityConflicts:
+        "Related party disclosed; disinterested authority mapped.",
+      safetyRightsAccess: "Facility, access, privacy, and continuity reviewed.",
+      evidencePreservation: "Original records and custodians documented.",
+      confidentialityDataBoundary:
+        "Minimum necessary records and access defined.",
+      counselReferral: "Licensed nonprofit and lease counsel under review.",
+      decisionFollowUp:
+        "Advice, decision, conditions, owners, and review recorded.",
+      hasUrgentSafetyReview: true,
+      hasAuthorityConflictReview: true,
+      hasJurisdictionSourceReview: true,
+      hasQualifiedCounselReview: false,
+    }
+    expect(summarizeLegalPlan(draft)).toEqual({
+      draftedAreaCount: 14,
+      totalAreaCount: 14,
+      safeguardCount: 3,
+      totalSafeguardCount: 4,
+      pathwayStepCount: 6,
+      totalPathwayStepCount: 6,
+    })
+    expect(buildLegalActions(draft).map(({ id }) => id)).toEqual([
+      "stage-operating",
+      "remaining-safeguards",
+    ])
+    expect(buildLegalReviewPrompt(draft)).toContain(
+      "Do not provide legal advice or determine rights"
+    )
+    expect(buildLegalReviewPrompt(draft)).toContain(
+      "Do not suggest deleting, altering, concealing"
+    )
+    expect(buildLegalCsv(draft)).toContain(
+      '"Area","Working nonprofit legal matter and referral brief"'
+    )
+    expect(buildLegalCsv({ ...draft, matterTitle: "=SUM(A1:A2)" })).toContain(
+      "'=SUM(A1:A2)"
+    )
+
+    expect(
+      sanitizeLegalPlan({
+        stage: "unknown",
+        category: "general-law",
+        urgency: "urgent",
+        organizationName: "o".repeat(200),
+        knownFacts: "f".repeat(1_200),
+        hasQualifiedCounselReview: "yes",
+      })
+    ).toMatchObject({
+      stage: "exploring",
+      category: "formation-governance",
+      urgency: "planning",
+      organizationName: "o".repeat(120),
+      knownFacts: "f".repeat(900),
+      hasQualifiedCounselReview: false,
+    })
+  })
+
   it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
@@ -1491,6 +1604,9 @@ describe("nonprofit documentation feature", () => {
     )
     const financeRoute = readSource(
       "src/app/(public)/documentation/tools/finance/page.tsx"
+    )
+    const legalRoute = readSource(
+      "src/app/(public)/documentation/tools/legal/page.tsx"
     )
     const quickstartRoute = readSource(
       "src/app/(public)/documentation/quickstart/page.tsx"
@@ -1547,6 +1663,8 @@ describe("nonprofit documentation feature", () => {
     expect(hrRoute).toContain('canonical: "/documentation/tools/hr"')
     expect(financeRoute).toContain("<FinanceArticlePage />")
     expect(financeRoute).toContain('canonical: "/documentation/tools/finance"')
+    expect(legalRoute).toContain("<LegalArticlePage />")
+    expect(legalRoute).toContain('canonical: "/documentation/tools/legal"')
     expect(quickstartRoute).toContain(
       "<FoundationGuidePage guide={QUICKSTART_GUIDE} />"
     )

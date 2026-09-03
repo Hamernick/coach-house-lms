@@ -16,6 +16,7 @@ export {
   NetworkingArticlePage,
   HrArticlePage,
   FinanceArticlePage,
+  LegalArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -35,6 +36,7 @@ export {
   NETWORKING_ARTICLE,
   HR_ARTICLE,
   FINANCE_ARTICLE,
+  LEGAL_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -167,6 +169,18 @@ export {
   buildFinanceReviewPrompt,
   sanitizeFinancePlan,
   summarizeFinancePlan,
+  DEFAULT_LEGAL_PLAN,
+  LEGAL_MATTER_CATEGORIES,
+  LEGAL_MATTER_PATHWAY,
+  LEGAL_MATTER_URGENCIES,
+  LEGAL_PLAN_STORAGE_KEY,
+  buildLegalActions,
+  buildLegalCsv,
+  buildLegalReviewPrompt,
+  legalCategoryLabel,
+  legalUrgencyLabel,
+  sanitizeLegalPlan,
+  summarizeLegalPlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -242,3 +256,10 @@ export type {
   FinancePlanSummary,
   FinancePlanAction,
 } from "./finance-types"
+export type {
+  LegalMatterCategoryId,
+  LegalMatterUrgencyId,
+  LegalPlanDraft,
+  LegalPlanSummary,
+  LegalPlanAction,
+} from "./legal-types"

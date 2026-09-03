@@ -93,22 +93,26 @@ describe("public-profiles feature contract", () => {
     expect(accountStep).toContain("Your profile stays private")
     expect(onboardingAction).toContain('form.get("personHandle")')
     expect(onboardingAction).toContain("claim_person_public_handle")
-    expect(identitySettings).toContain("Public profile")
+    expect(identitySettings).toContain("Public page")
     expect(identitySettings).toContain('fetch("/api/account/public-handle"')
-    expect(identitySettings).toContain("Nothing becomes public until you")
-    expect(identitySettings).toContain("publish.")
+    expect(identitySettings).toContain(
+      "Choose your Coach House address and decide when people can view it."
+    )
     expect(identitySettings).toContain("savePublicPersonProfileAction")
-    expect(identitySettings).toContain("Publish profile")
-    expect(identitySettings).toContain("Profile unpublished.")
+    expect(identitySettings).toContain("Visibility")
+    expect(identitySettings).toContain("Profile unpublished")
   })
 
-  it("gives existing users a dedicated public profile activation path", () => {
+  it("unifies personal and public profile management", () => {
     const tabTypes = readSource("src/components/account-settings/types.ts")
     const shell = readSource(
       "src/components/account-settings/account-settings-dialog-shell.tsx"
     )
     const profileFields = readSource(
       "src/components/account-settings/sections/profile-fields.tsx"
+    )
+    const profileSection = readSource(
+      "src/components/account-settings/sections/profile-section.tsx"
     )
     const navUser = readSource("src/components/nav-user.tsx")
     const accountMenu = readSource(
@@ -121,22 +125,35 @@ describe("public-profiles feature contract", () => {
       "src/features/public-profiles/components/public-profile-identity-settings.tsx"
     )
 
-    expect(tabTypes).toContain('| "public-profile"')
-    expect(shell).toContain('label="Public profile"')
-    expect(shell).toContain('tab === "public-profile"')
-    expect(shell).toContain("<PublicProfileSettings")
+    expect(tabTypes).not.toContain('| "public-profile"')
+    expect(shell).not.toContain('label="Public profile"')
+    expect(shell).not.toContain('tab === "public-profile"')
+    expect(shell).toContain("<ProfileSection")
     expect(shell).toContain("onDone={requestClose}")
-    expect(shell).not.toContain('onDone={() => onOpenChange(false)}')
+    expect(shell).not.toContain("onDone={() => onOpenChange(false)}")
+    expect(profileSection).toContain("<PublicProfileSettings")
     expect(profileFields).not.toContain("PublicProfileIdentitySettings")
+    expect(profileFields).toContain("Personal details")
+    expect(profileFields).toContain("Private")
     expect(navUser).toContain("initialTab={settingsInitialTab}")
-    expect(accountMenu).toContain('onOpenSettings("public-profile")')
-    expect(publicProfileSettings).toContain("Claim your Coach House address")
+    expect(accountMenu).not.toContain('onOpenSettings("public-profile")')
+    expect(accountMenu).toContain("Profile & settings")
+    expect(publicProfileSettings).not.toContain(">Public profile<")
+    expect(publicProfileSettings).toContain("profileDetails")
     expect(publicProfileSettings).toContain("PublicProfileAffiliationSettings")
     expect(publicProfileSettings).toContain(
       "PublicProfileSavedCollectionSettings"
     )
+    expect(identitySettings.indexOf("{profileDetails}")).toBeLessThan(
+      identitySettings.indexOf("Public page")
+    )
     expect(identitySettings).toContain("View profile")
-    expect(identitySettings).toContain('<Link href={`/${currentHandle}`}>')
+    expect(identitySettings).toContain("<Link href={`/${currentHandle}`}>")
+    expect(identitySettings).not.toContain("<Card")
+    expect(identitySettings).toContain(
+      "onCheckedChange={(checked) => void saveVisibility(checked)}"
+    )
+    expect(publicProfileSettings).toContain("profileDetails={profileDetails}")
   })
 
   it("checks organization URLs against the same global namespace", () => {

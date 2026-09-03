@@ -1,5 +1,5 @@
 import "server-only"
 
-// Phase 1 documentation is static and public. This boundary is intentionally
-// empty until a later phase adds server-owned search or review workflows.
+// Public documentation mutations are intentionally absent. Interactive drafts
+// and Marketplace shortlists remain local to the visitor's browser.
 export {}

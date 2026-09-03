@@ -141,8 +141,9 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       },
       {
         title: "Marketplace",
-        description: "Find vetted tools, discounts, and services.",
-        status: "planned",
+        description: "Compare source-backed tools, discounts, and support.",
+        href: `${DOCUMENTATION_PATH}/marketplace`,
+        status: "live",
       },
     ],
   },

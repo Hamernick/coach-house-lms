@@ -326,5 +326,6 @@ export const CRM_ARTICLE: BestPracticeArticle = {
   },
   next: {
     title: "Marketplace",
+    href: "/documentation/marketplace",
   },
 }

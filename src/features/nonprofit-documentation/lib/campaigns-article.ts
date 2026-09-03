@@ -324,5 +324,6 @@ export const CAMPAIGNS_ARTICLE: BestPracticeArticle = {
   },
   next: {
     title: "CRM",
+    href: "/documentation/tools/crm",
   },
 }

@@ -18,6 +18,7 @@ export { HR_ARTICLE } from "./hr-article"
 export { FINANCE_ARTICLE } from "./finance-article"
 export { LEGAL_ARTICLE } from "./legal-article"
 export { CAMPAIGNS_ARTICLE } from "./campaigns-article"
+export { CRM_ARTICLE } from "./crm-article"
 export {
   DEFAULT_COMPLIANCE_RHYTHM,
   US_STATE_OPTIONS,
@@ -184,6 +185,25 @@ export {
   sanitizeCampaignPlan,
   summarizeCampaignPlan,
 } from "./campaign-plan"
+export {
+  CRM_FIELD_CATEGORIES,
+  CRM_FIELD_SENSITIVITY,
+  CRM_LIFECYCLE,
+  CRM_PLAN_STORAGE_KEY,
+  CRM_RELATIONSHIP_CONTEXTS,
+  CRM_REVIEW_MONTHS,
+  DEFAULT_CRM_PLAN,
+  MAX_CRM_FIELDS,
+  buildCrmActions,
+  buildCrmCsv,
+  buildCrmReviewPrompt,
+  createCrmField,
+  crmFieldCategoryLabel,
+  crmFieldSensitivityLabel,
+  crmRelationshipContextLabel,
+  sanitizeCrmPlan,
+  summarizeCrmPlan,
+} from "./crm-plan"
 export { KEY_CONCEPTS_GUIDE, QUICKSTART_GUIDE } from "./foundation-guides"
 export {
   BRAND_IDENTITY_PATH,

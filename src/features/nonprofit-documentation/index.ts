@@ -18,6 +18,7 @@ export {
   FinanceArticlePage,
   LegalArticlePage,
   CampaignsArticlePage,
+  CrmArticlePage,
   BestPracticeArticlePage,
 } from "./components"
 export type { DocumentationShellState } from "./components"
@@ -39,6 +40,7 @@ export {
   FINANCE_ARTICLE,
   LEGAL_ARTICLE,
   CAMPAIGNS_ARTICLE,
+  CRM_ARTICLE,
   QUICKSTART_GUIDE,
   BRAND_FONT_GROUPS,
   BRAND_FONT_OPTIONS,
@@ -193,6 +195,23 @@ export {
   campaignTypeLabel,
   sanitizeCampaignPlan,
   summarizeCampaignPlan,
+  CRM_FIELD_CATEGORIES,
+  CRM_FIELD_SENSITIVITY,
+  CRM_LIFECYCLE,
+  CRM_PLAN_STORAGE_KEY,
+  CRM_RELATIONSHIP_CONTEXTS,
+  CRM_REVIEW_MONTHS,
+  DEFAULT_CRM_PLAN,
+  MAX_CRM_FIELDS,
+  buildCrmActions,
+  buildCrmCsv,
+  buildCrmReviewPrompt,
+  createCrmField,
+  crmFieldCategoryLabel,
+  crmFieldSensitivityLabel,
+  crmRelationshipContextLabel,
+  sanitizeCrmPlan,
+  summarizeCrmPlan,
 } from "./lib"
 export type {
   DocumentationNavItem,
@@ -281,3 +300,12 @@ export type {
   CampaignPlanSummary,
   CampaignTypeId,
 } from "./campaign-types"
+export type {
+  CrmFieldCategoryId,
+  CrmFieldDraft,
+  CrmFieldSensitivityId,
+  CrmPlanAction,
+  CrmPlanDraft,
+  CrmPlanSummary,
+  CrmRelationshipContextId,
+} from "./crm-types"

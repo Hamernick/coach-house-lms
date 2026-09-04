@@ -89,6 +89,9 @@ export function BestPracticeArticlePage({
   interactive?: ReactNode
 }) {
   const canonicalUrl = `https://coachhouse.app/documentation/${article.slug}`
+  const sectionLabel = article.slug.startsWith("tools/")
+    ? "Tools"
+    : "Best practices"
   const contents: ReadonlyArray<readonly [string, string]> = interactive
     ? [...baseContents, ["sandbox", "Try it"], ...closingContents]
     : [...baseContents, ...closingContents]
@@ -124,7 +127,7 @@ export function BestPracticeArticlePage({
               name: "Documentation",
               item: "https://coachhouse.app/documentation",
             },
-            { "@type": "ListItem", position: 2, name: "Best practices" },
+            { "@type": "ListItem", position: 2, name: sectionLabel },
             {
               "@type": "ListItem",
               position: 3,
@@ -150,7 +153,7 @@ export function BestPracticeArticlePage({
               Documentation
             </Link>
             <span aria-hidden>/</span>
-            <span>Best practices</span>
+            <span>{sectionLabel}</span>
             <span aria-hidden>/</span>
             <span aria-current="page" className="text-foreground">
               {article.navigationTitle}

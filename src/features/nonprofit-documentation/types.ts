@@ -60,7 +60,7 @@ export type FoundationGuide = {
 }
 
 export type BestPracticeArticle = {
-  slug: `best-practices/${string}`
+  slug: `${"best-practices" | "tools"}/${string}`
   navigationTitle: string
   title: string
   description: string
@@ -449,6 +449,79 @@ export type PartnershipBriefAction = {
     | "Safeguards"
     | "Learning"
     | "Closeout"
+  action: string
+  evidence: string
+}
+
+export type SocialMediaObjectiveId =
+  | "service-access"
+  | "community-education"
+  | "event-participation"
+  | "volunteer-recruitment"
+  | "donor-stewardship"
+  | "partner-development"
+
+export type SocialMediaChannelId =
+  | "instagram"
+  | "facebook"
+  | "linkedin"
+  | "tiktok"
+  | "youtube"
+  | "bluesky"
+  | "other"
+
+export type SocialMediaChannelCadence = Record<SocialMediaChannelId, number>
+
+export type SocialMediaPlanDraft = {
+  version: 1
+  organizationName: string
+  campaignName: string
+  stage: DocumentationStageId
+  objective: SocialMediaObjectiveId
+  campaignWeeks: 4 | 8 | 12
+  primaryAudience: string
+  desiredAction: string
+  destinationUrl: string
+  mainMessage: string
+  sourceEvidence: string
+  storyPermissionContext: string
+  voiceGuidance: string
+  postCopy: string
+  visualDescription: string
+  alternativeText: string
+  captionsPlan: string
+  linkLabel: string
+  responseProtocol: string
+  approvalOwner: string
+  escalationOwner: string
+  previewChannel: SocialMediaChannelId
+  channelCadence: SocialMediaChannelCadence
+  hasStoryPermissionReview: boolean
+  hasClaimSourceReview: boolean
+  hasAccessibilityReview: boolean
+  hasApprovalEscalationPlan: boolean
+}
+
+export type SocialMediaPlanSummary = {
+  activeChannelCount: number
+  weeklyOutputs: number
+  campaignOutputs: number
+  draftedAreaCount: number
+  totalAreaCount: number
+  safeguardCount: number
+  totalSafeguardCount: number
+}
+
+export type SocialMediaPlanAction = {
+  id: string
+  phase:
+    | "Purpose"
+    | "Audience"
+    | "Source"
+    | "Access"
+    | "Publishing"
+    | "Response"
+    | "Learning"
   action: string
   evidence: string
 }

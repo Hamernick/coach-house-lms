@@ -1,6 +1,5 @@
 export type AccountSettingsTabKey =
   | "profile"
-  | "public-profile"
   | "communications"
   | "security"
   | "danger"

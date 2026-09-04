@@ -4,7 +4,6 @@ import type { CSSProperties, RefObject } from "react"
 
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
-import IdCardIcon from "lucide-react/dist/esm/icons/id-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
 import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
@@ -84,19 +83,10 @@ export function NavUserMenuContent({
         type="button"
         variant="ghost"
         className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-        onClick={() => onOpenSettings("public-profile")}
-      >
-        <IdCardIcon className="size-4" />
-        Public profile
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
         onClick={() => onOpenSettings("profile")}
       >
         <CircleUserIcon className="size-4" />
-        Account settings
+        Profile & settings
       </Button>
       {showOrgAdmin && canAccessOrgAdmin ? (
         <Link
@@ -122,9 +112,7 @@ export function NavUserMenuContent({
               action.onSelect()
             }}
           >
-            {ActionIcon ? (
-              <ActionIcon className="size-4" aria-hidden />
-            ) : null}
+            {ActionIcon ? <ActionIcon className="size-4" aria-hidden /> : null}
             {action.label}
           </Button>
         )
@@ -150,6 +138,6 @@ export function NavUserMenuContent({
         {signOutPending ? "Signing out..." : "Log out"}
       </Button>
     </div>,
-    document.body,
+    document.body
   )
 }

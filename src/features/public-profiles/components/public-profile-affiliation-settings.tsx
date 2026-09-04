@@ -121,10 +121,13 @@ export function PublicProfileAffiliationSettings({
   return (
     <section aria-labelledby={`${idPrefix}-heading`} className="space-y-4">
       <div className="space-y-1">
-        <h3 id={`${idPrefix}-heading`} className="text-sm font-medium">
+        <h3
+          id={`${idPrefix}-heading`}
+          className="text-lg font-medium tracking-tight"
+        >
           Organizations
         </h3>
-        <p className="text-muted-foreground text-sm leading-6">
+        <p className="text-muted-foreground max-w-xl text-sm leading-6 text-pretty">
           Choose verified memberships to show. Private organizations remain
           hidden until the organization publishes.
         </p>
@@ -159,6 +162,7 @@ export function PublicProfileAffiliationSettings({
             type="button"
             variant="outline"
             size="sm"
+            className="h-11 sm:h-8"
             onClick={loadAffiliations}
           >
             Try again
@@ -166,8 +170,8 @@ export function PublicProfileAffiliationSettings({
         </div>
       ) : affiliations.length === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed p-4 text-sm leading-6">
-          No verified memberships yet. Join an organization to make it eligible
-          for your public profile.
+          No verified memberships yet. Organizations will appear here after you
+          accept an invitation.
         </p>
       ) : (
         <div className="space-y-2">
@@ -197,6 +201,9 @@ export function PublicProfileAffiliationSettings({
                       {affiliation.name}
                     </span>
                     <span className="text-muted-foreground block text-xs">
+                      <span className="sm:hidden">
+                        {ROLE_LABELS[affiliation.role]} ·{" "}
+                      </span>
                       {affiliation.organizationIsPublic
                         ? "Eligible for public display"
                         : "Hidden until the organization publishes"}

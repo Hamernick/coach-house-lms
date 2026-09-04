@@ -1,6 +1,5 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
@@ -33,29 +32,14 @@ import { buildOrganizationDetailHeaderSlots } from "./organization-detail-header
 import { usePublicMapDrawerSearchSession } from "./use-public-map-drawer-search-session"
 import { PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME } from "./sidebar-theme"
 import { PublicMapSidebarDrawer } from "./sidebar-drawer"
+import {
+  PublicMapDrawerDetailPanel,
+  PublicMapRailDetailPanel,
+  PublicMapResourceDrawerDetailPanel,
+  PublicMapResourceRailDetailPanel,
+} from "./sidebar-detail-loaders"
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
-
-const PublicMapDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapDrawerDetailPanel
-  )
-)
-const PublicMapRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapRailDetailPanel
-  )
-)
-const PublicMapResourceDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceDrawerDetailPanel
-  )
-)
-const PublicMapResourceRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceRailDetailPanel
-  )
-)
 
 function PublicMapSidebarOpenButton({
   hidden,

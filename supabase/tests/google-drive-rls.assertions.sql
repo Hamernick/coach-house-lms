@@ -3,12 +3,13 @@ set role service_role;
 insert into public.google_drive_oauth_intents (
   id, user_id, org_id, state_sha256,
   pkce_verifier_ciphertext, pkce_verifier_iv, pkce_verifier_auth_tag,
-  key_version, expires_at
+  key_version, return_path, expires_at
 ) values (
   '10000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
-  repeat('a', 64), 'ciphertext', 'iv', 'tag', 'v1', now() + interval '10 minutes'
+  repeat('a', 64), 'ciphertext', 'iv', 'tag', 'v1',
+  '/workspace?drawer=tools', now() + interval '10 minutes'
 );
 
 insert into public.google_drive_connections (

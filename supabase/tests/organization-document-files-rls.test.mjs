@@ -113,6 +113,8 @@ try {
     "supabase/migrations/20260904113000_add_organization_document_library.sql"
   )
   runSql("supabase/tests/organization-document-files-rls.assertions.sql")
+  runSql("supabase/migrations/20260904183000_count_policy_document_storage.sql")
+  runSql("supabase/tests/organization-policy-document-storage.assertions.sql")
   console.log(
     "[organization-document-files-rls] Tenant access, existing per-file limit, arbitrary MIME types, and 5 GB quota passed."
   )

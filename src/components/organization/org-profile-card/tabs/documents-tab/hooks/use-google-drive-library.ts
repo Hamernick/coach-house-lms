@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { toast } from "@/lib/toast"
+import type { DocumentActionOptions } from "./use-documents-library-selection"
 
 export type DriveLibraryDocument = {
   id: string
@@ -229,21 +230,26 @@ export function useGoogleDriveLibrary({ enabled }: { enabled: boolean }) {
     }
   }, [connected, enabled, openPicker, pending])
 
-  const detachDocument = useCallback(async (documentId: string) => {
-    const response = await fetch(
-      `/api/integrations/google-drive/documents/${encodeURIComponent(documentId)}`,
-      { method: "DELETE" }
-    )
-    const result = await readDriveResponse(response)
-    if (!response.ok) {
-      toast.error(driveErrorMessage(result?.code))
-      return
-    }
-    setDocuments((current) =>
-      current.filter((document) => document.id !== documentId)
-    )
-    toast.success("Google Drive file removed")
-  }, [])
+  const detachDocument = useCallback(
+    async (documentId: string, options: DocumentActionOptions = {}) => {
+      const response = await fetch(
+        `/api/integrations/google-drive/documents/${encodeURIComponent(documentId)}`,
+        { method: "DELETE" }
+      )
+      const result = await readDriveResponse(response)
+      if (!response.ok) {
+        toast.error(driveErrorMessage(result?.code))
+        if (options.throwOnError)
+          throw new Error(driveErrorMessage(result?.code))
+        return
+      }
+      setDocuments((current) =>
+        current.filter((document) => document.id !== documentId)
+      )
+      toast.success("Google Drive file removed")
+    },
+    []
+  )
 
   return {
     connected,

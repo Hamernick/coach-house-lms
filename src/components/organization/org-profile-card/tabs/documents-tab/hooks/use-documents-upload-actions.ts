@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from "react"
 import { useState } from "react"
 
 import { toast } from "@/lib/toast"
+import { downloadFile } from "@/lib/download-file"
+import type { DocumentActionOptions } from "./use-documents-library-selection"
 
 import type { OrgDocuments } from "../../../types"
 import { deleteOrgDocument, getOrgDocumentUrl, uploadOrgDocument } from "../api"
@@ -66,7 +68,7 @@ export function useDocumentsUploadActions({
 
   const handleDelete = async (
     definition: DocumentDefinition,
-    options: { confirm?: boolean } = {}
+    options: DocumentActionOptions = {}
   ) => {
     const current = documentsState?.[definition.key] ?? null
     if (!current?.path) return
@@ -84,23 +86,28 @@ export function useDocumentsUploadActions({
       toast.success("Document removed")
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Delete failed")
+      if (options.throwOnError) throw error
     } finally {
       setDeletingKind(null)
     }
   }
 
-  const handleDownload = async (definition: DocumentDefinition) => {
+  const handleDownload = async (
+    definition: DocumentDefinition,
+    options: DocumentActionOptions = {}
+  ) => {
     const current = documentsState?.[definition.key] ?? null
     if (!current?.path) return
 
     setDownloadingKind(definition.kind)
     try {
       const url = await getOrgDocumentUrl(definition.kind, { download: true })
-      window.open(url, "_blank", "noopener")
+      await downloadFile(url, current.name || definition.defaultName)
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Unable to download document"
       )
+      if (options.throwOnError) throw error
     } finally {
       setDownloadingKind(null)
     }

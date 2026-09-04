@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from "react"
 import { useState } from "react"
 
 import { toast } from "@/lib/toast"
+import { downloadFile } from "@/lib/download-file"
+import type { DocumentActionOptions } from "./use-documents-library-selection"
 
 import {
   deletePolicy,
@@ -120,18 +122,22 @@ export function useDocumentsPolicyActions({
     }
   }
 
-  const downloadPolicyDocument = async (policy: DocumentsPolicyEntry) => {
+  const downloadPolicyDocument = async (
+    policy: DocumentsPolicyEntry,
+    options: DocumentActionOptions = {}
+  ) => {
     if (!policy.document?.path) return
     setDownloadingPolicyDocumentId(policy.id)
     try {
       const url = await getPolicyDocumentUrl(policy.id, { download: true })
-      window.open(url, "_blank", "noopener")
+      await downloadFile(url, policy.document.name || policy.title)
     } catch (error: unknown) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Unable to download policy file"
       )
+      if (options.throwOnError) throw error
     } finally {
       setDownloadingPolicyDocumentId(null)
     }
@@ -139,7 +145,7 @@ export function useDocumentsPolicyActions({
 
   const removePolicyDocumentFile = async (
     policy: DocumentsPolicyEntry,
-    options: { confirm?: boolean } = {}
+    options: DocumentActionOptions = {}
   ) => {
     if (!policy.document?.path) return
     if (
@@ -159,6 +165,7 @@ export function useDocumentsPolicyActions({
           ? error.message
           : "Unable to remove policy document"
       )
+      if (options.throwOnError) throw error
     } finally {
       setDeletingPolicyId(null)
     }

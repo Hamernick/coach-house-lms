@@ -9,6 +9,7 @@ import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
 
 import { Button } from "@/components/ui/button"
+import { MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -204,7 +205,9 @@ export function UploadRowActions({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isUploading ? "Uploading…" : "Upload PDF (50 MB max)"}
+              {isUploading
+                ? "Uploading…"
+                : `Upload PDF (${MAX_UPLOAD_MB} MB max)`}
             </TooltipContent>
           </Tooltip>
         )

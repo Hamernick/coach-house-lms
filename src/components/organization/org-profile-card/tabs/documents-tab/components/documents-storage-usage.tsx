@@ -1,4 +1,9 @@
-import { formatBytes } from "../helpers"
+function formatStorageSize(bytes: number) {
+  const units = ["KB", "MB", "GB"]
+  const unit = bytes >= 1024 ** 3 ? 2 : bytes >= 1024 ** 2 ? 1 : 0
+  const value = Math.max(1, bytes / 1024 ** (unit + 1))
+  return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)} ${units[unit]}`
+}
 
 type DocumentsStorageUsageProps = {
   usedBytes: number
@@ -32,7 +37,7 @@ export function DocumentsStorageUsage({
       <span className="text-muted-foreground min-w-0 text-xs tabular-nums">
         {loading
           ? "Loading storage…"
-          : `${usedBytes === 0 ? "0" : formatBytes(usedBytes)} of ${formatBytes(limitBytes)} used`}
+          : `${usedBytes === 0 ? "0" : formatStorageSize(usedBytes)} of ${formatStorageSize(limitBytes)} used`}
       </span>
     </div>
   )

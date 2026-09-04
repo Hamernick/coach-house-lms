@@ -45,7 +45,7 @@ describe("organization document files", () => {
       "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-storage-usage.tsx"
     )
 
-    expect(route).toContain("const MAX_UPLOAD_MB = 50")
+    expect(route).toContain("@/lib/organization/document-storage")
     expect(route).toContain('file.type || "application/octet-stream"')
     expect(route).not.toContain("Only PDF files are supported")
     expect(route).toContain("{ download: data.name || true }")

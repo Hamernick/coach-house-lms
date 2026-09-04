@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { toast } from "@/lib/toast"
+import { downloadFile as saveDownload } from "@/lib/download-file"
+import { ORGANIZATION_DOCUMENT_QUOTA_BYTES } from "@/lib/organization/document-storage"
+import type { DocumentActionOptions } from "./use-documents-library-selection"
 import { MAX_BYTES, MAX_UPLOAD_MB } from "../constants"
 
-export const ORGANIZATION_DOCUMENT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024
+export { ORGANIZATION_DOCUMENT_QUOTA_BYTES } from "@/lib/organization/document-storage"
 
 export type OrganizationDocumentFile = {
   id: string
@@ -33,7 +36,7 @@ async function readResponseError(response: Response) {
   return payload?.error ?? "Unable to upload file."
 }
 
-export function useOrganizationDocumentFiles() {
+export function useOrganizationDocumentFiles(refreshKey = "") {
   const [files, setFiles] = useState<OrganizationDocumentFile[]>([])
   const [usedBytes, setUsedBytes] = useState(0)
   const [limitBytes, setLimitBytes] = useState(
@@ -72,7 +75,7 @@ export function useOrganizationDocumentFiles() {
 
   useEffect(() => {
     void load()
-  }, [load])
+  }, [load, refreshKey])
 
   const uploadFiles = useCallback(
     async (selectedFiles: File[]) => {
@@ -166,26 +169,33 @@ export function useOrganizationDocumentFiles() {
     }
   }, [])
 
-  const downloadFile = useCallback(async (file: OrganizationDocumentFile) => {
-    try {
-      const response = await fetch(
-        `/api/account/organization-document-files?id=${encodeURIComponent(file.id)}&download=true`,
-        { cache: "no-store" }
-      )
-      const payload = (await response.json().catch(() => null)) as {
-        url?: string
-        error?: string
-      } | null
-      if (!response.ok || !payload?.url) {
-        throw new Error(payload?.error ?? "Unable to download file.")
+  const downloadFile = useCallback(
+    async (
+      file: OrganizationDocumentFile,
+      options: DocumentActionOptions = {}
+    ) => {
+      try {
+        const response = await fetch(
+          `/api/account/organization-document-files?id=${encodeURIComponent(file.id)}&download=true`,
+          { cache: "no-store" }
+        )
+        const payload = (await response.json().catch(() => null)) as {
+          url?: string
+          error?: string
+        } | null
+        if (!response.ok || !payload?.url) {
+          throw new Error(payload?.error ?? "Unable to download file.")
+        }
+        await saveDownload(payload.url, file.name)
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error ? error.message : "Unable to download file."
+        )
+        if (options.throwOnError) throw error
       }
-      window.open(payload.url, "_blank", "noopener,noreferrer")
-    } catch (error: unknown) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to download file."
-      )
-    }
-  }, [])
+    },
+    []
+  )
 
   const updateFileLifecycle = useCallback(
     async (file: OrganizationDocumentFile, action: "trash" | "restore") => {
@@ -231,7 +241,10 @@ export function useOrganizationDocumentFiles() {
   )
 
   const trashFile = useCallback(
-    async (file: OrganizationDocumentFile) => {
+    async (
+      file: OrganizationDocumentFile,
+      options: DocumentActionOptions = {}
+    ) => {
       try {
         const trashedFile = await updateFileLifecycle(file, "trash")
         toast.success("Moved to Recently Deleted", {
@@ -246,13 +259,17 @@ export function useOrganizationDocumentFiles() {
             ? error.message
             : "Unable to move file to Recently Deleted."
         )
+        if (options.throwOnError) throw error
       }
     },
     [restoreFile, updateFileLifecycle]
   )
 
   const permanentlyDeleteFile = useCallback(
-    async (file: OrganizationDocumentFile) => {
+    async (
+      file: OrganizationDocumentFile,
+      options: DocumentActionOptions = {}
+    ) => {
       setPendingFileIds((current) => [...current, file.id])
       try {
         const response = await fetch(
@@ -273,6 +290,7 @@ export function useOrganizationDocumentFiles() {
             ? error.message
             : "Unable to permanently delete file."
         )
+        if (options.throwOnError) throw error
       } finally {
         setPendingFileIds((current) => current.filter((id) => id !== file.id))
       }

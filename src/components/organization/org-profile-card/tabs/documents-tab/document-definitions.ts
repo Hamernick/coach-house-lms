@@ -1,7 +1,6 @@
 import type { DocumentDefinition } from "./types"
 
-export const MAX_UPLOAD_MB = 50
-export const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+export { MAX_BYTES, MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
 
 export const DOCUMENTS: DocumentDefinition[] = [
   {

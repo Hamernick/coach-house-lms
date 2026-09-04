@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, type ReactNode } from "react"
 import {
   IconCheck,
   IconDots,
@@ -24,34 +24,23 @@ import type { DriveLibraryDocument } from "../hooks/use-google-drive-library"
 import { useDocumentsLibrarySelection } from "../hooks/use-documents-library-selection"
 import type { OrganizationDocumentFile } from "../hooks/use-organization-document-files"
 import type { DocumentIndexRow, DocumentsPolicyEntry } from "../types"
-
-export type DocumentsLibraryTab = "all" | "images" | "documents"
-export type DocumentsLibrarySource = "all" | "uploaded" | "generated"
-export type DocumentsLibraryFileType =
-  | "all"
-  | "image"
-  | "document"
-  | "spreadsheet"
-  | "presentation"
-  | "pdf"
-  | "other"
-
-type LibraryItem = {
-  id: string
-  name: string
-  description: string
-  source: Exclude<DocumentsLibrarySource, "all">
-  fileType: Exclude<DocumentsLibraryFileType, "all">
-  updatedAt: string | null
-  deleted: boolean
-  deletedAt?: string | null
-  href?: string
-  row?: DocumentIndexRow
-  uploadedFile?: OrganizationDocumentFile
-  driveDocument?: DriveLibraryDocument
-}
+import {
+  buildLibraryItems,
+  formatCardDate,
+  type LibraryItem,
+  type DocumentsLibraryTab,
+  type DocumentsLibrarySource,
+  type DocumentsLibraryFileType,
+} from "./documents-library-items"
+export type {
+  DocumentsLibraryTab,
+  DocumentsLibrarySource,
+  DocumentsLibraryFileType,
+} from "./documents-library-items"
 
 type DocumentsLibraryGridProps = {
+  viewMode?: "grid" | "list"
+  renderRowActions?: (row: DocumentIndexRow) => ReactNode
   rows: DocumentIndexRow[]
   driveDocuments: DriveLibraryDocument[]
   uploadedFiles: OrganizationDocumentFile[]
@@ -90,85 +79,9 @@ type DocumentsLibraryGridProps = {
   onReset: () => void
 }
 
-function resolveFileType(mimeType: string, name = ""): LibraryItem["fileType"] {
-  if (mimeType.startsWith("image/")) return "image"
-  if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) {
-    return "spreadsheet"
-  }
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) {
-    return "presentation"
-  }
-  if (mimeType === "application/pdf" || name.toLowerCase().endsWith(".pdf")) {
-    return "pdf"
-  }
-  if (
-    mimeType.startsWith("text/") ||
-    mimeType.includes("document") ||
-    mimeType.includes("word")
-  ) {
-    return "document"
-  }
-  return "other"
-}
-
-function buildLibraryItems(
-  rows: DocumentIndexRow[],
-  driveDocuments: DriveLibraryDocument[],
-  uploadedFiles: OrganizationDocumentFile[]
-) {
-  const localItems: LibraryItem[] = rows.flatMap((row) => {
-    if (row.source === "upload" && !row.document?.path) return []
-    return [
-      {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        source: row.source === "upload" ? "uploaded" : "generated",
-        fileType: row.source === "upload" ? "pdf" : "document",
-        updatedAt: row.updatedAt,
-        deleted: false,
-        href:
-          row.source === "roadmap" ? `/roadmap/${row.section.slug}` : undefined,
-        row,
-      } satisfies LibraryItem,
-    ]
-  })
-  const driveItems: LibraryItem[] = driveDocuments.map((document) => ({
-    id: `drive:${document.id}`,
-    name: document.name,
-    description: "Google Drive",
-    source: "uploaded",
-    fileType: resolveFileType(document.mimeType, document.name),
-    updatedAt: document.modifiedAt,
-    deleted: document.status === "trashed",
-    href: document.webViewLink,
-    driveDocument: document,
-  }))
-  const uploadedItems: LibraryItem[] = uploadedFiles.map((file) => ({
-    id: `uploaded:${file.id}`,
-    name: file.name,
-    description: file.mimeType,
-    source: "uploaded",
-    fileType: resolveFileType(file.mimeType, file.name),
-    updatedAt: file.updatedAt,
-    deleted: Boolean(file.deletedAt),
-    deletedAt: file.deletedAt,
-    uploadedFile: file,
-  }))
-  return [...uploadedItems, ...driveItems, ...localItems]
-}
-
-function formatCardDate(value: string | null) {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "-"
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-  }).format(date)
-}
-
 export function DocumentsLibraryGrid({
+  viewMode = "grid",
+  renderRowActions,
   rows,
   driveDocuments,
   uploadedFiles,
@@ -195,17 +108,29 @@ export function DocumentsLibraryGrid({
   onReset,
 }: DocumentsLibraryGridProps) {
   const items = useMemo(() => {
-    return buildLibraryItems(rows, driveDocuments, uploadedFiles).filter(
-      (item) => {
-        if (item.deleted !== showDeleted) return false
-        if (tab === "images" && item.fileType !== "image") return false
-        if (tab === "documents" && item.fileType === "image") return false
-        if (source !== "all" && item.source !== source) return false
-        if (fileType !== "all" && item.fileType !== fileType) return false
-        return true
-      }
-    )
-  }, [driveDocuments, fileType, rows, showDeleted, source, tab, uploadedFiles])
+    return buildLibraryItems(
+      rows,
+      driveDocuments,
+      uploadedFiles,
+      viewMode === "list"
+    ).filter((item) => {
+      if (item.deleted !== showDeleted) return false
+      if (tab === "images" && item.fileType !== "image") return false
+      if (tab === "documents" && item.fileType === "image") return false
+      if (source !== "all" && item.source !== source) return false
+      if (fileType !== "all" && item.fileType !== fileType) return false
+      return true
+    })
+  }, [
+    driveDocuments,
+    fileType,
+    rows,
+    showDeleted,
+    source,
+    tab,
+    uploadedFiles,
+    viewMode,
+  ])
   const selection = useDocumentsLibrarySelection({
     items,
     canEdit,
@@ -290,7 +215,13 @@ export function DocumentsLibraryGrid({
           onDownload={() => void selection.download()}
         />
       ) : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        className={
+          viewMode === "list"
+            ? "grid gap-3"
+            : "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        }
+      >
         {items.map((item) => {
           const selected = selection.selectedIds.includes(item.id)
           return (
@@ -298,7 +229,9 @@ export function DocumentsLibraryGrid({
               key={item.id}
               className={cn(
                 "group/card bg-muted/80 ring-border/60 relative flex aspect-[1/1.02] min-h-64 flex-col overflow-hidden rounded-[2rem] ring-1 transition-[background-color,box-shadow,transform] duration-200 motion-reduce:transition-none sm:min-h-0",
-                "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]"
+                "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]",
+                viewMode === "list" &&
+                  "aspect-auto min-h-20 flex-row items-center gap-3 rounded-2xl px-4 pr-24 sm:min-h-20"
               )}
             >
               <Button
@@ -306,7 +239,8 @@ export function DocumentsLibraryGrid({
                 variant="ghost"
                 className={cn(
                   "absolute inset-0 z-0 h-auto w-auto rounded-[2rem] border-2 border-transparent p-0 hover:bg-transparent focus-visible:ring-2",
-                  selected && "border-white"
+                  selected && "border-white",
+                  viewMode === "list" && "rounded-2xl"
                 )}
                 onClick={() =>
                   selection.selectedIds.length > 0
@@ -318,24 +252,50 @@ export function DocumentsLibraryGrid({
                     ? `${selected ? "Deselect" : "Select"} ${item.name}`
                     : `Open ${item.name}`
                 }
-                disabled={item.deleted && selection.selectedIds.length === 0}
+                disabled={
+                  selection.pending ||
+                  (item.deleted && selection.selectedIds.length === 0) ||
+                  (item.row?.source === "upload" && !item.row.document?.path)
+                }
               />
-              <h3 className="pointer-events-none relative z-10 line-clamp-2 px-5 pt-4 text-sm leading-5 font-medium break-words">
+              <h3
+                className={cn(
+                  "pointer-events-none relative z-10 line-clamp-2 px-5 pt-4 text-sm leading-5 font-medium break-words",
+                  viewMode === "list" && "min-w-0 flex-1 px-0 pt-0"
+                )}
+              >
                 {item.name}
               </h3>
-              <div className="text-foreground pointer-events-none relative z-10 flex flex-1 items-center justify-center">
+              <div
+                className={cn(
+                  "text-foreground pointer-events-none relative z-10 flex flex-1 items-center justify-center",
+                  viewMode === "list" && "order-first flex-none [&_svg]:size-5"
+                )}
+              >
                 <DocumentsLibraryTypeIcon
                   type={item.fileType}
                   generated={item.source === "generated"}
                 />
               </div>
-              <div className="text-muted-foreground pointer-events-none relative z-10 flex min-h-12 items-center px-5 pb-1 text-xs">
+              <div
+                className={cn(
+                  "text-muted-foreground pointer-events-none relative z-10 flex min-h-12 items-center px-5 pb-1 text-xs",
+                  viewMode === "list" && "hidden min-h-0 px-0 pb-0 sm:flex"
+                )}
+              >
                 <span className="truncate tabular-nums">
                   {item.deletedAt
                     ? `Deleted ${formatCardDate(item.deletedAt)}`
                     : formatCardDate(item.updatedAt)}
                 </span>
               </div>
+              {viewMode === "list" &&
+              item.row &&
+              selection.selectedIds.length === 0 ? (
+                <div className="relative z-20 shrink-0">
+                  {renderRowActions?.(item.row)}
+                </div>
+              ) : null}
               {item.uploadedFile && canEdit && editMode ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -343,7 +303,11 @@ export function DocumentsLibraryGrid({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2 z-20 size-11 rounded-full bg-transparent opacity-100 hover:bg-black/5 focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100 dark:hover:bg-white/10"
+                      className={cn(
+                        "absolute top-2 right-2 z-20 size-11 rounded-full bg-transparent opacity-100 hover:bg-black/5 focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100 dark:hover:bg-white/10",
+                        viewMode === "list" &&
+                          "top-1/2 right-12 -translate-y-1/2 sm:opacity-100"
+                      )}
                       disabled={pendingUploadedFileIds.includes(
                         item.uploadedFile.id
                       )}
@@ -407,8 +371,14 @@ export function DocumentsLibraryGrid({
                 size="icon"
                 className={cn(
                   "absolute right-2 bottom-2 z-20 size-11 rounded-full bg-transparent p-0 opacity-100 transition-opacity hover:bg-transparent focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100",
-                  selected && "opacity-100"
+                  selected && "opacity-100",
+                  viewMode === "list" &&
+                    "top-1/2 bottom-auto -translate-y-1/2 sm:opacity-100"
                 )}
+                disabled={
+                  selection.pending ||
+                  (item.row?.source === "upload" && !item.row.document?.path)
+                }
                 onClick={() => selection.toggle(item.id)}
                 aria-pressed={selected}
                 aria-label={`${selected ? "Deselect" : "Select"} ${item.name}`}

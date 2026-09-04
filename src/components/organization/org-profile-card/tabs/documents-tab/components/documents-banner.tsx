@@ -4,6 +4,7 @@ import { useRef, useState, type DragEvent, type ReactNode } from "react"
 import { IconCloudUpload, IconLock } from "@tabler/icons-react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import { MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
 
 const DOCUMENTS_BANNER_SOURCE =
   "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-banner.tsx"
@@ -86,7 +87,7 @@ export function DocumentsBanner({
           <IconCloudUpload className="text-primary size-8" aria-hidden />
           <p className="mt-3 text-sm font-medium">Drop files to upload</p>
           <p className="text-muted-foreground mt-1 text-xs">
-            Up to 50 MB per file
+            Up to {MAX_UPLOAD_MB} MB per file
           </p>
         </div>
       ) : null}

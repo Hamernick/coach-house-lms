@@ -343,6 +343,7 @@
       "tests/acceptance/org-documents-upload-limit.test.ts",
       "tests/acceptance/org-profile-story-contract.test.ts",
       "tests/acceptance/organization-coach-assignments.test.ts",
+      "tests/acceptance/organization-document-files-route.test.ts",
       "tests/acceptance/organization-geocoding.test.ts",
       "tests/acceptance/organization-primary-objects.test.ts",
       "tests/acceptance/organization-profile-persistence-validation.test.ts",

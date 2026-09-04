@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { toast } from "@/lib/toast"
 
 import type { DriveLibraryDocument } from "./use-google-drive-library"
 import type { OrganizationDocumentFile } from "./use-organization-document-files"
@@ -14,24 +15,43 @@ type SelectableLibraryItem = {
   driveDocument?: DriveLibraryDocument
 }
 
-type SelectionActions = {
-  onDownloadUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
+export type DocumentActionOptions = {
+  confirm?: boolean
+  throwOnError?: boolean
+}
+
+export type SelectionActions = {
+  onDownloadUploadedFile: (
+    file: OrganizationDocumentFile,
+    options?: DocumentActionOptions
+  ) => Promise<void>
   onDownloadUpload: (
-    definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"]
+    definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"],
+    options?: DocumentActionOptions
   ) => Promise<void>
   onDeleteUpload: (
     definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"],
-    options?: { confirm?: boolean }
+    options?: DocumentActionOptions
   ) => Promise<void>
-  onDownloadPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
+  onDownloadPolicyDocument: (
+    policy: DocumentsPolicyEntry,
+    options?: DocumentActionOptions
+  ) => Promise<void>
   onRemovePolicyDocument: (
     policy: DocumentsPolicyEntry,
-    options?: { confirm?: boolean }
+    options?: DocumentActionOptions
   ) => Promise<void>
-  onDetachDriveDocument: (documentId: string) => Promise<void>
-  onTrashUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
+  onDetachDriveDocument: (
+    documentId: string,
+    options?: DocumentActionOptions
+  ) => Promise<void>
+  onTrashUploadedFile: (
+    file: OrganizationDocumentFile,
+    options?: DocumentActionOptions
+  ) => Promise<void>
   onPermanentlyDeleteUploadedFile: (
-    file: OrganizationDocumentFile
+    file: OrganizationDocumentFile,
+    options?: DocumentActionOptions
   ) => Promise<void>
 }
 
@@ -58,7 +78,7 @@ export function useDocumentsLibrarySelection({
       (item) =>
         !item.deleted &&
         (Boolean(item.uploadedFile) ||
-          item.row?.source === "upload" ||
+          (item.row?.source === "upload" && Boolean(item.row.document?.path)) ||
           (item.row?.source === "policy" &&
             Boolean(item.row.policy.document?.path)))
     )
@@ -70,17 +90,21 @@ export function useDocumentsLibrarySelection({
       (item) =>
         Boolean(item.uploadedFile) ||
         Boolean(item.driveDocument) ||
-        item.row?.source === "upload" ||
+        (item.row?.source === "upload" && Boolean(item.row.document?.path)) ||
         (item.row?.source === "policy" &&
           Boolean(item.row.policy.document?.path))
     )
 
   useEffect(() => {
     const visibleIds = new Set(items.map((item) => item.id))
-    setSelectedIds((current) => current.filter((id) => visibleIds.has(id)))
+    setSelectedIds((current) => {
+      const next = current.filter((id) => visibleIds.has(id))
+      return next.length === current.length ? current : next
+    })
   }, [items])
 
   const toggle = (itemId: string) => {
+    if (pending) return
     setSelectedIds((current) =>
       current.includes(itemId)
         ? current.filter((id) => id !== itemId)
@@ -88,23 +112,48 @@ export function useDocumentsLibrarySelection({
     )
   }
 
-  const download = async () => {
-    if (!canDownload || pending) return
+  const runSelection = async (
+    action: (item: SelectableLibraryItem) => Promise<void>
+  ) => {
     setPending(true)
+    const completed = new Set<string>()
     try {
       for (const item of selectedItems) {
-        if (item.uploadedFile) {
-          await actions.onDownloadUploadedFile(item.uploadedFile)
-        } else if (item.row?.source === "upload") {
-          await actions.onDownloadUpload(item.row.definition)
-        } else if (item.row?.source === "policy") {
-          await actions.onDownloadPolicyDocument(item.row.policy)
+        try {
+          await action(item)
+          completed.add(item.id)
+        } catch {
+          // Keep failures selected so the user can retry without reselecting.
         }
       }
-      setSelectedIds([])
+      if (completed.size < selectedItems.length) {
+        toast.error(
+          "Some documents could not be processed. They remain selected."
+        )
+      }
+      setSelectedIds((current) => current.filter((id) => !completed.has(id)))
     } finally {
       setPending(false)
     }
+  }
+
+  const download = async () => {
+    if (!canDownload || pending) return
+    await runSelection(async (item) => {
+      if (item.uploadedFile) {
+        await actions.onDownloadUploadedFile(item.uploadedFile, {
+          throwOnError: true,
+        })
+      } else if (item.row?.source === "upload") {
+        await actions.onDownloadUpload(item.row.definition, {
+          throwOnError: true,
+        })
+      } else if (item.row?.source === "policy") {
+        await actions.onDownloadPolicyDocument(item.row.policy, {
+          throwOnError: true,
+        })
+      }
+    })
   }
 
   const remove = async () => {
@@ -118,27 +167,31 @@ export function useDocumentsLibrarySelection({
       return
     }
 
-    setPending(true)
-    try {
-      for (const item of selectedItems) {
-        if (item.uploadedFile) {
-          await (item.deleted
-            ? actions.onPermanentlyDeleteUploadedFile(item.uploadedFile)
-            : actions.onTrashUploadedFile(item.uploadedFile))
-        } else if (item.driveDocument) {
-          await actions.onDetachDriveDocument(item.driveDocument.id)
-        } else if (item.row?.source === "upload") {
-          await actions.onDeleteUpload(item.row.definition, { confirm: false })
-        } else if (item.row?.source === "policy") {
-          await actions.onRemovePolicyDocument(item.row.policy, {
-            confirm: false,
-          })
-        }
+    await runSelection(async (item) => {
+      if (item.uploadedFile) {
+        await (item.deleted
+          ? actions.onPermanentlyDeleteUploadedFile(item.uploadedFile, {
+              throwOnError: true,
+            })
+          : actions.onTrashUploadedFile(item.uploadedFile, {
+              throwOnError: true,
+            }))
+      } else if (item.driveDocument) {
+        await actions.onDetachDriveDocument(item.driveDocument.id, {
+          throwOnError: true,
+        })
+      } else if (item.row?.source === "upload") {
+        await actions.onDeleteUpload(item.row.definition, {
+          confirm: false,
+          throwOnError: true,
+        })
+      } else if (item.row?.source === "policy") {
+        await actions.onRemovePolicyDocument(item.row.policy, {
+          confirm: false,
+          throwOnError: true,
+        })
       }
-      setSelectedIds([])
-    } finally {
-      setPending(false)
-    }
+    })
   }
 
   return {

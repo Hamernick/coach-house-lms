@@ -4,15 +4,17 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { createNotification } from "@/lib/notifications"
 import {
+  MAX_BYTES,
+  MAX_UPLOAD_MB,
+  ORGANIZATION_DOCUMENT_QUOTA_BYTES as QUOTA_BYTES,
+} from "@/lib/organization/document-storage"
+import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 const BUCKET = "org-documents"
-const MAX_UPLOAD_MB = 50
-const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
-const QUOTA_BYTES = 5 * 1024 * 1024 * 1024
 const SIGNED_URL_TTL_SECONDS = 60 * 15
 const RETENTION_DAYS = 30
 
@@ -299,6 +301,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Metadata now owns this object. Notification failures must never roll it back.
+    uploadedPath = null
     const notifyResult = await createNotification(supabase, {
       userId: user.id,
       title: "File uploaded",
@@ -308,7 +312,7 @@ export async function POST(request: NextRequest) {
       type: "document_uploaded",
       actorId: user.id,
       metadata: { fileId: data.id, filename: file.name },
-    })
+    }).catch(() => ({ error: "Unable to create upload notification" }))
     if ("error" in notifyResult) {
       console.error(
         "Failed to create document notification",
@@ -380,7 +384,10 @@ export async function PATCH(request: NextRequest) {
     const { data, error: updateError } = await supabase
       .from("organization_document_files")
       .update({
-        deleted_at: action === "trash" ? new Date().toISOString() : null,
+        deleted_at:
+          action === "trash"
+            ? (current.deleted_at ?? new Date().toISOString())
+            : null,
       })
       .eq("id", current.id)
       .eq("org_id", orgId)

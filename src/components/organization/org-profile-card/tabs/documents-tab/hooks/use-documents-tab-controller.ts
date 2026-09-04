@@ -114,6 +114,7 @@ export function useDocumentsTabController({
     deletingKind,
     deletingPolicyId,
     documentsState,
+    policiesState,
     downloadingKind,
     downloadingPolicyDocumentId,
     downloadPolicyDocument,

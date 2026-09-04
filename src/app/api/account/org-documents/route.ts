@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
+import { MAX_BYTES, MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
 import {
   canEditOrganization,
   resolveActiveOrganization,
@@ -17,8 +18,6 @@ import {
 } from "./document-file-tracking"
 
 const BUCKET = "org-documents"
-const MAX_UPLOAD_MB = 50
-const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 const ALLOWED = new Set(["application/pdf"])
 const KIND_KEY_MAP = {
   "verification-letter": "verificationLetter",

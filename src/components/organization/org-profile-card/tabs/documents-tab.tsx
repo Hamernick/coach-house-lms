@@ -2,13 +2,11 @@
 
 import { useMemo, useRef, useState } from "react"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { DocumentsNotesPanel } from "../../documents-notes-right-rail"
 import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
 import {
   DocumentsBanner,
   DocumentsLibraryGrid,
-  DocumentsResults,
   DocumentsStorageUsage,
   DocumentsToolbar,
   PolicyEditorDialog,
@@ -20,14 +18,10 @@ import type {
 } from "./documents-tab/components/documents-library-grid"
 import type { DocumentsViewMode } from "./documents-tab/components/documents-toolbar-types"
 import { useDocumentsTabController } from "./documents-tab/hooks"
+import { DocumentRowActions } from "./documents-tab/components/document-row-actions"
 import { useGoogleDriveLibrary } from "./documents-tab/hooks/use-google-drive-library"
 import { useOrganizationDocumentFiles } from "./documents-tab/hooks/use-organization-document-files"
 import type { DocumentsTabProps } from "./documents-tab/types"
-
-const DOCUMENTS_INDEX_CARD_CLASSNAME =
-  "text-card-foreground flex flex-col border border-border/60 bg-muted relative w-full rounded-[2rem] p-3 shadow-sm overflow-hidden"
-const DOCUMENTS_INDEX_BODY_CLASSNAME =
-  "bg-background border-border/60 overflow-hidden rounded-[1.45rem] border p-0 first:pt-0"
 
 export type {
   DocumentsOption,
@@ -65,7 +59,11 @@ export function DocumentsTab({
     useState<DocumentsLibraryFileType>("all")
   const [showDeleted, setShowDeleted] = useState(false)
   const googleDrive = useGoogleDriveLibrary({ enabled: canEdit && editMode })
-  const documentFiles = useOrganizationDocumentFiles()
+  const storageRefreshKey = JSON.stringify([
+    controller.documentsState,
+    controller.policiesState.map((policy) => policy.document),
+  ])
+  const documentFiles = useOrganizationDocumentFiles(storageRefreshKey)
   const visibleDriveDocuments = useMemo(() => {
     const query = controller.searchQuery.trim().toLocaleLowerCase()
     if (!query) return googleDrive.documents
@@ -94,16 +92,6 @@ export function DocumentsTab({
     setShowDeleted(false)
   }
 
-  const changeViewMode = (nextViewMode: DocumentsViewMode) => {
-    setViewMode(nextViewMode)
-    if (nextViewMode === "list") {
-      setLibraryTab("all")
-      setLibrarySource("all")
-      setLibraryFileType("all")
-      setShowDeleted(false)
-    }
-  }
-
   return (
     <section
       ref={documentsRootRef}
@@ -129,7 +117,7 @@ export function DocumentsTab({
           drivePending={googleDrive.pending}
           onSearchQueryChange={controller.setSearchQuery}
           onTabChange={setLibraryTab}
-          onViewModeChange={changeViewMode}
+          onViewModeChange={setViewMode}
           onSourceChange={setLibrarySource}
           onFileTypeChange={setLibraryFileType}
           onShowDeletedChange={setShowDeleted}
@@ -145,68 +133,60 @@ export function DocumentsTab({
         />
 
         <div id="documents-index" className="mt-4" aria-live="polite">
-          {viewMode === "grid" ? (
-            <DocumentsLibraryGrid
-              rows={controller.filteredRows}
-              driveDocuments={visibleDriveDocuments}
-              uploadedFiles={visibleUploadedFiles}
-              tab={libraryTab}
-              source={librarySource}
-              fileType={libraryFileType}
-              showDeleted={showDeleted}
-              canEdit={canEdit}
-              editMode={editMode}
-              onEditPolicy={controller.openEditPolicyDialog}
-              onViewPolicyDocument={controller.viewPolicyDocument}
-              onViewUpload={controller.handleView}
-              onViewUploadedFile={documentFiles.openFile}
-              onDownloadUploadedFile={documentFiles.downloadFile}
-              onDownloadUpload={controller.handleDownload}
-              onDeleteUpload={controller.handleDelete}
-              onDownloadPolicyDocument={controller.downloadPolicyDocument}
-              onRemovePolicyDocument={controller.removePolicyDocumentFile}
-              onDetachDriveDocument={googleDrive.detachDocument}
-              pendingUploadedFileIds={documentFiles.pendingFileIds}
-              onTrashUploadedFile={documentFiles.trashFile}
-              onRestoreUploadedFile={documentFiles.restoreFile}
-              onPermanentlyDeleteUploadedFile={
-                documentFiles.permanentlyDeleteFile
-              }
-              onReset={resetLibrary}
-            />
-          ) : (
-            <Card className={DOCUMENTS_INDEX_CARD_CLASSNAME}>
-              <CardContent className={DOCUMENTS_INDEX_BODY_CLASSNAME}>
-                <DocumentsResults
-                  filteredRows={controller.filteredRows}
-                  clearFilters={controller.clearFilters}
-                  sortColumn={controller.sortColumn}
-                  sortDirection={controller.sortDirection}
-                  onToggleSortColumn={controller.toggleSortColumn}
-                  canEdit={canEdit}
-                  editMode={editMode}
-                  publicSlug={publicSlug}
-                  uploadingKind={controller.uploadingKind}
-                  deletingKind={controller.deletingKind}
-                  viewingKind={controller.viewingKind}
-                  downloadingKind={controller.downloadingKind}
-                  deletingPolicyId={controller.deletingPolicyId}
-                  viewingPolicyDocumentId={controller.viewingPolicyDocumentId}
-                  downloadingPolicyDocumentId={
-                    controller.downloadingPolicyDocumentId
-                  }
-                  onUpload={controller.handleUpload}
-                  onDeleteUpload={controller.handleDelete}
-                  onViewUpload={controller.handleView}
-                  onDownloadUpload={controller.handleDownload}
-                  onEditPolicy={controller.openEditPolicyDialog}
-                  onDeletePolicy={controller.handleDeletePolicy}
-                  onViewPolicyDocument={controller.viewPolicyDocument}
-                  onDownloadPolicyDocument={controller.downloadPolicyDocument}
-                />
-              </CardContent>
-            </Card>
-          )}
+          <DocumentsLibraryGrid
+            viewMode={viewMode}
+            renderRowActions={(row) => (
+              <DocumentRowActions
+                row={row}
+                canEdit={canEdit}
+                editMode={editMode}
+                publicSlug={publicSlug}
+                uploadingKind={controller.uploadingKind}
+                deletingKind={controller.deletingKind}
+                viewingKind={controller.viewingKind}
+                downloadingKind={controller.downloadingKind}
+                deletingPolicyId={controller.deletingPolicyId}
+                viewingPolicyDocumentId={controller.viewingPolicyDocumentId}
+                downloadingPolicyDocumentId={
+                  controller.downloadingPolicyDocumentId
+                }
+                onUpload={controller.handleUpload}
+                onDeleteUpload={controller.handleDelete}
+                onViewUpload={controller.handleView}
+                onDownloadUpload={controller.handleDownload}
+                onEditPolicy={controller.openEditPolicyDialog}
+                onDeletePolicy={controller.handleDeletePolicy}
+                onViewPolicyDocument={controller.viewPolicyDocument}
+                onDownloadPolicyDocument={controller.downloadPolicyDocument}
+              />
+            )}
+            rows={controller.filteredRows}
+            driveDocuments={visibleDriveDocuments}
+            uploadedFiles={visibleUploadedFiles}
+            tab={libraryTab}
+            source={librarySource}
+            fileType={libraryFileType}
+            showDeleted={showDeleted}
+            canEdit={canEdit}
+            editMode={editMode}
+            onEditPolicy={controller.openEditPolicyDialog}
+            onViewPolicyDocument={controller.viewPolicyDocument}
+            onViewUpload={controller.handleView}
+            onViewUploadedFile={documentFiles.openFile}
+            onDownloadUploadedFile={documentFiles.downloadFile}
+            onDownloadUpload={controller.handleDownload}
+            onDeleteUpload={controller.handleDelete}
+            onDownloadPolicyDocument={controller.downloadPolicyDocument}
+            onRemovePolicyDocument={controller.removePolicyDocumentFile}
+            onDetachDriveDocument={googleDrive.detachDocument}
+            pendingUploadedFileIds={documentFiles.pendingFileIds}
+            onTrashUploadedFile={documentFiles.trashFile}
+            onRestoreUploadedFile={documentFiles.restoreFile}
+            onPermanentlyDeleteUploadedFile={
+              documentFiles.permanentlyDeleteFile
+            }
+            onReset={resetLibrary}
+          />
         </div>
 
         {notes ? <DocumentsNotesPanel notes={notes} /> : null}

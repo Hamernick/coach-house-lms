@@ -1,3 +1,5 @@
+import type { ModuleNoteIndexEntry } from "@/lib/modules/notes-index"
+
 import type { OrgDocument, OrgDocuments } from "../../types"
 
 export type DocumentDefinition = {
@@ -104,6 +106,7 @@ export type DocumentsTabProps = {
   editMode: boolean
   canEdit: boolean
   initialFocusKey?: string | null
+  notes?: ModuleNoteIndexEntry[]
 }
 
 export type PolicyDraft = {

@@ -20,9 +20,9 @@ import { shouldForceStripeEntitlementSyncForWorkspace } from "@/lib/workspace/me
 import {
   EMPTY_STATE,
   type DashboardLayoutState,
-} from "./dashboard-layout-state.types"
+} from "./dashboard-layout-state-types"
 
-export type { DashboardLayoutState } from "./dashboard-layout-state.types"
+export type { DashboardLayoutState } from "./dashboard-layout-state-types"
 
 const resolveDashboardLayoutStateCached = cache(
   async (): Promise<DashboardLayoutState> => {

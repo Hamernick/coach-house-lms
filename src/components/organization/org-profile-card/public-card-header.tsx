@@ -2,8 +2,10 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
+import { Button } from "@/components/ui/button"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
+import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { cn } from "@/lib/utils"
 
 import {
@@ -18,11 +20,7 @@ function createIcon(slug: keyof typeof PROVIDER_ICON) {
   return <Icon className="h-4 w-4" />
 }
 
-export function OrgProfilePublicHeader({
-  profile,
-}: {
-  profile: OrgProfile
-}) {
+export function OrgProfilePublicHeader({ profile }: { profile: OrgProfile }) {
   const hasHeaderImage = hasPublicProfileValue(profile.headerUrl)
 
   return (
@@ -80,10 +78,26 @@ export function OrgProfilePublicHeader({
               {profile.name || "Organization"}
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm">
-              {profile.tagline && profile.tagline.trim() ? profile.tagline : "—"}
+              {profile.tagline && profile.tagline.trim()
+                ? profile.tagline
+                : "—"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {hasPublicProfileValue(profile.donateUrl) ? (
+              <Button asChild size="sm">
+                <Link
+                  href={
+                    normalizeExternalUrl(profile.donateUrl as string) ??
+                    (profile.donateUrl as string)
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Donate
+                </Link>
+              </Button>
+            ) : null}
             {hasPublicProfileValue(profile.publicUrl) ? (
               <Link
                 href={profile.publicUrl as string}

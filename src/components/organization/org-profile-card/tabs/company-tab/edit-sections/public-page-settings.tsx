@@ -17,13 +17,30 @@ import { slugifyLocal } from "../../../utils"
 import type { CompanyEditProps } from "../types"
 import { RESERVED_SLUGS } from "../constants"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugStatus, setSlugStatus }: CompanyEditProps) {
+export function PublicPageSettings({
+  company,
+  errors,
+  onUpdate,
+  onDirty,
+  slugStatus,
+  setSlugStatus,
+}: CompanyEditProps) {
   const [isChecking, setIsChecking] = useState(false)
   const lastCheckRef = useRef(0)
-  const explicitSlug = typeof company.publicSlug === "string" && company.publicSlug.trim().length > 0 ? company.publicSlug : ""
+  const explicitSlug =
+    typeof company.publicSlug === "string" &&
+    company.publicSlug.trim().length > 0
+      ? company.publicSlug
+      : ""
   const shouldCheckSlug = Boolean(explicitSlug || company.isPublic)
   const publicSlug = company.publicSlug || slugifyLocal(company.name || "")
   const hasAddress = [
@@ -48,12 +65,20 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
     }
     if (!slugCandidate) {
       setIsChecking(false)
-      setSlugStatus({ available: false, message: "Enter a public URL", slug: "" })
+      setSlugStatus({
+        available: false,
+        message: "Enter a public URL",
+        slug: "",
+      })
       return
     }
     if (RESERVED_SLUGS.has(slugCandidate)) {
       setIsChecking(false)
-      setSlugStatus({ available: false, message: "Reserved URL", slug: slugCandidate })
+      setSlugStatus({
+        available: false,
+        message: "Reserved URL",
+        slug: slugCandidate,
+      })
       return
     }
 
@@ -63,9 +88,12 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
     const timeout = window.setTimeout(async () => {
       setIsChecking(true)
       try {
-        const res = await fetch(`/api/public/organizations/slug-available?slug=${encodeURIComponent(slugCandidate)}`, {
-          signal: controller.signal,
-        })
+        const res = await fetch(
+          `/api/public/organizations/slug-available?slug=${encodeURIComponent(slugCandidate)}`,
+          {
+            signal: controller.signal,
+          }
+        )
         const data = await res.json().catch(() => ({}))
         if (lastCheckRef.current !== currentCheck) return
         if (typeof data.available === "boolean") {
@@ -75,11 +103,19 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
             slug: slugCandidate,
           })
         } else {
-          setSlugStatus({ available: false, message: data.error || "Not available", slug: slugCandidate })
+          setSlugStatus({
+            available: false,
+            message: data.error || "Not available",
+            slug: slugCandidate,
+          })
         }
       } catch (error) {
         if ((error as Error).name === "AbortError") return
-        setSlugStatus({ available: false, message: "Unable to check", slug: slugCandidate })
+        setSlugStatus({
+          available: false,
+          message: "Unable to check",
+          slug: slugCandidate,
+        })
       } finally {
         if (lastCheckRef.current === currentCheck) {
           setIsChecking(false)
@@ -97,13 +133,19 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
     if (errors.publicSlug) return { tone: "error", message: errors.publicSlug }
     if (isChecking) return { tone: "muted", message: "Checking..." }
     if (!slugStatus?.message) return null
-    return { tone: slugStatus.available ? "success" : "error", message: slugStatus.message }
+    return {
+      tone: slugStatus.available ? "success" : "error",
+      message: slugStatus.message,
+    }
   }, [errors.publicSlug, isChecking, slugStatus])
 
   return (
-    <FormRow title="Public Map Profile" description="Publish your organization on the Coach House map index.">
+    <FormRow
+      title="Public Map Profile"
+      description="Publish your organization on the Coach House map index."
+    >
       <div className="grid gap-4">
-        <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+        <div className="border-border/60 bg-muted/30 flex items-start gap-3 rounded-lg border p-3">
           <Switch
             id="publicPageEnabled"
             checked={Boolean(company.isPublic)}
@@ -114,13 +156,16 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
             aria-label="Make organization visible on map"
           />
           <div className="space-y-1">
-            <Label htmlFor="publicPageEnabled" className="text-xs text-muted-foreground">
+            <Label
+              htmlFor="publicPageEnabled"
+              className="text-muted-foreground text-xs"
+            >
               Public
             </Label>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               When enabled, your organization is discoverable on{" "}
               <Link
-                href="/find"
+                href="/"
                 target="_blank"
                 rel="noreferrer"
                 className="text-inherit underline underline-offset-2"
@@ -131,13 +176,19 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
             </p>
           </div>
         </div>
-        <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+        <div className="border-border/60 bg-background/70 rounded-xl border p-3">
           <div className="flex items-start gap-2">
-            <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            <p className="text-xs text-muted-foreground">
-              Turning this off only hides the public map profile. It does not cancel Stripe billing;
-              manage subscription changes from{" "}
-              <Link href="/billing" className="text-inherit underline underline-offset-2">
+            <InfoIcon
+              className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0"
+              aria-hidden
+            />
+            <p className="text-muted-foreground text-xs">
+              Turning this off only hides the public map profile. It does not
+              cancel Stripe billing; manage subscription changes from{" "}
+              <Link
+                href="/billing"
+                className="text-inherit underline underline-offset-2"
+              >
                 Billing
               </Link>
               .
@@ -179,9 +230,12 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
                 placeholder="https://example.org/get-help"
                 aria-invalid={Boolean(errors.locationUrl)}
               />
-              {errors.locationUrl ? <p className="text-xs text-destructive">{errors.locationUrl}</p> : null}
-              <p className="text-xs text-muted-foreground">
-                Add the link people should visit if this organization is a web resource.
+              {errors.locationUrl ? (
+                <p className="text-destructive text-xs">{errors.locationUrl}</p>
+              ) : null}
+              <p className="text-muted-foreground text-xs">
+                Add the link people should visit if this organization is a web
+                resource.
               </p>
             </div>
           ) : null}
@@ -189,37 +243,57 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
         {company.isPublic && !hasAddress && !isOnlineOnly ? (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
             <div className="flex items-start gap-2">
-              <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+              <MapPinIcon
+                className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+                aria-hidden
+              />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Add an address to appear on the map</p>
-                <p className="text-xs text-muted-foreground">
-                  This profile can still be published now, but it will not render a map marker until you add a public address in the Address section.
+                <p className="text-foreground text-sm font-medium">
+                  Add an address to appear on the map
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  This profile can still be published now, but it will not
+                  render a map marker until you add a public address in the
+                  Address section.
                 </p>
               </div>
             </div>
           </div>
         ) : null}
         {company.isPublic && hasAddress && !isOnlineOnly ? (
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+          <div className="border-primary/20 bg-primary/5 rounded-xl border p-3">
             <div className="flex items-start gap-2">
-              <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <MapPinIcon
+                className="text-primary mt-0.5 h-4 w-4 shrink-0"
+                aria-hidden
+              />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Map marker coordinates are populated automatically</p>
-                <p className="text-xs text-muted-foreground">
-                  When you save this profile, Coach House geocodes the address from the Address section and falls back to broader locality matching if the exact street lookup misses.
+                <p className="text-foreground text-sm font-medium">
+                  Map marker coordinates are populated automatically
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  When you save this profile, Coach House geocodes the address
+                  from the Address section and falls back to broader locality
+                  matching if the exact street lookup misses.
                 </p>
               </div>
             </div>
           </div>
         ) : null}
         {company.isPublic && isOnlineOnly ? (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <div className="border-primary/30 bg-primary/5 rounded-xl border p-3">
             <div className="flex items-start gap-2">
-              <GlobeIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <GlobeIcon
+                className="text-primary mt-0.5 h-4 w-4 shrink-0"
+                aria-hidden
+              />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">This will appear as a web resource</p>
-                <p className="text-xs text-muted-foreground">
-                  Online-only organizations stay visible in the `/find` list with a web resource badge instead of a map marker.
+                <p className="text-foreground text-sm font-medium">
+                  This will appear as a web resource
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Online-only organizations stay visible in Find with a web
+                  resource badge instead of a map marker.
                 </p>
               </div>
             </div>
@@ -233,11 +307,11 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
             <div
               className={cn(
                 "border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5",
-                Boolean(errors.publicSlug) && "border-destructive/70",
+                Boolean(errors.publicSlug) && "border-destructive/70"
               )}
             >
               <span className="text-muted-foreground shrink-0 text-sm">
-                coachhouse.org/find/
+                coachhouse.app/
               </span>
               <Input
                 id="publicSlug"
@@ -266,25 +340,37 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
               ) : null}
             </div>
             {statusMessage?.tone === "error" ? (
-              <p className="text-destructive text-xs" role="status" aria-live="polite">
+              <p
+                className="text-destructive text-xs"
+                role="status"
+                aria-live="polite"
+              >
                 {statusMessage.message}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground">
-                Lowercase letters, numbers, and dashes only. Avoid reserved words like /admin.
+              <p className="text-muted-foreground text-xs">
+                Lowercase letters, numbers, and dashes only. Avoid reserved
+                words like /admin.
               </p>
             )}
           </div>
           {company.isPublic ? (
             <div className="flex flex-col items-stretch gap-2 lg:items-end lg:justify-self-end">
-              <Button asChild size="sm" variant="secondary" className="w-full lg:w-auto">
-                <Link href={`/find/${encodeURIComponent(publicSlug)}`}>Preview map profile</Link>
+              <Button
+                asChild
+                size="sm"
+                variant="secondary"
+                className="w-full lg:w-auto"
+              >
+                <Link href={`/?organization=${encodeURIComponent(publicSlug)}`}>
+                  Preview map profile
+                </Link>
               </Button>
               <ShareButton
                 url={
                   typeof window === "undefined"
                     ? undefined
-                    : `${window.location.origin}/find/${encodeURIComponent(publicSlug)}`
+                    : `${window.location.origin}/?organization=${encodeURIComponent(publicSlug)}`
                 }
                 title={company.name || company.publicSlug || "Organization"}
               />

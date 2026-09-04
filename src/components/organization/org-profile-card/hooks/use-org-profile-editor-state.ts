@@ -330,7 +330,7 @@ export function useOrgProfileEditorState({
   )
   const publicLink =
     canEdit && company.isPublic && company.publicSlug
-      ? `/find/${encodeURIComponent(company.publicSlug)}`
+      ? `/${encodeURIComponent(company.publicSlug)}`
       : null
 
   return {

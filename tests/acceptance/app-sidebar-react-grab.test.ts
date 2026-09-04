@@ -29,15 +29,19 @@ describe("app sidebar react grab", () => {
         null,
         React.createElement(NavMain, {
           items: [{ title: "Tasks", href: "/tasks", icon: ClipboardListIcon }],
-        }),
-      ),
+        })
+      )
     )
 
     expect(markup).toContain('data-react-grab-anchor="AppSidebarMainNavItem"')
-    expect(markup).toContain('data-react-grab-owner-id="app-sidebar:main:tasks"')
-    expect(markup).toContain('data-react-grab-owner-source="src/components/nav-main.tsx"')
     expect(markup).toContain(
-      'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"',
+      'data-react-grab-owner-id="app-sidebar:main:tasks"'
+    )
+    expect(markup).toContain(
+      'data-react-grab-owner-source="src/components/nav-main.tsx"'
+    )
+    expect(markup).toContain(
+      'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"'
     )
 
     expect(window.__REACT_GRAB_SURFACES__["app-sidebar:main:tasks"]).toEqual(
@@ -50,7 +54,7 @@ describe("app sidebar react grab", () => {
           classAssemblyFile: "src/components/ui/sidebar/layout.tsx",
           primitiveImport: "@/components/ui/sidebar",
         }),
-      ]),
+      ])
     )
   })
 
@@ -69,15 +73,23 @@ describe("app sidebar react grab", () => {
               icon: MessageCircleIcon,
             },
           ],
-        }),
-      ),
+        })
+      )
     )
 
-    expect(markup).toContain('data-react-grab-anchor="AppSidebarResourceNavItem"')
-    expect(markup).toContain('data-react-grab-owner-id="app-sidebar:resources:community"')
-    expect(markup).toContain('data-react-grab-owner-source="src/components/nav-documents.tsx"')
+    expect(markup).toContain(
+      'data-react-grab-anchor="AppSidebarResourceNavItem"'
+    )
+    expect(markup).toContain(
+      'data-react-grab-owner-id="app-sidebar:resources:community"'
+    )
+    expect(markup).toContain(
+      'data-react-grab-owner-source="src/components/nav-documents.tsx"'
+    )
 
-    expect(window.__REACT_GRAB_SURFACES__["app-sidebar:resources:community"]).toEqual(
+    expect(
+      window.__REACT_GRAB_SURFACES__["app-sidebar:resources:community"]
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           component: "AppSidebarResourceNavItem",
@@ -87,7 +99,7 @@ describe("app sidebar react grab", () => {
           classAssemblyFile: "src/components/ui/sidebar/layout.tsx",
           primitiveImport: "@/components/ui/sidebar",
         }),
-      ]),
+      ])
     )
   })
 
@@ -107,8 +119,8 @@ describe("app sidebar react grab", () => {
           },
           onboardingLocked: true,
           onboardingIntentFocus: "build",
-        }),
-      ),
+        })
+      )
     )
 
     expect(markup).not.toContain(">Welcome<")
@@ -132,8 +144,8 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: false,
           showMemberWorkspace: false,
-        }),
-      ),
+        })
+      )
     )
 
     const upgradeIndex = markup.indexOf("Upgrade account")
@@ -143,7 +155,7 @@ describe("app sidebar react grab", () => {
     expect(resourcesIndex).toBeGreaterThan(-1)
     expect(upgradeIndex).toBeLessThan(resourcesIndex)
     expect(markup).toContain(
-      "/find?paywall=organization&amp;plan=organization&amp;source=sidebar_upgrade&amp;redirect=%2Fworkspace&amp;cancel=%2Ffind&amp;paywall_preview=1",
+      "/?paywall=organization&amp;plan=organization&amp;source=sidebar_upgrade&amp;redirect=%2Fworkspace&amp;cancel=%2F&amp;paywall_preview=1"
     )
   })
 
@@ -163,8 +175,8 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: true,
           showMemberWorkspace: true,
-        }),
-      ),
+        })
+      )
     )
 
     expect(markup).not.toContain("Upgrade account")
@@ -187,8 +199,8 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: true,
           showMemberWorkspace: true,
-        }),
-      ),
+        })
+      )
     )
 
     expect(markup).toContain("Upgrade account")

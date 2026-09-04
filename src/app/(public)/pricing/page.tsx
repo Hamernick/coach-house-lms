@@ -20,5 +20,5 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     }
   }
 
-  redirect(`/?${params.toString()}`)
+  redirect(`/home-canvas?${params.toString()}`)
 }

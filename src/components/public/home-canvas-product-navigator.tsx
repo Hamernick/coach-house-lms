@@ -47,7 +47,7 @@ export function HomeCanvasProductNavigator({
         )}
       >
         <Link
-          href="/find"
+          href="/"
           prefetch
           aria-current={activeSection === "hero" ? "true" : undefined}
           aria-busy={isFindRoutePending || undefined}

@@ -1,7 +1,12 @@
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 
 import { resolveOnboardingSteps } from "./constants"
-import { isFormationStatus, isIntentFocus, isRoleInterest, slugify } from "./helpers"
+import {
+  isFormationStatus,
+  isIntentFocus,
+  isRoleInterest,
+  slugify,
+} from "./helpers"
 import type {
   FormationStatus,
   IntentFocus,
@@ -13,6 +18,7 @@ import type {
 export type OnboardingAccountValues = {
   firstName: string
   lastName: string
+  personHandle: string
   phone: string
   publicEmail: string
   title: string
@@ -47,6 +53,7 @@ export function buildOnboardingCarryForwardFieldMap({
     orgSlug: organizationValues.orgSlug,
     firstName: accountValues.firstName,
     lastName: accountValues.lastName,
+    personHandle: accountValues.personHandle,
     phone: accountValues.phone,
     publicEmail: accountValues.publicEmail,
     title: accountValues.title,
@@ -64,13 +71,9 @@ export function buildOnboardingCarryForwardFieldMap({
   return fieldMap
 }
 
-function upsertHiddenInput(
-  form: HTMLFormElement,
-  name: string,
-  value: string,
-) {
+function upsertHiddenInput(form: HTMLFormElement, name: string, value: string) {
   let input = form.querySelector<HTMLInputElement>(
-    `input[type="hidden"][name="${name}"]`,
+    `input[type="hidden"][name="${name}"]`
   )
 
   if (!input) {
@@ -124,10 +127,13 @@ export function syncOnboardingCarryForwardInputs({
   }
 }
 
-export function readOnboardingAccountValues(form: FormData): OnboardingAccountValues {
+export function readOnboardingAccountValues(
+  form: FormData
+): OnboardingAccountValues {
   return {
     firstName: String(form.get("firstName") ?? ""),
     lastName: String(form.get("lastName") ?? ""),
+    personHandle: String(form.get("personHandle") ?? ""),
     phone: String(form.get("phone") ?? ""),
     publicEmail: String(form.get("publicEmail") ?? ""),
     title: String(form.get("title") ?? ""),
@@ -138,7 +144,7 @@ export function readOnboardingAccountValues(form: FormData): OnboardingAccountVa
 }
 
 export function readOnboardingOrganizationValues(
-  form: FormData,
+  form: FormData
 ): OnboardingOrganizationValues {
   const orgName = String(form.get("orgName") ?? "")
   const orgSlug = slugify(String(form.get("orgSlug") ?? "").trim() || orgName)
@@ -158,6 +164,7 @@ type ResolveOnboardingDefaultsArgs = {
   defaultRoleInterest?: RoleInterest | null
   defaultFirstName?: string | null
   defaultLastName?: string | null
+  defaultPersonHandle?: string | null
   defaultPhone?: string | null
   defaultPublicEmail?: string | null
   defaultTitle?: string | null
@@ -175,6 +182,7 @@ export type OnboardingDefaultValues = {
   initialRoleInterest: RoleInterest | ""
   initialFirstName: string
   initialLastName: string
+  initialPersonHandle: string
   initialPhone: string
   initialPublicEmail: string
   initialTitle: string
@@ -193,6 +201,7 @@ export function resolveOnboardingDefaultValues({
   defaultRoleInterest,
   defaultFirstName,
   defaultLastName,
+  defaultPersonHandle,
   defaultPhone,
   defaultPublicEmail,
   defaultTitle,
@@ -202,7 +211,9 @@ export function resolveOnboardingDefaultValues({
   defaultNewsletterOptIn,
 }: ResolveOnboardingDefaultsArgs): OnboardingDefaultValues {
   const initialOrgName = (defaultOrgName ?? "").trim()
-  const initialOrgSlug = slugify((defaultOrgSlug ?? "").trim() || initialOrgName)
+  const initialOrgSlug = slugify(
+    (defaultOrgSlug ?? "").trim() || initialOrgName
+  )
 
   return {
     initialOrgName,
@@ -210,10 +221,15 @@ export function resolveOnboardingDefaultValues({
     initialFormationStatus: isFormationStatus(defaultFormationStatus)
       ? defaultFormationStatus
       : "",
-    initialIntentFocus: isIntentFocus(defaultIntentFocus) ? defaultIntentFocus : "build",
-    initialRoleInterest: isRoleInterest(defaultRoleInterest) ? defaultRoleInterest : "",
+    initialIntentFocus: isIntentFocus(defaultIntentFocus)
+      ? defaultIntentFocus
+      : "build",
+    initialRoleInterest: isRoleInterest(defaultRoleInterest)
+      ? defaultRoleInterest
+      : "",
     initialFirstName: (defaultFirstName ?? "").trim(),
     initialLastName: (defaultLastName ?? "").trim(),
+    initialPersonHandle: (defaultPersonHandle ?? "").trim().toLowerCase(),
     initialPhone: (defaultPhone ?? "").trim(),
     initialPublicEmail: (defaultPublicEmail ?? defaultEmail ?? "").trim(),
     initialTitle: (defaultTitle ?? "").trim(),
@@ -227,7 +243,7 @@ export function resolveOnboardingDefaultValues({
 export function resolveDraftFieldValue(
   defaults: Record<string, string>,
   key: string,
-  draftValue: unknown,
+  draftValue: unknown
 ) {
   const value = typeof draftValue === "string" ? draftValue : ""
   if (value.trim().length > 0) return value
@@ -242,6 +258,8 @@ export function validateOnboardingStep({
   intentFocus,
   slugStatus,
   slugHint,
+  personHandleStatus,
+  personHandleHint,
   builderPlanTier,
 }: {
   stepIndex?: number
@@ -251,6 +269,8 @@ export function validateOnboardingStep({
   intentFocus: IntentFocus | ""
   slugStatus: OnboardingSlugStatus
   slugHint: string | null
+  personHandleStatus: OnboardingSlugStatus
+  personHandleHint: string | null
   builderPlanTier: PricingPlanTier
 }) {
   const nextErrors: Record<string, string> = {}
@@ -283,8 +303,14 @@ export function validateOnboardingStep({
   if (active === "account") {
     const firstName = String(form.get("firstName") ?? "").trim()
     const lastName = String(form.get("lastName") ?? "").trim()
+    const personHandle = String(form.get("personHandle") ?? "").trim()
     if (!firstName) nextErrors.firstName = "First name is required"
     if (!lastName) nextErrors.lastName = "Last name is required"
+    if (!personHandle) nextErrors.personHandle = "Username is required"
+    if (personHandleStatus !== "available") {
+      nextErrors.personHandle =
+        personHandleHint ?? "Choose an available username"
+    }
   }
 
   return nextErrors
@@ -293,9 +319,15 @@ export function validateOnboardingStep({
 export function isOnboardingAccountStepReady({
   firstName,
   lastName,
+  personHandle,
 }: {
   firstName: string
   lastName: string
+  personHandle: string
 }) {
-  return firstName.trim().length > 0 && lastName.trim().length > 0
+  return (
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    personHandle.trim().length > 0
+  )
 }

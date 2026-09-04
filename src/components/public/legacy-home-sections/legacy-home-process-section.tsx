@@ -10,34 +10,46 @@ import { cn } from "@/lib/utils"
 export function LegacyHomeProcessSection() {
   return (
     <>
-      <div className="rounded-[32px] border border-border/60 bg-card/70 p-6">
-        <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">Process</div>
+      <div className="border-border/60 bg-card/70 rounded-[32px] border p-6">
+        <div className="text-muted-foreground flex items-center justify-between text-xs uppercase">
+          Process
+        </div>
         <div className="mt-5 space-y-5">
           {PROCESS_STEPS.map((step) => (
             <div key={step.step} className="flex gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted text-xs font-semibold text-muted-foreground shadow-sm">
+              <div className="border-border/60 bg-muted text-muted-foreground flex h-10 w-10 items-center justify-center rounded-xl border text-xs font-semibold shadow-sm">
                 {step.step}
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-semibold">{step.title}</p>
-                <p className="text-sm text-muted-foreground">{step.body}</p>
+                <p className="text-muted-foreground text-sm">{step.body}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex flex-col rounded-[32px] border border-border/60 bg-foreground p-6 text-background shadow-xl">
-        <p className="text-xs uppercase text-background/70">Platform note</p>
-        <h2 className={cn(legacyHomeHeadingFont.className, "mt-4 text-3xl font-semibold")}>
+      <div className="border-border/60 bg-foreground text-background flex flex-col rounded-[32px] border p-6 shadow-xl">
+        <p className="text-background/70 text-xs uppercase">Platform note</p>
+        <h2
+          className={cn(
+            legacyHomeHeadingFont.className,
+            "mt-4 text-3xl font-semibold"
+          )}
+        >
           Make it easy for funders to say yes.
         </h2>
-        <p className="mt-4 text-sm text-background/80">
-          The platform keeps your mission, plan, and proof in sync. That means fewer follow-up emails and a clearer
-          narrative when it matters most.
+        <p className="text-background/80 mt-4 text-sm">
+          The platform keeps your mission, plan, and proof in sync. That means
+          fewer follow-up emails and a clearer narrative when it matters most.
         </p>
-        <Button asChild size="sm" variant="secondary" className="mt-auto self-start rounded-full px-4">
-          <Link href="/?section=pricing">View pricing</Link>
+        <Button
+          asChild
+          size="sm"
+          variant="secondary"
+          className="mt-auto self-start rounded-full px-4"
+        >
+          <Link href="/pricing">View pricing</Link>
         </Button>
       </div>
     </>

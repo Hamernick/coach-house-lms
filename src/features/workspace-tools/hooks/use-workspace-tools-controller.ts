@@ -9,7 +9,10 @@ import {
 } from "../lib"
 import type { WorkspaceToolsInput } from "../types"
 
-export function useWorkspaceToolsController(input: WorkspaceToolsInput) {
+export function useWorkspaceToolsController(
+  input: WorkspaceToolsInput,
+  googleDriveConnected: boolean | null
+) {
   const normalizedInput = useMemo(
     () => normalizeWorkspaceToolsInput(input),
     [input]
@@ -24,15 +27,14 @@ export function useWorkspaceToolsController(input: WorkspaceToolsInput) {
     [deferredQuery]
   )
   const stripeConnected = normalizedInput.stripeConnection.state === "connected"
+  const isInstalled = (
+    toolId: (typeof WORKSPACE_TOOL_DEFINITIONS)[number]["id"]
+  ) => (toolId === "stripe" ? stripeConnected : googleDriveConnected === true)
 
   return {
-    availableTools: matchingTools.filter(
-      (tool) => tool.id !== "stripe" || !stripeConnected
-    ),
+    availableTools: matchingTools.filter((tool) => !isInstalled(tool.id)),
     clearQuery: () => setQuery(""),
-    installedTools: matchingTools.filter(
-      (tool) => tool.id === "stripe" && stripeConnected
-    ),
+    installedTools: matchingTools.filter((tool) => isInstalled(tool.id)),
     query,
     setQuery,
     stripeConnection: normalizedInput.stripeConnection,

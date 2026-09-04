@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleAccountConnection } from "@/features/google-auth"
+import { PublicProfileSettings } from "@/features/public-profiles/client"
 import type { AccountSettingsErrorKey, AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
 import { ProfileFields } from "./profile-fields"
 
 export const TAB_LABELS: Record<AccountSettingsTabKey, string> = {
   profile: "Profile",
+  "public-profile": "Public profile",
   communications: "Communications",
   security: "Security",
   danger: "Danger zone",
@@ -18,6 +20,7 @@ export const MOBILE_LINKS: Array<{
   description?: string
 }> = [
   { key: "profile", description: "Personal details, photo" },
+  { key: "public-profile", description: "Username, visibility, collections" },
   { key: "communications", description: "Emails & notifications" },
   { key: "security", description: "Sign-in methods, password" },
   { key: "danger", description: "Delete account" },
@@ -169,6 +172,15 @@ export function MobileSubpage({
             onPhoneChange={onPhoneChange}
           />
         </div>
+      )}
+
+      {tab === "public-profile" && (
+        <PublicProfileSettings
+          avatarUrl={avatarUrl}
+          displayName={[firstName, lastName].filter(Boolean).join(" ")}
+          headline={title}
+          idPrefix="mobile-public-profile"
+        />
       )}
 
       {tab === "communications" && (

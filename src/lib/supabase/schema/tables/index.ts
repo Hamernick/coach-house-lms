@@ -1,4 +1,13 @@
 import type { OrganizationsTable } from "./organizations"
+import type { PublicHandleReservationsTable } from "./public_handle_reservations"
+import type { PublicHandlesTable } from "./public_handles"
+import type { PublicPersonProfilesTable } from "./public_person_profiles"
+import type { PublicPersonOrganizationAffiliationsTable } from "./public_person_organization_affiliations"
+import type { PublicPersonSavedCollectionItemsTable } from "./public_person_saved_collection_items"
+import type { PublicPersonSavedCollectionsTable } from "./public_person_saved_collections"
+import type { PublicProfileActivityEventsTable } from "./public_profile_activity_events"
+import type { PublicTrackedResourceLinkDailyOpensTable } from "./public_tracked_resource_link_daily_opens"
+import type { PublicTrackedResourceLinksTable } from "./public_tracked_resource_links"
 import type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
 import type { ModuleAssignmentsTable } from "./module_assignments"
 import type { AssignmentSubmissionsTable } from "./assignment_submissions"
@@ -111,8 +120,20 @@ import type { PlatformEmailConsentEventsTable } from "./platform_email_consent_e
 import type { PlatformEmailLinksTable } from "./platform_email_links"
 import type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 import type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
+import type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
+import type { GoogleDriveConnectionsTable } from "./google_drive_connections"
+import type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
 
 export type { OrganizationsTable } from "./organizations"
+export type { PublicHandleReservationsTable } from "./public_handle_reservations"
+export type { PublicHandlesTable } from "./public_handles"
+export type { PublicPersonProfilesTable } from "./public_person_profiles"
+export type { PublicPersonOrganizationAffiliationsTable } from "./public_person_organization_affiliations"
+export type { PublicPersonSavedCollectionItemsTable } from "./public_person_saved_collection_items"
+export type { PublicPersonSavedCollectionsTable } from "./public_person_saved_collections"
+export type { PublicProfileActivityEventsTable } from "./public_profile_activity_events"
+export type { PublicTrackedResourceLinkDailyOpensTable } from "./public_tracked_resource_link_daily_opens"
+export type { PublicTrackedResourceLinksTable } from "./public_tracked_resource_links"
 export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
 export type { ModuleAssignmentsTable } from "./module_assignments"
 export type { AssignmentSubmissionsTable } from "./assignment_submissions"
@@ -225,9 +246,21 @@ export type { PlatformEmailConsentEventsTable } from "./platform_email_consent_e
 export type { PlatformEmailLinksTable } from "./platform_email_links"
 export type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 export type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances"
+export type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
+export type { GoogleDriveConnectionsTable } from "./google_drive_connections"
+export type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
 
 export type PublicTables = {
   organizations: OrganizationsTable
+  public_handle_reservations: PublicHandleReservationsTable
+  public_handles: PublicHandlesTable
+  public_person_profiles: PublicPersonProfilesTable
+  public_person_organization_affiliations: PublicPersonOrganizationAffiliationsTable
+  public_person_saved_collection_items: PublicPersonSavedCollectionItemsTable
+  public_person_saved_collections: PublicPersonSavedCollectionsTable
+  public_profile_activity_events: PublicProfileActivityEventsTable
+  public_tracked_resource_link_daily_opens: PublicTrackedResourceLinkDailyOpensTable
+  public_tracked_resource_links: PublicTrackedResourceLinksTable
   app_pricing_feedback_responses: AppPricingFeedbackResponsesTable
   module_assignments: ModuleAssignmentsTable
   assignment_submissions: AssignmentSubmissionsTable
@@ -340,4 +373,7 @@ export type PublicTables = {
   platform_email_links: PlatformEmailLinksTable
   platform_email_link_clicks: PlatformEmailLinkClicksTable
   platform_legal_acceptances: PlatformLegalAcceptancesTable
+  google_drive_oauth_intents: GoogleDriveOauthIntentsTable
+  google_drive_connections: GoogleDriveConnectionsTable
+  organization_external_documents: OrganizationExternalDocumentsTable
 }

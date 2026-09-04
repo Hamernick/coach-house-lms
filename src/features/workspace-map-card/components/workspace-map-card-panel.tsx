@@ -9,20 +9,35 @@ import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 import LocateFixedIcon from "lucide-react/dist/esm/icons/locate-fixed"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
+import RefreshCwIcon from "lucide-react/dist/esm/icons/refresh-cw"
 
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
+import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 import { useWorkspaceMapCardController } from "../hooks/use-workspace-map-card-controller"
-import type { WorkspaceMapCardInput, WorkspaceMapResolvedLocation } from "../types"
+import type {
+  WorkspaceMapCardInput,
+  WorkspaceMapResolvedLocation,
+} from "../types"
 
 const MAP_STYLE = "mapbox://styles/mapbox/satellite-v9"
 const FALLBACK_CENTER: [number, number] = [-98.5795, 39.8283]
 const FALLBACK_ZOOM = 1.85
+const WORKSPACE_MAP_ERROR_OWNER_PROPS = getReactGrabOwnerProps({
+  ownerId: "workspace-map-card:error",
+  component: "WorkspaceMapCardError",
+  source:
+    "src/features/workspace-map-card/components/workspace-map-card-panel.tsx",
+  slot: "alert",
+  primitiveImport: "@/components/ui/alert",
+})
 
-type MapboxApi = typeof import("mapbox-gl")["default"]
+type MapboxApi = (typeof import("mapbox-gl"))["default"]
 
 function resolveMapViewport(location: WorkspaceMapResolvedLocation | null) {
   if (!location) {
@@ -40,6 +55,46 @@ function resolveMapViewport(location: WorkspaceMapResolvedLocation | null) {
     pitch: 44,
     bearing: -18,
   }
+}
+
+function WorkspaceMapErrorState({
+  error,
+  onRetry,
+  tokenAvailable,
+}: {
+  error: string | null
+  onRetry: () => void
+  tokenAvailable: boolean
+}) {
+  return (
+    <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_24%,rgba(148,163,184,0.18),transparent_28%),linear-gradient(160deg,rgba(15,23,42,0.95)_0%,rgba(30,41,59,0.92)_100%)]">
+      <Alert
+        {...WORKSPACE_MAP_ERROR_OWNER_PROPS}
+        className="mx-4 max-w-sm rounded-2xl border-white/12 bg-slate-950/72 text-white shadow-[0_24px_60px_-30px_rgba(2,6,23,0.9)] backdrop-blur-xl"
+      >
+        <MapPinIcon aria-hidden="true" />
+        <AlertTitle>Map Preview Unavailable</AlertTitle>
+        <AlertDescription className="gap-3 text-white/70">
+          <p>
+            {error ??
+              "The map is temporarily unavailable. Your workspace and checklist remain available."}
+          </p>
+          {tokenAvailable && error ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-11 sm:h-8"
+              onClick={onRetry}
+            >
+              <RefreshCwIcon data-icon="inline-start" />
+              Try Again
+            </Button>
+          ) : null}
+        </AlertDescription>
+      </Alert>
+    </div>
+  )
 }
 
 function MapChecklistItemRow({
@@ -62,24 +117,26 @@ function MapChecklistItemRow({
           "inline-flex size-5 shrink-0 items-center justify-center rounded-md border",
           complete
             ? "border-emerald-500/30 bg-emerald-500/12 text-emerald-300"
-            : "border-border/70 bg-background/60 text-muted-foreground",
+            : "border-border/70 bg-background/60 text-muted-foreground"
         )}
       >
         <CheckIcon className="h-3 w-3" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-foreground">{label}</span>
-        <span className="block text-xs leading-5 text-muted-foreground">
+        <span className="text-foreground block text-sm font-medium">
+          {label}
+        </span>
+        <span className="text-muted-foreground block text-xs leading-5">
           {detail}
         </span>
       </span>
       <Badge
         variant="outline"
         className={cn(
-          "shrink-0 rounded-full px-2 py-0 text-[10px] font-semibold uppercase tracking-[0.14em]",
+          "shrink-0 rounded-full px-2 py-0 text-[10px] font-semibold tracking-[0.14em] uppercase",
           complete
             ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
-            : "border-border/70 bg-background/55 text-muted-foreground",
+            : "border-border/70 bg-background/55 text-muted-foreground"
         )}
       >
         {complete ? "ready" : "needed"}
@@ -89,7 +146,7 @@ function MapChecklistItemRow({
 
   if (disableLink) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/52 px-3 py-3">
+      <div className="border-border/60 bg-background/52 flex items-start gap-3 rounded-2xl border px-3 py-3">
         {content}
       </div>
     )
@@ -98,7 +155,7 @@ function MapChecklistItemRow({
   return (
     <Link
       href={href}
-      className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/52 px-3 py-3 transition-colors duration-200 hover:border-border hover:bg-background/68"
+      className="border-border/60 bg-background/52 hover:border-border hover:bg-background/68 flex items-start gap-3 rounded-2xl border px-3 py-3 transition-colors duration-200"
     >
       {content}
     </Link>
@@ -131,6 +188,7 @@ export function WorkspaceMapCardPanel({
   const orgMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const viewerMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const [mapError, setMapError] = useState<string | null>(null)
+  const [mapAttempt, setMapAttempt] = useState(0)
   const [checklistOpen, setChecklistOpen] = useState(true)
   const [viewerLocation, setViewerLocation] =
     useState<WorkspaceMapResolvedLocation | null>(null)
@@ -139,7 +197,7 @@ export function WorkspaceMapCardPanel({
   const activeLocation = viewerLocation ?? resolvedLocation
   const mapViewport = useMemo(
     () => resolveMapViewport(activeLocation),
-    [activeLocation],
+    [activeLocation]
   )
 
   useEffect(() => {
@@ -151,6 +209,7 @@ export function WorkspaceMapCardPanel({
 
     async function initMap() {
       try {
+        setMapError(null)
         const mapboxModule = await import("mapbox-gl")
         const mapboxgl = (mapboxModule.default ?? mapboxModule) as MapboxApi
         if (!mapboxgl?.Map) {
@@ -189,14 +248,12 @@ export function WorkspaceMapCardPanel({
 
         map.on("error", (event) => {
           if (!event?.error) return
-          setMapError("Mapbox couldn't load the map tiles.")
+          setMapError("The map tiles couldn’t load. Try again.")
         })
 
         mapRef.current = map
       } catch {
-        setMapError(
-          "Mapbox couldn't start. Check your token and domain restrictions.",
-        )
+        setMapError("The map service couldn’t start. Try again.")
       }
     }
 
@@ -211,7 +268,15 @@ export function WorkspaceMapCardPanel({
       mapRef.current?.remove()
       mapRef.current = null
     }
-  }, [mapViewport.bearing, mapViewport.center, mapViewport.pitch, mapViewport.zoom, token, tokenAvailable])
+  }, [
+    mapAttempt,
+    mapViewport.bearing,
+    mapViewport.center,
+    mapViewport.pitch,
+    mapViewport.zoom,
+    token,
+    tokenAvailable,
+  ])
 
   useEffect(() => {
     const map = mapRef.current
@@ -277,7 +342,7 @@ export function WorkspaceMapCardPanel({
 
   const handleLocateViewer = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      setMapError("Location access isn't available in this browser.")
+      toast.error("Location access isn’t available in this browser")
       return
     }
 
@@ -294,27 +359,32 @@ export function WorkspaceMapCardPanel({
       },
       () => {
         setLocatingViewer(false)
-        setMapError("Location access was denied or unavailable.")
+        toast.error("Location access was denied or unavailable")
       },
       {
         enableHighAccuracy: true,
         timeout: 12000,
         maximumAge: 300000,
-      },
+      }
     )
+  }, [])
+
+  const retryMap = useCallback(() => {
+    setMapError(null)
+    setMapAttempt((current) => current + 1)
   }, [])
 
   return (
     <div
       className={cn(
         "group relative min-h-0 flex-1 overflow-hidden rounded-b-[24px]",
-        normalizedInput.presentationMode && "rounded-b-[20px]",
+        normalizedInput.presentationMode && "rounded-b-[20px]"
       )}
     >
       <div
         className={cn(
-          "relative h-full min-h-[360px] overflow-hidden rounded-[22px] border border-border/60 bg-slate-950",
-          normalizedInput.presentationMode && "min-h-[344px] rounded-[20px]",
+          "border-border/60 relative h-full min-h-[360px] overflow-hidden rounded-[22px] border bg-slate-950",
+          normalizedInput.presentationMode && "min-h-[344px] rounded-[20px]"
         )}
       >
         <div
@@ -322,7 +392,7 @@ export function WorkspaceMapCardPanel({
           aria-label="Organization map"
           className={cn(
             "absolute inset-0 transition-transform duration-300 ease-out group-hover:scale-[1.018]",
-            tokenAvailable && !mapError ? "opacity-100" : "opacity-0",
+            tokenAvailable && !mapError ? "opacity-100" : "opacity-0"
           )}
         />
         {tokenAvailable && !mapError && previewUrl ? (
@@ -334,40 +404,32 @@ export function WorkspaceMapCardPanel({
         ) : null}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_24%_20%,rgba(255,255,255,0.08),transparent_32%),linear-gradient(180deg,rgba(2,6,23,0.04)_0%,rgba(2,6,23,0.42)_100%)]" />
         {!tokenAvailable || mapError ? (
-          <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_24%,rgba(148,163,184,0.18),transparent_28%),linear-gradient(160deg,rgba(15,23,42,0.95)_0%,rgba(30,41,59,0.92)_100%)]">
-            <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center">
-              <div className="inline-flex size-12 items-center justify-center rounded-2xl border border-white/10 bg-white/6 text-white/85 backdrop-blur-md">
-                <MapPinIcon className="h-5 w-5" aria-hidden />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-white">Map preview unavailable</p>
-                <p className="text-sm leading-6 text-white/70">
-                  {mapError ??
-                    "Add NEXT_PUBLIC_MAPBOX_TOKEN to enable the live map surface."}
-                </p>
-              </div>
-            </div>
-          </div>
+          <WorkspaceMapErrorState
+            error={mapError}
+            onRetry={retryMap}
+            tokenAvailable={tokenAvailable}
+          />
         ) : null}
 
-        <div className="absolute left-4 top-4 z-20 flex items-center gap-2">
-          <Badge className="rounded-full border-white/12 bg-background/76 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm backdrop-blur-md">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+          <Badge className="bg-background/76 text-foreground rounded-full border-white/12 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase shadow-sm backdrop-blur-md">
             Map
           </Badge>
           <Badge
             variant="outline"
-            className="rounded-full border-white/12 bg-background/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur-md"
+            className="bg-background/70 text-muted-foreground rounded-full border-white/12 px-2.5 py-1 text-[10px] font-medium backdrop-blur-md"
           >
-            {completionSummary.completedCount} of {completionSummary.totalCount} ready
+            {completionSummary.completedCount} of {completionSummary.totalCount}{" "}
+            ready
           </Badge>
         </div>
 
-        <div className="absolute right-4 top-4 z-20 flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <Button
             type="button"
             size="sm"
             variant="secondary"
-            className="h-8 rounded-full border border-white/12 bg-background/76 px-3 text-xs backdrop-blur-md"
+            className="bg-background/76 h-8 rounded-full border border-white/12 px-3 text-xs backdrop-blur-md"
             onClick={() => setChecklistOpen((current) => !current)}
           >
             {checklistOpen ? (
@@ -381,7 +443,7 @@ export function WorkspaceMapCardPanel({
             type="button"
             size="sm"
             variant="secondary"
-            className="h-8 rounded-full border border-white/12 bg-background/76 px-3 text-xs backdrop-blur-md"
+            className="bg-background/76 h-8 rounded-full border border-white/12 px-3 text-xs backdrop-blur-md"
             onClick={handleLocateViewer}
             disabled={locatingViewer || normalizedInput.presentationMode}
           >
@@ -390,7 +452,7 @@ export function WorkspaceMapCardPanel({
           </Button>
         </div>
 
-        <div className="absolute bottom-4 right-4 z-20 rounded-full border border-white/12 bg-background/74 px-3 py-1.5 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-md">
+        <div className="bg-background/74 text-foreground absolute right-4 bottom-4 z-20 rounded-full border border-white/12 px-3 py-1.5 text-[11px] font-medium shadow-sm backdrop-blur-md">
           {locationLabel || "Location pending"}
         </div>
 
@@ -398,24 +460,27 @@ export function WorkspaceMapCardPanel({
           <CollapsibleContent forceMount asChild>
             <div
               className={cn(
-                "absolute bottom-4 left-4 z-20 w-[min(336px,calc(100%-2rem))] overflow-hidden rounded-[24px] border border-white/12 bg-background/74 shadow-[0_24px_60px_-30px_rgba(2,6,23,0.72)] backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out",
+                "bg-background/74 absolute bottom-4 left-4 z-20 w-[min(336px,calc(100%-2rem))] overflow-hidden rounded-[24px] border border-white/12 shadow-[0_24px_60px_-30px_rgba(2,6,23,0.72)] backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out",
                 checklistOpen
                   ? "translate-y-0 opacity-100"
-                  : "pointer-events-none translate-y-3 opacity-0",
+                  : "pointer-events-none translate-y-3 opacity-0"
               )}
             >
               <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-foreground text-sm font-semibold">
                     Go live on the map
                   </p>
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    Finish the public profile basics so this card can represent the organization well.
+                  <p className="text-muted-foreground text-xs leading-5">
+                    Finish the public profile basics so this card can represent
+                    the organization well.
                   </p>
                 </div>
                 <Badge
-                  variant={completionSummary.allComplete ? "default" : "secondary"}
-                  className="rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.16em]"
+                  variant={
+                    completionSummary.allComplete ? "default" : "secondary"
+                  }
+                  className="rounded-full px-2.5 py-1 text-[10px] tracking-[0.16em] uppercase"
                 >
                   {completionSummary.allComplete ? "ready" : "in progress"}
                 </Badge>
@@ -432,7 +497,7 @@ export function WorkspaceMapCardPanel({
                   />
                 ))}
                 {disableChecklistLinks ? (
-                  <p className="px-1 pt-1 text-[11px] leading-5 text-muted-foreground">
+                  <p className="text-muted-foreground px-1 pt-1 text-[11px] leading-5">
                     These links unlock after this guide step.
                   </p>
                 ) : null}
@@ -446,7 +511,7 @@ export function WorkspaceMapCardPanel({
             type="button"
             size="sm"
             variant="secondary"
-            className="absolute bottom-4 left-4 z-20 h-9 rounded-full border border-white/12 bg-background/76 px-3 text-xs backdrop-blur-md"
+            className="bg-background/76 absolute bottom-4 left-4 z-20 h-9 rounded-full border border-white/12 px-3 text-xs backdrop-blur-md"
             onClick={() => setChecklistOpen(true)}
           >
             <ChevronUpIcon data-icon="inline-start" />

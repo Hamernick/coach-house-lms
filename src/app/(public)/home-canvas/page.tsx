@@ -4,10 +4,22 @@ import { redirect } from "next/navigation"
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 import { PricingSurface } from "@/components/public/pricing-surface"
+import {
+  DEFAULT_POST_AUTH_REDIRECT,
+  getSafeRedirectPath,
+} from "@/lib/auth/redirects"
+import { getPublicMapboxToken } from "@/lib/mapbox/token"
+import {
+  resolveSignupBuilderPlanTier,
+  resolveSignupBuilderPlanTierFromRedirect,
+  resolveSignupIntentFocus,
+} from "@/lib/onboarding/signup-plan"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "Home Canvas Preview",
-  description: "A homepage preview that mirrors the internal canvas and side navigation model.",
+  description:
+    "A homepage preview that mirrors the internal canvas and side navigation model.",
 }
 
 export const runtime = "nodejs"
@@ -17,7 +29,13 @@ type HomeCanvasPreviewPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function HomeCanvasPreviewPage({ searchParams }: HomeCanvasPreviewPageProps) {
+function readStringParam(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : undefined
+}
+
+export default async function HomeCanvasPreviewPage({
+  searchParams,
+}: HomeCanvasPreviewPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const searchParamsObject = new URLSearchParams()
   for (const [key, value] of Object.entries(resolvedSearchParams ?? {})) {
@@ -38,7 +56,33 @@ export default async function HomeCanvasPreviewPage({ searchParams }: HomeCanvas
   if (authCallbackHref) {
     redirect(authCallbackHref)
   }
-  const initialSection = typeof resolvedSearchParams?.section === "string" ? resolvedSearchParams.section : undefined
+  const initialSection = readStringParam(resolvedSearchParams?.section)
+  const loginRedirectTo = getSafeRedirectPath(
+    readStringParam(resolvedSearchParams?.redirect)
+  )
+  const signupPlanTier =
+    resolveSignupBuilderPlanTier(readStringParam(resolvedSearchParams?.plan)) ??
+    resolveSignupBuilderPlanTierFromRedirect(loginRedirectTo)
+  const signupIntentFocus = resolveSignupIntentFocus(
+    readStringParam(resolvedSearchParams?.intent)
+  )
+  if (initialSection === "login") {
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  return <HomeCanvasPreview initialSection={initialSection} pricingPanel={<PricingSurface embedded />} />
+    if (user) redirect(DEFAULT_POST_AUTH_REDIRECT)
+  }
+
+  return (
+    <HomeCanvasPreview
+      initialSection={initialSection}
+      loginRedirectTo={loginRedirectTo}
+      mapboxToken={getPublicMapboxToken()}
+      pricingPanel={<PricingSurface embedded />}
+      signupIntentFocus={signupIntentFocus}
+      signupPlanTier={signupPlanTier}
+    />
+  )
 }

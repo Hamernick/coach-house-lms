@@ -166,7 +166,7 @@ export function OrganizationDetailStoryContent({ value }: { value: string }) {
       className={cn(
         "prose prose-sm dark:prose-invert text-foreground max-w-none overflow-x-auto text-sm leading-relaxed break-words",
         "prose-p:my-2 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
-        "[&_img]:my-4 [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-lg [&_img]:border [&_img]:border-border/60"
+        "[&_img]:border-border/60 [&_img]:my-4 [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-lg [&_img]:border"
       )}
       // Public narrative HTML is sanitized by resolvePublicOrganizationProfileNarratives.
       dangerouslySetInnerHTML={{ __html: value }}
@@ -260,8 +260,8 @@ export function OrganizationDetailAddressSection({
         </ul>
       ) : (
         <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
-          No address listed yet. This profile can still appear on `/find`, but
-          it will not render a map marker until an address is added.
+          No address listed yet. This profile can still appear in Find, but it
+          will not render a map marker until an address is added.
         </p>
       )}
     </section>

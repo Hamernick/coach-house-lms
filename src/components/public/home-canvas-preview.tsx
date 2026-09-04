@@ -110,12 +110,12 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
       setIsFindRoutePending(false)
       return
     }
-    router.prefetch("/find")
+    router.prefetch("/")
   }, [activeSection, router])
 
   function primeFindRoute() {
     if (activeSection === "find") return
-    router.prefetch("/find")
+    router.prefetch("/")
   }
 
   function handleFindRouteClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -221,7 +221,9 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                             Pricing is currently unavailable in this preview.
                           </p>
                           <Button asChild className="mt-4 rounded-xl">
-                            <Link href="/?section=pricing">Open pricing</Link>
+                            <Link href="/home-canvas?section=pricing">
+                              Open pricing
+                            </Link>
                           </Button>
                         </div>
                       </div>
@@ -235,7 +237,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                           </p>
                           <Button asChild className="mt-4 rounded-xl">
                             <Link
-                              href="/find"
+                              href="/"
                               prefetch
                               aria-busy={isFindRoutePending || undefined}
                               onClick={handleFindRouteClick}

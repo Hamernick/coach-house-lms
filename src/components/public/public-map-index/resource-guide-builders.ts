@@ -114,5 +114,5 @@ export function buildPublicMapResourceGuideHref(
   guideId: PublicMapResourceGuideId
 ) {
   const params = new URLSearchParams({ guide: guideId })
-  return `/find?${params.toString()}`
+  return `/?${params.toString()}`
 }

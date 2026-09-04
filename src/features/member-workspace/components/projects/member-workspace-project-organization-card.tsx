@@ -66,7 +66,7 @@ export function resolveMemberWorkspaceOrganizationHref(
   if (website) return website
 
   const publicSlug = toTrimmedString(organization.publicSlug)
-  return publicSlug ? `/find/${encodeURIComponent(publicSlug)}` : null
+  return publicSlug ? `/${encodeURIComponent(publicSlug)}` : null
 }
 
 export function partitionMemberWorkspaceOrganizationSetupItems(

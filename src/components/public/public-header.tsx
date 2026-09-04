@@ -4,9 +4,16 @@ import { PublicThemeToggle } from "@/components/organization/public-theme-toggle
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-4 z-50 mx-auto mt-4 w-[min(1100px,92%)] rounded-2xl border border-border/70 bg-background/50 px-4 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/40">
-      <nav className="flex items-center justify-between gap-4" aria-label="Primary">
-        <Link href="/" className="flex items-center gap-2" aria-label="Coach House home">
+    <header className="border-border/70 bg-background/50 supports-[backdrop-filter]:bg-background/40 sticky top-4 z-50 mx-auto mt-4 w-[min(1100px,92%)] rounded-2xl border px-4 py-3 shadow-md backdrop-blur">
+      <nav
+        className="flex items-center justify-between gap-4"
+        aria-label="Primary"
+      >
+        <Link
+          href="/"
+          className="flex items-center gap-2"
+          aria-label="Coach House home"
+        >
           <span className="relative flex h-8 w-8 items-center justify-center">
             <Image
               src="/coach-house-logo-light.png"
@@ -25,20 +32,23 @@ export function PublicHeader() {
               priority
             />
           </span>
-          <span className="flex h-8 items-center text-base font-semibold leading-none tracking-tight sm:text-lg font-[Inter]">
+          <span className="flex h-8 items-center font-[Inter] text-base leading-none font-semibold tracking-tight sm:text-lg">
             Coach House
           </span>
         </Link>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Link href="/?section=pricing" className="hidden sm:inline hover:text-foreground">
+        <div className="text-muted-foreground flex items-center gap-3 text-sm">
+          <Link
+            href="/pricing"
+            className="hover:text-foreground hidden sm:inline"
+          >
             Pricing
           </Link>
-          <Link href="/news" className="hidden sm:inline hover:text-foreground">
+          <Link href="/news" className="hover:text-foreground hidden sm:inline">
             News
           </Link>
           <Link
             href="/login"
-            className="rounded-full bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 py-2 font-medium shadow-sm transition"
           >
             Sign in
           </Link>

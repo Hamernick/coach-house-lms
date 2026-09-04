@@ -30,12 +30,13 @@ describe("workspace routes", () => {
       "finance",
       "people",
       "documents",
+      "tools",
       "accelerator",
       "roadmap",
     ])
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
     expect(normalizeWorkspaceDrawerTab("finance")).toBe("finance")
-    expect(normalizeWorkspaceDrawerTab("tools")).toBeNull()
+    expect(normalizeWorkspaceDrawerTab("tools")).toBe("tools")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })
 
@@ -45,6 +46,9 @@ describe("workspace routes", () => {
     )
     expect(getWorkspaceDrawerPath({ tab: "finance" })).toBe(
       "/workspace?drawer=finance"
+    )
+    expect(getWorkspaceDrawerPath({ tab: "tools" })).toBe(
+      "/workspace?drawer=tools"
     )
     expect(
       getWorkspaceDrawerPath({

@@ -7,7 +7,7 @@ import { AppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
 import { measureServerStep } from "@/lib/performance/server-timing"
 
-import { resolveDashboardLayoutState } from "./_lib/dashboard-layout-state"
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
 
 export default async function DashboardLayout({
   children,

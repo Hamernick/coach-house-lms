@@ -71,6 +71,7 @@ export type PublicMapOrganization = {
   brandMarkUrl: string | null
   headerUrl: string | null
   website: string | null
+  donateUrl: string | null
   email: string | null
   phone: string | null
   twitter: string | null
@@ -332,6 +333,15 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
           "publicUrl",
           "public_url",
           "website"
+        ),
+        donateUrl: readProfileString(
+          profile,
+          "donateUrl",
+          "donate_url",
+          "donationUrl",
+          "donation_url",
+          "givingUrl",
+          "giving_url"
         ),
         email: readProfileString(profile, "email"),
         phone: readProfileString(profile, "phone"),

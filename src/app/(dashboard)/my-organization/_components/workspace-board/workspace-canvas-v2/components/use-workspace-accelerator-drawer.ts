@@ -74,6 +74,10 @@ function resolveInitialWorkspaceDataDrawerRequest(
     return { tab: "finance" }
   }
 
+  if (initialDrawerTab === "tools") {
+    return { tab: "tools" }
+  }
+
   return null
 }
 

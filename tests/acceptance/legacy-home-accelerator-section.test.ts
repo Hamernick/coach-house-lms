@@ -18,6 +18,6 @@ describe("legacy home accelerator section", () => {
     expect(markup).toContain("Origin story")
     expect(markup).toContain("Need statement")
     expect(markup).toContain('href="/sign-up"')
-    expect(markup).toContain('href="/?section=pricing"')
+    expect(markup).toContain('href="/pricing"')
   })
 })

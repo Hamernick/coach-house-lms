@@ -47,15 +47,23 @@ describe("find-map feature", () => {
       join(ROOT, "src/app/(public)/find/loading.tsx"),
       "utf8"
     )
+    const routeLoadingSource = readFileSync(
+      join(
+        ROOT,
+        "src/features/find-map/components/public-find-route-loading.tsx"
+      ),
+      "utf8"
+    )
     const shellSource = readFileSync(
       join(ROOT, "src/components/public/home-canvas-find-shell.tsx"),
       "utf8"
     )
 
-    expect(routeSource).toContain("<FindMapLoadingState />")
-    expect(routeSource).toContain("<FindMapLoadingSidebar />")
-    expect(routeSource).toContain("sidebarFallback={")
-    expect(routeSource).toContain("showAuthActions={false}")
+    expect(routeSource).toContain("<PublicFindRouteLoading />")
+    expect(routeLoadingSource).toContain("<FindMapLoadingState />")
+    expect(routeLoadingSource).toContain("<FindMapLoadingSidebar />")
+    expect(routeLoadingSource).toContain("sidebarFallback={")
+    expect(routeLoadingSource).toContain("showAuthActions={false}")
     expect(routeSource).toContain("function PublicFindLoading()")
     expect(routeSource).not.toContain("async function PublicFindLoading")
     expect(routeSource).not.toContain("fetchPublicMapViewerState")

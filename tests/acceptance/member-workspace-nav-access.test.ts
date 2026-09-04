@@ -62,7 +62,7 @@ describe("member workspace nav access", () => {
       "utf8"
     )
     const layoutStateSource = readFileSync(
-      join(ROOT, "src/app/(dashboard)/_lib/dashboard-layout-state.ts"),
+      join(ROOT, "src/components/app-shell/dashboard-layout-state.ts"),
       "utf8"
     )
     const workspaceContentSource = readFileSync(

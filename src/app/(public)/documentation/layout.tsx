@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
-import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
 import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import { DocumentationShell } from "@/features/nonprofit-documentation"
 

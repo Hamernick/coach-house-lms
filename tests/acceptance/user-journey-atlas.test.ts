@@ -10,7 +10,8 @@ import {
   UserJourneyAtlasPanel,
 } from "@/features/user-journey-atlas"
 
-const MERMAID_PATH = "src/features/user-journey-atlas/lib/user-journey-atlas.mmd"
+const MERMAID_PATH =
+  "src/features/user-journey-atlas/lib/user-journey-atlas.mmd"
 
 function readMermaidSource() {
   return readFileSync(MERMAID_PATH, "utf8")
@@ -41,7 +42,7 @@ describe("user-journey-atlas feature contract", () => {
         "invites",
         "operations",
         "prototype",
-      ]),
+      ])
     )
     expect(graph.nodes.map((node) => node.file)).toEqual(
       expect.arrayContaining([
@@ -56,7 +57,7 @@ describe("user-journey-atlas feature contract", () => {
         "src/app/api/meetings/schedule/route.ts",
         "src/lib/homework/assist.ts",
         "src/features/user-journey-atlas/lib/user-journey-atlas.mmd",
-      ]),
+      ])
     )
     for (const node of graph.nodes) {
       expect(existsSync(join(process.cwd(), node.file))).toBe(true)
@@ -67,24 +68,24 @@ describe("user-journey-atlas feature contract", () => {
     const input = buildTestInput()
     const source = readFileSync(
       "src/features/user-journey-atlas/components/user-journey-atlas-panel.tsx",
-      "utf8",
+      "utf8"
     )
     const nodeCardSource = readFileSync(
       "src/features/user-journey-atlas/components/user-journey-atlas-node-card.tsx",
-      "utf8",
+      "utf8"
     )
     const nodeCardBodySource = readFileSync(
       "src/features/user-journey-atlas/components/user-journey-atlas-node-card-bodies.tsx",
-      "utf8",
+      "utf8"
     )
     const outlineSource = readFileSync(
       "src/features/user-journey-atlas/components/user-journey-atlas-outline.tsx",
-      "utf8",
+      "utf8"
     )
     const markup = renderToStaticMarkup(
       createElement(UserJourneyAtlasPanel, {
         input,
-      }),
+      })
     )
 
     expect(markup).toContain("User journey atlas")
@@ -94,7 +95,7 @@ describe("user-journey-atlas feature contract", () => {
       expect.arrayContaining([
         "src/app/(public)/page.tsx",
         "src/app/api/stripe/checkout/route.ts",
-      ]),
+      ])
     )
     expect(input.nodes).toEqual(
       expect.arrayContaining([
@@ -106,7 +107,7 @@ describe("user-journey-atlas feature contract", () => {
           healthStatus: "live",
           healthStatusLabel: "Working path",
           nextStepLabels: expect.arrayContaining([
-            "renders -> Home canvas shell",
+            "composes -> Find route composition",
           ]),
           surfaceKind: "route",
           surfaceKindLabel: "Route",
@@ -132,7 +133,10 @@ describe("user-journey-atlas feature contract", () => {
         }),
         expect.objectContaining({
           categoryLabel: "Workspace data intake files",
-          dataFields: expect.arrayContaining(["answers JSON", "submission status"]),
+          dataFields: expect.arrayContaining([
+            "answers JSON",
+            "submission status",
+          ]),
           file: "src/app/api/modules/[id]/assignment-submission/route.ts",
           fileKindLabel: "API route",
           healthStatus: "activation-gap",
@@ -173,7 +177,10 @@ describe("user-journey-atlas feature contract", () => {
         }),
         expect.objectContaining({
           categoryLabel: "Journey operations files",
-          dataFields: expect.arrayContaining(["profile completed", "first homework submitted"]),
+          dataFields: expect.arrayContaining([
+            "profile completed",
+            "first homework submitted",
+          ]),
           file: "src/features/workspace-canvas-tutorial/lib/index.ts",
           healthStatus: "activation-gap",
           healthStatusLabel: "Activation gap",
@@ -188,15 +195,17 @@ describe("user-journey-atlas feature contract", () => {
           surfaceKind: "ai",
           surfaceKindLabel: "AI assist",
         }),
-      ]),
+      ])
     )
     expect(input.nodes.map((node) => node.title)).toContain(
-      "Workspace invite sheet",
+      "Workspace invite sheet"
     )
     const connectedNodeIds = new Set(
-      input.edges.flatMap((edge) => [edge.from, edge.to]),
+      input.edges.flatMap((edge) => [edge.from, edge.to])
     )
-    expect(input.nodes.every((node) => connectedNodeIds.has(node.id))).toBe(true)
+    expect(input.nodes.every((node) => connectedNodeIds.has(node.id))).toBe(
+      true
+    )
     expect(markup).toContain('aria-label="Zoom out"')
     expect(markup).toContain('aria-label="Zoom in"')
     expect(markup).toContain('aria-label="Fit view"')
@@ -225,7 +234,7 @@ describe("user-journey-atlas feature contract", () => {
     expect(source).toContain("useNodesState")
     expect(source).toContain("fitViewOptions")
     expect(source).toContain(
-      "min-h-0 flex-1 touch-none overflow-hidden overscroll-contain",
+      "min-h-0 flex-1 touch-none overflow-hidden overscroll-contain"
     )
     expect(source).toContain("MIN_ZOOM = 0.08")
     expect(source).toContain("padding: 0.24")
@@ -301,7 +310,7 @@ describe("user-journey-atlas feature contract", () => {
   it("keeps the admin prototype page protected by platform admin auth", () => {
     const source = readFileSync(
       "src/app/(admin)/admin/platform/prototypes/page.tsx",
-      "utf8",
+      "utf8"
     )
 
     expect(source).toContain("await requireAdmin()")
@@ -311,12 +320,12 @@ describe("user-journey-atlas feature contract", () => {
   it("redirects the direct admin route into the Prototypes entry", () => {
     const source = readFileSync(
       "src/app/(admin)/admin/platform/user-journeys/page.tsx",
-      "utf8",
+      "utf8"
     )
 
     expect(source).toContain("await requireAdmin()")
     expect(source).toContain(
-      'redirect("/admin/platform/prototypes?entry=user-journey-atlas")',
+      'redirect("/admin/platform/prototypes?entry=user-journey-atlas")'
     )
   })
 })

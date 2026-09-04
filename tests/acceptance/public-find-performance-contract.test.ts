@@ -19,16 +19,13 @@ describe("public Find performance contract", () => {
   })
 
   it("uses measured 200-item pages without pre-rendering the pricing surface", () => {
-    for (const route of [
-      "src/app/(public)/find/page.tsx",
-      "src/app/(public)/find/[slug]/page.tsx",
-    ]) {
-      const source = readSource(route)
+    const source = readSource(
+      "src/features/find-map/components/public-find-route.tsx"
+    )
 
-      expect(source).toContain("/api/public/resource-map/index?limit=200")
-      expect(source).not.toContain("PricingSurface")
-      expect(source).not.toContain("pricingPanel=")
-    }
+    expect(source).toContain("/api/public/resource-map/index?limit=200")
+    expect(source).not.toContain("PricingSurface")
+    expect(source).not.toContain("pricingPanel=")
   })
 
   it("uses a dedicated shell that excludes hidden home and authentication panels", () => {
@@ -118,8 +115,8 @@ describe("public Find performance contract", () => {
   it("enforces a dedicated first-load JavaScript budget for Find", () => {
     const source = readSource("scripts/performance-route-budgets.mjs")
 
-    expect(source).toContain('routeKey: "/(public)/find/page"')
-    expect(source).toContain('urlLabel: "/find"')
+    expect(source).toContain('routeKey: "/(public)/page"')
+    expect(source).toContain('urlLabel: "/"')
     expect(source).toContain('shell: "public find"')
   })
 })

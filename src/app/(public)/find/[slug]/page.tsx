@@ -1,219 +1,27 @@
-import type { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { permanentRedirect } from "next/navigation"
 
-import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
-import { PublicMapIndex } from "@/components/public/public-map-index"
-import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
-import {
-  AuthenticatedFindShell,
-  fetchPublicMapViewerState,
-} from "@/features/find-map"
-import { updatePublicMapOrganizationCurationAction } from "@/actions/public-map-organization-curation"
-import { updateResourceMapCanonicalStateAction } from "@/features/resource-map-admin"
-import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
-import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
-import { completeMemberMapOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
+import { buildFindOrganizationHref } from "@/lib/find/routes"
 
-const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT =
-  "/api/public/resource-map/index?limit=200"
-
-export const revalidate = 300
-
-function normalizeSlug(value: string) {
-  return value.trim().toLowerCase()
-}
-
-function resolvePublicOrigin() {
-  const configured =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "http://localhost:3000"
-
-  try {
-    return new URL(configured).origin
-  } catch {
-    return "http://localhost:3000"
-  }
-}
-
-function normalizeImageUrl(value: string | null | undefined, origin: string) {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  if (/^https?:\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed
-  if (trimmed.startsWith("//")) return `https:${trimmed}`
-  if (trimmed.startsWith("/")) return `${origin}${trimmed}`
-  return `https://${trimmed}`
-}
-
-export async function generateMetadata({
-  params,
-}: {
+type LegacyFindOrganizationPageProps = {
   params: Promise<{ slug: string }>
-}): Promise<Metadata> {
-  const { slug } = await params
-  const normalizedSlug = normalizeSlug(slug)
-  if (!normalizedSlug) {
-    return {
-      title: "Find organization",
-      description:
-        "Open an organization profile from the Coach House public map index.",
-    }
-  }
-
-  const organizations = await fetchPublicMapOrganizations()
-  const matched = organizations.find(
-    (organization) =>
-      typeof organization.publicSlug === "string" &&
-      normalizeSlug(organization.publicSlug) === normalizedSlug
-  )
-
-  if (!matched?.publicSlug) {
-    return {
-      title: "Find organization",
-      description:
-        "Open an organization profile from the Coach House public map index.",
-    }
-  }
-
-  const origin = resolvePublicOrigin()
-  const url = `${origin}/find/${encodeURIComponent(matched.publicSlug)}`
-  const image =
-    normalizeImageUrl(matched.logoUrl, origin) ??
-    normalizeImageUrl(matched.headerUrl, origin)
-  const description =
-    matched.description?.trim() ||
-    matched.tagline?.trim() ||
-    "Discover this organization on the Coach House public map."
-
-  return {
-    title: matched.name,
-    description,
-    openGraph: {
-      title: matched.name,
-      description,
-      url,
-      type: "website",
-      images: image
-        ? [{ url: image, alt: `${matched.name} profile image` }]
-        : undefined,
-    },
-    twitter: {
-      card: image ? "summary_large_image" : "summary",
-      title: matched.name,
-      description,
-      images: image ? [image] : undefined,
-    },
-  }
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function PublicFindOrganizationPage({
+export default async function LegacyFindOrganizationPage({
   params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-  const normalizedSlug = normalizeSlug(slug)
-  if (!normalizedSlug) return notFound()
-
-  const [organizations, viewerState] = await Promise.all([
-    fetchPublicMapOrganizations(),
-    fetchPublicMapViewerState(),
+  searchParams,
+}: LegacyFindOrganizationPageProps) {
+  const [{ slug }, resolved] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve(undefined),
   ])
-  const matched = organizations.find(
-    (organization) =>
-      typeof organization.publicSlug === "string" &&
-      normalizeSlug(organization.publicSlug) === normalizedSlug
-  )
-  if (!matched?.publicSlug) {
-    return notFound()
-  }
-
-  const candidateTokens = [
-    process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
-    process.env.MAPBOX_TOKEN,
-  ]
-  const publicToken = candidateTokens
-    .map((value) => value?.trim() ?? "")
-    .find((value) => value.length > 0 && value.startsWith("pk."))
-
-  if (viewerState.viewer) {
-    const [shellState, defaultSidebarOpen] = await Promise.all([
-      resolveDashboardLayoutState(),
-      readAppSidebarDefaultOpen(),
-    ])
-    if (shellState.userPresent) {
-      const memberOnboardingIntent =
-        shellState.onboardingIntentFocus === "find" ||
-        shellState.onboardingIntentFocus === "fund" ||
-        shellState.onboardingIntentFocus === "support"
-          ? shellState.onboardingIntentFocus
-          : null
-      const memberOnboardingEnabled =
-        shellState.onboardingLocked && memberOnboardingIntent !== null
-
-      return (
-        <AuthenticatedFindShell
-          state={shellState}
-          defaultSidebarOpen={defaultSidebarOpen}
-          organizationDetail
-        >
-          <PublicMapIndex
-            presentationMode="app-shell"
-            organizations={organizations}
-            resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
-            mapboxToken={publicToken}
-            initialPublicSlug={matched.publicSlug}
-            viewer={viewerState.viewer}
-            canManageResourceMap={shellState.isAdmin}
-            organizationCurationAction={
-              shellState.isAdmin
-                ? updatePublicMapOrganizationCurationAction
-                : undefined
-            }
-            resourceMapCurationAction={
-              shellState.isAdmin
-                ? updateResourceMapCanonicalStateAction
-                : undefined
-            }
-            adminOnboardingPreview={
-              shellState.isAdmin
-                ? {
-                    canToggle: true,
-                    hasOrganizationSwitcher:
-                      shellState.memberMapOnboarding.hasOrganizationSwitcher,
-                  }
-                : undefined
-            }
-            memberOnboarding={
-              memberOnboardingEnabled
-                ? {
-                    enabled: true,
-                    intentFocus: memberOnboardingIntent,
-                    hasOrganizationSwitcher:
-                      shellState.memberMapOnboarding.hasOrganizationSwitcher,
-                    onComplete: completeMemberMapOnboardingAction,
-                  }
-                : undefined
-            }
-          />
-        </AuthenticatedFindShell>
-      )
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(resolved ?? {})) {
+    if (typeof value === "string") query.append(key, value)
+    if (Array.isArray(value)) {
+      for (const item of value) query.append(key, item)
     }
   }
 
-  return (
-    <HomeCanvasFindShell>
-      <div className="relative h-full">
-        <PublicMapIndex
-          organizations={organizations}
-          resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
-          mapboxToken={publicToken}
-          initialPublicSlug={matched.publicSlug}
-          viewer={viewerState.viewer}
-        />
-      </div>
-    </HomeCanvasFindShell>
-  )
+  permanentRedirect(buildFindOrganizationHref(slug, query))
 }

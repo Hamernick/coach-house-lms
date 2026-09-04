@@ -125,6 +125,7 @@ export const DRAFT_VALUE_KEYS = [
   "orgSlug",
   "firstName",
   "lastName",
+  "personHandle",
   "phone",
   "publicEmail",
   "title",

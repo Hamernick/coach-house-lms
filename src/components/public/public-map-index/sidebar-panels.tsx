@@ -244,7 +244,13 @@ export function PublicMapDrawerSearchPanel({
     query.trim().length === 0 &&
     activeGroup === "all" &&
     !searchContext &&
-    resourceItemsLoadStatus !== "error"
+    (resourceItemsLoadStatus !== "error" || items.length === 0)
+
+  function focusSearchInput() {
+    containerRef.current
+      ?.querySelector<HTMLInputElement>("[data-public-map-search-input]")
+      ?.focus()
+  }
 
   return (
     <div
@@ -273,6 +279,8 @@ export function PublicMapDrawerSearchPanel({
           featuredGuides={featuredGuides}
           onCategorySelect={onActiveGroupChange}
           onGuideSelect={onGuideSelect ?? noopPublicMapSearchAction}
+          onRetryResourceItems={onRetryResourceItems}
+          onStartSearch={focusSearchInput}
           onToggleSavedGuide={onToggleSavedGuide}
           resourceItemsLoadStatus={resourceItemsLoadStatus}
           savedGuideIds={savedGuideIds}

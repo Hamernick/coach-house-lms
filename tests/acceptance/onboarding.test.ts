@@ -26,7 +26,7 @@ describe("onboarding gate", () => {
   })
 
   it("redirects completed builder users to workspace", async () => {
-    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+    vi.doMock("@/components/app-shell/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({
         userPresent: true,
         onboardingLocked: false,
@@ -43,7 +43,7 @@ describe("onboarding gate", () => {
   })
 
   it("redirects completed member-intent users to find", async () => {
-    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+    vi.doMock("@/components/app-shell/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({
         userPresent: true,
         onboardingLocked: false,
@@ -56,11 +56,11 @@ describe("onboarding gate", () => {
 
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
     const destination = await captureRedirect(() => Page())
-    expect(destination).toBe("/find?member_onboarding=0&source=onboarding")
+    expect(destination).toBe("/?member_onboarding=0&source=onboarding")
   })
 
   it("renders onboarding workspace card while onboarding is still locked", async () => {
-    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+    vi.doMock("@/components/app-shell/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({
         userPresent: true,
         onboardingLocked: true,
@@ -78,12 +78,16 @@ describe("onboarding gate", () => {
 
     expect(result).toBeTruthy()
     expect(redirectMock).not.toHaveBeenCalled()
-    expect((result as { props: { className: string } }).props.className).toContain("min-h-0")
-    expect((result as { props: { className: string } }).props.className).toContain("py-0")
+    expect(
+      (result as { props: { className: string } }).props.className
+    ).toContain("min-h-0")
+    expect(
+      (result as { props: { className: string } }).props.className
+    ).toContain("py-0")
   })
 
   it("recovers a paid onboarding pricing return from Stripe-backed entitlements when the local subscription row was missing before sync", async () => {
-    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+    vi.doMock("@/components/app-shell/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({
         userPresent: true,
         onboardingLocked: true,
@@ -124,7 +128,10 @@ describe("onboarding gate", () => {
         }),
       })),
     })
-    resolveActiveOrganizationMock.mockResolvedValue({ orgId: "org_123", role: "owner" })
+    resolveActiveOrganizationMock.mockResolvedValue({
+      orgId: "org_123",
+      role: "owner",
+    })
     fetchLearningEntitlementsMock.mockResolvedValue({
       hasAcceleratorPurchase: false,
       hasActiveSubscription: true,
@@ -148,12 +155,14 @@ describe("onboarding gate", () => {
       isAdmin: false,
       forceStripeSync: true,
     })
-    const child = (result as { props: { children: { props: Record<string, unknown> } } }).props.children
+    const child = (
+      result as { props: { children: { props: Record<string, unknown> } } }
+    ).props.children
     expect(child.props).toEqual(
       expect.objectContaining({
         defaultBuilderPlanTier: "organization",
         mode: "post_signup_access",
-      }),
+      })
     )
   })
 
@@ -174,17 +183,16 @@ describe("onboarding gate", () => {
       },
     })
 
-    const { completeMemberMapOnboardingAction } = await import(
-      "@/app/(dashboard)/onboarding/actions"
-    )
+    const { completeMemberMapOnboardingAction } =
+      await import("@/actions/member-map-onboarding")
     const form = new FormData()
     form.set("intentFocus", "support")
 
     const destination = await captureRedirect(() =>
-      completeMemberMapOnboardingAction(form),
+      completeMemberMapOnboardingAction(form)
     )
 
-    expect(destination).toBe("/find?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
     expect(updateUser).toHaveBeenCalledWith({
       data: expect.objectContaining({
         onboarding_completed: true,

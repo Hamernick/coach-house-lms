@@ -45,6 +45,7 @@ export type OrgProfile = {
   brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
+  donateUrl?: string | null
   twitter?: string | null
   facebook?: string | null
   linkedin?: string | null

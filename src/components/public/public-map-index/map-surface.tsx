@@ -24,6 +24,7 @@ import {
   PublicMapLocationControl,
   type PublicMapLocationControlState,
 } from "./location-control"
+import { PublicMapFailureState } from "./map-failure-state"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapSidebarSearchContext } from "./sidebar"
@@ -98,6 +99,7 @@ type PublicMapSurfaceProps = {
   onQueryChange: (value: string) => void
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
   onRetryResourceItems: () => void
+  onRetryMap: () => void
   onToggleFavorite: (orgId: string) => void
   onToggleCollectedResource?: (resourceId: string) => void
   onGuideSelect?: (guideId: string) => void
@@ -160,6 +162,7 @@ export function PublicMapSurface({
   onQueryChange,
   onActiveGroupChange,
   onRetryResourceItems,
+  onRetryMap,
   onToggleFavorite,
   onToggleCollectedResource = () => undefined,
   onGuideSelect,
@@ -292,14 +295,10 @@ export function PublicMapSurface({
       ) : null}
 
       {!tokenAvailable ? (
-        <div className="flex h-full min-h-[480px] items-center justify-center px-6">
-          <Alert className="border-border/70 bg-card/90 max-w-xl rounded-2xl">
-            <AlertDescription>
-              Map unavailable. Add `MAPBOX_TOKEN` or `NEXT_PUBLIC_MAPBOX_TOKEN`
-              to enable the public organization map.
-            </AlertDescription>
-          </Alert>
-        </div>
+        <PublicMapFailureState
+          reason="configuration"
+          onBrowseDirectory={() => onSidebarModeChange("search")}
+        />
       ) : (
         <div className="relative h-full min-h-[520px]">
           <div data-public-map-overscan="12px" className="absolute -inset-3">
@@ -329,16 +328,6 @@ export function PublicMapSurface({
               weather={weather}
               className={PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME}
             />
-            {mapError ? (
-              <Alert
-                className={cn(
-                  PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-                  "border-destructive/30 pointer-events-auto rounded-2xl text-xs shadow-sm"
-                )}
-              >
-                <AlertDescription>{mapError}</AlertDescription>
-              </Alert>
-            ) : null}
             {preferencesSaveError ? (
               <Alert
                 className={cn(
@@ -350,6 +339,14 @@ export function PublicMapSurface({
               </Alert>
             ) : null}
           </div>
+          {mapError ? (
+            <PublicMapFailureState
+              reason="runtime"
+              className="absolute inset-0 z-30 min-h-0"
+              onBrowseDirectory={() => onSidebarModeChange("search")}
+              onRetry={onRetryMap}
+            />
+          ) : null}
         </div>
       )}
 

@@ -207,6 +207,7 @@ export function useInitializePublicMap({
   setMapLoadVersion,
   setMapError,
   setAppliedBounds,
+  retryVersion,
   theme,
 }: {
   token: string
@@ -221,6 +222,7 @@ export function useInitializePublicMap({
   setMapLoadVersion: (value: number | ((current: number) => number)) => void
   setMapError: (value: string | null) => void
   setAppliedBounds: (value: PublicMapBounds | null) => void
+  retryVersion: number
   theme: PublicMapTheme
 }) {
   const themeRef = useRef(theme)
@@ -406,5 +408,6 @@ export function useInitializePublicMap({
     setMapError,
     token,
     tokenAvailable,
+    retryVersion,
   ])
 }

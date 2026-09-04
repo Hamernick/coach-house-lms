@@ -20,7 +20,7 @@ vi.mock("@/components/public/pricing-surface", () => ({
   PricingSurface: () => createElement("div", null, "Pricing"),
 }))
 
-describe("public home login section", () => {
+describe("public home-canvas login section", () => {
   beforeEach(() => {
     resetTestMocks()
   })
@@ -35,7 +35,8 @@ describe("public home login section", () => {
       },
     })
 
-    const { default: LandingPage } = await import("@/app/(public)/page")
+    const { default: LandingPage } =
+      await import("@/app/(public)/home-canvas/page")
     const destination = await captureRedirect(() =>
       LandingPage({
         searchParams: Promise.resolve({ section: "login" }),
@@ -46,14 +47,16 @@ describe("public home login section", () => {
   })
 
   it("renders the established home canvas by default", async () => {
-    const { default: LandingPage } = await import("@/app/(public)/page")
+    const { default: LandingPage } =
+      await import("@/app/(public)/home-canvas/page")
     const result = await LandingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.initialSection).toBeUndefined()
   })
 
   it("keeps pricing in the existing canvas surface", async () => {
-    const { default: LandingPage } = await import("@/app/(public)/page")
+    const { default: LandingPage } =
+      await import("@/app/(public)/home-canvas/page")
     const result = await LandingPage({
       searchParams: Promise.resolve({ section: "pricing" }),
     })
@@ -71,7 +74,8 @@ describe("public home login section", () => {
       },
     })
 
-    const { default: LandingPage } = await import("@/app/(public)/page")
+    const { default: LandingPage } =
+      await import("@/app/(public)/home-canvas/page")
     const result = await LandingPage({
       searchParams: Promise.resolve({ section: "login" }),
     })

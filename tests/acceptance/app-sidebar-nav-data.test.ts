@@ -65,11 +65,8 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual([
-      "Workspace",
-      "Find",
-    ])
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find"])
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
@@ -124,7 +121,7 @@ describe("app sidebar nav data", () => {
     )
   })
 
-  it("shows coaches Workspace, Find, and Organizations", () => {
+  it("shows coaches only Workspace, Find, and Organizations", () => {
     const nav = buildMainNav({
       isAdmin: false,
       platformAccessLevel: "coach",
@@ -141,7 +138,7 @@ describe("app sidebar nav data", () => {
     ])
   })
 
-  it("shows Find for free self-only member accounts", () => {
+  it("shows Find only for free self-only member accounts", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
@@ -152,24 +149,13 @@ describe("app sidebar nav data", () => {
 
     expect(nav.map((item) => item.title)).toEqual(["Find"])
     expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
     expect(nav.find((item) => item.title === "Email")).toBeUndefined()
     expect(nav.find((item) => item.title === "People")).toBeUndefined()
     expect(nav.find((item) => item.title === "Documents")).toBeUndefined()
-  })
-
-  it("links the shared resource rail to the internal documentation library", () => {
-    expect(RESOURCE_NAV).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          name: "Documentation",
-          url: "/documentation",
-        }),
-      ])
-    )
   })
 
   it("omits project and task nav instead of rendering upgrade badges without access", () => {
@@ -181,7 +167,7 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()

@@ -33,7 +33,7 @@ describe("sign up page", () => {
           redirect: "/find",
           source: "pricing",
         }),
-      }),
+      })
     )
 
     expect(destination).toBe("/sign-up?redirect=%2Ffind&source=pricing")
@@ -60,10 +60,10 @@ describe("sign up page", () => {
         searchParams: Promise.resolve({
           intent: "find",
         }),
-      }),
+      })
     )
 
-    expect(destination).toBe("/find?member_onboarding=1&source=signup")
+    expect(destination).toBe("/?member_onboarding=1&source=signup")
   })
 
   it("routes signed-in generic signup users into onboarding instead of find", async () => {
@@ -85,7 +85,7 @@ describe("sign up page", () => {
     const destination = await captureRedirect(() =>
       SignUpPage({
         searchParams: Promise.resolve({}),
-      }),
+      })
     )
 
     expect(destination).toBe("/onboarding?source=signup")
@@ -112,11 +112,11 @@ describe("sign up page", () => {
         searchParams: Promise.resolve({
           plan: "operations_support",
         }),
-      }),
+      })
     )
 
     expect(destination).toBe(
-      "/api/stripe/checkout?plan=operations_support&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder",
+      "/api/stripe/checkout?plan=operations_support&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
     )
   })
 })

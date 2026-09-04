@@ -1,7 +1,11 @@
 "use client"
 
 import { lazy, Suspense } from "react"
+import CloudOffIcon from "lucide-react/dist/esm/icons/cloud-off"
+import SearchXIcon from "lucide-react/dist/esm/icons/search-x"
 
+import { Button } from "@/components/ui/button"
+import { Empty } from "@/components/ui/empty"
 import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
@@ -25,6 +29,8 @@ export function PublicMapDirectoryHome({
   featuredGuides,
   onCategorySelect,
   onGuideSelect,
+  onRetryResourceItems,
+  onStartSearch,
   onToggleSavedGuide,
   resourceItemsLoadStatus,
   savedGuideIds,
@@ -33,10 +39,16 @@ export function PublicMapDirectoryHome({
   featuredGuides: PublicMapResourceGuide[]
   onCategorySelect: (category: PublicMapGroupFilterKey) => void
   onGuideSelect: (guideId: string) => void
+  onRetryResourceItems: () => void
+  onStartSearch: () => void
   onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
   savedGuideIds: PublicMapResourceGuideId[]
 }) {
+  const loadFailed = resourceItemsLoadStatus === "error"
+  const showEmptyState =
+    resourceItemsLoadStatus !== "loading" && (loadFailed || counts.all === 0)
+
   return (
     <div
       data-public-map-directory-home=""
@@ -46,16 +58,57 @@ export function PublicMapDirectoryHome({
         data-public-map-directory-home-content=""
         className="mx-auto w-full max-w-3xl"
       >
-        <section className="flex flex-col gap-3 pb-4">
-          <h2 className="text-foreground px-0.5 text-xl font-semibold tracking-tight">
-            Find Nearby
-          </h2>
-          <PublicMapNearbyCategoryGrid
-            counts={counts}
-            loading={resourceItemsLoadStatus === "loading"}
-            onSelect={onCategorySelect}
-          />
-        </section>
+        {showEmptyState ? (
+          <section
+            data-public-map-directory-empty={loadFailed ? "error" : "empty"}
+            className="pb-4"
+          >
+            <Empty
+              variant="subtle"
+              size="lg"
+              className="min-h-64"
+              role={loadFailed ? "alert" : "status"}
+              icon={
+                loadFailed ? (
+                  <CloudOffIcon className="size-5" aria-hidden />
+                ) : (
+                  <SearchXIcon className="size-5" aria-hidden />
+                )
+              }
+              title={
+                loadFailed
+                  ? "We couldn’t load nearby resources"
+                  : "No nearby resources yet"
+              }
+              description={
+                loadFailed
+                  ? "Try again to reconnect to the public directory."
+                  : "Search for a service, organization, program, or location."
+              }
+              actions={
+                <Button
+                  type="button"
+                  variant={loadFailed ? "outline" : "default"}
+                  className="rounded-full"
+                  onClick={loadFailed ? onRetryResourceItems : onStartSearch}
+                >
+                  {loadFailed ? "Try again" : "Start searching"}
+                </Button>
+              }
+            />
+          </section>
+        ) : (
+          <section className="flex flex-col gap-3 pb-4">
+            <h2 className="text-foreground px-0.5 text-xl font-semibold tracking-tight">
+              Find Nearby
+            </h2>
+            <PublicMapNearbyCategoryGrid
+              counts={counts}
+              loading={resourceItemsLoadStatus === "loading"}
+              onSelect={onCategorySelect}
+            />
+          </section>
+        )}
         {featuredGuides.length > 0 ? (
           <div className="pb-5">
             <PublicMapResourceGuides

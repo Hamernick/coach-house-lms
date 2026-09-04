@@ -10,7 +10,10 @@ import FileText from "lucide-react/dist/esm/icons/file-text"
 import Route from "lucide-react/dist/esm/icons/route"
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 
-import { legacyHomeHeadingFont, legacyHomeInterFont } from "@/components/public/legacy-home-sections/fonts"
+import {
+  legacyHomeHeadingFont,
+  legacyHomeInterFont,
+} from "@/components/public/legacy-home-sections/fonts"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -41,9 +44,11 @@ const acceleratorPath = [
 
 export function LegacyHomeAcceleratorSection() {
   return (
-    <section className={cn(legacyHomeInterFont.className, "w-full max-w-[980px]")}>
+    <section
+      className={cn(legacyHomeInterFont.className, "w-full max-w-[980px]")}
+    >
       <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr] lg:items-stretch">
-        <div className="flex min-w-0 flex-col justify-between rounded-[26px] border border-border/70 bg-card/72 p-5 shadow-sm backdrop-blur sm:p-7">
+        <div className="border-border/70 bg-card/72 flex min-w-0 flex-col justify-between rounded-[26px] border p-5 shadow-sm backdrop-blur sm:p-7">
           <div className="space-y-5">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
@@ -54,15 +59,16 @@ export function LegacyHomeAcceleratorSection() {
               <h2
                 className={cn(
                   legacyHomeHeadingFont.className,
-                  "text-balance text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl",
+                  "text-foreground text-3xl leading-tight font-semibold tracking-normal text-balance sm:text-4xl"
                 )}
               >
                 Build the strategy before you chase the funding.
               </h2>
-              <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-                The Coach House accelerator gives founders a structured path through formation,
-                positioning, program design, and funding readiness. Every lesson ends with a concrete
-                answer your team can use in the strategic roadmap.
+              <p className="text-muted-foreground max-w-xl text-sm leading-6 sm:text-base sm:leading-7">
+                The Coach House accelerator gives founders a structured path
+                through formation, positioning, program design, and funding
+                readiness. Every lesson ends with a concrete answer your team
+                can use in the strategic roadmap.
               </p>
             </div>
           </div>
@@ -73,20 +79,25 @@ export function LegacyHomeAcceleratorSection() {
                 Start free <ArrowUpRight className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 rounded-full px-5">
-              <Link href="/?section=pricing">View pricing</Link>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="h-11 rounded-full px-5"
+            >
+              <Link href="/pricing">View pricing</Link>
             </Button>
           </div>
         </div>
 
-        <div className="min-w-0 rounded-[26px] border border-border/70 bg-background/82 p-3 shadow-sm backdrop-blur">
-          <div className="overflow-hidden rounded-[20px] border border-border/65 bg-card/78">
-            <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
+        <div className="border-border/70 bg-background/82 min-w-0 rounded-[26px] border p-3 shadow-sm backdrop-blur">
+          <div className="border-border/65 bg-card/78 overflow-hidden rounded-[20px] border">
+            <div className="border-border/70 flex items-center justify-between gap-3 border-b px-4 py-3">
               <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
                   Inside the accelerator
                 </p>
-                <h3 className="mt-1 truncate text-base font-semibold text-foreground">
+                <h3 className="text-foreground mt-1 truncate text-base font-semibold">
                   Idea to Impact Path
                 </h3>
               </div>
@@ -96,24 +107,34 @@ export function LegacyHomeAcceleratorSection() {
             </div>
 
             <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="border-b border-border/70 p-4 lg:border-r lg:border-b-0">
+              <div className="border-border/70 border-b p-4 lg:border-r lg:border-b-0">
                 <div className="space-y-3">
                   {acceleratorPath.map((item, index) => {
                     const Icon = item.icon
 
                     return (
-                      <div key={item.title} className="grid grid-cols-[2rem_1fr] gap-3">
+                      <div
+                        key={item.title}
+                        className="grid grid-cols-[2rem_1fr] gap-3"
+                      >
                         <div className="flex flex-col items-center">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background text-foreground shadow-xs">
+                          <span className="border-border/70 bg-background text-foreground flex h-8 w-8 items-center justify-center rounded-full border shadow-xs">
                             <Icon className="h-4 w-4" aria-hidden />
                           </span>
                           {index < acceleratorPath.length - 1 ? (
-                            <span className="mt-2 h-8 w-px bg-border" aria-hidden />
+                            <span
+                              className="bg-border mt-2 h-8 w-px"
+                              aria-hidden
+                            />
                           ) : null}
                         </div>
                         <div className="min-w-0 pb-3">
-                          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.body}</p>
+                          <p className="text-foreground text-sm font-semibold">
+                            {item.title}
+                          </p>
+                          <p className="text-muted-foreground mt-1 text-xs leading-5">
+                            {item.body}
+                          </p>
                         </div>
                       </div>
                     )
@@ -122,19 +143,27 @@ export function LegacyHomeAcceleratorSection() {
               </div>
 
               <div className="p-4">
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Route className="h-4 w-4 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                <div className="border-border/70 bg-background/80 rounded-2xl border p-4">
+                  <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
+                    <Route
+                      className="h-4 w-4 text-emerald-600 dark:text-emerald-300"
+                      aria-hidden
+                    />
                     Strategic roadmap drafts
                   </div>
                   <div className="mt-4 grid gap-2">
                     {acceleratorOutcomes.map((outcome) => (
                       <div
                         key={outcome}
-                        className="flex min-w-0 items-center gap-2 rounded-xl border border-border/60 bg-card/68 px-3 py-2"
+                        className="border-border/60 bg-card/68 flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2"
                       >
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
-                        <span className="min-w-0 truncate text-sm text-foreground">{outcome}</span>
+                        <CheckCircle2
+                          className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300"
+                          aria-hidden
+                        />
+                        <span className="text-foreground min-w-0 truncate text-sm">
+                          {outcome}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -144,9 +173,11 @@ export function LegacyHomeAcceleratorSection() {
                   {["Formation", "Programs", "Funding"].map((label) => (
                     <div
                       key={label}
-                      className="rounded-2xl border border-border/60 bg-muted/40 px-3 py-3 text-center"
+                      className="border-border/60 bg-muted/40 rounded-2xl border px-3 py-3 text-center"
                     >
-                      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                      <p className="text-muted-foreground text-xs font-medium">
+                        {label}
+                      </p>
                     </div>
                   ))}
                 </div>

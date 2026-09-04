@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ONBOARDING_PRICING_RETURN } from "@/lib/onboarding/pricing-return"
+import type { PublicHandleAvailabilityStatus } from "@/features/public-profiles/client"
 
 import { AccountStep } from "./account-step"
 import { AvatarCropDialog } from "./avatar-crop-dialog"
@@ -50,8 +51,11 @@ type OnboardingDialogContentProps = {
   initialOrgSlug: string
   slugStatus: OnboardingSlugStatus
   slugHint: string | null
+  personHandleStatus: PublicHandleAvailabilityStatus
+  personHandleHint: string | null
   initialFirstName: string
   initialLastName: string
+  initialPersonHandle: string
   initialPhone: string
   initialPublicEmail: string
   initialTitle: string
@@ -61,6 +65,7 @@ type OnboardingDialogContentProps = {
   accountValues: {
     firstName: string
     lastName: string
+    personHandle: string
     phone: string
     publicEmail: string
     title: string
@@ -117,8 +122,11 @@ export function OnboardingDialogContent({
   initialOrgSlug,
   slugStatus,
   slugHint,
+  personHandleStatus,
+  personHandleHint,
   initialFirstName,
   initialLastName,
+  initialPersonHandle,
   initialPhone,
   initialPublicEmail,
   initialTitle,
@@ -220,6 +228,11 @@ export function OnboardingDialogContent({
                   name="lastName"
                   value={accountValues.lastName}
                 />
+                <input
+                  type="hidden"
+                  name="personHandle"
+                  value={accountValues.personHandle}
+                />
                 <input type="hidden" name="phone" value={accountValues.phone} />
                 <input
                   type="hidden"
@@ -298,6 +311,9 @@ export function OnboardingDialogContent({
                 submitting={submitting}
                 initialFirstName={initialFirstName}
                 initialLastName={initialLastName}
+                initialPersonHandle={initialPersonHandle}
+                personHandleStatus={personHandleStatus}
+                personHandleHint={personHandleHint}
                 initialPhone={initialPhone}
                 initialPublicEmail={initialPublicEmail}
                 initialTitle={initialTitle}

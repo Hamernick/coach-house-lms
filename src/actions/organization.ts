@@ -60,6 +60,7 @@ type OrgProfilePayload = {
   brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
+  donateUrl?: string | null
   twitter?: string | null
   facebook?: string | null
   linkedin?: string | null
@@ -189,6 +190,7 @@ export async function updateOrganizationProfileAction(
   }
   const urlFields = new Set([
     "publicUrl",
+    "donateUrl",
     "newsletter",
     "twitter",
     "facebook",
@@ -457,20 +459,21 @@ function revalidateOrganizationViews({
   revalidatePath("/workspace")
   revalidatePath("/my-organization")
   revalidatePath("/organization")
-  revalidatePath("/find")
+  revalidatePath("/")
 
   if (isPublic || wasPublic) {
     revalidateTag("public-map-organizations", "max")
+    revalidateTag("public-profiles", "max")
     revalidatePath("/community")
   }
 
   if (previousSlug) {
     revalidatePath(`/${previousSlug}`)
-    revalidatePath(`/find/${previousSlug}`)
+    revalidatePath(`/${previousSlug}`)
   }
 
   if (nextSlug && nextSlug !== previousSlug) {
     revalidatePath(`/${nextSlug}`)
-    revalidatePath(`/find/${nextSlug}`)
+    revalidatePath(`/${nextSlug}`)
   }
 }

@@ -14,9 +14,7 @@ vi.mock("@/components/public/legacy-home-sections", () => ({
 }))
 
 import { isPrimaryPlainNavigationIntent } from "@/components/public/home-canvas-route-link-helpers"
-import {
-  resolveHomeCanvasSectionLinkTarget,
-} from "@/components/public/home-canvas-section-link"
+import { resolveHomeCanvasSectionLinkTarget } from "@/components/public/home-canvas-section-link"
 
 const ROOT = process.cwd()
 
@@ -35,7 +33,7 @@ describe("home canvas route link helpers", () => {
         ctrlKey: false,
         shiftKey: false,
         target: "_self",
-      }),
+      })
     ).toBe(true)
   })
 
@@ -49,7 +47,7 @@ describe("home canvas route link helpers", () => {
         ctrlKey: false,
         shiftKey: false,
         target: "_self",
-      }),
+      })
     ).toBe(false)
 
     expect(
@@ -61,7 +59,7 @@ describe("home canvas route link helpers", () => {
         ctrlKey: false,
         shiftKey: false,
         target: "_self",
-      }),
+      })
     ).toBe(false)
 
     expect(
@@ -73,18 +71,18 @@ describe("home canvas route link helpers", () => {
         ctrlKey: false,
         shiftKey: false,
         target: "_blank",
-      }),
+      })
     ).toBe(false)
   })
 
   it("resolves same-page canvas section links without requiring app router navigation", () => {
     expect(
       resolveHomeCanvasSectionLinkTarget({
-        currentHref: "https://coachhouse.app/?section=pricing",
-        href: "/?section=signup&intent=build&plan=operations_support",
-      }),
+        currentHref: "https://coachhouse.app/home-canvas?section=pricing",
+        href: "/home-canvas?section=signup&intent=build&plan=operations_support",
+      })
     ).toEqual({
-      href: "/?section=signup&intent=build&plan=operations_support",
+      href: "/home-canvas?section=signup&intent=build&plan=operations_support",
       loginRedirectTo: undefined,
       section: "signup",
       signupIntentFocus: "build",
@@ -93,50 +91,56 @@ describe("home canvas route link helpers", () => {
 
     expect(
       resolveHomeCanvasSectionLinkTarget({
-        currentHref: "https://coachhouse.app/?section=platform",
-        href: "https://coachhouse.app/?section=pricing",
-      })?.section,
+        currentHref: "https://coachhouse.app/home-canvas?section=platform",
+        href: "https://coachhouse.app/home-canvas?section=pricing",
+      })?.section
     ).toBe("pricing")
   })
 
   it("does not intercept non-canvas or external links", () => {
     expect(
       resolveHomeCanvasSectionLinkTarget({
-        currentHref: "https://coachhouse.app/?section=pricing",
-        href: "https://example.com/?section=signup",
-      }),
+        currentHref: "https://coachhouse.app/home-canvas?section=pricing",
+        href: "https://example.com/home-canvas?section=signup",
+      })
     ).toBeNull()
     expect(
       resolveHomeCanvasSectionLinkTarget({
-        currentHref: "https://coachhouse.app/find",
-        href: "/?section=signup&plan=organization",
-      }),
+        currentHref: "https://coachhouse.app/",
+        href: "/home-canvas?section=signup&plan=organization",
+      })
     ).toBeNull()
   })
 
   it("keeps logged-in home login clicks on the button while resolving the destination", () => {
-    const source = readSource("src/components/public/home-canvas-login-button.tsx")
-    const canvasSource = readSource("src/components/public/home-canvas-preview.tsx")
+    const source = readSource(
+      "src/components/public/home-canvas-login-button.tsx"
+    )
+    const canvasSource = readSource(
+      "src/components/public/home-canvas-preview.tsx"
+    )
     const shellSource = readSource(
-      "src/components/public/home-canvas-preview-shell.tsx",
+      "src/components/public/home-canvas-preview-shell.tsx"
     )
 
     expect(source).toContain("isLoginRoutePending")
     expect(source).toContain("handleLoginClick")
     expect(source).toContain("supabase.auth.getSession()")
     expect(source).toContain("router.replace(DEFAULT_POST_AUTH_REDIRECT)")
-    expect(source).toContain('aria-busy={isLoginRoutePending || undefined}')
+    expect(source).toContain("aria-busy={isLoginRoutePending || undefined}")
     expect(source).toContain("Opening…")
-    expect(source).toContain('onClick={handleLoginClick}')
+    expect(source).toContain("onClick={handleLoginClick}")
     expect(shellSource).toContain("HomeCanvasLoginButton")
     expect(canvasSource).toContain("HomeCanvasPreviewHeader")
     expect(canvasSource).not.toContain('onClick={() => changeSection("login")}')
   })
 
   it("intercepts home canvas section links so pricing CTAs switch panels immediately", () => {
-    const canvasSource = readSource("src/components/public/home-canvas-preview.tsx")
+    const canvasSource = readSource(
+      "src/components/public/home-canvas-preview.tsx"
+    )
     const controllerSource = readSource(
-      "src/components/public/home-canvas-section-link-controller.ts",
+      "src/components/public/home-canvas-section-link-controller.ts"
     )
 
     expect(canvasSource).toContain("useHomeCanvasSectionLinkController")
@@ -148,7 +152,9 @@ describe("home canvas route link helpers", () => {
   })
 
   it("keeps home canvas section motion on CSS instead of loading a JS animation runtime", () => {
-    const canvasSource = readSource("src/components/public/home-canvas-preview.tsx")
+    const canvasSource = readSource(
+      "src/components/public/home-canvas-preview.tsx"
+    )
     const flipWordsSource = readSource("src/components/ui/flip-words.tsx")
     const globalsSource = readSource("src/app/globals.css")
 

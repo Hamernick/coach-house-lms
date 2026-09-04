@@ -56,16 +56,23 @@ export function useDocumentsUploadActions({
       const url = await getOrgDocumentUrl(definition.kind)
       window.open(url, "_blank", "noopener")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to open document")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to open document"
+      )
     } finally {
       setViewingKind(null)
     }
   }
 
-  const handleDelete = async (definition: DocumentDefinition) => {
+  const handleDelete = async (
+    definition: DocumentDefinition,
+    options: { confirm?: boolean } = {}
+  ) => {
     const current = documentsState?.[definition.key] ?? null
     if (!current?.path) return
-    if (!window.confirm("Remove this document?")) return
+    if (options.confirm !== false && !window.confirm("Remove this document?")) {
+      return
+    }
 
     setDeletingKind(definition.kind)
     try {
@@ -91,7 +98,9 @@ export function useDocumentsUploadActions({
       const url = await getOrgDocumentUrl(definition.kind, { download: true })
       window.open(url, "_blank", "noopener")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to download document")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to download document"
+      )
     } finally {
       setDownloadingKind(null)
     }

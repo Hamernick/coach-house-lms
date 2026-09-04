@@ -160,6 +160,12 @@ export function DocumentsTab({
               onViewPolicyDocument={controller.viewPolicyDocument}
               onViewUpload={controller.handleView}
               onViewUploadedFile={documentFiles.openFile}
+              onDownloadUploadedFile={documentFiles.downloadFile}
+              onDownloadUpload={controller.handleDownload}
+              onDeleteUpload={controller.handleDelete}
+              onDownloadPolicyDocument={controller.downloadPolicyDocument}
+              onRemovePolicyDocument={controller.removePolicyDocumentFile}
+              onDetachDriveDocument={googleDrive.detachDocument}
               pendingUploadedFileIds={documentFiles.pendingFileIds}
               onTrashUploadedFile={documentFiles.trashFile}
               onRestoreUploadedFile={documentFiles.restoreFile}

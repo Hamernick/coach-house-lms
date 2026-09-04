@@ -55,4 +55,30 @@ describe("documents banner", () => {
     expect(notesSource).not.toContain("RightRailSlot")
     expect(notesSource).toContain("rounded-[2rem]")
   })
+
+  it("switches cards into multi-selection mode with batch actions", () => {
+    const root = process.cwd()
+    const gridSource = readFileSync(
+      join(
+        root,
+        "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-library-grid.tsx"
+      ),
+      "utf8"
+    )
+    const toolbarSource = readFileSync(
+      join(
+        root,
+        "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-selection-toolbar.tsx"
+      ),
+      "utf8"
+    )
+
+    expect(gridSource).toContain("selection.selectedIds.length > 0")
+    expect(gridSource).toContain("selection.toggle(item.id)")
+    expect(gridSource).toContain('selected && "border-white"')
+    expect(toolbarSource).toContain("Download")
+    expect(toolbarSource).toContain("Delete")
+    expect(toolbarSource).toContain("{count} selected")
+    expect(toolbarSource).toContain('aria-live="polite"')
+  })
 })

@@ -128,7 +128,13 @@ export async function GET(request: NextRequest) {
 
       const { data: signed, error: signedError } = await supabase.storage
         .from(BUCKET)
-        .createSignedUrl(data.storage_path, SIGNED_URL_TTL_SECONDS)
+        .createSignedUrl(
+          data.storage_path,
+          SIGNED_URL_TTL_SECONDS,
+          request.nextUrl.searchParams.get("download") === "true"
+            ? { download: data.name || true }
+            : undefined
+        )
 
       if (signedError || !signed?.signedUrl) {
         return NextResponse.json(

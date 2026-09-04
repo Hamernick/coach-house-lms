@@ -48,6 +48,7 @@ describe("organization document files", () => {
     expect(route).toContain("const MAX_UPLOAD_MB = 50")
     expect(route).toContain('file.type || "application/octet-stream"')
     expect(route).not.toContain("Only PDF files are supported")
+    expect(route).toContain("{ download: data.name || true }")
     expect(menu).toContain("multiple")
     expect(menu).not.toContain('accept="application/pdf"')
     expect(banner).toContain("onDragEnter")

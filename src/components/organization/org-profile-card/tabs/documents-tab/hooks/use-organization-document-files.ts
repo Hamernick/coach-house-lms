@@ -166,6 +166,27 @@ export function useOrganizationDocumentFiles() {
     }
   }, [])
 
+  const downloadFile = useCallback(async (file: OrganizationDocumentFile) => {
+    try {
+      const response = await fetch(
+        `/api/account/organization-document-files?id=${encodeURIComponent(file.id)}&download=true`,
+        { cache: "no-store" }
+      )
+      const payload = (await response.json().catch(() => null)) as {
+        url?: string
+        error?: string
+      } | null
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error ?? "Unable to download file.")
+      }
+      window.open(payload.url, "_blank", "noopener,noreferrer")
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to download file."
+      )
+    }
+  }, [])
+
   const updateFileLifecycle = useCallback(
     async (file: OrganizationDocumentFile, action: "trash" | "restore") => {
       setPendingFileIds((current) => [...current, file.id])
@@ -260,6 +281,7 @@ export function useOrganizationDocumentFiles() {
   )
 
   return {
+    downloadFile,
     files,
     limitBytes,
     loading,

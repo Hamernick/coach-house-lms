@@ -1,15 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   IconCheck,
   IconDots,
-  IconFile,
-  IconFileDescription,
-  IconFileSpreadsheet,
-  IconFileTypePdf,
-  IconPhoto,
-  IconPresentation,
   IconRestore,
   IconTrash,
   IconWorld,
@@ -24,7 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { DocumentsLibraryTypeIcon } from "./documents-library-type-icon"
+import { DocumentsSelectionToolbar } from "./documents-selection-toolbar"
 import type { DriveLibraryDocument } from "../hooks/use-google-drive-library"
+import { useDocumentsLibrarySelection } from "../hooks/use-documents-library-selection"
 import type { OrganizationDocumentFile } from "../hooks/use-organization-document-files"
 import type { DocumentIndexRow, DocumentsPolicyEntry } from "../types"
 
@@ -51,6 +48,7 @@ type LibraryItem = {
   href?: string
   row?: DocumentIndexRow
   uploadedFile?: OrganizationDocumentFile
+  driveDocument?: DriveLibraryDocument
 }
 
 type DocumentsLibraryGridProps = {
@@ -69,6 +67,20 @@ type DocumentsLibraryGridProps = {
     definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"]
   ) => Promise<void>
   onViewUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
+  onDownloadUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
+  onDownloadUpload: (
+    definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"]
+  ) => Promise<void>
+  onDeleteUpload: (
+    definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"],
+    options?: { confirm?: boolean }
+  ) => Promise<void>
+  onDownloadPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
+  onRemovePolicyDocument: (
+    policy: DocumentsPolicyEntry,
+    options?: { confirm?: boolean }
+  ) => Promise<void>
+  onDetachDriveDocument: (documentId: string) => Promise<void>
   pendingUploadedFileIds: string[]
   onTrashUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
   onRestoreUploadedFile: (file: OrganizationDocumentFile) => Promise<void>
@@ -130,6 +142,7 @@ function buildLibraryItems(
     updatedAt: document.modifiedAt,
     deleted: document.status === "trashed",
     href: document.webViewLink,
+    driveDocument: document,
   }))
   const uploadedItems: LibraryItem[] = uploadedFiles.map((file) => ({
     id: `uploaded:${file.id}`,
@@ -155,45 +168,6 @@ function formatCardDate(value: string | null) {
   }).format(date)
 }
 
-function TypeIcon({
-  type,
-  source,
-}: {
-  type: LibraryItem["fileType"]
-  source: LibraryItem["source"]
-}) {
-  const className = "size-8 stroke-[1.6]"
-  if (source === "generated") {
-    return <IconWorld className={className} aria-hidden />
-  }
-  if (type === "image") return <IconPhoto className={className} aria-hidden />
-  if (type === "spreadsheet") {
-    return (
-      <IconFileSpreadsheet
-        className={cn(className, "text-emerald-500")}
-        aria-hidden
-      />
-    )
-  }
-  if (type === "presentation") {
-    return (
-      <IconPresentation
-        className={cn(className, "text-amber-500")}
-        aria-hidden
-      />
-    )
-  }
-  if (type === "pdf") {
-    return (
-      <IconFileTypePdf className={cn(className, "text-red-500")} aria-hidden />
-    )
-  }
-  if (type === "document") {
-    return <IconFileDescription className={className} aria-hidden />
-  }
-  return <IconFile className={className} aria-hidden />
-}
-
 export function DocumentsLibraryGrid({
   rows,
   driveDocuments,
@@ -208,13 +182,18 @@ export function DocumentsLibraryGrid({
   onViewPolicyDocument,
   onViewUpload,
   onViewUploadedFile,
+  onDownloadUploadedFile,
+  onDownloadUpload,
+  onDeleteUpload,
+  onDownloadPolicyDocument,
+  onRemovePolicyDocument,
+  onDetachDriveDocument,
   pendingUploadedFileIds,
   onTrashUploadedFile,
   onRestoreUploadedFile,
   onPermanentlyDeleteUploadedFile,
   onReset,
 }: DocumentsLibraryGridProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const items = useMemo(() => {
     return buildLibraryItems(rows, driveDocuments, uploadedFiles).filter(
       (item) => {
@@ -227,6 +206,21 @@ export function DocumentsLibraryGrid({
       }
     )
   }, [driveDocuments, fileType, rows, showDeleted, source, tab, uploadedFiles])
+  const selection = useDocumentsLibrarySelection({
+    items,
+    canEdit,
+    editMode,
+    actions: {
+      onDeleteUpload,
+      onDetachDriveDocument,
+      onDownloadPolicyDocument,
+      onDownloadUpload,
+      onDownloadUploadedFile,
+      onPermanentlyDeleteUploadedFile,
+      onRemovePolicyDocument,
+      onTrashUploadedFile,
+    },
+  })
 
   function openItem(item: LibraryItem) {
     if (item.href) {
@@ -285,137 +279,156 @@ export function DocumentsLibraryGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {items.map((item) => {
-        const selected = selectedIds.includes(item.id)
-        return (
-          <article
-            key={item.id}
-            className={cn(
-              "group/card bg-muted/80 ring-border/60 relative flex aspect-[1/1.02] min-h-64 flex-col overflow-hidden rounded-[2rem] ring-1 transition-[background-color,box-shadow,transform] duration-200 motion-reduce:transition-none sm:min-h-0",
-              "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]",
-              selected && "ring-foreground/70 ring-2"
-            )}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              className="absolute inset-0 z-0 h-auto w-auto rounded-[2rem] p-0 hover:bg-transparent focus-visible:ring-2"
-              onClick={() => openItem(item)}
-              aria-label={`Open ${item.name}`}
-              disabled={item.deleted}
-            />
-            <h3 className="pointer-events-none relative z-10 line-clamp-2 px-5 pt-4 text-sm leading-5 font-medium break-words">
-              {item.name}
-            </h3>
-            <div className="text-foreground pointer-events-none relative z-10 flex flex-1 items-center justify-center">
-              <TypeIcon type={item.fileType} source={item.source} />
-            </div>
-            <div className="text-muted-foreground pointer-events-none relative z-10 flex min-h-12 items-center px-5 pb-1 text-xs">
-              <span className="truncate tabular-nums">
-                {item.deletedAt
-                  ? `Deleted ${formatCardDate(item.deletedAt)}`
-                  : formatCardDate(item.updatedAt)}
-              </span>
-            </div>
-            {item.uploadedFile && canEdit && editMode ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 z-20 size-11 rounded-full bg-transparent opacity-100 hover:bg-black/5 focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100 dark:hover:bg-white/10"
-                    disabled={pendingUploadedFileIds.includes(
-                      item.uploadedFile.id
-                    )}
-                    aria-label={`Manage ${item.name}`}
+    <>
+      {selection.selectedItems.length > 0 ? (
+        <DocumentsSelectionToolbar
+          count={selection.selectedItems.length}
+          canDelete={selection.canDelete}
+          canDownload={selection.canDownload}
+          pending={selection.pending}
+          onDelete={() => void selection.remove()}
+          onDownload={() => void selection.download()}
+        />
+      ) : null}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((item) => {
+          const selected = selection.selectedIds.includes(item.id)
+          return (
+            <article
+              key={item.id}
+              className={cn(
+                "group/card bg-muted/80 ring-border/60 relative flex aspect-[1/1.02] min-h-64 flex-col overflow-hidden rounded-[2rem] ring-1 transition-[background-color,box-shadow,transform] duration-200 motion-reduce:transition-none sm:min-h-0",
+                "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]"
+              )}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                className={cn(
+                  "absolute inset-0 z-0 h-auto w-auto rounded-[2rem] border-2 border-transparent p-0 hover:bg-transparent focus-visible:ring-2",
+                  selected && "border-white"
+                )}
+                onClick={() =>
+                  selection.selectedIds.length > 0
+                    ? selection.toggle(item.id)
+                    : openItem(item)
+                }
+                aria-label={
+                  selection.selectedIds.length > 0
+                    ? `${selected ? "Deselect" : "Select"} ${item.name}`
+                    : `Open ${item.name}`
+                }
+                disabled={item.deleted && selection.selectedIds.length === 0}
+              />
+              <h3 className="pointer-events-none relative z-10 line-clamp-2 px-5 pt-4 text-sm leading-5 font-medium break-words">
+                {item.name}
+              </h3>
+              <div className="text-foreground pointer-events-none relative z-10 flex flex-1 items-center justify-center">
+                <DocumentsLibraryTypeIcon
+                  type={item.fileType}
+                  generated={item.source === "generated"}
+                />
+              </div>
+              <div className="text-muted-foreground pointer-events-none relative z-10 flex min-h-12 items-center px-5 pb-1 text-xs">
+                <span className="truncate tabular-nums">
+                  {item.deletedAt
+                    ? `Deleted ${formatCardDate(item.deletedAt)}`
+                    : formatCardDate(item.updatedAt)}
+                </span>
+              </div>
+              {item.uploadedFile && canEdit && editMode ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 z-20 size-11 rounded-full bg-transparent opacity-100 hover:bg-black/5 focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100 dark:hover:bg-white/10"
+                      disabled={pendingUploadedFileIds.includes(
+                        item.uploadedFile.id
+                      )}
+                      aria-label={`Manage ${item.name}`}
+                    >
+                      <IconDots className="size-4" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 rounded-xl p-1.5 shadow-xl dark:border-white/10 dark:bg-[#303030]"
                   >
-                    <IconDots className="size-4" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-48 rounded-xl p-1.5 shadow-xl dark:border-white/10 dark:bg-[#303030]"
-                >
-                  {item.deleted ? (
-                    <>
-                      <DropdownMenuItem
-                        className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
-                        onSelect={() =>
-                          void onRestoreUploadedFile(item.uploadedFile!)
-                        }
-                      >
-                        <IconRestore className="size-4" aria-hidden />
-                        Restore
-                      </DropdownMenuItem>
+                    {item.deleted ? (
+                      <>
+                        <DropdownMenuItem
+                          className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
+                          onSelect={() =>
+                            void onRestoreUploadedFile(item.uploadedFile!)
+                          }
+                        >
+                          <IconRestore className="size-4" aria-hidden />
+                          Restore
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
+                          onSelect={() => {
+                            if (
+                              window.confirm(
+                                `Permanently delete ${item.name}? This cannot be undone.`
+                              )
+                            ) {
+                              void onPermanentlyDeleteUploadedFile(
+                                item.uploadedFile!
+                              )
+                            }
+                          }}
+                        >
+                          <IconTrash className="size-4" aria-hidden />
+                          Delete permanently
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
                       <DropdownMenuItem
                         variant="destructive"
                         className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
-                        onSelect={() => {
-                          if (
-                            window.confirm(
-                              `Permanently delete ${item.name}? This cannot be undone.`
-                            )
-                          ) {
-                            void onPermanentlyDeleteUploadedFile(
-                              item.uploadedFile!
-                            )
-                          }
-                        }}
+                        onSelect={() =>
+                          void onTrashUploadedFile(item.uploadedFile!)
+                        }
                       >
                         <IconTrash className="size-4" aria-hidden />
-                        Delete permanently
+                        Move to Recently Deleted
                       </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <DropdownMenuItem
-                      variant="destructive"
-                      className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
-                      onSelect={() =>
-                        void onTrashUploadedFile(item.uploadedFile!)
-                      }
-                    >
-                      <IconTrash className="size-4" aria-hidden />
-                      Move to Recently Deleted
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "absolute right-2 bottom-2 z-20 size-11 rounded-full bg-transparent p-0 opacity-100 transition-opacity hover:bg-transparent focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100",
-                selected && "opacity-100"
-              )}
-              onClick={() =>
-                setSelectedIds((current) =>
-                  current.includes(item.id)
-                    ? current.filter((id) => id !== item.id)
-                    : [...current, item.id]
-                )
-              }
-              aria-pressed={selected}
-              aria-label={`${selected ? "Deselect" : "Select"} ${item.name}`}
-            >
-              <span
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 className={cn(
-                  "border-muted-foreground/45 flex size-7 items-center justify-center rounded-full border-2 transition-[background-color,border-color]",
-                  selected && "border-foreground bg-foreground"
+                  "absolute right-2 bottom-2 z-20 size-11 rounded-full bg-transparent p-0 opacity-100 transition-opacity hover:bg-transparent focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100",
+                  selected && "opacity-100"
                 )}
-                aria-hidden
+                onClick={() => selection.toggle(item.id)}
+                aria-pressed={selected}
+                aria-label={`${selected ? "Deselect" : "Select"} ${item.name}`}
               >
-                {selected ? (
-                  <IconCheck className="text-background size-3" />
-                ) : null}
-              </span>
-            </Button>
-          </article>
-        )
-      })}
-    </div>
+                <span
+                  className={cn(
+                    "border-muted-foreground/45 flex size-7 items-center justify-center rounded-full border-2 transition-[background-color,border-color]",
+                    selected && "border-foreground bg-foreground"
+                  )}
+                  aria-hidden
+                >
+                  {selected ? (
+                    <IconCheck className="text-background size-3" />
+                  ) : null}
+                </span>
+              </Button>
+            </article>
+          )
+        })}
+      </div>
+    </>
   )
 }

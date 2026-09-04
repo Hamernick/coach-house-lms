@@ -32,6 +32,9 @@ page title as “Documents.”
   connected, then refreshes attached Drive documents in the library.
 - Cards support keyboard opening and explicit selection without making the
   selection indicator a dead control.
+- Selecting a card reveals compact Download and Delete actions plus a live
+  selection count. While selection mode is active, clicking another card
+  toggles its selection instead of opening it.
 
 ## Visual direction
 
@@ -54,6 +57,9 @@ ring, spacing, and rounded geometry.
   existing required-document uploads backfilled from organization profiles.
 - Soft deletion is reversible. Permanent deletion requires confirmation and
   removes both private storage and metadata, reclaiming quota immediately.
+- Batch actions use existing file-specific operations. They remain visible but
+  disabled when a selection contains generated roadmap content that cannot be
+  downloaded or removed safely from the library.
 - Native creations are not silently attached; users connect them through the
   selected-file Google Drive flow.
 - No migration, provider-console change, deployment, or production mutation.

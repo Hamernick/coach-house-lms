@@ -229,5 +229,29 @@ export function useGoogleDriveLibrary({ enabled }: { enabled: boolean }) {
     }
   }, [connected, enabled, openPicker, pending])
 
-  return { connected, connectOrPick, documents, loading, pending, refresh }
+  const detachDocument = useCallback(async (documentId: string) => {
+    const response = await fetch(
+      `/api/integrations/google-drive/documents/${encodeURIComponent(documentId)}`,
+      { method: "DELETE" }
+    )
+    const result = await readDriveResponse(response)
+    if (!response.ok) {
+      toast.error(driveErrorMessage(result?.code))
+      return
+    }
+    setDocuments((current) =>
+      current.filter((document) => document.id !== documentId)
+    )
+    toast.success("Google Drive file removed")
+  }, [])
+
+  return {
+    connected,
+    connectOrPick,
+    detachDocument,
+    documents,
+    loading,
+    pending,
+    refresh,
+  }
 }

@@ -34,6 +34,8 @@ describe("build-collect-navigation feature contract", () => {
     expect(source).toContain('<form action="/" method="get"')
     expect(source).toContain('name="q"')
     expect(source).toContain('href: "/build"')
+    expect(source).not.toContain("setOpenMenu")
+    expect(source).not.toContain("onValueChange=")
   })
 
   it("keeps the build route composition-only and delegates its UI to the feature", () => {

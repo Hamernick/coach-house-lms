@@ -183,12 +183,14 @@ export function BuildCollectPublicHeader({
   activeArea,
   authAction,
   hideBrandOnDesktop = false,
+  showResourceSearch = true,
   shellActions,
   themeAction,
 }: {
   activeArea: BuildCollectActiveArea
   authAction?: ReactNode
   hideBrandOnDesktop?: boolean
+  showResourceSearch?: boolean
   shellActions?: ReactNode
   themeAction?: ReactNode
 }) {
@@ -210,35 +212,37 @@ export function BuildCollectPublicHeader({
       </div>
 
       <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2">
-        <form action="/" method="get" className="hidden w-52 xl:block">
-          <label
-            htmlFor={`public-header-search-${activeArea}`}
-            className="sr-only"
-          >
-            Search organizations and resources
-          </label>
-          <InputGroup className="gap-1">
-            <InputGroupInput
-              id={`public-header-search-${activeArea}`}
-              name="q"
-              type="search"
-              autoComplete="off"
-              placeholder="Start searching"
-              className="h-10 rounded-full pl-4"
-            />
-            <InputGroupAddon>
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="size-10 rounded-full"
-                aria-label="Search"
-              >
-                <SearchIcon data-icon="inline-start" aria-hidden />
-              </Button>
-            </InputGroupAddon>
-          </InputGroup>
-        </form>
+        {showResourceSearch ? (
+          <form action="/" method="get" className="hidden w-52 xl:block">
+            <label
+              htmlFor={`public-header-search-${activeArea}`}
+              className="sr-only"
+            >
+              Search organizations and resources
+            </label>
+            <InputGroup className="gap-1">
+              <InputGroupInput
+                id={`public-header-search-${activeArea}`}
+                name="q"
+                type="search"
+                autoComplete="off"
+                placeholder="Start searching"
+                className="h-10 rounded-full pl-4"
+              />
+              <InputGroupAddon>
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="ghost"
+                  className="size-10 rounded-full"
+                  aria-label="Search"
+                >
+                  <SearchIcon data-icon="inline-start" aria-hidden />
+                </Button>
+              </InputGroupAddon>
+            </InputGroup>
+          </form>
+        ) : null}
 
         {authAction}
         <Button asChild className="rounded-full">

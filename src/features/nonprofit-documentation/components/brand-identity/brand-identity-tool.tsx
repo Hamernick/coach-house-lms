@@ -17,13 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { DocumentationMobileContents } from "../documentation-contents"
 
 import { useBrandIdentityTool } from "../../hooks/use-brand-identity-tool"
 import {
@@ -45,9 +39,12 @@ export function BrandIdentityTool() {
   const tool = useBrandIdentityTool()
 
   function moveToSection(id: string) {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+    document.getElementById(id)?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "start",
+    })
     window.history.replaceState(null, "", `#${id}`)
   }
 
@@ -69,7 +66,7 @@ export function BrandIdentityTool() {
       />
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-16 print:max-w-none print:p-0"
+        className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-8 sm:py-10 lg:px-12 print:max-w-none print:p-0"
       >
         <header className="mx-auto max-w-[820px] border-b pb-10 print:pb-6">
           <Link
@@ -79,12 +76,12 @@ export function BrandIdentityTool() {
             <ArrowLeftIcon className="size-3.5" aria-hidden />
             Documentation
           </Link>
-          <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
                 Tools · Public tool
               </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-balance sm:text-5xl">
+              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
                 Brand Identity Builder
               </h1>
               <p className="text-muted-foreground mt-5 max-w-2xl text-base leading-7 sm:text-lg">
@@ -95,7 +92,7 @@ export function BrandIdentityTool() {
             <div className="flex shrink-0 gap-2 print:hidden">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button type="button" variant="outline" size="sm">
+                  <Button type="button" variant="outline" className="min-h-11">
                     <RotateCcwIcon aria-hidden />
                     Reset
                   </Button>
@@ -121,7 +118,7 @@ export function BrandIdentityTool() {
               </AlertDialog>
               <Button
                 type="button"
-                size="sm"
+                className="min-h-11"
                 onClick={() => moveToSection("exports")}
               >
                 <DownloadIcon aria-hidden />
@@ -138,29 +135,18 @@ export function BrandIdentityTool() {
           </div>
         </header>
 
-        <div className="bg-background/95 sticky top-0 z-20 -mx-5 mt-6 border-y px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:hidden print:hidden">
-          <Select onValueChange={moveToSection}>
-            <SelectTrigger
-              className="w-full"
-              aria-label="Jump to brand guide section"
-            >
-              <SelectValue placeholder="Jump to a section" />
-            </SelectTrigger>
-            <SelectContent>
-              {BRAND_IDENTITY_SECTIONS.map((section) => (
-                <SelectItem key={section.id} value={section.id}>
-                  {section.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DocumentationMobileContents
+          items={BRAND_IDENTITY_SECTIONS.map(
+            (section) => [section.id, section.label] as const
+          )}
+          className="mx-auto max-w-[820px] lg:hidden"
+        />
 
         <div className="mx-auto grid max-w-[960px] gap-14 lg:grid-cols-[140px_minmax(0,760px)] lg:gap-16">
           <aside className="hidden lg:block print:hidden">
             <nav
               aria-label="Brand guide sections"
-              className="sticky top-8 pt-20"
+              className="sticky top-24 pt-10"
             >
               <ol className="space-y-4">
                 {BRAND_IDENTITY_SECTIONS.map((section) => (

@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,7 @@ export function DocumentationRail({
   contextual?: boolean
 }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
 
   return (
     <nav
@@ -55,10 +57,11 @@ export function DocumentationRail({
                 asChild
                 isActive={pathname === DOCUMENTATION_PATH}
                 tooltip="Documentation home"
-                className="justify-start gap-2"
+                className="min-h-11 justify-start gap-2 md:min-h-8"
               >
                 <Link
                   href={DOCUMENTATION_PATH}
+                  onNavigate={() => setOpenMobile(false)}
                   className="flex items-center gap-2"
                   aria-current={
                     pathname === DOCUMENTATION_PATH ? "page" : undefined
@@ -94,10 +97,11 @@ export function DocumentationRail({
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="justify-start"
+                        className="min-h-11 justify-start md:min-h-8"
                       >
                         <Link
                           href={item.href}
+                          onNavigate={() => setOpenMobile(false)}
                           className="flex min-w-0 items-center gap-2"
                           title={item.description}
                           aria-current={active ? "page" : undefined}

@@ -25,11 +25,13 @@ export function HomeCanvasFindShell({
   showAuthActions = true,
   sidebarFallback = null,
   sidebarLabel = "Find, Guides, and Saved",
+  showResourceSearch = true,
 }: {
   children: ReactNode
   showAuthActions?: boolean
   sidebarFallback?: ReactNode
   sidebarLabel?: string
+  showResourceSearch?: boolean
 }) {
   return (
     <RightRailProvider>
@@ -38,6 +40,7 @@ export function HomeCanvasFindShell({
           showAuthActions={showAuthActions}
           sidebarFallback={sidebarFallback}
           sidebarLabel={sidebarLabel}
+          showResourceSearch={showResourceSearch}
         >
           {children}
         </HomeCanvasFindShellContent>
@@ -51,11 +54,13 @@ function HomeCanvasFindShellContent({
   showAuthActions,
   sidebarFallback,
   sidebarLabel,
+  showResourceSearch,
 }: {
   children: ReactNode
   showAuthActions: boolean
   sidebarFallback: ReactNode
   sidebarLabel: string
+  showResourceSearch: boolean
 }) {
   const router = useRouter()
   const hasRightRail = useRightRailPresence()
@@ -101,6 +106,7 @@ function HomeCanvasFindShellContent({
               showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
               sidebarLabel={sidebarLabel}
+              showResourceSearch={showResourceSearch}
             />
 
             <div

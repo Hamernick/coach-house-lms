@@ -7,6 +7,10 @@ import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import type { FoundationGuide } from "../types"
 import { DOCUMENTATION_PATH } from "../lib"
 import {
+  DocumentationDesktopContents,
+  DocumentationMobileContents,
+} from "./documentation-contents"
+import {
   DocumentationJsonLd,
   DocumentationSurface,
 } from "./documentation-surface"
@@ -65,33 +69,18 @@ export function FoundationGuidePage({ guide }: { guide: FoundationGuide }) {
       />
       <div
         id="documentation-content"
-        className="mx-auto grid w-full max-w-[1180px] gap-14 px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:grid-cols-[minmax(0,760px)_220px]"
+        className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-12 xl:grid-cols-[minmax(0,760px)_200px]"
       >
         <article className="min-w-0">
           <GuideHeader guide={guide} />
+          <DocumentationMobileContents items={contents} />
           <GuideSections guide={guide} />
           <GuideStages guide={guide} />
           <GuideChecklistAndSources guide={guide} />
           <GuideFooter guide={guide} />
         </article>
 
-        <aside className="hidden xl:block">
-          <nav aria-label="On this page" className="sticky top-8 border-l pl-5">
-            <p className="text-xs font-semibold">On this page</p>
-            <ol className="text-muted-foreground mt-4 space-y-3 text-xs leading-5">
-              {contents.map(([id, title]) => (
-                <li key={id}>
-                  <a
-                    href={`#${id}`}
-                    className="hover:text-foreground focus-visible:text-foreground underline-offset-4 hover:underline"
-                  >
-                    {title}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </aside>
+        <DocumentationDesktopContents items={contents} />
       </div>
     </DocumentationSurface>
   )
@@ -117,17 +106,17 @@ function GuideHeader({ guide }: { guide: FoundationGuide }) {
           {guide.slug === "quickstart" ? "Quickstart" : "Key concepts"}
         </span>
       </nav>
-      <header className="mt-8 border-b pb-10">
+      <header className="mt-6 border-b pb-8">
         <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
           {guide.eyebrow}
         </p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
           {guide.title}
         </h1>
-        <p className="mt-6 text-lg leading-8 text-pretty sm:text-xl sm:leading-9">
+        <p className="mt-5 text-base leading-7 text-pretty sm:text-lg sm:leading-8">
           {guide.answer}
         </p>
-        <div className="text-muted-foreground mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+        <div className="text-muted-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs">
           <span>{guide.readingTime}</span>
           <span>Reviewed {guide.reviewedDate}</span>
           <span>United States</span>

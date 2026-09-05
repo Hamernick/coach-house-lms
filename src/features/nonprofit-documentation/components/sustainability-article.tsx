@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { SUSTAINABILITY_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { DocumentationSandboxFrame } from "./documentation-sandbox-frame"
@@ -10,8 +11,7 @@ export function SustainabilityArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive sustainability scenario planner"
-          title="Test mission commitments against money, people, and continuity"
-          description="Build a transparent planning scenario, keep restricted resources separate, expose capacity and continuity risks, then export the work or copy a guarded review prompt."
+          {...DOCUMENTATION_TOOL_METADATA["best-practices/sustainability"]}
         >
           <SustainabilityPlanBuilder />
         </DocumentationSandboxFrame>

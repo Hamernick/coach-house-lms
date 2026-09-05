@@ -45,7 +45,7 @@ export function FinancePlanBuilder() {
   }
 
   return (
-    <div>
+    <fieldset disabled={!storageReady} className="min-w-0">
       <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
         <div>
           <p className="text-sm font-semibold">
@@ -97,6 +97,6 @@ export function FinancePlanBuilder() {
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

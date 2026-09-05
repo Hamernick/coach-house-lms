@@ -146,14 +146,14 @@ export function MarketplacePage({
       />
       <main
         id="documentation-content"
-        className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16"
+        className="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8 sm:py-10 lg:px-12"
       >
-        <header className="grid gap-10 border-b pb-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.72fr)] lg:items-end">
+        <header className="grid gap-8 border-b pb-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] xl:items-end">
           <div>
             <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
               Resources · United States
             </p>
-            <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.045em] text-balance sm:text-5xl lg:text-6xl">
+            <h1 className="mt-3 max-w-4xl text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
               Find nonprofit resources with the evidence attached.
             </h1>
             <p className="text-muted-foreground mt-5 max-w-3xl text-base leading-7 text-pretty sm:text-lg sm:leading-8">
@@ -174,14 +174,14 @@ export function MarketplacePage({
               </Button>
             </div>
           </div>
-          <div className="bg-zinc-950 p-6 text-zinc-100 sm:p-8 dark:bg-zinc-900">
-            <p className="text-xs font-semibold tracking-[0.14em] text-zinc-400 uppercase">
+          <div className="bg-muted/30 rounded-xl border p-5 sm:p-6">
+            <p className="text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase">
               Before you choose
             </p>
             <p className="mt-4 text-xl leading-7 font-semibold tracking-[-0.02em]">
               A discount is not a requirements document.
             </p>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
+            <p className="text-muted-foreground mt-3 text-sm leading-6">
               Name the decision, owner, affected people, operating cost, data,
               accessibility needs, exit path, and approval authority before
               comparing providers.

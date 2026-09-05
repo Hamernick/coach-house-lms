@@ -132,6 +132,7 @@ type HomeCanvasPreviewHeaderProps = {
   showShellSidebar: boolean
   showRightRailToggle: boolean
   sidebarLabel?: string
+  showResourceSearch?: boolean
 }
 
 export function HomeCanvasPreviewHeader({
@@ -144,6 +145,7 @@ export function HomeCanvasPreviewHeader({
   showShellSidebar,
   showRightRailToggle,
   sidebarLabel = "Find, Guides, and Saved",
+  showResourceSearch = true,
 }: HomeCanvasPreviewHeaderProps) {
   const rightRailLabel =
     activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
@@ -152,6 +154,7 @@ export function HomeCanvasPreviewHeader({
     <BuildCollectPublicHeader
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
+      showResourceSearch={showResourceSearch}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton

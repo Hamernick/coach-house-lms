@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { SOCIAL_MEDIA_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { DocumentationSandboxFrame } from "./documentation-sandbox-frame"
@@ -10,8 +11,7 @@ export function SocialMediaArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive content tool"
-          title="Build a source-backed social media brief"
-          description="Plan the audience, source, action, channel rhythm, accessible content, safeguards, response ownership, tracked link, and human review. The draft stays on this device and is never published."
+          {...DOCUMENTATION_TOOL_METADATA["tools/social-media"]}
         >
           <SocialMediaPlanBuilder />
         </DocumentationSandboxFrame>

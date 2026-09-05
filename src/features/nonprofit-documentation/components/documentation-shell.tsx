@@ -59,6 +59,7 @@ export function DocumentationShell({
       <HomeCanvasFindShell
         sidebarFallback={<DocumentationRail />}
         sidebarLabel="documentation navigation"
+        showResourceSearch={false}
       >
         {children}
       </HomeCanvasFindShell>

@@ -7,6 +7,7 @@ import LibraryIcon from "lucide-react/dist/esm/icons/library"
 import MapIcon from "lucide-react/dist/esm/icons/map"
 import StoreIcon from "lucide-react/dist/esm/icons/store"
 import WrenchIcon from "lucide-react/dist/esm/icons/wrench"
+import { Button } from "@/components/ui/button"
 
 import { DOCUMENTATION_NAVIGATION, DOCUMENTATION_PATH } from "../lib"
 import {
@@ -68,13 +69,13 @@ export function DocumentationHome() {
       />
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16"
+        className="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8 sm:py-10 lg:px-12"
       >
         <header className="max-w-3xl">
           <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
             Coach House documentation
           </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl lg:text-6xl">
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
             Build a nonprofit that can last.
           </h1>
           <p className="text-muted-foreground mt-5 max-w-2xl text-base leading-7 text-pretty sm:text-lg sm:leading-8">
@@ -87,48 +88,53 @@ export function DocumentationHome() {
         <section
           id="quickstart"
           aria-labelledby="quickstart-title"
-          className="mt-12 overflow-hidden rounded-[24px] border border-zinc-800 bg-zinc-950 text-zinc-100 shadow-[0_24px_70px_-42px_rgba(0,0,0,0.85)] dark:bg-zinc-900"
+          className="bg-muted/30 mt-8 overflow-hidden rounded-xl border"
         >
           <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="flex flex-col justify-between border-b border-zinc-800 p-6 sm:p-8 lg:border-r lg:border-b-0 lg:p-10">
+            <div className="flex flex-col justify-between border-b p-5 sm:p-6 lg:border-r lg:border-b-0 lg:p-8">
               <div>
-                <p className="text-xs font-semibold tracking-[0.15em] text-amber-300 uppercase">
+                <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
                   Quickstart
                 </p>
                 <h2
                   id="quickstart-title"
-                  className="mt-4 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl"
+                  className="mt-3 text-2xl font-semibold tracking-[-0.025em] text-balance sm:text-3xl"
                 >
                   Start with the stage you are actually in.
                 </h2>
-                <p className="mt-4 max-w-lg text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
+                <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-6">
                   Nonprofit work is not one checklist. The right next action
                   changes as evidence, obligations, people, and resources grow.
                 </p>
               </div>
-              <Link
-                href={`${DOCUMENTATION_PATH}/quickstart`}
-                className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-              >
-                Open the quickstart
-                <ArrowRightIcon className="size-4" aria-hidden />
-              </Link>
+              <Button asChild className="mt-6 min-h-11 w-fit">
+                <Link href={`${DOCUMENTATION_PATH}/quickstart`}>
+                  Open the quickstart
+                  <ArrowRightIcon className="size-4" aria-hidden />
+                </Link>
+              </Button>
             </div>
-            <ol className="divide-y divide-zinc-800">
+            <ol className="divide-y">
               {stages.map((stage, index) => (
-                <li
-                  key={stage.label}
-                  className="grid grid-cols-[2rem_1fr] gap-3 px-6 py-5 sm:px-8"
-                >
-                  <span className="font-mono text-xs text-zinc-500">
-                    0{index + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">{stage.label}</h3>
-                    <p className="mt-1 text-sm leading-6 text-zinc-400">
-                      {stage.copy}
-                    </p>
-                  </div>
+                <li key={stage.label}>
+                  <Link
+                    href={`${DOCUMENTATION_PATH}/quickstart#${stage.label.toLowerCase()}-title`}
+                    className="hover:bg-muted/60 focus-visible:ring-ring grid grid-cols-[2rem_1fr_auto] items-start gap-3 px-5 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset sm:px-6"
+                  >
+                    <span className="text-muted-foreground pt-1 font-mono text-xs">
+                      0{index + 1}
+                    </span>
+                    <div>
+                      <h3 className="font-semibold">{stage.label}</h3>
+                      <p className="text-muted-foreground mt-1 text-sm leading-6">
+                        {stage.copy}
+                      </p>
+                    </div>
+                    <ArrowRightIcon
+                      className="text-muted-foreground mt-1 size-4"
+                      aria-hidden
+                    />
+                  </Link>
                 </li>
               ))}
             </ol>

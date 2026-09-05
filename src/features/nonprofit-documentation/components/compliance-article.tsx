@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { COMPLIANCE_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { ComplianceRhythmBuilder } from "./compliance/compliance-rhythm-builder"
@@ -10,8 +11,7 @@ export function ComplianceArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive planning tool"
-          title="Build your annual compliance rhythm"
-          description="Add a few operating facts to create a device-local review plan. The result identifies common federal filing paths and the questions that still require state or professional confirmation."
+          {...DOCUMENTATION_TOOL_METADATA["best-practices/compliance"]}
         >
           <ComplianceRhythmBuilder />
         </DocumentationSandboxFrame>

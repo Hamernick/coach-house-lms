@@ -17,6 +17,14 @@
 - Keep public tools available without authentication or paid entitlements.
   Device-local drafts must identify their storage boundary and avoid claiming
   account sync.
+- Keep planner controls disabled until saved drafts finish loading. This also
+  protects edits made immediately after hydration or browser back navigation.
+- Library search lives at `/documentation/search?q=…`. Its explicit public
+  corpus in `lib/search-documents.ts` includes authored guides, tool guidance,
+  and Marketplace entries. Search results render on the server; never import
+  this corpus into a client component or add private/account data to it.
+- Preserve section IDs: search results and contents links use them as deep
+  links. Keep article tool metadata shared between the renderer and index.
 - Brand Identity text and settings persist in local storage; uploaded originals
   persist in IndexedDB and never leave the browser. Keep ZIP generation
   client-side and preserve the portable JSON, CSS-token, usage-note, and asset
@@ -31,6 +39,9 @@
 - Import other features only through their public entrypoint (`@/features/<name>`).
 - Keep `lib/**` pure: no React, no UI imports, no route imports.
 - Keep shared UI in `src/components/ui/**`; avoid one-off primitives here.
-- Keep acceptance coverage in `tests/acceptance/nonprofit-documentation.test.ts`.
+- Keep content/tool acceptance coverage in
+  `tests/acceptance/nonprofit-documentation.test.ts` and search coverage in
+  `tests/acceptance/nonprofit-documentation-search.test.ts`. Browser journeys
+  and responsive baselines live in `tests/visual/documentation.visual.spec.ts`.
 - Use primary sources and visible review dates for legal, tax, compliance, and
   financial claims.

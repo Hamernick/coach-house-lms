@@ -2,9 +2,14 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
+import { Button } from "@/components/ui/button"
 
 import { DOCUMENTATION_PATH } from "../lib"
 import type { BestPracticeArticle } from "../types"
+import {
+  DocumentationDesktopContents,
+  DocumentationMobileContents,
+} from "./documentation-contents"
 import {
   BestPracticeChecklistAndMistakes,
   BestPracticeCoreSections,
@@ -139,7 +144,7 @@ export function BestPracticeArticlePage({
       />
       <div
         id="documentation-content"
-        className="mx-auto grid w-full max-w-[1180px] gap-14 px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:grid-cols-[minmax(0,760px)_220px]"
+        className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-12 xl:grid-cols-[minmax(0,760px)_200px]"
       >
         <article className="min-w-0">
           <nav
@@ -160,22 +165,30 @@ export function BestPracticeArticlePage({
             </span>
           </nav>
 
-          <header className="mt-8 border-b pb-10">
+          <header className="mt-6 border-b pb-8">
             <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
               {article.eyebrow}
             </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
               {article.title}
             </h1>
-            <p className="mt-6 text-lg leading-8 text-pretty sm:text-xl sm:leading-9">
+            <p className="mt-5 text-base leading-7 text-pretty sm:text-lg sm:leading-8">
               {article.answer}
             </p>
-            <div className="text-muted-foreground mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+            <div className="text-muted-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs">
               <span>{article.readingTime}</span>
               <span>Reviewed {article.reviewedDate}</span>
               <span>United States</span>
             </div>
+            {interactive ? (
+              <Button asChild variant="outline" className="mt-5 min-h-11">
+                <a href="#sandbox">
+                  Try the tool <ArrowRightIcon aria-hidden />
+                </a>
+              </Button>
+            ) : null}
           </header>
+          <DocumentationMobileContents items={contents} />
 
           <BestPracticeCoreSections article={article} />
           <BestPracticeStagesSection article={article} />
@@ -186,27 +199,7 @@ export function BestPracticeArticlePage({
           <ArticleFooter article={article} />
         </article>
 
-        <aside className="hidden xl:block" aria-label="On this page">
-          <div className="sticky top-8 border-l pl-5">
-            <p className="text-xs font-semibold tracking-[0.12em] uppercase">
-              On this page
-            </p>
-            <nav className="mt-4" aria-label="Article contents">
-              <ol className="space-y-3">
-                {contents.map(([id, label]) => (
-                  <li key={id}>
-                    <a
-                      href={`#${id}`}
-                      className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex min-h-7 items-center text-xs leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                      {label}
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </nav>
-          </div>
-        </aside>
+        <DocumentationDesktopContents items={contents} />
       </div>
     </DocumentationSurface>
   )

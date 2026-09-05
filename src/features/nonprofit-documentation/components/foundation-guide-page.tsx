@@ -208,7 +208,7 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
                     </li>
                   ))}
                 </ul>
-                <p className="bg-muted/45 mt-3 border-l-2 p-4 text-sm leading-5">
+                <p className="bg-muted/45 mt-3 rounded-xl border p-4 text-sm leading-5">
                   <strong>Ready when:</strong> {stage.checkpoint}
                 </p>
               </div>
@@ -234,7 +234,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
         >
           Readiness checklist
         </h2>
-        <ul className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2">
+        <ul className="bg-border mt-4 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
           {guide.checklist.map((item) => (
             <li
               key={item}
@@ -312,7 +312,7 @@ function GuideFooter({ guide }: { guide: FoundationGuide }) {
     <footer className="grid gap-4 border-t pt-5 sm:grid-cols-2">
       <Link
         href={DOCUMENTATION_PATH}
-        className="hover:bg-muted/45 flex min-h-16 items-center gap-3 border p-4 transition-colors"
+        className="hover:bg-muted/45 flex min-h-16 items-center gap-3 rounded-xl border p-4 transition-colors"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />
         <span>
@@ -322,7 +322,7 @@ function GuideFooter({ guide }: { guide: FoundationGuide }) {
       </Link>
       <Link
         href={next.href}
-        className="hover:bg-muted/45 flex min-h-16 items-center justify-between gap-3 border p-4 transition-colors"
+        className="hover:bg-muted/45 flex min-h-16 items-center justify-between gap-3 rounded-xl border p-4 transition-colors"
       >
         <span>
           <span className="text-muted-foreground block text-xs">

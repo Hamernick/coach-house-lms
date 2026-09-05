@@ -253,7 +253,7 @@ export function ComplianceRhythmBuilder() {
             label: "Calendar & export",
             content: (
               <div className="bg-muted/20 border-t p-4 sm:p-4">
-                <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2">
+                <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
                   <div className="bg-background p-4">
                     <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       Common federal path
@@ -312,7 +312,7 @@ export function ComplianceRhythmBuilder() {
                           <span className="text-muted-foreground text-xs">
                             {task.category}
                           </span>
-                          <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                          <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                             {task.status}
                           </span>
                         </div>

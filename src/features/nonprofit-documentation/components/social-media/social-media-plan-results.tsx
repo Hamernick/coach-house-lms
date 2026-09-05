@@ -101,14 +101,14 @@ export function SocialMediaPlanResults({
               Generic post preview
             </h3>
           </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
+          <span className="bg-background rounded-md border px-3 py-1 text-xs font-medium">
             Not connected · Not published
           </span>
         </div>
-        <div className="bg-background mt-4 overflow-hidden border shadow-sm">
+        <div className="bg-background mt-4 overflow-hidden rounded-xl border shadow-sm">
           <div className="flex items-center gap-3 border-b p-4">
             <div
-              className="bg-foreground text-background grid size-10 shrink-0 place-items-center font-semibold"
+              className="bg-foreground text-background grid size-10 shrink-0 place-items-center rounded-lg font-semibold"
               aria-hidden
             >
               {organization.slice(0, 1).toUpperCase()}
@@ -204,7 +204,7 @@ export function SocialMediaPlanResults({
           ) : null}
         </div>
         <div
-          className={`mt-4 border p-4 ${tracked.ok ? "bg-background" : "border-amber-500/60 bg-amber-500/8"}`}
+          className={`mt-4 rounded-xl border p-4 ${tracked.ok ? "bg-background" : "border-amber-500/60 bg-amber-500/8"}`}
           aria-live="polite"
         >
           {tracked.ok ? (
@@ -292,7 +292,7 @@ export function SocialMediaPlanResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

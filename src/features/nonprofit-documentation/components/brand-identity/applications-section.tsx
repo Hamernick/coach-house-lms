@@ -91,7 +91,7 @@ export function ApplicationsSection({
         title="Social composition"
         description="Use this as a starting point, then adapt the crop and copy for each channel rather than stretching one file everywhere."
       >
-        <div className="overflow-hidden rounded-md border">
+        <div className="overflow-hidden rounded-xl border">
           <div className="grid min-h-80 md:grid-cols-2">
             <div
               className="flex flex-col justify-between p-7 sm:p-10"

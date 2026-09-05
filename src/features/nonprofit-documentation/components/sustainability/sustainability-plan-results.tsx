@@ -33,7 +33,7 @@ function ContinuityNode({
   index: number
 }) {
   return (
-    <div className="bg-background min-w-0 flex-1 border p-4 sm:min-w-44">
+    <div className="bg-background min-w-0 flex-1 rounded-xl border p-4 sm:min-w-44">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold tracking-wide uppercase">{label}</p>
         <span className="text-muted-foreground font-mono text-[11px] tabular-nums">
@@ -106,19 +106,19 @@ export function SustainabilityPlanResults({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <p
-          className="bg-background border px-4 py-3 text-sm font-medium"
+          className="bg-background rounded-xl border px-4 py-3 text-sm font-medium"
           aria-live="polite"
         >
           {capacityLabel}. Available minus committed supported hours.
         </p>
-        <p className="bg-background border px-4 py-3 text-sm font-medium">
+        <p className="bg-background rounded-xl border px-4 py-3 text-sm font-medium">
           {dollars(draft.restrictedFunds)} in restricted funds is displayed
           separately and excluded from flexible-resource math.
         </p>
       </div>
 
       <p
-        className="bg-background mt-3 border px-4 py-3 text-sm font-medium"
+        className="bg-background mt-3 rounded-xl border px-4 py-3 text-sm font-medium"
         aria-live="polite"
       >
         {summary.hasReviewableScenario
@@ -210,7 +210,7 @@ export function SustainabilityPlanResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

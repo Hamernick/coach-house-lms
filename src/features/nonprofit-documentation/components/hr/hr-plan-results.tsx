@@ -60,7 +60,7 @@ function RoleBrief({ draft }: { draft: HrPlanDraft }) {
     ],
   ]
   return (
-    <div className="overflow-hidden border">
+    <div className="overflow-hidden rounded-xl border">
       <div className="bg-foreground text-background p-4 sm:p-4">
         <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
           {hrRelationshipLabel(draft.relationship)} · {draft.reviewDays}-day
@@ -134,9 +134,12 @@ export function HrPlanResults({
         </p>
         <div className="mt-4 grid gap-3">
           {actions.map((item, index) => (
-            <article key={item.id} className="bg-background border p-4 sm:p-5">
+            <article
+              key={item.id}
+              className="bg-background rounded-xl border p-4 sm:p-5"
+            >
               <div className="flex items-start gap-3">
-                <span className="bg-muted flex size-8 shrink-0 items-center justify-center font-mono text-xs tabular-nums">
+                <span className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-md font-mono text-xs tabular-nums">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">

@@ -35,6 +35,9 @@ The September 5 density refinement reduces page headings to 24px, body text to
 14px, desktop controls to 32px, and desktop tabs to 28px. Tighter panel spacing,
 shorter task illustrations, and smaller horizontal coach headers fit more content
 on screen. Mobile retains 44px touch targets and 16px input text.
+Standalone field groups, review panels, tables, guide links, callouts, and Brand
+Identity containers use consistent rounded corners, with child backgrounds clipped
+to the outer shape. The compact spacing and control sizes remain intact.
 
 Implementation commits: `6b86fb3a` (Marketplace and people) and `7aa7d19c`
 (documentation design and planner workflows), plus `9149b9f6` (optional sitemap
@@ -55,8 +58,8 @@ No issue was supplied.
 
 ## Validation and visual artifacts
 
-After the September 5 density refinement, the complete 21-stage quality gate
-passed in 484.75 seconds: 2,344 acceptance
+After the September 5 density and corner refinements, the complete 21-stage
+quality gate passed in 535.23 seconds: 2,344 acceptance
 tests passed with one intentional skip, seven deterministic RLS suites passed,
 the production build passed, all 80 browser tests passed, and performance budgets
 passed. Graphify is current. Reviewed baselines live in
@@ -73,6 +76,9 @@ account-shell fixtures, resource saving, and member-profile links.
 ## Deployment notes
 
 - No push, PR, deployment, profile publication, or provider changes were performed.
+- Local port 3010 has React Grab enabled again for component review. Screenshot
+  validation used `NEXT_PUBLIC_ENABLE_REACT_GRAB=0`; restore that flag when
+  restarting this local server for future visual-baseline checks.
 - Apply `supabase/migrations/20260904220000_reserve_documentation_public_handle.sql`
   before deploying this branch. It reserves the route name and fails explicitly
   if an existing public handle already owns `documentation`; resolve such an

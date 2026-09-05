@@ -59,7 +59,7 @@ export function MarketingPlanResults({
   return (
     <div className="bg-muted/20 border-t p-4 sm:p-4">
       <p
-        className="bg-background mt-4 border px-4 py-3 text-sm font-medium"
+        className="bg-background mt-4 rounded-xl border px-4 py-3 text-sm font-medium"
         aria-live="polite"
       >
         {rhythmLabel}
@@ -161,7 +161,7 @@ export function MarketingPlanResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

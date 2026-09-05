@@ -214,7 +214,7 @@ export function MarketingPlanFields({
             </p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
               {MARKETING_CHANNELS.map((channel) => (
-                <div key={channel.id} className="border p-4">
+                <div key={channel.id} className="rounded-xl border p-4">
                   <Label htmlFor={`marketing-channel-${channel.id}`}>
                     {channel.label}
                   </Label>

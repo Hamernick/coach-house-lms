@@ -290,7 +290,7 @@ export function FrameworkWorkspaceFields({
               <label
                 key={question.id}
                 htmlFor={id}
-                className="hover:bg-muted/35 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/45 flex min-h-16 cursor-pointer items-start gap-3 border p-4 transition-colors"
+                className="hover:bg-muted/35 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/45 flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors"
               >
                 <RadioGroupItem id={id} value={question.id} className="mt-1" />
                 <span className="min-w-0">
@@ -308,7 +308,10 @@ export function FrameworkWorkspaceFields({
             )
           })}
         </RadioGroup>
-        <div className="bg-muted/35 mt-4 border p-4" aria-live="polite">
+        <div
+          className="bg-muted/35 mt-4 rounded-xl border p-4"
+          aria-live="polite"
+        >
           <p className="text-xs font-semibold tracking-wide uppercase">
             Recommended starting framework
           </p>

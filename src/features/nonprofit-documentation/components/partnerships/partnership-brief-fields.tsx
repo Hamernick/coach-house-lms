@@ -187,7 +187,7 @@ export function PartnershipBriefFields({
             <Label
               key={model.id}
               htmlFor={`partnership-model-${model.id}`}
-              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 border p-4"
+              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 rounded-xl border p-4"
             >
               <RadioGroupItem
                 id={`partnership-model-${model.id}`}

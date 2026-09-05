@@ -51,7 +51,10 @@ function RelationshipPathway({
             <div className="mt-4 grid gap-2">
               {items.length > 0 ? (
                 items.map((relationship) => (
-                  <div key={relationship.id} className="bg-muted/35 border p-3">
+                  <div
+                    key={relationship.id}
+                    className="bg-muted/35 rounded-xl border p-3"
+                  >
                     <p className="text-xs font-semibold break-words">
                       {relationship.label}
                     </p>
@@ -61,7 +64,7 @@ function RelationshipPathway({
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground border border-dashed p-3 text-xs leading-5">
+                <p className="text-muted-foreground rounded-xl border border-dashed p-3 text-xs leading-5">
                   No labeled relationship in this mode.
                 </p>
               )}
@@ -191,7 +194,7 @@ export function NetworkingPlanResults({
         <h3 id="network-purpose-title" className="mt-2 font-semibold">
           Relationship system purpose
         </h3>
-        <div className="bg-foreground text-background mt-4 p-4 sm:p-4">
+        <div className="bg-foreground text-background mt-4 rounded-xl p-4 sm:p-4">
           <p className="text-base leading-8 font-semibold">
             {draft.networkingPurpose ||
               "Define the mission purpose and decision this relationship system should improve."}
@@ -219,7 +222,7 @@ export function NetworkingPlanResults({
               either direction or remain appropriately bounded.
             </p>
           </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
+          <span className="bg-background rounded-md border px-3 py-1 text-xs font-medium">
             Device-local · Contacts no one
           </span>
         </div>
@@ -244,7 +247,10 @@ export function NetworkingPlanResults({
                 relationship.category === category.id
             ).length
             return (
-              <div key={category.id} className="bg-background border p-4">
+              <div
+                key={category.id}
+                className="bg-background rounded-xl border p-4"
+              >
                 <p className="text-sm font-semibold">{category.label}</p>
                 <p className="text-muted-foreground mt-2 text-xs leading-5">
                   {category.description}
@@ -294,7 +300,7 @@ export function NetworkingPlanResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

@@ -137,7 +137,7 @@ export function FundraisingPlanResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

@@ -103,7 +103,7 @@ export function MarksSection({
             title="Logo scale"
             description="Use the smallest size only when the artwork stays readable. Switch to the compact mark below that threshold."
           >
-            <div className="divide-y overflow-hidden rounded-md border">
+            <div className="divide-y overflow-hidden rounded-xl border">
               {[100, 72, 52, 36, 24].map((size) => (
                 <div
                   key={size}
@@ -149,7 +149,7 @@ function LogoPanel({
   return (
     <figure>
       <div
-        className="relative aspect-square overflow-hidden rounded-md border"
+        className="relative aspect-square overflow-hidden rounded-xl border"
         style={{ backgroundColor: background, color: foreground }}
       >
         <Image

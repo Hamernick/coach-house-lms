@@ -163,7 +163,7 @@ export function MeasurementPlanFields({
             <Label
               key={decision.id}
               htmlFor={`measurement-decision-${decision.id}`}
-              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 border p-4"
+              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 rounded-xl border p-4"
             >
               <RadioGroupItem
                 id={`measurement-decision-${decision.id}`}

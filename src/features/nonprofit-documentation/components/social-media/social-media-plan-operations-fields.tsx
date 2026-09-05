@@ -36,7 +36,7 @@ export function SocialMediaPlanOperationsFields({
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {SOCIAL_MEDIA_CHANNELS.map((channel) => (
-            <div key={channel.id} className="border p-4">
+            <div key={channel.id} className="rounded-xl border p-4">
               <Label htmlFor={`social-channel-${channel.id}`}>
                 {channel.label}
               </Label>

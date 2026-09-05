@@ -68,7 +68,7 @@ function OperatingStep({
   detail: string
 }) {
   return (
-    <div className="bg-background min-w-0 flex-1 border p-4 sm:min-w-40">
+    <div className="bg-background min-w-0 flex-1 rounded-xl border p-4 sm:min-w-40">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold tracking-wide uppercase">{label}</p>
         <span className="text-muted-foreground font-mono text-[11px] tabular-nums">
@@ -115,7 +115,7 @@ export function PartnershipBriefResults({
       </div>
 
       <p
-        className="bg-background mt-3 border px-4 py-3 text-sm font-medium"
+        className="bg-background mt-3 rounded-xl border px-4 py-3 text-sm font-medium"
         aria-live="polite"
       >
         {summary.hasReviewableBrief
@@ -141,7 +141,7 @@ export function PartnershipBriefResults({
             <DownloadIcon className="size-4" aria-hidden /> Download brief CSV
           </Button>
         </div>
-        <div className="bg-border mt-3 grid gap-px border lg:grid-cols-[1fr_1.2fr_1fr]">
+        <div className="bg-border mt-3 grid gap-px overflow-hidden rounded-xl border lg:grid-cols-[1fr_1.2fr_1fr]">
           <AgreementColumn
             eyebrow="Your side"
             title={draft.organizationName || "Your organization"}
@@ -254,7 +254,7 @@ export function PartnershipBriefResults({
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
                 <p className="mt-3 text-sm leading-5 font-semibold">

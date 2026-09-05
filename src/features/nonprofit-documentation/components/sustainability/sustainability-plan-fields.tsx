@@ -143,7 +143,7 @@ export function SustainabilityPlanFields({
             <Label
               key={direction.id}
               htmlFor={`sustainability-direction-${direction.id}`}
-              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 border p-4"
+              className="has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/60 flex min-h-24 cursor-pointer items-start gap-3 rounded-xl border p-4"
             >
               <RadioGroupItem
                 id={`sustainability-direction-${direction.id}`}

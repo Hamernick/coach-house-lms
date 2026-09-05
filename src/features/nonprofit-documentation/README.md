@@ -22,6 +22,10 @@
   through `DocumentationSurface` and the portaled Marketplace shortlist. Preserve
   44px mobile targets and 16px mobile input text; do not resize shared app primitives
   or generated Brand Identity artwork to change the documentation layout.
+- Use `rounded-xl` for standalone containers, field groups, review panels, and
+  table frames. Clip edge-to-edge child backgrounds at the container boundary;
+  keep padding around interactive controls so focus rings remain visible. Apply
+  the same corners to success, empty, and error states.
 - Keep planner controls disabled until saved drafts finish loading. This also
   protects edits made immediately after hydration or browser back navigation.
 - All 14 planners share `DocumentationToolFlow` and

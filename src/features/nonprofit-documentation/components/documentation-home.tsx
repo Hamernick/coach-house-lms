@@ -79,7 +79,7 @@ export function DocumentationHome() {
           className="grid overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-100 md:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)]"
         >
           <div className="p-4 sm:p-5">
-            <p className="text-xs font-medium text-zinc-400">Quickstart</p>
+            <p className="text-xs font-medium text-green-400">Quickstart</p>
             <h2
               id="quickstart-title"
               className="mt-3 text-lg font-semibold tracking-tight"

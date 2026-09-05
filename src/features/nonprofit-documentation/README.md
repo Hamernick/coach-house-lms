@@ -35,10 +35,10 @@
 - Article, tool, and resource headers share `DocumentationPageHeader`, with four
   rounded image corners and an 8px inset. Headers use the abstract artwork family:
   blue for starting/building, rose for best practices, and warm yellow/peach for
-  resources. Task cards use frosted blue derivatives with a centered flat white
-  graphic matching the destination: megaphone for campaigns, chart and coins for
-  funding, and people/resource cards for the directory. Preserve soft folds,
-  diffuse light, fine grain, and clear white-on-blue contrast at card size.
+  resources. Task cards use blurred blue, coral/peach, and lavender/rose backgrounds
+  with a centered flat white graphic matching the destination: megaphone for campaigns, chart and coins for
+  funding, and people/resource cards for the directory. Preserve strongly defocused
+  color fields, restrained fine grain, and readable white graphics without shadows.
   Use original raster artwork without lettering or logos. Generated assets and
   exact prompts are documented in [assets/README.md](assets/README.md).
 - Contents navigation uses `SectionRailIndicator`, shared with Core Documents.

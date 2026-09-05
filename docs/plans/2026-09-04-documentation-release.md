@@ -60,7 +60,8 @@ sidebar and planner labels also use normal casing and tracking. The contents rai
 shares Core Documents' animated indicator and follows section links, scrolling,
 and browser history while respecting reduced motion.
 
-Home task cards use frosted blue artwork with flat white centered graphics:
+Home task cards use heavily blurred blue, coral/peach, and lavender/rose artwork
+with flat white centered graphics and no shadows:
 a megaphone for campaigns, a planning chart and coins for funding, and people
 with a resource card for the directory. The graphic stays inside the image asset.
 
@@ -103,6 +104,11 @@ The subsequent centered-white-graphic task cards passed final static quality in
 Only the three home baselines changed. Card geometry and link reachability were
 also checked at 390/1440px. The first run's unchanged CRM route returned normally
 after restarting the local preview; the clean rerun passed without route changes.
+
+The softer multicolor revision and green Quickstart label passed static quality
+in 46.07 seconds and the three affected browser journeys in 29.9 seconds. Only
+home baselines changed; desktop/mobile review confirmed 8px image insets, 10px
+corners, working links, and 11.18:1 contrast for the green label in both themes.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,

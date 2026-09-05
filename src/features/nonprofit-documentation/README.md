@@ -26,6 +26,9 @@
   table frames. Clip edge-to-edge child backgrounds at the container boundary;
   keep padding around interactive controls so focus rings remain visible. Apply
   the same corners to success, empty, and error states.
+- Task-card images use a 16:9 frame, rounded asset corners, and an 8px inset at
+  the top and sides. Keep captions compact. `DocumentationTaskCards` owns the
+  grid and React Grab metadata while its card content remains server-rendered.
 - Keep planner controls disabled until saved drafts finish loading. This also
   protects edits made immediately after hydration or browser back navigation.
 - All 14 planners share `DocumentationToolFlow` and

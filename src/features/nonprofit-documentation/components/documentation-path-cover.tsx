@@ -11,7 +11,7 @@ export function DocumentationPathCover({
   return (
     <svg
       viewBox="0 0 360 144"
-      className="h-20 w-full"
+      className="block aspect-video w-full rounded-lg"
       style={{ background: palette.background }}
       aria-hidden
     >

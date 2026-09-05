@@ -38,6 +38,9 @@ on screen. Mobile retains 44px touch targets and 16px input text.
 Standalone field groups, review panels, tables, guide links, callouts, and Brand
 Identity containers use consistent rounded corners, with child backgrounds clipped
 to the outer shape. The compact spacing and control sizes remain intact.
+Home task cards give the illustrations more space: 16:9 assets with rounded
+corners and an 8px top/side inset, shorter captions, and two columns at medium
+widths before the full three-column desktop layout.
 
 Implementation commits: `6b86fb3a` (Marketplace and people) and `7aa7d19c`
 (documentation design and planner workflows), plus `9149b9f6` (optional sitemap
@@ -58,14 +61,19 @@ No issue was supplied.
 
 ## Validation and visual artifacts
 
-After the September 5 density and corner refinements, the complete 21-stage
-quality gate passed in 535.23 seconds: 2,344 acceptance
+After the September 5 density and corner refinements (`8693b05e`), the complete
+21-stage quality gate passed in 535.23 seconds: 2,344 acceptance
 tests passed with one intentional skip, seven deterministic RLS suites passed,
 the production build passed, all 80 browser tests passed, and performance budgets
 passed. Graphify is current. Reviewed baselines live in
 `tests/visual/documentation.visual.spec.ts-snapshots/`: documentation home,
 search, guide/tool, Marketplace, People, Ad Grants, completed campaign and funding
 plans, and Brand Identity. Mobile coverage includes both themes and all 14 planners.
+
+The subsequent task-card image refinement passed static quality in 57.16 seconds
+and three targeted desktop/mobile browser checks in 43.4 seconds. Image geometry,
+keyboard destinations, and React Grab ownership were verified separately. The
+complete release gate remains pending for this latest local refinement.
 
 Acceptance checks cover published-only profile projection, missing data, resource
 contracts, old TechSoup saved-ID/link compatibility, and campaign starter behavior.
@@ -101,8 +109,8 @@ account-shell fixtures, resource saving, and member-profile links.
 
 ## Release checklist
 
-- [x] Full local quality gate passes after the compact layout refinement,
-  including the production build, visual suite, and performance budgets.
+- [ ] Rerun the complete release gate after the latest task-card image refinement;
+  the last full gate covers the preceding corner-refinement commit.
 - [x] Graphify updated; plan, monthly runlog, and review artifacts current.
 - [x] Implementation committed on the prepared branch; main refreshed at
   `67501039`, zero behind. No upstream, remote branch, or PR was created.

@@ -3,6 +3,7 @@ import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import { Button } from "@/components/ui/button"
 import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { DocumentationPathCover } from "./documentation-path-cover"
+import { DocumentationTaskCards } from "./documentation-task-cards"
 import {
   DocumentationJsonLd,
   DocumentationSurface,
@@ -12,19 +13,19 @@ const tasks = [
   {
     variant: "campaign" as const,
     title: "Create a campaign",
-    description: "Connect your audience, message, and call to action.",
+    description: "Plan your audience, message, and action.",
     href: "/documentation/tools/campaigns#sandbox",
   },
   {
     variant: "fundraising" as const,
     title: "Build a funding plan",
-    description: "Set the need and work out a realistic channel mix.",
+    description: "Set a funding goal and channel mix.",
     href: "/documentation/best-practices/fundraising#sandbox",
   },
   {
     variant: "marketplace" as const,
     title: "Find tools and people",
-    description: "Explore nonprofit offers, resource banks, and coaches.",
+    description: "Explore offers, resources, and coaches.",
     href: "/documentation/marketplace",
   },
 ]
@@ -132,15 +133,17 @@ export function DocumentationHome() {
           >
             Start a task
           </h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <DocumentationTaskCards>
             {tasks.map((task) => (
               <Link
                 key={task.href}
                 href={task.href}
                 className="group focus-visible:ring-ring overflow-hidden rounded-2xl border focus-visible:ring-2"
               >
-                <DocumentationPathCover variant={task.variant} />
-                <div className="p-4">
+                <div className="px-2 pt-2">
+                  <DocumentationPathCover variant={task.variant} />
+                </div>
+                <div className="px-3 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="font-semibold underline-offset-4 group-hover:underline">
                       {task.title}
@@ -150,13 +153,13 @@ export function DocumentationHome() {
                       aria-hidden
                     />
                   </div>
-                  <p className="text-muted-foreground mt-2 text-sm leading-5">
+                  <p className="text-muted-foreground mt-1 text-sm leading-5">
                     {task.description}
                   </p>
                 </div>
               </Link>
             ))}
-          </div>
+          </DocumentationTaskCards>
         </section>
         <section id="tools" aria-labelledby="tools-title" className="mt-6">
           <h2

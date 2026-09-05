@@ -60,7 +60,7 @@ export function MarketplaceDirectory() {
   return (
     <section
       id="directory"
-      className="scroll-mt-24 pt-6"
+      className="scroll-mt-24 pt-4"
       aria-labelledby="directory-title"
     >
       <h2 id="directory-title" className="sr-only">
@@ -117,7 +117,7 @@ export function MarketplaceDirectory() {
         </div>
       ) : (
         <Empty
-          className="mt-6 min-h-72"
+          className="mt-4 min-h-72"
           icon={<SearchXIcon className="size-5" aria-hidden />}
           title="No resources match these filters"
           description="Clear a filter or search for a broader need. Try a provider name or a broader term."

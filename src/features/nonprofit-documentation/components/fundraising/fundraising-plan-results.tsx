@@ -39,8 +39,8 @@ export function FundraisingPlanResults({
         : "Add a funding goal to calculate the plan"
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid grid-cols-2 gap-px overflow-hidden rounded-2xl border lg:grid-cols-4">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid grid-cols-2 gap-px overflow-hidden rounded-xl border lg:grid-cols-4">
         {[
           ["Fundraising need", summary.fundingNeed],
           ["Planned by channel", summary.plannedTotal],
@@ -51,7 +51,7 @@ export function FundraisingPlanResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">
+            <p className="mt-3 text-base font-semibold tabular-nums">
               {currency.format(Number(value))}
             </p>
           </div>
@@ -62,7 +62,7 @@ export function FundraisingPlanResults({
         {balanceLabel}
       </p>
 
-      <div className="mt-7 flex flex-wrap items-end justify-between gap-3">
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="font-semibold">Funding mix</h3>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -79,7 +79,7 @@ export function FundraisingPlanResults({
         </Button>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border">
+      <div className="mt-4 overflow-x-auto rounded-xl border">
         <table className="w-full min-w-0 border-collapse text-left text-sm">
           <caption className="sr-only">
             Planned fundraising amount and share of need by channel
@@ -121,7 +121,7 @@ export function FundraisingPlanResults({
         </table>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6">
         <h3 className="font-semibold">Stage and channel action plan</h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} actions generated from the selected stage, channels,
@@ -131,7 +131,7 @@ export function FundraisingPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
@@ -140,10 +140,10 @@ export function FundraisingPlanResults({
                 <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -153,7 +153,7 @@ export function FundraisingPlanResults({
         </ol>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
           This tool organizes assumptions. It does not predict awards, gifts,
           timing, donor behavior, eligibility, or legal requirements.

@@ -60,11 +60,11 @@ export function MarketplacePage({
       />
       <main
         id="documentation-content"
-        className="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8 lg:px-12"
+        className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">Marketplace</h1>
-          <p className="text-muted-foreground mt-3 max-w-2xl text-base leading-7">
+        <header className="mb-5">
+          <h1 className="text-2xl font-semibold tracking-tight">Marketplace</h1>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
             Useful tools, nonprofit offers, and people to help you put your
             plans to work.
           </p>
@@ -76,7 +76,7 @@ export function MarketplacePage({
         />
         <footer
           id="method"
-          className="text-muted-foreground mt-10 scroll-mt-24 border-t pt-5 text-xs leading-5"
+          className="text-muted-foreground mt-6 scroll-mt-24 border-t pt-4 text-xs leading-5"
         >
           <p>
             Source-backed listings, with offer terms and review dates on each

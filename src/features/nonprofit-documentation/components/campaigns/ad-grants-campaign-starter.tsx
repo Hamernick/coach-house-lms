@@ -29,10 +29,10 @@ export function AdGrantsCampaignStarter({
   const [goal, setGoal] = useState<AdGrantsCampaignGoal>("fundraising")
   if (params.get("template") !== "ad-grants") return null
   return (
-    <div className="bg-muted/30 space-y-4 border-b p-5 sm:p-6">
+    <div className="bg-muted/30 space-y-4 border-b p-4 sm:p-4">
       <div>
         <h3 className="font-semibold">Start an Ad Grants campaign</h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Choose the action you want to measure. The starter keeps your
           organization name and stage; replace the bracketed prompts with your
           own details.

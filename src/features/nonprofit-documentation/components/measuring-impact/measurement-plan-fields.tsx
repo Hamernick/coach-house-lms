@@ -81,7 +81,7 @@ function PlanTextarea({
         maxLength={maxLength}
         rows={4}
         placeholder={placeholder}
-        className="min-h-32 resize-y text-base"
+        className="min-h-32 resize-y text-sm"
       />
     </div>
   )
@@ -96,7 +96,7 @@ export function MeasurementPlanFields({
 }) {
   return (
     <div>
-      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="measurement-organization">Organization name</Label>
           <Input
@@ -108,7 +108,7 @@ export function MeasurementPlanFields({
             maxLength={120}
             autoComplete="organization"
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -119,7 +119,7 @@ export function MeasurementPlanFields({
             onChange={(event) => updateDraft("programName", event.target.value)}
             maxLength={120}
             placeholder="Example: Neighborhood legal navigation pilot…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2 lg:col-span-2">
@@ -144,11 +144,11 @@ export function MeasurementPlanFields({
         </div>
       </div>
 
-      <fieldset className="border-t p-5 sm:p-6">
+      <fieldset className="border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           What decision should this evidence support?
         </legend>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Choose one primary use. A bounded plan is more likely to produce
           evidence someone can act on.
         </p>
@@ -184,14 +184,14 @@ export function MeasurementPlanFields({
       </fieldset>
 
       <section
-        className="grid gap-6 border-t p-5 sm:p-6"
+        className="grid gap-4 border-t p-4 sm:p-4"
         aria-labelledby="measurement-question-title"
       >
         <div>
           <h3 id="measurement-question-title" className="font-semibold">
             Outcome and question
           </h3>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Define the expected change separately from the question used to
             examine it.
           </p>
@@ -240,14 +240,14 @@ export function MeasurementPlanFields({
       </section>
 
       <section
-        className="grid gap-6 border-t p-5 sm:p-6"
+        className="grid gap-4 border-t p-4 sm:p-4"
         aria-labelledby="measurement-evidence-title"
       >
         <div>
           <h3 id="measurement-evidence-title" className="font-semibold">
             Indicator and evidence
           </h3>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Specify what will be observed, where it comes from, and what the
             method can and cannot answer.
           </p>
@@ -301,17 +301,17 @@ export function MeasurementPlanFields({
       </section>
 
       <section
-        className="border-t p-5 sm:p-6"
+        className="border-t p-4 sm:p-4"
         aria-labelledby="measurement-burden-title"
       >
         <h3 id="measurement-burden-title" className="font-semibold">
           Respondent burden estimate
         </h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Use zero when the method does not ask people to respond. This is
           planning arithmetic, not a compliance determination.
         </p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-3">
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {[
             ["expectedRespondents", "People per cycle", "40", 1000000],
             ["minutesPerResponse", "Minutes per person", "5", 1440],
@@ -333,7 +333,7 @@ export function MeasurementPlanFields({
                   )
                 }
                 placeholder={String(placeholder)}
-                className="min-h-11 text-base"
+                className="min-h-11 text-sm"
               />
             </div>
           ))}
@@ -341,14 +341,14 @@ export function MeasurementPlanFields({
       </section>
 
       <section
-        className="grid gap-6 border-t p-5 sm:p-6"
+        className="grid gap-4 border-t p-4 sm:p-4"
         aria-labelledby="measurement-governance-title"
       >
         <div>
           <h3 id="measurement-governance-title" className="font-semibold">
             Interpretation, governance, and use
           </h3>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Make uncertainty, responsibility, participant voice, and the next
             decision visible before results exist.
           </p>
@@ -406,7 +406,7 @@ export function MeasurementPlanFields({
             <Label
               key={field}
               htmlFor={`measurement-${field}`}
-              className="flex min-h-14 cursor-pointer items-start gap-3 border p-4 text-sm leading-6"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm leading-5 md:min-h-9 md:py-2"
             >
               <Checkbox
                 id={`measurement-${field}`}

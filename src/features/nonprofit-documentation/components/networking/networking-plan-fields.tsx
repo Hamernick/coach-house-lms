@@ -55,7 +55,7 @@ function DraftTextarea({
         maxLength={maxLength}
         rows={4}
         placeholder={placeholder}
-        className="min-h-28 resize-y text-base"
+        className="min-h-28 resize-y text-sm"
       />
     </div>
   )
@@ -73,7 +73,7 @@ export function NetworkingPlanFields({
 }) {
   return (
     <div>
-      <fieldset className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Purpose and community
         </legend>
@@ -89,7 +89,7 @@ export function NetworkingPlanFields({
             }
             maxLength={120}
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -103,7 +103,7 @@ export function NetworkingPlanFields({
             }
             maxLength={120}
             placeholder="Example: Current referral pathway review…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -217,7 +217,7 @@ export function NetworkingPlanFields({
         />
       </fieldset>
 
-      <fieldset className="grid gap-5 border-t p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 border-t p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Invitation, follow-through, and safeguards
         </legend>
@@ -295,7 +295,7 @@ export function NetworkingPlanFields({
           ].map((item) => (
             <label
               key={item.key}
-              className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors"
+              className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2"
             >
               <Checkbox
                 checked={draft[item.key]}

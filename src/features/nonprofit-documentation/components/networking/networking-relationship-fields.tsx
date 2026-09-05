@@ -49,7 +49,7 @@ function RelationshipTextarea({
         maxLength={maxLength}
         rows={3}
         placeholder={placeholder}
-        className="min-h-24 resize-y text-base"
+        className="min-h-24 resize-y text-sm"
       />
     </div>
   )
@@ -102,7 +102,7 @@ function RelationshipCard({
           <Trash2Icon className="size-4" aria-hidden />
         </Button>
       </div>
-      <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-2">
+      <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-2">
         <div className="space-y-2 lg:col-span-2">
           <Label htmlFor={`${prefix}-label`}>
             Organization or relationship-role label
@@ -115,7 +115,7 @@ function RelationshipCard({
             }
             maxLength={160}
             placeholder="Use an organization or role label; avoid unnecessary personal details…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -238,7 +238,7 @@ function RelationshipCard({
             }
             maxLength={200}
             placeholder="Use a responsible role where possible…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -255,7 +255,7 @@ function RelationshipCard({
             }
             maxLength={200}
             placeholder="Example: Follow up within three business days…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
       </div>
@@ -279,7 +279,7 @@ export function NetworkingRelationshipFields({
   removeRelationship: (id: string) => void
 }) {
   return (
-    <fieldset className="border-t p-5 sm:p-6">
+    <fieldset className="border-t p-4 sm:p-4">
       <legend className="px-1 text-sm font-semibold">
         Mapped organizations or relationship roles
       </legend>
@@ -301,7 +301,7 @@ export function NetworkingRelationshipFields({
           Add relationship
         </Button>
       </div>
-      <div className="mt-5 grid gap-5">
+      <div className="mt-3 grid gap-3">
         {relationships.map((relationship, index) => (
           <RelationshipCard
             key={relationship.id}

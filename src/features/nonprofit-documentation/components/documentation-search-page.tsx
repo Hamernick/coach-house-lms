@@ -31,17 +31,17 @@ export function DocumentationSearchPage({
     <DocumentationSurface searchQuery={query}>
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-4xl px-5 py-10 sm:px-8 sm:py-14 lg:px-12"
+        className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-14 lg:px-8"
       >
-        <header className="border-b pb-8">
+        <header className="border-b pb-5">
           <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
             Documentation library
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-2xl">
             {query ? "Search results" : "Find your next step"}
           </h1>
           <p
-            className="text-muted-foreground mt-4 text-base leading-7 break-words"
+            className="text-muted-foreground mt-4 text-sm leading-6 break-words"
             role="status"
           >
             {query
@@ -61,17 +61,17 @@ export function DocumentationSearchPage({
               <li key={result.href}>
                 <Link
                   href={result.href}
-                  className="group hover:bg-muted/40 focus-visible:ring-ring -mx-3 flex min-w-0 gap-5 rounded-lg px-3 py-6 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="group hover:bg-muted/40 focus-visible:ring-ring -mx-3 flex min-w-0 gap-3 rounded-lg px-3 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-muted-foreground text-xs">
                       {result.category}
                       {result.sectionTitle ? ` / ${result.sectionTitle}` : ""}
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
+                    <h2 className="mt-2 text-base font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
                       {result.title}
                     </h2>
-                    <p className="text-muted-foreground mt-2 text-sm leading-6 break-words">
+                    <p className="text-muted-foreground mt-2 text-sm leading-5 break-words">
                       {result.excerpt}
                     </p>
                   </div>
@@ -84,7 +84,7 @@ export function DocumentationSearchPage({
             ))}
           </ol>
         ) : (
-          <div className="mt-8 flex flex-col gap-8">
+          <div className="mt-6 flex flex-col gap-6">
             {query ? (
               <Empty
                 variant="subtle"

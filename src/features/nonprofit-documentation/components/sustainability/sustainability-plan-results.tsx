@@ -40,7 +40,7 @@ function ContinuityNode({
           {String(index).padStart(2, "0")}
         </span>
       </div>
-      <p className="mt-3 text-sm leading-6 font-medium break-words">
+      <p className="mt-3 text-sm leading-5 font-medium break-words">
         {value || empty}
       </p>
     </div>
@@ -78,8 +78,8 @@ export function SustainabilityPlanResults({
       : `${summary.weeklyCapacityBalance.toLocaleString("en-US")} hours available weekly`
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-4">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Flexible resources", dollars(summary.flexibleResources)],
           [
@@ -99,7 +99,7 @@ export function SustainabilityPlanResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
@@ -126,7 +126,7 @@ export function SustainabilityPlanResults({
           : "Draft the mission benefit, commitments, assumptions, triggers, and owner to make the scenario reviewable."}
       </p>
 
-      <section className="mt-8" aria-labelledby="continuity-chain-title">
+      <section className="mt-6" aria-labelledby="continuity-chain-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -135,7 +135,7 @@ export function SustainabilityPlanResults({
             <h3 id="continuity-chain-title" className="mt-2 font-semibold">
               Mission continuity chain
             </h3>
-            <p className="text-muted-foreground mt-1 text-sm leading-6">
+            <p className="text-muted-foreground mt-1 text-sm leading-5">
               Read in order. The chain exposes dependencies and decisions; it
               does not certify that the work is sustainable.
             </p>
@@ -145,7 +145,7 @@ export function SustainabilityPlanResults({
             CSV
           </Button>
         </div>
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto">
           <div className="flex flex-col sm:min-w-[74rem] sm:flex-row sm:items-stretch">
             <ContinuityNode
               index={1}
@@ -192,7 +192,7 @@ export function SustainabilityPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="sustainability-actions-title">
+      <section className="mt-6" aria-labelledby="sustainability-actions-title">
         <h3 id="sustainability-actions-title" className="font-semibold">
           Stage and scenario action plan
         </h3>
@@ -204,7 +204,7 @@ export function SustainabilityPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
@@ -213,10 +213,10 @@ export function SustainabilityPlanResults({
                 <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -228,7 +228,7 @@ export function SustainabilityPlanResults({
 
       <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
           This simplified scenario excludes transaction timing, probability,
           restricted funds, receivables, liabilities, and many real operating

@@ -59,7 +59,7 @@ export function DocumentationToolFlow({
     >
       <div
         ref={navigation}
-        className="scroll-mt-40 overflow-x-auto border-b px-5 py-3 sm:px-6"
+        className="scroll-mt-28 overflow-x-auto border-b px-4 py-2"
       >
         <TabsList
           variant="line"
@@ -89,7 +89,7 @@ export function DocumentationToolFlow({
         >
           {step.id === "review" && !hasDraft ? (
             <Empty
-              className="m-5 rounded-2xl"
+              className="m-5 rounded-xl"
               title="Your plan will appear here"
               description="Add your details or load an example to see the working plan and export it."
             />
@@ -98,7 +98,7 @@ export function DocumentationToolFlow({
           )}
         </TabsContent>
       ))}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-2">
         <Button
           type="button"
           variant="ghost"

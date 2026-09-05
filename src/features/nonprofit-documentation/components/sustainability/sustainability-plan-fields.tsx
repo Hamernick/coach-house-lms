@@ -43,7 +43,7 @@ export function SustainabilityPlanFields({
 }) {
   return (
     <div>
-      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="sustainability-organization">Organization name</Label>
           <Input
@@ -55,7 +55,7 @@ export function SustainabilityPlanFields({
             maxLength={120}
             autoComplete="organization"
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -70,7 +70,7 @@ export function SustainabilityPlanFields({
             }
             maxLength={120}
             placeholder="Example: Neighborhood legal navigation pilot…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -124,11 +124,11 @@ export function SustainabilityPlanFields({
         </div>
       </div>
 
-      <fieldset className="border-t p-5 sm:p-6">
+      <fieldset className="border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           What direction are you preparing to decide?
         </legend>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Choose the primary direction for this scenario. It can change after
           review.
         </p>

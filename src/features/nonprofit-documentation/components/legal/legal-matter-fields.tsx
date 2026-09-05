@@ -44,7 +44,7 @@ export function LegalMatterFields({
 
   return (
     <div>
-      <fieldset className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Matter identity and triage
         </legend>
@@ -60,7 +60,7 @@ export function LegalMatterFields({
             }
             maxLength={120}
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -72,7 +72,7 @@ export function LegalMatterFields({
             onChange={(event) => updateDraft("matterTitle", event.target.value)}
             maxLength={140}
             placeholder="Example: Proposed related-party storefront lease…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -151,7 +151,7 @@ export function LegalMatterFields({
             <p className="text-sm font-semibold">
               Use qualified urgent channels now
             </p>
-            <p className="text-background/75 mt-2 text-sm leading-6">
+            <p className="text-background/75 mt-2 text-sm leading-5">
               Do not wait for this brief. Contact emergency, safeguarding,
               incident-response, insurer, regulator, and qualified legal
               channels as appropriate. Protect people first and avoid putting

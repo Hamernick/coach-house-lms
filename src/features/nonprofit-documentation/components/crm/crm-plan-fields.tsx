@@ -46,11 +46,11 @@ export function CrmPlanFields({
   )
 
   return (
-    <FieldSet className="p-5 sm:p-6">
+    <FieldSet className="p-4 sm:p-4">
       <FieldLegend className="px-1">
         Purpose, people, and record boundary
       </FieldLegend>
-      <FieldGroup className="grid gap-5 lg:grid-cols-2">
+      <FieldGroup className="grid gap-3 lg:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="crm-organization">Organization name</FieldLabel>
           <Input
@@ -63,7 +63,7 @@ export function CrmPlanFields({
             }
             maxLength={120}
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </Field>
         <Field>
@@ -75,7 +75,7 @@ export function CrmPlanFields({
             onChange={(event) => updateDraft("planName", event.target.value)}
             maxLength={140}
             placeholder="Example: Shared relationship record pilot…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </Field>
         <Field>

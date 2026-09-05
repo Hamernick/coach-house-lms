@@ -54,7 +54,7 @@ export function MarketingPlanFields({
   return (
     <div>
       {part !== "channels" ? (
-        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+        <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="marketing-organization">Organization name</Label>
             <Input
@@ -67,7 +67,7 @@ export function MarketingPlanFields({
               maxLength={120}
               placeholder="Example: Willow Street Family Resource Network…"
               autoComplete="organization"
-              className="min-h-11 text-base"
+              className="min-h-11 text-sm"
             />
           </div>
 
@@ -82,7 +82,7 @@ export function MarketingPlanFields({
               }
               maxLength={120}
               placeholder="Example: Know your options…"
-              className="min-h-11 text-base"
+              className="min-h-11 text-sm"
             />
           </div>
 
@@ -149,7 +149,7 @@ export function MarketingPlanFields({
               maxLength={280}
               rows={3}
               placeholder="Describe one group by its relationship to the mission and the information or access need being served…"
-              className="min-h-24 resize-y text-base"
+              className="min-h-24 resize-y text-sm"
             />
           </div>
 
@@ -165,7 +165,7 @@ export function MarketingPlanFields({
               maxLength={500}
               rows={4}
               placeholder="Write the one to three sourced sentences the audience should understand…"
-              className="min-h-28 resize-y text-base"
+              className="min-h-28 resize-y text-sm"
             />
           </div>
 
@@ -181,7 +181,7 @@ export function MarketingPlanFields({
               maxLength={500}
               rows={4}
               placeholder="Add a cited fact, current measure, consented story, or an honest evidence limit…"
-              className="min-h-32 resize-y text-base"
+              className="min-h-32 resize-y text-sm"
             />
           </div>
 
@@ -197,14 +197,14 @@ export function MarketingPlanFields({
               maxLength={280}
               rows={4}
               placeholder="Name one voluntary action and the real destination where it can be completed…"
-              className="min-h-32 resize-y text-base"
+              className="min-h-32 resize-y text-sm"
             />
           </div>
         </div>
       ) : null}
       {part !== "audience" ? (
         <>
-          <fieldset className="border-t p-5 sm:p-6">
+          <fieldset className="border-t p-4 sm:p-4">
             <legend className="px-1 text-sm font-semibold">
               Planned outputs per month
             </legend>
@@ -212,7 +212,7 @@ export function MarketingPlanFields({
               Set a maintainable cadence. Zero means the channel is outside this
               90-day period; no universal posting frequency is assumed.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
               {MARKETING_CHANNELS.map((channel) => (
                 <div key={channel.id} className="border p-4">
                   <Label htmlFor={`marketing-channel-${channel.id}`}>
@@ -236,13 +236,13 @@ export function MarketingPlanFields({
                         cadenceInput(event.target.value)
                       )
                     }
-                    className="mt-3 min-h-11 text-base tabular-nums"
+                    className="mt-3 min-h-11 text-sm tabular-nums"
                   />
                 </div>
               ))}
             </div>
           </fieldset>
-          <fieldset className="grid gap-3 border-t p-5 sm:p-6">
+          <fieldset className="grid gap-3 border-t p-4 sm:p-4">
             <legend className="px-1 text-sm font-semibold">
               Publishing readiness
             </legend>
@@ -268,7 +268,7 @@ export function MarketingPlanFields({
             ].map((item) => (
               <label
                 key={item.key}
-                className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors"
+                className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2"
               >
                 <Checkbox
                   checked={draft[item.key]}

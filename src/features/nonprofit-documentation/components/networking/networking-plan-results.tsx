@@ -25,7 +25,7 @@ function RelationshipPathway({
 }) {
   const mapped = relationships.filter(({ label }) => label.trim())
   return (
-    <div className="bg-border grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-5">
+    <div className="bg-border grid gap-px overflow-hidden rounded-xl border lg:grid-cols-5">
       {NETWORKING_ENGAGEMENTS.map((engagement, index) => {
         const items = mapped.filter(
           (relationship) => relationship.engagement === engagement.id
@@ -80,7 +80,7 @@ function RelationshipTable({
 }) {
   const mapped = relationships.filter(({ label }) => label.trim())
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border">
+    <div className="mt-4 overflow-x-auto rounded-xl border">
       <table className="w-full min-w-[68rem] border-collapse text-left text-sm">
         <caption className="sr-only">
           Complete working relationship map with reciprocal value and follow-up
@@ -115,16 +115,16 @@ function RelationshipTable({
                 <td className="px-4 py-4">
                   {networkingEngagementLabel(relationship.engagement)}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.purpose || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.responsibleOffer || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.nextStep || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   <span className="block font-medium">
                     {relationship.owner || "No owner"}
                   </span>
@@ -138,7 +138,7 @@ function RelationshipTable({
             <tr>
               <td
                 colSpan={7}
-                className="text-muted-foreground px-4 py-8 text-center"
+                className="text-muted-foreground px-4 py-6 text-center"
               >
                 Add an organization or relationship-role label to build the map.
               </td>
@@ -166,8 +166,8 @@ export function NetworkingPlanResults({
   const prompt = buildNetworkingReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-4">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Relationships", summary.relationshipCount],
           ["Categories", summary.representedCategoryCount],
@@ -178,12 +178,12 @@ export function NetworkingPlanResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
 
-      <section className="mt-8" aria-labelledby="network-purpose-title">
+      <section className="mt-6" aria-labelledby="network-purpose-title">
         <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           {networkingObjectiveLabel(draft.objective)} · {draft.reviewWeeks}-week
           review
@@ -191,16 +191,16 @@ export function NetworkingPlanResults({
         <h3 id="network-purpose-title" className="mt-2 font-semibold">
           Relationship system purpose
         </h3>
-        <div className="bg-foreground text-background mt-4 p-5 sm:p-6">
-          <p className="text-lg leading-8 font-semibold">
+        <div className="bg-foreground text-background mt-4 p-4 sm:p-4">
+          <p className="text-base leading-8 font-semibold">
             {draft.networkingPurpose ||
               "Define the mission purpose and decision this relationship system should improve."}
           </p>
-          <div className="border-background/25 mt-5 border-t pt-4">
+          <div className="border-background/25 mt-3 border-t pt-4">
             <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
               Community accountability
             </p>
-            <p className="mt-2 text-sm leading-6">
+            <p className="mt-2 text-sm leading-5">
               {draft.communityAccountability ||
                 "Describe how people affected by the work shape the map, decisions, interpretation, and follow-up."}
             </p>
@@ -208,7 +208,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-pathway-title">
+      <section className="mt-6" aria-labelledby="network-pathway-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="network-pathway-title" className="font-semibold">
@@ -228,7 +228,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-coverage-title">
+      <section className="mt-6" aria-labelledby="network-coverage-title">
         <h3 id="network-coverage-title" className="font-semibold">
           Category coverage
         </h3>
@@ -258,7 +258,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-table-title">
+      <section className="mt-6" aria-labelledby="network-table-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="network-table-title" className="font-semibold">
@@ -276,7 +276,7 @@ export function NetworkingPlanResults({
         <RelationshipTable relationships={draft.relationships} />
       </section>
 
-      <section className="mt-8" aria-labelledby="network-actions-title">
+      <section className="mt-6" aria-labelledby="network-actions-title">
         <h3 id="network-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -288,7 +288,7 @@ export function NetworkingPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
@@ -297,10 +297,10 @@ export function NetworkingPlanResults({
                 <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>

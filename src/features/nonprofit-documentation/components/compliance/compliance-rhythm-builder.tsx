@@ -75,7 +75,7 @@ function BuilderFields({
   ) => void
 }) {
   return (
-    <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+    <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor="compliance-state">Primary state or territory</Label>
         <Select
@@ -108,7 +108,7 @@ function BuilderFields({
           type="date"
           value={draft.taxYearEnd}
           onChange={(event) => updateDraft("taxYearEnd", event.target.value)}
-          className="min-h-11 text-base"
+          className="min-h-11 text-sm"
         />
       </div>
 
@@ -154,7 +154,7 @@ function BuilderFields({
         </Select>
       </div>
 
-      <label className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors lg:col-span-2">
+      <label className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2 lg:col-span-2">
         <Checkbox
           checked={draft.solicitsContributions}
           onCheckedChange={(checked) =>
@@ -171,7 +171,7 @@ function BuilderFields({
         </span>
       </label>
 
-      <label className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors lg:col-span-2">
+      <label className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2 lg:col-span-2">
         <Checkbox
           checked={draft.hasEmployees}
           onCheckedChange={(checked) =>
@@ -252,27 +252,27 @@ export function ComplianceRhythmBuilder() {
             id: "review",
             label: "Calendar & export",
             content: (
-              <div className="bg-muted/20 border-t p-5 sm:p-6">
+              <div className="bg-muted/20 border-t p-4 sm:p-4">
                 <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2">
-                  <div className="bg-background p-5">
+                  <div className="bg-background p-4">
                     <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       Common federal path
                     </p>
-                    <p className="mt-3 text-lg font-semibold">
+                    <p className="mt-3 text-base font-semibold">
                       {filingPath.form}
                     </p>
-                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    <p className="text-muted-foreground mt-2 text-sm leading-5">
                       {filingPath.explanation}
                     </p>
                   </div>
-                  <div className="bg-background p-5">
+                  <div className="bg-background p-4">
                     <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       Annual return planning date
                     </p>
-                    <p className="mt-3 text-lg font-semibold tabular-nums">
+                    <p className="mt-3 text-base font-semibold tabular-nums">
                       {dueDate?.label ?? "Add the tax-year end"}
                     </p>
-                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    <p className="text-muted-foreground mt-2 text-sm leading-5">
                       This is the nominal Form 990-series date. Confirm
                       weekends, holidays, extensions, exceptions, and the
                       applicable form with the IRS.
@@ -280,7 +280,7 @@ export function ComplianceRhythmBuilder() {
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">Planning rhythm</h3>
                     <p className="text-muted-foreground mt-1 text-sm">
@@ -302,7 +302,7 @@ export function ComplianceRhythmBuilder() {
                   {tasks.map((task, index) => (
                     <li
                       key={task.id}
-                      className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+                      className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
                     >
                       <span className="text-muted-foreground font-mono text-xs tabular-nums">
                         {String(index + 1).padStart(2, "0")}
@@ -316,14 +316,14 @@ export function ComplianceRhythmBuilder() {
                             {task.status}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm leading-6 font-semibold">
+                        <p className="mt-2 text-sm leading-5 font-semibold">
                           {task.task}
                         </p>
-                        <p className="text-muted-foreground mt-2 text-sm leading-6">
+                        <p className="text-muted-foreground mt-2 text-sm leading-5">
                           <strong className="text-foreground">Timing:</strong>{" "}
                           {task.timing}
                         </p>
-                        <p className="text-muted-foreground mt-1 text-sm leading-6">
+                        <p className="text-muted-foreground mt-1 text-sm leading-5">
                           <strong className="text-foreground">Keep:</strong>{" "}
                           {task.evidence}
                         </p>
@@ -332,7 +332,7 @@ export function ComplianceRhythmBuilder() {
                   ))}
                 </ol>
 
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-muted-foreground max-w-xl text-xs leading-5">
                     This tool creates a planning draft, not a legal
                     determination. Its filing path uses common IRS thresholds

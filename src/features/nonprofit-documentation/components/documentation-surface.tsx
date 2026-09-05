@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 import { DocumentationSearchForm } from "./documentation-search-form"
+import density from "./documentation-density.module.css"
 
 export function DocumentationSurface({
   children,
@@ -16,7 +17,8 @@ export function DocumentationSurface({
   return (
     <div
       className={cn(
-        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain [--radius:0.875rem] motion-safe:scroll-smooth [&_h2[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_h3[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_section[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)]",
+        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain [--radius:0.625rem] motion-safe:scroll-smooth [&_h2[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_h3[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_section[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)]",
+        density.surface,
         className
       )}
       data-documentation-scroll
@@ -27,11 +29,11 @@ export function DocumentationSurface({
       >
         Skip to documentation
       </a>
-      <div className="bg-background/95 sticky top-0 z-30 border-b px-5 py-3 backdrop-blur sm:px-8 lg:px-12 print:hidden">
+      <div className="bg-background/95 sticky top-0 z-30 border-b px-4 py-2 backdrop-blur sm:px-6 lg:px-8 print:hidden">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
           <Link
             href="/documentation"
-            className="text-muted-foreground hover:text-foreground hidden min-h-11 shrink-0 items-center text-sm font-medium sm:inline-flex"
+            className="text-muted-foreground hover:text-foreground hidden min-h-11 shrink-0 items-center text-sm font-medium sm:inline-flex md:min-h-8"
           >
             Documentation
           </Link>

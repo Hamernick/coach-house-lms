@@ -46,16 +46,16 @@ function FundsView({ draft }: { draft: FinancePlanDraft }) {
     },
   ]
   return (
-    <div className="bg-border grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-2">
+    <div className="bg-border grid gap-px overflow-hidden rounded-xl border lg:grid-cols-2">
       {columns.map((column) => (
-        <section key={column.label} className="bg-background min-w-0 p-5">
+        <section key={column.label} className="bg-background min-w-0 p-4">
           <p className="text-xs font-semibold tracking-wide uppercase">
             {column.label}
           </p>
           <p className="text-muted-foreground mt-1 text-xs leading-5">
             {column.note}
           </p>
-          <dl className="mt-5 divide-y border-y">
+          <dl className="mt-3 divide-y border-y">
             {[
               ["Beginning cash", currency.format(column.beginning)],
               ["Planned inflows", currency.format(column.inflows)],
@@ -98,8 +98,8 @@ export function FinancePlanResults({
       : "Not available"
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-4">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Planned inflows", currency.format(summary.totalPlannedInflows)],
           ["Planned outflows", currency.format(summary.totalPlannedOutflows)],
@@ -110,7 +110,7 @@ export function FinancePlanResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
@@ -123,7 +123,7 @@ export function FinancePlanResults({
         going-concern conclusion.
       </p>
 
-      <section className="mt-8" aria-labelledby="finance-funds-title">
+      <section className="mt-6" aria-labelledby="finance-funds-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="finance-funds-title" className="font-semibold">
@@ -144,7 +144,7 @@ export function FinancePlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="finance-actions-title">
+      <section className="mt-6" aria-labelledby="finance-actions-title">
         <h3 id="finance-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -163,7 +163,7 @@ export function FinancePlanResults({
                   <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">

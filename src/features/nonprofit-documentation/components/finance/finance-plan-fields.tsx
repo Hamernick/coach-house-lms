@@ -84,7 +84,7 @@ export function FinancePlanFields({
 }) {
   return (
     <div>
-      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-3">
+      <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-3">
         <div className="space-y-2 lg:col-span-3">
           <Label htmlFor="finance-organization">Organization name</Label>
           <Input
@@ -96,7 +96,7 @@ export function FinancePlanFields({
             maxLength={120}
             autoComplete="organization"
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -142,18 +142,18 @@ export function FinancePlanFields({
       </div>
 
       <section
-        className="border-t p-5 sm:p-6"
+        className="border-t p-4 sm:p-4"
         aria-labelledby="finance-cash-title"
       >
         <h3 id="finance-cash-title" className="font-semibold">
           Working cash view
         </h3>
-        <p className="text-muted-foreground mt-1 max-w-3xl text-sm leading-6">
+        <p className="text-muted-foreground mt-1 max-w-3xl text-sm leading-5">
           Enter one bounded planning scenario. These totals do not replace a
           dated cash-flow forecast, ledger, bank reconciliation, or financial
           statements.
         </p>
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
           {MONEY_FIELDS.map((field) => {
             const id = `finance-${field.key}`
             return (
@@ -187,7 +187,7 @@ export function FinancePlanFields({
                       )
                     }
                     aria-describedby={`${id}-description`}
-                    className="min-h-11 pl-7 text-base tabular-nums"
+                    className="min-h-11 pl-7 text-sm tabular-nums"
                   />
                 </div>
               </div>

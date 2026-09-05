@@ -25,17 +25,17 @@ export function MarketplacePeople({
   directory: MarketplacePeopleData
 }) {
   return (
-    <div className="space-y-12 pt-6">
+    <div className="space-y-12 pt-4">
       <section
         id="coaches"
         aria-labelledby="coaches-title"
         className="scroll-mt-24"
       >
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2
               id="coaches-title"
-              className="text-xl font-semibold tracking-tight"
+              className="text-base font-semibold tracking-tight"
             >
               Coach House coaches
             </h2>
@@ -55,33 +55,33 @@ export function MarketplacePeople({
           {MARKETPLACE_COACHES.map((coach) => (
             <Card
               key={coach.id}
-              className="gap-0 overflow-hidden rounded-3xl py-0 shadow-none"
+              className="gap-0 overflow-hidden rounded-2xl py-0 shadow-none"
               data-marketplace-coach={coach.id}
             >
-              <CardHeader className="bg-muted/40 gap-4 p-6">
-                <Avatar className="size-20">
+              <CardHeader className="bg-muted/40 flex flex-row items-center gap-3 p-4">
+                <Avatar className="size-12">
                   <AvatarImage
                     src={coach.image}
                     alt=""
                     className="object-cover"
                   />
-                  <AvatarFallback className="text-xl">
+                  <AvatarFallback className="text-sm">
                     {coach.initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-semibold">{coach.name}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">
+                  <h3 className="text-base font-semibold">{coach.name}</h3>
+                  <p className="text-muted-foreground mt-1 text-xs">
                     {coach.role}
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 p-6">
-                <p className="text-muted-foreground text-sm leading-6">
+              <CardContent className="flex-1 p-4">
+                <p className="text-muted-foreground text-sm leading-5">
                   {coach.description}
                 </p>
               </CardContent>
-              <CardFooter className="flex-col items-start gap-3 px-6 pb-6">
+              <CardFooter className="flex-col items-start gap-3 px-4 pb-4">
                 <Button
                   asChild
                   variant="outline"
@@ -109,21 +109,21 @@ export function MarketplacePeople({
       >
         <h2
           id="community-title"
-          className="text-xl font-semibold tracking-tight"
+          className="text-base font-semibold tracking-tight"
         >
           Meet the community
         </h2>
-        <p className="text-muted-foreground mt-1 mb-5 text-sm">
+        <p className="text-muted-foreground mt-1 mb-3 text-sm">
           People who have published a Coach House profile. Open a profile to
           learn about their work.
         </p>
         {directory.people.length ? (
-          <div className="grid gap-x-8 md:grid-cols-2">
+          <div className="grid gap-x-6 md:grid-cols-2">
             {directory.people.map((person) => (
               <Link
                 key={person.handle}
                 href={person.href}
-                className="hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 items-center gap-4 rounded-2xl p-4 focus-visible:ring-2"
+                className="hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 items-center gap-4 rounded-xl p-4 focus-visible:ring-2"
                 data-marketplace-person={person.handle}
               >
                 <Avatar className="size-12">
@@ -162,7 +162,7 @@ export function MarketplacePeople({
           </div>
         ) : (
           <Empty
-            className="rounded-3xl py-10"
+            className="rounded-2xl py-6"
             title={
               directory.status === "unavailable"
                 ? "Community profiles are temporarily unavailable"
@@ -178,7 +178,7 @@ export function MarketplacePeople({
           />
         )}
         {directory.page > 1 || directory.hasMore ? (
-          <nav aria-label="Community pages" className="mt-5 flex gap-3">
+          <nav aria-label="Community pages" className="mt-3 flex gap-3">
             {directory.page > 1 ? (
               <Button
                 asChild

@@ -45,14 +45,14 @@ export function PartnershipBriefFields({
   return (
     <div>
       <section
-        className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2"
+        className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2"
         aria-labelledby="partnership-context-title"
       >
         <div className="lg:col-span-2">
           <h3 id="partnership-context-title" className="font-semibold">
             Partnership context
           </h3>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Name a real potential relationship. Nothing entered here confirms
             the other party&apos;s interest or approval.
           </p>
@@ -68,7 +68,7 @@ export function PartnershipBriefFields({
             maxLength={120}
             autoComplete="organization"
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -79,7 +79,7 @@ export function PartnershipBriefFields({
             onChange={(event) => updateDraft("partnerName", event.target.value)}
             maxLength={120}
             placeholder="Example: Harbor County Legal Aid…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2 lg:col-span-2">
@@ -92,7 +92,7 @@ export function PartnershipBriefFields({
             }
             maxLength={140}
             placeholder="Example: Neighborhood legal navigation pathway…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -115,7 +115,7 @@ export function PartnershipBriefFields({
             </SelectContent>
           </Select>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="partnership-term">Initial term</Label>
             <Select
@@ -168,11 +168,11 @@ export function PartnershipBriefFields({
         </div>
       </section>
 
-      <fieldset className="border-t p-5 sm:p-6">
+      <fieldset className="border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           What kind of relationship are you exploring?
         </legend>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Choose the closest working model. Legal form and required review may
           differ from this planning label.
         </p>

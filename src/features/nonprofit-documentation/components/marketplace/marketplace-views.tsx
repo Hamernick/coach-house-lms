@@ -35,10 +35,10 @@ export function MarketplaceViews({
           className="rounded-full p-1 group-data-[orientation=horizontal]/tabs:h-11"
           aria-label="Marketplace views"
         >
-          <TabsTrigger value="resources" className="min-h-9 rounded-full px-5">
+          <TabsTrigger value="resources" className="min-h-9 rounded-full px-4">
             Tools & resources
           </TabsTrigger>
-          <TabsTrigger value="people" className="min-h-9 rounded-full px-5">
+          <TabsTrigger value="people" className="min-h-9 rounded-full px-4">
             People
           </TabsTrigger>
         </TabsList>

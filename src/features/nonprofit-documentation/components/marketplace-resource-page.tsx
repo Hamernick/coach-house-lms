@@ -42,35 +42,35 @@ export function MarketplaceResourcePage({
       />
       <main
         id="documentation-content"
-        className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-8 lg:px-12"
+        className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <Button asChild variant="link" className="mb-5 min-h-11 px-0">
+        <Button asChild variant="link" className="mb-3 min-h-11 px-0">
           <Link href="/documentation/marketplace">
             <ArrowLeftIcon aria-hidden />
             Marketplace
           </Link>
         </Button>
-        <header className="mb-8">
+        <header className="mb-5">
           <p className="text-muted-foreground text-sm">
             {resource.provider} · {marketplaceTypeLabel(resource.type)}
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-2xl">
             {resource.name}
           </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-base leading-7">
+          <p className="text-muted-foreground mt-4 max-w-2xl text-sm leading-6">
             {resource.description}
           </p>
         </header>
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <article className="min-w-0 space-y-9">
             <section id="use-when" aria-labelledby="resource-use-title">
               <h2
                 id="resource-use-title"
-                className="text-xl font-semibold tracking-tight"
+                className="text-base font-semibold tracking-tight"
               >
                 What you can do with it
               </h2>
-              <p className="text-muted-foreground mt-3 leading-7">
+              <p className="text-muted-foreground mt-3 leading-6">
                 {guide?.outcome ?? resource.useWhen}
               </p>
             </section>
@@ -79,11 +79,11 @@ export function MarketplaceResourcePage({
                 <section id="prepare" aria-labelledby="resource-prepare-title">
                   <h2
                     id="resource-prepare-title"
-                    className="text-xl font-semibold tracking-tight"
+                    className="text-base font-semibold tracking-tight"
                   >
                     Before you start
                   </h2>
-                  <ul className="text-muted-foreground mt-3 list-disc space-y-2 pl-5 text-sm leading-6">
+                  <ul className="text-muted-foreground mt-3 list-disc space-y-2 pl-5 text-sm leading-5">
                     {guide.preparation.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
@@ -95,14 +95,14 @@ export function MarketplaceResourcePage({
                 >
                   <h2
                     id="resource-steps-title"
-                    className="text-xl font-semibold tracking-tight"
+                    className="text-base font-semibold tracking-tight"
                   >
                     Put it to work
                   </h2>
                   <p className="text-muted-foreground mt-2 text-sm">
                     A suggested workflow from Coach House.
                   </p>
-                  <ol className="mt-5 space-y-6">
+                  <ol className="mt-3 space-y-4">
                     {guide.steps.map((step, index) => (
                       <li
                         key={step.title}
@@ -116,7 +116,7 @@ export function MarketplaceResourcePage({
                         </span>
                         <div>
                           <h3 className="pt-1 font-semibold">{step.title}</h3>
-                          <p className="text-muted-foreground mt-2 text-sm leading-6">
+                          <p className="text-muted-foreground mt-2 text-sm leading-5">
                             {step.description}
                           </p>
                           {step.href ? (
@@ -150,15 +150,15 @@ export function MarketplaceResourcePage({
                   >
                     <h2
                       id="resource-examples-title"
-                      className="text-xl font-semibold tracking-tight"
+                      className="text-base font-semibold tracking-tight"
                     >
                       Ways to use it
                     </h2>
-                    <div className="bg-muted/30 mt-4 divide-y rounded-3xl border px-5">
+                    <div className="bg-muted/30 mt-4 divide-y rounded-2xl border px-4">
                       {guide.examples.map((example) => (
-                        <div key={example.title} className="py-5">
+                        <div key={example.title} className="py-3">
                           <h3 className="font-medium">{example.title}</h3>
-                          <p className="text-muted-foreground mt-2 text-sm leading-6">
+                          <p className="text-muted-foreground mt-2 text-sm leading-5">
                             {example.description}
                           </p>
                         </div>
@@ -169,11 +169,11 @@ export function MarketplaceResourcePage({
                 <section id="watch-for" aria-labelledby="resource-watch-title">
                   <h2
                     id="resource-watch-title"
-                    className="text-xl font-semibold tracking-tight"
+                    className="text-base font-semibold tracking-tight"
                   >
                     Know before you commit
                   </h2>
-                  <ul className="text-muted-foreground mt-3 list-disc space-y-2 pl-5 text-sm leading-6">
+                  <ul className="text-muted-foreground mt-3 list-disc space-y-2 pl-5 text-sm leading-5">
                     {guide.watchFor.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
@@ -184,9 +184,12 @@ export function MarketplaceResourcePage({
             <section
               id="sources"
               aria-labelledby="resource-sources-title"
-              className="border-t pt-6"
+              className="border-t pt-4"
             >
-              <h2 id="resource-sources-title" className="text-lg font-semibold">
+              <h2
+                id="resource-sources-title"
+                className="text-base font-semibold"
+              >
                 Sources & review
               </h2>
               <ul className="mt-3 space-y-1">
@@ -222,12 +225,12 @@ export function MarketplaceResourcePage({
               </p>
             </section>
           </article>
-          <aside className="bg-muted/20 order-first rounded-3xl border p-5 lg:sticky lg:top-24 lg:order-last">
+          <aside className="bg-muted/20 order-first rounded-2xl border p-4 lg:sticky lg:top-24 lg:order-last">
             <Badge variant="secondary" className="rounded-full">
               {marketplaceCostLabel(resource.costModel)}
             </Badge>
-            <p className="mt-4 text-sm leading-6">{resource.costNote}</p>
-            <Button asChild className="mt-5 mb-3 min-h-11 w-full rounded-full">
+            <p className="mt-4 text-sm leading-5">{resource.costNote}</p>
+            <Button asChild className="mt-3 mb-3 min-h-11 w-full rounded-full">
               <a href={resource.url} target="_blank" rel="noreferrer">
                 Visit provider
                 <ArrowUpRightIcon aria-hidden />
@@ -255,19 +258,19 @@ export function MarketplaceResourcePage({
                   <dl className="mb-4 space-y-4 text-sm">
                     <div>
                       <dt className="font-medium">Who can use it</dt>
-                      <dd className="text-muted-foreground mt-1 leading-6">
+                      <dd className="text-muted-foreground mt-1 leading-5">
                         {resource.eligibility}
                       </dd>
                     </div>
                     <div>
                       <dt className="font-medium">Where</dt>
-                      <dd className="text-muted-foreground mt-1 leading-6">
+                      <dd className="text-muted-foreground mt-1 leading-5">
                         {resource.geography}
                       </dd>
                     </div>
                   </dl>
 
-                  <dl className="text-muted-foreground space-y-3 text-sm leading-6">
+                  <dl className="text-muted-foreground space-y-3 text-sm leading-5">
                     <div>
                       <dt className="text-foreground font-medium">Account</dt>
                       <dd>{resource.accountRequirement}</dd>

@@ -14,6 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import type { MarketplaceResource } from "../../marketplace-types"
+import density from "../documentation-density.module.css"
 
 export function MarketplaceShortlist({
   resources,
@@ -43,7 +44,9 @@ export function MarketplaceShortlist({
           </span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col gap-0 sm:max-w-md">
+      <SheetContent
+        className={`${density.surface} flex flex-col gap-0 sm:max-w-md`}
+      >
         <SheetHeader>
           <SheetTitle>Saved resources</SheetTitle>
           <SheetDescription>
@@ -71,7 +74,7 @@ export function MarketplaceShortlist({
             </ol>
           ) : (
             <Empty
-              className="my-4 rounded-2xl"
+              className="my-4 rounded-xl"
               title="No saved resources yet"
               description="Use Save on a resource to keep it here."
             />

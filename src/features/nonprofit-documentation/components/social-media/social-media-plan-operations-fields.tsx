@@ -26,7 +26,7 @@ export function SocialMediaPlanOperationsFields({
 }) {
   return (
     <>
-      <fieldset className="border-t p-5 sm:p-6">
+      <fieldset className="border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           User-entered outputs per week
         </legend>
@@ -34,7 +34,7 @@ export function SocialMediaPlanOperationsFields({
           Zero excludes a channel. These are planning inputs, not recommended
           frequencies.
         </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {SOCIAL_MEDIA_CHANNELS.map((channel) => (
             <div key={channel.id} className="border p-4">
               <Label htmlFor={`social-channel-${channel.id}`}>
@@ -58,14 +58,14 @@ export function SocialMediaPlanOperationsFields({
                     boundedCadence(event.target.value)
                   )
                 }
-                className="mt-3 min-h-11 text-base tabular-nums"
+                className="mt-3 min-h-11 text-sm tabular-nums"
               />
             </div>
           ))}
         </div>
       </fieldset>
 
-      <fieldset className="grid gap-5 border-t p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 border-t p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Ownership and safeguards
         </legend>
@@ -107,7 +107,7 @@ export function SocialMediaPlanOperationsFields({
               maxLength={item.maxLength}
               rows={4}
               placeholder={item.placeholder}
-              className="min-h-28 resize-y text-base"
+              className="min-h-28 resize-y text-sm"
             />
           </div>
         ))}
@@ -134,7 +134,7 @@ export function SocialMediaPlanOperationsFields({
           ].map((item) => (
             <label
               key={item.key}
-              className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors"
+              className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2"
             >
               <Checkbox
                 checked={draft[item.key]}

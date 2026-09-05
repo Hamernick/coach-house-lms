@@ -63,11 +63,11 @@ function MatterBrief({ draft }: { draft: LegalPlanDraft }) {
 
   return (
     <div className="overflow-hidden border">
-      <div className="bg-foreground text-background p-5 sm:p-6">
+      <div className="bg-foreground text-background p-4 sm:p-4">
         <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
           {legalCategoryLabel(draft.category)}
         </p>
-        <h3 className="mt-3 text-xl font-semibold text-balance">
+        <h3 className="mt-3 text-base font-semibold text-balance">
           {draft.matterTitle || "Working legal matter"}
         </h3>
         <div className="text-background/75 mt-2 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
@@ -82,7 +82,7 @@ function MatterBrief({ draft }: { draft: LegalPlanDraft }) {
         {sections.map(([term, description]) => (
           <div key={term} className="grid gap-2 p-4 sm:grid-cols-[10rem_1fr]">
             <dt className="text-sm font-semibold">{term}</dt>
-            <dd className="text-muted-foreground min-w-0 text-sm leading-6 break-words whitespace-pre-line">
+            <dd className="text-muted-foreground min-w-0 text-sm leading-5 break-words whitespace-pre-line">
               {description}
             </dd>
           </div>
@@ -107,10 +107,10 @@ export function LegalPlanResults({
   const prompt = buildLegalReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
       {draft.urgency === "immediate-safety" ? (
         <section
-          className="bg-foreground text-background mt-8 border p-4 sm:p-5"
+          className="bg-foreground text-background mt-6 border p-4 sm:p-5"
           aria-labelledby="legal-urgent-result-title"
         >
           <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
@@ -119,7 +119,7 @@ export function LegalPlanResults({
           <h3 id="legal-urgent-result-title" className="mt-2 font-semibold">
             Protect people and use qualified channels now
           </h3>
-          <p className="text-background/75 mt-2 text-sm leading-6">
+          <p className="text-background/75 mt-2 text-sm leading-5">
             Do not delay emergency, safeguarding, incident-response, insurer,
             regulator, or qualified legal contact to finish this tool. The
             selection records your description; it does not determine a legal
@@ -128,7 +128,7 @@ export function LegalPlanResults({
         </section>
       ) : null}
 
-      <section className="mt-8" aria-labelledby="legal-matter-brief-title">
+      <section className="mt-6" aria-labelledby="legal-matter-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="legal-matter-brief-title" className="font-semibold">
@@ -149,7 +149,7 @@ export function LegalPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="legal-actions-title">
+      <section className="mt-6" aria-labelledby="legal-actions-title">
         <h3 id="legal-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -168,7 +168,7 @@ export function LegalPlanResults({
                   <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">

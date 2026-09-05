@@ -20,7 +20,7 @@ export function BrandIdentitySection({
   return (
     <section
       id={id}
-      className={cn("scroll-mt-24 border-b py-14 sm:py-20", className)}
+      className={cn("scroll-mt-24 border-b py-6", className)}
       aria-labelledby={`${id}-title`}
     >
       {eyebrow ? (
@@ -30,16 +30,16 @@ export function BrandIdentitySection({
       ) : null}
       <h2
         id={`${id}-title`}
-        className="mt-2 text-xl font-semibold tracking-[-0.025em] sm:text-2xl"
+        className="mt-2 text-lg font-semibold tracking-[-0.025em]"
       >
         {title}
       </h2>
       {description ? (
-        <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-5">
           {description}
         </p>
       ) : null}
-      <div className="mt-8">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   )
 }
@@ -56,14 +56,14 @@ export function BrandIdentitySubsection({
   className?: string
 }) {
   return (
-    <section className={cn("mt-14 first:mt-0", className)}>
+    <section className={cn("mt-6 first:mt-0", className)}>
       <h3 className="text-base font-semibold tracking-[-0.015em]">{title}</h3>
       {description ? (
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
+        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-5">
           {description}
         </p>
       ) : null}
-      <div className="mt-5">{children}</div>
+      <div className="mt-3">{children}</div>
     </section>
   )
 }

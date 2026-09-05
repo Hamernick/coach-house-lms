@@ -132,17 +132,17 @@ export function SustainabilityFinancialFields({
   return (
     <>
       <section
-        className="border-t p-5 sm:p-6"
+        className="border-t p-4 sm:p-4"
         aria-labelledby="sustainability-finance-title"
       >
         <h3 id="sustainability-finance-title" className="font-semibold">
           Flexible resources and planned costs
         </h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Enter one transparent scenario. Confirm restrictions and model actual
           receipt and payment timing separately.
         </p>
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
           {FINANCIAL_FIELDS.map((field) => (
             <NumericField
               key={field.key}
@@ -155,17 +155,17 @@ export function SustainabilityFinancialFields({
       </section>
 
       <section
-        className="border-t p-5 sm:p-6"
+        className="border-t p-4 sm:p-4"
         aria-labelledby="sustainability-capacity-title"
       >
         <h3 id="sustainability-capacity-title" className="font-semibold">
           Weekly people capacity
         </h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Capacity is not free. Include supported staff and volunteer time
           without assuming overtime or unpaid labor.
         </p>
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
           {CAPACITY_FIELDS.map((field) => (
             <NumericField
               key={field.key}

@@ -20,16 +20,16 @@ export function DocumentationAiReview({
   onCopy: () => void
 }) {
   return (
-    <Accordion type="single" collapsible className="mt-8 border-t">
+    <Accordion type="single" collapsible className="mt-6 border-t">
       <AccordionItem value="ai-review" className="border-b-0">
         <AccordionTrigger>Optional AI review</AccordionTrigger>
         <AccordionContent>
-          <p className="text-muted-foreground max-w-2xl text-sm leading-6">
+          <p className="text-muted-foreground max-w-2xl text-sm leading-5">
             Use this prompt with your own AI tool, then check its suggestions.
             Remove personal details and confidential records before sharing it
             with another service.
           </p>
-          <pre className="bg-background mt-4 max-h-64 overflow-auto rounded-2xl border p-4 text-xs leading-5 break-words whitespace-pre-wrap">
+          <pre className="bg-background mt-4 max-h-64 overflow-auto rounded-xl border p-4 text-xs leading-5 break-words whitespace-pre-wrap">
             {prompt}
           </pre>
           <Button

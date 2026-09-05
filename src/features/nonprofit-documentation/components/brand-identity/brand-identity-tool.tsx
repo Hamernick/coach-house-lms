@@ -66,9 +66,9 @@ export function BrandIdentityTool() {
       />
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-8 sm:py-10 lg:px-12 print:max-w-none print:p-0"
+        className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:px-6 sm:py-6 lg:px-8 print:max-w-none print:p-0"
       >
-        <header className="mx-auto max-w-[820px] border-b pb-10 print:pb-6">
+        <header className="mx-auto max-w-[820px] border-b pb-4 print:pb-6">
           <Link
             href="/documentation"
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-xs font-medium underline-offset-4 hover:underline print:hidden"
@@ -76,15 +76,15 @@ export function BrandIdentityTool() {
             <ArrowLeftIcon className="size-3.5" aria-hidden />
             Documentation
           </Link>
-          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
                 Tools · Public tool
               </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
+              <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-balance sm:text-2xl">
                 Brand Identity Builder
               </h1>
-              <p className="text-muted-foreground mt-5 max-w-2xl text-base leading-7 sm:text-lg">
+              <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6 sm:text-sm">
                 Build a clear, accessible nonprofit brand system, then download
                 everything your team needs to use it consistently.
               </p>
@@ -126,7 +126,7 @@ export function BrandIdentityTool() {
               </Button>
             </div>
           </div>
-          <div className="text-muted-foreground mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+          <div className="text-muted-foreground mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs">
             <span role="status" aria-live="polite">
               {tool.message}
             </span>
@@ -142,25 +142,25 @@ export function BrandIdentityTool() {
           className="mx-auto max-w-[820px] lg:hidden"
         />
 
-        <div className="mx-auto grid max-w-[960px] gap-14 lg:grid-cols-[140px_minmax(0,760px)] lg:gap-16">
+        <div className="mx-auto grid max-w-[960px] gap-6 lg:grid-cols-[140px_minmax(0,760px)] lg:gap-8">
           <aside className="hidden lg:block print:hidden">
             <nav
               aria-label="Brand guide sections"
-              className="sticky top-24 pt-10"
+              className="sticky top-24 pt-6"
             >
-              <ol className="space-y-4">
+              <ol className="space-y-1">
                 {BRAND_IDENTITY_SECTIONS.map((section) => (
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground text-xs underline-offset-4 hover:underline"
+                      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex min-h-7 items-center text-xs underline-offset-4 hover:underline"
                     >
                       {section.label}
                     </a>
                   </li>
                 ))}
               </ol>
-              <div className="text-muted-foreground mt-16 space-y-2 border-t pt-5 text-[0.68rem] leading-5">
+              <div className="text-muted-foreground mt-6 space-y-2 border-t pt-4 text-[0.68rem] leading-5">
                 <p>Autosaves on this device.</p>
                 <p>Files never leave this browser.</p>
               </div>

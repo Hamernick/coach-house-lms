@@ -91,7 +91,7 @@ export function MarketplaceFiltersPanel({
             maxLength={100}
             autoComplete="off"
             placeholder="Search provider, purpose, or need"
-            className="min-h-11 pl-9 text-base sm:min-h-9 sm:text-sm"
+            className="min-h-11 pl-9 text-sm sm:min-h-9 sm:text-sm"
             onChange={(event) =>
               onChange({ ...filters, query: event.target.value })
             }

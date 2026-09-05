@@ -47,12 +47,12 @@ function CampaignBrief({ draft }: { draft: CampaignPlanDraft }) {
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border">
-      <div className="bg-foreground text-background p-5 sm:p-6">
+    <div className="overflow-hidden rounded-xl border">
+      <div className="bg-foreground text-background p-4 sm:p-4">
         <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
           {campaignTypeLabel(draft.campaignType)}
         </p>
-        <h3 className="mt-3 text-xl font-semibold text-balance">
+        <h3 className="mt-3 text-base font-semibold text-balance">
           {draft.campaignName || "Working campaign"}
         </h3>
         <div className="text-background/75 mt-2 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
@@ -71,7 +71,7 @@ function CampaignBrief({ draft }: { draft: CampaignPlanDraft }) {
           .map(([term, description]) => (
             <div key={term} className="grid gap-2 p-4 sm:grid-cols-[12rem_1fr]">
               <dt className="text-sm font-semibold">{term}</dt>
-              <dd className="text-muted-foreground min-w-0 text-sm leading-6 break-words whitespace-pre-line">
+              <dd className="text-muted-foreground min-w-0 text-sm leading-5 break-words whitespace-pre-line">
                 {description || "Open"}
               </dd>
             </div>
@@ -96,8 +96,8 @@ export function CampaignPlanResults({
   const prompt = buildCampaignReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <section className="mt-8" aria-labelledby="campaign-brief-title">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <section className="mt-6" aria-labelledby="campaign-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="campaign-brief-title" className="font-semibold">
@@ -121,7 +121,7 @@ export function CampaignPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="campaign-actions-title">
+      <section className="mt-6" aria-labelledby="campaign-actions-title">
         <h3 id="campaign-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -139,7 +139,7 @@ export function CampaignPlanResults({
                   <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">

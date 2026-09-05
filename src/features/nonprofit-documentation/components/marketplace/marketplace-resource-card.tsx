@@ -25,10 +25,10 @@ export function MarketplaceResourceCard({
 }) {
   return (
     <Card
-      className="gap-0 rounded-3xl py-0 shadow-none"
+      className="gap-0 rounded-2xl py-0 shadow-none"
       data-marketplace-resource={resource.id}
     >
-      <CardHeader className="gap-4 p-5 pb-0 sm:p-6 sm:pb-0">
+      <CardHeader className="gap-4 p-4 pb-0 sm:p-4 sm:pb-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-muted-foreground text-xs">
             {marketplaceTypeLabel(resource.type)}
@@ -37,7 +37,7 @@ export function MarketplaceResourceCard({
             {marketplaceCostLabel(resource.costModel)}
           </Badge>
         </div>
-        <h3 className="text-lg leading-6 font-semibold tracking-tight">
+        <h3 className="text-base leading-5 font-semibold tracking-tight">
           <Link
             href={`/documentation/marketplace/${resource.id}`}
             className="underline-offset-4 hover:underline"
@@ -46,12 +46,12 @@ export function MarketplaceResourceCard({
           </Link>
         </h3>
       </CardHeader>
-      <CardContent className="flex-1 p-5 pt-3 sm:p-6 sm:pt-3">
-        <p className="text-muted-foreground text-sm leading-6">
+      <CardContent className="flex-1 p-4 pt-3 sm:p-4 sm:pt-3">
+        <p className="text-muted-foreground text-sm leading-5">
           {resource.description}
         </p>
       </CardContent>
-      <CardFooter className="flex flex-wrap justify-between gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
+      <CardFooter className="flex flex-wrap justify-between gap-2 px-4 pb-4 sm:px-4 sm:pb-4">
         <Button asChild variant="ghost" className="min-h-11 rounded-full px-3">
           <Link href={`/documentation/marketplace/${resource.id}`}>
             View resource

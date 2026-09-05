@@ -69,7 +69,7 @@ export function FoundationGuidePage({ guide }: { guide: FoundationGuide }) {
       />
       <div
         id="documentation-content"
-        className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-12 xl:grid-cols-[minmax(0,760px)_200px]"
+        className="mx-auto grid w-full max-w-[1180px] gap-6 px-4 py-6 sm:px-6 sm:py-6 lg:px-8 xl:grid-cols-[minmax(0,760px)_200px]"
       >
         <article className="min-w-0">
           <GuideHeader guide={guide} />
@@ -106,17 +106,17 @@ function GuideHeader({ guide }: { guide: FoundationGuide }) {
           {guide.slug === "quickstart" ? "Quickstart" : "Key concepts"}
         </span>
       </nav>
-      <header className="mt-6 border-b pb-8">
+      <header className="mt-4 border-b pb-5">
         <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
           {guide.eyebrow}
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
+        <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-balance sm:text-2xl">
           {guide.title}
         </h1>
-        <p className="mt-5 text-base leading-7 text-pretty sm:text-lg sm:leading-8">
+        <p className="mt-3 text-sm leading-6 text-pretty sm:text-sm sm:leading-8">
           {guide.answer}
         </p>
-        <div className="text-muted-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+        <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
           <span>{guide.readingTime}</span>
           <span>Reviewed {guide.reviewedDate}</span>
           <span>United States</span>
@@ -131,26 +131,26 @@ function GuideSections({ guide }: { guide: FoundationGuide }) {
     <section
       key={section.id}
       id={section.id}
-      className="scroll-mt-8 border-b py-10"
+      className="scroll-mt-8 border-b py-6"
       aria-labelledby={`${section.id}-title`}
     >
       <h2
         id={`${section.id}-title`}
-        className="text-2xl font-semibold tracking-[-0.025em]"
+        className="text-lg font-semibold tracking-[-0.025em]"
       >
         {section.title}
       </h2>
-      <p className="text-muted-foreground mt-3 text-sm leading-6">
+      <p className="text-muted-foreground mt-3 text-sm leading-5">
         {section.introduction}
       </p>
-      <dl className="mt-6 divide-y border-y">
+      <dl className="mt-4 divide-y border-y">
         {section.entries.map((entry) => (
           <div
             key={entry.title}
-            className="grid gap-2 py-5 sm:grid-cols-[11rem_1fr] sm:gap-6"
+            className="grid gap-2 py-3 sm:grid-cols-[11rem_1fr] sm:gap-6"
           >
             <dt className="font-semibold">{entry.title}</dt>
-            <dd className="text-muted-foreground text-sm leading-6">
+            <dd className="text-muted-foreground text-sm leading-5">
               <p>{entry.description}</p>
               {entry.detail ? <p className="mt-2">{entry.detail}</p> : null}
             </dd>
@@ -165,7 +165,7 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
   return (
     <section
       id="stages"
-      className="scroll-mt-8 border-b py-10"
+      className="scroll-mt-8 border-b py-6"
       aria-labelledby="stages-title"
     >
       <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
@@ -173,11 +173,11 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
       </p>
       <h2
         id="stages-title"
-        className="mt-2 text-2xl font-semibold tracking-[-0.025em]"
+        className="mt-2 text-lg font-semibold tracking-[-0.025em]"
       >
         Use the concept at your current stage
       </h2>
-      <div className="mt-6 divide-y border-y">
+      <div className="mt-4 divide-y border-y">
         {guide.stages.map((stage, index) => (
           <section
             key={stage.id}
@@ -194,21 +194,21 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
                 </p>
                 <h3
                   id={`${stage.id}-title`}
-                  className="mt-2 text-xl font-semibold"
+                  className="mt-2 text-base font-semibold"
                 >
                   {stage.question}
                 </h3>
-                <p className="text-muted-foreground mt-3 text-sm leading-6">
+                <p className="text-muted-foreground mt-3 text-sm leading-5">
                   {stage.guidance}
                 </p>
-                <ul className="mt-5 list-disc space-y-3 pl-5">
+                <ul className="mt-3 list-disc space-y-3 pl-5">
                   {stage.actions.map((action) => (
-                    <li key={action} className="pl-1 text-sm leading-6">
+                    <li key={action} className="pl-1 text-sm leading-5">
                       {action}
                     </li>
                   ))}
                 </ul>
-                <p className="bg-muted/45 mt-5 border-l-2 p-4 text-sm leading-6">
+                <p className="bg-muted/45 mt-3 border-l-2 p-4 text-sm leading-5">
                   <strong>Ready when:</strong> {stage.checkpoint}
                 </p>
               </div>
@@ -225,20 +225,20 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
     <>
       <section
         id="checklist"
-        className="scroll-mt-8 border-b py-10"
+        className="scroll-mt-8 border-b py-6"
         aria-labelledby="checklist-title"
       >
         <h2
           id="checklist-title"
-          className="text-2xl font-semibold tracking-[-0.025em]"
+          className="text-lg font-semibold tracking-[-0.025em]"
         >
           Readiness checklist
         </h2>
-        <ul className="bg-border mt-6 grid gap-px overflow-hidden border sm:grid-cols-2">
+        <ul className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2">
           {guide.checklist.map((item) => (
             <li
               key={item}
-              className="bg-background grid grid-cols-[1.25rem_1fr] gap-3 p-4 text-sm leading-6"
+              className="bg-background grid grid-cols-[1.25rem_1fr] gap-3 p-4 text-sm leading-5"
             >
               <CheckIcon className="mt-1 size-4" aria-hidden />
               <span>{item}</span>
@@ -248,7 +248,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
       </section>
       <section
         id="sources"
-        className="scroll-mt-8 py-10"
+        className="scroll-mt-8 py-6"
         aria-labelledby="sources-title"
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -258,7 +258,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
             </p>
             <h2
               id="sources-title"
-              className="mt-2 text-2xl font-semibold tracking-[-0.025em]"
+              className="mt-2 text-lg font-semibold tracking-[-0.025em]"
             >
               Sources and review
             </h2>
@@ -267,9 +267,9 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
             Reviewed {guide.reviewedDate}
           </span>
         </div>
-        <ul className="mt-6 divide-y border-y">
+        <ul className="mt-4 divide-y border-y">
           {guide.sources.map((source) => (
-            <li key={source.url} className="py-5">
+            <li key={source.url} className="py-3">
               <a
                 href={source.url}
                 target="_blank"
@@ -285,13 +285,13 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
               <p className="text-muted-foreground mt-1 text-xs">
                 {source.publisher}
               </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-6">
+              <p className="text-muted-foreground mt-2 text-sm leading-5">
                 {source.note}
               </p>
             </li>
           ))}
         </ul>
-        <p className="text-muted-foreground mt-5 text-xs leading-5">
+        <p className="text-muted-foreground mt-3 text-xs leading-5">
           Educational guidance only. Confirm current federal and state
           requirements with the responsible agency or a qualified professional.
         </p>
@@ -309,10 +309,10 @@ function GuideFooter({ guide }: { guide: FoundationGuide }) {
           label: "Mission",
         }
   return (
-    <footer className="grid gap-4 border-t pt-8 sm:grid-cols-2">
+    <footer className="grid gap-4 border-t pt-5 sm:grid-cols-2">
       <Link
         href={DOCUMENTATION_PATH}
-        className="hover:bg-muted/45 flex min-h-20 items-center gap-3 border p-4 transition-colors"
+        className="hover:bg-muted/45 flex min-h-16 items-center gap-3 border p-4 transition-colors"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />
         <span>
@@ -322,7 +322,7 @@ function GuideFooter({ guide }: { guide: FoundationGuide }) {
       </Link>
       <Link
         href={next.href}
-        className="hover:bg-muted/45 flex min-h-20 items-center justify-between gap-3 border p-4 transition-colors"
+        className="hover:bg-muted/45 flex min-h-16 items-center justify-between gap-3 border p-4 transition-colors"
       >
         <span>
           <span className="text-muted-foreground block text-xs">

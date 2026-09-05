@@ -17,6 +17,11 @@
 - Keep public tools available without authentication or paid entitlements.
   Device-local drafts must identify their storage boundary and avoid claiming
   account sync.
+- Keep Documentation compact: 24px page headings, 14px body copy, 32px desktop
+  controls, and 28px desktop tabs. The feature-owned density CSS module applies
+  through `DocumentationSurface` and the portaled Marketplace shortlist. Preserve
+  44px mobile targets and 16px mobile input text; do not resize shared app primitives
+  or generated Brand Identity artwork to change the documentation layout.
 - Keep planner controls disabled until saved drafts finish loading. This also
   protects edits made immediately after hydration or browser back navigation.
 - All 14 planners share `DocumentationToolFlow` and

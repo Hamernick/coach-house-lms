@@ -36,11 +36,11 @@ export function DocumentationStageGuidance({
       collapsible
       value={stage}
       onValueChange={setStage}
-      className="mt-5"
+      className="mt-3"
     >
       {stages.map((item) => (
         <AccordionItem key={item.id} value={item.id}>
-          <AccordionTrigger className="gap-4 py-5 text-left">
+          <AccordionTrigger className="gap-4 py-3 text-left">
             <span
               id={`${item.id}-title`}
               className="w-24 shrink-0 font-semibold"
@@ -49,16 +49,16 @@ export function DocumentationStageGuidance({
             </span>
             <span className="flex-1 text-sm font-normal">{item.question}</span>
           </AccordionTrigger>
-          <AccordionContent className="pb-6">
-            <p className="text-muted-foreground text-sm leading-6">
+          <AccordionContent className="pb-4">
+            <p className="text-muted-foreground text-sm leading-5">
               {item.guidance}
             </p>
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-5">
               {item.actions.map((action) => (
                 <li key={action}>{action}</li>
               ))}
             </ul>
-            <p className="bg-muted/40 mt-5 rounded-2xl p-4 text-sm leading-6">
+            <p className="bg-muted/40 mt-3 rounded-xl p-4 text-sm leading-5">
               <strong>Ready to move on when:</strong> {item.checkpoint}
             </p>
           </AccordionContent>

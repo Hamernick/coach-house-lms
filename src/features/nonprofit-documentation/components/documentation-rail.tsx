@@ -57,7 +57,7 @@ export function DocumentationRail({
                 asChild
                 isActive={pathname === DOCUMENTATION_PATH}
                 tooltip="Documentation home"
-                className="min-h-11 justify-start gap-2 md:min-h-8"
+                className="min-h-11 justify-start gap-2 md:h-7 md:min-h-7 md:text-[13px]"
               >
                 <Link
                   href={DOCUMENTATION_PATH}
@@ -77,7 +77,7 @@ export function DocumentationRail({
       </SidebarGroup>
 
       {DOCUMENTATION_NAVIGATION.map((section) => (
-        <SidebarGroup key={section.id} className="py-2">
+        <SidebarGroup key={section.id} className="py-1">
           <SidebarGroupLabel className="text-[0.68rem] font-semibold tracking-[0.12em] uppercase">
             {section.title}
           </SidebarGroupLabel>
@@ -97,7 +97,7 @@ export function DocumentationRail({
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="min-h-11 justify-start md:min-h-8"
+                        className="min-h-11 justify-start md:h-7 md:min-h-7 md:text-[13px]"
                       >
                         <Link
                           href={item.href}

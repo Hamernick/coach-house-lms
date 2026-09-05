@@ -57,7 +57,7 @@ function DraftTextarea({
         maxLength={maxLength}
         rows={4}
         placeholder={placeholder}
-        className="min-h-28 resize-y text-base"
+        className="min-h-28 resize-y text-sm"
       />
     </div>
   )
@@ -77,7 +77,7 @@ export function SocialMediaPlanFields({
 }) {
   return (
     <div>
-      <fieldset className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Purpose and audience
         </legend>
@@ -93,7 +93,7 @@ export function SocialMediaPlanFields({
             }
             maxLength={120}
             placeholder="Example: Willow Street Family Resource Network…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -107,7 +107,7 @@ export function SocialMediaPlanFields({
             }
             maxLength={120}
             placeholder="Example: Know your options…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -229,7 +229,7 @@ export function SocialMediaPlanFields({
             }
             maxLength={1000}
             placeholder="https://example.org/program…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
           <p className="text-muted-foreground text-xs leading-5">
             Used only to build a local preview link. Nothing is opened or sent.
@@ -237,7 +237,7 @@ export function SocialMediaPlanFields({
         </div>
       </fieldset>
 
-      <fieldset className="grid gap-5 border-t p-5 sm:p-6 lg:grid-cols-2">
+      <fieldset className="grid gap-3 border-t p-4 sm:p-4 lg:grid-cols-2">
         <legend className="px-1 text-sm font-semibold">
           Source and content
         </legend>

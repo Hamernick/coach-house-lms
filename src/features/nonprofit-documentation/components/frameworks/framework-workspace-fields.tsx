@@ -198,7 +198,7 @@ function WorkspaceTextField({
         maxLength={field.maxLength}
         rows={4}
         placeholder={field.placeholder}
-        className="min-h-32 resize-y text-base"
+        className="min-h-32 resize-y text-sm"
       />
     </div>
   )
@@ -218,7 +218,7 @@ export function FrameworkWorkspaceFields({
 
   return (
     <div>
-      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+      <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="framework-organization">Organization name</Label>
           <Input
@@ -231,7 +231,7 @@ export function FrameworkWorkspaceFields({
             maxLength={120}
             placeholder="Example: Willow Street Family Resource Network…"
             autoComplete="organization"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2">
@@ -243,7 +243,7 @@ export function FrameworkWorkspaceFields({
             onChange={(event) => updateDraft("programName", event.target.value)}
             maxLength={120}
             placeholder="Example: Neighborhood legal navigation pilot…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
         </div>
         <div className="space-y-2 lg:col-span-2">
@@ -268,7 +268,7 @@ export function FrameworkWorkspaceFields({
         </div>
       </div>
 
-      <fieldset className="border-t p-5 sm:p-6">
+      <fieldset className="border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           What decision do you need to support?
         </legend>
@@ -281,7 +281,7 @@ export function FrameworkWorkspaceFields({
           onValueChange={(value) =>
             updateDraft("primaryQuestion", value as FrameworkQuestionId)
           }
-          className="mt-5 gap-3"
+          className="mt-3 gap-3"
         >
           {FRAMEWORK_QUESTIONS.map((question) => {
             const framework = recommendedFramework(question.id)
@@ -313,10 +313,10 @@ export function FrameworkWorkspaceFields({
             Recommended starting framework
           </p>
           <p className="mt-2 font-semibold">{recommendation.title}</p>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
+          <p className="text-muted-foreground mt-2 text-sm leading-5">
             {recommendation.description}
           </p>
-          <p className="mt-3 text-sm leading-6">
+          <p className="mt-3 text-sm leading-5">
             <strong>First move:</strong> {recommendation.firstMove}
           </p>
           <p className="text-muted-foreground mt-2 text-xs leading-5">
@@ -327,12 +327,12 @@ export function FrameworkWorkspaceFields({
       </fieldset>
 
       {FIELD_GROUPS.map((group) => (
-        <fieldset key={group.title} className="border-t p-5 sm:p-6">
+        <fieldset key={group.title} className="border-t p-4 sm:p-4">
           <legend className="px-1 text-sm font-semibold">{group.title}</legend>
           <p className="text-muted-foreground mt-1 text-xs leading-5">
             {group.description}
           </p>
-          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
             {group.fields.map((field) => (
               <WorkspaceTextField
                 key={field.key}

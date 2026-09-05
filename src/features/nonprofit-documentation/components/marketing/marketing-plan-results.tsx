@@ -31,7 +31,7 @@ function BriefItem({
       <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {label}
       </p>
-      <p className="mt-3 text-sm leading-6 font-medium text-pretty">
+      <p className="mt-3 text-sm leading-5 font-medium text-pretty">
         {value || empty}
       </p>
     </div>
@@ -57,7 +57,7 @@ export function MarketingPlanResults({
     : "Add a monthly cadence to include a channel in this period"
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
       <p
         className="bg-background mt-4 border px-4 py-3 text-sm font-medium"
         aria-live="polite"
@@ -65,15 +65,15 @@ export function MarketingPlanResults({
         {rhythmLabel}
       </p>
 
-      <div className="mt-8">
+      <div className="mt-6">
         <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
           {marketingObjectiveLabel(draft.objective)}
         </p>
         <h3 className="mt-2 font-semibold">Your communications brief</h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <p className="text-muted-foreground mt-1 text-sm leading-5">
           Audience: {draft.primaryAudience || "Add one primary audience"}
         </p>
-        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-3">
+        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-xl border lg:grid-cols-3">
           <BriefItem
             label="Message"
             value={draft.mainMessage}
@@ -92,7 +92,7 @@ export function MarketingPlanResults({
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="font-semibold">90-day channel rhythm</h3>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -109,7 +109,7 @@ export function MarketingPlanResults({
         </Button>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border">
+      <div className="mt-4 overflow-x-auto rounded-xl border">
         <table className="w-full min-w-0 border-collapse text-left text-sm">
           <caption className="sr-only">
             Planned monthly and ninety-day output cadence by channel
@@ -145,7 +145,7 @@ export function MarketingPlanResults({
         </table>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6">
         <h3 className="font-semibold">Stage and channel action plan</h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} actions generated from the stage, brief, channel
@@ -155,7 +155,7 @@ export function MarketingPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
@@ -164,10 +164,10 @@ export function MarketingPlanResults({
                 <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -179,7 +179,7 @@ export function MarketingPlanResults({
 
       <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
           This tool structures source inputs and cadence. It does not predict
           reach, engagement, conversion, participation, fundraising, or impact.

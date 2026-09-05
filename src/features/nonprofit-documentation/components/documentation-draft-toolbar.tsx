@@ -17,7 +17,7 @@ export function DocumentationDraftToolbar({
   onReset: () => void
 }) {
   return (
-    <div className="bg-muted/20 flex flex-wrap items-center justify-between gap-2 border-b px-5 py-2 sm:px-6">
+    <div className="bg-muted/20 flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 sm:px-4">
       <p className="text-muted-foreground text-xs">
         {!ready
           ? "Loading saved draft…"

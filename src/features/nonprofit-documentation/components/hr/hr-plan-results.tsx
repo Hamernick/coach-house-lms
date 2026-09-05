@@ -61,12 +61,12 @@ function RoleBrief({ draft }: { draft: HrPlanDraft }) {
   ]
   return (
     <div className="overflow-hidden border">
-      <div className="bg-foreground text-background p-5 sm:p-6">
+      <div className="bg-foreground text-background p-4 sm:p-4">
         <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
           {hrRelationshipLabel(draft.relationship)} · {draft.reviewDays}-day
           review
         </p>
-        <h3 className="mt-3 text-xl font-semibold text-balance">
+        <h3 className="mt-3 text-base font-semibold text-balance">
           {draft.roleTitle || "Working role title"}
         </h3>
         <p className="text-background/75 mt-2 text-sm">
@@ -77,7 +77,7 @@ function RoleBrief({ draft }: { draft: HrPlanDraft }) {
         {sections.map(([term, description]) => (
           <div key={term} className="grid gap-2 p-4 sm:grid-cols-[10rem_1fr]">
             <dt className="text-sm font-semibold">{term}</dt>
-            <dd className="text-muted-foreground min-w-0 text-sm leading-6 break-words">
+            <dd className="text-muted-foreground min-w-0 text-sm leading-5 break-words">
               {description}
             </dd>
           </div>
@@ -102,8 +102,8 @@ export function HrPlanResults({
   const prompt = buildHrReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <section className="mt-8" aria-labelledby="hr-role-brief-title">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <section className="mt-6" aria-labelledby="hr-role-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="hr-role-brief-title" className="font-semibold">
@@ -124,7 +124,7 @@ export function HrPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="hr-actions-title">
+      <section className="mt-6" aria-labelledby="hr-actions-title">
         <h3 id="hr-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -143,7 +143,7 @@ export function HrPlanResults({
                   <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">

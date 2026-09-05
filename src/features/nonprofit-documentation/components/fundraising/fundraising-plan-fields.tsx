@@ -59,7 +59,7 @@ export function FundraisingPlanFields({
   return (
     <div>
       {part !== "channels" ? (
-        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+        <div className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
           <div className="space-y-2 lg:col-span-2">
             <Label htmlFor="fundraising-organization">Organization name</Label>
             <Input
@@ -72,7 +72,7 @@ export function FundraisingPlanFields({
               maxLength={120}
               placeholder="Example: East Harbor Youth Arts…"
               autoComplete="organization"
-              className="min-h-11 text-base"
+              className="min-h-11 text-sm"
             />
           </div>
 
@@ -138,7 +138,7 @@ export function FundraisingPlanFields({
               onChange={(event) =>
                 updateDraft("fundingGoal", moneyInput(event.target.value))
               }
-              className="min-h-11 text-base tabular-nums"
+              className="min-h-11 text-sm tabular-nums"
             />
             <p className="text-muted-foreground text-xs leading-5">
               Use the approved cost of the work, including fundraising costs.
@@ -159,7 +159,7 @@ export function FundraisingPlanFields({
               onChange={(event) =>
                 updateDraft("committedFunds", moneyInput(event.target.value))
               }
-              className="min-h-11 text-base tabular-nums"
+              className="min-h-11 text-sm tabular-nums"
             />
             <p className="text-muted-foreground text-xs leading-5">
               Include only secured resources available for this plan.
@@ -169,7 +169,7 @@ export function FundraisingPlanFields({
       ) : null}
       {part !== "need" ? (
         <>
-          <fieldset className="border-t p-5 sm:p-6">
+          <fieldset className="border-t p-4 sm:p-4">
             <legend className="px-1 text-sm font-semibold">
               Planned amounts by channel
             </legend>
@@ -177,7 +177,7 @@ export function FundraisingPlanFields({
               Enter planning amounts, not predictions. Leave a channel at zero
               when it is not part of this period.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
               {FUNDRAISING_CHANNELS.map((channel) => (
                 <div key={channel.id} className="border p-4">
                   <Label htmlFor={`channel-${channel.id}`}>
@@ -201,17 +201,17 @@ export function FundraisingPlanFields({
                         moneyInput(event.target.value)
                       )
                     }
-                    className="mt-3 min-h-11 text-base tabular-nums"
+                    className="mt-3 min-h-11 text-sm tabular-nums"
                   />
                 </div>
               ))}
             </div>
           </fieldset>
-          <fieldset className="grid gap-3 border-t p-5 sm:p-6">
+          <fieldset className="grid gap-3 border-t p-4 sm:p-4">
             <legend className="px-1 text-sm font-semibold">
               System readiness
             </legend>
-            <label className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors">
+            <label className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2">
               <Checkbox
                 checked={draft.hasCaseForSupport}
                 onCheckedChange={(checked) =>
@@ -228,7 +228,7 @@ export function FundraisingPlanFields({
                 </span>
               </span>
             </label>
-            <label className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors">
+            <label className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2">
               <Checkbox
                 checked={draft.hasGiftAcknowledgmentProcess}
                 onCheckedChange={(checked) =>

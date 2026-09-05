@@ -45,10 +45,10 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
   }
 
   return (
-    <footer className="grid gap-4 border-t pt-8 sm:grid-cols-2">
+    <footer className="grid gap-4 border-t pt-5 sm:grid-cols-2">
       <Link
         href={previous.href}
-        className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center gap-3 rounded-2xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-16 items-center gap-3 rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />
         <span>
@@ -59,7 +59,7 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
       {article.next?.href ? (
         <Link
           href={article.next.href}
-          className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center justify-between gap-3 rounded-2xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-16 items-center justify-between gap-3 rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           <span>
             <span className="text-muted-foreground block text-xs">
@@ -71,7 +71,7 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
         </Link>
       ) : (
         <div
-          className="text-muted-foreground flex min-h-20 items-center justify-between gap-3 rounded-2xl border p-4"
+          className="text-muted-foreground flex min-h-16 items-center justify-between gap-3 rounded-xl border p-4"
           aria-disabled="true"
         >
           <span>
@@ -104,10 +104,10 @@ export function BestPracticeArticlePage({
     : [...baseContents, ...closingContents]
 
   const guide = (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,760px)_180px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,760px)_180px]">
       <div className="min-w-0">
         <DocumentationMobileContents items={contents} />
-        <p className="text-muted-foreground mt-5 text-xs">
+        <p className="text-muted-foreground mt-3 text-xs">
           {article.readingTime} · Reviewed {article.reviewedDate}
         </p>
         <BestPracticeCoreSections article={article} />
@@ -163,7 +163,7 @@ export function BestPracticeArticlePage({
       />
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-[1180px] px-5 py-8 sm:px-8 lg:px-12"
+        className="mx-auto w-full max-w-[1180px] px-4 py-6 sm:px-6 lg:px-8"
       >
         <article className="min-w-0">
           <nav
@@ -184,11 +184,11 @@ export function BestPracticeArticlePage({
             </span>
           </nav>
 
-          <header className="mt-5 mb-5">
-            <h1 className="text-3xl font-semibold tracking-tight">
+          <header className="mt-3 mb-3">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {article.navigationTitle}
             </h1>
-            <p className="text-muted-foreground mt-3 max-w-2xl text-base leading-7">
+            <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
               {toolMetadata?.description ?? article.description}
             </p>
           </header>

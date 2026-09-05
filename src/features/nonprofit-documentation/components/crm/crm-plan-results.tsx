@@ -41,11 +41,11 @@ function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
 
   return (
     <div className="overflow-hidden border">
-      <div className="bg-foreground text-background p-5 sm:p-6">
+      <div className="bg-foreground text-background p-4 sm:p-4">
         <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
           {crmRelationshipContextLabel(draft.relationshipContext)}
         </p>
-        <h3 className="mt-3 text-xl font-semibold text-balance">
+        <h3 className="mt-3 text-base font-semibold text-balance">
           {draft.planName || "Working CRM data-stewardship plan"}
         </h3>
         <p className="text-background/75 mt-2 text-sm">
@@ -57,7 +57,7 @@ function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
         {sections.map(([term, description]) => (
           <div key={term} className="grid gap-2 p-4 sm:grid-cols-[13rem_1fr]">
             <dt className="text-sm font-semibold">{term}</dt>
-            <dd className="text-muted-foreground min-w-0 text-sm leading-6 break-words whitespace-pre-line">
+            <dd className="text-muted-foreground min-w-0 text-sm leading-5 break-words whitespace-pre-line">
               {description || "Open"}
             </dd>
           </div>
@@ -113,7 +113,7 @@ function CrmFieldTable({ draft }: { draft: CrmPlanDraft }) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center">
+              <TableCell colSpan={7} className="py-6 text-center">
                 No generic fields named. Add a proposed field above.
               </TableCell>
             </TableRow>
@@ -139,8 +139,8 @@ export function CrmPlanResults({
   const prompt = buildCrmReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <section className="mt-8" aria-labelledby="crm-brief-title">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <section className="mt-6" aria-labelledby="crm-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="crm-brief-title" className="font-semibold">
@@ -161,7 +161,7 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="crm-table-title">
+      <section className="mt-6" aria-labelledby="crm-table-title">
         <h3 id="crm-table-title" className="font-semibold">
           Proposed field dictionary
         </h3>
@@ -174,7 +174,7 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="crm-actions-title">
+      <section className="mt-6" aria-labelledby="crm-actions-title">
         <h3 id="crm-actions-title" className="font-semibold">
           Next steps to review
         </h3>
@@ -193,7 +193,7 @@ export function CrmPlanResults({
                   <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">

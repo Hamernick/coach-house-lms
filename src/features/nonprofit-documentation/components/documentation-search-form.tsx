@@ -56,14 +56,14 @@ export function DocumentationSearchForm({ query = "" }: { query?: string }) {
           placeholder="Search guides and tools…"
           maxLength={DOCUMENTATION_SEARCH_QUERY_LIMIT}
           autoComplete="off"
-          className="h-11 min-w-0 text-base"
+          className="h-11 min-w-0 text-sm"
         />
         <InputGroupAddon>
           <Button
             type="submit"
             variant="outline"
             size="icon"
-            className="size-11 touch-manipulation"
+            className="size-11 touch-manipulation md:size-8"
             aria-label="Search documentation"
           >
             <SearchIcon aria-hidden />

@@ -65,16 +65,16 @@ export function DocumentationArticleWorkspace({
       value={view}
       onValueChange={changeView}
       className="gap-0"
-      style={{ "--documentation-anchor-offset": "10rem" } as CSSProperties}
+      style={{ "--documentation-anchor-offset": "7rem" } as CSSProperties}
     >
       <TabsList
         className="rounded-full p-1 group-data-[orientation=horizontal]/tabs:h-11"
         aria-label="Guide and tool"
       >
-        <TabsTrigger value="tool" className="min-h-9 rounded-full px-5">
+        <TabsTrigger value="tool" className="min-h-9 rounded-full px-4">
           Use tool
         </TabsTrigger>
-        <TabsTrigger value="guide" className="min-h-9 rounded-full px-5">
+        <TabsTrigger value="guide" className="min-h-9 rounded-full px-4">
           Read guide
         </TabsTrigger>
       </TabsList>
@@ -90,7 +90,7 @@ export function DocumentationArticleWorkspace({
         forceMount
         className="data-[state=inactive]:hidden"
       >
-        <div id="guide" className="scroll-mt-40">
+        <div id="guide" className="scroll-mt-28">
           {guide}
         </div>
       </TabsContent>

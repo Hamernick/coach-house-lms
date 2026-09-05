@@ -61,7 +61,7 @@ export function ExportsSection({
         <div className="bg-background p-6">
           <DownloadIcon className="size-5" aria-hidden />
           <h3 className="mt-5 font-semibold">Complete brand package</h3>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Includes structured brand data, CSS tokens, usage notes, and every
             uploaded original.
           </p>
@@ -78,7 +78,7 @@ export function ExportsSection({
         <div className="bg-background p-6">
           <CopyIcon className="size-5" aria-hidden />
           <h3 className="mt-5 font-semibold">Design tokens</h3>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Copy ready-to-use CSS variables for the palette, fonts, and modular
             type scale.
           </p>

@@ -28,7 +28,7 @@ export function MarketplaceResourceCard({
       className="gap-0 rounded-2xl py-0 shadow-none"
       data-marketplace-resource={resource.id}
     >
-      <CardHeader className="gap-4 p-4 pb-0 sm:p-4 sm:pb-0">
+      <CardHeader className="gap-2 p-4 pb-0 sm:p-4 sm:pb-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-muted-foreground text-xs">
             {marketplaceTypeLabel(resource.type)}
@@ -46,7 +46,7 @@ export function MarketplaceResourceCard({
           </Link>
         </h3>
       </CardHeader>
-      <CardContent className="flex-1 p-4 pt-3 sm:p-4 sm:pt-3">
+      <CardContent className="flex-1 p-4 pt-1 sm:p-4 sm:pt-1">
         <p className="text-muted-foreground text-sm leading-5">
           {resource.description}
         </p>

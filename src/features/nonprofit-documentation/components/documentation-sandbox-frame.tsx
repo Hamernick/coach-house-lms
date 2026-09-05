@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import density from "./documentation-density.module.css"
 
 export function DocumentationSandboxFrame({
   eyebrow,
@@ -14,24 +15,22 @@ export function DocumentationSandboxFrame({
   return (
     <section
       id="sandbox"
-      className="scroll-mt-24 pt-3 pb-5"
+      className="scroll-mt-24 pt-2 pb-4"
       aria-labelledby="sandbox-title"
     >
-      <div data-tool-intro>
+      <div data-tool-intro className={density.heading}>
         <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {eyebrow}
         </p>
         <h2
           id="sandbox-title"
-          className="mt-2 text-lg font-semibold tracking-[-0.025em]"
+          className="text-lg font-semibold tracking-[-0.025em]"
         >
           {title}
         </h2>
-        <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-5">
-          {description}
-        </p>
+        <p className="text-muted-foreground max-w-2xl text-sm">{description}</p>
       </div>
-      <div className="bg-card mt-3 overflow-hidden rounded-2xl border">
+      <div className="bg-card mt-2 overflow-hidden rounded-2xl border">
         {children}
       </div>
     </section>

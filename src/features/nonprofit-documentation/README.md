@@ -10,6 +10,13 @@
 
 ## Rules
 
+- Text spacing follows `docs/design.md`: 4px within eyebrow/title/subtitle groups,
+  8px before related content, and 16px between sections. Reuse `density.heading`
+  from `documentation-density.module.css` for page, hero, sandbox, and Brand
+  Identity heading groups. Do not add child vertical margins to that group;
+  subtitle line height is 1.4. Keep this rhythm at every breakpoint and check
+  the rendered gaps, including parent padding and wrapped lines.
+
 - Keep all visible documentation public. Entitlements change surrounding account
   navigation, not article access or content.
 - Publish only entries with live routes. Planned rail entries remain
@@ -19,7 +26,7 @@
   account sync.
 - Keep Documentation compact: 24px index headings, 14px body copy, 32px desktop
   controls, and 28px desktop tabs. Article headers use centered 28px mobile and
-  34px desktop titles, 15–16px subtitles with 1.5 line height, and sentence-case
+  34px desktop titles, 15–16px subtitles with 1.4 line height, and sentence-case
   eyebrows. Sidebar group labels explicitly override the shared uppercase style.
   The feature-owned density CSS module applies
   through `DocumentationSurface` and the portaled Marketplace shortlist. Preserve

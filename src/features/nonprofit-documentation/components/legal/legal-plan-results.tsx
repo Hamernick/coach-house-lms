@@ -67,10 +67,10 @@ function MatterBrief({ draft }: { draft: LegalPlanDraft }) {
         <p className="text-background/70 text-xs font-semibold tracking-normal">
           {legalCategoryLabel(draft.category)}
         </p>
-        <h3 className="mt-3 text-base font-semibold text-balance">
+        <h3 className="mt-1 text-base font-semibold text-balance">
           {draft.matterTitle || "Working legal matter"}
         </h3>
-        <div className="text-background/75 mt-2 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
+        <div className="text-background/75 mt-1 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
           <span>{draft.organizationName || "Organization not named"}</span>
           <span className="hidden sm:inline" aria-hidden>
             ·
@@ -116,10 +116,10 @@ export function LegalPlanResults({
           <p className="text-background/70 text-xs font-semibold tracking-normal">
             Immediate routing selected
           </p>
-          <h3 id="legal-urgent-result-title" className="mt-2 font-semibold">
+          <h3 id="legal-urgent-result-title" className="mt-1 font-semibold">
             Protect people and use qualified channels now
           </h3>
-          <p className="text-background/75 mt-2 text-sm leading-5">
+          <p className="text-background/75 mt-1 text-sm leading-5">
             Do not delay emergency, safeguarding, incident-response, insurer,
             regulator, or qualified legal contact to finish this tool. The
             selection records your description; it does not determine a legal

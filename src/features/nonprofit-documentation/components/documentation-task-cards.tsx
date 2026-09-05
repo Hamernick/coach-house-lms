@@ -14,7 +14,7 @@ export function DocumentationTaskCards({ children }: { children: ReactNode }) {
         slot: "task-cards",
         tokenSource: "src/app/globals.css",
       })}
-      className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+      className="mt-2 grid gap-3 md:grid-cols-2 xl:grid-cols-3"
     >
       {children}
     </div>

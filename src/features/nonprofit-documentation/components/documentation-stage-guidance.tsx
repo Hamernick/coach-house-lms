@@ -36,7 +36,7 @@ export function DocumentationStageGuidance({
       collapsible
       value={stage}
       onValueChange={setStage}
-      className="mt-3"
+      className="mt-2"
     >
       {stages.map((item) => (
         <AccordionItem key={item.id} value={item.id}>
@@ -53,12 +53,12 @@ export function DocumentationStageGuidance({
             <p className="text-muted-foreground text-sm leading-5">
               {item.guidance}
             </p>
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-5">
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-5">
               {item.actions.map((action) => (
                 <li key={action}>{action}</li>
               ))}
             </ul>
-            <p className="bg-muted/40 mt-3 rounded-xl p-4 text-sm leading-5">
+            <p className="bg-muted/40 mt-2 rounded-xl p-4 text-sm leading-5">
               <strong>Ready to move on when:</strong> {item.checkpoint}
             </p>
           </AccordionContent>

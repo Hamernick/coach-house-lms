@@ -66,10 +66,10 @@ function RoleBrief({ draft }: { draft: HrPlanDraft }) {
           {hrRelationshipLabel(draft.relationship)} · {draft.reviewDays}-day
           review
         </p>
-        <h3 className="mt-3 text-base font-semibold text-balance">
+        <h3 className="mt-1 text-base font-semibold text-balance">
           {draft.roleTitle || "Working role title"}
         </h3>
-        <p className="text-background/75 mt-2 text-sm">
+        <p className="text-background/75 mt-1 text-sm">
           {draft.organizationName || "Organization not named"}
         </p>
       </div>

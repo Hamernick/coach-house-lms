@@ -41,7 +41,7 @@ function RelationshipPathway({
             </p>
             <h4
               id={`network-path-${engagement.id}`}
-              className="mt-2 text-sm font-semibold"
+              className="mt-1 text-sm font-semibold"
             >
               {engagement.label}
             </h4>
@@ -191,7 +191,7 @@ export function NetworkingPlanResults({
           {networkingObjectiveLabel(draft.objective)} · {draft.reviewWeeks}-week
           review
         </p>
-        <h3 id="network-purpose-title" className="mt-2 font-semibold">
+        <h3 id="network-purpose-title" className="mt-1 font-semibold">
           Relationship system purpose
         </h3>
         <div className="bg-foreground text-background mt-4 rounded-xl p-4 sm:p-4">

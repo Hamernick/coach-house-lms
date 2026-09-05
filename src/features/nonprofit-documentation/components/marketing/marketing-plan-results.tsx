@@ -69,7 +69,7 @@ export function MarketingPlanResults({
         <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {marketingObjectiveLabel(draft.objective)}
         </p>
-        <h3 className="mt-2 font-semibold">Your communications brief</h3>
+        <h3 className="mt-1 font-semibold">Your communications brief</h3>
         <p className="text-muted-foreground mt-1 text-sm leading-5">
           Audience: {draft.primaryAudience || "Add one primary audience"}
         </p>

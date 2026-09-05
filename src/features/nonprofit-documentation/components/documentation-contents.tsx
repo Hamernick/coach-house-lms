@@ -64,7 +64,7 @@ export function DocumentationMobileContents({
     <Accordion
       type="single"
       collapsible
-      className={cn("mt-4 border-b xl:hidden print:hidden", className)}
+      className={cn("border-b xl:hidden print:hidden", className)}
       {...getReactGrabOwnerProps({
         ownerId: "documentation-contents:mobile",
         component: "DocumentationMobileContents",
@@ -74,7 +74,7 @@ export function DocumentationMobileContents({
       })}
     >
       <AccordionItem value="contents">
-        <AccordionTrigger className="min-h-11">On this page</AccordionTrigger>
+        <AccordionTrigger className="min-h-11 py-2">On this page</AccordionTrigger>
         <AccordionContent>
           <ContentsLinks items={items} />
         </AccordionContent>

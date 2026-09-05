@@ -4,6 +4,7 @@ import Image from "next/image"
 import type { ReactNode } from "react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import density from "./documentation-density.module.css"
 import {
   documentationArtwork,
   type DocumentationArtworkTone,
@@ -24,7 +25,7 @@ export function DocumentationPageHeader({
 }) {
   return (
     <header
-      className="my-5 text-center"
+      className="mt-2 mb-4 text-center"
       {...getReactGrabOwnerProps({
         ownerId: "documentation:page-header",
         component: "DocumentationPageHeader",
@@ -34,15 +35,17 @@ export function DocumentationPageHeader({
         tokenSource: "src/app/globals.css",
       })}
     >
-      <p className="text-muted-foreground text-xs font-medium">{eyebrow}</p>
-      <h1 className="mx-auto mt-2 max-w-3xl text-[1.75rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.125rem]">
-        {title}
-      </h1>
-      <p className="text-muted-foreground mx-auto mt-3 max-w-2xl text-[15px] leading-normal text-pretty sm:text-base">
-        {description}
-      </p>
-      {children ? <div className="mt-3">{children}</div> : null}
-      <div className="bg-muted/20 mt-5 rounded-2xl border p-2 print:hidden">
+      <div className={density.heading}>
+        <p className="text-muted-foreground text-xs font-medium">{eyebrow}</p>
+        <h1 className="mx-auto max-w-3xl text-[1.75rem] font-semibold tracking-tight text-balance sm:text-[2.125rem]">
+          {title}
+        </h1>
+        <p className="text-muted-foreground mx-auto max-w-2xl text-[15px] text-pretty sm:text-base">
+          {description}
+        </p>
+      </div>
+      {children ? <div className="mt-2">{children}</div> : null}
+      <div className="bg-muted/20 mt-2 rounded-2xl border p-2 print:hidden">
         <Image
           src={documentationArtwork[artwork]}
           alt=""

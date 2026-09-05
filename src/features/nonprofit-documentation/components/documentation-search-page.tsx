@@ -10,6 +10,7 @@ import {
 } from "../lib/documentation-search"
 import { DOCUMENTATION_SEARCH_DOCUMENTS } from "../lib/search-documents"
 import { DocumentationSurface } from "./documentation-surface"
+import density from "./documentation-density.module.css"
 
 const suggestions = [
   "Mission",
@@ -31,23 +32,25 @@ export function DocumentationSearchPage({
     <DocumentationSurface>
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-14 lg:px-8"
+        className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8"
       >
-        <header className="border-b pb-5">
-          <p className="text-muted-foreground text-xs font-semibold tracking-normal">
-            Documentation library
-          </p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-2xl">
-            {query ? "Search results" : "Find your next step"}
-          </h1>
-          <p
-            className="text-muted-foreground mt-4 text-sm leading-6 break-words"
-            role="status"
-          >
-            {query
-              ? `${results.length} ${results.length === 1 ? "page" : "pages"} for “${query}”`
-              : "Search the guides, practical tools, and resources in the library."}
-          </p>
+        <header className="border-b pb-2">
+          <div className={density.heading}>
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
+              Documentation library
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {query ? "Search results" : "Find your next step"}
+            </h1>
+            <p
+              className="text-muted-foreground text-sm break-words"
+              role="status"
+            >
+              {query
+                ? `${results.length} ${results.length === 1 ? "page" : "pages"} for “${query}”`
+                : "Search the guides, practical tools, and resources in the library."}
+            </p>
+          </div>
           {query ? (
             <Button asChild variant="link" className="mt-2 min-h-11 px-0">
               <Link href="/documentation/search">Clear search</Link>
@@ -68,10 +71,10 @@ export function DocumentationSearchPage({
                       {result.category}
                       {result.sectionTitle ? ` / ${result.sectionTitle}` : ""}
                     </p>
-                    <h2 className="mt-2 text-base font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
+                    <h2 className="mt-1 text-base font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
                       {result.title}
                     </h2>
-                    <p className="text-muted-foreground mt-2 text-sm leading-5 break-words">
+                    <p className="text-muted-foreground mt-1 text-sm leading-5 break-words">
                       {result.excerpt}
                     </p>
                   </div>
@@ -84,7 +87,7 @@ export function DocumentationSearchPage({
             ))}
           </ol>
         ) : (
-          <div className="mt-6 flex flex-col gap-6">
+          <div className="mt-4 flex flex-col gap-4">
             {query ? (
               <Empty
                 variant="subtle"
@@ -102,7 +105,7 @@ export function DocumentationSearchPage({
               <h2 id="search-suggestions" className="text-sm font-semibold">
                 Explore a topic
               </h2>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {suggestions.map((suggestion) => (
                   <Button
                     key={suggestion}

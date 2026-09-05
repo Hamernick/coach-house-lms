@@ -98,7 +98,7 @@ export function FrameworkWorkspaceResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Live sandbox
             </p>
-            <h3 id="live-model-title" className="mt-2 font-semibold">
+            <h3 id="live-model-title" className="mt-1 font-semibold">
               Program logic model
             </h3>
             <p className="text-muted-foreground mt-1 text-sm leading-5">

@@ -9,10 +9,10 @@ export function MarketplaceFeatured() {
         <p className="text-muted-foreground text-xs font-medium">
           Google Ad Grants
         </p>
-        <h2 className="mt-2 max-w-lg text-lg font-semibold tracking-tight text-balance">
+        <h2 className="mt-1 max-w-lg text-lg font-semibold tracking-tight text-balance">
           Help the right people find your work.
         </h2>
-        <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-5">
+        <p className="text-muted-foreground mt-1 max-w-lg text-sm leading-5">
           Up to $10,000 per month in Search ads for eligible nonprofits. Start
           with a useful campaign, a clear destination, and an action you can
           measure.

@@ -39,9 +39,9 @@ function AgreementColumn({
       >
         {eyebrow}
       </p>
-      <h4 className="mt-3 text-sm font-semibold break-words">{title}</h4>
+      <h4 className="mt-1 text-sm font-semibold break-words">{title}</h4>
       <p
-        className={`mt-4 text-sm leading-6 break-words ${
+        className={`mt-1 text-sm leading-5 break-words ${
           emphasis ? "text-background/80" : "text-muted-foreground"
         }`}
       >
@@ -129,7 +129,7 @@ export function PartnershipBriefResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Live sandbox
             </p>
-            <h3 id="agreement-table-title" className="mt-2 font-semibold">
+            <h3 id="agreement-table-title" className="mt-1 font-semibold">
               Partnership agreement table
             </h3>
             <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-5">

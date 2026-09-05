@@ -129,19 +129,19 @@ function GuideSections({ guide }: { guide: FoundationGuide }) {
     <section
       key={section.id}
       id={section.id}
-      className="scroll-mt-8 border-b py-6"
+      className="scroll-mt-8 border-b py-4 xl:first-of-type:pt-0"
       aria-labelledby={`${section.id}-title`}
     >
       <h2
         id={`${section.id}-title`}
-        className="text-lg font-semibold tracking-[-0.025em]"
+        className="text-lg leading-tight font-semibold tracking-[-0.025em]"
       >
         {section.title}
       </h2>
-      <p className="text-muted-foreground mt-3 text-sm leading-5">
+      <p className="text-muted-foreground mt-1 text-sm leading-5">
         {section.introduction}
       </p>
-      <dl className="mt-4 divide-y border-y">
+      <dl className="mt-2 divide-y border-y">
         {section.entries.map((entry) => (
           <div
             key={entry.title}
@@ -163,7 +163,7 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
   return (
     <section
       id="stages"
-      className="scroll-mt-8 border-b py-6"
+      className="scroll-mt-8 border-b py-4"
       aria-labelledby="stages-title"
     >
       <p className="text-muted-foreground text-xs font-semibold tracking-normal">
@@ -171,16 +171,16 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
       </p>
       <h2
         id="stages-title"
-        className="mt-2 text-lg font-semibold tracking-[-0.025em]"
+        className="mt-1 text-lg leading-tight font-semibold tracking-[-0.025em]"
       >
         Use the concept at your current stage
       </h2>
-      <div className="mt-4 divide-y border-y">
+      <div className="mt-2 divide-y border-y">
         {guide.stages.map((stage, index) => (
           <section
             key={stage.id}
             aria-labelledby={`${stage.id}-title`}
-            className="py-7"
+            className="py-4"
           >
             <div className="grid gap-4 sm:grid-cols-[3rem_1fr]">
               <span className="text-muted-foreground font-mono text-xs">
@@ -192,21 +192,21 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
                 </p>
                 <h3
                   id={`${stage.id}-title`}
-                  className="mt-2 text-base font-semibold"
+                  className="mt-1 text-base font-semibold"
                 >
                   {stage.question}
                 </h3>
-                <p className="text-muted-foreground mt-3 text-sm leading-5">
+                <p className="text-muted-foreground mt-1 text-sm leading-5">
                   {stage.guidance}
                 </p>
-                <ul className="mt-3 list-disc space-y-3 pl-5">
+                <ul className="mt-2 list-disc space-y-2 pl-5">
                   {stage.actions.map((action) => (
                     <li key={action} className="pl-1 text-sm leading-5">
                       {action}
                     </li>
                   ))}
                 </ul>
-                <p className="bg-muted/45 mt-3 rounded-xl border p-4 text-sm leading-5">
+                <p className="bg-muted/45 mt-2 rounded-xl border p-4 text-sm leading-5">
                   <strong>Ready when:</strong> {stage.checkpoint}
                 </p>
               </div>
@@ -223,16 +223,16 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
     <>
       <section
         id="checklist"
-        className="scroll-mt-8 border-b py-6"
+        className="scroll-mt-8 border-b py-4"
         aria-labelledby="checklist-title"
       >
         <h2
           id="checklist-title"
-          className="text-lg font-semibold tracking-[-0.025em]"
+          className="text-lg leading-tight font-semibold tracking-[-0.025em]"
         >
           Readiness checklist
         </h2>
-        <ul className="bg-border mt-4 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
+        <ul className="bg-border mt-2 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
           {guide.checklist.map((item) => (
             <li
               key={item}
@@ -246,7 +246,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
       </section>
       <section
         id="sources"
-        className="scroll-mt-8 py-6"
+        className="scroll-mt-8 py-4"
         aria-labelledby="sources-title"
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -256,7 +256,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
             </p>
             <h2
               id="sources-title"
-              className="mt-2 text-lg font-semibold tracking-[-0.025em]"
+              className="mt-1 text-lg leading-tight font-semibold tracking-[-0.025em]"
             >
               Sources and review
             </h2>
@@ -265,7 +265,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
             Reviewed {guide.reviewedDate}
           </span>
         </div>
-        <ul className="mt-4 divide-y border-y">
+        <ul className="mt-2 divide-y border-y">
           {guide.sources.map((source) => (
             <li key={source.url} className="py-3">
               <a

@@ -27,7 +27,7 @@ export function MarketplaceCommunity({
           </p>
           <h2
             id="community-title"
-            className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-balance"
+            className="mt-1 text-3xl font-semibold tracking-[-0.035em] text-balance"
           >
             Organizations that chose to be public.
           </h2>
@@ -66,7 +66,7 @@ export function MarketplaceCommunity({
                 />
               </div>
               <h3 className="mt-5 font-semibold">{profile.name}</h3>
-              <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-6">
+              <p className="text-muted-foreground mt-1 line-clamp-3 text-sm leading-5">
                 {profile.summary}
               </p>
               <div className="mt-4 flex flex-wrap gap-1.5">

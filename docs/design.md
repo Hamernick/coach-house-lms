@@ -442,7 +442,17 @@ Geist Sans sets UI and prose; Geist Mono sets code, data, and tabular figures. B
 
 ## Layout
 
-Spacing follows a 4px scale: 4, 8, 12, 16, 24, 32, 40, 64, 96px. Keep a three-step rhythm: 8px inside a group, 16px between groups, 32–40px between sections. Cards use 24px padding, 16px when compact and 32px for hero areas. Center content in a 1200px column with side padding that grows at wider breakpoints, and make every layout work on mobile and desktop. Breakpoints are `sm` 401px, `md` 601px, `lg` 961px, `xl` 1200px, and `2xl` 1400px.
+Spacing follows a 4px scale: 4, 8, 12, 16, 24, 32, 40, 64, 96px. Group related text at 4px, related content at 8px, and separate sections at 16px. Reserve 24–40px for deliberate changes of subject or page regions, never for a title/subtitle pair. Cards use 16px padding when compact and 24px for larger areas. Center content in a 1200px column with side padding that grows at wider breakpoints, and make every layout work on mobile and desktop. Breakpoints are `sm` 401px, `md` 601px, `lg` 961px, `xl` 1200px, and `2xl` 1400px.
+
+### Text grouping and spacing
+
+- Eyebrow → title → subtitle: **4px between each**, using one parent gap with no child vertical margins. Keep the same spacing on mobile and desktop.
+- Heading group → image, list, form, grid, or actions: **8px**. Do not add a second gap through the child's margin or padding.
+- Separate sections: **16px** by default. Bordered article sections may use 16px internal vertical padding; avoid additional section margins.
+- Heading line height: **1.25**. Subtitle line height: **1.4**, with normal tracking. Body paragraphs may retain their reading rhythm; 14px copy normally uses a 20px line height.
+- Read the computed spacing: line-box height, margins, parent gap, and container padding all contribute. Inspect wrapped subtitles in both themes and mobile layouts.
+- Documentation page, hero, sandbox, and Brand Identity headings share `.heading` in `src/features/nonprofit-documentation/components/documentation-density.module.css`. Use that existing rule for new heading groups; use `mt-1`, `mt-2`, and `mt-4` only for their respective text, content, and section relationships.
+- Do not shrink interactive targets or change generated/user-owned artwork to make text grouping compact.
 
 ## Elevation & Depth
 

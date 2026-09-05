@@ -1,6 +1,8 @@
 import Link from "next/link"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import density from "./documentation-density.module.css"
 import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { DocumentationPathCover } from "./documentation-path-cover"
 import { DocumentationTaskCards } from "./documentation-task-cards"
@@ -65,11 +67,11 @@ export function DocumentationHome() {
         id="documentation-content"
         className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <header className="mb-5">
+        <header className={cn(density.heading, "mb-2")}>
           <h1 className="text-2xl font-semibold tracking-tight">
             Nonprofit documentation
           </h1>
-          <p className="text-muted-foreground mt-3 text-sm leading-6">
+          <p className="text-muted-foreground text-sm">
             Practical guides and working tools for nonprofit founders and teams.
           </p>
         </header>
@@ -79,18 +81,20 @@ export function DocumentationHome() {
           className="grid overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-100 md:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)]"
         >
           <div className="p-4 sm:p-5">
-            <p className="text-xs font-medium text-green-400">Quickstart</p>
-            <h2
-              id="quickstart-title"
-              className="mt-3 text-lg font-semibold tracking-tight"
-            >
-              Start with the essentials.
-            </h2>
-            <p className="mt-3 max-w-md text-sm leading-5 text-zinc-400">
-              Work through your mission, organizational path, and first
-              operating decisions. Use the guides at the stage you are in.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3">
+            <div className={density.heading}>
+              <p className="text-xs font-medium text-green-400">Quickstart</p>
+              <h2
+                id="quickstart-title"
+                className="text-lg font-semibold tracking-tight"
+              >
+                Start with the essentials.
+              </h2>
+              <p className="max-w-md text-sm text-zinc-400">
+                Work through your mission, organizational path, and first
+                operating decisions. Use the guides at the stage you are in.
+              </p>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-3">
               <Button
                 asChild
                 className="min-h-11 rounded-full bg-white text-zinc-950 hover:bg-zinc-200"
@@ -125,11 +129,11 @@ export function DocumentationHome() {
         <section
           id="start-a-task"
           aria-labelledby="tasks-title"
-          className="mt-6"
+          className="mt-4"
         >
           <h2
             id="tasks-title"
-            className="text-base font-semibold tracking-tight"
+            className="text-base leading-tight font-semibold tracking-tight"
           >
             Start a task
           </h2>
@@ -161,23 +165,25 @@ export function DocumentationHome() {
             ))}
           </DocumentationTaskCards>
         </section>
-        <section id="tools" aria-labelledby="tools-title" className="mt-6">
-          <h2
-            id="tools-title"
-            className="text-base font-semibold tracking-tight"
-          >
-            More working tools
-          </h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Start from your own draft or load an example. Export the result when
-            you are ready to use it.
-          </p>
-          <div className="mt-3 grid gap-x-6 md:grid-cols-2">
+        <section id="tools" aria-labelledby="tools-title" className="mt-4">
+          <div className={density.heading}>
+            <h2
+              id="tools-title"
+              className="text-base leading-tight font-semibold tracking-tight"
+            >
+              More working tools
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Start from your own draft or load an example. Export the result
+              when you are ready to use it.
+            </p>
+          </div>
+          <div className="grid gap-x-6 md:grid-cols-2">
             {tools.map((tool) => (
               <Link
                 key={tool.href}
                 href={tool.href}
-                className="group focus-visible:ring-ring flex items-start justify-between gap-4 border-b py-3 focus-visible:ring-2"
+                className="group focus-visible:ring-ring flex items-start justify-between gap-4 border-b py-2 focus-visible:ring-2"
               >
                 <div>
                   <h3 className="text-sm font-medium underline-offset-4 group-hover:underline">
@@ -195,7 +201,7 @@ export function DocumentationHome() {
             ))}
           </div>
         </section>
-        <footer className="bg-muted/40 mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4">
+        <footer className="bg-muted/40 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4">
           <div>
             <h2 className="font-semibold">Work through it with someone.</h2>
             <p className="text-muted-foreground mt-1 text-sm">

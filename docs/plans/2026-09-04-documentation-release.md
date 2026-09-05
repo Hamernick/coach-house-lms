@@ -52,7 +52,7 @@ above the sidebar and canvas, remain open while moving into their links, and
 support keyboard activation and dismissal. Search remains beside Login.
 
 Guide, tool, and resource headers use centered 28px mobile / 34px desktop titles,
-15–16px subtitles with 1.5 line height, sentence-case eyebrows, and wide abstract
+15–16px subtitles with 1.4 line height, sentence-case eyebrows, and wide abstract
 artwork. Blue, rose/lavender, and yellow/peach images use soft organic folds,
 diffuse light, and subtle grain, following the user's supplied references. Hero
 and task-card images have four rounded corners and an 8px inset. Documentation
@@ -64,6 +64,12 @@ Home task cards use heavily blurred blue, coral/peach, and lavender/rose artwork
 with flat white centered graphics and no shadows:
 a megaphone for campaigns, a planning chart and coins for funding, and people
 with a resource card for the directory. The graphic stays inside the image asset.
+
+Text groups now share a 4px eyebrow/title/subtitle gap. Related content starts
+8px below its heading group, with 16px between sections. The standard lives in
+`docs/design.md`, is required by the UI rubric, and is implemented by the shared
+Documentation `.heading` rule. Page, search, article, Marketplace, and tool
+headings follow it; duplicated parent/child spacing is removed.
 
 Implementation commits: `6b86fb3a` (Marketplace and people) and `7aa7d19c`
 (documentation design and planner workflows), plus `9149b9f6` (optional sitemap
@@ -109,6 +115,14 @@ The softer multicolor revision and green Quickstart label passed static quality
 in 46.07 seconds and the three affected browser journeys in 29.9 seconds. Only
 home baselines changed; desktop/mobile review confirmed 8px image insets, 10px
 corners, working links, and 11.18:1 contrast for the green label in both themes.
+
+The text-spacing standard passed static quality in 36.65 seconds, final lint,
+and all 16 Documentation browser journeys in 1.5 minutes. Nineteen baselines
+were refreshed for the compact headers, article sections, and result headings.
+Manual checks across 21 page/viewport combinations confirmed 4px title/subtitle
+gaps without overflow; first tool content measures 8px and guide content starts
+16px after its hero. An intermittent history-indicator failure passed three
+focused repeats and the final full Documentation run without navigation changes.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,

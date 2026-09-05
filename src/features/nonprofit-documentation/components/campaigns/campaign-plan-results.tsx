@@ -52,10 +52,10 @@ function CampaignBrief({ draft }: { draft: CampaignPlanDraft }) {
         <p className="text-background/70 text-xs font-semibold tracking-normal">
           {campaignTypeLabel(draft.campaignType)}
         </p>
-        <h3 className="mt-3 text-base font-semibold text-balance">
+        <h3 className="mt-1 text-base font-semibold text-balance">
           {draft.campaignName || "Working campaign"}
         </h3>
-        <div className="text-background/75 mt-2 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
+        <div className="text-background/75 mt-1 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3">
           <span>{draft.organizationName || "Organization not named"}</span>
           <span className="hidden sm:inline" aria-hidden>
             ·

@@ -97,7 +97,7 @@ export function SocialMediaPlanResults({
             <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Planning preview · {socialMediaChannelLabel(draft.previewChannel)}
             </p>
-            <h3 id="social-preview-title" className="mt-2 font-semibold">
+            <h3 id="social-preview-title" className="mt-1 font-semibold">
               Generic post preview
             </h3>
           </div>
@@ -275,7 +275,7 @@ export function SocialMediaPlanResults({
         <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {socialMediaObjectiveLabel(draft.objective)}
         </p>
-        <h3 id="social-actions-title" className="mt-2 font-semibold">
+        <h3 id="social-actions-title" className="mt-1 font-semibold">
           Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">

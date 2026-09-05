@@ -25,17 +25,17 @@ export function MarketplacePeople({
   directory: MarketplacePeopleData
 }) {
   return (
-    <div className="space-y-12 pt-4">
+    <div className="space-y-4 pt-2">
       <section
         id="coaches"
         aria-labelledby="coaches-title"
         className="scroll-mt-24"
       >
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2
               id="coaches-title"
-              className="text-base font-semibold tracking-tight"
+              className="text-base leading-tight font-semibold tracking-tight"
             >
               Coach House coaches
             </h2>
@@ -109,11 +109,11 @@ export function MarketplacePeople({
       >
         <h2
           id="community-title"
-          className="text-base font-semibold tracking-tight"
+          className="text-base leading-tight font-semibold tracking-tight"
         >
           Meet the community
         </h2>
-        <p className="text-muted-foreground mt-1 mb-3 text-sm">
+        <p className="text-muted-foreground mt-1 mb-2 text-sm">
           People who have published a Coach House profile. Open a profile to
           learn about their work.
         </p>

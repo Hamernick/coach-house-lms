@@ -1,4 +1,6 @@
 import { MARKETPLACE_RESOURCES } from "../lib/marketplace-resources"
+import { cn } from "@/lib/utils"
+import density from "./documentation-density.module.css"
 import {
   DocumentationJsonLd,
   DocumentationSurface,
@@ -62,9 +64,9 @@ export function MarketplacePage({
         id="documentation-content"
         className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <header className="mb-5">
+        <header className={cn(density.heading, "mb-2")}>
           <h1 className="text-2xl font-semibold tracking-tight">Marketplace</h1>
-          <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
+          <p className="text-muted-foreground max-w-2xl text-sm">
             Useful tools, nonprofit offers, and people to help you put your
             plans to work.
           </p>

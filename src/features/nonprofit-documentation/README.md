@@ -33,10 +33,12 @@
   the top and sides. Keep captions compact. `DocumentationTaskCards` owns the
   grid and React Grab metadata while its card content remains server-rendered.
 - Article, tool, and resource headers share `DocumentationPageHeader`, with four
-  rounded image corners and an 8px inset. Headers and task cards use the same
-  abstract artwork family: blue for starting/building, rose for best practices,
-  and warm yellow/peach for resources. Preserve the soft folds, diffuse light,
-  fine grain, and broad color fields shown in the user's September 5 references.
+  rounded image corners and an 8px inset. Headers use the abstract artwork family:
+  blue for starting/building, rose for best practices, and warm yellow/peach for
+  resources. Task cards use frosted blue derivatives with a centered flat white
+  graphic matching the destination: megaphone for campaigns, chart and coins for
+  funding, and people/resource cards for the directory. Preserve soft folds,
+  diffuse light, fine grain, and clear white-on-blue contrast at card size.
   Use original raster artwork without lettering or logos. Generated assets and
   exact prompts are documented in [assets/README.md](assets/README.md).
 - Contents navigation uses `SectionRailIndicator`, shared with Core Documents.

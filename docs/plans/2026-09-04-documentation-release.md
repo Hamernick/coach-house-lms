@@ -60,6 +60,10 @@ sidebar and planner labels also use normal casing and tracking. The contents rai
 shares Core Documents' animated indicator and follows section links, scrolling,
 and browser history while respecting reduced motion.
 
+Home task cards use frosted blue artwork with flat white centered graphics:
+a megaphone for campaigns, a planning chart and coins for funding, and people
+with a resource card for the directory. The graphic stays inside the image asset.
+
 Implementation commits: `6b86fb3a` (Marketplace and people) and `7aa7d19c`
 (documentation design and planner workflows), plus `9149b9f6` (optional sitemap
 link guard), after core checkpoint `3d404002`.
@@ -93,6 +97,12 @@ The abstract-artwork replacement separately passed static quality in 42.72 secon
 and all 16 Documentation browser journeys in 1.5 minutes. Ten affected baselines
 were intentionally refreshed. Manual review confirmed desktop/mobile image
 loading, crop ratios, rounded corners, and preserved insets without page errors.
+
+The subsequent centered-white-graphic task cards passed final static quality in
+46.26 seconds and all three affected responsive browser journeys in 26.4 seconds.
+Only the three home baselines changed. Card geometry and link reachability were
+also checked at 390/1440px. The first run's unchanged CRM route returned normally
+after restarting the local preview; the clean rerun passed without route changes.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,

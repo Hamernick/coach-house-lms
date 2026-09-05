@@ -2,11 +2,17 @@
 
 Generated with the built-in image tool using the user's two supplied September 5 screenshots as style references. These are original abstract backgrounds without the reference brands or typography. WebP encoding preserves the generated framing and composition.
 
+Task-card derivatives add centered white destination graphics over a frosted blue
+background. Their prompts are in [task-graphics.md](task-graphics.md).
+
 | Asset | Use |
 | --- | --- |
-| [abstract-blue.webp](abstract-blue.webp) | Foundation/tool heroes and campaign card |
-| [abstract-rose.webp](abstract-rose.webp) | Best-practice heroes and fundraising card |
-| [abstract-warm.webp](abstract-warm.webp) | Resource heroes and Marketplace card |
+| [abstract-blue.webp](abstract-blue.webp) | Foundation/tool heroes |
+| [abstract-rose.webp](abstract-rose.webp) | Best-practice heroes |
+| [abstract-warm.webp](abstract-warm.webp) | Resource heroes |
+| [task-campaign.webp](task-campaign.webp) | Campaign card: white megaphone on frosted blue |
+| [task-funding.webp](task-funding.webp) | Funding card: white planning chart and coins on frosted blue |
+| [task-resources.webp](task-resources.webp) | Directory card: white people and resource card on frosted blue |
 
 ## Generation prompts
 

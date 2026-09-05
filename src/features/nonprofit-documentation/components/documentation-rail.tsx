@@ -78,7 +78,7 @@ export function DocumentationRail({
 
       {DOCUMENTATION_NAVIGATION.map((section) => (
         <SidebarGroup key={section.id} className="py-1">
-          <SidebarGroupLabel className="text-xs font-medium tracking-normal normal-case">
+          <SidebarGroupLabel className="text-xs font-bold tracking-normal normal-case">
             {section.title}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -97,7 +97,7 @@ export function DocumentationRail({
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="min-h-11 justify-start md:h-7 md:min-h-7 md:text-[13px]"
+                        className="min-h-11 justify-start pl-4 md:h-7 md:min-h-7 md:text-[13px]"
                       >
                         <Link
                           href={item.href}
@@ -117,7 +117,7 @@ export function DocumentationRail({
                       </SidebarMenuButton>
                     ) : (
                       <div
-                        className="text-muted-foreground flex h-8 min-w-0 items-center px-2 text-sm"
+                        className="text-muted-foreground flex h-8 min-w-0 items-center pr-2 pl-4 text-sm"
                         aria-disabled="true"
                         title={`${item.description} Planned for a later phase.`}
                       >

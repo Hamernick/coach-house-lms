@@ -1,9 +1,13 @@
 "use client"
 
+import { DocumentationToolFlow } from "../documentation-tool-flow"
+
+import { DEFAULT_COMPLIANCE_RHYTHM } from "../../lib/compliance-rhythm"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+
 import { useMemo, useState } from "react"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -188,8 +192,14 @@ function BuilderFields({
 }
 
 export function ComplianceRhythmBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useComplianceRhythm()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useComplianceRhythm()
   const [announcement, setAnnouncement] = useState("")
   const filingPath = useMemo(
     () => commonFederalFilingPath(draft.receiptsBand, draft.assetsBand),
@@ -215,133 +225,137 @@ export function ComplianceRhythmBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Organization profile</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setAnnouncement("Example compliance profile loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden />
-            Reset
-          </Button>
-        </div>
-      </div>
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_COMPLIANCE_RHYTHM)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setAnnouncement("Example compliance profile loaded.")
+        }}
+        onReset={handleReset}
+      />
 
-      <BuilderFields draft={draft} updateDraft={updateDraft} />
-
-      <div className="bg-muted/20 border-t p-5 sm:p-6">
-        <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2">
-          <div className="bg-background p-5">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Common federal path
-            </p>
-            <p className="mt-3 text-lg font-semibold">{filingPath.form}</p>
-            <p className="text-muted-foreground mt-2 text-sm leading-6">
-              {filingPath.explanation}
-            </p>
-          </div>
-          <div className="bg-background p-5">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Annual return planning date
-            </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">
-              {dueDate?.label ?? "Add the tax-year end"}
-            </p>
-            <p className="text-muted-foreground mt-2 text-sm leading-6">
-              This is the nominal Form 990-series date. Confirm weekends,
-              holidays, extensions, exceptions, and the applicable form with the
-              IRS.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="font-semibold">Planning rhythm</h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {tasks.length} review lanes
-              {stateName ? ` · Starting with ${stateName}` : ""}
-            </p>
-          </div>
-          <Button type="button" className="min-h-11" onClick={handleDownload}>
-            <DownloadIcon className="size-4" aria-hidden />
-            Download CSV
-          </Button>
-        </div>
-
-        <ol className="mt-4 divide-y border-y">
-          {tasks.map((task, index) => (
-            <li
-              key={task.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
-            >
-              <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-muted-foreground text-xs">
-                    {task.category}
-                  </span>
-                  <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
-                    {task.status}
-                  </span>
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_COMPLIANCE_RHYTHM)
+        }
+        steps={[
+          {
+            id: "facts",
+            label: "Organization facts",
+            content: <BuilderFields draft={draft} updateDraft={updateDraft} />,
+          },
+          {
+            id: "review",
+            label: "Calendar & export",
+            content: (
+              <div className="bg-muted/20 border-t p-5 sm:p-6">
+                <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2">
+                  <div className="bg-background p-5">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Common federal path
+                    </p>
+                    <p className="mt-3 text-lg font-semibold">
+                      {filingPath.form}
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                      {filingPath.explanation}
+                    </p>
+                  </div>
+                  <div className="bg-background p-5">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Annual return planning date
+                    </p>
+                    <p className="mt-3 text-lg font-semibold tabular-nums">
+                      {dueDate?.label ?? "Add the tax-year end"}
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                      This is the nominal Form 990-series date. Confirm
+                      weekends, holidays, extensions, exceptions, and the
+                      applicable form with the IRS.
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-2 text-sm leading-6 font-semibold">
-                  {task.task}
-                </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
-                  <strong className="text-foreground">Timing:</strong>{" "}
-                  {task.timing}
-                </p>
-                <p className="text-muted-foreground mt-1 text-sm leading-6">
-                  <strong className="text-foreground">Keep:</strong>{" "}
-                  {task.evidence}
+
+                <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">Planning rhythm</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {tasks.length} review lanes
+                      {stateName ? ` · Starting with ${stateName}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="min-h-11"
+                    onClick={handleDownload}
+                  >
+                    <DownloadIcon className="size-4" aria-hidden />
+                    Download CSV
+                  </Button>
+                </div>
+
+                <ol className="mt-4 divide-y border-y">
+                  {tasks.map((task, index) => (
+                    <li
+                      key={task.id}
+                      className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+                    >
+                      <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-muted-foreground text-xs">
+                            {task.category}
+                          </span>
+                          <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                            {task.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-6 font-semibold">
+                          {task.task}
+                        </p>
+                        <p className="text-muted-foreground mt-2 text-sm leading-6">
+                          <strong className="text-foreground">Timing:</strong>{" "}
+                          {task.timing}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-sm leading-6">
+                          <strong className="text-foreground">Keep:</strong>{" "}
+                          {task.evidence}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-muted-foreground max-w-xl text-xs leading-5">
+                    This tool creates a planning draft, not a legal
+                    determination. Its filing path uses common IRS thresholds
+                    and may not fit organizations with special filing rules.
+                  </p>
+                  <a
+                    href="https://www.irs.gov/charities-non-profits/state-links"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="focus-visible:ring-ring inline-flex min-h-11 items-center gap-2 px-1 text-sm font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    Open IRS state directory
+                    <ExternalLinkIcon className="size-4" aria-hidden />
+                  </a>
+                </div>
+                <p className="sr-only" aria-live="polite">
+                  {announcement}
                 </p>
               </div>
-            </li>
-          ))}
-        </ol>
-
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-muted-foreground max-w-xl text-xs leading-5">
-            This tool creates a planning draft, not a legal determination. Its
-            filing path uses common IRS thresholds and may not fit organizations
-            with special filing rules.
-          </p>
-          <a
-            href="https://www.irs.gov/charities-non-profits/state-links"
-            target="_blank"
-            rel="noreferrer"
-            className="focus-visible:ring-ring inline-flex min-h-11 items-center gap-2 px-1 text-sm font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Open IRS state directory
-            <ExternalLinkIcon className="size-4" aria-hidden />
-          </a>
-        </div>
-        <p className="sr-only" aria-live="polite">
-          {announcement}
-        </p>
-      </div>
+            ),
+          },
+        ]}
+      />
     </fieldset>
   )
 }

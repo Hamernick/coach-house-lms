@@ -1,3 +1,4 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
@@ -75,19 +76,11 @@ export function SocialMediaPlanResults({
 
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-5">
+      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-3">
         {[
           ["Active channels", summary.activeChannelCount],
           ["Outputs per week", summary.weeklyOutputs],
           ["Campaign outputs", summary.campaignOutputs],
-          [
-            "Drafted areas",
-            `${summary.draftedAreaCount}/${summary.totalAreaCount}`,
-          ],
-          [
-            "Safeguards",
-            `${summary.safeguardCount}/${summary.totalSafeguardCount}`,
-          ],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -97,10 +90,6 @@ export function SocialMediaPlanResults({
           </div>
         ))}
       </div>
-      <p className="text-muted-foreground mt-3 text-xs leading-5">
-        Counts describe this draft. They are not a quality, readiness, risk, or
-        performance score.
-      </p>
 
       <section className="mt-8" aria-labelledby="social-preview-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -166,7 +155,7 @@ export function SocialMediaPlanResults({
         <h3 id="content-path-title" className="font-semibold">
           Source-to-action path
         </h3>
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border lg:grid-cols-3">
+        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-3">
           <ContentPathItem
             index={1}
             label="Message"
@@ -243,7 +232,7 @@ export function SocialMediaPlanResults({
             Download brief CSV
           </Button>
         </div>
-        <div className="mt-4 overflow-x-auto border">
+        <div className="mt-4 overflow-x-auto rounded-2xl border">
           <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
             <caption className="sr-only">
               User-entered weekly and campaign output cadence by social channel
@@ -287,7 +276,7 @@ export function SocialMediaPlanResults({
           {socialMediaObjectiveLabel(draft.objective)}
         </p>
         <h3 id="social-actions-title" className="mt-2 font-semibold">
-          Stage and missing-brief actions
+          Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} actions generated from this draft. They are review
@@ -319,34 +308,11 @@ export function SocialMediaPlanResults({
         </ol>
       </section>
 
-      <section className="mt-8 border" aria-labelledby="social-prompt-title">
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="social-prompt-title" className="text-sm font-semibold">
-              Guarded human-review prompt
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the brief and constraints. Review all output yourself.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopyPrompt}
-          >
-            {promptCopied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {promptCopied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview
+        prompt={prompt}
+        copied={promptCopied}
+        onCopy={onCopyPrompt}
+      />
 
       <p className="text-muted-foreground mt-5 text-xs leading-5">
         This tool stores a working draft on this device. It does not connect to

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_FUNDRAISING_PLAN } from "../../lib/fundraising-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useFundraisingPlan } from "../../hooks/use-fundraising-plan"
 import { buildFundraisingCsv } from "../../lib/fundraising-plan"
@@ -27,6 +28,7 @@ export function FundraisingPlanBuilder() {
   const {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateChannelTarget,
     loadExample,
@@ -47,43 +49,60 @@ export function FundraisingPlanBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Planning assumptions</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setAnnouncement("Example fundraising plan loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden />
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      <FundraisingPlanFields
-        draft={draft}
-        updateDraft={updateDraft}
-        updateChannelTarget={updateChannelTarget}
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_FUNDRAISING_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setAnnouncement("Example fundraising plan loaded.")
+        }}
+        onReset={handleReset}
       />
-      <FundraisingPlanResults draft={draft} onDownload={handleDownload} />
+
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_FUNDRAISING_PLAN)
+        }
+        steps={[
+          {
+            id: "need",
+            label: "Funding need",
+            content: (
+              <FundraisingPlanFields
+                part="need"
+                draft={draft}
+                updateDraft={updateDraft}
+                updateChannelTarget={updateChannelTarget}
+              />
+            ),
+          },
+          {
+            id: "channels",
+            label: "Channel mix",
+            content: (
+              <FundraisingPlanFields
+                part="channels"
+                draft={draft}
+                updateDraft={updateDraft}
+                updateChannelTarget={updateChannelTarget}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <FundraisingPlanResults
+                draft={draft}
+                onDownload={handleDownload}
+              />
+            ),
+          },
+        ]}
+      />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>

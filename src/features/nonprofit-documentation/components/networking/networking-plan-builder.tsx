@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_NETWORKING_PLAN } from "../../lib/networking-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useNetworkingPlan } from "../../hooks/use-networking-plan"
 import {
@@ -31,6 +32,7 @@ export function NetworkingPlanBuilder() {
   const {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateRelationship,
     addRelationship,
@@ -54,57 +56,65 @@ export function NetworkingPlanBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Working relationship map</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setPromptCopied(false)
-              setAnnouncement("Example relationship map loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              if (!window.confirm("Reset this relationship map?")) return
-              reset()
-              setPromptCopied(false)
-              setAnnouncement("Relationship map reset.")
-            }}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-
-      <NetworkingPlanFields draft={draft} updateDraft={updateDraft} />
-      <NetworkingRelationshipFields
-        relationships={draft.relationships}
-        updateRelationship={updateRelationship}
-        addRelationship={addRelationship}
-        removeRelationship={removeRelationship}
-      />
-      <NetworkingPlanResults
-        draft={draft}
-        promptCopied={promptCopied}
-        onCopyPrompt={copyPrompt}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Relationship map CSV downloaded.")
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_NETWORKING_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setPromptCopied(false)
+          setAnnouncement("Example relationship map loaded.")
         }}
+        onReset={() => {
+          if (!window.confirm("Reset this relationship map?")) return
+          reset()
+          setPromptCopied(false)
+          setAnnouncement("Relationship map reset.")
+        }}
+      />
+
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_NETWORKING_PLAN)
+        }
+        steps={[
+          {
+            id: "purpose",
+            label: "Purpose",
+            content: (
+              <NetworkingPlanFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "relationships",
+            label: "Relationships",
+            content: (
+              <NetworkingRelationshipFields
+                relationships={draft.relationships}
+                updateRelationship={updateRelationship}
+                addRelationship={addRelationship}
+                removeRelationship={removeRelationship}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <NetworkingPlanResults
+                draft={draft}
+                promptCopied={promptCopied}
+                onCopyPrompt={copyPrompt}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Relationship map CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}

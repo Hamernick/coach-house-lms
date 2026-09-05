@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_SOCIAL_MEDIA_PLAN } from "../../lib/social-media-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useSocialMediaPlan } from "../../hooks/use-social-media-plan"
 import {
@@ -30,6 +31,7 @@ export function SocialMediaPlanBuilder() {
   const {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateChannelCadence,
     loadExample,
@@ -52,73 +54,75 @@ export function SocialMediaPlanBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Working content brief</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setPromptCopied(false)
-              setLinkCopied(false)
-              setAnnouncement("Example social media brief loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              if (!window.confirm("Reset this social media brief?")) return
-              reset()
-              setPromptCopied(false)
-              setLinkCopied(false)
-              setAnnouncement("Social media brief reset.")
-            }}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-
-      <SocialMediaPlanFields
-        draft={draft}
-        updateDraft={updateDraft}
-        updateChannelCadence={updateChannelCadence}
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_SOCIAL_MEDIA_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setPromptCopied(false)
+          setLinkCopied(false)
+          setAnnouncement("Example social media brief loaded.")
+        }}
+        onReset={() => {
+          if (!window.confirm("Reset this social media brief?")) return
+          reset()
+          setPromptCopied(false)
+          setLinkCopied(false)
+          setAnnouncement("Social media brief reset.")
+        }}
       />
-      <SocialMediaPlanResults
-        draft={draft}
-        promptCopied={promptCopied}
-        linkCopied={linkCopied}
-        onCopyPrompt={async () => {
-          const copied = await copy(
-            buildSocialMediaReviewPrompt(draft),
-            "Social media review prompt copied.",
-            "Social media review prompt could not be copied."
-          )
-          setPromptCopied(copied)
-        }}
-        onCopyLink={async (value) => {
-          const copied = await copy(
-            value,
-            "Tracked link copied.",
-            "Tracked link could not be copied."
-          )
-          setLinkCopied(copied)
-        }}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Social media brief CSV downloaded.")
-        }}
+
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_SOCIAL_MEDIA_PLAN)
+        }
+        steps={[
+          {
+            id: "content",
+            label: "Plan the content",
+            content: (
+              <SocialMediaPlanFields
+                draft={draft}
+                updateDraft={updateDraft}
+                updateChannelCadence={updateChannelCadence}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <SocialMediaPlanResults
+                draft={draft}
+                promptCopied={promptCopied}
+                linkCopied={linkCopied}
+                onCopyPrompt={async () => {
+                  const copied = await copy(
+                    buildSocialMediaReviewPrompt(draft),
+                    "Social media review prompt copied.",
+                    "Social media review prompt could not be copied."
+                  )
+                  setPromptCopied(copied)
+                }}
+                onCopyLink={async (value) => {
+                  const copied = await copy(
+                    value,
+                    "Tracked link copied.",
+                    "Tracked link could not be copied."
+                  )
+                  setLinkCopied(copied)
+                }}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Social media brief CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}

@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_PARTNERSHIP_BRIEF,
@@ -53,30 +55,12 @@ const EXAMPLE_PARTNERSHIP_BRIEF: PartnershipBriefDraft = {
 
 export function usePartnershipBrief() {
   const [draft, setDraft] = useState(DEFAULT_PARTNERSHIP_BRIEF)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(PARTNERSHIP_BRIEF_STORAGE_KEY)
-      if (stored) setDraft(sanitizePartnershipBrief(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        PARTNERSHIP_BRIEF_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The builder remains usable when browser persistence is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    PARTNERSHIP_BRIEF_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizePartnershipBrief
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof PartnershipBriefDraft>(
@@ -89,5 +73,5 @@ export function usePartnershipBrief() {
   const loadExample = useCallback(() => setDraft(EXAMPLE_PARTNERSHIP_BRIEF), [])
   const reset = useCallback(() => setDraft(DEFAULT_PARTNERSHIP_BRIEF), [])
 
-  return { draft, storageReady, updateDraft, loadExample, reset }
+  return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

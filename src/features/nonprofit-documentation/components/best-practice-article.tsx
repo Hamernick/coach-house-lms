@@ -2,9 +2,10 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import { Button } from "@/components/ui/button"
 
 import { DOCUMENTATION_PATH } from "../lib"
+import { getDocumentationToolMetadata } from "../lib/documentation-tools"
+import { DocumentationArticleWorkspace } from "./documentation-article-workspace"
 import type { BestPracticeArticle } from "../types"
 import {
   DocumentationDesktopContents,
@@ -47,7 +48,7 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
     <footer className="grid gap-4 border-t pt-8 sm:grid-cols-2">
       <Link
         href={previous.href}
-        className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center gap-3 border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center gap-3 rounded-2xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <ArrowLeftIcon className="size-4" aria-hidden />
         <span>
@@ -58,7 +59,7 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
       {article.next?.href ? (
         <Link
           href={article.next.href}
-          className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center justify-between gap-3 border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="hover:bg-muted/45 focus-visible:ring-ring flex min-h-20 items-center justify-between gap-3 rounded-2xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           <span>
             <span className="text-muted-foreground block text-xs">
@@ -70,7 +71,7 @@ function ArticleFooter({ article }: { article: BestPracticeArticle }) {
         </Link>
       ) : (
         <div
-          className="text-muted-foreground flex min-h-20 items-center justify-between gap-3 border p-4"
+          className="text-muted-foreground flex min-h-20 items-center justify-between gap-3 rounded-2xl border p-4"
           aria-disabled="true"
         >
           <span>
@@ -93,6 +94,7 @@ export function BestPracticeArticlePage({
   article: BestPracticeArticle
   interactive?: ReactNode
 }) {
+  const toolMetadata = getDocumentationToolMetadata(article.slug)
   const canonicalUrl = `https://coachhouse.app/documentation/${article.slug}`
   const sectionLabel = article.slug.startsWith("tools/")
     ? "Tools"
@@ -100,6 +102,23 @@ export function BestPracticeArticlePage({
   const contents: ReadonlyArray<readonly [string, string]> = interactive
     ? [...baseContents, ["sandbox", "Try it"], ...closingContents]
     : [...baseContents, ...closingContents]
+
+  const guide = (
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,760px)_180px]">
+      <div className="min-w-0">
+        <DocumentationMobileContents items={contents} />
+        <p className="text-muted-foreground mt-5 text-xs">
+          {article.readingTime} · Reviewed {article.reviewedDate}
+        </p>
+        <BestPracticeCoreSections article={article} />
+        <BestPracticeStagesSection article={article} />
+        <BestPracticeExampleAndFramework article={article} />
+        <BestPracticeChecklistAndMistakes article={article} />
+        <BestPracticeMeasuresAndSources article={article} />
+      </div>
+      <DocumentationDesktopContents items={contents} />
+    </div>
+  )
 
   return (
     <DocumentationSurface>
@@ -144,7 +163,7 @@ export function BestPracticeArticlePage({
       />
       <div
         id="documentation-content"
-        className="mx-auto grid w-full max-w-[1180px] gap-10 px-5 py-8 sm:px-8 sm:py-10 lg:px-12 xl:grid-cols-[minmax(0,760px)_200px]"
+        className="mx-auto w-full max-w-[1180px] px-5 py-8 sm:px-8 lg:px-12"
       >
         <article className="min-w-0">
           <nav
@@ -165,41 +184,25 @@ export function BestPracticeArticlePage({
             </span>
           </nav>
 
-          <header className="mt-6 border-b pb-8">
-            <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-              {article.eyebrow}
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl">
-              {article.title}
+          <header className="mt-5 mb-5">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {article.navigationTitle}
             </h1>
-            <p className="mt-5 text-base leading-7 text-pretty sm:text-lg sm:leading-8">
-              {article.answer}
+            <p className="text-muted-foreground mt-3 max-w-2xl text-base leading-7">
+              {toolMetadata?.description ?? article.description}
             </p>
-            <div className="text-muted-foreground mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs">
-              <span>{article.readingTime}</span>
-              <span>Reviewed {article.reviewedDate}</span>
-              <span>United States</span>
-            </div>
-            {interactive ? (
-              <Button asChild variant="outline" className="mt-5 min-h-11">
-                <a href="#sandbox">
-                  Try the tool <ArrowRightIcon aria-hidden />
-                </a>
-              </Button>
-            ) : null}
           </header>
-          <DocumentationMobileContents items={contents} />
-
-          <BestPracticeCoreSections article={article} />
-          <BestPracticeStagesSection article={article} />
-          {interactive}
-          <BestPracticeExampleAndFramework article={article} />
-          <BestPracticeChecklistAndMistakes article={article} />
-          <BestPracticeMeasuresAndSources article={article} />
+          {interactive ? (
+            <DocumentationArticleWorkspace
+              defaultView={article.slug.startsWith("tools/") ? "tool" : "guide"}
+              guide={guide}
+              tool={interactive}
+            />
+          ) : (
+            guide
+          )}
           <ArticleFooter article={article} />
         </article>
-
-        <DocumentationDesktopContents items={contents} />
       </div>
     </DocumentationSurface>
   )

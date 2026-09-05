@@ -1,6 +1,5 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
@@ -69,12 +68,8 @@ export function MeasurementPlanResults({
 
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-3">
+      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2">
         {[
-          [
-            "Drafted areas",
-            `${summary.draftedAreaCount} of ${summary.totalAreaCount}`,
-          ],
           ["Annual responses", summary.annualResponses.toLocaleString("en-US")],
           [
             "Respondent time",
@@ -165,7 +160,7 @@ export function MeasurementPlanResults({
           </div>
         </div>
 
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border lg:grid-cols-4">
+        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-4">
           {[
             [
               "Schedule",
@@ -234,43 +229,12 @@ export function MeasurementPlanResults({
         </ol>
       </section>
 
-      <section
-        className="mt-8 border"
-        aria-labelledby="measurement-review-title"
-      >
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="measurement-review-title" className="text-sm font-semibold">
-              Guarded measurement review
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the working plan and explicit anti-invention constraints for
-              human-reviewed analysis.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopy}
-          >
-            {copied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {copied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
-          Draft counts and burden arithmetic are transparent planning aids. They
-          are not a quality score, legal finding, or evidence of impact.
+          Use the response-time estimate to keep data collection manageable for
+          participants.
         </p>
         <a
           href="https://www.cdc.gov/evaluation/php/evaluation-framework-action-guide/step-4-gather-credible-evidence.html"

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_MEASUREMENT_PLAN } from "../../lib/measurement-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useMeasurementPlan } from "../../hooks/use-measurement-plan"
 import {
@@ -27,8 +28,14 @@ function downloadCsv(draft: MeasurementPlanDraft) {
 }
 
 export function MeasurementPlanBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useMeasurementPlan()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useMeasurementPlan()
   const [announcement, setAnnouncement] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -52,47 +59,48 @@ export function MeasurementPlanBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Working measurement plan</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setCopied(false)
-              setAnnouncement("Example measurement plan loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden />
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      <MeasurementPlanFields draft={draft} updateDraft={updateDraft} />
-      <MeasurementPlanResults
-        draft={draft}
-        copied={copied}
-        onCopy={handleCopy}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Measurement plan CSV downloaded.")
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_MEASUREMENT_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setCopied(false)
+          setAnnouncement("Example measurement plan loaded.")
         }}
+        onReset={handleReset}
+      />
+
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_MEASUREMENT_PLAN)
+        }
+        steps={[
+          {
+            id: "evidence",
+            label: "Plan the evidence",
+            content: (
+              <MeasurementPlanFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <MeasurementPlanResults
+                draft={draft}
+                copied={copied}
+                onCopy={handleCopy}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Measurement plan CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}

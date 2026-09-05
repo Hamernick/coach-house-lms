@@ -16,7 +16,7 @@ export function DocumentationSurface({
   return (
     <div
       className={cn(
-        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain motion-safe:scroll-smooth [&_section[id]]:scroll-mt-24 [&_h2[id]]:scroll-mt-24 [&_h3[id]]:scroll-mt-24",
+        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain [--radius:0.875rem] motion-safe:scroll-smooth [&_h2[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_h3[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_section[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)]",
         className
       )}
       data-documentation-scroll

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_PARTNERSHIP_BRIEF } from "../../lib/partnership-brief"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { usePartnershipBrief } from "../../hooks/use-partnership-brief"
 import {
@@ -27,8 +28,14 @@ function downloadCsv(draft: PartnershipBriefDraft) {
 }
 
 export function PartnershipBriefBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    usePartnershipBrief()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = usePartnershipBrief()
   const [announcement, setAnnouncement] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -52,46 +59,48 @@ export function PartnershipBriefBuilder() {
 
   return (
     <fieldset disabled={!storageReady} className="min-w-0">
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Working partnership brief</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setCopied(false)
-              setAnnouncement("Example partnership brief loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-
-      <PartnershipBriefFields draft={draft} updateDraft={updateDraft} />
-      <PartnershipBriefResults
-        draft={draft}
-        copied={copied}
-        onCopy={handleCopy}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Partnership brief CSV downloaded.")
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_PARTNERSHIP_BRIEF)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setCopied(false)
+          setAnnouncement("Example partnership brief loaded.")
         }}
+        onReset={handleReset}
+      />
+
+      <DocumentationToolFlow
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_PARTNERSHIP_BRIEF)
+        }
+        steps={[
+          {
+            id: "agreement",
+            label: "Shared agreement",
+            content: (
+              <PartnershipBriefFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <PartnershipBriefResults
+                draft={draft}
+                copied={copied}
+                onCopy={handleCopy}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Partnership brief CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}

@@ -1,75 +1,74 @@
 // Shared visible tool headings and descriptions; also used by library search.
 export const DOCUMENTATION_TOOL_METADATA = {
   "tools/campaigns": {
-    title: "Build a decision-ready nonprofit campaign brief",
+    title: "Campaign planner",
     description:
-      "Connect one objective, audience, action, message, destination, delivery system, safeguards, and learning decision. The draft stays on this device and publishes nothing.",
+      "Turn one audience, message, and action into a campaign brief you can share.",
   },
   "best-practices/compliance": {
-    title: "Build your annual compliance rhythm",
+    title: "Compliance calendar",
     description:
-      "Add a few operating facts to create a device-local review plan. The result identifies common federal filing paths and the questions that still require state or professional confirmation.",
+      "Map common filing dates, assign owners, and export a review calendar. Confirm requirements for your state and organization.",
   },
   "tools/crm": {
-    title: "Define a responsible relationship record",
+    title: "Plan your relationship records",
     description:
-      "Connect one system purpose to accountable practices and a generic field dictionary. The draft stays on this device, connects to nothing, and should contain no real constituent information.",
+      "Decide what to track, why you need it, and who can access it. Build a field dictionary using examples, not real constituent information.",
   },
   "tools/finance": {
-    title: "Build a reviewable operating-finance rhythm",
+    title: "Finance review planner",
     description:
-      "Keep restricted and unrestricted resources separate, connect cash planning to operating controls, and prepare better questions for staff, the board, and qualified reviewers. The draft stays on this device and moves no money.",
+      "Bring your budget, cash, restricted funds, and review responsibilities into one operating plan.",
   },
   "best-practices/frameworks": {
-    title: "Choose a framework and build a reviewable program pathway",
+    title: "Logic model builder",
     description:
-      "Start from the decision you need to support, draft a live logic model, expose assumptions and missing links, then export the work or copy a guarded review prompt.",
+      "Connect resources and activities to the change you expect. Export a logic model with assumptions and questions to test.",
   },
   "best-practices/fundraising": {
-    title: "Build a transparent fundraising plan",
+    title: "Fundraising plan",
     description:
-      "Set the funding need, assign planning amounts to a small channel mix, and generate a stage-specific action plan. Every number remains an assumption until support is committed.",
+      "Set a funding need, build a channel mix, and see the gap your team still needs to close.",
   },
   "tools/hr": {
-    title: "Build a reviewable role lifecycle",
+    title: "Hiring and role planner",
     description:
-      "Define necessary work, working relationship facts, full cost, fair recruitment, onboarding, support, records, safety, and transition. The draft stays on this device and makes no people decisions.",
+      "Define a role, estimate its full cost, and plan recruitment, onboarding, and ongoing support.",
   },
   "tools/legal": {
-    title: "Prepare a responsible matter and referral brief",
+    title: "Prepare for legal help",
     description:
-      "Separate facts from assumptions, protect people and evidence, map authority and jurisdiction, and prepare focused questions for qualified counsel. The draft stays on this device and provides no legal advice.",
+      "Organize the facts, jurisdiction, deadlines, and questions for qualified counsel. Keep sensitive case details out of this browser draft.",
   },
   "best-practices/marketing": {
-    title: "Build a source-backed 90-day communications rhythm",
+    title: "Audience and message planner",
     description:
-      "Define one audience, message, proof point, invitation, and maintainable channel cadence. Then export the brief or copy a guarded AI handoff for human-reviewed drafting.",
+      "Choose an audience, write a message with evidence, and plan a realistic 90-day communications rhythm.",
   },
   "best-practices/measuring-impact": {
-    title: "Connect one decision to an outcome, evidence, and action",
+    title: "Measurement plan",
     description:
-      "Draft a live evidence chain, estimate respondent burden, expose missing safeguards and limitations, then export the plan or copy a guarded review prompt.",
+      "Choose an outcome, a practical way to measure it, and the decision your evidence will inform.",
   },
   "tools/networking": {
-    title: "Map a reciprocal nonprofit relationship system",
+    title: "Relationship map",
     description:
-      "Define the purpose, community accountability, relationship roles, reciprocal value, accessible invitation, follow-through, safeguards, and human review. The draft stays on this device and contacts no one.",
+      "Identify who to connect with, what you can offer, and the next conversation to arrange.",
   },
   "best-practices/partnerships": {
-    title:
-      "Put the shared purpose, each contribution, and decision rights on one table",
+    title: "Partnership brief",
     description:
-      "Draft a bounded relationship, expose assumptions and safeguards, schedule reviews, then export the brief or copy a guarded review prompt. The result is preparation for a real agreement, not the agreement itself.",
+      "Define a shared purpose, contributions, decision rights, and a review date before drafting an agreement.",
   },
   "tools/social-media": {
-    title: "Build a source-backed social media brief",
+    title: "Social content planner",
     description:
-      "Plan the audience, source, action, channel rhythm, accessible content, safeguards, response ownership, tracked link, and human review. The draft stays on this device and is never published.",
+      "Turn your audience and message into a manageable content rhythm, with a tracked link and a clear response owner.",
   },
   "best-practices/sustainability": {
-    title: "Test mission commitments against money, people, and continuity",
+    title: "Runway and capacity planner",
     description:
-      "Build a transparent planning scenario, keep restricted resources separate, expose capacity and continuity risks, then export the work or copy a guarded review prompt.",
+      "Compare your commitments with available money and people. Explore a planning scenario and identify the next decision.",
   },
 } as const
 

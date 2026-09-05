@@ -86,6 +86,7 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   await page.reload()
   await ready(page)
   await expect(organization).toHaveValue("Local review organization")
+  await page.getByRole("tab", { name: /Review & export/ }).click()
   const download = page.waitForEvent("download")
   await page
     .getByRole("button", { name: "Download plan CSV", exact: true })
@@ -95,6 +96,7 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   )
   page.once("dialog", (dialog) => dialog.accept())
   await page.getByRole("button", { name: "Reset", exact: true }).click()
+  await page.getByRole("tab", { name: /Purpose/ }).click()
   await expect(organization).toHaveValue("")
 })
 
@@ -104,7 +106,7 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
   await page.goto("/documentation/marketplace")
   await ready(page)
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "15 resources"
+    "23 resources"
   )
   await page
     .getByRole("searchbox", { name: "Search resources", exact: true })
@@ -113,7 +115,7 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
     "2 resources"
   )
   await page
-    .getByRole("button", { name: "Add to shortlist", exact: true })
+    .getByRole("button", { name: /^Save TechSoup/ })
     .first()
     .click()
   await page.reload()
@@ -121,8 +123,9 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
     "1"
   )
   await expect(
-    page.getByRole("button", { name: "Shortlisted", exact: true })
+    page.getByRole("button", { name: /^Remove TechSoup/ })
   ).toBeVisible()
+  await page.getByRole("button", { name: "Saved 1", exact: true }).click()
   const download = page.waitForEvent("download")
   await page.getByRole("button", { name: /Download CSV/ }).click()
   expect((await download).suggestedFilename()).toBe(
@@ -168,7 +171,7 @@ for (const viewer of ["free", "paid", "locked"]) {
     await page.goto(`/visual-regression/documentation?viewer=${viewer}`)
     await ready(page)
     await expect(
-      page.getByRole("heading", { name: "Build a nonprofit that can last." })
+      page.getByRole("heading", { name: "Nonprofit documentation", exact: true })
     ).toBeVisible()
     await expect(
       page.getByRole("searchbox", { name: "Search documentation", exact: true })
@@ -286,3 +289,143 @@ test("documentation home and article desktop baselines", async ({ page }) => {
     )
   }
 })
+
+test("Marketplace People preserves filters through back and forward navigation", async ({
+  page,
+}) => {
+  await page.goto("/documentation/marketplace?q=Design%20Gigs")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "1 resource"
+  )
+  await page.getByRole("tab", { name: "People", exact: true }).click()
+  await expect(
+    page.getByRole("heading", { name: "Coach House coaches" })
+  ).toBeVisible()
+  await expect(page.locator("[data-marketplace-coach]")).toHaveCount(3)
+  await expect(
+    page.locator('[data-marketplace-coach="joel"] a').last()
+  ).toHaveAttribute("href", "/coaching")
+  await expect(
+    page.locator('[data-marketplace-coach="paula"] a').last()
+  ).toHaveAttribute("href", "/coaching")
+  await expect(
+    page.locator('[data-marketplace-coach="franklin"] a').last()
+  ).toHaveAttribute("href", "https://www.coachhousesolutions.org/contact")
+  await page.goBack()
+  await expect(
+    page.getByRole("searchbox", { name: "Search resources", exact: true })
+  ).toHaveValue("Design Gigs")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "1 resource"
+  )
+  await page.goForward()
+  await expect(
+    page.getByRole("tab", { name: "People", exact: true })
+  ).toHaveAttribute("aria-selected", "true")
+  await page.reload()
+  await expect(page.locator("[data-marketplace-coach]")).toHaveCount(3)
+})
+
+test("Marketplace resource guides lead from discovery to setup and saved choices", async ({
+  page,
+}) => {
+  await page.goto("/documentation/marketplace?q=Ad%20Grants")
+  await page
+    .getByRole("link", { name: "Google Ad Grants", exact: true })
+    .click()
+  await expect(page).toHaveURL(/marketplace\/google-ad-grants$/)
+  await expect(
+    page.getByRole("heading", { name: "Google Ad Grants", exact: true })
+  ).toBeVisible()
+  await expect(
+    page.getByRole("link", { name: "Follow Google's activation steps" })
+  ).toHaveAttribute("href", "https://www.google.com/grants/get-started/")
+  await expect(
+    page.getByRole("heading", { name: "Fundraising", exact: true })
+  ).toBeAttached()
+  await expect(
+    page.getByRole("heading", { name: "Volunteer recruitment", exact: true })
+  ).toBeAttached()
+  await expect(
+    page.getByRole("heading", { name: "Reach your community", exact: true })
+  ).toBeAttached()
+  await page
+    .getByRole("button", { name: "Save Google Ad Grants", exact: true })
+    .click()
+  await page.reload()
+  await expect(
+    page.getByRole("button", {
+      name: "Remove Google Ad Grants from saved resources",
+      exact: true,
+    })
+  ).toHaveAttribute("aria-pressed", "true")
+  await page.getByRole("button", { name: "Saved 1", exact: true }).click()
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByRole("link", { name: "Google Ad Grants", exact: true })
+  ).toHaveAttribute("href", "/documentation/marketplace/google-ad-grants")
+})
+
+test("Marketplace renders published member profiles separately from coaches", async ({
+  page,
+}) => {
+  await page.goto("/visual-regression/documentation?viewer=people")
+  await expect(page.locator("[data-marketplace-coach]")).toHaveCount(3)
+  const person = page.locator(
+    '[data-marketplace-person="sample-public-member"]'
+  )
+  await expect(person).toHaveAttribute("href", "/sample-public-member")
+  await expect(person).toContainText("Public member fixture")
+  await expect(person).not.toContainText("Book")
+})
+
+for (const [layout, mode, width, height] of [
+  ["desktop", "light", 1440, 900],
+  ["mobile", "dark", 390, 844],
+] as const) {
+  test(`Marketplace and completed plans have reviewed ${layout} baselines`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height })
+    await page.emulateMedia({ colorScheme: mode, reducedMotion: "reduce" })
+    await page.addInitScript(
+      (theme) => localStorage.setItem("theme", theme),
+      mode
+    )
+    for (const [route, surface, planner] of [
+      ["/visual-regression/documentation?viewer=people", "people", false],
+      ["/documentation/marketplace/google-ad-grants", "ad-grants", false],
+      ["/documentation/tools/campaigns#sandbox", "campaign-review", true],
+      [
+        "/documentation/best-practices/fundraising#sandbox",
+        "fundraising-review",
+        true,
+      ],
+    ] as const) {
+      await page.goto(route)
+      await ready(page)
+      if (planner) {
+        await page
+          .getByRole("button", { name: "Load example", exact: true })
+          .click()
+        await page
+          .getByRole("tablist", { name: "Planner steps" })
+          .getByRole("tab")
+          .last()
+          .click()
+        await expect(
+          page.getByRole("button", { name: /Download.*CSV/ }).first()
+        ).toBeVisible()
+      }
+      await expect(page).toHaveScreenshot(
+        `documentation-${surface}-${layout}-${mode}.png`,
+        {
+          animations: "disabled",
+          caret: "hide",
+          maxDiffPixelRatio: 0.01,
+        }
+      )
+    }
+  })
+}

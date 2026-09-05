@@ -3,6 +3,8 @@ import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
 import type { BestPracticeArticle } from "../types"
 
+import { DocumentationStageGuidance } from "./documentation-stage-guidance"
+
 type ArticleSectionProps = { article: BestPracticeArticle }
 
 export function BestPracticeCoreSections({ article }: ArticleSectionProps) {
@@ -46,7 +48,7 @@ export function BestPracticeCoreSections({ article }: ArticleSectionProps) {
             </li>
           ))}
         </ul>
-        <div className="mt-7 border-l-2 border-amber-500 bg-amber-500/8 px-5 py-4 text-sm leading-6">
+        <div className="bg-muted/30 mt-7 rounded-2xl border px-5 py-4 text-sm leading-6">
           <strong>Important distinction:</strong> {article.importantNote}
         </div>
       </section>
@@ -70,48 +72,7 @@ export function BestPracticeStagesSection({ article }: ArticleSectionProps) {
       >
         {article.labels.stages}
       </h2>
-      <div className="mt-7 divide-y border-y">
-        {article.stages.map((stage, index) => (
-          <section
-            key={stage.id}
-            className="py-7"
-            aria-labelledby={`${stage.id}-title`}
-          >
-            <div className="grid gap-4 sm:grid-cols-[8rem_1fr] sm:gap-8">
-              <div>
-                <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <h3 id={`${stage.id}-title`} className="mt-2 font-semibold">
-                  {stage.label}
-                </h3>
-              </div>
-              <div>
-                <p className="leading-6 font-semibold">{stage.question}</p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
-                  {stage.guidance}
-                </p>
-                <ul className="mt-4 space-y-2 text-sm leading-6">
-                  {stage.actions.map((action) => (
-                    <li
-                      key={action}
-                      className="grid grid-cols-[0.75rem_1fr] gap-2"
-                    >
-                      <span className="text-muted-foreground" aria-hidden>
-                        —
-                      </span>
-                      <span>{action}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="bg-muted/50 mt-5 border px-4 py-3 text-sm leading-6">
-                  <strong>Ready to move on when:</strong> {stage.checkpoint}
-                </p>
-              </div>
-            </div>
-          </section>
-        ))}
-      </div>
+      <DocumentationStageGuidance stages={article.stages} />
     </section>
   )
 }
@@ -138,7 +99,7 @@ export function BestPracticeExampleAndFramework({
         <p className="text-muted-foreground mt-4 text-sm leading-6">
           {article.example.context}
         </p>
-        <div className="bg-border mt-6 grid gap-px overflow-hidden border sm:grid-cols-2">
+        <div className="bg-border mt-6 grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2">
           <div className="bg-background p-5">
             <p className="text-muted-foreground text-xs font-semibold uppercase">
               {article.example.weakLabel}
@@ -210,7 +171,7 @@ export function BestPracticeChecklistAndMistakes({
         >
           {article.labels.checklist}
         </h2>
-        <ul className="bg-border mt-6 grid gap-px overflow-hidden border sm:grid-cols-2">
+        <ul className="bg-border mt-6 grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2">
           {article.checklist.map((item) => (
             <li
               key={item}

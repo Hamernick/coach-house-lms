@@ -40,7 +40,7 @@ export function FundraisingPlanResults({
 
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-4">
+      <div className="bg-border grid grid-cols-2 gap-px overflow-hidden rounded-2xl border lg:grid-cols-4">
         {[
           ["Fundraising need", summary.fundingNeed],
           ["Planned by channel", summary.plannedTotal],
@@ -58,10 +58,7 @@ export function FundraisingPlanResults({
         ))}
       </div>
 
-      <p
-        className="bg-background mt-4 border px-4 py-3 text-sm font-medium"
-        aria-live="polite"
-      >
+      <p className="text-muted-foreground mt-4 text-sm" aria-live="polite">
         {balanceLabel}
       </p>
 
@@ -72,26 +69,30 @@ export function FundraisingPlanResults({
             Planned amounts remain assumptions until support is committed.
           </p>
         </div>
-        <Button type="button" className="min-h-11" onClick={onDownload}>
+        <Button
+          type="button"
+          className="min-h-11 rounded-full"
+          onClick={onDownload}
+        >
           <DownloadIcon className="size-4" aria-hidden />
           Download plan CSV
         </Button>
       </div>
 
-      <div className="mt-4 overflow-x-auto border">
-        <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
+      <div className="mt-4 overflow-x-auto rounded-2xl border">
+        <table className="w-full min-w-0 border-collapse text-left text-sm">
           <caption className="sr-only">
             Planned fundraising amount and share of need by channel
           </caption>
           <thead className="bg-muted/45">
             <tr>
-              <th scope="col" className="px-4 py-3 font-semibold">
+              <th scope="col" className="px-3 py-3 font-semibold">
                 Channel
               </th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold">
+              <th scope="col" className="px-3 py-3 text-right font-semibold">
                 Planned amount
               </th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold">
+              <th scope="col" className="px-3 py-3 text-right font-semibold">
                 Share of need
               </th>
             </tr>
@@ -104,13 +105,13 @@ export function FundraisingPlanResults({
                 : 0
               return (
                 <tr key={channel.id}>
-                  <th scope="row" className="px-4 py-3 font-medium">
+                  <th scope="row" className="px-3 py-3 font-medium">
                     {channel.label}
                   </th>
-                  <td className="px-4 py-3 text-right tabular-nums">
+                  <td className="px-3 py-3 text-right tabular-nums">
                     {currency.format(amount)}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
+                  <td className="px-3 py-3 text-right tabular-nums">
                     {percent.format(share)}
                   </td>
                 </tr>

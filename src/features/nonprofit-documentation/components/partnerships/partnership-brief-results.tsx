@@ -1,6 +1,5 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
@@ -100,15 +99,11 @@ export function PartnershipBriefResults({
 
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2 lg:grid-cols-3">
         {[
           ["Relationship", partnershipModelLabel(draft.model)],
           ["Initial term", `${draft.termMonths} months`],
           ["Planned reviews", String(summary.reviewMomentCount)],
-          [
-            "Safeguards selected",
-            `${summary.safeguardCount} of ${summary.totalSafeguardCount}`,
-          ],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -124,8 +119,8 @@ export function PartnershipBriefResults({
         aria-live="polite"
       >
         {summary.hasReviewableBrief
-          ? `${summary.draftedAreaCount} of ${summary.totalAreaCount} planning areas contain working text. The core brief is ready for verification with the partner, affected people, and authorized reviewers.`
-          : `${summary.draftedAreaCount} of ${summary.totalAreaCount} planning areas contain working text. Draft the shared purpose, both contributions, joint work, decision rights, and closeout plan before review.`}
+          ? `Review the core brief with your partner and the people affected before agreeing to it.`
+          : `Draft the shared purpose, contributions, joint work, decision rights, and closeout plan before review.`}
       </p>
 
       <section className="mt-8" aria-labelledby="agreement-table-title">
@@ -275,38 +270,7 @@ export function PartnershipBriefResults({
         </ol>
       </section>
 
-      <section
-        className="mt-8 border"
-        aria-labelledby="partnership-review-title"
-      >
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="partnership-review-title" className="text-sm font-semibold">
-              Guarded partnership review
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the brief with explicit anti-invention and
-              professional-review constraints.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopy}
-          >
-            {copied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {copied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">

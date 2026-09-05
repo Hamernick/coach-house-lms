@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_LEGAL_PLAN,
@@ -52,27 +54,12 @@ const EXAMPLE_LEGAL_PLAN: LegalPlanDraft = {
 
 export function useLegalPlan() {
   const [draft, setDraft] = useState(DEFAULT_LEGAL_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LEGAL_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeLegalPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(LEGAL_PLAN_STORAGE_KEY, JSON.stringify(draft))
-    } catch {
-      // The tool remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    LEGAL_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeLegalPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof LegalPlanDraft>(key: Key, value: LegalPlanDraft[Key]) =>
@@ -83,6 +70,7 @@ export function useLegalPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     loadExample: useCallback(() => setDraft(EXAMPLE_LEGAL_PLAN), []),
     reset: useCallback(() => setDraft(DEFAULT_LEGAL_PLAN), []),

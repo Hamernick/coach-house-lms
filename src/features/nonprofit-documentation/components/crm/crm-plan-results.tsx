@@ -1,5 +1,4 @@
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
+import { DocumentationAiReview } from "../documentation-ai-review"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 
 import { Button } from "@/components/ui/button"
@@ -14,13 +13,11 @@ import {
 
 import type { CrmPlanDraft } from "../../crm-types"
 import {
-  CRM_LIFECYCLE,
   buildCrmActions,
   buildCrmReviewPrompt,
   crmFieldCategoryLabel,
   crmFieldSensitivityLabel,
   crmRelationshipContextLabel,
-  summarizeCrmPlan,
 } from "../../lib/crm-plan"
 
 function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
@@ -138,88 +135,11 @@ export function CrmPlanResults({
   onCopyPrompt: () => void
   onDownload: () => void
 }) {
-  const summary = summarizeCrmPlan(draft)
   const actions = buildCrmActions(draft)
   const prompt = buildCrmReviewPrompt(draft)
 
-  const stats = [
-    [
-      "Operating areas",
-      `${summary.draftedAreaCount}/${summary.totalAreaCount}`,
-    ],
-    [
-      "Lifecycle steps",
-      `${summary.lifecycleStepCount}/${summary.totalLifecycleStepCount}`,
-    ],
-    ["Safeguards", `${summary.safeguardCount}/${summary.totalSafeguardCount}`],
-    ["Named fields", String(summary.fieldCount)],
-    ["Complete fields", `${summary.completeFieldCount}/${summary.fieldCount}`],
-    ["High-risk review", String(summary.highRiskFieldCount)],
-  ]
-
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <section aria-labelledby="crm-status-title">
-        <h3 id="crm-status-title" className="font-semibold">
-          Definition status
-        </h3>
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map(([label, value]) => (
-            <div key={label} className="bg-background p-4">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                {label}
-              </p>
-              <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-muted-foreground mt-3 text-xs leading-5">
-          Counts describe this draft. They do not score people or establish
-          necessity, consent, permission, accuracy, access, retention, security,
-          compliance, vendor fit, relationship quality, or impact.
-        </p>
-      </section>
-
-      <section className="mt-8" aria-labelledby="crm-lifecycle-title">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 id="crm-lifecycle-title" className="font-semibold">
-              Live relationship-record lifecycle
-            </h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              A step becomes Defined only when every named operating area
-              contains text. Human review still applies.
-            </p>
-          </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
-            Device-local · Connects to nothing
-          </span>
-        </div>
-        <ol className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-7">
-          {CRM_LIFECYCLE.map((step, index) => {
-            const complete = step.fields.every((field) =>
-              String(draft[field]).trim()
-            )
-            return (
-              <li key={step.id} className="bg-background min-w-0 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-muted-foreground text-[11px] font-medium">
-                    {complete ? "Defined" : "Open"}
-                  </span>
-                </div>
-                <h4 className="mt-3 text-sm font-semibold">{step.label}</h4>
-                <p className="text-muted-foreground mt-2 text-xs leading-5">
-                  {step.description}
-                </p>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-
       <section className="mt-8" aria-labelledby="crm-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -256,7 +176,7 @@ export function CrmPlanResults({
 
       <section className="mt-8" aria-labelledby="crm-actions-title">
         <h3 id="crm-actions-title" className="font-semibold">
-          Stage and missing-plan actions
+          Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} review prompts generated from this draft. They are
@@ -286,39 +206,11 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section
-        className="mt-8 border p-4 sm:p-5"
-        aria-labelledby="crm-ai-title"
-      >
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-          Optional human-reviewed handoff
-        </p>
-        <h3 id="crm-ai-title" className="mt-2 font-semibold">
-          Copy a guarded AI review prompt
-        </h3>
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-          The prompt reviews only generic system and field definitions. Remove
-          all real names, contact details, donor, participant, service, health,
-          education, employment, payment, credential, and other personal or
-          sensitive information before using another service.
-        </p>
-        <pre className="bg-muted/40 mt-4 max-h-56 overflow-auto border p-4 text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-4 min-h-11"
-          onClick={onCopyPrompt}
-        >
-          {promptCopied ? (
-            <CheckIcon data-icon="inline-start" aria-hidden />
-          ) : (
-            <CopyIcon data-icon="inline-start" aria-hidden />
-          )}
-          {promptCopied ? "Prompt copied" : "Copy review prompt"}
-        </Button>
-      </section>
+      <DocumentationAiReview
+        prompt={prompt}
+        copied={promptCopied}
+        onCopy={onCopyPrompt}
+      />
     </div>
   )
 }

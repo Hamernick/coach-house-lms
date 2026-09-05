@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_LOGIC_MODEL_DRAFT,
@@ -40,32 +42,12 @@ const EXAMPLE_LOGIC_MODEL_DRAFT: LogicModelDraft = {
 
 export function useFrameworkWorkspace() {
   const [draft, setDraft] = useState(DEFAULT_LOGIC_MODEL_DRAFT)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(
-        FRAMEWORK_WORKSPACE_STORAGE_KEY
-      )
-      if (stored) setDraft(sanitizeLogicModelDraft(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        FRAMEWORK_WORKSPACE_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The workspace remains usable when private browsing blocks persistence.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    FRAMEWORK_WORKSPACE_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeLogicModelDraft
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof LogicModelDraft>(
@@ -80,5 +62,5 @@ export function useFrameworkWorkspace() {
   const loadExample = useCallback(() => setDraft(EXAMPLE_LOGIC_MODEL_DRAFT), [])
   const reset = useCallback(() => setDraft(DEFAULT_LOGIC_MODEL_DRAFT), [])
 
-  return { draft, storageReady, updateDraft, loadExample, reset }
+  return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

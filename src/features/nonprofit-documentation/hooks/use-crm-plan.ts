@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import type { CrmFieldDraft, CrmPlanDraft } from "../crm-types"
 import {
@@ -108,27 +110,12 @@ const EXAMPLE_CRM_PLAN: CrmPlanDraft = {
 
 export function useCrmPlan() {
   const [draft, setDraft] = useState(DEFAULT_CRM_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(CRM_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeCrmPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(CRM_PLAN_STORAGE_KEY, JSON.stringify(draft))
-    } catch {
-      // The planner remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    CRM_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeCrmPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof CrmPlanDraft>(key: Key, value: CrmPlanDraft[Key]) =>
@@ -181,6 +168,7 @@ export function useCrmPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateField,
     addField,

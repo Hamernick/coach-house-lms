@@ -1,6 +1,5 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
@@ -69,22 +68,17 @@ export function FrameworkWorkspaceResults({
 
   return (
     <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-3">
-        {[
-          [
-            "Drafted areas",
-            `${summary.draftedAreaCount} of ${summary.totalAreaCount}`,
-          ],
-          ["Connected pathway links", `${summary.causalLinkCount} of 5`],
-          ["Starting framework", recommendation.title],
-        ].map(([label, value]) => (
-          <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              {label}
-            </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
-          </div>
-        ))}
+      <div className="bg-border grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-1">
+        {[["Starting framework", recommendation.title]].map(
+          ([label, value]) => (
+            <div key={label} className="bg-background p-4">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                {label}
+              </p>
+              <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            </div>
+          )
+        )}
       </div>
 
       <p
@@ -162,7 +156,7 @@ export function FrameworkWorkspaceResults({
           </div>
         </div>
 
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border lg:grid-cols-4">
+        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-2xl border lg:grid-cols-4">
           {[
             ["Need", draft.need, "Add the need or opportunity."],
             ["People", draft.people, "Add who is most affected."],
@@ -215,40 +209,12 @@ export function FrameworkWorkspaceResults({
         </ol>
       </section>
 
-      <section className="mt-8 border" aria-labelledby="framework-review-title">
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="framework-review-title" className="text-sm font-semibold">
-              Guarded framework review
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the working hypotheses and safeguards for human-reviewed
-              analysis.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopy}
-          >
-            {copied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {copied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
-          Draft counts show which text areas contain content. They are not a
-          quality score, readiness rating, or evidence that the pathway works.
+          Test the model with the people delivering and experiencing the
+          program.
         </p>
         <a
           href="https://www.cdc.gov/evaluation/php/evaluation-framework-action-guide/step-2-describe-the-program.html"

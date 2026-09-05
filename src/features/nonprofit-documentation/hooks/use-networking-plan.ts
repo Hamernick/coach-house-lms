@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_NETWORKING_PLAN,
@@ -112,30 +114,12 @@ const EXAMPLE_NETWORKING_PLAN: NetworkingPlanDraft = {
 
 export function useNetworkingPlan() {
   const [draft, setDraft] = useState(DEFAULT_NETWORKING_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(NETWORKING_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeNetworkingPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        NETWORKING_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The tool remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    NETWORKING_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeNetworkingPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof NetworkingPlanDraft>(
@@ -193,6 +177,7 @@ export function useNetworkingPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateRelationship,
     addRelationship,

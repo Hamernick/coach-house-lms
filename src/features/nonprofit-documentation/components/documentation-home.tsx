@@ -1,55 +1,53 @@
 import Link from "next/link"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import BookMarkedIcon from "lucide-react/dist/esm/icons/book-marked"
-import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
-import CompassIcon from "lucide-react/dist/esm/icons/compass"
-import LibraryIcon from "lucide-react/dist/esm/icons/library"
-import MapIcon from "lucide-react/dist/esm/icons/map"
-import StoreIcon from "lucide-react/dist/esm/icons/store"
-import WrenchIcon from "lucide-react/dist/esm/icons/wrench"
 import { Button } from "@/components/ui/button"
-
-import { DOCUMENTATION_NAVIGATION, DOCUMENTATION_PATH } from "../lib"
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
+import { DocumentationPathCover } from "./documentation-path-cover"
 import {
   DocumentationJsonLd,
   DocumentationSurface,
 } from "./documentation-surface"
 
-const stages = [
-  { label: "Exploring", copy: "Test the need and the right way to respond." },
+const tasks = [
   {
-    label: "Forming",
-    copy: "Build the legal, governance, and operating base.",
+    variant: "campaign" as const,
+    title: "Create a campaign",
+    description: "Connect your audience, message, and call to action.",
+    href: "/documentation/tools/campaigns#sandbox",
   },
-  { label: "Operating", copy: "Deliver reliably and learn from evidence." },
   {
-    label: "Growing",
-    copy: "Expand impact without losing focus or durability.",
+    variant: "fundraising" as const,
+    title: "Build a funding plan",
+    description: "Set the need and work out a realistic channel mix.",
+    href: "/documentation/best-practices/fundraising#sandbox",
+  },
+  {
+    variant: "marketplace" as const,
+    title: "Find tools and people",
+    description: "Explore nonprofit offers, resource banks, and coaches.",
+    href: "/documentation/marketplace",
   },
 ]
 
-const concepts = [
-  ["Mission", "The contribution your organization exists to make."],
-  ["Vision", "The future condition your work helps move toward."],
-  ["Program", "An organized set of activities serving the mission."],
-  ["Outcome", "A change experienced by people, systems, or communities."],
-  [
-    "Capacity",
-    "The people, systems, money, and relationships available to act.",
-  ],
-] as const
+const tools = [
+  {
+    title: "Brand identity",
+    description: "Build a palette, type system, and portable brand kit.",
+    href: "/documentation/tools/brand-identity",
+  },
+  ...Object.entries(DOCUMENTATION_TOOL_METADATA)
+    .filter(
+      ([slug]) =>
+        !["tools/campaigns", "best-practices/fundraising"].includes(slug)
+    )
+    .map(([slug, tool]) => ({
+      title: tool.title,
+      description: tool.description.split(".")[0] + ".",
+      href: `/documentation/${slug}#sandbox`,
+    })),
+]
 
 export function DocumentationHome() {
-  const bestPractices = DOCUMENTATION_NAVIGATION.find(
-    (section) => section.id === "best-practices"
-  )
-  const tools = DOCUMENTATION_NAVIGATION.find(
-    (section) => section.id === "tools"
-  )
-  const resources = DOCUMENTATION_NAVIGATION.find(
-    (section) => section.id === "resources"
-  )
-
   return (
     <DocumentationSurface>
       <DocumentationJsonLd
@@ -58,331 +56,152 @@ export function DocumentationHome() {
           "@type": "CollectionPage",
           name: "Coach House Nonprofit Documentation",
           description:
-            "Stage-specific guidance for starting and operating sustainable nonprofit organizations in the United States.",
+            "Practical guides and working tools for nonprofit founders and teams.",
           url: "https://coachhouse.app/documentation",
-          isPartOf: {
-            "@type": "WebSite",
-            name: "Coach House",
-            url: "https://coachhouse.app",
-          },
         }}
       />
-      <div
+      <main
         id="documentation-content"
-        className="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8 sm:py-10 lg:px-12"
+        className="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8 lg:px-12"
       >
-        <header className="max-w-3xl">
-          <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
-            Coach House documentation
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
-            Build a nonprofit that can last.
+        <header className="mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Nonprofit documentation
           </h1>
-          <p className="text-muted-foreground mt-5 max-w-2xl text-base leading-7 text-pretty sm:text-lg sm:leading-8">
-            Clear, stage-specific guidance for starting and operating a
-            sustainable nonprofit in the United States—from first evidence to
-            durable systems.
+          <p className="text-muted-foreground mt-3 text-base leading-7">
+            Practical guides and working tools for nonprofit founders and teams.
           </p>
         </header>
-
         <section
           id="quickstart"
           aria-labelledby="quickstart-title"
-          className="bg-muted/30 mt-8 overflow-hidden rounded-xl border"
+          className="grid overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 text-zinc-100 md:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)]"
         >
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="flex flex-col justify-between border-b p-5 sm:p-6 lg:border-r lg:border-b-0 lg:p-8">
-              <div>
-                <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-                  Quickstart
-                </p>
-                <h2
-                  id="quickstart-title"
-                  className="mt-3 text-2xl font-semibold tracking-[-0.025em] text-balance sm:text-3xl"
-                >
-                  Start with the stage you are actually in.
-                </h2>
-                <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-6">
-                  Nonprofit work is not one checklist. The right next action
-                  changes as evidence, obligations, people, and resources grow.
-                </p>
-              </div>
-              <Button asChild className="mt-6 min-h-11 w-fit">
-                <Link href={`${DOCUMENTATION_PATH}/quickstart`}>
-                  Open the quickstart
-                  <ArrowRightIcon className="size-4" aria-hidden />
+          <div className="p-6 sm:p-8">
+            <p className="text-xs font-medium text-zinc-400">Quickstart</p>
+            <h2
+              id="quickstart-title"
+              className="mt-3 text-2xl font-semibold tracking-tight"
+            >
+              Start with the essentials.
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
+              Work through your mission, organizational path, and first
+              operating decisions. Use the guides at the stage you are in.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button
+                asChild
+                className="min-h-11 rounded-full bg-white text-zinc-950 hover:bg-zinc-200"
+              >
+                <Link href="/documentation/quickstart">
+                  Open Quickstart
+                  <ArrowRightIcon aria-hidden />
                 </Link>
               </Button>
-            </div>
-            <ol className="divide-y">
-              {stages.map((stage, index) => (
-                <li key={stage.label}>
-                  <Link
-                    href={`${DOCUMENTATION_PATH}/quickstart#${stage.label.toLowerCase()}-title`}
-                    className="hover:bg-muted/60 focus-visible:ring-ring grid grid-cols-[2rem_1fr_auto] items-start gap-3 px-5 py-4 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset sm:px-6"
-                  >
-                    <span className="text-muted-foreground pt-1 font-mono text-xs">
-                      0{index + 1}
-                    </span>
-                    <div>
-                      <h3 className="font-semibold">{stage.label}</h3>
-                      <p className="text-muted-foreground mt-1 text-sm leading-6">
-                        {stage.copy}
-                      </p>
-                    </div>
-                    <ArrowRightIcon
-                      className="text-muted-foreground mt-1 size-4"
-                      aria-hidden
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section className="mt-16" aria-labelledby="paths-title">
-          <div className="flex items-end justify-between gap-6 border-b pb-5">
-            <div>
-              <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-                Build paths
-              </p>
-              <h2
-                id="paths-title"
-                className="mt-2 text-2xl font-semibold tracking-[-0.025em] sm:text-3xl"
+              <Button
+                asChild
+                variant="link"
+                className="min-h-11 px-2 text-zinc-300"
               >
-                Guidance for founders and operators
-              </h2>
+                <Link href="/documentation/key-concepts">Key concepts</Link>
+              </Button>
             </div>
           </div>
-          <div className="grid md:grid-cols-2">
-            <article className="border-b py-7 md:border-r md:pr-8">
-              <CompassIcon
-                className="text-muted-foreground size-5"
-                aria-hidden
-              />
-              <h3 className="mt-5 text-xl font-semibold">Start a nonprofit</h3>
-              <p className="text-muted-foreground mt-2 max-w-md text-sm leading-6">
-                Test the need, choose the right structure, and create a credible
-                connection between purpose, activities, governance, and money.
-              </p>
-              <Link
-                href={`${DOCUMENTATION_PATH}/best-practices/mission`}
-                className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-              >
-                Define the mission{" "}
-                <ArrowRightIcon className="size-4" aria-hidden />
-              </Link>
-            </article>
-            <article className="border-b py-7 md:pl-8">
-              <BookMarkedIcon
-                className="text-muted-foreground size-5"
-                aria-hidden
-              />
-              <h3 className="mt-5 text-xl font-semibold">
-                Strengthen an organization
-              </h3>
-              <p className="text-muted-foreground mt-2 max-w-md text-sm leading-6">
-                Improve strategic focus, operating systems, evidence, revenue,
-                partnerships, and the decisions that protect long-term impact.
-              </p>
-              <Link
-                href={`${DOCUMENTATION_PATH}/best-practices/mission#stages`}
-                className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-              >
-                Review stage guidance{" "}
-                <ArrowRightIcon className="size-4" aria-hidden />
-              </Link>
-            </article>
-          </div>
-        </section>
-
-        <section className="mt-16" aria-labelledby="practices-title">
-          <div className="flex items-center gap-3">
-            <LibraryIcon className="text-muted-foreground size-5" aria-hidden />
-            <h2
-              id="practices-title"
-              className="text-2xl font-semibold tracking-[-0.025em]"
-            >
-              Best practices
-            </h2>
-          </div>
-          <div className="mt-6 grid border-t sm:grid-cols-2 lg:grid-cols-4">
-            {bestPractices?.items.map((item) => {
-              const content = (
-                <>
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    {item.href ? (
-                      <ArrowRightIcon className="size-4 shrink-0" aria-hidden />
-                    ) : null}
-                  </div>
-                  <p className="text-muted-foreground mt-2 text-sm leading-6">
-                    {item.description}
-                  </p>
-                  {!item.href ? (
-                    <span className="text-muted-foreground/70 mt-4 block text-xs">
-                      In development
-                    </span>
-                  ) : null}
-                </>
-              )
-
-              return item.href ? (
-                <Link
-                  key={item.title}
-                  href={item.href}
-                  className="hover:bg-muted/45 focus-visible:bg-muted/45 min-h-40 border-r border-b p-5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <article
-                  key={item.title}
-                  className="min-h-40 border-r border-b p-5"
-                >
-                  {content}
-                </article>
-              )
-            })}
-          </div>
-        </section>
-
-        <section
-          id="key-concepts"
-          className="mt-16 scroll-mt-8"
-          aria-labelledby="concepts-title"
-        >
-          <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-            Key concepts
-          </p>
-          <h2
-            id="concepts-title"
-            className="mt-2 text-2xl font-semibold tracking-[-0.025em]"
-          >
-            Use precise language
-          </h2>
-          <Link
-            href={`${DOCUMENTATION_PATH}/key-concepts`}
-            className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-          >
-            Read all key concepts
-            <ArrowRightIcon className="size-4" aria-hidden />
-          </Link>
-          <dl className="mt-6 divide-y border-y">
-            {concepts.map(([term, definition]) => (
-              <div
-                key={term}
-                className="grid gap-1 py-4 sm:grid-cols-[10rem_1fr] sm:gap-6"
-              >
-                <dt className="font-semibold">{term}</dt>
-                <dd className="text-muted-foreground text-sm leading-6">
-                  {definition}
-                </dd>
-              </div>
+          <ol className="grid content-center gap-5 border-t border-zinc-800 p-6 text-sm sm:p-8 md:border-t-0 md:border-l">
+            {[
+              "Clarify who you serve and what changes for them.",
+              "Choose a structure that fits the work.",
+              "Set priorities for your first operating plan.",
+            ].map((item, index) => (
+              <li key={item} className="flex gap-4">
+                <span className="text-zinc-500 tabular-nums">0{index + 1}</span>
+                <span className="max-w-xs leading-6 text-zinc-300">{item}</span>
+              </li>
             ))}
-          </dl>
+          </ol>
         </section>
-
-        <section className="mt-16" aria-labelledby="tools-title">
-          <div className="flex items-center gap-3">
-            <WrenchIcon className="text-muted-foreground size-5" aria-hidden />
-            <h2
-              id="tools-title"
-              className="text-2xl font-semibold tracking-[-0.025em]"
-            >
-              Tools
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-x-8 border-t sm:grid-cols-2 lg:grid-cols-3">
-            {tools?.items.map((item) => {
-              const content = (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    {item.href ? (
-                      <ArrowRightIcon className="size-4" aria-hidden />
-                    ) : null}
+        <section
+          id="start-a-task"
+          aria-labelledby="tasks-title"
+          className="mt-10"
+        >
+          <h2 id="tasks-title" className="text-xl font-semibold tracking-tight">
+            Start a task
+          </h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {tasks.map((task) => (
+              <Link
+                key={task.href}
+                href={task.href}
+                className="group focus-visible:ring-ring overflow-hidden rounded-3xl border focus-visible:ring-2"
+              >
+                <DocumentationPathCover variant={task.variant} />
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-semibold underline-offset-4 group-hover:underline">
+                      {task.title}
+                    </h3>
+                    <ArrowRightIcon
+                      className="mt-0.5 size-4 shrink-0"
+                      aria-hidden
+                    />
                   </div>
                   <p className="text-muted-foreground mt-2 text-sm leading-6">
-                    {item.description}
+                    {task.description}
                   </p>
-                </>
-              )
-
-              return item.href ? (
-                <Link
-                  key={item.title}
-                  href={item.href}
-                  className="hover:bg-muted/45 focus-visible:bg-muted/45 border-b px-3 py-5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <article key={item.title} className="border-b px-3 py-5">
-                  {content}
-                </article>
-              )
-            })}
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
-
-        <section className="mt-16" aria-labelledby="resources-title">
-          <div className="flex items-center gap-3">
-            <StoreIcon className="text-muted-foreground size-5" aria-hidden />
-            <h2
-              id="resources-title"
-              className="text-2xl font-semibold tracking-[-0.025em]"
-            >
-              Resources
-            </h2>
-          </div>
-          <div className="mt-6 grid border-t sm:grid-cols-2">
-            {resources?.items.map((item) => {
-              const Icon = item.title === "Map" ? MapIcon : StoreIcon
-              return item.href ? (
-                <Link
-                  key={item.title}
-                  href={item.href}
-                  className="hover:bg-muted/45 focus-visible:bg-muted/45 group min-h-44 border-r border-b p-5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <Icon
-                      className="text-muted-foreground size-5"
-                      aria-hidden
-                    />
-                    <ArrowRightIcon
-                      className="size-4 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden
-                    />
-                  </div>
-                  <h3 className="mt-5 font-semibold">{item.title}</h3>
-                  <p className="text-muted-foreground mt-2 max-w-md text-sm leading-6">
-                    {item.description}
-                  </p>
-                </Link>
-              ) : null
-            })}
-          </div>
-        </section>
-
-        <aside
-          className="bg-muted/35 mt-16 border p-6 sm:p-8"
-          aria-labelledby="editorial-title"
-        >
-          <CheckCircle2Icon className="text-foreground size-5" aria-hidden />
-          <h2 id="editorial-title" className="mt-4 text-xl font-semibold">
-            Built to be used and referenced
+        <section id="tools" aria-labelledby="tools-title" className="mt-10">
+          <h2 id="tools-title" className="text-xl font-semibold tracking-tight">
+            More working tools
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-3xl text-sm leading-6">
-            Guidance leads with a direct answer, separates stages, labels
-            illustrative examples, and cites primary sources for legal, tax,
-            compliance, and financial claims. Each article shows when it was
-            reviewed. State-specific requirements should still be confirmed with
-            the responsible agency or a qualified professional.
+          <p className="text-muted-foreground mt-2 text-sm">
+            Start from your own draft or load an example. Export the result when
+            you are ready to use it.
           </p>
-        </aside>
-      </div>
+          <div className="mt-5 grid gap-x-8 md:grid-cols-2">
+            {tools.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                className="group focus-visible:ring-ring flex items-start justify-between gap-4 border-b py-5 focus-visible:ring-2"
+              >
+                <div>
+                  <h3 className="text-sm font-medium underline-offset-4 group-hover:underline">
+                    {tool.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-1 text-sm leading-6">
+                    {tool.description}
+                  </p>
+                </div>
+                <ArrowRightIcon
+                  className="text-muted-foreground mt-1 size-4 shrink-0"
+                  aria-hidden
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+        <footer className="bg-muted/40 mt-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl p-6">
+          <div>
+            <h2 className="font-semibold">Work through it with someone.</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Meet Joel, Paula, and Franklin, and find the right conversation
+              for your next step.
+            </p>
+          </div>
+          <Button asChild variant="outline" className="min-h-11 rounded-full">
+            <Link href="/documentation/marketplace?view=people">
+              Meet the coaches
+              <ArrowRightIcon aria-hidden />
+            </Link>
+          </Button>
+        </footer>
+      </main>
     </DocumentationSurface>
   )
 }

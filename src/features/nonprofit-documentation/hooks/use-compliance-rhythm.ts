@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   COMPLIANCE_RHYTHM_STORAGE_KEY,
@@ -21,30 +23,12 @@ const EXAMPLE_COMPLIANCE_RHYTHM: ComplianceRhythmDraft = {
 
 export function useComplianceRhythm() {
   const [draft, setDraft] = useState(DEFAULT_COMPLIANCE_RHYTHM)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(COMPLIANCE_RHYTHM_STORAGE_KEY)
-      if (stored) setDraft(sanitizeComplianceRhythm(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        COMPLIANCE_RHYTHM_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The builder remains usable when private browsing blocks persistence.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    COMPLIANCE_RHYTHM_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeComplianceRhythm
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof ComplianceRhythmDraft>(
@@ -67,6 +51,7 @@ export function useComplianceRhythm() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     loadExample,
     reset,

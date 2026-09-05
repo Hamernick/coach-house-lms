@@ -2,18 +2,21 @@
 
 import { useEffect, useRef } from "react"
 import Form from "next/form"
-import SearchIcon from "lucide-react/dist/esm/icons/search"
+import { usePathname, useSearchParams } from "next/navigation"
 
-import { Button } from "@/components/ui/button"
+import { SearchInput } from "@/components/ui/search-input"
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group"
-import { DOCUMENTATION_SEARCH_QUERY_LIMIT } from "../lib/documentation-search"
+  DOCUMENTATION_SEARCH_QUERY_LIMIT,
+  sanitizeDocumentationQuery,
+} from "../lib/documentation-search"
 
-export function DocumentationSearchForm({ query = "" }: { query?: string }) {
+export function DocumentationSearchForm() {
   const formRef = useRef<HTMLFormElement>(null)
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const query = sanitizeDocumentationQuery(
+    pathname === "/documentation/search" ? searchParams.get("q") : ""
+  )
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -43,33 +46,19 @@ export function DocumentationSearchForm({ query = "" }: { query?: string }) {
       prefetch={false}
       role="search"
       aria-label="Documentation"
-      className="w-full max-w-md"
+      className="min-w-0 flex-1 lg:w-56 lg:flex-none xl:w-64"
     >
-      <InputGroup>
-        <InputGroupInput
-          key={query}
-          name="q"
-          type="search"
-          aria-label="Search documentation"
-          aria-keyshortcuts="Meta+K Control+K"
-          defaultValue={query}
-          placeholder="Search guides and tools…"
-          maxLength={DOCUMENTATION_SEARCH_QUERY_LIMIT}
-          autoComplete="off"
-          className="h-11 min-w-0 text-sm"
-        />
-        <InputGroupAddon>
-          <Button
-            type="submit"
-            variant="outline"
-            size="icon"
-            className="size-11 touch-manipulation md:size-8"
-            aria-label="Search documentation"
-          >
-            <SearchIcon aria-hidden />
-          </Button>
-        </InputGroupAddon>
-      </InputGroup>
+      <SearchInput
+        key={`${pathname}:${query}`}
+        name="q"
+        aria-label="Search documentation"
+        aria-keyshortcuts="Meta+K Control+K"
+        defaultValue={query}
+        placeholder="Search docs…"
+        maxLength={DOCUMENTATION_SEARCH_QUERY_LIMIT}
+        autoComplete="off"
+        submitLabel="Search documentation"
+      />
     </Form>
   )
 }

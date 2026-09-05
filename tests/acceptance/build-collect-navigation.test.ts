@@ -31,7 +31,7 @@ describe("build-collect-navigation feature contract", () => {
 
     expect(source).toContain("<NavigationMenu")
     expect(source).toContain("<NavigationMenuTrigger")
-    expect(source).toContain('<form action="/" method="get"')
+    expect(source).toMatch(/<form\s+action="\/"\s+method="get"/)
     expect(source).toContain('name="q"')
     expect(source).toContain('href: "/build"')
   })

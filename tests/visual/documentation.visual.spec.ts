@@ -26,10 +26,12 @@ test("library search supports keyboard, deep links, browser history, and empty r
   page.on("pageerror", (error) => errors.push(error.message))
   await page.goto("/documentation")
   await ready(page)
-  const input = page.getByRole("searchbox", {
-    name: "Search documentation",
-    exact: true,
-  })
+  const input = page
+    .locator("[data-build-collect-public-header]")
+    .getByRole("searchbox", {
+      name: "Search documentation",
+      exact: true,
+    })
   await expect(page.getByRole("searchbox")).toHaveCount(1)
   await page.keyboard.press("Control+k")
   await expect(input).toBeFocused()
@@ -52,6 +54,12 @@ test("library search supports keyboard, deep links, browser history, and empty r
   await expect(
     page.getByRole("heading", { name: "No matching pages" })
   ).toBeVisible()
+  await input.fill("mission")
+  await page
+    .getByRole("button", { name: "Search documentation", exact: true })
+    .click()
+  await expect(page).toHaveURL(/\/documentation\/search\?q=mission$/)
+  await expect(results.getByRole("link").first()).toBeVisible()
   await page.getByRole("link", { name: "Clear search", exact: true }).click()
   await expect(input).toHaveValue("")
   await expect(
@@ -171,11 +179,19 @@ for (const viewer of ["free", "paid", "locked"]) {
     await page.goto(`/visual-regression/documentation?viewer=${viewer}`)
     await ready(page)
     await expect(
-      page.getByRole("heading", { name: "Nonprofit documentation", exact: true })
+      page.getByRole("heading", {
+        name: "Nonprofit documentation",
+        exact: true,
+      })
     ).toBeVisible()
     await expect(
       page.getByRole("searchbox", { name: "Search documentation", exact: true })
     ).toBeVisible()
+    await page.keyboard.press("Control+k")
+    await expect(
+      page.getByRole("searchbox", { name: "Search documentation", exact: true })
+    ).toBeFocused()
+    await expect(page.getByRole("dialog")).toHaveCount(0)
     await expect(
       page.getByRole("navigation", {
         name: "Documentation navigation",

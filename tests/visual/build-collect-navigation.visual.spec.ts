@@ -31,7 +31,9 @@ test("public header search submits to the Collect root", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
 
-  const search = page.getByPlaceholder("Start searching")
+  const search = page.getByRole("searchbox", {
+    name: "Search organizations and resources",
+  })
   await search.fill("food")
   await search.press("Enter")
 

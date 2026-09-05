@@ -44,6 +44,12 @@
   corpus in `lib/search-documents.ts` includes authored guides, tool guidance,
   and Marketplace entries. Search results render on the server; never import
   this corpus into a client component or add private/account data to it.
+- Render the library search once through `DocumentationShell`'s header slot,
+  immediately beside Login in the public header and beside account controls in
+  the account header. Use shared `SearchInput`: the submit icon belongs inside
+  the same rounded field. Do not add a second search rail to page content.
+  The header reads the search route's query so navigation, clearing, and browser
+  history keep the field current; Marketplace filters remain independent.
 - Preserve section IDs: search results and contents links use them as deep
   links. Keep article tool metadata shared between the renderer and index.
 - Brand Identity text and settings persist in local storage; uploaded originals

@@ -3,16 +3,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
-import SearchIcon from "lucide-react/dist/esm/icons/search"
 import { type ReactNode, useState } from "react"
 
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import { Button } from "@/components/ui/button"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group"
+import { SearchInput } from "@/components/ui/search-input"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -184,6 +179,7 @@ export function BuildCollectPublicHeader({
   authAction,
   hideBrandOnDesktop = false,
   showResourceSearch = true,
+  searchAction,
   shellActions,
   themeAction,
 }: {
@@ -191,6 +187,7 @@ export function BuildCollectPublicHeader({
   authAction?: ReactNode
   hideBrandOnDesktop?: boolean
   showResourceSearch?: boolean
+  searchAction?: ReactNode
   shellActions?: ReactNode
   themeAction?: ReactNode
 }) {
@@ -198,11 +195,15 @@ export function BuildCollectPublicHeader({
     activeArea === "build"
       ? { href: "/sign-up?intent=build", label: "Start free" }
       : { href: "/build", label: "Build" }
+  const hasSearch = searchAction != null || showResourceSearch
 
   return (
     <header
       data-build-collect-public-header=""
-      className="grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 px-[var(--shell-content-pad,1rem)] py-2"
+      className={cn(
+        "grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 px-[var(--shell-content-pad,1rem)] py-2",
+        hasSearch && "grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]"
+      )}
     >
       <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
 
@@ -211,41 +212,44 @@ export function BuildCollectPublicHeader({
         <BuildCollectDesktopNavigation activeArea={activeArea} />
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2">
-        {showResourceSearch ? (
-          <form action="/" method="get" className="hidden w-52 xl:block">
-            <label
-              htmlFor={`public-header-search-${activeArea}`}
-              className="sr-only"
+      <div
+        className={cn(
+          "flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2",
+          hasSearch && "col-span-2 lg:col-span-1"
+        )}
+      >
+        {searchAction ??
+          (showResourceSearch ? (
+            <form
+              action="/"
+              method="get"
+              className="min-w-0 flex-1 lg:w-52 lg:flex-none"
+              role="search"
+              aria-label="Organizations and resources"
             >
-              Search organizations and resources
-            </label>
-            <InputGroup className="gap-1">
-              <InputGroupInput
+              <label
+                htmlFor={`public-header-search-${activeArea}`}
+                className="sr-only"
+              >
+                Search organizations and resources
+              </label>
+              <SearchInput
                 id={`public-header-search-${activeArea}`}
                 name="q"
-                type="search"
                 autoComplete="off"
-                placeholder="Start searching"
-                className="h-10 rounded-full pl-4"
+                placeholder="Search…"
               />
-              <InputGroupAddon>
-                <Button
-                  type="submit"
-                  size="icon"
-                  variant="ghost"
-                  className="size-10 rounded-full"
-                  aria-label="Search"
-                >
-                  <SearchIcon data-icon="inline-start" aria-hidden />
-                </Button>
-              </InputGroupAddon>
-            </InputGroup>
-          </form>
-        ) : null}
+            </form>
+          ) : null)}
 
         {authAction}
-        <Button asChild className="rounded-full">
+        <Button
+          asChild
+          className={cn(
+            "rounded-full",
+            hasSearch && activeArea === "collect" && "hidden sm:inline-flex"
+          )}
+        >
           <Link href={builderCta.href}>
             {builderCta.label}
             <ArrowUpRightIcon data-icon="inline-end" aria-hidden />

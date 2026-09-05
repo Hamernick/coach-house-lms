@@ -1,18 +1,14 @@
 import type { ReactNode } from "react"
-import Link from "next/link"
 
 import { cn } from "@/lib/utils"
-import { DocumentationSearchForm } from "./documentation-search-form"
 import density from "./documentation-density.module.css"
 
 export function DocumentationSurface({
   children,
   className,
-  searchQuery,
 }: {
   children: ReactNode
   className?: string
-  searchQuery?: string
 }) {
   return (
     <div
@@ -29,17 +25,6 @@ export function DocumentationSurface({
       >
         Skip to documentation
       </a>
-      <div className="bg-background/95 sticky top-0 z-30 border-b px-4 py-2 backdrop-blur sm:px-6 lg:px-8 print:hidden">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
-          <Link
-            href="/documentation"
-            className="text-muted-foreground hover:text-foreground hidden min-h-11 shrink-0 items-center text-sm font-medium sm:inline-flex md:min-h-8"
-          >
-            Documentation
-          </Link>
-          <DocumentationSearchForm query={searchQuery} />
-        </div>
-      </div>
       {children}
     </div>
   )

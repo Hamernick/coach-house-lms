@@ -80,6 +80,7 @@ export function AppShellInner({
   children,
   breadcrumbs,
   sidebarHeaderContent,
+  headerSearch,
   contextualNavigation,
   sidebarTree,
   user,
@@ -330,6 +331,7 @@ export function AppShellInner({
             >
               <AppShellHeader
                 breadcrumbs={breadcrumbs}
+                headerSearch={headerSearch}
                 hasUser={hasUser}
                 isAdmin={isAdmin}
                 onboardingLocked={onboardingLocked}
@@ -401,6 +403,7 @@ export function AppShellInner({
             onRightOpenChange={handleRightOpenChangeUser}
           />
           {hasUser &&
+          !headerSearch &&
           !onboardingLocked &&
           !isAdminContext &&
           platformAccessLevel !== "coach" ? (

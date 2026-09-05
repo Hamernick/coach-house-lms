@@ -10,6 +10,14 @@
 
 ## Rules
 
+- Header copy states one concrete action or benefit in plain language. Subtitles
+  use at most 15 words; the September 5 copy pass cuts each previous subtitle
+  by at least half. Rewrite at the content source instead of truncating strings
+  or hiding text. Keep eligibility and sensitive-data qualifiers where relevant;
+  detailed instructions belong in the guide or tool.
+  Resource pages use `headerDescription`; their longer catalog `description`
+  retains the offer details needed for browsing and search.
+
 - Text spacing follows `docs/design.md`: 4px within eyebrow/title/subtitle groups,
   8px before related content, and 16px between sections. Reuse `density.heading`
   from `documentation-density.module.css` for page, hero, sandbox, and Brand

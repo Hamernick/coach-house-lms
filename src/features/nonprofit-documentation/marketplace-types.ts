@@ -35,6 +35,7 @@ export type MarketplaceResource = {
   functions: MarketplaceFunction[]
   stages: DocumentationStageId[]
   description: string
+  headerDescription: string
   useWhen: string
   costModel: MarketplaceCostModel
   costNote: string

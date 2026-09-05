@@ -4,8 +4,7 @@ export const MISSION_ARTICLE: BestPracticeArticle = {
   slug: "best-practices/mission",
   navigationTitle: "Mission",
   title: "Write a mission that guides real decisions",
-  description:
-    "A practical, stage-specific guide to defining a nonprofit mission that connects purpose, people, activities, and measurable change.",
+  description: "Clarify your purpose, community, and intended change.",
   eyebrow: "Best practices · Mission",
   answer:
     "A useful nonprofit mission names who the organization serves, the change it exists to create, and the distinctive work it will do—clearly enough to guide programs, budgets, partnerships, and what the organization declines.",

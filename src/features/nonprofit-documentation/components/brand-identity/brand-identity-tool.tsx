@@ -78,9 +78,9 @@ export function BrandIdentityTool() {
             Documentation
           </Link>
           <DocumentationPageHeader
-            eyebrow="Tools · Public tool"
-            title="Brand Identity Builder"
-            description="Build a clear, accessible nonprofit brand system, then download everything your team needs to use it consistently."
+            eyebrow="Tools"
+            title="Build your brand"
+            description="Create and download your nonprofit’s brand kit."
           />
           <div className="flex justify-center gap-2 print:hidden">
             <AlertDialog>

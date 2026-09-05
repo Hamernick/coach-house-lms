@@ -19,6 +19,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["communications", "fundraising"],
     description:
       "Up to $10,000 USD each month in Search advertising for eligible nonprofits.",
+    headerDescription: "Search advertising credit for eligible nonprofits.",
     useWhen:
       "Help people searching for your cause find a program, volunteer opportunity, or donation page.",
     costModel: "free-eligible",
@@ -48,6 +49,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["technology", "communications"],
     description:
       "Organization email, shared files, documents, calendars, and video meetings on a $0 nonprofit plan.",
+    headerDescription: "Email and teamwork for eligible nonprofits.",
     useWhen:
       "Move team work out of personal email accounts and into organization-managed accounts.",
     costModel: "free-eligible",
@@ -73,6 +75,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     stages: ["exploring", "forming", "operating", "growing"],
     description:
       "A community-run design and social-impact job board, with an international Slack community.",
+    headerDescription: "Design jobs and a global community.",
     useWhen:
       "Find mission-aligned design opportunities, learn from designers, or prepare a clear creative hiring brief.",
     costModel: "free-public",
@@ -101,6 +104,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["communications", "finance", "people", "technology"],
     description:
       "Free skilled volunteer projects and one-hour consultations for nonprofit teams.",
+    headerDescription: "Skilled volunteers for nonprofit projects.",
     useWhen:
       "You can name a bounded deliverable: a campaign brief, budget review, website wireframe, or operations process.",
     costModel: "free-eligible",
@@ -130,6 +134,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     stages: ["exploring", "forming", "operating", "growing"],
     description:
       "A public database of free and discounted nonprofit software, with related skilled-volunteer projects.",
+    headerDescription: "Free and discounted nonprofit software.",
     useWhen:
       "Explore more options after you have identified a specific technology need.",
     costModel: "free-public",
@@ -154,6 +159,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["technology", "data"],
     description:
       "A free assessment to identify technology gaps and plan improvements for your nonprofit.",
+    headerDescription: "Assess technology gaps and plan improvements.",
     useWhen:
       "Your team has accumulated tools but needs a clear order for what to improve next.",
     costModel: "free-public",
@@ -176,6 +182,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["communications"],
     description:
       "Free Express Premium access for eligible nonprofits creating social posts, flyers, videos, and presentations.",
+    headerDescription: "Free Express Premium for eligible nonprofits.",
     useWhen:
       "Turn an existing brand and campaign message into reusable content templates.",
     costModel: "free-eligible",
@@ -202,6 +209,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["technology", "people"],
     description:
       "A 50% nonprofit discount on eligible Starter and Advanced project-management plans.",
+    headerDescription: "50% off eligible Asana plans.",
     useWhen:
       "Coordinate a recurring program or campaign across owners, deadlines, and dependencies.",
     costModel: "discount-eligible",
@@ -227,6 +235,7 @@ export const MARKETPLACE_RESOURCE_ADDITIONS: MarketplaceResource[] = [
     functions: ["governance", "formation", "people"],
     description:
       "A global network connecting eligible organizations with free legal support and practical legal resources.",
+    headerDescription: "Free legal support for eligible organizations.",
     useWhen:
       "Prepare a scoped organizational legal question for qualified counsel in the relevant jurisdiction.",
     costModel: "free-eligible",

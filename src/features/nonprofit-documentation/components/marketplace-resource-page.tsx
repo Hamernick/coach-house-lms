@@ -55,7 +55,7 @@ export function MarketplaceResourcePage({
           artwork="warm"
           eyebrow={`${resource.provider} · ${marketplaceTypeLabel(resource.type)}`}
           title={resource.name}
-          description={resource.description}
+          description={resource.headerDescription}
         />
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <article className="min-w-0 space-y-4">

@@ -124,6 +124,17 @@ gaps without overflow; first tool content measures 8px and guide content starts
 16px after its hero. An intermittent history-indicator failure passed three
 focused repeats and the final full Documentation run without navigation changes.
 
+The header-copy pass rewrote all 41 article subtitles, reducing each to at most
+half its previous word count and a maximum of 15 words (628 words to 267 total).
+Quickstart now reads “Find your next step”; resource headers use concise summaries
+while catalog and search descriptions retain the full offer details. Static
+quality passed in 48.89 seconds, all 53 focused acceptance checks passed, and all
+16 Documentation browser journeys passed in 1.6 minutes. Eight affected baselines
+were refreshed; the final desktop check passed after the last two wording edits.
+Desktop/mobile review preserved the 4px title/subtitle gap without overflow.
+Standalone TypeScript still reports 143 errors confined to existing test files,
+with no application-source errors. The full release gate remains pending.
+
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,
 and viewport overflow at 320/390/768/1024/1440px. New interaction coverage checks
@@ -168,7 +179,7 @@ account-shell fixtures, resource saving, and member-profile links.
 
 ## Release checklist
 
-- [ ] Rerun the complete release gate after the abstract-artwork replacement.
+- [ ] Rerun the complete release gate after the artwork, spacing, and header-copy refinements.
 - [x] Graphify updated; plan, monthly runlog, and review artifacts current.
 - [x] Implementation committed on the prepared branch; main refreshed at
   `67501039`, zero behind. No upstream, remote branch, or PR was created.

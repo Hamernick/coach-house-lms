@@ -32,12 +32,13 @@
 - Task-card images use a 16:9 frame, rounded asset corners, and an 8px inset at
   the top and sides. Keep captions compact. `DocumentationTaskCards` owns the
   grid and React Grab metadata while its card content remains server-rendered.
-- Article, tool, and resource headers share `DocumentationPageHeader`, including
-  the community-courtyard hero with four rounded corners and an 8px inset.
-  `assets/community-courtyard.webp` was generated with the built-in image tool
-  and encoded for the web without changing its composition. Art direction:
-  a calm community courtyard, civic buildings, trees, and a shared table in
-  sage, ivory, and muted blue, with no lettering, in a wide 3:1 composition.
+- Article, tool, and resource headers share `DocumentationPageHeader`, with four
+  rounded image corners and an 8px inset. Headers and task cards use the same
+  abstract artwork family: blue for starting/building, rose for best practices,
+  and warm yellow/peach for resources. Preserve the soft folds, diffuse light,
+  fine grain, and broad color fields shown in the user's September 5 references.
+  Use original raster artwork without lettering or logos. Generated assets and
+  exact prompts are documented in [assets/README.md](assets/README.md).
 - Contents navigation uses `SectionRailIndicator`, shared with Core Documents.
   Preserve scroll tracking within the Documentation canvas, section deep links,
   browser history, and reduced-motion behavior. Keep header menus centered over

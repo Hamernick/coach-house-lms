@@ -4,17 +4,22 @@ import Image from "next/image"
 import type { ReactNode } from "react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-import communityCourtyard from "../assets/community-courtyard.webp"
+import {
+  documentationArtwork,
+  type DocumentationArtworkTone,
+} from "./documentation-artwork"
 
 export function DocumentationPageHeader({
   eyebrow,
   title,
   description,
+  artwork = "blue",
   children,
 }: {
   eyebrow: string
   title: string
   description: string
+  artwork?: DocumentationArtworkTone
   children?: ReactNode
 }) {
   return (
@@ -39,7 +44,7 @@ export function DocumentationPageHeader({
       {children ? <div className="mt-3">{children}</div> : null}
       <div className="bg-muted/20 mt-5 rounded-2xl border p-2 print:hidden">
         <Image
-          src={communityCourtyard}
+          src={documentationArtwork[artwork]}
           alt=""
           className="aspect-[16/7] w-full rounded-lg object-cover sm:aspect-[3/1]"
           sizes="(min-width: 1280px) 1100px, (min-width: 768px) 75vw, 100vw"

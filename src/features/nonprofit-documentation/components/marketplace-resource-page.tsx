@@ -52,6 +52,7 @@ export function MarketplaceResourcePage({
           </Link>
         </Button>
         <DocumentationPageHeader
+          artwork="warm"
           eyebrow={`${resource.provider} · ${marketplaceTypeLabel(resource.type)}`}
           title={resource.name}
           description={resource.description}

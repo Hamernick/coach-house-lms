@@ -52,8 +52,10 @@ above the sidebar and canvas, remain open while moving into their links, and
 support keyboard activation and dismissal. Search remains beside Login.
 
 Guide, tool, and resource headers use centered 28px mobile / 34px desktop titles,
-15–16px subtitles with 1.5 line height, sentence-case eyebrows, and a wide community
-courtyard hero. The image has four rounded corners and an 8px inset. Documentation
+15–16px subtitles with 1.5 line height, sentence-case eyebrows, and wide abstract
+artwork. Blue, rose/lavender, and yellow/peach images use soft organic folds,
+diffuse light, and subtle grain, following the user's supplied references. Hero
+and task-card images have four rounded corners and an 8px inset. Documentation
 sidebar and planner labels also use normal casing and tracking. The contents rail
 shares Core Documents' animated indicator and follows section links, scrolling,
 and browser history while respecting reduced motion.
@@ -78,13 +80,19 @@ No issue was supplied.
 
 ## Validation and visual artifacts
 
-The complete gate passed after the header menus, hero, typography, and contents
+The complete gate passed after the header menus, original hero, typography, and contents
 indicator changes: all 21 stages in 438.79 seconds, 2,344 acceptance tests with
 one intentional skip, seven deterministic RLS suites, production build/TypeScript,
-all 82 browser tests, and performance budgets. Reviewed baselines live in
+all 82 browser tests, and performance budgets. This gate predates the subsequent
+abstract-artwork replacement; rerun it before release. Reviewed baselines live in
 `tests/visual/documentation.visual.spec.ts-snapshots/`: documentation home,
 search, guide/tool, Marketplace, People, Ad Grants, completed campaign and funding
 plans, and Brand Identity. Mobile coverage includes both themes and all 14 planners.
+
+The abstract-artwork replacement separately passed static quality in 42.72 seconds
+and all 16 Documentation browser journeys in 1.5 minutes. Ten affected baselines
+were intentionally refreshed. Manual review confirmed desktop/mobile image
+loading, crop ratios, rounded corners, and preserved insets without page errors.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,
@@ -130,7 +138,7 @@ account-shell fixtures, resource saving, and member-profile links.
 
 ## Release checklist
 
-- [x] Complete release gate passed after the latest hero, typography, and navigation refinements.
+- [ ] Rerun the complete release gate after the abstract-artwork replacement.
 - [x] Graphify updated; plan, monthly runlog, and review artifacts current.
 - [x] Implementation committed on the prepared branch; main refreshed at
   `67501039`, zero behind. No upstream, remote branch, or PR was created.

@@ -1,4 +1,5 @@
 import { DocumentationHome } from "./documentation-home"
+import { MarketplacePage } from "./marketplace-page"
 import {
   DocumentationShell,
   type DocumentationShellState,
@@ -9,7 +10,7 @@ import {
 export function DocumentationVisualFixture({ viewer }: { viewer: string }) {
   const paid = viewer === "paid"
   const state: DocumentationShellState | null =
-    viewer === "anonymous"
+    viewer === "anonymous" || viewer === "people"
       ? null
       : {
           sidebarTree: [],
@@ -42,7 +43,28 @@ export function DocumentationVisualFixture({ viewer }: { viewer: string }) {
         }
   return (
     <DocumentationShell state={state} defaultSidebarOpen>
-      <DocumentationHome />
+      {viewer === "people" ? (
+        <MarketplacePage
+          view="people"
+          peopleDirectory={{
+            status: "ready",
+            page: 1,
+            hasMore: false,
+            people: [
+              {
+                handle: "sample-public-member",
+                name: "Public member fixture",
+                headline: "Community programs and volunteer coordination",
+                location: "Chicago",
+                avatarUrl: null,
+                href: "/sample-public-member",
+              },
+            ],
+          }}
+        />
+      ) : (
+        <DocumentationHome />
+      )}
     </DocumentationShell>
   )
 }

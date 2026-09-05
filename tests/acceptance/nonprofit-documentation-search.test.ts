@@ -8,6 +8,7 @@ import {
 } from "@/features/nonprofit-documentation/lib/documentation-search"
 import { DOCUMENTATION_SEARCH_DOCUMENTS } from "@/features/nonprofit-documentation/lib/search-documents"
 import { DOCUMENTATION_NAVIGATION } from "@/features/nonprofit-documentation/lib/navigation"
+import { MARKETPLACE_RESOURCES } from "@/features/nonprofit-documentation/lib/marketplace-resources"
 import type { DocumentationSearchDocument } from "@/features/nonprofit-documentation/search-types"
 
 const search = (query: unknown) =>
@@ -17,6 +18,9 @@ describe("nonprofit documentation search", () => {
   it("covers every published library page once, with real routes and section content", () => {
     const expected = [
       "/documentation",
+      ...MARKETPLACE_RESOURCES.map(
+        (resource) => `/documentation/marketplace/${resource.id}`
+      ),
       ...DOCUMENTATION_NAVIGATION.flatMap((group) => group.items)
         .filter(
           (item) =>
@@ -27,10 +31,14 @@ describe("nonprofit documentation search", () => {
     expect(
       DOCUMENTATION_SEARCH_DOCUMENTS.map((item) => item.href).sort()
     ).toEqual(expected)
-    expect(new Set(expected).size).toBe(20)
+    expect(new Set(expected).size).toBe(43)
     for (const document of DOCUMENTATION_SEARCH_DOCUMENTS) {
       expect(
-        existsSync(resolve(`src/app/(public)${document.href}/page.tsx`))
+        existsSync(
+          resolve(
+            `src/app/(public)${document.href.startsWith("/documentation/marketplace/") ? "/documentation/marketplace/[slug]" : document.href}/page.tsx`
+          )
+        )
       ).toBe(true)
       expect(document.sections.length).toBeGreaterThan(0)
       for (const section of document.sections)
@@ -69,8 +77,8 @@ describe("nonprofit documentation search", () => {
       )
     ).toBe(true)
     expect(
-      search("TechSoup").some(
-        (item) => item.href === "/documentation/marketplace"
+      search("TechSoup").some((item) =>
+        item.href.startsWith("/documentation/marketplace/techsoup")
       )
     ).toBe(true)
   })

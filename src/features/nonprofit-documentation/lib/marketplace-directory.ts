@@ -80,7 +80,11 @@ export function sanitizeMarketplaceShortlist(
   if (!Array.isArray(value)) return []
   const validIds = new Set(resources.map((resource) => resource.id))
   return [
-    ...new Set(value.filter((id): id is string => typeof id === "string")),
+    ...new Set(
+      value
+        .filter((id): id is string => typeof id === "string")
+        .map((id) => (id === "techsoup-product-selection" ? "techsoup" : id))
+    ),
   ]
     .filter((id) => validIds.has(id))
     .slice(0, 20)

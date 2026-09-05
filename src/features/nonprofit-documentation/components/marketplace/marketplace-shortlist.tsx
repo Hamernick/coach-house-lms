@@ -1,103 +1,103 @@
 "use client"
 
+import Link from "next/link"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
-import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
-import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
-
-import { Badge } from "@/components/ui/badge"
+import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
-
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import type { MarketplaceResource } from "../../marketplace-types"
 
 export function MarketplaceShortlist({
   resources,
   ready,
+  persistent = true,
   onClear,
   onDownload,
 }: {
   resources: MarketplaceResource[]
   ready: boolean
+  persistent?: boolean
   onClear: () => void
   onDownload: () => void
 }) {
   return (
-    <aside
-      id="marketplace-shortlist"
-      className="bg-muted/30 border p-5 sm:p-6"
-      aria-labelledby="marketplace-shortlist-title"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <ListChecksIcon className="size-4" aria-hidden />
-            <h2 id="marketplace-shortlist-title" className="font-semibold">
-              Working shortlist
-            </h2>
-            <Badge variant="outline" data-marketplace-shortlist-count>
-              {ready ? resources.length : 0}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
-            This device-local list is a comparison aid, not a recommendation.
-            Confirm fit, terms, privacy, security, accessibility, integrations,
-            total cost, and authority before deciding.
-          </p>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="outline"
+          className="min-h-11 rounded-full"
+          disabled={!ready}
+        >
+          <BookmarkIcon aria-hidden />
+          Saved{" "}
+          <span data-marketplace-shortlist-count>
+            {ready ? resources.length : 0}
+          </span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="flex flex-col gap-0 sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Saved resources</SheetTitle>
+          <SheetDescription>
+            {persistent
+              ? "Saved in this browser. Export a comparison list to share with your team."
+              : "Browser saving is unavailable. Export this list before leaving the tab."}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4">
+          {resources.length ? (
+            <ol className="divide-y">
+              {resources.map((resource) => (
+                <li key={resource.id} className="py-4">
+                  <Link
+                    href={`/documentation/marketplace/${resource.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {resource.name}
+                  </Link>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {resource.costNote}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <Empty
+              className="my-4 rounded-2xl"
+              title="No saved resources yet"
+              description="Use Save on a resource to keep it here."
+            />
+          )}
         </div>
-        {resources.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11 sm:min-h-9"
-              onClick={onDownload}
-            >
-              <DownloadIcon data-icon="inline-start" aria-hidden />
+        {resources.length ? (
+          <div className="flex flex-wrap gap-2 border-t p-4">
+            <Button onClick={onDownload} className="min-h-11 rounded-full">
+              <DownloadIcon aria-hidden />
               Download CSV
             </Button>
             <Button
-              type="button"
               variant="ghost"
-              className="min-h-11 sm:min-h-9"
-              onClick={onClear}
+              className="min-h-11 rounded-full"
+              onClick={() => {
+                if (
+                  window.confirm("Clear all saved resources from this browser?")
+                )
+                  onClear()
+              }}
             >
-              <Trash2Icon data-icon="inline-start" aria-hidden />
-              Clear
+              Clear saved resources
             </Button>
           </div>
         ) : null}
-      </div>
-      {resources.length > 0 ? (
-        <ol className="mt-5 grid border-t sm:grid-cols-2">
-          {resources.map((resource, index) => (
-            <li
-              key={resource.id}
-              className="border-b py-3 text-sm sm:odd:border-r sm:odd:pr-4 sm:even:pl-4"
-            >
-              <span className="text-muted-foreground mr-2 font-mono text-xs">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="font-medium">{resource.name}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                — {resource.provider}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <Empty
-          variant="subtle"
-          size="sm"
-          className="mt-5"
-          title={ready ? "No resources shortlisted" : "Loading shortlist"}
-          description={
-            ready
-              ? "Add a resource below to create a device-local comparison list."
-              : "Checking this browser for a saved list."
-          }
-        />
-      )}
-    </aside>
+      </SheetContent>
+    </Sheet>
   )
 }

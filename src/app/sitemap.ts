@@ -1,4 +1,9 @@
 import type { MetadataRoute } from "next"
+import {
+  DOCUMENTATION_NAVIGATION,
+  DOCUMENTATION_PATH,
+  MARKETPLACE_RESOURCES,
+} from "@/features/nonprofit-documentation"
 
 import { fetchPublishedPublicHandles } from "@/lib/queries/public-profile-sitemap"
 
@@ -31,6 +36,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticEntries,
+    {
+      url: `${origin}${DOCUMENTATION_PATH}`,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...DOCUMENTATION_NAVIGATION.flatMap((group) =>
+      group.items
+        .filter(
+          (item) =>
+            item.status === "live" &&
+            item.href.startsWith(`${DOCUMENTATION_PATH}/`)
+        )
+        .map((item) => ({
+          url: `${origin}${item.href}`,
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        }))
+    ),
+    ...MARKETPLACE_RESOURCES.map((resource) => ({
+      url: `${origin}/documentation/marketplace/${resource.id}`,
+      lastModified: resource.reviewedDate,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
     ...handles.map(({ handle, updatedAt }) => ({
       url: `${origin}/${encodeURIComponent(handle)}`,
       lastModified: updatedAt,

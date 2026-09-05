@@ -243,9 +243,9 @@ describe("nonprofit documentation feature", () => {
   })
 
   it("publishes a source-backed, non-ranked Marketplace catalog", () => {
-    expect(MARKETPLACE_RESOURCES).toHaveLength(15)
-    expect(new Set(MARKETPLACE_RESOURCES.map(({ id }) => id)).size).toBe(15)
-    expect(new Set(MARKETPLACE_RESOURCES.map(({ url }) => url)).size).toBe(14)
+    expect(MARKETPLACE_RESOURCES).toHaveLength(23)
+    expect(new Set(MARKETPLACE_RESOURCES.map(({ id }) => id)).size).toBe(23)
+    expect(new Set(MARKETPLACE_RESOURCES.map(({ url }) => url)).size).toBe(23)
     expect(MARKETPLACE_RESOURCES.map(({ type }) => type)).toEqual(
       expect.arrayContaining([
         "coaching",
@@ -259,7 +259,7 @@ describe("nonprofit documentation feature", () => {
     )
     for (const resource of MARKETPLACE_RESOURCES) {
       expect(resource.url).toMatch(/^https:\/\//)
-      expect(resource.reviewedDate).toBe("2026-09-03")
+      expect(["2026-09-03", "2026-09-04"]).toContain(resource.reviewedDate)
       expect(resource.reviewByDate >= resource.reviewedDate).toBe(true)
       expect(resource.description.length).toBeGreaterThan(50)
       expect(resource.eligibility.length).toBeGreaterThan(20)
@@ -2101,7 +2101,8 @@ describe("nonprofit documentation feature", () => {
     expect(marketplacePage).toContain('"@type": "CollectionPage"')
     expect(marketplacePage).toContain('"@type": "ItemList"')
     expect(marketplacePage).toContain('"@type": "BreadcrumbList"')
-    expect(marketplacePage).toContain("People are not inventory")
+    expect(marketplacePage).toContain("<MarketplacePeople")
+    expect(marketplaceRoute).toContain("fetchPublicPeopleDirectory")
     expect(marketplaceData).not.toContain("listCoachingCoaches")
     expect(marketplaceData).not.toContain("coaching_coaches")
     expect(quickstartRoute).toContain(

@@ -8,6 +8,7 @@ export type MarketplaceResourceType =
   | "learning"
   | "people"
   | "professional-support"
+  | "resource-bank"
 
 export type MarketplaceFunction =
   | "formation"
@@ -57,6 +58,20 @@ export type MarketplaceFilters = {
   function: MarketplaceFunction | "all"
   stage: DocumentationStageId | "all"
   cost: MarketplaceCostModel | "all"
+}
+
+export type MarketplaceResourceGuide = {
+  outcome: string
+  preparation: string[]
+  steps: Array<{
+    title: string
+    description: string
+    href?: string
+    linkLabel?: string
+  }>
+  examples?: Array<{ title: string; description: string }>
+  watchFor: string[]
+  sources: Array<{ title: string; href: string }>
 }
 
 export type MarketplaceCommunityProfile = {

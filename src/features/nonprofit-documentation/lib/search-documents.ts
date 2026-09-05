@@ -16,6 +16,7 @@ import { FUNDRAISING_ARTICLE } from "./fundraising-article"
 import { HR_ARTICLE } from "./hr-article"
 import { LEGAL_ARTICLE } from "./legal-article"
 import { MARKETING_ARTICLE } from "./marketing-article"
+import { MARKETPLACE_RESOURCE_GUIDES } from "./marketplace-resource-guides"
 import { MARKETPLACE_RESOURCES } from "./marketplace-resources"
 import { MEASURING_IMPACT_ARTICLE } from "./measuring-impact-article"
 import { MISSION_ARTICLE } from "./mission-article"
@@ -147,10 +148,10 @@ export const DOCUMENTATION_SEARCH_DOCUMENTS: DocumentationSearchDocument[] = [
     title: "Documentation home",
     category: "Library",
     description:
-      "Stage-specific guidance for starting and operating sustainable nonprofit organizations.",
+      "Practical guides and working tools for nonprofit founders and teams.",
     sections: [
       {
-        title: "Build a nonprofit that can last",
+        title: "Nonprofit documentation",
         text: "Exploring, forming, operating, and growing. Quickstart, key concepts, best practices, tools, and resources.",
       },
     ],
@@ -174,20 +175,54 @@ export const DOCUMENTATION_SEARCH_DOCUMENTS: DocumentationSearchDocument[] = [
     category: "Resources",
     description:
       "Compare source-backed tools, discounts, funding, learning, and professional support.",
-    sections: MARKETPLACE_RESOURCES.map((resource) => ({
-      title: resource.name,
-      text: authoredText([
-        resource.provider,
-        resource.description,
-        resource.useWhen,
-        resource.costNote,
-        resource.eligibility,
-      ]),
-    })),
+    sections: [
+      {
+        id: "directory",
+        title: "Tools and resources",
+        text: "Software, nonprofit offers, resource banks, professional support, and saved resources.",
+      },
+    ],
   },
+  ...MARKETPLACE_RESOURCES.map((resource): DocumentationSearchDocument => {
+    const guide = MARKETPLACE_RESOURCE_GUIDES[resource.id]
+    return {
+      href: `${DOCUMENTATION_PATH}/marketplace/${resource.id}`,
+      title: resource.name,
+      category: "Resources",
+      description: resource.description,
+      sections: [
+        section("use-when", "What you can do with it", [
+          resource.useWhen,
+          guide?.outcome,
+        ]),
+        {
+          title: "Offer and eligibility",
+          text: authoredText([
+            resource.provider,
+            resource.costNote,
+            resource.eligibility,
+          ]),
+        },
+        ...(guide
+          ? [
+              section("prepare", "Before you start", guide.preparation),
+              section("get-started", "Put it to work", guide.steps),
+              ...(guide.examples?.length
+                ? [section("examples", "Ways to use it", guide.examples)]
+                : []),
+              section("watch-for", "Know before you commit", guide.watchFor),
+            ]
+          : []),
+      ],
+    }
+  }),
 ].filter(
   (document) =>
     document.href === DOCUMENTATION_PATH ||
+    MARKETPLACE_RESOURCES.some(
+      (resource) =>
+        document.href === `${DOCUMENTATION_PATH}/marketplace/${resource.id}`
+    ) ||
     DOCUMENTATION_NAVIGATION.some((group) =>
       group.items.some(
         (item) => item.status === "live" && item.href === document.href

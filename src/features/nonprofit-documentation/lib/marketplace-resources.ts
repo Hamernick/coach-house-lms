@@ -7,6 +7,8 @@ import type {
 } from "../marketplace-types"
 import type { DocumentationStageId } from "../types"
 
+import { MARKETPLACE_RESOURCE_ADDITIONS } from "./marketplace-resource-additions"
+
 const ALL_STAGES: DocumentationStageId[] = [
   "exploring",
   "forming",
@@ -23,8 +25,9 @@ export const MARKETPLACE_RESOURCE_TYPES: Array<{
   { value: "discount", label: "Discounts" },
   { value: "funding", label: "Funding" },
   { value: "learning", label: "Learning" },
-  { value: "people", label: "People" },
+  { value: "people", label: "Talent networks" },
   { value: "professional-support", label: "Professional support" },
+  { value: "resource-bank", label: "Resource banks" },
 ]
 
 export const MARKETPLACE_FUNCTIONS: Array<{
@@ -74,6 +77,7 @@ export const MARKETPLACE_SHORTLIST_STORAGE_KEY =
   "coach-house:documentation:marketplace-shortlist:v1"
 
 export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
+  ...MARKETPLACE_RESOURCE_ADDITIONS,
   {
     id: "coach-house-coaching",
     name: "Nonprofit coaching",
@@ -422,9 +426,9 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
       "A platform that connects participating social organizations with professionals for scoped pro bono projects.",
     useWhen:
       "You can name a bounded project, assign an internal owner, and support a professional volunteer through completion.",
-    costModel: "paid-or-varies",
+    costModel: "free-eligible",
     costNote:
-      "Access pathways and sponsorship can vary; confirm current terms.",
+      "Foundation-sponsored access or a free-membership application when places open. No paid memberships currently offered.",
     eligibility:
       "Organization eligibility and access depend on current program terms.",
     geography: "Online; participating organizations and programs vary.",
@@ -434,10 +438,10 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
       "Agree on accessible collaboration practices before matching.",
     accountRequirement:
       "Organization registration and program access required.",
-    url: "https://www.catchafire.org/org_home",
+    url: "https://help.catchafire.org/en/articles/8380963-what-is-catchafire-and-how-do-i-join",
     sourceLabel: "Catchafire for organizations",
-    reviewedDate: "2026-09-03",
-    reviewByDate: "2026-12-03",
+    reviewedDate: "2026-09-04",
+    reviewByDate: "2026-12-04",
     whyIncluded:
       "A concrete path from a scoped capacity need to professional volunteer support.",
     relatedGuide: {
@@ -508,31 +512,5 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
       title: "Fundraising",
       href: "/documentation/best-practices/fundraising",
     },
-  },
-  {
-    id: "techsoup-product-selection",
-    name: "Technology selection learning",
-    provider: "TechSoup",
-    type: "learning",
-    functions: ["technology", "data"],
-    stages: ["exploring", "forming", "operating", "growing"],
-    description:
-      "Nonprofit-focused articles, courses, webinars, and support for choosing and using technology.",
-    useWhen:
-      "You need to define requirements, compare approaches, or prepare staff before selecting a product.",
-    costModel: "paid-or-varies",
-    costNote: "Public and paid learning options vary.",
-    eligibility: "Many resources are public; program-specific rules may apply.",
-    geography: "United States focus with online access.",
-    delivery: "Online learning and support",
-    languages: "Availability varies by resource.",
-    accessibility: "Confirm formats and accommodations for each offering.",
-    accountRequirement: "Some content may require an account or registration.",
-    url: "https://www.techsoup.org/about-us/what-we-do",
-    sourceLabel: "TechSoup: What we do",
-    reviewedDate: "2026-09-03",
-    reviewByDate: "2027-03-03",
-    whyIncluded:
-      "Procurement guidance helps teams define the need before pursuing a discount.",
   },
 ]

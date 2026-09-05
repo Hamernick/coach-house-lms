@@ -336,3 +336,4 @@ export type {
   MarketplaceResource,
   MarketplaceResourceType,
 } from "./marketplace-types"
+export { MarketplaceResourcePage } from "./components/marketplace-resource-page"

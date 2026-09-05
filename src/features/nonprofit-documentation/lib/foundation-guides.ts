@@ -4,7 +4,7 @@ const reviewedDate = "August 31, 2026"
 
 export const QUICKSTART_GUIDE: FoundationGuide = {
   slug: "quickstart",
-  title: "Find your next step",
+  title: "Start and grow your nonprofit",
   description:
     "A stage-specific nonprofit quickstart for moving from a community need to a durable operating organization in the United States.",
   eyebrow: "Quickstart",

@@ -17,6 +17,8 @@
   detailed instructions belong in the guide or tool.
   Resource pages use `headerDescription`; their longer catalog `description`
   retains the offer details needed for browsing and search.
+  Titles name the subject and useful action in familiar words; avoid generic
+  promises such as “Find your next step” that could describe any page.
 
 - Text spacing follows `docs/design.md`: 4px within eyebrow/title/subtitle groups,
   8px before related content, and 16px between sections. Reuse `density.heading`

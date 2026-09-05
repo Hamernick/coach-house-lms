@@ -1,0 +1,216 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "User-provided Screenshot 2026-09-05 at 6.22.49 PM.png",
+  "sharedPrompt": "Use case: stylized-concept. Create ONE original abstract editorial hero artwork for a nonprofit documentation article. Landscape 3:1 composition, 1536 by 512 pixels if possible, full bleed. Match the supplied reference's very heavily defocused color-field photography: broad hazy asymmetrical color masses viewed through dense frosted glass, boundaries dissolved across hundreds of pixels, delicate even fine photographic grain, quiet luminous color, low local contrast, substantial empty color space. This is optical defocus of amorphous shapes, not a conventional smooth linear/radial CSS gradient. No recognizable subject. No waves, no ribbons, no satin folds, no glass objects, no ridges, no hard edges, no bokeh circles, no sharp geometric panels, no stars, no scratches, no dots, no paper or fabric texture. No illustration, icon, logo, text, lettering, watermark, border, or baked-in rounded corners. Use the reference solely for softness, grain, and color-field treatment; vary the composition as specified. The artwork itself should occupy the whole canvas; don't reproduce the screenshot's black margins. ",
+  "compositionPrefix": "Unique composition for this individual asset: ",
+  "compositionSuffix": " Keep this composition distinct; don't copy the reference's exact arrangement.",
+  "encoding": "WebP, quality 84, effort 6; downscale to 1440px wide without enlarging. Original composition and colors preserved.",
+  "assets": [
+    {
+      "key": "quickstart",
+      "file": "quickstart.webp",
+      "composition": "Medium cornflower and periwinkle blue field, broad diffused icy cyan entering upper-right, lavender at left, deeper cobalt pooled low center.",
+      "promptOverride": "Use case: stylized-concept. Create ONE original abstract editorial hero artwork for a nonprofit documentation article. Landscape 3:1 composition, 1536 by 512 pixels if possible, full bleed. Match the supplied reference's very heavily defocused color-field photography: broad hazy asymmetrical color masses viewed through dense frosted glass, boundaries dissolved across hundreds of pixels, delicate even fine photographic grain, quiet luminous color, low local contrast, substantial empty color space. This is optical defocus of amorphous shapes, not a conventional smooth linear/radial CSS gradient. No recognizable subject. No waves, no ribbons, no satin folds, no glass objects, no ridges, no hard edges, no bokeh circles, no sharp geometric panels, no stars, no scratches, no dots, no paper or fabric texture. No illustration, icon, logo, text, lettering, watermark, border, or baked-in rounded corners. Use the reference solely for softness, grain, and color-field treatment; vary the composition as specified. The artwork itself should occupy the whole canvas; don't reproduce the screenshot's black margins. This unique composition is for Quickstart: medium cornflower and periwinkle blue field, a large diffused pale icy cyan light mass entering from the upper-right and dissolving toward center, faint lavender haze along the left margin, deeper soft cobalt pooled low near the center. The light should be broad and irregular, not triangular or a spotlight beam. Keep the reference's soft blue feeling."
+    },
+    {
+      "key": "key-concepts",
+      "file": "key-concepts.webp",
+      "composition": "Lavender-blue ground, two immense defocused pools of lilac and powder blue offset left and low right, a quiet smoky indigo far right edge. Keep center medium lavender."
+    },
+    {
+      "key": "best-practices/mission",
+      "file": "best-practices-mission.webp",
+      "composition": "Soft cerulean and pale aqua, a wide amorphous milky-cyan glow rising from lower left through the middle, muted sea-blue at upper right. Quiet sense of open space."
+    },
+    {
+      "key": "best-practices/compliance",
+      "file": "best-practices-compliance.webp",
+      "composition": "Dusty teal-blue with a cool sage undertone, elongated foggy light region across upper middle, darker blue-green softly gathered at lower left, pale mint dissolving at right."
+    },
+    {
+      "key": "best-practices/fundraising",
+      "file": "best-practices-fundraising.webp",
+      "composition": "Muted apricot and blush light diffusing into periwinkle shadows. Broad warm glow slightly left of center, cool lavender-blue fades at the two edges, never a distinct orb."
+    },
+    {
+      "key": "best-practices/marketing",
+      "file": "best-practices-marketing.webp",
+      "composition": "Soft rose-lilac ground with a broad defocused mauve color mass entering from upper left and powder-blue wash along lower right. Very broad color breathing room."
+    },
+    {
+      "key": "best-practices/frameworks",
+      "file": "best-practices-frameworks.webp",
+      "composition": "Periwinkle and soft violet with a large elongated icy-blue haze low across the middle, a darker muted indigo mass high at left. No lines or geometric structures."
+    },
+    {
+      "key": "best-practices/measuring-impact",
+      "file": "best-practices-measuring-impact.webp",
+      "composition": "Clear gentle azure with diffused turquoise at lower center, a broad pale-blue void near upper left and a subtly deeper cobalt right margin. Unequal amorphous fields."
+    },
+    {
+      "key": "best-practices/sustainability",
+      "file": "best-practices-sustainability.webp",
+      "composition": "Cool mint and moss-tinted teal, an expansive soft pale seafoam field across center-left fading into dusty ocean-blue on right. A faint warm cream haze at top."
+    },
+    {
+      "key": "best-practices/partnerships",
+      "file": "best-practices-partnerships.webp",
+      "composition": "Blue-lavender and muted dusky rose blend in the middle without a seam, a large pale periwinkle glow high right and a soft blue mass low left. Keep overlaps formless."
+    },
+    {
+      "key": "tools/brand-identity",
+      "file": "tools-brand-identity.webp",
+      "composition": "Very pale lilac, saturated but gentle iris blue and a faint blush accent. Large blue haze dominates right half, cool luminous lavender drifts across left-center."
+    },
+    {
+      "key": "tools/social-media",
+      "file": "tools-social-media.webp",
+      "composition": "Soft blueberry-periwinkle blue with a diffused rose-pink haze rising from bottom left and faint icy light at upper middle. Cool blue still dominates."
+    },
+    {
+      "key": "tools/networking",
+      "file": "tools-networking.webp",
+      "composition": "Muted aqua-blue with cloudy pale turquoise spreading from upper left into center and a deep soft denim field low at right. Gentle violet whisper on the far left."
+    },
+    {
+      "key": "tools/hr",
+      "file": "tools-hr.webp",
+      "composition": "Warm blush-pink and pale peach glow through a misty lavender-blue ground, a large softly shaded lavender region at upper right; calm, human and quiet."
+    },
+    {
+      "key": "tools/finance",
+      "file": "tools-finance.webp",
+      "composition": "Slate-leaning cornflower blue with a misty pale mint region at lower right, long undefined cyan light at upper left, darker dusty blue center-left."
+    },
+    {
+      "key": "tools/legal",
+      "file": "tools-legal.webp",
+      "composition": "Soft indigo and blue-violet haze, large pale periwinkle region occupying the lower-left half, lavender light at upper right; medium overall luminosity, no black."
+    },
+    {
+      "key": "tools/campaigns",
+      "file": "tools-campaigns.webp",
+      "composition": "Luminous cobalt-blue ground, broad irregular cyan glow centered toward the left, muted violet near right edge and a soft deeper blue haze low across center."
+    },
+    {
+      "key": "tools/crm",
+      "file": "tools-crm.webp",
+      "composition": "Powder blue and subdued turquoise, three very large overlapping out-of-focus color fields of different sizes, with pale-blue light high at center and deeper teal low left."
+    },
+    {
+      "key": "marketplace/coach-house-coaching",
+      "file": "marketplace-coach-house-coaching.webp",
+      "composition": "Soft dusty lavender-blue with warm pale peach diffused across upper left and a subdued blue hollow at center-right. Wide airy negative space."
+    },
+    {
+      "key": "marketplace/techsoup",
+      "file": "marketplace-techsoup.webp",
+      "composition": "Mint-tinged cyan and cornflower-blue ground, large amorphous teal shadow extends from upper right, light blue haze low at left, quiet cream-blue central wash."
+    },
+    {
+      "key": "marketplace/google-for-nonprofits",
+      "file": "marketplace-google-for-nonprofits.webp",
+      "composition": "Sky blue with a broad pale aqua color mass low left and periwinkle above, tiny diffuse warm apricot undertone far right. No brand colors or logo structure."
+    },
+    {
+      "key": "marketplace/microsoft-for-nonprofits",
+      "file": "marketplace-microsoft-for-nonprofits.webp",
+      "composition": "Dusty steel-blue and glacier blue, an immense pale-blue haze crossing diagonally from lower-left to upper-middle with soft darker cobalt at far right, no band edges."
+    },
+    {
+      "key": "marketplace/canva-for-nonprofits",
+      "file": "marketplace-canva-for-nonprofits.webp",
+      "composition": "Muted orchid and periwinkle melting into pale seafoam at center-right, a broad luminous lavender area left and soft violet pooling along the bottom."
+    },
+    {
+      "key": "marketplace/grants-gov",
+      "file": "marketplace-grants-gov.webp",
+      "composition": "Soft marine blue with a diffused milky turquoise opening slightly right of center, cool pale lavender at lower left, darker desaturated blue high across the top."
+    },
+    {
+      "key": "marketplace/irs-exempt-organization-learning",
+      "file": "marketplace-irs-exempt-organization-learning.webp",
+      "composition": "Blue-gray and periwinkle ground, wide pale icy-blue haze entering at bottom middle, muted indigo gathered at upper left and light gray-cyan far right."
+    },
+    {
+      "key": "marketplace/candid-learning",
+      "file": "marketplace-candid-learning.webp",
+      "composition": "Pale warm apricot diffusing into a broad lavender and sky-blue field, deepest periwinkle low left, light cream-blue high right. No identifiable petal or fabric."
+    },
+    {
+      "key": "marketplace/candid-search",
+      "file": "marketplace-candid-search.webp",
+      "composition": "Soft iris-blue with a very large elongated pale lavender field at center-left, aqua-blue filling bottom right and muted violet mist high on the right."
+    },
+    {
+      "key": "marketplace/idealist-volunteermatch",
+      "file": "marketplace-idealist-volunteermatch.webp",
+      "composition": "Quiet seafoam green-blue with a soft lavender-blue pocket low at center, pale mint glow at upper right and medium dusty teal on left."
+    },
+    {
+      "key": "marketplace/boardsource",
+      "file": "marketplace-boardsource.webp",
+      "composition": "Muted cornflower and slate-blue, an enormous irregular pale-cyan patch high left and broad lavender haze low right. Blue density softly concentrated in the middle."
+    },
+    {
+      "key": "marketplace/catchafire",
+      "file": "marketplace-catchafire.webp",
+      "composition": "Pale coral-peach with a dusky lavender-blue field on left and a very broad soft rose glow at lower right. Keep pastel luminosity and extreme defocus, no fire shapes."
+    },
+    {
+      "key": "marketplace/little-green-light",
+      "file": "marketplace-little-green-light.webp",
+      "composition": "Soft mint, pale celadon and blue-green haze, a large powder-blue mass at lower left, creamy seafoam light high at center, muted teal right edge."
+    },
+    {
+      "key": "marketplace/givebutter",
+      "file": "marketplace-givebutter.webp",
+      "composition": "Pale buttercream and apricot haze with a broad icy-blue region across the lower half, faint lavender in upper right and softly warmer center-left. No yellow objects."
+    },
+    {
+      "key": "marketplace/google-ad-grants",
+      "file": "marketplace-google-ad-grants.webp",
+      "composition": "Blue and cool lilac with an off-center azure cloud of color low right, an expansive very pale cyan glow near the top left, deeper periwinkle surrounding the center."
+    },
+    {
+      "key": "marketplace/google-workspace-nonprofits",
+      "file": "marketplace-google-workspace-nonprofits.webp",
+      "composition": "Light aqua and cool powder blue, two large irregular diffused teal fields at opposing lower-left and upper-right edges, pale ice-blue center."
+    },
+    {
+      "key": "marketplace/design-gigs-for-good",
+      "file": "marketplace-design-gigs-for-good.webp",
+      "composition": "Muted pink-lavender with a broad electric-periwinkle haze entering left center, pale rose glow high at right, and soft blue-violet low at center."
+    },
+    {
+      "key": "marketplace/taproot-plus",
+      "file": "marketplace-taproot-plus.webp",
+      "composition": "Dusty sage and turquoise-blue, wide seafoam glow extends inward from lower right and medium teal fills upper left, a little pale lavender at center. No plant shapes."
+    },
+    {
+      "key": "marketplace/catchafire-resource-bank",
+      "file": "marketplace-catchafire-resource-bank.webp",
+      "composition": "Soft apricot-blue pairing, warm milky peach ground top left fading into medium periwinkle lower right, large pale lavender mist at center; no dividing line."
+    },
+    {
+      "key": "marketplace/techsoup-digital-assessment",
+      "file": "marketplace-techsoup-digital-assessment.webp",
+      "composition": "Muted turquoise and powder blue, a vast diffuse pale cyan haze toward right-center, deeper soft ocean-blue along lower-left edge and light cool mint upper left."
+    },
+    {
+      "key": "marketplace/adobe-express-nonprofits",
+      "file": "marketplace-adobe-express-nonprofits.webp",
+      "composition": "Dusty lilac and muted coral-pink with periwinkle at the lower left, broad pale-rose color mass high center fading softly into lavender on right. Very gentle saturation."
+    },
+    {
+      "key": "marketplace/asana-nonprofits",
+      "file": "marketplace-asana-nonprofits.webp",
+      "composition": "Pale peach-pink light on left, broad periwinkle-blue field center and right, soft lilac haze along bottom and a small very blurred cream area upper right."
+    },
+    {
+      "key": "marketplace/trustlaw",
+      "file": "marketplace-trustlaw.webp",
+      "composition": "Soft ultramarine and smoky violet, broad pale-blue light rises near lower center and lilac haze rests at upper left, medium slate-blue right side. Quiet, no dark black patches."
+    }
+  ]
+}

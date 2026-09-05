@@ -110,6 +110,7 @@ function GuideHeader({ guide }: { guide: FoundationGuide }) {
         </span>
       </nav>
       <DocumentationPageHeader
+        artwork={guide.slug}
         eyebrow={guide.eyebrow}
         title={guide.title}
         description={guide.answer}

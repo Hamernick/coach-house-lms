@@ -1,6 +1,13 @@
 # Documentation artwork
 
-Generated with the built-in image tool using the user's two supplied September 5 screenshots as style references. These are original abstract backgrounds without the reference brands or typography. WebP encoding preserves the generated framing and composition.
+Generated with the built-in image tool using the user's September 5 screenshots
+as style references. The current article set follows the 6:22 PM reference:
+heavily defocused, broad color fields with subtle grain and no objects or lettering.
+Each of the 41 article pages has its own original image in [heroes](heroes), mapped
+by slug in `components/documentation-artwork.ts`. No shared-image fallback exists.
+The [prompt set](heroes/prompts.json) records the exact generation instructions
+and each asset's distinct composition. WebP encoding preserves the generated
+composition and colors; 1440px images total 1,197,568 bytes.
 
 Task-card derivatives add centered flat white destination graphics without shadows
 over heavily blurred blue, coral/peach, and lavender/rose backgrounds. Current
@@ -9,14 +16,15 @@ remain in [task-graphics.md](task-graphics.md).
 
 | Asset | Use |
 | --- | --- |
-| [abstract-blue.webp](abstract-blue.webp) | Foundation/tool heroes |
-| [abstract-rose.webp](abstract-rose.webp) | Best-practice heroes |
-| [abstract-warm.webp](abstract-warm.webp) | Resource heroes |
+| [heroes](heroes) | 41 distinct article, tool, and resource heroes |
 | [task-campaign.webp](task-campaign.webp) | Campaign card: white megaphone on frosted blue |
 | [task-funding.webp](task-funding.webp) | Funding card: white planning chart and coins on blurred coral/peach |
 | [task-resources.webp](task-resources.webp) | Directory card: white people and resource card on blurred lavender/rose |
 
-## Generation prompts
+## Historical hero prompts
+
+These three shared backgrounds were replaced by the per-page set above. Their
+files remain recoverable in Git history; these prompts preserve the earlier work.
 
 ### blue
 

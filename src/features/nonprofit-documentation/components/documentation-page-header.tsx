@@ -5,22 +5,19 @@ import type { ReactNode } from "react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import density from "./documentation-density.module.css"
-import {
-  documentationArtwork,
-  type DocumentationArtworkTone,
-} from "./documentation-artwork"
+import { getDocumentationArtwork } from "./documentation-artwork"
 
 export function DocumentationPageHeader({
   eyebrow,
   title,
   description,
-  artwork = "blue",
+  artwork,
   children,
 }: {
   eyebrow: string
   title: string
   description: string
-  artwork?: DocumentationArtworkTone
+  artwork: string
   children?: ReactNode
 }) {
   return (
@@ -47,7 +44,7 @@ export function DocumentationPageHeader({
       {children ? <div className="mt-2">{children}</div> : null}
       <div className="bg-muted/20 mt-2 rounded-2xl border p-2 print:hidden">
         <Image
-          src={documentationArtwork[artwork]}
+          src={getDocumentationArtwork(artwork)}
           alt=""
           className="aspect-[16/7] w-full rounded-lg object-cover sm:aspect-[3/1]"
           sizes="(min-width: 1280px) 1100px, (min-width: 768px) 75vw, 100vw"

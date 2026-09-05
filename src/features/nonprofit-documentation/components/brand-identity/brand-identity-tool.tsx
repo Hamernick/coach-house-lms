@@ -78,6 +78,7 @@ export function BrandIdentityTool() {
             Documentation
           </Link>
           <DocumentationPageHeader
+            artwork="tools/brand-identity"
             eyebrow="Tools"
             title="Build your brand"
             description="Create and download your nonprofit’s brand kit."

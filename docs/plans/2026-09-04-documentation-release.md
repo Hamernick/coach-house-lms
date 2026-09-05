@@ -53,10 +53,13 @@ support keyboard activation and dismissal. Search remains beside Login.
 
 Guide, tool, and resource headers use centered 28px mobile / 34px desktop titles,
 15–16px subtitles with 1.4 line height, sentence-case eyebrows, and wide abstract
-artwork. Blue, rose/lavender, and yellow/peach images use soft organic folds,
-diffuse light, and subtle grain, following the user's supplied references. Hero
+artwork. All 41 pages have an individual original image, using heavily defocused
+color fields and subtle grain based on the supplied reference. Compositions and
+palettes vary by page; an explicit slug registry replaces the shared palette
+fallback, with acceptance coverage for missing and duplicate assets. Hero
 and task-card images have four rounded corners and an 8px inset. Documentation
-sidebar and planner labels also use normal casing and tracking. The contents rail
+sidebar and planner labels also use normal casing and tracking. Sidebar group
+labels are bold, and their links have an additional 8px left inset. The contents rail
 shares Core Documents' animated indicator and follows section links, scrolling,
 and browser history while respecting reduced motion.
 
@@ -126,7 +129,7 @@ focused repeats and the final full Documentation run without navigation changes.
 
 The header-copy pass rewrote all 41 article subtitles, reducing each to at most
 half its previous word count and a maximum of 15 words (628 words to 267 total).
-Quickstart now reads “Find your next step”; resource headers use concise summaries
+Quickstart now reads “Start and grow your nonprofit”; resource headers use concise summaries
 while catalog and search descriptions retain the full offer details. Static
 quality passed in 48.89 seconds, all 53 focused acceptance checks passed, and all
 16 Documentation browser journeys passed in 1.6 minutes. Eight affected baselines
@@ -134,6 +137,14 @@ were refreshed; the final desktop check passed after the last two wording edits.
 Desktop/mobile review preserved the 4px title/subtitle gap without overflow.
 Standalone TypeScript still reports 143 errors confined to existing test files,
 with no application-source errors. The full release gate remains pending.
+
+The individual hero-artwork pass passed static quality in 47.24 seconds, all 54
+focused acceptance checks, and all 16 Documentation browser journeys in 2.0
+minutes. Browser review verified 41 distinct loaded image URLs across all article
+pages plus six mobile page families, with rounded corners, 8px insets, 4px text
+gaps, and no page errors or overflow. Seven hero baselines changed intentionally.
+The 41 optimized images total 1,197,568 bytes; generation prompts are recorded in
+`src/features/nonprofit-documentation/assets/heroes/prompts.json`.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,

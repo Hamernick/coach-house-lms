@@ -186,7 +186,7 @@ export function BestPracticeArticlePage({
           </nav>
 
           <DocumentationPageHeader
-            artwork={article.slug.startsWith("tools/") ? "blue" : "rose"}
+            artwork={article.slug}
             eyebrow={sectionLabel}
             title={article.navigationTitle}
             description={toolMetadata?.description ?? article.description}

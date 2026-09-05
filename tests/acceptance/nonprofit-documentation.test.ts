@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs"
+import { createHash } from "node:crypto"
+import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
@@ -129,6 +130,11 @@ import {
   projectMarketplaceCommunityProfiles,
 } from "@/features/nonprofit-documentation"
 import { createBrowserZip } from "@/features/nonprofit-documentation/lib/brand-identity-export"
+import { DOCUMENTATION_SEARCH_DOCUMENTS } from "@/features/nonprofit-documentation/lib/search-documents"
+import {
+  documentationArtwork,
+  getDocumentationArtwork,
+} from "@/features/nonprofit-documentation/components/documentation-artwork"
 
 const ROOT = process.cwd()
 
@@ -137,6 +143,23 @@ function readSource(relativePath: string) {
 }
 
 describe("nonprofit documentation feature", () => {
+  it("gives every article a distinct authored image without a shared fallback", () => {
+    const pages = DOCUMENTATION_SEARCH_DOCUMENTS
+      .filter(({ href }) => ![DOCUMENTATION_PATH, `${DOCUMENTATION_PATH}/marketplace`].includes(href))
+      .map(({ href }) => href.slice(DOCUMENTATION_PATH.length + 1))
+    expect(Object.keys(documentationArtwork).sort()).toEqual([...pages].sort())
+    expect(new Set(pages.map(getDocumentationArtwork)).size).toBe(pages.length)
+    expect(() => getDocumentationArtwork("unregistered-page")).toThrow("Missing Documentation artwork")
+
+    const directory = join(ROOT, "src/features/nonprofit-documentation/assets/heroes")
+    const files = readdirSync(directory).filter((file) => file.endsWith(".webp"))
+    const hashes = files.map((file) =>
+      createHash("sha256").update(readFileSync(join(directory, file))).digest("hex")
+    )
+    expect(files).toHaveLength(pages.length)
+    expect(new Set(hashes).size).toBe(pages.length)
+  })
+
   it("publishes one canonical navigation registry without dead links", () => {
     expect(DOCUMENTATION_PATH).toBe("/documentation")
     expect(DOCUMENTATION_NAVIGATION.map((section) => section.title)).toEqual([

@@ -46,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter(
           (item) =>
             item.status === "live" &&
-            item.href.startsWith(`${DOCUMENTATION_PATH}/`)
+            item.href?.startsWith(`${DOCUMENTATION_PATH}/`)
         )
         .map((item) => ({
           url: `${origin}${item.href}`,

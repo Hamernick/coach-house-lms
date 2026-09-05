@@ -78,7 +78,7 @@ export function DocumentationRail({
 
       {DOCUMENTATION_NAVIGATION.map((section) => (
         <SidebarGroup key={section.id} className="py-1">
-          <SidebarGroupLabel className="text-[0.68rem] font-semibold tracking-[0.12em] uppercase">
+          <SidebarGroupLabel className="text-xs font-medium tracking-normal normal-case">
             {section.title}
           </SidebarGroupLabel>
           <SidebarGroupContent>

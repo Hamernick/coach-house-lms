@@ -312,7 +312,7 @@ export function FrameworkWorkspaceFields({
           className="bg-muted/35 mt-4 rounded-xl border p-4"
           aria-live="polite"
         >
-          <p className="text-xs font-semibold tracking-wide uppercase">
+          <p className="text-xs font-semibold tracking-normal">
             Recommended starting framework
           </p>
           <p className="mt-2 font-semibold">{recommendation.title}</p>

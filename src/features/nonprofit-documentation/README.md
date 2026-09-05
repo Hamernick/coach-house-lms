@@ -17,8 +17,11 @@
 - Keep public tools available without authentication or paid entitlements.
   Device-local drafts must identify their storage boundary and avoid claiming
   account sync.
-- Keep Documentation compact: 24px page headings, 14px body copy, 32px desktop
-  controls, and 28px desktop tabs. The feature-owned density CSS module applies
+- Keep Documentation compact: 24px index headings, 14px body copy, 32px desktop
+  controls, and 28px desktop tabs. Article headers use centered 28px mobile and
+  34px desktop titles, 15–16px subtitles with 1.5 line height, and sentence-case
+  eyebrows. Sidebar group labels explicitly override the shared uppercase style.
+  The feature-owned density CSS module applies
   through `DocumentationSurface` and the portaled Marketplace shortlist. Preserve
   44px mobile targets and 16px mobile input text; do not resize shared app primitives
   or generated Brand Identity artwork to change the documentation layout.
@@ -29,6 +32,16 @@
 - Task-card images use a 16:9 frame, rounded asset corners, and an 8px inset at
   the top and sides. Keep captions compact. `DocumentationTaskCards` owns the
   grid and React Grab metadata while its card content remains server-rendered.
+- Article, tool, and resource headers share `DocumentationPageHeader`, including
+  the community-courtyard hero with four rounded corners and an 8px inset.
+  `assets/community-courtyard.webp` was generated with the built-in image tool
+  and encoded for the web without changing its composition. Art direction:
+  a calm community courtyard, civic buildings, trees, and a shared table in
+  sage, ivory, and muted blue, with no lettering, in a wide 3:1 composition.
+- Contents navigation uses `SectionRailIndicator`, shared with Core Documents.
+  Preserve scroll tracking within the Documentation canvas, section deep links,
+  browser history, and reduced-motion behavior. Keep header menus centered over
+  the canvas and above its stacking context so every dropdown link is reachable.
 - Keep planner controls disabled until saved drafts finish loading. This also
   protects edits made immediately after hydration or browser back navigation.
 - All 14 planners share `DocumentationToolFlow` and

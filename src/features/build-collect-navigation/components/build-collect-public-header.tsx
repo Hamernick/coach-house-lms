@@ -3,8 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
-import { type ReactNode, useState } from "react"
+import type { ReactNode } from "react"
 
+import {
+  getReactGrabLinkedSurfaceProps,
+  getReactGrabOwnerProps,
+} from "@/components/dev/react-grab-surface"
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import { Button } from "@/components/ui/button"
 import { SearchInput } from "@/components/ui/search-input"
@@ -70,7 +74,7 @@ function BuildCollectBrand({
 
 function NavigationCards({ items }: { items: BuildCollectNavigationItem[] }) {
   return (
-    <ul className="grid w-[min(32rem,calc(100vw-2rem))] gap-1 p-1 md:grid-cols-2">
+    <ul className="grid w-[min(32rem,calc(100cqw-2rem))] gap-1 p-1 md:grid-cols-2">
       {items.map((item) => (
         <li key={item.href}>
           <NavigationMenuLink asChild>
@@ -92,40 +96,63 @@ function BuildCollectDesktopNavigation({
 }: {
   activeArea: BuildCollectActiveArea
 }) {
-  const [openMenu, setOpenMenu] = useState("")
-
   return (
     <NavigationMenu
+      {...getReactGrabOwnerProps({
+        ownerId: "build-collect-navigation:desktop",
+        component: "BuildCollectDesktopNavigation",
+        source:
+          "src/features/build-collect-navigation/components/build-collect-public-header.tsx",
+        slot: "navigation",
+        tokenSource: "src/app/globals.css",
+      })}
       className="hidden md:flex"
       delayDuration={100}
-      onPointerLeave={() => setOpenMenu("")}
-      onValueChange={setOpenMenu}
       skipDelayDuration={100}
-      value={openMenu}
       viewport={false}
     >
       <NavigationMenuList className="bg-background/90 rounded-xl border p-1 shadow-xs backdrop-blur">
-        <NavigationMenuItem value="collect">
+        <NavigationMenuItem value="collect" className="static">
           <NavigationMenuTrigger
             className="data-[active=true]:bg-accent rounded-lg"
             data-active={activeArea === "collect"}
-            onPointerEnter={() => setOpenMenu("collect")}
           >
             Collect
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="left-1/2 -translate-x-1/2">
+          <NavigationMenuContent
+            {...getReactGrabLinkedSurfaceProps({
+              ownerId: "build-collect-navigation:desktop",
+              component: "BuildCollectDesktopNavigation",
+              source:
+                "src/features/build-collect-navigation/components/build-collect-public-header.tsx",
+              slot: "collect-content",
+              surfaceKind: "content",
+              tokenSource: "src/app/globals.css",
+            })}
+            className="left-1/2 -translate-x-1/2"
+          >
             <NavigationCards items={COLLECT_NAVIGATION_ITEMS} />
           </NavigationMenuContent>
         </NavigationMenuItem>
-        <NavigationMenuItem value="build">
+        <NavigationMenuItem value="build" className="static">
           <NavigationMenuTrigger
             className="data-[active=true]:bg-accent rounded-lg"
             data-active={activeArea === "build"}
-            onPointerEnter={() => setOpenMenu("build")}
           >
             Build
           </NavigationMenuTrigger>
-          <NavigationMenuContent className="right-0 left-auto">
+          <NavigationMenuContent
+            {...getReactGrabLinkedSurfaceProps({
+              ownerId: "build-collect-navigation:desktop",
+              component: "BuildCollectDesktopNavigation",
+              source:
+                "src/features/build-collect-navigation/components/build-collect-public-header.tsx",
+              slot: "build-content",
+              surfaceKind: "content",
+              tokenSource: "src/app/globals.css",
+            })}
+            className="left-1/2 -translate-x-1/2"
+          >
             <NavigationCards items={BUILD_NAVIGATION_ITEMS} />
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -200,69 +227,70 @@ export function BuildCollectPublicHeader({
   return (
     <header
       data-build-collect-public-header=""
-      className={cn(
-        "grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 px-[var(--shell-content-pad,1rem)] py-2",
-        hasSearch && "grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]"
-      )}
+      className="@container/public-header relative z-20 min-h-16 shrink-0 px-[var(--shell-content-pad,1rem)] py-2"
     >
-      <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
+      <div className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+        <div className="min-w-0 justify-self-start">
+          <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
+        </div>
 
-      <div className="flex min-w-0 items-center justify-center">
-        <BuildCollectMobileNavigation activeArea={activeArea} />
-        <BuildCollectDesktopNavigation activeArea={activeArea} />
-      </div>
+        <div className="flex min-w-0 items-center justify-center">
+          <BuildCollectMobileNavigation activeArea={activeArea} />
+          <BuildCollectDesktopNavigation activeArea={activeArea} />
+        </div>
 
-      <div
-        className={cn(
-          "flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2",
-          hasSearch && "col-span-2 lg:col-span-1"
-        )}
-      >
-        {searchAction ??
-          (showResourceSearch ? (
-            <form
-              action="/"
-              method="get"
-              className="min-w-0 flex-1 lg:w-52 lg:flex-none"
-              role="search"
-              aria-label="Organizations and resources"
-            >
-              <label
-                htmlFor={`public-header-search-${activeArea}`}
-                className="sr-only"
-              >
-                Search organizations and resources
-              </label>
-              <SearchInput
-                id={`public-header-search-${activeArea}`}
-                name="q"
-                autoComplete="off"
-                placeholder="Search…"
-              />
-            </form>
-          ) : null)}
-
-        {authAction}
-        <Button
-          asChild
+        <div
           className={cn(
-            "rounded-full",
-            hasSearch && activeArea === "collect" && "hidden sm:inline-flex"
+            "flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2",
+            hasSearch && "col-span-3 @min-[60rem]/public-header:col-span-1"
           )}
         >
-          <Link href={builderCta.href}>
-            {builderCta.label}
-            <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
-          </Link>
-        </Button>
-        {themeAction ?? (
-          <PublicThemeToggle
-            variant="ghost"
-            size="icon"
-            className="hidden size-10 shrink-0 sm:inline-flex"
-          />
-        )}
-        {shellActions}
+          {searchAction ??
+            (showResourceSearch ? (
+              <form
+                action="/"
+                method="get"
+                className="min-w-0 flex-1 lg:max-w-52"
+                role="search"
+                aria-label="Organizations and resources"
+              >
+                <label
+                  htmlFor={`public-header-search-${activeArea}`}
+                  className="sr-only"
+                >
+                  Search organizations and resources
+                </label>
+                <SearchInput
+                  id={`public-header-search-${activeArea}`}
+                  name="q"
+                  autoComplete="off"
+                  placeholder="Search…"
+                />
+              </form>
+            ) : null)}
+
+          {authAction}
+          <Button
+            asChild
+            className={cn(
+              "rounded-full",
+              hasSearch && activeArea === "collect" && "hidden sm:inline-flex"
+            )}
+          >
+            <Link href={builderCta.href}>
+              {builderCta.label}
+              <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
+            </Link>
+          </Button>
+          {themeAction ?? (
+            <PublicThemeToggle
+              variant="ghost"
+              size="icon"
+              className="hidden size-10 shrink-0 sm:inline-flex"
+            />
+          )}
+          {shellActions}
+        </div>
       </div>
     </header>
   )

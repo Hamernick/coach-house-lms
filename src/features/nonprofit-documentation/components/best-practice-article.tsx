@@ -6,6 +6,7 @@ import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import { DOCUMENTATION_PATH } from "../lib"
 import { getDocumentationToolMetadata } from "../lib/documentation-tools"
 import { DocumentationArticleWorkspace } from "./documentation-article-workspace"
+import { DocumentationPageHeader } from "./documentation-page-header"
 import type { BestPracticeArticle } from "../types"
 import {
   DocumentationDesktopContents,
@@ -184,14 +185,11 @@ export function BestPracticeArticlePage({
             </span>
           </nav>
 
-          <header className="mt-3 mb-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {article.navigationTitle}
-            </h1>
-            <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
-              {toolMetadata?.description ?? article.description}
-            </p>
-          </header>
+          <DocumentationPageHeader
+            eyebrow={sectionLabel}
+            title={article.navigationTitle}
+            description={toolMetadata?.description ?? article.description}
+          />
           {interactive ? (
             <DocumentationArticleWorkspace
               defaultView={article.slug.startsWith("tools/") ? "tool" : "guide"}

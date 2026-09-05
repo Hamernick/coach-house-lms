@@ -34,7 +34,7 @@ export function DocumentationSearchPage({
         className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-14 lg:px-8"
       >
         <header className="border-b pb-5">
-          <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-normal">
             Documentation library
           </p>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-2xl">

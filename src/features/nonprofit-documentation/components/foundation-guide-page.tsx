@@ -6,6 +6,7 @@ import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
 import type { FoundationGuide } from "../types"
 import { DOCUMENTATION_PATH } from "../lib"
+import { DocumentationPageHeader } from "./documentation-page-header"
 import {
   DocumentationDesktopContents,
   DocumentationMobileContents,
@@ -67,21 +68,23 @@ export function FoundationGuidePage({ guide }: { guide: FoundationGuide }) {
           ],
         }}
       />
-      <div
+      <article
         id="documentation-content"
-        className="mx-auto grid w-full max-w-[1180px] gap-6 px-4 py-6 sm:px-6 sm:py-6 lg:px-8 xl:grid-cols-[minmax(0,760px)_200px]"
+        className="mx-auto w-full max-w-[1180px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <article className="min-w-0">
-          <GuideHeader guide={guide} />
-          <DocumentationMobileContents items={contents} />
-          <GuideSections guide={guide} />
-          <GuideStages guide={guide} />
-          <GuideChecklistAndSources guide={guide} />
-          <GuideFooter guide={guide} />
-        </article>
+        <GuideHeader guide={guide} />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,760px)_200px]">
+          <div className="min-w-0">
+            <DocumentationMobileContents items={contents} />
+            <GuideSections guide={guide} />
+            <GuideStages guide={guide} />
+            <GuideChecklistAndSources guide={guide} />
+            <GuideFooter guide={guide} />
+          </div>
 
-        <DocumentationDesktopContents items={contents} />
-      </div>
+          <DocumentationDesktopContents items={contents} />
+        </div>
+      </article>
     </DocumentationSurface>
   )
 }
@@ -106,22 +109,17 @@ function GuideHeader({ guide }: { guide: FoundationGuide }) {
           {guide.slug === "quickstart" ? "Quickstart" : "Key concepts"}
         </span>
       </nav>
-      <header className="mt-4 border-b pb-5">
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
-          {guide.eyebrow}
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-balance sm:text-2xl">
-          {guide.title}
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-pretty sm:text-sm sm:leading-8">
-          {guide.answer}
-        </p>
-        <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+      <DocumentationPageHeader
+        eyebrow={guide.eyebrow}
+        title={guide.title}
+        description={guide.answer}
+      >
+        <div className="text-muted-foreground flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
           <span>{guide.readingTime}</span>
           <span>Reviewed {guide.reviewedDate}</span>
           <span>United States</span>
         </div>
-      </header>
+      </DocumentationPageHeader>
     </>
   )
 }
@@ -168,7 +166,7 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
       className="scroll-mt-8 border-b py-6"
       aria-labelledby="stages-title"
     >
-      <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+      <p className="text-muted-foreground text-xs font-semibold tracking-normal">
         Stage-specific guidance
       </p>
       <h2
@@ -189,7 +187,7 @@ function GuideStages({ guide }: { guide: FoundationGuide }) {
                 0{index + 1}
               </span>
               <div>
-                <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">
+                <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                   {stage.label}
                 </p>
                 <h3
@@ -253,7 +251,7 @@ function GuideChecklistAndSources({ guide }: { guide: FoundationGuide }) {
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Primary references
             </p>
             <h2

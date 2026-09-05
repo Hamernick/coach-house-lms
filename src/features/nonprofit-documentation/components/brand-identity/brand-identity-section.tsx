@@ -24,7 +24,7 @@ export function BrandIdentitySection({
       aria-labelledby={`${id}-title`}
     >
       {eyebrow ? (
-        <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
+        <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-normal">
           {eyebrow}
         </p>
       ) : null}

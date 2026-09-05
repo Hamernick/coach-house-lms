@@ -28,7 +28,7 @@ function BriefItem({
 }) {
   return (
     <div className="bg-background p-4 sm:p-5">
-      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+      <p className="text-muted-foreground text-xs font-semibold tracking-normal">
         {label}
       </p>
       <p className="mt-3 text-sm leading-5 font-medium text-pretty">
@@ -66,7 +66,7 @@ export function MarketingPlanResults({
       </p>
 
       <div className="mt-6">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {marketingObjectiveLabel(draft.objective)}
         </p>
         <h3 className="mt-2 font-semibold">Your communications brief</h3>

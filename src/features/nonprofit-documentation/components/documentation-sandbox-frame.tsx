@@ -18,7 +18,7 @@ export function DocumentationSandboxFrame({
       aria-labelledby="sandbox-title"
     >
       <div data-tool-intro>
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {eyebrow}
         </p>
         <h2

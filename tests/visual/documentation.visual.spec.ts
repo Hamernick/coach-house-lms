@@ -162,6 +162,11 @@ test("mobile navigation closes after choosing a guide and contents links reach s
     .getByRole("link", { name: "Readiness checklist", exact: true })
     .click()
   await expect(page).toHaveURL(/#checklist$/)
+  await expect(
+    page
+      .getByRole("navigation", { name: "Article contents", exact: true })
+      .getByRole("link", { name: "Readiness checklist", exact: true })
+  ).toHaveAttribute("aria-current", "location")
   await expect(page.locator("#checklist-title")).toBeInViewport()
   const headingBounds = await page.locator("#checklist-title").boundingBox()
   const searchBounds = await page
@@ -170,6 +175,67 @@ test("mobile navigation closes after choosing a guide and contents links reach s
   expect(headingBounds!.y).toBeGreaterThan(
     searchBounds!.y + searchBounds!.height
   )
+})
+
+test("article contents indicator follows scrolling, section links, and browser history", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/documentation/quickstart#checklist")
+  await ready(page)
+  const contents = page
+    .getByRole("complementary", { name: "On this page", exact: true })
+    .getByRole("navigation", { name: "Article contents", exact: true })
+  const checklist = contents.getByRole("link", {
+    name: "Readiness checklist",
+    exact: true,
+  })
+  const indicator = contents.locator('[data-slot="section-rail-indicator"]')
+  async function expectIndicatorAtCurrentLink() {
+    await expect
+      .poll(async () => {
+        const active = await contents
+          .locator('[aria-current="location"]')
+          .boundingBox()
+        const marker = await indicator.boundingBox()
+        return active && marker
+          ? Math.max(
+              Math.abs(active.y - marker.y),
+              Math.abs(active.height - marker.height)
+            )
+          : Infinity
+      })
+      .toBeLessThan(1)
+  }
+  await expect(checklist).toHaveAttribute("aria-current", "location")
+  await expectIndicatorAtCurrentLink()
+  await contents.getByRole("link", { name: "Sources", exact: true }).click()
+  await expect(page).toHaveURL(/#sources$/)
+  await expect(
+    contents.getByRole("link", { name: "Sources", exact: true })
+  ).toHaveAttribute("aria-current", "location")
+  await expectIndicatorAtCurrentLink()
+  await page.goBack()
+  await expect(page).toHaveURL(/#checklist$/)
+  await expect(checklist).toHaveAttribute("aria-current", "location")
+  await expectIndicatorAtCurrentLink()
+  await page.locator("[data-documentation-scroll]").evaluate((element) => {
+    element.scrollTo({ top: 0, behavior: "instant" })
+  })
+  await expect(contents.getByRole("link").first()).toHaveAttribute(
+    "aria-current",
+    "location"
+  )
+  await expectIndicatorAtCurrentLink()
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await checklist.click()
+  await expect(checklist).toHaveAttribute("aria-current", "location")
+  await expectIndicatorAtCurrentLink()
+  expect(
+    await indicator.evaluate(
+      (element) => getComputedStyle(element).transitionProperty
+    )
+  ).toBe("none")
 })
 
 for (const viewer of ["free", "paid", "locked"]) {
@@ -271,6 +337,7 @@ for (const mode of ["light", "dark"] as const) {
 }
 
 test("documentation home and article desktop baselines", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto("/documentation")
   await ready(page)
   await expect(page).toHaveScreenshot("documentation-home-desktop.png", {
@@ -286,6 +353,7 @@ test("documentation home and article desktop baselines", async ({ page }) => {
     maxDiffPixelRatio: 0.01,
   })
   for (const [route, surface] of [
+    ["/documentation/quickstart", "quickstart"],
     ["/documentation/marketplace", "marketplace"],
     ["/documentation/tools/brand-identity", "brand-identity"],
   ]) {
@@ -397,7 +465,7 @@ test("Marketplace renders published member profiles separately from coaches", as
 })
 
 for (const [layout, mode, width, height] of [
-  ["desktop", "light", 1440, 900],
+  ["desktop", "light", 1280, 900],
   ["mobile", "dark", 390, 844],
 ] as const) {
   test(`Marketplace and completed plans have reviewed ${layout} baselines`, async ({

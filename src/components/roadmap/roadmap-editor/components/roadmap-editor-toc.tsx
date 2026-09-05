@@ -3,6 +3,7 @@ import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import type { CSSProperties, RefObject } from "react"
 
 import { Button } from "@/components/ui/button"
+import { SectionRailIndicator } from "@/components/ui/section-rail-indicator"
 import { cn } from "@/lib/utils"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
@@ -108,16 +109,9 @@ export function RoadmapEditorToc({
         aria-hidden
         className="bg-border/60 absolute top-0 left-[var(--roadmap-toc-rail-offset)] h-full w-px rounded-full"
       />
-      <span
-        aria-hidden
-        className={cn(
-          "bg-foreground/90 absolute left-[var(--roadmap-toc-rail-offset)] z-10 w-[2px] rounded-full transition-[transform,height,opacity] duration-200 ease-out motion-reduce:transition-none",
-          tocIndicator.visible ? "opacity-100" : "opacity-0"
-        )}
-        style={{
-          height: `${tocIndicator.height}px`,
-          transform: `translateY(${tocIndicator.top}px)`,
-        }}
+      <SectionRailIndicator
+        {...tocIndicator}
+        className="left-[var(--roadmap-toc-rail-offset)] z-10"
       />
       {tocItems.map((item) => {
         if (item.type === "group") {

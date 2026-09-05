@@ -49,7 +49,7 @@ function CampaignBrief({ draft }: { draft: CampaignPlanDraft }) {
   return (
     <div className="overflow-hidden rounded-xl border">
       <div className="bg-foreground text-background p-4 sm:p-4">
-        <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+        <p className="text-background/70 text-xs font-semibold tracking-normal">
           {campaignTypeLabel(draft.campaignType)}
         </p>
         <h3 className="mt-3 text-base font-semibold text-balance">
@@ -136,7 +136,7 @@ export function CampaignPlanResults({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                     {item.phase}
                   </p>
                   <p className="mt-2 text-sm leading-5 font-medium">

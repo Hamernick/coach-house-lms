@@ -49,7 +49,7 @@ function FundsView({ draft }: { draft: FinancePlanDraft }) {
     <div className="bg-border grid gap-px overflow-hidden rounded-xl border lg:grid-cols-2">
       {columns.map((column) => (
         <section key={column.label} className="bg-background min-w-0 p-4">
-          <p className="text-xs font-semibold tracking-wide uppercase">
+          <p className="text-xs font-semibold tracking-normal">
             {column.label}
           </p>
           <p className="text-muted-foreground mt-1 text-xs leading-5">
@@ -107,7 +107,7 @@ export function FinancePlanResults({
           ["Unrestricted coverage", coverage],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
             <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
@@ -163,7 +163,7 @@ export function FinancePlanResults({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                     {item.phase}
                   </p>
                   <p className="mt-2 text-sm leading-5 font-medium">

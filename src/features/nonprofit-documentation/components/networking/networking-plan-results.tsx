@@ -178,7 +178,7 @@ export function NetworkingPlanResults({
           ["Next steps", summary.nextStepCount],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
             <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
@@ -187,7 +187,7 @@ export function NetworkingPlanResults({
       </div>
 
       <section className="mt-6" aria-labelledby="network-purpose-title">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {networkingObjectiveLabel(draft.objective)} · {draft.reviewWeeks}-week
           review
         </p>
@@ -200,7 +200,7 @@ export function NetworkingPlanResults({
               "Define the mission purpose and decision this relationship system should improve."}
           </p>
           <div className="border-background/25 mt-3 border-t pt-4">
-            <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+            <p className="text-background/70 text-xs font-semibold tracking-normal">
               Community accountability
             </p>
             <p className="mt-2 text-sm leading-5">

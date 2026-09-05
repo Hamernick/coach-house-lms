@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { DocumentationMobileContents } from "../documentation-contents"
+import { DocumentationPageHeader } from "../documentation-page-header"
 
 import { useBrandIdentityTool } from "../../hooks/use-brand-identity-tool"
 import {
@@ -68,7 +69,7 @@ export function BrandIdentityTool() {
         id="documentation-content"
         className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:px-6 sm:py-6 lg:px-8 print:max-w-none print:p-0"
       >
-        <header className="mx-auto max-w-[820px] border-b pb-4 print:pb-6">
+        <div className="border-b pb-4 print:pb-6">
           <Link
             href="/documentation"
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-xs font-medium underline-offset-4 hover:underline print:hidden"
@@ -76,64 +77,54 @@ export function BrandIdentityTool() {
             <ArrowLeftIcon className="size-3.5" aria-hidden />
             Documentation
           </Link>
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
-                Tools · Public tool
-              </p>
-              <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-balance sm:text-2xl">
-                Brand Identity Builder
-              </h1>
-              <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6 sm:text-sm">
-                Build a clear, accessible nonprofit brand system, then download
-                everything your team needs to use it consistently.
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-2 print:hidden">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="outline" className="min-h-11">
-                    <RotateCcwIcon aria-hidden />
-                    Reset
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Start a fresh brand guide?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes the saved text, colors, settings, and
-                      uploaded assets from this device. The action cannot be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep guide</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => void tool.reset()}>
-                      Reset guide
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button
-                type="button"
-                className="min-h-11"
-                onClick={() => moveToSection("exports")}
-              >
-                <DownloadIcon aria-hidden />
-                Export
-              </Button>
-            </div>
+          <DocumentationPageHeader
+            eyebrow="Tools · Public tool"
+            title="Brand Identity Builder"
+            description="Build a clear, accessible nonprofit brand system, then download everything your team needs to use it consistently."
+          />
+          <div className="flex justify-center gap-2 print:hidden">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" className="min-h-11">
+                  <RotateCcwIcon aria-hidden />
+                  Reset
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Start a fresh brand guide?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This removes the saved text, colors, settings, and uploaded
+                    assets from this device. The action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep guide</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => void tool.reset()}>
+                    Reset guide
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              type="button"
+              className="min-h-11"
+              onClick={() => moveToSection("exports")}
+            >
+              <DownloadIcon aria-hidden />
+              Export
+            </Button>
           </div>
-          <div className="text-muted-foreground mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+          <div className="text-muted-foreground mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
             <span role="status" aria-live="polite">
               {tool.message}
             </span>
             <span>Private to this browser</span>
             <span>No account required</span>
           </div>
-        </header>
+        </div>
 
         <DocumentationMobileContents
           items={BRAND_IDENTITY_SECTIONS.map(

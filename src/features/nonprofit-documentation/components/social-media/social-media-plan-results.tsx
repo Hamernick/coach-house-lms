@@ -35,7 +35,7 @@ function ContentPathItem({
         {String(index).padStart(2, "0")}
       </span>
       <div className="min-w-0">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {label}
         </p>
         <p className="mt-2 text-sm leading-5 font-medium break-words">
@@ -83,7 +83,7 @@ export function SocialMediaPlanResults({
           ["Campaign outputs", summary.campaignOutputs],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
             <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
@@ -94,7 +94,7 @@ export function SocialMediaPlanResults({
       <section className="mt-6" aria-labelledby="social-preview-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Planning preview · {socialMediaChannelLabel(draft.previewChannel)}
             </p>
             <h3 id="social-preview-title" className="mt-2 font-semibold">
@@ -124,7 +124,7 @@ export function SocialMediaPlanResults({
                 {previewCopy}
               </p>
               <div className="mt-3 border-t pt-4">
-                <p className="text-muted-foreground text-xs font-semibold uppercase">
+                <p className="text-muted-foreground text-xs font-semibold">
                   Link label
                 </p>
                 <p className="mt-2 text-sm font-semibold break-words underline underline-offset-4">
@@ -133,13 +133,13 @@ export function SocialMediaPlanResults({
               </div>
             </div>
             <div className="bg-muted/45 border-t p-4 lg:border-t-0 lg:border-l">
-              <p className="text-muted-foreground text-xs font-semibold uppercase">
+              <p className="text-muted-foreground text-xs font-semibold">
                 Visual direction
               </p>
               <p className="mt-3 text-sm leading-5 break-words">
                 {draft.visualDescription || "Add a purposeful visual plan."}
               </p>
-              <p className="text-muted-foreground mt-3 text-xs font-semibold uppercase">
+              <p className="text-muted-foreground mt-3 text-xs font-semibold">
                 Alternative text
               </p>
               <p className="mt-3 text-sm leading-5 break-words">
@@ -272,7 +272,7 @@ export function SocialMediaPlanResults({
       </section>
 
       <section className="mt-6" aria-labelledby="social-actions-title">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {socialMediaObjectiveLabel(draft.objective)}
         </p>
         <h3 id="social-actions-title" className="mt-2 font-semibold">

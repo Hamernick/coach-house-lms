@@ -1,3 +1,6 @@
+"use client"
+
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import {
   Accordion,
   AccordionContent,
@@ -5,18 +8,41 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { cn } from "@/lib/utils"
+import { SectionRailIndicator } from "@/components/ui/section-rail-indicator"
+import {
+  useDocumentationContents,
+  type DocumentationContents,
+} from "../hooks/use-documentation-contents"
 
-type Contents = ReadonlyArray<readonly [string, string]>
+type Contents = DocumentationContents
 
 function ContentsLinks({ items }: { items: Contents }) {
+  const { navigationRef, activeId, setActiveId, indicator } =
+    useDocumentationContents(items)
   return (
-    <nav aria-label="Article contents">
-      <ol className="space-y-1">
+    <nav
+      ref={navigationRef}
+      aria-label="Article contents"
+      className="relative pl-3"
+    >
+      <span
+        aria-hidden
+        className="bg-border/60 absolute inset-y-0 left-0 w-px rounded-full"
+      />
+      <SectionRailIndicator {...indicator} className="top-0 left-0" />
+      <ol className="flex flex-col gap-1">
         {items.map(([id, title]) => (
           <li key={id}>
             <a
               href={`#${id}`}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:ring-ring flex min-h-11 items-center rounded-md px-2 text-sm leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none xl:min-h-8 xl:text-xs"
+              aria-current={activeId === id ? "location" : undefined}
+              onClick={() => setActiveId(id)}
+              className={cn(
+                "hover:text-foreground hover:bg-muted/50 focus-visible:ring-ring flex min-h-11 items-center rounded-md px-2 text-sm leading-5 transition-colors focus-visible:ring-2 focus-visible:outline-none xl:min-h-8 xl:text-[13px]",
+                activeId === id
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground"
+              )}
             >
               {title}
             </a>
@@ -38,7 +64,14 @@ export function DocumentationMobileContents({
     <Accordion
       type="single"
       collapsible
-      className={cn("mt-6 border-b xl:hidden print:hidden", className)}
+      className={cn("mt-4 border-b xl:hidden print:hidden", className)}
+      {...getReactGrabOwnerProps({
+        ownerId: "documentation-contents:mobile",
+        component: "DocumentationMobileContents",
+        source:
+          "src/features/nonprofit-documentation/components/documentation-contents.tsx",
+        slot: "mobile-contents",
+      })}
     >
       <AccordionItem value="contents">
         <AccordionTrigger className="min-h-11">On this page</AccordionTrigger>
@@ -52,9 +85,20 @@ export function DocumentationMobileContents({
 
 export function DocumentationDesktopContents({ items }: { items: Contents }) {
   return (
-    <aside className="hidden xl:block print:hidden" aria-label="On this page">
-      <div className="sticky top-24 max-h-[calc(100svh-12rem)] overflow-y-auto border-l pl-4">
-        <p className="mb-3 px-2 text-xs font-semibold">On this page</p>
+    <aside
+      className="hidden xl:block print:hidden"
+      aria-label="On this page"
+      {...getReactGrabOwnerProps({
+        ownerId: "documentation-contents:desktop",
+        component: "DocumentationDesktopContents",
+        source:
+          "src/features/nonprofit-documentation/components/documentation-contents.tsx",
+        slot: "desktop-contents",
+        tokenSource: "src/app/globals.css",
+      })}
+    >
+      <div className="sticky top-6 max-h-[calc(100svh-8rem)] overflow-y-auto">
+        <p className="mb-2 pl-5 text-xs font-semibold">On this page</p>
         <ContentsLinks items={items} />
       </div>
     </aside>

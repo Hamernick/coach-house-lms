@@ -66,7 +66,7 @@ export function FoundationSection({
         </Field>
       </div>
       <div className="mt-10 border-y py-10">
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           Live introduction
         </p>
         <h3

@@ -22,7 +22,7 @@ export function MarketplaceCommunity({
     >
       <div className="grid gap-5 md:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)]">
         <div>
-          <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-normal">
             Community
           </p>
           <h2

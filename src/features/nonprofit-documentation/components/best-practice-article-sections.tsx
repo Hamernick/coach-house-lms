@@ -63,7 +63,7 @@ export function BestPracticeStagesSection({ article }: ArticleSectionProps) {
       className="scroll-mt-8 border-b py-6"
       aria-labelledby="stages-title"
     >
-      <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+      <p className="text-muted-foreground text-xs font-semibold tracking-normal">
         Stage-specific guidance
       </p>
       <h2
@@ -87,7 +87,7 @@ export function BestPracticeExampleAndFramework({
         className="scroll-mt-8 border-b py-6"
         aria-labelledby="example-title"
       >
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {article.labels.example}
         </p>
         <h2
@@ -101,13 +101,13 @@ export function BestPracticeExampleAndFramework({
         </p>
         <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
           <div className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold uppercase">
+            <p className="text-muted-foreground text-xs font-semibold">
               {article.example.weakLabel}
             </p>
             <p className="mt-3 text-sm leading-5">“{article.example.weak}”</p>
           </div>
           <div className="bg-background p-4">
-            <p className="text-xs font-semibold uppercase">
+            <p className="text-xs font-semibold">
               {article.example.strongLabel}
             </p>
             <p className="mt-3 text-sm leading-5">“{article.example.strong}”</p>
@@ -251,7 +251,7 @@ export function BestPracticeMeasuresAndSources({
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Primary references
             </p>
             <h2

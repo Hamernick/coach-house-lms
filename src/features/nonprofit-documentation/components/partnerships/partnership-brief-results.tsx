@@ -33,7 +33,7 @@ function AgreementColumn({
       }`}
     >
       <p
-        className={`text-[11px] font-semibold tracking-[0.14em] uppercase ${
+        className={`text-[11px] font-semibold tracking-normal ${
           emphasis ? "text-background/65" : "text-muted-foreground"
         }`}
       >
@@ -70,7 +70,7 @@ function OperatingStep({
   return (
     <div className="bg-background min-w-0 flex-1 rounded-xl border p-4 sm:min-w-40">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold tracking-wide uppercase">{label}</p>
+        <p className="text-xs font-semibold tracking-normal">{label}</p>
         <span className="text-muted-foreground font-mono text-[11px] tabular-nums">
           {String(index).padStart(2, "0")}
         </span>
@@ -106,7 +106,7 @@ export function PartnershipBriefResults({
           ["Planned reviews", String(summary.reviewMomentCount)],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
             <p className="mt-3 text-sm font-semibold tabular-nums">{value}</p>
@@ -126,7 +126,7 @@ export function PartnershipBriefResults({
       <section className="mt-6" aria-labelledby="agreement-table-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Live sandbox
             </p>
             <h3 id="agreement-table-title" className="mt-2 font-semibold">

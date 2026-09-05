@@ -64,7 +64,7 @@ function MatterBrief({ draft }: { draft: LegalPlanDraft }) {
   return (
     <div className="overflow-hidden rounded-xl border">
       <div className="bg-foreground text-background p-4 sm:p-4">
-        <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+        <p className="text-background/70 text-xs font-semibold tracking-normal">
           {legalCategoryLabel(draft.category)}
         </p>
         <h3 className="mt-3 text-base font-semibold text-balance">
@@ -113,7 +113,7 @@ export function LegalPlanResults({
           className="bg-foreground text-background mt-6 rounded-xl border p-4 sm:p-5"
           aria-labelledby="legal-urgent-result-title"
         >
-          <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+          <p className="text-background/70 text-xs font-semibold tracking-normal">
             Immediate routing selected
           </p>
           <h3 id="legal-urgent-result-title" className="mt-2 font-semibold">
@@ -168,7 +168,7 @@ export function LegalPlanResults({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                     {item.phase}
                   </p>
                   <p className="mt-2 text-sm leading-5 font-medium">

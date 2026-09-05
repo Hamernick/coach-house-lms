@@ -58,7 +58,7 @@ export function DocumentationShell({
   const headerSearch = (
     <Suspense
       fallback={
-        <div className="h-11 min-w-0 flex-1 md:h-8 lg:w-56 lg:flex-none xl:w-64" />
+        <div className="h-11 min-w-0 flex-1 md:h-8 lg:max-w-56 xl:max-w-64" />
       }
     >
       <DocumentationSearchForm />

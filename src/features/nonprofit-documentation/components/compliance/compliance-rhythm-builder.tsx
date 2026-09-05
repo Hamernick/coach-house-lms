@@ -255,7 +255,7 @@ export function ComplianceRhythmBuilder() {
               <div className="bg-muted/20 border-t p-4 sm:p-4">
                 <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
                   <div className="bg-background p-4">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                       Common federal path
                     </p>
                     <p className="mt-3 text-base font-semibold">
@@ -266,7 +266,7 @@ export function ComplianceRhythmBuilder() {
                     </p>
                   </div>
                   <div className="bg-background p-4">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                       Annual return planning date
                     </p>
                     <p className="mt-3 text-base font-semibold tabular-nums">

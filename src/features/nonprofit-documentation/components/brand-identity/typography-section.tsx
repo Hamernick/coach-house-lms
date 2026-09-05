@@ -179,7 +179,7 @@ export function TypographySection({
             const heading = !["body", "caption"].includes(example.id)
             return (
               <div key={example.id} className="py-6">
-                <div className="text-muted-foreground mb-3 flex justify-between gap-4 font-mono text-[0.68rem] uppercase">
+                <div className="text-muted-foreground mb-3 flex justify-between gap-4 font-mono text-[0.68rem]">
                   <span>{example.label}</span>
                   <span>{size.toFixed(1)}px</span>
                 </div>

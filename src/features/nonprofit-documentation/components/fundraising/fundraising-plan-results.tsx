@@ -48,7 +48,7 @@ export function FundraisingPlanResults({
           ["Monthly planning pace", summary.monthlyPace],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
             <p className="mt-3 text-base font-semibold tabular-nums">

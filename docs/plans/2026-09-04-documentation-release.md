@@ -31,9 +31,8 @@ Intentional visual changes follow the supplied references: a compact hierarchy,
 rounded panels and controls, a dark quickstart section, illustrated task covers,
 and a restrained gradient for the featured Ad Grants offer.
 
-The September 5 density refinement reduces page headings to 24px, body text to
-14px, desktop controls to 32px, and desktop tabs to 28px. Tighter panel spacing,
-shorter task illustrations, and smaller horizontal coach headers fit more content
+Index headings use 24px, body text 14px, desktop controls 32px, and desktop tabs
+28px. Tighter panel spacing and smaller horizontal coach headers fit more content
 on screen. Mobile retains 44px touch targets and 16px input text.
 Standalone field groups, review panels, tables, guide links, callouts, and Brand
 Identity containers use consistent rounded corners, with child backgrounds clipped
@@ -48,6 +47,17 @@ the rounded field. The duplicate in-content rail is removed; mobile keeps the
 field beside Login, and account shells receive the same search through a header
 slot. Query clearing, browser history, and Ctrl/Cmd+K remain supported.
 
+Collect/Build navigation stays centered over the main canvas. Dropdowns render
+above the sidebar and canvas, remain open while moving into their links, and
+support keyboard activation and dismissal. Search remains beside Login.
+
+Guide, tool, and resource headers use centered 28px mobile / 34px desktop titles,
+15–16px subtitles with 1.5 line height, sentence-case eyebrows, and a wide community
+courtyard hero. The image has four rounded corners and an 8px inset. Documentation
+sidebar and planner labels also use normal casing and tracking. The contents rail
+shares Core Documents' animated indicator and follows section links, scrolling,
+and browser history while respecting reduced motion.
+
 Implementation commits: `6b86fb3a` (Marketplace and people) and `7aa7d19c`
 (documentation design and planner workflows), plus `9149b9f6` (optional sitemap
 link guard), after core checkpoint `3d404002`.
@@ -57,6 +67,7 @@ No issue was supplied.
 ## Review paths
 
 - `/documentation`: home, navigation, keyboard search, and task shortcuts.
+- `/documentation/quickstart`: centered hero, typography, and contents indicator.
 - `/documentation/marketplace`: filter, save, reload, and export resources.
 - `/documentation/marketplace?view=people`: coaches and published-member state.
 - `/documentation/marketplace/google-ad-grants`: source-backed setup guidance.
@@ -67,19 +78,22 @@ No issue was supplied.
 
 ## Validation and visual artifacts
 
-After the September 5 task-card and header-search refinements, the complete
-21-stage quality gate passed in 425.78 seconds: 2,344 acceptance
-tests passed with one intentional skip, seven deterministic RLS suites passed,
-the production build passed, all 80 browser tests passed, and performance budgets
-passed. Graphify is current. Reviewed baselines live in
+The complete gate passed after the header menus, hero, typography, and contents
+indicator changes: all 21 stages in 438.79 seconds, 2,344 acceptance tests with
+one intentional skip, seven deterministic RLS suites, production build/TypeScript,
+all 82 browser tests, and performance budgets. Reviewed baselines live in
 `tests/visual/documentation.visual.spec.ts-snapshots/`: documentation home,
 search, guide/tool, Marketplace, People, Ad Grants, completed campaign and funding
 plans, and Brand Identity. Mobile coverage includes both themes and all 14 planners.
 
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,
-and viewport overflow at 320/390/768/1024/1440px. The full gate above covers both
-the task-card and header-search refinements. Evidence is recorded in
+and viewport overflow at 320/390/768/1024/1440px. New interaction coverage checks
+dropdown centering and link reachability at 768/1024/1440px, contents indicator
+alignment after scroll and history navigation, and reduced motion. Hero geometry
+and light/dark rendering were manually reviewed at 390/1440px; photographic
+desktop baselines use 1280px to remain within the repository's file-size budget.
+Evidence is recorded in
 `test-results/quality-gate/full.json` and the current monthly runlog.
 
 Acceptance checks cover published-only profile projection, missing data, resource
@@ -116,7 +130,7 @@ account-shell fixtures, resource saving, and member-profile links.
 
 ## Release checklist
 
-- [x] Complete release gate passed after the task-card and header-search refinements.
+- [x] Complete release gate passed after the latest hero, typography, and navigation refinements.
 - [x] Graphify updated; plan, monthly runlog, and review artifacts current.
 - [x] Implementation committed on the prepared branch; main refreshed at
   `67501039`, zero behind. No upstream, remote branch, or PR was created.

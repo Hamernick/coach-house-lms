@@ -20,6 +20,7 @@ import {
   DocumentationSurface,
 } from "./documentation-surface"
 import { MarketplaceResourceActions } from "./marketplace/marketplace-resource-actions"
+import { DocumentationPageHeader } from "./documentation-page-header"
 
 export function MarketplaceResourcePage({
   resource,
@@ -50,17 +51,11 @@ export function MarketplaceResourcePage({
             Marketplace
           </Link>
         </Button>
-        <header className="mb-5">
-          <p className="text-muted-foreground text-sm">
-            {resource.provider} · {marketplaceTypeLabel(resource.type)}
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-2xl">
-            {resource.name}
-          </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-sm leading-6">
-            {resource.description}
-          </p>
-        </header>
+        <DocumentationPageHeader
+          eyebrow={`${resource.provider} · ${marketplaceTypeLabel(resource.type)}`}
+          title={resource.name}
+          description={resource.description}
+        />
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <article className="min-w-0 space-y-9">
             <section id="use-when" aria-labelledby="resource-use-title">

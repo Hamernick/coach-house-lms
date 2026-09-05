@@ -19,6 +19,15 @@
   account sync.
 - Keep planner controls disabled until saved drafts finish loading. This also
   protects edits made immediately after hydration or browser back navigation.
+- All 14 planners share `DocumentationToolFlow` and
+  `useDocumentationDraftPersistence`. Preserve draft keys, sanitizers, calculations,
+  and exports when changing steps. Keep inactive panels mounted, support browser
+  history, and warn when browser storage is unavailable. Examples and templates
+  require confirmation before replacing existing work.
+- Guide/tool selection preserves existing section anchors; step selection lives
+  in the URL. Ad Grants starters run only after an explicit action from
+  `/documentation/tools/campaigns?template=ad-grants#sandbox`; never auto-fill or
+  claim campaign results on arrival.
 - Library search lives at `/documentation/search?q=…`. Its explicit public
   corpus in `lib/search-documents.ts` includes authored guides, tool guidance,
   and Marketplace entries. Search results render on the server; never import
@@ -32,10 +41,15 @@
 - Marketplace catalog entries require a direct official source, visible review
   and recheck dates, qualified cost language, and no ranking or endorsement.
   Shortlists stay in local storage and exports remain formula-safe.
-- Community previews may project only safe fields from organizations already
-  published on Map. Never expose private profiles, contact details, exact
-  addresses, coordinates, source queues, or individual coach records without an
-  explicit public-profile opt-in model.
+- Marketplace People separates the curated, explicitly authorized Coach House
+  roster from published member profiles. The public people query selects only
+  `is_public=true`, person-owned handles, and a minimal directory projection.
+  Never infer coaching status from membership or publish private account data.
+  Do not connect the roster to private booking records or invent availability.
+- Marketplace resource details live at `/documentation/marketplace/[slug]`;
+  new offers include source-backed terms and suggested workflows. Keep resource
+  guides in the public search corpus and sitemap. Resource banks are verified
+  as discovery sources, not as verification of every listing they contain.
 - Import other features only through their public entrypoint (`@/features/<name>`).
 - Keep `lib/**` pure: no React, no UI imports, no route imports.
 - Keep shared UI in `src/components/ui/**`; avoid one-off primitives here.
@@ -43,5 +57,9 @@
   `tests/acceptance/nonprofit-documentation.test.ts` and search coverage in
   `tests/acceptance/nonprofit-documentation-search.test.ts`. Browser journeys
   and responsive baselines live in `tests/visual/documentation.visual.spec.ts`.
+- Planner edit/export/reload, mobile themes, template replacement, storage
+  failures, and history coverage live in
+  `tests/visual/documentation-planners.visual.spec.ts`. Public-directory privacy
+  and Marketplace workflow contracts have dedicated acceptance suites.
 - Use primary sources and visible review dates for legal, tax, compliance, and
   financial claims.

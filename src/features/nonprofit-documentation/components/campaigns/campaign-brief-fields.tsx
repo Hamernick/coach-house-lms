@@ -35,7 +35,7 @@ export function CampaignBriefFields({
   )
 
   return (
-    <fieldset className="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+    <fieldset className="grid gap-3 p-4 sm:p-4 lg:grid-cols-2">
       <legend className="px-1 text-sm font-semibold">
         Campaign identity, decision, and audience
       </legend>
@@ -51,7 +51,7 @@ export function CampaignBriefFields({
           }
           maxLength={120}
           placeholder="Example: Willow Street Family Resource Network…"
-          className="min-h-11 text-base"
+          className="min-h-11 text-sm"
         />
       </div>
       <div className="space-y-2">
@@ -63,7 +63,7 @@ export function CampaignBriefFields({
           onChange={(event) => updateDraft("campaignName", event.target.value)}
           maxLength={140}
           placeholder="Example: Appointments without the guesswork…"
-          className="min-h-11 text-base"
+          className="min-h-11 text-sm"
         />
       </div>
       <div className="space-y-2">
@@ -118,7 +118,7 @@ export function CampaignBriefFields({
           type="date"
           value={draft.startDate}
           onChange={(event) => updateDraft("startDate", event.target.value)}
-          className="min-h-11 text-base"
+          className="min-h-11 text-sm"
         />
       </div>
       <div className="space-y-2">
@@ -130,7 +130,7 @@ export function CampaignBriefFields({
           value={draft.endDate}
           onChange={(event) => updateDraft("endDate", event.target.value)}
           min={draft.startDate || undefined}
-          className="min-h-11 text-base"
+          className="min-h-11 text-sm"
         />
         <p className="text-muted-foreground text-xs leading-5">
           Planning dates only. Confirm every filing, notice, registration,

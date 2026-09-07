@@ -1,5 +1,4 @@
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
+import { DocumentationAiReview } from "../documentation-ai-review"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 
 import { Button } from "@/components/ui/button"
@@ -14,13 +13,11 @@ import {
 
 import type { CrmPlanDraft } from "../../crm-types"
 import {
-  CRM_LIFECYCLE,
   buildCrmActions,
   buildCrmReviewPrompt,
   crmFieldCategoryLabel,
   crmFieldSensitivityLabel,
   crmRelationshipContextLabel,
-  summarizeCrmPlan,
 } from "../../lib/crm-plan"
 
 function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
@@ -43,15 +40,15 @@ function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
   ]
 
   return (
-    <div className="overflow-hidden border">
-      <div className="bg-foreground text-background p-5 sm:p-6">
-        <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+    <div className="overflow-hidden rounded-xl border">
+      <div className="bg-foreground text-background p-4 sm:p-4">
+        <p className="text-background/70 text-xs font-semibold tracking-normal">
           {crmRelationshipContextLabel(draft.relationshipContext)}
         </p>
-        <h3 className="mt-3 text-xl font-semibold text-balance">
+        <h3 className="mt-1 text-base font-semibold text-balance">
           {draft.planName || "Working CRM data-stewardship plan"}
         </h3>
-        <p className="text-background/75 mt-2 text-sm">
+        <p className="text-background/75 mt-1 text-sm">
           {draft.organizationName || "Organization not named"} · Review every{" "}
           <span className="tabular-nums">{draft.reviewMonths} months</span>
         </p>
@@ -60,7 +57,7 @@ function CrmOperatingBrief({ draft }: { draft: CrmPlanDraft }) {
         {sections.map(([term, description]) => (
           <div key={term} className="grid gap-2 p-4 sm:grid-cols-[13rem_1fr]">
             <dt className="text-sm font-semibold">{term}</dt>
-            <dd className="text-muted-foreground min-w-0 text-sm leading-6 break-words whitespace-pre-line">
+            <dd className="text-muted-foreground min-w-0 text-sm leading-5 break-words whitespace-pre-line">
               {description || "Open"}
             </dd>
           </div>
@@ -74,7 +71,7 @@ function CrmFieldTable({ draft }: { draft: CrmPlanDraft }) {
   const fields = draft.fields.filter(({ label }) => label.trim())
 
   return (
-    <div className="border">
+    <div className="overflow-hidden rounded-xl border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -116,7 +113,7 @@ function CrmFieldTable({ draft }: { draft: CrmPlanDraft }) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center">
+              <TableCell colSpan={7} className="py-6 text-center">
                 No generic fields named. Add a proposed field above.
               </TableCell>
             </TableRow>
@@ -138,89 +135,12 @@ export function CrmPlanResults({
   onCopyPrompt: () => void
   onDownload: () => void
 }) {
-  const summary = summarizeCrmPlan(draft)
   const actions = buildCrmActions(draft)
   const prompt = buildCrmReviewPrompt(draft)
 
-  const stats = [
-    [
-      "Operating areas",
-      `${summary.draftedAreaCount}/${summary.totalAreaCount}`,
-    ],
-    [
-      "Lifecycle steps",
-      `${summary.lifecycleStepCount}/${summary.totalLifecycleStepCount}`,
-    ],
-    ["Safeguards", `${summary.safeguardCount}/${summary.totalSafeguardCount}`],
-    ["Named fields", String(summary.fieldCount)],
-    ["Complete fields", `${summary.completeFieldCount}/${summary.fieldCount}`],
-    ["High-risk review", String(summary.highRiskFieldCount)],
-  ]
-
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <section aria-labelledby="crm-status-title">
-        <h3 id="crm-status-title" className="font-semibold">
-          Definition status
-        </h3>
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map(([label, value]) => (
-            <div key={label} className="bg-background p-4">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                {label}
-              </p>
-              <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-muted-foreground mt-3 text-xs leading-5">
-          Counts describe this draft. They do not score people or establish
-          necessity, consent, permission, accuracy, access, retention, security,
-          compliance, vendor fit, relationship quality, or impact.
-        </p>
-      </section>
-
-      <section className="mt-8" aria-labelledby="crm-lifecycle-title">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 id="crm-lifecycle-title" className="font-semibold">
-              Live relationship-record lifecycle
-            </h3>
-            <p className="text-muted-foreground mt-1 text-sm">
-              A step becomes Defined only when every named operating area
-              contains text. Human review still applies.
-            </p>
-          </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
-            Device-local · Connects to nothing
-          </span>
-        </div>
-        <ol className="bg-border mt-4 grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-7">
-          {CRM_LIFECYCLE.map((step, index) => {
-            const complete = step.fields.every((field) =>
-              String(draft[field]).trim()
-            )
-            return (
-              <li key={step.id} className="bg-background min-w-0 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground font-mono text-xs tabular-nums">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-muted-foreground text-[11px] font-medium">
-                    {complete ? "Defined" : "Open"}
-                  </span>
-                </div>
-                <h4 className="mt-3 text-sm font-semibold">{step.label}</h4>
-                <p className="text-muted-foreground mt-2 text-xs leading-5">
-                  {step.description}
-                </p>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-
-      <section className="mt-8" aria-labelledby="crm-brief-title">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <section className="mt-6" aria-labelledby="crm-brief-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="crm-brief-title" className="font-semibold">
@@ -241,7 +161,7 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="crm-table-title">
+      <section className="mt-6" aria-labelledby="crm-table-title">
         <h3 id="crm-table-title" className="font-semibold">
           Proposed field dictionary
         </h3>
@@ -254,9 +174,9 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="crm-actions-title">
+      <section className="mt-6" aria-labelledby="crm-actions-title">
         <h3 id="crm-actions-title" className="font-semibold">
-          Stage and missing-plan actions
+          Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} review prompts generated from this draft. They are
@@ -264,16 +184,19 @@ export function CrmPlanResults({
         </p>
         <div className="mt-4 grid gap-3">
           {actions.map((item, index) => (
-            <article key={item.id} className="bg-background border p-4 sm:p-5">
+            <article
+              key={item.id}
+              className="bg-background rounded-xl border p-4 sm:p-5"
+            >
               <div className="flex items-start gap-3">
-                <span className="bg-muted flex size-8 shrink-0 items-center justify-center font-mono text-xs tabular-nums">
+                <span className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-md font-mono text-xs tabular-nums">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-normal">
                     {item.phase}
                   </p>
-                  <p className="mt-2 text-sm leading-6 font-medium">
+                  <p className="mt-2 text-sm leading-5 font-medium">
                     {item.action}
                   </p>
                   <p className="text-muted-foreground mt-2 text-xs leading-5">
@@ -286,39 +209,11 @@ export function CrmPlanResults({
         </div>
       </section>
 
-      <section
-        className="mt-8 border p-4 sm:p-5"
-        aria-labelledby="crm-ai-title"
-      >
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-          Optional human-reviewed handoff
-        </p>
-        <h3 id="crm-ai-title" className="mt-2 font-semibold">
-          Copy a guarded AI review prompt
-        </h3>
-        <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-          The prompt reviews only generic system and field definitions. Remove
-          all real names, contact details, donor, participant, service, health,
-          education, employment, payment, credential, and other personal or
-          sensitive information before using another service.
-        </p>
-        <pre className="bg-muted/40 mt-4 max-h-56 overflow-auto border p-4 text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-4 min-h-11"
-          onClick={onCopyPrompt}
-        >
-          {promptCopied ? (
-            <CheckIcon data-icon="inline-start" aria-hidden />
-          ) : (
-            <CopyIcon data-icon="inline-start" aria-hidden />
-          )}
-          {promptCopied ? "Prompt copied" : "Copy review prompt"}
-        </Button>
-      </section>
+      <DocumentationAiReview
+        prompt={prompt}
+        copied={promptCopied}
+        onCopy={onCopyPrompt}
+      />
     </div>
   )
 }

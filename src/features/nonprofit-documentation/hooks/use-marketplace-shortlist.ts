@@ -12,6 +12,7 @@ import {
 export function useMarketplaceShortlist() {
   const [ids, setIds] = useState<string[]>([])
   const [ready, setReady] = useState(false)
+  const [persistent, setPersistent] = useState(true)
 
   useEffect(() => {
     try {
@@ -19,6 +20,7 @@ export function useMarketplaceShortlist() {
       setIds(sanitizeMarketplaceShortlist(raw ? JSON.parse(raw) : []))
     } catch {
       setIds([])
+      setPersistent(false)
     } finally {
       setReady(true)
     }
@@ -32,8 +34,9 @@ export function useMarketplaceShortlist() {
         MARKETPLACE_SHORTLIST_STORAGE_KEY,
         JSON.stringify(sanitized)
       )
+      setPersistent(true)
     } catch {
-      // The working list remains usable for this session when storage is blocked.
+      setPersistent(false)
     }
   }, [])
 
@@ -66,6 +69,7 @@ export function useMarketplaceShortlist() {
     download,
     ids,
     ready,
+    persistent,
     resources: MARKETPLACE_RESOURCES.filter((resource) =>
       ids.includes(resource.id)
     ),

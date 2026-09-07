@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { CAMPAIGNS_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { CampaignPlanBuilder } from "./campaigns/campaign-plan-builder"
@@ -10,8 +11,7 @@ export function CampaignsArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive campaign planning tool"
-          title="Build a decision-ready nonprofit campaign brief"
-          description="Connect one objective, audience, action, message, destination, delivery system, safeguards, and learning decision. The draft stays on this device and publishes nothing."
+          {...DOCUMENTATION_TOOL_METADATA["tools/campaigns"]}
         >
           <CampaignPlanBuilder />
         </DocumentationSandboxFrame>

@@ -14,7 +14,7 @@ export function LegalOperationsFields({
   ) => void
 }) {
   return (
-    <fieldset className="grid gap-5 border-t p-5 sm:p-6 lg:grid-cols-2">
+    <fieldset className="grid gap-3 border-t p-4 sm:p-4 lg:grid-cols-2">
       <legend className="px-1 text-sm font-semibold">
         Scope, referral, and follow-through
       </legend>
@@ -123,7 +123,7 @@ export function LegalOperationsFields({
         ].map((item) => (
           <label
             key={item.key}
-            className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors"
+            className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2"
           >
             <Checkbox
               checked={draft[item.key]}
@@ -131,7 +131,7 @@ export function LegalOperationsFields({
                 updateDraft(item.key, checked === true)
               }
             />
-            <span className="text-sm leading-6">{item.title}</span>
+            <span className="text-sm leading-5">{item.title}</span>
           </label>
         ))}
       </div>

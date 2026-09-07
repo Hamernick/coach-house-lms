@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
+import density from "./documentation-density.module.css"
 
 export function DocumentationSurface({
   children,
@@ -12,7 +13,8 @@ export function DocumentationSurface({
   return (
     <div
       className={cn(
-        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain scroll-smooth",
+        "bg-background h-full min-h-0 overflow-y-auto overscroll-contain [--radius:0.625rem] motion-safe:scroll-smooth [&_h2[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_h3[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)] [&_section[id]]:[scroll-margin-top:var(--documentation-anchor-offset,6rem)]",
+        density.surface,
         className
       )}
       data-documentation-scroll

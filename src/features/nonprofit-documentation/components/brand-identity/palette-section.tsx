@@ -55,7 +55,7 @@ export function PaletteSection({
           return (
             <div
               key={color.id}
-              className="overflow-hidden rounded-md border"
+              className="overflow-hidden rounded-xl border"
               style={{ backgroundColor: value, color: foregroundFor(value) }}
             >
               <div className="min-h-40 p-4">
@@ -125,7 +125,7 @@ export function PaletteSection({
         title="Color proportions"
         description="The percentages automatically normalize to a complete system. Let the lightest surface create breathing room and reserve the strongest colors for emphasis."
       >
-        <div className="flex min-h-32 overflow-hidden rounded-md border">
+        <div className="flex min-h-32 overflow-hidden rounded-xl border">
           {normalized.map((color) => (
             <div
               key={color.id}

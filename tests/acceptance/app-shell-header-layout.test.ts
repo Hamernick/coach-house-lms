@@ -118,7 +118,7 @@ describe("app shell header layout", () => {
     expect(headerSource).toContain(
       "hidden min-w-0 items-center overflow-hidden"
     )
-    expect(headerSource).toContain("flex shrink-0 flex-wrap items-center")
+    expect(headerSource).toContain("shrink-0 flex-wrap items-center")
     expect(globalSearchTriggersSource).toContain("w-full max-w-[520px] min-w-0")
     expect(globalSearchTriggersSource).not.toContain("min-w-[240px]")
     expect(resizableSource).toContain("react-resizable-panels")

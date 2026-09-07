@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_FUNDRAISING_PLAN,
@@ -29,30 +31,12 @@ const EXAMPLE_FUNDRAISING_PLAN: FundraisingPlanDraft = {
 
 export function useFundraisingPlan() {
   const [draft, setDraft] = useState(DEFAULT_FUNDRAISING_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(FUNDRAISING_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeFundraisingPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        FUNDRAISING_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The builder remains usable when private browsing blocks persistence.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    FUNDRAISING_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeFundraisingPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof FundraisingPlanDraft>(
@@ -83,6 +67,7 @@ export function useFundraisingPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateChannelTarget,
     loadExample,

@@ -29,7 +29,7 @@ export function LegalPlanTextarea({
         maxLength={maxLength}
         rows={4}
         placeholder={placeholder}
-        className="min-h-28 resize-y text-base"
+        className="min-h-28 resize-y text-sm"
       />
     </div>
   )

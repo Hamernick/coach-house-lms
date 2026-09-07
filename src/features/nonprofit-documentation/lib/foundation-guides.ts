@@ -4,12 +4,12 @@ const reviewedDate = "August 31, 2026"
 
 export const QUICKSTART_GUIDE: FoundationGuide = {
   slug: "quickstart",
-  title: "Choose the next right nonprofit step",
+  title: "Start and grow your nonprofit",
   description:
     "A stage-specific nonprofit quickstart for moving from a community need to a durable operating organization in the United States.",
-  eyebrow: "Get started · Quickstart",
+  eyebrow: "Quickstart",
   answer:
-    "Start with evidence and stage, not incorporation paperwork. Clarify the need, test whether a new organization is necessary, and build only the governance, compliance, money, and measurement systems required for the next responsible decision.",
+    "Understand your community’s needs, decide whether to start a nonprofit, and plan your first steps.",
   readingTime: "8 minute read",
   reviewedDate,
   sections: [
@@ -167,12 +167,12 @@ export const QUICKSTART_GUIDE: FoundationGuide = {
 
 export const KEY_CONCEPTS_GUIDE: FoundationGuide = {
   slug: "key-concepts",
-  title: "Use nonprofit terms precisely",
+  title: "Understand nonprofit terms",
   description:
     "Plain-language definitions of the legal, strategic, operating, and impact concepts nonprofit founders and operators use most.",
-  eyebrow: "Get started · Key concepts",
+  eyebrow: "Key concepts",
   answer:
-    "Precise language prevents expensive category errors. Separate state nonprofit status from federal tax exemption, mission from programs, outputs from outcomes, and organizational growth from durable impact.",
+    "Understand the terms behind nonprofit structure, strategy, finances, and impact.",
   readingTime: "10 minute read",
   reviewedDate,
   sections: [

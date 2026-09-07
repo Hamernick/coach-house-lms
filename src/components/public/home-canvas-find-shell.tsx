@@ -25,11 +25,15 @@ export function HomeCanvasFindShell({
   showAuthActions = true,
   sidebarFallback = null,
   sidebarLabel = "Find, Guides, and Saved",
+  showResourceSearch = true,
+  headerSearch,
 }: {
   children: ReactNode
   showAuthActions?: boolean
   sidebarFallback?: ReactNode
   sidebarLabel?: string
+  showResourceSearch?: boolean
+  headerSearch?: ReactNode
 }) {
   return (
     <RightRailProvider>
@@ -38,6 +42,8 @@ export function HomeCanvasFindShell({
           showAuthActions={showAuthActions}
           sidebarFallback={sidebarFallback}
           sidebarLabel={sidebarLabel}
+          showResourceSearch={showResourceSearch}
+          headerSearch={headerSearch}
         >
           {children}
         </HomeCanvasFindShellContent>
@@ -51,11 +57,15 @@ function HomeCanvasFindShellContent({
   showAuthActions,
   sidebarFallback,
   sidebarLabel,
+  showResourceSearch,
+  headerSearch,
 }: {
   children: ReactNode
   showAuthActions: boolean
   sidebarFallback: ReactNode
   sidebarLabel: string
+  showResourceSearch: boolean
+  headerSearch?: ReactNode
 }) {
   const router = useRouter()
   const hasRightRail = useRightRailPresence()
@@ -90,7 +100,7 @@ function HomeCanvasFindShellContent({
         ) : null}
 
         <div className="flex min-h-0 flex-1">
-          <SidebarInset className="h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]">
+          <SidebarInset className="h-full min-h-0 overflow-visible bg-[var(--shell-bg)]">
             <HomeCanvasPreviewHeader
               activeSection="find"
               changeSection={navigateToSection}
@@ -101,13 +111,15 @@ function HomeCanvasFindShellContent({
               showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
               sidebarLabel={sidebarLabel}
+              showResourceSearch={showResourceSearch}
+              headerSearch={headerSearch}
             />
 
             <div
               data-public-find-content-frame=""
               className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-[var(--shell-content-pad)]"
             >
-              <div className="relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
+              <div className="relative isolate flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
                 <div className="absolute inset-0 overflow-hidden overscroll-contain">
                   {children}
                 </div>

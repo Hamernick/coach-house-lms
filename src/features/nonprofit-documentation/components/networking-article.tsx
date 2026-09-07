@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { NETWORKING_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { DocumentationSandboxFrame } from "./documentation-sandbox-frame"
@@ -10,8 +11,7 @@ export function NetworkingArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive relationship tool"
-          title="Map a reciprocal nonprofit relationship system"
-          description="Define the purpose, community accountability, relationship roles, reciprocal value, accessible invitation, follow-through, safeguards, and human review. The draft stays on this device and contacts no one."
+          {...DOCUMENTATION_TOOL_METADATA["tools/networking"]}
         >
           <NetworkingPlanBuilder />
         </DocumentationSandboxFrame>

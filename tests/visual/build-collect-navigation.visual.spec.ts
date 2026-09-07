@@ -1,8 +1,72 @@
 import { expect, test } from "@playwright/test"
 
+test("Documentation menus stay centered and reachable above the canvas", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 768]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/documentation")
+    await page.waitForLoadState("networkidle")
+    const header = page.locator("[data-build-collect-public-header]")
+    const navigation = header.locator('[data-slot="navigation-menu-list"]')
+    const headerBounds = (await header.boundingBox())!
+    const navigationBounds = (await navigation.boundingBox())!
+    expect(
+      Math.abs(
+        navigationBounds.x +
+          navigationBounds.width / 2 -
+          (headerBounds.x + headerBounds.width / 2)
+      )
+    ).toBeLessThan(1)
+
+    for (const name of ["Collect", "Build"]) {
+      const trigger = header.getByRole("button", { name, exact: true })
+      await trigger.hover()
+      const menu = header.locator(
+        '[data-slot="navigation-menu-content"][data-state="open"]'
+      )
+      await expect(menu).toBeVisible()
+      const links = menu.getByRole("link")
+      await links.first().hover()
+      await expect(menu).toBeVisible()
+      for (const link of await links.all()) await link.click({ trial: true })
+      const menuBounds = (await menu.boundingBox())!
+      expect(
+        Math.abs(
+          menuBounds.x +
+            menuBounds.width / 2 -
+            (navigationBounds.x + navigationBounds.width / 2)
+        )
+      ).toBeLessThan(1)
+      await page.keyboard.press("Escape")
+      await expect(menu).toBeHidden()
+      await trigger.focus()
+      await trigger.press("Space")
+      await expect(menu).toBeVisible()
+      await page.keyboard.press("Escape")
+      await expect(menu).toBeHidden()
+      await page.mouse.move(20, 400)
+    }
+  }
+  await page.goto("/documentation")
+  await page.waitForLoadState("networkidle")
+  const header = page.locator("[data-build-collect-public-header]")
+  await header.getByRole("button", { name: "Collect", exact: true }).focus()
+  await page.keyboard.press("Space")
+  await expect(
+    header.locator('[data-slot="navigation-menu-content"][data-state="open"]')
+  ).toBeVisible()
+  await page.keyboard.press("ArrowDown")
+  const explore = header.getByRole("link", { name: /^Explore resources/ })
+  await expect(explore).toBeFocused()
+  await explore.press("Enter")
+  await expect(page).toHaveURL(/\/$/)
+})
+
 test("public Build landing and hover navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
+  await page.waitForLoadState("networkidle")
 
   await expect(
     page.getByRole("heading", {
@@ -31,7 +95,9 @@ test("public header search submits to the Collect root", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
 
-  const search = page.getByPlaceholder("Start searching")
+  const search = page.getByRole("searchbox", {
+    name: "Search organizations and resources",
+  })
   await search.fill("food")
   await search.press("Enter")
 

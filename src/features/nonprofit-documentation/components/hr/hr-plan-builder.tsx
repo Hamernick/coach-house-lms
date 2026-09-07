@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_HR_PLAN } from "../../lib/hr-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useHrPlan } from "../../hooks/use-hr-plan"
 import { buildHrCsv, buildHrReviewPrompt } from "../../lib/hr-plan"
@@ -25,7 +26,14 @@ function downloadCsv(draft: HrPlanDraft) {
 }
 
 export function HrPlanBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } = useHrPlan()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useHrPlan()
   const [announcement, setAnnouncement] = useState("")
   const [promptCopied, setPromptCopied] = useState(false)
 
@@ -41,58 +49,60 @@ export function HrPlanBuilder() {
   }
 
   return (
-    <div>
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">
-            Working role and people-practices brief
-          </p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setPromptCopied(false)
-              setAnnouncement("Example role brief loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              if (!window.confirm("Reset this role brief?")) return
-              reset()
-              setPromptCopied(false)
-              setAnnouncement("Role brief reset.")
-            }}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-      <HrPlanFields draft={draft} updateDraft={updateDraft} />
-      <HrOperationsFields draft={draft} updateDraft={updateDraft} />
-      <HrPlanResults
-        draft={draft}
-        promptCopied={promptCopied}
-        onCopyPrompt={copyPrompt}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Role brief CSV downloaded.")
+    <fieldset disabled={!storageReady} className="min-w-0">
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={JSON.stringify(draft) !== JSON.stringify(DEFAULT_HR_PLAN)}
+        onLoadExample={() => {
+          loadExample()
+          setPromptCopied(false)
+          setAnnouncement("Example role brief loaded.")
         }}
+        onReset={() => {
+          if (!window.confirm("Reset this role brief?")) return
+          reset()
+          setPromptCopied(false)
+          setAnnouncement("Role brief reset.")
+        }}
+      />
+      <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
+        hasDraft={JSON.stringify(draft) !== JSON.stringify(DEFAULT_HR_PLAN)}
+        steps={[
+          {
+            id: "role",
+            label: "Define the role",
+            content: <HrPlanFields draft={draft} updateDraft={updateDraft} />,
+          },
+          {
+            id: "support",
+            label: "Cost & support",
+            content: (
+              <HrOperationsFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <HrPlanResults
+                draft={draft}
+                promptCopied={promptCopied}
+                onCopyPrompt={copyPrompt}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Role brief CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

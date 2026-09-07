@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_FINANCE_PLAN } from "../../lib/finance-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import type { FinancePlanDraft } from "../../finance-types"
 import { useFinancePlan } from "../../hooks/use-finance-plan"
@@ -28,8 +29,14 @@ function downloadCsv(draft: FinancePlanDraft) {
 }
 
 export function FinancePlanBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useFinancePlan()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useFinancePlan()
   const [announcement, setAnnouncement] = useState("")
   const [promptCopied, setPromptCopied] = useState(false)
 
@@ -45,58 +52,69 @@ export function FinancePlanBuilder() {
   }
 
   return (
-    <div>
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">
-            Working operating-finance plan
-          </p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setPromptCopied(false)
-              setAnnouncement("Example finance plan loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              if (!window.confirm("Reset this finance plan?")) return
-              reset()
-              setPromptCopied(false)
-              setAnnouncement("Finance plan reset.")
-            }}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-      <FinancePlanFields draft={draft} updateDraft={updateDraft} />
-      <FinanceOperationsFields draft={draft} updateDraft={updateDraft} />
-      <FinancePlanResults
-        draft={draft}
-        promptCopied={promptCopied}
-        onCopyPrompt={copyPrompt}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Finance plan CSV downloaded.")
+    <fieldset disabled={!storageReady} className="min-w-0">
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_FINANCE_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setPromptCopied(false)
+          setAnnouncement("Example finance plan loaded.")
         }}
+        onReset={() => {
+          if (!window.confirm("Reset this finance plan?")) return
+          reset()
+          setPromptCopied(false)
+          setAnnouncement("Finance plan reset.")
+        }}
+      />
+      <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_FINANCE_PLAN)
+        }
+        steps={[
+          {
+            id: "budget",
+            label: "Budget & cash",
+            content: (
+              <FinancePlanFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "controls",
+            label: "Review & controls",
+            content: (
+              <FinanceOperationsFields
+                draft={draft}
+                updateDraft={updateDraft}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <FinancePlanResults
+                draft={draft}
+                promptCopied={promptCopied}
+                onCopyPrompt={copyPrompt}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Finance plan CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

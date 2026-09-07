@@ -57,11 +57,11 @@ export function ExportsSection({
       description="Download the entire guide as a portable package. Everything is generated in this browser; Coach House does not receive your files."
       className="border-b-0 pb-24"
     >
-      <div className="bg-border grid gap-px overflow-hidden rounded-md border sm:grid-cols-2">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2">
         <div className="bg-background p-6">
           <DownloadIcon className="size-5" aria-hidden />
           <h3 className="mt-5 font-semibold">Complete brand package</h3>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Includes structured brand data, CSS tokens, usage notes, and every
             uploaded original.
           </p>
@@ -78,7 +78,7 @@ export function ExportsSection({
         <div className="bg-background p-6">
           <CopyIcon className="size-5" aria-hidden />
           <h3 className="mt-5 font-semibold">Design tokens</h3>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
+          <p className="text-muted-foreground mt-1 text-sm leading-5">
             Copy ready-to-use CSS variables for the palette, fonts, and modular
             type scale.
           </p>
@@ -94,7 +94,7 @@ export function ExportsSection({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 rounded-md border p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-medium">Printable guide</p>
           <p className="text-muted-foreground mt-1 text-sm">

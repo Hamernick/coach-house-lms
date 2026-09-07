@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
@@ -132,6 +133,8 @@ type HomeCanvasPreviewHeaderProps = {
   showShellSidebar: boolean
   showRightRailToggle: boolean
   sidebarLabel?: string
+  showResourceSearch?: boolean
+  headerSearch?: ReactNode
 }
 
 export function HomeCanvasPreviewHeader({
@@ -144,6 +147,8 @@ export function HomeCanvasPreviewHeader({
   showShellSidebar,
   showRightRailToggle,
   sidebarLabel = "Find, Guides, and Saved",
+  showResourceSearch = true,
+  headerSearch,
 }: HomeCanvasPreviewHeaderProps) {
   const rightRailLabel =
     activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
@@ -152,6 +157,8 @@ export function HomeCanvasPreviewHeader({
     <BuildCollectPublicHeader
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
+      showResourceSearch={showResourceSearch}
+      searchAction={headerSearch}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton

@@ -142,7 +142,7 @@ function ScenarioTextarea({
         maxLength={field.maximum ?? 1000}
         rows={4}
         placeholder={field.placeholder}
-        className="min-h-32 resize-y text-base"
+        className="min-h-32 resize-y text-sm"
       />
     </div>
   )
@@ -158,10 +158,10 @@ export function SustainabilityContinuityFields({
   return (
     <>
       {GROUPS.map((group) => (
-        <section key={group.title} className="grid gap-6 border-t p-5 sm:p-6">
+        <section key={group.title} className="grid gap-4 border-t p-4 sm:p-4">
           <div>
             <h3 className="font-semibold">{group.title}</h3>
-            <p className="text-muted-foreground mt-1 text-sm leading-6">
+            <p className="text-muted-foreground mt-1 text-sm leading-5">
               {group.description}
             </p>
           </div>
@@ -176,7 +176,7 @@ export function SustainabilityContinuityFields({
         </section>
       ))}
 
-      <fieldset className="space-y-3 border-t p-5 sm:p-6">
+      <fieldset className="space-y-3 border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           Governance safeguards
         </legend>
@@ -197,7 +197,7 @@ export function SustainabilityContinuityFields({
           <Label
             key={field}
             htmlFor={`sustainability-${field}`}
-            className="flex min-h-14 cursor-pointer items-start gap-3 border p-4 text-sm leading-6"
+            className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm leading-5 md:min-h-9 md:py-2"
           >
             <Checkbox
               id={`sustainability-${field}`}

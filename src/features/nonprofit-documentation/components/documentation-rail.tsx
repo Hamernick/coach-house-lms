@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,7 @@ export function DocumentationRail({
   contextual?: boolean
 }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
 
   return (
     <nav
@@ -55,10 +57,11 @@ export function DocumentationRail({
                 asChild
                 isActive={pathname === DOCUMENTATION_PATH}
                 tooltip="Documentation home"
-                className="justify-start gap-2"
+                className="min-h-11 justify-start gap-2 md:h-7 md:min-h-7 md:text-[13px]"
               >
                 <Link
                   href={DOCUMENTATION_PATH}
+                  onNavigate={() => setOpenMobile(false)}
                   className="flex items-center gap-2"
                   aria-current={
                     pathname === DOCUMENTATION_PATH ? "page" : undefined
@@ -74,8 +77,8 @@ export function DocumentationRail({
       </SidebarGroup>
 
       {DOCUMENTATION_NAVIGATION.map((section) => (
-        <SidebarGroup key={section.id} className="py-2">
-          <SidebarGroupLabel className="text-[0.68rem] font-semibold tracking-[0.12em] uppercase">
+        <SidebarGroup key={section.id} className="py-1">
+          <SidebarGroupLabel className="text-xs font-bold tracking-normal normal-case">
             {section.title}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -94,10 +97,11 @@ export function DocumentationRail({
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="justify-start"
+                        className="min-h-11 justify-start pl-4 md:h-7 md:min-h-7 md:text-[13px]"
                       >
                         <Link
                           href={item.href}
+                          onNavigate={() => setOpenMobile(false)}
                           className="flex min-w-0 items-center gap-2"
                           title={item.description}
                           aria-current={active ? "page" : undefined}
@@ -113,7 +117,7 @@ export function DocumentationRail({
                       </SidebarMenuButton>
                     ) : (
                       <div
-                        className="text-muted-foreground flex h-8 min-w-0 items-center px-2 text-sm"
+                        className="text-muted-foreground flex h-8 min-w-0 items-center pr-2 pl-4 text-sm"
                         aria-disabled="true"
                         title={`${item.description} Planned for a later phase.`}
                       >

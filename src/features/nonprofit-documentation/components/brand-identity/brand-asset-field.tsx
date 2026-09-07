@@ -37,7 +37,7 @@ export function BrandAssetField({
     <div>
       <div
         className={cn(
-          "bg-muted/45 relative overflow-hidden rounded-md border",
+          "bg-muted/45 relative overflow-hidden rounded-xl border",
           aspect === "square" ? "aspect-square" : "aspect-[16/9]"
         )}
       >

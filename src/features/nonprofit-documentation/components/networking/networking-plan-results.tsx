@@ -1,5 +1,4 @@
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
+import { DocumentationAiReview } from "../documentation-ai-review"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 
 import { Button } from "@/components/ui/button"
@@ -26,7 +25,7 @@ function RelationshipPathway({
 }) {
   const mapped = relationships.filter(({ label }) => label.trim())
   return (
-    <div className="bg-border grid gap-px overflow-hidden border lg:grid-cols-5">
+    <div className="bg-border grid gap-px overflow-hidden rounded-xl border lg:grid-cols-5">
       {NETWORKING_ENGAGEMENTS.map((engagement, index) => {
         const items = mapped.filter(
           (relationship) => relationship.engagement === engagement.id
@@ -42,7 +41,7 @@ function RelationshipPathway({
             </p>
             <h4
               id={`network-path-${engagement.id}`}
-              className="mt-2 text-sm font-semibold"
+              className="mt-1 text-sm font-semibold"
             >
               {engagement.label}
             </h4>
@@ -52,7 +51,10 @@ function RelationshipPathway({
             <div className="mt-4 grid gap-2">
               {items.length > 0 ? (
                 items.map((relationship) => (
-                  <div key={relationship.id} className="bg-muted/35 border p-3">
+                  <div
+                    key={relationship.id}
+                    className="bg-muted/35 rounded-xl border p-3"
+                  >
                     <p className="text-xs font-semibold break-words">
                       {relationship.label}
                     </p>
@@ -62,7 +64,7 @@ function RelationshipPathway({
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground border border-dashed p-3 text-xs leading-5">
+                <p className="text-muted-foreground rounded-xl border border-dashed p-3 text-xs leading-5">
                   No labeled relationship in this mode.
                 </p>
               )}
@@ -81,7 +83,7 @@ function RelationshipTable({
 }) {
   const mapped = relationships.filter(({ label }) => label.trim())
   return (
-    <div className="mt-4 overflow-x-auto border">
+    <div className="mt-4 overflow-x-auto rounded-xl border">
       <table className="w-full min-w-[68rem] border-collapse text-left text-sm">
         <caption className="sr-only">
           Complete working relationship map with reciprocal value and follow-up
@@ -116,16 +118,16 @@ function RelationshipTable({
                 <td className="px-4 py-4">
                   {networkingEngagementLabel(relationship.engagement)}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.purpose || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.responsibleOffer || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   {relationship.nextStep || "Not drafted"}
                 </td>
-                <td className="px-4 py-4 leading-6">
+                <td className="px-4 py-4 leading-5">
                   <span className="block font-medium">
                     {relationship.owner || "No owner"}
                   </span>
@@ -139,7 +141,7 @@ function RelationshipTable({
             <tr>
               <td
                 colSpan={7}
-                className="text-muted-foreground px-4 py-8 text-center"
+                className="text-muted-foreground px-4 py-6 text-center"
               >
                 Add an organization or relationship-role label to build the map.
               </td>
@@ -167,54 +169,41 @@ export function NetworkingPlanResults({
   const prompt = buildNetworkingReviewPrompt(draft)
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-6">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Relationships", summary.relationshipCount],
           ["Categories", summary.representedCategoryCount],
           ["Engagement modes", summary.representedEngagementCount],
           ["Next steps", summary.nextStepCount],
-          [
-            "Drafted areas",
-            `${summary.draftedAreaCount}/${summary.totalAreaCount}`,
-          ],
-          [
-            "Safeguards",
-            `${summary.safeguardCount}/${summary.totalSafeguardCount}`,
-          ],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
-      <p className="text-muted-foreground mt-3 text-xs leading-5">
-        Counts describe this draft. They do not measure relationship quality,
-        trust, reciprocity, access, influence, representation, power, equity,
-        consent, readiness, or likely results.
-      </p>
 
-      <section className="mt-8" aria-labelledby="network-purpose-title">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+      <section className="mt-6" aria-labelledby="network-purpose-title">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {networkingObjectiveLabel(draft.objective)} · {draft.reviewWeeks}-week
           review
         </p>
-        <h3 id="network-purpose-title" className="mt-2 font-semibold">
+        <h3 id="network-purpose-title" className="mt-1 font-semibold">
           Relationship system purpose
         </h3>
-        <div className="bg-foreground text-background mt-4 p-5 sm:p-6">
-          <p className="text-lg leading-8 font-semibold">
+        <div className="bg-foreground text-background mt-4 rounded-xl p-4 sm:p-4">
+          <p className="text-base leading-8 font-semibold">
             {draft.networkingPurpose ||
               "Define the mission purpose and decision this relationship system should improve."}
           </p>
-          <div className="border-background/25 mt-5 border-t pt-4">
-            <p className="text-background/70 text-xs font-semibold tracking-wide uppercase">
+          <div className="border-background/25 mt-3 border-t pt-4">
+            <p className="text-background/70 text-xs font-semibold tracking-normal">
               Community accountability
             </p>
-            <p className="mt-2 text-sm leading-6">
+            <p className="mt-2 text-sm leading-5">
               {draft.communityAccountability ||
                 "Describe how people affected by the work shape the map, decisions, interpretation, and follow-up."}
             </p>
@@ -222,7 +211,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-pathway-title">
+      <section className="mt-6" aria-labelledby="network-pathway-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="network-pathway-title" className="font-semibold">
@@ -233,7 +222,7 @@ export function NetworkingPlanResults({
               either direction or remain appropriately bounded.
             </p>
           </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
+          <span className="bg-background rounded-md border px-3 py-1 text-xs font-medium">
             Device-local · Contacts no one
           </span>
         </div>
@@ -242,7 +231,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-coverage-title">
+      <section className="mt-6" aria-labelledby="network-coverage-title">
         <h3 id="network-coverage-title" className="font-semibold">
           Category coverage
         </h3>
@@ -258,7 +247,10 @@ export function NetworkingPlanResults({
                 relationship.category === category.id
             ).length
             return (
-              <div key={category.id} className="bg-background border p-4">
+              <div
+                key={category.id}
+                className="bg-background rounded-xl border p-4"
+              >
                 <p className="text-sm font-semibold">{category.label}</p>
                 <p className="text-muted-foreground mt-2 text-xs leading-5">
                   {category.description}
@@ -272,7 +264,7 @@ export function NetworkingPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="network-table-title">
+      <section className="mt-6" aria-labelledby="network-table-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="network-table-title" className="font-semibold">
@@ -290,9 +282,9 @@ export function NetworkingPlanResults({
         <RelationshipTable relationships={draft.relationships} />
       </section>
 
-      <section className="mt-8" aria-labelledby="network-actions-title">
+      <section className="mt-6" aria-labelledby="network-actions-title">
         <h3 id="network-actions-title" className="font-semibold">
-          Stage and missing-map actions
+          Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} actions generated from this draft. They are review
@@ -302,19 +294,19 @@ export function NetworkingPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -324,34 +316,11 @@ export function NetworkingPlanResults({
         </ol>
       </section>
 
-      <section className="mt-8 border" aria-labelledby="network-prompt-title">
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="network-prompt-title" className="text-sm font-semibold">
-              Guarded human-review prompt
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the brief and constraints. Review all output yourself.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopyPrompt}
-          >
-            {promptCopied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {promptCopied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-72 overflow-auto p-4 font-mono text-xs leading-5 whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview
+        prompt={prompt}
+        copied={promptCopied}
+        onCopy={onCopyPrompt}
+      />
     </div>
   )
 }

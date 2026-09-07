@@ -229,7 +229,7 @@ function BriefTextarea({
         maxLength={field.maximum ?? 1000}
         rows={4}
         placeholder={field.placeholder}
-        className="min-h-32 resize-y text-base"
+        className="min-h-32 resize-y text-sm"
       />
     </div>
   )
@@ -245,14 +245,14 @@ export function PartnershipAgreementFields({
   return (
     <>
       {GROUPS.map((group) => (
-        <section key={group.title} className="grid gap-6 border-t p-5 sm:p-6">
+        <section key={group.title} className="grid gap-4 border-t p-4 sm:p-4">
           <div>
             <h3 className="font-semibold">{group.title}</h3>
-            <p className="text-muted-foreground mt-1 text-sm leading-6">
+            <p className="text-muted-foreground mt-1 text-sm leading-5">
               {group.description}
             </p>
           </div>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {group.fields.map((field) => (
               <BriefTextarea
                 key={field.key}
@@ -265,11 +265,11 @@ export function PartnershipAgreementFields({
         </section>
       ))}
 
-      <fieldset className="space-y-3 border-t p-5 sm:p-6">
+      <fieldset className="space-y-3 border-t p-4 sm:p-4">
         <legend className="px-1 text-sm font-semibold">
           Pre-commitment safeguards
         </legend>
-        <p className="text-muted-foreground text-sm leading-6">
+        <p className="text-muted-foreground text-sm leading-5">
           These checks describe planned review. Selecting them does not mean the
           review occurred or that a requirement was satisfied.
         </p>
@@ -277,7 +277,7 @@ export function PartnershipAgreementFields({
           <Label
             key={safeguard.key}
             htmlFor={`partnership-${safeguard.key}`}
-            className="flex min-h-14 cursor-pointer items-start gap-3 border p-4 text-sm leading-6"
+            className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-3 text-sm leading-5 md:min-h-9 md:py-2"
           >
             <Checkbox
               id={`partnership-${safeguard.key}`}

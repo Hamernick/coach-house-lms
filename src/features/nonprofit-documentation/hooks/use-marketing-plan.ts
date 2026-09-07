@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_MARKETING_PLAN,
@@ -38,30 +40,12 @@ const EXAMPLE_MARKETING_PLAN: MarketingPlanDraft = {
 
 export function useMarketingPlan() {
   const [draft, setDraft] = useState(DEFAULT_MARKETING_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(MARKETING_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeMarketingPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        MARKETING_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The planner remains usable when private browsing blocks persistence.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    MARKETING_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeMarketingPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof MarketingPlanDraft>(
@@ -92,6 +76,7 @@ export function useMarketingPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateChannelCadence,
     loadExample,

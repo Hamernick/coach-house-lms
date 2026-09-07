@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { Suspense, type ReactNode } from "react"
 
 import { AppShell } from "@/components/app-shell"
 import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
@@ -14,6 +14,7 @@ import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 
 import { DocumentationRail } from "./documentation-rail"
+import { DocumentationSearchForm } from "./documentation-search-form"
 
 export type DocumentationShellState = {
   sidebarTree: SidebarClass[]
@@ -54,11 +55,23 @@ export function DocumentationShell({
   state: DocumentationShellState | null
   defaultSidebarOpen?: boolean
 }) {
+  const headerSearch = (
+    <Suspense
+      fallback={
+        <div className="h-11 min-w-0 flex-1 md:h-8 lg:max-w-56 xl:max-w-64" />
+      }
+    >
+      <DocumentationSearchForm />
+    </Suspense>
+  )
+
   if (!state) {
     return (
       <HomeCanvasFindShell
         sidebarFallback={<DocumentationRail />}
         sidebarLabel="documentation navigation"
+        showResourceSearch={false}
+        headerSearch={headerSearch}
       >
         {children}
       </HomeCanvasFindShell>
@@ -70,6 +83,7 @@ export function DocumentationShell({
       <FrameEscape />
       <AppShell
         breadcrumbs={<AppBreadcrumbs segments={[{ label: "Documentation" }]} />}
+        headerSearch={headerSearch}
         sidebarHeaderContent={
           state.memberWorkspaceHeader ? (
             <MemberWorkspaceOrgSwitcher

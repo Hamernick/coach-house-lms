@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_SUSTAINABILITY_PLAN } from "../../lib/sustainability-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useSustainabilityPlan } from "../../hooks/use-sustainability-plan"
 import {
@@ -27,8 +28,14 @@ function downloadCsv(draft: SustainabilityPlanDraft) {
 }
 
 export function SustainabilityPlanBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useSustainabilityPlan()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useSustainabilityPlan()
   const [announcement, setAnnouncement] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -53,53 +60,58 @@ export function SustainabilityPlanBuilder() {
   }
 
   return (
-    <div>
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">
-            Working sustainability scenario
-          </p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setCopied(false)
-              setAnnouncement("Example sustainability scenario loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-
-      <SustainabilityPlanFields draft={draft} updateDraft={updateDraft} />
-      <SustainabilityPlanResults
-        draft={draft}
-        copied={copied}
-        onCopy={handleCopy}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Sustainability scenario CSV downloaded.")
+    <fieldset disabled={!storageReady} className="min-w-0">
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_SUSTAINABILITY_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setCopied(false)
+          setAnnouncement("Example sustainability scenario loaded.")
         }}
+        onReset={handleReset}
+      />
+
+      <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_SUSTAINABILITY_PLAN)
+        }
+        steps={[
+          {
+            id: "scenario",
+            label: "Your scenario",
+            content: (
+              <SustainabilityPlanFields
+                draft={draft}
+                updateDraft={updateDraft}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <SustainabilityPlanResults
+                draft={draft}
+                copied={copied}
+                onCopy={handleCopy}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Sustainability scenario CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

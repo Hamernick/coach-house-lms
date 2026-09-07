@@ -1,3 +1,4 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
@@ -34,10 +35,10 @@ function ContentPathItem({
         {String(index).padStart(2, "0")}
       </span>
       <div className="min-w-0">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {label}
         </p>
-        <p className="mt-2 text-sm leading-6 font-medium break-words">
+        <p className="mt-2 text-sm leading-5 font-medium break-words">
           {value || empty}
         </p>
       </div>
@@ -74,52 +75,40 @@ export function SocialMediaPlanResults({
     "Draft post copy will appear here. Keep the source meaning, relevant limits, and one useful action visible."
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-5">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-3">
         {[
           ["Active channels", summary.activeChannelCount],
           ["Outputs per week", summary.weeklyOutputs],
           ["Campaign outputs", summary.campaignOutputs],
-          [
-            "Drafted areas",
-            `${summary.draftedAreaCount}/${summary.totalAreaCount}`,
-          ],
-          [
-            "Safeguards",
-            `${summary.safeguardCount}/${summary.totalSafeguardCount}`,
-          ],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
-      <p className="text-muted-foreground mt-3 text-xs leading-5">
-        Counts describe this draft. They are not a quality, readiness, risk, or
-        performance score.
-      </p>
 
-      <section className="mt-8" aria-labelledby="social-preview-title">
+      <section className="mt-6" aria-labelledby="social-preview-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Planning preview · {socialMediaChannelLabel(draft.previewChannel)}
             </p>
-            <h3 id="social-preview-title" className="mt-2 font-semibold">
+            <h3 id="social-preview-title" className="mt-1 font-semibold">
               Generic post preview
             </h3>
           </div>
-          <span className="bg-background border px-3 py-1 text-xs font-medium">
+          <span className="bg-background rounded-md border px-3 py-1 text-xs font-medium">
             Not connected · Not published
           </span>
         </div>
-        <div className="bg-background mt-4 overflow-hidden border shadow-sm">
+        <div className="bg-background mt-4 overflow-hidden rounded-xl border shadow-sm">
           <div className="flex items-center gap-3 border-b p-4">
             <div
-              className="bg-foreground text-background grid size-10 shrink-0 place-items-center font-semibold"
+              className="bg-foreground text-background grid size-10 shrink-0 place-items-center rounded-lg font-semibold"
               aria-hidden
             >
               {organization.slice(0, 1).toUpperCase()}
@@ -130,12 +119,12 @@ export function SocialMediaPlanResults({
             </div>
           </div>
           <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)]">
-            <div className="p-5 sm:p-6">
-              <p className="text-sm leading-7 break-words whitespace-pre-wrap">
+            <div className="p-4 sm:p-4">
+              <p className="text-sm leading-6 break-words whitespace-pre-wrap">
                 {previewCopy}
               </p>
-              <div className="mt-5 border-t pt-4">
-                <p className="text-muted-foreground text-xs font-semibold uppercase">
+              <div className="mt-3 border-t pt-4">
+                <p className="text-muted-foreground text-xs font-semibold">
                   Link label
                 </p>
                 <p className="mt-2 text-sm font-semibold break-words underline underline-offset-4">
@@ -143,17 +132,17 @@ export function SocialMediaPlanResults({
                 </p>
               </div>
             </div>
-            <div className="bg-muted/45 border-t p-5 lg:border-t-0 lg:border-l">
-              <p className="text-muted-foreground text-xs font-semibold uppercase">
+            <div className="bg-muted/45 border-t p-4 lg:border-t-0 lg:border-l">
+              <p className="text-muted-foreground text-xs font-semibold">
                 Visual direction
               </p>
-              <p className="mt-3 text-sm leading-6 break-words">
+              <p className="mt-3 text-sm leading-5 break-words">
                 {draft.visualDescription || "Add a purposeful visual plan."}
               </p>
-              <p className="text-muted-foreground mt-5 text-xs font-semibold uppercase">
+              <p className="text-muted-foreground mt-3 text-xs font-semibold">
                 Alternative text
               </p>
-              <p className="mt-3 text-sm leading-6 break-words">
+              <p className="mt-3 text-sm leading-5 break-words">
                 {draft.alternativeText ||
                   "Add relevant alternative text or document why the visual is decorative."}
               </p>
@@ -162,11 +151,11 @@ export function SocialMediaPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="content-path-title">
+      <section className="mt-6" aria-labelledby="content-path-title">
         <h3 id="content-path-title" className="font-semibold">
           Source-to-action path
         </h3>
-        <div className="bg-border mt-4 grid gap-px overflow-hidden border lg:grid-cols-3">
+        <div className="bg-border mt-4 grid gap-px overflow-hidden rounded-xl border lg:grid-cols-3">
           <ContentPathItem
             index={1}
             label="Message"
@@ -188,7 +177,7 @@ export function SocialMediaPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="tracked-link-title">
+      <section className="mt-6" aria-labelledby="tracked-link-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="tracked-link-title" className="font-semibold">
@@ -215,7 +204,7 @@ export function SocialMediaPlanResults({
           ) : null}
         </div>
         <div
-          className={`mt-4 border p-4 ${tracked.ok ? "bg-background" : "border-amber-500/60 bg-amber-500/8"}`}
+          className={`mt-4 rounded-xl border p-4 ${tracked.ok ? "bg-background" : "border-amber-500/60 bg-amber-500/8"}`}
           aria-live="polite"
         >
           {tracked.ok ? (
@@ -228,7 +217,7 @@ export function SocialMediaPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="channel-rhythm-title">
+      <section className="mt-6" aria-labelledby="channel-rhythm-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 id="channel-rhythm-title" className="font-semibold">
@@ -243,7 +232,7 @@ export function SocialMediaPlanResults({
             Download brief CSV
           </Button>
         </div>
-        <div className="mt-4 overflow-x-auto border">
+        <div className="mt-4 overflow-x-auto rounded-xl border">
           <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
             <caption className="sr-only">
               User-entered weekly and campaign output cadence by social channel
@@ -282,12 +271,12 @@ export function SocialMediaPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="social-actions-title">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+      <section className="mt-6" aria-labelledby="social-actions-title">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           {socialMediaObjectiveLabel(draft.objective)}
         </p>
-        <h3 id="social-actions-title" className="mt-2 font-semibold">
-          Stage and missing-brief actions
+        <h3 id="social-actions-title" className="mt-1 font-semibold">
+          Next steps to review
         </h3>
         <p className="text-muted-foreground mt-1 text-sm">
           {actions.length} actions generated from this draft. They are review
@@ -297,19 +286,19 @@ export function SocialMediaPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -319,36 +308,13 @@ export function SocialMediaPlanResults({
         </ol>
       </section>
 
-      <section className="mt-8 border" aria-labelledby="social-prompt-title">
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3 id="social-prompt-title" className="text-sm font-semibold">
-              Guarded human-review prompt
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the brief and constraints. Review all output yourself.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopyPrompt}
-          >
-            {promptCopied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {promptCopied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview
+        prompt={prompt}
+        copied={promptCopied}
+        onCopy={onCopyPrompt}
+      />
 
-      <p className="text-muted-foreground mt-5 text-xs leading-5">
+      <p className="text-muted-foreground mt-3 text-xs leading-5">
         This tool stores a working draft on this device. It does not connect to
         an account, publish, approve content, or determine compliance,
         accessibility, permission, rights, safety, or likely performance.

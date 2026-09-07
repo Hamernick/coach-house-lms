@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_LEGAL_PLAN } from "../../lib/legal-plan"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useLegalPlan } from "../../hooks/use-legal-plan"
 import { buildLegalCsv, buildLegalReviewPrompt } from "../../lib/legal-plan"
@@ -25,8 +26,14 @@ function downloadCsv(draft: LegalPlanDraft) {
 }
 
 export function LegalPlanBuilder() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useLegalPlan()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useLegalPlan()
   const [announcement, setAnnouncement] = useState("")
   const [promptCopied, setPromptCopied] = useState(false)
 
@@ -42,58 +49,64 @@ export function LegalPlanBuilder() {
   }
 
   return (
-    <div>
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">
-            Working legal matter and referral brief
-          </p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setPromptCopied(false)
-              setAnnouncement("Example legal matter brief loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              if (!window.confirm("Reset this legal matter brief?")) return
-              reset()
-              setPromptCopied(false)
-              setAnnouncement("Legal matter brief reset.")
-            }}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden /> Reset
-          </Button>
-        </div>
-      </div>
-      <LegalMatterFields draft={draft} updateDraft={updateDraft} />
-      <LegalOperationsFields draft={draft} updateDraft={updateDraft} />
-      <LegalPlanResults
-        draft={draft}
-        promptCopied={promptCopied}
-        onCopyPrompt={copyPrompt}
-        onDownload={() => {
-          downloadCsv(draft)
-          setAnnouncement("Legal matter brief CSV downloaded.")
+    <fieldset disabled={!storageReady} className="min-w-0">
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_LEGAL_PLAN)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setPromptCopied(false)
+          setAnnouncement("Example legal matter brief loaded.")
         }}
+        onReset={() => {
+          if (!window.confirm("Reset this legal matter brief?")) return
+          reset()
+          setPromptCopied(false)
+          setAnnouncement("Legal matter brief reset.")
+        }}
+      />
+      <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
+        hasDraft={JSON.stringify(draft) !== JSON.stringify(DEFAULT_LEGAL_PLAN)}
+        steps={[
+          {
+            id: "matter",
+            label: "Your question",
+            content: (
+              <LegalMatterFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "preparation",
+            label: "Prepare for counsel",
+            content: (
+              <LegalOperationsFields draft={draft} updateDraft={updateDraft} />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <LegalPlanResults
+                draft={draft}
+                promptCopied={promptCopied}
+                onCopyPrompt={copyPrompt}
+                onDownload={() => {
+                  downloadCsv(draft)
+                  setAnnouncement("Legal matter brief CSV downloaded.")
+                }}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

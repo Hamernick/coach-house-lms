@@ -59,7 +59,7 @@ function FieldTextarea({
         maxLength={maxLength}
         rows={3}
         placeholder={placeholder}
-        className="min-h-24 resize-y text-base"
+        className="min-h-24 resize-y text-sm"
       />
     </Field>
   )
@@ -90,7 +90,7 @@ function CrmFieldCard({
 
   return (
     <section
-      className="bg-background border"
+      className="bg-background overflow-hidden rounded-xl border"
       aria-labelledby={`${prefix}-title`}
     >
       <div className="bg-muted/30 flex items-center justify-between gap-3 border-b px-4 py-3">
@@ -117,7 +117,7 @@ function CrmFieldCard({
           <Trash2Icon aria-hidden />
         </Button>
       </div>
-      <FieldGroup className="grid gap-5 p-4 sm:p-5 lg:grid-cols-2">
+      <FieldGroup className="grid gap-3 p-4 sm:p-5 lg:grid-cols-2">
         <Field className="lg:col-span-2">
           <FieldLabel htmlFor={`${prefix}-label`}>
             Generic field label
@@ -131,7 +131,7 @@ function CrmFieldCard({
             }
             maxLength={120}
             placeholder="Example: Contact preference status—not a person’s value…"
-            className="min-h-11 text-base"
+            className="min-h-11 text-sm"
           />
           <FieldDescription>
             Describe the field only. Do not enter real names, contact details,
@@ -254,7 +254,7 @@ export function CrmFieldDictionary({
   removeField: (id: string) => void
 }) {
   return (
-    <FieldSet className="border-t p-5 sm:p-6">
+    <FieldSet className="border-t p-4 sm:p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <FieldLegend>Proposed field dictionary</FieldLegend>
@@ -274,7 +274,7 @@ export function CrmFieldDictionary({
           Add proposed field
         </Button>
       </div>
-      <FieldGroup className="mt-5 gap-4">
+      <FieldGroup className="mt-3 gap-4">
         {draft.fields.map((field, index) => (
           <CrmFieldCard
             key={field.id}

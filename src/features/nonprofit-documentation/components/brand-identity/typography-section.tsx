@@ -141,7 +141,7 @@ export function TypographySection({
 
       <div className="mt-12">
         <h3 className="text-base font-semibold">Type scale</h3>
-        <div className="mt-6 grid gap-6 rounded-md border p-5">
+        <div className="mt-6 grid gap-6 rounded-xl border p-5">
           <div className="grid gap-3 sm:grid-cols-[5rem_1fr_4rem] sm:items-center">
             <Label htmlFor="base-size">Base size</Label>
             <Slider
@@ -179,7 +179,7 @@ export function TypographySection({
             const heading = !["body", "caption"].includes(example.id)
             return (
               <div key={example.id} className="py-6">
-                <div className="text-muted-foreground mb-3 flex justify-between gap-4 font-mono text-[0.68rem] uppercase">
+                <div className="text-muted-foreground mb-3 flex justify-between gap-4 font-mono text-[0.68rem]">
                   <span>{example.label}</span>
                   <span>{size.toFixed(1)}px</span>
                 </div>

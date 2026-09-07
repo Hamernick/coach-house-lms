@@ -17,6 +17,7 @@ import { useRightRailPresence } from "../right-rail"
 
 type AppShellHeaderProps = {
   breadcrumbs?: ReactNode
+  headerSearch?: ReactNode
   hasUser: boolean
   isAdmin: boolean
   onboardingLocked: boolean
@@ -26,6 +27,7 @@ type AppShellHeaderProps = {
 
 export function AppShellHeader({
   breadcrumbs,
+  headerSearch,
   hasUser,
   isAdmin,
   onboardingLocked,
@@ -48,7 +50,12 @@ export function AppShellHeader({
           isCompactMobileHeader && "min-h-12 py-1.5"
         )}
       >
-        <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <div
+          className={cn(
+            "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
+            headerSearch && "grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto]"
+          )}
+        >
           <div className="flex min-w-0 items-center gap-2">
             {showHeaderToggles ? (
               <SidebarTrigger
@@ -68,11 +75,19 @@ export function AppShellHeader({
               </div>
             ) : null}
           </div>
+          {!headerSearch ? (
+            <div
+              id="site-header-actions-center"
+              className="hidden min-w-0 items-center overflow-hidden md:flex md:justify-end lg:justify-center"
+            />
+          ) : null}
           <div
-            id="site-header-actions-center"
-            className="hidden min-w-0 items-center overflow-hidden md:flex md:justify-end lg:justify-center"
-          />
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap">
+            className={cn(
+              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap",
+              headerSearch && "flex-nowrap"
+            )}
+          >
+            {hasUser ? headerSearch : null}
             <div
               id="site-header-actions-right"
               className="flex flex-wrap items-center gap-2 md:flex-nowrap"
@@ -82,6 +97,7 @@ export function AppShellHeader({
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
             <ThemeToggle />
+            {!hasUser ? headerSearch : null}
             {!hasUser ? (
               <Button
                 variant="outline"

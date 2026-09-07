@@ -21,6 +21,8 @@ export {
   CrmArticlePage,
   BestPracticeArticlePage,
   MarketplacePage,
+  DocumentationSearchPage,
+  DocumentationVisualFixture,
 } from "./components"
 export type { DocumentationShellState } from "./components"
 export {
@@ -334,3 +336,4 @@ export type {
   MarketplaceResource,
   MarketplaceResourceType,
 } from "./marketplace-types"
+export { MarketplaceResourcePage } from "./components/marketplace-resource-page"

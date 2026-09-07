@@ -48,11 +48,11 @@ export function CrmGovernanceFields({
   ]
 
   return (
-    <FieldSet className="border-t p-5 sm:p-6">
+    <FieldSet className="border-t p-4 sm:p-4">
       <FieldLegend className="px-1">
         Collection, use, protection, and retirement
       </FieldLegend>
-      <FieldGroup className="grid gap-5 lg:grid-cols-2">
+      <FieldGroup className="grid gap-3 lg:grid-cols-2">
         <CrmPlanTextarea
           id="crm-collection-notice"
           label="Collection, source, notice, and consent"
@@ -150,13 +150,13 @@ export function CrmGovernanceFields({
           onChange={(value) => updateDraft("vendorMigration", value)}
         />
       </FieldGroup>
-      <FieldSet className="mt-3 border-t pt-5">
+      <FieldSet className="mt-3 border-t pt-4">
         <FieldLegend>Human-review safeguards</FieldLegend>
         <FieldGroup>
           {safeguards.map((item) => (
             <label
               key={item.key}
-              className="hover:bg-muted/35 flex min-h-14 cursor-pointer items-center gap-3 border p-4 transition-colors"
+              className="hover:bg-muted/35 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors md:min-h-9 md:py-2"
             >
               <Checkbox
                 checked={draft[item.key]}
@@ -164,7 +164,7 @@ export function CrmGovernanceFields({
                   updateDraft(item.key, checked === true)
                 }
               />
-              <span className="text-sm leading-6">{item.title}</span>
+              <span className="text-sm leading-5">{item.title}</span>
             </label>
           ))}
         </FieldGroup>

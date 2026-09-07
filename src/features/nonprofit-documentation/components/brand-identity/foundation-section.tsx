@@ -21,7 +21,7 @@ export function FoundationSection({
       title="Foundation"
       description="Write the decisions that every visual choice should support. Clear inputs make the finished system easier for staff, volunteers, and partners to use."
     >
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Organization name" htmlFor="brand-organization-name">
           <Input
             id="brand-organization-name"
@@ -66,7 +66,7 @@ export function FoundationSection({
         </Field>
       </div>
       <div className="mt-10 border-y py-10">
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">
+        <p className="text-muted-foreground text-xs font-semibold tracking-normal">
           Live introduction
         </p>
         <h3

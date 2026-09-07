@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { MEASURING_IMPACT_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { DocumentationSandboxFrame } from "./documentation-sandbox-frame"
@@ -10,8 +11,7 @@ export function MeasuringImpactArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive measurement-plan builder"
-          title="Connect one decision to an outcome, evidence, and action"
-          description="Draft a live evidence chain, estimate respondent burden, expose missing safeguards and limitations, then export the plan or copy a guarded review prompt."
+          {...DOCUMENTATION_TOOL_METADATA["best-practices/measuring-impact"]}
         >
           <MeasurementPlanBuilder />
         </DocumentationSandboxFrame>

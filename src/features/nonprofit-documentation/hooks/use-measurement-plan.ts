@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_MEASUREMENT_PLAN,
@@ -45,30 +47,12 @@ const EXAMPLE_MEASUREMENT_PLAN: MeasurementPlanDraft = {
 
 export function useMeasurementPlan() {
   const [draft, setDraft] = useState(DEFAULT_MEASUREMENT_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(MEASUREMENT_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeMeasurementPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        MEASUREMENT_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The planner remains usable when browser persistence is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    MEASUREMENT_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeMeasurementPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof MeasurementPlanDraft>(
@@ -81,5 +65,5 @@ export function useMeasurementPlan() {
   const loadExample = useCallback(() => setDraft(EXAMPLE_MEASUREMENT_PLAN), [])
   const reset = useCallback(() => setDraft(DEFAULT_MEASUREMENT_PLAN), [])
 
-  return { draft, storageReady, updateDraft, loadExample, reset }
+  return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

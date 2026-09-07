@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_SUSTAINABILITY_PLAN,
@@ -46,32 +48,12 @@ const EXAMPLE_SUSTAINABILITY_PLAN: SustainabilityPlanDraft = {
 
 export function useSustainabilityPlan() {
   const [draft, setDraft] = useState(DEFAULT_SUSTAINABILITY_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(
-        SUSTAINABILITY_PLAN_STORAGE_KEY
-      )
-      if (stored) setDraft(sanitizeSustainabilityPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        SUSTAINABILITY_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The planner remains usable when browser persistence is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    SUSTAINABILITY_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeSustainabilityPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof SustainabilityPlanDraft>(
@@ -87,5 +69,5 @@ export function useSustainabilityPlan() {
   )
   const reset = useCallback(() => setDraft(DEFAULT_SUSTAINABILITY_PLAN), [])
 
-  return { draft, storageReady, updateDraft, loadExample, reset }
+  return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

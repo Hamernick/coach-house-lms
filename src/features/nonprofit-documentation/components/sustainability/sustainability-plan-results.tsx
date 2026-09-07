@@ -1,6 +1,5 @@
+import { DocumentationAiReview } from "../documentation-ai-review"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
@@ -34,14 +33,14 @@ function ContinuityNode({
   index: number
 }) {
   return (
-    <div className="bg-background min-w-0 flex-1 border p-4 sm:min-w-44">
+    <div className="bg-background min-w-0 flex-1 rounded-xl border p-4 sm:min-w-44">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold tracking-wide uppercase">{label}</p>
+        <p className="text-xs font-semibold tracking-normal">{label}</p>
         <span className="text-muted-foreground font-mono text-[11px] tabular-nums">
           {String(index).padStart(2, "0")}
         </span>
       </div>
-      <p className="mt-3 text-sm leading-6 font-medium break-words">
+      <p className="mt-3 text-sm leading-5 font-medium break-words">
         {value || empty}
       </p>
     </div>
@@ -79,8 +78,8 @@ export function SustainabilityPlanResults({
       : `${summary.weeklyCapacityBalance.toLocaleString("en-US")} hours available weekly`
 
   return (
-    <div className="bg-muted/20 border-t p-5 sm:p-6">
-      <div className="bg-border grid gap-px overflow-hidden border sm:grid-cols-2 lg:grid-cols-4">
+    <div className="bg-muted/20 border-t p-4 sm:p-4">
+      <div className="bg-border grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Flexible resources", dollars(summary.flexibleResources)],
           [
@@ -97,29 +96,29 @@ export function SustainabilityPlanResults({
           ],
         ].map(([label, value]) => (
           <div key={label} className="bg-background p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               {label}
             </p>
-            <p className="mt-3 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="mt-3 text-base font-semibold tabular-nums">{value}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <p
-          className="bg-background border px-4 py-3 text-sm font-medium"
+          className="bg-background rounded-xl border px-4 py-3 text-sm font-medium"
           aria-live="polite"
         >
           {capacityLabel}. Available minus committed supported hours.
         </p>
-        <p className="bg-background border px-4 py-3 text-sm font-medium">
+        <p className="bg-background rounded-xl border px-4 py-3 text-sm font-medium">
           {dollars(draft.restrictedFunds)} in restricted funds is displayed
           separately and excluded from flexible-resource math.
         </p>
       </div>
 
       <p
-        className="bg-background mt-3 border px-4 py-3 text-sm font-medium"
+        className="bg-background mt-3 rounded-xl border px-4 py-3 text-sm font-medium"
         aria-live="polite"
       >
         {summary.hasReviewableScenario
@@ -127,16 +126,16 @@ export function SustainabilityPlanResults({
           : "Draft the mission benefit, commitments, assumptions, triggers, and owner to make the scenario reviewable."}
       </p>
 
-      <section className="mt-8" aria-labelledby="continuity-chain-title">
+      <section className="mt-6" aria-labelledby="continuity-chain-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            <p className="text-muted-foreground text-xs font-semibold tracking-normal">
               Live sandbox
             </p>
-            <h3 id="continuity-chain-title" className="mt-2 font-semibold">
+            <h3 id="continuity-chain-title" className="mt-1 font-semibold">
               Mission continuity chain
             </h3>
-            <p className="text-muted-foreground mt-1 text-sm leading-6">
+            <p className="text-muted-foreground mt-1 text-sm leading-5">
               Read in order. The chain exposes dependencies and decisions; it
               does not certify that the work is sustainable.
             </p>
@@ -146,7 +145,7 @@ export function SustainabilityPlanResults({
             CSV
           </Button>
         </div>
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto">
           <div className="flex flex-col sm:min-w-[74rem] sm:flex-row sm:items-stretch">
             <ContinuityNode
               index={1}
@@ -193,7 +192,7 @@ export function SustainabilityPlanResults({
         </div>
       </section>
 
-      <section className="mt-8" aria-labelledby="sustainability-actions-title">
+      <section className="mt-6" aria-labelledby="sustainability-actions-title">
         <h3 id="sustainability-actions-title" className="font-semibold">
           Stage and scenario action plan
         </h3>
@@ -205,19 +204,19 @@ export function SustainabilityPlanResults({
           {actions.map((item, index) => (
             <li
               key={item.id}
-              className="grid gap-3 py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
+              className="grid gap-3 py-3 sm:grid-cols-[2.5rem_minmax(0,1fr)]"
             >
               <span className="text-muted-foreground font-mono text-xs tabular-nums">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0">
-                <span className="bg-muted border px-2 py-0.5 text-[11px] font-medium">
+                <span className="bg-muted rounded-md border px-2 py-0.5 text-[11px] font-medium">
                   {item.phase}
                 </span>
-                <p className="mt-3 text-sm leading-6 font-semibold">
+                <p className="mt-3 text-sm leading-5 font-semibold">
                   {item.action}
                 </p>
-                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                <p className="text-muted-foreground mt-2 text-sm leading-5">
                   <strong className="text-foreground">Keep:</strong>{" "}
                   {item.evidence}
                 </p>
@@ -227,43 +226,9 @@ export function SustainabilityPlanResults({
         </ol>
       </section>
 
-      <section
-        className="mt-8 border"
-        aria-labelledby="sustainability-review-title"
-      >
-        <div className="bg-muted/35 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-          <div>
-            <h3
-              id="sustainability-review-title"
-              className="text-sm font-semibold"
-            >
-              Guarded scenario review
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Copy the assumptions, calculations, and anti-invention constraints
-              for human-reviewed planning.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={onCopy}
-          >
-            {copied ? (
-              <CheckIcon className="size-4" aria-hidden />
-            ) : (
-              <CopyIcon className="size-4" aria-hidden />
-            )}
-            {copied ? "Copied" : "Copy review prompt"}
-          </Button>
-        </div>
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-5 break-words whitespace-pre-wrap">
-          {prompt}
-        </pre>
-      </section>
+      <DocumentationAiReview prompt={prompt} copied={copied} onCopy={onCopy} />
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground max-w-xl text-xs leading-5">
           This simplified scenario excludes transaction timing, probability,
           restricted funds, receivables, liabilities, and many real operating

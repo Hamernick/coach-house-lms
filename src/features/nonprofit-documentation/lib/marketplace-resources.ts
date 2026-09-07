@@ -7,6 +7,8 @@ import type {
 } from "../marketplace-types"
 import type { DocumentationStageId } from "../types"
 
+import { MARKETPLACE_RESOURCE_ADDITIONS } from "./marketplace-resource-additions"
+
 const ALL_STAGES: DocumentationStageId[] = [
   "exploring",
   "forming",
@@ -23,8 +25,9 @@ export const MARKETPLACE_RESOURCE_TYPES: Array<{
   { value: "discount", label: "Discounts" },
   { value: "funding", label: "Funding" },
   { value: "learning", label: "Learning" },
-  { value: "people", label: "People" },
+  { value: "people", label: "Talent networks" },
   { value: "professional-support", label: "Professional support" },
+  { value: "resource-bank", label: "Resource banks" },
 ]
 
 export const MARKETPLACE_FUNCTIONS: Array<{
@@ -74,6 +77,7 @@ export const MARKETPLACE_SHORTLIST_STORAGE_KEY =
   "coach-house:documentation:marketplace-shortlist:v1"
 
 export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
+  ...MARKETPLACE_RESOURCE_ADDITIONS,
   {
     id: "coach-house-coaching",
     name: "Nonprofit coaching",
@@ -83,6 +87,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ALL_STAGES,
     description:
       "Structured support for nonprofit founders and operators working through mission, governance, programs, funding, and operating decisions.",
+    headerDescription: "Get help with your nonprofit’s next decision.",
     useWhen:
       "You need a thinking partner for a consequential decision or a practical sequence of next actions.",
     costModel: "account-based",
@@ -110,6 +115,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "A catalog of donated and discounted technology offers for qualifying nonprofits, libraries, and foundations.",
+    headerDescription: "Technology offers for eligible organizations.",
     useWhen:
       "You have defined a technology need and want to check provider-specific nonprofit eligibility before buying.",
     costModel: "discount-eligible",
@@ -142,6 +148,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "Access pathway for eligible nonprofits to nonprofit versions or offers across selected Google products.",
+    headerDescription: "Google product offers for eligible nonprofits.",
     useWhen:
       "Your organization is legally established and is comparing collaboration, outreach, or advertising tools.",
     costModel: "free-eligible",
@@ -173,6 +180,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "Grants and discounts for eligible nonprofit organizations across selected Microsoft cloud and productivity products.",
+    headerDescription: "Microsoft offers for eligible nonprofits.",
     useWhen:
       "You are comparing collaboration, cloud, security, or data tools after documenting requirements and ownership.",
     costModel: "discount-eligible",
@@ -200,6 +208,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "A nonprofit program providing eligible organizations access to Canva's premium design and collaboration features.",
+    headerDescription: "Premium Canva tools for eligible nonprofits.",
     useWhen:
       "You have a brand system and need a shared tool for repeatable communications materials.",
     costModel: "free-eligible",
@@ -233,6 +242,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "The U.S. government system for finding and applying for federal grant opportunities.",
+    headerDescription: "Find and apply for federal grants.",
     useWhen:
       "Your organization has delivery capacity and wants to search official federal opportunities and instructions.",
     costModel: "free-public",
@@ -266,6 +276,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ALL_STAGES,
     description:
       "Official educational resources, guidance, forms, and workshops for tax-exempt organizations.",
+    headerDescription: "Official tax-exempt organization guidance.",
     useWhen:
       "You need a primary federal source before acting on exemption, filing, governance, or tax questions.",
     costModel: "free-public",
@@ -298,6 +309,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ALL_STAGES,
     description:
       "Free training, how-to resources, and sample fundraising documents for nonprofit professionals.",
+    headerDescription: "Free fundraising training and templates.",
     useWhen:
       "You need foundational instruction before building a funding plan, proposal, budget, or measurement approach.",
     costModel: "free-public",
@@ -325,6 +337,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["exploring", "forming", "operating", "growing"],
     description:
       "A combined nonprofit and foundation research system drawing on Candid's Foundation Directory and GuideStar data.",
+    headerDescription: "Research nonprofits and foundations with Candid data.",
     useWhen:
       "You need to research organizations or funders and can document why a prospect is aligned before outreach.",
     costModel: "paid-or-varies",
@@ -356,6 +369,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "A volunteer opportunity network now operated as part of Idealist, with tools for organizations seeking volunteers.",
+    headerDescription: "Recruit volunteers through the Idealist network.",
     useWhen:
       "You have a defined volunteer role, accountable supervisor, accessible process, and realistic support capacity.",
     costModel: "free-public",
@@ -387,6 +401,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "Public and member resources, training, assessments, and publications focused on nonprofit board leadership.",
+    headerDescription: "Resources and training for nonprofit boards.",
     useWhen:
       "A board needs clearer roles, orientation, meeting practices, assessment, or governance learning.",
     costModel: "paid-or-varies",
@@ -420,11 +435,12 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["operating", "growing"],
     description:
       "A platform that connects participating social organizations with professionals for scoped pro bono projects.",
+    headerDescription: "Find professionals for pro bono projects.",
     useWhen:
       "You can name a bounded project, assign an internal owner, and support a professional volunteer through completion.",
-    costModel: "paid-or-varies",
+    costModel: "free-eligible",
     costNote:
-      "Access pathways and sponsorship can vary; confirm current terms.",
+      "Foundation-sponsored access or a free-membership application when places open. No paid memberships currently offered.",
     eligibility:
       "Organization eligibility and access depend on current program terms.",
     geography: "Online; participating organizations and programs vary.",
@@ -434,10 +450,10 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
       "Agree on accessible collaboration practices before matching.",
     accountRequirement:
       "Organization registration and program access required.",
-    url: "https://www.catchafire.org/org_home",
+    url: "https://help.catchafire.org/en/articles/8380963-what-is-catchafire-and-how-do-i-join",
     sourceLabel: "Catchafire for organizations",
-    reviewedDate: "2026-09-03",
-    reviewByDate: "2026-12-03",
+    reviewedDate: "2026-09-04",
+    reviewByDate: "2026-12-04",
     whyIncluded:
       "A concrete path from a scoped capacity need to professional volunteer support.",
     relatedGuide: {
@@ -454,6 +470,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["operating", "growing"],
     description:
       "A cloud-based donor management and fundraising database priced by constituent-record count.",
+    headerDescription: "Manage donor records and fundraising.",
     useWhen:
       "You have defined responsible CRM practices and need to compare a nonprofit-specific constituent system.",
     costModel: "paid-or-varies",
@@ -485,6 +502,7 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
     stages: ["forming", "operating", "growing"],
     description:
       "A nonprofit fundraising platform with donation forms, campaigns, events, auctions, and donor-management tools.",
+    headerDescription: "Manage donations, campaigns, events, and donors.",
     useWhen:
       "You have a documented fundraising process and need to compare collection, campaign, and supporter-record tools.",
     costModel: "paid-or-varies",
@@ -508,31 +526,5 @@ export const MARKETPLACE_RESOURCES: MarketplaceResource[] = [
       title: "Fundraising",
       href: "/documentation/best-practices/fundraising",
     },
-  },
-  {
-    id: "techsoup-product-selection",
-    name: "Technology selection learning",
-    provider: "TechSoup",
-    type: "learning",
-    functions: ["technology", "data"],
-    stages: ["exploring", "forming", "operating", "growing"],
-    description:
-      "Nonprofit-focused articles, courses, webinars, and support for choosing and using technology.",
-    useWhen:
-      "You need to define requirements, compare approaches, or prepare staff before selecting a product.",
-    costModel: "paid-or-varies",
-    costNote: "Public and paid learning options vary.",
-    eligibility: "Many resources are public; program-specific rules may apply.",
-    geography: "United States focus with online access.",
-    delivery: "Online learning and support",
-    languages: "Availability varies by resource.",
-    accessibility: "Confirm formats and accommodations for each offering.",
-    accountRequirement: "Some content may require an account or registration.",
-    url: "https://www.techsoup.org/about-us/what-we-do",
-    sourceLabel: "TechSoup: What we do",
-    reviewedDate: "2026-09-03",
-    reviewByDate: "2027-03-03",
-    whyIncluded:
-      "Procurement guidance helps teams define the need before pursuing a discount.",
   },
 ]

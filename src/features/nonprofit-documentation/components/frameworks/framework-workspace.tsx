@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { DEFAULT_LOGIC_MODEL_DRAFT } from "../../lib/framework-workspace"
+import { DocumentationDraftToolbar } from "../documentation-draft-toolbar"
+import { DocumentationToolFlow } from "../documentation-tool-flow"
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 import { useFrameworkWorkspace } from "../../hooks/use-framework-workspace"
 import {
@@ -27,8 +28,14 @@ function downloadCsv(draft: LogicModelDraft) {
 }
 
 export function FrameworkWorkspace() {
-  const { draft, storageReady, updateDraft, loadExample, reset } =
-    useFrameworkWorkspace()
+  const {
+    draft,
+    storageReady,
+    storageStatus,
+    updateDraft,
+    loadExample,
+    reset,
+  } = useFrameworkWorkspace()
   const [announcement, setAnnouncement] = useState("")
   const [copied, setCopied] = useState(false)
 
@@ -56,49 +63,55 @@ export function FrameworkWorkspace() {
   }
 
   return (
-    <div>
-      <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6">
-        <div>
-          <p className="text-sm font-semibold">Working model</p>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {storageReady ? "Saved on this device" : "Loading saved draft…"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              loadExample()
-              setCopied(false)
-              setAnnouncement("Example logic model loaded.")
-            }}
-          >
-            Load example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={handleReset}
-          >
-            <RotateCcwIcon className="size-4" aria-hidden />
-            Reset
-          </Button>
-        </div>
-      </div>
+    <fieldset disabled={!storageReady} className="min-w-0">
+      <DocumentationDraftToolbar
+        ready={storageReady}
+        storageStatus={storageStatus}
+        hasChanges={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_LOGIC_MODEL_DRAFT)
+        }
+        onLoadExample={() => {
+          loadExample()
+          setCopied(false)
+          setAnnouncement("Example logic model loaded.")
+        }}
+        onReset={handleReset}
+      />
 
-      <FrameworkWorkspaceFields draft={draft} updateDraft={updateDraft} />
-      <FrameworkWorkspaceResults
-        draft={draft}
-        copied={copied}
-        onCopy={handleCopy}
-        onDownload={handleDownload}
+      <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
+        hasDraft={
+          JSON.stringify(draft) !== JSON.stringify(DEFAULT_LOGIC_MODEL_DRAFT)
+        }
+        steps={[
+          {
+            id: "model",
+            label: "Build the model",
+            content: (
+              <FrameworkWorkspaceFields
+                draft={draft}
+                updateDraft={updateDraft}
+              />
+            ),
+          },
+          {
+            id: "review",
+            label: "Review & export",
+            content: (
+              <FrameworkWorkspaceResults
+                draft={draft}
+                copied={copied}
+                onCopy={handleCopy}
+                onDownload={handleDownload}
+              />
+            ),
+          },
+        ]}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-    </div>
+    </fieldset>
   )
 }

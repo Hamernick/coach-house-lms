@@ -1,3 +1,4 @@
+import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
 import { CRM_ARTICLE } from "../lib"
 import { BestPracticeArticlePage } from "./best-practice-article"
 import { CrmPlanBuilder } from "./crm/crm-plan-builder"
@@ -10,8 +11,7 @@ export function CrmArticlePage() {
       interactive={
         <DocumentationSandboxFrame
           eyebrow="Interactive CRM planning tool"
-          title="Define a responsible relationship record"
-          description="Connect one system purpose to accountable practices and a generic field dictionary. The draft stays on this device, connects to nothing, and should contain no real constituent information."
+          {...DOCUMENTATION_TOOL_METADATA["tools/crm"]}
         >
           <CrmPlanBuilder />
         </DocumentationSandboxFrame>

@@ -17,13 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { DocumentationMobileContents } from "../documentation-contents"
+import { DocumentationPageHeader } from "../documentation-page-header"
 
 import { useBrandIdentityTool } from "../../hooks/use-brand-identity-tool"
 import {
@@ -45,9 +40,12 @@ export function BrandIdentityTool() {
   const tool = useBrandIdentityTool()
 
   function moveToSection(id: string) {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+    document.getElementById(id)?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "start",
+    })
     window.history.replaceState(null, "", `#${id}`)
   }
 
@@ -69,9 +67,9 @@ export function BrandIdentityTool() {
       />
       <div
         id="documentation-content"
-        className="mx-auto w-full max-w-[1120px] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-16 print:max-w-none print:p-0"
+        className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:px-6 sm:py-6 lg:px-8 print:max-w-none print:p-0"
       >
-        <header className="mx-auto max-w-[820px] border-b pb-10 print:pb-6">
+        <div className="border-b pb-4 print:pb-6">
           <Link
             href="/documentation"
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-xs font-medium underline-offset-4 hover:underline print:hidden"
@@ -79,102 +77,82 @@ export function BrandIdentityTool() {
             <ArrowLeftIcon className="size-3.5" aria-hidden />
             Documentation
           </Link>
-          <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-muted-foreground text-[0.68rem] font-semibold tracking-[0.15em] uppercase">
-                Tools · Public tool
-              </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-balance sm:text-5xl">
-                Brand Identity Builder
-              </h1>
-              <p className="text-muted-foreground mt-5 max-w-2xl text-base leading-7 sm:text-lg">
-                Build a clear, accessible nonprofit brand system, then download
-                everything your team needs to use it consistently.
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-2 print:hidden">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="outline" size="sm">
-                    <RotateCcwIcon aria-hidden />
-                    Reset
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Start a fresh brand guide?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes the saved text, colors, settings, and
-                      uploaded assets from this device. The action cannot be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep guide</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => void tool.reset()}>
-                      Reset guide
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => moveToSection("exports")}
-              >
-                <DownloadIcon aria-hidden />
-                Export
-              </Button>
-            </div>
+          <DocumentationPageHeader
+            artwork="tools/brand-identity"
+            eyebrow="Tools"
+            title="Build your brand"
+            description="Create and download your nonprofit’s brand kit."
+          />
+          <div className="flex justify-center gap-2 print:hidden">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" className="min-h-11">
+                  <RotateCcwIcon aria-hidden />
+                  Reset
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Start a fresh brand guide?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This removes the saved text, colors, settings, and uploaded
+                    assets from this device. The action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep guide</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => void tool.reset()}>
+                    Reset guide
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              type="button"
+              className="min-h-11"
+              onClick={() => moveToSection("exports")}
+            >
+              <DownloadIcon aria-hidden />
+              Export
+            </Button>
           </div>
-          <div className="text-muted-foreground mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+          <div className="text-muted-foreground mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
             <span role="status" aria-live="polite">
               {tool.message}
             </span>
             <span>Private to this browser</span>
             <span>No account required</span>
           </div>
-        </header>
-
-        <div className="bg-background/95 sticky top-0 z-20 -mx-5 mt-6 border-y px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:hidden print:hidden">
-          <Select onValueChange={moveToSection}>
-            <SelectTrigger
-              className="w-full"
-              aria-label="Jump to brand guide section"
-            >
-              <SelectValue placeholder="Jump to a section" />
-            </SelectTrigger>
-            <SelectContent>
-              {BRAND_IDENTITY_SECTIONS.map((section) => (
-                <SelectItem key={section.id} value={section.id}>
-                  {section.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
-        <div className="mx-auto grid max-w-[960px] gap-14 lg:grid-cols-[140px_minmax(0,760px)] lg:gap-16">
+        <DocumentationMobileContents
+          items={BRAND_IDENTITY_SECTIONS.map(
+            (section) => [section.id, section.label] as const
+          )}
+          className="mx-auto max-w-[820px] lg:hidden"
+        />
+
+        <div className="mx-auto grid max-w-[960px] gap-6 lg:grid-cols-[140px_minmax(0,760px)] lg:gap-8">
           <aside className="hidden lg:block print:hidden">
             <nav
               aria-label="Brand guide sections"
-              className="sticky top-8 pt-20"
+              className="sticky top-24 pt-6"
             >
-              <ol className="space-y-4">
+              <ol className="space-y-1">
                 {BRAND_IDENTITY_SECTIONS.map((section) => (
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground text-xs underline-offset-4 hover:underline"
+                      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex min-h-7 items-center text-xs underline-offset-4 hover:underline"
                     >
                       {section.label}
                     </a>
                   </li>
                 ))}
               </ol>
-              <div className="text-muted-foreground mt-16 space-y-2 border-t pt-5 text-[0.68rem] leading-5">
+              <div className="text-muted-foreground mt-6 space-y-2 border-t pt-4 text-[0.68rem] leading-5">
                 <p>Autosaves on this device.</p>
                 <p>Files never leave this browser.</p>
               </div>

@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import type { FinancePlanDraft } from "../finance-types"
 import {
@@ -56,30 +58,12 @@ const EXAMPLE_FINANCE_PLAN: FinancePlanDraft = {
 
 export function useFinancePlan() {
   const [draft, setDraft] = useState(DEFAULT_FINANCE_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(FINANCE_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeFinancePlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        FINANCE_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The tool remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    FINANCE_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeFinancePlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof FinancePlanDraft>(
@@ -92,6 +76,7 @@ export function useFinancePlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     loadExample: useCallback(() => setDraft(EXAMPLE_FINANCE_PLAN), []),
     reset: useCallback(() => setDraft(DEFAULT_FINANCE_PLAN), []),

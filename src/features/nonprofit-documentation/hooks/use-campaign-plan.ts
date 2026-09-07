@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import type { CampaignPlanDraft } from "../campaign-types"
 import {
@@ -60,30 +62,12 @@ const EXAMPLE_CAMPAIGN_PLAN: CampaignPlanDraft = {
 
 export function useCampaignPlan() {
   const [draft, setDraft] = useState(DEFAULT_CAMPAIGN_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(CAMPAIGN_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeCampaignPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        CAMPAIGN_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The tool remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    CAMPAIGN_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeCampaignPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof CampaignPlanDraft>(
@@ -96,7 +80,12 @@ export function useCampaignPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
+    loadDraft: useCallback(
+      (value: CampaignPlanDraft) => setDraft(sanitizeCampaignPlan(value)),
+      []
+    ),
     loadExample: useCallback(() => setDraft(EXAMPLE_CAMPAIGN_PLAN), []),
     reset: useCallback(() => setDraft(DEFAULT_CAMPAIGN_PLAN), []),
   }

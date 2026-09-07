@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useDocumentationDraftPersistence } from "./use-documentation-draft-persistence"
+
+import { useCallback, useState } from "react"
 
 import {
   DEFAULT_SOCIAL_MEDIA_PLAN,
@@ -61,30 +63,12 @@ const EXAMPLE_SOCIAL_MEDIA_PLAN: SocialMediaPlanDraft = {
 
 export function useSocialMediaPlan() {
   const [draft, setDraft] = useState(DEFAULT_SOCIAL_MEDIA_PLAN)
-  const [storageReady, setStorageReady] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(SOCIAL_MEDIA_PLAN_STORAGE_KEY)
-      if (stored) setDraft(sanitizeSocialMediaPlan(JSON.parse(stored)))
-    } catch {
-      // Keep the safe default when browser storage is unavailable or invalid.
-    } finally {
-      setStorageReady(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!storageReady) return
-    try {
-      window.localStorage.setItem(
-        SOCIAL_MEDIA_PLAN_STORAGE_KEY,
-        JSON.stringify(draft)
-      )
-    } catch {
-      // The tool remains usable when browser storage is unavailable.
-    }
-  }, [draft, storageReady])
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    SOCIAL_MEDIA_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeSocialMediaPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof SocialMediaPlanDraft>(
@@ -107,6 +91,7 @@ export function useSocialMediaPlan() {
   return {
     draft,
     storageReady,
+    storageStatus,
     updateDraft,
     updateChannelCadence,
     loadExample: useCallback(() => setDraft(EXAMPLE_SOCIAL_MEDIA_PLAN), []),

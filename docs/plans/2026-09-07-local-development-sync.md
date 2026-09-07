@@ -1,6 +1,6 @@
 # Local development synchronization — 2026-09-07
 
-Status: source combined; validation and checkout synchronization pending.
+Status: full local quality gate passed; checkout synchronization in progress.
 
 ## Authorization and recovery
 
@@ -109,3 +109,14 @@ historical-checkout deletion.
   histories are retained without reverting those newer implementations.
 - Final gate command: `NEXT_PUBLIC_ENABLE_REACT_GRAB=0 SUPABASE_SERVICE_ROLE_KEY=
   pnpm check:quality`. The review server will retain React Grab.
+
+## Final validation
+
+- All 21 stages passed in 506.34 seconds on `27e9bfc2`.
+- Acceptance: 441 files passed, one skipped; 2,434 tests passed, one skipped.
+- Eight isolated database suites passed; provider-connected fixtures were skipped.
+- Visual regression: all 98 checks passed. Build/type checking passed.
+- Performance: Find 1,823.6 KB / 1,975 KB; Community 605.9 KB / 900 KB;
+  Admin 994.3 KB / 1,000 KB. No budget changes.
+- Canonical review checkout after synchronization: root repository, local branch
+  `chore/local-development-20260907`, port 3010.

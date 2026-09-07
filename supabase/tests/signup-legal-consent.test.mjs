@@ -130,9 +130,11 @@ try {
   runSql("supabase/tests/signup-legal-consent-vulnerable.assertions.sql")
   runSql("supabase/migrations/20260814090000_enforce_signup_legal_consent.sql")
   runSql("supabase/tests/signup-legal-consent.assertions.sql")
+  runSql("supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql")
+  runSql("supabase/tests/signup-legal-consent-current.assertions.sql")
 
   console.log(
-    "[signup-consent] Pre-fix bypass reproduced; missing or forged consent is rejected after the fix; valid consent and trusted service provisioning pass."
+    "[signup-consent] Pre-fix bypass reproduced; consent enforcement and trusted provisioning pass; current-version RLS fixtures pass without app metadata."
   )
 } finally {
   if (started) {

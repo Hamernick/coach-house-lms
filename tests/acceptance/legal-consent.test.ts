@@ -188,4 +188,21 @@ describe("legal consent", () => {
     )
     expect(migration).toContain("coalesce(new.created_at, now())")
   })
+
+  it("provisions every live RLS fixture with current consent, not an exemption", () => {
+    const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
+    const registrations = [
+      ...rlsSuite.matchAll(/auth\.admin\.createUser\(\{([\s\S]*?)\n  \}\)/g),
+    ]
+
+    expect(registrations).toHaveLength(8)
+    for (const [, payload] of registrations) {
+      expect(payload).toContain("user_metadata: { legal_consent: signupLegalConsent }")
+      expect(payload).not.toContain("app_metadata")
+    }
+    expect(rlsSuite).toContain(`version: "${TERMS_DOCUMENT.version}"`)
+    expect(rlsSuite).toContain(TERMS_DOCUMENT.sha256)
+    expect(rlsSuite).toContain(PRIVACY_DOCUMENT.sha256)
+    expect(rlsSuite).not.toContain("legal_consent_exempt")
+  })
 })

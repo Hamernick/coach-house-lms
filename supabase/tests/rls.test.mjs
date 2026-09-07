@@ -79,9 +79,6 @@ const signupLegalConsent = {
     "4110a62f34947f3950dc75b7e6ffab87f60d9abfe48b44625c8150da5e845e62",
   acceptedAt: new Date().toISOString(),
 }
-const trustedProvisioningMetadata = {
-  legal_consent_exempt: "service_provisioned",
-}
 
 async function ensureProfile(id, role, fullName) {
   const { error } = await adminClient.from("profiles").upsert(
@@ -96,6 +93,8 @@ async function ensureProfile(id, role, fullName) {
 }
 
 async function createUsers() {
+  // All synthetic users include consent at insertion time; do not depend on
+  // exemption metadata being available when the signup trigger executes.
   const {
     data: { user: member },
     error: memberError,
@@ -111,7 +110,7 @@ async function createUsers() {
     data: { user: admin },
     error: adminError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: adminEmail,
     password,
     email_confirm: true,
@@ -122,7 +121,7 @@ async function createUsers() {
     data: { user: owner },
     error: ownerError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: ownerEmail,
     password,
     email_confirm: true,
@@ -133,7 +132,7 @@ async function createUsers() {
     data: { user: staff },
     error: staffError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: staffEmail,
     password,
     email_confirm: true,
@@ -144,7 +143,7 @@ async function createUsers() {
     data: { user: board },
     error: boardError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: boardEmail,
     password,
     email_confirm: true,
@@ -155,7 +154,7 @@ async function createUsers() {
     data: { user: orgAdmin },
     error: orgAdminError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: orgAdminEmail,
     password,
     email_confirm: true,
@@ -166,7 +165,7 @@ async function createUsers() {
     data: { user: coach },
     error: coachError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: coachEmail,
     password,
     email_confirm: true,
@@ -177,7 +176,7 @@ async function createUsers() {
     data: { user: secondCoach },
     error: secondCoachError,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: trustedProvisioningMetadata,
+    user_metadata: { legal_consent: signupLegalConsent },
     email: secondCoachEmail,
     password,
     email_confirm: true,

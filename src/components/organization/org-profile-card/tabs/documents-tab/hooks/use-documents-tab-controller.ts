@@ -23,15 +23,11 @@ export function useDocumentsTabController({
   policyPeopleOptions,
   roadmapSections,
 }: UseDocumentsTabControllerArgs) {
-  const {
-    documentsState,
-    setDocumentsState,
-    policiesState,
-    setPoliciesState,
-  } = useDocumentsTabState({
-    documents,
-    policyEntries,
-  })
+  const { documentsState, setDocumentsState, policiesState, setPoliciesState } =
+    useDocumentsTabState({
+      documents,
+      policyEntries,
+    })
 
   const {
     clearPendingPolicyDocument,
@@ -92,6 +88,7 @@ export function useDocumentsTabController({
     handleUpload,
     handleView,
     policySavePending,
+    removePolicyDocumentFile,
     uploadingKind,
     viewingKind,
     viewingPolicyDocumentId,
@@ -142,6 +139,7 @@ export function useDocumentsTabController({
     policyDraft,
     policySavePending,
     removePolicyCategory,
+    removePolicyDocumentFile,
     searchQuery,
     selectPolicyDocument,
     setPolicyDraft,

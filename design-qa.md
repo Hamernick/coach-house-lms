@@ -58,3 +58,157 @@ The revised dark fixture matches the reference's horizontal graph grammar. Autom
 - A final authenticated screenshot with the user's full production-sized data set would validate the exact content density, but the same layout engine passed 120-node and six-domain collision coverage.
 
 final result: passed for the deterministic fixture; authenticated production-data validation pending
+
+---
+
+# Documents redesign QA
+
+## References
+
+- Full library: `/Users/calebhamernick/Downloads/Screenshot 2026-08-27 at 8.57.37 PM.png`
+- New menu: `/Users/calebhamernick/Downloads/Screenshot 2026-08-27 at 8.58.10 PM.png`
+- Card hover and selection: `/Users/calebhamernick/Downloads/Screenshot 2026-09-04 at 1.24.55 AM.png`
+- Filter menu: `/Users/calebhamernick/Downloads/Screenshot 2026-09-04 at 1.23.40 AM.png`
+
+## Implementation captures
+
+- Desktop final, 1942 x 1280 at DPR 1: `documents-implementation-qa-selected.png`
+- New menu: `documents-implementation-new-menu.png`
+- Filter menu: `documents-implementation-filter-menu.png`
+- Mobile, 390 x 844 at DPR 1: `documents-implementation-mobile.png`
+
+## Comparison
+
+- Typography uses the product's Geist system treatment while preserving the required `Documents` title.
+- The desktop content width, three-column card proportions, 20px grid gaps, rounded geometry, dark surfaces, and compact toolbar now track the references closely.
+- The New and filter menus reproduce the reference grouping and hierarchy while using the repository's accessible shadcn primitives.
+- Mobile collapses to one card column and keeps search, menus, filters, grid/list switching, and card selection usable.
+- Dynamic organization content and the surrounding Coach House shell intentionally differ from the source images.
+- No raster assets were required. Interface icons use Tabler; the Google Drive action uses the closest available brand glyph rather than a copied raster logo.
+
+## Iteration history
+
+- The first pass was too wide, with oversized columns, darker cards, and verbose dates.
+- Reduced the surface to 61rem, set cards and menus to `#303030` in dark mode, tightened the grid to 20px gaps, and reduced dates to month and day.
+- Kept menus at 18rem so labels remain readable without dominating the toolbar.
+
+## Functional checks
+
+- Search, All/Images/Documents tabs, source/file-type filters, reset, and recently deleted state update the visible library.
+- Grid and list controls switch between the new card library and the existing detailed document table.
+- Card open and selection actions work with pointer and keyboard input.
+- New opens Google-native creation destinations; Upload files accepts multiple
+  arbitrary file types through the organization library upload flow.
+- Add from Google Drive uses the existing OAuth and authenticated Picker path.
+- Desktop and mobile browser checks completed on `http://localhost:3000/organization/documents` with no console errors.
+
+## Remaining variance
+
+- P3: the Drive menu glyph is the available Tabler brand icon, not the reference's multicolor Google asset.
+- The surrounding app shell and Notes rail are outside the selected `DocumentsBanner` surface.
+- No P0, P1, or P2 visual or functional issues remain.
+
+## Density correction
+
+- User feedback identified the 61rem surface, 32px heading, and 18rem menus as oversized relative to the surrounding Coach House app.
+- Reduced the surface to 54rem, the heading to 24px, desktop controls to 36px, menu width to 16rem, menu copy to 14px, and menu icons to 16px while retaining 44px mobile targets.
+- Post-fix evidence: `documents-implementation-density-final.png` and `documents-implementation-density-menu-final.png`, captured at 1942 x 1280 and DPR 1.
+- Browser measurements confirm an 864px surface, 24px heading, approximately 248px menu, and approximately 35px desktop menu rows.
+- The source and revised implementation were compared together at full-view and focused menu levels. The revised controls preserve the source hierarchy without remaining visually oversized inside the product shell.
+
+## Width refinement
+
+- Reduced the surface from 54rem to 52rem in response to the follow-up annotation.
+- Post-fix evidence: `documents-implementation-width-52rem.png`, captured at 1942 x 1280 and DPR 1.
+- Browser measurements confirm an 832px surface with three equal 256px cards and no overflow or wrapping regression.
+- The source and implementation were compared together at full-view level. Typography, color, imagery, copy, and interaction treatment are unchanged; only the requested horizontal density changed.
+- Follow-up feedback reduced the final surface another 2rem, from 52rem to 50rem. Browser measurement confirms an 800px surface with three equal 251px cards and 16px gaps.
+
+## Grid-gap refinement
+
+- Reduced card spacing from 20px to 16px after the card-gap annotation.
+- The selected full-card button remains unchanged; spacing is correctly owned by the parent CSS grid.
+- Post-fix evidence: `documents-implementation-gap-16px.png`; browser measurements confirm 16px row and column gaps with equal 259px cards.
+- Keyboard, pointer, focus, selection, and responsive behavior are unchanged.
+
+## Equal-gutter refinement
+
+- Reduced the final surface from 50rem to 45rem.
+- Standardized the surface padding, toolbar-to-grid spacing, row gaps, column gaps, and bottom gutter at 16px.
+- Removed the desktop 256px minimum card height so the narrower cards retain their intended near-square aspect ratio; the mobile minimum remains intact.
+- Browser measurement confirms a 720px surface, 16px padding on every side, 16px row and column gaps, and equal 219 x 223px cards. Post-fix evidence: `documents-implementation-45rem-equal-gutters.png`.
+
+## Card-content refinement
+
+- Reduced card titles to 14px with 20px line height, file icons to 32px, dates to 12px, and the visible selection circle to 28px.
+- Preserved a 44px mobile selection target and 32px desktop target around the smaller visual circle.
+- Post-fix evidence: `documents-implementation-compact-cards.png`; keyboard, focus, pointer, selection, and open behavior remain unchanged.
+
+## Toolbar-icon refinement
+
+- Kept the filter, grid, and list button dimensions unchanged while increasing their icons from 16px to 18px.
+- Replaced the funnel filter glyph with Tabler's horizontal-adjustments icon for a clearer distinction from file filtering content.
+- Browser measurement confirms three unchanged 36 x 36px desktop buttons with 18 x 18px icons. Post-fix evidence: `documents-implementation-toolbar-icons.png`.
+
+final result: passed
+
+## Drag-and-drop and storage quota
+
+- The complete Documents surface accepts file drags in edit mode and displays
+  a focused dashed drop overlay without changing the 45rem layout.
+- The New menu and drop target share the same multi-file upload handler. Files
+  upload sequentially, appear immediately, and open through private signed
+  URLs.
+- A compact meter reports organization usage against 5 GB. Client checks give
+  immediate feedback while the database serializes authoritative quota checks.
+- Arbitrary MIME types are accepted. The existing 50 MB application limit and
+  existing bucket-level file-size setting remain unchanged.
+- Focused acceptance tests, scoped lint, structure, route, boundary, raw-button,
+  isolated PostgreSQL RLS/quota testing, and the production build passed.
+- The migration was not applied to shared Supabase, so a real upload was not
+  performed from localhost during this branch-only iteration.
+
+## Recently Deleted lifecycle
+
+- Uploaded library files can be moved to Recently Deleted and restored from
+  the card menu. The removal toast includes an Undo action.
+- Recently deleted files remain private, cannot be opened, and continue to
+  count against the organization’s 5 GB allowance for 30 days.
+- Permanent deletion requires confirmation, removes the storage object before
+  its metadata, and immediately reclaims quota.
+- Expired files are purged in bounded batches when an editor loads Documents
+  or starts an upload; a failed storage removal leaves metadata and quota
+  intact for a safe retry.
+- Focused acceptance, isolated PostgreSQL RLS/quota coverage, scoped lint, all
+  repository guardrails, diff checks, and the production build passed.
+
+## Final width correction
+
+- Reduced the owned Documents surface from 45rem to 42rem while preserving the
+  existing 16px card gaps and equal 16px outer gutters.
+- Simplified empty storage usage from “0 B of 5 GB used” to “0 of 5 GB used.”
+- Renamed the generated-source filter to “Strategic Roadmap” and replaced its
+  wand glyph with the Waypoints icon.
+
+## Inline Notes
+
+- Removed the Documents-specific app-shell right-rail registration and placed
+  Notes below the file library inside the 42rem Documents surface.
+- Preserved note search, class filtering, expansion, empty states, counts, and
+  module links.
+- Restyled the section with the library’s muted card, 2rem radius, subtle ring,
+  compact typography, and equal horizontal padding.
+- Authenticated browser verification confirmed Notes renders inside the
+  Documents region and the route has no build or console error.
+
+## Multi-selection actions
+
+- Selecting any card reveals compact Download and Delete buttons with a live,
+  locale-neutral selection count above the grid.
+- Once selection mode begins, the full-card action toggles additional cards
+  instead of opening them. The explicit circular control remains available.
+- Selected full-card buttons use a two-pixel white border, with the filled
+  selection control providing a second visual cue.
+- Batch actions reuse signed downloads, required-document removal, policy-file
+  removal, Drive detachment, and uploaded-file lifecycle actions. Unsupported
+  generated-roadmap selections leave the visible actions disabled.

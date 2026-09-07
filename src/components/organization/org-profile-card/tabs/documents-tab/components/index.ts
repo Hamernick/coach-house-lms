@@ -1,10 +1,9 @@
-export {
-  CategoryBadges,
-  SortIndicator,
-  StatusBadge,
-} from "./document-row-meta"
+export { CategoryBadges, SortIndicator, StatusBadge } from "./document-row-meta"
 export { DocumentsBanner } from "./documents-banner"
+export { DocumentsLibraryGrid } from "./documents-library-grid"
 export { DocumentsResults } from "./documents-results"
+export { DocumentsSelectionToolbar } from "./documents-selection-toolbar"
+export { DocumentsStorageUsage } from "./documents-storage-usage"
 export { DocumentsToolbar } from "./documents-toolbar"
 export { PolicyEditorDialog } from "./policy-editor-dialog"
 export { PolicyRowActions } from "./policy-row-actions"

@@ -226,6 +226,7 @@
       "tests/acceptance/nav-user-menu-content.test.ts",
       "tests/acceptance/notifications-mobile-drawer.test.ts",
       "tests/acceptance/org-chart-canvas-controls.test.ts",
+      "tests/acceptance/organization-document-files.test.ts",
       "tests/acceptance/organization-document-write-safety.test.ts",
       "tests/acceptance/organization-profile-read-safety.test.ts",
       "tests/acceptance/people-actions-access.test.ts",

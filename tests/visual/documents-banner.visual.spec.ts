@@ -11,7 +11,7 @@ async function openBanner(page: Page, colorScheme: "light" | "dark") {
 }
 
 for (const colorScheme of ["light", "dark"] as const) {
-  test(`documents banner remains centered in ${colorScheme} mode`, async ({
+  test(`documents library remains responsive in ${colorScheme} mode`, async ({
     page,
   }) => {
     await openBanner(page, colorScheme)
@@ -20,9 +20,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       '[data-react-grab-owner-id="organization-documents:banner"]'
     )
     await expect(banner).toBeVisible()
-    await expect(banner.getByRole("heading")).toHaveText(
-      "Store, track, and act on every key document in one place."
-    )
+    await expect(
+      banner.getByRole("heading", { name: "Documents" })
+    ).toBeVisible()
     await expect(banner).toHaveScreenshot(
       `documents-banner-${colorScheme}.png`,
       {

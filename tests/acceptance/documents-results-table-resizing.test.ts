@@ -87,7 +87,10 @@ describe("documents results table column resizing", () => {
       "bg-background border-border/60 overflow-hidden rounded-[1.45rem] border p-0 first:pt-0"
     )
     expect(documentsTabSource).toContain(
-      '<Card id="documents-index" className={DOCUMENTS_INDEX_CARD_CLASSNAME}>'
+      '<div id="documents-index" className="mt-4" aria-live="polite">'
+    )
+    expect(documentsTabSource).toContain(
+      "<Card className={DOCUMENTS_INDEX_CARD_CLASSNAME}>"
     )
     expect(documentsTabSource).toContain(
       "<CardContent className={DOCUMENTS_INDEX_BODY_CLASSNAME}>"

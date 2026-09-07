@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
-import { type ReactNode, useState } from "react"
+import type { ReactNode } from "react"
 
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -97,16 +97,11 @@ function BuildCollectDesktopNavigation({
 }: {
   activeArea: BuildCollectActiveArea
 }) {
-  const [openMenu, setOpenMenu] = useState("")
-
   return (
     <NavigationMenu
       className="hidden md:flex"
       delayDuration={100}
-      onPointerLeave={() => setOpenMenu("")}
-      onValueChange={setOpenMenu}
       skipDelayDuration={100}
-      value={openMenu}
       viewport={false}
     >
       <NavigationMenuList className="bg-background/90 rounded-xl border p-1 shadow-xs backdrop-blur">
@@ -114,7 +109,6 @@ function BuildCollectDesktopNavigation({
           <NavigationMenuTrigger
             className="data-[active=true]:bg-accent rounded-lg"
             data-active={activeArea === "collect"}
-            onPointerEnter={() => setOpenMenu("collect")}
           >
             Collect
           </NavigationMenuTrigger>
@@ -126,7 +120,6 @@ function BuildCollectDesktopNavigation({
           <NavigationMenuTrigger
             className="data-[active=true]:bg-accent rounded-lg"
             data-active={activeArea === "build"}
-            onPointerEnter={() => setOpenMenu("build")}
           >
             Build
           </NavigationMenuTrigger>

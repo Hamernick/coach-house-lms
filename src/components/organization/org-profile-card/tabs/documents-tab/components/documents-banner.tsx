@@ -1,7 +1,7 @@
 "use client"
 
-import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
-import Lock from "lucide-react/dist/esm/icons/lock"
+import { useRef, useState, type DragEvent, type ReactNode } from "react"
+import { IconCloudUpload, IconLock } from "@tabler/icons-react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 
@@ -15,49 +15,88 @@ const DOCUMENTS_BANNER_OWNER_PROPS = getReactGrabOwnerProps({
   slot: "root",
   canonicalOwnerSource: DOCUMENTS_BANNER_SOURCE,
   canonicalOwnerReason:
-    "DocumentsBanner owns its document-introduction layout and presentation.",
+    "DocumentsBanner owns the complete Documents library surface and presentation.",
 })
 
 type DocumentsBannerProps = {
-  hasRoadmapDocuments: boolean
   canEdit: boolean
+  editMode?: boolean
+  uploading?: boolean
+  onFilesDropped?: (files: File[]) => Promise<void>
+  children: ReactNode
 }
 
 export function DocumentsBanner({
-  hasRoadmapDocuments,
   canEdit,
+  editMode = false,
+  uploading = false,
+  onFilesDropped,
+  children,
 }: DocumentsBannerProps) {
+  const [draggingFiles, setDraggingFiles] = useState(false)
+  const dragDepthRef = useRef(0)
+  const acceptsDrops =
+    canEdit && editMode && Boolean(onFilesDropped) && !uploading
+
+  const hasFiles = (event: DragEvent<HTMLElement>) =>
+    Array.from(event.dataTransfer.types).includes("Files")
+
+  const handleDragEnter = (event: DragEvent<HTMLElement>) => {
+    if (!acceptsDrops || !hasFiles(event)) return
+    event.preventDefault()
+    dragDepthRef.current += 1
+    setDraggingFiles(true)
+  }
+
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    if (!acceptsDrops || !hasFiles(event)) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = "copy"
+  }
+
+  const handleDragLeave = (event: DragEvent<HTMLElement>) => {
+    if (!acceptsDrops || !hasFiles(event)) return
+    event.preventDefault()
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+    if (dragDepthRef.current === 0) setDraggingFiles(false)
+  }
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    if (!acceptsDrops || !hasFiles(event)) return
+    event.preventDefault()
+    dragDepthRef.current = 0
+    setDraggingFiles(false)
+    const files = Array.from(event.dataTransfer.files)
+    if (files.length > 0) void onFilesDropped?.(files)
+  }
+
   return (
     <section
       {...DOCUMENTS_BANNER_OWNER_PROPS}
-      className="border-border/70 rounded-2xl border bg-zinc-100/80 px-4 py-5 text-center sm:px-5 sm:py-6 dark:bg-zinc-900/30"
+      className="relative mx-auto w-full max-w-[42rem] rounded-[2rem] bg-transparent p-4"
+      data-dragging-files={draggingFiles || undefined}
+      aria-busy={uploading || undefined}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
-      <div className="mx-auto flex max-w-[68ch] min-w-0 flex-col items-center">
-        <span className="border-border/70 bg-background text-muted-foreground inline-flex size-14 shrink-0 origin-center items-center justify-center rounded-2xl border shadow-xs motion-safe:animate-[soft-pop_600ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">
-          <FolderOpen className="size-6" aria-hidden />
-        </span>
-        <h2
-          id="documents-title"
-          className="text-foreground mt-3 max-w-[30ch] text-xl font-semibold text-balance sm:text-2xl"
-        >
-          Store, track, and act on every key document in one place.
-        </h2>
-        <div className="text-muted-foreground mt-3 space-y-2 text-sm leading-relaxed">
-          <p>
-            {hasRoadmapDocuments
-              ? "This filing system combines roadmap sections, policies, and organization files in one index so your team can find what matters and keep documentation current."
-              : "Keep your organization's policies and core files in one secure index so your team can quickly find, update, and manage required documents."}
+      {draggingFiles ? (
+        <div className="bg-background/95 border-primary/60 absolute inset-1 z-50 flex flex-col items-center justify-center rounded-[1.75rem] border-2 border-dashed backdrop-blur-sm">
+          <IconCloudUpload className="text-primary size-8" aria-hidden />
+          <p className="mt-3 text-sm font-medium">Drop files to upload</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Up to 50 MB per file
           </p>
-          <p>Uploads support PDF files up to 50 MB.</p>
         </div>
-        {!canEdit ? (
-          <div className="border-border/70 bg-background/70 text-muted-foreground mt-3 inline-flex w-fit items-center justify-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
-            <Lock className="size-3.5 shrink-0" aria-hidden />
-            You have view-only access. Organization admins can upload files and
-            manage policies.
-          </div>
-        ) : null}
-      </div>
+      ) : null}
+      {children}
+      {!canEdit ? (
+        <p className="text-muted-foreground mt-5 flex items-center gap-2 text-xs">
+          <IconLock className="size-3.5" aria-hidden />
+          View-only access. Organization admins can add and manage files.
+        </p>
+      ) : null}
     </section>
   )
 }

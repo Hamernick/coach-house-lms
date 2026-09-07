@@ -1,6 +1,7 @@
 # Local development synchronization — 2026-09-07
 
-Status: full local quality gate passed; checkout synchronization in progress.
+Status: complete. All 22 original active checkouts and the integration checkout
+share the validated development baseline. Root serves localhost:3010.
 
 ## Authorization and recovery
 
@@ -27,7 +28,7 @@ historical-checkout deletion.
 - The older Documents UI snapshot is already represented by later catch-up
   implementation. Preserved newer download/error propagation, upload rollback,
   centralized limits, selection behavior, grid/list support, and consent fixtures.
-  Its 17 root-level review screenshots remain external backup artifacts.
+  Its 17 root-level review screenshots remain in their original worktree and backup.
 - Reconciled Find weather history while preserving newer camera lifecycle,
   failure/empty states, card spacing, and matching tests. The resulting weather
   merge introduced no source changes because the catch-up tree already includes it.
@@ -120,3 +121,25 @@ historical-checkout deletion.
   Admin 994.3 KB / 1,000 KB. No budget changes.
 - Canonical review checkout after synchronization: root repository, local branch
   `chore/local-development-20260907`, port 3010.
+
+## Completed synchronization
+
+- Fast-forwarded all 22 active checkouts to `dcf59c18`, preserving original tips
+  and dirty-file checkpoints. The completion record is a subsequent docs-only
+  commit shared with the integration checkout; source remains the tested tree.
+- Seven historical checkouts retain their original branches, heads, status, and
+  changed-file hashes. Five missing registrations remain registered, with their
+  committed history protected. All 17 Documents review screenshots are retained.
+- Root now uses `chore/local-development-20260907` with no upstream. This is the
+  canonical review checkout; future branch edits still require normal Git sync.
+- Cleared 1.45 GB of root `.next` output and restarted port 3010 with React Grab.
+  Verified listener working directory, HTTP 200 on home and Documentation, and a
+  warm Documentation response in 0.346 seconds. Chromium confirmed the latest
+  glass eyebrow, Social media header, five canvas nodes, no article tabs,
+  no horizontal overflow, and no page errors.
+- Refreshed the root Graphify code graph with `graphify update .`.
+- Original and validated history bundles, dirty-file archives, checksums, quality
+  reports, browser evidence, and final synchronization inventory are retained in
+  the private backup directory. `history-after-sync.bundle` records final history.
+- Local `main` remains `bb1a3e0b`; remote `main` remains `67501039`. No push,
+  deployment, provider mutation, migration application, or hosted fixture write.

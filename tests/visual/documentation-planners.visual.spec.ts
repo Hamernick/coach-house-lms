@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 
 const planners = [
   ["Campaigns", "tools/campaigns", 3],
@@ -8,7 +8,7 @@ const planners = [
   ["HR", "tools/hr", 3],
   ["Legal", "tools/legal", 3],
   ["Networking", "tools/networking", 3],
-  ["Social media", "tools/social-media", 2],
+  ["Social media", "tools/social-media", 5],
   ["Compliance", "best-practices/compliance", 2],
   ["Frameworks", "best-practices/frameworks", 2],
   ["Fundraising", "best-practices/fundraising", 3],
@@ -18,29 +18,53 @@ const planners = [
   ["Sustainability", "best-practices/sustainability", 2],
 ] as const
 
+async function closeEditor(page: Page) {
+  await page
+    .locator("[data-canvas-editor]")
+    .getByRole("button", { name: "Collapse step", exact: true })
+    .click()
+  await expect(page.locator("[data-canvas-editor]")).toHaveCount(0)
+}
+
+async function listSteps(page: Page) {
+  const toggle = page.getByRole("button", { name: "List view", exact: true })
+  if (await toggle.isVisible()) await toggle.click()
+  return page.getByRole("list", { name: "Planner steps" }).getByRole("button")
+}
+
 for (const [name, route, count] of planners) {
   test(`${name} planner preserves edits through steps, export, and reload`, async ({
     page,
   }) => {
     const errors: string[] = []
     page.on("pageerror", (error) => errors.push(error.message))
-    await page.goto(`/documentation/${route}#sandbox`)
+    await page.goto(`/documentation/${route}`)
+    await expect(
+      page.getByRole("tab", { name: /^(Tool|Overview)$/ })
+    ).toHaveCount(0)
+    await expect(page.locator("#definition")).toBeVisible()
+    await expect(
+      page.getByRole("region", { name: "Decision canvas", exact: true })
+    ).toBeVisible()
     const example = page.getByRole("button", {
       name: "Load example",
       exact: true,
     })
     await expect(example).toBeEnabled()
     await example.click()
+    await page
+      .getByRole("button", { name: "Start planning", exact: true })
+      .click()
     const firstInput = page
       .locator(
-        '#sandbox input:not([type]):visible, #sandbox input[type="text"]:visible'
+        '[data-planner-editor] input:not([type]):visible, [data-planner-editor] input[type="text"]:visible'
       )
       .first()
+    await expect(page.locator("[data-canvas-editor]")).toBeVisible()
     const hasTextInput = (await firstInput.count()) > 0
     if (hasTextInput) await firstInput.fill("Planner workflow check")
-    const steps = page
-      .getByRole("tablist", { name: "Planner steps" })
-      .getByRole("tab")
+    await closeEditor(page)
+    const steps = await listSteps(page)
     await expect(steps).toHaveCount(count)
     await steps.last().click()
     const download = page.waitForEvent("download")
@@ -53,11 +77,12 @@ for (const [name, route, count] of planners) {
     const csv = readFileSync((await file.path())!, "utf8")
     expect(csv.length).toBeGreaterThan(100)
     if (hasTextInput) expect(csv).toContain("Planner workflow check")
+    await closeEditor(page)
     await steps.first().click()
     if (hasTextInput)
       await expect(firstInput).toHaveValue("Planner workflow check")
     await page.reload()
-    await expect(example).toBeEnabled()
+    await expect(page.locator("[data-canvas-editor]")).toBeVisible()
     if (hasTextInput)
       await expect(firstInput).toHaveValue("Planner workflow check")
     expect(errors).toEqual([])
@@ -68,41 +93,94 @@ test("planner examples preserve existing work when replacement is cancelled", as
   page,
 }) => {
   await page.goto("/documentation/tools/crm#sandbox")
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   const name = page.getByLabel("Organization name", { exact: true })
-  await expect(name).toBeEnabled()
   await name.fill("Keep this draft")
+  await closeEditor(page)
   page.once("dialog", (dialog) => dialog.dismiss())
   await page.getByRole("button", { name: "Load example", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   await expect(name).toHaveValue("Keep this draft")
+  await closeEditor(page)
   page.once("dialog", (dialog) => dialog.accept())
   await page.getByRole("button", { name: "Load example", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   await expect(name).toHaveValue("Willow Street Family Resource Network")
 })
 
-test("guide anchors and planner steps survive browser history without replacing drafts", async ({
+test("overview and planner share one page and preserve drafts through anchor history", async ({
   page,
 }) => {
-  await page.goto("/documentation/tools/campaigns#sandbox")
+  await page.goto("/documentation/tools/campaigns")
+  await expect(
+    page.getByRole("tab", { name: /^(Tool|Overview)$/ })
+  ).toHaveCount(0)
+  const canvas = page.getByRole("region", {
+    name: "Decision canvas",
+    exact: true,
+  })
+  await expect(canvas).toBeVisible()
+  expect(
+    await page.locator("#sandbox").evaluate((tool) => {
+      const introduction = document.getElementById("stages")!
+      const example = document.getElementById("example")!
+      return (
+        Boolean(
+          introduction.compareDocumentPosition(tool) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+        ) &&
+        Boolean(
+          tool.compareDocumentPosition(example) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+        )
+      )
+    })
+  ).toBe(true)
+  await page.getByRole("link", { name: "Try it", exact: true }).click()
+  await expect(page).toHaveURL(/#sandbox$/)
+  await expect(page.locator("[data-decision-viewport]")).toBeInViewport()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   const name = page.getByLabel("Organization name", { exact: true })
-  await expect(name).toBeEnabled()
   await name.fill("History check")
-  const step = page.getByRole("tab", { name: /Delivery & measurement/ })
-  await step.click()
+  await page
+    .getByRole("button", { name: "Reviewed & continue", exact: true })
+    .click()
   await expect(page).toHaveURL(/step=delivery#sandbox$/)
-  await page.getByRole("tab", { name: "Read guide", exact: true }).click()
-  await expect(
-    page.getByRole("tab", { name: "Read guide", exact: true })
-  ).toHaveAttribute("aria-selected", "true")
   await page.goBack()
-  await expect(step).toHaveAttribute("aria-selected", "true")
-  await page.goBack()
-  await expect(name).toBeVisible()
   await expect(name).toHaveValue("History check")
-  await page.goto("/documentation/tools/campaigns#example")
-  await expect(
-    page.getByRole("tab", { name: "Read guide", exact: true })
-  ).toHaveAttribute("aria-selected", "true")
-  await expect(page.locator("#example")).toBeVisible()
+  await page.goForward()
+  await expect(page.locator("[data-canvas-editor]")).toContainText(
+    "Delivery & measurement"
+  )
+  await closeEditor(page)
+  await page.getByRole("link", { name: "Example", exact: true }).click()
+  await expect(page).toHaveURL(/#example$/)
+  await expect(page.locator("#example")).toBeInViewport()
+  await expect(canvas).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL(/#sandbox$/)
+  await page.goBack()
+  await expect(page.locator("[data-canvas-editor]")).toContainText(
+    "Delivery & measurement"
+  )
+  await page.goto("/documentation/tools/campaigns#guide")
+  await expect(page.locator("#guide")).toBeInViewport()
+  await expect(canvas).toBeVisible()
+  await expect(page.locator("[data-canvas-editor]")).toHaveCount(0)
+  await page.goto("/documentation/tools/campaigns?step=brief")
+  await expect(name).toHaveValue("History check")
+  await expect(page.locator("[data-decision-viewport]")).toBeInViewport()
+  await page.goto("/documentation/tools/campaigns#tool-campaign")
+  await expect(page.locator("[data-decision-viewport]")).toBeInViewport()
+  await expect(canvas).toBeVisible()
 })
 
 test("Ad Grants starter uses the selected goal and does not replace work silently", async ({
@@ -115,25 +193,38 @@ test("Ad Grants starter uses the selected goal and does not replace work silentl
   await expect(
     page.getByRole("heading", { name: "Start an Ad Grants campaign" })
   ).toBeVisible()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   const name = page.getByLabel("Organization name", { exact: true })
-  await expect(name).toBeEnabled()
   await name.fill("Keep organization identity")
+  await closeEditor(page)
   await page.getByRole("combobox", { name: "Campaign goal" }).click()
   await page
     .getByRole("option", { name: "Volunteer recruitment", exact: true })
     .click()
   page.once("dialog", (dialog) => dialog.dismiss())
   await page.getByRole("button", { name: "Use starter", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   await expect(name).toHaveValue("Keep organization identity")
+  await closeEditor(page)
   page.once("dialog", (dialog) => dialog.accept())
   await page.getByRole("button", { name: "Use starter", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   await expect(name).toHaveValue("Keep organization identity")
   await expect(
     page.getByLabel("Working campaign name", { exact: true })
   ).toHaveValue("Google Ad Grants: Volunteer recruitment")
   await expect(page).not.toHaveURL(/template=/)
-  await page.getByRole("tab", { name: /Review & export/ }).click()
-  await expect(page.locator("#sandbox")).toContainText("submitted applications")
+  await closeEditor(page)
+  await (await listSteps(page)).last().click()
+  await expect(page.locator("[data-canvas-editor]")).toContainText(
+    "submitted applications"
+  )
 })
 
 test("a planner reports unavailable storage and still exports the current draft", async ({
@@ -145,19 +236,14 @@ test("a planner reports unavailable storage and still exports the current draft"
     }
   })
   await page.goto("/documentation/tools/campaigns#sandbox")
-  const example = page.getByRole("button", {
-    name: "Load example",
-    exact: true,
-  })
-  await expect(example).toBeEnabled()
-  await example.click()
+  await page.getByRole("button", { name: "Load example", exact: true }).click()
   await expect(
     page.getByText(
       "Browser saving is unavailable. Export before leaving this tab.",
       { exact: true }
     )
   ).toBeVisible()
-  await page.getByRole("tab", { name: /Review & export/ }).click()
+  await (await listSteps(page)).last().click()
   const download = page.waitForEvent("download")
   await page
     .getByRole("button", { name: "Download brief CSV", exact: true })
@@ -178,31 +264,34 @@ for (const mode of ["light", "dark"] as const) {
     )
     for (const [name, route] of planners) {
       await page.goto(`/documentation/${route}#sandbox`)
-      const example = page.getByRole("button", {
-        name: "Load example",
-        exact: true,
-      })
-      await expect(example).toBeEnabled()
-      await example.click()
-      const steps = page
-        .getByRole("tablist", { name: "Planner steps" })
-        .getByRole("tab")
+      await page
+        .getByRole("button", { name: "Load example", exact: true })
+        .click()
+      const steps = await listSteps(page)
       await steps.last().click()
       await expect(
         page.getByRole("button", { name: /Download.*CSV/ }).first()
       ).toBeVisible()
       expect(
         await page
-          .locator("[data-documentation-scroll]")
+          .locator("[data-planner-editor]")
           .evaluate((el) => el.scrollWidth <= el.clientWidth),
         `${name} review should fit mobile`
       ).toBe(true)
+      await closeEditor(page)
       await steps.first().click()
+      expect(
+        await page
+          .locator("[data-planner-editor]")
+          .evaluate((el) => el.scrollWidth <= el.clientWidth),
+        `${name} fields should fit mobile`
+      ).toBe(true)
+      await closeEditor(page)
       expect(
         await page
           .locator("[data-documentation-scroll]")
           .evaluate((el) => el.scrollWidth <= el.clientWidth),
-        `${name} fields should fit mobile`
+        `${name} canvas should fit mobile`
       ).toBe(true)
     }
   })

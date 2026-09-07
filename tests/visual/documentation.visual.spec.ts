@@ -74,11 +74,18 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   await page.goto("/documentation/tools/crm#sandbox")
   await ready(page)
   await page.getByRole("button", { name: "Load example", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   const organization = page.getByLabel("Organization name", { exact: true })
   await expect(organization).toHaveValue(
     "Willow Street Family Resource Network"
   )
   await organization.fill("Local review organization")
+  await page
+    .locator("[data-canvas-editor]")
+    .getByRole("button", { name: "Collapse step", exact: true })
+    .click()
   const search = page.getByRole("searchbox", {
     name: "Search documentation",
     exact: true,
@@ -90,11 +97,20 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   ).toBeVisible()
   await page.goBack()
   await ready(page)
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
   await expect(organization).toHaveValue("Local review organization")
   await page.reload()
   await ready(page)
   await expect(organization).toHaveValue("Local review organization")
-  await page.getByRole("tab", { name: /Review & export/ }).click()
+  await page
+    .locator("[data-canvas-editor]")
+    .getByRole("button", { name: "Collapse step", exact: true })
+    .click()
+  await page
+    .getByRole("button", { name: "Open Review & export", exact: true })
+    .click()
   const download = page.waitForEvent("download")
   await page
     .getByRole("button", { name: "Download plan CSV", exact: true })
@@ -102,9 +118,13 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   expect((await download).suggestedFilename()).toBe(
     "nonprofit-crm-data-stewardship-plan.csv"
   )
+  await page
+    .locator("[data-canvas-editor]")
+    .getByRole("button", { name: "Collapse step", exact: true })
+    .click()
   page.once("dialog", (dialog) => dialog.accept())
   await page.getByRole("button", { name: "Reset", exact: true }).click()
-  await page.getByRole("tab", { name: /Purpose/ }).click()
+  await page.getByRole("button", { name: "Open Purpose", exact: true }).click()
   await expect(organization).toHaveValue("")
 })
 
@@ -494,8 +514,11 @@ for (const [layout, mode, width, height] of [
           .getByRole("button", { name: "Load example", exact: true })
           .click()
         await page
-          .getByRole("tablist", { name: "Planner steps" })
-          .getByRole("tab")
+          .getByRole("button", { name: "List view", exact: true })
+          .click()
+        await page
+          .getByRole("list", { name: "Planner steps" })
+          .getByRole("button")
           .last()
           .click()
         await expect(

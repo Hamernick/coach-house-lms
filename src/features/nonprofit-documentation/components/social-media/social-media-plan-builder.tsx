@@ -12,6 +12,7 @@ import {
   buildSocialMediaReviewPrompt,
 } from "../../lib/social-media-plan"
 import type { SocialMediaPlanDraft } from "../../types"
+import { SocialMediaPlanOperationsFields } from "./social-media-plan-operations-fields"
 import { SocialMediaPlanFields } from "./social-media-plan-fields"
 import { SocialMediaPlanResults } from "./social-media-plan-results"
 
@@ -76,15 +77,62 @@ export function SocialMediaPlanBuilder() {
       />
 
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={
           JSON.stringify(draft) !== JSON.stringify(DEFAULT_SOCIAL_MEDIA_PLAN)
         }
         steps={[
           {
             id: "content",
-            label: "Plan the content",
+            label: "Audience & purpose",
+            description:
+              "Choose who this is for and the action you want to support.",
             content: (
               <SocialMediaPlanFields
+                part="purpose"
+                draft={draft}
+                updateDraft={updateDraft}
+              />
+            ),
+          },
+          {
+            id: "message",
+            label: "Message & content",
+            description: "Shape a sourced message and an accessible post.",
+            dependsOn: ["content"],
+            content: (
+              <SocialMediaPlanFields
+                part="message"
+                draft={draft}
+                updateDraft={updateDraft}
+              />
+            ),
+          },
+          {
+            id: "channels",
+            label: "Channels & cadence",
+            description:
+              "Choose the channels and workload your team can support.",
+            dependsOn: ["content"],
+            content: (
+              <SocialMediaPlanOperationsFields
+                part="channels"
+                draft={draft}
+                updateDraft={updateDraft}
+                updateChannelCadence={updateChannelCadence}
+              />
+            ),
+          },
+          {
+            id: "safeguards",
+            label: "Ownership & safeguards",
+            description:
+              "Bring the content and channel plans together for review.",
+            dependsOn: ["message", "channels"],
+            content: (
+              <SocialMediaPlanOperationsFields
+                part="safeguards"
                 draft={draft}
                 updateDraft={updateDraft}
                 updateChannelCadence={updateChannelCadence}

@@ -1,137 +1,171 @@
 "use client"
 
-import { useEffect, useRef, type ReactNode } from "react"
-import { useSearchParams } from "next/navigation"
+import { useCallback, useMemo, type ReactNode } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  DocumentationDecisionCanvasPanel,
+  useDocumentationDecisionCanvasController,
+  type DocumentationDecisionStep,
+} from "@/features/documentation-decision-canvas"
+import { getDocumentationToolMetadata } from "../lib/documentation-tools"
+import styles from "./documentation-tool-flow.module.css"
 
-export type DocumentationToolStep = {
-  id: string
-  label: string
+export type DocumentationToolStep = DocumentationDecisionStep & {
   content: ReactNode
 }
 
 export function DocumentationToolFlow({
   steps,
   hasDraft = true,
+  ready,
+  draftFingerprint,
 }: {
   steps: DocumentationToolStep[]
   hasDraft?: boolean
+  ready: boolean
+  draftFingerprint: string
 }) {
   const params = useSearchParams()
+  const pathname = usePathname()
   const requested = params.get("step")
   const current = Math.max(
     0,
     steps.findIndex((step) => step.id === requested)
   )
-  const navigation = useRef<HTMLDivElement>(null)
-  const activeId = steps[current].id
-  const previousStep = useRef(activeId)
-  useEffect(() => {
-    if (previousStep.current !== activeId) {
-      navigation.current?.scrollIntoView({ block: "start" })
-      navigation.current
-        ?.querySelector('[role="tab"][data-state="active"]')
-        ?.scrollIntoView({ block: "nearest", inline: "nearest" })
-    }
-    previousStep.current = activeId
-  }, [activeId])
-  const changeStep = (id: string) => {
+  const active = steps[current]
+  const open = steps.some((step) => step.id === requested)
+  const schema = JSON.stringify(
+    steps.map(({ id, label, description, dependsOn }) => ({
+      id,
+      label,
+      description,
+      dependsOn,
+    }))
+  )
+  const canvasSteps = useMemo<DocumentationDecisionStep[]>(
+    () => JSON.parse(schema),
+    [schema]
+  )
+  const { reviewed, markReviewed, savingUnavailable } =
+    useDocumentationDecisionCanvasController({
+      steps: canvasSteps,
+      storageKey: `coach-house:decision-review:${pathname}`,
+      draftFingerprint,
+      ready,
+      hasDraft,
+      editingId: open ? active.id : null,
+    })
+  const title =
+    getDocumentationToolMetadata(pathname.replace("/documentation/", ""))
+      ?.title ?? "Your plan"
+  const changeStep = useCallback((id: string | null) => {
     const url = new URL(window.location.href)
-    if (id === steps[0].id) url.searchParams.delete("step")
-    else url.searchParams.set("step", id)
+    if (id) url.searchParams.set("step", id)
+    else url.searchParams.delete("step")
     url.hash = "sandbox"
     window.history.pushState(
       null,
       "",
       `${url.pathname}${url.search}${url.hash}`
     )
-    navigation.current?.scrollIntoView({ block: "start" })
-  }
+  }, [])
+
   return (
-    <Tabs
-      value={steps[current].id}
-      onValueChange={changeStep}
-      className="gap-0"
-    >
-      <div
-        ref={navigation}
-        className="scroll-mt-28 overflow-x-auto border-b px-4 py-2"
-      >
-        <TabsList
-          variant="line"
-          className="min-w-max justify-start gap-x-4 group-data-[orientation=horizontal]/tabs:h-auto sm:min-w-0 sm:flex-wrap"
-          aria-label="Planner steps"
-        >
-          {steps.map((step, index) => (
-            <TabsTrigger
-              key={step.id}
-              value={step.id}
-              className="min-h-11 flex-none px-1"
-            >
-              <span className="text-muted-foreground mr-1 tabular-nums">
-                {index + 1}.
-              </span>
-              {step.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
-      {steps.map((step) => (
-        <TabsContent
-          key={step.id}
-          value={step.id}
-          forceMount
-          className="data-[state=inactive]:hidden"
-        >
-          {step.id === "review" && !hasDraft ? (
-            <Empty
-              className="m-5 rounded-xl"
-              title="Your plan will appear here"
-              description="Add your details or load an example to see the working plan and export it."
-            />
-          ) : (
-            step.content
-          )}
-        </TabsContent>
-      ))}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-2">
-        <Button
-          type="button"
-          variant="ghost"
-          className="min-h-11 rounded-full"
-          disabled={current === 0}
-          onClick={() => changeStep(steps[current - 1].id)}
-        >
-          <ArrowLeftIcon aria-hidden />
-          Back
-        </Button>
-        <p className="text-muted-foreground text-xs">
-          Step {current + 1} of {steps.length}
+    <>
+      <DocumentationDecisionCanvasPanel
+        title={title}
+        steps={canvasSteps}
+        activeId={
+          open
+            ? active.id
+            : (
+                canvasSteps.find((step) => !reviewed.includes(step.id)) ??
+                canvasSteps[canvasSteps.length - 1]
+              ).id
+        }
+        reviewed={reviewed}
+        disabled={!ready}
+        onSelect={changeStep}
+        onClose={() => changeStep(null)}
+        editor={
+          open
+            ? {
+                id: active.id,
+                label: active.label,
+                positionLabel: `Step ${current + 1} of ${steps.length}`,
+                description:
+                  active.description ??
+                  "Your draft stays connected as you move between steps.",
+                content: (
+                  <fieldset
+                    disabled={!ready}
+                    className={`${styles.editor} min-w-0`}
+                  >
+                    {active.id === "review" && !hasDraft ? (
+                      <Empty
+                        className="m-4 rounded-2xl"
+                        title="Your plan will appear here"
+                        description="Add your details or load an example to see the working plan and export it."
+                      />
+                    ) : (
+                      active.content
+                    )}
+                  </fieldset>
+                ),
+                actions: (
+                  <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="min-h-11 shrink-0 rounded-full"
+                      onClick={() =>
+                        changeStep(current ? steps[current - 1].id : null)
+                      }
+                    >
+                      <ArrowLeftIcon aria-hidden />
+                      {current ? "Back" : "Canvas"}
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={!ready || (active.id === "review" && !hasDraft)}
+                      className="min-h-11 rounded-full px-4"
+                      onClick={() => {
+                        markReviewed(active.id)
+                        changeStep(
+                          current < steps.length - 1
+                            ? steps[current + 1].id
+                            : null
+                        )
+                      }}
+                    >
+                      {current === steps.length - 1 ? (
+                        <>
+                          <CheckIcon aria-hidden />
+                          Finish review
+                        </>
+                      ) : (
+                        <>
+                          {hasDraft ? "Reviewed & continue" : "Continue"}
+                          <ArrowRightIcon aria-hidden />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ),
+              }
+            : null
+        }
+      />
+      {savingUnavailable && (
+        <p role="status" className="text-muted-foreground px-5 pb-4 text-xs">
+          Review progress cannot be saved in this browser.
         </p>
-        {current < steps.length - 1 ? (
-          <Button
-            type="button"
-            className="min-h-11 rounded-full"
-            onClick={() => changeStep(steps[current + 1].id)}
-          >
-            {current === steps.length - 2 ? "Review your plan" : "Continue"}
-            <ArrowRightIcon aria-hidden />
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 rounded-full"
-            onClick={() => changeStep(steps[0].id)}
-          >
-            Edit plan
-          </Button>
-        )}
-      </div>
-    </Tabs>
+      )}
+    </>
   )
 }

@@ -1,99 +1,61 @@
 "use client"
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-type ArticleView = "guide" | "tool"
+import { useEffect, type CSSProperties, type ReactNode } from "react"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 
 export function DocumentationArticleWorkspace({
   guide,
   tool,
-  defaultView,
+  continuation,
 }: {
   guide: ReactNode
   tool: ReactNode
-  defaultView: ArticleView
+  continuation: ReactNode
 }) {
-  const [view, setView] = useState(defaultView)
-  const [anchor, setAnchor] = useState("")
-
   useEffect(() => {
+    let frame = 0
     const sync = () => {
-      const hash = window.location.hash.slice(1)
-      setView(
-        hash
-          ? hash === "sandbox" || hash.startsWith("tool-")
-            ? "tool"
-            : "guide"
-          : defaultView
-      )
-      setAnchor(hash)
+      cancelAnimationFrame(frame)
+      const url = new URL(window.location.href)
+      const anchor =
+        url.hash.slice(1) || (url.searchParams.has("step") ? "sandbox" : "")
+      if (!anchor) return
+      frame = requestAnimationFrame(() => {
+        const target =
+          document.getElementById(anchor) ??
+          (anchor.startsWith("tool-")
+            ? document.getElementById("sandbox")
+            : null)
+        target?.scrollIntoView({ block: "start" })
+      })
     }
     sync()
     window.addEventListener("hashchange", sync)
     window.addEventListener("popstate", sync)
     return () => {
+      cancelAnimationFrame(frame)
       window.removeEventListener("hashchange", sync)
       window.removeEventListener("popstate", sync)
     }
-  }, [defaultView])
-
-  useEffect(() => {
-    if (!anchor) return
-    const frame = requestAnimationFrame(() =>
-      document.getElementById(anchor)?.scrollIntoView({ block: "start" })
-    )
-    return () => cancelAnimationFrame(frame)
-  }, [anchor, view])
-
-  const changeView = (next: string) => {
-    const selected = next === "tool" ? "tool" : "guide"
-    const target = selected === "tool" ? "sandbox" : "guide"
-    const url = new URL(window.location.href)
-    url.hash = target
-    window.history.pushState(
-      null,
-      "",
-      `${url.pathname}${url.search}${url.hash}`
-    )
-    setView(selected)
-    setAnchor(target)
-  }
+  }, [])
 
   return (
-    <Tabs
-      value={view}
-      onValueChange={changeView}
-      className="gap-0"
+    <div
+      {...getReactGrabOwnerProps({
+        ownerId: "documentation:article-workspace",
+        component: "DocumentationArticleWorkspace",
+        source:
+          "src/features/nonprofit-documentation/components/documentation-article-workspace.tsx",
+        slot: "article-workspace",
+      })}
+      className="flex w-full min-w-0 flex-col gap-4"
       style={{ "--documentation-anchor-offset": "7rem" } as CSSProperties}
     >
-      <TabsList
-        className="rounded-full p-1 group-data-[orientation=horizontal]/tabs:h-11"
-        aria-label="Guide and tool"
-      >
-        <TabsTrigger value="tool" className="min-h-9 rounded-full px-4">
-          Use tool
-        </TabsTrigger>
-        <TabsTrigger value="guide" className="min-h-9 rounded-full px-4">
-          Read guide
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent
-        value="tool"
-        forceMount
-        className="data-[state=inactive]:hidden [&_[data-tool-intro]]:sr-only"
-      >
-        {tool}
-      </TabsContent>
-      <TabsContent
-        value="guide"
-        forceMount
-        className="data-[state=inactive]:hidden"
-      >
-        <div id="guide" className="scroll-mt-28">
-          {guide}
-        </div>
-      </TabsContent>
-    </Tabs>
+      <div id="guide" className="mx-auto w-full max-w-2xl scroll-mt-28">
+        {guide}
+      </div>
+      {tool}
+      <div className="mx-auto w-full max-w-2xl">{continuation}</div>
+    </div>
   )
 }

@@ -84,6 +84,8 @@ export function CampaignPlanBuilder() {
         }}
       />
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={
           JSON.stringify(draft) !== JSON.stringify(DEFAULT_CAMPAIGN_PLAN)
         }

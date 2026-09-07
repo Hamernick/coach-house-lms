@@ -23,6 +23,7 @@
       "tests/acceptance/coaching-schedule-route.test.ts",
       "tests/acceptance/core-documents-publication.test.ts",
       "tests/acceptance/devtools-audience.test.ts",
+      "tests/acceptance/documentation-decision-canvas.test.ts",
       "tests/acceptance/documents-banner.test.ts",
       "tests/acceptance/documents-index-sort-state.test.ts",
       "tests/acceptance/documents-results-table-resizing.test.ts",

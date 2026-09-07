@@ -34,6 +34,12 @@
 - Keep public tools available without authentication or paid entitlements.
   Device-local drafts must identify their storage boundary and avoid claiming
   account sync.
+- Articles integrate their tools between introductory/stage guidance and the
+  examples, frameworks, and references. Keep everything on one page without
+  Tool/Overview tabs or hidden planner mounts. Preserve `#guide`, `#sandbox`,
+  `#tool-*`, section anchors, step URLs, and browser history. Center reading
+  content and node editor content in a responsive column capped at 42rem
+  (672px); canvases use the hero width. Show each embedded tool's introduction.
 - Keep Documentation compact: 24px index headings, 14px body copy, 32px desktop
   controls, and 28px desktop tabs. Article headers use centered 28px mobile and
   34px desktop titles, 15–16px subtitles with 1.4 line height, and sentence-case
@@ -42,6 +48,8 @@
   through `DocumentationSurface` and the portaled Marketplace shortlist. Preserve
   44px mobile targets and 16px mobile input text; do not resize shared app primitives
   or generated Brand Identity artwork to change the documentation layout.
+- Decision canvases use `rounded-3xl` outer shells and `rounded-2xl` nodes,
+  following the September 6 widget references.
 - Use `rounded-xl` for standalone containers, field groups, review panels, and
   table frames. Clip edge-to-edge child backgrounds at the container boundary;
   keep padding around interactive controls so focus rings remain visible. Apply
@@ -50,7 +58,16 @@
   the top and sides. Keep captions compact. `DocumentationTaskCards` owns the
   grid and React Grab metadata while its card content remains server-rendered.
 - Article, tool, and resource headers share `DocumentationPageHeader`, with four
-  rounded image corners and an 8px inset. Every article has its own original image
+  rounded image corners and an 8px inset. Eyebrow, title, and subtitle sit centered
+  over the artwork; only the eyebrow sits inside a compact frosted pill.
+  The title and subtitle remain outside that pill; metadata sits below the image.
+  Keep the translucent background and backdrop blur confined to the eyebrow,
+  using `PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME` from the map's `sidebar-theme.ts`
+  for the same theme-aware frosted surface as the map overlay pills.
+  Preserve original image brightness outside it: no full-image scrim, tint,
+  brightness filter, or color wash. Printed headers keep their text and omit
+  the decorative image and pill treatment.
+  Every article has its own original image
   in `assets/heroes`, assigned by page slug in `documentation-artwork.ts`. Never
   reuse a palette fallback or recolor one image across several pages. Follow the
   September 5 reference's heavily defocused color fields and subtle fine grain;
@@ -69,11 +86,12 @@
   protects edits made immediately after hydration or browser back navigation.
 - All 14 planners share `DocumentationToolFlow` and
   `useDocumentationDraftPersistence`. Preserve draft keys, sanitizers, calculations,
-  and exports when changing steps. Keep inactive panels mounted, support browser
-  history, and warn when browser storage is unavailable. Examples and templates
-  require confirmation before replacing existing work.
-- Guide/tool selection preserves existing section anchors; step selection lives
-  in the URL. Ad Grants starters run only after an explicit action from
+  and exports when changing steps. Keep the planner mounted while readers follow
+  section anchors, support browser history, and warn when browser storage is
+  unavailable. Examples and templates require confirmation before replacing
+  existing work.
+- Reading and planning share existing section anchors; step selection lives in
+  the URL. Ad Grants starters run only after an explicit action from
   `/documentation/tools/campaigns?template=ad-grants#sandbox`; never auto-fill or
   claim campaign results on arrival.
 - Library search lives at `/documentation/search?q=…`. Its explicit public
@@ -111,6 +129,15 @@
   `tests/acceptance/nonprofit-documentation.test.ts` and search coverage in
   `tests/acceptance/nonprofit-documentation-search.test.ts`. Browser journeys
   and responsive baselines live in `tests/visual/documentation.visual.spec.ts`.
+- Planner navigation uses the public `documentation-decision-canvas` feature.
+  The embedded canvas matches the hero width; reading and editor content stay
+  at 672px.
+  Nodes expand inside the canvas viewport with a scrollable form body, fixed
+  editor header, and navigation in the canvas footer. Preserve mobile touch
+  targets, reduced motion, focus return, and existing canvas pan/zoom state.
+  Review progress belongs to the canvas controller; each planner retains its
+  draft keys, calculations, sanitization, and exports. Social Media has five
+  connected sections with parallel message/channel planning.
 - Planner edit/export/reload, mobile themes, template replacement, storage
   failures, and history coverage live in
   `tests/visual/documentation-planners.visual.spec.ts`. Public-directory privacy

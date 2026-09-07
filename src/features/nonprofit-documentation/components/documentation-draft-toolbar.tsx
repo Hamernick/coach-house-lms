@@ -17,7 +17,7 @@ export function DocumentationDraftToolbar({
   onReset: () => void
 }) {
   return (
-    <div className="bg-muted/20 flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 sm:px-4">
+    <div className="border-border/50 flex flex-wrap items-center justify-between gap-2 border-b px-5 py-2 sm:px-6">
       <p className="text-muted-foreground text-xs">
         {!ready
           ? "Loading saved draft…"
@@ -29,7 +29,7 @@ export function DocumentationDraftToolbar({
         <Button
           type="button"
           variant="ghost"
-          className="min-h-11 rounded-full"
+          className="min-h-11 rounded-full text-xs"
           disabled={!ready}
           onClick={() => {
             if (
@@ -47,7 +47,7 @@ export function DocumentationDraftToolbar({
         <Button
           type="button"
           variant="ghost"
-          className="min-h-11 rounded-full"
+          className="min-h-11 rounded-full text-xs"
           disabled={!ready}
           onClick={onReset}
         >

@@ -79,6 +79,8 @@ export function FrameworkWorkspace() {
       />
 
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={
           JSON.stringify(draft) !== JSON.stringify(DEFAULT_LOGIC_MODEL_DRAFT)
         }

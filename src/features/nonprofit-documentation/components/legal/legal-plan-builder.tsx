@@ -69,6 +69,8 @@ export function LegalPlanBuilder() {
         }}
       />
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={JSON.stringify(draft) !== JSON.stringify(DEFAULT_LEGAL_PLAN)}
         steps={[
           {

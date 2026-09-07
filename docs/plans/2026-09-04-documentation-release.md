@@ -146,6 +146,16 @@ gaps, and no page errors or overflow. Seven hero baselines changed intentionally
 The 41 optimized images total 1,197,568 bytes; generation prompts are recorded in
 `src/features/nonprofit-documentation/assets/heroes/prompts.json`.
 
+The shared article header now centers its eyebrow, title, and subtitle directly
+over the original artwork. The user rejected the initial dark scrim; the final
+preview has no tint, brightness filter, or shadow. Metadata stays below the image,
+and print retains black text while hiding the decorative image. Static quality
+passed in 51.20 seconds, final focused lint and ownership checks passed, and all
+16 Documentation browser journeys passed in 2.2 minutes. Seven hero baselines
+changed intentionally. A final audit checked 47 page/viewport combinations and
+six print layouts, including all 41 articles at 320px. Long titles wrap without
+shifting the centered text. The full release gate remains pending.
+
 Image geometry, keyboard destinations, and React Grab ownership were verified
 separately. The header-search pass also checked icon containment, Login adjacency,
 and viewport overflow at 320/390/768/1024/1440px. New interaction coverage checks

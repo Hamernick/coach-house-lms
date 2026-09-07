@@ -104,6 +104,14 @@ export function BestPracticeArticlePage({
     ? [...baseContents, ["sandbox", "Try it"], ...closingContents]
     : [...baseContents, ...closingContents]
 
+  const continuation = (
+    <>
+      <BestPracticeExampleAndFramework article={article} />
+      <BestPracticeChecklistAndMistakes article={article} />
+      <BestPracticeMeasuresAndSources article={article} />
+    </>
+  )
+
   const guide = (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,760px)_180px]">
       <div className="min-w-0">
@@ -113,9 +121,7 @@ export function BestPracticeArticlePage({
         </p>
         <BestPracticeCoreSections article={article} />
         <BestPracticeStagesSection article={article} />
-        <BestPracticeExampleAndFramework article={article} />
-        <BestPracticeChecklistAndMistakes article={article} />
-        <BestPracticeMeasuresAndSources article={article} />
+        {!interactive && continuation}
       </div>
       <DocumentationDesktopContents items={contents} />
     </div>
@@ -193,9 +199,13 @@ export function BestPracticeArticlePage({
           />
           {interactive ? (
             <DocumentationArticleWorkspace
-              defaultView={article.slug.startsWith("tools/") ? "tool" : "guide"}
               guide={guide}
               tool={interactive}
+              continuation={
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,760px)_180px]">
+                  <div className="min-w-0">{continuation}</div>
+                </div>
+              }
             />
           ) : (
             guide

@@ -74,6 +74,8 @@ export function MeasurementPlanBuilder() {
       />
 
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={
           JSON.stringify(draft) !== JSON.stringify(DEFAULT_MEASUREMENT_PLAN)
         }

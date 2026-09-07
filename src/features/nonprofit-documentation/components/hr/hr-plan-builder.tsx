@@ -67,6 +67,8 @@ export function HrPlanBuilder() {
         }}
       />
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={JSON.stringify(draft) !== JSON.stringify(DEFAULT_HR_PLAN)}
         steps={[
           {

@@ -74,6 +74,8 @@ export function PartnershipBriefBuilder() {
       />
 
       <DocumentationToolFlow
+        ready={storageReady}
+        draftFingerprint={JSON.stringify(draft)}
         hasDraft={
           JSON.stringify(draft) !== JSON.stringify(DEFAULT_PARTNERSHIP_BRIEF)
         }

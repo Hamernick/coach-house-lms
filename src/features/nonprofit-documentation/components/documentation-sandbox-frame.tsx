@@ -30,7 +30,7 @@ export function DocumentationSandboxFrame({
         </h2>
         <p className="text-muted-foreground max-w-2xl text-sm">{description}</p>
       </div>
-      <div className="bg-card mt-2 overflow-hidden rounded-2xl border">
+      <div className="bg-card border-border/60 mt-2 overflow-hidden rounded-3xl border shadow-sm">
         {children}
       </div>
     </section>

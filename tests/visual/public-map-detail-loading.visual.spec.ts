@@ -65,6 +65,11 @@ for (const width of [1440, 390]) {
       const result = drawer.locator('[data-public-map-result-trigger="true"]')
       await expect(result).toHaveCount(1)
       await expect(result).toBeVisible()
+      const mapSurface = page
+        .locator("[data-public-map-overscan], [data-public-map-failure-state]")
+        .first()
+      await expect(mapSurface).toBeVisible()
+      const mountedSurface = await mapSurface.elementHandle()
 
       holdChunks = true
       await result.click()
@@ -72,7 +77,8 @@ for (const width of [1440, 390]) {
       // A cold detail import must commit locally, without hiding the whole map
       // behind the route's public-navigation loading fallback.
       await expect(drawer.locator('[data-public-map-drawer-panel="details"]')).toBeVisible()
-      await expect(page.locator("[data-public-map-overscan]")).toBeVisible()
+      await expect(mapSurface).toBeVisible()
+      expect(await mountedSurface!.evaluate((element) => element.isConnected)).toBe(true)
       await expect(page.getByLabel("Loading Find")).toHaveCount(0)
 
       holdChunks = false

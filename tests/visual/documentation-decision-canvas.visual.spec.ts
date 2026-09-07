@@ -107,6 +107,8 @@ for (const width of [1440, 390]) {
       await page
         .getByRole("button", { name: "Load example", exact: true })
         .click()
+      const canvas = page.getByRole("region", { name: "Decision canvas" })
+      await canvas.scrollIntoViewIfNeeded()
       await expect(
         page.getByRole("button", {
           name: "Open Audience & purpose",
@@ -116,7 +118,7 @@ for (const width of [1440, 390]) {
       await page.addStyleTag({
         content: "nextjs-portal { visibility: hidden !important; }",
       })
-      const canvas = page.getByRole("region", { name: "Decision canvas" })
+      await page.mouse.move(0, 0)
       await expect(canvas).toHaveScreenshot(
         `decision-canvas-${width}-${theme}.png`,
         { animations: "disabled" }
@@ -139,6 +141,7 @@ for (const width of [1440, 390]) {
       expect(
         await editor.evaluate((el) => el.scrollWidth <= el.clientWidth)
       ).toBe(true)
+      await page.mouse.move(0, 0)
       await expect(canvas).toHaveScreenshot(
         `decision-editor-${width}-${theme}.png`,
         { animations: "disabled" }

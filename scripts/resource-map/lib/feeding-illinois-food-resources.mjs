@@ -250,6 +250,14 @@ function buildFieldEvidence({ fields, fetchedAt, rawApiUrl, sourceUrl }) {
   }))
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.fetchedAt
+ * @param {Record<string, unknown>} options.location Raw API location, normalized below.
+ * @param {string} options.rawApiUrl
+ * @param {Array<{ locationId?: number, locationServiceId?: number, dayOfWeek?: number, weekDayDescr?: string, startTimeDescr?: string | null, endTimeDescr?: string | null, contactForHoursMessage?: string | null, weeksOfMonth?: string | null, daysOfMonth?: string | null, notes?: string | null, everyOtherWeekInd?: boolean }>} [options.schedules]
+ * @param {string} [options.sourceUrl]
+ */
 export function buildFeedingIllinoisRecord({
   fetchedAt,
   location,

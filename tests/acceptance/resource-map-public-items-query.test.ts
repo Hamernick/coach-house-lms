@@ -671,7 +671,7 @@ describe("fetchPublicResourceMapItems", () => {
       )
       expect(
         discoveryPreviewItems.filter((item) =>
-          item.sourceLabel.toLowerCase().includes("wikidata")
+          item.sourceLabel?.toLowerCase().includes("wikidata")
         )
       ).toEqual(
         expect.arrayContaining([

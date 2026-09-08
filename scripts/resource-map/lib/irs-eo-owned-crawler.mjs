@@ -419,6 +419,45 @@ export function buildOwnedCrawlerDryRun(plan) {
   }
 }
 
+/**
+ * @typedef {object} OwnedCrawlerReceipt
+ * @property {number} schemaVersion
+ * @property {string} kind
+ * @property {string} planHash
+ * @property {string | null} packageId
+ * @property {number} sequence
+ * @property {string | null} previousReceiptHash
+ * @property {string} receiptHash
+ * @property {"robots" | "provider"} receiptType
+ * @property {string} requestId
+ * @property {string} sourceUrl
+ * @property {string} finalUrl
+ * @property {string} status
+ * @property {number} retainedBytes
+ * @property {string} finishedAt
+ * @property {false} publicDisplayEligible
+ * @property {true} publicationBlocked
+ * @property {Array<{ phase: "robots" | "provider", url: string, hostname: string, status: number | null, receivedBytes: number, contentSha256: string | null, error?: string }>} networkEvents
+ * @property {{ allowed: boolean, reason: string, crawlDelayMs: number, status: string }} [robotsDecision]
+ * @property {ReturnType<typeof extractSourcePageEvidence> | null} [evidence]
+ * @property {ReturnType<typeof extractProviderPageSignals> | null} [signals]
+ * @property {number} [httpStatus]
+ * @property {string | null} [contentType]
+ * @property {Array<{ ein: string, rank: number }>} [consumers]
+ */
+
+/**
+ * @param {ReturnType<typeof import("./irs-eo-search-discovery.mjs").buildSharedProviderFetchPlan>} plan
+ * @param {object} [options]
+ * @param {ReturnType<typeof import("./irs-eo-search-discovery.mjs").buildIrsEoSearchPlan>} [options.parentPlan]
+ * @param {OwnedCrawlerReceipt[]} [options.existingReceipts]
+ * @param {ReturnType<typeof createNodeCrawlerTransport>} [options.transport]
+ * @param {(hostname: string) => Promise<import("node:dns").LookupAddress[]>} [options.resolveHostname]
+ * @param {() => string} [options.now]
+ * @param {() => number} [options.clock]
+ * @param {(milliseconds: number) => Promise<void>} [options.sleep]
+ * @param {(receipt: OwnedCrawlerReceipt, receipts: OwnedCrawlerReceipt[]) => void | Promise<void>} [options.onReceipt]
+ */
 export async function runIrsEoOwnedCrawler(
   plan,
   {
@@ -465,6 +504,7 @@ export async function runIrsEoOwnedCrawler(
     plan,
     policy: plan.executionPolicy,
     existingReceipts,
+    /** @type {OwnedCrawlerReceipt[]} */
     receipts: [],
     initialReceiptHash,
     networkRequests: existingNetworkRequests,

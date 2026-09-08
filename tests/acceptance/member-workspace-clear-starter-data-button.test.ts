@@ -14,7 +14,7 @@ describe("MemberWorkspaceClearStarterDataButton", () => {
   it("renders a visible clear-demo-data trigger", () => {
     const markup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceClearStarterDataButton, {
-        clearStarterDataAction: async () => ({ ok: true }),
+        clearStarterDataAction: async () => ({ ok: true as const }),
       }),
     )
 

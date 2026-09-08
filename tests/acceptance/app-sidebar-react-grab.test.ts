@@ -44,7 +44,7 @@ describe("app sidebar react grab", () => {
       'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"'
     )
 
-    expect(window.__REACT_GRAB_SURFACES__["app-sidebar:main:tasks"]).toEqual(
+    expect(window.__REACT_GRAB_SURFACES__?.["app-sidebar:main:tasks"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           component: "AppSidebarMainNavItem",
@@ -88,7 +88,7 @@ describe("app sidebar react grab", () => {
     )
 
     expect(
-      window.__REACT_GRAB_SURFACES__["app-sidebar:resources:community"]
+      window.__REACT_GRAB_SURFACES__?.["app-sidebar:resources:community"]
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

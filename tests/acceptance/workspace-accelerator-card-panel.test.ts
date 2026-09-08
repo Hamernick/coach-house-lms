@@ -6,6 +6,7 @@ import {
   resolveWorkspaceAcceleratorModuleStepNavigation,
   resolveWorkspaceAcceleratorPlaceholderVideoUrl,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-module-navigation"
+import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
 import { WorkspaceAcceleratorCardPanel } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
 import { isWorkspaceAcceleratorOpenStepRequestFulfilled } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-runtime"
@@ -103,7 +104,7 @@ describe("workspace accelerator tutorial panel state", () => {
         hasAssignment: true,
         hasDeck: false,
       },
-    ] as const
+    ] satisfies WorkspaceAcceleratorCardStep[]
 
     expect(
       resolveWorkspaceAcceleratorModuleStepNavigation({
@@ -151,7 +152,7 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    } as const
+    } satisfies WorkspaceAcceleratorCardStep
     const needAssignment = {
       ...needVideo,
       id: "what-is-the-need:assignment",
@@ -161,7 +162,7 @@ describe("workspace accelerator tutorial panel state", () => {
       durationMinutes: null,
       status: "not_started",
       stepSequenceIndex: 2,
-    } as const
+    } satisfies WorkspaceAcceleratorCardStep
     const aiNeedVideo = {
       id: "ai-the-need:video",
       moduleId: "module-ai-need",
@@ -182,7 +183,7 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    } as const
+    } satisfies WorkspaceAcceleratorCardStep
     const aiNeedAssignment = {
       ...aiNeedVideo,
       id: "ai-the-need:assignment",
@@ -191,7 +192,7 @@ describe("workspace accelerator tutorial panel state", () => {
       videoUrl: null,
       durationMinutes: null,
       stepSequenceIndex: 2,
-    } as const
+    } satisfies WorkspaceAcceleratorCardStep
     const steps = [needVideo, needAssignment, aiNeedVideo, aiNeedAssignment]
 
     expect(

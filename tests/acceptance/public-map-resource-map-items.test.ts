@@ -70,6 +70,7 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
+    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -1023,7 +1024,7 @@ describe("public map resource map items", () => {
       })
     }
     expect(guideById.get("essentials")?.itemCount).toBe(21)
-    expect(guideById.has("gary-food-access")).toBe(false)
+    expect(Array.from(guideById.keys())).not.toContain("gary-food-access")
 
     const featuredGuides = filterPublicMapFeaturedResourceGuides(
       Array.from(guideById.values())

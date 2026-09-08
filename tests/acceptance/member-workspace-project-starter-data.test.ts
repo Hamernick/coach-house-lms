@@ -34,6 +34,9 @@ describe("member workspace project starter data", () => {
     const mapped = mapOrganizationProjectToViewModel({
       id: "project-1",
       org_id: "org-1",
+      canonical_org_id: null,
+      project_kind: "standard",
+      description: null,
       name: "Project",
       status: "active",
       priority: "high",

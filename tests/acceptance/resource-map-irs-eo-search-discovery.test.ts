@@ -195,10 +195,12 @@ describe("IRS EO search discovery", () => {
         candidates: [{ url: "https://cached.example.org/" }],
       },
     ])
-    expect(cached.filter(({ status }) => status === "completed")).toHaveLength(
-      1
-    )
-    expect(cached.filter(({ status }) => status === "miss")).toHaveLength(3)
+    expect(
+      cached.filter(({ status }: { status: string }) => status === "completed")
+    ).toHaveLength(1)
+    expect(
+      cached.filter(({ status }: { status: string }) => status === "miss")
+    ).toHaveLength(3)
 
     const directory = runAuthoritativeDirectorySearchAdapter(plan, [
       {
@@ -232,7 +234,7 @@ describe("IRS EO search discovery", () => {
       },
     ])
     const completed = directory.results.filter(
-      ({ status }) => status === "completed"
+      ({ status }: { status: string }) => status === "completed"
     )
     expect(completed).toHaveLength(2)
     expect(completed[0].results[0]).toMatchObject({ matchMethod: "ein_exact" })

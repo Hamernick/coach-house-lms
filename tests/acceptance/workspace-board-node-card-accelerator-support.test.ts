@@ -31,9 +31,12 @@ describe("workspace board accelerator header support", () => {
       selectedLessonGroupKey: "formation",
       isModuleViewerOpen: false,
     } as WorkspaceAcceleratorCardRuntimeSnapshot
-    const actions = {
+    const actions: WorkspaceAcceleratorCardRuntimeActions = {
+      goPrevious: () => {},
+      goNext: () => {},
+      markCurrentStepComplete: () => {},
       selectLessonGroup: () => {},
-    } as WorkspaceAcceleratorCardRuntimeActions
+    }
 
     expect(
       resolveAcceleratorHeaderMeta({

@@ -39,30 +39,32 @@ const row = {
 
 function setup(
   options: {
+    storagePath?: string
     authenticated?: boolean
     deletedAt?: string | null
     insertError?: string
     storageError?: string
   } = {}
 ) {
-  const current = { ...row, deleted_at: options.deletedAt ?? null }
+  const current = {
+    ...row,
+    storage_path: options.storagePath ?? row.storage_path,
+    deleted_at: options.deletedAt ?? null,
+  }
   const upload = vi.fn().mockResolvedValue({ error: null })
-  const remove = vi
-    .fn()
-    .mockResolvedValue({
-      error: options.storageError ? { message: options.storageError } : null,
-    })
-  const signed = vi
-    .fn()
-    .mockResolvedValue({
-      data: { signedUrl: "https://storage.example/file" },
-      error: null,
-    })
+  const remove = vi.fn().mockResolvedValue({
+    error: options.storageError ? { message: options.storageError } : null,
+  })
+  const signed = vi.fn().mockResolvedValue({
+    data: { signedUrl: "https://storage.example/file" },
+    error: null,
+  })
   const eq = vi.fn()
   const deletion = vi.fn()
   const update = vi.fn()
   const from = vi.fn(() => {
     let action = "select"
+    let expired = false
     const result = () => ({
       data: current,
       error:
@@ -77,13 +79,20 @@ function setup(
         return query
       }),
       is: vi.fn(() => query),
-      lt: vi.fn(() => query),
+      lt: vi.fn(() => {
+        expired = true
+        return query
+      }),
       limit: vi.fn(() => query),
       order: vi.fn(() => query),
-      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
+      returns: vi.fn(async () => ({
+        data: expired ? [] : [current],
+        error: null,
+      })),
       maybeSingle: vi.fn(async () => result()),
       single: vi.fn(async () => result()),
-      insert: vi.fn(() => {
+      insert: vi.fn((values: Partial<typeof current>) => {
+        Object.assign(current, values)
         action = "insert"
         return query
       }),
@@ -103,14 +112,12 @@ function setup(
   })
   mocks.client.mockReturnValue({
     auth: {
-      getUser: vi
-        .fn()
-        .mockResolvedValue({
-          data: {
-            user: options.authenticated === false ? null : { id: "user-1" },
-          },
-          error: null,
-        }),
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: options.authenticated === false ? null : { id: "user-1" },
+        },
+        error: null,
+      }),
     },
     from,
     storage: {
@@ -120,9 +127,13 @@ function setup(
   return { upload, remove, signed, eq, deletion, update }
 }
 
-function uploadRequest(file = new File(["bin"], "archive.bin")) {
+function uploadRequest(
+  file = new File(["bin"], "archive.bin"),
+  coreSectionId?: string
+) {
   const form = new FormData()
   form.set("file", file)
+  if (coreSectionId !== undefined) form.set("coreSectionId", coreSectionId)
   const request = new NextRequest(
     "http://localhost/api/account/organization-document-files",
     { method: "POST" }
@@ -169,6 +180,55 @@ describe("organization document file routes", () => {
       expect.any(Buffer),
       { contentType: "application/octet-stream" }
     )
+  })
+  it("keeps a core upload attached through listing, trash, and restore", async () => {
+    const calls = setup()
+    const uploaded = await POST(uploadRequest(undefined, "budget"))
+    expect(uploaded.status).toBe(200)
+    expect((await uploaded.json()).file.coreSectionId).toBe("budget")
+    expect(calls.upload).toHaveBeenCalledWith(
+      expect.stringMatching(/^org-1\/library\/core\/budget\//),
+      expect.any(Buffer),
+      { contentType: "application/octet-stream" }
+    )
+    const listed = await GET(
+      new NextRequest(
+        "http://localhost/api/account/organization-document-files"
+      )
+    )
+    expect((await listed.json()).files[0].coreSectionId).toBe("budget")
+    for (const action of ["trash", "restore"]) {
+      const response = await PATCH(actionRequest("PATCH", action))
+      expect(response.status).toBe(200)
+      expect((await response.json()).file.coreSectionId).toBe("budget")
+    }
+    expect(calls.eq).toHaveBeenCalledWith("org_id", "org-1")
+  })
+  it.each(["unknown", "../budget", "budget/../../other", " budget", ""])(
+    "rejects invalid core section %s",
+    async (sectionId) => {
+      const calls = setup()
+      expect((await POST(uploadRequest(undefined, sectionId))).status).toBe(400)
+      expect(calls.upload).not.toHaveBeenCalled()
+    }
+  )
+  it("enforces permissions and shared quota for core uploads", async () => {
+    let calls = setup()
+    mocks.organization.mockResolvedValue({ orgId: "org-1", role: "board" })
+    expect(
+      (await POST(uploadRequest(undefined, "board_strategy"))).status
+    ).toBe(403)
+    expect(calls.upload).not.toHaveBeenCalled()
+    mocks.organization.mockResolvedValue({ orgId: "org-1", role: "admin" })
+    calls = setup({
+      insertError: "Organization document storage quota exceeded.",
+    })
+    expect(
+      (await POST(uploadRequest(undefined, "board_strategy"))).status
+    ).toBe(413)
+    expect(calls.remove).toHaveBeenCalledWith([
+      expect.stringMatching(/^org-1\/library\/core\/board_strategy\//),
+    ])
   })
   it("preserves the existing per-file cap", async () => {
     const calls = setup()

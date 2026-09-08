@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import { MAX_BYTES, MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
+import { validateOrganizationDocument } from "@/lib/organization/document-storage"
 import {
   canEditOrganization,
   resolveActiveOrganization,
@@ -18,7 +18,6 @@ import {
 } from "./document-file-tracking"
 
 const BUCKET = "org-documents"
-const ALLOWED = new Set(["application/pdf"])
 const KIND_KEY_MAP = {
   "verification-letter": "verificationLetter",
   "articles-of-incorporation": "articlesOfIncorporation",
@@ -184,17 +183,9 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 })
   }
-  if (!ALLOWED.has(file.type)) {
-    return NextResponse.json(
-      { error: "Only PDF files are supported." },
-      { status: 400 }
-    )
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: `File too large. Max size is ${MAX_UPLOAD_MB} MB.` },
-      { status: 400 }
-    )
+  const validationError = validateOrganizationDocument(file)
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 })
   }
 
   try {

@@ -144,9 +144,7 @@ describe("Google Drive backend contract", () => {
   })
 
   it("reuses a stored refresh token only for the same Google subject", () => {
-    expect(canReuseGoogleDriveRefreshToken("subject-a", "subject-a")).toBe(
-      true
-    )
+    expect(canReuseGoogleDriveRefreshToken("subject-a", "subject-a")).toBe(true)
     expect(canReuseGoogleDriveRefreshToken("subject-a", "subject-b")).toBe(
       false
     )
@@ -260,5 +258,112 @@ describe("Google Drive backend contract", () => {
     expect(connection).toContain("Disconnect Google Drive?")
     expect(connection).not.toContain("picker-token")
     expect(connection).not.toContain("GooglePicker")
+  })
+  it("exports only the selected Google Doc and keeps its token server-side", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          id: "selected-file",
+          name: "Board strategy",
+          mimeType: "application/vnd.google-apps.document",
+          webViewLink: "https://docs.google.com/document/d/selected-file/edit",
+        })
+      )
+      .mockResolvedValueOnce(new Response("fixture document bytes"))
+    vi.stubGlobal("fetch", fetchMock)
+    const { downloadGoogleDriveDocument } =
+      await import("@/features/google-drive/server/file-content")
+    const file = await downloadGoogleDriveDocument(
+      "private-fixture-token",
+      "selected-file"
+    )
+    expect(file.name).toBe("Board strategy.docx")
+    expect(file.bytes.toString()).toBe("fixture document bytes")
+    const [url, options] = fetchMock.mock.calls[1]
+    expect(url.pathname).toBe("/drive/v3/files/selected-file/export")
+    expect(url.searchParams.get("mimeType")).toContain(
+      "wordprocessingml.document"
+    )
+    expect(options).toMatchObject({
+      cache: "no-store",
+      redirect: "error",
+      headers: { authorization: "Bearer private-fixture-token" },
+    })
+    expect(file).not.toHaveProperty("accessToken")
+  })
+
+  it("reads selected Word/Markdown blobs and rejects inaccessible or unsupported Google files", async () => {
+    const { downloadGoogleDriveDocument } =
+      await import("@/features/google-drive/server/file-content")
+    let fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          id: "selected-file",
+          name: "strategy.md",
+          mimeType: "text/markdown",
+          webViewLink: "https://drive.google.com/file/d/selected-file/view",
+        })
+      )
+      .mockResolvedValueOnce(new Response("# Strategy"))
+    vi.stubGlobal("fetch", fetchMock)
+    expect(
+      (
+        await downloadGoogleDriveDocument("token", "selected-file")
+      ).bytes.toString()
+    ).toBe("# Strategy")
+    expect(fetchMock.mock.calls[1][0].searchParams.get("alt")).toBe("media")
+    fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          id: "selected-file",
+          name: "Budget",
+          mimeType: "application/vnd.google-apps.spreadsheet",
+          webViewLink:
+            "https://docs.google.com/spreadsheets/d/selected-file/edit",
+        })
+      )
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(
+      downloadGoogleDriveDocument("token", "selected-file")
+    ).rejects.toMatchObject({ code: "invalid" })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 403 }))
+    )
+    await expect(
+      downloadGoogleDriveDocument("token", "selected-file")
+    ).rejects.toMatchObject({ code: "file_not_authorized" })
+  })
+
+  it("bounds streamed Drive content even when Content-Length is absent", async () => {
+    const cancel = vi.fn()
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(15 * 1024 * 1024 + 1))
+      },
+      cancel,
+    })
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          id: "selected-file",
+          name: "large.docx",
+          mimeType: "application/octet-stream",
+          webViewLink: "https://drive.google.com/file/d/selected-file/view",
+        })
+      )
+      .mockResolvedValueOnce(new Response(stream))
+    vi.stubGlobal("fetch", fetchMock)
+    const { downloadGoogleDriveDocument } =
+      await import("@/features/google-drive/server/file-content")
+    await expect(
+      downloadGoogleDriveDocument("token", "selected-file")
+    ).rejects.toMatchObject({ status: 413 })
+    expect(cancel).toHaveBeenCalled()
   })
 })

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 
+import { useCoreDocumentImport } from "./documents-tab/hooks/use-core-document-import"
 import { DocumentsNotesPanel } from "../../documents-notes-right-rail"
 import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
 import {
@@ -43,13 +44,14 @@ export function DocumentsTab({
   notes,
 }: DocumentsTabProps) {
   const documentsRootRef = useRef<HTMLElement>(null)
+  const coreDocuments = useCoreDocumentImport(roadmapSections)
   const controller = useDocumentsTabController({
     userId,
     documents,
     policyEntries,
     policyProgramOptions,
     policyPeopleOptions,
-    roadmapSections,
+    roadmapSections: coreDocuments.sections,
   })
   const [libraryTab, setLibraryTab] = useState<DocumentsLibraryTab>("all")
   const [viewMode, setViewMode] = useState<DocumentsViewMode>("grid")
@@ -71,13 +73,6 @@ export function DocumentsTab({
       document.name.toLocaleLowerCase().includes(query)
     )
   }, [controller.searchQuery, googleDrive.documents])
-  const visibleUploadedFiles = useMemo(() => {
-    const query = controller.searchQuery.trim().toLocaleLowerCase()
-    if (!query) return documentFiles.files
-    return documentFiles.files.filter((file) =>
-      file.name.toLocaleLowerCase().includes(query)
-    )
-  }, [controller.searchQuery, documentFiles.files])
 
   useOrganizationDeepLinkFocus({
     focusKey: initialFocusKey,
@@ -98,12 +93,8 @@ export function DocumentsTab({
       className="pb-6"
       aria-labelledby="documents-title"
     >
-      <DocumentsBanner
-        canEdit={canEdit}
-        editMode={editMode}
-        uploading={documentFiles.uploading}
-        onFilesDropped={documentFiles.uploadFiles}
-      >
+      {coreDocuments.dialog}
+      <DocumentsBanner canEdit={canEdit} uploading={documentFiles.uploading}>
         <DocumentsToolbar
           searchQuery={controller.searchQuery}
           tab={libraryTab}
@@ -162,7 +153,14 @@ export function DocumentsTab({
             )}
             rows={controller.filteredRows}
             driveDocuments={visibleDriveDocuments}
-            uploadedFiles={visibleUploadedFiles}
+            uploadedFiles={documentFiles.files}
+            searchQuery={controller.searchQuery}
+            uploadingFiles={documentFiles.uploading}
+            uploadingCoreSectionId={documentFiles.uploadingCoreSectionId}
+            onUploadCoreDocument={async (sectionId, file) => {
+              if (!coreDocuments.prepareImport(sectionId, file))
+                await documentFiles.uploadFiles([file], sectionId)
+            }}
             tab={libraryTab}
             source={librarySource}
             fileType={libraryFileType}
@@ -172,6 +170,8 @@ export function DocumentsTab({
             onEditPolicy={controller.openEditPolicyDialog}
             onViewPolicyDocument={controller.viewPolicyDocument}
             onViewUpload={controller.handleView}
+            onUpload={controller.handleUpload}
+            uploadingKind={controller.uploadingKind}
             onViewUploadedFile={documentFiles.openFile}
             onDownloadUploadedFile={documentFiles.downloadFile}
             onDownloadUpload={controller.handleDownload}

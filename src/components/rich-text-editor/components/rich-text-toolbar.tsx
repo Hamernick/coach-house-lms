@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { RichTextPasteMenu } from "./rich-text-paste-menu"
 
 type RichTextToolbarProps = {
   editor: Editor
@@ -156,6 +157,7 @@ export function RichTextToolbar({
         toolbarClassName,
       )}
     >
+      <RichTextPasteMenu editor={editor} />
       <DropdownMenu>
         <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
         <DropdownMenuContent align="start" className="w-44">

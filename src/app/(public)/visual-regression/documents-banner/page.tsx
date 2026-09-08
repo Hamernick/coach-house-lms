@@ -4,10 +4,15 @@ import { notFound } from "next/navigation"
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
-export default async function DocumentsBannerVisualRegressionPage() {
+export default async function DocumentsBannerVisualRegressionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ readOnly?: string }>
+}) {
   if (!canAccessVisualRegressionRoute(await headers())) {
     notFound()
   }
+  const readOnly = (await searchParams).readOnly === "1"
 
   return (
     <main className="bg-background text-foreground flex min-h-screen items-center px-6 py-10">
@@ -53,6 +58,42 @@ export default async function DocumentsBannerVisualRegressionPage() {
           policyProgramOptions={[]}
           policyPeopleOptions={[]}
           roadmapSections={[
+            ...["program", "people", "board_calendar", "next_actions"].map(
+              (id) => ({
+                id,
+                title: (
+                  {
+                    program: "Program",
+                    people: "People",
+                    board_calendar: "Calendar",
+                    next_actions: "Next Actions",
+                  } as Record<string, string>
+                )[id],
+                subtitle: "",
+                slug: id.replaceAll("_", "-"),
+                status: "not_started" as const,
+                lastUpdated: null,
+                isPublic: false,
+              })
+            ),
+            {
+              id: "budget",
+              title: "Budget",
+              subtitle: "Roadmap document",
+              slug: "budget",
+              status: "not_started",
+              lastUpdated: null,
+              isPublic: false,
+            },
+            {
+              id: "board_strategy",
+              title: "Board strategy",
+              subtitle: "Roadmap document",
+              slug: "board-strategy",
+              status: "not_started",
+              lastUpdated: null,
+              isPublic: false,
+            },
             {
               id: "fundraising_strategy",
               title: "Fundraising strategy",
@@ -82,7 +123,7 @@ export default async function DocumentsBannerVisualRegressionPage() {
             },
           ]}
           editMode
-          canEdit
+          canEdit={!readOnly}
         />
       </div>
     </main>

@@ -30,6 +30,8 @@ export type SortColumn =
 export type SortDirection = "asc" | "desc"
 
 export type DocumentsRoadmapSection = {
+  content?: string
+  hasContent?: boolean
   id: string
   title: string
   subtitle: string

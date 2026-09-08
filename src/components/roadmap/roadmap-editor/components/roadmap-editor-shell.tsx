@@ -3,7 +3,7 @@ import type { ComponentType, RefObject } from "react"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { RoadmapRightRailSection } from "@/components/roadmap/roadmap-right-rail-section"
 import { Button } from "@/components/ui/button"
-import { RoadmapBudgetTableEditor } from "@/components/roadmap/roadmap-budget-table-editor"
+import { RoadmapBudgetDocumentEditor } from "./roadmap-budget-document-editor"
 import { RoadmapCalendar } from "@/components/roadmap/roadmap-calendar"
 import { RoadmapSectionPanel } from "@/components/roadmap/roadmap-section-panel"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
@@ -113,12 +113,15 @@ export function RoadmapEditorShell({
             isCalendarSection ? (
               <RoadmapCalendar />
             ) : isBudgetSection ? (
-              <RoadmapBudgetTableEditor
-                rows={activeDraft.budgetRows}
+              <RoadmapBudgetDocumentEditor
+                key={activeSection.id}
+                draft={activeDraft}
+                title={activeSection.title}
+                onImageUpload={onImageUpload}
                 canEdit={canEdit}
                 isDirty={isDirty}
                 isSaving={savingId === activeSection.id}
-                onRowsChange={(budgetRows) => onDraftChange({ budgetRows })}
+                onDraftChange={onDraftChange}
                 onSave={onSave}
               />
             ) : undefined
@@ -127,6 +130,10 @@ export function RoadmapEditorShell({
             isCalendarSection || isBudgetSection
               ? undefined
               : {
+                  enableDocumentImport: canEdit,
+                  preserveImages: true,
+                  documentTitle: activeSection.title,
+                  ariaLabel: `${activeSection.title} document`,
                   value: activeDraft.content,
                   onChange: (value) => onDraftChange({ content: value }),
                   readOnly: !canEdit,

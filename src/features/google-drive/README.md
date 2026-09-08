@@ -1,8 +1,9 @@
 # Google Drive Feature
 
-Connection and Picker integration for Documents. V1 links user-selected
-Drive files through `drive.file`; it does not enumerate, copy, proxy, edit, or
-download file contents.
+Connection and Picker integration for Documents. User-selected Drive files use
+`drive.file`. The document-import flow can export a selected Google Doc or read a
+selected Word/Markdown file into an editable Coach House copy with a source link.
+It does not enumerate a user's Drive or write editor changes back to Google.
 
 ## Ownership
 

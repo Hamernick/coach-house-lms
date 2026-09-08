@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
+import { themeTextColor } from "@/lib/markdown/theme-colors"
 
 describe("sanitizeHtml", () => {
   it("removes encoded script URLs and executable markup", () => {
@@ -54,45 +55,88 @@ describe("sanitizeHtml", () => {
 
     expect(sanitized).not.toMatch(/href="(?:javascript|data:)/i)
     expect(sanitized).not.toContain("background-image")
-    expect(sanitized).not.toMatch(/(?:background-)?color/i)
-    expect(sanitized).toContain("<span>styled</span>")
+    expect(sanitized).toContain(`color:${themeTextColor("#123456")}`)
     expect(sanitized).toContain('href="/roadmap"')
     expect(sanitized).toContain('href="#section"')
     expect(sanitized).toContain('href="mailto:hello@example.com"')
     expect(sanitized).toContain('href="tel:+13125550100"')
   })
 
-  it("removes pasted theme colors without flattening rich text", () => {
+  it("retains safe pasted text styles while normalizing block styles", () => {
     const sanitized = sanitizeHtml(
       [
         '<h2 style="color:#000;background-color:#fff;text-align:center">Vision</h2>',
-        '<p><span style="color:rgb(0, 0, 0);font-size:18px"><strong>Visible</strong> in every theme.</span></p>',
+        '<p><span style="color:inherit;font-size:18px"><strong>Visible</strong> in every theme.</span></p>',
         '<mark style="background-color:#ffff00">Highlighted text</mark>',
         '<ul><li><a href="https://example.com">Useful link</a></li></ul>',
         '<img src="https://example.com/vision.jpg" alt="Vision workshop">',
       ].join("")
     )
 
-    expect(sanitized).toContain(
-      '<h2 style="text-align:center">Vision</h2>'
-    )
+    expect(sanitized).toContain('<h2 style="text-align:center">Vision</h2>')
     expect(sanitized).toContain("<strong>Visible</strong>")
     expect(sanitized).toContain("Highlighted text")
     expect(sanitized).toContain("<ul><li>")
     expect(sanitized).toContain('href="https://example.com"')
     expect(sanitized).toContain('alt="Vision workshop"')
-    expect(sanitized).not.toMatch(/(?:background-)?color|font-size|<mark/i)
+    expect(sanitized).toContain("color:inherit;font-size:18px")
+    expect(sanitized).not.toMatch(/<mark|background-color/i)
   })
 
-  it("does not register free-form color parsing in the rich text editor", () => {
+  it("registers supported text styles for formatted paste", () => {
     const extensionsSource = readFileSync(
       "src/components/rich-text-editor/extensions.ts",
       "utf8"
     )
 
-    expect(extensionsSource).not.toMatch(
-      /extension-(?:color|highlight|text-style)/
+    expect(extensionsSource).toContain("@tiptap/extension-text-style")
+    expect(extensionsSource).toContain("TextStyleKit.configure")
+  })
+})
+
+describe("theme-compatible pasted colors", () => {
+  it.each([
+    "black",
+    "white",
+    "#000",
+    "#fff",
+    "#222222",
+    "rgb(12, 12, 12)",
+    "hsl(0, 0%, 90%)",
+  ])("makes %s follow the theme", (color) => {
+    expect(themeTextColor(color)).toBe("inherit")
+    expect(themeTextColor(color, "highlight")).toBe("transparent")
+  })
+  it.each([
+    "red",
+    "#0066cc",
+    "rgb(180, 20, 30)",
+    "hsl(270, 70%, 50%)",
+    "rgb(0% 40% 80%)",
+  ])("retains an adaptive accent for %s across sanitization", (color) => {
+    const html = sanitizeHtml(
+      `<p><span style="color:${color};background-color:#ffff00;font-size:18px">Styled</span></p>`
     )
-    expect(extensionsSource).not.toMatch(/\b(?:Color|Highlight|TextStyle),/)
+    expect(html).toContain("color:light-dark(")
+    expect(html).toContain("background-color:light-dark(")
+    expect(sanitizeHtml(html)).toBe(html)
+  })
+  it("keeps canonical browser color serialization and rejects unreadable or executable overrides", () => {
+    const adapted = themeTextColor("#aa2020")
+    const serialized = adapted.replace(
+      /#([a-f0-9]{6})/g,
+      (_, hex) =>
+        `rgb(${[0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`
+    )
+    expect(themeTextColor(serialized)).toBe(adapted)
+    for (const value of [
+      "light-dark(#000000, #000000)",
+      "var(--unknown)",
+      "url(https://example.com)",
+      "expression(alert(1))",
+    ]) {
+      expect(themeTextColor(value)).toBe("inherit")
+    }
+    expect(themeTextColor("rgba(255,0,0,0)", "highlight")).toBe("transparent")
   })
 })

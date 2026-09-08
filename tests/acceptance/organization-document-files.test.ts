@@ -31,7 +31,7 @@ describe("organization document files", () => {
     expect(migration).toContain("jsonb_each")
   })
 
-  it("accepts arbitrary multi-file selection and drag-and-drop", () => {
+  it("keeps general file selection and limits drag-and-drop to individual slots", () => {
     const route = readSource(
       "src/app/api/account/organization-document-files/route.ts"
     )
@@ -51,10 +51,14 @@ describe("organization document files", () => {
     expect(route).toContain("{ download: data.name || true }")
     expect(menu).toContain("multiple")
     expect(menu).not.toContain('accept="application/pdf"')
-    expect(banner).toContain("onDragEnter")
+    const slot = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/hooks/use-document-slot-drop.ts"
+    )
+    expect(slot).toContain("onDragEnter")
+    expect(slot).toContain("stopPropagation")
     expect(banner).toContain("onDragOver")
     expect(banner).toContain("onDrop")
-    expect(banner).toContain("Drop files to upload")
+    expect(banner).not.toContain("Drop files to upload")
     expect(storageUsage).toContain('usedBytes === 0 ? "0"')
     expect(storageUsage).not.toContain('usedBytes === 0 ? "0 B"')
   })
@@ -83,7 +87,10 @@ describe("organization document files", () => {
       "setUsedBytes((current) => current - file.sizeBytes)"
     )
     expect(grid).toContain("Deleted files remain here for 30 days")
-    expect(grid).toContain("Delete permanently")
-    expect(grid).toContain("window.confirm")
+    const card = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-library-card.tsx"
+    )
+    expect(card).toContain("Delete permanently")
+    expect(card).toContain("window.confirm")
   })
 })

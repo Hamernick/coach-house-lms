@@ -1,5 +1,6 @@
 export { requireGoogleDriveContext } from "./server/context"
 export {
+  importGoogleDriveFile,
   attachGoogleDriveDocuments,
   completeGoogleDriveConnection,
   createGoogleDrivePickerToken,

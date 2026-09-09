@@ -30,7 +30,17 @@ export type {
   DocumentsRoadmapSection,
 } from "./documents-tab/types"
 
-export function DocumentsTab({
+export function DocumentsTab(props: DocumentsTabProps) {
+  return (
+    <ScopedDocumentsTab
+      key={`${props.userId}:${props.organizationId}`}
+      {...props}
+    />
+  )
+}
+
+function ScopedDocumentsTab({
+  organizationId,
   userId,
   documents,
   policyEntries,
@@ -44,7 +54,11 @@ export function DocumentsTab({
   notes,
 }: DocumentsTabProps) {
   const documentsRootRef = useRef<HTMLElement>(null)
-  const coreDocuments = useCoreDocumentImport(roadmapSections)
+  const coreDocuments = useCoreDocumentImport(
+    roadmapSections,
+    { userId, organizationId },
+    canEdit
+  )
   const controller = useDocumentsTabController({
     userId,
     documents,

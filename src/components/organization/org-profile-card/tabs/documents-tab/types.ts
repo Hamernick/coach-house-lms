@@ -98,6 +98,7 @@ export type RoadmapRow = {
 export type DocumentIndexRow = UploadRow | PolicyRow | RoadmapRow
 
 export type DocumentsTabProps = {
+  organizationId: string
   userId: string
   documents?: OrgDocuments | null
   policyEntries: DocumentsPolicyEntry[]

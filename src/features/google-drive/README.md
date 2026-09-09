@@ -44,3 +44,7 @@ separate deployment step.
 See [the local setup checklist](../../../docs/plans/2026-09-04-google-drive-local-verification.md)
 before configuring localhost. The serving worktree uses the shared production
 database, so a local connection can affect shared credentials and documents.
+
+Disconnecting Drive clears Coach House's saved Drive credentials without revoking
+other Google integrations. Google project-wide revocation is available in the
+user's Google account access controls. See [Google's token revocation contract](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke).

@@ -1,3 +1,6 @@
+import { deflateRawSync } from "node:zlib"
+import { readImportRequest } from "@/features/document-import/server/read-import-request"
+import { reserveDocumentImport } from "@/features/document-import/server/import-capacity"
 import { readFileSync } from "node:fs"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
@@ -39,13 +42,12 @@ import {
 
 const docx = readFileSync("tests/fixtures/document-import/board-strategy.docx")
 function request(name = "board.md", content = "# Board strategy") {
-  const value = new NextRequest("http://localhost/api/document-import", {
-    method: "POST",
-  })
   const form = new FormData()
   form.set("file", new File([content], name))
-  vi.spyOn(value, "formData").mockResolvedValue(form)
-  return value
+  return new NextRequest("http://localhost/api/document-import", {
+    method: "POST",
+    body: form,
+  })
 }
 
 beforeEach(() => {
@@ -59,6 +61,107 @@ beforeEach(() => {
 })
 
 describe("document import", () => {
+  it("enforces streamed multipart and JSON limits without trusting Content-Length", async () => {
+    const oversized = new NextRequest("http://localhost/api/document-import", {
+      method: "POST",
+      headers: { "content-type": "application/json", "content-length": "1" },
+      body: JSON.stringify({ extra: "x".repeat(5000) }),
+    })
+    expect((await prepareDocumentImport(oversized)).status).toBe(413)
+    expect(mocks.drive).not.toHaveBeenCalled()
+    const form = new FormData()
+    form.set("file", new File(["# Board"], "board.md"))
+    form.set("extra", "x".repeat(15 * 1024 * 1024 + 65536))
+    const large = new NextRequest("http://localhost/api/document-import", {
+      method: "POST",
+      body: form,
+    })
+    expect((await prepareDocumentImport(large)).status).toBe(413)
+    expect((await prepareDocumentImport(request())).status).toBe(200)
+  })
+
+  it("cancels a stalled body and releases reader resources", async () => {
+    vi.useFakeTimers()
+    const cancel = vi.fn()
+    const req = new Request("http://localhost", {
+      method: "POST",
+      body: new ReadableStream({ cancel }),
+      duplex: "half",
+    } as RequestInit)
+    const promise = readImportRequest(req, 100)
+    const assertion = expect(promise).rejects.toThrow("timed out")
+    await vi.advanceTimersByTimeAsync(15_000)
+    await assertion
+    expect(cancel).toHaveBeenCalledOnce()
+    vi.useRealTimers()
+  })
+
+  it("limits simultaneous imports and releases capacity", () => {
+    const release = reserveDocumentImport("capacity-test")
+    expect(() => reserveDocumentImport("capacity-test")).toThrow(
+      "already running"
+    )
+    release()
+    expect(() => reserveDocumentImport("capacity-test")()).not.toThrow()
+  })
+
+  it("does not return parser internals to the browser", async () => {
+    mocks.drive.mockRejectedValue(new Error("secret-internal-path"))
+    const response = await prepareDocumentImport(
+      new NextRequest("http://localhost/api/document-import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ driveFileId: "file" }),
+      })
+    )
+    expect(response.status).toBe(400)
+    expect(await response.text()).not.toContain("secret-internal-path")
+  })
+
+  it("rejects a DOCX that understates its actual inflated size", async () => {
+    const name = Buffer.from("word/document.xml")
+    const data = deflateRawSync(Buffer.from("x".repeat(1024 * 1024)))
+    const local = Buffer.alloc(30)
+    local.writeUInt32LE(0x04034b50, 0)
+    local.writeUInt16LE(8, 8)
+    local.writeUInt32LE(data.length, 18)
+    local.writeUInt32LE(1, 22)
+    local.writeUInt16LE(name.length, 26)
+    const central = Buffer.alloc(46)
+    central.writeUInt32LE(0x02014b50, 0)
+    central.writeUInt16LE(8, 10)
+    central.writeUInt32LE(data.length, 20)
+    central.writeUInt32LE(1, 24)
+    central.writeUInt16LE(name.length, 28)
+    const end = Buffer.alloc(22)
+    end.writeUInt32LE(0x06054b50, 0)
+    end.writeUInt16LE(1, 8)
+    end.writeUInt16LE(1, 10)
+    end.writeUInt32LE(central.length + name.length, 12)
+    end.writeUInt32LE(local.length + name.length + data.length, 16)
+    await expect(
+      convertDocument({
+        name: "understated.docx",
+        bytes: Buffer.concat([local, name, data, central, name, end]),
+      })
+    ).rejects.toThrow("damaged")
+  })
+
+  it("rejects cyclic legacy allocation chains before invoking the Word parser", async () => {
+    const bytes = Buffer.from(
+      readFileSync("tests/fixtures/document-import/legacy-board.doc")
+    )
+    const size = 2 ** bytes.readUInt16LE(30)
+    const fat = (bytes.readInt32LE(76) + 1) * size
+    const directoryId = bytes.readInt32LE(48)
+    const second = directoryId === 0 ? 1 : 0
+    bytes.writeInt32LE(second, fat + directoryId * 4)
+    bytes.writeInt32LE(directoryId, fat + second * 4)
+    await expect(
+      convertDocument({ name: "cyclic.doc", bytes })
+    ).rejects.toThrow("damaged")
+  })
+
   it("converts DOCX text, bold, and tables to editable HTML", async () => {
     const document = await convertDocument({ name: "board.docx", bytes: docx })
     expect(document.html).toContain("Board strategy")

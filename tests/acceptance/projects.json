@@ -393,6 +393,7 @@
       "tests/acceptance/roadmap-budget-table.test.ts",
       "tests/acceptance/roadmap-calendar-board-reminders.test.ts",
       "tests/acceptance/roadmap-calendar-month-agenda.test.ts",
+      "tests/acceptance/roadmap-editor-scope.test.ts",
       "tests/acceptance/roadmap-editor-status.test.ts",
       "tests/acceptance/search-route.test.ts",
       "tests/acceptance/workspace-accelerator-card-checklist.test.ts",

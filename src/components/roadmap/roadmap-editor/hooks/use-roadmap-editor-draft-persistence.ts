@@ -1,29 +1,36 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { type RoadmapSection } from "@/lib/roadmap"
 
-import { createDraftMap, isRoadmapDraftDirty, persistRoadmapDraftsToStorage } from "../helpers"
+import {
+  createDraftMap,
+  isRoadmapDraftDirty,
+  persistRoadmapDraftsToStorage,
+} from "../helpers"
 import { type RoadmapDraft } from "../types"
 
 type UseRoadmapEditorDraftPersistenceArgs = {
   sections: RoadmapSection[]
   drafts: Record<string, RoadmapDraft>
-  setDrafts: Dispatch<SetStateAction<Record<string, RoadmapDraft>>>
-  storageKey: string
+  replaceDrafts: (drafts: Record<string, RoadmapDraft>) => void
+  storageKey: string | null
+  enabled: boolean
   onDirtyChange?: (isDirty: boolean) => void
   onRegisterDiscard?: (discard: (() => void) | null) => void
 }
 
 export function useRoadmapEditorDraftPersistence({
+  enabled,
   sections,
   drafts,
-  setDrafts,
+  replaceDrafts,
   storageKey,
   onDirtyChange,
   onRegisterDiscard,
 }: UseRoadmapEditorDraftPersistenceArgs) {
+  const [storageFailed, setStorageFailed] = useState(false)
   const hasUnsavedChanges = useMemo(
     () =>
       sections.some((section) => {
@@ -31,12 +38,15 @@ export function useRoadmapEditorDraftPersistence({
         if (!draft) return false
         return isRoadmapDraftDirty(section, draft)
       }),
-    [sections, drafts],
+    [sections, drafts]
   )
 
   const discardDrafts = useCallback(() => {
-    setDrafts(() => createDraftMap(sections))
-  }, [sections, setDrafts])
+    const next = createDraftMap(sections)
+    replaceDrafts(next)
+    // Discard can be followed immediately by navigation/unmount.
+    persistRoadmapDraftsToStorage({ storageKey, sections, drafts: next })
+  }, [replaceDrafts, sections, storageKey])
 
   useEffect(() => {
     onDirtyChange?.(hasUnsavedChanges)
@@ -48,6 +58,20 @@ export function useRoadmapEditorDraftPersistence({
   }, [onRegisterDiscard, discardDrafts])
 
   useEffect(() => {
-    persistRoadmapDraftsToStorage({ storageKey, sections, drafts })
-  }, [drafts, sections, storageKey])
+    if (!enabled) return
+    setStorageFailed(
+      !persistRoadmapDraftsToStorage({ storageKey, sections, drafts })
+    )
+  }, [drafts, enabled, sections, storageKey])
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [hasUnsavedChanges])
+  return storageFailed
 }

@@ -25,7 +25,6 @@ import {
   exchangeGoogleDriveCode,
   getGoogleDriveFile,
   refreshGoogleDriveAccessToken,
-  revokeGoogleDriveToken,
 } from "./google-api"
 import {
   decryptGoogleDriveSecret,
@@ -376,28 +375,9 @@ export async function disconnectGoogleDrive(input: {
     .maybeSingle()
   if (connectionError) throw new GoogleDriveError("provider_unavailable", 503)
   if (!connection) return
-  if (
-    input.revoke !== false &&
-    connection.refresh_token_ciphertext &&
-    connection.refresh_token_iv &&
-    connection.refresh_token_auth_tag &&
-    connection.key_version
-  ) {
-    try {
-      const token = decryptGoogleDriveSecret(
-        {
-          ciphertext: connection.refresh_token_ciphertext,
-          iv: connection.refresh_token_iv,
-          authTag: connection.refresh_token_auth_tag,
-          keyVersion: connection.key_version,
-        },
-        connectionAad(input.userId)
-      )
-      await revokeGoogleDriveToken(token)
-    } catch {
-      // Always remove local credentials, including when an old key is unavailable.
-    }
-  }
+  // A feature disconnect clears its credentials. Google token revocation also
+  // invalidates Calendar/login grants in the same project, so leave that to
+  // the user's Google account-wide access controls.
   const { error } = await admin
     .from("google_drive_connections")
     .update({

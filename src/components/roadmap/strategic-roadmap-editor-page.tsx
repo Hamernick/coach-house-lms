@@ -64,6 +64,7 @@ export async function StrategicRoadmapEditorPage({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <RoadmapShell
+        draftScope={{ userId: user.id, organizationId: orgId }}
         sections={roadmapSections}
         publicSlug={roadmapPublicSlug}
         heroUrl={roadmapHeroUrl ?? null}

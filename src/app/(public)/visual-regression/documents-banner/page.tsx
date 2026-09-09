@@ -18,6 +18,7 @@ export default async function DocumentsBannerVisualRegressionPage({
     <main className="bg-background text-foreground flex min-h-screen items-center px-6 py-10">
       <div className="mx-auto w-full max-w-4xl">
         <DocumentsTab
+          organizationId="visual-documents-org"
           userId="visual-documents-user"
           documents={null}
           policyEntries={[

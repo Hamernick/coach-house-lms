@@ -25,6 +25,7 @@ import { setRoadmapHeroImageAction } from "@/actions/roadmap"
 import { cn } from "@/lib/utils"
 
 type RoadmapShellProps = {
+  draftScope?: { userId: string; organizationId: string }
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit?: boolean
@@ -59,6 +60,7 @@ const DOT_PATTERN_CLASSES = [
 ]
 
 export function RoadmapShell({
+  draftScope,
   sections,
   publicSlug,
   canEdit = true,
@@ -311,6 +313,7 @@ export function RoadmapShell({
         ) : null}
 
         <RoadmapEditor
+          draftScope={draftScope}
           sections={sections}
           publicSlug={publicSlug}
           layout={editorLayout}

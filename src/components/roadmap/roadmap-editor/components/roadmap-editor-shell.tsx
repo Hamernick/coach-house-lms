@@ -10,7 +10,9 @@ import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "@/lib/roadmap/public-organization-profile-sections"
 
 import { DEFAULT_PLACEHOLDER, ROADMAP_TOOLBAR_ID } from "../constants"
-import type { RoadmapDraft } from "../types"
+import { RoadmapSaveFeedback } from "./roadmap-save-feedback"
+import type { RoadmapSaveIssue } from "../hooks/use-roadmap-editor-save"
+import type { RoadmapDraftScope, RoadmapDraft } from "../types"
 
 type RoadmapEditorShellProps = {
   sections: RoadmapSection[]
@@ -39,6 +41,11 @@ type RoadmapEditorShellProps = {
   onSave: () => void
   isDirty: boolean
   savingId: string | null
+  saveIssue?: RoadmapSaveIssue
+  offline: boolean
+  storageFailed: boolean
+  draftScope?: RoadmapDraftScope
+  onResolveConflict: (section: RoadmapSection, keepDraft: boolean) => void
   sectionIcon: ComponentType<{ className?: string }>
 }
 
@@ -69,6 +76,11 @@ export function RoadmapEditorShell({
   onSave,
   isDirty,
   savingId,
+  saveIssue,
+  offline,
+  storageFailed,
+  draftScope,
+  onResolveConflict,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
   const controlsPublicProfile = PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(
@@ -89,6 +101,18 @@ export function RoadmapEditorShell({
         </RightRailSlot>
       ) : null}
       <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
+        {canEdit ? (
+          <RoadmapSaveFeedback
+            key={activeSection.id}
+            issue={saveIssue}
+            offline={offline}
+            storageFailed={storageFailed}
+            draft={activeDraft}
+            draftScope={draftScope}
+            onRetry={onSave}
+            onResolve={onResolveConflict}
+          />
+        ) : null}
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}
@@ -154,7 +178,13 @@ export function RoadmapEditorShell({
                       size="sm"
                       variant="ghost"
                       onClick={onSave}
-                      disabled={statusSelectDisabled || !isDirty}
+                      disabled={
+                        savingId !== null ||
+                        offline ||
+                        saveIssue?.kind === "conflict" ||
+                        saveIssue?.kind === "scope_changed" ||
+                        !isDirty
+                      }
                       className="text-muted-foreground hover:text-foreground gap-2"
                     >
                       {savingId === activeSection.id

@@ -130,6 +130,7 @@ test("Markdown replacement is explicit and cancel leaves the original unchanged"
     Buffer.from("# New strategy\n\n- Recruit\n- Train")
   )
   await dialog.getByRole("button", { name: "Replace document" }).click()
+  await page.getByRole("button", { name: "Confirm replacement" }).click()
   await expect(editor).not.toContainText("Existing board notes.")
   await expect(editor.locator("h1")).toHaveText("New strategy")
   await expect(editor.locator("li")).toHaveCount(2)
@@ -202,18 +203,21 @@ test("formatted paste keeps supported styles after reload", async ({
   await expect(editor.locator("script")).toHaveCount(0)
 })
 
-test("Google import uses the selected file and retains a source link", async ({
+test("Google import distinguishes setup errors, retries, and retains the selected source link", async ({
   page,
 }) => {
   const fixture = await mockImports(page)
+  let pickerFailure: string | null = "not_configured"
   await page.route("**/api/integrations/google-drive/picker-token", (route) =>
-    route.fulfill({
-      json: {
-        accessToken: "fixture-token",
-        developerKey: "fixture-key",
-        appId: "fixture-app",
-      },
-    })
+    !pickerFailure
+      ? route.fulfill({
+          json: {
+            accessToken: "fixture-token",
+            developerKey: "fixture-key",
+            appId: "fixture-app",
+          },
+        })
+      : route.fulfill({ status: 503, json: { ok: false, code: pickerFailure } })
   )
   await page.goto("/visual-regression/document-import")
   await page.evaluate(() => {
@@ -268,6 +272,27 @@ test("Google import uses the selected file and retains a source link", async ({
     .getByRole("button", { name: "Google Drive", exact: true })
     .click()
   const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Google Drive file selection is unavailable in this environment."
+  )
+  await expect(
+    dialog.getByRole("link", { name: "Manage connections" })
+  ).toHaveCount(0)
+  expect(fixture.driveRequests).toEqual([])
+  pickerFailure = "google_revoked"
+  await dialog
+    .getByRole("button", { name: "Google Drive", exact: true })
+    .click()
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Reconnect in Workspace Tools"
+  )
+  await expect(
+    dialog.getByRole("link", { name: "Manage connections" })
+  ).toBeVisible()
+  pickerFailure = null
+  await dialog
+    .getByRole("button", { name: "Google Drive", exact: true })
+    .click()
   await expect(dialog.getByLabel("Import preview")).toBeVisible()
   await dialog.getByRole("button", { name: "Add to document" }).click()
   await expect(
@@ -391,4 +416,43 @@ test("a core card imports into its matching editor and non-document sections are
     sectionId: "board_strategy",
     expectedLastUpdated: null,
   })
+})
+
+test("cancelling document preparation keeps the editor unchanged", async ({
+  page,
+}) => {
+  await mockImports(page)
+  let resume = () => {}
+  const pending = new Promise<void>((resolve) => {
+    resume = resolve
+  })
+  await page.route("**/api/document-import", async (route) => {
+    await pending
+    await route.fulfill({
+      json: {
+        document: {
+          name: "later.md",
+          html: "<p>Late result</p>",
+          warnings: [],
+        },
+      },
+    })
+  })
+  await page.goto("/visual-regression/document-import")
+  const editor = page.locator('[contenteditable="true"]')
+  const original = await editor.innerHTML()
+  await page
+    .getByRole("button", { name: "Import document", exact: true })
+    .click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByLabel("Choose document to import").setInputFiles({
+    name: "later.md",
+    mimeType: "text/markdown",
+    buffer: Buffer.from("# Later"),
+  })
+  await expect(dialog.getByRole("status")).toHaveText("Preparing document…")
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click()
+  resume()
+  await expect(dialog).toHaveCount(0)
+  expect(await editor.innerHTML()).toBe(original)
 })

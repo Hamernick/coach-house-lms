@@ -27,3 +27,15 @@ with a browser-paste fallback message if access is denied.
 Google Docs export to DOCX; selected Word/Markdown files download with the user's
 existing drive.file grant. Imports create a Coach House copy and retain a source
 link. They do not sync edits back to Google. No provider setup is performed.
+
+Import requests are read with an actual-byte limit and a 15-second body timeout
+before JSON or multipart parsing. Per-process concurrency is capped at four
+imports and one per user; this is not distributed rate limiting. DOCX preflight
+checks local headers, actual inflated sizes, XML complexity and duplicate parts.
+Legacy DOC preflight bounds allocation tables and rejects cyclic sector and
+directory chains. Parser internals are not returned to clients.
+
+Roadmap drafts use authenticated user/organization keys and retain their base
+revision through browser recovery. Legacy unscoped browser drafts are preserved
+but never automatically loaded into another session. Conflict recovery reviews
+both versions and retains revision checks when the user chooses their draft.

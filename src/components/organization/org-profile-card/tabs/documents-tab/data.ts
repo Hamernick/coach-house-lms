@@ -13,7 +13,7 @@ import type {
 
 export type DocumentsTabData = Omit<
   DocumentsTabProps,
-  "userId" | "editMode" | "canEdit"
+  "userId" | "organizationId" | "editMode" | "canEdit"
 >
 
 const POLICY_STATUSES = new Set(["not_started", "in_progress", "complete"])

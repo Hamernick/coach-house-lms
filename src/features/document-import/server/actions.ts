@@ -9,6 +9,9 @@ import {
   GoogleDriveError,
 } from "@/features/google-drive"
 import { MAX_DOCUMENT_IMPORT_BYTES } from "../lib"
+import { readImportRequest } from "./read-import-request"
+import { reserveDocumentImport } from "./import-capacity"
+import { DocumentImportError } from "./import-error"
 import { convertDocument } from "./convert-document"
 
 export async function prepareDocumentImport(request: NextRequest) {
@@ -19,12 +22,23 @@ export async function prepareDocumentImport(request: NextRequest) {
   } = await supabase.auth.getUser()
   if (error || !user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  let release: (() => void) | undefined
   try {
     const organization = await resolveActiveOrganization(supabase, user.id)
     if (!canEditOrganization(organization.role))
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    if (request.headers.get("content-type")?.includes("application/json")) {
-      const input = (await request.json()) as { driveFileId?: unknown }
+    if (request.headers.get("sec-fetch-site") === "cross-site")
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    release = reserveDocumentImport(user.id)
+    const isJson = request.headers
+      .get("content-type")
+      ?.includes("application/json")
+    const body = await readImportRequest(
+      request,
+      isJson ? 4096 : MAX_DOCUMENT_IMPORT_BYTES + 65536
+    )
+    if (isJson) {
+      const input = (await body.json()) as { driveFileId?: unknown }
       const file = await importGoogleDriveFile({
         userId: user.id,
         fileId: input.driveFileId,
@@ -35,15 +49,7 @@ export async function prepareDocumentImport(request: NextRequest) {
         { headers: { "Cache-Control": "private, no-store" } }
       )
     }
-    if (
-      Number(request.headers.get("content-length")) >
-      MAX_DOCUMENT_IMPORT_BYTES + 65536
-    )
-      return NextResponse.json(
-        { error: "Choose a document up to 15 MB." },
-        { status: 413 }
-      )
-    const form = await request.formData()
+    const form = await body.formData()
     const file = form.get("file")
     if (!(file instanceof File) || file.size > MAX_DOCUMENT_IMPORT_BYTES)
       return NextResponse.json(
@@ -75,11 +81,13 @@ export async function prepareDocumentImport(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
+          error instanceof DocumentImportError
             ? error.message
             : "This document could not be imported.",
       },
-      { status: 400 }
+      { status: error instanceof DocumentImportError ? error.status : 400 }
     )
+  } finally {
+    release?.()
   }
 }

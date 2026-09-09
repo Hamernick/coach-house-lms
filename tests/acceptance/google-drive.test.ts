@@ -36,6 +36,70 @@ function stubGoogleDriveServerConfig() {
   vi.stubEnv("GOOGLE_DRIVE_PICKER_APP_ID", "74627119265")
 }
 
+describe("Google Drive Picker failures", () => {
+  it.each([
+    ["not_configured", 503, "unavailable in this environment", false],
+    ["unauthorized", 401, "session expired", false],
+    ["forbidden", 403, "permission", false],
+    ["google_revoked", 409, "Reconnect in Workspace Tools", true],
+    ["missing_refresh_token", 409, "Reconnect in Workspace Tools", true],
+    ["scope_denied", 403, "selected-file access", true],
+    ["rate_limited", 429, "busy", false],
+    ["provider_unavailable", 503, "could not load", false],
+    ["refresh-token=secret-value", 500, "could not load", false],
+  ])(
+    "explains %s without confusing setup with connection state",
+    async (code, status, message, requiresReconnect) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(Response.json({ ok: false, code }, { status }))
+      vi.stubGlobal("fetch", fetchMock)
+      const { pickGoogleDriveFiles } =
+        await import("@/features/google-drive/client")
+      await expect(pickGoogleDriveFiles()).rejects.toMatchObject({
+        name: "GoogleDrivePickerError",
+        message: expect.stringContaining(message),
+        requiresReconnect,
+      })
+      expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+        "/api/integrations/google-drive/picker-token",
+        { method: "POST", cache: "no-store", signal: expect.any(AbortSignal) }
+      )
+    }
+  )
+
+  it.each([
+    () => new Response("Unavailable", { status: 502 }),
+    () => Response.json(null),
+    () => Response.json({ ok: true }),
+    () => Response.json({ accessToken: {}, developerKey: 42, appId: [] }),
+  ])(
+    "handles malformed token responses without asking for reconnection",
+    async (response) => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response()))
+      const { pickGoogleDriveFiles } =
+        await import("@/features/google-drive/client")
+      await expect(pickGoogleDriveFiles()).rejects.toMatchObject({
+        message: "Google Drive file selection could not load. Try again.",
+        requiresReconnect: false,
+      })
+    }
+  )
+
+  it("handles network failures without displaying internal error details", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("private network detail"))
+    )
+    const { pickGoogleDriveFiles } =
+      await import("@/features/google-drive/client")
+    await expect(pickGoogleDriveFiles()).rejects.toMatchObject({
+      message: "Google Drive file selection could not load. Try again.",
+      requiresReconnect: false,
+    })
+  })
+})
+
 describe("Google Drive backend contract", () => {
   it("accepts only bounded, unique Picker file IDs", () => {
     expect(normalizeGoogleDriveFileIds(["abcdefghij", "ABC_123-xyz"])).toEqual([
@@ -314,17 +378,15 @@ describe("Google Drive backend contract", () => {
       ).bytes.toString()
     ).toBe("# Strategy")
     expect(fetchMock.mock.calls[1][0].searchParams.get("alt")).toBe("media")
-    fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          id: "selected-file",
-          name: "Budget",
-          mimeType: "application/vnd.google-apps.spreadsheet",
-          webViewLink:
-            "https://docs.google.com/spreadsheets/d/selected-file/edit",
-        })
-      )
+    fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        id: "selected-file",
+        name: "Budget",
+        mimeType: "application/vnd.google-apps.spreadsheet",
+        webViewLink:
+          "https://docs.google.com/spreadsheets/d/selected-file/edit",
+      })
+    )
     vi.stubGlobal("fetch", fetchMock)
     await expect(
       downloadGoogleDriveDocument("token", "selected-file")
@@ -365,5 +427,131 @@ describe("Google Drive backend contract", () => {
       downloadGoogleDriveDocument("token", "selected-file")
     ).rejects.toMatchObject({ status: 413 })
     expect(cancel).toHaveBeenCalled()
+  })
+})
+
+describe("Google Drive recovery and shared grants", () => {
+  it("retries a failed Picker script load without reloading the page", async () => {
+    const tokenFetch = vi.fn().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            accessToken: "token",
+            developerKey: "key",
+            appId: "app",
+          })
+        )
+    )
+    vi.stubGlobal("fetch", tokenFetch)
+    const pickerWindow: Record<string, unknown> = { setTimeout, clearTimeout }
+    vi.stubGlobal("window", pickerWindow)
+    let attempts = 0
+    let removed = 0
+    class Script extends EventTarget {
+      dataset = {}
+      remove() {
+        removed++
+      }
+    }
+    class Builder {
+      callback = (_: unknown) => {}
+      addView() {
+        return this
+      }
+      setAppId() {
+        return this
+      }
+      setDeveloperKey() {
+        return this
+      }
+      setOAuthToken() {
+        return this
+      }
+      setCallback(callback: (data: unknown) => void) {
+        this.callback = callback
+        return this
+      }
+      build() {
+        return {
+          setVisible: () =>
+            this.callback({ action: "picked", docs: [{ id: "selected" }] }),
+        }
+      }
+    }
+    vi.stubGlobal("document", {
+      querySelector: () => null,
+      createElement: () => new Script(),
+      head: {
+        append: (script: Script) => {
+          attempts++
+          queueMicrotask(() => {
+            if (attempts === 1) {
+              script.dispatchEvent(new Event("error"))
+              return
+            }
+            pickerWindow.gapi = {
+              load: (_: string, options: { callback: () => void }) => {
+                pickerWindow.google = {
+                  picker: {
+                    Action: { PICKED: "picked", CANCEL: "cancel" },
+                    ViewId: { DOCS: "docs" },
+                    DocsView: class {},
+                    PickerBuilder: Builder,
+                  },
+                }
+                options.callback()
+              },
+            }
+            script.dispatchEvent(new Event("load"))
+          })
+        },
+      },
+    })
+    const { pickGoogleDriveFiles } =
+      await import("@/features/google-drive/components/picker")
+    await expect(pickGoogleDriveFiles()).rejects.toThrow("could not load")
+    await expect(pickGoogleDriveFiles()).resolves.toEqual(["selected"])
+    expect(attempts).toBe(2)
+    expect(removed).toBe(1)
+  })
+
+  it("clears Drive credentials without making a project-wide Google revocation request", async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
+    const update = vi
+      .fn()
+      .mockReturnValue({ eq: async () => ({ error: null }) })
+    const admin = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: {
+                id: "connection",
+                refresh_token_ciphertext: "encrypted",
+                refresh_token_iv: "iv",
+                refresh_token_auth_tag: "tag",
+                key_version: "v1",
+              },
+              error: null,
+            }),
+          }),
+        }),
+        update,
+      }),
+    }
+    const { disconnectGoogleDrive } =
+      await import("@/features/google-drive/server/service")
+    await disconnectGoogleDrive({ admin: admin as never, userId: "user" })
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        refresh_token_ciphertext: null,
+        refresh_token_iv: null,
+        refresh_token_auth_tag: null,
+        key_version: null,
+        status: "disconnected",
+      })
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

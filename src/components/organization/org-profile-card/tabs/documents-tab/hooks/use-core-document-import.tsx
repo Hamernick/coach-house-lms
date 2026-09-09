@@ -10,6 +10,7 @@ import {
   isImportableDocument,
   mergeImportedDocument,
 } from "@/features/document-import/client"
+import type { RoadmapDraftScope } from "@/components/roadmap/roadmap-editor/types"
 import { toast } from "@/lib/toast"
 import type { DocumentsRoadmapSection } from "../types"
 
@@ -21,13 +22,18 @@ const ImportDialog = dynamic(
   { loading: () => null }
 )
 
-export function useCoreDocumentImport(sections: DocumentsRoadmapSection[]) {
+export function useCoreDocumentImport(
+  sections: DocumentsRoadmapSection[],
+  scope: RoadmapDraftScope,
+  canEdit: boolean
+) {
   const [overrides, setOverrides] = useState<
     Record<string, DocumentsRoadmapSection>
   >({})
   const [target, setTarget] = useState<{
     section: DocumentsRoadmapSection
     file: File
+    scope: RoadmapDraftScope
   } | null>(null)
   const currentSections = useMemo(
     () =>
@@ -43,8 +49,8 @@ export function useCoreDocumentImport(sections: DocumentsRoadmapSection[]) {
 
   function prepareImport(sectionId: string, file: File) {
     const section = currentSections.find((entry) => entry.id === sectionId)
-    if (section && isImportableDocument(file.name)) {
-      setTarget({ section, file })
+    if (canEdit && section && isImportableDocument(file.name)) {
+      setTarget({ section, file, scope })
       return true
     }
     return false
@@ -61,6 +67,8 @@ export function useCoreDocumentImport(sections: DocumentsRoadmapSection[]) {
       onImport={async (document, mode) => {
         const result = await saveRoadmapSectionAction({
           sectionId: target.section.id,
+          expectedOrganizationId: target.scope.organizationId,
+          expectedUserId: target.scope.userId,
           expectedLastUpdated: target.section.lastUpdated,
           content: mergeImportedDocument(
             target.section.content ?? "",

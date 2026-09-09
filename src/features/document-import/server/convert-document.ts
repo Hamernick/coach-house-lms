@@ -4,6 +4,8 @@ import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { plainTextToNarrativeHtml } from "@/lib/roadmap/organization-narratives"
 import { MAX_DOCUMENT_IMPORT_BYTES, MAX_DOCUMENT_IMPORT_HTML } from "../lib"
 import type { ImportedDocument } from "../types"
+import { DocumentImportError } from "./import-error"
+import { validateLegacyWord } from "./validate-legacy-word"
 import { validateDocxArchive } from "./validate-docx-archive"
 
 export async function convertDocument({
@@ -14,11 +16,11 @@ export async function convertDocument({
   bytes: Buffer
 }): Promise<ImportedDocument> {
   if (!bytes.length || bytes.length > MAX_DOCUMENT_IMPORT_BYTES)
-    throw new Error("Choose a non-empty document up to 15 MB.")
+    throw new DocumentImportError("Choose a non-empty document up to 15 MB.")
   let html: string
   const warnings: string[] = []
   if (/\.docx$/i.test(name)) {
-    validateDocxArchive(bytes)
+    await validateDocxArchive(bytes)
     const result = await mammoth.convertToHtml(
       { buffer: bytes },
       {
@@ -45,9 +47,10 @@ export async function convertDocument({
       )
   } else if (/\.doc$/i.test(name)) {
     if (bytes.subarray(0, 8).toString("hex") !== "d0cf11e0a1b11ae1")
-      throw new Error(
+      throw new DocumentImportError(
         "This is not a supported Word .doc file. Save it as .docx and try again."
       )
+    validateLegacyWord(bytes)
     const document = await new WordExtractor().extract(bytes)
     html = plainTextToNarrativeHtml(document.getBody())
     warnings.push(
@@ -58,10 +61,12 @@ export async function convertDocument({
     const markdown = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
     html = await marked.parse(markdown, { async: false, gfm: true })
   } else {
-    throw new Error("Choose a Word (.docx or .doc) or Markdown (.md) document.")
+    throw new DocumentImportError(
+      "Choose a Word (.docx or .doc) or Markdown (.md) document."
+    )
   }
   if (html.length > MAX_DOCUMENT_IMPORT_HTML)
-    throw new Error(
+    throw new DocumentImportError(
       "This document is too long to import. Split it into smaller documents."
     )
   if (/<img\b/i.test(html) && warnings.length === 0)
@@ -70,6 +75,8 @@ export async function convertDocument({
     )
   html = sanitizeHtml(html).replace(/<img\b[^>]*>/gi, "")
   if (!html.replace(/<[^>]*>/g, "").trim())
-    throw new Error("No editable text was found in this document.")
+    throw new DocumentImportError(
+      "No editable text was found in this document."
+    )
   return { name, html, warnings }
 }

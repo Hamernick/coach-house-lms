@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 
-import { pickGoogleDriveFiles } from "@/features/google-drive/client"
+import {
+  GoogleDrivePickerError,
+  pickGoogleDriveFiles,
+} from "@/features/google-drive/client"
 import { toast } from "@/lib/toast"
 import type { DocumentActionOptions } from "./use-documents-library-selection"
 
@@ -120,7 +123,11 @@ export function useGoogleDriveLibrary({ enabled }: { enabled: boolean }) {
       window.location.assign(result.authorizationUrl)
     } catch (error) {
       toast.error(
-        driveErrorMessage(error instanceof Error ? error.message : undefined)
+        error instanceof GoogleDrivePickerError
+          ? error.message
+          : driveErrorMessage(
+              error instanceof Error ? error.message : undefined
+            )
       )
     } finally {
       setPending(false)

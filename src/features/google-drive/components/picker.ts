@@ -1,5 +1,7 @@
 "use client"
 
+import { GoogleDrivePickerError } from "../lib/picker-error"
+
 type PickerDocument = { id?: string }
 type PickerData = { action?: string; docs?: PickerDocument[] }
 type PickerInstance = { setVisible: (visible: boolean) => void }
@@ -21,7 +23,17 @@ type PickerNamespace = {
 }
 
 type PickerWindow = Window & {
-  gapi?: { load: (api: string, callback: () => void) => void }
+  gapi?: {
+    load: (
+      api: string,
+      options: {
+        callback: () => void
+        onerror: () => void
+        timeout: number
+        ontimeout: () => void
+      }
+    ) => void
+  }
   google?: { picker?: PickerNamespace }
 }
 
@@ -39,34 +51,62 @@ function loadPickerScript() {
       'script[data-google-picker="true"]'
     )
     const script = existing ?? document.createElement("script")
-    const loadPicker = () => {
-      if (!pickerWindow.gapi) {
-        reject(new Error("provider_unavailable"))
+    let settled = false
+    const cleanup = () => {
+      window.clearTimeout(timeout)
+      script.removeEventListener("load", loadPicker)
+      script.removeEventListener("error", fail)
+    }
+    const fail = () => {
+      if (settled) return
+      settled = true
+      cleanup()
+      script.remove()
+      reject(new GoogleDrivePickerError())
+    }
+    const ready = () => {
+      if (settled) return
+      if (!pickerWindow.google?.picker) {
+        fail()
         return
       }
-      pickerWindow.gapi.load("picker", resolve)
+      settled = true
+      cleanup()
+      resolve()
     }
-
-    if (existing) {
-      existing.addEventListener("load", loadPicker, { once: true })
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("provider_unavailable")),
-        { once: true }
-      )
+    const loadPicker = () => {
+      if (settled) return
+      if (!pickerWindow.gapi) {
+        fail()
+        return
+      }
+      try {
+        pickerWindow.gapi.load("picker", {
+          callback: ready,
+          onerror: fail,
+          timeout: 15000,
+          ontimeout: fail,
+        })
+      } catch {
+        fail()
+      }
+    }
+    const timeout = window.setTimeout(fail, 15000)
+    if (pickerWindow.gapi) {
+      loadPicker()
       return
     }
-
-    script.src = "https://apis.google.com/js/api.js"
-    script.async = true
-    script.dataset.googlePicker = "true"
     script.addEventListener("load", loadPicker, { once: true })
-    script.addEventListener(
-      "error",
-      () => reject(new Error("provider_unavailable")),
-      { once: true }
-    )
-    document.head.append(script)
+    script.addEventListener("error", fail, { once: true })
+    if (!existing) {
+      script.src = "https://apis.google.com/js/api.js"
+      script.async = true
+      script.dataset.googlePicker = "true"
+      document.head.append(script)
+    }
+  }).catch((error) => {
+    pickerScriptPromise = null
+    throw error
   })
 
   return pickerScriptPromise
@@ -77,24 +117,37 @@ export async function pickGoogleDriveFiles(
 ): Promise<string[]> {
   const response = await fetch("/api/integrations/google-drive/picker-token", {
     method: "POST",
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000),
+  }).catch(() => {
+    throw new GoogleDrivePickerError()
   })
-  const token = (await response.json()) as {
-    accessToken?: string
-    developerKey?: string
-    appId?: string
-    code?: string
-  }
-  if (!response.ok || !token.accessToken || !token.developerKey || !token.appId)
-    throw new Error("Connect Google Drive in Workspace Tools, then try again.")
+  const token = (await response.json().catch(() => null)) as {
+    accessToken?: unknown
+    developerKey?: unknown
+    appId?: unknown
+    code?: unknown
+  } | null
+  if (!response.ok) throw new GoogleDrivePickerError(token?.code)
+  if (
+    typeof token?.accessToken !== "string" ||
+    !token.accessToken ||
+    typeof token.developerKey !== "string" ||
+    !token.developerKey ||
+    typeof token.appId !== "string" ||
+    !token.appId
+  )
+    throw new GoogleDrivePickerError()
+  const { accessToken, developerKey, appId } = token
   await loadPickerScript()
   const picker = (window as PickerWindow).google?.picker
   if (!picker) throw new Error("Google Drive could not open. Try again.")
   return new Promise((resolve) => {
     const builder = new picker.PickerBuilder()
       .addView(new picker.DocsView(picker.ViewId.DOCS))
-      .setAppId(token.appId!)
-      .setDeveloperKey(token.developerKey!)
-      .setOAuthToken(token.accessToken!)
+      .setAppId(appId)
+      .setDeveloperKey(developerKey)
+      .setOAuthToken(accessToken)
       .setCallback((data) => {
         if (data.action === picker.Action.CANCEL) resolve([])
         if (data.action === picker.Action.PICKED)

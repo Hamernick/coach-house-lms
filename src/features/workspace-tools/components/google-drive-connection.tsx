@@ -3,7 +3,7 @@
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import TriangleAlertIcon from "lucide-react/dist/esm/icons/triangle-alert"
 import type { ReactNode } from "react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
@@ -16,12 +16,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "@/lib/toast"
 
 import type {
@@ -93,6 +94,9 @@ export function GoogleDriveConnection({
   brand: ReactNode
   onConnectionChange?: (connected: boolean) => void
 }) {
+  const connectionControlId = useId()
+  const connectionDescriptionId = `${connectionControlId}-description`
+  const connectionControlRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -233,12 +237,18 @@ export function GoogleDriveConnection({
                 <p className="text-muted-foreground truncate text-xs">
                   {connection.googleEmail ?? "Connected Google account"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                <p
+                  id={connectionDescriptionId}
+                  className="text-muted-foreground mt-0.5 text-xs leading-relaxed"
+                >
                   Only files you choose can be connected.
                 </p>
               </>
             ) : (
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p
+                id={connectionDescriptionId}
+                className="text-muted-foreground text-xs leading-relaxed"
+              >
                 {reconnectRequired
                   ? "Access expired. Reconnect to selected files."
                   : "Connect now; choose files later in Documents."}
@@ -260,78 +270,85 @@ export function GoogleDriveConnection({
             <Badge variant="outline" className="font-normal">
               Needs Attention
             </Badge>
-          ) : connected ? (
-            <>
-              <Badge variant="secondary" className="font-normal">
-                Connected
-              </Badge>
-              <AlertDialog
-                open={disconnectOpen}
-                onOpenChange={setDisconnectOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-11 sm:h-8"
-                    disabled={pendingAction !== null}
-                  >
-                    Disconnect…
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Disconnect Google Drive?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Coach House will lose access. Connected file records will
-                      require reconnection, but no files are deleted from Drive.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={pendingAction !== null}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      disabled={pendingAction !== null}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        void disconnect()
-                      }}
-                    >
-                      {pendingAction === "disconnect" ? (
-                        <LoaderCircleIcon
-                          aria-hidden="true"
-                          className="size-4 animate-spin motion-reduce:animate-none"
-                        />
-                      ) : null}
-                      {pendingAction === "disconnect"
-                        ? "Disconnecting…"
-                        : "Disconnect"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
           ) : (
-            <Button
-              type="button"
-              size="sm"
-              className="h-11 sm:h-8"
-              disabled={pendingAction !== null}
-              onClick={() => void connect()}
-            >
-              {pendingAction === "connect" ? (
-                <LoaderCircleIcon
-                  aria-hidden="true"
-                  className="size-4 animate-spin motion-reduce:animate-none"
+            <>
+              <Label
+                htmlFor={connectionControlId}
+                className="min-h-11 cursor-pointer gap-2 sm:min-h-8"
+              >
+                <span className="text-muted-foreground text-xs font-normal whitespace-nowrap">
+                  {pendingAction === "connect"
+                    ? "Connecting…"
+                    : connected
+                      ? "Connected"
+                      : reconnectRequired
+                        ? "Reconnect"
+                        : "Not connected"}
+                </span>
+                <Switch
+                  ref={connectionControlRef}
+                  id={connectionControlId}
+                  aria-label="Google Drive connection"
+                  aria-describedby={connectionDescriptionId}
+                  checked={connected}
+                  disabled={pendingAction !== null}
+                  onCheckedChange={(nextConnected) => {
+                    if (nextConnected) {
+                      void connect()
+                    } else {
+                      setDisconnectOpen(true)
+                    }
+                  }}
                 />
+              </Label>
+              {connected ? (
+                <AlertDialog
+                  open={disconnectOpen}
+                  onOpenChange={setDisconnectOpen}
+                >
+                  <AlertDialogContent
+                    onCloseAutoFocus={(event) => {
+                      event.preventDefault()
+                      connectionControlRef.current?.focus()
+                    }}
+                  >
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Disconnect Google Drive?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Coach House will lose access. Connected file records
+                        will require reconnection, but no files are deleted from
+                        Drive.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={pendingAction !== null}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={pendingAction !== null}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          void disconnect()
+                        }}
+                      >
+                        {pendingAction === "disconnect" ? (
+                          <LoaderCircleIcon
+                            aria-hidden="true"
+                            className="size-4 animate-spin motion-reduce:animate-none"
+                          />
+                        ) : null}
+                        {pendingAction === "disconnect"
+                          ? "Disconnecting…"
+                          : "Disconnect"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : null}
-              {pendingAction === "connect" ? "Connecting…" : "Connect"}
-            </Button>
+            </>
           )}
         </div>
       </div>

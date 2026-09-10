@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+  canReuseGoogleDriveRefreshToken,
   normalizeGoogleDriveFileIds,
   normalizeGoogleDriveOAuthCallbackInput,
   normalizeGoogleDriveReturnPath,
@@ -12,6 +13,9 @@ const ROOT = process.cwd()
 const readSource = (path: string) => readFileSync(join(ROOT, path), "utf8")
 const migration = readSource(
   "supabase/migrations/20260831203000_add_google_drive_documents.sql"
+)
+const toolsReturnPathMigration = readSource(
+  "supabase/migrations/20260902224500_allow_google_drive_tools_return_path.sql"
 )
 
 afterEach(() => {
@@ -59,7 +63,7 @@ describe("Google Drive backend contract", () => {
     ).toBeNull()
   })
 
-  it("bounds callback inputs and redirects only to Documents routes", () => {
+  it("bounds callback inputs and redirects only to approved app routes", () => {
     const state = "a".repeat(43)
     expect(
       normalizeGoogleDriveOAuthCallbackInput(state, "4/authorization-code")
@@ -86,6 +90,7 @@ describe("Google Drive backend contract", () => {
     expect(normalizeGoogleDriveReturnPath("//evil.example")).toBe(
       "/organization/documents"
     )
+    expect(toolsReturnPathMigration).toContain("'/workspace?drawer=tools'")
   })
 
   it("keeps OAuth credentials service-only and forces RLS", () => {
@@ -136,6 +141,16 @@ describe("Google Drive backend contract", () => {
     expect(crypto).toContain('createCipheriv("aes-256-gcm"')
     expect(crypto).toContain("cipher.setAAD")
     expect(migration).not.toMatch(/\baccess_token\b/)
+  })
+
+  it("reuses a stored refresh token only for the same Google subject", () => {
+    expect(canReuseGoogleDriveRefreshToken("subject-a", "subject-a")).toBe(
+      true
+    )
+    expect(canReuseGoogleDriveRefreshToken("subject-a", "subject-b")).toBe(
+      false
+    )
+    expect(canReuseGoogleDriveRefreshToken(null, "subject-b")).toBe(false)
   })
 
   it("round-trips secrets only with the matching authenticated context", async () => {

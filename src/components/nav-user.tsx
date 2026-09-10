@@ -15,6 +15,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui
 
 import { useNavUserMenu } from "./nav-user/hooks/use-nav-user-menu"
 import { NavUserMenuContent } from "./nav-user/nav-user-menu-content"
+import type { AccountSettingsTabKey } from "./account-settings/types"
 
 const AccountSettingsDialog = dynamic(
   () =>
@@ -52,6 +53,8 @@ export function NavUser({
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsInitialTab, setSettingsInitialTab] =
+    useState<AccountSettingsTabKey>("profile")
   const registeredAccountMenuActions = useAppShellAccountMenuActions()
   const {
     menuOpen,
@@ -144,8 +147,9 @@ export function NavUser({
           accountMenuActions={accountMenuActions}
           signOutPending={signOutPending}
           onCloseMenu={() => setMenuOpen(false)}
-          onOpenSettings={() => {
+          onOpenSettings={(tab = "profile") => {
             setMenuOpen(false)
+            setSettingsInitialTab(tab)
             setSettingsOpen(true)
           }}
           onSignOut={() => {
@@ -158,6 +162,7 @@ export function NavUser({
       <AccountSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        initialTab={settingsInitialTab}
         defaultName={displayName}
         defaultEmail={displayEmail}
         defaultMarketingOptIn={true}

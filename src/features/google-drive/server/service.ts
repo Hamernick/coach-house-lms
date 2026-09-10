@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase"
 import {
+  canReuseGoogleDriveRefreshToken,
   normalizeGoogleDriveFileIds,
   normalizeGoogleDriveOAuthCallbackInput,
   normalizeGoogleDriveReturnPath,
@@ -144,8 +145,15 @@ export async function completeGoogleDriveConnection(input: {
   if (existingError) throw new GoogleDriveError("provider_unavailable", 503)
 
   let refreshToken = result.tokens.refresh_token
-  if (!refreshToken && existing?.refresh_token_ciphertext && existing.refresh_token_iv &&
-      existing.refresh_token_auth_tag && existing.key_version) {
+  if (
+    !refreshToken &&
+    existing &&
+    canReuseGoogleDriveRefreshToken(existing.google_subject, result.subject) &&
+    existing.refresh_token_ciphertext &&
+    existing.refresh_token_iv &&
+    existing.refresh_token_auth_tag &&
+    existing.key_version
+  ) {
     refreshToken = decryptGoogleDriveSecret({
       ciphertext: existing.refresh_token_ciphertext,
       iv: existing.refresh_token_iv,

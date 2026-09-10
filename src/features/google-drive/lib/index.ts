@@ -9,6 +9,13 @@ const GOOGLE_DRIVE_RETURN_PATHS = new Set([
   "/workspace?drawer=tools",
 ])
 
+export function canReuseGoogleDriveRefreshToken(
+  existingSubject: string | null | undefined,
+  nextSubject: string
+) {
+  return Boolean(existingSubject && existingSubject === nextSubject)
+}
+
 export function normalizeGoogleDriveFileIds(value: unknown): string[] | null {
   if (
     !Array.isArray(value) ||

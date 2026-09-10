@@ -8,6 +8,12 @@ export const WORKSPACE_TOOL_DEFINITIONS: readonly WorkspaceToolDefinition[] = [
     searchTerms: ["payments", "finance", "transactions"],
   },
   {
+    id: "google-calendar",
+    name: "Google Calendar",
+    description: "Your schedule alongside board events.",
+    searchTerms: ["calendar", "events", "schedule", "google"],
+  },
+  {
     id: "google-drive",
     name: "Google Drive",
     description: "Bring Drive files into your organization workspace.",

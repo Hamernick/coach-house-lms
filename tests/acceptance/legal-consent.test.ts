@@ -129,7 +129,7 @@ describe("legal consent", () => {
       "utf8"
     )
     const currentConsentMigration = readFileSync(
-      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "supabase/migrations/20260909150000_accept_calendar_privacy_consent.sql",
       "utf8"
     )
     expect(migration).toContain("references auth.users(id) on delete cascade")
@@ -175,7 +175,7 @@ describe("legal consent", () => {
 
   it("rejects public signup without current server-validated consent", () => {
     const migration = readFileSync(
-      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "supabase/migrations/20260909150000_accept_calendar_privacy_consent.sql",
       "utf8"
     )
     expect(migration).toContain(

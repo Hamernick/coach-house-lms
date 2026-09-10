@@ -49,11 +49,14 @@ export function RoadmapCalendarDayWithEventDots({
       <span className="absolute inset-x-0 top-2 text-center !text-sm leading-none">
         {children}
       </span>
-      {visibleDots.length > 0 ? (
+      {visibleDots.length > 0 || modifiers?.google_calendar ? (
         <span
           className="absolute inset-x-0 bottom-1.5 flex justify-center gap-1"
           aria-hidden
         >
+          {modifiers?.google_calendar ? (
+            <span className="bg-foreground size-1.5 rounded-full" />
+          ) : null}
           {visibleDots.map((eventType) => (
             <span
               key={eventType}

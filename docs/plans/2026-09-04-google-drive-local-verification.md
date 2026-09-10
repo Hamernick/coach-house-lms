@@ -3,15 +3,22 @@
 ## Current checkpoint
 
 - Documents and Drive tests pass locally; a signed-in provider canary remains open.
-- Serving worktree: `coach-house-platform-local-catchup-20260904`, branch
-  `chore/local-catchup-20260904`, port 3000.
-- All eight Drive configuration variables are absent locally as of September 4.
+- Serving worktree: `coach-house-platform`, branch
+  `chore/local-development-20260907`, port 3000, at `bb262360`.
+- All eight Drive configuration variables remain absent locally as of September 9.
+  Presence-only inspection checked seven distinct environment files across local
+  worktrees and the current shell. No credential values were printed.
 - The September 1 runlog records production-only Vercel secrets and independent
   password-manager copies. Their current provider state has not been reverified.
-  Inspect the existing project before proposing new resources or key rotation.
-- Browser automation currently fails during runtime startup because it references
-  a removed plugin version. Reconnect through the supported app/browser flow;
-  do not patch plugin files or extract browser sessions.
+  The existing Vercel project link resolves to `coachhouse`, but the saved CLI login
+  returned HTTP 403 for both account and project reads on September 9. Restore
+  authorized access before inspecting provider settings or proposing key rotation.
+- Browser runtime setup now succeeds, but discovery returned no attached browsers
+  on September 9. Reattach through the supported app/browser flow; do not patch
+  plugin files or extract browser sessions.
+- The combined Documents/Calendar review lives in the isolated
+  `chore/documents-calendar-integration-20260909` worktree without provider
+  credentials. See [the integration review](2026-09-09-documents-calendar-integration.md).
 
 ## Before enabling localhost
 

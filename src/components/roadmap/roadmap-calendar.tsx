@@ -8,20 +8,19 @@ import {
   listRoadmapCalendarEvents,
   updateRoadmapCalendarEvent,
 } from "@/actions/roadmap-calendar"
+import {
+  GoogleCalendarPanel,
+  usePersonalCalendarEvents,
+} from "@/features/google-calendar/client"
+
 import { toast } from "@/lib/toast"
 import {
-  ROADMAP_CALENDAR_PRESETS,
-  type RoadmapCalendarAssignedRole,
   type RoadmapCalendarEvent,
   type RoadmapCalendarEventInput,
-  type RoadmapCalendarRecurrence,
   type RoadmapCalendarType,
   type RoadmapCalendarEventType,
 } from "@/lib/roadmap/calendar"
-import {
-  DEMO_SEED_KEY,
-  DURATION_OPTIONS,
-} from "@/components/roadmap/roadmap-calendar/constants"
+import { DURATION_OPTIONS } from "@/components/roadmap/roadmap-calendar/constants"
 import {
   addMinutesToDatetimeLocal,
   buildDraft,
@@ -34,7 +33,10 @@ import {
   roadmapCalendarEventOccursOnDay,
   sortRoadmapCalendarEventsByStart,
 } from "@/components/roadmap/roadmap-calendar/helpers"
-import type { EventDraft } from "@/components/roadmap/roadmap-calendar/types"
+import type {
+  EventDraft,
+  RoadmapCalendarView,
+} from "@/components/roadmap/roadmap-calendar/types"
 import {
   RoadmapCalendarEventDrawer,
   RoadmapCalendarMonthAgendaPanel,
@@ -46,6 +48,8 @@ const calendarType: RoadmapCalendarType = "internal"
 type RoadmapCalendarProps = {
   compactHeaderControls?: boolean
   hideHeaderCopy?: boolean
+  initialView?: RoadmapCalendarView
+  onViewChange?: (view: RoadmapCalendarView) => void
 }
 
 function RoadmapCalendarHeader({ hidden }: { hidden: boolean }) {
@@ -62,9 +66,17 @@ function RoadmapCalendarHeader({ hidden }: { hidden: boolean }) {
 }
 
 export function RoadmapCalendar(props: RoadmapCalendarProps) {
-  const { compactHeaderControls = false, hideHeaderCopy = false } = props
-  const [month, setMonth] = useState(() => new Date())
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const {
+    compactHeaderControls = false,
+    hideHeaderCopy = false,
+    initialView,
+    onViewChange,
+  } = props
+  const [month, setMonth] = useState(() => initialView?.month ?? new Date())
+  const personalEvents = usePersonalCalendarEvents(month)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(() =>
+    initialView ? initialView.selectedDate : new Date()
+  )
   const [events, setEvents] = useState<RoadmapCalendarEvent[]>([])
   const [canManageCalendar, setCanManageCalendar] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -76,6 +88,9 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
   const [draft, setDraft] = useState<EventDraft>(() => buildDraft({}))
   const [selectedDuration, setSelectedDuration] = useState<number>(45)
   const [timeZone, setTimeZone] = useState("")
+  useEffect(() => {
+    onViewChange?.({ month, selectedDate })
+  }, [month, selectedDate, onViewChange])
   const dayEvents = useMemo(() => {
     if (!selectedDate) return []
     return events
@@ -178,59 +193,6 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
     if (!timeZone || typeof window === "undefined") return
     window.localStorage.setItem("roadmap-calendar-timezone", timeZone)
   }, [timeZone])
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") return
-    if (!canManageCalendar || isLoading || events.length > 0) return
-    if (typeof window === "undefined") return
-    if (window.localStorage.getItem(DEMO_SEED_KEY)) return
-
-    const now = new Date()
-    const seeds: RoadmapCalendarEventInput[] = Array.from({ length: 60 }).map(
-      (_, index) => {
-        const preset =
-          ROADMAP_CALENDAR_PRESETS[index % ROADMAP_CALENDAR_PRESETS.length]
-        const start = new Date(now)
-        start.setDate(now.getDate() + index * 3)
-        start.setHours(9 + (index % 6), 0, 0, 0)
-        const end = new Date(start)
-        end.setHours(start.getHours() + 1)
-        return {
-          title: preset?.label ?? `Milestone ${index + 1}`,
-          description: "",
-          eventType: preset?.eventType ?? "meeting",
-          startsAt: start.toISOString(),
-          endsAt: end.toISOString(),
-          allDay: index % 9 === 0,
-          status: "active" as const,
-          assignedRoles:
-            index % 5 === 0
-              ? (["admin", "staff", "board"] as RoadmapCalendarAssignedRole[])
-              : (["admin"] as RoadmapCalendarAssignedRole[]),
-          recurrence:
-            index % 11 === 0
-              ? ({ frequency: "monthly" } as RoadmapCalendarRecurrence)
-              : null,
-        }
-      }
-    )
-
-    window.localStorage.setItem(DEMO_SEED_KEY, "true")
-    startTransition(async () => {
-      const created: RoadmapCalendarEvent[] = []
-      for (const seed of seeds) {
-        const result = await createRoadmapCalendarEvent({
-          calendarType,
-          event: seed,
-        })
-        if ("error" in result) continue
-        created.push(result.event)
-      }
-      if (created.length > 0) {
-        setEvents((prev) => [...prev, ...created])
-      }
-    })
-  }, [canManageCalendar, events.length, isLoading, startTransition])
 
   const handleOpenCreate = useCallback(
     (preset?: {
@@ -400,6 +362,8 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
 
       <RoadmapCalendarMonthAgendaPanel
         compactHeaderControls={compactHeaderControls}
+        personalEvents={personalEvents}
+        googleCalendarControls={<GoogleCalendarPanel compact />}
         month={month}
         selectedDate={selectedDate}
         events={monthEvents}

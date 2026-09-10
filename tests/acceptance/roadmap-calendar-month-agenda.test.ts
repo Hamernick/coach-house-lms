@@ -158,7 +158,7 @@ describe("roadmap calendar month agenda", () => {
       "node.scrollHeight > node.clientHeight + 1"
     )
     expect(agendaPanel).toContain(
-      "fadeEligible={dayEvents.length > 1 && !isLoading}"
+      "fadeEligible={totalDayEvents > 1 && !isLoading}"
     )
     expect(agendaPanelParts).toContain(
       "[--mask-height:1.5rem] [--scroll-buffer:1rem]"
@@ -207,9 +207,6 @@ describe("roadmap calendar month agenda", () => {
     )
     const notificationsIndex = appShellHeader.indexOf("<NotificationsMenu")
 
-    expect(calendarAction).toContain(
-      "const [calendarHasOpened, setCalendarHasOpened]"
-    )
     expect(calendarAction).toContain('import dynamic from "next/dynamic"')
     expect(calendarAction).toContain("const RoadmapCalendar = dynamic")
     expect(calendarAction).not.toContain("setRoadmapCalendar")
@@ -222,7 +219,6 @@ describe("roadmap calendar month agenda", () => {
     expect(calendarAction).toContain(
       "const handleCalendarOpenChange = useCallback"
     )
-    expect(calendarAction).toContain("setCalendarHasOpened(true)")
     expect(calendarAction).toContain("const isMobile = useIsMobile()")
     expect(calendarAction).toContain("if (isMobile)")
     expect(calendarAction).toContain("<Drawer")
@@ -235,9 +231,9 @@ describe("roadmap calendar month agenda", () => {
       '<DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>'
     )
     expect(calendarAction).toContain("onOpenChange={handleCalendarOpenChange}")
-    expect(calendarAction).toContain("{calendarHasOpened ? (")
-    expect(calendarAction).toContain("forceMount")
-    expect(calendarAction).toContain("data-[state=closed]:hidden")
+    expect(calendarAction).not.toContain("forceMount")
+    expect(calendarAction).toContain("initialView={calendarView}")
+    expect(calendarAction).toContain("onViewChange={setCalendarView}")
     expect(calendarAction).toContain("h-[88dvh] max-h-[88dvh]")
     expect(calendarAction).toContain(
       "data-[vaul-drawer-direction=bottom]:max-h-[88dvh]"
@@ -357,8 +353,8 @@ describe("roadmap calendar month agenda", () => {
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
     )
 
-    expect(calendarAction).toContain(
-      "<RoadmapCalendar hideHeaderCopy compactHeaderControls />"
+    expect(calendarAction).toMatch(
+      /<RoadmapCalendar\s+hideHeaderCopy\s+compactHeaderControls/
     )
     expect(calendar).toContain("compactHeaderControls = false")
     expect(calendar).toContain("compactHeaderControls={compactHeaderControls}")

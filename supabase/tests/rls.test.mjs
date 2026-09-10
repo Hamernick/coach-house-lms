@@ -72,11 +72,11 @@ const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 const signupLegalConsent = {
-  version: "2026-08-27.1",
+  version: "2026-09-09.1",
   termsSha256:
-    "51bde17c17824786259ae9fe35f5b0740c7638c4705795d3de2805d1d0d80220",
+    "7976c515ea20f08a89c0334d4135733d7a0d1088780bb1e6d5768d1c7ababef0",
   privacySha256:
-    "4110a62f34947f3950dc75b7e6ffab87f60d9abfe48b44625c8150da5e845e62",
+    "3ba370741180467b5e1b43fad91feb6b0ac393634e500487588d15951e069b9f",
   acceptedAt: new Date().toISOString(),
 }
 

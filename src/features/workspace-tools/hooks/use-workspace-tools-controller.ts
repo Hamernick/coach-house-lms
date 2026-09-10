@@ -11,7 +11,8 @@ import type { WorkspaceToolsInput } from "../types"
 
 export function useWorkspaceToolsController(
   input: WorkspaceToolsInput,
-  googleDriveConnected: boolean | null
+  googleDriveConnected: boolean | null,
+  googleCalendarConnected: boolean | null = null
 ) {
   const normalizedInput = useMemo(
     () => normalizeWorkspaceToolsInput(input),
@@ -29,7 +30,12 @@ export function useWorkspaceToolsController(
   const stripeConnected = normalizedInput.stripeConnection.state === "connected"
   const isInstalled = (
     toolId: (typeof WORKSPACE_TOOL_DEFINITIONS)[number]["id"]
-  ) => (toolId === "stripe" ? stripeConnected : googleDriveConnected === true)
+  ) =>
+    toolId === "stripe"
+      ? stripeConnected
+      : toolId === "google-calendar"
+        ? googleCalendarConnected === true
+        : googleDriveConnected === true
 
   return {
     availableTools: matchingTools.filter((tool) => !isInstalled(tool.id)),

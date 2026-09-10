@@ -11,7 +11,7 @@ export const TERMS_DOCUMENT: LegalDocument = {
     "These Terms govern access to Coach House's nonprofit discovery, organizational, educational, reporting, and related services.",
   effectiveDate: LEGAL_DOCUMENT_EFFECTIVE_DATE,
   version: LEGAL_DOCUMENT_VERSION,
-  sha256: "51bde17c17824786259ae9fe35f5b0740c7638c4705795d3de2805d1d0d80220",
+  sha256: "7976c515ea20f08a89c0334d4135733d7a0d1088780bb1e6d5768d1c7ababef0",
   sections: [
     {
       id: "agreement",

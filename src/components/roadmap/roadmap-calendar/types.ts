@@ -4,6 +4,11 @@ import type {
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
 
+export type RoadmapCalendarView = {
+  month: Date
+  selectedDate: Date | undefined
+}
+
 export type EventDraft = {
   title: string
   description: string

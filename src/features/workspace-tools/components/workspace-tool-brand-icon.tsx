@@ -1,4 +1,4 @@
-import { siGoogledrive, siStripe } from "simple-icons"
+import { siGooglecalendar, siGoogledrive, siStripe } from "simple-icons"
 
 import { cn } from "@/lib/utils"
 
@@ -6,6 +6,7 @@ import type { WorkspaceToolId } from "../types"
 
 const TOOL_BRANDS = {
   stripe: siStripe,
+  "google-calendar": siGooglecalendar,
   "google-drive": siGoogledrive,
 } as const
 

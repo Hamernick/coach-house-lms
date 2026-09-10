@@ -71,6 +71,8 @@ try {
   runSql("supabase/migrations/20260831203000_add_google_drive_documents.sql")
   runSql("supabase/migrations/20260902224500_allow_google_drive_tools_return_path.sql")
   runSql("supabase/tests/google-drive-rls.assertions.sql")
+  runSql("supabase/migrations/20260908160000_add_google_calendar_sync.sql")
+  runSql("supabase/tests/google-calendar-rls.assertions.sql")
   console.log("[google-drive-rls] Credential isolation, tenant reads, write denial, and reconnect transitions passed.")
 } finally {
   if (started) {

@@ -45,6 +45,12 @@ See [the local setup checklist](../../../docs/plans/2026-09-04-google-drive-loca
 before configuring localhost. The serving worktree uses the shared production
 database, so a local connection can affect shared credentials and documents.
 
-Disconnecting Drive clears Coach House's saved Drive credentials without revoking
-other Google integrations. Google project-wide revocation is available in the
-user's Google account access controls. See [Google's token revocation contract](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke).
+## Disconnect behavior
+
+Disconnect removes this feature's stored credentials and marks Drive attachments as
+needing reconnection; it does not delete Google files or revoke the Google project grant.
+Google token revocation also affects Calendar and login grants in the same project, so
+feature-level switches must not call it. Users can remove all Coach House Google access
+from Google account permissions as a separate explicit action.
+
+See [Google's token revocation contract](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke).

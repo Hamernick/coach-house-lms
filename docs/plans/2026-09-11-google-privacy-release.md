@@ -6,18 +6,19 @@ Publish the reviewed Google Drive and Calendar privacy disclosures at `/privacy`
 and bind new signup consent to document version `2026-09-10.1`. The Terms body
 is unchanged; its date, version and content hash move with the bundled policy.
 Drive disconnect also stops revoking the entire Google project grant, preserving
-the user's other Google integrations as the policy describes.
+the user's other Google integrations as the policy describes. Full account
+deletion explicitly retains best-effort Google revocation before local cleanup.
 
 Candidate branch: `fix/google-integration-privacy-20260911`, based directly on
 remote `main` at `67501039f5a79db95db87f6ad4842b640a537195`.
 Checkout: `/Users/calebhamernick/Development/coach-house-platform-google-privacy-release-20260911`.
 
-The candidate contains three legal-document files, the scoped Drive disconnect
-change, two compatible consent migrations, seven regression-test files and one
-browser-test configuration file,
-plus this release record and runlog.
-The policy/migration files match the rehearsed development checkout, and the
-Drive disconnect function matches after whitespace normalization. No Calendar
+The candidate contains three legal-document files, two Drive/account-deletion
+implementation files, two compatible consent migrations, eight regression-test
+files and one browser-test configuration file, plus this release record and runlog.
+The policy/migration files match the rehearsed development checkout. The Drive
+switch reuses its local-only behavior, with explicit provider revocation retained
+for full account deletion following review. No Calendar
 implementation, scheduler, credentials, dependencies or unrelated development
 changes are included. Recording continues against the prepared localhost demo.
 
@@ -37,13 +38,13 @@ production code and has no dependency on that consolidation.
 
 ## Validation
 
-Two independent full `pnpm check:quality` runs validate this release:
+Independent full `pnpm check:quality` runs validate the demo and final release:
 
 - Combined demo integration with the exact eight-file September 10 privacy delta,
   on browser fixture port 3023: all 21 stages passed in 922.50 seconds, including
   2,530 acceptance tests and 155 browser tests.
 - Scoped production candidate, on browser fixture port 3024: all 21 stages passed
-  in 371.81 seconds, including 2,287 acceptance tests and 45 browser tests.
+  in 439.98 seconds, including 2,290 acceptance tests and 45 browser tests.
 
 Both checkouts have real locked dependency installations, no environment files
 or provider credentials, one browser worker and no browser retries. Each gate
@@ -62,11 +63,19 @@ was changed to accommodate that environment failure.
 Final source review found a policy/behavior mismatch in production's Drive
 disconnect: it still called Google's revoke endpoint. Google's documented
 [token revocation behavior](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke)
-invalidates all clients' grants under the project. The candidate ports the
-rehearsed feature-only disconnect function and keeps credential deletion intact.
-A regression using a valid synthetic encrypted credential fails before the fix
-with one revoke request and passes after it; all 35 focused Drive/routes/legal/
-auth tests pass. The completed final full gate includes that behavior and test.
+invalidates all clients' grants under the project. Normal Drive disconnect now
+clears its stored credentials without revoking that shared grant. PR #233 review
+identified account deletion as a separate caller that must retain revocation;
+it now explicitly requests best-effort provider revocation. Local credentials
+are cleared even if Google is unavailable or the stored key cannot be read.
+Regressions use valid synthetic AES-GCM credentials to verify default disconnect,
+explicit local disconnect, account deletion and a provider outage. Three review
+regressions failed before the follow-up and all 43 focused Drive/routes/account/
+legal/auth tests pass afterward. The final full gate includes these changes.
+
+An interrupted browser startup initially returned a fixture-page 404. Its generated
+Next cache was preserved outside the checkout, then the complete gate passed from
+a fresh cache. No application code or screenshot baseline changed for this recovery.
 
 The scoped release ran seven isolated PostgreSQL suites; the combined demo ran
 eight, including Calendar credential/event isolation through the Drive harness.
@@ -77,8 +86,8 @@ absent. These runs did not create shared database users or provider test records
 Chrome also verified the built candidate on port 3035: `/privacy` displays
 `2026-09-10.1`, separate Google Sign-In/Drive/Calendar sections and a working Drive
 anchor. Signup's Terms and Privacy links open the current documents in new tabs;
-its consent remains unchecked and no account was submitted. Local review:
-`http://localhost:3035/privacy#google-drive`.
+its consent remains unchecked and no account was submitted. That temporary server
+has been stopped. PR #233 provides the hosted review preview.
 
 Evidence lives in the canonical root under
 `test-results/google-verification-release-20260911/`: immutable input manifests,

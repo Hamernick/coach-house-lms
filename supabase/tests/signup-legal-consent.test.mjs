@@ -130,9 +130,15 @@ try {
   runSql("supabase/tests/signup-legal-consent-vulnerable.assertions.sql")
   runSql("supabase/migrations/20260814090000_enforce_signup_legal_consent.sql")
   runSql("supabase/tests/signup-legal-consent.assertions.sql")
+  runSql("supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql")
+  runSql("supabase/tests/signup-legal-consent-current.assertions.sql")
+  runSql("supabase/migrations/20260909150000_accept_calendar_privacy_consent.sql")
+  runSql("supabase/tests/signup-legal-consent-calendar.assertions.sql")
+  runSql("supabase/migrations/20260910120000_accept_drive_privacy_consent.sql")
+  runSql("supabase/tests/signup-legal-consent-drive.assertions.sql")
 
   console.log(
-    "[signup-consent] Pre-fix bypass reproduced; missing or forged consent is rejected after the fix; valid consent and trusted service provisioning pass."
+    "[signup-consent] Consent enforcement, Drive/Calendar versions, prior-version compatibility and trusted provisioning pass in isolated PostgreSQL."
   )
 } finally {
   if (started) {

@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test"
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000)
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`
 
 export default defineConfig({
   testDir: "./tests/visual",
@@ -8,7 +9,7 @@ export default defineConfig({
   timeout: 90_000,
   snapshotPathTemplate: "{snapshotDir}/{testFileName}-snapshots/{arg}{ext}",
   fullyParallel: false,
-  workers: 2,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS ?? 2),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["github"]] : [["list"]],
   expect: {
@@ -25,7 +26,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: "VISUAL_REGRESSION_ROUTES=1 pnpm dev --port 3000",
+        command: `VISUAL_REGRESSION_ROUTES=1 pnpm dev --port ${port}`,
         url: baseURL,
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,

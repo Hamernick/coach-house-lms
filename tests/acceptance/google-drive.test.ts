@@ -261,4 +261,53 @@ describe("Google Drive backend contract", () => {
     expect(connection).not.toContain("picker-token")
     expect(connection).not.toContain("GooglePicker")
   })
+
+  it("disconnects only Drive even when its stored credential can be decrypted", async () => {
+    vi.stubEnv("GOOGLE_DRIVE_TOKEN_ENCRYPTION_CURRENT_VERSION", "v1")
+    vi.stubEnv(
+      "GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEYS",
+      JSON.stringify({ v1: Buffer.alloc(32, 7).toString("base64") })
+    )
+    const { encryptGoogleDriveSecret } =
+      await import("@/features/google-drive/server/token-crypto")
+    const secret = encryptGoogleDriveSecret(
+      "synthetic-refresh-token",
+      "google-drive:connection:user"
+    )
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+    vi.stubGlobal("fetch", fetchMock)
+    const update = vi.fn().mockReturnValue({ eq: async () => ({ error: null }) })
+    const from = vi.fn().mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: {
+              id: "connection",
+              refresh_token_ciphertext: secret.ciphertext,
+              refresh_token_iv: secret.iv,
+              refresh_token_auth_tag: secret.authTag,
+              key_version: secret.keyVersion,
+            },
+            error: null,
+          }),
+        }),
+      }),
+      update,
+    })
+    const { disconnectGoogleDrive } =
+      await import("@/features/google-drive/server/service")
+
+    await disconnectGoogleDrive({ admin: { from } as never, userId: "user" })
+
+    expect(update).toHaveBeenCalledExactlyOnceWith({
+      refresh_token_ciphertext: null,
+      refresh_token_iv: null,
+      refresh_token_auth_tag: null,
+      key_version: null,
+      status: "disconnected",
+      disconnected_at: expect.any(String),
+    })
+    expect(from.mock.calls.every(([table]) => table === "google_drive_connections")).toBe(true)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

@@ -261,4 +261,69 @@ describe("Google Drive backend contract", () => {
     expect(connection).not.toContain("picker-token")
     expect(connection).not.toContain("GooglePicker")
   })
+
+  it.each([
+    ["Drive switch", undefined, false],
+    ["explicit local disconnect", false, false],
+    ["account deletion", true, false],
+    ["account deletion during a provider outage", true, true],
+  ] as const)("handles %s without confusing local disconnect with revocation", async (_, revoke, providerUnavailable) => {
+    vi.stubEnv("GOOGLE_DRIVE_TOKEN_ENCRYPTION_CURRENT_VERSION", "v1")
+    vi.stubEnv(
+      "GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEYS",
+      JSON.stringify({ v1: Buffer.alloc(32, 7).toString("base64") })
+    )
+    const { encryptGoogleDriveSecret } =
+      await import("@/features/google-drive/server/token-crypto")
+    const secret = encryptGoogleDriveSecret(
+      "synthetic-refresh-token",
+      "google-drive:connection:user"
+    )
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+    if (providerUnavailable) fetchMock.mockRejectedValue(new Error("provider unavailable"))
+    vi.stubGlobal("fetch", fetchMock)
+    const update = vi.fn().mockReturnValue({ eq: async () => ({ error: null }) })
+    const from = vi.fn().mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: {
+              id: "connection",
+              refresh_token_ciphertext: secret.ciphertext,
+              refresh_token_iv: secret.iv,
+              refresh_token_auth_tag: secret.authTag,
+              key_version: secret.keyVersion,
+            },
+            error: null,
+          }),
+        }),
+      }),
+      update,
+    })
+    const { disconnectGoogleDrive } =
+      await import("@/features/google-drive/server/service")
+
+    await disconnectGoogleDrive({ admin: { from } as never, userId: "user", revoke })
+
+    expect(update).toHaveBeenCalledExactlyOnceWith({
+      refresh_token_ciphertext: null,
+      refresh_token_iv: null,
+      refresh_token_auth_tag: null,
+      key_version: null,
+      status: "disconnected",
+      disconnected_at: expect.any(String),
+    })
+    expect(from.mock.calls.every(([table]) => table === "google_drive_connections")).toBe(true)
+    if (revoke) {
+      expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+        "https://oauth2.googleapis.com/revoke",
+        expect.objectContaining({
+          method: "POST",
+          body: new URLSearchParams({ token: "synthetic-refresh-token" }),
+        })
+      )
+    } else {
+      expect(fetchMock).not.toHaveBeenCalled()
+    }
+  })
 })

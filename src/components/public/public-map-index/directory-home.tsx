@@ -130,7 +130,7 @@ export function PublicMapDirectoryHome({
               asChild
               variant="link"
               size="sm"
-              className="text-muted-foreground h-11 touch-manipulation"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
             >
               <Link href="/privacy">Privacy Policy</Link>
             </Button>
@@ -138,7 +138,7 @@ export function PublicMapDirectoryHome({
               asChild
               variant="link"
               size="sm"
-              className="text-muted-foreground h-11 touch-manipulation"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
             >
               <Link href="/terms">Terms of Service</Link>
             </Button>

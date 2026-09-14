@@ -373,7 +373,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain('variant="line"')
     expect(source).toContain("ref={tabsListRef}")
     expect(source).toContain(
-      'className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"'
+      'className="h-11 w-full min-w-0 justify-start overflow-x-auto overscroll-x-contain p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-11 md:h-7 md:w-auto md:group-data-[orientation=horizontal]/tabs:!h-7 [&::-webkit-scrollbar]:hidden"'
     )
     expect(source).not.toContain(
       'className="h-auto w-full min-w-0 self-end p-0 sm:w-auto"'
@@ -399,7 +399,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("pt-0.5")
     expect(source).not.toContain("pt-5")
     expect(source).toContain(
-      "h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
+      "h-11 min-w-0 flex-none gap-2 px-3 py-2 text-left after:hidden md:h-7 md:px-2 md:py-1"
     )
     expect(source).not.toContain(
       "h-auto min-w-0 flex-1 gap-2 px-2 py-1.5 text-left after:hidden sm:flex-none"
@@ -435,7 +435,7 @@ describe("workspace canvas overlay drawer", () => {
       "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
     )
     expect(source).toContain(
-      "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
+      "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] data-[state=inactive]:hidden md:px-8"
     )
     expect(source.match(/max-w-7xl/g)).toHaveLength(7)
     expect(source).toContain('value="finance"')
@@ -855,7 +855,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("request?: WorkspaceDataDrawerRequest | null")
     expect(source).toContain("setTab(request.tab)")
     expect(source).toContain(
-      'request.tab === "roadmap"\n          ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT\n          : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT'
+      '(isMobile || request.tab === "roadmap")\n          ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT\n          : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT'
     )
     expect(source).toContain("useLayoutEffect(() => {")
     expect(tabsViewSource).toContain("key={`documents:${request?.id ?? 0}`}")
@@ -1392,7 +1392,7 @@ describe("workspace canvas overlay drawer", () => {
       'viewportClassName="h-full max-w-full overscroll-contain touch-pan-y [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"'
     )
     expect(source).toContain(
-      'contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 [&>*]:min-w-0 [&>*]:max-w-full"'
+      'contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 max-md:pb-[var(--shell-mobile-nav-clearance,0.75rem)] [&>*]:min-w-0 [&>*]:max-w-full"'
     )
     expect(source).not.toContain(
       "const WorkspacePeopleDrawerTable = memo(function WorkspacePeopleDrawerTable"
@@ -2140,9 +2140,9 @@ describe("workspace canvas overlay drawer", () => {
       "pointer-events-none absolute left-4 top-1/2 z-10"
     )
     expect(mobileShortcutOverlaySource).toContain(
-      "pointer-events-none absolute bottom-4 left-4 z-10 md:hidden"
+      "pointer-events-none absolute bottom-[calc(1rem+var(--shell-mobile-nav-clearance,0px))] left-4 z-10 md:hidden"
     )
-    expect(controlsSource).toContain("absolute right-4 bottom-4 z-30")
+    expect(controlsSource).toContain("absolute right-4 bottom-[calc(1rem+var(--shell-mobile-nav-clearance,0px))] z-30")
     expect(controlsSource).toContain("md:top-4 md:bottom-auto")
     expect(rendererSource).not.toContain("<WorkspaceCanvasOverlayDrawer")
     expect(rendererSource).not.toContain("headerPickerAction")

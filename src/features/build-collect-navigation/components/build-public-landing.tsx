@@ -48,22 +48,22 @@ export function BuildPublicLanding() {
       <main>
         <section
           aria-labelledby="build-public-title"
-          className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-20 pb-12 text-center sm:px-8 sm:pt-28 sm:pb-16"
+          className="mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-10 pb-8 text-center sm:px-8 sm:pt-28 sm:pb-16"
         >
           <p className="text-muted-foreground text-sm font-semibold">
             Build with Coach House
           </p>
           <h1
             id="build-public-title"
-            className="mt-4 max-w-4xl text-4xl leading-[1.05] font-semibold text-balance sm:text-6xl"
+            className="mt-4 max-w-4xl text-[2rem] leading-[1.1] font-semibold text-balance sm:text-6xl sm:leading-[1.05]"
           >
             Build the organization your community needs.
           </h1>
-          <p className="text-muted-foreground mt-6 max-w-2xl text-base leading-7 text-pretty sm:text-lg">
+          <p className="text-muted-foreground mt-4 max-w-2xl text-base leading-6 text-pretty sm:mt-6 sm:text-lg sm:leading-7">
             Plan programs, organize the record, and keep staff and board members
             working from the same source of truth.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-6 flex flex-wrap sm:mt-8 items-center justify-center gap-3">
             <Button asChild size="lg" className="rounded-full px-6">
               <Link href="/sign-up?intent=build">
                 Start free

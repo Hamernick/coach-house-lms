@@ -24,7 +24,7 @@ export function WorkspaceCardShortcutsMobile({
 }) {
   const [open, setOpen] = useState(false)
   const triggerClassName =
-    "h-11 w-11 rounded-2xl border border-neutral-300/70 bg-white/78 shadow-lg backdrop-blur-xl dark:border-neutral-700/70 dark:bg-neutral-950/82"
+    "h-11 gap-2 rounded-full px-4 border border-neutral-300/70 bg-white/78 shadow-lg backdrop-blur-xl dark:border-neutral-700/70 dark:bg-neutral-950/82"
 
   return (
     <div className="pointer-events-auto md:hidden">
@@ -39,7 +39,7 @@ export function WorkspaceCardShortcutsMobile({
             aria-hidden="true"
             tabIndex={-1}
           >
-            <PanelLeftOpenIcon className="h-5 w-5" aria-hidden />
+            <PanelLeftOpenIcon className="h-5 w-5" aria-hidden /><span>Cards</span>
           </Button>
         }
       >
@@ -52,7 +52,7 @@ export function WorkspaceCardShortcutsMobile({
               className={triggerClassName}
               aria-label="Open workspace card shortcuts"
             >
-              <PanelLeftOpenIcon className="h-5 w-5" aria-hidden />
+              <PanelLeftOpenIcon className="h-5 w-5" aria-hidden /><span>Cards</span>
             </Button>
           </DrawerTrigger>
           <DrawerContent className="border-border/70 bg-background/98 px-0 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
@@ -62,7 +62,7 @@ export function WorkspaceCardShortcutsMobile({
                 Open or hide the cards attached to your organization workspace.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="grid gap-2 px-4 pb-4">
+            <div className="grid min-h-0 gap-2 overflow-y-auto overscroll-contain px-4 pb-4">
               {items.map((item) => {
                 const Icon = item.icon
                 return (

@@ -219,7 +219,7 @@ export function WorkspaceFinanceViewTabs({
       <TabsContent
         value="activity"
         data-workspace-finance-view="activity"
-        className="m-0 min-h-0 flex-1 overflow-y-auto overscroll-contain data-[state=inactive]:hidden"
+        className="m-0 min-h-0 flex-1 overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] data-[state=inactive]:hidden"
       >
         <WorkspaceFinanceActivityDashboard
           raisedCents={finance.raisedCents}
@@ -235,7 +235,7 @@ export function WorkspaceFinanceViewTabs({
       <TabsContent
         value="history"
         data-workspace-finance-view="history"
-        className="m-0 min-h-0 flex-1 overflow-y-auto overscroll-contain data-[state=inactive]:hidden"
+        className="m-0 min-h-0 flex-1 overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] data-[state=inactive]:hidden"
       >
         <WorkspaceFinanceHistory
           onRecordCorrected={handleRecordCorrected}

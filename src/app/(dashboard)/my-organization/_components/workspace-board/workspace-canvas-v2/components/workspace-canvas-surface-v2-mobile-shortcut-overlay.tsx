@@ -7,7 +7,7 @@ export function WorkspaceCanvasSurfaceV2MobileShortcutOverlay({
   items: WorkspaceCardShortcutItemModel[]
 }) {
   return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-10 md:hidden">
+    <div className="pointer-events-none absolute bottom-[calc(1rem+var(--shell-mobile-nav-clearance,0px))] left-4 z-10 md:hidden">
       <WorkspaceCardShortcutsMobile items={items} />
     </div>
   )

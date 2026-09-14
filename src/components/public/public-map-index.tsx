@@ -416,6 +416,7 @@ export function PublicMapIndex({
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
+      welcomeControl={memberOnboardingState.welcomeControl}
       mapOverlay={memberOnboardingState.overlay}
     />
   )

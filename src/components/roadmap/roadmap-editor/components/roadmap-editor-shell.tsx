@@ -137,7 +137,7 @@ export function RoadmapEditorShell({
                   countClassName:
                     "bg-[#e6e6e6] px-4 py-2 text-xs text-muted-foreground dark:bg-[#1c1c1c]",
                   contentClassName:
-                    "flex-1 min-h-0 overflow-y-auto overscroll-contain bg-[#ededed] dark:bg-[#171717] rounded-none",
+                    "flex-1 min-h-0 overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] bg-[#ededed] dark:bg-[#171717] rounded-none",
                   onImageUpload: canEdit ? onImageUpload : undefined,
                   insertUploadedImage: true,
                   disableResize: true,

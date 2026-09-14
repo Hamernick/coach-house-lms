@@ -90,7 +90,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
           className
         )}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pt-1 pb-3">
+        <div className="grid grid-cols-1 items-center gap-2 px-2 pt-1 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-foreground shrink-0 text-lg font-semibold tracking-normal whitespace-nowrap">
               {formatMonthLabel(month)}
@@ -102,7 +102,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               {events.length}
             </Badge>
           </div>
-          <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+          <div className="flex min-w-0 shrink-0 items-center justify-between gap-2 sm:justify-end sm:gap-1.5">
             <RoadmapCalendarAddEventMenu
               disabled={!canManageCalendar}
               onOpenCreate={onOpenCreate}
@@ -111,7 +111,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               <Button
                 type="button"
                 variant="outline"
-                className="h-8 rounded-full px-3 text-sm shadow-none"
+                className="h-11 rounded-full px-4 text-sm shadow-none sm:h-8 sm:px-3"
                 onClick={onGoToToday}
               >
                 Today
@@ -121,7 +121,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               type="button"
               variant="outline"
               size="icon"
-              className="size-8 rounded-full shadow-none"
+              className="size-11 rounded-full shadow-none sm:size-8"
               onClick={() => onMonthChange(addMonths(month, -1))}
               aria-label="Show previous month"
             >
@@ -131,7 +131,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               type="button"
               variant="outline"
               size="icon"
-              className="size-8 rounded-full shadow-none"
+              className="size-11 rounded-full shadow-none sm:size-8"
               onClick={() => onMonthChange(addMonths(month, 1))}
               aria-label="Show next month"
             >
@@ -141,7 +141,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
         </div>
 
         <div
-          className="bg-background flex min-h-0 flex-col rounded-[24px] px-3 py-3"
+          className="bg-background flex min-h-0 min-w-0 flex-col rounded-[24px] px-2 py-3 sm:px-3"
           {...getReactGrabOwnerProps({
             ownerId: "roadmap-calendar-month-agenda:month-grid",
             component: "RoadmapCalendarMonthAgendaPanel",

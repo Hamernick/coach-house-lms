@@ -1,6 +1,6 @@
 "use client"
 
-import type { CSSProperties, RefObject } from "react"
+import type { CSSProperties } from "react"
 
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
@@ -22,10 +22,10 @@ import type { WorkspacePeopleCanvasActions } from "./workspace-canvas-people-dnd
 import { WorkspaceCanvasOverlayOrganizationPanel } from "./workspace-canvas-overlay-organization-panel"
 import { WorkspacePeopleDrawerPanel } from "./workspace-canvas-overlay-people-panel"
 import { WorkspaceCanvasOverlayRoadmapPanel } from "./workspace-canvas-overlay-roadmap-panel"
-import type {
-  WorkspaceCanvasDrawerTab,
-  WorkspaceDataDrawerRequest,
-  WorkspaceDataDrawerTabIndicator,
+import {
+  useWorkspaceDataDrawerTabIndicator,
+  type WorkspaceCanvasDrawerTab,
+  type WorkspaceDataDrawerRequest,
 } from "./workspace-canvas-overlay-drawer-tabs"
 
 function WorkspaceDrawerTabTrigger({
@@ -41,7 +41,7 @@ function WorkspaceDrawerTabTrigger({
     <TabsTrigger
       value={value}
       onClick={onOpen}
-      className="h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
+      className="h-11 min-w-0 flex-none gap-2 px-3 py-2 text-left after:hidden md:h-7 md:px-2 md:py-1"
     >
       {children}
     </TabsTrigger>
@@ -67,9 +67,6 @@ export function WorkspaceDrawerTabs({
   placedPersonIds,
   request,
   tab,
-  tabIndicator,
-  tabsHeaderRef,
-  tabsListRef,
   uiPreferencesScope,
   viewerId,
 }: {
@@ -91,12 +88,12 @@ export function WorkspaceDrawerTabs({
   placedPersonIds: ReadonlySet<string>
   request?: WorkspaceDataDrawerRequest | null
   tab: WorkspaceCanvasDrawerTab
-  tabIndicator: WorkspaceDataDrawerTabIndicator
-  tabsHeaderRef: RefObject<HTMLDivElement | null>
-  tabsListRef: RefObject<HTMLDivElement | null>
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   viewerId: string
 }) {
+  const { tabIndicator, tabsHeaderRef, tabsListRef } =
+    useWorkspaceDataDrawerTabIndicator({ tab })
+
   return (
     <Tabs
       value={tab}
@@ -116,7 +113,7 @@ export function WorkspaceDrawerTabs({
         <TabsList
           variant="line"
           ref={tabsListRef}
-          className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"
+          className="h-11 w-full min-w-0 justify-start overflow-x-auto overscroll-x-contain p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-11 md:h-7 md:w-auto md:group-data-[orientation=horizontal]/tabs:!h-7 [&::-webkit-scrollbar]:hidden"
         >
           <WorkspaceDrawerTabTrigger
             value="organization"
@@ -223,7 +220,7 @@ export function WorkspaceDrawerTabs({
         </TabsContent>
         <TabsContent
           value="documents"
-          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] data-[state=inactive]:hidden md:px-8"
         >
           {tab === "documents" ? (
             <div className="box-border min-h-full w-full max-w-full min-w-0 p-2 sm:p-3">
@@ -242,7 +239,7 @@ export function WorkspaceDrawerTabs({
         </TabsContent>
         <TabsContent
           value="tools"
-          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain max-md:pb-[var(--shell-mobile-nav-clearance,0px)] data-[state=inactive]:hidden md:px-8"
         >
           {tab === "tools" ? (
             <WorkspaceToolsPanel

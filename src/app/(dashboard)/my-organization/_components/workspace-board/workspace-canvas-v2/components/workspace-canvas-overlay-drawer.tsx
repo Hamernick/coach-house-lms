@@ -19,6 +19,7 @@ import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { Button } from "@/components/ui/button"
+import { Dialog } from "@/components/ui/dialog"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
 import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import {
@@ -32,6 +33,7 @@ import {
 import { Toggle } from "@/components/ui/toggle"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-overlay-drawer-container"
 import {
@@ -47,7 +49,6 @@ import {
 import {
   type WorkspaceCanvasDrawerTab,
   type WorkspaceDataDrawerRequest,
-  useWorkspaceDataDrawerTabIndicator,
 } from "./workspace-canvas-overlay-drawer-tabs"
 import { WorkspaceDrawerTabs } from "./workspace-canvas-overlay-drawer-tabs-view"
 import {
@@ -92,6 +93,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     peopleCanvasActions: WorkspacePeopleCanvasActions
   }) {
     const canvasContainer = useWorkspaceCanvasOverlayDrawerContainer()
+    const isMobile = useIsMobile()
     const [open, setOpen] = useState(true)
     const [hasOpened, setHasOpened] = useState(true)
     const [activeSnapPoint, setActiveSnapPoint] = useState<
@@ -155,8 +157,14 @@ export const WorkspaceCanvasOverlayDrawer = memo(
       if (storedSnapPoint === null) return
       setOpen(true)
       setHasOpened(true)
-      setActiveSnapPoint(storedSnapPoint)
-    }, [request, uiPreferencesScope])
+      setActiveSnapPoint(isMobile ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT : storedSnapPoint)
+    }, [isMobile, request, uiPreferencesScope])
+
+    // The mobile breakpoint resolves after hydration. Expand even when a route
+    // request was already handled during the initial desktop-shaped render.
+    useEffect(() => {
+      if (isMobile) setActiveSnapPoint(WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT)
+    }, [isMobile])
 
     useLayoutEffect(() => {
       if (!request || handledRequestIdRef.current === request.id) return
@@ -169,11 +177,11 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         dataDrawerTab: request.tab,
       })
       handleActiveSnapPointChange(
-        request.tab === "roadmap"
+        (isMobile || request.tab === "roadmap")
           ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT
           : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT
       )
-    }, [handleActiveSnapPointChange, request, uiPreferencesScope])
+    }, [handleActiveSnapPointChange, isMobile, request, uiPreferencesScope])
 
     const handleOpenChange = useCallback(
       (nextOpen: boolean) => {
@@ -266,9 +274,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         ? request
         : null
 
-    const { tabIndicator, tabsHeaderRef, tabsListRef } =
-      useWorkspaceDataDrawerTabIndicator({ tab })
-
     return (
       <Drawer
         open={canvasContainer ? open : false}
@@ -288,6 +293,9 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         snapToSequentialPoint
         shouldScaleBackground={false}
       >
+        {/* Vaul 1.1.2 does not forward modal=false to its Radix root. Scope a
+            controlled nonmodal root so the persistent drawer keeps navigation accessible. */}
+        <Dialog open={canvasContainer ? open : false} onOpenChange={handleOpenChange} modal={false}>
         <DrawerTrigger asChild>
           <Button
             type="button"
@@ -394,15 +402,13 @@ export const WorkspaceCanvasOverlayDrawer = memo(
                 placedPersonIds={placedPersonIds}
                 request={request}
                 tab={tab}
-                tabIndicator={tabIndicator}
-                tabsHeaderRef={tabsHeaderRef}
-                tabsListRef={tabsListRef}
                 uiPreferencesScope={uiPreferencesScope}
                 viewerId={viewerId}
               />
             </div>
           </DrawerContent>
         ) : null}
+        </Dialog>
       </Drawer>
     )
   }

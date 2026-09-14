@@ -20,7 +20,7 @@ describe("my organization editor view layout", () => {
     expect(source).toContain("<ScrollFadeEffect")
     expect(source).toContain("enabled={hasScrollableOverflow}")
     expect(source).toContain(
-      'className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"'
+      'className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] max-md:pb-[var(--shell-mobile-nav-clearance,0px)]"'
     )
     expect(source).toContain("new ResizeObserver(updateScrollableOverflow)")
     expect(source).toContain("new MutationObserver(updateScrollableOverflow)")

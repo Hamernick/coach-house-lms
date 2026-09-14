@@ -139,6 +139,7 @@ export function buildIrsEoSearchPlan(workPackage) {
       commercialSearchScrapingAllowed: false,
       maxDomainHypothesesPerOrganization: 2,
       maxCrawlerRequests: workPackage.budgets?.maxHttpRequests ?? 0,
+      maxRetainedBytes: workPackage.budgets?.maxRetainedBytes ?? 0,
       maxRequestsPerHost: 3,
       robotsRequired: true,
       rawResponsesRetained: false,
@@ -263,7 +264,13 @@ export function normalizeIrsEoSearchAdapterResults(plan, rows) {
 
 export function buildSharedProviderFetchPlan(
   candidateSets,
-  { maxNetworkRequests = 75, maxPerHost = 3 } = {}
+  {
+    maxNetworkRequests = 75,
+    maxPerHost = 3,
+    maxRetainedBytes = 25_000_000,
+    packageId = null,
+    parentPlanHash = null,
+  } = {}
 ) {
   const requestByUrl = new Map()
   const rejected = []
@@ -355,8 +362,23 @@ export function buildSharedProviderFetchPlan(
     ).values(),
   ]
   const planBody = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "irs_eo_shared_provider_fetch_plan",
+    packageId,
+    parentPlanHash,
+    executionPolicy: {
+      networkRequestBudget: maxNetworkRequests,
+      retainedByteBudget: maxRetainedBytes,
+      maxRequestsPerHost: maxPerHost,
+      maxPageBytes: 1_000_000,
+      maxRobotsBytes: 256_000,
+      requestTimeoutMs: 15_000,
+      maxRedirects: 3,
+      userAgent:
+        "CoachHouseResourceResearch/1.0 (+https://coachhouse.app)",
+      allowedPorts: [80, 443],
+      rawResponsesRetained: false,
+    },
     requests: selected,
     robotsRequests,
     hostPolicies,

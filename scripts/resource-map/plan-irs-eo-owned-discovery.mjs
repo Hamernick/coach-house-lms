@@ -89,6 +89,9 @@ async function main() {
   const fetchPlan = buildSharedProviderFetchPlan(normalized.candidateSets, {
     maxNetworkRequests: plan.ownedDiscoveryPolicy.maxCrawlerRequests,
     maxPerHost: plan.ownedDiscoveryPolicy.maxRequestsPerHost,
+    maxRetainedBytes: plan.ownedDiscoveryPolicy.maxRetainedBytes,
+    packageId: plan.packageId,
+    parentPlanHash: plan.planHash,
   })
   const telemetry = buildSearchStageTelemetry({
     packageId: plan.packageId,

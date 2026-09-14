@@ -81,6 +81,9 @@ async function main() {
           workPackage.budgets.maxHttpRequests
         ),
         maxPerHost: readPositiveInteger(args.get("max-per-host"), 3),
+        maxRetainedBytes: workPackage.budgets.maxRetainedBytes,
+        packageId: searchPlan.packageId,
+        parentPlanHash: searchPlan.planHash,
       })
     : null
   const telemetry = normalized

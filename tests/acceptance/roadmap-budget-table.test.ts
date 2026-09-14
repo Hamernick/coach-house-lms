@@ -60,7 +60,7 @@ describe("roadmap budget table", () => {
     expect(hasMeaningfulRoadmapBudgetRows(normalized)).toBe(true)
   })
 
-  it("replaces only the Budget editor body with the shared TanStack table", () => {
+  it("keeps the shared Budget table alongside the editable document view", () => {
     const shell = readSource(
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
     )
@@ -73,7 +73,12 @@ describe("roadmap budget table", () => {
     const action = readSource("src/actions/roadmap.ts")
 
     expect(uiState).toContain('activeSection?.id === "budget"')
-    expect(shell).toContain("<RoadmapBudgetTableEditor")
+    expect(shell).toContain("<RoadmapBudgetDocumentEditor")
+    const documentEditor = readSource(
+      "src/components/roadmap/roadmap-editor/components/roadmap-budget-document-editor.tsx"
+    )
+    expect(documentEditor).toContain("<RoadmapBudgetTableEditor")
+    expect(documentEditor).toContain("<RichTextEditor")
     expect(shell).toContain("isCalendarSection || isBudgetSection")
     expect(budgetEditor).toContain(
       'from "@/components/training/module-detail/budget-table"'

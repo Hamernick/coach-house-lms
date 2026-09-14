@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
+import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { MemberWorkspaceProjectDetailPage } from "@/features/member-workspace/components/projects/member-workspace-project-detail-page"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
@@ -29,6 +30,12 @@ vi.mock("next/cache", () => ({
 }))
 
 const project = getProjectDetailsById("project-1")
+
+function buildProjectSource(
+  overrides: Pick<PlatformAdminDashboardLabProject, "description" | "projectKind">
+) {
+  return { ...project.source!, ...overrides }
+}
 
 function renderProjectDetailPage(
   overrideProps?: Partial<
@@ -69,7 +76,7 @@ function renderProjectDetailPage(
           setupItems: [],
           profile: {},
         },
-        updateProjectAction: async () => ({ ok: true, id: project.id }),
+        updateProjectAction: async () => ({ ok: true as const, id: project.id }),
         ...overrideProps,
       })
     )
@@ -264,10 +271,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
           ...project,
           description:
             "<h2>Saved overview</h2><p>This should show in view mode.</p>",
-          source: {
-            ...project.source!,
-            description: "",
-          },
+          source: buildProjectSource({ description: "" }),
         },
       })
     )
@@ -291,11 +295,10 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         project: {
           ...project,
           description: "Collapsed summary should not replace the document.",
-          source: {
-            ...project.source!,
+          source: buildProjectSource({
             description:
               "<h2>Saved source document</h2><p><strong>Formatting</strong> should survive.</p>",
-          },
+          }),
         },
       })
     )
@@ -313,10 +316,9 @@ describe("MemberWorkspaceProjectDetailPage", () => {
           description: "Collapsed summary should not replace the document.",
           overviewDocument:
             "<h2>Dedicated overview document</h2><p>This is the rich saved document.</p>",
-          source: {
-            ...project.source!,
+          source: buildProjectSource({
             description: "<p>Legacy source document.</p>",
-          },
+          }),
         },
       })
     )
@@ -334,10 +336,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
           ...project,
           description:
             "## Markdown overview\n\nThis should render as **formatted** markdown.\n\n- First item\n- Second item\n\n| Area | Owner |\n| --- | --- |\n| Intake | Coach House |\n\n<script>alert('x')</script>",
-          source: {
-            ...project.source!,
-            description: "",
-          },
+          source: buildProjectSource({ description: "" }),
         },
       })
     )
@@ -456,10 +455,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     const markup = renderProjectDetailPage({
       project: {
         ...project,
-        source: {
-          ...project.source!,
-          projectKind: "standard",
-        },
+        source: buildProjectSource({ projectKind: "standard" }),
       },
       canManageProject: false,
       canEditProjectDetails: true,
@@ -488,10 +484,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     const markup = renderProjectDetailPage({
       project: {
         ...project,
-        source: {
-          ...project.source!,
-          projectKind: "organization_admin",
-        },
+        source: buildProjectSource({ projectKind: "organization_admin" }),
       },
       canManageProject: false,
       canEditProjectDetails: true,
@@ -535,6 +528,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         applicationId: "app-1",
         applicationStatus: "agreement_ready",
         legalEntityType: "informal_group_with_ein",
+        reviewNotes: null,
         reviewedAt: "2026-06-10T18:00:00.000Z",
         submittedAt: "2026-06-10T17:00:00.000Z",
         events: [
@@ -594,6 +588,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         applicationId: "app-1",
         applicationStatus: "agreement_ready",
         legalEntityType: "informal_group_with_ein",
+        reviewNotes: null,
         reviewedAt: "2026-06-10T18:00:00.000Z",
         submittedAt: "2026-06-10T17:00:00.000Z",
         events: [],

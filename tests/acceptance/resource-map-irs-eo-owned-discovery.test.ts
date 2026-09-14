@@ -103,7 +103,9 @@ describe("IRS EO owned discovery", () => {
     )
 
     const results = runSelfHostedEvidenceIndexAdapter(searchPlan(), index)
-    const completed = results.filter(({ status }) => status === "completed")
+    const completed = results.filter(
+      ({ status }: { status: string }) => status === "completed"
+    )
     expect(completed).toHaveLength(1)
     expect(completed[0]).toMatchObject({
       adapterId: "self_hosted_evidence_index",

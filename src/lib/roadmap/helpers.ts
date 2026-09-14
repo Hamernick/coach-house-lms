@@ -251,7 +251,12 @@ export function getRoadmapWorkspaceRevalidationPaths({
 }): string[] {
   const normalizedSectionSlug =
     typeof sectionSlug === "string" ? sectionSlug.trim() : ""
-  const paths = [WORKSPACE_PATH, MY_ORGANIZATION_PATH, WORKSPACE_ROADMAP_PATH]
+  const paths = [
+    WORKSPACE_PATH,
+    MY_ORGANIZATION_PATH,
+    WORKSPACE_ROADMAP_PATH,
+    "/organization/documents",
+  ]
 
   if (normalizedSectionSlug) {
     paths.push(getWorkspaceRoadmapSectionPath(normalizedSectionSlug))

@@ -55,7 +55,9 @@ describe("resource-map provider page signals", () => {
         }),
       ])
     )
-    expect(signals.evidenceLinkCandidates.map((item) => item.url)).toEqual([
+    expect(
+      signals.evidenceLinkCandidates.map((item: { url: string }) => item.url)
+    ).toEqual([
       "https://provider.example.org/find-support",
       "https://provider.example.org/programs/family-care",
     ])

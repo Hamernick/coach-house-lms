@@ -166,8 +166,13 @@ test("selection survives list mode and downloads without popups", async ({
   await card(page, "beta.csv").locator("button").first().click()
   await expect(page.getByText("2 selected", { exact: true })).toBeVisible()
   await expect(card(page, "alpha.bin").locator("button").first()).toHaveClass(
-    /border-white/
+    /border-foreground/
   )
+  await page.mouse.move(0, 0)
+  await card(page, "alpha.bin").locator("button").first().blur()
+  await expect(
+    card(page, "alpha.bin").locator('button[aria-pressed="true"]')
+  ).toHaveCSS("opacity", "1")
   await page.getByRole("button", { name: "List view", exact: true }).click()
   await expect(page.getByText("2 selected", { exact: true })).toBeVisible()
   await expect(
@@ -243,7 +248,7 @@ test("trash, restore, and permanent deletion update cards and storage", async ({
   await expect(usage).toHaveAttribute("aria-valuenow", "10")
 })
 
-test("arbitrary drag-and-drop uploads stay visible in list mode", async ({
+test("only the file picker uploads general files; the library is not a dropzone", async ({
   page,
 }) => {
   const fixture = await openLibrary(page)
@@ -257,8 +262,19 @@ test("arbitrary drag-and-drop uploads stay visible in list mode", async ({
     '[data-react-grab-owner-id="organization-documents:banner"]'
   )
   await banner.dispatchEvent("dragenter", { dataTransfer: transfer })
-  await expect(page.getByText("Up to 15 MB per file")).toBeVisible()
+  await expect(page.getByText("Drop files to upload")).toHaveCount(0)
   await banner.dispatchEvent("drop", { dataTransfer: transfer })
+  expect(fixture.uploadCount()).toBe(0)
+  await page.getByRole("button", { name: "New", exact: true }).click()
+  const chooser = page.waitForEvent("filechooser")
+  await page.getByRole("menuitem", { name: "Upload files" }).click()
+  await (
+    await chooser
+  ).setFiles({
+    name: "dropped.bin",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("hello"),
+  })
   await expect(
     page.getByRole("heading", { name: "dropped.bin", exact: true })
   ).toBeVisible()

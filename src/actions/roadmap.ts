@@ -30,6 +30,8 @@ import {
 import { createNotification } from "@/lib/notifications"
 
 type SaveInput = {
+  expectedOrganizationId?: string
+  expectedUserId?: string
   sectionId?: string
   expectedLastUpdated?: string | null
   title?: string
@@ -44,7 +46,13 @@ type SaveInput = {
   ctaUrl?: string
 }
 
-type SaveResult = { section: RoadmapSection } | { error: string }
+type SaveResult =
+  | { section: RoadmapSection }
+  | {
+      error: string
+      code?: "conflict" | "scope_changed"
+      currentSection?: RoadmapSection
+    }
 type DeleteResult = { ok: true } | { error: string }
 
 function revalidateRoadmapWorkspacePaths({
@@ -74,6 +82,8 @@ function revalidatePublicOrganizationProfile(sectionId: string | null) {
 }
 
 export async function saveRoadmapSectionAction({
+  expectedOrganizationId,
+  expectedUserId,
   sectionId,
   expectedLastUpdated,
   title,
@@ -104,6 +114,16 @@ export async function saveRoadmapSectionAction({
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
+  if (
+    (expectedOrganizationId && orgId !== expectedOrganizationId) ||
+    (expectedUserId && user.id !== expectedUserId)
+  ) {
+    return {
+      error:
+        "Your account or organization changed. Reopen this document before saving.",
+      code: "scope_changed",
+    }
+  }
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
@@ -136,6 +156,8 @@ export async function saveRoadmapSectionAction({
     return {
       error:
         "This roadmap section was updated elsewhere. Reload before saving.",
+      code: "conflict",
+      currentSection: previousSection,
     }
   }
 
@@ -192,6 +214,7 @@ export async function saveRoadmapSectionAction({
     if (!updatedRow) {
       return {
         error: "This organization was updated elsewhere. Reload before saving.",
+        code: "conflict",
       }
     }
   } else {

@@ -262,6 +262,15 @@ export function normalizeIrsEoSearchAdapterResults(plan, rows) {
   }
 }
 
+/**
+ * @param {Array<Record<string, unknown>>} candidateSets Raw candidates, normalized before planning.
+ * @param {object} [options]
+ * @param {number} [options.maxNetworkRequests]
+ * @param {number} [options.maxPerHost]
+ * @param {number} [options.maxRetainedBytes]
+ * @param {string | null} [options.packageId]
+ * @param {string | null} [options.parentPlanHash]
+ */
 export function buildSharedProviderFetchPlan(
   candidateSets,
   {
@@ -401,6 +410,13 @@ export function buildSharedProviderFetchPlan(
   return { ...planBody, planHash: sha256(stableJson(planBody)) }
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.packageId
+ * @param {Array<{ adapterId: string, telemetry?: { queries?: number }, results?: unknown[] }>} [options.adapterRows]
+ * @param {Record<string, number>} options.normalizedCounts
+ * @param {{ counts: Record<string, number> }} options.fetchPlan
+ */
 export function buildSearchStageTelemetry({
   packageId,
   adapterRows = [],

@@ -10,6 +10,15 @@ import type { RoadmapEditorProps } from "@/components/roadmap/roadmap-editor/typ
 export type { RoadmapEditorLayout } from "@/components/roadmap/roadmap-editor/types"
 
 export function RoadmapEditor(props: RoadmapEditorProps) {
+  return (
+    <ScopedRoadmapEditor
+      key={JSON.stringify(props.draftScope ?? null)}
+      {...props}
+    />
+  )
+}
+
+function ScopedRoadmapEditor(props: RoadmapEditorProps) {
   const {
     activeSection,
     activeDraft,
@@ -33,6 +42,10 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     handleSave,
     isDirty,
     savingId,
+    saveIssue,
+    offline,
+    storageFailed,
+    resolveConflict,
     handleStatusChange,
   } = useRoadmapEditorState(props)
 
@@ -70,6 +83,11 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       onSave={handleSave}
       isDirty={isDirty}
       savingId={savingId}
+      saveIssue={saveIssue}
+      offline={offline}
+      storageFailed={storageFailed}
+      onResolveConflict={resolveConflict}
+      draftScope={props.draftScope}
       sectionIcon={SectionIcon}
     />
   )

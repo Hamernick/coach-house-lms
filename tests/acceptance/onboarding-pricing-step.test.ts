@@ -96,14 +96,18 @@ describe("onboarding step footer", () => {
       onNext: () => calls.push("next"),
     })
 
-    function findButton(element: ReactElement): ReactElement | null {
+    function findButton(element: ReactElement): {
+      type: string
+      onClick: (event: { preventDefault: () => void }) => void
+    } | null {
       const props = element.props as {
         children?: ReactNode
         onClick?: unknown
         type?: string
       }
       if (props.type === "button" && typeof props.onClick === "function") {
-        return element
+        const onClick = props.onClick
+        return { type: props.type, onClick: (event) => onClick(event) }
       }
 
       for (const child of Children.toArray(props.children)) {
@@ -117,8 +121,8 @@ describe("onboarding step footer", () => {
     }
 
     const button = findButton(footer)
-    expect(button?.props.type).toBe("button")
-    button?.props.onClick({
+    expect(button?.type).toBe("button")
+    button?.onClick({
       preventDefault: () => calls.push("preventDefault"),
     })
 

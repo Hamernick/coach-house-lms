@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test"
 
 async function openBanner(page: Page, colorScheme: "light" | "dark") {
+  // Keep the local development toolbar out of product baselines.
+  await page.route("https://unpkg.com/react-grab@*/**", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" })
+  )
   await page.emulateMedia({ colorScheme, reducedMotion: "reduce" })
   await page.goto("/visual-regression/documents-banner")
   await page.waitForLoadState("networkidle")

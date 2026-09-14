@@ -19,6 +19,7 @@ describe("roadmap actions", () => {
       "/workspace",
       "/my-organization",
       "/workspace/roadmap",
+      "/organization/documents",
       "/workspace/roadmap/origin-story",
       "/coach-house/roadmap",
     ])
@@ -35,6 +36,7 @@ describe("roadmap actions", () => {
       "/workspace",
       "/my-organization",
       "/workspace/roadmap",
+      "/organization/documents",
     ])
     expect(revalidatePathMock).not.toHaveBeenCalled()
   })

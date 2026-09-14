@@ -19,6 +19,17 @@ async function ready(page: Page) {
   })
 }
 
+async function openDocumentationSearchWithShortcut(page: Page) {
+  await page.bringToFront()
+  await page
+    .getByRole("heading", { name: "Nonprofit documentation", exact: true })
+    .click()
+  await expect(
+    page.getByRole("searchbox", { name: "Search documentation", exact: true })
+  ).not.toBeFocused()
+  await page.keyboard.press("Control+k")
+}
+
 test("library search supports keyboard, deep links, browser history, and empty recovery", async ({
   page,
 }) => {
@@ -33,7 +44,7 @@ test("library search supports keyboard, deep links, browser history, and empty r
       exact: true,
     })
   await expect(page.getByRole("searchbox")).toHaveCount(1)
-  await page.keyboard.press("Control+k")
+  await openDocumentationSearchWithShortcut(page)
   await expect(input).toBeFocused()
   await input.fill("color proportions")
   await input.press("Enter")
@@ -273,7 +284,7 @@ for (const viewer of ["free", "paid", "locked"]) {
     await expect(
       page.getByRole("searchbox", { name: "Search documentation", exact: true })
     ).toBeVisible()
-    await page.keyboard.press("Control+k")
+    await openDocumentationSearchWithShortcut(page)
     await expect(
       page.getByRole("searchbox", { name: "Search documentation", exact: true })
     ).toBeFocused()

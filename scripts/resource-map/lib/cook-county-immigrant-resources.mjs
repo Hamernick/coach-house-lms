@@ -161,6 +161,13 @@ function parseLocation(row, geocode) {
   }
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.fetchedAt
+ * @param {{ addressComponents?: { city?: string, state?: string, zip?: string }, coordinates?: { x: number, y: number } } | null} [options.geocode]
+ * @param {Record<string, unknown>} options.row Raw directory fields, normalized below.
+ * @param {string} [options.sourceUrl]
+ */
 export function buildCookCountyImmigrantResourceRecord({
   fetchedAt,
   geocode = null,

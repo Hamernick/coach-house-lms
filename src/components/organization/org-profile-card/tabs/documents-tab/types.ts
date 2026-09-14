@@ -30,6 +30,8 @@ export type SortColumn =
 export type SortDirection = "asc" | "desc"
 
 export type DocumentsRoadmapSection = {
+  content?: string
+  hasContent?: boolean
   id: string
   title: string
   subtitle: string
@@ -96,6 +98,7 @@ export type RoadmapRow = {
 export type DocumentIndexRow = UploadRow | PolicyRow | RoadmapRow
 
 export type DocumentsTabProps = {
+  organizationId: string
   userId: string
   documents?: OrgDocuments | null
   policyEntries: DocumentsPolicyEntry[]

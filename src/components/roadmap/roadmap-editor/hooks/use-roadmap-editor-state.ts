@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
@@ -15,12 +8,8 @@ import {
   uploadOrgMedia,
   validateOrgMediaFile,
 } from "@/lib/organization/org-media"
-import { toast } from "@/lib/toast"
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
-import {
-  hasMeaningfulRoadmapBudgetRows,
-  roadmapBudgetRowsEqual,
-} from "@/lib/roadmap/budget"
+import { roadmapBudgetRowsEqual } from "@/lib/roadmap/budget"
 import {
   WORKSPACE_ROADMAP_PATH,
   getWorkspaceRoadmapSectionPath,
@@ -34,8 +23,11 @@ import {
   getRoadmapSectionBaseline,
   isRoadmapDraftDirty,
   loadRoadmapDraftsFromStorage,
+  roadmapDraftStorageKey,
 } from "../helpers"
 import { type RoadmapDraft } from "../types"
+import { reconcileRoadmapEditorSections } from "../save-state"
+import { useRoadmapEditorSave } from "./use-roadmap-editor-save"
 import { useRoadmapEditorAutosave } from "./use-roadmap-editor-autosave"
 import { useRoadmapEditorDraftPersistence } from "./use-roadmap-editor-draft-persistence"
 import type {
@@ -45,17 +37,15 @@ import type {
 
 export function useRoadmapEditorState({
   sections: initialSections,
-  publicSlug,
+  draftScope,
   canEdit = true,
   navigationMode = "route",
   initialSectionId = null,
   onDirtyChange,
   onRegisterDiscard,
+  saveSection = saveRoadmapSectionAction,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
-  const storageKey = useMemo(
-    () => `roadmap-draft:${publicSlug ?? "private"}`,
-    [publicSlug]
-  )
+  const storageKey = roadmapDraftStorageKey(draftScope)
   const initialActiveId = useMemo(() => {
     if (!initialSectionId) return ""
     return initialSections.some((section) => section.id === initialSectionId)
@@ -71,9 +61,8 @@ export function useRoadmapEditorState({
   const [activeId, setActiveId] = useState(
     initialActiveId || initialSections[0]?.id || ""
   )
-  const [savingId, setSavingId] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
   const [isHydrated, setIsHydrated] = useState(false)
+  const loadedStorageKeyRef = useRef<string | null>(null)
   const sectionsRef = useRef(sections)
   const draftsRef = useRef(drafts)
   const activeIdRef = useRef(activeId)
@@ -100,10 +89,27 @@ export function useRoadmapEditorState({
   }, [activeId])
 
   useEffect(() => {
-    setSections(initialSections)
-    setDrafts(() => loadRoadmapDraftsFromStorage(storageKey, initialSections))
+    const next =
+      loadedStorageKeyRef.current === storageKey
+        ? reconcileRoadmapEditorSections(
+            initialSections,
+            sectionsRef.current,
+            draftsRef.current
+          )
+        : {
+            sections: initialSections,
+            drafts: loadRoadmapDraftsFromStorage(
+              canEdit ? storageKey : null,
+              initialSections
+            ),
+          }
+    loadedStorageKeyRef.current = storageKey
+    sectionsRef.current = next.sections
+    draftsRef.current = next.drafts
+    setSections(next.sections)
+    setDrafts(next.drafts)
     setActiveId((prev) => prev || initialSections[0]?.id || "")
-  }, [initialSections, storageKey])
+  }, [canEdit, initialSections, storageKey])
 
   const initialActiveIdRef = useRef(initialActiveId)
 
@@ -177,69 +183,29 @@ export function useRoadmapEditorState({
     return () => observer.disconnect()
   }, [headerTitle, headerSubtitle])
 
-  const saveSectionById = useCallback(
-    ({ sectionId, showToast }: { sectionId: string; showToast: boolean }) => {
-      if (!canEdit) return
-      if (!sectionId) return
-      if (savingId || isPending) return
-
-      const section = sectionsRef.current.find(
-        (entry) => entry.id === sectionId
-      )
-      if (!section) return
-      const draft = draftsRef.current[sectionId] ?? createDraft(section)
-      if (!isRoadmapDraftDirty(section, draft)) return
-
-      const shouldMarkInProgress =
-        section.status === "not_started" &&
-        (draft.content.trim().length > 0 ||
-          hasMeaningfulRoadmapBudgetRows(draft.budgetRows) ||
-          draft.title.trim().length > 0 ||
-          draft.subtitle.trim().length > 0)
-
-      setSavingId(section.id)
-      startTransition(async () => {
-        try {
-          const result = await saveRoadmapSectionAction({
-            sectionId: section.id,
-            expectedLastUpdated: section.lastUpdated,
-            title: draft.title,
-            subtitle: draft.subtitle,
-            content: draft.content,
-            budgetRows: section.id === "budget" ? draft.budgetRows : undefined,
-            imageUrl: draft.imageUrl,
-            status: shouldMarkInProgress ? "in_progress" : undefined,
-          })
-
-          if ("error" in result) {
-            toast.error(result.error)
-            return
-          }
-
-          const nextSection = result.section
-          setSections((prev) => {
-            const index = prev.findIndex((entry) => entry.id === nextSection.id)
-            if (index === -1) return [...prev, nextSection]
-            return prev.map((entry, idx) =>
-              idx === index ? nextSection : entry
-            )
-          })
-          setDrafts((prev) => ({
-            ...prev,
-            [nextSection.id]: createDraft(nextSection),
-          }))
-          if (showToast) toast.success("Section saved")
-        } catch {
-          toast.error(
-            "The roadmap could not save. Your draft is still available; retry or refresh."
-          )
-        } finally {
-          setSavingId(null)
-        }
-      })
+  const updateSavedState = useCallback(
+    (
+      nextSections: RoadmapSection[],
+      nextDrafts: Record<string, RoadmapDraft>
+    ) => {
+      sectionsRef.current = nextSections
+      draftsRef.current = nextDrafts
+      setSections(nextSections)
+      setDrafts(nextDrafts)
     },
-    [canEdit, isPending, savingId]
+    []
   )
+  const { savingId, issues, offline, saveSectionById, resolveConflict } =
+    useRoadmapEditorSave({
+      canEdit,
+      draftScope,
+      saveSection,
+      sectionsRef,
+      draftsRef,
+      update: updateSavedState,
+    })
+  const isPending = savingId !== null
+  const saveIssue = issues[activeId]
 
   const flushActiveSectionDraft = useCallback(() => {
     const sectionId = activeIdRef.current
@@ -284,10 +250,17 @@ export function useRoadmapEditorState({
     )
   }, [activeDraft, activeSection])
 
-  useRoadmapEditorDraftPersistence({
+  const replaceDrafts = useCallback((next: Record<string, RoadmapDraft>) => {
+    draftsRef.current = next
+    setDrafts(next)
+  }, [])
+
+  const storageFailed = useRoadmapEditorDraftPersistence({
+    enabled:
+      canEdit && isHydrated && loadedStorageKeyRef.current === storageKey,
     sections,
     drafts,
-    setDrafts,
+    replaceDrafts,
     storageKey,
     onDirtyChange,
     onRegisterDiscard,
@@ -297,13 +270,16 @@ export function useRoadmapEditorState({
     (updates: Partial<RoadmapDraft>) => {
       if (!canEdit) return
       if (!activeSection) return
-      setDrafts((prev) => ({
-        ...prev,
+      const nextDrafts = {
+        ...draftsRef.current,
         [activeSection.id]: {
-          ...(prev[activeSection.id] ?? createDraft(activeSection)),
+          ...(draftsRef.current[activeSection.id] ??
+            createDraft(activeSection)),
           ...updates,
         },
-      }))
+      }
+      draftsRef.current = nextDrafts
+      setDrafts(nextDrafts)
     },
     [activeSection, canEdit]
   )
@@ -315,7 +291,7 @@ export function useRoadmapEditorState({
   }, [activeSection, canEdit, saveSectionById])
 
   useRoadmapEditorAutosave({
-    canEdit,
+    canEdit: canEdit && !offline && !saveIssue,
     activeSection,
     activeDraft,
     isDirty,
@@ -336,58 +312,13 @@ export function useRoadmapEditorState({
 
   const handleStatusChange = useCallback(
     (nextStatus: RoadmapSectionStatus) => {
-      if (!canEdit) return
-      if (!activeSection) return
-      if (savingId || isPending) return
-      const draft =
-        draftsRef.current[activeSection.id] ?? createDraft(activeSection)
-      const draftIsDirty = isRoadmapDraftDirty(activeSection, draft)
-      setSavingId(activeSection.id)
-      startTransition(async () => {
-        try {
-          const result = await saveRoadmapSectionAction({
-            sectionId: activeSection.id,
-            expectedLastUpdated: activeSection.lastUpdated,
-            status: nextStatus,
-            ...(draftIsDirty
-              ? {
-                  title: draft.title,
-                  subtitle: draft.subtitle,
-                  content: draft.content,
-                  budgetRows:
-                    activeSection.id === "budget"
-                      ? draft.budgetRows
-                      : undefined,
-                  imageUrl: draft.imageUrl,
-                }
-              : {}),
-          })
-
-          if ("error" in result) {
-            toast.error(result.error)
-            return
-          }
-
-          const nextSection = result.section
-          setSections((prev) =>
-            prev.map((section) =>
-              section.id === nextSection.id ? nextSection : section
-            )
-          )
-          setDrafts((prev) => ({
-            ...prev,
-            [nextSection.id]: createDraft(nextSection),
-          }))
-        } catch {
-          toast.error(
-            "The roadmap could not save. Your draft is still available; retry or refresh."
-          )
-        } finally {
-          setSavingId(null)
-        }
+      saveSectionById({
+        sectionId: activeIdRef.current,
+        showToast: false,
+        nextStatus,
       })
     },
-    [activeSection, canEdit, isPending, savingId]
+    [saveSectionById]
   )
 
   return {
@@ -402,7 +333,11 @@ export function useRoadmapEditorState({
     headerIconSize,
     headerTextRef,
     status,
-    statusSelectDisabled: isPending,
+    statusSelectDisabled: isPending || offline || Boolean(saveIssue),
+    saveIssue,
+    offline,
+    storageFailed,
+    resolveConflict,
     isHydrated,
     isCalendarSection,
     isBudgetSection,

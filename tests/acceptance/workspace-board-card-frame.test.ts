@@ -107,22 +107,20 @@ describe("workspace board card frame", () => {
   })
 
   it("renders the shared workspace card shell with Frame primitives", () => {
+    const props: React.ComponentProps<typeof WorkspaceBoardCardFrame> = {
+      cardId: "brand-kit",
+      title: "Brand kit",
+      subtitle: "Voice and assets",
+      size: "md",
+      presentationMode: false,
+      onSizeChange: vi.fn(),
+      fullHref: "/workspace/brand-kit",
+      canEdit: true,
+      footer: React.createElement("button", null, "Run action"),
+      children: React.createElement("div", null, "Brand kit body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(
-        WorkspaceBoardCardFrame,
-        {
-          cardId: "brand-kit",
-          title: "Brand kit",
-          subtitle: "Voice and assets",
-          size: "md",
-          presentationMode: false,
-          onSizeChange: vi.fn(),
-          fullHref: "/workspace/brand-kit",
-          canEdit: true,
-          footer: React.createElement("button", null, "Run action"),
-        },
-        React.createElement("div", null, "Brand kit body")
-      )
+      React.createElement(WorkspaceBoardCardFrame, props)
     )
 
     expect(markup).toContain('data-workspace-card="brand-kit"')
@@ -156,23 +154,21 @@ describe("workspace board card frame", () => {
     const shellSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-shell.tsx"
     )
+    const props: React.ComponentProps<typeof WorkspaceBoardNodeCardShell> = {
+      cardId: "programs",
+      title: "Programs",
+      subtitle: "Offers and services",
+      hideSubtitle: true,
+      size: "md",
+      presentationMode: false,
+      fullHref: "/workspace/programs",
+      canEdit: true,
+      headerAction: React.createElement("button", null, "Add"),
+      contentSurface: "plain",
+      children: React.createElement("div", null, "Programs body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(
-        WorkspaceBoardNodeCardShell,
-        {
-          cardId: "programs",
-          title: "Programs",
-          subtitle: "Offers and services",
-          hideSubtitle: true,
-          size: "md",
-          presentationMode: false,
-          fullHref: "/workspace/programs",
-          canEdit: true,
-          headerAction: React.createElement("button", null, "Add"),
-          contentSurface: "plain",
-        },
-        React.createElement("div", null, "Programs body")
-      )
+      React.createElement(WorkspaceBoardNodeCardShell, props)
     )
 
     expect(markup).toContain('data-workspace-card="programs"')
@@ -230,19 +226,17 @@ describe("workspace board card frame", () => {
   })
 
   it("renders the organization overview shell through the card-style node anatomy", () => {
+    const props: React.ComponentProps<typeof WorkspaceBoardOrganizationCardShell> = {
+      title: "Organization",
+      subtitle: "Profile",
+      size: "md",
+      presentationMode: false,
+      fullHref: "/workspace/profile",
+      canEdit: true,
+      children: React.createElement("div", null, "Organization body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(
-        WorkspaceBoardOrganizationCardShell,
-        {
-          title: "Organization",
-          subtitle: "Profile",
-          size: "md",
-          presentationMode: false,
-          fullHref: "/workspace/profile",
-          canEdit: true,
-        },
-        React.createElement("div", null, "Organization body")
-      )
+      React.createElement(WorkspaceBoardOrganizationCardShell, props)
     )
 
     expect(markup).toContain('data-workspace-card="organization-overview"')

@@ -1,8 +1,9 @@
 # Google Drive Feature
 
-Connection and Picker integration for Documents. V1 links user-selected
-Drive files through `drive.file`; it does not enumerate, copy, proxy, edit, or
-download file contents.
+Connection and Picker integration for Documents. User-selected Drive files use
+`drive.file`. The document-import flow can export a selected Google Doc or read a
+selected Word/Markdown file into an editable Coach House copy with a source link.
+It does not enumerate a user's Drive or write editor changes back to Google.
 
 ## Ownership
 
@@ -43,3 +44,7 @@ separate deployment step.
 See [the local setup checklist](../../../docs/plans/2026-09-04-google-drive-local-verification.md)
 before configuring localhost. The serving worktree uses the shared production
 database, so a local connection can affect shared credentials and documents.
+
+Disconnecting Drive clears Coach House's saved Drive credentials without revoking
+other Google integrations. Google project-wide revocation is available in the
+user's Google account access controls. See [Google's token revocation contract](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke).

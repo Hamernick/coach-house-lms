@@ -282,7 +282,7 @@ describe("Core Documents publication", () => {
   it("uses the new labels, keeps colors, and refreshes the public map", () => {
     const panel = readSource("src/components/roadmap/roadmap-section-panel.tsx")
     const editor = readSource(
-      "src/components/roadmap/roadmap-editor/hooks/use-roadmap-editor-state.ts"
+      "src/components/roadmap/roadmap-editor/hooks/use-roadmap-editor-save.ts"
     )
     const editorShell = readSource(
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
@@ -306,7 +306,7 @@ describe("Core Documents publication", () => {
     expect(panel).toContain(
       'headerVariant === "calendar" ? "pt-6" : "pt-2 sm:pt-4"'
     )
-    expect(editor).toContain("expectedLastUpdated: activeSection.lastUpdated")
+    expect(editor).toContain("expectedLastUpdated: draft.lastUpdated")
     expect(editor).toContain("content: draft.content")
     expect(editorShell).toContain(
       "status={controlsPublicProfile ? activeSection.status : status}"

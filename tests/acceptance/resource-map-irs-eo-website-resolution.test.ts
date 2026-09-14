@@ -67,7 +67,11 @@ describe("IRS EO provider website resolution", () => {
 
     expect(normalized.ein).toBe("123456789")
     expect(normalized.candidates).toHaveLength(4)
-    expect(normalized.candidates.map((item) => item.candidateKind)).toEqual([
+    expect(
+      normalized.candidates.map(
+        (item: { candidateKind: string }) => item.candidateKind
+      )
+    ).toEqual([
       "provider_website",
       "social",
       "directory",

@@ -1,4 +1,5 @@
 import cleanHtml from "sanitize-html"
+import { normalizeTextColorStyles, THEME_COLOR_PATTERN } from "./theme-colors"
 
 const RICH_TEXT_TAGS = [
   "p",
@@ -41,12 +42,24 @@ const RICH_TEXT_TAGS = [
 const SAFE_TEXT_ALIGNMENT = /^(?:left|center|right|justify)$/
 
 const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
+  transformTags: {
+    span: (tagName, attribs) => ({
+      tagName,
+      attribs: {
+        ...attribs,
+        ...(attribs.style
+          ? { style: normalizeTextColorStyles(attribs.style) }
+          : {}),
+      },
+    }),
+  },
   allowedTags: RICH_TEXT_TAGS,
   allowedAttributes: {
     a: ["href", "target", "rel", "class"],
     img: ["src", "alt", "title", "width", "height", "loading"],
     ol: ["start", "type", "class"],
     ul: ["class"],
+    span: ["style"],
     p: ["style"],
     div: ["style"],
     h1: ["style"],
@@ -64,6 +77,14 @@ const RICH_TEXT_OPTIONS: cleanHtml.IOptions = {
     ul: ["list-disc"],
   },
   allowedStyles: {
+    span: {
+      color: [/^inherit$/, THEME_COLOR_PATTERN],
+      "background-color": [/^transparent$/, THEME_COLOR_PATTERN],
+      "font-size": [
+        /^(?:[1-9]\d?(?:\.\d+)?)(?:px|pt)$|^(?:[0-4](?:\.\d+)?)(?:em|rem)$/,
+      ],
+      "font-family": [/^[a-zA-Z0-9 ,"'-]{1,160}$/],
+    },
     p: { "text-align": [SAFE_TEXT_ALIGNMENT] },
     div: { "text-align": [SAFE_TEXT_ALIGNMENT] },
     h1: { "text-align": [SAFE_TEXT_ALIGNMENT] },

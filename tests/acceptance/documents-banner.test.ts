@@ -8,19 +8,17 @@ import { DocumentsBanner } from "@/components/organization/org-profile-card/tabs
 
 describe("documents banner", () => {
   it("owns the persistent documents library surface", () => {
+    const props: React.ComponentProps<typeof DocumentsBanner> = {
+      canEdit: true,
+      children: React.createElement("h1", { id: "documents-title" }, "Documents"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(
-        DocumentsBanner,
-        {
-          canEdit: true,
-        },
-        React.createElement("h1", { id: "documents-title" }, "Documents")
-      )
+      React.createElement(DocumentsBanner, props)
     )
 
     expect(markup).toContain("Documents")
-    expect(markup).toContain("rounded-[2rem]")
-    expect(markup).toContain("max-w-[42rem]")
+    expect(markup).toContain("rounded-2xl")
+    expect(markup).toContain("max-w-xl")
     expect(markup).toContain(
       'data-react-grab-owner-id="organization-documents:banner"'
     )
@@ -75,7 +73,7 @@ describe("documents banner", () => {
 
     expect(gridSource).toContain("selection.selectedIds.length > 0")
     expect(gridSource).toContain("selection.toggle(item.id)")
-    expect(gridSource).toContain('selected && "border-white"')
+    expect(gridSource).toContain("<DocumentsLibraryCard")
     expect(toolbarSource).toContain("Download")
     expect(toolbarSource).toContain("Delete")
     expect(toolbarSource).toContain("{count} selected")

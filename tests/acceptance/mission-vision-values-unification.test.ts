@@ -318,7 +318,9 @@ describe("Mission, Vision, and Values canonical roadmap contract", () => {
 describe("Mission, Vision, and Values integration guardrails", () => {
   it("writes invited-member answers to the supplied organization only", async () => {
     const filters: Array<[string, unknown]> = []
-    let updatePayload: Record<string, unknown> | null = null
+    const captured: { updatePayload: Record<string, unknown> | null } = {
+      updatePayload: null,
+    }
     const selectQuery = {
       eq(key: string, value: unknown) {
         filters.push([key, value])
@@ -353,7 +355,7 @@ describe("Mission, Vision, and Values integration guardrails", () => {
             return selectQuery
           },
           update(payload: Record<string, unknown>) {
-            updatePayload = payload
+            captured.updatePayload = payload
             return updateQuery
           },
         }
@@ -366,7 +368,7 @@ describe("Mission, Vision, and Values integration guardrails", () => {
       sanitizedAnswers: { vision_final: "A thriving future." },
       orgKeyMapping: { vision_final: "vision" },
     })
-    const writtenProfile = updatePayload?.profile as Record<string, unknown>
+    const writtenProfile = captured.updatePayload?.profile as Record<string, unknown>
 
     expect(result).toEqual({ ok: true })
     expect(filters).toContainEqual(["user_id", "defy-org-id"])

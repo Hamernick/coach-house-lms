@@ -6,11 +6,13 @@ import type { RoadmapSection } from "@/lib/roadmap"
 import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 
 export function WorkspaceCanvasOverlayRoadmapPanel({
+  draftScope,
   sections,
   publicSlug,
   canEdit,
   request,
 }: {
+  draftScope: { userId: string; organizationId: string }
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit: boolean
@@ -32,6 +34,7 @@ export function WorkspaceCanvasOverlayRoadmapPanel({
       className="box-border flex h-full min-h-0 w-full min-w-0 p-2 sm:p-3"
     >
       <RoadmapEditor
+        draftScope={draftScope}
         sections={sections}
         publicSlug={publicSlug}
         canEdit={canEdit}

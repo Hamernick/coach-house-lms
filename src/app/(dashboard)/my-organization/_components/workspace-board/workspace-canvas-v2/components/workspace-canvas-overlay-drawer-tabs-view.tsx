@@ -199,6 +199,10 @@ export function WorkspaceDrawerTabs({
         >
           {tab === "roadmap" ? (
             <WorkspaceCanvasOverlayRoadmapPanel
+              draftScope={{
+                userId: viewerId,
+                organizationId: uiPreferencesScope.orgId,
+              }}
               sections={acceleratorRoadmapSections}
               publicSlug={organizationEditorData.roadmapPublicSlug}
               canEdit={canEdit}
@@ -228,6 +232,7 @@ export function WorkspaceDrawerTabs({
           {tab === "documents" ? (
             <div className="box-border min-h-full w-full max-w-full min-w-0 p-2 sm:p-3">
               <DocumentsTab
+                organizationId={uiPreferencesScope.orgId}
                 key={`documents:${request?.id ?? 0}`}
                 userId={viewerId}
                 {...documentsTab}

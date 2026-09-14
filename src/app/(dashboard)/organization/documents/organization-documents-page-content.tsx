@@ -95,6 +95,7 @@ export default async function MyOrganizationDocumentsPage({
   return (
     <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-6">
       <DocumentsTab
+        organizationId={orgId}
         userId={user.id}
         {...documentsTabData}
         editMode={canEdit}

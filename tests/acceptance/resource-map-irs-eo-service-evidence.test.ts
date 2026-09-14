@@ -11,6 +11,12 @@ import {
   extractIrsEoServiceFieldEvidence,
   isProviderLinkedServicePage,
 } from "../../scripts/resource-map/lib/irs-eo-service-evidence.mjs"
+import type { fetchProviderPageSnapshot } from "../../scripts/resource-map/lib/provider-page-comparison.mjs"
+
+type FetchedPageSnapshot = Extract<
+  Awaited<ReturnType<typeof fetchProviderPageSnapshot>>,
+  { contentHash: string }
+>
 
 const ROOT = process.cwd()
 const COLLECTOR = join(
@@ -18,20 +24,36 @@ const COLLECTOR = join(
   "scripts/resource-map/collect-irs-eo-service-evidence.mjs"
 )
 
-function pageSnapshot(url: string) {
+function pageSnapshot(url: string): FetchedPageSnapshot {
+  const textExcerpt =
+    "We provide free family support in Durham County. Open Monday through Friday, 9:00 AM to 5:00 PM. Open to Durham County residents age 18 and older. Register online or call (919) 555-0100 for an appointment."
   return {
     checkedAt: "2026-08-31T12:00:00.000Z",
     contentHash: "service-page-content-hash",
+    contentType: "text/html",
+    evidenceSnippet: textExcerpt,
     fetchStatus: "fetched",
     finalUrl: url,
     httpStatus: 200,
     pageTitle: "Family Support Program",
     pageEvidence: {
+      contentSha256: "service-page-content-hash",
+      contentType: "text/html",
+      evidenceUrl: url,
+      metaDescription: null,
       pageTitle: "Family Support Program",
       headings: ["Get support"],
-      textExcerpt:
-        "We provide free family support in Durham County. Open Monday through Friday, 9:00 AM to 5:00 PM. Open to Durham County residents age 18 and older. Register online or call (919) 555-0100 for an appointment.",
+      textExcerpt,
+      truncated: false,
     },
+    pageSignals: {
+      schemaVersion: 1,
+      contacts: [],
+      socialAccounts: [],
+      evidenceLinkCandidates: [],
+      imageCandidates: [],
+    },
+    visibleText: textExcerpt,
     websiteUrl: url,
   }
 }
@@ -202,6 +224,7 @@ describe("IRS EO service-page evidence", () => {
       fetchSnapshot: async (pageUrl) => ({
         ...pageSnapshot(pageUrl),
         pageEvidence: {
+          ...pageSnapshot(pageUrl).pageEvidence,
           pageTitle: "Contact",
           textExcerpt: "Call us at (919) 555-0100 for more information.",
         },

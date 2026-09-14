@@ -8,6 +8,7 @@ export {
 } from "./lib"
 export { GoogleDriveError } from "./types"
 export {
+  importGoogleDriveFile,
   attachGoogleDriveDocuments,
   completeGoogleDriveConnection,
   createGoogleDrivePickerToken,

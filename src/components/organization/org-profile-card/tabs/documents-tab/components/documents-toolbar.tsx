@@ -29,7 +29,7 @@ export function DocumentsToolbar(props: DocumentsToolbarProps) {
           </h1>
         </div>
         <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
-          <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
+          <div className="relative w-44 min-w-0">
             <IconSearch
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
               aria-hidden

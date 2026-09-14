@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createNotification } from "@/lib/notifications"
+import { isCoreDocumentSectionId } from "@/lib/organization/core-document-uploads"
 import {
   MAX_BYTES,
   MAX_UPLOAD_MB,
@@ -14,37 +15,11 @@ import {
 } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
+import { fileResponse, sanitizeFilename, type FileRow } from "./file-record"
+
 const BUCKET = "org-documents"
 const SIGNED_URL_TTL_SECONDS = 60 * 15
 const RETENTION_DAYS = 30
-
-type FileRow = {
-  id: string
-  name: string
-  mime_type: string
-  size_bytes: number
-  storage_path: string
-  deleted_at: string | null
-  created_at: string
-  updated_at: string
-}
-
-function sanitizeFilename(name: string) {
-  const cleaned = name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-")
-  return cleaned.length > 0 ? cleaned : "file"
-}
-
-function fileResponse(file: FileRow) {
-  return {
-    id: file.id,
-    name: file.name,
-    mimeType: file.mime_type,
-    sizeBytes: file.size_bytes,
-    deletedAt: file.deleted_at,
-    createdAt: file.created_at,
-    updatedAt: file.updated_at,
-  }
-}
 
 async function loadFile(
   supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
@@ -227,6 +202,13 @@ export async function POST(request: NextRequest) {
 
   const form = await request.formData()
   const file = form.get("file")
+  const coreSectionId = form.get("coreSectionId")
+  if (coreSectionId !== null && !isCoreDocumentSectionId(coreSectionId)) {
+    return NextResponse.json(
+      { error: "Unsupported core document." },
+      { status: 400 }
+    )
+  }
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file." }, { status: 400 })
   }
@@ -258,7 +240,8 @@ export async function POST(request: NextRequest) {
 
     await purgeExpiredFiles(supabase, orgId)
 
-    const objectName = `${orgId}/library/${randomUUID()}-${sanitizeFilename(file.name)}`
+    const folder = coreSectionId ? `core/${coreSectionId}/` : ""
+    const objectName = `${orgId}/library/${folder}${randomUUID()}-${sanitizeFilename(file.name)}`
     const mimeType = file.type || "application/octet-stream"
     const buffer = Buffer.from(await file.arrayBuffer())
     const { error: uploadError } = await supabase.storage

@@ -9,6 +9,8 @@ export type LinkPreviewMeta = {
 export type LinkPreviewMetaMap = Record<string, LinkPreviewMeta>
 
 export type RichTextEditorProps = {
+  enableDocumentImport?: boolean
+  documentTitle?: string
   value: string
   onChange: (value: string) => void
   ariaLabel?: string

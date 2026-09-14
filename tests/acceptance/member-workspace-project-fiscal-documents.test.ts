@@ -23,6 +23,7 @@ function buildWorkflowSummary(
     latestSignaturePacket: null,
     legalEntityType: "corporation",
     requiredDocuments: [],
+    reviewNotes: null,
     reviewedAt: null,
     submittedAt: null,
     ...override,

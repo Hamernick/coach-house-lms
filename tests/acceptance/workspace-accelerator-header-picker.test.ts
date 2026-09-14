@@ -60,13 +60,25 @@ describe("workspace accelerator header picker", () => {
     expect(markup).not.toContain("ml-auto")
     expect(markup).toContain("py-3")
     expect(markup).toContain("sm:justify-between")
-    expect(markup).toContain("sm:max-w-lg")
+    expect(markup).not.toContain("sm:max-w-md")
+    expect(markup).not.toContain("sm:max-w-lg")
     expect(markup).toContain("14% complete")
     expect(markup).toContain('data-react-grab-surface-slot="progress-rail"')
     expect(markup.indexOf("14% complete")).toBeLessThan(
       markup.indexOf(
         'aria-label="Choose a class track. Current selection: Formation"'
       )
+    )
+  })
+
+  it("matches the workspace drawer content width to the Accelerator banner", () => {
+    const source = readFileSync(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx",
+      "utf8"
+    )
+
+    expect(source).toContain(
+      'workspaceDrawerEmbedded ? "mx-auto w-full max-w-3xl" : undefined'
     )
   })
 

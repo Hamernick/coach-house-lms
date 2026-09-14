@@ -226,10 +226,10 @@ export function AcceleratorProgressRail({
             }
             aria-hidden
             className={cn(
-              "relative h-full min-w-0 flex-none overflow-hidden rounded-full",
+              "relative h-full min-w-0 basis-0 overflow-hidden rounded-full",
               segment.trackClassName
             )}
-            style={{ width: `${segment.width}%` }}
+            style={{ flexGrow: segment.width }}
           >
             <ProgressPrimitive.Indicator
               data-slot="accelerator-progress-segment-indicator"
@@ -262,8 +262,8 @@ export function AcceleratorProgressRail({
                     variant="ghost"
                     size="sm"
                     aria-label={`${segment.label} segment, ${segment.rangeLabel}`}
-                    className="focus-visible:ring-ring/70 data-[state=delayed-open]:ring-foreground/20 data-[state=instant-open]:ring-foreground/20 h-full min-w-0 flex-none rounded-full p-0 shadow-none transition-[box-shadow] hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 data-[state=delayed-open]:ring-1 data-[state=instant-open]:ring-1"
-                    style={{ width: `${segment.width}%` }}
+                    className="focus-visible:ring-ring/70 data-[state=delayed-open]:ring-foreground/20 data-[state=instant-open]:ring-foreground/20 h-full min-w-0 basis-0 rounded-full p-0 shadow-none transition-[box-shadow] hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 data-[state=delayed-open]:ring-1 data-[state=instant-open]:ring-1"
+                    style={{ flexGrow: segment.width }}
                   />
                 </TooltipTrigger>
                 <TooltipContent

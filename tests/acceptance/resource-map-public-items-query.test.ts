@@ -492,8 +492,9 @@ describe("fetchPublicResourceMapItems", () => {
       limit: 200,
       options: {
         enabled: true,
+        ignoreLocalPreviewFile: true,
         localEnginePreviewFile: null,
-        localPreviewFile: null,
+        localPreviewFile: "candidate-records.jsonl",
       },
     })
 

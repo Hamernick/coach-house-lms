@@ -94,6 +94,51 @@ describe("resource-map provider page comparison", () => {
     expect(comparison.matchedSignals).toContain("provider_name_acronym")
   })
 
+  it("treats a terminal legal suffix as optional for an exact provider name", () => {
+    const comparison = compareProviderPageSnapshot(
+      {
+        extractedFields: {
+          organizationName: "Center Harbor Soup Kitchen Inc",
+        },
+      },
+      fetchedSnapshot({
+        finalUrl: "https://host.example.org/community-programs",
+        visibleText:
+          "center harbor soup kitchen provides free meals in center harbor nh",
+        websiteUrl: "https://host.example.org/community-programs",
+      })
+    )
+
+    expect(comparison.status).toBe("supported")
+    expect(comparison.matchedSignals).toContain("exact_provider_name")
+  })
+
+  it("treats possessive punctuation as optional in an exact provider name", () => {
+    const comparison = compareProviderPageSnapshot(
+      { extractedFields: { organizationName: "Jessys Fight Inc" } },
+      fetchedSnapshot({
+        finalUrl: "https://www.jessysfight.example.org/",
+        visibleText: "jessy's fight supports the cancer care community",
+        websiteUrl: "https://www.jessysfight.example.org/",
+      })
+    )
+
+    expect(comparison.matchedSignals).toContain("exact_provider_name")
+  })
+
+  it("matches previously normalized possessive page text", () => {
+    const comparison = compareProviderPageSnapshot(
+      { extractedFields: { organizationName: "Jessys Fight Inc" } },
+      fetchedSnapshot({
+        finalUrl: "https://www.jessysfight.example.org/",
+        visibleText: "jessy s fight supports the cancer care community",
+        websiteUrl: "https://www.jessysfight.example.org/",
+      })
+    )
+
+    expect(comparison.matchedSignals).toContain("exact_provider_name")
+  })
+
   it("supports an established provider acronym in the same-site domain", () => {
     const acronymRecord = {
       ...record,

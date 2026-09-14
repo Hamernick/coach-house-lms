@@ -300,6 +300,12 @@ describe("Core Documents publication", () => {
     expect(panel).toContain(
       'status === "in_progress" ? "bg-amber-500" : "bg-border"'
     )
+    expect(panel).toContain(
+      "flex-col gap-6 sm:flex-row sm:items-center sm:gap-3"
+    )
+    expect(panel).toContain(
+      'headerVariant === "calendar" ? "pt-6" : "pt-2 sm:pt-4"'
+    )
     expect(editor).toContain("expectedLastUpdated: activeSection.lastUpdated")
     expect(editor).toContain("content: draft.content")
     expect(editorShell).toContain(

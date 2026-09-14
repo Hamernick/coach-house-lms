@@ -57,4 +57,16 @@ describe("app shell onboarding redirect", () => {
       })
     ).toBeNull()
   })
+
+  it("keeps explicitly public app-shell content available during onboarding", () => {
+    expect(
+      resolveAppShellOnboardingRedirectTarget({
+        onboardingLocked: true,
+        onboardingIntentFocus: "build",
+        isAdminContext: false,
+        pathname: "/documentation",
+        allowOnboardingLockedContent: true,
+      })
+    ).toBeNull()
+  })
 })

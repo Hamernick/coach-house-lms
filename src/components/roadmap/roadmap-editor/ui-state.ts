@@ -44,8 +44,7 @@ export function deriveRoadmapEditorSectionUi({
     : "not_started"
   const isCalendarSection = activeSection?.id === "board_calendar"
   const isBudgetSection = activeSection?.id === "budget"
-  const contentMaxWidth =
-    isCalendarSection || isBudgetSection ? "max-w-none" : "max-w-3xl"
+  const contentMaxWidth = isBudgetSection ? "max-w-none" : "max-w-3xl"
 
   return {
     activeSection,

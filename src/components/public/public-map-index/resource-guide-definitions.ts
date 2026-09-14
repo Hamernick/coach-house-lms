@@ -1,6 +1,7 @@
 import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapResourceCategoryKey } from "@/lib/public-map/resource-categories"
 import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
+import { PUBLIC_MAP_GOAL_RESOURCE_GUIDE_DEFINITIONS } from "./resource-guide-goal-definitions"
 
 export type PublicMapResourceGuideVisualVariant =
   | "nyc"
@@ -157,6 +158,7 @@ function isNycCoolingCenterItem(item: PublicMapItem) {
 }
 
 export const PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS = [
+  ...PUBLIC_MAP_GOAL_RESOURCE_GUIDE_DEFINITIONS,
   {
     id: "chicago-food-access",
     title: "Chicago Food Access",

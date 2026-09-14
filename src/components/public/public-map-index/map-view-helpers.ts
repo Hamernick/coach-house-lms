@@ -60,7 +60,6 @@ export const PUBLIC_MAP_SELECTED_MARKER_LABEL_LAYER_ID =
 export const PUBLIC_MAP_CLUSTER_RADIUS = 50
 export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 14
 export const PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM = 15.1
-export const ORGANIZATION_MARKER_OFFSET_Y = 0
 
 export type PublicMapOrganizationFeatureCollection = PublicMapFeatureCollection
 
@@ -157,7 +156,6 @@ export function fitMapToOrganizations({
     map.flyTo({
       center: [only.longitude, only.latitude],
       zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-      offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
       duration,
       essential: true,
     })
@@ -240,15 +238,22 @@ export function focusChicagoFallback({
   })
 }
 
-export function resolvePublicMapCameraPadding(sidebarInsetLeft: number) {
-  const normalizedInset = Math.max(0, Math.round(sidebarInsetLeft))
+export function resolvePublicMapCameraPadding(
+  sidebarInsetLeft: number,
+  drawerInsetBottom = 0
+) {
+  const normalizedLeftInset = Math.max(0, Math.round(sidebarInsetLeft))
+  const normalizedBottomInset = Math.max(0, Math.round(drawerInsetBottom))
   return {
     top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
     right: PUBLIC_MAP_CAMERA_EDGE_PADDING,
-    bottom: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+    bottom:
+      normalizedBottomInset > 0
+        ? normalizedBottomInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
+        : PUBLIC_MAP_CAMERA_EDGE_PADDING,
     left:
-      normalizedInset > 0
-        ? normalizedInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
+      normalizedLeftInset > 0
+        ? normalizedLeftInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
         : PUBLIC_MAP_CAMERA_EDGE_PADDING,
   }
 }
@@ -263,7 +268,6 @@ export function focusOrganizationOnMap({
   map.flyTo({
     center: [organization.longitude, organization.latitude],
     zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-    offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
     duration: 780,
     essential: true,
   })

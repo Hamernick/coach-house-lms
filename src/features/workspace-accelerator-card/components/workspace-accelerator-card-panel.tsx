@@ -550,6 +550,9 @@ export function WorkspaceAcceleratorCardPanel({
             {workspaceDrawerEmbedded ? workspaceDrawerHeader : null}
             <WorkspaceAcceleratorCardSidebar
               {...sidebarProps}
+              className={
+                workspaceDrawerEmbedded ? "mx-auto w-full max-w-3xl" : undefined
+              }
               showProgressSummary={false}
               fillAvailableHeight={!workspaceDrawerEmbedded}
               headerControls={

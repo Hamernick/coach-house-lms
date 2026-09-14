@@ -19,6 +19,11 @@ import {
   PublicMapListMetadataStrip,
 } from "./organization-list-card-shared"
 
+const PUBLIC_MAP_ORGANIZATION_LIST_CARD_PERF_STYLE = {
+  ...PUBLIC_MAP_LIST_CARD_PERF_STYLE,
+  containIntrinsicSize: "112px",
+} as const
+
 export function PublicMapPlatformOrganizationListCard({
   constrainedLayout,
   item,
@@ -59,7 +64,7 @@ export function PublicMapPlatformOrganizationListCard({
   return (
     <article
       key={org.id}
-      style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
+      style={PUBLIC_MAP_ORGANIZATION_LIST_CARD_PERF_STYLE}
       className={cn(
         "text-foreground relative w-full max-w-full min-w-0 overflow-hidden bg-transparent",
         PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
@@ -78,12 +83,12 @@ export function PublicMapPlatformOrganizationListCard({
         aria-label={`Open details for ${org.name}`}
         onClick={openDetails}
         className={cn(
-          "group relative z-10 flex min-h-20 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
+          "group relative z-10 flex min-h-28 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
           "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
           selected
             ? "bg-accent text-accent-foreground dark:bg-accent/50"
             : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-          constrainedLayout ? "p-3" : "p-4"
+          constrainedLayout ? "p-2.5" : "p-3"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -95,7 +100,7 @@ export function PublicMapPlatformOrganizationListCard({
       >
         <div
           className={cn(
-            "flex min-w-0 items-center",
+            "flex min-w-0 items-stretch",
             constrainedLayout ? "gap-3" : "gap-4"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -107,7 +112,7 @@ export function PublicMapPlatformOrganizationListCard({
           <Avatar
             className={cn(
               "border-border/60 mt-0.5 rounded-xl border",
-              constrainedLayout ? "size-11" : "size-12",
+              constrainedLayout ? "size-24" : "size-28",
               hasLogoImage && "bg-white"
             )}
             {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -120,16 +125,16 @@ export function PublicMapPlatformOrganizationListCard({
               src={avatarImageSrc}
               alt={org.name}
               className={cn(
-                hasLogoImage ? "object-contain p-1.5" : "object-cover"
+                hasLogoImage ? "object-contain p-3" : "object-cover"
               )}
             />
-            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-xs font-semibold">
+            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-base font-semibold">
               {fallbackInitials}
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
             <p
-              className="text-foreground truncate text-base leading-snug font-semibold"
+              className="text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -138,7 +143,13 @@ export function PublicMapPlatformOrganizationListCard({
             >
               <PublicMapHighlightedText query={query} text={org.name} />
             </p>
+            {org.tagline ? (
+              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-snug text-pretty">
+                <PublicMapHighlightedText query={query} text={org.tagline} />
+              </p>
+            ) : null}
             <PublicMapListMetadataStrip
+              className="mt-1.5"
               itemKeyPrefix="category"
               items={categoryMetadataItems}
               notes="Primary category for the organization list card."

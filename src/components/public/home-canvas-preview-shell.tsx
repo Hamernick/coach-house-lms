@@ -17,7 +17,7 @@ import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
 import { BuildCollectPublicHeader } from "@/features/build-collect-navigation"
 import { cn } from "@/lib/utils"
 
-function HomeCanvasMobileSidebarTrigger() {
+function HomeCanvasMobileSidebarTrigger({ label }: { label: string }) {
   const { isMobile, openMobile, toggleSidebar } = useSidebar()
 
   if (!isMobile) return null
@@ -28,11 +28,7 @@ function HomeCanvasMobileSidebarTrigger() {
       variant="outline"
       size="icon"
       className="text-muted-foreground hover:bg-foreground/5 hover:text-foreground size-11 touch-manipulation rounded-md border-[color:var(--shell-border)] bg-transparent shadow-none md:hidden"
-      aria-label={
-        openMobile
-          ? "Close Find, Guides, and Saved"
-          : "Open Find, Guides, and Saved"
-      }
+      aria-label={openMobile ? `Close ${label}` : `Open ${label}`}
       aria-expanded={openMobile}
       onClick={toggleSidebar}
     >
@@ -135,6 +131,7 @@ type HomeCanvasPreviewHeaderProps = {
   showAuthActions?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
+  sidebarLabel?: string
 }
 
 export function HomeCanvasPreviewHeader({
@@ -146,6 +143,7 @@ export function HomeCanvasPreviewHeader({
   showAuthActions = true,
   showShellSidebar,
   showRightRailToggle,
+  sidebarLabel = "Find, Guides, and Saved",
 }: HomeCanvasPreviewHeaderProps) {
   const rightRailLabel =
     activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
@@ -174,7 +172,9 @@ export function HomeCanvasPreviewHeader({
       }
       shellActions={
         <>
-          {showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null}
+          {showShellSidebar ? (
+            <HomeCanvasMobileSidebarTrigger label={sidebarLabel} />
+          ) : null}
           {showRightRailToggle ? (
             <Button
               variant="ghost"

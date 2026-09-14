@@ -191,9 +191,9 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("does not duplicate Find in the sidebar resource nav", () => {
+  it("keeps Documentation and Community in the sidebar resource nav", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
-      "Knowledge base",
+      "Documentation",
       "Community",
     ])
     expect(

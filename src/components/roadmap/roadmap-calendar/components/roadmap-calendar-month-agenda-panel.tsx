@@ -3,6 +3,7 @@
 import { memo } from "react"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
+import CircleIcon from "lucide-react/dist/esm/icons/circle"
 
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +33,7 @@ import {
 } from "./roadmap-calendar-month-agenda-panel-parts"
 
 type RoadmapCalendarMonthAgendaPanelProps = {
+  compactHeaderControls?: boolean
   month: Date
   selectedDate: Date | undefined
   events: RoadmapCalendarEvent[]
@@ -57,6 +59,7 @@ const ROADMAP_CALENDAR_MONTH_AGENDA_PANEL_SOURCE =
 
 export const RoadmapCalendarMonthAgendaPanel = memo(
   function RoadmapCalendarMonthAgendaPanel({
+    compactHeaderControls = false,
     month,
     selectedDate,
     events,
@@ -86,11 +89,11 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
     return (
       <section
         className={cn(
-          "border-border/60 bg-muted/45 flex max-h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full flex-col overflow-hidden rounded-[30px] border p-2.5",
+          "border-border/60 bg-muted/45 mx-auto flex max-h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-[30px] border p-2.5",
           className
         )}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pt-1 pb-3">
+        <div className="grid grid-cols-1 items-center gap-2 px-2 pt-1 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-foreground shrink-0 text-lg font-semibold tracking-normal whitespace-nowrap">
               {formatMonthLabel(month)}
@@ -102,21 +105,12 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               {events.length}
             </Badge>
           </div>
-          <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5 justify-self-end">
             <RoadmapCalendarAddEventMenu
               disabled={!canManageCalendar}
+              iconOnly={compactHeaderControls}
               onOpenCreate={onOpenCreate}
             />
-            {showTodayButton ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-8 rounded-full px-3 text-sm shadow-none"
-                onClick={onGoToToday}
-              >
-                Today
-              </Button>
-            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -127,6 +121,26 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             >
               <ChevronLeftIcon data-icon aria-hidden />
             </Button>
+            {showTodayButton ? (
+              <Button
+                type="button"
+                variant="outline"
+                size={compactHeaderControls ? "icon" : "default"}
+                className={cn(
+                  "h-8 rounded-full shadow-none",
+                  compactHeaderControls ? "w-8" : "px-3 text-sm"
+                )}
+                onClick={onGoToToday}
+                aria-label={compactHeaderControls ? "Go to today" : undefined}
+                title={compactHeaderControls ? "Go to today" : undefined}
+              >
+                {compactHeaderControls ? (
+                  <CircleIcon className="size-2 fill-current" aria-hidden />
+                ) : (
+                  "Today"
+                )}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -141,7 +155,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
         </div>
 
         <div
-          className="bg-background flex min-h-0 flex-col rounded-[24px] px-3 py-3"
+          className="bg-background flex min-h-0 w-full flex-col rounded-[24px] px-3 py-3"
           {...getReactGrabOwnerProps({
             ownerId: "roadmap-calendar-month-agenda:month-grid",
             component: "RoadmapCalendarMonthAgendaPanel",

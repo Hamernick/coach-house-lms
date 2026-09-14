@@ -223,6 +223,183 @@ international, animal welfare, and organization-support before taxonomy
 classification. These rows still require source/license review and normal
 quality flags before any public display.
 
+National EO extracts should use the streaming acquisition path instead of the
+general connector, which retains a fetched payload in memory:
+
+```bash
+pnpm resource-map:eo-import -- --input /path/eo1.csv,/path/eo2.csv --write
+pnpm resource-map:eo-run -- --batch 250 --write
+```
+
+Before scaling research workers, benchmark the complete corpus independently of
+the direct-service shortlist:
+
+```bash
+pnpm resource-map:eo-plan-benchmark -- --input /path/eo1.csv,/path/eo2.csv --sample 10000
+pnpm resource-map:eo-plan-benchmark -- --input /path/eo1.csv,/path/eo2.csv --sample 10000 --write
+```
+
+The planner streams and deduplicates all valid EINs, excludes the existing
+research-result ledger, and uses bounded per-stratum heaps rather than retaining
+the corpus in sortable arrays. The coverage cohort is balanced by filing state
+and NTEE major group; each row includes its stratum population, selected count,
+and projection weight so measured costs and yields can be reweighted to the
+actual corpus. The manifest signs the cohort and identity-event outputs.
+
+The companion append-only control plane begins each selected record at `unseen`
+and admits only versioned transitions through discovery, identity, source fetch,
+evidence extraction, entity resolution, enrichment, independent verification,
+batch readiness, curated preview, approval, and publication. Explicit exception
+states cover duplicates, inactivity, missing public presence, non-public
+services, robots restrictions, unreachable sources, conflicts, and human review.
+Every transition requires hashed evidence and fails closed on tampering or an
+out-of-order prior state. Benchmark generation itself stops at
+`identity_resolved` and has no publication capability.
+
+Convert the signed cohort into small resumable discovery assignments:
+
+```bash
+pnpm resource-map:eo-plan-work -- --package-size 25
+pnpm resource-map:eo-plan-work -- --package-size 25 --write
+pnpm resource-map:eo-work-lease -- --action status --plan <plan-directory>
+pnpm resource-map:eo-work-lease -- --action claim --plan <plan-directory> --worker <worker-id> --write
+```
+
+Package files and the plan manifest are immutable and hash-verified before a
+claim is returned. A local claim is an atomic directory operation. Workers write
+immutable heartbeats, then a hashed completion or failure receipt. Expired claims
+move to history and can be reclaimed; retry attempts are retained; a third
+failure or explicitly non-retryable failure moves the package to dead-letter.
+The status command reports active, completed, expired, failed-attempt,
+dead-letter, and remaining package counts without mutating state.
+
+Plan search and shared provider fetching for a claimed package:
+
+```bash
+pnpm resource-map:eo-plan-search -- --package <package.json>
+pnpm resource-map:eo-plan-search -- --package <package.json> --adapter-results <results.jsonl>
+pnpm resource-map:eo-plan-search -- --package <package.json> --adapter-results <results.jsonl> --write
+```
+
+The signed request plan sends each bounded query through local evidence,
+authoritative directories, the self-hosted evidence index, deterministic domain
+hypotheses, a bounded public crawler, and finally a sandboxed browser. All tiers
+prohibit paid providers. Common Crawl is reserved for history lookup after a
+candidate URL is known because its index is not full-text organization search.
+Normalized adapter results remain discovery hints. The shared-fetch plan removes tracking
+parameters, deduplicates exact URLs across EIN consumers, rejects social and
+directory pages as provider fetches, caps each exact host, and creates one robots
+request per origin. Host policies require serial requests, a minimum delay,
+manual redirect validation, and no credentials. No request executes in this
+planning command.
+
+Run the offline tiers against a signed plan:
+
+```bash
+pnpm resource-map:eo-run-search-adapter -- --plan <search-plan.json> --adapter local_evidence_cache --input <candidate-sets.jsonl>
+pnpm resource-map:eo-run-search-adapter -- --plan <search-plan.json> --adapter authoritative_directory_index --input <directory-records.jsonl>
+```
+
+The cache adapter keys only by EIN. The directory adapter keys first by exact
+EIN, then exact normalized provider name plus state. Accepted source kinds are
+government, provider, 211, and food-bank directories. Every accepted candidate
+retains the human-facing directory URL and a deterministic input-row hash.
+Unmatched queries return `miss`, not a terminal no-result finding. Both adapters
+report zero network and paid queries and write only with explicit `--write`.
+
+Plan the owned discovery tiers after generating the signed search plan:
+
+```bash
+pnpm resource-map:eo-plan-owned-discovery -- \
+  --plan <search-plan.json> \
+  --candidate-cache <candidate-sets.jsonl> \
+  --directory-records <directory-records.jsonl> \
+  --evidence-documents <evidence.jsonl>
+```
+
+The command defaults to a no-write dry run and never uses the network. It builds
+a content-addressed private index from source-backed evidence, retrieves only by
+exact EIN or exact normalized provider name plus state, and creates at most two
+unverified `.org` hypotheses for distinctive names. Generic names receive no
+domain hypothesis. The resulting shared-fetch plan deduplicates URLs across
+organizations, caps exact hosts, and schedules robots checks. Add `--write` only
+after reviewing the report. Fetch execution remains a separate future gate.
+
+The importer deduplicates by EIN and writes a private, identity-only discovery
+pool under `data/resource-map/.engine/eo/`. It preserves the filing address as
+`filingAddress`, explicitly sets `serviceLocation` to `null`, and never marks a
+record public-display eligible. `resource-map:eo-run` deterministically balances
+the next research batch across category hints and filing states. Search work is
+checkpointed by applying evidence results:
+
+```bash
+pnpm resource-map:eo-run -- --resume --results /path/results.jsonl --write
+```
+
+Each result needs an EIN and `acquisitionStatus`. Non-held results require a
+provider website; statuses beyond `website_matched` require evidence URLs.
+
+Store bounded web-search results as ignored JSONL, then validate them:
+
+```json
+{
+  "ein": "123456789",
+  "searchCompleted": true,
+  "candidates": [
+    {
+      "url": "https://provider.org/",
+      "candidateKind": "provider_website",
+      "title": "Provider",
+      "snippet": "...",
+      "rank": 1
+    }
+  ]
+}
+```
+
+```bash
+pnpm resource-map:eo-resolve-websites -- --candidates /path/search-candidates.jsonl
+pnpm resource-map:eo-resolve-websites -- --candidates /path/search-candidates.jsonl --network true --write
+pnpm resource-map:eo-collect-service-evidence -- --ein 123456789 --max-records 1 --max-pages 3
+pnpm resource-map:eo-collect-service-evidence -- --ein 123456789 --max-records 1 --max-pages 3 --network true --write
+pnpm resource-map:eo-build-private-drafts -- --max-records 25
+pnpm resource-map:eo-build-private-drafts -- --max-records 25 --write
+```
+
+The first command is offline and dry-run-only. The second safely fetches at most
+three provider candidates per organization, caches bounded page evidence for 30
+days, and writes private `website_matched` or `held` results. Social profiles and
+directory pages remain evidence candidates, never primary provider websites.
+Apply the results through `resource-map:eo-run -- --resume --results <file>`.
+Strong matches also retain provider-linked social profiles, visible email and
+phone contacts, same-site service/access page candidates, and image candidates.
+These remain private evidence: service pages still require fetching and field
+comparison, while media remains non-publishable pending rights review.
+`verified` and `ready_for_review` require a supported provider identity, and
+`ready_for_review` also requires a source-supported service. Applied results
+remain private and publication-blocked.
+
+The service-evidence command accepts only already-supported provider results.
+It checks the confirmed provider page first, then retained same-site links, and
+never crawls recursively. Network access and local writes are separate opt-ins;
+fresh website snapshots seed the cache before the versioned 30-day service cache
+is consulted. The output keeps bounded, source-linked candidate snippets for
+services, access, eligibility, hours, and service areas while leaving structured
+`services`, `serviceAreas`, and other public fields unchanged. Only explicit
+service evidence advances a row to `evidence_fetched`; access, hours, or
+eligibility evidence alone leaves it `website_matched`. Apply its private result
+file through `resource-map:eo-run -- --resume --results <file>` only after
+inspecting the evidence output.
+
+The private-draft command is offline and dry-run-first. It joins supported
+research results back to the IRS identity pool, but never copies an IRS filing
+address into a service location. It groups retained source snippets into
+candidate service, access, eligibility, hours, and service-area fields and
+retains provider-linked contacts, socials, and unreviewed media separately.
+Output stays under the ignored `.engine/eo/` store with location and coordinate
+candidates empty until provider evidence supports them. Re-running the same
+bounded input produces the same draft evidence hash and merged JSONL output.
+
 `rss_atom` uses the XML parser path. RSS `<item>` and Atom `<entry>` rows map
 paired tags plus Atom `link href` and `category term/label` attributes into
 candidate title, description, source category text, website URL, source URL,

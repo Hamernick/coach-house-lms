@@ -2,6 +2,9 @@ import { createHash } from "node:crypto"
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
 
+import { extractProviderPageSignals } from "./provider-page-signals.mjs"
+import { extractSourcePageEvidence } from "./source-evidence.mjs"
+
 const MAX_BODY_BYTES = 1_500_000
 const MAX_REDIRECTS = 5
 const REQUEST_HEADERS = {
@@ -54,8 +57,19 @@ function normalizeText(value) {
     .replace(/&(?:nbsp|#160);/giu, " ")
     .replace(/&#(?:39|x27);|&apos;/giu, "'")
     .replace(/&(?:quot|#34);/giu, '"')
+    .replace(/['’]s\b/gu, "s")
     .replace(/[^a-z0-9]+/gu, " ")
     .replace(/\s+/gu, " ")
+    .replace(/\b([a-z0-9]+) s\b/gu, "$1s")
+    .trim()
+}
+
+export function normalizeProviderNameForExactMatch(value) {
+  return normalizeText(value)
+    .replace(
+      /\b(?:co|company|corp|corporation|inc|incorporated|limited|llc|ltd)\b$/u,
+      ""
+    )
     .trim()
 }
 
@@ -258,12 +272,22 @@ export async function fetchProviderPageSnapshot(
     }
     const html = await readLimitedBody(response)
     const visibleText = visiblePageText(html)
+    const pageEvidence = extractSourcePageEvidence({
+      body: html,
+      contentType,
+      url: response.url || websiteUrl,
+    })
     return {
       ...base,
       contentHash: createHash("sha256").update(html).digest("hex"),
       evidenceSnippet: visibleText.slice(0, 2_000),
       fetchStatus: "fetched",
       pageTitle: readPageTitle(html),
+      pageEvidence,
+      pageSignals: extractProviderPageSignals({
+        html,
+        url: response.url || websiteUrl,
+      }),
       visibleText,
     }
   } catch (error) {
@@ -289,14 +313,14 @@ export function compareProviderPageSnapshot(record, snapshot) {
   ]
     .map(readString)
     .filter(Boolean)
-  const text = snapshot.visibleText ?? ""
+  const text = normalizeText(snapshot.visibleText ?? "")
   const allTokens = [...new Set(providerNames.flatMap(meaningfulNameTokens))]
   const matchedTokens = allTokens.filter((token) => text.includes(token))
   const tokenCoverage = allTokens.length
     ? matchedTokens.length / allTokens.length
     : 0
   const exactName = providerNames.some((name) => {
-    const normalized = normalizeText(name)
+    const normalized = normalizeProviderNameForExactMatch(name)
     return normalized.length >= 5 && text.includes(normalized)
   })
   const pageTokens = new Set(normalizeText(text).split(" "))

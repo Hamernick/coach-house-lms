@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
+import { type ReactNode, useMemo } from "react"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
@@ -45,6 +45,7 @@ export type AppSidebarProps = {
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  contextualNavigation?: ReactNode
 }
 
 export function AppSidebar({
@@ -68,6 +69,7 @@ export function AppSidebar({
   showCoachScheduling = false,
   showWorkspaceHome = true,
   showMemberWorkspace,
+  contextualNavigation,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -102,6 +104,7 @@ export function AppSidebar({
         showCoachScheduling={showCoachScheduling}
         showWorkspaceHome={showWorkspaceHome}
         showMemberWorkspace={showMemberWorkspace}
+        contextualNavigation={contextualNavigation}
       />
     </aside>
   )
@@ -135,6 +138,7 @@ type SidebarBodyProps = {
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  contextualNavigation?: ReactNode
 }
 
 export function SidebarBody({
@@ -160,6 +164,7 @@ export function SidebarBody({
   showCoachScheduling = false,
   showWorkspaceHome = true,
   showMemberWorkspace,
+  contextualNavigation,
 }: SidebarBodyProps) {
   const isCoach = platformAccessLevel === "coach"
   const shouldShowAccelerator =
@@ -194,6 +199,7 @@ export function SidebarBody({
         {onboardingLocked ? null : (
           <NavMain items={mainNavItems} className="py-0" />
         )}
+        {contextualNavigation}
         {shouldShowAccelerator && showClasses ? (
           <ClassesSection
             classes={classes}

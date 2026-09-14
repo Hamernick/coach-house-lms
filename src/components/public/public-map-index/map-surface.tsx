@@ -114,6 +114,7 @@ type PublicMapSurfaceProps = {
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
   onSidebarInsetChange?: (value: number) => void
+  onDrawerInsetChange?: (value: number) => void
   searchContext?: PublicMapSidebarSearchContext | null
   mapOverlay?: ReactNode
   renderDesktopSidebar?: boolean
@@ -174,6 +175,7 @@ export function PublicMapSurface({
   onSidebarModeChange,
   onAuthSheetOpenChange,
   onSidebarInsetChange,
+  onDrawerInsetChange,
   searchContext = null,
   mapOverlay = null,
   renderDesktopSidebar = true,
@@ -290,6 +292,7 @@ export function PublicMapSurface({
           onSelectItem={onSelectItem}
           onOpenDetails={onOpenOrgDetails}
           onBackToSearch={onBackToSearch}
+          onDrawerInsetChange={onDrawerInsetChange}
           setSidebarMode={onSidebarModeChange}
         />
       ) : null}

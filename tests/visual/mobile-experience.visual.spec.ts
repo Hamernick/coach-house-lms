@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { mobileScreenshotName } from "./mobile-screenshot-name"
 
 const route = "/visual-regression/mobile-experience?react-grab=0"
 
@@ -31,7 +32,7 @@ for (const width of [320, 390]) {
         )
       ).toBe(true)
       await expect(page).toHaveScreenshot(
-        `mobile-navigation-${width}-${theme}.png`,
+        mobileScreenshotName(`mobile-navigation-${width}-${theme}.png`),
         { animations: "disabled", scale: "css" }
       )
     })

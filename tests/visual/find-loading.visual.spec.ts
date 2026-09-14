@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { mobileScreenshotName } from "./mobile-screenshot-name"
 
 async function openFindLoading(
   page: Page,
@@ -225,7 +226,7 @@ for (const width of [320, 390]) {
     await resourceList.evaluate(e => { e.scrollTop = e.scrollHeight })
     await expect.poll(() => resourceList.evaluate(e => Math.abs(e.scrollHeight - e.clientHeight - e.scrollTop))).toBeLessThan(1)
     await expect(dock.getByRole("button", { name: "Profile", exact: true })).toBeVisible()
-    await expect(page).toHaveScreenshot(`find-map-panel-expanded-${width}.png`, { animations: "disabled", maxDiffPixelRatio: 0.005 })
+    await expect(page).toHaveScreenshot(mobileScreenshotName(`find-map-panel-expanded-${width}.png`), { animations: "disabled", maxDiffPixelRatio: 0.005 })
     await page.getByRole("button", { name: "Resize resource map panel to full height" }).press("ArrowDown")
     await expect(page.getByRole("searchbox", { name: "Find resources" })).toBeHidden()
     await expect.poll(async () => Math.abs((await dock.boundingBox())!.y - initialDockBox!.y)).toBeLessThan(1)

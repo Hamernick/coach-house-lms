@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { mobileScreenshotName } from "./mobile-screenshot-name"
 
 test("public Build landing and hover navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -60,7 +61,7 @@ test("public Build landing stays within a mobile viewport", async ({
     )
   ).toBe(false)
 
-  await expect(page).toHaveScreenshot("public-build-landing-mobile.png", {
+  await expect(page).toHaveScreenshot(mobileScreenshotName("public-build-landing-mobile.png"), {
     animations: "disabled",
     caret: "hide",
     maxDiffPixelRatio: 0.02,

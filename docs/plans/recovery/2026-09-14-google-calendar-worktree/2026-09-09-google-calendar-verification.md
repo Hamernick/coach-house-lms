@@ -196,57 +196,79 @@ preparation remain. No video or submission exists.
 Status: implementation ready for continued review. Google has not approved Calendar data access. A callback
 fix now preserves unconsumed OAuth state when Google explicitly returns incomplete
 Calendar permissions; 21 focused tests pass, including correction/replay and token
-scope regressions. Live import is still unverified. Do not submit a demonstration
-that implies the import is working until the canary succeeds. Joel's Google Cloud
-Console is accessible again as of September 9, 19:39 UTC. Branding is verified;
-Calendar event-read access remains unverified.
+scope regressions. Caleb's live import, manual refresh, pause/resume and disconnect
+canary passed: all six private demo occurrences imported, the renamed event updated,
+pause hid it, resume restored it, and disconnect cleared the credential/cache while
+preserving the Google source events and existing Drive connection record. The
+September 10 review added the missing Drive disclosure and applied a compatible
+2026-09-10.1 consent migration. Joel's Google Cloud sign-in and Chrome page control
+are now restored. Calendar data access remains unverified. The user confirmed
+Southside Community Table is sample data suitable for the recording; its
+localhost:3000 Calendar switch now opens setup after local configuration and
+registration of the matching Google callback. No fresh OAuth request was started.
 
 ## Current remaining order
 
 1. Done: privacy release merged, deployed and verified on coachhouse.app.
-2. Done: form review and homepage legal-link release. PR #234 merged; both live
-   homepage links open the correct policies. Scope/appeal drafts remain prepared;
-   Google Save still needs the actual video URL.
-3. Finish the native recorder region, Do Not Disturb and readability setup.
-   Audio is optional. The walkthrough tabs and continuous-take cue sheet are ready.
-4. Record one continuous walkthrough: homepage, Google Sign-In, Calendar consent
-   and features, then Drive consent and sample-file use. Preserve the demo until
-   the on-camera disconnect/reconnect steps; restore both connections by the end.
-5. Review the actual footage, mask unrelated calendar/account labels and incidental
-   sensitive query values, then finalize English captions, title and description.
+2. Form review complete; homepage legal links are ready in PR #234. Obtain the
+   required code-owner approval, merge, and verify both links on the public page.
+   Scope/appeal drafts are prepared; Google Save still needs the actual video URL.
+3. Prepare the recorder crop, Do Not Disturb and a short readability test.
+   Audio is optional; use English text captions if recording silently.
+4. Record the real OAuth grants and rehearsed Sign-In, Drive and Calendar features
+   with caleb@bandto.com and Southside. Preserve the working demo until recording.
+5. Review the actual footage, remove unintended sensitive information, and finalize
+   captions, title and description against the capabilities actually shown.
 6. The user uploads the reviewed video as Unlisted and supplies its watch URL;
    verify playback from that URL.
-7. Add the real video URL and corrected explanations, address the remaining
+7. Add the real video URL and corrected explanations, address any remaining
    app-name issue, review the complete verification request, and submit.
 8. Prepare the separate focused Calendar production release during Google's review;
    after approval, deploy/activate and verify a controlled production canary.
 
-## Historical September 9 execution plan — current status is above
+## Historical September 10 execution plan — current status is above
 
-1. Inspect existing Google sessions before starting consent. Done: Joel is signed
-   in and the verification form is accessible. After the user returned, started
-   one fresh Caleb request at 20:20 UTC after creating the safe demo calendar.
-   Its warning remained open and the database confirms expiry at 20:30:07 UTC.
-   Zero Calendar connections were present at that check. Wait for the human
-   operator to be ready before creating another request; do not reuse the expired one.
-2. Implement the Calendar privacy disclosure and compatible signup-consent update.
-   Done locally, with the database migration applied and verified. The public
-   privacy page has not been deployed.
-3. Complete Caleb's real import, privacy, pause/resume and disconnect canary. Pending
-   successful consent; keep optional export off. Do not use test mocks as live evidence.
+1. Inspect existing Google sessions before starting consent. Done: the user
+   completed Caleb's authorization; callback created a real Calendar connection
+   and consumed the OAuth intent. No consent retry was needed to run the canary.
+2. Implement the Calendar/Drive privacy disclosures and compatible signup consent.
+   Done locally; both consent migrations are applied and verified. The September 10
+   follow-up covers selected-file metadata, optional import copies, sharing,
+   retention and Drive disconnect. The public privacy page has not been deployed.
+3. Complete Caleb's real import, privacy labels, pause/resume and disconnect canary.
+   Passed with only Coach House Demo selected and export off. Backend cache contained
+   exactly six demo occurrences and no export destinations. Manual refresh completed
+   at 2026-09-09T21:50:58.799Z. Disconnect left status disconnected, enabled false,
+   zero selections/caches, and no retained Calendar credential. Drive remained
+   connected with its unchanged September 3 update timestamp. This verifies the
+   private canary and service storage; a second-user live visibility test was not run.
 4. Record the working flow and prepare the actual unlisted demonstration video.
-   Pending the canary. No recording or upload exists.
+   Calendar rehearsal passed. Saved and reloaded the localhost:3012 Sign-In origin,
+   Drive callback and Picker website restriction; local login is enabled. Local
+   Drive lacks private configuration, while the production settings are present
+   as unreadable secrets. Prepare production Sign-In/Drive footage with the chosen
+   demo account. Southside is the confirmed demo workspace on localhost:3000;
+   Drive rehearsal and recorder setup remain pending. No recording or upload exists.
 5. Finish Console verification details and submit the completed request. Pending
    the reviewed public privacy release, the actual video and the app-name appeal
-   field now displayed by the submission form. Joel's sign-in is complete.
+   field previously displayed by the submission form. Joel is signed in.
 6. Complete release validation, deploy through the repository workflow and activate
    Calendar/scheduling when rollout is ready. Production is still disabled.
 
-Validation in this follow-up: 28 focused acceptance tests; isolated PostgreSQL tests
-for exact consent hashes, prior-version compatibility, immutable records, server
-timestamps and role restrictions; all 16 static-quality stages including lint and
-snapshots; local browser confirmation of the Calendar disclosure and effective date.
-The full release quality gate was not repeated against shared production credentials.
+September 10 validation: 28 focused acceptance tests; isolated PostgreSQL tests
+for all four exact consent tuples, mismatched-version/hash rejection, immutable
+records, server timestamps and role restrictions; all 16 static-quality stages
+including lint and snapshots (49.44 seconds); and live migration/function checks.
+The updated local policy was not visually rechecked after Chrome's extension block.
+
+Before this follow-up, 80 of 84 Calendar implementation/test files were byte-identical
+to the combined Documents/Calendar checkout that passed all 21 quality stages.
+The four differences are its documented Drive README/service, acceptance manifest
+and Documentation browser-test integrations. This new privacy correction is not
+yet in that combined checkout. An eight-file patch and source-hash manifest are at
+`test-results/drive-privacy-consent-20260910/` in this Calendar worktree;
+`git apply --check` passed against the combined checkout without changing it.
+Carry that correction into the final release and validate the resulting snapshot.
 
 ## Application and project
 
@@ -372,11 +394,13 @@ actual video before uploading it. No recording or upload has been created yet.
 
 ## Submission completion
 
-After remaining recording preparation is complete, the reviewed privacy release is
+After the remaining recording preparation is complete, the reviewed privacy release is
 available, and the video exists: verify branding status, confirm the exact declared
 scopes, save the scope justification and video URL in Google Auth Platform, review
 the completed submission, and submit the Calendar data-access verification request.
 Track the actual Google review result; submitting does not mean approved.
 
-Sources: [Google sensitive-scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification),
+Sources: [Google user-data disclosure requirements](https://support.google.com/cloud/answer/13464321?hl=en),
+[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
+[Google sensitive-scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification),
 [Google submission requirements](https://support.google.com/cloud/answer/13461325?hl=en).

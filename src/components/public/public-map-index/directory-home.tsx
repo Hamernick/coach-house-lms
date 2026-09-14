@@ -139,11 +139,9 @@ export function PublicMapDirectoryHome({
               </p>
             </div>
             <p>
-              Optional Google connections let you sign in, link or import Drive
-              files you choose, and view selected calendars in your private
-              agenda. You can also export board events to a separate Google
-              calendar created by Coach House. Manage connections in Workspace
-              Tools.
+              Google connections are optional. Sign in with Google and manage
+              your Drive connection in Workspace Tools. Drive file import and
+              Google Calendar syncing are coming soon.
             </p>
           </section>
           <nav aria-label="Legal" className="flex justify-center gap-2">

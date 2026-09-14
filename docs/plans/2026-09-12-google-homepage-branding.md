@@ -50,3 +50,26 @@ Review the small homepage diff, complete responsive light/dark visual checks in
 the isolated worktree, run the required release checks, then publish through a
 small PR. After deployment, confirm the public text and links. Handle any Google
 review email in the existing submission; final approval remains Google's decision.
+
+
+## September 14 release review
+
+- PR #236 is an independent change against main. Its original published head
+  ef0bf7ab passed the complete quality CI.
+- Hosted preview reviewed in Bandto Chrome at desktop width and 390px: the
+  About section sits below the NFP claim prompt, above working Privacy/Terms
+  links, with wrapping text and no added controls. Preview resource data is
+  empty; the existing mobile map-control overlap belongs to #235.
+- Corrected release wording: production supports optional Google Sign-In and
+  Drive connection management; Drive file import and Calendar syncing remain
+  in unreleased PRs. The homepage now explicitly describes those as coming soon.
+- Current production verified in Vercel: calebs-projects-58ab1538/coachhouse,
+  deployment 8FNjMjaMmPP389fbKy1W1QQwV5kP, source main/cb9287b1, Ready,
+  with coachhouse.app and coachhouse.vercel.app assigned. Production environment
+  branch tracking is main. The separate coach-house-platform project also
+  builds PRs but does not establish ownership of coachhouse.app.
+- Local Vercel CLI authentication returns 403 Not authorized; used the existing
+  signed-in Bandto Chrome profile for read-only provider verification. No
+  credential, provider setting, database, main merge, or production change.
+- The corrected commit needs its own passing CI and final hosted copy check,
+  then normal code-owner approval. Do not bypass branch protection.

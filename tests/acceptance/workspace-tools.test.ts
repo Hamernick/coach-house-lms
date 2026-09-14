@@ -14,9 +14,10 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace-tools feature contract", () => {
-  it("offers the approved Stripe and Google Drive catalog", () => {
+  it("offers the approved Stripe, Calendar, and Google Drive catalog", () => {
     expect(WORKSPACE_TOOL_DEFINITIONS.map((tool) => tool.id)).toEqual([
       "stripe",
+      "google-calendar",
       "google-drive",
     ])
     expect(
@@ -32,8 +33,8 @@ describe("workspace-tools feature contract", () => {
     expect(
       WORKSPACE_TOOL_DEFINITIONS.filter((tool) =>
         workspaceToolMatchesQuery(tool, "calendar")
-      )
-    ).toEqual([])
+      ).map((tool) => tool.id)
+    ).toEqual(["google-calendar"])
   })
 
   it("reuses the authorized Finance Stripe owner", () => {

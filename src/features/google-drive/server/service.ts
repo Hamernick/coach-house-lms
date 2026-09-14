@@ -25,6 +25,7 @@ import {
   exchangeGoogleDriveCode,
   getGoogleDriveFile,
   refreshGoogleDriveAccessToken,
+  revokeGoogleDriveToken,
 } from "./google-api"
 import {
   decryptGoogleDriveSecret,

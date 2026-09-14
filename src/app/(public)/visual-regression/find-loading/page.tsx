@@ -7,7 +7,7 @@ import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
 import {
   FindMapLoadingSidebar,
   FindMapLoadingState,
-} from "@/features/find-map/components/find-map-loading-state"
+} from "@/features/find-map"
 import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
 export default async function FindLoadingVisualRegressionPage({

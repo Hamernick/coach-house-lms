@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import styles from "@/components/public/public-map-index/map-surface.module.css"
+import { mobileMapControlStyles as styles } from "@/features/mobile-navigation"
 
 import { AppShell } from "@/components/app-shell"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,7 @@ import { PublicMapLocationControl } from "@/components/public/public-map-index/l
 import { PublicMapMemberOnboardingPreviewToggle } from "@/components/public/public-map-index/member-onboarding-preview-controls"
 import { PublicMapMemberOnboardingOverlay } from "@/components/public/public-map-index/member-onboarding-overlay"
 import { PublicMapSidebarDrawer } from "@/components/public/public-map-index/sidebar-drawer"
-import { FindMapWeatherCard } from "@/features/find-map/components/find-map-weather-card"
+import { FindMapWeatherCard } from "@/features/find-map/client"
 
 export function MobileMapFixture() {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)

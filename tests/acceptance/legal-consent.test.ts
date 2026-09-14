@@ -78,6 +78,8 @@ describe("legal consent", () => {
       "financial",
       "location",
       "retention",
+      "Google Drive",
+      "Google Calendar",
     ]) {
       expect(privacyText).toContain(disclosure)
     }
@@ -129,7 +131,7 @@ describe("legal consent", () => {
       "utf8"
     )
     const currentConsentMigration = readFileSync(
-      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "supabase/migrations/20260910120000_accept_drive_privacy_consent.sql",
       "utf8"
     )
     expect(migration).toContain("references auth.users(id) on delete cascade")
@@ -154,6 +156,9 @@ describe("legal consent", () => {
     expect(currentConsentMigration).toContain(
       "consent ->> 'version' = '2026-08-12.1'"
     )
+    expect(currentConsentMigration).toContain(
+      "consent ->> 'version' = '2026-09-09.1'"
+    )
 
     const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
     expect(rlsSuite).toContain(
@@ -175,7 +180,7 @@ describe("legal consent", () => {
 
   it("rejects public signup without current server-validated consent", () => {
     const migration = readFileSync(
-      "supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql",
+      "supabase/migrations/20260910120000_accept_drive_privacy_consent.sql",
       "utf8"
     )
     expect(migration).toContain(
@@ -187,5 +192,22 @@ describe("legal consent", () => {
       "new.raw_user_meta_data ->> 'legal_consent_exempt'"
     )
     expect(migration).toContain("coalesce(new.created_at, now())")
+  })
+
+  it("provisions every live RLS fixture with current consent, not an exemption", () => {
+    const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
+    const registrations = [
+      ...rlsSuite.matchAll(/auth\.admin\.createUser\(\{([\s\S]*?)\n  \}\)/g),
+    ]
+
+    expect(registrations).toHaveLength(8)
+    for (const [, payload] of registrations) {
+      expect(payload).toContain("user_metadata: { legal_consent: signupLegalConsent }")
+      expect(payload).not.toContain("app_metadata")
+    }
+    expect(rlsSuite).toContain(`version: "${TERMS_DOCUMENT.version}"`)
+    expect(rlsSuite).toContain(TERMS_DOCUMENT.sha256)
+    expect(rlsSuite).toContain(PRIVACY_DOCUMENT.sha256)
+    expect(rlsSuite).not.toContain("legal_consent_exempt")
   })
 })

@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { FIND_PATH } from "@/lib/find/routes"
-import { MobileMapNavigationProvider } from "@/features/mobile-navigation"
+import { MobileMapNavigationProvider } from "@/features/mobile-navigation/client"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"

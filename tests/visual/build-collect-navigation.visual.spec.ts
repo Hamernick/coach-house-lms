@@ -46,6 +46,7 @@ test("public Build landing stays within a mobile viewport", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/build?react-grab=0")
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" })
 
   await expect(page.getByRole("link", { name: "Collect" })).toBeVisible()
   await expect(

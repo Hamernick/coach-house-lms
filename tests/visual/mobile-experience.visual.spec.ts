@@ -5,6 +5,7 @@ const route = "/visual-regression/mobile-experience?react-grab=0"
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(route)
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" })
   await expect(
     page.getByRole("navigation", { name: "Main navigation" })
   ).toBeVisible()

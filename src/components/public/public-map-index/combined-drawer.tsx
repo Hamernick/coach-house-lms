@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { PublicMapDrawerResizeControl } from "./drawer-resize-control"
 import type { PublicMapSidebarDrawerProps } from "./sidebar-drawer"
 import { useMapPanelDrag } from "./use-map-panel-drag"
-import styles from "./combined-drawer.module.css"
+import { mobileMapPanelStyles as styles } from "@/features/mobile-navigation"
 
 export function PublicMapCombinedDrawer({
   activeSnapIndex,

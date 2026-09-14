@@ -39,7 +39,7 @@ import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
 } from "./category-filter"
-import styles from "./map-surface.module.css"
+import { mobileMapControlStyles as styles } from "@/features/mobile-navigation"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 

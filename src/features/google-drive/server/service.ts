@@ -309,7 +309,9 @@ export async function disconnectGoogleDrive(input: {
     .select("*").eq("user_id", input.userId).maybeSingle()
   if (connectionError) throw new GoogleDriveError("provider_unavailable", 503)
   if (!connection) return
-  if (input.revoke !== false && connection.refresh_token_ciphertext &&
+  // Feature disconnect must not revoke the shared Google project grant.
+  // Full account deletion explicitly requests best-effort provider revocation.
+  if (input.revoke === true && connection.refresh_token_ciphertext &&
       connection.refresh_token_iv && connection.refresh_token_auth_tag && connection.key_version) {
     try {
       const token = decryptGoogleDriveSecret({
@@ -320,7 +322,7 @@ export async function disconnectGoogleDrive(input: {
       }, connectionAad(input.userId))
       await revokeGoogleDriveToken(token)
     } catch {
-      // Always remove local credentials, including when an old key is unavailable.
+      // Always clear local credentials, even if a prior key is unavailable.
     }
   }
   const { error } = await admin.from("google_drive_connections").update({

@@ -1,6 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
+import Link from "next/link"
 import CloudOffIcon from "lucide-react/dist/esm/icons/cloud-off"
 import SearchXIcon from "lucide-react/dist/esm/icons/search-x"
 
@@ -124,6 +125,24 @@ export function PublicMapDirectoryHome({
           <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
             <PublicMapClaimDialog />
           </Suspense>
+          <nav aria-label="Legal" className="flex justify-center gap-2">
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/privacy">Privacy Policy</Link>
+            </Button>
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/terms">Terms of Service</Link>
+            </Button>
+          </nav>
         </div>
       </div>
     </div>

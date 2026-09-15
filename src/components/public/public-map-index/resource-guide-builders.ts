@@ -79,7 +79,10 @@ export function buildPublicMapSavedResourceGuides({
   savedGuideIds: PublicMapResourceGuideId[]
 }) {
   const guideById = new Map(guides.map((guide) => [guide.id, guide]))
-  const definitionById = new Map(
+  const definitionById = new Map<
+    PublicMapResourceGuideId,
+    PublicMapResourceGuideDefinition
+  >(
     PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.map((definition) => [
       definition.id,
       definition,

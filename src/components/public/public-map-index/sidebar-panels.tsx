@@ -123,7 +123,7 @@ export function PublicMapRailSearchPanel({
             />
           </div>
           {searchContext ? (
-            <div className="shrink-0 pb-2">
+            <div className="shrink-0 pb-1">
               <PublicMapSearchContextCard
                 context={searchContext}
                 savedGuideIds={savedGuideIds}
@@ -298,7 +298,7 @@ export function PublicMapDrawerSearchPanel({
             searchPending={searchPending}
           />
           {searchContext ? (
-            <div className="shrink-0 pt-2">
+            <div className="shrink-0 pt-1">
               <PublicMapSearchContextCard
                 context={searchContext}
                 savedGuideIds={savedGuideIds}
@@ -327,7 +327,7 @@ export function PublicMapDrawerSearchPanel({
               activeGroup={activeGroup}
               resourceItemsLoadStatus={resourceItemsLoadStatus}
               resourceItemsLoadError={resourceItemsLoadError}
-              className="h-full pt-2"
+              className={cn("h-full", searchContext ? "pt-1" : "pt-2")}
               scrollable
               leadingContent={
                 <PublicMapSearchShortcuts

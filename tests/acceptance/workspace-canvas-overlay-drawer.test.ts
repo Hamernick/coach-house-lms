@@ -2167,7 +2167,7 @@ describe("workspace canvas overlay drawer", () => {
       "workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0"
     )
     expect(viewSource).toContain(
-      'className="absolute inset-0 max-w-full min-w-0 overflow-hidden"'
+      'className="absolute inset-0 max-w-full min-w-0 overflow-clip"'
     )
     expect(canvasBodySource).toContain(
       'className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"'

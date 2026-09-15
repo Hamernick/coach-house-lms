@@ -55,3 +55,21 @@ and does not establish the original incident's cause. Existing authenticated
 session/cache were retained. Drawer remains95% pending that original scenario.
 
 Production remains held. Existing Profile runlog and root handoff notes stay local.
+
+## Second hosted pass: later screenshots
+
+Run34986106119 at a1902c12 passes every original17 screenshot comparison and all
+static, acceptance, RLS and build lanes. Soft screenshot assertions exposed20
+later reference differences across9 tests. All20 expected/actual/diff triples
+were reviewed: four Decision editor states, Documentation home/articles/Marketplace
+and Brand identity, plus Ad Grants, Campaign and Fundraising planner reviews.
+The differences remain text rendering and resulting line wraps. Containers,
+controls, images and responsive layout remain intact. Eleven actual images are
+byte-identical to retry; the other nine differ by1–29 raw pixels. No React Grab
+toolbar appears in these images.
+
+Add20 separately named Linux references, preserving every original. Combined with
+the first pass there are37 reviewed Linux references. Thresholds are unchanged.
+Artifact: `/tmp/coach-house-profile-a1902c12-visual`. Second-pass SHA256 manifest:
+`linux-references-second-pass.json` in the recovery directory above. Hosted quality
+must be rerun at the new commit; passing prior comparisons alone is not completion.

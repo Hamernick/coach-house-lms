@@ -69,3 +69,43 @@ incident. Drawer completion remains95%.
 
 The expanded fixture and64 Profile resource/drawer checks pass. The temporary
 loopback fixture server is stopped. No extra Next server or full local build.
+
+## September 15: prevent hidden canvas scrolling
+
+A separate defect was reproduced on authenticated Profile51882a89. After
+fullscreen/restore and selecting Organization, the drawer retained its correct
+306.28px translation but the flow-frame ancestor had scrollTop36px. Consequently
+the half drawer showed318.72px rather than282.72px in the589px canvas. The frame
+uses overflow:hidden, which still permits focus/programmatic scrolling.
+
+The fixture now includes two focus cases using the real Vaul component and
+measurement hook. Focusing a control outside the collapsed viewport gives:
+
+| Frame overflow | scrollTop | Visible drawer | Visible content marker |
+| --- | --- | --- | --- |
+|hidden|252px|320px (entire canvas)|36px|
+|clip|0px|68px|35px (1px border clipped)|
+
+This reproduces an incorrectly full-height drawer independently of cached snap
+geometry. It does not reproduce the blank content in that focus case; zero-height
+startup remains the separate reproduced blank-content failure. Change only the
+flow-frame owner's overflow to clip. Nested content scrollers and React Flow's
+transform-based panning remain in place. No control sizes, fonts or snap points
+change. Normal localhost React Grab remains enabled.
+
+Use the two Focus frame field buttons at the top of the existing fixture.
+Supported browser text locators work on this minimal HTML page; role-name
+locators did not resolve these fixture buttons. No source/database/provider data
+is used. Hosted verification of the actual frame change follows.
+
+[MDN overflow reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow)
+documents the hidden-versus-clip scrolling distinction.
+Recovery: /var/folders/l2/jpghvb_52t10fnrzxcs0bpd40000gn/T/coach-house-drawer-focus-scroll-34wb28zo .
+
+Local actual-component verification after fullscreen/restore and selecting
+Organization:653px canvas,339.56px translation,313.44px visible (exact48%),
+flow-frame scrollTop0 and overflow clip. Selecting the lower Need pill scrolls
+only the nested content viewport to1045px; the frame remains at0. Restored Origin
+story and the Organization panel. Eleven existing drawer acceptance tests,
+focused lint and whitespace pass. Temporary3043 fixture server stopped;
+existing root Next server on3000 stays running.

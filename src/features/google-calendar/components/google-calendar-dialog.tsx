@@ -49,7 +49,7 @@ export function GoogleCalendarDialog({
           surfaceKind: "content",
         })}
       >
-        <DialogHeader className="text-left">
+        <DialogHeader>
           <DialogTitle>Google Calendar</DialogTitle>
           <DialogDescription>
             {summary?.email ?? "Bring your schedule into Coach House."}

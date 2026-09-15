@@ -307,7 +307,18 @@ for (const width of [390, 1440]) {
         exact: true,
       })
     ).toBeVisible()
-    await page.keyboard.press("Escape")
+    if (width === 390) {
+      const closeCalendar = page.getByRole("button", {
+        name: "Close calendar",
+        exact: true,
+      })
+      const target = await closeCalendar.boundingBox()
+      expect(target?.width).toBeGreaterThanOrEqual(44)
+      expect(target?.height).toBeGreaterThanOrEqual(44)
+      await closeCalendar.click()
+    } else {
+      await page.keyboard.press("Escape")
+    }
     await expect(calendar).toHaveCount(0)
 
     // Mount a workspace drawer after the first calendar visit. A retained,

@@ -77,11 +77,13 @@ export function AppShellHeader({
               id="site-header-actions-right"
               className="flex flex-wrap items-center gap-2 md:flex-nowrap"
             />
-            {hasUser && !isCompactMobileHeader ? (
+            {hasUser && !isMobile ? (
               <AppShellCalendarAction />
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
-            <ThemeToggle />
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             {!hasUser ? (
               <Button
                 variant="outline"

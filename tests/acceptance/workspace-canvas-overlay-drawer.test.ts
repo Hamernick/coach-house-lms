@@ -47,7 +47,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("modal={false}")
     expect(source).toContain("noBodyStyles")
     expect(source).toContain(
-      "snapPoints={[...WORKSPACE_DATA_DRAWER_SNAP_POINTS]}"
+      "snapPoints={snapPoints}"
     )
     expect(source).toContain("snapToSequentialPoint")
     expect(source).toContain("shouldScaleBackground={false}")

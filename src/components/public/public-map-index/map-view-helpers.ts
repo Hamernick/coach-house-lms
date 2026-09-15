@@ -240,15 +240,22 @@ export function focusChicagoFallback({
   })
 }
 
-export function resolvePublicMapCameraPadding(sidebarInsetLeft: number) {
-  const normalizedInset = Math.max(0, Math.round(sidebarInsetLeft))
+export function resolvePublicMapCameraPadding(
+  sidebarInsetLeft: number,
+  drawerInsetBottom = 0
+) {
+  const normalizedLeftInset = Math.max(0, Math.round(sidebarInsetLeft))
+  const normalizedBottomInset = Math.max(0, Math.round(drawerInsetBottom))
   return {
     top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
     right: PUBLIC_MAP_CAMERA_EDGE_PADDING,
-    bottom: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+    bottom:
+      normalizedBottomInset > 0
+        ? normalizedBottomInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
+        : PUBLIC_MAP_CAMERA_EDGE_PADDING,
     left:
-      normalizedInset > 0
-        ? normalizedInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
+      normalizedLeftInset > 0
+        ? normalizedLeftInset + PUBLIC_MAP_CAMERA_EDGE_PADDING
         : PUBLIC_MAP_CAMERA_EDGE_PADDING,
   }
 }

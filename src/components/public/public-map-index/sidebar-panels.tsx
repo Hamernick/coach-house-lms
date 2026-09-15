@@ -287,7 +287,7 @@ export function PublicMapDrawerSearchPanel({
         />
       ) : (
         <div
-          className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2")}
+          className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2.5")}
         >
           <PublicMapSearchResultsStatus
             hasStaleResourceItems={items.some(

@@ -54,7 +54,7 @@ function PublicMapResourceListMedia({
   return (
     <span
       className={cn(
-        "border-border/60 bg-muted/35 relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm",
+        "border-border/60 bg-muted/35 relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border",
         constrainedLayout ? "size-11" : "size-12"
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({

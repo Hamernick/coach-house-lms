@@ -21,6 +21,14 @@ Reviewed and updated only `google-calendar-setup-390-light.png` and
 approved Mobile dialog, rather than a Calendar-specific redesign. Both originals
 were backed up locally. Screenshot tolerances are unchanged.
 
+Hosted run `35036477104` passed all nonvisual lanes and54 visual tests, leaving
+these same two comparisons with3% text-rendering differences from macOS. Reviewed
+each expected/actual/diff: dimensions358×570, control positions and line wrapping
+match. Both Linux actuals are byte-identical to their retries. Added two Linux
+counterparts through the existing reviewed-platform helper; macOS references and
+the2% comparison tolerance remain unchanged. This separates platform rendering
+without suppressing screenshot assertions.
+
 ## Validation
 
 - 33 focused Calendar, service, Workspace Tools and shell acceptance tests pass.

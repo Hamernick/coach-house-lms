@@ -73,3 +73,11 @@ the first pass there are37 reviewed Linux references. Thresholds are unchanged.
 Artifact: `/tmp/coach-house-profile-a1902c12-visual`. Second-pass SHA256 manifest:
 `linux-references-second-pass.json` in the recovery directory above. Hosted quality
 must be rerun at the new commit; passing prior comparisons alone is not completion.
+
+## Marketplace layout update
+
+User requested the color-library/coss.com header, category and searchable-filter layout. Profile `f2fe76cf` passes hosted static, acceptance, RLS and build; both Previews are Ready. The new Marketplace interaction regression passes, including combined filters/reload/People switching, multiword typing, literal “all” and empty-state recovery. Visual run35016760566:140 passed,4 passed on retry,5 expected screenshot failures.
+
+Reviewed all five new images: Marketplace desktop and mobile light/dark; People desktop light and mobile dark. The larger shared heading, shorter subtitle, category/filter controls and moved promotion account for the changes. Cards, public shell, coach photos/actions and member projection remain intact. Four first/retry images are byte-identical; desktop Marketplace also matches visually on retry. Update only these five existing Linux references. Original references are backed up with SHA256 manifest under `coach-house-marketplace-layout-fm7gk13v/visual-references` in the session recovery directory. Platform-neutral references and comparison thresholds remain unchanged.
+
+Evidence: `/tmp/coach-house-marketplace-f2fe76cf-visual`; behavior and failure summary: `/tmp/coach-house-marketplace-f2fe76cf-visual.log`. Four passing retries involved article scroll tracking and three existing Roadmap cases; their screenshots were not updated. Full validation after the reference update remains required. Localhost/Bandto responsive and hosted Preview checks also pass; no release.

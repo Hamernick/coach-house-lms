@@ -12,8 +12,8 @@ import {
 
 describe("buildPublicMapDrawerSnapPoints", () => {
   it("collapses the combined mobile panel to its handle and navigation", () => {
-    expect(buildPublicMapDrawerSnapPoints(844, true)).toEqual(["98px", "473px", 1])
-    expect(buildPublicMapDrawerSnapPoints(0, true)).toEqual(["98px", "336px", 1])
+    expect(buildPublicMapDrawerSnapPoints(844, true)).toEqual(["86px", "473px", 1])
+    expect(buildPublicMapDrawerSnapPoints(0, true)).toEqual(["86px", "336px", 1])
   })
   it("derives pixel snap points from the measured canvas height", () => {
     expect(buildPublicMapDrawerSnapPoints(520)).toEqual(["168px", "336px", 1])

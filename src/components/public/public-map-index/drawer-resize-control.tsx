@@ -30,7 +30,7 @@ export function PublicMapDrawerResizeControl({
       type="button"
       variant="ghost"
       data-public-map-drawer-resize-control=""
-      className={cn("focus-visible:ring-ring/45 flex h-auto w-full shrink-0 touch-none justify-center rounded-none px-4 pt-3 pb-2 transition-none hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:outline-none dark:hover:bg-transparent", combined && "h-7 py-0")}
+      className={cn("focus-visible:ring-ring/45 flex h-auto w-full shrink-0 touch-none justify-center rounded-none px-4 pt-3 pb-2 transition-none hover:bg-transparent hover:text-inherit focus-visible:ring-2 focus-visible:outline-none dark:hover:bg-transparent", combined && "h-7 py-0", combined && activeSnapIndex === 0 && "h-4 pt-3 pb-0")}
       aria-label={`Resize resource map panel to ${nextSnapLabel}`}
       onClick={() => onSnapIndexChange(nextSnapIndex)}
       onKeyDown={(event) => {

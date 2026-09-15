@@ -26,7 +26,7 @@ export function PublicMapCombinedDrawer({
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
   const registerSearch = navigation?.registerSearch
   const registerFooter = navigation?.setFooter
-  const { dragHeight, handlers } = useMapPanelDrag({ frame: drawer, host, middleHeight: snapPoints[1], onSnap: setActiveSnapIndex })
+  const { dragHeight, handlers } = useMapPanelDrag({ frame: drawer, host, collapsedHeight: snapPoints[0], middleHeight: snapPoints[1], onSnap: setActiveSnapIndex })
 
   useEffect(() => {
     registerFooter?.(footer)
@@ -53,7 +53,7 @@ export function PublicMapCombinedDrawer({
           data-public-map-drawer-mode={activeSnapIndex === 2 ? "fullscreen" : "floating"}
           data-public-map-drawer-snap-index={activeSnapIndex}
           className={cn(styles.panel, "absolute inset-x-0 top-auto bottom-0 flex w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-[36px] p-0 sm:max-w-none sm:rounded-[36px] sm:p-0 data-[state=open]:animate-none data-[state=closed]:animate-none")}
-          style={{ height: dragHeight ?? (activeSnapIndex === 2 ? "100%" : activeSnapIndex === 0 ? 98 : snapPoints[1]), maxHeight: "100%" }}
+          style={{ height: dragHeight ?? (activeSnapIndex === 2 ? "100%" : snapPoints[activeSnapIndex]), maxHeight: "100%" }}
           onOpenAutoFocus={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
           onEscapeKeyDown={(event) => { event.preventDefault(); setActiveSnapIndex(0) }}

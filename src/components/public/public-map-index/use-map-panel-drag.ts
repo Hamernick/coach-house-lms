@@ -5,11 +5,13 @@ import { useRef, useState, type MouseEvent, type PointerEvent } from "react"
 export function useMapPanelDrag({
   frame,
   host,
+  collapsedHeight,
   middleHeight,
   onSnap,
 }: {
   frame: HTMLElement | null
   host: HTMLElement | null
+  collapsedHeight: string
   middleHeight: string
   onSnap: (index: 0 | 1 | 2) => void
 }) {
@@ -17,10 +19,11 @@ export function useMapPanelDrag({
   const gesture = useRef<{ y: number; height: number; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const clear = () => { gesture.current = null; setDragHeight(null) }
-  const heights = () => [98, Math.min(Number.parseFloat(middleHeight), host?.clientHeight ?? 844), host?.clientHeight ?? 844]
+  const minimumHeight = Number.parseFloat(collapsedHeight)
+  const heights = () => [minimumHeight, Math.min(Number.parseFloat(middleHeight), host?.clientHeight ?? 844), host?.clientHeight ?? 844]
   const heightAt = (event: PointerEvent<HTMLButtonElement>) => {
     const start = gesture.current!
-    return Math.min(heights()[2], Math.max(98, start.height + start.y - event.clientY))
+    return Math.min(heights()[2], Math.max(minimumHeight, start.height + start.y - event.clientY))
   }
   return {
     dragHeight,

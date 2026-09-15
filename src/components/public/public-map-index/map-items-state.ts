@@ -33,7 +33,7 @@ export function buildPublicMapSelectableItemMap(
   items: PublicMapItem[],
   savedItems: PublicMapItem[] = []
 ) {
-  // Saved seasonal resources remain openable when absent from the current map.
+  // Saved resources use the same weather presentation as the current map.
   // Visible presentations win when the same ID appears in both collections.
   return new Map(
     [...savedItems, ...items].map((item) => [resolvePublicMapItemSelectableId(item), item] as const)

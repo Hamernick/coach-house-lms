@@ -21,24 +21,9 @@ const normalItemCache = new WeakMap<
   ExternalResourceMapItem | null
 >()
 
-export function isPublicMapCoolingGuide(guideId: string | null | undefined) {
-  return guideId?.includes("cooling") ?? false
-}
-
-export function hasPublicMapCoolingIntent({
-  guideId,
-  category,
-  query,
-}: {
-  guideId?: string | null
-  category?: string | null
-  query?: string | null
-}) {
-  return (
-    isPublicMapCoolingGuide(guideId) ||
-    category === COOLING_CATEGORY ||
-    /\bcooling\b|\bheat relief\b/i.test(query ?? "")
-  )
+/** Only the existing weather gate activates a cooling-center presentation. */
+export function shouldShowPublicMapCoolingCenters(signal: string | null | undefined) {
+  return signal === "official_alert" || signal === "forecast_threshold"
 }
 
 function normalResourceTitle(title: string) {

@@ -298,7 +298,7 @@ export function PublicMapDrawerSearchPanel({
             searchPending={searchPending}
           />
           {searchContext ? (
-            <div className="shrink-0 pt-2 pb-2">
+            <div className="shrink-0 pt-2">
               <PublicMapSearchContextCard
                 context={searchContext}
                 savedGuideIds={savedGuideIds}

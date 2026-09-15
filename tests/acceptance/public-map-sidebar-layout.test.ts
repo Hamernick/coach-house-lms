@@ -705,9 +705,9 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain(">View<")
     expect(markup).toContain("flex min-w-0 items-center")
     expect(markup).toContain(
-      "line-clamp-2 text-base leading-snug font-semibold"
+      "line-clamp-2 text-sm leading-snug font-semibold"
     )
-    expect(markup).toContain("text-sm leading-snug")
+    expect(markup).toContain("text-xs leading-snug")
     expect(markup).toContain(">Community<")
     expect(markup).not.toContain("Weekly mutual-aid meals")
     expect(markup).toContain("rounded-xl text-left whitespace-normal")
@@ -782,10 +782,10 @@ describe("public map sidebar layout", () => {
     expect(resourceNameIndex).toBeGreaterThan(resourceTitleSlotIndex)
     expect(primaryCategoryIndex).toBeGreaterThan(resourceNameIndex)
     expect(markup).toContain("Chicago, IL")
-    expect(organizationMetadataClassName.split(" ")).toContain("mt-1.5")
-    expect(resourceMetadataClassName.split(" ")).toContain("mt-1.5")
-    expect(markup.match(/min-h-20/g)).toHaveLength(4)
-    expect(markup).toContain("min-h-20")
+    expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
+    expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
+    expect(markup.match(/min-h-16/g)).toHaveLength(4)
+    expect(markup).toContain("min-h-16")
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -820,8 +820,8 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(markup).toContain("min-h-20")
-    expect(markup).toContain("size-14")
+    expect(markup).toContain("min-h-16")
+    expect(markup).toContain("size-11")
     expect(markup).toContain('data-react-grab-surface-slot="media"')
     expect(markup).toContain('src="https://example.org/provider-photo.jpg"')
     expect(markup).toContain('alt="Seed Food Access image"')

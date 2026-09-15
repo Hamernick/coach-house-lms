@@ -7,10 +7,10 @@ import { buildPublicMapOrganizationListCardSurfaceProps } from "./react-grab"
 
 export const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   contentVisibility: "auto",
-  containIntrinsicSize: "80px",
+  containIntrinsicSize: "64px",
 } as const
 
-export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "min-h-20"
+export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "min-h-16"
 
 export function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -80,7 +80,7 @@ export function PublicMapListMetadataStrip({
   return (
     <div
       className={cn(
-        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-sm leading-snug",
+        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-xs leading-snug",
         className
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({

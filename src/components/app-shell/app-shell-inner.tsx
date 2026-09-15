@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 
 import { SidebarBody } from "@/components/app-sidebar"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
+import { AppShellSidebarHeader } from "@/components/app-shell/components/app-shell-sidebar-header"
 import {
   GlobalSearch,
   PaywallOverlay,
@@ -16,7 +17,6 @@ import {
   AppShellMobileNav,
   ShellMainContent,
   ShellRightRail,
-  SidebarBrand,
 } from "@/components/app-shell/components"
 import {
   RightRailSlot,
@@ -25,7 +25,6 @@ import {
 import { AppShellRightRailControlsProvider } from "@/components/app-shell/right-rail-controls"
 import {
   Sidebar,
-  SidebarHeader,
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
@@ -288,9 +287,12 @@ export function AppShellInner({
               variant="sidebar"
               className="border-0 bg-[var(--shell-rail)]"
             >
-              <SidebarHeader>
-                {sidebarHeaderContent ?? <SidebarBrand href={brandHref} />}
-              </SidebarHeader>
+              <AppShellSidebarHeader
+                brandHref={brandHref}
+                showCalendar={isMobile && hasUser && !onboardingLocked}
+              >
+                {sidebarHeaderContent}
+              </AppShellSidebarHeader>
               <SidebarBody
                 isAdmin={isAdmin}
                 platformAccessLevel={platformAccessLevel}

@@ -260,6 +260,7 @@
       "tests/acceptance/workspace-roadmap-card-title.test.ts"
     ],
     "cli": [
+      "tests/acceptance/feature-client-entrypoint.test.ts",
       "tests/acceptance/resource-map-admin.test.ts",
       "tests/acceptance/resource-map-data-engine.test.ts",
       "tests/acceptance/resource-map-enrichment-quality.test.ts",
@@ -293,6 +294,8 @@
       "tests/acceptance/fiscal-sponsorship-native-signing.test.ts",
       "tests/acceptance/fiscal-sponsorship-w9.test.ts",
       "tests/acceptance/global-search-query-source-concurrency.test.ts",
+      "tests/acceptance/google-calendar-service.test.ts",
+      "tests/acceptance/google-calendar.test.ts",
       "tests/acceptance/google-drive-routes.test.ts",
       "tests/acceptance/google-drive.test.ts",
       "tests/acceptance/home-canvas-preview-navigation.test.ts",

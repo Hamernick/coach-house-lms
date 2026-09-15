@@ -140,7 +140,7 @@ for (const width of [320, 390]) {
       const style = getComputedStyle(e)
       return { gap: parseFloat(style.columnGap), padding: parseFloat(style.paddingLeft) }
     })
-    expect(activeSpacing.gap).toBe(8)
+    expect(activeSpacing.gap).toBe(6)
     expect(activeSpacing.padding).toBe(10)
     expect(await page.locator("[data-public-map-directory-status]").evaluate(e => {
       const centers = Array.from(e.children).map(child => {

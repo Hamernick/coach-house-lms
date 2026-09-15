@@ -99,7 +99,7 @@ export function usePublicMapResourceGuideState({
         activeGuide
           ? {
               title: activeGuide.title,
-              description: `${activeGuide.itemCount.toLocaleString()} places from the current resource map data.`,
+              description: `${activeGuide.itemCount.toLocaleString()} ${activeGuide.itemCount === 1 ? "resource" : "resources"} in this guide.`,
               guideId: activeGuide.id,
               items: activeGuide.items,
               onClear: clearActiveGuide,
@@ -297,7 +297,7 @@ function PublicMapResourceGuideCard({
             </span>
             <span className="text-muted-foreground mt-1.5 block text-sm leading-tight font-medium">
               {available
-                ? `${guide.itemCount.toLocaleString()} places`
+                ? `${guide.itemCount.toLocaleString()} ${guide.itemCount === 1 ? "resource" : "resources"}`
                 : "Unavailable right now"}
             </span>
           </span>

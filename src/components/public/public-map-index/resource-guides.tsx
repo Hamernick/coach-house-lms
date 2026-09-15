@@ -48,6 +48,7 @@ export type PublicMapResourceGuideSearchContext = {
 
 export function usePublicMapResourceGuideState({
   activeGuideId,
+  showCoolingCenters = true,
   filteredMapItems,
   organizations,
   includeSeedResources,
@@ -59,6 +60,7 @@ export function usePublicMapResourceGuideState({
   setActiveGuideId,
 }: {
   activeGuideId: PublicMapResourceGuideId | null
+  showCoolingCenters?: boolean
   filteredMapItems: PublicMapItem[]
   organizations: PublicMapOrganization[]
   includeSeedResources: boolean
@@ -81,8 +83,8 @@ export function usePublicMapResourceGuideState({
     [includeSeedResources, organizations, resourceItems]
   )
   const resourceGuides = useMemo(
-    () => buildPublicMapResourceGuides(guideSourceMapItems),
-    [guideSourceMapItems]
+    () => buildPublicMapResourceGuides(guideSourceMapItems, { showCoolingCenters }),
+    [guideSourceMapItems, showCoolingCenters]
   )
   const activeGuide = useMemo<PublicMapResourceGuide | null>(
     () => resourceGuides.find((guide) => guide.id === activeGuideId) ?? null,

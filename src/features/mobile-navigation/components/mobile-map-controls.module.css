@@ -51,8 +51,19 @@
     height: clamp(14px, 4vw, 16px);
   }
 
+  .surface [data-public-map-directory-status],
+  .surface [data-public-map-welcome-control] > button,
   .surface [data-public-map-location-controls] [data-weather-temperature-length] span {
     font-size: var(--public-map-control-font-size);
+    line-height: 1.25;
+  }
+
+  .surface [data-public-map-directory-status] {
+    gap: 6px;
+  }
+
+  .surface [data-public-map-directory-count] {
+    font-variant-numeric: normal;
   }
 
   .surface [data-public-map-location-controls] [data-weather-temperature-length="5"] span {

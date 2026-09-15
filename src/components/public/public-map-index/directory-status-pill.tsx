@@ -1,6 +1,7 @@
 "use client"
 
 import StatusIndicator from "@/components/8starlabs-ui/status-indicator"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { cn } from "@/lib/utils"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 
@@ -51,10 +52,17 @@ export function PublicMapDirectoryStatusPill({
 
   return (
     <span
+      {...getReactGrabOwnerProps({
+        ownerId: "public-map-directory-status:active-count",
+        component: "PublicMapDirectoryStatusPill",
+        source: "src/components/public/public-map-index/directory-status-pill.tsx",
+        tokenSource: "src/components/public/public-map-index/sidebar-theme.ts",
+        slot: "status",
+      })}
       data-public-map-directory-status
       className={cn(
         PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
+        "pointer-events-auto inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
         className
       )}
       aria-label={
@@ -74,7 +82,7 @@ export function PublicMapDirectoryStatusPill({
           aria-hidden="true"
         />
       ) : (
-        <span className="tabular-nums">
+        <span data-public-map-directory-count className="tabular-nums">
           {compactOnMobile ? (
             <>
               <span className="md:hidden">

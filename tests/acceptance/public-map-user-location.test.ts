@@ -238,7 +238,7 @@ describe("public map user location", () => {
     expect(locationControlSource).toContain("safe-area-inset-top")
     expect(locationControlSource).toContain("safe-area-inset-left")
     expect(locationControlSource).toContain("data-public-map-location-controls")
-    expect(locationControlSource).toContain("absolute inset-0 md:z-[60]")
+    expect(locationControlSource).not.toContain("absolute inset-0 md:z-[60]")
     expect(locationControlSource).toContain("Location timed out")
     expect(locationControlSource).toContain(
       "public-map-location-card:current-location"

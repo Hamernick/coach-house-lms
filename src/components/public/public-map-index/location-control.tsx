@@ -81,7 +81,7 @@ export function PublicMapLocationControl({
   const label = resolveLocationControlLabel({ active, status })
 
   return (
-    <div className="pointer-events-none absolute inset-0 md:z-[60]">
+    <div className="pointer-events-none absolute inset-0">
       <div
         data-public-map-location-controls="true"
         className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.375rem,env(safe-area-inset-right))] left-[max(0.375rem,env(safe-area-inset-left))] z-20 flex min-w-0 items-center gap-1 md:top-[max(1rem,env(safe-area-inset-top))] md:right-[max(1rem,env(safe-area-inset-right))] md:left-[max(1rem,env(safe-area-inset-left))] md:gap-2"

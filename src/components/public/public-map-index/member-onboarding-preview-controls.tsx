@@ -117,7 +117,7 @@ export function PublicMapMemberOnboardingPreviewToggle({
         size="sm"
         aria-pressed={active}
         className={cn(
-          "pointer-events-auto relative rounded-xl shadow-sm backdrop-blur max-md:after:absolute max-md:after:inset-x-0 max-md:after:-inset-y-1.5 [html.light_&]:!text-zinc-950",
+          "pointer-events-auto relative rounded-xl shadow-none backdrop-blur max-md:after:absolute max-md:after:inset-x-0 max-md:after:-inset-y-1.5 [html.light_&]:!text-zinc-950",
           PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME
         )}
         onClick={onToggle}

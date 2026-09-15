@@ -38,6 +38,7 @@ export function OrgProfileEditor({
     dirty,
     company,
     errors,
+    validationAttempt,
     slugStatus,
     setSlugStatus,
     editProgram,
@@ -112,6 +113,7 @@ export function OrgProfileEditor({
           >
             <CompanyTab
               focusKey={initialFocus}
+              validationAttempt={validationAttempt}
               company={company}
               errors={errors}
               editMode={editMode}

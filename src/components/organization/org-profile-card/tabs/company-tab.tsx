@@ -14,6 +14,7 @@ export type CompanyTabProps = {
   errors: OrgProfileErrors
   editMode: boolean
   focusKey?: string | null
+  validationAttempt?: number
   onInputChange: CompanyEditProps["onInputChange"]
   onUpdate: CompanyEditProps["onUpdate"]
   onDirty: CompanyEditProps["onDirty"]
@@ -27,6 +28,7 @@ export function CompanyTab({
   errors,
   editMode,
   focusKey,
+  validationAttempt,
   onInputChange,
   onUpdate,
   onDirty,
@@ -93,7 +95,11 @@ export function CompanyTab({
     }
 
     return (
-      <ProfileFieldTabsProvider focusKey={focusKey} errors={errors}>
+      <ProfileFieldTabsProvider
+        focusKey={focusKey}
+        errors={errors}
+        validationAttempt={validationAttempt}
+      >
         <EditModeSections {...editProps} />
       </ProfileFieldTabsProvider>
     )
@@ -106,7 +112,11 @@ export function CompanyTab({
   }
 
   return (
-    <ProfileFieldTabsProvider focusKey={focusKey} errors={errors}>
+    <ProfileFieldTabsProvider
+      focusKey={focusKey}
+      errors={errors}
+      validationAttempt={validationAttempt}
+    >
       <ViewModeSections {...viewProps} />
     </ProfileFieldTabsProvider>
   )

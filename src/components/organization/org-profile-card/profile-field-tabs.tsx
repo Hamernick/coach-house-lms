@@ -65,11 +65,14 @@ export function ProfileFieldTabs({
     if (focusField) select(focusField)
   }, [focusField, select])
 
-  const errors = state?.errors
+  const validationAttempt = state?.validationAttempt
+  const handledValidation = useRef(validationAttempt)
   useEffect(() => {
+    if (handledValidation.current === validationAttempt) return
+    handledValidation.current = validationAttempt
     pendingErrorFocus.current = errorField ?? null
     if (errorField) select(errorField)
-  }, [errorField, errors, select])
+  }, [errorField, validationAttempt, select])
 
   useEffect(() => {
     if (!activeField || pendingErrorFocus.current !== activeField) return
@@ -88,7 +91,7 @@ export function ProfileFieldTabs({
       ;(control ?? panel)?.focus()
     })
     return () => cancelAnimationFrame(frame)
-  }, [activeField, errorField, errors])
+  }, [activeField, errorField, validationAttempt])
 
   if (!activeField) return null
 

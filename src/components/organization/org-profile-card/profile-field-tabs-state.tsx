@@ -16,6 +16,7 @@ const ProfileFieldTabsContext = createContext<{
   select: (group: string, field: string) => void
   focusKey?: string | null
   firstError?: string
+  validationAttempt: number
   errors: OrgProfileErrors
 } | null>(null)
 
@@ -23,10 +24,12 @@ export function ProfileFieldTabsProvider({
   children,
   focusKey,
   errors,
+  validationAttempt = 0,
 }: {
   children: ReactNode
   focusKey?: string | null
   errors: OrgProfileErrors
+  validationAttempt?: number
 }) {
   const [selections, setSelections] = useState<Record<string, string>>({})
   const select = useCallback((group: string, field: string) => {
@@ -38,8 +41,15 @@ export function ProfileFieldTabsProvider({
     Boolean(message)
   )?.[0]
   const value = useMemo(
-    () => ({ selections, select, focusKey, firstError, errors }),
-    [selections, select, focusKey, firstError, errors]
+    () => ({
+      selections,
+      select,
+      focusKey,
+      firstError,
+      errors,
+      validationAttempt,
+    }),
+    [selections, select, focusKey, firstError, errors, validationAttempt]
   )
   return (
     <ProfileFieldTabsContext.Provider value={value}>

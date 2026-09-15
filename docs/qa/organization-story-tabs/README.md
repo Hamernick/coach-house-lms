@@ -17,3 +17,5 @@ Verified September 14, 2026:
 - Switching tabs remains possible while a validation message exists.
 
 Validation focus initially ran before the newly selected panel was visible. The final implementation waits for that panel's React commit before focusing it.
+
+The fixture also checks simultaneous Mission/Vision errors: correcting Mission retains its tab and focus, and typing in Values does not jump to Vision. Only a new explicit validation attempt opens the invalid field.

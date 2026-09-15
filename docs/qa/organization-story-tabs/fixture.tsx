@@ -25,6 +25,7 @@ function Fixture() {
   const [company, setCompany] = useState(initial)
   const [editMode, setEditMode] = useState(false)
   const [errors, setErrors] = useState<OrgProfileErrors>({})
+  const [validationAttempt, setValidationAttempt] = useState(0)
   const [focusKey, setFocusKey] = useState<string | null>(null)
   return (
     <main>
@@ -56,7 +57,13 @@ function Fixture() {
           Cancel
         </Button>
         <Button
-          onClick={() => setErrors({ mission: "Mission needs attention." })}
+          onClick={() => {
+            setErrors({
+              mission: "Mission needs attention.",
+              vision: "Vision needs attention.",
+            })
+            setValidationAttempt((attempt) => attempt + 1)
+          }}
         >
           Validate mission
         </Button>
@@ -69,14 +76,25 @@ function Fixture() {
           Focus theory
         </Button>
       </nav>
-      <ProfileFieldTabsProvider errors={errors} focusKey={focusKey}>
+      <ProfileFieldTabsProvider
+        errors={errors}
+        focusKey={focusKey}
+        validationAttempt={validationAttempt}
+      >
         {editMode ? (
           <StorySection
             company={company}
             errors={errors}
             onUpdate={(updates) => {
               setCompany((previous) => ({ ...previous, ...updates }))
-              setErrors({})
+              setErrors((previous) =>
+                Object.fromEntries(
+                  Object.entries(previous).map(([key, value]) => [
+                    key,
+                    key in updates ? "" : value,
+                  ])
+                )
+              )
             }}
             onInputChange={() => undefined}
             onDirty={() => undefined}

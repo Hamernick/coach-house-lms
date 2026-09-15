@@ -32,3 +32,6 @@ No database/data/schema or provider changes. No new server, full local build/sui
 - Focused root resource/layout checks:96 pass. Mobile resource/location checks:71 pass; these suites overlap. Regressions cover both cooling-guide modes, all weather signals and saved ID retention.
 - Bandto localhost at66 degrees: Cooling and Heat Relief shows3,542 ordinary resource versions, including125th St Library under Libraries and playgrounds under Recreation. This is display verification, not service verification. Actual heat-alert transition remains test-covered but has not occurred live during this review.
 - No source records, saved IDs, provider settings or production changes. Recovery archive: /var/folders/l2/jpghvb_52t10fnrzxcs0bpd40000gn/T/coach-house-weather-only-cooling-5ernpwlc .
+
+- Follow-up search regression: retaining the original seasonal title as a search alias lets explicit cooling queries find the ordinary host. Display title/category remain normal; source records and existing aliases are unchanged. The query regression failed before the alias correction.
+- Final Bandto canary: searching "Brooklyn Central Library cooling" returns the two existing source records, both displayed as Brooklyn Central Library / Libraries at66 degrees. No cooling presentation is reactivated.

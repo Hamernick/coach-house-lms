@@ -86,6 +86,8 @@ export function resolvePublicMapResourcePresentation(
   const normalItem: ExternalResourceMapItem = {
     ...item,
     title,
+    // Keep the source name discoverable without presenting its seasonal role.
+    aliases: [...new Set([...(item.aliases ?? []), item.title])],
     subtitle:
       item.subtitle && !HEAT_TEXT.test(item.subtitle) && item.subtitle !== title
         ? item.subtitle

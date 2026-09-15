@@ -134,7 +134,7 @@ export function PublicMapPlatformOrganizationListCard({
           </Avatar>
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <p
-              className="text-foreground line-clamp-2 text-sm leading-snug font-semibold text-pretty"
+              className="text-foreground line-clamp-2 text-sm leading-4 font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -144,12 +144,11 @@ export function PublicMapPlatformOrganizationListCard({
               <PublicMapHighlightedText query={query} text={org.name} />
             </p>
             {org.tagline ? (
-              <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs leading-snug text-pretty">
+              <p className="text-muted-foreground line-clamp-1 text-xs leading-4 text-pretty">
                 <PublicMapHighlightedText query={query} text={org.tagline} />
               </p>
             ) : null}
             <PublicMapListMetadataStrip
-              className="mt-0.5"
               itemKeyPrefix="category"
               items={categoryMetadataItems}
               notes="Primary category for the organization list card."

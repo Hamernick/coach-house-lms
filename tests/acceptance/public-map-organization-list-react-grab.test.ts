@@ -238,12 +238,12 @@ describe("public map organization list react grab", () => {
     expect(markup).toContain('data-public-map-result-trigger="true"')
     expect(markup).toContain("min-h-16")
     expect(markup).toContain(
-      "text-foreground line-clamp-2 text-sm leading-snug font-semibold text-pretty"
+      "text-foreground line-clamp-2 text-sm leading-4 font-semibold text-pretty"
     )
     expect(markup).toContain(
-      "text-muted-foreground flex max-w-full items-center"
+      "text-muted-foreground mt-0 flex max-w-full items-center"
     )
-    expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
+    expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0")
     expect(markup).toContain("min-w-0 text-pretty break-words")
     expect(markup).not.toContain("max-w-[55%]")
     expect(markup).not.toContain("max-w-[45%]")

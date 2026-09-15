@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -39,9 +40,16 @@ export function PublicMapSearchContextCard({
 }) {
   return (
     <div
+      {...getReactGrabOwnerProps({
+        ownerId: "public-map-search-context-card",
+        component: "PublicMapSearchContextCard",
+        source: "src/components/public/public-map-index/search-panel-content.tsx",
+        tokenSource: "src/components/public/public-map-index/sidebar-theme.ts",
+        slot: "card",
+      })}
       data-public-map-sidebar-section="search-context-card"
       className={cn(
-        "w-full max-w-full px-3 py-3",
+        "mx-auto w-full max-w-3xl px-3 py-3",
         PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME
       )}
     >

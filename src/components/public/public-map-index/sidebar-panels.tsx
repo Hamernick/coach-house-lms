@@ -255,10 +255,7 @@ export function PublicMapDrawerSearchPanel({
   return (
     <div
       ref={containerRef}
-      className={cn(
-        "flex min-h-0 flex-1 flex-col bg-transparent",
-        !showDiscoveryHome && "mx-auto w-full max-w-xl"
-      )}
+      className="flex min-h-0 flex-1 flex-col bg-transparent"
       onKeyDown={handleResultKeyDown}
     >
       <div className="shrink-0 px-2.5">

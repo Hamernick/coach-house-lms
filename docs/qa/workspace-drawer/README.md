@@ -40,3 +40,32 @@ Validation: targeted ESLint and all 11 existing drawer acceptance tests passed.
 No intended design changes or baseline updates. Full quality/hosted cold-load
 regression remains pending; no release approval. Graphify refresh deferred under
 the user's laptop-resource restriction.
+
+## September 15: zero-height startup regression
+
+The fixture now covers initial container heights0 and220px, each with immediate
+and60ms delayed portals, before growing to320px. It uses a32px header and36px
+content marker to measure actual text visibility inside the clipped canvas.
+
+| Initial height | Baseline translation / visible drawer / visible text | Fixed translation / visible drawer / visible text |
+| --- | --- | --- |
+|220px|152px /168px /16.5px|252px /68px /16.5px|
+|0px|-68px /252px /0px|252px /68px /16.5px|
+
+Both portal timings produce the same results. Zero-height startup reproduces
+a large blank drawer: the text has moved above the clipped container. The existing
+source hook restores the correct collapsed geometry and visible content. This
+reproduces the failure class; it still does not prove that the historical Preview
+incident began with a zero-height canvas. No additional source fix was necessary.
+
+Fresh authenticated Bandto navigation at Profile2931f0d3 to
+`/workspace?drawer=accelerator` rendered the Accelerator without dragging:330px
+viewport,589px canvas,306.28px translation,282.72px visible (requested48%), mounted
+lesson content and progress. The preceding plain Workspace navigation also
+rendered its Organization panel correctly. These are fresh page mounts with
+an existing authenticated browser, not a new account, cleared cache or first-frame
+recording. Organization tab restored; the user has not yet rechecked the original
+incident. Drawer completion remains95%.
+
+The expanded fixture and64 Profile resource/drawer checks pass. The temporary
+loopback fixture server is stopped. No extra Next server or full local build.

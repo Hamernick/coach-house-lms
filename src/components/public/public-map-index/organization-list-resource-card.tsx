@@ -196,7 +196,7 @@ export function PublicMapResourceListCard({
             )}
           >
             <p
-              className="text-foreground line-clamp-2 text-sm leading-snug font-semibold text-pretty"
+              className="text-foreground line-clamp-2 text-sm leading-4 font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -206,12 +206,11 @@ export function PublicMapResourceListCard({
               <PublicMapHighlightedText query={query} text={item.title} />
             </p>
             {serviceOutcome ? (
-              <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs leading-snug text-pretty">
+              <p className="text-muted-foreground line-clamp-1 text-xs leading-4 text-pretty">
                 <PublicMapHighlightedText query={query} text={serviceOutcome} />
               </p>
             ) : null}
             <PublicMapListMetadataStrip
-              className="mt-0.5"
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."

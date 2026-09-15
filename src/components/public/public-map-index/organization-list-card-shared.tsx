@@ -80,7 +80,7 @@ export function PublicMapListMetadataStrip({
   return (
     <div
       className={cn(
-        "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-xs leading-snug",
+        "text-muted-foreground mt-0 flex max-w-full items-center gap-2 text-xs leading-4",
         className
       )}
       {...buildPublicMapOrganizationListCardSurfaceProps({
@@ -90,7 +90,7 @@ export function PublicMapListMetadataStrip({
       })}
     >
       <div
-        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5"
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0"
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
           slot: "location",

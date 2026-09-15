@@ -55,6 +55,9 @@
   .surface [data-public-map-welcome-control] > button,
   .surface [data-public-map-location-controls] [data-weather-temperature-length] span {
     font-size: var(--public-map-control-font-size);
+    font-weight: 500;
+    font-variant-numeric: normal;
+    letter-spacing: normal;
     line-height: 1.25;
   }
 
@@ -66,8 +69,8 @@
     font-variant-numeric: normal;
   }
 
-  .surface [data-public-map-location-controls] [data-weather-temperature-length="5"] span {
-    font-size: calc(var(--public-map-control-font-size) * 0.8);
+  .surface [data-public-map-location-controls] [data-weather-temperature-length="5"] {
+    width: calc(var(--public-map-control-size) * 1.25);
   }
 
   .surface:has([data-public-map-drawer-mode="fullscreen"])

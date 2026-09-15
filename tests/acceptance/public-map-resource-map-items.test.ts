@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
+import { hasPublicMapCoolingIntent, resolvePublicMapResourceDetailPresentation, resolvePublicMapResourcePresentation } from "@/lib/public-map/resource-seasonal-presentation"
+
 import { buildResourceAddressLines } from "@/components/public/public-map-index/resource-detail-helpers"
 
 import {
@@ -138,6 +140,132 @@ function buildGuideResourceItem(
 }
 
 describe("public map resource map items", () => {
+  it("keeps the ordinary library under its existing ID below the heat threshold", () => {
+    const source = buildGuideResourceItem("shared-library-id", {
+      title: "Brooklyn Central Library cooling center",
+      resourceCategories: ["emergency_cooling_centers", "environment", "community_libraries", "community"],
+      weatherEligible: true,
+      hoursLabel: "Heat-event hours only",
+    })
+    const ordinary = resolvePublicMapResourcePresentation(source, false)!
+    expect(ordinary).toMatchObject({
+      id: source.id,
+      title: "Brooklyn Central Library",
+      primaryResourceCategory: "community_libraries",
+      seasonalPresentation: "normal",
+      weatherEligible: false,
+      hoursLabel: null,
+    })
+    expect(ordinary.resourceCategories).not.toContain("emergency_cooling_centers")
+    expect(buildPublicMapItemPointFeatures([ordinary])[0].properties.markerStyleKey).toBe("standard")
+    expect(buildPublicMapItemPointFeatures([source])[0].properties.markerStyleKey).toBe("special-pill")
+    expect(ordinary.latitude).toBe(source.latitude)
+    expect(ordinary.verificationStatus).toBe(source.verificationStatus)
+    expect(source.title).toBe("Brooklyn Central Library cooling center")
+    expect(resolvePublicMapResourcePresentation(source, true)).toBe(source)
+  })
+
+  it("retains a named cooling host even when its feed only gives a broad category", () => {
+    const source = buildGuideResourceItem("college", {
+      title: "Daley College — Cooling Center",
+      resourceCategories: ["emergency_cooling_centers", "environment"],
+    })
+    expect(resolvePublicMapResourcePresentation(source, false)).toMatchObject({
+      title: "Daley College",
+      primaryResourceCategory: "education",
+    })
+  })
+
+  it.each([
+    ["Community Center cooling center - Delano", "Community Center - Delano"],
+    ["Senior Center cooling center - Fresno", "Senior Center - Fresno"],
+    ["Harbor Library — Cooling and Warming Center", "Harbor Library"],
+    ["Warming & Cooling Center: Harbor Library", "Harbor Library"],
+  ])("removes the seasonal role while keeping facility and city: %s", (title, expected) => {
+    const source = buildGuideResourceItem("named-host", { title })
+    expect(resolvePublicMapResourcePresentation(source, false)?.title).toBe(expected)
+    expect(source.title).toBe(title)
+  })
+
+  it("keeps heat-only records seasonal without inventing a normal service", () => {
+    const source = buildGuideResourceItem("heat-only", { title: "Cooling center" })
+    expect(resolvePublicMapResourcePresentation(source, false)).toBeNull()
+    expect(resolvePublicMapResourcePresentation(source, true)).toBe(source)
+  })
+
+  it("preserves other resources and removes cooling-only service claims from ordinary listings", () => {
+    const source = buildGuideResourceItem("mixed", {
+      title: "Cooling Center | Harbor Library",
+      description: "This cooling center opens during heat alerts.",
+      services: [
+        { id: "cooling", title: "Cooling center", description: "Heat-event access" },
+        { id: "library", title: "Library", description: "Public library services" },
+      ],
+    })
+    const ordinary = resolvePublicMapResourcePresentation(source, false)!
+    expect(ordinary.title).toBe("Harbor Library")
+    expect(ordinary.description).toBeNull()
+    expect(ordinary.services?.map(service => service.id)).toEqual(["library"])
+    const unaffected = buildGuideResourceItem("food", {
+      title: "Pantry",
+      resourceCategories: ["food"],
+      primaryResourceCategory: "food",
+    })
+    expect(resolvePublicMapResourcePresentation(unaffected, false)).toBe(unaffected)
+  })
+
+  it("keeps the ordinary presentation when full resource details arrive", () => {
+    const source = buildGuideResourceItem("detail", {
+      title: "Harbor Library cooling center",
+      resourceCategories: ["emergency_cooling_centers", "community_libraries"],
+    })
+    const ordinary = resolvePublicMapResourcePresentation(source, false)!
+    expect(resolvePublicMapResourceDetailPresentation(ordinary, source)).toMatchObject({
+      id: source.id, title: "Harbor Library", seasonalPresentation: "normal",
+    })
+    expect(resolvePublicMapResourceDetailPresentation(source, source)).toBe(source)
+    expect(resolvePublicMapResourceDetailPresentation(source, ordinary)).toBe(source)
+  })
+
+  it("uses normal versions inside ordinary service guides during cool weather", () => {
+    const items = Array.from({ length: 5 }, (_, i) => buildGuideResourceItem(`health-${i}`, {
+      title: `Clinic ${i} cooling center`,
+      city: "Chicago", state: "IL",
+      resourceCategories: ["emergency_cooling_centers", "health"],
+    }))
+    const guide = buildPublicMapResourceGuides(items, { showCoolingCenters: false })
+      .find(candidate => candidate.id === "chicago-health-care")!
+    expect(guide.items).toHaveLength(5)
+    expect(guide.items.map(item => item.title)).toEqual(items.map((_, i) => `Clinic ${i}`))
+    expect(guide.items.map(item => item.id)).toEqual(items.map(item => item.id))
+  })
+
+  it("opens saved seasonal resources without putting them on the ordinary map", () => {
+    const heatOnly = buildGuideResourceItem("saved-heat-only")
+    const library = buildGuideResourceItem("saved-library", { title: "Harbor Library cooling center" })
+    const ordinary = resolvePublicMapResourcePresentation(library, false)!
+    const visibleItems = [ordinary]
+    const selectable = buildPublicMapSelectableItemMap(visibleItems, [heatOnly, library])
+    expect(selectable.get(resolvePublicMapItemSelectableId(heatOnly))).toBe(heatOnly)
+    expect(selectable.get(resolvePublicMapItemSelectableId(library))).toBe(ordinary)
+    expect(visibleItems).toEqual([ordinary])
+  })
+
+  it("keeps cooling guides and deliberate cooling searches available below the threshold", () => {
+    expect(hasPublicMapCoolingIntent({ guideId: "library-cooling-centers" })).toBe(true)
+    expect(hasPublicMapCoolingIntent({ category: "emergency_cooling_centers" })).toBe(true)
+    expect(hasPublicMapCoolingIntent({ query: "cooling centers near me" })).toBe(true)
+    expect(hasPublicMapCoolingIntent({ query: "library", guideId: "digital-access" })).toBe(false)
+    const source = buildGuideResourceItem("guide-library", {
+      title: "Harbor Library cooling center",
+      resourceCategories: ["emergency_cooling_centers", "community_libraries"],
+    })
+    const guideItems = [source, ...Array.from({ length: 9 }, (_, i) => ({ ...source, id: `guide-${i}` }))]
+    const coolingGuide = buildPublicMapResourceGuides(guideItems, { showCoolingCenters: false })
+      .find(guide => guide.id === "cooling-heat-relief")
+    expect(coolingGuide?.items.find(item => item.id === source.id)).toBe(source)
+  })
+
   it.each([
     {
       address: "80-45 Winchester Blvd, Building 4",

@@ -147,13 +147,13 @@ function BuildCollectMobileNavigation({
   return (
     <nav
       aria-label="Public navigation"
-      className="flex items-center gap-1 md:hidden"
+      className="border-border/70 bg-background/85 flex min-w-0 items-center gap-1 rounded-full border p-1 shadow-xs backdrop-blur-md md:hidden"
     >
       <Button
         asChild
         size="sm"
         variant={activeArea === "collect" ? "secondary" : "ghost"}
-        className="rounded-full"
+        className="h-11 rounded-full px-4"
       >
         <Link
           href="/"
@@ -166,7 +166,7 @@ function BuildCollectMobileNavigation({
         asChild
         size="sm"
         variant={activeArea === "build" ? "secondary" : "ghost"}
-        className="rounded-full"
+        className="h-11 rounded-full px-4"
       >
         <Link
           href="/build"
@@ -200,7 +200,7 @@ export function BuildCollectPublicHeader({
   return (
     <header
       data-build-collect-public-header=""
-      className="grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 px-[var(--shell-content-pad,1rem)] py-2"
+      className="grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-1 px-3 py-2 sm:gap-2 sm:px-[var(--shell-content-pad,1rem)]"
     >
       <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
 
@@ -241,7 +241,7 @@ export function BuildCollectPublicHeader({
         </form>
 
         {authAction}
-        <Button asChild className="rounded-full">
+        <Button asChild className={cn("hidden h-11 rounded-full px-4 sm:inline-flex md:h-9", activeArea === "collect" && "hidden md:inline-flex")}>
           <Link href={builderCta.href}>
             {builderCta.label}
             <ArrowUpRightIcon data-icon="inline-end" aria-hidden />

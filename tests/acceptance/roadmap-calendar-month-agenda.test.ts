@@ -318,7 +318,7 @@ describe("roadmap calendar month agenda", () => {
       "mt-3 flex max-h-[clamp(6.5rem,30dvh,15rem)] min-h-0 flex-col"
     )
     expect(agendaPanel).toContain(
-      'className="bg-background flex min-h-0 flex-col rounded-[24px]'
+      'className="bg-background flex min-h-0 min-w-0 flex-col rounded-[24px]'
     )
     expect(agendaPanel).not.toContain(
       'className="flex min-h-0 flex-1 flex-col rounded-[24px]'
@@ -350,9 +350,9 @@ describe("roadmap calendar month agenda", () => {
       '<span className="min-w-0 truncate whitespace-nowrap leading-snug">'
     )
     expect(agendaPanel).toContain(
-      "grid grid-cols-[minmax(0,1fr)_auto] items-center"
+      "grid grid-cols-1 items-center"
     )
-    expect(agendaPanel).toContain("flex min-w-0 shrink-0 items-center gap-1.5")
+    expect(agendaPanel).toContain("flex min-w-0 shrink-0 items-center justify-between gap-2")
     expect(agendaPanel).toContain(
       "const showTodayButton = !isSameCalendarMonth(month, new Date())"
     )

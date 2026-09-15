@@ -93,7 +93,7 @@ export const RoadmapCalendarAddEventMenu = memo(
           <Button
             type="button"
             variant="outline"
-            className="h-8 justify-start rounded-full px-3 text-sm font-medium shadow-none"
+            className="h-11 justify-start rounded-full px-3 text-sm font-medium shadow-none sm:h-8"
             disabled={disabled}
             title={
               disabled

@@ -307,7 +307,7 @@ export const WorkspacePeopleDrawerPanel = memo(
         <ScrollArea
           className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"
           viewportClassName="h-full max-w-full overscroll-contain touch-pan-y [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"
-          contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 [&>*]:min-w-0 [&>*]:max-w-full"
+          contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 max-md:pb-[var(--shell-mobile-nav-clearance,0.75rem)] [&>*]:min-w-0 [&>*]:max-w-full"
         >
           {people.length === 0 ? (
             <div className="border-border/70 text-muted-foreground grid min-h-48 place-items-center rounded-2xl border border-dashed px-6 text-center text-sm">

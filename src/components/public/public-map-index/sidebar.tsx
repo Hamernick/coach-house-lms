@@ -1,10 +1,10 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Button } from "@/components/ui/button"
+import { useMobileMapNavigation } from "@/features/mobile-navigation"
 import { cn } from "@/lib/utils"
 
 import {
@@ -34,28 +34,14 @@ import { usePublicMapDrawerSearchSession } from "./use-public-map-drawer-search-
 import { PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME } from "./sidebar-theme"
 import { PublicMapSidebarDrawer } from "./sidebar-drawer"
 
-export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
+import {
+  PublicMapDrawerDetailPanel,
+  PublicMapRailDetailPanel,
+  PublicMapResourceDrawerDetailPanel,
+  PublicMapResourceRailDetailPanel,
+} from "./sidebar-detail-loaders"
 
-const PublicMapDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapDrawerDetailPanel
-  )
-)
-const PublicMapRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapRailDetailPanel
-  )
-)
-const PublicMapResourceDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceDrawerDetailPanel
-  )
-)
-const PublicMapResourceRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceRailDetailPanel
-  )
-)
+export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
 function PublicMapSidebarOpenButton({
   hidden,
@@ -135,6 +121,7 @@ export function PublicMapSidebar({
   onDrawerInsetChange,
   setSidebarMode,
 }: PublicMapSidebarProps) {
+  const withNavigation = Boolean(useMobileMapNavigation())
   const compact = panelPresentation === "drawer"
   const effectiveSidebarMode = resolveEffectivePublicMapSidebarMode({
     compact,
@@ -146,8 +133,8 @@ export function PublicMapSidebar({
   const constrainedRailLayout =
     panelPresentation === "rail" && sidebarWidth < 376
   const snapPoints = useMemo(
-    () => buildPublicMapDrawerSnapPoints(surfaceHeight),
-    [surfaceHeight]
+    () => buildPublicMapDrawerSnapPoints(surfaceHeight, withNavigation),
+    [surfaceHeight, withNavigation]
   )
   const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(
     resolveInitialPublicMapDrawerSnapPointIndex(effectiveSidebarMode)

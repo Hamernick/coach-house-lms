@@ -543,7 +543,7 @@ export function WorkspaceAcceleratorCardPanel({
             className={cn(
               "flex min-h-0 flex-col gap-2",
               workspaceDrawerEmbedded &&
-                "touch-pan-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]",
+                "touch-pan-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] max-md:pb-[var(--shell-mobile-nav-clearance,0px)] max-md:[&>*]:shrink-0",
               workspaceDrawerEmbedded && isModuleViewerOpen && "hidden"
             )}
           >

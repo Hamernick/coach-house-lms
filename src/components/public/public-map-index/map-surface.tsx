@@ -39,6 +39,7 @@ import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
 } from "./category-filter"
+import { mobileMapControlStyles as styles } from "@/features/mobile-navigation"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
@@ -114,7 +115,9 @@ type PublicMapSurfaceProps = {
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
   onSidebarInsetChange?: (value: number) => void
+  onDrawerInsetChange?: (value: number) => void
   searchContext?: PublicMapSidebarSearchContext | null
+  welcomeControl?: ReactNode
   mapOverlay?: ReactNode
   renderDesktopSidebar?: boolean
   renderMobileDrawer?: boolean
@@ -174,7 +177,9 @@ export function PublicMapSurface({
   onSidebarModeChange,
   onAuthSheetOpenChange,
   onSidebarInsetChange,
+  onDrawerInsetChange,
   searchContext = null,
+  welcomeControl = null,
   mapOverlay = null,
   renderDesktopSidebar = true,
   renderMobileDrawer = true,
@@ -237,7 +242,10 @@ export function PublicMapSurface({
   return (
     <div
       ref={surfaceRef}
-      className="bg-background relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden"
+      className={cn(
+        "bg-background relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden",
+        styles.surface
+      )}
     >
       <div
         ref={setPanelPortalContainer}
@@ -290,6 +298,7 @@ export function PublicMapSurface({
           onSelectItem={onSelectItem}
           onOpenDetails={onOpenOrgDetails}
           onBackToSearch={onBackToSearch}
+          onDrawerInsetChange={onDrawerInsetChange}
           setSidebarMode={onSidebarModeChange}
         />
       ) : null}
@@ -314,6 +323,18 @@ export function PublicMapSurface({
           <PublicMapLocationControl
             {...locationControl}
             directoryCount={directoryCount}
+            additionalControls={
+              <>
+                {welcomeControl}
+                <FindMapWeatherCard
+                  weather={weather}
+                  className={cn(
+                    PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+                    "md:hidden"
+                  )}
+                />
+              </>
+            }
           />
           <PublicMapWeatherController
             coordinates={locationControl.coordinates}
@@ -326,7 +347,10 @@ export function PublicMapSurface({
           >
             <FindMapWeatherCard
               weather={weather}
-              className={PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME}
+              className={cn(
+                PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+                "hidden md:flex"
+              )}
             />
             {preferencesSaveError ? (
               <Alert

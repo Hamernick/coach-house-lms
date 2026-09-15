@@ -8,6 +8,7 @@ import {
   type MouseEvent,
 } from "react"
 import dynamic from "next/dynamic"
+import XIcon from "lucide-react/dist/esm/icons/x"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
 
 import { useAppShellCalendarActionRegistration } from "@/components/app-shell/calendar-action-context"
@@ -15,6 +16,8 @@ import { Button } from "@/components/ui/button"
 import {
   Drawer,
   DrawerContent,
+  DrawerClose,
+  DrawerDescription,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -54,7 +57,7 @@ const WorkspaceTutorialCallout = dynamic<
   { loading: () => null, ssr: false },
 )
 
-export function AppShellCalendarAction() {
+export function AppShellCalendarAction({ placement = "header" }: { placement?: "header" | "sidebar" } = {}) {
   const isMobile = useIsMobile()
   const { tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete } =
     useAppShellCalendarActionRegistration()
@@ -84,7 +87,7 @@ export function AppShellCalendarAction() {
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size={placement === "sidebar" ? "default" : "icon"}
       aria-label={calendarOpen ? "Hide calendar" : "Show calendar"}
       aria-expanded={calendarOpen}
       aria-controls={calendarRegionId}
@@ -92,6 +95,7 @@ export function AppShellCalendarAction() {
       onClick={handleCalendarTriggerClick}
       className={cn(
         "relative",
+        placement === "sidebar" && "min-h-11 w-full justify-start gap-2 px-2",
         calendarOpen &&
           "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm",
         tutorialCalendarButtonActive &&
@@ -99,6 +103,7 @@ export function AppShellCalendarAction() {
       )}
     >
       <CalendarDaysIcon className="h-4 w-4" aria-hidden />
+      {placement === "sidebar" ? "Calendar" : null}
     </Button>
   )
 
@@ -129,20 +134,23 @@ export function AppShellCalendarAction() {
         onOpenChange={handleCalendarOpenChange}
         handleOnly
       >
-        <div className="relative inline-flex">
+        <div className={cn("relative inline-flex", placement === "sidebar" && "w-full")}>
           {tutorialCallout}
           <DrawerTrigger asChild>{calendarTrigger}</DrawerTrigger>
         </div>
 
         {calendarHasOpened ? (
           <DrawerContent
-            forceMount
             className={cn(
               "border-border/70 bg-background/98 h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl data-[state=closed]:hidden",
               "touch-pan-y overscroll-contain data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[88dvh]"
             )}
           >
             <DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>
+            <DrawerDescription className="sr-only">Browse dates and scheduled events.</DrawerDescription>
+            <DrawerClose asChild>
+              <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-2 z-10 size-11 rounded-full" aria-label="Close calendar"><XIcon aria-hidden /></Button>
+            </DrawerClose>
             <div
               id={calendarRegionId}
               role="region"

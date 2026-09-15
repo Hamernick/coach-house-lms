@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { mobileScreenshotName } from "./mobile-screenshot-name"
 
 test("public Build landing and hover navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -46,6 +47,7 @@ test("public Build landing stays within a mobile viewport", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/build?react-grab=0")
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" })
 
   await expect(page.getByRole("link", { name: "Collect" })).toBeVisible()
   await expect(
@@ -59,7 +61,7 @@ test("public Build landing stays within a mobile viewport", async ({
     )
   ).toBe(false)
 
-  await expect(page).toHaveScreenshot("public-build-landing-mobile.png", {
+  await expect(page).toHaveScreenshot(mobileScreenshotName("public-build-landing-mobile.png"), {
     animations: "disabled",
     caret: "hide",
     maxDiffPixelRatio: 0.02,

@@ -19,6 +19,11 @@ import {
   PublicMapListMetadataStrip,
 } from "./organization-list-card-shared"
 
+const PUBLIC_MAP_ORGANIZATION_LIST_CARD_PERF_STYLE = {
+  ...PUBLIC_MAP_LIST_CARD_PERF_STYLE,
+  containIntrinsicSize: "64px",
+} as const
+
 export function PublicMapPlatformOrganizationListCard({
   constrainedLayout,
   item,
@@ -59,7 +64,7 @@ export function PublicMapPlatformOrganizationListCard({
   return (
     <article
       key={org.id}
-      style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
+      style={PUBLIC_MAP_ORGANIZATION_LIST_CARD_PERF_STYLE}
       className={cn(
         "text-foreground relative w-full max-w-full min-w-0 overflow-hidden bg-transparent",
         PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
@@ -78,12 +83,12 @@ export function PublicMapPlatformOrganizationListCard({
         aria-label={`Open details for ${org.name}`}
         onClick={openDetails}
         className={cn(
-          "group relative z-10 flex min-h-20 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
+          "group relative z-10 flex h-auto min-h-16 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
           "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
           selected
             ? "bg-accent text-accent-foreground dark:bg-accent/50"
             : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-          constrainedLayout ? "p-3" : "p-4"
+          "p-2"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -96,7 +101,7 @@ export function PublicMapPlatformOrganizationListCard({
         <div
           className={cn(
             "flex min-w-0 items-center",
-            constrainedLayout ? "gap-3" : "gap-4"
+            constrainedLayout ? "gap-2.5" : "gap-3"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
             ownerId,
@@ -123,13 +128,13 @@ export function PublicMapPlatformOrganizationListCard({
                 hasLogoImage ? "object-contain p-1.5" : "object-cover"
               )}
             />
-            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-xs font-semibold">
+            <AvatarFallback className="bg-muted/45 text-foreground rounded-xl text-base font-semibold">
               {fallbackInitials}
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
             <p
-              className="text-foreground truncate text-base leading-snug font-semibold"
+              className="text-foreground line-clamp-2 text-sm leading-4 font-semibold text-pretty"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
@@ -138,6 +143,11 @@ export function PublicMapPlatformOrganizationListCard({
             >
               <PublicMapHighlightedText query={query} text={org.name} />
             </p>
+            {org.tagline ? (
+              <p className="text-muted-foreground line-clamp-1 text-xs leading-4 text-pretty">
+                <PublicMapHighlightedText query={query} text={org.tagline} />
+              </p>
+            ) : null}
             <PublicMapListMetadataStrip
               itemKeyPrefix="category"
               items={categoryMetadataItems}

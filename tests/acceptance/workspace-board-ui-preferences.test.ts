@@ -181,6 +181,6 @@ describe("workspace board UI preferences", () => {
     expect(drawerSource).toContain(
       "readWorkspaceBoardUiPreferences(uiPreferencesScope)\n      if (request) return"
     )
-    expect(drawerSource).toContain("}, [request, uiPreferencesScope])")
+    expect(drawerSource).toContain("}, [isMobile, request, uiPreferencesScope])")
   })
 })

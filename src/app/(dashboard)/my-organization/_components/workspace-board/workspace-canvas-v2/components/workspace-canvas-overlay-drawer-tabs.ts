@@ -248,23 +248,39 @@ export function useWorkspaceDataDrawerTabIndicator({
   }, [])
 
   useEffect(() => {
-    updateTabIndicator()
+    const list = tabsListRef.current
+    const syncTabLayout = () => {
+      const active = list?.querySelector<HTMLElement>('[data-state="active"]')
+      if (list && active && list.scrollWidth > list.clientWidth) {
+        const listRect = list.getBoundingClientRect()
+        const activeRect = active.getBoundingClientRect()
+        if (activeRect.left < listRect.left) {
+          list.scrollLeft -= listRect.left - activeRect.left
+        } else if (activeRect.right > listRect.right) {
+          list.scrollLeft += activeRect.right - listRect.right
+        }
+      }
+      updateTabIndicator()
+    }
+    syncTabLayout()
+    list?.addEventListener("scroll", updateTabIndicator, { passive: true })
 
-    const animationFrame = window.requestAnimationFrame(updateTabIndicator)
+    const animationFrame = window.requestAnimationFrame(syncTabLayout)
     const resizeObserver =
       typeof ResizeObserver === "undefined"
         ? null
-        : new ResizeObserver(updateTabIndicator)
+        : new ResizeObserver(syncTabLayout)
 
     if (tabsHeaderRef.current) resizeObserver?.observe(tabsHeaderRef.current)
     if (tabsListRef.current) resizeObserver?.observe(tabsListRef.current)
 
-    window.addEventListener("resize", updateTabIndicator)
+    window.addEventListener("resize", syncTabLayout)
 
     return () => {
       window.cancelAnimationFrame(animationFrame)
       resizeObserver?.disconnect()
-      window.removeEventListener("resize", updateTabIndicator)
+      list?.removeEventListener("scroll", updateTabIndicator)
+      window.removeEventListener("resize", syncTabLayout)
     }
   }, [tab, updateTabIndicator])
 

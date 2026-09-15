@@ -74,6 +74,7 @@
       "tests/acceptance/member-workspace-task-starter-data.test.ts",
       "tests/acceptance/member-workspace-task-transitions.test.ts",
       "tests/acceptance/member-workspace.test.ts",
+      "tests/acceptance/mobile-navigation.test.ts",
       "tests/acceptance/module-right-rail.test.ts",
       "tests/acceptance/my-organization-accelerator-timeline.test.ts",
       "tests/acceptance/onboarding-actions.test.ts",

@@ -137,6 +137,25 @@ describe("resolvePublicMapCameraPadding", () => {
     })
   })
 
+  it("reserves space for the open drawer below the selected marker", () => {
+    expect(resolvePublicMapCameraPadding(0, 549)).toEqual({
+      top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      right: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      bottom: 549 + PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      left: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+    })
+  })
+
+  it("clamps and rounds drawer and sidebar measurements", () => {
+    expect(resolvePublicMapCameraPadding(-20, 100.6)).toEqual({
+      top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      right: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      bottom: 101 + PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      left: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+    })
+    expect(resolvePublicMapCameraPadding(0, -30).bottom).toBe(PUBLIC_MAP_CAMERA_EDGE_PADDING)
+  })
+
   it("falls back to symmetric edge padding with no sidebar inset", () => {
     expect(resolvePublicMapCameraPadding(0)).toEqual({
       top: PUBLIC_MAP_CAMERA_EDGE_PADDING,

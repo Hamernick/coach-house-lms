@@ -1,4 +1,9 @@
 export const PUBLIC_MAP_RESOURCE_GUIDE_IDS = [
+  // Preserve known saved guides even when this UI does not offer them yet.
+  "essentials",
+  "transportation-access",
+  "documents-and-id",
+  "digital-access",
   "chicago-food-access",
   "chicago-housing-shelter",
   "chicago-legal-help",

@@ -96,7 +96,7 @@ export function MyOrganizationEditorView({
           enabled={hasScrollableOverflow}
           data-organization-scroll-viewport="true"
           data-scrollable={hasScrollableOverflow ? "true" : undefined}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] max-md:pb-[var(--shell-mobile-nav-clearance,0px)]"
           style={{ scrollbarGutter: "stable" }}
         >
           <OrgProfileCard

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { resolvePublicMapResourceLinkBranding } from "@/components/public/public-map-index/resource-link-branding"
 
-import { hasPublicMapCoolingIntent, resolvePublicMapResourceDetailPresentation, resolvePublicMapResourcePresentation } from "@/lib/public-map/resource-seasonal-presentation"
+import { shouldShowPublicMapCoolingCenters, resolvePublicMapItemPresentations, resolvePublicMapResourceDetailPresentation, resolvePublicMapResourcePresentation } from "@/lib/public-map/resource-seasonal-presentation"
 
 import { buildResourceAddressLines } from "@/components/public/public-map-index/resource-detail-helpers"
 
@@ -266,30 +266,43 @@ describe("public map resource map items", () => {
     expect(guide.items.map(item => item.id)).toEqual(items.map(item => item.id))
   })
 
-  it("opens saved seasonal resources without putting them on the ordinary map", () => {
+  it("keeps saved IDs while applying the weather gate to saved resources and details", () => {
     const heatOnly = buildGuideResourceItem("saved-heat-only")
     const library = buildGuideResourceItem("saved-library", { title: "Harbor Library cooling center" })
-    const ordinary = resolvePublicMapResourcePresentation(library, false)!
-    const visibleItems = [ordinary]
-    const selectable = buildPublicMapSelectableItemMap(visibleItems, [heatOnly, library])
-    expect(selectable.get(resolvePublicMapItemSelectableId(heatOnly))).toBe(heatOnly)
-    expect(selectable.get(resolvePublicMapItemSelectableId(library))).toBe(ordinary)
-    expect(visibleItems).toEqual([ordinary])
+    const sources = [heatOnly, library]
+    const savedItems = resolvePublicMapItemPresentations(sources, false)
+    const selectable = buildPublicMapSelectableItemMap([], savedItems)
+    expect(savedItems).toMatchObject([{ id: library.id, title: "Harbor Library", seasonalPresentation: "normal" }])
+    expect(selectable.has(resolvePublicMapItemSelectableId(heatOnly))).toBe(false)
+    expect(selectable.get(resolvePublicMapItemSelectableId(library))).toBe(savedItems[0])
+    expect(sources.map(item => item.id)).toEqual([heatOnly.id, library.id])
+    expect(resolvePublicMapItemPresentations(sources, true)).toEqual(sources)
   })
 
-  it("keeps cooling guides and deliberate cooling searches available below the threshold", () => {
-    expect(hasPublicMapCoolingIntent({ guideId: "library-cooling-centers" })).toBe(true)
-    expect(hasPublicMapCoolingIntent({ category: "emergency_cooling_centers" })).toBe(true)
-    expect(hasPublicMapCoolingIntent({ query: "cooling centers near me" })).toBe(true)
-    expect(hasPublicMapCoolingIntent({ query: "library", guideId: "digital-access" })).toBe(false)
+  it.each([
+    ["official_alert", true],
+    ["forecast_threshold", true],
+    ["none", false],
+    ["unknown", false],
+    [null, false],
+    [undefined, false],
+  ] as const)("uses only the weather signal %s for cooling presentation", (signal, expected) => {
+    expect(shouldShowPublicMapCoolingCenters(signal)).toBe(expected)
+  })
+
+  it.each([false, true])("applies weather mode %s even inside a cooling guide", (showCoolingCenters) => {
     const source = buildGuideResourceItem("guide-library", {
       title: "Harbor Library cooling center",
       resourceCategories: ["emergency_cooling_centers", "community_libraries"],
     })
     const guideItems = [source, ...Array.from({ length: 9 }, (_, i) => ({ ...source, id: `guide-${i}` }))]
-    const coolingGuide = buildPublicMapResourceGuides(guideItems, { showCoolingCenters: false })
-      .find(guide => guide.id === "cooling-heat-relief")
-    expect(coolingGuide?.items.find(item => item.id === source.id)).toBe(source)
+    const coolingGuide = buildPublicMapResourceGuides(guideItems, { showCoolingCenters })
+      .find(guide => guide.id === "cooling-heat-relief")!
+    expect(coolingGuide.itemCount).toBe(10)
+    expect(coolingGuide.items.map(item => item.id)).toEqual(guideItems.map(item => item.id))
+    expect(coolingGuide.items[0]).toMatchObject(showCoolingCenters
+      ? { title: source.title, primaryResourceCategory: "emergency_cooling_centers" }
+      : { title: "Harbor Library", primaryResourceCategory: "community_libraries", seasonalPresentation: "normal" })
   })
 
   it.each([
@@ -1260,6 +1273,7 @@ describe("public map resource map items", () => {
     expect(guideById.get("transportation-access")?.itemCount).toBe(1)
     expect(guideById.get("documents-and-id")?.itemCount).toBe(2)
     expect(guideById.get("digital-access")?.itemCount).toBe(2)
+    expect(guideById.get("essentials")?.itemCount).toBe(5)
   })
 
   it("retains saved guides when their current public item gate is unavailable", () => {

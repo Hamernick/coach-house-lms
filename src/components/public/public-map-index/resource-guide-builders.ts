@@ -14,7 +14,7 @@ import {
   type PublicMapResourceGuideDefinition,
 } from "./resource-guide-definitions"
 
-import { isPublicMapCoolingGuide, resolvePublicMapItemPresentations } from "@/lib/public-map/resource-seasonal-presentation"
+import { resolvePublicMapItemPresentations } from "@/lib/public-map/resource-seasonal-presentation"
 
 function buildGuideItems({
   definition,
@@ -44,7 +44,7 @@ export function buildPublicMapResourceGuides(
   return PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.flatMap((definition) => {
     const guideItems = resolvePublicMapItemPresentations(
       buildGuideItems({ definition, items }),
-      showCoolingCenters || isPublicMapCoolingGuide(definition.id)
+      showCoolingCenters
     )
     const minItems = definition.minItems ?? 1
     if (guideItems.length < minItems) return []

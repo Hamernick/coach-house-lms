@@ -154,9 +154,7 @@ export function PublicMapIndex({
     totalResourceCount,
   } = usePublicMapResourceItems({ initialResourceItems, resourceItemsEndpoint })
   const { resourceItems, showCoolingCenters, weather, setWeather } =
-    usePublicMapSeasonalResources(sourceResourceItems, {
-      guideId: activeGuideId, category: activeGroup, query,
-    })
+    usePublicMapSeasonalResources(sourceResourceItems)
   const deferredQuery = useDeferredValue(query)
   const {
     collectedResourceIds,

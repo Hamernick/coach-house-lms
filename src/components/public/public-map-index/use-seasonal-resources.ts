@@ -4,21 +4,17 @@ import { useMemo, useState } from "react"
 import type { FindMapWeatherResponse } from "@/features/find-map/client"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import {
-  hasPublicMapCoolingIntent,
+  shouldShowPublicMapCoolingCenters,
   resolvePublicMapResourcePresentation,
 } from "@/lib/public-map/resource-seasonal-presentation"
 
 import { usePublicMapSavedItems } from "./public-map-index-state"
 
 export function usePublicMapSeasonalResources(
-  sourceItems: ExternalResourceMapItem[],
-  intent: Parameters<typeof hasPublicMapCoolingIntent>[0]
+  sourceItems: ExternalResourceMapItem[]
 ) {
   const [weather, setWeather] = useState<FindMapWeatherResponse | null>(null)
-  const showCoolingCenters =
-    weather?.signal === "official_alert" ||
-    weather?.signal === "forecast_threshold" ||
-    hasPublicMapCoolingIntent(intent)
+  const showCoolingCenters = shouldShowPublicMapCoolingCenters(weather?.signal)
   const resourceItems = useMemo(
     () =>
       sourceItems.flatMap((item) => {
@@ -40,9 +36,10 @@ export function usePublicMapSeasonalSavedItems(
 ) {
   const saved = usePublicMapSavedItems(input)
   const savedResources = useMemo(
-    () => saved.savedResources.map(item =>
-      resolvePublicMapResourcePresentation(item, showCoolingCenters) ?? item
-    ),
+    () => saved.savedResources.flatMap(item => {
+      const presentation = resolvePublicMapResourcePresentation(item, showCoolingCenters)
+      return presentation ? [presentation] : []
+    }),
     [saved.savedResources, showCoolingCenters]
   )
   return { ...saved, savedResources }

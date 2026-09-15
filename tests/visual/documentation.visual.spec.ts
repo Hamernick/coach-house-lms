@@ -177,6 +177,72 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
   )
 })
 
+test("Marketplace category pills and searchable filters retain URL state", async ({
+  page,
+}) => {
+  await page.goto("/documentation/marketplace")
+  await ready(page)
+  await page.getByRole("radio", { name: "Software", exact: true }).click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "5 resources"
+  )
+  await page
+    .getByRole("button", { name: "Browse resource filters", exact: true })
+    .click()
+  const filterSearch = page.getByRole("combobox", {
+    name: "Find a resource filter",
+    exact: true,
+  })
+  await filterSearch.fill("free if")
+  await filterSearch.press("Enter")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "2 resources"
+  )
+  await page.reload()
+  await expect(
+    page.getByRole("radio", { name: "Software", exact: true })
+  ).toBeChecked()
+  await expect(
+    page.getByRole("button", {
+      name: "Remove Free if eligible filter",
+      exact: true,
+    })
+  ).toBeVisible()
+  await page.getByRole("tab", { name: "People", exact: true }).click()
+  await expect(page).toHaveURL(/view=people/)
+  await page
+    .getByRole("tab", { name: "Tools & resources", exact: true })
+    .click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "2 resources"
+  )
+  await page
+    .getByRole("button", { name: "Remove Software filter", exact: true })
+    .click()
+  await expect(page).not.toHaveURL(/type=software/)
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click()
+  const search = page.getByRole("searchbox", {
+    name: "Search resources",
+    exact: true,
+  })
+  await search.pressSequentially("Google Workspace")
+  await expect(search).toHaveValue("Google Workspace")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "1 resource"
+  )
+  await search.fill("all")
+  await expect(search).toHaveValue("all")
+  await expect(page).toHaveURL(/q=all/)
+  await search.fill("no-matching-resource-20260915")
+  await expect(
+    page.getByText("No resources match these filters", { exact: true })
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "23 resources"
+  )
+})
+
 test("mobile navigation closes after choosing a guide and contents links reach sections", async ({
   page,
 }) => {

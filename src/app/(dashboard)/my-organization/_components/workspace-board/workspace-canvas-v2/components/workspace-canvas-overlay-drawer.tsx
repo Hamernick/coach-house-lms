@@ -33,6 +33,7 @@ import { Toggle } from "@/components/ui/toggle"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
+import { useWorkspaceDrawerSnapPoints } from "./use-workspace-drawer-snap-points"
 import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-overlay-drawer-container"
 import {
   isWorkspaceDataDrawerCollapsedSnapPoint as isDrawerCollapsed,
@@ -42,7 +43,6 @@ import {
   WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT,
   WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT,
   WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT,
-  WORKSPACE_DATA_DRAWER_SNAP_POINTS,
 } from "./workspace-canvas-overlay-drawer-state"
 import {
   type WorkspaceCanvasDrawerTab,
@@ -92,6 +92,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     peopleCanvasActions: WorkspacePeopleCanvasActions
   }) {
     const canvasContainer = useWorkspaceCanvasOverlayDrawerContainer()
+    const snapPoints = useWorkspaceDrawerSnapPoints(canvasContainer)
     const [open, setOpen] = useState(true)
     const [hasOpened, setHasOpened] = useState(true)
     const [activeSnapPoint, setActiveSnapPoint] = useState<
@@ -284,7 +285,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         noBodyStyles
         repositionInputs={false}
         setActiveSnapPoint={handleActiveSnapPointChange}
-        snapPoints={[...WORKSPACE_DATA_DRAWER_SNAP_POINTS]}
+        snapPoints={snapPoints}
         snapToSequentialPoint
         shouldScaleBackground={false}
       >

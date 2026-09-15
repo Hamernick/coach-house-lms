@@ -2,6 +2,26 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  set_person_public_profile_visibility: {
+    Args: { p_is_public: boolean }
+    Returns: Json
+  }
+  save_person_public_profile_details: {
+    Args: {
+      p_bio: string | null
+      p_location_label: string | null
+      p_website_url: string | null
+    }
+    Returns: Json
+  }
+  save_account_email_preferences: {
+    Args: {
+      p_marketing_opt_in: boolean | null
+      p_newsletter_opt_in: boolean | null
+    }
+    Returns: Json
+  }
+
   public_handle_availability: {
     Args: { p_handle: string }
     Returns: Json

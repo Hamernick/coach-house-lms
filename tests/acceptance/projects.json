@@ -356,6 +356,7 @@
       "tests/acceptance/origin-story-assignment-flow.test.ts",
       "tests/acceptance/page-health-monitor.test.ts",
       "tests/acceptance/pricing.test.ts",
+      "tests/acceptance/profile-settings-completion.test.ts",
       "tests/acceptance/program-primary-object-persistence.test.ts",
       "tests/acceptance/program-wizard-activity-flow.test.ts",
       "tests/acceptance/program-wizard-budget.test.ts",

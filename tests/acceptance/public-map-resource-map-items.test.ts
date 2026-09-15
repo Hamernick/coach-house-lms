@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
+import { buildResourceAddressLines } from "@/components/public/public-map-index/resource-detail-helpers"
+
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
   PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
@@ -136,6 +138,39 @@ function buildGuideResourceItem(
 }
 
 describe("public map resource map items", () => {
+  it.each([
+    {
+      address: "80-45 Winchester Blvd, Building 4",
+      addressStreet: null,
+      expected: ["80-45 Winchester Blvd, Building 4"],
+    },
+    {
+      address: " 80-45 Winchester Blvd, Building 4\n\n Queens, NY 11427\nUnited States ",
+      addressStreet: " ",
+      expected: ["80-45 Winchester Blvd, Building 4", "Queens, NY 11427", "United States"],
+    },
+    {
+      address: "Legacy address text",
+      addressStreet: "80-45 Winchester Blvd, Building 4",
+      expected: ["80-45 Winchester Blvd, Building 4", "Queens, NY", "United States"],
+    },
+    {
+      address: " ",
+      addressStreet: null,
+      expected: ["Queens, NY", "United States"],
+    },
+  ])("preserves resource addresses with partial structured fields: $address", ({ address, addressStreet, expected }) => {
+    const item = buildGuideResourceItem("address-regression", {
+      address,
+      addressStreet,
+      city: "Queens",
+      state: "NY",
+      country: "United States",
+    })
+
+    expect(buildResourceAddressLines(item)).toEqual(expected)
+  })
+
   it("deduplicates concurrent public resource loads and supports cache clearing", async () => {
     clearPublicMapResourceItemsCache("/api/test-resource-items")
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({

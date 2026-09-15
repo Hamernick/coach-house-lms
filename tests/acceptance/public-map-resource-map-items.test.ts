@@ -29,6 +29,7 @@ import {
   buildFilteredPublicMapItems,
   buildPublicMapListItems,
   buildPublicMapSelectableItemMap,
+  rankPublicMapListItems,
   resolvePublicMapListItemsFromSelectableIds,
 } from "@/components/public/public-map-index/map-items-state"
 import {
@@ -188,6 +189,21 @@ describe("public map resource map items", () => {
     expect(ordinary.verificationStatus).toBe(source.verificationStatus)
     expect(source.title).toBe("Brooklyn Central Library cooling center")
     expect(resolvePublicMapResourcePresentation(source, true)).toBe(source)
+  })
+
+  it("finds an ordinary resource by its retained seasonal name without showing cooling status", () => {
+    const source = buildGuideResourceItem("search-library", {
+      title: "Brooklyn Central Library cooling center",
+      aliases: ["Central Library"],
+      sourceLabel: "NYC Emergency Management - Cool Options",
+      resourceCategories: ["emergency_cooling_centers", "community_libraries"],
+    })
+    const ordinary = resolvePublicMapResourcePresentation(source, false)!
+    const results = rankPublicMapListItems({ items: [ordinary], query: "Brooklyn Central Library cooling" })
+    expect(results).toMatchObject([{ id: source.id, title: "Brooklyn Central Library", primaryResourceCategory: "community_libraries" }])
+    expect(ordinary.aliases).toContain("Central Library")
+    expect(ordinary.resourceCategories).not.toContain("emergency_cooling_centers")
+    expect(source.aliases).toEqual(["Central Library"])
   })
 
   it("retains a named cooling host even when its feed only gives a broad category", () => {

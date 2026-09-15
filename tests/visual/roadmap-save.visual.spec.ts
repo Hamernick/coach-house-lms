@@ -1,8 +1,13 @@
 import { expect, test, type Page } from "@playwright/test"
+import { prepareVisualPage, reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 import {
   resolveRoadmapSections,
   updateRoadmapSection,
 } from "../../src/lib/roadmap"
+
+test.beforeEach(async ({ page }) => {
+  await prepareVisualPage(page)
+})
 
 async function mockSaves(page: Page) {
   await page.route("https://unpkg.com/react-grab@*/**", (route) =>
@@ -282,8 +287,8 @@ for (const width of [390, 1440]) {
       await expect(
         dialog.getByRole("region", { name: "Saved document", exact: true })
       ).toContainText("three new members")
-      await expect(dialog).toHaveScreenshot(
-        `roadmap-conflict-${width}-${colorScheme}.png`,
+      await expect.soft(dialog).toHaveScreenshot(
+        reviewedPlatformScreenshotName(`roadmap-conflict-${width}-${colorScheme}.png`),
         { animations: "disabled" }
       )
       expect(

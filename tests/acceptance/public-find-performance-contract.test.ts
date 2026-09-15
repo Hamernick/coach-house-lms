@@ -60,7 +60,12 @@ describe("public Find performance contract", () => {
       "src/components/public/public-map-index/sidebar-panels.tsx"
     )
 
-    expect(sidebarSource).toContain('import("./sidebar-detail-panels")')
+    const detailLoadersSource = readSource(
+      "src/components/public/public-map-index/sidebar-detail-loaders.tsx"
+    )
+
+    expect(sidebarSource).toContain('from "./sidebar-detail-loaders"')
+    expect(detailLoadersSource).toContain('import("./sidebar-detail-panels")')
     expect(panelsSource).not.toContain('from "./sidebar-detail-panels"')
   })
 

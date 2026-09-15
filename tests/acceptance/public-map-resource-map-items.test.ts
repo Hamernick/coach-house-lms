@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
+import { resolvePublicMapResourceLinkBranding } from "@/components/public/public-map-index/resource-link-branding"
 
 import { hasPublicMapCoolingIntent, resolvePublicMapResourceDetailPresentation, resolvePublicMapResourcePresentation } from "@/lib/public-map/resource-seasonal-presentation"
 
@@ -140,6 +141,31 @@ function buildGuideResourceItem(
 }
 
 describe("public map resource map items", () => {
+  it("looks up website favicons using only the destination hostname", () => {
+    const icon = resolvePublicMapResourceLinkBranding({
+      href: "https://user:private@www.example.org/apply?token=secret#private",
+    })
+    expect(icon.domain).toBe("example.org")
+    expect(icon.iconUrls).toEqual(["https://www.google.com/s2/favicons?domain=example.org&sz=64"])
+  })
+
+  it("uses the provider logo only for that provider's website", () => {
+    const options = {
+      websiteHref: "https://www.example.org",
+      faviconUrl: "https://cdn.example.org/logo.png",
+    }
+    expect(resolvePublicMapResourceLinkBranding({ ...options, href: "https://example.org/donate" }).iconUrls[0])
+      .toBe(options.faviconUrl)
+    expect(resolvePublicMapResourceLinkBranding({ ...options, href: "https://facebook.com/example" }).iconUrls)
+      .toEqual(["https://www.google.com/s2/favicons?domain=facebook.com&sz=64"])
+  })
+
+  it.each(["mailto:hello@example.org", "tel:+12125550100", "/local", "javascript:alert(1)"])(
+    "does not request a site favicon for a non-HTTP target: %s", (href) => {
+      expect(resolvePublicMapResourceLinkBranding({ href }).iconUrls).toEqual([])
+    }
+  )
+
   it("keeps the ordinary library under its existing ID below the heat threshold", () => {
     const source = buildGuideResourceItem("shared-library-id", {
       title: "Brooklyn Central Library cooling center",

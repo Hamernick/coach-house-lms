@@ -255,7 +255,10 @@ export function PublicMapDrawerSearchPanel({
   return (
     <div
       ref={containerRef}
-      className="flex min-h-0 flex-1 flex-col bg-transparent"
+      className={cn(
+        "flex min-h-0 flex-1 flex-col bg-transparent",
+        !showDiscoveryHome && "mx-auto w-full max-w-xl"
+      )}
       onKeyDown={handleResultKeyDown}
     >
       <div className="shrink-0 px-2.5">
@@ -287,7 +290,7 @@ export function PublicMapDrawerSearchPanel({
         />
       ) : (
         <div
-          className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2")}
+          className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2.5")}
         >
           <PublicMapSearchResultsStatus
             hasStaleResourceItems={items.some(

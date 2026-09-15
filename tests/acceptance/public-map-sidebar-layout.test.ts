@@ -695,7 +695,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("overflow-hidden")
     expect(markup).toContain('data-public-map-result-trigger="true"')
     expect(markup).not.toContain('role="button"')
-    expect(markup).not.toContain(organization.tagline)
+    expect(markup).toContain(organization.tagline)
     expect(markup).not.toContain(organization.description ?? "")
     expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
     expect(markup).toContain("min-w-0 text-pretty break-words")
@@ -705,7 +705,7 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain(">View<")
     expect(markup).toContain("flex min-w-0 items-center")
     expect(markup).toContain(
-      "truncate text-base leading-snug font-semibold"
+      "line-clamp-2 text-base leading-snug font-semibold"
     )
     expect(markup).toContain("text-sm leading-snug")
     expect(markup).toContain(">Community<")
@@ -753,7 +753,7 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain("Seed Food Access")
-    expect(markup).not.toContain("pantry and meal support")
+    expect(markup).toContain("pantry and meal support")
     expect(markup).toContain(">Food</mark>")
     expect(markup).toContain("Chicago, IL")
     expect(markup).not.toContain(">Water<")
@@ -782,8 +782,8 @@ describe("public map sidebar layout", () => {
     expect(resourceNameIndex).toBeGreaterThan(resourceTitleSlotIndex)
     expect(primaryCategoryIndex).toBeGreaterThan(resourceNameIndex)
     expect(markup).toContain("Chicago, IL")
-    expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
+    expect(organizationMetadataClassName.split(" ")).toContain("mt-1.5")
+    expect(resourceMetadataClassName.split(" ")).toContain("mt-1.5")
     expect(markup.match(/min-h-20/g)).toHaveLength(4)
     expect(markup).toContain("min-h-20")
     expect(markup).not.toContain(">Pending review<")
@@ -802,7 +802,7 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("PublicMapResourcePreviewPopover")
   })
 
-  it("keeps resource rows compact when provider images are available", () => {
+  it("keeps compact resource cards with provider images and category fallback", () => {
     const resource = buildResourceItem({
       markerImageUrl: "https://example.org/provider-photo.jpg",
     })
@@ -821,11 +821,12 @@ describe("public map sidebar layout", () => {
     )
 
     expect(markup).toContain("min-h-20")
-    expect(markup).toContain("size-11")
-    expect(markup).toContain('data-react-grab-surface-slot="avatar"')
-    expect(markup).not.toContain('src="https://example.org/provider-photo.jpg"')
-    expect(markup).toContain('aria-label="Open details for Seed Food Access"')
-    expect(markup).toContain("truncate text-base")
+    expect(markup).toContain("size-14")
+    expect(markup).toContain('data-react-grab-surface-slot="media"')
+    expect(markup).toContain('src="https://example.org/provider-photo.jpg"')
+    expect(markup).toContain('alt="Seed Food Access image"')
+    expect(markup).toContain('loading="lazy"')
+    expect(markup).toContain("line-clamp-2")
     expect(markup).toContain('data-public-map-resource-category-icon="food"')
   })
 
@@ -1573,7 +1574,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(">My Map<")
     expect(markup).toContain("Seed Food Access")
     expect(markup).toContain(">Food<")
-    expect(markup).not.toContain("Food pantry and meal support")
+    expect(markup).toContain("Food pantry and meal support")
     expect(markup).toContain('aria-label="Remove Seed Food Access from My Map"')
     expect(markup).toContain('aria-pressed="true"')
   })

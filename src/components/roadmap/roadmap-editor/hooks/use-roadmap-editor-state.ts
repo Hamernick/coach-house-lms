@@ -8,6 +8,7 @@ import {
   useState,
   useTransition,
 } from "react"
+import { useWorkspaceParticles } from "@/features/workspace-particles/client"
 import { usePathname } from "next/navigation"
 
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
@@ -52,6 +53,7 @@ export function useRoadmapEditorState({
   onDirtyChange,
   onRegisterDiscard,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
+  const onRoadmapSectionSaved = useWorkspaceParticles()?.updateRoadmapSection
   const storageKey = useMemo(
     () => `roadmap-draft:${publicSlug ?? "private"}`,
     [publicSlug]
@@ -217,6 +219,7 @@ export function useRoadmapEditorState({
           }
 
           const nextSection = result.section
+          onRoadmapSectionSaved?.(nextSection)
           setSections((prev) => {
             const index = prev.findIndex((entry) => entry.id === nextSection.id)
             if (index === -1) return [...prev, nextSection]
@@ -238,7 +241,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [canEdit, isPending, savingId]
+    [canEdit, isPending, savingId, onRoadmapSectionSaved]
   )
 
   const flushActiveSectionDraft = useCallback(() => {
@@ -369,6 +372,7 @@ export function useRoadmapEditorState({
           }
 
           const nextSection = result.section
+          onRoadmapSectionSaved?.(nextSection)
           setSections((prev) =>
             prev.map((section) =>
               section.id === nextSection.id ? nextSection : section
@@ -387,7 +391,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [activeSection, canEdit, isPending, savingId]
+    [activeSection, canEdit, isPending, savingId, onRoadmapSectionSaved]
   )
 
   return {

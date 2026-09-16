@@ -1,5 +1,7 @@
 "use client"
 
+import { useWorkspaceParticles } from "@/features/workspace-particles/client"
+
 import {
   memo,
   useCallback,
@@ -104,6 +106,11 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     const [tab, setTab] = useState<WorkspaceCanvasDrawerTab>(
       request?.tab ?? "accelerator"
     )
+    const particleDrag = useWorkspaceParticles()?.draggingSource
+    useEffect(() => {
+      if (particleDrag)
+        setActiveSnapPoint(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)
+    }, [particleDrag])
     const handledRequestIdRef = useRef(0)
     const handledAcceleratorRequestIdRef = useRef(0)
     const [, startTabTransition] = useTransition()

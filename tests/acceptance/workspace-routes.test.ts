@@ -30,6 +30,7 @@ describe("workspace routes", () => {
       "finance",
       "people",
       "documents",
+      "particles",
       "tools",
       "accelerator",
       "roadmap",
@@ -37,10 +38,14 @@ describe("workspace routes", () => {
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
     expect(normalizeWorkspaceDrawerTab("finance")).toBe("finance")
     expect(normalizeWorkspaceDrawerTab("tools")).toBe("tools")
+    expect(normalizeWorkspaceDrawerTab("particles")).toBe("particles")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })
 
   it("builds editor and roadmap detail links", () => {
+    expect(getWorkspaceDrawerPath({ tab: "particles" })).toBe(
+      "/workspace?drawer=particles"
+    )
     expect(getWorkspaceDrawerPath({ tab: "accelerator" })).toBe(
       "/workspace?drawer=accelerator"
     )

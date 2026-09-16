@@ -12,6 +12,7 @@ export type GoogleDriveConnectionSummary = {
 
 export type GoogleDriveDocument = {
   id: string
+  fileId?: string
   name: string
   mimeType: string
   webViewLink: string

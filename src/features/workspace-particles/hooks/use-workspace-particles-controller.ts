@@ -1,0 +1,354 @@
+"use client"
+
+import { useCallback, useMemo, useRef, useState } from "react"
+import type { Connection, Node, NodeChange, ReactFlowInstance } from "reactflow"
+import { toast } from "sonner"
+import type { RoadmapSection } from "@/lib/roadmap/types"
+import {
+  normalizeWorkspaceParticleState,
+  PARTICLE_LIMIT,
+  PARTICLE_IMAGE_MAX_BYTES,
+  PARTICLE_SIZES,
+  particleSourceKey,
+  removeParticle,
+  resizeParticle,
+} from "../lib"
+import type {
+  ParticleDriveDocument,
+  ParticleImage,
+  ParticleReference,
+  ParticleSize,
+  WorkspaceParticleState,
+} from "../types"
+import { useParticleSources } from "./use-particle-sources"
+import { useParticleNodes } from "./use-particle-nodes"
+
+export function useWorkspaceParticlesController({
+  state: input,
+  sections,
+  canEdit,
+  enabled,
+  onChange,
+  pickDriveFiles,
+  loadDriveDocuments,
+}: {
+  state: WorkspaceParticleState | undefined
+  sections: RoadmapSection[]
+  canEdit: boolean
+  enabled: boolean
+  pickDriveFiles: () => Promise<string[]>
+  loadDriveDocuments?: () => Promise<ParticleDriveDocument[]>
+  onChange: (next: WorkspaceParticleState) => void
+}) {
+  const state = useMemo(() => normalizeWorkspaceParticleState(input), [input])
+  const stateRef = useRef(state)
+  stateRef.current = state
+  const flow = useRef<ReactFlowInstance | null>(null)
+  const canvas = useRef<HTMLElement | null>(null)
+  const setFlow = useCallback((instance: ReactFlowInstance) => {
+    flow.current = instance
+  }, [])
+  const setCanvas = useCallback((element: HTMLElement | null) => {
+    canvas.current = element
+  }, [])
+  const { sources, driveStatus, refreshDrive, updateRoadmapSection } =
+    useParticleSources(sections, state.images, loadDriveDocuments)
+  const [draggingSource, setDraggingSource] = useState<string | null>(null)
+  const [draggingNode, setDraggingNode] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [announcement, setAnnouncement] = useState("")
+  const { nodes, onNodesChange } = useParticleNodes(
+    state.items,
+    sources,
+    canEdit,
+    enabled
+  )
+  const commit = useCallback(
+    (next: WorkspaceParticleState) => {
+      if (!canEdit || !enabled) return
+      const normalized = normalizeWorkspaceParticleState({
+        ...next,
+        updatedAt: new Date().toISOString(),
+      })
+      stateRef.current = normalized
+      onChange(normalized)
+    },
+    [canEdit, enabled, onChange]
+  )
+  const add = useCallback(
+    (
+      ref: ParticleReference,
+      point?: { x: number; y: number },
+      image?: ParticleImage
+    ) => {
+      if (!canEdit || !enabled || !flow.current || !canvas.current) return false
+      const source = sources.find(
+        (entry) => particleSourceKey(entry.ref) === particleSourceKey(ref)
+      )
+      if (!image && !source?.available) return false
+      const current = stateRef.current
+      const existing = current.items.find(
+        (item) => particleSourceKey(item.source) === particleSourceKey(ref)
+      )
+      if (existing) {
+        void flow.current.fitView({
+          nodes: [{ id: existing.id }],
+          maxZoom: 1,
+          duration: 250,
+        })
+        setAnnouncement(
+          `${source?.title ?? image?.title ?? "Item"} is already on the canvas.`
+        )
+        return false
+      }
+      if (current.items.length >= PARTICLE_LIMIT) {
+        toast.error("This canvas has reached its 100-particle limit.")
+        return false
+      }
+      const bounds = canvas.current.getBoundingClientRect()
+      const screenPoint = point ?? {
+        x: bounds.left + bounds.width / 2,
+        y: bounds.top + bounds.height * 0.3,
+      }
+      const position = flow.current.screenToFlowPosition(screenPoint)
+      const dimensions = PARTICLE_SIZES.mini
+      const item = {
+        id: `particle-${crypto.randomUUID()}`,
+        source: ref,
+        x: position.x - dimensions.width / 2,
+        y: position.y - dimensions.height / 2,
+        size: "mini" as const,
+      }
+      commit({
+        ...current,
+        images: image ? [...current.images, image] : current.images,
+        items: [...current.items, item],
+      })
+      setAnnouncement(
+        `${source?.title ?? image?.title ?? "Item"} added to canvas.`
+      )
+      return true
+    },
+    [canEdit, enabled, sources, commit]
+  )
+  const remove = useCallback(
+    (id: string) => {
+      commit(removeParticle(stateRef.current, id))
+      setAnnouncement("Removed from canvas. The original is still available.")
+    },
+    [commit]
+  )
+  const resize = useCallback(
+    (id: string, size: ParticleSize) => {
+      commit({
+        ...stateRef.current,
+        items: stateRef.current.items.map((item) =>
+          item.id === id ? resizeParticle(item, size) : item
+        ),
+      })
+    },
+    [commit]
+  )
+  const persistPositions = useCallback(
+    (moved: Node[], point?: { x: number; y: number }) => {
+      setDraggingNode(false)
+      if (!canEdit) return
+      const targets = point
+        ? Array.from(
+            document.querySelectorAll<HTMLElement>(
+              "[data-particle-return-target]"
+            )
+          )
+        : []
+      const returned =
+        point &&
+        targets.some((target) => {
+          const rect = target.getBoundingClientRect()
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            point.x >= rect.left &&
+            point.x <= rect.right &&
+            point.y >= rect.top &&
+            point.y <= rect.bottom
+          )
+        })
+      const movedIds = new Map(
+        moved
+          .filter((node) => node.type === "workspace-particle")
+          .map((node) => [node.id, node.position])
+      )
+      if (movedIds.size === 0) return
+      if (returned) {
+        commit(
+          Array.from(movedIds.keys()).reduce(removeParticle, stateRef.current)
+        )
+        setAnnouncement("Returned to Particles. Original content is unchanged.")
+      } else {
+        commit({
+          ...stateRef.current,
+          items: stateRef.current.items.map((item) => {
+            const position = movedIds.get(item.id)
+            return position ? { ...item, x: position.x, y: position.y } : item
+          }),
+        })
+      }
+    },
+    [canEdit, commit]
+  )
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const ids = new Set(stateRef.current.items.map((item) => item.id))
+      const own = changes.filter(
+        (change) => "id" in change && ids.has(change.id)
+      )
+      onNodesChange(
+        own.filter(
+          (change) =>
+            canEdit || change.type === "dimensions" || change.type === "select"
+        )
+      )
+      const removed = own.filter((change) => change.type === "remove")
+      const positioned = own.filter(
+        (change) =>
+          change.type === "position" &&
+          change.position &&
+          change.dragging !== true
+      )
+      if (canEdit && positioned.length) {
+        commit({
+          ...stateRef.current,
+          items: stateRef.current.items.map((item) => {
+            const change = positioned.find(
+              (entry) => "id" in entry && entry.id === item.id
+            )
+            return change?.type === "position" && change.position
+              ? { ...item, ...change.position }
+              : item
+          }),
+        })
+      }
+      if (canEdit && removed.length)
+        commit(
+          removed.reduce(
+            (next, change) =>
+              "id" in change ? removeParticle(next, change.id) : next,
+            stateRef.current
+          )
+        )
+    },
+    [canEdit, commit, onNodesChange]
+  )
+  const connect = useCallback(
+    (connection: Connection) => {
+      if (
+        !connection.source ||
+        !connection.target ||
+        connection.source === connection.target
+      )
+        return
+      commit({
+        ...stateRef.current,
+        connections: [
+          ...stateRef.current.connections,
+          {
+            id: "pending",
+            source: connection.source,
+            target: connection.target,
+          },
+        ],
+      })
+    },
+    [commit]
+  )
+  const disconnect = useCallback(
+    (id: string) => {
+      commit({
+        ...stateRef.current,
+        connections: stateRef.current.connections.filter(
+          (edge) => edge.id !== id
+        ),
+      })
+    },
+    [commit]
+  )
+  const uploadImage = useCallback(
+    async (file: File) => {
+      if (!canEdit || uploading) return
+      if (
+        stateRef.current.images.length >= PARTICLE_LIMIT ||
+        stateRef.current.items.length >= PARTICLE_LIMIT
+      ) {
+        toast.error("This workspace has reached its image or particle limit.")
+        return
+      }
+      if (
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+        file.size > PARTICLE_IMAGE_MAX_BYTES
+      ) {
+        toast.error("Choose a PNG, JPG, or WebP image up to 4 MB.")
+        return
+      }
+      setUploading(true)
+      try {
+        const form = new FormData()
+        form.set("file", file)
+        const response = await fetch("/api/workspace/particles/images", {
+          method: "POST",
+          body: form,
+        })
+        const result = await response.json()
+        if (!response.ok || !result.image)
+          throw new Error(result.error ?? "Image upload failed.")
+        const image = result.image as ParticleImage
+        if (!add({ kind: "image", id: image.id }, undefined, image)) {
+          commit({
+            ...stateRef.current,
+            images: [...stateRef.current.images, image],
+          })
+        }
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Image upload failed. Try again."
+        )
+      } finally {
+        setUploading(false)
+      }
+    },
+    [canEdit, uploading, add, commit]
+  )
+  return {
+    state,
+    nodes,
+    sources,
+    canEdit: canEdit && enabled,
+    flow,
+    canvas,
+    setFlow,
+    setCanvas,
+    draggingSource,
+    setDraggingSource,
+    draggingNode,
+    setDraggingNode,
+    driveStatus,
+    refreshDrive,
+    updateRoadmapSection,
+    pickDriveFiles,
+    add,
+    remove,
+    resize,
+    persistPositions,
+    onNodesChange: handleNodesChange,
+    connect,
+    disconnect,
+    uploadImage,
+    uploading,
+    announcement,
+  }
+}
+
+export type WorkspaceParticlesController = ReturnType<
+  typeof useWorkspaceParticlesController
+>

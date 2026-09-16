@@ -2,6 +2,7 @@
 
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 import XIcon from "lucide-react/dist/esm/icons/x"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -18,6 +19,7 @@ import {
   MARKETPLACE_FILTER_GROUPS,
   MarketplaceFilterMenu,
 } from "./marketplace-filter-menu"
+import categoryStyles from "./marketplace-category.module.css"
 
 export function MarketplaceFiltersPanel({
   filters,
@@ -68,10 +70,23 @@ export function MarketplaceFiltersPanel({
                 key={filter.key}
                 type="button"
                 variant="secondary"
-                className="max-w-full rounded-lg px-2 text-xs"
+                className={cn(
+                  "max-w-full rounded-lg px-2 text-xs",
+                  categoryStyles.category
+                )}
+                data-category={filter.key === "type" ? filters.type : undefined}
                 aria-label={`Remove ${filter.label} filter`}
                 onClick={() => onChange({ ...filters, [filter.key]: "all" })}
               >
+                {filter.key === "type" && (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full",
+                      categoryStyles.dot
+                    )}
+                  />
+                )}
                 <span className="truncate">{filter.label}</span>
                 <XIcon data-icon="inline-end" aria-hidden />
               </Button>
@@ -98,7 +113,7 @@ export function MarketplaceFiltersPanel({
         }
         aria-label="Resource categories"
         spacing={2}
-        className="max-w-full flex-wrap justify-start"
+        className="w-full max-w-md flex-wrap justify-start"
       >
         {[
           { value: "all", label: "All resources" },
@@ -107,8 +122,19 @@ export function MarketplaceFiltersPanel({
           <ToggleGroupItem
             key={option.value}
             value={option.value}
-            className="bg-muted/60 data-[state=on]:bg-primary/10 data-[state=on]:text-primary h-11 rounded-xl px-3 text-xs font-medium md:h-9"
+            data-category={option.value}
+            className={cn(
+              "bg-muted/60 h-11 gap-2 rounded-xl px-3 text-xs font-medium md:h-9",
+              categoryStyles.category
+            )}
           >
+            <span
+              aria-hidden
+              className={cn(
+                "size-2.5 shrink-0 rounded-full",
+                categoryStyles.dot
+              )}
+            />
             {option.label}
           </ToggleGroupItem>
         ))}

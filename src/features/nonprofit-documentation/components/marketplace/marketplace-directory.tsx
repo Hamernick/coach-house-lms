@@ -103,7 +103,7 @@ export function MarketplaceDirectory() {
       </div>
 
       {resources.length > 0 ? (
-        <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid auto-rows-fr items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {resources.map((resource) => (
             <MarketplaceResourceCard
               key={resource.id}

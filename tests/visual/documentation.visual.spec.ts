@@ -150,7 +150,7 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
   await page.goto("/documentation/marketplace")
   await ready(page)
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "23 resources"
+    "34 resources"
   )
   await page
     .getByRole("searchbox", { name: "Search resources", exact: true })
@@ -184,7 +184,7 @@ test("Marketplace category pills and searchable filters retain URL state", async
   await ready(page)
   await page.getByRole("radio", { name: "Software", exact: true }).click()
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "5 resources"
+    "16 resources"
   )
   await page
     .getByRole("button", { name: "Browse resource filters", exact: true })
@@ -196,7 +196,7 @@ test("Marketplace category pills and searchable filters retain URL state", async
   await filterSearch.fill("free if")
   await filterSearch.press("Enter")
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "2 resources"
+    "3 resources"
   )
   await page.reload()
   await expect(
@@ -214,7 +214,7 @@ test("Marketplace category pills and searchable filters retain URL state", async
     .getByRole("tab", { name: "Tools & resources", exact: true })
     .click()
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "2 resources"
+    "3 resources"
   )
   await page
     .getByRole("button", { name: "Remove Software filter", exact: true })
@@ -239,7 +239,7 @@ test("Marketplace category pills and searchable filters retain URL state", async
   ).toBeVisible()
   await page.getByRole("button", { name: "Clear filters", exact: true }).click()
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "23 resources"
+    "34 resources"
   )
 })
 
@@ -561,7 +561,10 @@ test("Marketplace renders published member profiles separately from coaches", as
   const person = page.locator(
     '[data-marketplace-person="sample-public-member"]'
   )
-  await expect(person).toHaveAttribute("href", "/sample-public-member")
+  await expect(person).toHaveAttribute(
+    "href",
+    "/documentation/marketplace/people/@sample-public-member"
+  )
   await expect(person).toContainText("Public member fixture")
   await expect(person).not.toContainText("Book")
 })

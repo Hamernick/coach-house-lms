@@ -3,6 +3,7 @@
 import { useState } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import SlidersHorizontalIcon from "lucide-react/dist/esm/icons/sliders-horizontal"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -24,6 +25,7 @@ import {
   MARKETPLACE_STAGES,
 } from "../../lib/marketplace-directory"
 import type { MarketplaceFilters } from "../../marketplace-types"
+import categoryStyles from "./marketplace-category.module.css"
 
 export const MARKETPLACE_FILTER_GROUPS = [
   { key: "type", label: "Category", options: MARKETPLACE_RESOURCE_TYPES },
@@ -73,7 +75,13 @@ export function MarketplaceFilterMenu({
                   <CommandItem
                     key={option.value}
                     value={`${group.label} ${option.label}`}
-                    className="min-h-11 rounded-lg md:min-h-9"
+                    className={cn(
+                      "min-h-11 rounded-lg md:min-h-9",
+                      categoryStyles.category
+                    )}
+                    data-category={
+                      group.key === "type" ? option.value : undefined
+                    }
                     onSelect={() => {
                       onChange({
                         ...filters,
@@ -85,6 +93,15 @@ export function MarketplaceFilterMenu({
                       setOpen(false)
                     }}
                   >
+                    {group.key === "type" && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "size-2.5 shrink-0 rounded-full",
+                          categoryStyles.dot
+                        )}
+                      />
+                    )}
                     {option.label}
                     {filters[group.key] === option.value && (
                       <CheckIcon className="ml-auto" aria-label="Applied" />

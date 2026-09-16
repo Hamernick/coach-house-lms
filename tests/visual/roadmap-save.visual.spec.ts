@@ -326,18 +326,26 @@ test("offline drafts wait and resume saving after reconnecting", async ({
 }) => {
   const errors: string[] = []
   page.on("pageerror", (error) => errors.push(error.message))
+  await page.clock.install()
   const backend = await mockSaves(page)
   await context.setOffline(true)
-  await page.getByLabel("Document text").fill("Offline draft")
-  await expect(
-    page.getByText("Offline. Your changes are waiting to save.")
-  ).toBeVisible()
-  await page.clock.install()
+  const offlineMessage = page.getByText(
+    "Offline. Your changes are waiting to save."
+  )
+  // Wait for the connection effect before editing; the initial Saved label is SSR.
+  await expect(offlineMessage).toBeVisible()
+  const editor = page.getByLabel("Document text")
+  await editor.fill("Offline draft")
+  await expect(page.getByLabel("Save state")).toHaveText("Unsaved")
   await page.clock.fastForward(15_000)
+  await expect(editor).toHaveValue("Offline draft")
   expect(backend.requests).toHaveLength(0)
   await context.setOffline(false)
-  await page.clock.fastForward(3_000)
+  await expect(offlineMessage).toBeHidden()
+  await page.clock.runFor(3_000)
   await expect.poll(() => backend.section.content).toBe("Offline draft")
+  await expect(editor).toHaveValue("Offline draft")
+  await expect(page.getByLabel("Save state")).toHaveText("Saved")
   expect(errors).toEqual([])
 })
 

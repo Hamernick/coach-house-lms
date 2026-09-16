@@ -465,14 +465,21 @@ describe("nonprofit documentation feature", () => {
         name: "Harbor Blue",
       })
     ).toBe("Background — Harbor Blue")
-    expect(BRAND_FONT_OPTIONS.length).toBeGreaterThanOrEqual(30)
+    expect(BRAND_FONT_OPTIONS.length).toBeGreaterThanOrEqual(19)
     expect(BRAND_FONT_GROUPS.map((group) => group.label)).toEqual([
       "Sans serif",
-      "Serif",
       "Display",
-      "Monospace",
     ])
-    expect(brandFontStack("Georgia")).toBe("Georgia, serif")
+    expect(brandFontStack("Georgia")).toBe(brandFontStack("System Sans"))
+    expect(
+      sanitizeBrandDraft({
+        headingFont: "Georgia",
+        bodyFont: "Times New Roman",
+      })
+    ).toMatchObject({ headingFont: "System Sans", bodyFont: "System Sans" })
+    expect(
+      BRAND_FONT_OPTIONS.every((font) => font.stack.endsWith("sans-serif"))
+    ).toBe(true)
 
     for (const legacyName of ["Community cream", "Warm canvas"]) {
       const migrated = sanitizeBrandDraft({

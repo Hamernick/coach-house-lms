@@ -12,6 +12,8 @@ import type {
   StoredBrandAsset,
 } from "../../types"
 import { foregroundFor, normalizeHex } from "../../lib/brand-identity"
+import { brandFontStack } from "../../lib/brand-fonts"
+import { BrandAssetExample } from "./brand-asset-example"
 import { BrandAssetField } from "./brand-asset-field"
 import {
   BrandIdentitySection,
@@ -29,6 +31,7 @@ export function ApplicationsSection({
   updateDraft,
   uploadAsset,
   deleteAsset,
+  disabled = false,
 }: {
   draft: BrandIdentityDraft
   assets: StoredBrandAsset[]
@@ -36,18 +39,18 @@ export function ApplicationsSection({
   updateDraft: (value: Partial<BrandIdentityDraft>) => void
   uploadAsset: (id: BrandAssetId, file: File) => Promise<boolean>
   deleteAsset: (id: BrandAssetId) => Promise<void>
+  disabled?: boolean
 }) {
   const application = assets.find((asset) => asset.id === "application-image")
   const brand = normalizeHex(draft.colors[1]?.value ?? "#214E3B")
   const canvas = normalizeHex(draft.colors[0]?.value ?? "#F3F0E8")
-  const ink = normalizeHex(draft.colors[3]?.value ?? "#111310")
 
   return (
     <BrandIdentitySection
       id="applications"
       eyebrow="Put the system to work"
       title="Applications"
-      description="Test the identity in a realistic campaign composition. One message, one focal image, and one clear action are usually enough."
+      description="Bring your palette, type, and imagery together."
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -84,6 +87,7 @@ export function ApplicationsSection({
           previewUrl={assetUrls["application-image"]}
           onUpload={uploadAsset}
           onDelete={deleteAsset}
+          disabled={disabled}
         />
       </BrandIdentitySubsection>
 
@@ -101,7 +105,7 @@ export function ApplicationsSection({
               <div>
                 <p
                   className="text-3xl leading-tight font-semibold tracking-[-0.04em] sm:text-4xl"
-                  style={{ fontFamily: draft.headingFont }}
+                  style={{ fontFamily: brandFontStack(draft.headingFont) }}
                 >
                   {draft.campaignHeadline}
                 </p>
@@ -124,14 +128,7 @@ export function ApplicationsSection({
                   unoptimized
                 />
               ) : (
-                <div
-                  className="flex size-full items-end p-8"
-                  style={{ color: ink }}
-                >
-                  <p className="max-w-xs text-sm leading-6">
-                    Upload a campaign image to complete this composition.
-                  </p>
-                </div>
+                <BrandAssetExample id="application-image" />
               )}
             </div>
           </div>
@@ -142,7 +139,7 @@ export function ApplicationsSection({
         title="Illustrations"
         description="Keep a small, coherent set. Use one drawing style, consistent line weight, and the same approved foreground/background pairings."
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {ILLUSTRATION_IDS.map((id, index) => (
             <BrandAssetField
               key={id}
@@ -153,6 +150,7 @@ export function ApplicationsSection({
               previewUrl={assetUrls[id]}
               onUpload={uploadAsset}
               onDelete={deleteAsset}
+              disabled={disabled}
               aspect="square"
             />
           ))}

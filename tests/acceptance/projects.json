@@ -335,6 +335,7 @@
       "tests/acceptance/my-organization-calendar-view.test.ts",
       "tests/acceptance/my-organization-page-content-helpers.test.ts",
       "tests/acceptance/my-organization-workspace-seed-helpers.test.ts",
+      "tests/acceptance/nonprofit-documentation-brand-assets.test.ts",
       "tests/acceptance/nonprofit-documentation-marketplace.test.ts",
       "tests/acceptance/nonprofit-documentation-search.test.ts",
       "tests/acceptance/nonprofit-documentation.test.ts",

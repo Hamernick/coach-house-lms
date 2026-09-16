@@ -19,14 +19,17 @@ import { BrandIdentitySection } from "./brand-identity-section"
 export function ExportsSection({
   draft,
   assets,
+  ready = false,
 }: {
   draft: BrandIdentityDraft
   assets: StoredBrandAsset[]
+  ready?: boolean
 }) {
   const [status, setStatus] = useState("Ready to export")
   const [working, setWorking] = useState(false)
 
   async function downloadPackage() {
+    if (!ready) return
     setWorking(true)
     setStatus("Building brand package")
     try {
@@ -68,7 +71,7 @@ export function ExportsSection({
           <Button
             type="button"
             className="mt-6"
-            disabled={working}
+            disabled={working || !ready}
             onClick={() => void downloadPackage()}
           >
             <DownloadIcon aria-hidden />
@@ -86,6 +89,7 @@ export function ExportsSection({
             type="button"
             variant="outline"
             className="mt-6"
+            disabled={!ready}
             onClick={() => void copyTokens()}
           >
             <CopyIcon aria-hidden />
@@ -101,7 +105,12 @@ export function ExportsSection({
             Open the browser print view to save a PDF or create a paper copy.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={() => window.print()}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!ready}
+          onClick={() => window.print()}
+        >
           <PrinterIcon aria-hidden />
           Print guide
         </Button>
@@ -128,7 +137,9 @@ export function ExportsSection({
         role="status"
         aria-live="polite"
       >
-        {status}
+        {ready
+          ? status
+          : "Waiting for saved text and images. Reload to retry if storage is unavailable."}
       </p>
     </BrandIdentitySection>
   )

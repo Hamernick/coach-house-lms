@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { runInNewContext } from "node:vm"
-import { transformSync } from "esbuild"
+import { JsxEmit, ModuleKind, ScriptTarget, transpileModule } from "typescript"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import * as identity from "@/features/nonprofit-documentation/lib/brand-identity"
 import * as validation from "@/features/nonprofit-documentation/lib/brand-asset-validation"
@@ -16,11 +16,14 @@ function sourceModule(
 ) {
   const compiledModule = { exports: {} as Record<string, (...args: any[]) => any> }
   runInNewContext(
-    transformSync(readFileSync(feature + path, "utf8"), {
-      loader: path.endsWith("tsx") ? "tsx" : "ts",
-      format: "cjs",
-      jsx: "automatic",
-    }).code,
+    transpileModule(readFileSync(feature + path, "utf8"), {
+      fileName: path,
+      compilerOptions: {
+        target: ScriptTarget.ES2020,
+        module: ModuleKind.CommonJS,
+        jsx: JsxEmit.ReactJSX,
+      },
+    }).outputText,
     {
       module: compiledModule,
       exports: compiledModule.exports,

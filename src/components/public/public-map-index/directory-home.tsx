@@ -125,6 +125,25 @@ export function PublicMapDirectoryHome({
           <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
             <PublicMapClaimDialog />
           </Suspense>
+          <section
+            aria-label="About Coach House"
+            className="text-muted-foreground mx-auto flex max-w-xl flex-col gap-2 px-2 pt-4 text-center text-sm leading-5"
+          >
+            <div className="flex flex-col gap-1">
+              <h2 className="text-foreground font-semibold leading-tight">
+                Coach House
+              </h2>
+              <p>
+                Find local resources and run your nonprofit with shared plans,
+                documents, and a calendar.
+              </p>
+            </div>
+            <p>
+              Google connections are optional. Sign in with Google and manage
+              your Drive connection in Workspace Tools. Drive file import and
+              Google Calendar syncing are coming soon.
+            </p>
+          </section>
           <nav aria-label="Legal" className="flex justify-center gap-2">
             <Button
               asChild

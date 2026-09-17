@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test"
+import { prepareVisualPage, reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
+
+test.beforeEach(async ({ page }) => {
+  await prepareVisualPage(page)
+})
 
 async function ready(page: Page) {
   await page.locator("[data-documentation-scroll]").waitFor()
@@ -145,7 +150,7 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
   await page.goto("/documentation/marketplace")
   await ready(page)
   await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
-    "23 resources"
+    "34 resources"
   )
   await page
     .getByRole("searchbox", { name: "Search resources", exact: true })
@@ -169,6 +174,72 @@ test("Marketplace retains resource filters, shortlist persistence, and export", 
   await page.getByRole("button", { name: /Download CSV/ }).click()
   expect((await download).suggestedFilename()).toBe(
     "coach-house-marketplace-shortlist.csv"
+  )
+})
+
+test("Marketplace category pills and searchable filters retain URL state", async ({
+  page,
+}) => {
+  await page.goto("/documentation/marketplace")
+  await ready(page)
+  await page.getByRole("radio", { name: "Software", exact: true }).click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "16 resources"
+  )
+  await page
+    .getByRole("button", { name: "Browse resource filters", exact: true })
+    .click()
+  const filterSearch = page.getByRole("combobox", {
+    name: "Find a resource filter",
+    exact: true,
+  })
+  await filterSearch.fill("free if")
+  await filterSearch.press("Enter")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "3 resources"
+  )
+  await page.reload()
+  await expect(
+    page.getByRole("radio", { name: "Software", exact: true })
+  ).toBeChecked()
+  await expect(
+    page.getByRole("button", {
+      name: "Remove Free if eligible filter",
+      exact: true,
+    })
+  ).toBeVisible()
+  await page.getByRole("tab", { name: "People", exact: true }).click()
+  await expect(page).toHaveURL(/view=people/)
+  await page
+    .getByRole("tab", { name: "Tools & resources", exact: true })
+    .click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "3 resources"
+  )
+  await page
+    .getByRole("button", { name: "Remove Software filter", exact: true })
+    .click()
+  await expect(page).not.toHaveURL(/type=software/)
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click()
+  const search = page.getByRole("searchbox", {
+    name: "Search resources",
+    exact: true,
+  })
+  await search.pressSequentially("Google Workspace")
+  await expect(search).toHaveValue("Google Workspace")
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "1 resource"
+  )
+  await search.fill("all")
+  await expect(search).toHaveValue("all")
+  await expect(page).toHaveURL(/q=all/)
+  await search.fill("no-matching-resource-20260915")
+  await expect(
+    page.getByText("No resources match these filters", { exact: true })
+  ).toBeVisible()
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click()
+  await expect(page.locator("[data-marketplace-results-count]")).toHaveText(
+    "34 resources"
   )
 })
 
@@ -324,8 +395,8 @@ for (const mode of ["light", "dark"] as const) {
         .locator("[data-documentation-scroll]")
         .evaluate((el) => el.scrollWidth <= el.clientWidth)
     ).toBe(true)
-    await expect(page).toHaveScreenshot(
-      `documentation-search-mobile-${mode}.png`,
+    await expect.soft(page).toHaveScreenshot(
+      reviewedPlatformScreenshotName(`documentation-search-mobile-${mode}.png`),
       { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
     )
     await page
@@ -340,8 +411,8 @@ for (const mode of ["light", "dark"] as const) {
         .locator("[data-documentation-scroll]")
         .evaluate((el) => el.scrollWidth <= el.clientWidth)
     ).toBe(true)
-    await expect(page).toHaveScreenshot(
-      `documentation-article-mobile-${mode}.png`,
+    await expect.soft(page).toHaveScreenshot(
+      reviewedPlatformScreenshotName(`documentation-article-mobile-${mode}.png`),
       { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
     )
     for (const [route, surface] of [
@@ -355,8 +426,8 @@ for (const mode of ["light", "dark"] as const) {
           .locator("[data-documentation-scroll]")
           .evaluate((el) => el.scrollWidth <= el.clientWidth)
       ).toBe(true)
-      await expect(page).toHaveScreenshot(
-        `documentation-${surface}-mobile-${mode}.png`,
+      await expect.soft(page).toHaveScreenshot(
+        reviewedPlatformScreenshotName(`documentation-${surface}-mobile-${mode}.png`),
         {
           animations: "disabled",
           caret: "hide",
@@ -371,14 +442,14 @@ test("documentation home and article desktop baselines", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto("/documentation")
   await ready(page)
-  await expect(page).toHaveScreenshot("documentation-home-desktop.png", {
+  await expect.soft(page).toHaveScreenshot(reviewedPlatformScreenshotName("documentation-home-desktop.png"), {
     animations: "disabled",
     caret: "hide",
     maxDiffPixelRatio: 0.01,
   })
   await page.goto("/documentation/best-practices/mission")
   await ready(page)
-  await expect(page).toHaveScreenshot("documentation-article-desktop.png", {
+  await expect.soft(page).toHaveScreenshot(reviewedPlatformScreenshotName("documentation-article-desktop.png"), {
     animations: "disabled",
     caret: "hide",
     maxDiffPixelRatio: 0.01,
@@ -394,8 +465,8 @@ test("documentation home and article desktop baselines", async ({ page }) => {
       await expect(
         page.getByRole("status").filter({ hasText: "Saved on this device" })
       ).toBeVisible()
-    await expect(page).toHaveScreenshot(
-      `documentation-${surface}-desktop.png`,
+    await expect.soft(page).toHaveScreenshot(
+      reviewedPlatformScreenshotName(`documentation-${surface}-desktop.png`),
       {
         animations: "disabled",
         caret: "hide",
@@ -490,7 +561,10 @@ test("Marketplace renders published member profiles separately from coaches", as
   const person = page.locator(
     '[data-marketplace-person="sample-public-member"]'
   )
-  await expect(person).toHaveAttribute("href", "/sample-public-member")
+  await expect(person).toHaveAttribute(
+    "href",
+    "/documentation/marketplace/people/@sample-public-member"
+  )
   await expect(person).toContainText("Public member fixture")
   await expect(person).not.toContainText("Book")
 })
@@ -536,8 +610,8 @@ for (const [layout, mode, width, height] of [
           page.getByRole("button", { name: /Download.*CSV/ }).first()
         ).toBeVisible()
       }
-      await expect(page).toHaveScreenshot(
-        `documentation-${surface}-${layout}-${mode}.png`,
+      await expect.soft(page).toHaveScreenshot(
+        reviewedPlatformScreenshotName(`documentation-${surface}-${layout}-${mode}.png`),
         {
           animations: "disabled",
           caret: "hide",

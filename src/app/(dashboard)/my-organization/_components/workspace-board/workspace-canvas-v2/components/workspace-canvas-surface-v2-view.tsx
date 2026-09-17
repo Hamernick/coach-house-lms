@@ -244,7 +244,7 @@ export function WorkspaceCanvasSurfaceV2View({
           <div
             ref={setFlowFrameContainer}
             data-workspace-canvas-flow-frame="true"
-            className="absolute inset-0 max-w-full min-w-0 overflow-hidden"
+            className="absolute inset-0 max-w-full min-w-0 overflow-clip"
           >
             <ReactFlowProvider>
               <WorkspaceReactFlowErrorBootstrap onError={onError}>

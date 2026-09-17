@@ -122,7 +122,7 @@ function PublicMapMemberOnboardingPreviewToggle({
         size="sm"
         aria-pressed={active}
         className={cn(
-          "pointer-events-auto rounded-xl shadow-sm backdrop-blur [html.light_&]:!text-zinc-950",
+          "pointer-events-auto rounded-xl shadow-none backdrop-blur [html.light_&]:!text-zinc-950",
           PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME
         )}
         onClick={onToggle}

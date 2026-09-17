@@ -7,6 +7,7 @@ import HouseIcon from "lucide-react/dist/esm/icons/house"
 import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
 import type { BrandAssetId } from "../../types"
 import artwork from "../../assets/heroes/tools-brand-identity.webp"
+import { brandIdentityOwner } from "./brand-identity-owner"
 const illustrations = [
   HandHeartIcon,
   SproutIcon,
@@ -28,7 +29,7 @@ export function BrandExampleMark({ compact = false }: { compact?: boolean }) {
   )
 }
 export function BrandAssetExample({ id }: { id: BrandAssetId }) {
-  if (id === "application-image")
+  if (id === "application-image" || id === "application-vertical-image")
     return (
       <Image
         src={artwork}
@@ -44,13 +45,19 @@ export function BrandAssetExample({ id }: { id: BrandAssetId }) {
       className="text-foreground/80 flex size-full items-center justify-center p-6"
       role="img"
       aria-label="Example artwork"
+      {...brandIdentityOwner(
+        "brand-asset-example",
+        "BrandAssetExample",
+        id,
+        "example"
+      )}
     >
       {Illustration ? (
-        <Illustration className="size-[48%]" strokeWidth={1.1} aria-hidden />
+        <Illustration className="size-10 sm:size-12" strokeWidth={1.1} aria-hidden />
       ) : (
         <span
           className={
-            id === "brand-mark" ? "text-6xl" : "text-[clamp(1.5rem,4vw,3rem)]"
+            id === "brand-mark" ? "text-4xl" : "text-[clamp(1.25rem,2.5vw,2rem)]"
           }
         >
           <BrandExampleMark compact={id === "brand-mark"} />

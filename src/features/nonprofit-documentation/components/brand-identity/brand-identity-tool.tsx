@@ -29,7 +29,7 @@ import {
   DocumentationSurface,
 } from "../documentation-surface"
 import { ApplicationsSection } from "./applications-section"
-import { ExportsSection } from "./exports-section"
+import { BrandIdentitySidebar } from "./brand-identity-sidebar"
 import { FoundationSection } from "./foundation-section"
 import { MarksSection } from "./marks-section"
 import { PaletteSection } from "./palette-section"
@@ -72,34 +72,10 @@ export function BrandIdentityTool() {
           items={BRAND_IDENTITY_SECTIONS.map(
             (section) => [section.id, section.label] as const
           )}
-          className="mx-auto max-w-[820px] lg:hidden"
+          className="mx-auto max-w-[680px] xl:hidden"
         />
 
-        <div className="mx-auto grid max-w-[920px] gap-6 lg:grid-cols-[140px_minmax(0,680px)] lg:gap-16">
-          <aside className="hidden lg:block print:hidden">
-            <nav
-              aria-label="Brand guide sections"
-              className="sticky top-24 pt-12"
-            >
-              <ol className="flex flex-col gap-1">
-                {BRAND_IDENTITY_SECTIONS.map((section) => (
-                  <li key={section.id}>
-                    <a
-                      href={`#${section.id}`}
-                      className="text-muted-foreground hover:text-foreground focus-visible:text-foreground inline-flex min-h-9 items-center text-xs underline-offset-4 hover:underline"
-                    >
-                      {section.label}
-                    </a>
-                  </li>
-                ))}
-              </ol>
-              <div className="text-muted-foreground mt-6 space-y-2 border-t pt-4 text-[0.68rem] leading-5">
-                <p>Autosaves on this device.</p>
-                <p>Files never leave this browser.</p>
-              </div>
-            </nav>
-          </aside>
-
+        <div className="mx-auto grid max-w-[680px] gap-8 xl:max-w-none xl:grid-cols-[minmax(0,680px)_240px] xl:gap-10 print:block print:max-w-none">
           <article className="min-w-0 font-sans">
             <div className="mb-12 print:mb-8">
               <Link
@@ -191,12 +167,12 @@ export function BrandIdentityTool() {
               deleteAsset={tool.deleteAsset}
               disabled={!tool.assetsReady}
             />
-            <ExportsSection
-              draft={tool.draft}
-              assets={tool.assets}
-              ready={tool.ready && tool.assetsReady}
-            />
           </article>
+          <BrandIdentitySidebar
+            draft={tool.draft}
+            assets={tool.assets}
+            ready={tool.ready && tool.assetsReady}
+          />
         </div>
       </div>
     </DocumentationSurface>

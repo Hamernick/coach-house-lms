@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import * as identity from "@/features/nonprofit-documentation/lib/brand-identity"
 import * as validation from "@/features/nonprofit-documentation/lib/brand-asset-validation"
 import { saveBrandAsset } from "@/features/nonprofit-documentation/lib/brand-identity-storage"
+import { buildBrandPackage } from "@/features/nonprofit-documentation/lib/brand-identity-export"
 
 const feature = "src/features/nonprofit-documentation/"
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve))
@@ -14,7 +15,9 @@ function sourceModule(
   dependencies: Record<string, unknown>,
   extra = {}
 ) {
-  const compiledModule = { exports: {} as Record<string, (...args: any[]) => any> }
+  const compiledModule = {
+    exports: {} as Record<string, (...args: any[]) => any>,
+  }
   runInNewContext(
     transpileModule(readFileSync(feature + path, "utf8"), {
       fileName: path,
@@ -39,6 +42,22 @@ function sourceModule(
 afterEach(() => vi.unstubAllGlobals())
 
 describe("Brand Identity assets", () => {
+  it("adds three actionables to older guides while retaining saved choices and empty fields", () => {
+    expect(
+      identity.sanitizeBrandDraft({ audience: "Neighbors" })
+    ).toMatchObject({
+      audience: "Neighbors",
+      actionables: ["Donate", "Volunteer", "Apply"],
+    })
+    expect(
+      identity.sanitizeBrandDraft({
+        actionables: ["Join", "", "Apply", "Extra"],
+      }).actionables
+    ).toEqual(["Join", "", "Apply"])
+    expect(
+      identity.sanitizeBrandDraft({ actionables: ["Join", 12] }).actionables
+    ).toEqual(["Join", "Volunteer", "Apply"])
+  })
   it("accepts exactly one supported, nonempty image within the limit", () => {
     const png = { type: "image/png", size: 12 * 1024 * 1024 }
     expect(validation.brandAssetError([png])).toBeNull()
@@ -201,7 +220,12 @@ describe("Brand Identity assets", () => {
       onUpload: upload,
       onDelete: vi.fn(),
     }
-    for (const id of ["primary-logo", "illustration-3"]) {
+    for (const id of [
+      "primary-logo",
+      "illustration-3",
+      "application-image",
+      "application-vertical-image",
+    ]) {
       const tree = BrandAssetField({ ...props, id })
       const dropzone = nodes(tree).find((node) => node.props.onDrop)
       dropzone.props.onDrop({
@@ -216,7 +240,7 @@ describe("Brand Identity assets", () => {
       })
       await flush()
     }
-    expect(upload).toHaveBeenCalledTimes(2)
+    expect(upload).toHaveBeenCalledTimes(4)
     expect(errors).toContain("Choose one image for this tile.")
     const picker = nodes(BrandAssetField({ ...props, id: "brand-mark" })).find(
       (node) => node.type === "input"
@@ -226,5 +250,54 @@ describe("Brand Identity assets", () => {
     await flush()
     expect(upload).toHaveBeenLastCalledWith("brand-mark", file)
     expect(target.value).toBe("")
+  })
+
+  it("exports landscape and vertical originals as separate files without cropping them", async () => {
+    const assets = (
+      ["application-image", "application-vertical-image"] as const
+    ).map((id) => ({
+      id,
+      name: "campaign.png",
+      type: "image/png",
+      blob: new Blob([`original-${id}`]),
+      updatedAt: "",
+    }))
+    const result = await buildBrandPackage(
+      {
+        ...identity.DEFAULT_BRAND_IDENTITY_DRAFT,
+        actionables: ["Donate", "Volunteer", "Join"],
+      },
+      assets
+    )
+    const bytes = new Uint8Array(await result.blob.arrayBuffer())
+    const view = new DataView(bytes.buffer)
+    const decoder = new TextDecoder()
+    const files: Record<string, string> = {}
+    let offset = 0
+    while (view.getUint32(offset, true) === 0x04034b50) {
+      const size = view.getUint32(offset + 18, true)
+      const nameLength = view.getUint16(offset + 26, true)
+      const extraLength = view.getUint16(offset + 28, true)
+      const name = decoder.decode(
+        bytes.slice(offset + 30, offset + 30 + nameLength)
+      )
+      const start = offset + 30 + nameLength + extraLength
+      files[name] = decoder.decode(bytes.slice(start, start + size))
+      offset = start + size
+    }
+    expect(files["assets/application-image.png"]).toBe(
+      "original-application-image"
+    )
+    expect(files["assets/application-vertical-image.png"]).toBe(
+      "original-application-vertical-image"
+    )
+    expect(JSON.parse(files["brand/brand.json"]).actionables).toEqual([
+      "Donate",
+      "Volunteer",
+      "Join",
+    ])
+    expect(files["README.txt"]).toContain(
+      "Actionables\n- Donate\n- Volunteer\n- Join"
+    )
   })
 })

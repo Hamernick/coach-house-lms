@@ -32,7 +32,7 @@ export function BrandAssetField({
   previewUrl?: string
   onUpload: (id: BrandAssetId, file: File) => Promise<boolean>
   onDelete: (id: BrandAssetId) => Promise<void>
-  aspect?: "wide" | "square"
+  aspect?: "wide" | "square" | "portrait"
   disabled?: boolean
 }) {
   const input = useRef<HTMLInputElement>(null)
@@ -86,7 +86,7 @@ export function BrandAssetField({
         role="group"
         aria-label={`${label} dropzone`}
         className={cn(
-          "bg-muted/45 relative overflow-hidden rounded-lg border transition-colors",
+          "group/asset bg-muted/45 relative overflow-hidden rounded-lg border transition-colors",
           dragging && "border-primary ring-primary ring-2"
         )}
         onDragEnter={(event) => {
@@ -123,8 +123,12 @@ export function BrandAssetField({
           aria-describedby={`asset-${id}-help${error ? ` asset-${id}-error` : ""}`}
           onClick={() => input.current?.click()}
           className={cn(
-            "group relative flex h-auto w-full flex-col overflow-hidden rounded-none p-0 whitespace-normal shadow-none",
-            aspect === "square" ? "aspect-square" : "aspect-[16/9]"
+            "relative flex h-auto w-full flex-col overflow-hidden rounded-none p-0 whitespace-normal shadow-none",
+            aspect === "square"
+              ? "aspect-square"
+              : aspect === "portrait"
+                ? "aspect-[4/5]"
+                : "aspect-[16/9]"
           )}
           {...owner("upload-trigger")}
         >
@@ -135,7 +139,11 @@ export function BrandAssetField({
                 alt={`${label} preview`}
                 fill
                 sizes={aspect === "square" ? "320px" : "720px"}
-                className="object-contain p-6"
+                className={
+                  id === "primary-logo" || id === "brand-mark"
+                    ? "object-contain"
+                    : "object-cover"
+                }
                 unoptimized
               />
             ) : (
@@ -147,40 +155,67 @@ export function BrandAssetField({
               Example
             </span>
           ) : null}
-          <span className="bg-background/95 absolute right-2 bottom-2 left-2 flex min-h-11 items-center justify-center gap-2 rounded-md px-2 text-xs">
-            <UploadIcon aria-hidden />
-            {busy
-              ? "Saving image…"
-              : dragging
-                ? "Drop image here"
-                : "Drop image or click to upload"}
-          </span>
+          {busy || dragging ? (
+            <span
+              role="status"
+              className="bg-background/90 text-foreground absolute inset-0 flex items-center justify-center text-sm"
+              {...owner("upload-status")}
+            >
+              {busy ? "Saving image…" : "Drop image"}
+            </span>
+          ) : null}
         </Button>
-        {asset ? (
-          <div className="absolute top-2 right-2 flex gap-1">
+        <div
+          className={cn(
+            "absolute top-2 right-2 flex gap-1",
+            id === "primary-logo" && !asset
+              ? "pointer-events-auto opacity-100"
+              : "pointer-events-none opacity-0 group-focus-within/asset:pointer-events-auto group-focus-within/asset:opacity-100 group-hover/asset:pointer-events-auto group-hover/asset:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100"
+          )}
+          {...owner("image-actions")}
+        >
+          {!asset ? (
             <Button
               type="button"
               size="icon"
               variant="secondary"
-              aria-label={`Download ${label.toLowerCase()}`}
-              onClick={() => downloadBlob(asset.blob, asset.name)}
-              {...owner("download-trigger")}
-            >
-              <DownloadIcon aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
+              className="size-8 shadow-none [@media(hover:none)]:size-11"
               disabled={disabled || busy}
-              aria-label={`Remove ${label.toLowerCase()}`}
-              onClick={() => void remove()}
-              {...owner("remove-trigger")}
+              aria-label={`Choose ${label.toLowerCase()} file`}
+              onClick={() => input.current?.click()}
+              {...owner("choose-file-trigger")}
             >
-              <Trash2Icon aria-hidden />
+              <UploadIcon aria-hidden />
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+          {asset ? (
+            <>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="size-8 shadow-none [@media(hover:none)]:size-11"
+                aria-label={`Download ${label.toLowerCase()}`}
+                onClick={() => downloadBlob(asset.blob, asset.name)}
+                {...owner("download-trigger")}
+              >
+                <DownloadIcon aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="size-8 shadow-none [@media(hover:none)]:size-11"
+                disabled={disabled || busy}
+                aria-label={`Remove ${label.toLowerCase()}`}
+                onClick={() => void remove()}
+                {...owner("remove-trigger")}
+              >
+                <Trash2Icon aria-hidden />
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
       <figcaption className="mt-2" {...owner("caption")}>
         <p className="text-sm font-medium">{label}</p>

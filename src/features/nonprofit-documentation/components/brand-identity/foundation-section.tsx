@@ -97,6 +97,44 @@ export function FoundationSection({
             onChange={(event) => updateDraft({ audience: event.target.value })}
           />
         </Field>
+        <fieldset
+          className="min-w-0"
+          {...brandIdentityOwner(
+            "foundation-section",
+            "FoundationSection",
+            "actionables",
+            "fields",
+            "Three editable calls to action below Primary audience."
+          )}
+        >
+          <legend className="text-sm font-medium">Actionables</legend>
+          <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            {draft.actionables.map((action, index) => (
+              <Input
+                key={index}
+                id={`brand-actionable-${index + 1}`}
+                aria-label={`Actionable ${index + 1}`}
+                className="shadow-none max-sm:min-h-11"
+                value={action}
+                placeholder="Donate, Volunteer, Join…"
+                onChange={(event) => {
+                  const actionables: BrandIdentityDraft["actionables"] = [
+                    ...draft.actionables,
+                  ]
+                  actionables[index] = event.target.value
+                  updateDraft({ actionables })
+                }}
+                {...brandIdentityOwner(
+                  "foundation-section",
+                  "FoundationSection",
+                  `brand-actionable-${index + 1}`,
+                  "field",
+                  `Actionable ${index + 1}`
+                )}
+              />
+            ))}
+          </div>
+        </fieldset>
       </div>
     </BrandIdentitySection>
   )

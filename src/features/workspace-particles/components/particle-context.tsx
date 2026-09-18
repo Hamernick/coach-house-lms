@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { WorkspaceObjectivePlannerPanel } from "@/features/workspace-objective-planner/client"
 import { createPortal } from "react-dom"
 import {
   DndContext,
@@ -202,18 +201,6 @@ export function WorkspaceParticlesProvider({
             )
           : null}
       </DndContext>
-      {controller.editingPlan && controller.canEdit ? (
-        <WorkspaceObjectivePlannerPanel
-          key={controller.editingPlan}
-          preview={preview}
-          plan={controller.state.plans?.find(
-            (plan) => plan.id === controller.editingPlan
-          )}
-          canEdit={controller.canEdit}
-          onSave={controller.savePlan}
-          onClose={() => controller.setEditingPlan(null)}
-        />
-      ) : null}
       <span className="sr-only" role="status" aria-live="polite">
         {controller.announcement}
       </span>

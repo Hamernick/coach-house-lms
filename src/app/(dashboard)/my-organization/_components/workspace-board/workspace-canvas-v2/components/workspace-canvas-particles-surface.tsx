@@ -23,7 +23,11 @@ import {
 
 import { WorkspaceCanvasSurfaceV2View } from "./workspace-canvas-surface-v2-view"
 import type { WorkspaceCanvasSurfaceV2ViewProps } from "./workspace-canvas-surface-v2-view-types"
-import type { WorkspaceCardId } from "../../workspace-board-types"
+import { resolveCardDimensions } from "../../workspace-board-layout-config"
+import type {
+  WorkspaceBoardState,
+  WorkspaceCardId,
+} from "../../workspace-board-types"
 
 const pickDriveFiles = () => pickGoogleDriveFiles(true)
 
@@ -32,22 +36,25 @@ function eventPoint(event: MouseEvent | ReactMouseEvent) {
 }
 
 export function WorkspaceCanvasParticlesSurface({
-  particleState,
-  particleOrganization,
-  particleActivities,
+  particleBoardState,
+  particleSources,
   onParticlesChange,
   onPersistWorkspaceCardPosition,
+  onToggleWorkspaceCardVisibility,
   ...props
 }: WorkspaceCanvasSurfaceV2ViewProps & {
-  particleState: WorkspaceParticleState | undefined
-  particleOrganization: ParticleOrganization
-  particleActivities: ParticleActivity[]
+  particleBoardState: WorkspaceBoardState
+  particleSources: {
+    organization: ParticleOrganization
+    activities: ParticleActivity[]
+  }
   onParticlesChange: (state: WorkspaceParticleState) => void
   onPersistWorkspaceCardPosition: (
     cardId: WorkspaceCardId,
     x: number,
     y: number
   ) => void
+  onToggleWorkspaceCardVisibility: (cardId: WorkspaceCardId) => void
 }) {
   const router = useRouter()
   useEffect(() => {
@@ -73,15 +80,45 @@ export function WorkspaceCanvasParticlesSurface({
     },
     [onPersistWorkspaceCardPosition, onWorkspaceNodesChange]
   )
+  const revealCanvasNode = useCallback(
+    (nodeId: string, center?: { x: number; y: number }) => {
+      if (nodeId !== "organization-overview" && nodeId !== "programs")
+        return false
+      if (!particleBoardState.hiddenCardIds.includes(nodeId)) return false
+      if (center) {
+        const boardNode = particleBoardState.nodes.find(
+          (node) => node.id === nodeId
+        )
+        const dimensions = resolveCardDimensions(
+          boardNode?.size ?? "md",
+          nodeId
+        )
+        onPersistWorkspaceCardPosition(
+          nodeId,
+          center.x - dimensions.width / 2,
+          center.y - dimensions.height / 2
+        )
+      }
+      onToggleWorkspaceCardVisibility(nodeId)
+      return true
+    },
+    [
+      onPersistWorkspaceCardPosition,
+      onToggleWorkspaceCardVisibility,
+      particleBoardState.hiddenCardIds,
+      particleBoardState.nodes,
+    ]
+  )
   const particles = useWorkspaceParticlesController({
-    state: particleState,
+    state: particleBoardState.particles,
     sections: props.workspaceAcceleratorDrawerRoadmapSections,
-    organization: particleOrganization,
-    activities: particleActivities,
+    organization: particleSources.organization,
+    activities: particleSources.activities,
     canEdit: props.allowEditing && !props.presentationMode,
     enabled: !props.tutorialActive,
     onChange: onParticlesChange,
     onPlaceCanvasNode: placeCanvasNode,
+    onRevealCanvasNode: revealCanvasNode,
     pickDriveFiles,
   })
   const nodes = useMemo(

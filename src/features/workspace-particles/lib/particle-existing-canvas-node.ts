@@ -8,15 +8,27 @@ export function activateExistingCanvasNode({
   source,
   point,
   onPlace,
+  onReveal,
 }: {
   flow: ReactFlowInstance
   source: ParticleSource
   point?: { x: number; y: number }
   onPlace?: (node: Node) => boolean
+  onReveal?: (
+    canvasNodeId: string,
+    center?: { x: number; y: number }
+  ) => boolean
 }): "shown" | "moved" | null {
   if (!source.canvasNodeId) return null
   const canvasNode = flow.getNode(source.canvasNodeId)
-  if (!canvasNode) return null
+  if (!canvasNode) {
+    const center = point ? flow.screenToFlowPosition(point) : undefined
+    return onReveal?.(source.canvasNodeId, center)
+      ? point
+        ? "moved"
+        : "shown"
+      : null
+  }
   if (!point) {
     void flow.fitView({
       nodes: [{ id: canvasNode.id }],

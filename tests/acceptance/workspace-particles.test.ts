@@ -180,6 +180,32 @@ describe("workspace particles", () => {
       })
     )
   })
+  it("reveals a hidden Workspace card at the requested canvas point", () => {
+    const onReveal = vi.fn(() => true)
+    const flow = {
+      getNode: vi.fn(() => undefined),
+      screenToFlowPosition: vi.fn(() => ({ x: 420, y: 310 })),
+    } as unknown as ReactFlowInstance
+
+    expect(
+      activateExistingCanvasNode({
+        flow,
+        source: {
+          ref: { kind: "organization", id: "organization-one" },
+          title: "Organization",
+          description: "Organization overview",
+          available: true,
+          canvasNodeId: "organization-overview",
+        },
+        point: { x: 500, y: 400 },
+        onReveal,
+      })
+    ).toBe("moved")
+    expect(onReveal).toHaveBeenCalledWith("organization-overview", {
+      x: 420,
+      y: 310,
+    })
+  })
   it("bounds canvas coordinates and the number of rendered items", () => {
     const items = Array.from({ length: 120 }, (_, index) => ({
       ...item,

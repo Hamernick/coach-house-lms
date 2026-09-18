@@ -43,21 +43,49 @@ function activateExistingSource({
   source,
   point,
   onPlace,
+  onReveal,
   announce,
 }: {
   flow: ReactFlowInstance
   source: ParticleSource | undefined
   point?: { x: number; y: number }
   onPlace?: (node: Node) => boolean
+  onReveal?: (
+    canvasNodeId: string,
+    center?: { x: number; y: number }
+  ) => boolean
   announce: (message: string) => void
 }) {
   if (!source?.canvasNodeId) return null
-  const action = activateExistingCanvasNode({ flow, source, point, onPlace })
+  const action = activateExistingCanvasNode({
+    flow,
+    source,
+    point,
+    onPlace,
+    onReveal,
+  })
   if (!action) return false
   announce(
     `${source.title} ${action === "moved" ? "moved on" : "shown on"} the canvas.`
   )
   return true
+}
+
+type WorkspaceParticlesControllerOptions = {
+  state: WorkspaceParticleState | undefined
+  sections: RoadmapSection[]
+  organization?: ParticleOrganization
+  activities?: ParticleActivity[]
+  canEdit: boolean
+  enabled: boolean
+  pickDriveFiles: () => Promise<string[]>
+  loadDriveDocuments?: () => Promise<ParticleDriveDocument[]>
+  onChange: (next: WorkspaceParticleState) => void
+  onPlaceCanvasNode?: (node: Node) => boolean
+  onRevealCanvasNode?: (
+    canvasNodeId: string,
+    center?: { x: number; y: number }
+  ) => boolean
 }
 
 export function useWorkspaceParticlesController({
@@ -69,20 +97,10 @@ export function useWorkspaceParticlesController({
   enabled,
   onChange,
   onPlaceCanvasNode,
+  onRevealCanvasNode,
   pickDriveFiles,
   loadDriveDocuments,
-}: {
-  state: WorkspaceParticleState | undefined
-  sections: RoadmapSection[]
-  organization?: ParticleOrganization
-  activities?: ParticleActivity[]
-  canEdit: boolean
-  enabled: boolean
-  pickDriveFiles: () => Promise<string[]>
-  loadDriveDocuments?: () => Promise<ParticleDriveDocument[]>
-  onChange: (next: WorkspaceParticleState) => void
-  onPlaceCanvasNode?: (node: Node) => boolean
-}) {
+}: WorkspaceParticlesControllerOptions) {
   const state = useMemo(() => normalizeWorkspaceParticleState(input), [input])
   const stateRef = useRef(state)
   stateRef.current = state
@@ -148,6 +166,7 @@ export function useWorkspaceParticlesController({
         source,
         point,
         onPlace: onPlaceCanvasNode,
+        onReveal: onRevealCanvasNode,
         announce: setAnnouncement,
       })
       if (existingResult !== null) return existingResult
@@ -194,7 +213,7 @@ export function useWorkspaceParticlesController({
       )
       return true
     },
-    [canEdit, enabled, sources, commit, onPlaceCanvasNode]
+    [canEdit, enabled, sources, commit, onPlaceCanvasNode, onRevealCanvasNode]
   )
   const remove = useCallback(
     (id: string) => {

@@ -62,7 +62,7 @@ export function WorkspaceCanvasSurfaceV2({
     onInitialOnboardingSubmit,
   })
   const particles = useWorkspaceParticleSources({ boardState, seed })
-  const orgNodePositionFromBoard = Runtime.useWorkspaceCanvasOrgNodePosition(
+  const orgNodePosition = Runtime.useWorkspaceCanvasOrgNodePosition(
     boardState.nodes
   )
   const tutorialActiveFromBoard = boardState.onboardingFlow.active
@@ -79,7 +79,7 @@ export function WorkspaceCanvasSurfaceV2({
     viewerId: seed.viewerId,
   })
   const {
-    allowPeopleCanvasInteraction,
+    allowPeopleCanvasInteraction: allowPeopleDrag,
     workspaceDataDrawerPeople,
     workspacePersonById,
     workspacePersonPlacements,
@@ -108,7 +108,7 @@ export function WorkspaceCanvasSurfaceV2({
     initialPositionLookupRef,
   } = Runtime.useWorkspaceCanvasSurfaceNodeLookups({
     boardNodes: boardState.nodes,
-    orgNodePositionFromBoard,
+    orgNodePositionFromBoard: orgNodePosition,
   })
   const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
   const {
@@ -253,6 +253,7 @@ export function WorkspaceCanvasSurfaceV2({
     journeyGuideState,
     onFocusCard,
     onOpenCard: handleOpenCard,
+    onHideCard: onToggleCardVisibility,
     onCardMeasuredHeightChange: handleCardMeasuredHeightChange,
     organizationShortcutItems: shortcutItems,
     organizationMapButtonCallout,
@@ -308,7 +309,7 @@ export function WorkspaceCanvasSurfaceV2({
       initialPositionLookupRef,
       cardDataLookup,
       allowEditing,
-      allowPeopleCanvasInteraction,
+      allowPeopleCanvasInteraction: allowPeopleDrag,
       tutorialActive,
       acceleratorStepNodeData,
       tutorialNodeData: tutorialNodeWithPresentation,
@@ -317,7 +318,7 @@ export function WorkspaceCanvasSurfaceV2({
       onRemoveWorkspacePerson: handleRemoveWorkspacePersonPlacement,
       tutorialSceneCardPositionOverrides: resolvedTutorialCardPositionOverrides,
       tutorialDraggableCardIds,
-      orgNodePositionFromBoard,
+      orgNodePositionFromBoard: orgNodePosition,
       tutorialSceneNodeIds: resolvedTutorialSceneNodeIds,
       tutorialSceneSignature,
       tutorialSceneCameraViewport: resolvedTutorialSceneCameraViewport,
@@ -389,18 +390,17 @@ export function WorkspaceCanvasSurfaceV2({
     visibleNodeIds: ontologyInteractions.visibleNodeIds,
   })
   const viewProps = {
-    particleState: boardState.particles,
-    particleOrganization: particles.organization,
-    particleActivities: particles.activities,
+    particleBoardState: boardState,
+    particleSources: particles,
     onParticlesChange,
     onPersistWorkspaceCardPosition: onPersistNodePosition,
+    onToggleWorkspaceCardVisibility: onToggleCardVisibility,
     nodes: ontologyInteractions.nodes,
     edges: flowState.renderEdges,
     allowEditing,
-    peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction,
+    peopleCanvasInteractionEnabled: allowPeopleDrag,
     workspaceDataDrawerCanEdit,
-    nodesDraggable:
-      allowEditing || allowPeopleCanvasInteraction || tutorialActive,
+    nodesDraggable: allowEditing || allowPeopleDrag || tutorialActive,
     tutorialActive,
     layoutAnimating: tutorialLayoutAnimating || ontology.layoutAnimating,
     presentationMode,

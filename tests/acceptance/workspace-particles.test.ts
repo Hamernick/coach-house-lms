@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import type { ReactFlowInstance } from "reactflow"
 import type { RoadmapSection } from "@/lib/roadmap/types"
 import { ParticleRoadmapContent } from "@/features/workspace-particles/components/particle-roadmap-content"
+import { ParticlePreview } from "@/features/workspace-particles/components/particle-preview"
 import { describe, expect, it, vi } from "vitest"
 import {
   activateExistingCanvasNode,
@@ -110,6 +111,8 @@ describe("workspace particles", () => {
         id: "organization-one",
         title: "Southside Community Table",
         subtitle: "Neighborhood meals and mentoring",
+        logoUrl: "https://example.com/logo.png",
+        headerUrl: "https://example.com/header.jpg",
         programsCount: 3,
         peopleCount: 12,
         fundingGoalCents: 1000000,
@@ -133,6 +136,10 @@ describe("workspace particles", () => {
         title: "Southside Community Table",
         href: "/workspace?drawer=organization",
         canvasNodeId: "organization-overview",
+        organization: expect.objectContaining({
+          logoUrl: "https://example.com/logo.png",
+          headerUrl: "https://example.com/header.jpg",
+        }),
       }),
       expect.objectContaining({
         ref: { kind: "activity", id: "workspace-activity" },
@@ -347,6 +354,44 @@ describe("linked roadmap rendering", () => {
     titleIsTemplate: false,
     subtitleIsTemplate: false,
   }
+  it("uses real source media and content in compact catalog previews", () => {
+    const sources = buildParticleSources(
+      [
+        {
+          ...section,
+          content: "The first lines of the actual roadmap document.",
+          imageUrl: "https://example.com/roadmap.jpg",
+        },
+      ],
+      [],
+      [],
+      {
+        id: "organization-one",
+        title: "Southside Community Table",
+        subtitle: "Neighborhood meals and mentoring",
+        logoUrl: "https://example.com/logo.png",
+        headerUrl: "https://example.com/header.jpg",
+        programsCount: 3,
+        peopleCount: 12,
+        fundingGoalCents: 1000000,
+        raisedCents: 250000,
+      }
+    )
+
+    const organizationHtml = renderToStaticMarkup(
+      createElement(ParticlePreview, { source: sources[0] })
+    )
+    const roadmapHtml = renderToStaticMarkup(
+      createElement(ParticlePreview, { source: sources[1] })
+    )
+
+    expect(organizationHtml).toContain("https://example.com/header.jpg")
+    expect(organizationHtml).toContain("https://example.com/logo.png")
+    expect(organizationHtml).toContain("3 programs · 12 people")
+    expect(roadmapHtml).toContain("https://example.com/roadmap.jpg")
+    expect(roadmapHtml).toContain("first lines of the actual roadmap document")
+    expect(roadmapHtml).toContain("outline-black/10")
+  })
   it("renders structured budget data without requiring a second content copy", () => {
     const html = renderToStaticMarkup(
       createElement(ParticleRoadmapContent, {

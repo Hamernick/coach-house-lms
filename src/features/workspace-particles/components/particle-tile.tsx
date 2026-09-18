@@ -29,31 +29,34 @@ export const ParticleTile = memo(function ParticleTile({
       (item) => particleSourceKey(item.source) === particleSourceKey(source.ref)
     )
   return (
-    <Card className="gap-0 overflow-hidden rounded-2xl py-0 shadow-none">
-      <CardHeader className="gap-1 px-4 pt-4 pb-3">
+    <Card className="hover:border-foreground/20 focus-within:border-foreground/25 gap-0 overflow-hidden rounded-[14px] py-0 shadow-none">
+      <CardHeader className="gap-0 px-2.5 py-2">
         <div className="flex min-w-0 items-start justify-between gap-1">
           <CardTitle
-            className="min-w-0 truncate text-sm leading-7"
+            className="min-w-0 truncate py-1 text-xs leading-5"
             title={source.title}
           >
             {source.title}
           </CardTitle>
           {source.available ? (
-            <ParticleSourceHandle source={source.ref} title={source.title} />
+            <ParticleSourceHandle
+              source={source.ref}
+              title={source.title}
+              className="-m-1 size-8 transition-none"
+            />
           ) : null}
         </div>
-        <CardDescription className="line-clamp-2 min-h-10 text-xs leading-5">
-          {source.description}
-        </CardDescription>
       </CardHeader>
-      <CardContent className="bg-background/70 relative m-1 mt-0 grid h-40 place-items-center rounded-xl border p-4">
+      <CardContent className="bg-muted/25 relative m-1 mt-0 grid h-28 place-items-center overflow-hidden rounded-[10px] p-0 outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10">
         {controller?.canEdit && source.available ? (
           <ParticleSourceHandle
             source={source.ref}
             title={source.title}
-            className="absolute inset-0 h-full w-full rounded-xl p-4 hover:bg-transparent"
+            className="absolute inset-0 h-full w-full rounded-[10px] p-0 transition-none hover:bg-transparent focus-visible:ring-inset"
           >
-            <ParticlePreview source={source} />
+            <span aria-hidden className="block size-full">
+              <ParticlePreview source={source} />
+            </span>
           </ParticleSourceHandle>
         ) : (
           <ParticlePreview source={source} />
@@ -62,7 +65,7 @@ export const ParticleTile = memo(function ParticleTile({
           type="button"
           variant="secondary"
           size="icon"
-          className="absolute right-2 bottom-2 size-9"
+          className="bg-background/90 hover:bg-background absolute right-1.5 bottom-1.5 z-10 size-8 rounded-[8px] border shadow-xs backdrop-blur-sm transition-none"
           disabled={!controller?.canEdit || !source.available}
           aria-label={
             placed
@@ -74,6 +77,9 @@ export const ParticleTile = memo(function ParticleTile({
           {placed ? <CheckIcon /> : <PlusIcon />}
         </Button>
       </CardContent>
+      <CardDescription className="line-clamp-2 min-h-10 px-2.5 pt-1 pb-2.5 text-[11px] leading-4">
+        {source.description}
+      </CardDescription>
     </Card>
   )
 })

@@ -2,7 +2,7 @@
 
 ## Behavior
 
-- Particles is a tab in the existing workspace drawer. The catalog uses small preview tiles, search, and Organization / Activity / Roadmap / Objectives / Drive / Images filters.
+- Particles is a tab in the existing workspace drawer. Its compact auto-filling catalog uses real source previews, search, and Organization / Activity / Roadmap / Objectives / Drive / Images filters. Only the catalog scrolls; a content-aware fade marks cropped rows and clears at the end.
 - Organization and Activity are handles for the existing `organization-overview` and `programs` Workspace cards. Show focuses the existing card; dragging the catalog tile repositions that card and persists its normal board coordinates. No separate particle placement is created. Legacy duplicate placements are discarded during board normalization.
 - Selecting either existing card shows the particle-style toolbar with Small, Medium, Large, and Remove controls. Size changes use the normal board-card size state. Remove hides the card; Show or a catalog drag restores the same card, with a drag also updating its position.
 - Each roadmap section is a reference to the original section ID. Saving inside the drawer updates its particle; returning from the editor tab refreshes the source. The canvas stores no duplicate section content.

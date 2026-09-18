@@ -23,6 +23,8 @@ export function useWorkspaceParticleSources({
       id: seed.orgId,
       title: seed.organizationTitle,
       subtitle: seed.organizationSubtitle,
+      logoUrl: seed.initialProfile.logoUrl,
+      headerUrl: seed.initialProfile.headerUrl,
       programsCount: seed.programsCount,
       peopleCount: seed.peopleCount,
       fundingGoalCents: seed.fundingGoalCents,
@@ -30,6 +32,8 @@ export function useWorkspaceParticleSources({
     }),
     [
       seed.fundingGoalCents,
+      seed.initialProfile.headerUrl,
+      seed.initialProfile.logoUrl,
       seed.orgId,
       seed.organizationSubtitle,
       seed.organizationTitle,

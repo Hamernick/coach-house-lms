@@ -41,6 +41,8 @@ export type ParticleOrganization = {
   id: string
   title: string
   subtitle: string
+  logoUrl?: string | null
+  headerUrl?: string | null
   programsCount: number
   peopleCount: number
   fundingGoalCents: number

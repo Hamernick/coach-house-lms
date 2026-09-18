@@ -12,6 +12,7 @@ import { Empty } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import { particleSourceKey } from "../lib"
 import { useWorkspaceParticles } from "./particle-context"
 import { ParticleTile } from "./particle-tile"
@@ -51,12 +52,30 @@ function GoogleDriveIcon({ className }: { className?: string }) {
       aria-hidden="true"
       className={className}
     >
-      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da" />
-      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47" />
-      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335" />
-      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d" />
-      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc" />
-      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00" />
+      <path
+        d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z"
+        fill="#0066da"
+      />
+      <path
+        d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z"
+        fill="#00ac47"
+      />
+      <path
+        d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z"
+        fill="#ea4335"
+      />
+      <path
+        d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z"
+        fill="#00832d"
+      />
+      <path
+        d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z"
+        fill="#2684fc"
+      />
+      <path
+        d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z"
+        fill="#ffba00"
+      />
     </svg>
   )
 }
@@ -141,11 +160,11 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
         source: WORKSPACE_PARTICLES_PANEL_SOURCE,
         slot: "root",
       })}
-      className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:p-6"
+      className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-3 overflow-hidden p-3 sm:p-4"
     >
       <div
         {...particlesSurfaceProps("header", "root")}
-        className="flex flex-wrap items-start justify-between gap-3"
+        className="flex shrink-0 flex-wrap items-start justify-between gap-2"
       >
         <div>
           <h2
@@ -156,7 +175,7 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
           </h2>
           <p
             {...particlesSurfaceProps("header-description", "content")}
-            className="text-muted-foreground mt-1 text-sm"
+            className="text-muted-foreground mt-0.5 text-sm"
           >
             Drag onto your canvas. Bring ideas together.
           </p>
@@ -194,7 +213,7 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
       <div
         ref={filterRowRef}
         {...particlesSurfaceProps("filter-row", "root")}
-        className="border-border/60 relative flex flex-wrap items-end justify-between gap-x-3 border-b pb-0.5"
+        className="border-border/60 relative flex shrink-0 flex-wrap items-end justify-between gap-x-3 border-b pb-0.5"
       >
         <Tabs
           value={filter}
@@ -256,10 +275,11 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
       {filter === "drive" && controller.driveStatus === "loading" ? (
         <div
           aria-label="Loading Drive files"
-          className="grid grid-cols-2 gap-4"
+          className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]"
         >
-          <Skeleton className="h-56" />
-          <Skeleton className="h-56" />
+          {Array.from({ length: 6 }, (_, index) => (
+            <Skeleton key={index} className="h-[11.75rem] rounded-[14px]" />
+          ))}
         </div>
       ) : null}
       {controller.driveStatus === "error" &&
@@ -282,9 +302,9 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
         </div>
       ) : null}
       {sources.length ? (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
           {filter === "drive" ? (
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex shrink-0 items-center justify-between gap-2">
               <p className="text-muted-foreground text-xs font-medium">
                 Google Drive files ({sources.length})
               </p>
@@ -302,15 +322,20 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
               </Button>
             </div>
           ) : null}
-          <div
+          <ScrollFadeEffect
             {...particlesSurfaceProps("sources-grid", "root")}
-            className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="min-h-0 flex-1 overscroll-contain pr-1 [--mask-height:2rem] [--scroll-buffer:1rem] [scrollbar-width:thin]"
           >
-            {sources.map((source) => (
-              <ParticleTile key={particleSourceKey(source.ref)} source={source} />
-            ))}
-          </div>
-        </>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
+              {sources.map((source) => (
+                <ParticleTile
+                  key={particleSourceKey(source.ref)}
+                  source={source}
+                />
+              ))}
+            </div>
+          </ScrollFadeEffect>
+        </div>
       ) : controller.driveStatus !== "loading" || filter !== "drive" ? (
         <div {...particlesSurfaceProps("empty-state", "content")}>
           <Empty
@@ -331,7 +356,10 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
                   size="sm"
                   disabled={!controller.canEdit || picker.pending}
                   onClick={() => void picker.choose()}
-                  {...particlesSurfaceProps("empty-add-drive-button", "trigger")}
+                  {...particlesSurfaceProps(
+                    "empty-add-drive-button",
+                    "trigger"
+                  )}
                   className="gap-1.5"
                 >
                   <GoogleDriveIcon className="size-4 shrink-0" />
@@ -344,7 +372,7 @@ export const WorkspaceParticlesPanel = memo(function WorkspaceParticlesPanel() {
       ) : null}
       <p
         {...particlesSurfaceProps("footer-hint", "content")}
-        className="text-muted-foreground text-xs"
+        className="text-muted-foreground shrink-0 text-xs"
       >
         Return an item here to remove it from the canvas. Its original stays
         available.

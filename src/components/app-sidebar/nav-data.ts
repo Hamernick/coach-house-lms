@@ -12,6 +12,7 @@ import MailIcon from "lucide-react/dist/esm/icons/mail"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
+import ShieldCheckIcon from "lucide-react/dist/esm/icons/shield-check"
 
 import {
   listPrototypeLabSidebarTree,
@@ -29,6 +30,7 @@ type MainNavItem = {
   title: string
   href?: string
   icon?: LucideIcon
+  children?: MainNavItem[]
   tree?: PrototypeLabSidebarTreeNode[]
   locked?: boolean
   badge?: string
@@ -82,29 +84,38 @@ export function buildMainNav({
       ? [
           ...workspaceHomeItem,
           { title: "Find", href: FIND_PATH, icon: EarthIcon },
-          ...memberWorkspaceItems,
+          ...(isAdmin ? [] : memberWorkspaceItems),
         ]
       : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]
 
   if (isAdmin) {
     items.push({
-      title: "Platform",
-      href: "/admin/platform",
-      icon: DatabaseIcon,
-    })
-    if (showPlatformLab) {
-      items.push({
-        title: "Platform Lab",
-        href: "/internal/platform-lab",
-        icon: PanelTopIcon,
-      })
-    }
-    items.push({
-      title: "Prototypes",
-      href: "/admin/platform/prototypes",
-      icon: FlaskConicalIcon,
-      tree: listPrototypeLabSidebarTree(),
+      title: "Admin",
+      icon: ShieldCheckIcon,
+      children: [
+        ...(showMemberWorkspace ? memberWorkspaceItems : []),
+        {
+          title: "Platform",
+          href: "/admin/platform",
+          icon: DatabaseIcon,
+        },
+        ...(showPlatformLab
+          ? [
+              {
+                title: "Platform Lab",
+                href: "/internal/platform-lab",
+                icon: PanelTopIcon,
+              },
+            ]
+          : []),
+        {
+          title: "Prototypes",
+          href: "/admin/platform/prototypes",
+          icon: FlaskConicalIcon,
+          tree: listPrototypeLabSidebarTree(),
+        },
+      ],
     })
   }
   return items

@@ -142,6 +142,8 @@ export function buildLibraryItems(
     updatedAt: document.modifiedAt,
     deleted: document.status === "trashed",
     href: document.webViewLink,
+    previewPath: `/api/integrations/google-drive/documents/${encodeURIComponent(document.id)}/preview`,
+    previewVersion: document.modifiedAt ?? undefined,
     driveDocument: document,
   }))
   const uploadedItems: LibraryItem[] = uploadedFiles

@@ -364,7 +364,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             </div>
             <DrawerDescription className="sr-only">
               Switch between your organization profile, people, documents,
-              Finance, Tools, and Accelerator.
+              Particles, Finance, Tools, and Accelerator.
             </DrawerDescription>
             <div
               data-workspace-data-drawer-content-viewport="true"

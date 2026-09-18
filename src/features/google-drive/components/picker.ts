@@ -1,5 +1,6 @@
 "use client"
 
+import "./picker.css"
 import { GoogleDrivePickerError } from "../lib/picker-error"
 
 type PickerDocument = { id?: string }

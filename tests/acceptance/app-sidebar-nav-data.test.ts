@@ -4,21 +4,20 @@ import EarthIcon from "lucide-react/dist/esm/icons/earth"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 
 describe("app sidebar nav data", () => {
-  it("shows the internal platform item only for true platform admins", () => {
+  it("groups internal platform navigation only for true platform admins", () => {
+    const adminNav = buildMainNav({
+      isAdmin: true,
+      showOrgAdmin: true,
+      canAccessOrgAdmin: true,
+    })
+
+    expect(adminNav.map((item) => item.title)).toContain("Admin")
     expect(
-      buildMainNav({
-        isAdmin: true,
-        showOrgAdmin: true,
-        canAccessOrgAdmin: true,
-      }).map((item) => item.title)
+      adminNav
+        .find((item) => item.title === "Admin")
+        ?.children?.map((item) => item.title)
     ).toContain("Platform")
-    expect(
-      buildMainNav({
-        isAdmin: true,
-        showOrgAdmin: true,
-        canAccessOrgAdmin: true,
-      }).map((item) => item.title)
-    ).not.toContain("User Journeys")
+    expect(adminNav.map((item) => item.title)).not.toContain("User Journeys")
 
     expect(
       buildMainNav({
@@ -26,7 +25,7 @@ describe("app sidebar nav data", () => {
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
       }).map((item) => item.title)
-    ).not.toContain("Platform")
+    ).not.toContain("Admin")
     expect(
       buildMainNav({
         isAdmin: false,
@@ -37,22 +36,28 @@ describe("app sidebar nav data", () => {
   })
 
   it("shows Platform Lab only when explicitly enabled for platform admins", () => {
-    expect(
-      buildMainNav({
-        isAdmin: true,
-        showOrgAdmin: true,
-        canAccessOrgAdmin: true,
-        showPlatformLab: true,
-      }).map((item) => item.title)
-    ).toContain("Platform Lab")
+    const enabledNav = buildMainNav({
+      isAdmin: true,
+      showOrgAdmin: true,
+      canAccessOrgAdmin: true,
+      showPlatformLab: true,
+    })
+    const disabledNav = buildMainNav({
+      isAdmin: true,
+      showOrgAdmin: true,
+      canAccessOrgAdmin: true,
+      showPlatformLab: false,
+    })
 
     expect(
-      buildMainNav({
-        isAdmin: true,
-        showOrgAdmin: true,
-        canAccessOrgAdmin: true,
-        showPlatformLab: false,
-      }).map((item) => item.title)
+      enabledNav
+        .find((item) => item.title === "Admin")
+        ?.children?.map((item) => item.title)
+    ).toContain("Platform Lab")
+    expect(
+      disabledNav
+        .find((item) => item.title === "Admin")
+        ?.children?.map((item) => item.title)
     ).not.toContain("Platform Lab")
   })
 
@@ -101,6 +106,10 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
       "Find",
+      "Admin",
+    ])
+    const adminItems = nav.find((item) => item.title === "Admin")?.children
+    expect(adminItems?.map((item) => item.title)).toEqual([
       "Organizations",
       "Tasks",
       "Email",
@@ -108,10 +117,12 @@ describe("app sidebar nav data", () => {
       "Platform Lab",
       "Prototypes",
     ])
-    expect(nav.find((item) => item.title === "Organizations")?.href).toBe(
-      "/organizations"
-    )
-    expect(nav.find((item) => item.title === "Prototypes")?.tree).toEqual(
+    expect(
+      adminItems?.find((item) => item.title === "Organizations")?.href
+    ).toBe("/organizations")
+    expect(
+      adminItems?.find((item) => item.title === "Prototypes")?.tree
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "user-journeys",

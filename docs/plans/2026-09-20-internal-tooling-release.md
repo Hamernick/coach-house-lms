@@ -40,3 +40,10 @@ On isolated production-mode port 3004, a disposable assigned coach successfully 
 Authenticated file-route canary passed upload, fresh listing, signed download/content, trash, restore and permanent removal; no fixture file or storage object remains. Temporary browser identities remain tracked only until hosted verification completes.
 
 Hosted configuration inspection found Drive and Calendar credentials scoped only to Production. Preserve those provider settings; new OAuth connections are outside preview certification. Standard Vercel protection can be retained while providing a shareable team preview link. Production requires aggregate quality and code-owner review.
+
+## Hosted follow-up — September 20
+- PR: https://github.com/Hamernick/coach-house-lms/pull/241 (draft until aggregate quality passes).
+- Hosted coach acceptance passes: assigned scope, task changes and document save/reload, persisted multi-day workstream. Controlled fixture identities/data were deleted and independently verified absent.
+- The preview required an existing server credential, now a Secret scoped only to this release branch. Production settings unchanged.
+- First CI visual run139/156; after platform references153/156. Four final reviewed Linux images match this intentionally bounded candidate, excluding newer unrelated public design edits. Final CI still required.
+- Production still needs code-owner review. Preview link replacement would revoke the existing Hobby link; user choice pending. Frank invitation email permission pending. No production release or invitation claimed.

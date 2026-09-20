@@ -1,5 +1,5 @@
 import React from "react"
-import { renderToStaticMarkup } from "react-dom/server"
+import { renderToStaticMarkup, renderToReadableStream } from "react-dom/server"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -103,8 +103,8 @@ describe("app sidebar react grab", () => {
     )
   })
 
-  it("renders active admin destinations inside the Admin accordion", () => {
-    const markup = renderToStaticMarkup(
+  it("renders active admin destinations inside the Admin accordion", async () => {
+    const stream = await renderToReadableStream(
       React.createElement(
         SidebarProvider,
         null,
@@ -122,6 +122,9 @@ describe("app sidebar react grab", () => {
         })
       )
     )
+
+    await stream.allReady
+    const markup = await new Response(stream).text()
 
     expect(markup.indexOf(">Find<")).toBeLessThan(markup.indexOf(">Admin<"))
     expect(markup).toContain('aria-label="Collapse Admin"')

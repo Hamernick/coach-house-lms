@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 
@@ -29,13 +29,16 @@ import {
 } from "@/components/ui/sidebar"
 import { useInternalRoutePrefetch } from "@/hooks/use-internal-route-prefetch"
 import { cn } from "@/lib/utils"
-import { NavMainGroupItem } from "./nav-main/admin-group"
 import {
   buildMainNavItemReactGrabProps,
   type NavMainItem,
 } from "./nav-main/item"
 import { PrototypeTreeEntry } from "./nav-main/prototype-tree-entry"
 import { PrototypeTreeFolder } from "./nav-main/prototype-tree-folder"
+
+const NavMainGroupItem = lazy(() =>
+  import("./nav-main/admin-group").then((module) => ({ default: module.NavMainGroupItem }))
+)
 
 function collectPrototypeTreePrefetchHrefs(
   nodes: PrototypeLabSidebarTreeNode[]
@@ -237,13 +240,14 @@ export function NavMain({
 
             if (item.children?.length) {
               return (
-                <NavMainGroupItem
-                  key={item.title}
-                  activeHref={activeHref}
-                  activeEntryId={prototypeActiveEntryId}
-                  item={item}
-                  onPrefetch={prefetchHref}
-                />
+                <Suspense key={item.title} fallback={null}>
+                  <NavMainGroupItem
+                    activeHref={activeHref}
+                    activeEntryId={prototypeActiveEntryId}
+                    item={item}
+                    onPrefetch={prefetchHref}
+                  />
+                </Suspense>
               )
             }
 

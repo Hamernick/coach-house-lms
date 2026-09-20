@@ -23,3 +23,11 @@ Full quality gate running; candidate is uncommitted and not deployed. Record fin
 - All isolated and live RLS suites passed; standalone production build passed. No TypeScript application errors. Full quality run continues.
 - Graphify extraction/clustering finished: 17,665 nodes, 50,498 edges, 970 communities.
 - The feature contract now recognizes explicit `/client` entrypoints, preserving the fix for the reported inline Server Action import failure. Public document-screen tests from the broad candidate were not adopted; only relevant file API/quota/retention assertions were retained. No existing production test was removed.
+
+## Release-candidate verification
+
+- Replacement draft PR #242: https://github.com/Hamernick/coach-house-lms/pull/242. First head e9f4ce20 passed local/hosted static, acceptance, RLS, build compilation and all 45 production visual cases; no baselines changed. The performance check alone failed: admin shell 1001 KB against the unchanged 1000 KB limit (public shell 1825.5/1975 KB; community 607.4/900 KB).
+- Follow-up loads the staff-only navigation group separately with React lazy/Suspense; ordinary public navigation retains its synchronous production rendering. Streaming SSR navigation test retains all active-link/accessibility assertions; 17 navigation checks pass. Full gate is rerunning for the final bundle measurement. No budget relaxation.
+- Production-mode local browser rehearsal: assigned coach sees one assigned organization, one standard project and one personal task; completion persisted after full reload. Workstream shows the five-day Sep 21–25 task. Mission edited/saved/reloaded and exact content retained. 390px Dashboard has 390px document width and no mobile Find bar. Existing signed-in admin dashboard read-only also loaded.
+- Temporary-file API canary passed upload/list/download/trash/restore/permanent removal; storage cleanup verified. Disposable owner/coach and organization/project/tasks removed afterwards. No real organization changes, invitations or Google authorization/activation. Google Calendar is unavailable in local environment; new OAuth consent/provider synchronization remains unverified.
+- Graphify update completed 18,044 nodes / 50,815 edges / 1,039 communities. Production remains d88a0943; required code-owner approval still applies.

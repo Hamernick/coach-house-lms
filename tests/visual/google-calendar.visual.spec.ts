@@ -1,3 +1,4 @@
+import { reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 import { expect, test, type Page } from "@playwright/test"
 import type { CalendarSummary } from "../../src/features/google-calendar/types"
 
@@ -144,7 +145,7 @@ for (const width of [390, 1440])
           )
         ).toBe(true)
         await expect(dialog).toHaveScreenshot(
-          "google-calendar-setup-" + width + "-" + scheme + ".png",
+          reviewedPlatformScreenshotName("google-calendar-setup-" + width + "-" + scheme + ".png"),
           { animations: "disabled", maxDiffPixelRatio: 0.02 }
         )
         await dialog

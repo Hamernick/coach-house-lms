@@ -350,9 +350,9 @@ describe("public find routes", () => {
     expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
     expect(shellSource).toContain("state.memberWorkspaceHeader")
     expect(appShellSource).toContain("isMobile")
-    expect(shellMainContentSource).toContain('? "rounded-none border-0"')
+    expect(shellMainContentSource).toContain('"rounded-none border-0"')
     expect(shellMainContentSource).toContain(
-      ': "rounded-[28px] border border-[color:var(--shell-border)]"'
+      '"border-[color:var(--shell-border)] md:rounded-[28px] md:border"'
     )
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })

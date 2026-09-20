@@ -1,6 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
+import Link from "next/link"
 import CloudOffIcon from "lucide-react/dist/esm/icons/cloud-off"
 import SearchXIcon from "lucide-react/dist/esm/icons/search-x"
 
@@ -124,6 +125,43 @@ export function PublicMapDirectoryHome({
           <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
             <PublicMapClaimDialog />
           </Suspense>
+          <section
+            aria-label="About Coach House"
+            className="text-muted-foreground mx-auto flex max-w-xl flex-col gap-2 px-2 pt-4 text-center text-sm leading-5"
+          >
+            <div className="flex flex-col gap-1">
+              <h2 className="text-foreground font-semibold leading-tight">
+                Coach House
+              </h2>
+              <p>
+                Find local resources and run your nonprofit with shared plans,
+                documents, and a calendar.
+              </p>
+            </div>
+            <p>
+              Google connections are optional. Sign in with Google and manage
+              your Drive connection in Workspace Tools. Drive file import and
+              Google Calendar syncing are coming soon.
+            </p>
+          </section>
+          <nav aria-label="Legal" className="flex justify-center gap-2">
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/privacy">Privacy Policy</Link>
+            </Button>
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/terms">Terms of Service</Link>
+            </Button>
+          </nav>
         </div>
       </div>
     </div>

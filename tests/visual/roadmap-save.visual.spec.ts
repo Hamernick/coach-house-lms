@@ -1,3 +1,4 @@
+import { reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 import { expect, test, type Page } from "@playwright/test"
 import {
   resolveRoadmapSections,
@@ -283,7 +284,7 @@ for (const width of [390, 1440]) {
         dialog.getByRole("region", { name: "Saved document", exact: true })
       ).toContainText("three new members")
       await expect(dialog).toHaveScreenshot(
-        `roadmap-conflict-${width}-${colorScheme}.png`,
+        reviewedPlatformScreenshotName(`roadmap-conflict-${width}-${colorScheme}.png`),
         { animations: "disabled" }
       )
       expect(

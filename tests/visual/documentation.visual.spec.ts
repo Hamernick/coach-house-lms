@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 
 async function ready(page: Page) {
   await page.locator("[data-documentation-scroll]").waitFor()
@@ -324,10 +325,14 @@ for (const mode of ["light", "dark"] as const) {
         .locator("[data-documentation-scroll]")
         .evaluate((el) => el.scrollWidth <= el.clientWidth)
     ).toBe(true)
-    await expect(page).toHaveScreenshot(
-      `documentation-search-mobile-${mode}.png`,
-      { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
-    )
+    await expect
+      .soft(page)
+      .toHaveScreenshot(
+        reviewedPlatformScreenshotName(
+          `documentation-search-mobile-${mode}.png`
+        ),
+        { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
+      )
     await page
       .getByRole("list", { name: "Documentation search results" })
       .getByRole("link")
@@ -340,10 +345,14 @@ for (const mode of ["light", "dark"] as const) {
         .locator("[data-documentation-scroll]")
         .evaluate((el) => el.scrollWidth <= el.clientWidth)
     ).toBe(true)
-    await expect(page).toHaveScreenshot(
-      `documentation-article-mobile-${mode}.png`,
-      { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
-    )
+    await expect
+      .soft(page)
+      .toHaveScreenshot(
+        reviewedPlatformScreenshotName(
+          `documentation-article-mobile-${mode}.png`
+        ),
+        { animations: "disabled", caret: "hide", maxDiffPixelRatio: 0.01 }
+      )
     for (const [route, surface] of [
       ["/documentation/marketplace", "marketplace"],
       ["/documentation", "home"],
@@ -355,14 +364,18 @@ for (const mode of ["light", "dark"] as const) {
           .locator("[data-documentation-scroll]")
           .evaluate((el) => el.scrollWidth <= el.clientWidth)
       ).toBe(true)
-      await expect(page).toHaveScreenshot(
-        `documentation-${surface}-mobile-${mode}.png`,
-        {
-          animations: "disabled",
-          caret: "hide",
-          maxDiffPixelRatio: 0.01,
-        }
-      )
+      await expect
+        .soft(page)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `documentation-${surface}-mobile-${mode}.png`
+          ),
+          {
+            animations: "disabled",
+            caret: "hide",
+            maxDiffPixelRatio: 0.01,
+          }
+        )
     }
   })
 }
@@ -371,18 +384,28 @@ test("documentation home and article desktop baselines", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto("/documentation")
   await ready(page)
-  await expect(page).toHaveScreenshot("documentation-home-desktop.png", {
-    animations: "disabled",
-    caret: "hide",
-    maxDiffPixelRatio: 0.01,
-  })
+  await expect
+    .soft(page)
+    .toHaveScreenshot(
+      reviewedPlatformScreenshotName("documentation-home-desktop.png"),
+      {
+        animations: "disabled",
+        caret: "hide",
+        maxDiffPixelRatio: 0.01,
+      }
+    )
   await page.goto("/documentation/best-practices/mission")
   await ready(page)
-  await expect(page).toHaveScreenshot("documentation-article-desktop.png", {
-    animations: "disabled",
-    caret: "hide",
-    maxDiffPixelRatio: 0.01,
-  })
+  await expect
+    .soft(page)
+    .toHaveScreenshot(
+      reviewedPlatformScreenshotName("documentation-article-desktop.png"),
+      {
+        animations: "disabled",
+        caret: "hide",
+        maxDiffPixelRatio: 0.01,
+      }
+    )
   for (const [route, surface] of [
     ["/documentation/quickstart", "quickstart"],
     ["/documentation/marketplace", "marketplace"],
@@ -394,14 +417,16 @@ test("documentation home and article desktop baselines", async ({ page }) => {
       await expect(
         page.getByRole("status").filter({ hasText: "Saved on this device" })
       ).toBeVisible()
-    await expect(page).toHaveScreenshot(
-      `documentation-${surface}-desktop.png`,
-      {
-        animations: "disabled",
-        caret: "hide",
-        maxDiffPixelRatio: 0.01,
-      }
-    )
+    await expect
+      .soft(page)
+      .toHaveScreenshot(
+        reviewedPlatformScreenshotName(`documentation-${surface}-desktop.png`),
+        {
+          animations: "disabled",
+          caret: "hide",
+          maxDiffPixelRatio: 0.01,
+        }
+      )
   }
 })
 
@@ -536,14 +561,18 @@ for (const [layout, mode, width, height] of [
           page.getByRole("button", { name: /Download.*CSV/ }).first()
         ).toBeVisible()
       }
-      await expect(page).toHaveScreenshot(
-        `documentation-${surface}-${layout}-${mode}.png`,
-        {
-          animations: "disabled",
-          caret: "hide",
-          maxDiffPixelRatio: 0.01,
-        }
-      )
+      await expect
+        .soft(page)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `documentation-${surface}-${layout}-${mode}.png`
+          ),
+          {
+            animations: "disabled",
+            caret: "hide",
+            maxDiffPixelRatio: 0.01,
+          }
+        )
     }
   })
 }

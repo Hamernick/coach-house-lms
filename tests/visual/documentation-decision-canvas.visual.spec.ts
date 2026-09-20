@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 
 async function closeEditor(page: Page) {
   await page
@@ -119,10 +120,14 @@ for (const width of [1440, 390]) {
         content: "nextjs-portal { visibility: hidden !important; }",
       })
       await page.mouse.move(0, 0)
-      await expect(canvas).toHaveScreenshot(
-        `decision-canvas-${width}-${theme}.png`,
-        { animations: "disabled" }
-      )
+      await expect
+        .soft(canvas)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `decision-canvas-${width}-${theme}.png`
+          ),
+          { animations: "disabled" }
+        )
       await page
         .getByRole("button", { name: "Start planning", exact: true })
         .click()
@@ -142,10 +147,14 @@ for (const width of [1440, 390]) {
         await editor.evaluate((el) => el.scrollWidth <= el.clientWidth)
       ).toBe(true)
       await page.mouse.move(0, 0)
-      await expect(canvas).toHaveScreenshot(
-        `decision-editor-${width}-${theme}.png`,
-        { animations: "disabled" }
-      )
+      await expect
+        .soft(canvas)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `decision-editor-${width}-${theme}.png`
+          ),
+          { animations: "disabled" }
+        )
       await closeEditor(page)
       await page.getByRole("button", { name: "List view", exact: true }).click()
       await page

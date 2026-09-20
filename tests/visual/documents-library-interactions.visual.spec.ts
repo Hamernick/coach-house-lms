@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
 
 type FixtureFile = {
   id: string
@@ -149,7 +150,9 @@ for (const colorScheme of ["light", "dark"] as const) {
         )
       ).toBe(true)
       await expect(banner).toHaveScreenshot(
-        `documents-list-${width}-${colorScheme}.png`,
+        reviewedPlatformScreenshotName(
+          `documents-list-${width}-${colorScheme}.png`
+        ),
         { animations: "disabled" }
       )
     })

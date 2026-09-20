@@ -392,10 +392,12 @@ export function AppShellInner({
             </SidebarInset>
           </div>
 
-          <AppShellMobileNav
-            rightOpen={rightOpen}
-            onRightOpenChange={handleRightOpenChangeUser}
-          />
+          {pathname !== "/admin/dashboard" && !pathname?.startsWith("/admin/dashboard/") ? (
+            <AppShellMobileNav
+              rightOpen={rightOpen}
+              onRightOpenChange={handleRightOpenChangeUser}
+            />
+          ) : null}
           {hasUser &&
           !onboardingLocked &&
           !isAdminContext &&

@@ -1,6 +1,7 @@
 create role anon;
 create role authenticated;
 create schema auth;
+create function auth.role() returns text language sql as $$ select nullif(current_setting('request.jwt.claim.role', true), '') $$;
 create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 create table public.organizations(user_id uuid primary key, profile jsonb);
 create table public.organization_projects(id uuid primary key, org_id uuid references public.organizations(user_id) on delete cascade);

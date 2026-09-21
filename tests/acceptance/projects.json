@@ -139,6 +139,7 @@
       "tests/acceptance/stripe-connect-research-contract.test.ts",
       "tests/acceptance/stripe-runtime-production-safety.test.ts",
       "tests/acceptance/stripe-webhook-route.test.ts",
+      "tests/acceptance/supabase-admin-actor.test.ts",
       "tests/acceptance/supabase-management-api-config.test.ts",
       "tests/acceptance/supabase-manager-error-message.test.ts",
       "tests/acceptance/supabase-project-ref.test.ts",

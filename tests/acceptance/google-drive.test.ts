@@ -590,4 +590,51 @@ describe("Google Drive recovery and shared grants", () => {
     )
     expect(fetchMock).not.toHaveBeenCalled()
   })
+  it.each(["success", "provider failure", "unreadable token", "missing token"])(
+    "erases credentials after best-effort account-deletion revocation: %s",
+    async (scenario) => {
+      vi.stubEnv("GOOGLE_DRIVE_TOKEN_ENCRYPTION_CURRENT_VERSION", "v1")
+      vi.stubEnv("GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEYS", JSON.stringify({ v1: Buffer.alloc(32, 7).toString("base64") }))
+      const { encryptGoogleDriveSecret } = await import("@/features/google-drive/server/token-crypto")
+      const encrypted = encryptGoogleDriveSecret("test-refresh-token", "google-drive:connection:user")
+      const order: string[] = []
+      const fetchMock = vi.fn(async () => {
+        order.push("revoke")
+        if (scenario === "provider failure") throw new Error("offline")
+        return new Response(null, { status: 200 })
+      })
+      vi.stubGlobal("fetch", fetchMock)
+      const update = vi.fn(() => {
+        order.push("clear")
+        return { eq: async () => ({ error: null }) }
+      })
+      const connection = {
+        id: "connection",
+        refresh_token_ciphertext: scenario === "missing token" ? null : encrypted.ciphertext,
+        refresh_token_iv: encrypted.iv,
+        refresh_token_auth_tag: scenario === "unreadable token" ? "invalid" : encrypted.authTag,
+        key_version: encrypted.keyVersion,
+      }
+      const admin = { from: () => ({
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: connection, error: null }) }) }),
+        update,
+      }) }
+      const { disconnectGoogleDrive } = await import("@/features/google-drive/server/service")
+      await disconnectGoogleDrive({ admin: admin as never, userId: "user", revoke: true })
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({
+        refresh_token_ciphertext: null, refresh_token_iv: null,
+        refresh_token_auth_tag: null, key_version: null,
+      }))
+      if (scenario === "success" || scenario === "provider failure") {
+        expect(order).toEqual(["revoke", "clear"])
+        expect(fetchMock).toHaveBeenCalledWith("https://oauth2.googleapis.com/revoke", expect.objectContaining({ method: "POST", body: expect.any(URLSearchParams) }))
+        const options = vi.mocked(fetch).mock.calls[0][1]
+        expect(String(options?.body)).toBe("token=test-refresh-token")
+      } else {
+        expect(order).toEqual(["clear"])
+        expect(fetchMock).not.toHaveBeenCalled()
+      }
+    },
+  )
+
 })

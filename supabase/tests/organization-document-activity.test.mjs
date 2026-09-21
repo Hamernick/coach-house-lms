@@ -111,7 +111,9 @@ try {
   runSql("supabase/tests/organization-document-activity.bootstrap.sql")
   runSql("supabase/migrations/20260919194000_record_organization_document_activity.sql")
   runSql("supabase/migrations/20260920214000_restore_deleted_activity_event.sql")
+  runSql("supabase/migrations/20260921002000_preserve_document_activity_actor.sql")
   runSql("supabase/tests/organization-document-activity.assertions.sql")
+  runSql("supabase/tests/organization-document-activity-actor.assertions.sql")
   console.log("[organization-document-activity] Document/file triggers, tenant scope and write restrictions passed.")
 } finally {
   if (started) {

@@ -31,3 +31,11 @@ Full quality gate running; candidate is uncommitted and not deployed. Record fin
 - Production-mode local browser rehearsal: assigned coach sees one assigned organization, one standard project and one personal task; completion persisted after full reload. Workstream shows the five-day Sep 21–25 task. Mission edited/saved/reloaded and exact content retained. 390px Dashboard has 390px document width and no mobile Find bar. Existing signed-in admin dashboard read-only also loaded.
 - Temporary-file API canary passed upload/list/download/trash/restore/permanent removal; storage cleanup verified. Disposable owner/coach and organization/project/tasks removed afterwards. No real organization changes, invitations or Google authorization/activation. Google Calendar is unavailable in local environment; new OAuth consent/provider synchronization remains unverified.
 - Graphify update completed 18,044 nodes / 50,815 edges / 1,039 communities. Production remains d88a0943; required code-owner approval still applies.
+
+## P1 review repair checkpoint — September 20
+
+PR #241 is now closed as superseded; its branch/worktree remain preserved. PR #242's previous head ea87f464 passed local and hosted quality; required code-owner approval still blocks merging.
+
+Two review defects are repaired: explicit account-deletion Google revocation occurs before token erasure, while ordinary disconnect stays local-only; elevated document/file writes carry authenticated actor context into their database triggers. The new forward migration `20260921002000_preserve_document_activity_actor.sql` must be applied before the repaired code is released. It ignores spoofed actor headers on ordinary user JWTs and does not fabricate historical actors. Migration rollback and detailed evidence are in the current monthly log.
+
+The repaired source passes the complete local quality gate (407.91 seconds), 2,532 acceptance tests plus all RLS suites, and 45 unchanged production visual cases. Public paths remain identical to production. No production deployment, Google revocation, invitation, or live migration occurred in this repair batch. Next: hosted checks at the repair commit, code-owner review, then migration/deployment and production verification under the existing release authorization.

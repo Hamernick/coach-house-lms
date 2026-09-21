@@ -32,7 +32,7 @@ export async function resolveOrganizationDocumentAccess(
     resolveLegacyPlatformAccessLevel(profile?.role)
   if (!hasPlatformCapability(accessLevel, "organizations"))
     return { error: "Forbidden" }
-  const admin = createSupabaseAdminClient()
+  const admin = createSupabaseAdminClient({ actorId: userId })
   const scope = await loadOrganizationCoachActorScope({
     supabase: admin,
     accessLevel,

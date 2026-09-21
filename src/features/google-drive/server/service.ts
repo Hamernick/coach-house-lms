@@ -28,6 +28,7 @@ import {
   exchangeGoogleDriveCode,
   getGoogleDriveFile,
   refreshGoogleDriveAccessToken,
+  revokeGoogleDriveToken,
 } from "./google-api"
 import {
   decryptGoogleDriveSecret,
@@ -302,7 +303,7 @@ export async function attachGoogleDriveDocuments(input: {
 }) {
   const fileIds = normalizeGoogleDriveFileIds(input.fileIds)
   if (!fileIds) throw new GoogleDriveError("invalid", 400)
-  const admin = createSupabaseAdminClient()
+  const admin = createSupabaseAdminClient({ actorId: input.userId })
   const { accessToken, connection } = await getAccessToken(admin, input.userId)
   const files = await Promise.all(
     fileIds.map((id) => getGoogleDriveFile(accessToken, id))
@@ -387,11 +388,12 @@ export async function getGoogleDriveDocumentThumbnail(input: {
 
 export async function detachGoogleDriveDocument(
   documentId: string,
-  orgId: string
+  orgId: string,
+  actorId: string
 ) {
   if (!/^[0-9a-f-]{36}$/i.test(documentId))
     throw new GoogleDriveError("invalid", 400)
-  const { error, count } = await createSupabaseAdminClient()
+  const { error, count } = await createSupabaseAdminClient({ actorId })
     .from("organization_external_documents")
     .delete({ count: "exact" })
     .eq("id", documentId)
@@ -413,9 +415,27 @@ export async function disconnectGoogleDrive(input: {
     .maybeSingle()
   if (connectionError) throw new GoogleDriveError("provider_unavailable", 503)
   if (!connection) return
-  // A feature disconnect clears its credentials. Google token revocation also
-  // invalidates Calendar/login grants in the same project, so leave that to
-  // the user's Google account-wide access controls.
+  // Ordinary disconnects are local: revocation also affects Calendar/login.
+  // Account deletion explicitly requests best-effort revocation before erasure.
+  if (
+    input.revoke === true &&
+    connection.refresh_token_ciphertext &&
+    connection.refresh_token_iv &&
+    connection.refresh_token_auth_tag &&
+    connection.key_version
+  ) {
+    try {
+      const token = decryptGoogleDriveSecret({
+        ciphertext: connection.refresh_token_ciphertext,
+        iv: connection.refresh_token_iv,
+        authTag: connection.refresh_token_auth_tag,
+        keyVersion: connection.key_version,
+      }, connectionAad(input.userId))
+      await revokeGoogleDriveToken(token)
+    } catch {
+      // Unreadable tokens or provider outages must not prevent local erasure.
+    }
+  }
   const { error } = await admin
     .from("google_drive_connections")
     .update({

@@ -43,7 +43,10 @@ describe("scoped organization document access", () => {
       mode: "assigned",
       organizationIds: new Set(["target-org"]),
     })
-    mocks.admin.mockReturnValue(client({ user_id: "target-org" }))
+    mocks.admin.mockImplementation((options) => {
+      expect(options).toEqual({ actorId: "user" })
+      return client({ user_id: "target-org" })
+    })
     mocks.active.mockResolvedValue({ orgId: "active-org", role: "member" })
   })
   it("preserves normal active-organization access without service-role elevation", async () => {

@@ -35,3 +35,14 @@ No Tools activation patch is currently indicated: its production controls alread
 - Source changes are authorized server-side against the signed-in user, active organization, edit role, selected Drive file, and current document version. Saved editor content is retained when Drive replaces the visible source; unsafe persisted links are rejected.
 - Final Node 22 `PLAYWRIGHT_PORT=3031 pnpm check:quality` passed all 21 stages in 399.01 seconds: 2,550 acceptance tests with one expected skip, all RLS suites, production build, 48 visual tests, and performance budgets. Graphify updated to 18,149 nodes and 51,231 edges.
 - Live fresh-user OAuth, Picker selection, and selected-file save/reload remain external release checks. No provider settings, production data, deployment, or live Google file changed.
+
+## Release scope lock
+
+Ship only:
+
+- The updated authenticated Documents tab and its file, preview, selection, Notes, and storage helpers.
+- Core Document start-writing/Google Drive choices, card actions, title-preserving links, and required roadmap editor persistence.
+- Google Drive selected-file server validation and existing Picker integration.
+- Direct tests, visual-regression fixtures, and release documentation.
+
+Exclude Marketplace, public product pages, Workspace Particles, Calendar, Finance, admin tooling, migrations, provider configuration, and unrelated root-worktree changes. Workspace drawer edits are limited to passing the authenticated user and organization scope required by the Documents and Core Document surfaces. The public route diff contains only the gated Documents visual-regression fixture.

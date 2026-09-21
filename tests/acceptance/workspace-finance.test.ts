@@ -73,6 +73,12 @@ const EMPTY_NORMALIZED_STATE = {
 }
 
 describe("workspace-finance feature contract", () => {
+  it("keeps the embedded Finance surface at the established reading width", () => {
+    expect(readComponent("workspace-finance-panel.tsx")).toContain(
+      'className="mx-auto h-full min-h-0 w-full max-w-3xl overflow-hidden"'
+    )
+  })
+
   it("adapts existing organization programs through one read-only seam", () => {
     expect(
       buildWorkspaceFinanceProgramInputs([

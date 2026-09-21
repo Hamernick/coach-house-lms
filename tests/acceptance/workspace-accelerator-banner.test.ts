@@ -16,6 +16,7 @@ describe("workspace Accelerator banner", () => {
     )
     expect(markup).toContain("bg-zinc-100/80")
     expect(markup).toContain("dark:bg-zinc-900/30")
+    expect(markup).toContain("mx-auto mt-4 w-full max-w-3xl")
     expect(markup).toContain("text-center")
     expect(markup).toContain("text-balance")
     expect(markup).toContain("text-pretty")

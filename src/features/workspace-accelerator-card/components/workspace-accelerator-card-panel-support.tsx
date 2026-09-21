@@ -31,6 +31,7 @@ export { WorkspaceAcceleratorHeaderPicker } from "./workspace-accelerator-header
 export { resolveWorkspaceAcceleratorHeaderPickerScrollDistance } from "./workspace-accelerator-header-picker-overflow"
 
 type WorkspaceAcceleratorCardSidebarProps = {
+  className?: string
   selectedLessonGroup:
     | ReturnType<typeof buildWorkspaceAcceleratorLessonGroupOptions>[number]
     | null
@@ -358,6 +359,7 @@ export function useWorkspaceAcceleratorTutorialViewerState({
 }
 
 export function WorkspaceAcceleratorCardSidebar({
+  className,
   selectedLessonGroup,
   tutorialCallout,
   tutorialInteractionPolicy = null,
@@ -381,7 +383,8 @@ export function WorkspaceAcceleratorCardSidebar({
     <div
       className={cn(
         "flex flex-col gap-2.5",
-        fillAvailableHeight ? "min-h-full" : "min-h-0"
+        fillAvailableHeight ? "min-h-full" : "min-h-0",
+        className
       )}
     >
       {headerControls ? <div className="w-full">{headerControls}</div> : null}

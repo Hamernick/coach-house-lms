@@ -12,7 +12,10 @@ export function WorkspaceFinancePanel({
   const finance = normalizeWorkspaceFinanceInput(input)
 
   return (
-    <section aria-label="Finance" className="h-full min-h-0 overflow-hidden">
+    <section
+      aria-label="Finance"
+      className="mx-auto h-full min-h-0 w-full max-w-3xl overflow-hidden"
+    >
       <WorkspaceFinanceViewTabs
         access={input.access}
         initialView={finance.initialView}

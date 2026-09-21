@@ -277,7 +277,7 @@ export const WorkspacePeopleDrawerPanel = memo(
     return (
       <div
         className={cn(
-          "flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden",
+          "mx-auto flex min-h-0 w-full max-w-3xl min-w-0 flex-1 flex-col overflow-hidden",
           draggingPersonIds.length > 0 && "select-none"
         )}
       >

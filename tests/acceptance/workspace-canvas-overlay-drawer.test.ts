@@ -764,7 +764,7 @@ describe("workspace canvas overlay drawer", () => {
       "target.focus({ preventScroll: true })"
     )
     expect(panelSource).toContain(
-      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col p-2 sm:p-3"'
+      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-3xl min-w-0 flex-col p-2 sm:p-3"'
     )
     expect(controllerSource).toContain(
       "organizationEditorData.initialProfileTab"
@@ -1383,7 +1383,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("export const WorkspacePeopleDrawerPanel = memo(")
     expect(source).toContain("function WorkspacePeopleDrawerPanel({")
     expect(source).toContain(
-      "flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden"
+      "mx-auto flex min-h-0 w-full max-w-3xl min-w-0 flex-1 flex-col overflow-hidden"
     )
     expect(source).toContain(
       'className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"'

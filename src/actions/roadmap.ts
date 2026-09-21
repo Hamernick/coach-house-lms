@@ -4,6 +4,9 @@ import { revalidatePath, revalidateTag } from "next/cache"
 
 import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
 
+import { getSelectedGoogleDriveFile } from "@/features/google-drive"
+import { normalizeCoreDocumentDriveSource } from "@/lib/roadmap/core-document-source"
+
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
@@ -32,6 +35,7 @@ import {
 import { createNotification } from "@/lib/notifications"
 
 type SaveInput = {
+  driveFileId?: string | null
   targetOrganizationId?: string
   expectedOrganizationId?: string
   expectedUserId?: string
@@ -85,6 +89,7 @@ function revalidatePublicOrganizationProfile(sectionId: string | null) {
 }
 
 export async function saveRoadmapSectionAction({
+  driveFileId,
   targetOrganizationId,
   expectedOrganizationId,
   expectedUserId,
@@ -179,6 +184,37 @@ export async function saveRoadmapSectionAction({
       error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.`,
     }
   }
+  let driveSource: RoadmapSection["driveSource"] | undefined
+  if (driveFileId !== undefined) {
+    if (
+      !previousSection ||
+      !expectedOrganizationId ||
+      !expectedUserId ||
+      expectedLastUpdated === undefined
+    ) {
+      return { error: "Reopen this document before changing its source." }
+    }
+    if (driveFileId === null) {
+      driveSource = null
+    } else {
+      try {
+        const file = await getSelectedGoogleDriveFile(user.id, driveFileId)
+        driveSource = normalizeCoreDocumentDriveSource({
+          provider: "google_drive",
+          fileId: file.id,
+          name: file.name,
+          webViewLink: file.webViewLink,
+        })
+        if (!driveSource)
+          return { error: "Choose a valid Google Drive document." }
+      } catch {
+        return {
+          error:
+            "Unable to access this Google Drive file. Reconnect in Tools and try again.",
+        }
+      }
+    }
+  }
   const isNewSection = !previousSection
   const narrativeKey =
     getOrganizationNarrativeKeyForSectionId(normalizedSectionId)
@@ -189,12 +225,13 @@ export async function saveRoadmapSectionAction({
         : sanitizeHtml(content)
       : content
   const sectionUpdates = {
-    title,
+    driveSource,
+    title: driveFileId !== undefined ? previousSection?.title : title,
     subtitle,
     content: sanitizedContent,
     budgetRows,
     imageUrl,
-    isPublic: allowPublicSharing ? isPublic : false,
+    isPublic: driveSource ? false : allowPublicSharing ? isPublic : false,
     layout,
     status,
     ctaLabel,

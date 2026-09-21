@@ -425,12 +425,15 @@ export async function disconnectGoogleDrive(input: {
     connection.key_version
   ) {
     try {
-      const token = decryptGoogleDriveSecret({
-        ciphertext: connection.refresh_token_ciphertext,
-        iv: connection.refresh_token_iv,
-        authTag: connection.refresh_token_auth_tag,
-        keyVersion: connection.key_version,
-      }, connectionAad(input.userId))
+      const token = decryptGoogleDriveSecret(
+        {
+          ciphertext: connection.refresh_token_ciphertext,
+          iv: connection.refresh_token_iv,
+          authTag: connection.refresh_token_auth_tag,
+          keyVersion: connection.key_version,
+        },
+        connectionAad(input.userId)
+      )
       await revokeGoogleDriveToken(token)
     } catch {
       // Unreadable tokens or provider outages must not prevent local erasure.
@@ -461,4 +464,20 @@ export async function importGoogleDriveFile(input: {
     input.userId
   )
   return downloadGoogleDriveDocument(accessToken, ids[0])
+}
+
+export async function getSelectedGoogleDriveFile(
+  userId: string,
+  fileId: unknown
+) {
+  const ids = normalizeGoogleDriveFileIds([fileId])
+  if (!ids) throw new GoogleDriveError("invalid", 400)
+  const { accessToken } = await getAccessToken(
+    createSupabaseAdminClient(),
+    userId
+  )
+  const file = await getGoogleDriveFile(accessToken, ids[0])
+  if (file.status !== "available")
+    throw new GoogleDriveError("file_not_authorized", 403)
+  return file
 }

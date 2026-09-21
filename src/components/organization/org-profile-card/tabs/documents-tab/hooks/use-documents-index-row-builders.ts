@@ -1,3 +1,4 @@
+import { isDocumentsSectionVisible } from "@/lib/organization/core-document-uploads"
 import type { OrgDocuments } from "../../../types"
 import { DOCUMENTS } from "../constants"
 import {
@@ -25,7 +26,7 @@ export function buildUploadRows(documentsState: OrgDocuments): UploadRow[] {
       categories: [definition.category],
       status: document?.path ? "ready" : "missing",
       visibility: "private",
-      updatedAt: document?.updatedAt ?? null,
+      updatedAt: document?.path ? (document.updatedAt ?? null) : null,
       definition,
       document,
     }
@@ -54,7 +55,8 @@ export function buildPolicyRows({
     const peopleLabels = policy.personIds
       .map((personId) => peopleLabelById.get(personId))
       .filter((value): value is string => Boolean(value))
-    if (peopleLabels.length > 0) associations.push(`People: ${peopleLabels.join(", ")}`)
+    if (peopleLabels.length > 0)
+      associations.push(`People: ${peopleLabels.join(", ")}`)
 
     const description = [
       policy.summary.trim(),
@@ -77,16 +79,20 @@ export function buildPolicyRows({
   })
 }
 
-export function buildRoadmapRows(roadmapSections: DocumentsRoadmapSection[]): RoadmapRow[] {
-  return roadmapSections.map((section) => ({
-    id: `roadmap:${section.id}`,
-    source: "roadmap",
-    name: section.title,
-    description: section.subtitle,
-    categories: [resolveRoadmapCategory(section.id)],
-    status: mapRoadmapStatus(section),
-    visibility: section.isPublic ? "public" : "private",
-    updatedAt: section.lastUpdated,
-    section,
-  }))
+export function buildRoadmapRows(
+  roadmapSections: DocumentsRoadmapSection[]
+): RoadmapRow[] {
+  return roadmapSections
+    .filter((section) => isDocumentsSectionVisible(section.id))
+    .map((section) => ({
+      id: `roadmap:${section.id}`,
+      source: "roadmap",
+      name: section.title,
+      description: section.subtitle,
+      categories: [resolveRoadmapCategory(section.id)],
+      status: mapRoadmapStatus(section),
+      visibility: section.isPublic ? "public" : "private",
+      updatedAt: section.lastUpdated,
+      section,
+    }))
 }

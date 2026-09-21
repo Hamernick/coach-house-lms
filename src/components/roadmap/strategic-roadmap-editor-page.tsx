@@ -2,10 +2,17 @@ import { redirect } from "next/navigation"
 
 import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import { cleanupRoadmapTestSections, resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  cleanupRoadmapTestSections,
+  resolveRoadmapHeroUrl,
+  resolveRoadmapSections,
+} from "@/lib/roadmap"
 import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -51,11 +58,16 @@ export async function StrategicRoadmapEditorPage({
       ...section,
       homework: roadmapHomework[section.id] ?? null,
     }
-    return publicSharingEnabled ? withHomework : { ...withHomework, isPublic: false }
+    return publicSharingEnabled
+      ? withHomework
+      : { ...withHomework, isPublic: false }
   })
   const normalizedSlug = initialSectionSlug?.trim() ?? ""
   const initialSectionId = normalizedSlug.length
-    ? roadmapSections.find((section) => section.slug === normalizedSlug || section.id === normalizedSlug)?.id ?? null
+    ? (roadmapSections.find(
+        (section) =>
+          section.slug === normalizedSlug || section.id === normalizedSlug
+      )?.id ?? null)
     : null
 
   const roadmapPublicSlug = orgRow?.public_slug ?? null
@@ -64,6 +76,7 @@ export async function StrategicRoadmapEditorPage({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <RoadmapShell
+        sourceScope={{ userId: user.id, organizationId: orgId }}
         sections={roadmapSections}
         publicSlug={roadmapPublicSlug}
         heroUrl={roadmapHeroUrl ?? null}

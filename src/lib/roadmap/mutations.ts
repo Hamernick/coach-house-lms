@@ -20,6 +20,7 @@ export function updateRoadmapSection(
   updates: {
     title?: string
     subtitle?: string
+    driveSource?: RoadmapSection["driveSource"]
     content?: string
     budgetRows?: BudgetTableRow[]
     imageUrl?: string | null
@@ -117,6 +118,16 @@ export function updateRoadmapSection(
       title: nextTitle,
       subtitle: nextSubtitle,
       content: nextContent,
+      driveSource:
+        updates.driveSource === undefined
+          ? current.driveSource
+          : updates.driveSource,
+      documentSource:
+        updates.driveSource === undefined
+          ? current.documentSource
+          : updates.driveSource
+            ? "google_drive"
+            : "editor",
       publishedContent: nextPublishedContent,
       publicProfileStatusControlled: nextPublicProfileStatusControlled,
       budgetRows: nextBudgetRows,
@@ -180,6 +191,7 @@ export function updateRoadmapSection(
           subtitle: nextSubtitle,
           slug: nextSlug,
           content: nextContent,
+          driveSource: updates.driveSource,
           publicProfileStatusControlled: controlsPublicProfile || undefined,
           budgetRows: nextBudgetRows,
           imageUrl: nextImageUrl,

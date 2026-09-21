@@ -1,22 +1,29 @@
 "use client"
 
-import { useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
+import { useMemo, useRef, useState } from "react"
 
+import { useCoreDocumentSource } from "@/components/roadmap/core-document-source/use-core-document-source"
+import type { DocumentsRoadmapSection } from "./documents-tab/types"
+import { DocumentsNotesPanel } from "../../documents-notes-right-rail"
+import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
 import {
   DocumentsBanner,
-  DocumentsResults,
+  DocumentsLibraryGrid,
+  DocumentsStorageUsage,
   DocumentsToolbar,
   PolicyEditorDialog,
 } from "./documents-tab/components"
+import type {
+  DocumentsLibraryFileType,
+  DocumentsLibrarySource,
+  DocumentsLibraryTab,
+} from "./documents-tab/components/documents-library-grid"
+import type { DocumentsViewMode } from "./documents-tab/components/documents-toolbar-types"
 import { useDocumentsTabController } from "./documents-tab/hooks"
+import { DocumentRowActions } from "./documents-tab/components/document-row-actions"
+import { useGoogleDriveLibrary } from "./documents-tab/hooks/use-google-drive-library"
+import { useOrganizationDocumentFiles } from "./documents-tab/hooks/use-organization-document-files"
 import type { DocumentsTabProps } from "./documents-tab/types"
-
-const DOCUMENTS_INDEX_CARD_CLASSNAME =
-  "text-card-foreground flex flex-col border border-border/60 bg-muted relative w-full rounded-[2rem] p-3 shadow-sm overflow-hidden"
-const DOCUMENTS_INDEX_BODY_CLASSNAME =
-  "bg-background border-border/60 overflow-hidden rounded-[1.45rem] border p-0 first:pt-0"
 
 export type {
   DocumentsOption,
@@ -24,7 +31,17 @@ export type {
   DocumentsRoadmapSection,
 } from "./documents-tab/types"
 
-export function DocumentsTab({
+export function DocumentsTab(props: DocumentsTabProps) {
+  return (
+    <ScopedDocumentsTab
+      key={`${props.userId}:${props.organizationId}`}
+      {...props}
+    />
+  )
+}
+
+function ScopedDocumentsTab({
+  organizationId,
   userId,
   documents,
   policyEntries,
@@ -35,151 +52,192 @@ export function DocumentsTab({
   editMode,
   canEdit,
   initialFocusKey,
+  notes,
 }: DocumentsTabProps) {
+  const [coreOverrides, setCoreOverrides] = useState<
+    Record<string, DocumentsRoadmapSection>
+  >({})
+  const coreSource = useCoreDocumentSource(
+    { userId, organizationId },
+    (section) => {
+      setCoreOverrides((current) => ({ ...current, [section.id]: section }))
+    }
+  )
+  const currentSections = roadmapSections.map((section) =>
+    coreOverrides[section.id] &&
+    (coreOverrides[section.id].lastUpdated ?? "") >= (section.lastUpdated ?? "")
+      ? coreOverrides[section.id]
+      : section
+  )
   const documentsRootRef = useRef<HTMLElement>(null)
-  const {
-    activeFilters,
-    categoryOptions,
-    clearFilters,
-    clearPendingPolicyDocument,
-    createPolicyCategory,
-    deletingKind,
-    deletingPolicyId,
-    downloadingKind,
-    downloadingPolicyDocumentId,
-    downloadPolicyDocument,
-    filteredRows,
-    handleDelete,
-    handleDownload,
-    handleDeletePolicy,
-    handlePolicyDialogOpenChange,
-    handleSavePolicy,
-    handleSortColumnChange,
-    handleSortDirectionChange,
-    handleUpload,
-    handleView,
-    hasRoadmapDocuments,
-    isBannerVisible,
-    markPolicyDocumentForRemoval,
-    needsAttentionEnabled,
-    openEditPolicyDialog,
-    openNewPolicyDialog,
-    policyDialogOpen,
-    policyDocumentBusy,
-    policyDocumentPending,
-    policyDraft,
-    policySavePending,
-    removePolicyCategory,
-    searchQuery,
-    selectPolicyDocument,
-    setPolicyDraft,
-    setSearchQuery,
-    sortColumn,
-    sortDirection,
-    toggleFilter,
-    togglePolicyCategory,
-    toggleSortColumn,
-    updated30dEnabled,
-    uploadingKind,
-    viewingKind,
-    viewingPolicyDocumentId,
-    viewPolicyDocument,
-    viewPolicyDraftDocument,
-  } = useDocumentsTabController({
+  const controller = useDocumentsTabController({
     userId,
     documents,
     policyEntries,
     policyProgramOptions,
     policyPeopleOptions,
-    roadmapSections,
+    roadmapSections: currentSections,
   })
+  const [libraryTab, setLibraryTab] = useState<DocumentsLibraryTab>("all")
+  const [viewMode, setViewMode] = useState<DocumentsViewMode>("grid")
+  const [librarySource, setLibrarySource] =
+    useState<DocumentsLibrarySource>("all")
+  const [libraryFileType, setLibraryFileType] =
+    useState<DocumentsLibraryFileType>("all")
+  const [showDeleted, setShowDeleted] = useState(false)
+  const googleDrive = useGoogleDriveLibrary({ enabled: canEdit && editMode })
+  const storageRefreshKey = JSON.stringify([
+    controller.documentsState,
+    controller.policiesState.map((policy) => policy.document),
+  ])
+  const documentFiles = useOrganizationDocumentFiles(storageRefreshKey)
+  const visibleDriveDocuments = useMemo(() => {
+    const query = controller.searchQuery.trim().toLocaleLowerCase()
+    if (!query) return googleDrive.documents
+    return googleDrive.documents.filter((document) =>
+      document.name.toLocaleLowerCase().includes(query)
+    )
+  }, [controller.searchQuery, googleDrive.documents])
+
   useOrganizationDeepLinkFocus({
     focusKey: initialFocusKey,
     rootRef: documentsRootRef,
   })
 
+  const resetLibrary = () => {
+    controller.clearFilters()
+    setLibraryTab("all")
+    setLibrarySource("all")
+    setLibraryFileType("all")
+    setShowDeleted(false)
+  }
+
   return (
     <section
       ref={documentsRootRef}
-      className="space-y-4 pb-6"
+      className="pb-6"
       aria-labelledby="documents-title"
     >
-      {isBannerVisible ? (
-        <DocumentsBanner
-          hasRoadmapDocuments={hasRoadmapDocuments}
+      <DocumentsBanner canEdit={canEdit} uploading={documentFiles.uploading}>
+        <DocumentsToolbar
+          searchQuery={controller.searchQuery}
+          tab={libraryTab}
+          viewMode={viewMode}
+          source={librarySource}
+          fileType={libraryFileType}
+          showDeleted={showDeleted}
           canEdit={canEdit}
+          editMode={editMode}
+          driveConnected={googleDrive.connected}
+          drivePending={googleDrive.pending}
+          onSearchQueryChange={controller.setSearchQuery}
+          onTabChange={setLibraryTab}
+          onViewModeChange={setViewMode}
+          onSourceChange={setLibrarySource}
+          onFileTypeChange={setLibraryFileType}
+          onShowDeletedChange={setShowDeleted}
+          onReset={resetLibrary}
+          onUploadFiles={documentFiles.uploadFiles}
+          onGoogleDrive={() => void googleDrive.connectOrPick()}
         />
-      ) : null}
 
-      <DocumentsToolbar
-        searchQuery={searchQuery}
-        activeFilters={activeFilters}
-        hasRoadmapDocuments={hasRoadmapDocuments}
-        categoryOptions={categoryOptions}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        needsAttentionEnabled={needsAttentionEnabled}
-        updated30dEnabled={updated30dEnabled}
-        canEdit={canEdit}
-        editMode={editMode}
-        onSearchQueryChange={setSearchQuery}
-        onToggleFilter={toggleFilter}
-        onClearFilters={clearFilters}
-        onSortColumnChange={handleSortColumnChange}
-        onSortDirectionChange={handleSortDirectionChange}
-        onOpenNewPolicy={openNewPolicyDialog}
-      />
+        <DocumentsStorageUsage
+          usedBytes={documentFiles.usedBytes}
+          limitBytes={documentFiles.limitBytes}
+          loading={documentFiles.loading}
+        />
 
-      <Card id="documents-index" className={DOCUMENTS_INDEX_CARD_CLASSNAME}>
-        <CardContent className={DOCUMENTS_INDEX_BODY_CLASSNAME}>
-          <DocumentsResults
-            filteredRows={filteredRows}
-            clearFilters={clearFilters}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            onToggleSortColumn={toggleSortColumn}
+        <div id="documents-index" className="mt-4" aria-live="polite">
+          <DocumentsLibraryGrid
+            coreSource={coreSource}
+            viewMode={viewMode}
+            renderRowActions={(row) => (
+              <DocumentRowActions
+                row={row}
+                canEdit={canEdit}
+                editMode={editMode}
+                publicSlug={publicSlug}
+                uploadingKind={controller.uploadingKind}
+                deletingKind={controller.deletingKind}
+                viewingKind={controller.viewingKind}
+                downloadingKind={controller.downloadingKind}
+                deletingPolicyId={controller.deletingPolicyId}
+                viewingPolicyDocumentId={controller.viewingPolicyDocumentId}
+                downloadingPolicyDocumentId={
+                  controller.downloadingPolicyDocumentId
+                }
+                onUpload={controller.handleUpload}
+                onDeleteUpload={controller.handleDelete}
+                onViewUpload={controller.handleView}
+                onDownloadUpload={controller.handleDownload}
+                onEditPolicy={controller.openEditPolicyDialog}
+                onDeletePolicy={controller.handleDeletePolicy}
+                onViewPolicyDocument={controller.viewPolicyDocument}
+                onDownloadPolicyDocument={controller.downloadPolicyDocument}
+              />
+            )}
+            rows={controller.filteredRows}
+            driveDocuments={visibleDriveDocuments}
+            uploadedFiles={documentFiles.files}
+            searchQuery={controller.searchQuery}
+            uploadingFiles={documentFiles.uploading}
+            uploadingCoreSectionId={documentFiles.uploadingCoreSectionId}
+            onUploadCoreDocument={async (sectionId, file) => {
+              await documentFiles.uploadFiles([file], sectionId)
+            }}
+            tab={libraryTab}
+            source={librarySource}
+            fileType={libraryFileType}
+            showDeleted={showDeleted}
             canEdit={canEdit}
             editMode={editMode}
-            publicSlug={publicSlug}
-            uploadingKind={uploadingKind}
-            deletingKind={deletingKind}
-            viewingKind={viewingKind}
-            downloadingKind={downloadingKind}
-            deletingPolicyId={deletingPolicyId}
-            viewingPolicyDocumentId={viewingPolicyDocumentId}
-            downloadingPolicyDocumentId={downloadingPolicyDocumentId}
-            onUpload={handleUpload}
-            onDeleteUpload={handleDelete}
-            onViewUpload={handleView}
-            onDownloadUpload={handleDownload}
-            onEditPolicy={openEditPolicyDialog}
-            onDeletePolicy={handleDeletePolicy}
-            onViewPolicyDocument={viewPolicyDocument}
-            onDownloadPolicyDocument={downloadPolicyDocument}
+            onEditPolicy={controller.openEditPolicyDialog}
+            onViewPolicyDocument={controller.viewPolicyDocument}
+            onViewUpload={controller.handleView}
+            onUpload={controller.handleUpload}
+            uploadingKind={controller.uploadingKind}
+            onViewUploadedFile={documentFiles.openFile}
+            onDownloadUploadedFile={documentFiles.downloadFile}
+            onDownloadUpload={controller.handleDownload}
+            onDeleteUpload={controller.handleDelete}
+            onDownloadPolicyDocument={controller.downloadPolicyDocument}
+            onRemovePolicyDocument={controller.removePolicyDocumentFile}
+            onDetachDriveDocument={googleDrive.detachDocument}
+            pendingUploadedFileIds={documentFiles.pendingFileIds}
+            onTrashUploadedFile={documentFiles.trashFile}
+            onRestoreUploadedFile={documentFiles.restoreFile}
+            onPermanentlyDeleteUploadedFile={
+              documentFiles.permanentlyDeleteFile
+            }
+            onReset={resetLibrary}
           />
-        </CardContent>
-      </Card>
+        </div>
+
+        {notes ? <DocumentsNotesPanel notes={notes} /> : null}
+      </DocumentsBanner>
 
       <PolicyEditorDialog
-        open={policyDialogOpen}
-        onOpenChange={handlePolicyDialogOpenChange}
-        draft={policyDraft}
-        categoryOptions={categoryOptions}
+        open={controller.policyDialogOpen}
+        onOpenChange={controller.handlePolicyDialogOpenChange}
+        draft={controller.policyDraft}
+        categoryOptions={controller.categoryOptions}
         peopleOptions={policyPeopleOptions}
         programOptions={policyProgramOptions}
-        pending={policySavePending}
-        pendingDocumentName={policyDocumentPending?.name ?? null}
-        pendingDocumentUpload={policyDocumentBusy}
-        viewingDocument={viewingPolicyDocumentId === policyDraft.id}
-        onChange={setPolicyDraft}
-        onToggleCategory={togglePolicyCategory}
-        onCreateCategory={createPolicyCategory}
-        onRemoveCategory={removePolicyCategory}
-        onSelectDocument={selectPolicyDocument}
-        onClearPendingDocument={clearPendingPolicyDocument}
-        onRemoveExistingDocument={markPolicyDocumentForRemoval}
-        onViewDocument={viewPolicyDraftDocument}
-        onSave={handleSavePolicy}
+        pending={controller.policySavePending}
+        pendingDocumentName={controller.policyDocumentPending?.name ?? null}
+        pendingDocumentUpload={controller.policyDocumentBusy}
+        viewingDocument={
+          controller.viewingPolicyDocumentId === controller.policyDraft.id
+        }
+        onChange={controller.setPolicyDraft}
+        onToggleCategory={controller.togglePolicyCategory}
+        onCreateCategory={controller.createPolicyCategory}
+        onRemoveCategory={controller.removePolicyCategory}
+        onSelectDocument={controller.selectPolicyDocument}
+        onClearPendingDocument={controller.clearPendingPolicyDocument}
+        onRemoveExistingDocument={controller.markPolicyDocumentForRemoval}
+        onViewDocument={controller.viewPolicyDraftDocument}
+        onSave={controller.handleSavePolicy}
       />
     </section>
   )

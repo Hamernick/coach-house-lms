@@ -8,6 +8,8 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     const project: OrganizationProjectRecord = {
       id: "project-1",
       org_id: "org-1",
+      canonical_org_id: null,
+      project_kind: "standard",
       name: "Neighborhood Grants Rollout",
       status: "active",
       priority: "high",
@@ -38,6 +40,10 @@ describe("buildMemberWorkspaceProjectDetails", () => {
           id: "task-1",
           project_id: "project-1",
           title: "Define community partner list",
+          description: null,
+          priority: "no-priority",
+          tag_label: null,
+          workstream_name: null,
           task_type: "task",
           status: "in-progress",
           start_date: "2026-04-02",
@@ -48,6 +54,10 @@ describe("buildMemberWorkspaceProjectDetails", () => {
           id: "task-2",
           project_id: "project-1",
           title: "Tighten eligibility criteria",
+          description: null,
+          priority: "no-priority",
+          tag_label: null,
+          workstream_name: null,
           task_type: "improvement",
           status: "todo",
           start_date: "2026-04-07",
@@ -109,12 +119,20 @@ describe("buildMemberWorkspaceProjectDetails", () => {
       "Improvements",
     ])
     expect(details.timelineTasks).toHaveLength(2)
+    expect(details.time.schedule).toBeNull()
+    const scheduled = buildMemberWorkspaceProjectDetails({ project, tasks: [], scheduleAvailable: true, scheduleConfirmed: true, projectMembers: [{ id: "actual-owner", name: "Real Owner" }, { id: "actual-contributor", name: "Real Contributor" }] })
+    expect(scheduled.time.schedule).toEqual({ startDate: project.start_date, endDate: project.end_date })
+    expect(scheduled.time.scheduleAvailable).toBe(true)
+    expect(scheduled.backlog.picLabel).toBe("Owner")
+    expect(scheduled.backlog.picUsers.map((person) => person.id)).toEqual(["actual-owner"])
+    expect(scheduled.backlog.supportUsers?.map((person) => person.id)).toEqual(["actual-contributor"])
+
     expect(details.backlog.statusLabel).toBe("Active")
     expect(details.meta.sprintLabel).toBe("Launch 3 weeks")
     expect(details.meta.locationLabel).toBeUndefined()
     expect(details.workstreams[0]?.tasks[0]?.assignee).toBeUndefined()
     expect(details.workstreams[0]?.tasks[0]?.description).toBeUndefined()
-    expect(details.workstreams[0]?.tasks[0]?.priority).toBeUndefined()
+    expect(details.workstreams[0]?.tasks[0]?.priority).toBe("no-priority")
     expect(details.notes).toEqual([
       expect.objectContaining({
         id: "note-1",
@@ -150,6 +168,8 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     const project: OrganizationProjectRecord = {
       id: "project-2",
       org_id: "org-1",
+      canonical_org_id: null,
+      project_kind: "standard",
       name: "Operations Readiness",
       status: "active",
       priority: "medium",
@@ -283,6 +303,8 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     const project: OrganizationProjectRecord = {
       id: "project-3",
       org_id: "org-1",
+      canonical_org_id: null,
+      project_kind: "standard",
       name: "Member Workspace Refresh",
       status: "active",
       priority: "medium",
@@ -312,6 +334,10 @@ describe("buildMemberWorkspaceProjectDetails", () => {
           id: "task-b",
           project_id: "project-3",
           title: "Second by date, first by order",
+          description: null,
+          priority: "no-priority",
+          tag_label: null,
+          workstream_name: null,
           task_type: "task",
           status: "todo",
           start_date: "2026-04-20",
@@ -322,6 +348,10 @@ describe("buildMemberWorkspaceProjectDetails", () => {
           id: "task-a",
           project_id: "project-3",
           title: "First by date, second by order",
+          description: null,
+          priority: "no-priority",
+          tag_label: null,
+          workstream_name: null,
           task_type: "task",
           status: "todo",
           start_date: "2026-04-05",

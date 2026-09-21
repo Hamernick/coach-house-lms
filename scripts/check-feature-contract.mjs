@@ -143,7 +143,7 @@ function collectSpecifierErrors({ repoRelativePath, featureName, layer, specifie
   if (featureAlias) {
     if (featureAlias.featureName !== featureName) {
       const isPublicEntry =
-        featureAlias.rest.length === 0 || (featureAlias.rest.length === 1 && featureAlias.rest[0] === "index")
+        featureAlias.rest.length === 0 || (featureAlias.rest.length === 1 && ["index", "client"].includes(featureAlias.rest[0]))
       if (!isPublicEntry) {
         errors.push(
           `${repoRelativePath}: cross-feature imports must use public entrypoint ('@/features/${featureAlias.featureName}'). Found '${specifier}'.`,

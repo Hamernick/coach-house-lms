@@ -1,5 +1,5 @@
 import React from "react"
-import { renderToStaticMarkup } from "react-dom/server"
+import { renderToStaticMarkup, renderToReadableStream } from "react-dom/server"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -44,7 +44,7 @@ describe("app sidebar react grab", () => {
       'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"'
     )
 
-    expect(window.__REACT_GRAB_SURFACES__["app-sidebar:main:tasks"]).toEqual(
+    expect(window.__REACT_GRAB_SURFACES__?.["app-sidebar:main:tasks"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           component: "AppSidebarMainNavItem",
@@ -88,7 +88,7 @@ describe("app sidebar react grab", () => {
     )
 
     expect(
-      window.__REACT_GRAB_SURFACES__["app-sidebar:resources:community"]
+      window.__REACT_GRAB_SURFACES__?.["app-sidebar:resources:community"]
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -100,6 +100,37 @@ describe("app sidebar react grab", () => {
           primitiveImport: "@/components/ui/sidebar",
         }),
       ])
+    )
+  })
+
+  it("renders active admin destinations inside the Admin accordion", async () => {
+    const stream = await renderToReadableStream(
+      React.createElement(
+        SidebarProvider,
+        null,
+        React.createElement(NavMain, {
+          items: [
+            { title: "Find", href: "/" },
+            {
+              title: "Admin",
+              children: [
+                { title: "Organizations", href: "/organizations" },
+                { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+              ],
+            },
+          ],
+        })
+      )
+    )
+
+    await stream.allReady
+    const markup = await new Response(stream).text()
+
+    expect(markup.indexOf(">Find<")).toBeLessThan(markup.indexOf(">Admin<"))
+    expect(markup).toContain('aria-label="Collapse Admin"')
+    expect(markup).toContain('href="/tasks"')
+    expect(markup).toContain(
+      'data-react-grab-owner-id="app-sidebar:main:tasks"'
     )
   })
 

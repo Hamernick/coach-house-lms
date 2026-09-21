@@ -1,3 +1,5 @@
+import type { OrganizationDocumentFilesTable } from "./organization_document_files"
+import type { GoogleCalendarConnectionsTable, GoogleCalendarOauthIntentsTable } from "./google_calendar_connections"
 import type { OrganizationsTable } from "./organizations"
 import type { PublicHandleReservationsTable } from "./public_handle_reservations"
 import type { PublicHandlesTable } from "./public_handles"
@@ -374,6 +376,11 @@ export type PublicTables = {
   platform_email_link_clicks: PlatformEmailLinkClicksTable
   platform_legal_acceptances: PlatformLegalAcceptancesTable
   google_drive_oauth_intents: GoogleDriveOauthIntentsTable
+  organization_document_files: OrganizationDocumentFilesTable
+  google_calendar_oauth_intents: GoogleCalendarOauthIntentsTable
+  google_calendar_connections: GoogleCalendarConnectionsTable
   google_drive_connections: GoogleDriveConnectionsTable
   organization_external_documents: OrganizationExternalDocumentsTable
 }
+
+export type { OrganizationDocumentFilesTable } from "./organization_document_files"

@@ -4,6 +4,7 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({
   attachGoogleDriveDocuments: vi.fn(),
   createGoogleDrivePickerToken: vi.fn(),
+  getGoogleDriveConnection: vi.fn(),
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
   requireGoogleDriveContext: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock("@/features/google-drive", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/google-drive")>()),
   attachGoogleDriveDocuments: mocks.attachGoogleDriveDocuments,
   createGoogleDrivePickerToken: mocks.createGoogleDrivePickerToken,
+  getGoogleDriveConnection: mocks.getGoogleDriveConnection,
   requireGoogleDriveContext: mocks.requireGoogleDriveContext,
   startGoogleDriveConnection: mocks.startGoogleDriveConnection,
 }))
@@ -115,6 +117,39 @@ describe("Google Drive route contracts", () => {
       expect.anything(),
       true
     )
+  })
+
+  it("preserves a connected account when this environment cannot issue Picker tokens", async () => {
+    mocks.getGoogleDriveConnection.mockResolvedValue({
+      connected: true,
+      googleEmail: "connected@example.org",
+      status: "connected",
+    })
+    const { GoogleDriveError } = await import("@/features/google-drive")
+    mocks.createGoogleDrivePickerToken.mockRejectedValue(
+      new GoogleDriveError("not_configured", 503)
+    )
+    const { GET } =
+      await import("@/app/api/integrations/google-drive/connection/route")
+    const connection = await GET(
+      new NextRequest(
+        "https://coachhouse.app/api/integrations/google-drive/connection"
+      )
+    )
+    expect(await connection.json()).toMatchObject({
+      connection: { connected: true },
+    })
+    const { POST } =
+      await import("@/app/api/integrations/google-drive/picker-token/route")
+    const picker = await POST(
+      new NextRequest(
+        "https://coachhouse.app/api/integrations/google-drive/picker-token",
+        { method: "POST" }
+      )
+    )
+    expect(picker.status).toBe(503)
+    expect(await picker.json()).toEqual({ ok: false, code: "not_configured" })
+    expect(mocks.startGoogleDriveConnection).not.toHaveBeenCalled()
   })
 
   it("attaches only server-verified file IDs for the active organization", async () => {

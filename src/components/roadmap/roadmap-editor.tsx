@@ -44,6 +44,8 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
 
   return (
     <RoadmapEditorShell
+      key={`${props.sourceScope?.userId}:${props.sourceScope?.organizationId}:${activeSection.id}`}
+      sourceScope={props.sourceScope}
       sections={props.sections}
       activeSection={activeSection}
       drafts={drafts}

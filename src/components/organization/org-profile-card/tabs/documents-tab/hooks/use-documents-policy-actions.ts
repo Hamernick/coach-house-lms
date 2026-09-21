@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from "react"
 import { useState } from "react"
 
 import { toast } from "@/lib/toast"
+import { downloadFile } from "@/lib/download-file"
+import type { DocumentActionOptions } from "./use-documents-library-selection"
 
 import {
   deletePolicy,
@@ -37,8 +39,11 @@ export function useDocumentsPolicyActions({
   resetPolicyDocumentMutations,
 }: UseDocumentsPolicyActionsArgs) {
   const [deletingPolicyId, setDeletingPolicyId] = useState<string | null>(null)
-  const [viewingPolicyDocumentId, setViewingPolicyDocumentId] = useState<string | null>(null)
-  const [downloadingPolicyDocumentId, setDownloadingPolicyDocumentId] = useState<string | null>(null)
+  const [viewingPolicyDocumentId, setViewingPolicyDocumentId] = useState<
+    string | null
+  >(null)
+  const [downloadingPolicyDocumentId, setDownloadingPolicyDocumentId] =
+    useState<string | null>(null)
   const [policySavePending, setPolicySavePending] = useState(false)
 
   const viewPolicyDocument = async (policy: DocumentsPolicyEntry) => {
@@ -48,7 +53,9 @@ export function useDocumentsPolicyActions({
       const url = await getPolicyDocumentUrl(policy.id)
       window.open(url, "_blank", "noopener")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to open policy file")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to open policy file"
+      )
     } finally {
       setViewingPolicyDocumentId(null)
     }
@@ -88,7 +95,9 @@ export function useDocumentsPolicyActions({
       resetPolicyDocumentMutations()
       toast.success(policyDraft.id ? "Policy updated" : "Policy created")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to save policy")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to save policy"
+      )
     } finally {
       setPolicySavePending(false)
       setPolicyDocumentBusy(false)
@@ -100,25 +109,65 @@ export function useDocumentsPolicyActions({
     setDeletingPolicyId(policy.id)
     try {
       await deletePolicy(policy.id)
-      setPoliciesState((current) => current.filter((entry) => entry.id !== policy.id))
+      setPoliciesState((current) =>
+        current.filter((entry) => entry.id !== policy.id)
+      )
       toast.success("Policy deleted")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to delete policy")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to delete policy"
+      )
     } finally {
       setDeletingPolicyId(null)
     }
   }
 
-  const downloadPolicyDocument = async (policy: DocumentsPolicyEntry) => {
+  const downloadPolicyDocument = async (
+    policy: DocumentsPolicyEntry,
+    options: DocumentActionOptions = {}
+  ) => {
     if (!policy.document?.path) return
     setDownloadingPolicyDocumentId(policy.id)
     try {
       const url = await getPolicyDocumentUrl(policy.id, { download: true })
-      window.open(url, "_blank", "noopener")
+      await downloadFile(url, policy.document.name || policy.title)
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to download policy file")
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to download policy file"
+      )
+      if (options.throwOnError) throw error
     } finally {
       setDownloadingPolicyDocumentId(null)
+    }
+  }
+
+  const removePolicyDocumentFile = async (
+    policy: DocumentsPolicyEntry,
+    options: DocumentActionOptions = {}
+  ) => {
+    if (!policy.document?.path) return
+    if (
+      options.confirm !== false &&
+      !window.confirm("Remove this policy document?")
+    ) {
+      return
+    }
+    setDeletingPolicyId(policy.id)
+    try {
+      const updated = await removePolicyDocument(policy.id)
+      setPoliciesState((current) => upsertPolicyEntry(current, updated))
+      toast.success("Policy document removed")
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to remove policy document"
+      )
+      if (options.throwOnError) throw error
+    } finally {
+      setDeletingPolicyId(null)
     }
   }
 
@@ -129,6 +178,7 @@ export function useDocumentsPolicyActions({
     handleDeletePolicy,
     handleSavePolicy,
     policySavePending,
+    removePolicyDocumentFile,
     viewingPolicyDocumentId,
     viewPolicyDocument,
     viewPolicyDraftDocument,

@@ -1,7 +1,7 @@
 "use client"
 
-import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
-import Lock from "lucide-react/dist/esm/icons/lock"
+import type { DragEvent, ReactNode } from "react"
+import { IconLock } from "@tabler/icons-react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 
@@ -15,49 +15,42 @@ const DOCUMENTS_BANNER_OWNER_PROPS = getReactGrabOwnerProps({
   slot: "root",
   canonicalOwnerSource: DOCUMENTS_BANNER_SOURCE,
   canonicalOwnerReason:
-    "DocumentsBanner owns its document-introduction layout and presentation.",
+    "DocumentsBanner owns the complete Documents library surface and presentation.",
 })
 
 type DocumentsBannerProps = {
-  hasRoadmapDocuments: boolean
   canEdit: boolean
+  uploading?: boolean
+  children: ReactNode
 }
 
 export function DocumentsBanner({
-  hasRoadmapDocuments,
   canEdit,
+  uploading = false,
+  children,
 }: DocumentsBannerProps) {
+  const preventFileNavigation = (event: DragEvent<HTMLElement>) => {
+    if (Array.from(event.dataTransfer.types).includes("Files")) {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "none"
+    }
+  }
+
   return (
     <section
       {...DOCUMENTS_BANNER_OWNER_PROPS}
-      className="border-border/70 rounded-2xl border bg-zinc-100/80 px-4 py-5 text-center sm:px-5 sm:py-6 dark:bg-zinc-900/30"
+      className="relative mx-auto w-full max-w-xl rounded-2xl bg-transparent p-3"
+      aria-busy={uploading || undefined}
+      onDragOver={preventFileNavigation}
+      onDrop={preventFileNavigation}
     >
-      <div className="mx-auto flex max-w-[68ch] min-w-0 flex-col items-center">
-        <span className="border-border/70 bg-background text-muted-foreground inline-flex size-14 shrink-0 origin-center items-center justify-center rounded-2xl border shadow-xs motion-safe:animate-[soft-pop_600ms_cubic-bezier(0.22,1,0.36,1)_both] motion-reduce:animate-none">
-          <FolderOpen className="size-6" aria-hidden />
-        </span>
-        <h2
-          id="documents-title"
-          className="text-foreground mt-3 max-w-[30ch] text-xl font-semibold text-balance sm:text-2xl"
-        >
-          Store, track, and act on every key document in one place.
-        </h2>
-        <div className="text-muted-foreground mt-3 space-y-2 text-sm leading-relaxed">
-          <p>
-            {hasRoadmapDocuments
-              ? "This filing system combines roadmap sections, policies, and organization files in one index so your team can find what matters and keep documentation current."
-              : "Keep your organization's policies and core files in one secure index so your team can quickly find, update, and manage required documents."}
-          </p>
-          <p>Uploads support PDF files up to 50 MB.</p>
-        </div>
-        {!canEdit ? (
-          <div className="border-border/70 bg-background/70 text-muted-foreground mt-3 inline-flex w-fit items-center justify-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
-            <Lock className="size-3.5 shrink-0" aria-hidden />
-            You have view-only access. Organization admins can upload files and
-            manage policies.
-          </div>
-        ) : null}
-      </div>
+      {children}
+      {!canEdit ? (
+        <p className="text-muted-foreground mt-5 flex items-center gap-2 text-xs">
+          <IconLock className="size-3.5" aria-hidden />
+          View-only access. Organization admins can add and manage files.
+        </p>
+      ) : null}
     </section>
   )
 }

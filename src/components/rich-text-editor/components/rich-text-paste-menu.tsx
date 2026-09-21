@@ -1,0 +1,75 @@
+"use client"
+
+import type { Editor } from "@tiptap/react"
+import { useRef } from "react"
+import ClipboardIcon from "lucide-react/dist/esm/icons/clipboard"
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+} from "@/components/ui/dropdown-menu"
+import { getReactGrabOwnerProps, getReactGrabLinkedSurfaceProps } from "@/components/dev/react-grab-surface"
+import { pasteEditorClipboard } from "../clipboard"
+
+export function RichTextPasteMenu({ editor }: { editor: Editor }) {
+  const pastingRef = useRef(false)
+  function paste(plain: boolean) {
+    pastingRef.current = true
+    void pasteEditorClipboard(editor, plain)
+  }
+
+  return (
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) pastingRef.current = false
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <Button
+          {...getReactGrabOwnerProps({
+            ownerId: "rich-text:paste",
+            component: "RichTextPasteMenu",
+            source:
+              "src/components/rich-text-editor/components/rich-text-paste-menu.tsx",
+            slot: "trigger",
+          })}
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground h-7 gap-1 px-1 sm:h-8 sm:px-1.5"
+          aria-label="Paste options"
+          title="Paste options"
+        >
+          <ClipboardIcon data-icon="inline-start" />
+          <ChevronDown data-icon="inline-end" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        {...getReactGrabLinkedSurfaceProps({ ownerId: "rich-text:paste", component: "RichTextPasteMenu", source: "src/components/rich-text-editor/components/rich-text-paste-menu.tsx", surfaceKind: "content" })}
+        align="start"
+        className="max-w-[calc(100vw-2rem)]"
+        onCloseAutoFocus={(event) => {
+          if (pastingRef.current) {
+            event.preventDefault()
+            editor.commands.focus()
+          }
+        }}
+      >
+        <DropdownMenuGroup>
+          <DropdownMenuItem onSelect={() => void paste(false)}>
+            Paste <DropdownMenuShortcut>Ctrl/Cmd+V</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void paste(true)}>
+            Paste without formatting{" "}
+            <DropdownMenuShortcut>Ctrl/Cmd+Shift+V</DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}

@@ -44,6 +44,7 @@ import type {
 } from "./use-roadmap-editor-state-types"
 
 export function useRoadmapEditorState({
+  sourceScope,
   sections: initialSections,
   publicSlug,
   canEdit = true,
@@ -53,8 +54,11 @@ export function useRoadmapEditorState({
   onRegisterDiscard,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
   const storageKey = useMemo(
-    () => `roadmap-draft:${publicSlug ?? "private"}`,
-    [publicSlug]
+    () =>
+      sourceScope
+        ? `roadmap-draft:${sourceScope.userId}:${sourceScope.organizationId}`
+        : `roadmap-draft:${publicSlug ?? "private"}`,
+    [publicSlug, sourceScope]
   )
   const initialActiveId = useMemo(() => {
     if (!initialSectionId) return ""
@@ -201,6 +205,8 @@ export function useRoadmapEditorState({
       startTransition(async () => {
         try {
           const result = await saveRoadmapSectionAction({
+            expectedOrganizationId: sourceScope?.organizationId,
+            expectedUserId: sourceScope?.userId,
             sectionId: section.id,
             expectedLastUpdated: section.lastUpdated,
             title: draft.title,
@@ -238,7 +244,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [canEdit, isPending, savingId]
+    [canEdit, isPending, savingId, sourceScope]
   )
 
   const flushActiveSectionDraft = useCallback(() => {
@@ -346,6 +352,8 @@ export function useRoadmapEditorState({
       startTransition(async () => {
         try {
           const result = await saveRoadmapSectionAction({
+            expectedOrganizationId: sourceScope?.organizationId,
+            expectedUserId: sourceScope?.userId,
             sectionId: activeSection.id,
             expectedLastUpdated: activeSection.lastUpdated,
             status: nextStatus,
@@ -387,7 +395,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [activeSection, canEdit, isPending, savingId]
+    [activeSection, canEdit, isPending, savingId, sourceScope]
   )
 
   return {

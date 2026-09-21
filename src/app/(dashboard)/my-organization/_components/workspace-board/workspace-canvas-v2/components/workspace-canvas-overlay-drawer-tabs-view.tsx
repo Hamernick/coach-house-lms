@@ -199,6 +199,10 @@ export function WorkspaceDrawerTabs({
         >
           {tab === "roadmap" ? (
             <WorkspaceCanvasOverlayRoadmapPanel
+              sourceScope={{
+                userId: viewerId,
+                organizationId: uiPreferencesScope.orgId,
+              }}
               sections={acceleratorRoadmapSections}
               publicSlug={organizationEditorData.roadmapPublicSlug}
               canEdit={canEdit}
@@ -230,6 +234,7 @@ export function WorkspaceDrawerTabs({
               <DocumentsTab
                 key={`documents:${request?.id ?? 0}`}
                 userId={viewerId}
+                organizationId={uiPreferencesScope.orgId}
                 {...documentsTab}
                 editMode={canEdit}
                 canEdit={canEdit}

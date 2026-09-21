@@ -10,6 +10,10 @@ import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
 
 import { Button } from "@/components/ui/button"
 import {
+  MAX_UPLOAD_MB,
+  ORGANIZATION_DOCUMENT_ACCEPT,
+} from "@/lib/organization/document-storage"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -78,7 +82,7 @@ export function UploadRowActions({
           id={inputId}
           ref={inputRef}
           type="file"
-          accept="application/pdf"
+          accept={ORGANIZATION_DOCUMENT_ACCEPT}
           className="sr-only"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]
@@ -204,7 +208,9 @@ export function UploadRowActions({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isUploading ? "Uploading…" : "Upload PDF (50 MB max)"}
+              {isUploading
+                ? "Uploading…"
+                : `Upload PDF or image (${MAX_UPLOAD_MB} MB max)`}
             </TooltipContent>
           </Tooltip>
         )

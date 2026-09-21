@@ -7,9 +7,9 @@ import {
 import { validatePdf } from "@/components/organization/org-profile-card/tabs/documents-tab/helpers"
 
 describe("organization document upload limit", () => {
-  it("allows PDF uploads up to 50 MB", () => {
-    expect(MAX_UPLOAD_MB).toBe(50)
-    expect(MAX_BYTES).toBe(50 * 1024 * 1024)
+  it("allows PDF uploads up to 15 MB", () => {
+    expect(MAX_UPLOAD_MB).toBe(15)
+    expect(MAX_BYTES).toBe(15 * 1024 * 1024)
 
     const file = new File(["x"], "verification.pdf", {
       type: "application/pdf",
@@ -21,7 +21,7 @@ describe("organization document upload limit", () => {
     expect(validatePdf(file)).toBeNull()
   })
 
-  it("returns the current 50 MB limit in validation errors", () => {
+  it("returns the current 15 MB limit in validation errors", () => {
     const file = new File(["x"], "verification.pdf", {
       type: "application/pdf",
     })
@@ -29,6 +29,6 @@ describe("organization document upload limit", () => {
       value: MAX_BYTES + 1,
     })
 
-    expect(validatePdf(file)).toBe("PDF must be 50 MB or less.")
+    expect(validatePdf(file)).toBe("PDF must be 15 MB or less.")
   })
 })

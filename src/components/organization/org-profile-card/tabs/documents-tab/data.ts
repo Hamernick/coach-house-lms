@@ -1,3 +1,6 @@
+import { stripHtml } from "@/lib/markdown/convert"
+import { isDocumentsSectionVisible } from "@/lib/organization/core-document-uploads"
+import { hasMeaningfulRoadmapBudgetRows } from "@/lib/roadmap/budget"
 import type { RoadmapSection } from "@/lib/roadmap"
 
 import type { OrgDocuments, OrgProgram } from "../../types"
@@ -10,7 +13,7 @@ import type {
 
 export type DocumentsTabData = Omit<
   DocumentsTabProps,
-  "userId" | "editMode" | "canEdit"
+  "userId" | "organizationId" | "editMode" | "canEdit"
 >
 
 const POLICY_STATUSES = new Set(["not_started", "in_progress", "complete"])
@@ -182,15 +185,24 @@ export function buildDocumentsRoadmapSections({
 }): DocumentsRoadmapSection[] {
   if (!canAccessRoadmapDocuments) return []
 
-  return roadmapSections.map((section) => ({
-    id: section.id,
-    title: section.title,
-    subtitle: section.subtitle,
-    slug: section.slug,
-    status: section.status,
-    lastUpdated: section.lastUpdated,
-    isPublic: section.isPublic,
-  }))
+  return roadmapSections
+    .filter((section) => isDocumentsSectionVisible(section.id))
+    .map((section) => ({
+      content: section.content,
+      driveSource: section.driveSource,
+      documentSource: section.documentSource,
+      hasContent:
+        Boolean(
+          stripHtml(section.content).trim() || /<img\b/i.test(section.content)
+        ) || hasMeaningfulRoadmapBudgetRows(section.budgetRows ?? []),
+      id: section.id,
+      title: section.title,
+      subtitle: section.subtitle,
+      slug: section.slug,
+      status: section.status,
+      lastUpdated: section.lastUpdated,
+      isPublic: section.isPublic,
+    }))
 }
 
 export function buildDocumentsTabData({

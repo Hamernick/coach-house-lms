@@ -78,21 +78,7 @@ describe("documents results table column resizing", () => {
       "utf8"
     )
 
-    expect(documentsTabSource).toContain("DOCUMENTS_INDEX_CARD_CLASSNAME")
-    expect(documentsTabSource).toContain(
-      "border border-border/60 bg-muted relative w-full rounded-[2rem] p-3 shadow-sm"
-    )
-    expect(documentsTabSource).toContain("DOCUMENTS_INDEX_BODY_CLASSNAME")
-    expect(documentsTabSource).toContain(
-      "bg-background border-border/60 overflow-hidden rounded-[1.45rem] border p-0 first:pt-0"
-    )
-    expect(documentsTabSource).toContain(
-      '<Card id="documents-index" className={DOCUMENTS_INDEX_CARD_CLASSNAME}>'
-    )
-    expect(documentsTabSource).toContain(
-      "<CardContent className={DOCUMENTS_INDEX_BODY_CLASSNAME}>"
-    )
-
+    expect(documentsTabSource).toContain("DocumentsLibraryGrid")
     expect(tableSource).toContain("<colgroup>")
     expect(tableSource).toContain("DOCUMENTS_RESULTS_TABLE_COLUMNS.map")
     expect(tableSource).toContain('<div className="hidden w-full md:block">')

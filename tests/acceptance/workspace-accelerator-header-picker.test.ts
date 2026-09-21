@@ -41,6 +41,17 @@ function extractProgressPercentMarkup(markup: string) {
 }
 
 describe("workspace accelerator header picker", () => {
+  it("constrains the embedded drawer checklist to the established reading width", () => {
+    const source = readFileSync(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx",
+      "utf8"
+    )
+
+    expect(source).toContain(
+      'workspaceDrawerEmbedded ? "mx-auto w-full max-w-3xl" : undefined'
+    )
+  })
+
   it("places drawer progress on the left and the class picker on the right", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorDrawerHeaderControls, {

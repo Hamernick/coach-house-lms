@@ -186,9 +186,12 @@ export async function canAccessProjectOrg({
 }) {
   const { data: staff, error: staffError } = await supabase
     .from("platform_staff_members")
-    .select("access_level")
+    .select("access_level,can_access_unassigned_organizations")
     .eq("user_id", userId)
-    .maybeSingle<{ access_level: string }>()
+    .maybeSingle<{
+      access_level: string
+      can_access_unassigned_organizations: boolean
+    }>()
 
   const staffTableMissing =
     staffError?.code === "42P01" || staffError?.code === "PGRST205"
@@ -213,7 +216,16 @@ export async function canAccessProjectOrg({
       .eq("coach_user_id", userId)
       .maybeSingle<{ organization_id: string }>()
 
-    return !assignmentError && !!assignment
+    if (assignmentError) return false
+    if (assignment) return true
+    if (!staff.can_access_unassigned_organizations) return false
+    const { data: anyAssignment, error: anyAssignmentError } = await supabase
+      .from("organization_coach_assignments")
+      .select("organization_id")
+      .eq("organization_id", orgId)
+      .limit(1)
+      .maybeSingle<{ organization_id: string }>()
+    return !anyAssignmentError && !anyAssignment
   }
 
   if (staff?.access_level === "developer") {

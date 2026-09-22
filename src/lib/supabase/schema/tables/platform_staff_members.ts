@@ -2,6 +2,7 @@ export type PlatformStaffMembersTable = {
   Row: {
     user_id: string
     access_level: "developer" | "coach"
+    can_access_unassigned_organizations: boolean
     granted_by: string | null
     created_at: string
     updated_at: string
@@ -9,6 +10,7 @@ export type PlatformStaffMembersTable = {
   Insert: {
     user_id: string
     access_level: "developer" | "coach"
+    can_access_unassigned_organizations?: boolean
     granted_by?: string | null
     created_at?: string
     updated_at?: string
@@ -16,6 +18,7 @@ export type PlatformStaffMembersTable = {
   Update: {
     user_id?: string
     access_level?: "developer" | "coach"
+    can_access_unassigned_organizations?: boolean
     granted_by?: string | null
     created_at?: string
     updated_at?: string

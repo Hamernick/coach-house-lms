@@ -1,6 +1,7 @@
 import "server-only"
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 import { loadMemberWorkspaceTasksPage } from "@/features/member-workspace"
 import type { CoachDashboardInput } from "../types"
 
@@ -33,6 +34,14 @@ export async function loadCoachDashboard(
   if (!personalTasks) issues.push("Tasks could not be loaded.")
   let ids = (assignments.data ?? []).map((row) => row.organization_id)
   let organizationScopeError = Boolean(assignments.error)
+  const actorScope = await loadOrganizationCoachActorScope({
+    accessLevel: actor.accessLevel,
+    supabase: db,
+    userId: actor.userId,
+  })
+  if (scope === "assigned" && actorScope.mode === "assigned") {
+    ids = [...actorScope.organizationIds]
+  }
   if (scope === "all") {
     const allOrganizations = await db.from("organizations").select("user_id")
     organizationScopeError = Boolean(allOrganizations.error)
@@ -47,7 +56,11 @@ export async function loadCoachDashboard(
         "886455ec-a664-4f13-83f1-471ddd1f5ffd",
       ].includes(id)
   )
-  const coachFilter = scope === "all" ? "all" : actor.userId
+  const coachFilter =
+    scope === "all" ||
+    (actorScope.mode === "assigned" && actorScope.canAccessUnassigned)
+      ? "all"
+      : actor.userId
   const since = new Date(now)
   since.setDate(since.getDate() - 372)
   const [orgs, projects, events, personal] = ids.length

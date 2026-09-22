@@ -6,7 +6,11 @@ export type OrganizationCoachScopeStatus = {
 
 export type OrganizationCoachActorScope =
   | { mode: "all" }
-  | { mode: "assigned"; organizationIds: ReadonlySet<string> }
+  | {
+      mode: "assigned"
+      organizationIds: ReadonlySet<string>
+      canAccessUnassigned?: boolean
+    }
 
 export const ALL_ORGANIZATION_COACH_SCOPE: OrganizationCoachActorScope = {
   mode: "all",

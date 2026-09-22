@@ -14,6 +14,7 @@ import {
   normalizeOrganizationCoachFilter,
 } from "@/features/organization-coach-assignments"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+import { canAccessProjectOrg } from "@/app/api/account/project-assets/route-support"
 
 const paula = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -227,6 +228,59 @@ describe("organization-coach-assignments feature contract", () => {
         assignedScope
       )
     ).toEqual([{ orgId: "org-1" }])
+  })
+
+  it("adds unassigned organizations to permitted coaches' access scope", () => {
+    const assignedScope = {
+      mode: "assigned" as const,
+      organizationIds: new Set(["assigned", "unassigned"]),
+      canAccessUnassigned: true,
+    }
+    expect(canAccessOrganizationInCoachScope(assignedScope, "unassigned")).toBe(true)
+    expect(canAccessOrganizationInCoachScope(assignedScope, "other-coach")).toBe(false)
+    expect(filterByOrganizationCoachScope([
+      { orgId: "assigned" },
+      { orgId: "unassigned" },
+      { orgId: "other-coach" },
+    ], assignedScope)).toEqual([
+      { orgId: "assigned" },
+      { orgId: "unassigned" },
+    ])
+  })
+
+  it("allows project assets for a permitted coach only while the organization is unassigned", async () => {
+    function client(canAccessUnassigned: boolean, assignedCoachId: string | null) {
+      return {
+        from(table: string) {
+          const filters = new Map<string, string>()
+          const query = {
+            select() { return query },
+            eq(column: string, value: string) {
+              filters.set(column, value)
+              return query
+            },
+            limit() { return query },
+            async maybeSingle() {
+              const data = table === "platform_staff_members"
+                ? { access_level: "coach", can_access_unassigned_organizations: canAccessUnassigned }
+                : table === "organization_coach_scope_settings"
+                  ? { assigned_only_enabled: true }
+                  : assignedCoachId &&
+                      (!filters.has("coach_user_id") || filters.get("coach_user_id") === assignedCoachId)
+                    ? { organization_id: "org-1" }
+                    : null
+              return { data, error: null }
+            },
+          }
+          return query
+        },
+      } as unknown as Parameters<typeof canAccessProjectOrg>[0]["supabase"]
+    }
+
+    const input = { orgId: "org-1", userId: "coach-1", requireEdit: true }
+    expect(await canAccessProjectOrg({ ...input, supabase: client(true, null) })).toBe(true)
+    expect(await canAccessProjectOrg({ ...input, supabase: client(true, "coach-2") })).toBe(false)
+    expect(await canAccessProjectOrg({ ...input, supabase: client(false, null) })).toBe(false)
   })
 
   it("keeps assigned-only visibility behind an audited readiness gate", () => {

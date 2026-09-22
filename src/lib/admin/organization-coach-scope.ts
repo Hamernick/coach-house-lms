@@ -60,17 +60,55 @@ export async function loadOrganizationCoachActorScope({
     return { mode: "all" }
   }
 
-  const { data, error } = await supabase
-    .from("organization_coach_assignments")
-    .select("organization_id")
-    .eq("coach_user_id", userId)
-    .returns<Array<{ organization_id: string }>>()
+  const [assignmentResult, staffResult] = await Promise.all([
+    supabase
+      .from("organization_coach_assignments")
+      .select("organization_id")
+      .eq("coach_user_id", userId)
+      .returns<Array<{ organization_id: string }>>(),
+    supabase
+      .from("platform_staff_members")
+      .select("can_access_unassigned_organizations")
+      .eq("user_id", userId)
+      .maybeSingle<{ can_access_unassigned_organizations: boolean }>(),
+  ])
 
-  if (error && isMissingScopeTable(error)) return { mode: "all" }
-  if (error) throw new Error("Unable to load coach organization access.")
+  if (assignmentResult.error && isMissingScopeTable(assignmentResult.error))
+    return { mode: "all" }
+  if (assignmentResult.error)
+    throw new Error("Unable to load coach organization access.")
+  if (staffResult.error && staffResult.error.code !== "42703")
+    throw new Error("Unable to load coach visibility permission.")
 
+  const organizationIds = new Set(
+    (assignmentResult.data ?? []).map((row) => row.organization_id)
+  )
+  if (!staffResult.data?.can_access_unassigned_organizations) {
+    return { mode: "assigned", organizationIds }
+  }
+
+  const [organizations, allAssignments] = await Promise.all([
+    supabase.from("organizations").select("user_id", { count: "exact" }),
+    supabase.from("organization_coach_assignments").select("organization_id", { count: "exact" }),
+  ])
+  if (
+    organizations.error ||
+    allAssignments.error ||
+    organizations.count !== organizations.data?.length ||
+    allAssignments.count !== allAssignments.data?.length
+  ) {
+    throw new Error("Unable to load unassigned organization visibility.")
+  }
+  const coveredIds = new Set(
+    (allAssignments.data ?? []).map((row) => row.organization_id)
+  )
+  for (const organization of organizations.data ?? []) {
+    if (!coveredIds.has(organization.user_id))
+      organizationIds.add(organization.user_id)
+  }
   return {
     mode: "assigned",
-    organizationIds: new Set((data ?? []).map((row) => row.organization_id)),
+    organizationIds,
+    canAccessUnassigned: true,
   }
 }

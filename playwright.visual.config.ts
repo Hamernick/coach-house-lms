@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test"
-import { assertVisualBaselineEnvironment } from "./scripts/visual-baseline-environment.mjs"
+import { assertVisualBaselineEnvironment } from "./scripts/visual-baseline-environment"
 
 assertVisualBaselineEnvironment()
 

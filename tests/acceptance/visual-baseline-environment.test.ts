@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   assertVisualBaselineEnvironment,
   VISUAL_BASELINE_ENVIRONMENT,
-} from "../../scripts/visual-baseline-environment.mjs"
+} from "../../scripts/visual-baseline-environment"
 
 describe("visual baseline environment", () => {
   it("accepts the hosted visual environment", () => {

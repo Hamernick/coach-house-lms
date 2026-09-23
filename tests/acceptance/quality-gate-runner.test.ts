@@ -22,6 +22,64 @@ afterEach(async () => {
 })
 
 describe("quality gate runner", () => {
+  const prepushStages = [
+    "check:npm-supply-chain",
+    "check:large-files",
+    "lint:push",
+  ]
+
+  it("runs only the three fast pre-push checks in order", async () => {
+    expect(QUALITY_GATE_PROFILES.prepush).toEqual(prepushStages)
+    const artifactDirectory = await mkdtemp(
+      path.join(tmpdir(), "coach-house-prepush-")
+    )
+    temporaryDirectories.push(artifactDirectory)
+    const attempted: string[] = []
+
+    const summary = await runQualityGate({
+      artifactDirectory,
+      executeStage: async (script) => {
+        attempted.push(script)
+        return 0
+      },
+      profileName: "prepush",
+    })
+
+    expect(attempted).toEqual(prepushStages)
+    expect(summary.status).toBe("passed")
+    expect(summary.acceptanceInventory).toBeNull()
+    expect(summary.stages.map((stage) => stage.script)).toEqual(prepushStages)
+  })
+
+  it.each(prepushStages)("stops pre-push when %s fails", async (failedStage) => {
+    const artifactDirectory = await mkdtemp(
+      path.join(tmpdir(), "coach-house-prepush-failure-")
+    )
+    temporaryDirectories.push(artifactDirectory)
+    const attempted: string[] = []
+
+    const summary = await runQualityGate({
+      artifactDirectory,
+      executeStage: async (script) => {
+        attempted.push(script)
+        return script === failedStage ? 9 : 0
+      },
+      profileName: "prepush",
+    })
+
+    expect(attempted).toEqual(
+      prepushStages.slice(0, prepushStages.indexOf(failedStage) + 1)
+    )
+    expect(summary.status).toBe("failed")
+    expect(summary.failedStage).toBe(failedStage)
+    expect(summary.acceptanceInventory).toBeNull()
+    expect(summary.stages.at(-1)).toMatchObject({
+      exitCode: 9,
+      script: failedStage,
+      status: "failed",
+    })
+  })
+
   it("keeps every hosted lane inside the canonical full profile", () => {
     const hostedStages = [
       ...QUALITY_GATE_PROFILES.static,

@@ -8,8 +8,8 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - New-chat branch checkpoint: before writing files in the first turn of every chat, follow the mandatory worktree report and branch-choice protocol in `docs/agent/workflow-quality.md` unless the user's prompt already chose the branch strategy.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
-- Keep PRs small and pass: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
-- Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.
+- Keep PRs small. Required CI merge checks include: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
+- Required CI merge guardrails include: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.
 - Build for Next.js App Router, RSC-first, mobile-first, shadcn/ui, dark/light/system.
 - Enforce security defaults: RLS on all tables, server-side authz, webhook signature verification, Stripe idempotency via `event_id`, HTML sanitization.
 - Store timestamps in UTC (`TIMESTAMPTZ`) and render locale-aware date/time/currency.
@@ -21,7 +21,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - For new feature work, start from `pnpm scaffold:feature <kebab-name>` and implement inside `src/features/**`; keep `src/app/**` route files composition-only.
 - For UI changes, use existing shadcn/ui primitives and shared patterns; avoid one-off controls where system primitives already exist.
 - For public resource-map work, prioritize current provider directories and real service diversity; use deterministic source-specific extraction by default, never require a model key or add an admin surface unless explicitly requested, keep raw API links private, expose provider websites, and report exact field-complete and verified/publishable counts. Never mix synthetic seeds or the raw candidate intake queue into `/find`, including admin sessions; local review requires an explicit curated preview file. Treat Wikidata/entity catalogs as discovery evidence, not public resources, until provider evidence establishes a specific actionable service.
-- Ship only when `pnpm check:quality` passes (includes structure, boundaries, visual regression, tests, build, perf).
+- Ship only after the required GitHub `quality` check passes for the current PR revision with branch-protection requirements satisfied. During development, run focused checks covering the changed behavior. Run the complete local `pnpm check:quality` suite only when explicitly requested or needed to diagnose a specific CI failure.
 - If visuals intentionally changed, update visual baselines with `pnpm test:visual:update` and include the rationale in the current monthly log linked from `docs/RUNLOG.md`.
 
 ## Quick Commands

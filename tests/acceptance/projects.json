@@ -150,6 +150,7 @@
       "tests/acceptance/use-realtime-cursor-connection-state.test.ts",
       "tests/acceptance/user-journey-atlas.test.ts",
       "tests/acceptance/user-journey-telemetry.test.ts",
+      "tests/acceptance/visual-baseline-environment.test.ts",
       "tests/acceptance/wizard-route.test.ts",
       "tests/acceptance/workspace-accelerator-banner.test.ts",
       "tests/acceptance/workspace-accelerator-card.test.ts",

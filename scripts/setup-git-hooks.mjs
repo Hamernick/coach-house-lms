@@ -11,7 +11,7 @@ const PRE_PUSH_PATH = path.join(HOOKS_DIR, "pre-push")
 const PRE_PUSH_SCRIPT = `#!/usr/bin/env sh
 set -eu
 
-echo "[pre-push] Running structural quality subset..."
+echo "[pre-push] Checking supply chain, file sizes, and changed-file lint..."
 PREPUSH_REMOTE="\${1:-origin}" pnpm check:prepush
 `
 

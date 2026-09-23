@@ -1,4 +1,7 @@
 import { defineConfig } from "@playwright/test"
+import { assertVisualBaselineEnvironment } from "./scripts/visual-baseline-environment.mjs"
+
+assertVisualBaselineEnvironment()
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000)
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`
@@ -8,6 +11,7 @@ export default defineConfig({
   testIgnore: "fiscal-sponsorship-authenticated-routes.visual.spec.ts",
   timeout: 90_000,
   snapshotPathTemplate: "{snapshotDir}/{testFileName}-snapshots/{arg}{ext}",
+  updateSnapshots: "none",
   fullyParallel: false,
   workers: Number(process.env.PLAYWRIGHT_WORKERS ?? 2),
   retries: process.env.CI ? 1 : 0,

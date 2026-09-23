@@ -88,7 +88,15 @@ On the first turn of every new chat, before changing files:
   union retains its proven single-project scheduler and setup.
 - Add targeted edge cases for touched behavior.
 - Visual baselines:
-  - Update intentionally changed screenshots with `pnpm test:visual:update`.
+  - Run visual comparisons and baseline updates on Ubuntu 24.04 x64 with the
+    repository's locked Playwright version. The visual config fails early on
+    unsupported environments; macOS browser captures are for UI review.
+  - Review expected, actual, and diff images before replacing baselines. Use
+    `pnpm exec playwright test --config=playwright.visual.config.ts
+    <affected-spec> --update-snapshots` only for the affected spec in the
+    supported environment. Normal runs do not create missing baselines.
+  - Keep screenshot thresholds unchanged when correcting an environment
+    mismatch. Review baseline changes when upgrading the runner or browser.
 
 ## File And Module Layout
 

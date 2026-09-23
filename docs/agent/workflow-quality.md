@@ -20,12 +20,12 @@ On the first turn of every new chat, before changing files:
 
 1. Plan: list files to touch and propose diffs.
 2. Implement: write code/migrations/docs in the correct directories.
-3. Validate: run required checks and core smoke tests.
+3. Validate locally with checks covering the changed behavior; require complete hosted CI before merge.
 4. Deliver: include screenshots (light/dark/mobile) and state-coverage notes in PRs when UI changes.
 5. Log: append a concise entry to the current monthly log linked from `docs/RUNLOG.md` for every ad-hoc/Codex session:
    what changed, what worked, what did not, and where to continue.
 
-## Required Validation Gates
+## Required CI Merge Gates
 
 - `pnpm lint`
 - `pnpm check:npm-supply-chain`
@@ -54,10 +54,28 @@ On the first turn of every new chat, before changing files:
 - Test framework: Vitest (acceptance + snapshot suites).
 - After migration/policy edits, run RLS tests.
 - Update snapshots via `pnpm snapshots:update` when intended.
-- Mirror CI locally:
-  - `pnpm check:quality`
-- Local `check:quality` and `check:prepush` write stage timings and acceptance
-  inventory to ignored `test-results/quality-gate/*.json` artifacts.
+- Before testing, name the selected checks and the behavior each verifies. Do not
+  expand validation without identifying a concrete uncovered risk.
+- Use this local validation guide; the required CI merge gates above remain in force:
+
+  | Change | Required local evidence |
+  | --- | --- |
+  | Live assignment/data correction without code changes | Verify identities, authorization, intended mutation, and saved result. |
+  | Documentation only | Diff/format review and automatic pre-push checks. |
+  | Application logic | Named tests covering changed behavior. |
+  | Authorization or RLS | Relevant access tests; RLS tests for migration/policy changes. |
+  | UI behavior or appearance | Relevant tests and a focused browser check of the affected surface. |
+  | Quality-gate scripts | `quality-gate-runner.test.ts`, `prepush-lint-optimization.test.ts`, and `large-file-guard.test.ts`. |
+
+- Reuse passing results while their relevant code, dependencies, configuration,
+  and environment remain unchanged.
+- When an unrelated check fails, record the failure and leave the merge blocked.
+  Do not investigate unrelated features or update visual baselines within the
+  current task.
+- A focused local pass means locally validated, not release-ready.
+- Local `check:quality` and `check:prepush` write stage timings to ignored
+  `test-results/quality-gate/*.json` artifacts. Acceptance inventory is included
+  only when the selected profile runs acceptance tests.
 - Acceptance tests are classified by the checked
   `tests/acceptance/projects.json` manifest. Every test file must appear exactly
   once across `behavior`, `contract`, `cli`, and `integration`; manifest drift
@@ -88,8 +106,8 @@ On the first turn of every new chat, before changing files:
 
 - Single environment: `prod` (Supabase + Stripe test/live modes).
 - Migrations must be versioned and reversible.
-- `pnpm check:quality` is the canonical local gate and runs every required stage
-  serially with timing evidence.
+- `pnpm check:quality` remains available for complete local diagnosis. Run it
+  only when explicitly requested or needed to diagnose a specific CI failure.
 - GitHub Actions runs the same stage manifest in parallel static, acceptance,
   RLS, build, and visual lanes; the aggregate `quality` job must require all
   five results.

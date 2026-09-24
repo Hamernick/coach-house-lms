@@ -13,12 +13,15 @@ async function ready(page: Page) {
   await expect(
     page.getByRole("searchbox", { name: "Search documentation", exact: true })
   ).toBeVisible()
-  if ((page.viewportSize()?.width ?? 1440) < 768) {
+  if (
+    (page.viewportSize()?.width ?? 1440) < 768 &&
+    new URL(page.url()).pathname.startsWith("/documentation")
+  ) {
     const navigation = page.getByRole("navigation", {
       name: "Documentation navigation",
       exact: true,
     })
-    if ((await navigation.count()) > 0 && !(await navigation.isVisible())) {
+    if (!(await navigation.isVisible())) {
       const openTrigger = page.getByRole("button", {
         name: "Open Find, Guides, and Saved",
         exact: true,
@@ -592,7 +595,7 @@ for (const [layout, mode, width, height] of [
     for (const [route, surface, planner] of [
       [
         "/visual-regression/documentation?viewer=marketplace",
-        "marketplace",
+        "marketplace-fixture",
         false,
       ],
       ["/documentation/marketplace/google-ad-grants", "ad-grants", false],
@@ -625,9 +628,7 @@ for (const [layout, mode, width, height] of [
         .soft(page)
         .toHaveScreenshot(
           reviewedPlatformScreenshotName(
-            surface === "marketplace" && layout === "desktop"
-              ? "documentation-marketplace-desktop.png"
-              : `documentation-${surface}-${layout}-${mode}.png`
+            `documentation-${surface}-${layout}-${mode}.png`
           ),
           {
             animations: "disabled",

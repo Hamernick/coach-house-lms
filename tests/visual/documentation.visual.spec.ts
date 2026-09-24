@@ -18,7 +18,7 @@ async function ready(page: Page) {
       name: "Documentation navigation",
       exact: true,
     })
-    if (!(await navigation.isVisible())) {
+    if ((await navigation.count()) > 0 && !(await navigation.isVisible())) {
       const openTrigger = page.getByRole("button", {
         name: "Open Find, Guides, and Saved",
         exact: true,
@@ -625,7 +625,9 @@ for (const [layout, mode, width, height] of [
         .soft(page)
         .toHaveScreenshot(
           reviewedPlatformScreenshotName(
-            `documentation-${surface}-${layout}-${mode}.png`
+            surface === "marketplace" && layout === "desktop"
+              ? "documentation-marketplace-desktop.png"
+              : `documentation-${surface}-${layout}-${mode}.png`
           ),
           {
             animations: "disabled",

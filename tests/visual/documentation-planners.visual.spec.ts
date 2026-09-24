@@ -426,7 +426,7 @@ test("a planner reports unavailable storage and still exports the current draft"
   await page.getByRole("button", { name: "Load example", exact: true }).click()
   await expect(
     page.getByText(
-      "Browser saving is unavailable. Export before leaving this tab.",
+      "Browser saving is unavailable. Export your latest changes before leaving.",
       { exact: true }
     )
   ).toBeVisible()

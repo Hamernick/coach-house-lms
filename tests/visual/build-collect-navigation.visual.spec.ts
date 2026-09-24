@@ -116,8 +116,17 @@ for (const route of ["/", "/documentation"] as const) {
       await expect(trigger).toHaveAttribute("data-state", "open")
       await link.click()
       await expect(page).toHaveURL(
-        menuName === "Collect" ? /\/login\?redirect=%2F$/ : /\/pricing$/
+        menuName === "Collect"
+          ? /\/login\?redirect=%2F$/
+          : /\/home-canvas\?section=pricing$/
       )
+      if (menuName === "Build") {
+        await expect(
+          page.getByRole("region", {
+            name: "Simple pricing for nonprofit builders",
+          })
+        ).toBeVisible()
+      }
     })
   }
 }

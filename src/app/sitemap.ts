@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 
 import { fetchPublishedPublicHandles } from "@/lib/queries/public-profile-sitemap"
+import { documentationSitemapEntries } from "@/features/nonprofit-documentation"
 
 export const revalidate = 300
 
@@ -27,6 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/pricing`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${origin}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${origin}/terms`, changeFrequency: "yearly", priority: 0.2 },
+    ...documentationSitemapEntries(origin),
   ]
 
   return [

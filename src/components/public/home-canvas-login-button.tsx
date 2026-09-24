@@ -48,14 +48,18 @@ export function HomeCanvasLoginButton({
     <Button
       variant={activeSection === "login" ? "default" : "outline"}
       size="sm"
-      className="rounded-full"
+      className="rounded-full shadow-none"
       disabled={isLoginRoutePending}
       aria-busy={isLoginRoutePending || undefined}
       onClick={handleLoginClick}
     >
       {isLoginRoutePending ? (
         <>
-          <LoaderCircleIcon className="animate-spin" data-icon="inline-start" aria-hidden />
+          <LoaderCircleIcon
+            className="animate-spin"
+            data-icon="inline-start"
+            aria-hidden
+          />
           <span>Opening…</span>
         </>
       ) : (

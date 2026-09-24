@@ -1,0 +1,10 @@
+.editor :global(fieldset),
+.editor :global(.grid) > *,
+.editor :global([data-slot="select-trigger"]),
+.editor :global([data-slot="select-value"]) {
+  min-width: 0;
+}
+
+.editor :global([data-slot="select-trigger"]) {
+  max-width: 100%;
+}

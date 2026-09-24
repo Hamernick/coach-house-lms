@@ -101,7 +101,7 @@ function BuildCollectDesktopNavigation({
 
   return (
     <NavigationMenu
-      className="hidden md:flex"
+      className="relative z-50 hidden md:flex"
       delayDuration={100}
       onPointerLeave={() => setOpenMenu("")}
       onValueChange={setOpenMenu}
@@ -109,10 +109,10 @@ function BuildCollectDesktopNavigation({
       value={openMenu}
       viewport={false}
     >
-      <NavigationMenuList className="bg-background/90 rounded-xl border p-1 shadow-xs backdrop-blur">
+      <NavigationMenuList className="bg-background/90 rounded-full border p-1 shadow-none backdrop-blur">
         <NavigationMenuItem value="collect">
           <NavigationMenuTrigger
-            className="data-[active=true]:bg-accent rounded-lg"
+            className="data-[active=true]:bg-accent h-8 rounded-full px-3"
             data-active={activeArea === "collect"}
             onPointerEnter={() => setOpenMenu("collect")}
           >
@@ -124,7 +124,7 @@ function BuildCollectDesktopNavigation({
         </NavigationMenuItem>
         <NavigationMenuItem value="build">
           <NavigationMenuTrigger
-            className="data-[active=true]:bg-accent rounded-lg"
+            className="data-[active=true]:bg-accent h-8 rounded-full px-3"
             data-active={activeArea === "build"}
             onPointerEnter={() => setOpenMenu("build")}
           >
@@ -147,13 +147,13 @@ function BuildCollectMobileNavigation({
   return (
     <nav
       aria-label="Public navigation"
-      className="flex items-center gap-1 md:hidden"
+      className="flex items-center md:hidden"
     >
       <Button
         asChild
         size="sm"
         variant={activeArea === "collect" ? "secondary" : "ghost"}
-        className="rounded-full"
+        className="rounded-full px-2 shadow-none"
       >
         <Link
           href="/"
@@ -166,7 +166,7 @@ function BuildCollectMobileNavigation({
         asChild
         size="sm"
         variant={activeArea === "build" ? "secondary" : "ghost"}
-        className="rounded-full"
+        className="rounded-full px-2 shadow-none"
       >
         <Link
           href="/build"
@@ -184,12 +184,14 @@ export function BuildCollectPublicHeader({
   authAction,
   hideBrandOnDesktop = false,
   shellActions,
+  showPublicSearch = true,
   themeAction,
 }: {
   activeArea: BuildCollectActiveArea
   authAction?: ReactNode
   hideBrandOnDesktop?: boolean
   shellActions?: ReactNode
+  showPublicSearch?: boolean
   themeAction?: ReactNode
 }) {
   const builderCta =
@@ -200,48 +202,65 @@ export function BuildCollectPublicHeader({
   return (
     <header
       data-build-collect-public-header=""
-      className="grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 px-[var(--shell-content-pad,1rem)] py-2"
+      className="grid min-h-16 shrink-0 grid-cols-[auto_1fr_auto] items-center gap-1 px-[var(--shell-content-pad,1rem)] py-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-2"
     >
       <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
 
-      <div className="flex min-w-0 items-center justify-center">
+      <div className="flex min-w-0 items-center justify-center md:col-start-2">
         <BuildCollectMobileNavigation activeArea={activeArea} />
         <BuildCollectDesktopNavigation activeArea={activeArea} />
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2">
-        <form action="/" method="get" className="hidden w-52 xl:block">
-          <label
-            htmlFor={`public-header-search-${activeArea}`}
-            className="sr-only"
+      <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2 md:col-start-3">
+        {showPublicSearch && activeArea === "collect" ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="hidden size-8 rounded-full shadow-none xl:inline-flex"
+            aria-label="Search"
+            onClick={() => {
+              document
+                .querySelector<HTMLInputElement>("[data-public-map-search-input]")
+                ?.focus()
+            }}
           >
-            Search organizations and resources
-          </label>
-          <InputGroup className="gap-1">
-            <InputGroupInput
-              id={`public-header-search-${activeArea}`}
-              name="q"
-              type="search"
-              autoComplete="off"
-              placeholder="Start searching"
-              className="h-10 rounded-full pl-4"
-            />
-            <InputGroupAddon>
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="size-10 rounded-full"
-                aria-label="Search"
-              >
-                <SearchIcon data-icon="inline-start" aria-hidden />
-              </Button>
-            </InputGroupAddon>
-          </InputGroup>
-        </form>
+            <SearchIcon aria-hidden />
+          </Button>
+        ) : showPublicSearch ? (
+          <form action="/" method="get" className="hidden w-52 xl:block">
+            <label
+              htmlFor={`public-header-search-${activeArea}`}
+              className="sr-only"
+            >
+              Search organizations and resources
+            </label>
+            <InputGroup className="gap-1">
+              <InputGroupInput
+                id={`public-header-search-${activeArea}`}
+                name="q"
+                type="search"
+                autoComplete="off"
+                placeholder="Start searching"
+                className="h-10 rounded-full pl-4"
+              />
+              <InputGroupAddon>
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="ghost"
+                  className="size-10 rounded-full"
+                  aria-label="Search"
+                >
+                  <SearchIcon data-icon="inline-start" aria-hidden />
+                </Button>
+              </InputGroupAddon>
+            </InputGroup>
+          </form>
+        ) : null}
 
         {authAction}
-        <Button asChild className="rounded-full">
+        <Button asChild size="sm" className="rounded-full shadow-none">
           <Link href={builderCta.href}>
             {builderCta.label}
             <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
@@ -251,7 +270,7 @@ export function BuildCollectPublicHeader({
           <PublicThemeToggle
             variant="ghost"
             size="icon"
-            className="hidden size-10 shrink-0 sm:inline-flex"
+            className="hidden size-8 shrink-0 shadow-none sm:inline-flex"
           />
         )}
         {shellActions}

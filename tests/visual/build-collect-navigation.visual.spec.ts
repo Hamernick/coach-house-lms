@@ -15,7 +15,6 @@ test("public Build landing and hover navigation", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Pricing/ })).toBeVisible()
-
   await page.mouse.move(20, 300)
   await expect(buildMenu).toHaveAttribute("data-state", "closed")
 
@@ -26,6 +25,111 @@ test("public Build landing and hover navigation", async ({ page }) => {
     scale: "css",
   })
 })
+
+test("public navigation menu layers above Documentation content", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/documentation?react-grab=0")
+
+  const buildMenu = page.getByRole("button", { name: "Build", exact: true })
+  await buildMenu.hover()
+  const menuLayer = page.locator(
+    '[data-slot="navigation-menu-content"][data-state="open"]'
+  )
+  await expect(menuLayer.getByRole("link", { name: /Workspace/ })).toBeVisible()
+
+  const menuBox = await menuLayer.boundingBox()
+  const frameBox = await page
+    .locator("[data-public-find-content-frame]")
+    .boundingBox()
+  expect(menuBox).not.toBeNull()
+  expect(frameBox).not.toBeNull()
+  const overlapLeft = Math.max(menuBox!.x, frameBox!.x)
+  const overlapRight = Math.min(
+    menuBox!.x + menuBox!.width,
+    frameBox!.x + frameBox!.width
+  )
+  const overlapTop = Math.max(menuBox!.y, frameBox!.y)
+  const overlapBottom = Math.min(
+    menuBox!.y + menuBox!.height,
+    frameBox!.y + frameBox!.height
+  )
+  expect(overlapRight).toBeGreaterThan(overlapLeft)
+  expect(overlapBottom).toBeGreaterThan(overlapTop)
+
+  const menuIsTopLayer = await page.evaluate(
+    ({ x, y }) => {
+      const menu = document.querySelector(
+        '[data-slot="navigation-menu-content"][data-state="open"]'
+      )
+      const hitTarget = document.elementFromPoint(x, y)
+      return Boolean(menu && hitTarget && menu.contains(hitTarget))
+    },
+    {
+      x: (overlapLeft + overlapRight) / 2,
+      y: (overlapTop + overlapBottom) / 2,
+    }
+  )
+  expect(menuIsTopLayer).toBe(true)
+})
+
+test("public navigation menu opens and closes with the keyboard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/build?react-grab=0")
+  const trigger = page
+    .locator('[data-slot="navigation-menu-trigger"]')
+    .filter({ hasText: "Build" })
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(trigger).toHaveAttribute("data-state", "open")
+  await expect(
+    page.locator(
+      '[data-slot="navigation-menu-content"][data-state="open"] a[href="/workspace"]'
+    )
+  ).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(trigger).toHaveAttribute("data-state", "closed")
+  await expect(trigger).toBeFocused()
+})
+
+for (const route of ["/", "/documentation"] as const) {
+  for (const menuName of ["Collect", "Build"] as const) {
+    test(`${menuName} menu stays open and navigates from ${route}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await page.goto(`${route}?react-grab=0`)
+      const trigger = page
+        .locator('[data-slot="navigation-menu-trigger"]')
+        .filter({ hasText: menuName })
+      await trigger.hover()
+      const link = page.locator(
+        menuName === "Collect"
+          ? 'a[href="/login?redirect=%2F"]'
+          : 'a[href="/pricing"]'
+      )
+      await expect(link).toBeVisible()
+      await link.hover()
+      await expect(trigger).toHaveAttribute("data-state", "open")
+      await link.click()
+      await expect(page).toHaveURL(
+        menuName === "Collect"
+          ? /\/login\?redirect=%2F$/
+          : /\/home-canvas\?section=pricing$/
+      )
+      if (menuName === "Build") {
+        await expect(
+          page.getByRole("region", {
+            name: "Simple pricing for nonprofit builders",
+          })
+        ).toBeVisible()
+      }
+    })
+  }
+}
 
 test("public header search submits to the Collect root", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -51,6 +155,9 @@ test("public Build landing stays within a mobile viewport", async ({
   await expect(
     page.getByRole("link", { name: "Build", exact: true })
   ).toHaveAttribute("aria-current", "page")
+  await page.addStyleTag({
+    content: "nextjs-portal { visibility: hidden !important; }",
+  })
   expect(
     await page.evaluate(
       () =>

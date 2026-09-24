@@ -266,6 +266,7 @@
       "tests/acceptance/workspace-roadmap-card-title.test.ts"
     ],
     "cli": [
+      "tests/acceptance/feature-client-entrypoint.test.ts",
       "tests/acceptance/resource-map-admin.test.ts",
       "tests/acceptance/resource-map-data-engine.test.ts",
       "tests/acceptance/resource-map-enrichment-quality.test.ts",

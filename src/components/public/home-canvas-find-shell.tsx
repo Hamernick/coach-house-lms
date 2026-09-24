@@ -23,10 +23,12 @@ import { useIsMobile } from "@/hooks/use-mobile"
 export function HomeCanvasFindShell({
   children,
   showAuthActions = true,
+  showPublicSearch = true,
   sidebarFallback = null,
 }: {
   children: ReactNode
   showAuthActions?: boolean
+  showPublicSearch?: boolean
   sidebarFallback?: ReactNode
 }) {
   return (
@@ -34,6 +36,7 @@ export function HomeCanvasFindShell({
       <HomeCanvasSidebarSlotProvider>
         <HomeCanvasFindShellContent
           showAuthActions={showAuthActions}
+          showPublicSearch={showPublicSearch}
           sidebarFallback={sidebarFallback}
         >
           {children}
@@ -46,10 +49,12 @@ export function HomeCanvasFindShell({
 function HomeCanvasFindShellContent({
   children,
   showAuthActions,
+  showPublicSearch,
   sidebarFallback,
 }: {
   children: ReactNode
   showAuthActions: boolean
+  showPublicSearch: boolean
   sidebarFallback: ReactNode
 }) {
   const router = useRouter()
@@ -93,6 +98,7 @@ function HomeCanvasFindShellContent({
               railToggleClassName="text-muted-foreground size-10 rounded-md border border-[color:var(--shell-border)] hover:bg-foreground/5 hover:text-foreground md:size-8"
               rightOpen={rightOpen}
               showAuthActions={showAuthActions}
+              showPublicSearch={showPublicSearch}
               showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
             />

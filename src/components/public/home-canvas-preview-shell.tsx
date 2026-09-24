@@ -133,6 +133,7 @@ type HomeCanvasPreviewHeaderProps = {
   railToggleClassName: string
   rightOpen: boolean
   showAuthActions?: boolean
+  showPublicSearch?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
 }
@@ -144,6 +145,7 @@ export function HomeCanvasPreviewHeader({
   railToggleClassName,
   rightOpen,
   showAuthActions = true,
+  showPublicSearch = true,
   showShellSidebar,
   showRightRailToggle,
 }: HomeCanvasPreviewHeaderProps) {
@@ -154,6 +156,7 @@ export function HomeCanvasPreviewHeader({
     <BuildCollectPublicHeader
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
+      showPublicSearch={showPublicSearch}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton
@@ -167,7 +170,7 @@ export function HomeCanvasPreviewHeader({
           variant="outline"
           size="icon"
           className={cn(
-            "size-9 shrink-0 sm:size-10",
+            "size-8 shrink-0 shadow-none",
             showShellSidebar && "hidden md:inline-flex"
           )}
         />

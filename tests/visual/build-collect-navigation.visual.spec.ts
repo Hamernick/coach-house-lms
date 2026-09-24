@@ -15,7 +15,6 @@ test("public Build landing and hover navigation", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Pricing/ })).toBeVisible()
-
   await page.mouse.move(20, 300)
   await expect(buildMenu).toHaveAttribute("data-state", "closed")
 
@@ -25,6 +24,54 @@ test("public Build landing and hover navigation", async ({ page }) => {
     maxDiffPixelRatio: 0.02,
     scale: "css",
   })
+})
+
+test("public navigation menu layers above Documentation content", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/documentation?react-grab=0")
+
+  const buildMenu = page.getByRole("button", { name: "Build", exact: true })
+  await buildMenu.hover()
+  const menuLayer = page.locator(
+    '[data-slot="navigation-menu-content"][data-state="open"]'
+  )
+  await expect(menuLayer.getByRole("link", { name: /Workspace/ })).toBeVisible()
+
+  const menuBox = await menuLayer.boundingBox()
+  const frameBox = await page
+    .locator("[data-public-find-content-frame]")
+    .boundingBox()
+  expect(menuBox).not.toBeNull()
+  expect(frameBox).not.toBeNull()
+  const overlapLeft = Math.max(menuBox!.x, frameBox!.x)
+  const overlapRight = Math.min(
+    menuBox!.x + menuBox!.width,
+    frameBox!.x + frameBox!.width
+  )
+  const overlapTop = Math.max(menuBox!.y, frameBox!.y)
+  const overlapBottom = Math.min(
+    menuBox!.y + menuBox!.height,
+    frameBox!.y + frameBox!.height
+  )
+  expect(overlapRight).toBeGreaterThan(overlapLeft)
+  expect(overlapBottom).toBeGreaterThan(overlapTop)
+
+  const menuIsTopLayer = await page.evaluate(
+    ({ x, y }) => {
+      const menu = document.querySelector(
+        '[data-slot="navigation-menu-content"][data-state="open"]'
+      )
+      const hitTarget = document.elementFromPoint(x, y)
+      return Boolean(menu && hitTarget && menu.contains(hitTarget))
+    },
+    {
+      x: (overlapLeft + overlapRight) / 2,
+      y: (overlapTop + overlapBottom) / 2,
+    }
+  )
+  expect(menuIsTopLayer).toBe(true)
 })
 
 test("public header search submits to the Collect root", async ({ page }) => {

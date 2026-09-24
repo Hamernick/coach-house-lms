@@ -8,6 +8,7 @@ import {
   useState,
   useTransition,
 } from "react"
+import { useWorkspaceParticles } from "@/features/workspace-particles/client"
 import { usePathname } from "next/navigation"
 
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
@@ -53,11 +54,11 @@ export function useRoadmapEditorState({
   onDirtyChange,
   onRegisterDiscard,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
+  const onRoadmapSectionSaved = useWorkspaceParticles()?.updateRoadmapSection
   const storageKey = useMemo(
-    () =>
-      sourceScope
-        ? `roadmap-draft:${sourceScope.userId}:${sourceScope.organizationId}`
-        : `roadmap-draft:${publicSlug ?? "private"}`,
+    () => sourceScope
+      ? `roadmap-draft:${sourceScope.userId}:${sourceScope.organizationId}`
+      : `roadmap-draft:${publicSlug ?? "private"}`,
     [publicSlug, sourceScope]
   )
   const initialActiveId = useMemo(() => {
@@ -66,9 +67,7 @@ export function useRoadmapEditorState({
       ? initialSectionId
       : ""
   }, [initialSections, initialSectionId])
-  const [sections, setSections] = useState<RoadmapSection[]>(
-    () => initialSections
-  )
+  const [sections, setSections] = useState<RoadmapSection[]>(() => initialSections)
   const [drafts, setDrafts] = useState<Record<string, RoadmapDraft>>(() =>
     createDraftMap(initialSections)
   )
@@ -223,6 +222,7 @@ export function useRoadmapEditorState({
           }
 
           const nextSection = result.section
+          onRoadmapSectionSaved?.(nextSection)
           setSections((prev) => {
             const index = prev.findIndex((entry) => entry.id === nextSection.id)
             if (index === -1) return [...prev, nextSection]
@@ -244,7 +244,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [canEdit, isPending, savingId, sourceScope]
+    [canEdit, isPending, savingId, sourceScope, onRoadmapSectionSaved]
   )
 
   const flushActiveSectionDraft = useCallback(() => {
@@ -377,6 +377,7 @@ export function useRoadmapEditorState({
           }
 
           const nextSection = result.section
+          onRoadmapSectionSaved?.(nextSection)
           setSections((prev) =>
             prev.map((section) =>
               section.id === nextSection.id ? nextSection : section
@@ -395,7 +396,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [activeSection, canEdit, isPending, savingId, sourceScope]
+    [activeSection, canEdit, isPending, savingId, sourceScope, onRoadmapSectionSaved]
   )
 
   return {

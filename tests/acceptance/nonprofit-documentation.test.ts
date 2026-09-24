@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
+import { documentationCsvCell } from "@/features/nonprofit-documentation/lib/csv-cell"
 
 import {
   BRAND_FONT_GROUPS,
@@ -510,6 +511,16 @@ describe("nonprofit documentation feature", () => {
     expect(view.getUint32(0, true)).toBe(0x04034b50)
     expect(view.getUint32(archive.length - 22, true)).toBe(0x06054b50)
     expect(view.getUint16(archive.length - 12, true)).toBe(2)
+  })
+
+  it("quotes cells and neutralizes spreadsheet formulas and control prefixes", () => {
+    for (const value of ["=SUM(A1:A2)", "+1", "-1", "@name", "\t=1", "\r=1"]) {
+      expect(documentationCsvCell(value)).toBe(`"'${value}"`)
+    }
+    expect(documentationCsvCell('plain, "text"\nnext')).toBe(
+      '"plain, ""text""\nnext"'
+    )
+    expect(documentationCsvCell(null)).toBe('""')
   })
 
   it("publishes complete stage-specific foundation guides", () => {
@@ -1833,6 +1844,9 @@ describe("nonprofit documentation feature", () => {
     expect(
       buildCampaignCsv({ ...draft, campaignName: "=SUM(A1:A2)" })
     ).toContain("'=SUM(A1:A2)")
+    expect(
+      buildCampaignCsv({ ...draft, campaignName: "\t=SUM(A1:A2)" })
+    ).toContain("'\t=SUM(A1:A2)")
 
     expect(
       sanitizeCampaignPlan({
@@ -1964,6 +1978,9 @@ describe("nonprofit documentation feature", () => {
     )
     expect(buildCrmCsv({ ...draft, planName: "=SUM(A1:A2)" })).toContain(
       "'=SUM(A1:A2)"
+    )
+    expect(buildCrmCsv({ ...draft, planName: "\r=SUM(A1:A2)" })).toContain(
+      "'\r=SUM(A1:A2)"
     )
 
     expect(

@@ -62,12 +62,13 @@ const EXAMPLE_CAMPAIGN_PLAN: CampaignPlanDraft = {
 
 export function useCampaignPlan() {
   const [draft, setDraft] = useState(DEFAULT_CAMPAIGN_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    CAMPAIGN_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeCampaignPlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      CAMPAIGN_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeCampaignPlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof CampaignPlanDraft>(
@@ -87,6 +88,9 @@ export function useCampaignPlan() {
       []
     ),
     loadExample: useCallback(() => setDraft(EXAMPLE_CAMPAIGN_PLAN), []),
-    reset: useCallback(() => setDraft(DEFAULT_CAMPAIGN_PLAN), []),
+    reset: useCallback(() => {
+      authorizeResetAfterReadFailure()
+      setDraft(DEFAULT_CAMPAIGN_PLAN)
+    }, [authorizeResetAfterReadFailure]),
   }
 }

@@ -58,12 +58,13 @@ const EXAMPLE_FINANCE_PLAN: FinancePlanDraft = {
 
 export function useFinancePlan() {
   const [draft, setDraft] = useState(DEFAULT_FINANCE_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    FINANCE_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeFinancePlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      FINANCE_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeFinancePlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof FinancePlanDraft>(
@@ -79,6 +80,9 @@ export function useFinancePlan() {
     storageStatus,
     updateDraft,
     loadExample: useCallback(() => setDraft(EXAMPLE_FINANCE_PLAN), []),
-    reset: useCallback(() => setDraft(DEFAULT_FINANCE_PLAN), []),
+    reset: useCallback(() => {
+      authorizeResetAfterReadFailure()
+      setDraft(DEFAULT_FINANCE_PLAN)
+    }, [authorizeResetAfterReadFailure]),
   }
 }

@@ -55,12 +55,13 @@ const EXAMPLE_PARTNERSHIP_BRIEF: PartnershipBriefDraft = {
 
 export function usePartnershipBrief() {
   const [draft, setDraft] = useState(DEFAULT_PARTNERSHIP_BRIEF)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    PARTNERSHIP_BRIEF_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizePartnershipBrief
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      PARTNERSHIP_BRIEF_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizePartnershipBrief
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof PartnershipBriefDraft>(
@@ -71,7 +72,10 @@ export function usePartnershipBrief() {
   )
 
   const loadExample = useCallback(() => setDraft(EXAMPLE_PARTNERSHIP_BRIEF), [])
-  const reset = useCallback(() => setDraft(DEFAULT_PARTNERSHIP_BRIEF), [])
+  const reset = useCallback(() => {
+    authorizeResetAfterReadFailure()
+    setDraft(DEFAULT_PARTNERSHIP_BRIEF)
+  }, [authorizeResetAfterReadFailure])
 
   return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

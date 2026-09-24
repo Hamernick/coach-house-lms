@@ -1,3 +1,4 @@
+import { documentationCsvCell } from "./csv-cell"
 import type {
   LegalMatterCategoryId,
   LegalMatterUrgencyId,
@@ -447,9 +448,7 @@ export function buildLegalReviewPrompt(draft: LegalPlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  let text = String(value)
-  if (/^[=+\-@]/.test(text)) text = `'${text}`
-  return `"${text.replaceAll('"', '""')}"`
+  return documentationCsvCell(value)
 }
 
 export function buildLegalCsv(draft: LegalPlanDraft) {

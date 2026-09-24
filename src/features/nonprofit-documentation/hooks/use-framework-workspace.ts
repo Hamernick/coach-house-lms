@@ -42,12 +42,13 @@ const EXAMPLE_LOGIC_MODEL_DRAFT: LogicModelDraft = {
 
 export function useFrameworkWorkspace() {
   const [draft, setDraft] = useState(DEFAULT_LOGIC_MODEL_DRAFT)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    FRAMEWORK_WORKSPACE_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeLogicModelDraft
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      FRAMEWORK_WORKSPACE_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeLogicModelDraft
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof LogicModelDraft>(
@@ -60,7 +61,10 @@ export function useFrameworkWorkspace() {
   )
 
   const loadExample = useCallback(() => setDraft(EXAMPLE_LOGIC_MODEL_DRAFT), [])
-  const reset = useCallback(() => setDraft(DEFAULT_LOGIC_MODEL_DRAFT), [])
+  const reset = useCallback(() => {
+    authorizeResetAfterReadFailure()
+    setDraft(DEFAULT_LOGIC_MODEL_DRAFT)
+  }, [authorizeResetAfterReadFailure])
 
   return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

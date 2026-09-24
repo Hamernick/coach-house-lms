@@ -26,6 +26,21 @@ async function closeEditor(page: Page) {
   await expect(page.locator("[data-canvas-editor]")).toHaveCount(0)
 }
 
+async function runWithDialog(
+  page: Page,
+  action: () => Promise<unknown>,
+  resolution: "accept" | "dismiss"
+) {
+  let message = ""
+  const handledDialog = page.waitForEvent("dialog").then(async (dialog) => {
+    message = dialog.message()
+    await dialog[resolution]()
+  })
+  await action()
+  await handledDialog
+  return message
+}
+
 async function listSteps(page: Page) {
   const toggle = page.getByRole("button", { name: "List view", exact: true })
   if (await toggle.isVisible()) await toggle.click()
@@ -79,6 +94,7 @@ for (const [name, route, count] of planners) {
     if (hasTextInput) expect(csv).toContain("Planner workflow check")
     await closeEditor(page)
     await steps.first().click()
+    await expect(page).toHaveURL(/[?&]step=[^&#]+/)
     if (hasTextInput)
       await expect(firstInput).toHaveValue("Planner workflow check")
     await page.reload()
@@ -112,6 +128,177 @@ test("planner examples preserve existing work when replacement is cancelled", as
     .getByRole("button", { name: "Start planning", exact: true })
     .click()
   await expect(name).toHaveValue("Willow Street Family Resource Network")
+})
+
+test("malformed saved drafts stay intact until the user confirms reset", async ({
+  page,
+}) => {
+  const key = "coach-house:documentation:crm-data-stewardship-plan:v1"
+  const storedBytes = "{malformed legacy draft"
+  await page.addInitScript(
+    ({ key, storedBytes }) => {
+      const originalSetItem = Storage.prototype.setItem
+      originalSetItem.call(localStorage, key, storedBytes)
+    },
+    { key, storedBytes }
+  )
+  await page.goto("/documentation/tools/crm#sandbox")
+  await expect(
+    page.getByText("Browser saving is unavailable.", { exact: false })
+  ).toBeVisible()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
+  await page
+    .getByLabel("Organization name", { exact: true })
+    .fill("Keep this unsaved edit")
+  expect(
+    await page.evaluate((storageKey) => localStorage[storageKey], key)
+  ).toBe(storedBytes)
+
+  await closeEditor(page)
+  const navigationMessage = await runWithDialog(
+    page,
+    () => page.locator('a[href="/documentation/quickstart"]').click(),
+    "dismiss"
+  )
+  expect(navigationMessage).toContain("unsaved changes")
+  await expect(page).toHaveURL(
+    /\/documentation\/tools\/crm(?:\?step=[^#]+)?#sandbox$/
+  )
+  const search = page.getByRole("searchbox", {
+    name: "Search documentation",
+    exact: true,
+  })
+  await search.fill("mission")
+  const searchMessage = await runWithDialog(
+    page,
+    () => search.press("Enter"),
+    "dismiss"
+  )
+  expect(searchMessage).toContain("unsaved changes")
+  await expect(page).toHaveURL(
+    /\/documentation\/tools\/crm(?:\?step=[^#]+)?#sandbox$/
+  )
+  expect(
+    await page.evaluate((storageKey) => localStorage[storageKey], key)
+  ).toBe(storedBytes)
+
+  await runWithDialog(
+    page,
+    () => page.getByRole("button", { name: "Reset", exact: true }).click(),
+    "accept"
+  )
+  await expect(page.getByText("Saved in this browser")).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate((storageKey) => {
+        const saved = JSON.parse(localStorage[storageKey] ?? "null")
+        return saved?.organizationName
+      }, key)
+    )
+    .toBe("")
+})
+
+test("a blocked saved-draft read never enables the default draft overwrite", async ({
+  page,
+}) => {
+  const key = "coach-house:documentation:crm-data-stewardship-plan:v1"
+  const storedBytes = "preserve these bytes when reads are blocked"
+  await page.addInitScript(
+    ({ key, storedBytes }) => {
+      const originalSetItem = Storage.prototype.setItem
+      const originalGetItem = Storage.prototype.getItem
+      originalSetItem.call(localStorage, key, storedBytes)
+      Storage.prototype.getItem = function (candidateKey) {
+        if (candidateKey === key) throw new Error("Storage read blocked")
+        return originalGetItem.call(this, candidateKey)
+      }
+    },
+    { key, storedBytes }
+  )
+  await page.goto("/documentation/tools/crm#sandbox")
+  await expect(
+    page.getByText("Browser saving is unavailable.", { exact: false })
+  ).toBeVisible()
+  expect(
+    await page.evaluate((storageKey) => localStorage[storageKey], key)
+  ).toBe(storedBytes)
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
+  await page
+    .getByLabel("Organization name", { exact: true })
+    .fill("Cannot replace a failed read")
+  expect(
+    await page.evaluate((storageKey) => localStorage[storageKey], key)
+  ).toBe(storedBytes)
+})
+
+test("failed draft writes warn on navigation while keeping export available", async ({
+  page,
+}) => {
+  const key = "coach-house:documentation:crm-data-stewardship-plan:v1"
+  await page.addInitScript((storageKey) => {
+    const originalSetItem = Storage.prototype.setItem
+    Storage.prototype.setItem = function (candidateKey, value) {
+      if (candidateKey === storageKey) throw new Error("Storage is full")
+      return originalSetItem.call(this, candidateKey, value)
+    }
+  }, key)
+  await page.goto("/documentation/tools/crm#sandbox")
+  await expect(
+    page.getByText("Browser saving is unavailable.", { exact: false })
+  ).toBeVisible()
+  await page
+    .getByRole("button", { name: "Start planning", exact: true })
+    .click()
+  await page
+    .getByLabel("Organization name", { exact: true })
+    .fill("Export this unsaved organization")
+
+  const editor = page.locator("[data-canvas-editor]")
+  const collapse = editor.getByRole("button", {
+    name: "Collapse step",
+    exact: true,
+  })
+  if (await collapse.count()) await collapse.click()
+  await page.getByRole("button", { name: "List view", exact: true }).click()
+  await page
+    .getByRole("list", { name: "Planner steps" })
+    .getByRole("button")
+    .last()
+    .click()
+  const download = page.waitForEvent("download")
+  await page
+    .getByRole("button", { name: "Download plan CSV", exact: true })
+    .click()
+  const file = await download
+  expect(file.suggestedFilename()).toMatch(/\.csv$/)
+  expect(readFileSync((await file.path())!, "utf8")).toContain(
+    "Export this unsaved organization"
+  )
+
+  const navigationCollapse = page
+    .locator("[data-canvas-editor]")
+    .getByRole("button", { name: "Collapse step", exact: true })
+  if (await navigationCollapse.count()) await navigationCollapse.click()
+  const navigationMessage = await runWithDialog(
+    page,
+    () => page.locator('a[href="/documentation/quickstart"]').click(),
+    "dismiss"
+  )
+  expect(navigationMessage).toContain("unsaved changes")
+  await expect(page).toHaveURL(
+    /\/documentation\/tools\/crm(?:\?step=[^#]+)?#sandbox$/
+  )
+  expect(
+    await page.evaluate(() => {
+      const event = new Event("beforeunload", { cancelable: true })
+      window.dispatchEvent(event)
+      return event.defaultPrevented
+    })
+  ).toBe(true)
 })
 
 test("overview and planner share one page and preserve drafts through anchor history", async ({

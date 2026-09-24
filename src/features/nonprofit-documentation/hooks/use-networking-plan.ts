@@ -114,12 +114,13 @@ const EXAMPLE_NETWORKING_PLAN: NetworkingPlanDraft = {
 
 export function useNetworkingPlan() {
   const [draft, setDraft] = useState(DEFAULT_NETWORKING_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    NETWORKING_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeNetworkingPlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      NETWORKING_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeNetworkingPlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof NetworkingPlanDraft>(
@@ -183,6 +184,9 @@ export function useNetworkingPlan() {
     addRelationship,
     removeRelationship,
     loadExample: useCallback(() => setDraft(EXAMPLE_NETWORKING_PLAN), []),
-    reset: useCallback(() => setDraft(DEFAULT_NETWORKING_PLAN), []),
+    reset: useCallback(() => {
+      authorizeResetAfterReadFailure()
+      setDraft(DEFAULT_NETWORKING_PLAN)
+    }, [authorizeResetAfterReadFailure]),
   }
 }

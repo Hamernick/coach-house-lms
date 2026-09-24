@@ -58,6 +58,41 @@ describe("Brand Identity assets", () => {
       identity.sanitizeBrandDraft({ actionables: ["Join", 12] }).actionables
     ).toEqual(["Join", "Volunteer", "Apply"])
   })
+  it("sanitizes malformed persisted scalar and color values field by field", () => {
+    const sanitized = identity.sanitizeBrandDraft({
+      tagline: {},
+      organizationName: "A valid name",
+      baseSize: Number.NaN,
+      typeRatio: "invalid",
+      colors: [
+        null,
+        { id: "brand", name: {}, value: [], proportion: "invalid" },
+        { id: "ink", name: "Ink custom", value: "#abc", proportion: 20 },
+        { id: "unknown", name: "ignored", value: "#000", proportion: 1 },
+      ],
+      extra: "ignored",
+    })
+
+    expect(sanitized.organizationName).toBe("A valid name")
+    expect(sanitized.tagline).toBe(
+      identity.DEFAULT_BRAND_IDENTITY_DRAFT.tagline
+    )
+    expect(sanitized.baseSize).toBe(16)
+    expect(sanitized.typeRatio).toBe(1.25)
+    expect(sanitized.colors[1]).toMatchObject({
+      id: "brand",
+      name: "",
+      value: "#214E3B",
+      proportion: 30,
+    })
+    expect(sanitized.colors[3]).toMatchObject({
+      id: "ink",
+      name: "Ink custom",
+      value: "#AABBCC",
+      proportion: 20,
+    })
+    expect(Object.keys(sanitized)).not.toContain("extra")
+  })
   it("accepts exactly one supported, nonempty image within the limit", () => {
     const png = { type: "image/png", size: 12 * 1024 * 1024 }
     expect(validation.brandAssetError([png])).toBeNull()

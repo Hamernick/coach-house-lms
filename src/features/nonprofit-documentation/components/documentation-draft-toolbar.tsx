@@ -22,7 +22,7 @@ export function DocumentationDraftToolbar({
         {!ready
           ? "Loading saved draft…"
           : storageStatus === "unavailable"
-            ? "Browser saving is unavailable. Export before leaving this tab."
+            ? "Browser saving is unavailable. Export your latest changes before leaving."
             : "Saved in this browser"}
       </p>
       <div className="flex flex-wrap gap-1">

@@ -1,5 +1,7 @@
 # Public Documentation release lane
 
+Production recovery continuation: [S02 executor instructions](2026-09-23-public-documentation-production-recovery.md). That handoff supersedes the historical push/deployment/approval status below.
+
 Branch: `feat/public-documentation-release-20260923`
 Worktree: `/Users/calebhamernick/Development/coach-house-platform-public-documentation-release-20260923`
 Local preview: http://localhost:3012/documentation

@@ -1,3 +1,4 @@
+import { documentationCsvCell } from "./csv-cell"
 import type {
   HrPlanAction,
   HrPlanDraft,
@@ -393,9 +394,7 @@ export function buildHrReviewPrompt(draft: HrPlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  let text = String(value)
-  if (/^[=+\-@]/.test(text)) text = `'${text}`
-  return `"${text.replaceAll('"', '""')}"`
+  return documentationCsvCell(value)
 }
 
 export function buildHrCsv(draft: HrPlanDraft) {

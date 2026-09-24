@@ -1,3 +1,4 @@
+import { documentationCsvCell } from "./csv-cell"
 import type {
   DocumentationStageId,
   MarketingChannelId,
@@ -405,9 +406,7 @@ export function buildMarketingAiPrompt(draft: MarketingPlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  let text = String(value)
-  if (/^[=+\-@]/.test(text)) text = `'${text}`
-  return `"${text.replaceAll('"', '""')}"`
+  return documentationCsvCell(value)
 }
 
 export function buildMarketingCsv(draft: MarketingPlanDraft) {

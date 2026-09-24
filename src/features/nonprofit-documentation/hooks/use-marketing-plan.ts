@@ -40,12 +40,13 @@ const EXAMPLE_MARKETING_PLAN: MarketingPlanDraft = {
 
 export function useMarketingPlan() {
   const [draft, setDraft] = useState(DEFAULT_MARKETING_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    MARKETING_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeMarketingPlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      MARKETING_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeMarketingPlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof MarketingPlanDraft>(
@@ -71,7 +72,10 @@ export function useMarketingPlan() {
   )
 
   const loadExample = useCallback(() => setDraft(EXAMPLE_MARKETING_PLAN), [])
-  const reset = useCallback(() => setDraft(DEFAULT_MARKETING_PLAN), [])
+  const reset = useCallback(() => {
+    authorizeResetAfterReadFailure()
+    setDraft(DEFAULT_MARKETING_PLAN)
+  }, [authorizeResetAfterReadFailure])
 
   return {
     draft,

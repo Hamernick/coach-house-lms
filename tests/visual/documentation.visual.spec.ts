@@ -14,20 +14,21 @@ async function ready(page: Page) {
     page.getByRole("searchbox", { name: "Search documentation", exact: true })
   ).toBeVisible()
   if ((page.viewportSize()?.width ?? 1440) < 768) {
-    const navigationTrigger = page.getByRole("button", {
-      name: "Open Find, Guides, and Saved",
+    const navigation = page.getByRole("navigation", {
+      name: "Documentation navigation",
       exact: true,
     })
-    await expect(navigationTrigger).toBeVisible()
-    await navigationTrigger.click()
-    await expect(
-      page.getByRole("navigation", {
-        name: "Documentation navigation",
+    if (!(await navigation.isVisible())) {
+      const openTrigger = page.getByRole("button", {
+        name: "Open Find, Guides, and Saved",
         exact: true,
       })
-    ).toBeVisible()
-    await page.keyboard.press("Escape")
-    await expect(page.getByRole("dialog")).toHaveCount(0)
+      await expect(openTrigger).toBeVisible()
+      await openTrigger.click()
+      await expect(navigation).toBeVisible()
+      await page.keyboard.press("Escape")
+      await expect(page.getByRole("dialog")).toHaveCount(0)
+    }
   }
   const loadExample = page.getByRole("button", {
     name: "Load example",
@@ -136,9 +137,13 @@ test("CRM draft survives search, navigation, reload, export, and confirmed reset
   ).toBeVisible()
   await page.goBack()
   await ready(page)
-  await page
-    .getByRole("button", { name: "Start planning", exact: true })
-    .click()
+  const editor = page.locator("[data-canvas-editor]")
+  if (!(await editor.count())) {
+    await page
+      .getByRole("button", { name: "Start planning", exact: true })
+      .click()
+  }
+  await expect(editor).toBeVisible()
   await expect(organization).toHaveValue("Local review organization")
   await page.reload()
   await ready(page)

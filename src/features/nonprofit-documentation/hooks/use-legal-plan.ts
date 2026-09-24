@@ -54,12 +54,13 @@ const EXAMPLE_LEGAL_PLAN: LegalPlanDraft = {
 
 export function useLegalPlan() {
   const [draft, setDraft] = useState(DEFAULT_LEGAL_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    LEGAL_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeLegalPlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      LEGAL_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeLegalPlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof LegalPlanDraft>(key: Key, value: LegalPlanDraft[Key]) =>
@@ -73,6 +74,9 @@ export function useLegalPlan() {
     storageStatus,
     updateDraft,
     loadExample: useCallback(() => setDraft(EXAMPLE_LEGAL_PLAN), []),
-    reset: useCallback(() => setDraft(DEFAULT_LEGAL_PLAN), []),
+    reset: useCallback(() => {
+      authorizeResetAfterReadFailure()
+      setDraft(DEFAULT_LEGAL_PLAN)
+    }, [authorizeResetAfterReadFailure]),
   }
 }

@@ -48,12 +48,13 @@ const EXAMPLE_SUSTAINABILITY_PLAN: SustainabilityPlanDraft = {
 
 export function useSustainabilityPlan() {
   const [draft, setDraft] = useState(DEFAULT_SUSTAINABILITY_PLAN)
-  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
-    SUSTAINABILITY_PLAN_STORAGE_KEY,
-    draft,
-    setDraft,
-    sanitizeSustainabilityPlan
-  )
+  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
+    useDocumentationDraftPersistence(
+      SUSTAINABILITY_PLAN_STORAGE_KEY,
+      draft,
+      setDraft,
+      sanitizeSustainabilityPlan
+    )
 
   const updateDraft = useCallback(
     <Key extends keyof SustainabilityPlanDraft>(
@@ -67,7 +68,10 @@ export function useSustainabilityPlan() {
     () => setDraft(EXAMPLE_SUSTAINABILITY_PLAN),
     []
   )
-  const reset = useCallback(() => setDraft(DEFAULT_SUSTAINABILITY_PLAN), [])
+  const reset = useCallback(() => {
+    authorizeResetAfterReadFailure()
+    setDraft(DEFAULT_SUSTAINABILITY_PLAN)
+  }, [authorizeResetAfterReadFailure])
 
   return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

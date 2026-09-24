@@ -74,6 +74,54 @@ test("public navigation menu layers above Documentation content", async ({
   expect(menuIsTopLayer).toBe(true)
 })
 
+test("public navigation menu opens and closes with the keyboard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/build?react-grab=0")
+  const trigger = page
+    .locator('[data-slot="navigation-menu-trigger"]')
+    .filter({ hasText: "Build" })
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(trigger).toHaveAttribute("data-state", "open")
+  await expect(
+    page.locator(
+      '[data-slot="navigation-menu-content"][data-state="open"] a[href="/workspace"]'
+    )
+  ).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(trigger).toHaveAttribute("data-state", "closed")
+  await expect(trigger).toBeFocused()
+})
+
+for (const route of ["/", "/documentation"] as const) {
+  for (const menuName of ["Collect", "Build"] as const) {
+    test(`${menuName} menu stays open and navigates from ${route}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await page.goto(`${route}?react-grab=0`)
+      const trigger = page
+        .locator('[data-slot="navigation-menu-trigger"]')
+        .filter({ hasText: menuName })
+      await trigger.hover()
+      const link = page.locator(
+        menuName === "Collect"
+          ? 'a[href="/login?redirect=%2F"]'
+          : 'a[href="/pricing"]'
+      )
+      await expect(link).toBeVisible()
+      await link.hover()
+      await expect(trigger).toHaveAttribute("data-state", "open")
+      await link.click()
+      await expect(page).toHaveURL(
+        menuName === "Collect" ? /\/login\?redirect=%2F$/ : /\/pricing$/
+      )
+    })
+  }
+}
+
 test("public header search submits to the Collect root", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
@@ -98,6 +146,9 @@ test("public Build landing stays within a mobile viewport", async ({
   await expect(
     page.getByRole("link", { name: "Build", exact: true })
   ).toHaveAttribute("aria-current", "page")
+  await page.addStyleTag({
+    content: "nextjs-portal { visibility: hidden !important; }",
+  })
   expect(
     await page.evaluate(
       () =>

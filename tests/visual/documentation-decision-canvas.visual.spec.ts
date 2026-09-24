@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test"
-import { prepareVisualPage, reviewedPlatformScreenshotName } from "./reviewed-platform-screenshot"
+import {
+  prepareVisualPage,
+  reviewedPlatformScreenshotName,
+} from "./reviewed-platform-screenshot"
 
 test.beforeEach(async ({ page }) => {
   await prepareVisualPage(page)
@@ -74,6 +77,7 @@ test("decision nodes support keyboard, zoom, review persistence, and branch revi
   await expect(canvas.getByRole("status")).toContainText("5/5")
   await page.reload()
   await expect(canvas.getByRole("status")).toContainText("5/5")
+  await closeEditor(page)
   await page
     .getByRole("button", { name: "Open Message & content", exact: true })
     .click()
@@ -124,10 +128,14 @@ for (const width of [1440, 390]) {
         content: "nextjs-portal { visibility: hidden !important; }",
       })
       await page.mouse.move(0, 0)
-      await expect.soft(canvas).toHaveScreenshot(
-        reviewedPlatformScreenshotName(`decision-canvas-${width}-${theme}.png`),
-        { animations: "disabled" }
-      )
+      await expect
+        .soft(canvas)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `decision-canvas-${width}-${theme}.png`
+          ),
+          { animations: "disabled" }
+        )
       await page
         .getByRole("button", { name: "Start planning", exact: true })
         .click()
@@ -147,10 +155,14 @@ for (const width of [1440, 390]) {
         await editor.evaluate((el) => el.scrollWidth <= el.clientWidth)
       ).toBe(true)
       await page.mouse.move(0, 0)
-      await expect.soft(canvas).toHaveScreenshot(
-        reviewedPlatformScreenshotName(`decision-editor-${width}-${theme}.png`),
-        { animations: "disabled" }
-      )
+      await expect
+        .soft(canvas)
+        .toHaveScreenshot(
+          reviewedPlatformScreenshotName(
+            `decision-editor-${width}-${theme}.png`
+          ),
+          { animations: "disabled" }
+        )
       await closeEditor(page)
       await page.getByRole("button", { name: "List view", exact: true }).click()
       await page

@@ -1,3 +1,4 @@
+import { documentationCsvCell } from "./csv-cell"
 import type {
   CampaignPlanAction,
   CampaignPlanDraft,
@@ -365,9 +366,7 @@ export function buildCampaignActions(
 }
 
 function csvCell(value: string | number | boolean | null) {
-  let text = value === null ? "" : String(value)
-  if (/^[=+\-@]/.test(text)) text = `'${text}`
-  return `"${text.replace(/"/g, '""')}"`
+  return documentationCsvCell(value)
 }
 
 export function buildCampaignCsv(draft: CampaignPlanDraft) {

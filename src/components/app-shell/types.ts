@@ -7,7 +7,9 @@ import type { PlatformAccessLevel } from "@/features/platform-access"
 export type AppShellProps = {
   children: ReactNode
   breadcrumbs?: ReactNode
+  headerSearch?: ReactNode
   sidebarHeaderContent?: ReactNode
+  contextualNavigation?: ReactNode
   sidebarTree: SidebarClass[]
   user?: {
     name: string | null
@@ -40,4 +42,5 @@ export type AppShellProps = {
   brandHref?: string
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  allowOnboardingLockedContent?: boolean
 }

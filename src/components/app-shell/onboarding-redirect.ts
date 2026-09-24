@@ -12,13 +12,17 @@ export function resolveAppShellOnboardingRedirectTarget({
   onboardingIntentFocus,
   isAdminContext,
   pathname,
+  allowOnboardingLockedContent = false,
 }: {
   onboardingLocked: boolean
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   isAdminContext: boolean
   pathname: string | null
+  allowOnboardingLockedContent?: boolean
 }) {
-  if (!onboardingLocked || isAdminContext) return null
+  if (!onboardingLocked || isAdminContext || allowOnboardingLockedContent) {
+    return null
+  }
   const redirectTarget =
     onboardingIntentFocus === "find" ||
     onboardingIntentFocus === "fund" ||
@@ -31,6 +35,10 @@ export function resolveAppShellOnboardingRedirectTarget({
   if (redirectTarget === MEMBER_ONBOARDING_REDIRECT && isFindPath(pathname)) {
     return null
   }
-  if (redirectTarget === WORKSPACE_ONBOARDING_REDIRECT && pathname.startsWith("/onboarding")) return null
+  if (
+    redirectTarget === WORKSPACE_ONBOARDING_REDIRECT &&
+    pathname.startsWith("/onboarding")
+  )
+    return null
   return redirectTarget
 }

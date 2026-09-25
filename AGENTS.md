@@ -5,7 +5,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 ## Non-Negotiables
 
 - Source of truth: this file + linked `docs/agent/**` documents.
-- Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
+- Continuation protocol: follow the [Agent protocol](docs/RUNLOG.md#agent-protocol), including the current monthly entries and `docs/agent/open-work-index.md`, before the worktree checkpoint and lane selection. `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - New-chat branch checkpoint: before writing files in the first turn of every chat, follow the mandatory worktree report and branch-choice protocol in `docs/agent/workflow-quality.md` unless the user's prompt already chose the branch strategy.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
 - Keep PRs small. Required CI merge checks include: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
@@ -36,6 +36,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Code structure, naming, ownership, decomposition limits: `docs/agent/code-structure.md`
 - UI quality rubric (MUST/SHOULD/NEVER): `docs/agent/ui-rubric.md`
 - Prompt templates for deterministic execution: `docs/agent/codex-execution-playbook.md`
+- Active unshipped work index: `docs/agent/open-work-index.md`
 - External engineering references for guardrails: `docs/agent/engineering-sources.md`
 - Workspace presentation operations checklist: `docs/agent/workspace-presentation-runbook.md`
 - Workspace canvas node shell anatomy and React Flow boundary: `docs/agent/workspace-node-frame-contract.md`

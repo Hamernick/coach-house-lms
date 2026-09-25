@@ -103,7 +103,6 @@ function BuildCollectDesktopNavigation({
     <NavigationMenu
       className="relative z-50 hidden md:flex"
       delayDuration={100}
-      onPointerLeave={() => setOpenMenu("")}
       onValueChange={setOpenMenu}
       skipDelayDuration={100}
       value={openMenu}

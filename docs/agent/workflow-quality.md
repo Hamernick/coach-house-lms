@@ -10,10 +10,10 @@
 
 On the first turn of every new chat, before changing files:
 
-1. Read the continuation log, then inspect `git branch --show-current`, `git status --short --branch`, `git branch -vv`, and `git worktree list`.
+1. Complete the reading steps in the [canonical startup sequence](../RUNLOG.md#agent-protocol), reusing any already-read context. Then inspect `git branch --show-current`, `git status --short --branch`, `git branch -vv`, and `git worktree list`.
 2. Display a concise startup report with the current branch and upstream, clean/dirty state, staged/unstaged/untracked summary, relevant open branches or worktrees, overlap with the requested files, and any known commit, push, PR, or deployment status. Summarize; do not dump the full worktree.
 3. If the user's prompt has not already chosen a strategy, recommend the safest option and ask whether to continue the current branch, use a named existing branch/worktree, or create a clean isolated `feat/*`, `fix/*`, or `chore/*` branch/worktree from current `origin/main`.
-4. Do not create or switch branches, move existing changes, or write task files until the user chooses. Read-only inspection may continue.
+4. Once the user has chosen a strategy, including in the task prompt, proceed without asking again. Otherwise, do not create or switch branches, move existing changes, or write task files until the user chooses. Read-only inspection may continue.
 5. Preserve dirty worktrees. Prefer an isolated worktree when the requested change must later ship independently or overlaps unrelated staged, unstaged, or untracked work.
 
 ## Agent Workflow

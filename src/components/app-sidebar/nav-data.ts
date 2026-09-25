@@ -127,10 +127,9 @@ export function buildMainNav({
 
 export const RESOURCE_NAV = [
   {
-    name: "Knowledge base",
-    url: "https://coach-house.gitbook.io/coach-house",
+    name: "Documentation",
+    url: "/documentation",
     icon: NotebookIcon,
-    external: true,
   },
   {
     name: "Community",

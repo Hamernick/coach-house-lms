@@ -30,4 +30,9 @@ export const BUILD_NAVIGATION_ITEMS: BuildCollectNavigationItem[] = [
     description: "Compare workspace plans and operating support.",
     href: "/pricing",
   },
+  {
+    label: "Documentation",
+    description: "Guides and tools for building and running your nonprofit.",
+    href: "/documentation",
+  },
 ]

@@ -203,18 +203,19 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("preserves production Knowledge base and Community resources", () => {
+  it("links Documentation internally and preserves Community resources", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
-      "Knowledge base",
+      "Documentation",
       "Community",
     ])
     expect(
       RESOURCE_NAV.find((item) => item.name === "Find organizations")
     ).toBeUndefined()
-    expect(RESOURCE_NAV.find((item) => item.name === "Knowledge base")).toMatchObject({
-      url: "https://coach-house.gitbook.io/coach-house", external: true,
-    })
-    expect(RESOURCE_NAV.find((item) => item.url === "/documentation")).toBeUndefined()
+    const documentation = RESOURCE_NAV.find(
+      (item) => item.name === "Documentation"
+    )
+    expect(documentation).toMatchObject({ url: "/documentation" })
+    expect(documentation).not.toHaveProperty("external")
     expect(RESOURCE_NAV.find((item) => item.url === "/find")).toBeUndefined()
   })
 })

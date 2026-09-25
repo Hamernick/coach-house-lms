@@ -21,6 +21,7 @@ describe("build-collect-navigation feature contract", () => {
       "/workspace",
       "/accelerator",
       "/pricing",
+      "/documentation",
     ])
   })
 

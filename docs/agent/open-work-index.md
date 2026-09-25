@@ -1,10 +1,16 @@
 # Open Work Index
 
-Updated 2026-09-24. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Cleanup base: `origin/main` `32d7e8d8`; recheck Git before new work.
+Updated 2026-09-25. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Cleanup base: `origin/main` `32d7e8d8`; recheck Git before new work.
+
+Maintain one active entry per lane or preservation hold. Update entries in place:
+replace renamed branch references and obsolete next actions instead of appending
+duplicates. Keep historical closeout records in the logs; they do not reopen work.
+When changing the startup sequence, keep `AGENTS.md`, `docs/RUNLOG.md`, and the
+workflow checkpoint aligned in the same change.
 
 ## Closed
 
-Caleb confirmed Public Documentation / S02 shipped and PRs #247, #248, #249 merged. Do not reopen them, repeat production checks, or continue the old menu investigation. #249 changed test isolation only.
+Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. Do not reopen them, repeat production checks, or restart the historical menu investigation from old handoffs. #249 changed test isolation only. The separately requested public navigation change below is tracked in PR #253.
 
 ## Open lanes
 
@@ -16,16 +22,8 @@ The four `chore/*` backup branches start at `32d7e8d8`, contain scoped copies of
 | Marketplace people | `chore/marketplace-people-20260924` (`21026428`); `feat/public-profiles-marketplace-people-20260922` (`6b3be0b6`) | Complete list/detail integration; check privacy, handles, empty/error states and browser behavior. Closed Documentation content stays separate. |
 | Particles/Objectives — high priority | `chore/workspace-particles-objectives-20260924` (`8eabd28e`); `feat/workspace-particles-objective-resume-20260922` (`c855aea6`) | Product concept and UI/UX remain rough. Decide the flow, then review canvas/drawer/mobile and Drive authorization. Passing tests do not establish readiness. |
 | Google Calendar | `chore/google-calendar-20260924` (`a1acccad`); `feat/google-calendar-resume-20260922` (`508b8df0`) | Review Workspace Tools/roadmap/AppShell integration; finish provider/OAuth setup and approved live-flow verification separately from code checks. |
-The four `organize/*` branches start at `32d7e8d8`, contain scoped copies of existing work, and are backed up on GitHub. They are **unfinished, not release-ready**. Original sources remain. Old runlog versions were excluded; Particles and Calendar acceptance manifest additions were merged with current main.
 
-| Lane | GitHub backup / source | Remaining work and validation |
-| --- | --- | --- |
-| AppShell/mobile | `organize/app-shell-mobile-20260924` (`2f15f54f`); `feat/app-shell-mobile-navigation-20260922` (`d1e4b1a1`) | Review dashboard/public/mobile shell, sidebar and drawer behavior; focused browser/acceptance and hosted quality. Calendar owns separate AppShell Calendar controls. |
-| Marketplace people | `organize/marketplace-people-20260924` (`21026428`); `feat/public-profiles-marketplace-people-20260922` (`6b3be0b6`) | Complete list/detail integration; check privacy, handles, empty/error states and browser behavior. Closed Documentation content stays separate. |
-| Particles/Objectives — high priority | `organize/workspace-particles-objectives-20260924` (`8eabd28e`); `feat/workspace-particles-objective-resume-20260922` (`c855aea6`) | Product concept and UI/UX remain rough. Decide the flow, then review canvas/drawer/mobile and Drive authorization. Passing tests do not establish readiness. |
-| Google Calendar | `organize/google-calendar-20260924` (`a1acccad`); `feat/google-calendar-resume-20260922` (`508b8df0`) | Review Workspace Tools/roadmap/AppShell integration; finish provider/OAuth setup and approved live-flow verification separately from code checks. |
-
-The next isolated fix is the **Build hover-menu buttons that lead nowhere**. Start from current main, establish intended destinations, test desktop/mobile clicks, and keep this separate from feature lanes.
+The current isolated task is the public navigation update on `fix/public-navigation-documentation-20260925`: add the published `/documentation` destination to Build, replace the external sidebar Knowledge base link with an internal Documentation link, and remove the header's immediate pointer-leave close. Caleb will verify the preview UI before merge. Existing Workspace, Accelerator, and Pricing destinations remain unchanged.
 
 ## Named preservation holds
 
@@ -43,7 +41,6 @@ The mixed root history has broad candidate areas. No file/hunk review yet proves
 ## Clean state and release gates
 
 All 61 valid registered worktrees were clean after cleanup. Closed S02 notes were saved locally on `chore/preserve-s02-closeout-local-20260924` (`80cb2c3f`); this is historical, not a release branch or remote backup. The token-bearing legacy file was copied byte-for-byte to a mode-0700 private archive outside all worktrees, verified, then removed from launch-clean. Its contents were not printed or uploaded. Ignored credentials/data and localhost:3000 were left alone.
-All 61 valid registered worktrees were clean after cleanup. Closed S02 notes were saved locally on `preservation/s02-closeout-local-20260924` (`80cb2c3f`); this is historical, not a release branch or remote backup. The token-bearing legacy file was copied byte-for-byte to a mode-0700 private archive outside all worktrees, verified, then removed from launch-clean. Its contents were not printed or uploaded. Ignored credentials/data and localhost:3000 were left alone.
 
 The root mixed recovery branch remains local. Four scoped backup branches passed staged and complete outgoing-commit secret scans and diff hygiene. No new application or hosted release tests ran in this organization pass. No open lane is marked release-ready.
 

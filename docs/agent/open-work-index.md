@@ -25,7 +25,7 @@ The four `organize/*` branches start at `32d7e8d8`, contain scoped copies of exi
 | Particles/Objectives — high priority | `organize/workspace-particles-objectives-20260924` (`8eabd28e`); `feat/workspace-particles-objective-resume-20260922` (`c855aea6`) | Product concept and UI/UX remain rough. Decide the flow, then review canvas/drawer/mobile and Drive authorization. Passing tests do not establish readiness. |
 | Google Calendar | `organize/google-calendar-20260924` (`a1acccad`); `feat/google-calendar-resume-20260922` (`508b8df0`) | Review Workspace Tools/roadmap/AppShell integration; finish provider/OAuth setup and approved live-flow verification separately from code checks. |
 
-The next isolated fix is the **Build hover-menu buttons that lead nowhere**. Start from current main, establish intended destinations, test desktop/mobile clicks, and keep this separate from feature lanes.
+The current isolated task is the public navigation update on `fix/public-navigation-documentation-20260925`: add the published `/documentation` destination to Build, replace the external sidebar Knowledge base link with an internal Documentation link, and remove the header's immediate pointer-leave close. Caleb will verify the preview UI before merge. Existing Workspace, Accelerator, and Pricing destinations remain unchanged.
 
 ## Named preservation holds
 

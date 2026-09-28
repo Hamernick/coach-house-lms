@@ -105,3 +105,15 @@ and all route budgets pass: admin 994.9 KB, community 607.4 KB, public map 1,821
 Twelve shell/navigation tests pass after the lazy-loading change (56 unique focused
 tests across the validation passes). Unauthenticated Calendar connection and cron
 requests both return 401. Changed-file lint, structure and staged secret scan pass.
+
+## Shipping authorization — 2026-09-28 02:05 EDT
+
+Caleb requested testing in localhost and shipping live, without extra preview servers.
+Stopped the additional 3012 server and the closed mobile checkout's 3011 server; the
+Calendar candidate now uses the single localhost address `http://localhost:3011`.
+Chrome is on the sign-in page; Caleb has been asked to sign in for UI review. The
+registered local Google OAuth callback remains port 3012, so do not start Google
+consent from 3011; real consent/sync verification is a separately scoped production
+canary. No new provider callback was registered. Production shipping is authorized
+once hosted quality, required review, UI review and activation gates are satisfied.
+No manually created cloud preview is required.

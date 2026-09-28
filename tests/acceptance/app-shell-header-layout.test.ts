@@ -26,7 +26,7 @@ describe("app shell header layout", () => {
       "pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))]"
     )
     expect(rightRailSource).toContain('"w-[var(--shell-right-rail-width)]"')
-    expect(rightRailSource).toContain("<SheetDescription>")
+    expect(rightRailSource).toContain('<SheetDescription className="sr-only">')
     expect(rightRailSource).toContain(
       "Contextual details for the current workspace view."
     )
@@ -118,7 +118,7 @@ describe("app shell header layout", () => {
     expect(headerSource).toContain(
       "hidden min-w-0 items-center overflow-hidden"
     )
-    expect(headerSource).toContain("flex shrink-0 flex-wrap items-center")
+    expect(headerSource).toContain("flex min-w-0 shrink-0 flex-wrap items-center")
     expect(globalSearchTriggersSource).toContain("w-full max-w-[520px] min-w-0")
     expect(globalSearchTriggersSource).not.toContain("min-w-[240px]")
     expect(resizableSource).toContain("react-resizable-panels")

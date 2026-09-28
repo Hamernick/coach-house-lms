@@ -4,10 +4,11 @@ $$;
 -- Both fields are genuinely NULL, while the non-null tenant ownership is retained.
 select public.create_organization_project_transition(
  '00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001',
- '{"name":"Undated internal project","status":"active","priority":"medium","organization_unassigned":true,"recurrence":"monthly"}',false,null,null);
+ '{"name":"Undated internal project","status":"active","priority":"medium","organization_unassigned":true,"recurrence":"none"}',false,null,null);
 select pg_temp.assert_true((select start_date is null and end_date is null and organization_unassigned from organization_projects where name='Undated internal project'),'Creation keeps missing dates and organization choice');
 update organization_projects set status='completed' where name='Undated internal project';
-select pg_temp.assert_true((select count(*)=2 and bool_and(start_date is null and end_date is null and organization_unassigned) from organization_projects where name='Undated internal project'),'Recurrence preserves missing dates and assignment');
+select pg_temp.assert_true((select count(*)=1 and bool_and(start_date is null and end_date is null and organization_unassigned) from organization_projects where name='Undated internal project'),'Completing an undated non-recurring project creates no successor');
+update organization_projects set status='planned' where name='Undated internal project';
 select update_organization_project_transition(id,'00000000-0000-4000-8000-000000000001',org_id,updated_at,
  '{"name":"Undated internal project","status":"planned","priority":"medium","end_date":"2027-05-01","organization_unassigned":false}',false,null,null)
 from organization_projects where name='Undated internal project' and status='planned';

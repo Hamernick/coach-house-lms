@@ -84,6 +84,9 @@ export function normalizeMemberWorkspaceCreateProjectInput(
   if (input.recurrence !== undefined && input.recurrence !== "none" && input.recurrence !== "monthly") {
     return { ok: false, error: "Choose a valid repeat schedule." }
   }
+  if (input.recurrence === "monthly" && (!startDate || !endDate)) {
+    return { ok: false, error: "Monthly projects require a start date and an end date." }
+  }
 
   const settings = input.optionSettings === undefined ? undefined : projectOptionSettingsSchema.safeParse(input.optionSettings)
   if (settings && !settings.success) return { ok: false, error: "Check option names and colors." }

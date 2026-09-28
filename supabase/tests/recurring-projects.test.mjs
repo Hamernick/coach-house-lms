@@ -118,6 +118,7 @@ try {
   runSql("supabase/migrations/20260920103000_confirm_project_schedules.sql")
   runSql("supabase/migrations/20260928090000_recurring_projects.sql")
   runSql("supabase/migrations/20260928150000_optional_project_dates_and_assignment.sql")
+  runSql("supabase/migrations/20260928180000_require_monthly_project_dates.sql")
   runSql("supabase/tests/recurring-projects.assertions.sql")
   runSql("supabase/tests/optional-project-fields.assertions.sql")
   runSql("supabase/tests/task-assignment-notifications.bootstrap.sql")

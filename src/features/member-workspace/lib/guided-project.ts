@@ -37,6 +37,12 @@ export const guidedProjectSchema = z
       .max(30),
   })
   .superRefine((value, context) => {
+    if (value.recurrence === "monthly" && (!value.startDate || !value.endDate))
+      context.addIssue({
+        code: "custom",
+        message: "Monthly projects require a start date and an end date.",
+        path: [!value.startDate ? "startDate" : "endDate"],
+      })
     if (value.startDate && value.endDate && value.endDate < value.startDate)
       context.addIssue({
         code: "custom",

@@ -158,9 +158,9 @@ export async function updateMemberWorkspaceProjectAction(
   const { data: existingProject, error: existingProjectError } =
     await actor.supabase
       .from("organization_projects")
-      .select("id, org_id, updated_at")
+      .select("id, org_id, updated_at, recurrence")
       .eq("id", projectId)
-      .maybeSingle<{ id: string; org_id: string; updated_at: string }>()
+      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string }>()
 
   if (existingProjectError || !existingProject) {
     if (
@@ -183,6 +183,11 @@ export async function updateMemberWorkspaceProjectAction(
 
   if (input.orgId && input.orgId !== existingProject.org_id) {
     return { error: "Changing a project's owning organization is not supported. You can remove its organization assignment." }
+  }
+
+  if ((input.recurrence ?? existingProject.recurrence) === "monthly" &&
+      (!normalized.value.startDate || !normalized.value.endDate)) {
+    return { error: "Monthly projects require a start date and an end date." }
   }
 
   const payload = {
@@ -314,9 +319,9 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   const { data: existingProject, error: existingProjectError } =
     await actor.supabase
       .from("organization_projects")
-      .select("id, org_id, updated_at")
+      .select("id, org_id, updated_at, recurrence")
       .eq("id", normalizedProjectId)
-      .maybeSingle<{ id: string; org_id: string; updated_at: string }>()
+      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string }>()
 
   if (existingProjectError || !existingProject) {
     if (
@@ -335,6 +340,10 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     return {
       error: "You do not have access to that organization's projects.",
     }
+  }
+
+  if (existingProject.recurrence === "monthly" && (!normalizedStartDate || !normalizedEndDate)) {
+    return { error: "Monthly projects require a start date and an end date." }
   }
 
   const transition = await transitionOrganizationProjectSchedule({

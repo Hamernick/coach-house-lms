@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+
 import { AppShell } from "@/components/app-shell"
 import {
   RightRailSlot,
@@ -12,7 +14,9 @@ import { SidebarProvider, useSidebar } from "@/components/ui/sidebar"
 
 function MobileInitializationMarker() {
   const { isMobile } = useSidebar()
-  return <span hidden data-mobile-ready={isMobile} />
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => setHydrated(true), [])
+  return <span hidden data-mobile-ready={isMobile} data-shell-ready={hydrated} />
 }
 
 // Guarded fixture: no account, session, or provider access is created.
@@ -56,6 +60,7 @@ export function AppShellVisualFixture({
       contentPresentation={fullBleed ? "full-bleed" : "default"}
       breadcrumbs={<span>Workspace</span>}
     >
+      <MobileInitializationMarker />
       <div
         className={
           fullBleed ? "min-h-0 flex-1 overflow-y-auto p-4" : "contents"

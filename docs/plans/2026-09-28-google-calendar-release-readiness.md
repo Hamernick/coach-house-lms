@@ -1,7 +1,18 @@
 # Google Calendar release readiness — 2026-09-28
 
-Calendar is the selected next lane per Caleb. This is a source/evidence audit, not
-an activation or release authorization. Main inspected: `aa2fc54f` after fetch.
+Calendar is the selected next lane. Caleb authorized production shipping after release
+gates. Current effective status appears first; older dated checkpoints below are history.
+
+## Current effective status — 2026-09-28 02:25 EDT
+
+- Candidate: [PR #257](https://github.com/Hamernick/coach-house-lms/pull/257), branch `feat/google-calendar-release-20260928`; never ship the mixed root. Integration and focused tests are complete.
+- Single localhost: `http://localhost:3012/workspace?drawer=tools`, matching the registered callback. Earlier 3011 instructions below are superseded. Chrome awaits user login and appearance review.
+- Hosted static, acceptance, RLS and build passed at `f8adcc98`. Current visual fixes retain existing baselines; final-head aggregate quality and required code-owner approval remain gates.
+- Edge-case audit reproduced an export defect: timed recurrence end dates used UTC midnight, dropping late local occurrences. End dates now include the entire day in the configured timezone; six cases cover UTC, positive/fractional offsets and both US DST transitions. Five fail before the fix; all 27 Calendar/service cases pass after. All-day end dates remain date-only.
+- Read-only live database audit confirms both Calendar migrations applied, both private tables have forced RLS, and anon/authenticated have no SELECT privilege. `pg_cron` is installed but has no job referencing Calendar. One existing enabled connection is overdue; no real sync or event writes were performed.
+- Production Vercel access remains unavailable. Verify actual flag/keys/callback and any external scheduler before creating a job or activating. A scoped live canary and user review remain required. Do not repeat prior Google approval work.
+
+## Initial audit (historical)
 
 ## Already implemented
 

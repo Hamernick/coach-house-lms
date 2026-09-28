@@ -26,6 +26,22 @@ function localDate(value: string, timeZone: string) {
     .map((type) => parts.find((p) => p.type === type)?.value)
     .join("-")
 }
+function recurrenceUntil(endDate: string, timeZone: string) {
+  const day = endDate.slice(0, 10)
+  const midnight = Date.parse(day + "T00:00:00Z") / 1000
+  if (!Number.isFinite(midnight)) throw new CalendarError("invalid")
+  // Find the last second of the selected local date. Searching the boundary
+  // handles DST and fractional offsets without assuming a 24-hour local day.
+  let before = midnight - 86400
+  let after = midnight + 172800
+  while (after - before > 1) {
+    const candidate = Math.floor((before + after) / 2)
+    if (localDate(new Date(candidate * 1000).toISOString(), timeZone) <= day)
+      before = candidate
+    else after = candidate
+  }
+  return new Date(before * 1000).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"
+}
 export function exportEventBody(event: RoadmapCalendarEvent, timeZone: string) {
   const end =
     event.endsAt ?? new Date(Date.parse(event.startsAt) + 3600000).toISOString()
@@ -50,10 +66,7 @@ export function exportEventBody(event: RoadmapCalendarEvent, timeZone: string) {
   if (rule && recurrence?.endDate) {
     const until = event.allDay
       ? recurrence.endDate.slice(0, 10).replace(/-/g, "")
-      : new Date(recurrence.endDate.slice(0, 10) + "T23:59:59Z")
-          .toISOString()
-          .replace(/[-:]/g, "")
-          .split(".")[0] + "Z"
+      : recurrenceUntil(recurrence.endDate, timeZone)
     rule += ";UNTIL=" + until
   } else if (rule && recurrence?.count) rule += ";COUNT=" + recurrence.count
   if (rule && recurrence?.byDay?.length)

@@ -43,8 +43,8 @@ current configuration without restarting completed approval work.
 
 The Calendar and consent migrations are in main and were previously recorded as applied:
 `20260908160000_add_google_calendar_sync.sql` and
-`20260909150000_accept_calendar_privacy_consent.sql`. Inspect actual migration history
-before changing the database; do not replay them blindly.
+`20260909150000_accept_calendar_privacy_consent.sql`. Read-only live inspection on September 28 confirms both applied and both Calendar
+tables have forced RLS with no anon/authenticated SELECT privilege. Do not replay them.
 
 ## Scheduled sync and activation
 
@@ -52,7 +52,9 @@ The scheduler calls `GET /api/integrations/google-calendar/cron` with
 `Authorization: Bearer <GOOGLE_CALENDAR_CRON_SECRET>`. The secret must have at least
 32 characters. Each invocation handles up to ten due accounts within 45 seconds;
 successful accounts become due five minutes later. Actual freshness depends on scheduler
-cadence and capacity. A cron route alone does not establish that a scheduler exists.
+cadence and capacity. A cron route alone does not establish that a scheduler exists. Read-only inspection on
+September 28 found pg_cron installed but no Calendar job. One enabled connection was
+overdue; verify any external scheduler before creating a duplicate or triggering sync.
 
 Read-only Vercel inspection on September 28 returned HTTP 403. Current Production
 flag/variables, deployed configuration and scheduler have not been verified. Confirm

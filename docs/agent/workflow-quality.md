@@ -21,7 +21,7 @@ On the first turn of every new chat, before changing files:
 1. Plan: list files to touch and propose diffs.
 2. Implement: write code/migrations/docs in the correct directories.
 3. Validate locally with checks covering the changed behavior; require complete hosted CI before merge.
-4. Deliver: include screenshots (light/dark/mobile) and state-coverage notes in PRs when UI changes.
+4. Deliver: record the user's reviewed routes, states and results in UI PRs. Include required affected visual artifacts; capture additional screenshots only for a specific unresolved question.
 5. Log: append a concise entry to the current monthly log linked from `docs/RUNLOG.md` for every ad-hoc/Codex session:
    what changed, what worked, what did not, and where to continue.
 
@@ -64,11 +64,17 @@ On the first turn of every new chat, before changing files:
   | Documentation only | Diff/format review and automatic pre-push checks. |
   | Application logic | Named tests covering changed behavior. |
   | Authorization or RLS | Relevant access tests; RLS tests for migration/policy changes. |
-  | UI behavior or appearance | Relevant tests and a focused browser check of the affected surface. |
+  | UI behavior or appearance | Relevant tests for changed logic and a focused review of the affected surface. Explicit user test results satisfy the interactive review; do not duplicate them without a concrete unresolved risk. |
   | Quality-gate scripts | `quality-gate-runner.test.ts`, `prepush-lint-optimization.test.ts`, and `large-file-guard.test.ts`. |
 
 - Reuse passing results while their relevant code, dependencies, configuration,
   and environment remain unchanged.
+- Follow AGENTS.md's Product Review And Browser Testing policy. Present the
+  preview early; use agent-driven Playwright only for a named unresolved question
+  or required automated gate. User approval does not replace security tests,
+  required hosted CI, visual comparisons, or branch protection. Stabilize affected
+  fixtures and batch corrections before pushing; avoid repeated full CI runs as
+  the development loop. Do not add browser matrices or test infrastructure by default.
 - When an unrelated check fails, record the failure and leave the merge blocked.
   Do not investigate unrelated features or update visual baselines within the
   current task.

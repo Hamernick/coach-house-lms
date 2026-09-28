@@ -4,6 +4,12 @@ Release worktree: `/Users/calebhamernick/Development/coach-house-platform-intern
 Release branch: `feat/internal-tracker-release-20260928`, fresh base `d7d1eec3`.
 Preserved source: `feat/internal-projects-tasks-20260928` in its original worktree; localhost 3013 remains there. No source worktree or credentials were discarded.
 
+## Final release status — September 28, 1:53 PM EDT
+
+PR #261 is merged as `5f02a334`; all required hosted checks passed on the matching head tree. Its production deployment is Ready on coachhouse.app. Migration 20260928180000 is applied and its monthly-date constraint validated in the live catalog. Cross-scope proposal/collaborator visibility is deployed without mutation permission expansion. No imported data changed. This supersedes older pending review-fix checkpoints below.
+
+Implementation, import and release work stop here. Remaining human review: Joel's task view and edit/save/reopen before the meeting. Caleb confirmed Google sign-in works on localhost:3000; 3012/3013 servers are stopped, original worktrees preserved. [Final operator evidence](../operations/tracker-import/README.md).
+
 ## Current production status — September 28, 1:25 PM EDT
 
 PRs [#258](https://github.com/Hamernick/coach-house-lms/pull/258) and [#259](https://github.com/Hamernick/coach-house-lms/pull/259) were merged by Caleb. All required hosted checks passed on #259 head `6d86dfdc`, whose tree matches production merge `335b96dc`. Vercel deployment `dpl_9iDsMUMgCVZBTSRci6Rqf6kKmovU` is Ready and serves coachhouse.app. All three tracker migrations are applied.

@@ -9,6 +9,19 @@ function normalizeCategorySearchText(value: string) {
     .trim()
 }
 
+// A category scan checks hundreds of aliases against the same narrative.
+// Normalize that narrative once, without retaining user text in a global cache.
+export function createPublicMapCategoryAliasMatcher(text: string) {
+  const normalizedText = normalizeCategorySearchText(text)
+  const paddedText = ` ${normalizedText} `
+
+  return (alias: string) => {
+    const normalizedAlias = normalizeCategorySearchText(alias)
+    if (!normalizedAlias || !normalizedText) return false
+    return paddedText.includes(` ${normalizedAlias} `)
+  }
+}
+
 export function publicMapTextContainsCategoryAlias({
   alias,
   text,
@@ -16,9 +29,5 @@ export function publicMapTextContainsCategoryAlias({
   alias: string
   text: string
 }) {
-  const normalizedAlias = normalizeCategorySearchText(alias)
-  const normalizedText = normalizeCategorySearchText(text)
-  if (!normalizedAlias || !normalizedText) return false
-
-  return ` ${normalizedText} `.includes(` ${normalizedAlias} `)
+  return createPublicMapCategoryAliasMatcher(text)(alias)
 }

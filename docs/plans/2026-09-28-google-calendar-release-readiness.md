@@ -117,3 +117,9 @@ consent from 3011; real consent/sync verification is a separately scoped product
 canary. No new provider callback was registered. Production shipping is authorized
 once hosted quality, required review, UI review and activation gates are satisfied.
 No manually created cloud preview is required.
+
+## Current pre-release checkpoint — 2026-09-28 02:20 EDT
+
+PR [#257](https://github.com/Hamernick/coach-house-lms/pull/257) is ready for code-owner review. Hosted static, acceptance, RLS and build passed at `618e60d7`; visual comparison found two mobile Calendar style mismatches and a Details focus race. Both fixes are scoped, with no baseline changes. Updated-head hosted quality remains required.
+
+The single server now runs at `http://localhost:3012/workspace?drawer=tools`, matching the existing local OAuth callback. This supersedes the 3011 UI-only workaround above. No second server or provider registration was created. User login/UI review and actual production Vercel access remain pending. Production configuration, scheduled sync and a scoped real-data canary must be verified before activation.

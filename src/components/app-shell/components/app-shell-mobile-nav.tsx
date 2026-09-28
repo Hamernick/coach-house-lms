@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import CompassIcon from "lucide-react/dist/esm/icons/compass"
 import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
@@ -29,18 +28,6 @@ export function AppShellMobileNav({
   const pathname = usePathname() ?? "/"
   const hasRightRail = useRightRailPresence()
   const { isMobile, openMobile } = useSidebar()
-  const detailsButtonRef = useRef<HTMLButtonElement>(null)
-  const wasRightOpen = useRef(false)
-  useEffect(() => {
-    if (wasRightOpen.current && !rightOpen) {
-      const frame = requestAnimationFrame(() =>
-        detailsButtonRef.current?.focus()
-      )
-      wasRightOpen.current = false
-      return () => cancelAnimationFrame(frame)
-    }
-    wasRightOpen.current = rightOpen
-  }, [rightOpen])
   if (!isMobile) return null
 
   const items: MobileNavigationItem[] = []
@@ -67,7 +54,6 @@ export function AppShellMobileNav({
       active: rightOpen,
       expanded: rightOpen,
       controls: RIGHT_RAIL_ID,
-      buttonRef: detailsButtonRef,
       onSelect: () => onRightOpenChange(!rightOpen),
     })
   return items.length > 0 ? <MobileNavigationPanel items={items} /> : null

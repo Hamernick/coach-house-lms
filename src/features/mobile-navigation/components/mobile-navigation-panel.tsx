@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import type { CSSProperties } from "react"
+import { useRouter } from "next/navigation"
+import { useRef, useState, type CSSProperties, type PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useMobileNavigationScroll } from "../hooks/use-mobile-navigation-scroll"
+import { resolveMobileNavigationIndex } from "../lib"
 import type { MobileNavigationItem } from "../types"
 import styles from "./mobile-navigation.module.css"
 
@@ -14,24 +16,141 @@ export function MobileNavigationPanel({
 }: {
   items: MobileNavigationItem[]
 }) {
-  const keyboardOpen = useMobileNavigationScroll()
+  const router = useRouter()
+  const { compact, keyboardOpen } = useMobileNavigationScroll()
+  const [scrubIndex, setScrubIndex] = useState<number | null>(null)
+  const gesture = useRef<{
+    pointerId: number
+    startX: number
+    dragging: boolean
+    canceled: boolean
+  } | null>(null)
+  const suppressClick = useRef(false)
+  const suppressionTimer = useRef<number | null>(null)
   const selected = items.findIndex((item) => item.active)
+  const highlight = scrubIndex ?? selected
+
+  function clearClickSuppression() {
+    suppressClick.current = false
+    if (suppressionTimer.current !== null) {
+      window.clearTimeout(suppressionTimer.current)
+      suppressionTimer.current = null
+    }
+  }
+
+  function suppressReleasedPointerClick() {
+    clearClickSuppression()
+    suppressClick.current = true
+    suppressionTimer.current = window.setTimeout(() => {
+      suppressClick.current = false
+      suppressionTimer.current = null
+    }, 0)
+  }
+
+  function indexAt(event: PointerEvent<HTMLElement>) {
+    const { left, top, width, height } =
+      event.currentTarget.getBoundingClientRect()
+    return resolveMobileNavigationIndex({
+      x: event.clientX,
+      y: event.clientY,
+      left,
+      top,
+      width,
+      height,
+      count: items.length,
+    })
+  }
+
+  function finishGesture(event: PointerEvent<HTMLElement>) {
+    const current = gesture.current
+    if (!current || current.pointerId !== event.pointerId) return
+    gesture.current = null
+    setScrubIndex(null)
+    if (!current.dragging && !current.canceled) return
+
+    suppressReleasedPointerClick()
+    if (current.canceled) return
+    const index = indexAt(event)
+    if (index === null) return
+    const item = items[index]
+    if (item.href) router.push(item.href)
+    else item.onSelect?.()
+  }
 
   return (
     <div className={cn(styles.dock, "md:hidden")} hidden={keyboardOpen}>
       <nav
         aria-label="Main navigation"
         className={styles.bar}
+        data-compact={compact}
+        data-scrubbing={scrubIndex !== null}
         style={
           {
             "--tab-count": items.length,
-            "--active-index": Math.max(0, selected),
+            "--active-index": Math.max(0, highlight),
           } as CSSProperties
         }
+        onPointerDown={(event) => {
+          if (
+            !event.isPrimary ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          )
+            return
+          clearClickSuppression()
+          gesture.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            dragging: false,
+            canceled: false,
+          }
+        }}
+        onPointerMove={(event) => {
+          const current = gesture.current
+          if (
+            !current ||
+            current.pointerId !== event.pointerId ||
+            current.canceled
+          )
+            return
+          if (Math.abs(event.clientX - current.startX) > 8) {
+            current.dragging = true
+            if (!event.currentTarget.hasPointerCapture(event.pointerId))
+              event.currentTarget.setPointerCapture(event.pointerId)
+            setScrubIndex(indexAt(event))
+          }
+        }}
+        onPointerUp={finishGesture}
+        onPointerCancel={(event) => {
+          if (gesture.current?.pointerId !== event.pointerId) return
+          gesture.current = null
+          setScrubIndex(null)
+          clearClickSuppression()
+        }}
+        onLostPointerCapture={(event) => {
+          if (gesture.current?.pointerId !== event.pointerId) return
+          gesture.current = null
+          setScrubIndex(null)
+          clearClickSuppression()
+        }}
+        onClickCapture={(event) => {
+          if (!suppressClick.current || event.detail === 0) return
+          event.preventDefault()
+          event.stopPropagation()
+          clearClickSuppression()
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Escape" || !gesture.current) return
+          gesture.current.canceled = true
+          setScrubIndex(null)
+        }}
       >
         <span
           className={styles.highlight}
-          data-visible={selected >= 0}
+          data-visible={highlight >= 0}
           aria-hidden
         />
         {items.map((item, index) => {
@@ -52,12 +171,13 @@ export function MobileNavigationPanel({
               asChild
               variant="ghost"
               className={className}
-              data-highlighted={selected === index}
+              data-highlighted={highlight === index}
             >
               <Link
                 href={item.href}
                 prefetch={false}
                 aria-current={item.active ? "page" : undefined}
+                draggable={false}
               >
                 {contents}
               </Link>
@@ -69,7 +189,7 @@ export function MobileNavigationPanel({
               type="button"
               variant="ghost"
               className={className}
-              data-highlighted={selected === index}
+              data-highlighted={highlight === index}
               aria-expanded={item.expanded}
               aria-controls={item.controls}
               onClick={item.onSelect}

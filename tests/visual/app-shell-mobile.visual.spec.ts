@@ -116,7 +116,7 @@ test("mobile Details closes with Escape and returns focus", async ({
   await expect(details).toBeFocused()
 })
 
-test("Workspace dock link follows the existing access input", async ({
+test("component visibility follows the Workspace access input", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -126,6 +126,9 @@ test("Workspace dock link follows the existing access input", async ({
     navigation.getByRole("link", { name: "Workspace" })
   ).toHaveAttribute("href", "/workspace")
   await page.goto(`${fixture}?scenario=restricted-navigation&rail=none`)
+  await expect(page.locator("[data-mobile-ready]")).toHaveAttribute(
+    "data-mobile-ready", "true"
+  )
   await expect(
     page
       .getByRole("navigation", { name: "Main navigation" })
@@ -135,7 +138,7 @@ test("Workspace dock link follows the existing access input", async ({
   ).toHaveCount(0)
 })
 
-test("locked navigation has no destinations and absent rails have no Details", async ({
+test("component visibility honors locked navigation and absent rails", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -143,6 +146,9 @@ test("locked navigation has no destinations and absent rails have no Details", a
   await expect(
     page.getByRole("heading", { name: "Navigation visibility fixture" })
   ).toBeVisible()
+  await expect(page.locator("[data-mobile-ready]")).toHaveAttribute(
+    "data-mobile-ready", "true"
+  )
   await expect(
     page.getByRole("navigation", { name: "Main navigation" })
   ).toHaveCount(0)
@@ -185,7 +191,7 @@ test("full-bleed content clears the dock and desktop keeps its rail", async ({
   )
 })
 
-test("keyboard clearance and reduced motion preserve mobile actions", async ({
+test("simulated keyboard clearance and reduced motion preserve mobile actions", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -211,11 +217,154 @@ test("keyboard clearance and reduced motion preserve mobile actions", async ({
     viewport.dispatchEvent(new Event("resize"))
   })
   await expect(navigation).toBeVisible()
+  expect(await navigation.evaluate((element) =>
+    getComputedStyle(element).transitionDuration
+  )).toBe("0s")
   expect(
     await navigation
       .locator("span[aria-hidden]")
       .evaluate((element) => getComputedStyle(element).transitionDuration)
   ).toBe("0s")
+})
+
+test("scrubbing previews, commits inside, and cancels outside or with Escape", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(fixture)
+  const navigation = page.getByRole("navigation", { name: "Main navigation" })
+  await expect(navigation).toBeVisible()
+  const find = navigation.getByRole("link", { name: "Find" })
+  const details = navigation.getByRole("button", { name: "Details" })
+  const drawer = page.getByRole("dialog", { name: "Details" })
+  const from = (await find.boundingBox())!
+  const to = (await details.boundingBox())!
+  const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 }
+  const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 }
+  const begin = async () => {
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(end.x, end.y, { steps: 5 })
+    await expect(navigation).toHaveAttribute("data-scrubbing", "true")
+    await expect(details).toHaveAttribute("data-highlighted", "true")
+    await expect(drawer).toBeHidden()
+    await expect(page).toHaveURL(new RegExp(`${fixture}$`))
+  }
+
+  await begin()
+  await page.mouse.up()
+  await expect(drawer).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(drawer).toBeHidden()
+
+  await begin()
+  await page.mouse.move(end.x, from.y - 30)
+  await page.mouse.up()
+  await expect(drawer).toBeHidden()
+  await expect(page).toHaveURL(new RegExp(`${fixture}$`))
+
+  await begin()
+  await page.keyboard.press("Escape")
+  await page.mouse.up()
+  await expect(navigation).toHaveAttribute("data-scrubbing", "false")
+  await expect(drawer).toBeHidden()
+  await details.click()
+  await expect(drawer).toBeVisible()
+})
+
+test("touch pointer cancellation leaves the next action usable", async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(fixture)
+  const navigation = page.getByRole("navigation", { name: "Main navigation" })
+  await expect(navigation).toBeVisible()
+  const from = (await navigation.getByRole("link", { name: "Find" }).boundingBox())!
+  const details = navigation.getByRole("button", { name: "Details" })
+  const to = (await details.boundingBox())!
+  const client = await context.newCDPSession(page)
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: from.x + from.width / 2, y: from.y + from.height / 2 }],
+  })
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: to.x + to.width / 2, y: to.y + to.height / 2 }],
+  })
+  await expect(navigation).toHaveAttribute("data-scrubbing", "true")
+  await client.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] })
+  await expect(navigation).toHaveAttribute("data-scrubbing", "false")
+  await expect(page.getByRole("dialog", { name: "Details" })).toBeHidden()
+  await expect(page).toHaveURL(new RegExp(`${fixture}$`))
+  await details.click()
+  await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
+  await client.detach()
+})
+
+test("links preserve ordinary, keyboard, modified and single scrub navigation", async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  // Keep destination rendering out of this AppShell interaction test.
+  await context.route("**/*", (route) => {
+    const request = route.request()
+    if (request.isNavigationRequest() && new URL(request.url()).pathname === "/")
+      return route.fulfill({ contentType: "text/html", body: "<h1>Find destination</h1>" })
+    return route.continue()
+  })
+  for (const activation of ["click", "keyboard", "modified", "scrub"] as const) {
+    await page.goto(fixture)
+    const navigation = page.getByRole("navigation", { name: "Main navigation" })
+    await expect(navigation).toBeVisible()
+    const find = navigation.getByRole("link", { name: "Find" })
+    if (activation === "modified") {
+      const popupPromise = context.waitForEvent("page")
+      await find.click({ modifiers: [process.platform === "darwin" ? "Meta" : "Control"] })
+      const popup = await popupPromise
+      await expect(popup).toHaveURL(/\/$/)
+      await expect(page).toHaveURL(new RegExp(`${fixture}$`))
+      await popup.close()
+      continue
+    }
+    const destinations: string[] = []
+    const onNavigation = (frame: import("@playwright/test").Frame) => {
+      if (frame === page.mainFrame() && new URL(frame.url()).pathname === "/")
+        destinations.push(frame.url())
+    }
+    page.on("framenavigated", onNavigation)
+    if (activation === "click") await find.click()
+    else if (activation === "keyboard") await find.press("Enter")
+    else {
+      const from = (await navigation.getByRole("button", { name: "Details" }).boundingBox())!
+      const to = (await find.boundingBox())!
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 5 })
+      await expect(navigation).toHaveAttribute("data-scrubbing", "true")
+      expect(destinations).toHaveLength(0)
+      await page.mouse.up()
+    }
+    await expect(page).toHaveURL(/\/$/)
+    expect(destinations).toHaveLength(1)
+    page.off("framenavigated", onNavigation)
+  }
+})
+
+test("scroll compaction retains labels and actions and expands on upward scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(fixture)
+  const navigation = page.getByRole("navigation", { name: "Main navigation" })
+  await expect(navigation).toBeVisible()
+  const scroll = page.locator("[data-shell-scroll]")
+  await scroll.evaluate((element) => { element.scrollTop = 240 })
+  await expect(navigation).toHaveAttribute("data-compact", "true")
+  for (const name of ["Find", "Details"]) {
+    await expect(navigation.getByText(name, { exact: true })).toBeVisible()
+  }
+  for (const control of await navigation.locator("a,button").all()) {
+    const bounds = (await control.boundingBox())!
+    expect(bounds.width).toBeGreaterThanOrEqual(44)
+    expect(bounds.height).toBeGreaterThanOrEqual(44)
+  }
+  await navigation.getByRole("button", { name: "Details" }).click()
+  await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await scroll.evaluate((element) => { element.scrollTop = 120 })
+  await expect(navigation).toHaveAttribute("data-compact", "false")
 })
 
 const visualCases = [
@@ -252,8 +401,34 @@ for (const { width, height, theme } of visualCases) {
       content:
         "nextjs-portal, [data-testid='react-grab-overlay'] { visibility: hidden !important; }",
     })
-    await expect(page).toHaveScreenshot(`app-shell-${width}-${theme}.png`, {
+    await expect.soft(page).toHaveScreenshot(`app-shell-${width}-${theme}.png`, {
       animations: "disabled",
     })
+    if (width === 390) {
+      await page.locator("[data-shell-scroll]").evaluate((element) => {
+        element.scrollTop = 240
+      })
+      await expect(page.getByRole("navigation", { name: "Main navigation" }))
+        .toHaveAttribute("data-compact", "true")
+      await expect.soft(page).toHaveScreenshot(`app-shell-compact-${theme}.png`, {
+        animations: "disabled",
+      })
+      await page.locator("[data-shell-scroll]").evaluate((element) => {
+        element.scrollTop = 0
+      })
+      await expect(page.getByRole("navigation", { name: "Main navigation" }))
+        .toHaveAttribute("data-compact", "false")
+      await page.getByRole("button", { name: "Menu", exact: true }).click()
+      await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible()
+      await expect.soft(page).toHaveScreenshot(`app-shell-sidebar-${theme}.png`, {
+        animations: "disabled",
+      })
+      await page.getByRole("button", { name: "Close menu" }).click()
+      await page.getByRole("button", { name: "Details", exact: true }).click()
+      await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
+      await expect.soft(page).toHaveScreenshot(`app-shell-details-${theme}.png`, {
+        animations: "disabled",
+      })
+    }
   })
 }

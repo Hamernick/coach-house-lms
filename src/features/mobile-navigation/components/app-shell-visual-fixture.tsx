@@ -8,7 +8,12 @@ import {
 import { AppShellMobileNav } from "@/components/app-shell/components/app-shell-mobile-nav"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar"
+
+function MobileInitializationMarker() {
+  const { isMobile } = useSidebar()
+  return <span hidden data-mobile-ready={isMobile} />
+}
 
 // Guarded fixture: no account, session, or provider access is created.
 export function AppShellVisualFixture({
@@ -28,6 +33,7 @@ export function AppShellVisualFixture({
     return (
       <RightRailProvider>
         <SidebarProvider>
+          <MobileInitializationMarker />
           <main className="min-h-svh p-4">
             <h1>Navigation visibility fixture</h1>
             {withRail ? <RightRailSlot>Details fixture</RightRailSlot> : null}

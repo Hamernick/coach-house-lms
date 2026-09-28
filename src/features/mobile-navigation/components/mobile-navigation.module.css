@@ -26,7 +26,9 @@
     0 2px 6px #0000000c,
     inset 0 1px 0 #ffffff30;
   pointer-events: auto;
-  touch-action: manipulation;
+  touch-action: pan-y;
+  user-select: none;
+  transition: width 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @supports (backdrop-filter: blur(16px)) {
   .bar {
@@ -54,6 +56,9 @@
 .highlight[data-visible="true"] {
   opacity: 1;
 }
+.bar[data-scrubbing="true"] .highlight {
+  transition: none;
+}
 .tab {
   color: var(--muted-foreground);
   -webkit-tap-highlight-color: transparent;
@@ -65,12 +70,19 @@
 .label {
   display: block;
 }
+.bar[data-compact="true"] {
+  width: min(100%, 320px);
+}
+.bar[data-compact="true"] .tab {
+  gap: 0;
+}
 @media (min-width: 768px) {
   .dock {
     display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .bar,
   .highlight {
     transition: none;
   }

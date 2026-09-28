@@ -7,16 +7,20 @@ import { Badge } from "@/components/ui/badge"
 import { WorkspaceFinanceStripeConnection } from "@/features/workspace-finance"
 
 import type { WorkspaceToolDefinition, WorkspaceToolsInput } from "../types"
+import { GoogleCalendarPanel } from "@/features/google-calendar/client"
+
 import { GoogleDriveConnection } from "./google-drive-connection"
 import { WorkspaceToolBrandIcon } from "./workspace-tool-brand-icon"
 
 export function WorkspaceToolRow({
   tool,
   onGoogleDriveConnectionChange,
+  onGoogleCalendarConnectionChange,
   stripeConnection,
 }: {
   tool: WorkspaceToolDefinition
   onGoogleDriveConnectionChange: (connected: boolean) => void
+  onGoogleCalendarConnectionChange: (connected: boolean) => void
   stripeConnection: WorkspaceToolsInput["stripeConnection"]
 }) {
   const router = useRouter()
@@ -31,6 +35,14 @@ export function WorkspaceToolRow({
       </div>
     )
   }
+
+  if (tool.id === "google-calendar")
+    return (
+      <GoogleCalendarPanel
+        brand={<WorkspaceToolBrandIcon toolId={tool.id} />}
+        onConnectionChange={onGoogleCalendarConnectionChange}
+      />
+    )
 
   if (tool.id === "google-drive") {
     return (

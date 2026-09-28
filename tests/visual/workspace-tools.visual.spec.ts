@@ -3,6 +3,26 @@ import { expect, test, type Page } from "@playwright/test"
 type DriveState = "connected" | "disconnected" | "error"
 
 async function openToolsFixture(page: Page, state: DriveState) {
+  await page.route("**/api/integrations/google-calendar/connection", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        activeOrgId: "org",
+        configured: false,
+        connected: false,
+        enabled: false,
+        status: "not_connected",
+        email: null,
+        selectedCalendars: [],
+        exportOrgId: null,
+        canExport: false,
+        timeZone: "UTC",
+        lastSyncedAt: null,
+        error: null,
+        syncing: false,
+      }),
+    })
+  )
   await page.route("**/api/integrations/google-drive/connection", (route) => {
     if (state === "error") {
       return route.fulfill({

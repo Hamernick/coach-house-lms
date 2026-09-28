@@ -215,6 +215,27 @@ describe("Google Calendar personal sync", () => {
     )
   })
   it.each([
+    ["America/New_York", "2026-09-08", "20260909T035959Z"],
+    ["America/New_York", "2026-03-08", "20260309T035959Z"],
+    ["America/New_York", "2026-11-01", "20261102T045959Z"],
+    ["Asia/Tokyo", "2026-09-08", "20260908T145959Z"],
+    ["Asia/Kathmandu", "2026-09-08", "20260908T181459Z"],
+    ["UTC", "2026-09-08", "20260908T235959Z"],
+  ])("includes the entire recurrence end date in %s on %s", async (timeZone, endDate, until) => {
+    const { exportEventBody } = await import("@/features/google-calendar/server/sync-export")
+    const event = {
+      id: "evening-board", orgId: "org", title: "Board", description: null,
+      startsAt: "2026-01-01T01:00:00Z", endsAt: "2026-01-01T02:00:00Z",
+      allDay: false, status: "active", eventType: "board_meeting", assignedRoles: [],
+      createdAt: "2026-01-01", updatedAt: "2026-01-01",
+      recurrence: { frequency: "weekly", endDate },
+    } as const
+    expect(exportEventBody({ ...event, assignedRoles: [] }, timeZone).recurrence)
+      .toEqual(["RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=" + until])
+    expect(exportEventBody({ ...event, assignedRoles: [], allDay: true }, timeZone).recurrence)
+      .toEqual(["RRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=" + endDate.replace(/-/g, "")])
+  })
+  it.each([
     "openid email",
     "https://www.googleapis.com/auth/calendar.events.readonly",
     "https://www.googleapis.com/auth/calendar.calendarlist.readonly",

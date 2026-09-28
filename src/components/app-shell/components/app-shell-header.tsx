@@ -1,11 +1,11 @@
 import { useEffect, useRef, type ReactNode } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 
 import MenuIcon from "lucide-react/dist/esm/icons/menu"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 
-import { AppShellCalendarAction } from "@/components/app-shell/components/app-shell-calendar-action"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,11 @@ import { cn } from "@/lib/utils"
 
 import { RIGHT_RAIL_ID } from "../constants"
 import { useRightRailPresence } from "../right-rail"
+
+const AppShellCalendarAction = dynamic(
+  () => import("./app-shell-calendar-action").then((mod) => mod.AppShellCalendarAction),
+  { ssr: false, loading: () => <span aria-hidden className="block size-9" /> }
+)
 
 type AppShellHeaderProps = {
   breadcrumbs?: ReactNode
@@ -105,7 +110,7 @@ export function AppShellHeader({
               id="site-header-actions-right"
               className="flex flex-wrap items-center gap-2 md:flex-nowrap"
             />
-            {hasUser && !isCompactMobileHeader ? (
+            {hasUser && !isMobile && !onboardingLocked ? (
               <AppShellCalendarAction />
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}

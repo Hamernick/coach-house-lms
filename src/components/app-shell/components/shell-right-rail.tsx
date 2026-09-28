@@ -49,6 +49,13 @@ export function ShellRightRail({
           side="right"
           id={RIGHT_RAIL_ID}
           className="w-full max-w-full gap-0 border-0 p-0 sm:max-w-sm [&>button]:size-11"
+          onCloseAutoFocus={(event) => {
+            // Restore focus after the modal focus trap releases, not on render.
+            event.preventDefault()
+            document
+              .querySelector<HTMLButtonElement>(`button[aria-controls="${RIGHT_RAIL_ID}"]`)
+              ?.focus()
+          }}
         >
           <SheetHeader className="shrink-0 border-b px-4 py-5 pr-16">
             <SheetTitle>Details</SheetTitle>

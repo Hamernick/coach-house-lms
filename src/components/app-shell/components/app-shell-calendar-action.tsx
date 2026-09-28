@@ -9,12 +9,16 @@ import {
 } from "react"
 import dynamic from "next/dynamic"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
+import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { useAppShellCalendarActionRegistration } from "@/components/app-shell/calendar-action-context"
+import type { RoadmapCalendarView } from "@/components/roadmap/roadmap-calendar/types"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -37,9 +41,9 @@ const RoadmapCalendar = dynamic<
 >(
   () =>
     import("@/components/roadmap/roadmap-calendar").then(
-      (mod) => mod.RoadmapCalendar,
+      (mod) => mod.RoadmapCalendar
     ),
-  { loading: () => null, ssr: false },
+  { loading: () => null, ssr: false }
 )
 
 const WorkspaceTutorialCallout = dynamic<
@@ -49,17 +53,20 @@ const WorkspaceTutorialCallout = dynamic<
 >(
   () =>
     import("@/components/workspace/workspace-tutorial-callout").then(
-      (mod) => mod.WorkspaceTutorialCallout,
+      (mod) => mod.WorkspaceTutorialCallout
     ),
-  { loading: () => null, ssr: false },
+  { loading: () => null, ssr: false }
 )
 
-export function AppShellCalendarAction() {
+export function AppShellCalendarAction({
+  placement = "header",
+}: { placement?: "header" | "sidebar" } = {}) {
   const isMobile = useIsMobile()
   const { tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete } =
     useAppShellCalendarActionRegistration()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [calendarHasOpened, setCalendarHasOpened] = useState(false)
+  const [calendarView, setCalendarView] = useState<RoadmapCalendarView>()
   const calendarRegionId = useId()
   const tutorialCalendarButtonActive = tutorialCalendarButtonCallout !== null
 
@@ -84,7 +91,7 @@ export function AppShellCalendarAction() {
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size={placement === "sidebar" ? "default" : "icon"}
       aria-label={calendarOpen ? "Hide calendar" : "Show calendar"}
       aria-expanded={calendarOpen}
       aria-controls={calendarRegionId}
@@ -92,6 +99,7 @@ export function AppShellCalendarAction() {
       onClick={handleCalendarTriggerClick}
       className={cn(
         "relative",
+        placement === "sidebar" && "min-h-11 w-full justify-start gap-2 px-2",
         calendarOpen &&
           "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm",
         tutorialCalendarButtonActive &&
@@ -99,6 +107,7 @@ export function AppShellCalendarAction() {
       )}
     >
       <CalendarDaysIcon className="h-4 w-4" aria-hidden />
+      {placement === "sidebar" ? <span>Calendar</span> : null}
     </Button>
   )
 
@@ -118,8 +127,15 @@ export function AppShellCalendarAction() {
         indicatorSideOffset={6}
       />
     ) : null
+  // Closed overlays must unmount so they release their interaction layer.
+  // Keep only the selected view here, outside the popup's lifecycle.
   const calendarBody = calendarHasOpened ? (
-    <RoadmapCalendar hideHeaderCopy />
+    <RoadmapCalendar
+      hideHeaderCopy
+      compactHeaderControls
+      initialView={calendarView}
+      onViewChange={setCalendarView}
+    />
   ) : null
 
   if (isMobile) {
@@ -129,20 +145,33 @@ export function AppShellCalendarAction() {
         onOpenChange={handleCalendarOpenChange}
         handleOnly
       >
-        <div className="relative inline-flex">
+        <div className={cn("relative inline-flex", placement === "sidebar" && "w-full")}>
           {tutorialCallout}
           <DrawerTrigger asChild>{calendarTrigger}</DrawerTrigger>
         </div>
 
         {calendarHasOpened ? (
           <DrawerContent
-            forceMount
             className={cn(
-              "border-border/70 bg-background/98 h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl data-[state=closed]:hidden",
+              "border-border/70 bg-background/98 h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-3xl p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl",
               "touch-pan-y overscroll-contain data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[88dvh]"
             )}
           >
             <DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Browse dates and scheduled events.
+            </DrawerDescription>
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-0 right-2 z-10 size-11 rounded-full"
+                aria-label="Close calendar"
+              >
+                <XIcon aria-hidden />
+              </Button>
+            </DrawerClose>
             <div
               id={calendarRegionId}
               role="region"
@@ -166,7 +195,6 @@ export function AppShellCalendarAction() {
 
       {calendarHasOpened ? (
         <PopoverContent
-          forceMount
           id={calendarRegionId}
           role="region"
           aria-label="Workspace calendar"
@@ -174,7 +202,7 @@ export function AppShellCalendarAction() {
           align="end"
           sideOffset={8}
           collisionPadding={16}
-          className="bg-background/95 data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 w-[min(23.5rem,calc(100vw-1rem))] overflow-hidden rounded-[30px] border-0 p-0 shadow-none backdrop-blur-xl data-[state=closed]:hidden motion-reduce:data-[state=closed]:animate-none motion-reduce:data-[state=open]:animate-none"
+          className="bg-background/95 data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 w-[min(23.5rem,calc(100vw-1rem))] overflow-hidden rounded-[30px] border-0 p-0 shadow-none backdrop-blur-xl motion-reduce:data-[state=closed]:animate-none motion-reduce:data-[state=open]:animate-none"
         >
           {calendarBody}
         </PopoverContent>

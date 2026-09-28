@@ -1,4 +1,3 @@
-export { MobileNavigationPanel } from "./components"
 export {
   isMobileNavigationPathActive,
   resolveMobileNavigationIndex,

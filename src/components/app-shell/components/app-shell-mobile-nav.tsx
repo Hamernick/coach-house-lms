@@ -6,10 +6,10 @@ import PanelRightIcon from "lucide-react/dist/esm/icons/panel-right"
 
 import { useSidebar } from "@/components/ui/sidebar"
 import {
-  MobileNavigationPanel,
   isMobileNavigationPathActive,
   type MobileNavigationItem,
 } from "@/features/mobile-navigation"
+import { MobileNavigationPanel } from "@/features/mobile-navigation/client"
 import { RIGHT_RAIL_ID } from "../constants"
 import { useRightRailPresence } from "../right-rail"
 

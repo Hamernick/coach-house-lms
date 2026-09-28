@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, type ReactNode } from "react"
+import { useEffect, useMemo } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
-import { AppShellNavigation } from "@/components/app-shell/components/app-shell-navigation"
+import {
+  AppShellNavigation,
+  AppShellSidebarNavigation,
+} from "@/components/app-shell/components/app-shell-navigation"
 import { SidebarBody } from "@/components/app-sidebar"
 import { AppShellSidebarHeader } from "@/components/app-shell/components/app-shell-sidebar-header"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
@@ -26,7 +29,6 @@ import {
   Sidebar,
   SidebarInset,
   SidebarProvider,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   ResizableHandle,
@@ -85,32 +87,6 @@ function useAppShellNavUser(user: AppShellProps["user"]) {
       avatar: user?.avatar ?? null,
     }),
     [user?.avatar, user?.email, user?.name, user?.title]
-  )
-}
-
-function AppShellSidebarNavigation({ children }: { children: ReactNode }) {
-  const { isMobile, setOpenMobile } = useSidebar()
-  return (
-    <div
-      className="flex min-h-0 flex-1 flex-col max-md:[&_a]:min-h-11 max-md:[&_a]:min-w-11 max-md:[&_button]:min-h-11 max-md:[&_button]:min-w-11"
-      onClickCapture={(event) => {
-        if (
-          !isMobile ||
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey ||
-          !(event.target instanceof Element)
-        )
-          return
-        const link = event.target.closest("a[href]")
-        if (!link || !event.currentTarget.contains(link)) return
-        requestAnimationFrame(() => setOpenMobile(false))
-      }}
-    >
-      {children}
-    </div>
   )
 }
 

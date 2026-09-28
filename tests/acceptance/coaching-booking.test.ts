@@ -640,20 +640,24 @@ describe("coaching booking feature", () => {
     expect(appShell).toContain(
       "const useMobileSingleGutterContent = isMobile && isCoachingRoute"
     )
-    expect(appShell).toContain("const useFlushContentBody =")
-    expect(appShell).toContain(
-      "useFullBleedContent || useMobileSingleGutterContent"
+    expect(appShell).toContain("useFlushContentBody={useFullBleedContent}")
+    expect(shellMainContent).toContain(
+      "max-md:gap-0 max-md:px-0 max-md:py-0"
     )
     expect(shellMainContent).toContain(
       'import { ScrollFadeEffect } from "@/components/scroll-fade-effect"'
     )
     expect(shellMainContent).toContain("<ScrollFadeEffect")
-    expect(shellMainContent).toContain("enabled={useMobileSingleGutterContent}")
+    expect(shellMainContent).toContain(
+      "enabled={isMobile && useMobileSingleGutterContent}"
+    )
     expect(shellMainContent).toContain(
       "[--mask-height:2rem] [--scroll-buffer:1.5rem]"
     )
     expect(appShell).toContain("useMobileSingleGutterContent")
-    expect(appShell).toContain('? "px-[var(--shell-content-pad)]"')
+    expect(appShell).toContain(
+      '!isPublicMapSurface && isCoachingRoute && "px-[var(--shell-content-pad)]"'
+    )
     expect(appShell).toContain("useFullBleedContent")
     expect(shellMainContent).toContain('? "overflow-hidden"')
     expect(shellMainContent).toContain(': "overflow-y-auto"')

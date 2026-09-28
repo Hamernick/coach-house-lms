@@ -1,4 +1,13 @@
 import { expect, test, type Page } from "@playwright/test"
+import { existsSync } from "node:fs"
+
+async function expectShellScreenshot(page: Page, name: string) {
+  // Preserve a review artifact when the normal gate refuses a missing baseline.
+  if (!existsSync(test.info().snapshotPath(name))) {
+    await page.screenshot({ path: test.info().outputPath(name), animations: "disabled" })
+  }
+  await expect.soft(page).toHaveScreenshot(name, { animations: "disabled" })
+}
 
 const pageErrors = new WeakMap<Page, string[]>()
 
@@ -401,18 +410,14 @@ for (const { width, height, theme } of visualCases) {
       content:
         "nextjs-portal, [data-testid='react-grab-overlay'] { visibility: hidden !important; }",
     })
-    await expect.soft(page).toHaveScreenshot(`app-shell-${width}-${theme}.png`, {
-      animations: "disabled",
-    })
+    await expectShellScreenshot(page, `app-shell-${width}-${theme}.png`)
     if (width === 390) {
       await page.locator("[data-shell-scroll]").evaluate((element) => {
         element.scrollTop = 240
       })
       await expect(page.getByRole("navigation", { name: "Main navigation" }))
         .toHaveAttribute("data-compact", "true")
-      await expect.soft(page).toHaveScreenshot(`app-shell-compact-${theme}.png`, {
-        animations: "disabled",
-      })
+      await expectShellScreenshot(page, `app-shell-compact-${theme}.png`)
       await page.locator("[data-shell-scroll]").evaluate((element) => {
         element.scrollTop = 0
       })
@@ -420,15 +425,11 @@ for (const { width, height, theme } of visualCases) {
         .toHaveAttribute("data-compact", "false")
       await page.getByRole("button", { name: "Menu", exact: true }).click()
       await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible()
-      await expect.soft(page).toHaveScreenshot(`app-shell-sidebar-${theme}.png`, {
-        animations: "disabled",
-      })
+      await expectShellScreenshot(page, `app-shell-sidebar-${theme}.png`)
       await page.getByRole("button", { name: "Close menu" }).click()
       await page.getByRole("button", { name: "Details", exact: true }).click()
       await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
-      await expect.soft(page).toHaveScreenshot(`app-shell-details-${theme}.png`, {
-        animations: "disabled",
-      })
+      await expectShellScreenshot(page, `app-shell-details-${theme}.png`)
     }
   })
 }

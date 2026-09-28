@@ -258,10 +258,13 @@ export async function loadMemberWorkspaceTasksPage() {
       )
     }
 
-    const rows = (detailRows ?? []).filter((task) =>
-      taskProjectScope.projectIds.has(task.project_id) &&
-      (assignedTaskIds.has(task.id) || actorCanAccessOrganization(actor, task.org_id))
-    )
+    const rows = (detailRows ?? []).filter((task) => {
+      const tracker = readTaskTrackerDetails(task.tracker_metadata)
+      const related = tracker?.collaboratorUserIds.includes(actor.userId) ||
+        (tracker?.assignmentStatus === "Proposed" && tracker.proposedUserId === actor.userId && task.status !== "done")
+      return taskProjectScope.projectIds.has(task.project_id) &&
+        (assignedTaskIds.has(task.id) || related || actorCanAccessOrganization(actor, task.org_id))
+    })
     const accessibleProjects = (orgRows ?? []).filter((row) => actorCanAccessOrganization(actor, row.org_id))
     const accessibleProjectIds = new Set(accessibleProjects.map((row) => row.id))
     const adminOrgIds = [...new Set(accessibleProjects.map((row) => row.org_id))]

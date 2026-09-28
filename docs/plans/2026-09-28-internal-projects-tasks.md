@@ -122,3 +122,13 @@ Removed the now-unused organization coach assignment fetch from the Projects rou
 ### Release candidate checkpoint — 12:47 EDT
 
 Scope frozen early. Ported the coherent internal-tools/tracker patch to a clean current-main worktree; the two unrelated restored migration-history copies remain only in the source worktree. No secrets, workbook or private payloads copied into Git. Changed-file lint, structure, route/boundary/raw-button checks and existing local RLS pass. PostgREST JSON relationship-filter syntax verified by a read-only request. Graphify AST updated in the source worktree. Hosted quality/review and deployed/imported state remain pending.
+
+## Automated review corrections — September 28, 1:40 PM EDT
+
+Confirmed both review findings against merged code. Monthly recurrence now requires both valid dates through quick creation, guided setup, project updates (including omitted recurrence) and schedule edits. Additive migration `20260928180000_require_monthly_project_dates.sql` protects every database write. Ordinary projects remain undated when desired. Existing optional-date SQL coverage previously explicitly permitted undated recurrence; corrected that existing expectation to ordinary non-recurring work, while preserving dated recurrence checks. No new tests added.
+
+Cross-organization pending proposals/collaborations now survive the initial personal-task filter. The existing final personal-scope check still rejects completed/stale proposals or proposals assigned to someone else; unrelated work remains excluded. Existing `canUpdate` and server mutation authorization remain unchanged, so metadata visibility does not grant edit or parent-project access.
+
+Validation: 85 existing application checks pass, lint/structure pass, existing local PostgreSQL recurrence/RLS harness and full import/rollback rehearsal pass. Local SQL probes reject each missing monthly date on creation and edits. Production read-only preflight found zero monthly projects; no production data changes or migration applied for this correction. Await hosted quality and Caleb merge before applying/deploying.
+
+PR #260 aggregate quality passed after Caleb's merge. Consolidated local server runs merged code plus this review branch on localhost:3000. Caleb confirmed Google sign-in succeeds there. The separate local-runtime branch preserves its setup log; original 3012/3013 worktrees remain intact.

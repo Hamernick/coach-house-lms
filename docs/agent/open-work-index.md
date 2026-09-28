@@ -1,6 +1,6 @@
 # Open Work Index
 
-Updated 2026-09-27. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Cleanup base: `origin/main` `32d7e8d8`; recheck Git before new work.
+Updated 2026-09-28. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Current release base: `origin/main` `54ed2c3c`; recheck only before starting new work.
 
 Maintain one active entry per lane or preservation hold. Update entries in place:
 replace renamed branch references and obsolete next actions instead of appending
@@ -12,22 +12,27 @@ workflow checkpoint aligned in the same change.
 
 Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. Do not reopen them, repeat production checks, or restart the historical menu investigation from old handoffs. #249 changed test isolation only. The separate public navigation change in PR #253 is also closed per Caleb; do not reopen it.
 
+AppShell/mobile is closed for implementation: Caleb confirmed PR [#254](https://github.com/Hamernick/coach-house-lms/pull/254) merged, approved appearance and confirmed authenticated Menu/dock/Details/desktop checks passed. The merged revision is `54ed2c3c`. Production deployment/smoke verification was not independently established in this session; do not infer it or reopen the lane without a reported issue or explicit request. Preserve `6b13dd82`, the release worktree, `/tmp/app-shell-draft-20260925.yv1Vat` and `/tmp/app-shell-recovery.6Y6oFk`.
+
 ## Open lanes
 
-The four `chore/*` backup branches start at `32d7e8d8`, contain scoped copies of existing work, and are backed up on GitHub. They are **unfinished, not release-ready**. Original sources remain. Old runlog versions were excluded; Particles and Calendar acceptance manifest additions were merged with current main.
+The original four `chore/*` backup branches start at `32d7e8d8` and remain backed up on GitHub. AppShell has since merged; the three remaining feature backups are **unfinished, not release-ready**. Original sources remain. Old runlog versions were excluded; Particles and Calendar acceptance manifest additions were merged with current main.
 
 | Lane | GitHub backup / source | Remaining work and validation |
 | --- | --- | --- |
-| AppShell/mobile | Local release branch `feat/app-shell-mobile-release-20260925` from `b8cce495`; preservation: `chore/app-shell-mobile-20260924` (`2f15f54f`), `feat/app-shell-mobile-navigation-20260922` (`d1e4b1a1`) | Mobile appearance and authenticated interactions approved; shipping authorized. Restored scrubbing/compaction and drawer improvements pass hosted interaction tests. PR #254 build/bundle, acceptance, static and RLS gates pass. Final Ubuntu visual comparisons, code-owner approval, deployment and production verification remain. Map integration and Calendar relocation excluded. |
-| Marketplace people | `chore/marketplace-people-20260924` (`21026428`); `feat/public-profiles-marketplace-people-20260922` (`6b3be0b6`) | Complete list/detail integration; check privacy, handles, empty/error states and browser behavior. Closed Documentation content stays separate. |
+| Marketplace people — next active lane | Release: `feat/marketplace-people-release-20260928`; preservation: `chore/marketplace-people-20260924` (`21026428`), `feat/public-profiles-marketplace-people-20260922` (`6b3be0b6`) | Clean release checkout based on current main plus this documentation closeout. Preserved implementation has not yet been ported. Compare its ten-file patch, bring forward only unfinished owned work, then finish list/detail integration and review privacy, handles and empty/error states. |
 | Particles/Objectives — high priority | `chore/workspace-particles-objectives-20260924` (`8eabd28e`); `feat/workspace-particles-objective-resume-20260922` (`c855aea6`) | Product concept and UI/UX remain rough. Decide the flow, then review canvas/drawer/mobile and Drive authorization. Passing tests do not establish readiness. |
 | Google Calendar | `chore/google-calendar-20260924` (`a1acccad`); `feat/google-calendar-resume-20260922` (`508b8df0`) | Review Workspace Tools/roadmap/AppShell integration; finish provider/OAuth setup and approved live-flow verification separately from code checks. |
 
-The current isolated task is AppShell/mobile in `coach-house-platform-app-shell-mobile-release-20260925`, preview port 3011. Root checkout/server and preservation branches remain untouched. Caleb approved the actual mobile appearance and explicitly authorized shipping on 2026-09-27, including push/PR and merge/deployment after the required gates. He will verify authenticated interactions himself; do not retry automated localhost browser access. No Codex goal or delegation is authorized.
+## Marketplace continuation
 
-Preserve original commit `6b13dd82` and both `/tmp/app-shell-draft-20260925.yv1Vat` and `/tmp/app-shell-recovery.6Y6oFk`; the restored scrubbing/compaction changes continue as a new correction commit. Port 3011 uses Node 22.13.0 with existing root local environment loaded into its process only. Caleb confirmed his session loads after this repair. Google login is enabled; the separate Google signup flag is absent. No credential/provider files changed.
-
-Shipping continuation: PR [#254](https://github.com/Hamernick/coach-house-lms/pull/254) is open. Hosted run `36373611266` passed static, RLS, acceptance, production build and performance budgets. Caleb confirmed all authenticated interaction checks passed. All twelve new AppShell references and the affected Marketplace shell reference are reviewed Ubuntu 24.04 x64 / Playwright 1.58.2 captures. Corrected fixture hydration/image readiness and moved the screenshot pointer off controls; final visual comparison remains pending. The unrelated startup assertion received explicit approval and its capitalization-only fix passes. Code-owner approval and current-revision quality still gate merge; lane stays open until deployment and production verification.
+- Worktree: `/Users/calebhamernick/Development/coach-house-platform-marketplace-people-release-20260928`.
+- Branch: `feat/marketplace-people-release-20260928`; base: `54ed2c3c` plus the human-first review policy and mobile closeout commit. No new preview process, dependency installation, provider mutation or application changes were made for this handoff.
+- Start with the scoped patch `git show 21026428`; it contains ten files / 678 added lines. Compare with current main before porting; do not replay mixed recovery branches or historical runlogs.
+- Owned starting points: `src/features/public-profiles/**`, `src/lib/queries/public-people.ts`, `src/app/(public)/documentation/marketplace/people/[handle]/page.tsx`, and `tests/acceptance/public-profiles-marketplace-people.test.ts`. Inspect the Marketplace list composition owner before integrating; do not change shared shell or shipped Documentation incidentally.
+- Next product step: identify the remaining list/detail integration gaps, expose the existing design in an isolated preview, and let Caleb test. Resolve concrete issues from that review; no redesign, new testing framework, agents or goals by default.
+- Focused validation: existing public-profiles acceptance coverage, relevant changed-file lint, visibility/privacy and handle behavior. Human review covers appearance and interactive list/detail/empty/error states; use Playwright for specific unresolved questions. Required security/RLS checks (if affected), hosted quality, visual comparisons and review remain release gates.
+- Preserve root checkout/server and all existing worktrees. Keep Calendar, Particles/Objectives, auth/provider changes, map integration and closed Documentation outside this lane. The mobile shipping authorization does not by itself authorize Marketplace deployment.
 
 ## Named preservation holds
 

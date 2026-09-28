@@ -294,7 +294,10 @@ export function AppShellInner({
               variant="sidebar"
               className="border-0 bg-[var(--shell-rail)]"
             >
-              <AppShellSidebarHeader brandHref={brandHref}>
+              <AppShellSidebarHeader
+                brandHref={brandHref}
+                showCalendar={isMobile && hasUser && !onboardingLocked}
+              >
                 {sidebarHeaderContent}
               </AppShellSidebarHeader>
               <AppShellSidebarNavigation>

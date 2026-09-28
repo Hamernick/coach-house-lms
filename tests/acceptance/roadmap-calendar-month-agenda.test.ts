@@ -157,7 +157,7 @@ describe("roadmap calendar month agenda", () => {
       "node.scrollHeight > node.clientHeight + 1"
     )
     expect(agendaPanel).toContain(
-      "fadeEligible={dayEvents.length > 1 && !isLoading}"
+      "fadeEligible={totalDayEvents > 1 && !isLoading}"
     )
     expect(agendaPanelParts).toContain(
       "[--mask-height:1.5rem] [--scroll-buffer:1rem]"
@@ -206,9 +206,6 @@ describe("roadmap calendar month agenda", () => {
     )
     const notificationsIndex = appShellHeader.indexOf("<NotificationsMenu")
 
-    expect(calendarAction).toContain(
-      "const [calendarHasOpened, setCalendarHasOpened]"
-    )
     expect(calendarAction).toContain('import dynamic from "next/dynamic"')
     expect(calendarAction).toContain("const RoadmapCalendar = dynamic")
     expect(calendarAction).not.toContain("setRoadmapCalendar")
@@ -221,7 +218,6 @@ describe("roadmap calendar month agenda", () => {
     expect(calendarAction).toContain(
       "const handleCalendarOpenChange = useCallback"
     )
-    expect(calendarAction).toContain("setCalendarHasOpened(true)")
     expect(calendarAction).toContain("const isMobile = useIsMobile()")
     expect(calendarAction).toContain("if (isMobile)")
     expect(calendarAction).toContain("<Drawer")
@@ -234,9 +230,9 @@ describe("roadmap calendar month agenda", () => {
       '<DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>'
     )
     expect(calendarAction).toContain("onOpenChange={handleCalendarOpenChange}")
-    expect(calendarAction).toContain("{calendarHasOpened ? (")
-    expect(calendarAction).toContain("forceMount")
-    expect(calendarAction).toContain("data-[state=closed]:hidden")
+    expect(calendarAction).not.toContain("forceMount")
+    expect(calendarAction).toContain("initialView={calendarView}")
+    expect(calendarAction).toContain("onViewChange={setCalendarView}")
     expect(calendarAction).toContain("h-[88dvh] max-h-[88dvh]")
     expect(calendarAction).toContain(
       "data-[vaul-drawer-direction=bottom]:max-h-[88dvh]"
@@ -329,6 +325,44 @@ describe("roadmap calendar month agenda", () => {
     )
     expect(agendaPanel).toContain("disabled={!canManageCalendar}")
     expect(agendaPanelParts).toContain('variant="outline"')
+    expect(agendaPanelParts).toContain(
+      '"h-8 justify-start px-3 text-sm font-medium"'
+    )
+    expect(agendaPanelParts).toContain('{iconOnly ? null : "Add event"}')
+  })
+
+  it("scopes icon-only controls to the app-shell calendar", () => {
+    const calendarAction = readSource(
+      "src/components/app-shell/components/app-shell-calendar-action.tsx"
+    )
+    const calendar = readSource("src/components/roadmap/roadmap-calendar.tsx")
+    const roadmapEditorShell = readSource(
+      "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
+    )
+    const agendaPanel = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
+    )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
+
+    expect(calendarAction).toMatch(
+      /<RoadmapCalendar\s+hideHeaderCopy\s+compactHeaderControls/
+    )
+    expect(calendar).toContain("compactHeaderControls = false")
+    expect(calendar).toContain("compactHeaderControls={compactHeaderControls}")
+    expect(roadmapEditorShell).toContain("<RoadmapCalendar />")
+    expect(agendaPanel).toContain("iconOnly={compactHeaderControls}")
+    expect(agendaPanel).toContain(
+      'aria-label={compactHeaderControls ? "Go to today" : undefined}'
+    )
+    expect(agendaPanel).toContain(
+      '<CircleIcon className="size-2 fill-current" aria-hidden />'
+    )
+    expect(agendaPanelParts).toContain(
+      'aria-label={iconOnly ? "Add event" : undefined}'
+    )
+    expect(agendaPanelParts).toContain('{iconOnly ? null : "Add event"}')
   })
 
   it("keeps coaching out of the month-grid header", () => {
@@ -350,9 +384,11 @@ describe("roadmap calendar month agenda", () => {
       '<span className="min-w-0 truncate whitespace-nowrap leading-snug">'
     )
     expect(agendaPanel).toContain(
-      "grid grid-cols-[minmax(0,1fr)_auto] items-center"
+      "grid grid-cols-1 items-center gap-2 px-2 pt-1 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]"
     )
-    expect(agendaPanel).toContain("flex min-w-0 shrink-0 items-center gap-1.5")
+    expect(agendaPanel).toContain(
+      "flex min-w-0 shrink-0 items-center gap-1.5 justify-self-end"
+    )
     expect(agendaPanel).toContain(
       "const showTodayButton = !isSameCalendarMonth(month, new Date())"
     )

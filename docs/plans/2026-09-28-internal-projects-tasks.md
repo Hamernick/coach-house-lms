@@ -4,9 +4,17 @@ Release worktree: `/Users/calebhamernick/Development/coach-house-platform-intern
 Release branch: `feat/internal-tracker-release-20260928`, fresh base `d7d1eec3`.
 Preserved source: `feat/internal-projects-tasks-20260928` in its original worktree; localhost 3013 remains there. No source worktree or credentials were discarded.
 
+## Current production status — September 28, 1:25 PM EDT
+
+PRs [#258](https://github.com/Hamernick/coach-house-lms/pull/258) and [#259](https://github.com/Hamernick/coach-house-lms/pull/259) were merged by Caleb. All required hosted checks passed on #259 head `6d86dfdc`, whose tree matches production merge `335b96dc`. Vercel deployment `dpl_9iDsMUMgCVZBTSRci6Rqf6kKmovU` is Ready and serves coachhouse.app. All three tracker migrations are applied.
+
+The production batch completed at 1:21 PM EDT: **40 projects, 255 tasks, nine reference notes**, with all 348 source records reconciled. Existing manual records are unchanged. Joel has 82 imported assignments (49 open/33 done), four proposals and 34 collaborator appearances. Eight On Fire! priorities map to Urgent; raw labels remain preserved. A prior attempt rolled back atomically; no partial import remained. Zero import assignment notifications; one activity summary.
+
+[Production walkthrough, hashes, controls and rollback](../operations/tracker-import/README.md). No new tracker tests were added. Implementation/import work is stopped. Remaining human review: Joel's signed-in view and edit/save/reopen. Deferred: Franklin account link, 11 held source records, active template/recurrence engines, proposal history. Earlier dated notes below are historical checkpoints, not current deployment status. Acme rename and separate Calendar provider/canary work remain outside this import.
+
 ## Tracker integration planning
 
-Immediate delivery: Caleb now requires a production meeting release within three hours and no new tests. Follow the [three-hour production plan](2026-09-28-tracker-three-hour-production.md), targeting approximately 2:55 PM EDT September 28. Native business records and usable ownership/history come first; templates and recurrence are preserved visibly inactive. Current GitHub main matches this lane's base; required quality and one code-owner approval remain release gates. Implementation and local import rehearsal are complete; production import has not begun. See the current release status below.
+Immediate delivery: Caleb now requires a production meeting release within three hours and no new tests. Follow the [three-hour production plan](2026-09-28-tracker-three-hour-production.md), targeting approximately 2:55 PM EDT September 28. Native business records and usable ownership/history come first; templates and recurrence are preserved visibly inactive. The implementation, release and production import are complete; see the authoritative production status above.
 
 See [Joel tracker migration plan](2026-09-28-joel-tracker-migration.md). Caleb requested investigation/planning and confirmed preserving team ownership with Joel's own task view. Audited all 28 workbook sheets and the handoff script: 41 projects, 264 tasks, nine inbox records, four project templates/26 steps and four recurring rules. Thirty task records lie beyond row 1001; Archive duplicates the 51 completed master tasks. The plan covers missing assignment/proposal/collaborator, task-date, waiting, history, template and scheduled-recurrence support, identity/duplicate review, lossless provenance, reconciliation and rollback. Live identity/project comparison was read-only. Implementation now extends the existing task system. The source audit remains the baseline; later decisions and rehearsal evidence are recorded below.
 

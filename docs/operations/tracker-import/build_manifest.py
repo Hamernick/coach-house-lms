@@ -95,6 +95,13 @@ def display_day(value):
         return value  # Preserve malformed source labels verbatim.
 
 
+def priority(value, default):
+    mapped = {'on fire!': 'urgent'}.get((value or default).lower(), (value or default).lower())
+    if mapped not in {'no-priority', 'low', 'medium', 'high', 'urgent'}:
+        raise ValueError(f'Unknown source priority: {value}')
+    return mapped
+
+
 def description(record, omitted=()):
     omitted = (*omitted, 'Proposed Owner', 'Proposed By', 'Proposed Date', 'Accepted Date', 'Acceptance Notes', 'Assignment Status')
     record = {k: (display_day(v) if k in {'Planned Week', 'Estimated Start Date', 'Deadline', 'Completed Date', 'Start Date', 'Target Completion Date', 'Source Date', 'Captured Date', 'Next Generation Date'} else (f'{float(v):g} minutes' if k == 'Estimated Minutes' else v)) for k, v in record.items()}
@@ -146,7 +153,7 @@ def build(book):
         tracker = metadata(row, True)
         m['projects'].append({'id': pid, 'name': row['Project Name'], 'description': description(row),
             'status': {'Active': 'active', 'On Hold': 'on-hold', 'Complete': 'completed'}[row['Status']],
-            'priority': row.get('Priority', 'Medium').lower(), 'startDate': day(row.get('Start Date')),
+            'priority': priority(row.get('Priority'), 'medium'), 'startDate': day(row.get('Start Date')),
             'endDate': day(row.get('Target Completion Date')), 'typeLabel': row.get('Project Type'),
             'tags': [v for v in [row.get('Work Area'), 'Tracker import'] if v],
             'members': [NAMES.get(n, n) for n in [tracker.get('ownerName'), *tracker['collaboratorNames']] if n],
@@ -168,7 +175,7 @@ def build(book):
         m['tasks'].append({'id': tid, 'projectId': parent, 'title': row['Task Name'],
             'description': description(row, ('Focus Score',)), 'status': {'Not Started': 'todo', 'In Progress': 'in-progress', 'Waiting': 'waiting', 'Complete': 'done'}[row['Status']],
             'startDate': day(row.get('Estimated Start Date')), 'endDate': day(row.get('Deadline')),
-            'priority': row.get('Priority', 'No-priority').lower(), 'workArea': row.get('Work Area') or 'General',
+            'priority': priority(row.get('Priority'), 'no-priority'), 'workArea': row.get('Work Area') or 'General',
             'sortOrder': row['_row'], 'assigneeId': PEOPLE.get(row.get('Owner')), 'tracker': tracker})
         ledger('Tasks', row, 'created', tid, 'task')
     # Readable inactive references; no script execution, template automation or duplicate task generation.

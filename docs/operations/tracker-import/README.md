@@ -21,7 +21,7 @@ Applied manifest: `manifest-v3.json`, SHA256 `a967906ce42250db7f718db5219158235d
 
 Batch `b9d95f31-a465-5164-bc43-7a78159207c8` completed at **2026-09-28 17:21:35 UTC (1:21 PM EDT)**. Full native/source reconciliation passed. Four existing projects, six existing tasks and six existing assignments match their pre-import snapshots. Zero import assignment notifications; one summary activity event. Private evidence: `production-before-import.json` and `production-reconciled-v3.json` in the backup directory.
 
-Eight source priorities labeled **On Fire!** map to native **Urgent**; original labels remain in overview text and raw provenance. An earlier v2 attempt failed the native priority constraint and rolled back completely. The corrected rehearsal includes that production constraint, identical-retry verification, access checks and guarded rollback. Unknown priority labels now fail offline before any database call.
+Eight source priorities labeled **On Fire!** map to native **Urgent**; original labels remain in overview text and raw provenance. An earlier v2 attempt failed the native priority constraint and rolled back completely. The corrected rehearsal includes that production constraint, identical-retry verification, access checks and guarded rollback. Unknown priority labels now fail offline before any database call. Validation is entity-specific: projects accept Urgent/High/Medium/Low, while tasks also accept No-priority. The entity argument is required; missing project priorities still default to Medium, and missing task priorities to No-priority.
 
 Generate another candidate only after reviewing any source or mapping change:
 

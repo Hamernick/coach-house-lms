@@ -260,6 +260,7 @@ test("scrubbing previews, commits inside, and cancels outside or with Escape", a
   const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 }
   const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 }
   const begin = async () => {
+    await find.click({ trial: true })
     await page.mouse.move(start.x, start.y)
     await page.mouse.down()
     await page.mouse.move(end.x, end.y, { steps: 5 })

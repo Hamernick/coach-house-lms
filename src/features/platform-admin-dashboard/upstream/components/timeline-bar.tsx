@@ -11,7 +11,7 @@ interface TimelineBarProps {
   label: string
   progress?: number
   variant: "project" | "task"
-  status?: "done" | "todo" | "in-progress"
+  status?: "done" | "todo" | "in-progress" | "waiting"
 }
 
 export function TimelineBar({ startDate, endDate, dates, cellWidth, label, progress, variant, status }: TimelineBarProps) {

@@ -3,19 +3,26 @@ import type { Json } from "../json"
 export type OrganizationProjectsTable = {
   Row: {
     id: string
+    tracker_metadata?: Json | null
     org_id: string
     canonical_org_id: string | null
+    organization_unassigned?: boolean
     project_kind: string
     name: string
     description: string | null
     status: string
     priority: string
     progress: number
-    start_date: string
+    start_date: string | null
+    recurrence?: "none" | "monthly"
+    recurrence_anchor_start?: string | null
+    recurrence_anchor_end?: string | null
+    recurrence_occurrence?: number
+    recurrence_generated?: boolean
     guided_setup?: Json | null
     creation_request_id?: string | null
     schedule_confirmed?: boolean
-    end_date: string
+    end_date: string | null
     client_name: string | null
     option_settings?: Json | null
     type_label: string | null
@@ -33,19 +40,26 @@ export type OrganizationProjectsTable = {
   }
   Insert: {
     id?: string
+    tracker_metadata?: Json | null
     org_id: string
     canonical_org_id?: string | null
+    organization_unassigned?: boolean
     project_kind?: string
     name: string
     description?: string | null
     status?: string
     priority?: string
     progress?: number
-    start_date: string
+    start_date: string | null
+    recurrence?: "none" | "monthly"
+    recurrence_anchor_start?: string | null
+    recurrence_anchor_end?: string | null
+    recurrence_occurrence?: number
+    recurrence_generated?: boolean
     guided_setup?: Json | null
     creation_request_id?: string | null
     schedule_confirmed?: boolean
-    end_date: string
+    end_date: string | null
     client_name?: string | null
     option_settings?: Json | null
     type_label?: string | null
@@ -63,19 +77,26 @@ export type OrganizationProjectsTable = {
   }
   Update: {
     id?: string
+    tracker_metadata?: Json | null
     org_id?: string
     canonical_org_id?: string | null
+    organization_unassigned?: boolean
     project_kind?: string
     name?: string
     description?: string | null
     status?: string
     priority?: string
     progress?: number
-    start_date?: string
+    start_date?: string | null
+    recurrence?: "none" | "monthly"
+    recurrence_anchor_start?: string | null
+    recurrence_anchor_end?: string | null
+    recurrence_occurrence?: number
+    recurrence_generated?: boolean
     guided_setup?: Json | null
     creation_request_id?: string | null
     schedule_confirmed?: boolean
-    end_date?: string
+    end_date?: string | null
     client_name?: string | null
     option_settings?: Json | null
     type_label?: string | null

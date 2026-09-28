@@ -1,7 +1,7 @@
 import { EditableOptionPicker, type EditableOption } from "../EditableOptionPicker";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils";
-import { format } from "date-fns";
+import { formatProjectDate } from "@/lib/project-date";
 import { Calendar } from "../../ui/calendar";
 import { Button } from "../../ui/button";
 import {
@@ -74,6 +74,7 @@ export type StepQuickCreateValue = {
   statusId?: string;
   tagId?: string;
   targetDate?: Date;
+  recurrence?: "none" | "monthly";
   title: string;
   workstreamId?: string;
 };
@@ -228,18 +229,22 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
+          defaultMonth={date}
           onSelect={(nextDate) => {
             onSelect(nextDate);
             setOpen(false);
           }}
           initialFocus
         />
+        {date && <Button variant="ghost" className="m-2" onClick={() => { onSelect(undefined); setOpen(false); }}>Clear date</Button>}
       </PopoverContent>
     </Popover>
   );
 }
 
 interface StepQuickCreateProps {
+  recurrenceControl?: (value: "none" | "monthly", onChange: (value: "none" | "monthly") => void) => React.ReactNode;
+  footerAction?: React.ReactNode;
   onClose: () => void;
   onCreate: (value: StepQuickCreateValue) => void;
   onExpandChange?: (isExpanded: boolean) => void;
@@ -274,6 +279,8 @@ function resolveSelected<T extends { id: string }>(
 }
 
 export function StepQuickCreate({
+  footerAction,
+  recurrenceControl,
   onClose,
   onCreate,
   onExpandChange,
@@ -291,6 +298,7 @@ export function StepQuickCreate({
   tags = TAGS,
   clients: clientOptions = EMPTY_ORGANIZATIONS,
 }: StepQuickCreateProps) {
+  const [recurrence, setRecurrence] = useState<"none" | "monthly">(initialValue?.recurrence ?? "none");
   const [title, setTitle] = useState(initialValue?.title ?? "");
   const [description, setDescription] = useState<string | undefined>(
     initialValue?.description,
@@ -299,7 +307,7 @@ export function StepQuickCreate({
     () => resolveSelected(users, initialValue?.assigneeId),
   );
   const [startDate, setStartDate] = useState<Date | undefined>(
-    initialValue?.startDate ?? new Date(),
+    initialValue?.startDate,
   );
   const [status, setStatus] = useState<StepQuickCreateStatusOption | null>(
     () => resolveSelected(statuses, initialValue?.statusId, 1),
@@ -339,9 +347,10 @@ export function StepQuickCreate({
     setTagOptions(initialValue?.optionSettings?.tags ?? tags);
     setOptionsChanged(false);
     setTitle(initialValue?.title ?? "");
+    setRecurrence(initialValue?.recurrence ?? "none");
     setDescription(initialValue?.description);
     setAssignee(resolveSelected(users, initialValue?.assigneeId));
-    setStartDate(initialValue?.startDate ?? new Date());
+    setStartDate(initialValue?.startDate);
     setStatus(resolveSelected(statuses, initialValue?.statusId, 1));
     setSprintType(resolveSelected(initialValue?.optionSettings?.sprintTypes ?? sprintTypes, initialValue?.sprintTypeId, undefined) ?? (initialValue?.optionSettings?.sprintTypes ?? sprintTypes).find((option) => option.label === initialValue?.sprintTypeId) ?? (initialValue?.sprintTypeId ? { id: initialValue.sprintTypeId, label: initialValue.sprintTypeId } : null));
     setTargetDate(initialValue?.targetDate);
@@ -363,6 +372,7 @@ export function StepQuickCreate({
   const handleSubmit = () => {
     if (submitPending || error) return;
     onCreate({
+      recurrence,
       title,
       description,
       assigneeId: assignee?.id,
@@ -476,7 +486,7 @@ export function StepQuickCreate({
                 <CalendarBlank className="size-4 text-muted-foreground" />
                 <span className="font-medium text-foreground text-sm leading-5">
                   {startDate
-                    ? `Start: ${format(startDate, "dd/MM/yyyy")}`
+                    ? `Start: ${formatProjectDate(startDate)}`
                     : "Start Date"}
                 </span>
               </button>
@@ -594,7 +604,7 @@ export function StepQuickCreate({
               <button className="bg-background flex gap-2 h-9 items-center px-3 py-2 rounded-lg border border-border hover:bg-black/5 transition-colors">
                 <CalendarBlank className="size-4 text-muted-foreground" />
                 <span className="font-medium text-foreground text-sm leading-5">
-                  {targetDate ? format(targetDate, "dd/MM/yyyy") : "Target"}
+                  {targetDate ? formatProjectDate(targetDate) : "Target"}
                 </span>
               </button>
             }
@@ -688,8 +698,11 @@ export function StepQuickCreate({
           />
         </div>
 
-        <div className="flex items-center justify-between mt-auto w-full pt-4 shrink-0">
+        {recurrenceControl?.(recurrence, setRecurrence)}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-auto w-full pt-4 shrink-0">
           <div className="flex items-center">
+            {footerAction}
             <button className="flex items-center justify-center size-10 rounded-lg hover:bg-black/5 transition-colors cursor-pointer">
               <Paperclip className="size-4 text-muted-foreground" />
             </button>
@@ -701,7 +714,7 @@ export function StepQuickCreate({
           <button
             onClick={handleSubmit}
             disabled={submitPending || Boolean(error)}
-            className="bg-primary hover:bg-primary/90 disabled:opacity-60 flex gap-3 h-10 items-center justify-center px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            className="ml-auto shrink-0 bg-primary hover:bg-primary/90 disabled:opacity-60 flex gap-3 h-10 items-center justify-center px-4 py-2 rounded-lg transition-colors cursor-pointer"
           >
             <span className="font-medium text-primary-foreground text-sm leading-5">
               {submitPending

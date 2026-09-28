@@ -1,11 +1,18 @@
 import "./test-utils"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { buildActivityDays } from "@/features/coach-dashboard/lib"
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   from: vi.fn(),
   tasks: vi.fn(),
+  scope: vi.fn(),
 }))
+vi.mock("@/lib/admin/organization-coach-scope", () => ({ loadOrganizationCoachActorScope: mocks.scope }))
+vi.mock("@/features/coach-dashboard/hooks/use-coach-dashboard-controller", () => ({ useCoachDashboardController: () => {} }))
+vi.mock("@/features/coach-dashboard/components/coach-dashboard-tools", () => ({ CoachDashboardTools: () => null }))
+vi.mock("@/features/member-workspace/client", () => ({ PlatformRevenueStat: () => null }))
 vi.mock("@/lib/admin/auth", () => ({ requirePlatformCapability: mocks.auth }))
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => ({ from: mocks.from }),
@@ -14,8 +21,12 @@ vi.mock("@/features/member-workspace", () => ({
   loadMemberWorkspaceTasksPage: mocks.tasks,
 }))
 import { loadCoachDashboard } from "@/features/coach-dashboard/server/actions"
+import { CoachDashboardPanel } from "@/features/coach-dashboard/components/coach-dashboard-panel"
 const queries: { table: string; calls: [string, unknown[]][] }[] = []
 let activityFails = false
+let organizationsFail = false
+let projectUnassigned = false
+let activity: Record<string, unknown>[] = []
 function query(table: string) {
   const calls: [string, unknown[]][] = []
   queries.push({ table, calls })
@@ -31,6 +42,8 @@ function query(table: string) {
       }
     if (table === "organization_coach_assignments")
       return { data: [{ organization_id: "assigned-org" }], error: null }
+    if (table === "organizations")
+      if (organizationsFail) return { data: null, error: { code: "offline" } }
     if (table === "organizations")
       return {
         data: [
@@ -50,6 +63,7 @@ function query(table: string) {
             org_id: "assigned-org",
             end_date: "2026-10-01",
             status: "active",
+            organization_unassigned: projectUnassigned,
           },
         ],
         count: 12,
@@ -57,7 +71,7 @@ function query(table: string) {
       }
     return activityFails
       ? { data: null, error: { code: "42P01" } }
-      : { data: [], error: null, count: 0 }
+      : { data: activity, error: null, count: activity.length }
   }
   const chain: Record<string, unknown> = {}
   for (const name of [
@@ -84,6 +98,10 @@ describe("coach dashboard", () => {
     vi.clearAllMocks()
     queries.length = 0
     activityFails = false
+    organizationsFail = false
+    projectUnassigned = false
+    activity = []
+    mocks.scope.mockResolvedValue({ mode: "all" })
     mocks.auth.mockResolvedValue({ userId: "coach", accessLevel: "coach" })
     mocks.from.mockImplementation(query)
     mocks.tasks.mockResolvedValue({
@@ -163,5 +181,41 @@ describe("coach dashboard", () => {
     )
     expect(days.reduce((sum, day) => sum + day.count, 0)).toBe(2)
     expect(days.length % 7).toBe(0)
+  })
+  it("keeps directory links consistent with access to unassigned organizations", async () => {
+    mocks.scope.mockResolvedValue({ mode: "assigned", organizationIds: new Set(["assigned-org"]), canAccessUnassigned: true })
+    const result = await loadCoachDashboard()
+    const markup = renderToStaticMarkup(createElement(CoachDashboardPanel, { input: result }))
+    expect(result.directoryCoachFilter).toBe("all")
+    expect(markup).toContain('href="/organizations?coach=all"')
+    expect(markup).toContain('href="/projects?view=board"')
+    expect(markup).toContain("Your assigned and unassigned organizations")
+  })
+  it("links organization, project, and deleted-project activity to usable destinations", async () => {
+    mocks.auth.mockResolvedValue({ userId: "admin", accessLevel: "developer" })
+    activity = [
+      { id: "org-event", org_id: "assigned-org", project_id: "canonical", project: { project_kind: "organization_admin" } },
+      { id: "project-event", org_id: "assigned-org", project_id: "standard", project: { project_kind: "standard" } },
+      { id: "document-or-deleted-event", org_id: "assigned-org", project_id: null, project: null },
+    ]
+    const result = await loadCoachDashboard("all")
+    expect(result.activity.map(event => event.href)).toEqual([
+      "/organizations/canonical", "/projects/standard", "/organizations?coach=all&search=Assigned%20organization",
+    ])
+  })
+  it("preserves no-organization projects and routes personal tasks through their authorized list", async () => {
+    projectUnassigned = true
+    mocks.tasks.mockResolvedValue({ taskGroups: [{ tasks: [{ id: "outside", title: "Cross-scope assignment", status: "todo", endDate: "2026-10-01", projectId: "forbidden-parent", canUpdate: false }] }] })
+    const result = await loadCoachDashboard()
+    expect(result.projects[0]?.organization).toBe("No organization")
+    const markup = renderToStaticMarkup(createElement(CoachDashboardPanel, { input: result }))
+    expect(markup).toMatch(/href="\/tasks"[^>]*>[\s\S]*?Cross-scope assignment/)
+    expect(markup).not.toContain('/projects/forbidden-parent')
+  })
+  it("reports organization load failure without presenting an empty successful directory", async () => {
+    organizationsFail = true
+    const result = await loadCoachDashboard()
+    expect(result.organizationCount).toBeNull()
+    expect(result.issues).toContain("Organizations could not be loaded.")
   })
 })

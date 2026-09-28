@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { createElement, type ReactNode } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+import { MemberWorkspaceProjectFilterPopover } from "@/features/member-workspace/components/projects/member-workspace-project-filter-popover"
+import { projectDirectoryFilters } from "@/features/member-workspace/components/projects/member-workspace-project-status"
+
+vi.mock("@/components/ui/popover", () => ({
+  Popover: ({ children }: { children: ReactNode }) => children,
+  PopoverTrigger: ({ children }: { children: ReactNode }) => children,
+  PopoverContent: ({ children }: { children: ReactNode }) => children,
+}))
+
+import { restoreDirectoryQuery, saveDirectoryQuery } from "@/features/member-workspace/lib/directory-preferences"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import {
@@ -36,7 +48,110 @@ function createProject(
   }
 }
 
+describe("organization directory preferences", () => {
+  const scope = { directory: "organizations" as const, viewerUserId: "coach-1" }
+
+  function installStorage() {
+    const values = new Map<string, string>()
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+      },
+    })
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it.each(["all", "coach-1", "unassigned"])(
+    "restores %s when returning through a link without filters",
+    (coach) => {
+      installStorage()
+      saveDirectoryQuery(scope, "", coach)
+      expect(new URLSearchParams(restoreDirectoryQuery(scope, "")).get("coach")).toBe(coach)
+    }
+  )
+
+  it("retains search, facets and view settings alongside the coach choice", () => {
+    installStorage()
+    const query = "search=House%2C+Inc.&priority=High&view=board&closed=hide"
+    saveDirectoryQuery(scope, query, "all")
+    const restored = new URLSearchParams(restoreDirectoryQuery(scope, ""))
+    expect(paramsToChips(restored)).toEqual([
+      { key: "Search", value: "House, Inc." },
+      { key: "Priority", value: "High" },
+    ])
+    expect(paramsToViewOptions(restored)).toMatchObject({
+      viewType: "board", showClosedProjects: false,
+    })
+  })
+
+  it("honors an explicit URL over saved filters", () => {
+    installStorage()
+    saveDirectoryQuery(scope, "", "all")
+    expect(restoreDirectoryQuery(scope, "coach=coach-1")).toBe("coach=coach-1")
+  })
+
+  it("keeps accounts and directories separate and leaves anonymous previews unsaved", () => {
+    installStorage()
+    saveDirectoryQuery(scope, "", "all")
+    expect(restoreDirectoryQuery({ ...scope, viewerUserId: "coach-2" }, "")).toBe("")
+    expect(restoreDirectoryQuery({ ...scope, directory: "projects" }, "")).toBe("")
+    const preview = { directory: "organizations" as const }
+    saveDirectoryQuery(preview, "", "all")
+    expect(restoreDirectoryQuery(preview, "")).toBe("")
+  })
+
+  it("remembers clearing filters instead of bringing back the old selection", () => {
+    installStorage()
+    saveDirectoryQuery(scope, "search=old&priority=High", "coach-1")
+    saveDirectoryQuery(scope, "", "all")
+    expect(restoreDirectoryQuery(scope, "")).toBe("coach=all")
+  })
+
+  it("keeps filtering usable when browser storage access is denied", () => {
+    vi.stubGlobal("window", {
+      get localStorage() { throw new Error("Storage disabled") },
+    })
+    expect(() => saveDirectoryQuery(scope, "", "all")).not.toThrow()
+    expect(restoreDirectoryQuery(scope, "")).toBe("")
+    expect(restoreDirectoryQuery(scope, "coach=all")).toBe("coach=all")
+  })
+})
+
 describe("member workspace project filters", () => {
+  it.each(["backlog", "planned", "active", "completed", "cancelled"] as const)("filters the exact %s project status", status => {
+    const projects = (["backlog", "planned", "active", "completed", "cancelled"] as const).map(status => createProject({ id: status, status }))
+    const options = { directory: "projects" as const, projects, filters: [{ key: "Status", value: status }], viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS }
+    expect(filterMemberWorkspaceProjects(options).map(project => project.id)).toEqual([status])
+    expect(computeMemberWorkspaceProjectFilterCounts(options).status).toEqual({ backlog: 1, planned: 1, active: 1, completed: 1, cancelled: 1 })
+  })
+
+  it("combines real project members, tags and priority without fiscal sponsorship filtering", () => {
+    const projects = [createProject({ id: "match", members: ["Ann"], tags: ["Finance"], priority: "high" }), createProject({ id: "different", members: ["Joanne"], tags: ["Finance"], priority: "high" })]
+    expect(filterMemberWorkspaceProjects({ directory: "projects", projects, filters: [{ key: "Member", value: "Ann" }, { key: "Tag", value: "Finance" }, { key: "Priority", value: "High" }, { key: "Fiscal Sponsorship", value: "Active" }], viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS }).map(project => project.id)).toEqual(["match"])
+  })
+
+  it("migrates old organization status chips into explicit project states", () => {
+    const filters = projectDirectoryFilters([{ key: "Status", value: "Onboarding" }, { key: "Status", value: "Archived" }, { key: "Fiscal Sponsorship", value: "Active" }])
+    expect(filters.map(chip => chip.value)).toEqual(["Backlog", "Planned", "Completed", "Cancelled"])
+    expect(paramsToChips(chipsToParams(filters))).toEqual(filters)
+  })
+
+  it("renders project status choices without organization coach or fiscal controls", () => {
+    const markup = renderToStaticMarkup(createElement(MemberWorkspaceProjectFilterPopover, { directory: "projects", projects: [], coachOptions: [{ id: "coach", name: "Coach", email: null, avatarUrl: null }], onCoachFilterChange: () => {}, onApply: () => {}, onClear: () => {} }))
+    expect(markup).toContain("Project status")
+    for (const label of ["Backlog", "Planned", "Active", "Completed", "Cancelled", "Members"]) expect(markup).toContain(label)
+    for (const label of ["Organization status", "Onboarding", "Archived", "Fiscal Sponsorship", "Filter organizations by coach"]) expect(markup).not.toContain(label)
+  })
+
+  it("places undated projects after scheduled ones when ordering by due date", () => {
+    const projects = [createProject({ id: "unscheduled" }), createProject({ id: "scheduled" })]
+    projects[0].startDate = null
+    projects[0].endDate = null
+    expect(filterMemberWorkspaceProjects({ projects, filters: [], viewOptions: { ...DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS, ordering: "date" } }).map((project) => project.id)).toEqual(["scheduled", "unscheduled"])
+  })
+
   it("searches organization names with existing filters and matching facet counts", () => {
     const projects = [
       createProject({ id: "match", name: "North House", priority: "high" }),
@@ -287,12 +402,14 @@ describe("member workspace project filters", () => {
       "backlog",
       "planned",
       "active",
+      "on-hold",
     ])
 
     expect(getMemberWorkspaceProjectBoardColumnOrder(true)).toEqual([
       "backlog",
       "planned",
       "active",
+      "on-hold",
       "completed",
       "cancelled",
     ])

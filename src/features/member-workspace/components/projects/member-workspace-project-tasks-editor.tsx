@@ -10,6 +10,8 @@ import {
   Trash,
 } from "@phosphor-icons/react/dist/ssr"
 import { toast } from "sonner"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { savedTask } from "../../lib/saved-task"
 
 import type {
   CreateTaskContext,
@@ -162,7 +164,7 @@ export function MemberWorkspaceProjectTasksEditor({
   }, [])
 
   const handleSaveTask = useCallback(async () => {
-    if (!draftTargetId || !taskDraft) {
+    if (savingTaskId || !draftTargetId || !taskDraft) {
       return
     }
 
@@ -174,32 +176,30 @@ export function MemberWorkspaceProjectTasksEditor({
     setSavingTaskId(draftTargetId)
 
     try {
-      const result =
-        draftTargetId === NEW_TASK_ID
-          ? await createTaskAction?.(mutationInput)
-          : await updateTaskAction?.(draftTargetId, mutationInput)
-
-      if (!result) {
-        toast.error("Task editing is unavailable.")
-        return
-      }
-
-      if ("error" in result) {
-        toast.error(result.error)
-        return
-      }
-
-      toast.success(draftTargetId === NEW_TASK_ID ? "Task created" : "Task updated")
+      const result = await withSaveFeedback(
+        async () => draftTargetId === NEW_TASK_ID
+          ? createTaskAction?.(mutationInput)
+          : updateTaskAction?.(draftTargetId, mutationInput),
+        { pending: draftTargetId === NEW_TASK_ID ? "Creating task…" : "Saving task…", success: draftTargetId === NEW_TASK_ID ? "Task created" : "Task updated" },
+      )
+      if ("error" in result) return
+      const task = savedTask(result.taskId, mutationInput, project.name, assigneeOptions)
+      setTasks(current => current.some(item => item.id === task.id)
+        ? current.map(item => item.id === task.id ? task : item)
+        : [task, ...current])
       handleCancelDraft()
       router.refresh()
     } finally {
       setSavingTaskId(null)
     }
   }, [
+    assigneeOptions,
+    savingTaskId,
     createTaskAction,
     draftTargetId,
     handleCancelDraft,
     project.id,
+    project.name,
     router,
     taskDraft,
     updateTaskAction,
@@ -224,14 +224,13 @@ export function MemberWorkspaceProjectTasksEditor({
       setMovingTaskId(taskId)
 
       try {
-        const result = await updateTaskOrderAction(
+        const result = await withSaveFeedback(() => updateTaskOrderAction(
           project.id,
           nextTasks.map((task) => task.id),
-        )
+        ), { pending: "Saving task order…", success: "Task order saved" })
 
         if ("error" in result) {
           setTasks(previousTasks)
-          toast.error(result.error)
           return
         }
 

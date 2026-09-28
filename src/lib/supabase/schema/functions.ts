@@ -188,11 +188,11 @@ export type PublicFunctions = {
   update_organization_project_schedule_transition: {
     Args: {
       p_actor_id: string
-      p_end_date: string
+      p_end_date: string | null
       p_expected_org_id: string
       p_expected_updated_at: string
       p_project_id: string
-      p_start_date: string
+      p_start_date: string | null
     }
     Returns: Json
   }
@@ -308,10 +308,10 @@ export type PublicFunctions = {
       p_actor_id: string
       p_assignee_id: string | null
       p_description: string | null
-      p_end_date: string
+      p_end_date: string | null
       p_priority: string
       p_project_id: string
-      p_start_date: string
+      p_start_date: string | null
       p_status: string
       p_tag_label: string | null
       p_task_type: string
@@ -325,12 +325,12 @@ export type PublicFunctions = {
       p_actor_id: string
       p_assignee_id: string | null
       p_description: string | null
-      p_end_date: string
+      p_end_date: string | null
       p_expected_org_id: string
       p_expected_project_id: string
       p_priority: string
       p_project_id: string
-      p_start_date: string
+      p_start_date: string | null
       p_status: string
       p_tag_label: string | null
       p_task_id: string

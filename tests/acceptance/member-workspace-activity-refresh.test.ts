@@ -10,6 +10,20 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 describe("activity refresh", () => {
+  it("fetches again when a save occurs during an older activity request", async () => {
+    let finish!: (value: OrganizationActivityResult) => void
+    const load = vi.fn()
+      .mockImplementationOnce(() => new Promise<OrganizationActivityResult>(resolve => { finish = resolve }))
+      .mockResolvedValue({ state: "ready", items: [] })
+    const onResult = vi.fn()
+    const controller = createActivityRefresh({ load, onResult, onPending: vi.fn() })
+    const pending = controller.refresh()
+    await controller.refresh()
+    finish({ state: "ready", items: [] })
+    await pending
+    expect(load).toHaveBeenCalledTimes(2)
+    expect(onResult).toHaveBeenCalledTimes(2)
+  })
   it("polls only visible pages, refreshes on focus, and removes timers/listeners", async () => {
     vi.useFakeTimers()
     const document = Object.assign(new EventTarget(), {

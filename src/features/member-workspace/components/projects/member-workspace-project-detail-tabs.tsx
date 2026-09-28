@@ -159,9 +159,9 @@ type MemberWorkspaceProjectDetailTabsProps = {
   ) => Promise<{ ok: true; projectId: string } | { error: string }>
   updateTaskStatusAction?: (
     taskId: string,
-    nextStatus: "todo" | "in-progress" | "done"
+    nextStatus: "todo" | "in-progress" | "waiting" | "done"
   ) => Promise<
-    | { ok: true; taskId: string; status: "todo" | "in-progress" | "done" }
+    | { ok: true; taskId: string; status: "todo" | "in-progress" | "waiting" | "done" }
     | { error: string }
   >
 } & FiscalSponsorshipProjectWorkbenchAdminActionProps &

@@ -52,8 +52,7 @@ async function loadAdminStandardOrganizationProjects({
     .eq("project_kind", "standard")
     .neq("created_source", "system")
     .neq("created_source", "starter_seed")
-    .order("start_date", { ascending: true })
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .returns<OrganizationProjectRecord[]>()
 
   if (error) {
@@ -95,7 +94,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
           organizations,
           supabase: actor.supabase,
         }),
-        loadAdminStandardOrganizationProjects({
+        directory === "organizations" ? Promise.resolve([] as OrganizationProjectRecord[]) : loadAdminStandardOrganizationProjects({
           orgIds,
           supabase: actor.supabase,
         }),
@@ -143,7 +142,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
           taskSummaryLabel: "Tasks",
         }
       }),
-      ...standardProjects.map(mapOrganizationProjectToViewModel).map((project) => ({ ...project, client: organizationNames.get(project.organizationId ?? "") ?? undefined })),
+      ...standardProjects.map(mapOrganizationProjectToViewModel).map((project) => ({ ...project, client: project.organizationUnassigned ? undefined : organizationNames.get(project.organizationId ?? "") ?? undefined })),
     ]
     const workstreamConfiguration =
       await loadPlatformAdminWorkstreamConfiguration({
@@ -218,8 +217,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
     .eq("org_id", actor.activeOrg.orgId)
     .eq("project_kind", "standard")
     .neq("created_source", "system")
-    .order("start_date", { ascending: true })
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .returns<OrganizationProjectRecord[]>()
 
   if (error) {

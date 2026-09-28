@@ -88,8 +88,8 @@ export function useMemberWorkspaceProjectTaskCreate({
       )?.label
       const startDate =
         value.startDate?.toISOString().slice(0, 10) ??
-        new Date().toISOString().slice(0, 10)
-      const endDate = value.targetDate?.toISOString().slice(0, 10) ?? startDate
+        ""
+      const endDate = value.targetDate?.toISOString().slice(0, 10) ?? ""
       const result = await createTaskAction({
         projectId: value.projectId,
         title: value.title,

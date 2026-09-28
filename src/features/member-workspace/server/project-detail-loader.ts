@@ -45,6 +45,7 @@ type OrganizationTaskDetailRecord = Pick<
   | "project_id"
   | "title"
   | "description"
+  | "tracker_metadata"
   | "task_type"
   | "status"
   | "start_date"
@@ -136,7 +137,7 @@ async function loadProjectTaskRows({
   const { data: taskRows, error: taskError } = await supabase
     .from("organization_tasks")
     .select(
-      "id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order"
+      "id, project_id, tracker_metadata, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order"
     )
     .eq("org_id", orgId)
     .eq("project_id", projectId)

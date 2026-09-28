@@ -42,6 +42,18 @@ describe("guided project creation", () => {
     await createGuidedProjectAction(input)
     expect(mocks.people).toHaveBeenCalledWith(expect.objectContaining({ orgIds: [], includePlatformAdmins: true }))
   })
+  it("creates an unassigned, undated project under authorized Coach House ownership", async () => {
+    const value = { ...input, organizationId: "", startDate: "", endDate: "" }
+    expect(guidedProjectSchema.safeParse(value).success).toBe(true)
+    expect(await createGuidedProjectAction(value)).toEqual({ ok: true, id: "project-1" })
+    expect(mocks.rpc).toHaveBeenCalledWith("create_guided_organization_project", expect.objectContaining({ p_org_id: org, p_setup: value }))
+  })
+  it("does not grant a restricted coach access to Coach House when assignment is empty", async () => {
+    const actor = await mocks.actor()
+    mocks.actor.mockResolvedValue({ ...actor, isAdmin: false, canAccessOrganizations: true, organizationCoachScope: { mode: "assigned", organizationIds: new Set(), canAccessUnassigned: false } })
+    expect(await createGuidedProjectAction({ ...input, organizationId: "" })).toHaveProperty("error")
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
   it("rejects dates outside project bounds and impossible dates", () => {
     expect(guidedProjectSchema.safeParse({ ...input, tasks: [{ ...input.tasks[0], endDate: "2026-10-01" }] }).success).toBe(false)
     expect(guidedProjectSchema.safeParse({ ...input, startDate: "2026-02-30" }).success).toBe(false)

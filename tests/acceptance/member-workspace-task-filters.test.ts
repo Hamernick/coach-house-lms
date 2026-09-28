@@ -4,7 +4,15 @@ import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { projects } from "@/features/platform-admin-dashboard/upstream/lib/data/projects"
 import { personalTaskIds } from "@/features/member-workspace/server/personal-task-scope"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+import { FilterPopover } from "@/features/platform-admin-dashboard/upstream/components/filter-popover"
+
+// Render the actual filter content without requiring a browser portal.
+vi.mock("@/features/platform-admin-dashboard/upstream/components/ui/popover", () => ({
+  Popover: ({ children }: { children: React.ReactNode }) => children,
+  PopoverTrigger: ({ children }: { children: React.ReactNode }) => children,
+  PopoverContent: ({ children }: { children: React.ReactNode }) => children,
+}))
 
 import {
   ProjectTaskListView,
@@ -58,6 +66,48 @@ const TASKS: ProjectTask[] = [
 ]
 
 describe("member workspace task filters", () => {
+  it.each([
+    ["To do", ["task-1"]],
+    ["In progress", ["task-2"]],
+    ["Done", ["task-3"]],
+  ])("filters by the displayed %s status label", (value, ids) => {
+    expect(filterTasksByChips(TASKS, [{ key: "Status", value }]).map((task) => task.id)).toEqual(ids)
+  })
+
+  it("supports No priority and combines multiple statuses with other categories", () => {
+    const tasks = TASKS.map((task) => task.id === "task-2" ? { ...task, priority: undefined } : task)
+    expect(filterTasksByChips(tasks, [{ key: "Priority", value: "No priority" }]).map((task) => task.id)).toEqual(["task-2"])
+    expect(filterTasksByChips(TASKS, [
+      { key: "Status", value: "To do" },
+      { key: "Status", value: "Done" },
+      { key: "Member", value: "No member" },
+    ]).map((task) => task.id)).toEqual(["task-3"])
+    expect(filterTasksByChips(TASKS, [])).toEqual(TASKS)
+  })
+
+  it("renders task statuses and accurate member totals without changing project filters", () => {
+    const props = {
+      onApply: () => {}, onClear: () => {},
+      counts: computeTaskFilterCounts(TASKS),
+      memberOptions: [
+        { id: "ann", label: "Ann Lee", countKey: "ann lee" },
+        { id: "joanne", label: "Joanne Hart", countKey: "joanne hart" },
+        { id: "no-member", label: "No member" },
+      ],
+    }
+    const taskMarkup = renderToStaticMarkup(createElement(FilterPopover, { ...props, entityType: "task" }))
+    expect(taskMarkup).toContain("To do")
+    expect(taskMarkup).toContain("In progress")
+    expect(taskMarkup).toContain("Done")
+    expect(taskMarkup).not.toContain("Planned")
+    expect(taskMarkup).not.toContain("Cancelled")
+    expect(taskMarkup).toMatch(/Members<\/span><span[^>]*>3<\/span>/)
+    const projectMarkup = renderToStaticMarkup(createElement(FilterPopover, props))
+    expect(projectMarkup).toContain("Planned")
+    expect(projectMarkup).toContain("Completed")
+    expect(projectMarkup).not.toContain("To do")
+  })
+
   it("matches members exactly instead of substring matching", () => {
     const result = filterTasksByChips(TASKS, [
       { key: "Member", value: "Ann Lee" },

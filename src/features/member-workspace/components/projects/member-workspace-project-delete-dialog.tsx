@@ -19,6 +19,7 @@ export function MemberWorkspaceProjectDeleteDialog({
   disabled = false,
   open,
   pending,
+  error,
   projectName,
   onConfirm,
   onOpenChange,
@@ -26,6 +27,7 @@ export function MemberWorkspaceProjectDeleteDialog({
   disabled?: boolean
   open: boolean
   pending: boolean
+  error?: string
   projectName: string
   onConfirm: () => void
   onOpenChange: (open: boolean) => void
@@ -41,17 +43,19 @@ export function MemberWorkspaceProjectDeleteDialog({
           disabled={disabled || pending}
         >
           <Trash data-icon="inline-start" weight="bold" />
-          Delete
+          Delete Project
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {projectName}?</AlertDialogTitle>
           <AlertDialogDescription>
-            This removes the organization record and its related workspace
-            detail records. This cannot be undone.
+            This permanently deletes this project, its tasks, notes, and file links.
+            The organization and original external files are kept.
+            This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
@@ -63,7 +67,7 @@ export function MemberWorkspaceProjectDeleteDialog({
             }}
           >
             {pending ? <CircleNotch className="h-4 w-4 animate-spin" /> : null}
-            Delete organization
+            Delete Project
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

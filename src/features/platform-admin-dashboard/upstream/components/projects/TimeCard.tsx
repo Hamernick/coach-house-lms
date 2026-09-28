@@ -19,7 +19,7 @@ export function TimeCard({ time }: TimeCardProps) {
         <StatRow label="Estimate" value={<span className="px-2">{time.estimateLabel}</span>} icon={<Clock className="h-4 w-4" />} />
         <StatRow
           label="Due Date"
-          value={<span className="px-2">{time.dueDate.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</span>}
+          value={<span className="px-2">{time.dueDate?.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }) ?? "No due date"}</span>}
           icon={<CalendarBlank className="h-4 w-4" />}
         />
 

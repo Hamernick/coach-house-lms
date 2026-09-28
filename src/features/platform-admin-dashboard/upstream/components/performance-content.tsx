@@ -463,7 +463,7 @@ export function PerformanceContent() {
       (task) => task.endDate.getTime() >= rangeStart.getTime() && task.endDate.getTime() <= rangeEnd.getTime(),
     )
 
-    const healthRows = scopedProjects.map((project) => {
+    const healthRows = scopedProjects.filter((project): project is Project & { startDate: Date; endDate: Date } => Boolean(project.startDate && project.endDate)).map((project) => {
       const duration = project.endDate.getTime() - project.startDate.getTime()
       const elapsed = rangeEnd.getTime() - project.startDate.getTime()
       const scheduleProgress = duration > 0 ? clamp((elapsed / duration) * 100, 0, 100) : 0

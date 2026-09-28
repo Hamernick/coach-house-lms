@@ -55,7 +55,7 @@ import type {
 export type TaskDraft = {
   title: string
   description: string
-  status: "todo" | "in-progress" | "done"
+  status: "todo" | "in-progress" | "waiting" | "done"
   startDate: string
   endDate: string
   priority: "no-priority" | "low" | "medium" | "high" | "urgent"
@@ -70,6 +70,7 @@ const UNASSIGNED_ASSIGNEE_ID = "__unassigned__"
 const TASK_STATUS_OPTIONS = [
   { value: "todo", label: "To do" },
   { value: "in-progress", label: "In progress" },
+  { value: "waiting", label: "Waiting" },
   { value: "done", label: "Done" },
 ] as const
 
@@ -133,7 +134,7 @@ function groupAssigneeOptions(options: MemberWorkspacePersonOption[]) {
 function toDateValue(date?: Date) {
   return date
     ? date.toISOString().slice(0, 10)
-    : new Date().toISOString().slice(0, 10)
+    : ""
 }
 
 export function formatTaskDateLabel(date?: Date) {
@@ -164,9 +165,8 @@ export function buildTaskDraft({
   task?: ProjectTask
   context?: CreateTaskContext
 }): TaskDraft {
-  const startDate = task?.startDate ?? project.source?.startDate ?? new Date()
-  const endDate =
-    task?.endDate ?? task?.startDate ?? project.source?.endDate ?? startDate
+  const startDate = task?.startDate
+  const endDate = task?.endDate
 
   return {
     title: task?.name ?? "",
@@ -201,7 +201,7 @@ export function buildTaskInput({
     assigneeUserId:
       draft.assigneeId && draft.assigneeId !== UNASSIGNED_ASSIGNEE_ID
         ? draft.assigneeId
-        : undefined,
+        : null,
   }
 }
 

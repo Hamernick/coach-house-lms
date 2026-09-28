@@ -71,6 +71,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
         hostname: "api.mapbox.com",
         pathname: "/styles/v1/**",
       },

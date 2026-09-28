@@ -39,7 +39,7 @@ type MemberWorkspaceProjectCardProps = {
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
 }
 
-function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]) {
+function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]): { label: string; dot: string; pill: string } {
   switch (resolveMemberWorkspaceOrganizationStatus(status)) {
     case "active":
       return {
@@ -113,6 +113,9 @@ export function MemberWorkspaceProjectCard({
   const router = useRouter()
   const directoryHref = (usePathname() ?? "").startsWith("/projects") ? "/projects" : "/organizations"
   const status = getStatusConfig(project.status)
+  if (directoryHref === "/projects") {
+    status.label = ({ backlog: "Backlog", planned: "Planned", active: "Active", "on-hold": "On hold", completed: "Completed", cancelled: "Cancelled" } as const)[project.status]
+  }
   const fiscalSponsorshipStatus = project.fiscalSponsorshipStatus
     ? getFiscalSponsorshipStatusConfig(project.fiscalSponsorshipStatus)
     : null
@@ -232,7 +235,7 @@ export function MemberWorkspaceProjectCard({
                 className="text-muted-foreground flex items-center gap-1.5 text-xs"
               >
                 <Flag className="h-4 w-4" />
-                <span>{format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d")}</span>
+                <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d") : "No due date"}</span>
               </div>
             ) : (
               <div className="h-4" />
@@ -351,7 +354,7 @@ export function MemberWorkspaceProjectCard({
                   className="flex items-center gap-2"
                 >
                   <CalendarBlank className="h-4 w-4" />
-                  <span>{format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d, yyyy")}</span>
+                  <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d, yyyy") : "No due date"}</span>
                 </div>
               ) : (
                 <div />

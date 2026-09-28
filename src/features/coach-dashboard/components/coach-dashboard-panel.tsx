@@ -13,7 +13,8 @@ import { buildActivityDays } from "../lib"
 import { useCoachDashboardController } from "../hooks/use-coach-dashboard-controller"
 import { CoachDashboardTools } from "./coach-dashboard-tools"
 
-function dueDate(value: string) {
+function dueDate(value: string | null) {
+  if (!value) return "No due date"
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
@@ -60,15 +61,15 @@ export function CoachDashboardPanel({ input }: { input: CoachDashboardInput }) {
     .map((part) => part[0])
     .join("")
   const allOrganizations = input.scope === "all"
-  const coachFilter = allOrganizations ? "all" : input.user.id
+  const coachFilter = input.directoryCoachFilter ?? (allOrganizations ? "all" : input.user.id)
   const scopeLabel = allOrganizations
     ? "All organizations"
-    : "Your assigned organizations"
+    : input.includesUnassigned ? "Your assigned and unassigned organizations" : "Your assigned organizations"
   const orgHref = `/organizations?coach=${coachFilter}`
-  const projectsHref = `/projects?coach=${coachFilter}&view=board`
+  const projectsHref = "/projects?view=board"
   const stats = [
     {
-      label: allOrganizations ? "Organizations" : "Assigned organizations",
+      label: allOrganizations || input.includesUnassigned ? "Organizations" : "Assigned organizations",
       value: input.organizationCount,
       href: orgHref,
     },
@@ -230,7 +231,7 @@ export function CoachDashboardPanel({ input }: { input: CoachDashboardInput }) {
               <Empty>
                 {activityUnavailable
                   ? "Could not load recent activity."
-                  : `Changes from ${allOrganizations ? "all organizations" : "your assigned organizations"} will appear here.`}
+                  : `Changes from ${scopeLabel.toLowerCase()} will appear here.`}
               </Empty>
             )}
           </section>
@@ -278,7 +279,7 @@ export function CoachDashboardPanel({ input }: { input: CoachDashboardInput }) {
               <Empty>
                 {input.projectCount === null
                   ? "Projects are unavailable."
-                  : `No open projects in ${allOrganizations ? "the organization directory" : "your assigned organizations"}.`}
+                  : `No open projects in ${scopeLabel.toLowerCase()}.`}
               </Empty>
             )}
           </section>
@@ -289,7 +290,7 @@ export function CoachDashboardPanel({ input }: { input: CoachDashboardInput }) {
                 {input.tasks.map((task) => (
                   <li key={task.id}>
                     <Link
-                      href={`/projects/${task.projectId}`}
+                      href="/tasks"
                       className="hover:bg-muted/50 flex min-w-0 items-center gap-3 rounded-lg py-2.5"
                     >
                       <span
@@ -344,7 +345,7 @@ export function CoachDashboardPanel({ input }: { input: CoachDashboardInput }) {
                   ? "Organizations are unavailable."
                   : allOrganizations
                     ? "No organizations found."
-                    : "No organizations assigned yet."}
+                    : input.includesUnassigned ? "No accessible organizations found." : "No organizations assigned yet."}
               </Empty>
             )}
           </section>

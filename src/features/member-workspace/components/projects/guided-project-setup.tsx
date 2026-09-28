@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
+import type { MemberWorkspaceCreateProjectFormInput } from "../../types"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +17,7 @@ import {
   guidedProjectSchema,
   type GuidedProjectInput,
 } from "../../lib/guided-project"
+import { defaultProjectOrganizationId } from "../../lib/project-organization"
 import { parseScheduleDay } from "../../lib/project-schedule"
 import {
   createGuidedProjectAction,
@@ -34,9 +37,11 @@ const STEPS = ["Project", "People & tasks", "Files", "Review"]
 export function GuidedProjectSetup({
   organizations,
   onClose,
+  onSaved,
   directoryHref,
 }: {
   organizations: MemberWorkspaceProjectOrganizationOption[]
+  onSaved?: (id: string, input: MemberWorkspaceCreateProjectFormInput, taskCount?: number) => void
   onClose: () => void
   directoryHref: string
 }) {
@@ -44,7 +49,7 @@ export function GuidedProjectSetup({
   const [step, setStep] = useState(0)
   const [value, setValue] = useState<GuidedProjectInput>(() => ({
     requestId: crypto.randomUUID(),
-    organizationId: organizations.length === 1 ? organizations[0].orgId : "",
+    organizationId: defaultProjectOrganizationId(organizations) ?? "",
     name: "",
     description: "",
     outcomes: "",
@@ -70,7 +75,6 @@ export function GuidedProjectSetup({
     let active = true
     setPeople([])
     setPeopleError(null)
-    if (!value.organizationId) return
     setLoadingPeople(true)
     loadGuidedProjectPeople(value.organizationId)
       .then((result) => {
@@ -93,14 +97,13 @@ export function GuidedProjectSetup({
   function next() {
     if (
       step === 0 &&
-      (!value.organizationId ||
-        !value.name.trim() ||
-        parseScheduleDay(value.startDate) === null ||
-        parseScheduleDay(value.endDate) === null ||
-        value.endDate < value.startDate)
+      (!value.name.trim() ||
+        (value.startDate && parseScheduleDay(value.startDate) === null) ||
+        (value.endDate && parseScheduleDay(value.endDate) === null) ||
+        (value.startDate && value.endDate && value.endDate < value.startDate))
     ) {
       setError(
-        "Choose an organization, project name, and valid start and due dates."
+        "Enter a project name and check any dates you have set."
       )
       return
     }
@@ -141,11 +144,12 @@ export function GuidedProjectSetup({
     setSaving(true)
     setError(null)
     try {
-      const result = await createGuidedProjectAction(value)
+      const result = await withSaveFeedback(() => createGuidedProjectAction(value), { pending: "Creating project…", success: "Project created" })
       if ("error" in result) {
         setError(result.error)
         return
       }
+      onSaved?.(result.id, { name: value.name, description: value.description, orgId: value.organizationId || null, startDate: value.startDate, endDate: value.endDate, status: "planned", priority: "medium", recurrence: value.recurrence, memberLabels: people.filter(person => [value.ownerId, ...value.contributorIds].includes(person.id)).map(person => person.name).join(", ") }, value.tasks.length)
       onClose()
       router.refresh()
       if (directoryHref !== "/projects") router.push(`${directoryHref}/${result.id}`)
@@ -261,9 +265,9 @@ export function GuidedProjectSetup({
                   {
                     organizations.find(
                       (org) => org.orgId === value.organizationId
-                    )?.name
+                    )?.name ?? "No organization"
                   }{" "}
-                  · {value.startDate} – {value.endDate}
+                  · {value.startDate || "No start date"} – {value.endDate || "No due date"}
                 </p>
               </div>
               {value.description ? (
@@ -277,6 +281,7 @@ export function GuidedProjectSetup({
               ) : null}
               <div>
                 <p>Owner: {nameFor(value.ownerId)}</p>
+                <p>{value.recurrence === "monthly" ? "Repeats monthly after completion" : "Does not repeat"}</p>
                 {value.contributorIds.length ? (
                   <p>
                     Contributors: {value.contributorIds.map(nameFor).join(", ")}

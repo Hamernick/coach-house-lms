@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 
 import {
   AppShellNavigation,
+  AppShellRightRail as ShellRightRail,
   AppShellSidebarNavigation,
 } from "@/components/app-shell/components/app-shell-navigation"
 import { SidebarBody } from "@/components/app-sidebar"
@@ -18,7 +19,6 @@ import { AppShellAccountMenuActionsProvider } from "@/components/app-shell/accou
 import {
   AppShellHeader,
   ShellMainContent,
-  ShellRightRail,
 } from "@/components/app-shell/components"
 import {
   RightRailSlot,

@@ -2,6 +2,16 @@ import { expect, test, type Page } from "@playwright/test"
 import { existsSync } from "node:fs"
 
 async function expectShellScreenshot(page: Page, name: string) {
+  await expect.poll(() => page.locator("img").evaluateAll((images) =>
+    images.every((image) => {
+      if (!(image instanceof HTMLImageElement)) return true
+      const bounds = image.getBoundingClientRect()
+      const inView = bounds.width > 0 && bounds.height > 0 &&
+        bounds.right > 0 && bounds.left < innerWidth &&
+        bounds.bottom > 0 && bounds.top < innerHeight
+      return !inView || (image.complete && image.naturalWidth > 0)
+    })
+  )).toBe(true)
   // Preserve a review artifact when the normal gate refuses a missing baseline.
   if (!existsSync(test.info().snapshotPath(name))) {
     await page.screenshot({ path: test.info().outputPath(name), animations: "disabled" })

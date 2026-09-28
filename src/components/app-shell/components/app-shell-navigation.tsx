@@ -3,6 +3,7 @@
 import { lazy, Suspense, type ComponentProps, type ReactNode } from "react"
 
 import { useSidebar } from "@/components/ui/sidebar"
+import { useRightRailPresence } from "@/components/app-shell/right-rail"
 
 import { GlobalSearch } from "@/components/app-shell/dynamic-components"
 type GlobalSearchProps = ComponentProps<typeof GlobalSearch>
@@ -12,6 +13,16 @@ const AppShellMobileNav = lazy(() =>
     default: module.AppShellMobileNav,
   }))
 )
+const ShellRightRail = lazy(() =>
+  import("./shell-right-rail").then((module) => ({ default: module.ShellRightRail }))
+)
+
+export function AppShellRightRail(props: ComponentProps<typeof ShellRightRail>) {
+  const hasRightRail = useRightRailPresence()
+  if (!hasRightRail) return null
+  return <Suspense fallback={null}><ShellRightRail {...props} /></Suspense>
+}
+
 export function AppShellNavigation({
   isMobile,
   showMobileNavigation = true,

@@ -7,9 +7,38 @@ import { useRef, useState, type CSSProperties, type PointerEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useMobileNavigationScroll } from "../hooks/use-mobile-navigation-scroll"
-import { resolveMobileNavigationIndex } from "../lib"
 import type { MobileNavigationItem } from "../types"
 import styles from "./mobile-navigation.module.css"
+
+/** A release outside the bar cancels navigation. */
+function resolveMobileNavigationIndex({
+  x,
+  y,
+  left,
+  top,
+  width,
+  height,
+  count,
+}: {
+  x: number
+  y: number
+  left: number
+  top: number
+  width: number
+  height: number
+  count: number
+}): number | null {
+  if (
+    width <= 0 ||
+    count < 1 ||
+    x < left ||
+    x > left + width ||
+    y < top ||
+    y > top + height
+  )
+    return null
+  return Math.min(count - 1, Math.floor(((x - left) / width) * count))
+}
 
 export function MobileNavigationPanel({
   items,

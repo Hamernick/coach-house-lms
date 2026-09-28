@@ -1,10 +1,14 @@
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import { ProjectTasksTab } from "@/features/platform-admin-dashboard/upstream/components/projects/ProjectTasksTab"
 import { WorkstreamTab } from "@/features/platform-admin-dashboard/upstream/components/projects/WorkstreamTab"
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}))
 
 const project = getProjectDetailsById("project-1")
 

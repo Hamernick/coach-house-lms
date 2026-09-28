@@ -170,13 +170,10 @@ function mapQuickCreateToMemberLabels({
         member.trim().toLowerCase() === assigneeId?.trim().toLowerCase()
     )
 
-  if (!selectedAssignee) {
-    return ""
-  }
-
-  return typeof selectedAssignee === "string"
+  const primaryMember = typeof selectedAssignee === "string"
     ? selectedAssignee
-    : selectedAssignee.name
+    : selectedAssignee?.name
+  return [...new Set([primaryMember, ...(initialProject?.members.slice(1) ?? [])].filter(Boolean))].join(",")
 }
 
 function buildQuickCreateInitialValue({
@@ -200,7 +197,7 @@ function buildQuickCreateInitialValue({
     recurrence: initialProject.recurrence ?? "none",
     title: initialProject.name,
     description: initialProject.description,
-    assigneeId: matchingAssigneeId,
+    assigneeId: matchingAssigneeId ?? "__unassigned_project_owner__",
     startDate: initialProject.startDate ? projectDateToLocalCalendar(initialProject.startDate) : undefined,
     statusId: mapProjectStatusToQuickStatus(initialProject.status),
     targetDate: initialProject.endDate ? projectDateToLocalCalendar(initialProject.endDate) : undefined,
@@ -275,15 +272,19 @@ export function MemberWorkspaceProjectWizard({
     [initialProject?.projectKind, organizationOptions]
   )
 
-  const quickCreateUsers = useMemo(
-    () =>
-      assigneeOptions.map((person) => ({
-        id: person.id,
-        name: person.name,
-        avatar: person.avatarUrl ?? undefined,
-      })),
-    [assigneeOptions]
-  )
+  const quickCreateUsers = useMemo(() => {
+    const users = assigneeOptions.map((person) => ({
+      id: person.id, name: person.name, avatar: person.avatarUrl ?? undefined,
+    }))
+    const originalOwner = initialProject?.members[0]
+    if (initialProject && !originalOwner) {
+      users.unshift({ id: "__unassigned_project_owner__", name: "Unassigned", avatar: undefined })
+    } else if (originalOwner && !users.some(user => user.name.trim().toLowerCase() === originalOwner.trim().toLowerCase())) {
+      // Existing labels are preserved without inventing a linked platform account.
+      users.unshift({ id: originalOwner, name: originalOwner, avatar: undefined })
+    }
+    return users
+  }, [assigneeOptions, initialProject])
 
   const quickCreateInitialValue = useMemo(
     () =>

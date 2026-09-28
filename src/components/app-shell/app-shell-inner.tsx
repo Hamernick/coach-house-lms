@@ -3,20 +3,22 @@
 import { useEffect, useMemo } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
+import {
+  AppShellNavigation,
+  AppShellRightRail as ShellRightRail,
+  AppShellSidebarNavigation,
+} from "@/components/app-shell/components/app-shell-navigation"
 import { SidebarBody } from "@/components/app-sidebar"
+import { AppShellSidebarHeader } from "@/components/app-shell/components/app-shell-sidebar-header"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import {
-  GlobalSearch,
   PaywallOverlay,
   TutorialManager,
 } from "@/components/app-shell/dynamic-components"
 import { AppShellAccountMenuActionsProvider } from "@/components/app-shell/account-menu-actions-context"
 import {
   AppShellHeader,
-  AppShellMobileNav,
   ShellMainContent,
-  ShellRightRail,
-  SidebarBrand,
 } from "@/components/app-shell/components"
 import {
   RightRailSlot,
@@ -25,7 +27,6 @@ import {
 import { AppShellRightRailControlsProvider } from "@/components/app-shell/right-rail-controls"
 import {
   Sidebar,
-  SidebarHeader,
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { FIND_PATH } from "@/lib/find/routes"
+import { shouldShowMobileNavigation } from "@/features/mobile-navigation"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
@@ -74,6 +76,18 @@ function useOnboardingRedirectTarget(onboardingRedirectTarget: string | null) {
     if (currentTarget === onboardingRedirectTarget) return
     window.location.replace(onboardingRedirectTarget)
   }, [onboardingRedirectTarget])
+}
+
+function useAppShellNavUser(user: AppShellProps["user"]) {
+  return useMemo(
+    () => ({
+      name: user?.name ?? null,
+      title: user?.title ?? null,
+      email: user?.email ?? null,
+      avatar: user?.avatar ?? null,
+    }),
+    [user?.avatar, user?.email, user?.name, user?.title]
+  )
 }
 
 export function AppShellInner({
@@ -157,15 +171,7 @@ export function AppShellInner({
     [handleRightOpenChangeAuto, handleRightOpenChangeUser, rightOpen]
   )
 
-  const navUser = useMemo(
-    () => ({
-      name: user?.name ?? null,
-      title: user?.title ?? null,
-      email: user?.email ?? null,
-      avatar: user?.avatar ?? null,
-    }),
-    [user?.avatar, user?.email, user?.name, user?.title]
-  )
+  const navUser = useAppShellNavUser(user)
 
   const classesBasePath = isAcceleratorContext ? "/accelerator" : ""
   const resolvedHasAcceleratorAccess =
@@ -189,8 +195,6 @@ export function AppShellInner({
   const useFullBleedContent =
     contentPresentation === "full-bleed" ||
     (isOrganizationRoute && hasOrganizationEditorParams)
-  const useFlushContentBody =
-    useFullBleedContent || useMobileSingleGutterContent
   const useDesktopResizableRightRail =
     !isMobile && hasRightRail && rightOpen && resizableRightRail
   const rightRailDefaultSize = isAcceleratorContext
@@ -200,14 +204,15 @@ export function AppShellInner({
       : derivedContext === "public"
         ? "24%"
         : "20%"
-  const contentPadding = isMobile
-    ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
-    : "pb-4"
-  const contentHorizontalPadding = isMobile
-    ? useMobileSingleGutterContent
-      ? "px-[var(--shell-content-pad)]"
-      : "px-[var(--shell-gutter)]"
-    : "pl-[var(--shell-outer-gutter)]"
+  const isPublicMapSurface = derivedContext === "public" && useFullBleedContent
+  const showMobileNavigation =
+    shouldShowMobileNavigation(pathname) && (!onboardingLocked || hasRightRail)
+  const contentPadding = "pb-0 md:pb-4"
+  const contentHorizontalPadding = cn(
+    "px-0",
+    !isPublicMapSurface && isCoachingRoute && "px-[var(--shell-content-pad)]",
+    "md:pl-[var(--shell-outer-gutter)] md:pr-0"
+  )
   const onboardingRedirectTarget = resolveAppShellOnboardingRedirectTarget({
     onboardingLocked,
     onboardingIntentFocus,
@@ -235,11 +240,12 @@ export function AppShellInner({
 
   const mainShellContent = (
     <ShellMainContent
+      showMobileNavigation={showMobileNavigation}
       isAcceleratorContext={isAcceleratorContext}
       isMobile={isMobile}
       onboardingRedirectTarget={onboardingRedirectTarget}
       routeTransitionRef={routeTransitionRef}
-      useFlushContentBody={useFlushContentBody}
+      useFlushContentBody={useFullBleedContent}
       useFullBleedContent={useFullBleedContent}
       useMobileSingleGutterContent={useMobileSingleGutterContent}
     >
@@ -288,33 +294,35 @@ export function AppShellInner({
               variant="sidebar"
               className="border-0 bg-[var(--shell-rail)]"
             >
-              <SidebarHeader>
-                {sidebarHeaderContent ?? <SidebarBrand href={brandHref} />}
-              </SidebarHeader>
-              <SidebarBody
-                isAdmin={isAdmin}
-                platformAccessLevel={platformAccessLevel}
-                isTester={isTester}
-                showOrgAdmin={showOrgAdmin}
-                canAccessOrgAdmin={canAccessOrgAdmin}
-                classes={sidebarTree}
-                user={navUser}
-                showAccelerator={showAccelerator}
-                hasActiveSubscription={Boolean(hasActiveSubscription)}
-                hasBillingCancellationRisk={hasBillingCancellationRisk}
-                showClasses={showLeftClasses}
-                classesBasePath={classesBasePath}
-                hasAcceleratorAccess={resolvedHasAcceleratorAccess}
-                hasElectiveAccess={resolvedHasElectiveAccess}
-                ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
-                formationStatus={formationStatus}
-                onboardingLocked={onboardingLocked}
-                onboardingIntentFocus={onboardingIntentFocus}
-                organizationName={organizationName}
-                showCoachScheduling={!isAcceleratorContext}
-                showWorkspaceHome={showWorkspaceHome}
-                showMemberWorkspace={showMemberWorkspaceNav}
-              />
+              <AppShellSidebarHeader brandHref={brandHref}>
+                {sidebarHeaderContent}
+              </AppShellSidebarHeader>
+              <AppShellSidebarNavigation>
+                <SidebarBody
+                  isAdmin={isAdmin}
+                  platformAccessLevel={platformAccessLevel}
+                  isTester={isTester}
+                  showOrgAdmin={showOrgAdmin}
+                  canAccessOrgAdmin={canAccessOrgAdmin}
+                  classes={sidebarTree}
+                  user={navUser}
+                  showAccelerator={showAccelerator}
+                  hasActiveSubscription={Boolean(hasActiveSubscription)}
+                  hasBillingCancellationRisk={hasBillingCancellationRisk}
+                  showClasses={showLeftClasses}
+                  classesBasePath={classesBasePath}
+                  hasAcceleratorAccess={resolvedHasAcceleratorAccess}
+                  hasElectiveAccess={resolvedHasElectiveAccess}
+                  ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
+                  formationStatus={formationStatus}
+                  onboardingLocked={onboardingLocked}
+                  onboardingIntentFocus={onboardingIntentFocus}
+                  organizationName={organizationName}
+                  showCoachScheduling={!isAcceleratorContext}
+                  showWorkspaceHome={showWorkspaceHome}
+                  showMemberWorkspace={showMemberWorkspaceNav}
+                />
+              </AppShellSidebarNavigation>
             </Sidebar>
 
             <SidebarInset
@@ -338,9 +346,8 @@ export function AppShellInner({
                     "flex min-h-0 min-w-0 flex-1 gap-0",
                     contentPadding,
                     contentHorizontalPadding,
-                    !isMobile &&
-                      (!hasRightRail || !rightOpen) &&
-                      "pr-[var(--shell-gutter)]"
+                    (!hasRightRail || !rightOpen) &&
+                      "md:pr-[var(--shell-gutter)]"
                   )}
                 >
                   {useDesktopResizableRightRail ? (
@@ -392,25 +399,28 @@ export function AppShellInner({
             </SidebarInset>
           </div>
 
-          {pathname !== "/admin/dashboard" && !pathname?.startsWith("/admin/dashboard/") ? (
-            <AppShellMobileNav
-              rightOpen={rightOpen}
-              onRightOpenChange={handleRightOpenChangeUser}
-            />
-          ) : null}
-          {hasUser &&
-          !onboardingLocked &&
-          !isAdminContext &&
-          platformAccessLevel !== "coach" ? (
-            <GlobalSearch
-              isAdmin={isAdmin}
-              showOrgAdmin={showOrgAdmin}
-              context={isAcceleratorContext ? "accelerator" : "platform"}
-              classes={sidebarTree}
-              showAccelerator={showAccelerator}
-              showMemberWorkspace={showMemberWorkspaceNav}
-            />
-          ) : null}
+          <AppShellNavigation
+            showMobileNavigation={showMobileNavigation}
+            isMobile={isMobile}
+            search={{
+              isAdmin,
+              showOrgAdmin,
+              context: isAcceleratorContext ? "accelerator" : "platform",
+              classes: sidebarTree,
+              showAccelerator,
+              showMemberWorkspace: showMemberWorkspaceNav,
+            }}
+            showGlobalSearch={
+              hasUser &&
+              !onboardingLocked &&
+              !isAdminContext &&
+              platformAccessLevel !== "coach"
+            }
+            showWorkspace={hasUser && showWorkspaceHome && !isAdminContext}
+            onboardingLocked={onboardingLocked}
+            rightOpen={rightOpen}
+            onRightOpenChange={handleRightOpenChangeUser}
+          />
           {!isAdminContext ? (
             <PaywallOverlay currentPlanTier={currentPlanTier} />
           ) : null}

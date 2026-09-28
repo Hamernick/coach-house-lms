@@ -1,6 +1,7 @@
-import type { ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import Link from "next/link"
 
+import MenuIcon from "lucide-react/dist/esm/icons/menu"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 
@@ -33,7 +34,17 @@ export function AppShellHeader({
   onRightOpenChange,
 }: AppShellHeaderProps) {
   const hasRightRail = useRightRailPresence()
-  const { isMobile } = useSidebar()
+  const { isMobile, openMobile, toggleSidebar } = useSidebar()
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const wasMobileMenuOpen = useRef(false)
+  useEffect(() => {
+    if (isMobile && wasMobileMenuOpen.current && !openMobile) {
+      const frame = requestAnimationFrame(() => menuButtonRef.current?.focus())
+      wasMobileMenuOpen.current = false
+      return () => cancelAnimationFrame(frame)
+    }
+    wasMobileMenuOpen.current = openMobile
+  }, [isMobile, openMobile])
   const hasBreadcrumbs = Boolean(breadcrumbs)
   const isCompactMobileHeader = isMobile && onboardingLocked
   const showHeaderToggles = !isMobile
@@ -44,18 +55,31 @@ export function AppShellHeader({
     <header className="text-muted-foreground flex shrink-0 flex-col bg-[var(--shell-bg)] text-sm">
       <div
         className={cn(
-          "flex min-h-14 min-w-0 items-center py-2 pr-[var(--shell-content-pad)] pl-[var(--shell-content-pad)] md:py-0",
+          "flex min-h-16 min-w-0 items-center py-2 pr-1 pl-[var(--shell-content-pad)] md:min-h-14 md:py-0 md:pr-[var(--shell-content-pad)]",
           isCompactMobileHeader && "min-h-12 py-1.5"
         )}
       >
-        <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <div
+          className={cn(
+            "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          )}
+        >
           <div className="flex min-w-0 items-center gap-2">
-            {showHeaderToggles ? (
-              <SidebarTrigger
-                className={toggleButtonClass}
-                aria-label="Toggle sidebar"
-              />
-            ) : null}
+            <Button
+              ref={menuButtonRef}
+              variant="ghost"
+              size="icon"
+              className="size-11 shrink-0 touch-manipulation md:hidden"
+              aria-label="Menu"
+              aria-expanded={openMobile}
+              onClick={toggleSidebar}
+            >
+              <MenuIcon />
+            </Button>
+            <SidebarTrigger
+              className={cn(toggleButtonClass, "hidden md:inline-flex")}
+              aria-label="Toggle sidebar"
+            />
             {showHeaderToggles && hasBreadcrumbs ? (
               <Separator orientation="vertical" className="bg-border h-4" />
             ) : null}
@@ -72,7 +96,11 @@ export function AppShellHeader({
             id="site-header-actions-center"
             className="hidden min-w-0 items-center overflow-hidden md:flex md:justify-end lg:justify-center"
           />
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap">
+          <div
+            className={cn(
+              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap md:gap-2 [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
+            )}
+          >
             <div
               id="site-header-actions-right"
               className="flex flex-wrap items-center gap-2 md:flex-nowrap"
@@ -81,13 +109,15 @@ export function AppShellHeader({
               <AppShellCalendarAction />
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
-            <ThemeToggle />
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             {!hasUser ? (
               <Button
                 variant="outline"
                 size="sm"
                 asChild
-                className="border-[color:var(--shell-border)] bg-transparent"
+                className="border-[color:var(--shell-border)] bg-transparent max-md:min-h-11 max-md:min-w-11 touch-manipulation"
               >
                 <Link href="/login">Sign in</Link>
               </Button>

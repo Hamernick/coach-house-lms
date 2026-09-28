@@ -1,6 +1,6 @@
 # Open Work Index
 
-Updated 2026-09-25. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Cleanup base: `origin/main` `32d7e8d8`; recheck Git before new work.
+Updated 2026-09-27. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Cleanup base: `origin/main` `32d7e8d8`; recheck Git before new work.
 
 Maintain one active entry per lane or preservation hold. Update entries in place:
 replace renamed branch references and obsolete next actions instead of appending
@@ -10,7 +10,7 @@ workflow checkpoint aligned in the same change.
 
 ## Closed
 
-Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. Do not reopen them, repeat production checks, or restart the historical menu investigation from old handoffs. #249 changed test isolation only. The separately requested public navigation change below is tracked in PR #253.
+Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. Do not reopen them, repeat production checks, or restart the historical menu investigation from old handoffs. #249 changed test isolation only. The separate public navigation change in PR #253 is also closed per Caleb; do not reopen it.
 
 ## Open lanes
 
@@ -18,12 +18,16 @@ The four `chore/*` backup branches start at `32d7e8d8`, contain scoped copies of
 
 | Lane | GitHub backup / source | Remaining work and validation |
 | --- | --- | --- |
-| AppShell/mobile | `chore/app-shell-mobile-20260924` (`2f15f54f`); `feat/app-shell-mobile-navigation-20260922` (`d1e4b1a1`) | Review dashboard/public/mobile shell, sidebar and drawer behavior; focused browser/acceptance and hosted quality. Calendar owns separate AppShell Calendar controls. |
+| AppShell/mobile | Local release branch `feat/app-shell-mobile-release-20260925` from `b8cce495`; preservation: `chore/app-shell-mobile-20260924` (`2f15f54f`), `feat/app-shell-mobile-navigation-20260922` (`d1e4b1a1`) | Mobile appearance and authenticated interactions approved; shipping authorized. Restored scrubbing/compaction and drawer improvements pass hosted interaction tests. PR #254 build/bundle, acceptance, static and RLS gates pass. Final Ubuntu visual comparisons, code-owner approval, deployment and production verification remain. Map integration and Calendar relocation excluded. |
 | Marketplace people | `chore/marketplace-people-20260924` (`21026428`); `feat/public-profiles-marketplace-people-20260922` (`6b3be0b6`) | Complete list/detail integration; check privacy, handles, empty/error states and browser behavior. Closed Documentation content stays separate. |
 | Particles/Objectives — high priority | `chore/workspace-particles-objectives-20260924` (`8eabd28e`); `feat/workspace-particles-objective-resume-20260922` (`c855aea6`) | Product concept and UI/UX remain rough. Decide the flow, then review canvas/drawer/mobile and Drive authorization. Passing tests do not establish readiness. |
 | Google Calendar | `chore/google-calendar-20260924` (`a1acccad`); `feat/google-calendar-resume-20260922` (`508b8df0`) | Review Workspace Tools/roadmap/AppShell integration; finish provider/OAuth setup and approved live-flow verification separately from code checks. |
 
-The current isolated task is the public navigation update on `fix/public-navigation-documentation-20260925`: add the published `/documentation` destination to Build, replace the external sidebar Knowledge base link with an internal Documentation link, and remove the header's immediate pointer-leave close. Caleb will verify the preview UI before merge. Existing Workspace, Accelerator, and Pricing destinations remain unchanged.
+The current isolated task is AppShell/mobile in `coach-house-platform-app-shell-mobile-release-20260925`, preview port 3011. Root checkout/server and preservation branches remain untouched. Caleb approved the actual mobile appearance and explicitly authorized shipping on 2026-09-27, including push/PR and merge/deployment after the required gates. He will verify authenticated interactions himself; do not retry automated localhost browser access. No Codex goal or delegation is authorized.
+
+Preserve original commit `6b13dd82` and both `/tmp/app-shell-draft-20260925.yv1Vat` and `/tmp/app-shell-recovery.6Y6oFk`; the restored scrubbing/compaction changes continue as a new correction commit. Port 3011 uses Node 22.13.0 with existing root local environment loaded into its process only. Caleb confirmed his session loads after this repair. Google login is enabled; the separate Google signup flag is absent. No credential/provider files changed.
+
+Shipping continuation: PR [#254](https://github.com/Hamernick/coach-house-lms/pull/254) is open. Hosted run `36373611266` passed static, RLS, acceptance, production build and performance budgets. Caleb confirmed all authenticated interaction checks passed. All twelve new AppShell references and the affected Marketplace shell reference are reviewed Ubuntu 24.04 x64 / Playwright 1.58.2 captures. Corrected fixture hydration/image readiness and moved the screenshot pointer off controls; final visual comparison remains pending. The unrelated startup assertion received explicit approval and its capitalization-only fix passes. Code-owner approval and current-revision quality still gate merge; lane stays open until deployment and production verification.
 
 ## Named preservation holds
 
@@ -31,7 +35,7 @@ The mixed root history has broad candidate areas. No file/hunk review yet proves
 
 | Hold | Owner/source | Concrete next step |
 | --- | --- | --- |
-| `H-FIND` | Public Find/resource-map UI; root `0a1895fc`, launch reference `f15ce510`, Find branches | Compare public UI/data files with main; isolate residuals and prove raw intake/synthetic seeds cannot enter `/find`. |
+| `H-FIND` | Public Find/resource-map UI; root `0a1895fc`, launch reference `f15ce510`, Find branches | Compare public UI/data files with main; isolate residuals and prove raw intake/synthetic seeds cannot enter `/find`. AppShell map navigation/context/control/panel remnants remain only in preservation commit `2f15f54f`; they are excluded from the mobile release. |
 | `H-ACQUISITION` | Private resource acquisition scripts; root `0a1895fc` | Compare `scripts/resource-map/**` and tests with main; keep private tools separate from publication. |
 | `H-ORG-DOCS` | Org/Documents leftovers; root and Documents/Drive branches | Compare with shipped Core Documents/Drive work; isolate only remaining hunks. |
 | `H-ACCOUNT` | Account/settings/profile; root and profile/settings branches | Compare with shipped admin/auth/profile work; resolve Marketplace people and shared-shell ownership. |

@@ -1,3 +1,4 @@
+import { AdminCoachingCreditsPanel, loadAdminCoachingCredits, loadCoachingCreditsAction, issueCoachingCreditsAction, manageStaffCoachingBookingAction } from "@/features/coaching-booking"
 import { loadOrganizationCoachAssignmentData } from "@/features/organization-coach-assignments"
 
 import { notFound } from "next/navigation"
@@ -99,6 +100,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     fiscalSponsorshipWorkflowSummary,
     adminBilling,
     coachAssignmentData,
+    coachingCredits,
   ] = await Promise.all([
     result.scope === "platform-admin"
       ? canManageFiscalSponsorshipForOrganization({
@@ -115,6 +117,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     loadOrganizationCoachAssignmentData({
       organizationIds: [result.organizationSummary.orgId],
     }).catch(() => null),
+    loadAdminCoachingCredits(result.organizationSummary.orgId),
   ])
   const fiscalSponsorshipWorkflowData =
     "error" in fiscalSponsorshipWorkflowSummary
@@ -133,7 +136,9 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
           : null
       }
       adminBilling={
-        adminBilling ? (
+        <div className="space-y-4">
+          <AdminCoachingCreditsPanel initialData={coachingCredits} loadAction={loadCoachingCreditsAction} issueAction={issueCoachingCreditsAction} manageAction={manageStaffCoachingBookingAction} />
+        {adminBilling ? (
           <AdminOrganizationBillingPanel
             billing={adminBilling}
             changePlanAction={changeAdminOrganizationBillingPlanAction}
@@ -141,7 +146,8 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
               refundLatestAdminOrganizationPaymentAction
             }
           />
-        ) : undefined
+        ) : null}
+        </div>
       }
       project={result.project}
       assigneeOptions={result.assigneeOptions}

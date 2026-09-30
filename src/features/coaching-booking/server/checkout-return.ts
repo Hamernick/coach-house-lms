@@ -1,3 +1,4 @@
+import { recordPurchasedCoachingCredit } from "./purchased-credit"
 import type Stripe from "stripe"
 
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
@@ -18,16 +19,21 @@ type PaidCheckoutBooking = {
   attendee_notes: string | null
   google_event_id: string | null
   google_meet_url: string | null
+  calendar_pending_action?: string | null
   stripe_checkout_session_id: string | null
 }
 
 function shouldTryNextStripeRuntime(error: unknown) {
   const stripeError = error as Stripe.errors.StripeError | null
-  return stripeError?.type === "StripeInvalidRequestError" && stripeError.code === "resource_missing"
+  return (
+    stripeError?.type === "StripeInvalidRequestError" &&
+    stripeError.code === "resource_missing"
+  )
 }
 
 async function retrieveCheckoutSession(sessionId: string) {
-  const preferTester = sessionId.startsWith("cs_test_") || process.env.NODE_ENV !== "production"
+  const preferTester =
+    sessionId.startsWith("cs_test_") || process.env.NODE_ENV !== "production"
   const configs = resolveStripeRuntimeConfigsForFallback({ preferTester })
   let lastMissingError: unknown = null
 
@@ -72,18 +78,25 @@ export async function confirmPaidCoachingCheckoutReturn({
   const { data: booking, error } = await admin
     .from("coaching_bookings")
     .select(
-      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url, stripe_checkout_session_id",
+      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url, stripe_checkout_session_id, calendar_pending_action"
     )
     .eq("id", bookingId)
     .maybeSingle<PaidCheckoutBooking>()
 
   if (error) {
-    throw supabaseErrorToError(error, "Unable to load coaching checkout return.")
+    throw supabaseErrorToError(
+      error,
+      "Unable to load coaching checkout return."
+    )
   }
   if (!booking || booking.user_id !== userId || booking.org_id !== orgId) {
     return { confirmed: false }
   }
-  if (booking.status === "confirmed" && booking.google_event_id) {
+  if (
+    booking.status === "confirmed" &&
+    booking.google_event_id &&
+    booking.calendar_pending_action !== "create"
+  ) {
     return { confirmed: true }
   }
   if (booking.status === "confirmed") {
@@ -94,23 +107,39 @@ export async function confirmPaidCoachingCheckoutReturn({
     })
     return { confirmed: true }
   }
-  if (booking.status !== "pending_payment" || !booking.stripe_checkout_session_id) {
+  if (
+    booking.status !== "pending_payment" ||
+    !booking.stripe_checkout_session_id
+  ) {
     return { confirmed: false }
   }
 
-  const session = await retrieveCheckoutSession(booking.stripe_checkout_session_id)
-  if (!session || !checkoutSessionIsPaidForBooking({ session, bookingId: booking.id })) {
+  const session = await retrieveCheckoutSession(
+    booking.stripe_checkout_session_id
+  )
+  if (
+    !session ||
+    !checkoutSessionIsPaidForBooking({ session, bookingId: booking.id })
+  ) {
     return { confirmed: false }
   }
 
+  await recordPurchasedCoachingCredit({
+    admin,
+    booking,
+    checkoutId: session.id,
+  })
   await confirmCoachingBooking({
     admin,
     booking,
     attendeeEmail: userEmail,
     stripeCheckoutSessionId: session.id,
     stripePaymentIntentId:
-      typeof session.payment_intent === "string" ? session.payment_intent : null,
-    stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : null,
+    stripeCustomerId:
+      typeof session.customer === "string" ? session.customer : null,
   })
 
   return { confirmed: true }

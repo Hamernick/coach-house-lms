@@ -221,9 +221,7 @@ export function SidebarBody({
               </>
             ) : null}
             {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
-            {isCoach ? null : (
-              <NavDocuments items={RESOURCE_NAV} label="Resources" />
-            )}
+            <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>
         )}
         {hasUser ? (

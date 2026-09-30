@@ -16,3 +16,13 @@ export type {
   CoachingPriceTier,
   CoachingSlot,
 } from "./types"
+
+export { AdminCoachingCreditsPanel } from "./components"
+export { loadAdminCoachingCredits } from "./loaders"
+export {
+  loadCoachingCreditsAction,
+  issueCoachingCreditsAction,
+  manageStaffCoachingBookingAction,
+} from "./actions"
+export { coachingCalendarCron } from "./handlers"
+export { legacyCoachingSchedule } from "./handlers"

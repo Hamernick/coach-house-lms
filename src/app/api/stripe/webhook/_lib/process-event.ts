@@ -33,6 +33,9 @@ export async function processStripeWebhookEvent({
   stripeMode: "live" | "test"
   organizationPriceId: string | null
 }) {
+  if (event.type === "checkout.session.async_payment_succeeded") {
+    if (await processCoachingCheckoutSession(event.data.object as Stripe.Checkout.Session)) return
+  }
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
     const coachingHandled = await processCoachingCheckoutSession(session)

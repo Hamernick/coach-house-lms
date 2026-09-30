@@ -1,6 +1,6 @@
 import type { Json } from "@/lib/supabase"
 
-export const COACHING_INCLUDED_SESSION_LIMIT = 4
+export const COACHING_INCLUDED_SESSION_LIMIT = 10
 
 export type CoachingTier = "free" | "discounted" | "full"
 export type CoachingCoachId = "joel" | "paula"

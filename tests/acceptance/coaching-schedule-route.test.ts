@@ -35,7 +35,7 @@ vi.mock("@/lib/env", () => ({
   },
 }))
 
-const DEFAULT_PRO_INCLUDED_MEETING_URL = "https://calendar.app.google/EKs5A4iaXFAbFSp57"
+const DEFAULT_PRO_INCLUDED_MEETING_URL = "/coaching"
 
 type ScheduleStubOptions = {
   meetingRequests?: number
@@ -99,6 +99,11 @@ function createScheduleSupabaseStub({
   })
 
   const supabase = {
+    rpc: vi.fn().mockResolvedValue({ data: {
+      available: Math.max(0, (coachingIncludedPurchases.length ? 10 : 0) - meetingRequests),
+      includedAllowance: coachingIncludedPurchases.length ? 10 : 0,
+      consumed: meetingRequests, grants: [],
+    }, error: null }),
     auth: {
       getUser: vi.fn().mockResolvedValue({
         data: { user: { id: "user-1" } },
@@ -129,7 +134,7 @@ describe("coaching schedule route", () => {
     createNotificationMock.mockResolvedValue({ id: "notif-1" })
   })
 
-  it("uses the Pro included default URL for free tier without consuming a credit", async () => {
+  it("uses the ledger-backed coaching page without consuming a credit", async () => {
     const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
       meetingRequests: 0,
       coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
@@ -143,7 +148,7 @@ describe("coaching schedule route", () => {
     expect(json).toMatchObject({
       tier: "free",
       url: DEFAULT_PRO_INCLUDED_MEETING_URL,
-      remaining: 4,
+      remaining: 10,
     })
     expect(organizationsUpsert).not.toHaveBeenCalled()
     expect(createNotificationMock).toHaveBeenCalledWith(
@@ -156,7 +161,7 @@ describe("coaching schedule route", () => {
 
   it("routes non-Operations users to full rate after included sessions are exhausted", async () => {
     const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
-      meetingRequests: 4,
+      meetingRequests: 10,
       coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
     })
     createSupabaseServerClientMock.mockResolvedValue(supabase)
@@ -167,7 +172,7 @@ describe("coaching schedule route", () => {
     expect(response.status).toBe(200)
     expect(json).toMatchObject({
       tier: "full",
-      url: "https://full.example/booking",
+      url: "/coaching",
       remaining: 0,
     })
     expect(organizationsUpsert).not.toHaveBeenCalled()
@@ -175,7 +180,7 @@ describe("coaching schedule route", () => {
 
   it("routes Operations Support users to discounted tier after included sessions are exhausted", async () => {
     const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
-      meetingRequests: 4,
+      meetingRequests: 10,
       coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
       subscriptions: [
         {
@@ -195,7 +200,7 @@ describe("coaching schedule route", () => {
     expect(response.status).toBe(200)
     expect(json).toMatchObject({
       tier: "discounted",
-      url: "https://discounted.example/booking",
+      url: "/coaching",
       remaining: 0,
     })
     expect(organizationsUpsert).not.toHaveBeenCalled()
@@ -214,12 +219,12 @@ describe("coaching schedule route", () => {
     expect(response.status).toBe(200)
     expect(json).toMatchObject({
       tier: "full",
-      url: "https://full.example/booking",
-      remaining: null,
+      url: "/coaching",
+      remaining: 0,
     })
   })
 
-  it("uses coach-specific links when configured", async () => {
+  it("keeps legacy coach-specific links inside the ledger-backed booking flow", async () => {
     process.env.NEXT_PUBLIC_MEETING_PAULA_FULL_URL = "https://paula.example/full"
     const { supabase } = createScheduleSupabaseStub({
       meetingRequests: 0,
@@ -234,8 +239,8 @@ describe("coaching schedule route", () => {
     expect(json).toMatchObject({
       coach: "paula",
       tier: "full",
-      url: "https://paula.example/full",
-      remaining: null,
+      url: "/coaching",
+      remaining: 0,
     })
   })
 })

@@ -1,5 +1,9 @@
 export type CoachingBookingsTable = {
   Row: {
+    current_credit_entry_id: string | null
+    credit_revision: number
+    calendar_pending_action: string | null
+    calendar_checked_at: string | null
     id: string
     org_id: string
     user_id: string
@@ -25,6 +29,10 @@ export type CoachingBookingsTable = {
     updated_at: string
   }
   Insert: {
+    current_credit_entry_id?: string | null
+    credit_revision?: number
+    calendar_pending_action?: string | null
+    calendar_checked_at?: string | null
     id?: string
     org_id: string
     user_id: string
@@ -50,6 +58,10 @@ export type CoachingBookingsTable = {
     updated_at?: string
   }
   Update: {
+    current_credit_entry_id?: string | null
+    credit_revision?: number
+    calendar_pending_action?: string | null
+    calendar_checked_at?: string | null
     id?: string
     org_id?: string
     user_id?: string

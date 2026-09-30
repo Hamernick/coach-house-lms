@@ -233,6 +233,7 @@ async function getCalendarAccessTokenForCoach(coachId) {
 async function requestCalendar({ coachId, path, method = "GET", body }) {
   const token = await getCalendarAccessTokenForCoach(coachId)
   const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
+    signal: AbortSignal.timeout(8000),
     method,
     headers: {
       authorization: `Bearer ${token}`,
@@ -361,6 +362,7 @@ async function createEvent(payload) {
     path: `/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
     method: "POST",
     body: {
+      ...(payload.eventId ? { id: payload.eventId } : {}),
       summary: payload.summary,
       description: payload.attendeeEmail
         ? `${payload.description}\n\nAttendee: ${payload.attendeeEmail}\nUse this Google Calendar invite for updates or rescheduling.`
@@ -385,7 +387,11 @@ async function createEvent(payload) {
         },
       },
     },
+  }).catch(async (error) => {
+    if (payload.eventId && error.status === 409) return requestCalendar({ coachId: payload.coachId, path: `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(payload.eventId)}` })
+    throw error
   })
+  if (event.status === "cancelled") throw new Error("Coach canceled the calendar event during confirmation.")
   const conference = await waitForMeetUrl({ coachId: payload.coachId, calendarId, event })
   if (impersonatedUser && !conference.meetUrl) {
     const error = new Error("Google Calendar created the event but did not return a Meet link.")
@@ -424,7 +430,14 @@ async function deleteEvent(payload) {
   return { ok: true }
 }
 
+async function getEvent(payload) {
+  const calendarId = requireCalendarId(payload.coachId)
+  const event = await requestCalendar({ coachId: payload.coachId, path: `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(payload.googleEventId)}` })
+  return { status: event.status, startsAt: event.start?.dateTime ?? null, endsAt: event.end?.dateTime ?? null }
+}
+
 async function dispatch({ operation, payload }) {
+  if (operation === "getEvent") return await getEvent(payload)
   if (operation === "freeBusy") return await freeBusy(payload)
   if (operation === "createEvent") return await createEvent(payload)
   if (operation === "updateEvent") return await updateEvent(payload)

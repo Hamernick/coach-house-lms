@@ -14,6 +14,10 @@ Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. D
 
 AppShell/mobile is closed for implementation: Caleb confirmed PR [#254](https://github.com/Hamernick/coach-house-lms/pull/254) merged, approved appearance and confirmed authenticated Menu/dock/Details/desktop checks passed. The merged revision is `54ed2c3c`. Production deployment/smoke verification was not independently established in this session; do not infer it or reopen the lane without a reported issue or explicit request. Preserve `6b13dd82`, the release worktree, `/tmp/app-shell-draft-20260925.yv1Vat` and `/tmp/app-shell-recovery.6Y6oFk`.
 
+## Current bundled update
+
+`fix/internal-tools-updates-20260930`, draft PR #263, updated through main `7f82918f`, in the internal-tracker-release-20260928 worktree. Caleb explicitly chose one bundle: coach Resources navigation, medium-screen Documentation header containment, and personal coaching credits. The signed-in Documentation shell change was withdrawn. See [coaching implementation and activation checklist](../plans/2026-09-30-coaching-credits.md). Local implementation and focused validation are complete; hosted quality passed on `e6b9d2b6`; updated-head checks, appearance review, coordinated migration/app activation, broker rollout and scheduler/live canary are pending. Isolated preview `jqbyuzgiizmfyzackxyo` has the current public schema and all three coaching migrations; branch-specific Vercel Preview credentials isolate its review accounts and disable live payments/email/Calendar writes. Existing production data is unchanged. PR #262 is now merged; canonical production is Ready at `7f82918f`.
+
 ## Open lanes
 
 The original four `chore/*` backup branches start at `32d7e8d8` and remain backed up on GitHub. AppShell has since merged; the three remaining feature backups are **unfinished, not release-ready**. Original sources remain. Old runlog versions were excluded; Particles and Calendar acceptance manifest additions were merged with current main.

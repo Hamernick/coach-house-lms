@@ -2,6 +2,12 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  coaching_credit_account: { Args: { p_user_id: string }; Returns: Json }
+  issue_coaching_credits: { Args: { p_user_id: string; p_org_id: string | null; p_quantity: number; p_source_type: string; p_label: string; p_reason: string; p_expires_at: string | null; p_actor_id: string | null; p_request_key: string }; Returns: string }
+  confirm_coaching_credit_booking: { Args: { p_booking_id: string; p_checkout_id: string | null; p_payment_id: string | null; p_customer_id: string | null }; Returns: undefined }
+  restore_coaching_credit: { Args: { p_booking_id: string; p_actor_id: string | null; p_reason: string }; Returns: boolean }
+  manage_coaching_credit_booking: { Args: { p_booking_id: string; p_actor_id: string | null; p_action: string; p_staff: boolean; p_reason: string | null; p_starts_at?: string; p_timezone?: string; p_request_id?: string; p_expected_starts_at?: string }; Returns: Json }
+
   create_guided_organization_project: {
     Args: { p_actor_id: string; p_org_id: string; p_request_id: string; p_setup: Json; p_member_labels: string[]; p_overview_html: string; p_overview_text: string }
     Returns: Json

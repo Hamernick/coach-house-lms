@@ -1,3 +1,4 @@
+import type { CoachingCreditGrantsTable } from "./coaching_credit_grants"
 import type { OrganizationDocumentFilesTable } from "./organization_document_files"
 import type { GoogleCalendarConnectionsTable, GoogleCalendarOauthIntentsTable } from "./google_calendar_connections"
 import type { OrganizationsTable } from "./organizations"
@@ -357,6 +358,8 @@ export type PublicTables = {
   user_activation_checkpoints: UserActivationCheckpointsTable
   coaching_coaches: CoachingCoachesTable
   coaching_bookings: CoachingBookingsTable
+  coaching_credit_grants: CoachingCreditGrantsTable
+  coaching_accelerator_credit_receipts: { Row: { user_id: string; created_at: string }; Insert: { user_id: string; created_at?: string }; Update: { user_id?: string; created_at?: string }; Relationships: [] }
   coaching_credit_ledger: CoachingCreditLedgerTable
   fiscal_sponsorship_applications: FiscalSponsorshipApplicationsTable
   fiscal_sponsorship_documents: FiscalSponsorshipDocumentsTable

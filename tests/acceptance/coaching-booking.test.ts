@@ -47,6 +47,12 @@ function createCreditSummarySupabaseStub({
   ledger?: LedgerRow[]
 }) {
   return {
+    rpc: async () => ({ data: {
+      available: Math.max(0, (purchases.length ? 10 : 0) + ledger.reduce((sum, row) => sum + row.quantity, 0)),
+      includedAllowance: purchases.length ? 10 : 0,
+      consumed: ledger.length,
+      grants: [],
+    }, error: null }),
     from(table: string) {
       if (table === "accelerator_purchases") {
         return {
@@ -185,7 +191,8 @@ describe("coaching booking feature", () => {
     )
     const flow = readSource(
       "src/features/coaching-booking/components/coaching-booking-flow.tsx"
-    )
+    ) + readSource("src/features/coaching-booking/components/coaching-session-notes-field.tsx")
+      + readSource("src/features/coaching-booking/hooks/use-coaching-booking-actions.ts")
     const participantStacks = readSource(
       "src/features/coaching-booking/components/coaching-participant-stacks.tsx"
     )
@@ -570,7 +577,7 @@ describe("coaching booking feature", () => {
     expect(flow).toContain("Cancel this meeting?")
     expect(flow).toContain("Keep meeting")
     expect(flow).toContain("Cancel meeting")
-    expect(flow).not.toContain("Reschedule")
+    expect(flow).toContain("CoachingRescheduleDialog")
     expect(flow).not.toContain("rescheduleCoachingBookingAction")
     expect(flow).not.toContain("Availability for")
     expect(flow).not.toContain("Joint availability")
@@ -779,7 +786,7 @@ describe("coaching booking feature", () => {
     expect(actions).toContain("price_tier: priceTier")
     expect(actions).toContain("resolveStripeRuntimeConfigForCoaching")
     expect(actions).toContain(
-      "getValidGoogleCalendarEventId(booking.google_event_id)"
+      "flushCoachingCalendarChange(booking.id)"
     )
     expect(actions).toContain('requestHeaders.get("origin")')
     expect(actions).toContain("Unable to create the coach calendar event.")
@@ -834,7 +841,7 @@ describe("coaching booking feature", () => {
     )
     expect(finalizer).toContain("Meeting notes from attendee:")
     expect(finalizer).toContain("attendeeNotes: booking.attendee_notes")
-    expect(finalizer).toContain('source: "booking"')
+    expect(finalizer).toContain('"confirm_coaching_credit_booking"')
     expect(email).toContain("sendResendEmail")
     expect(email).toContain("Your Coach House coaching meeting is confirmed")
     expect(email).toContain("New Coach House coaching meeting booked")
@@ -1001,7 +1008,7 @@ describe("coaching booking feature", () => {
     const included = await resolveCoachingCreditSummary({
       supabase: createCreditSummarySupabaseStub({
         purchases: [{ coaching_included: true }],
-        ledger: consumedCredits(3),
+        ledger: consumedCredits(9),
       }),
       userId: "user-1",
       orgId: "org-1",
@@ -1009,7 +1016,7 @@ describe("coaching booking feature", () => {
     const nonOperationsAfterCredits = await resolveCoachingCreditSummary({
       supabase: createCreditSummarySupabaseStub({
         purchases: [{ coaching_included: true }],
-        ledger: consumedCredits(4),
+        ledger: consumedCredits(10),
       }),
       userId: "user-1",
       orgId: "org-1",
@@ -1081,6 +1088,7 @@ describe("coaching booking feature", () => {
     const bookings = await listUpcomingCoachingBookings({
       supabase,
       orgId: "org-1",
+      userId: "user-1",
     })
 
     expect(calls.statusEq).toBe("confirmed")

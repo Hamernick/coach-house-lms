@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import CalendarPlusIcon from "lucide-react/dist/esm/icons/calendar-plus"
@@ -10,7 +10,6 @@ import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import Globe2Icon from "lucide-react/dist/esm/icons/globe-2"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 import VideoIcon from "lucide-react/dist/esm/icons/video"
-import { toast } from "sonner"
 
 import {
   AlertDialog,
@@ -26,13 +25,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
-import { Textarea } from "@/components/ui/textarea"
+import { SessionNotesField } from "./coaching-session-notes-field"
+import { CoachingRescheduleDialog } from "./coaching-reschedule-dialog"
+import { useCoachingBookingActions } from "../hooks/use-coaching-booking-actions"
 import { WheelPicker, WheelPickerWrapper, type WheelPickerOption } from "@/components/wheel-picker"
 import { COACHING_DEFAULT_TIMEZONE, COACHING_PATH, COACHING_SESSION_MINUTES, getValidGoogleMeetUrl, getValidGoogleCalendarEventUrl } from "../lib"
-import { cancelCoachingBookingAction, listCoachingAvailabilityAction, reserveCoachingBookingAction } from "../actions"
+import { listCoachingAvailabilityAction } from "../actions"
 import { BookingParticipantStack, SessionAvatarStack } from "./coaching-participant-stacks"
 import { dateFromKey, dateKey, formatSlotTimeLabel, getCalendarGridRange, listCalendarGridDates, startOfMonth, zonedDateKey } from "./coaching-time-picker-utils"
-import { COACHING_ATTENDEE_NOTES_MAX_LENGTH, type CoachingBookingPageData, type CoachingBookingRecord, type CoachingCoach, type CoachingSlot } from "../types"
+import { type CoachingBookingPageData, type CoachingBookingRecord, type CoachingCoach, type CoachingSlot } from "../types"
 
 type CoachingBookingFlowProps = {
   initialData: CoachingBookingPageData
@@ -173,6 +174,10 @@ function SessionDetailsPanel({ coaches, creditSummary, timezone }: { coaches: Co
             {priceTier ? <> · {priceTier}</> : null}
           </span>
         </SessionMetaRow>
+        <p className="text-muted-foreground text-xs leading-5">
+          Cancel at least 4 hours before to restore your credit. Late cancellations and no-shows use the credit.
+          Late reschedules require another credit. Coach cancellations restore your credit.
+        </p>
       </div>
     </aside>
   )
@@ -218,6 +223,7 @@ function BookingRow({ booking, onCancel, pending }: { booking: CoachingBookingRe
         </Button>
         {booking.canManage ? (
           <>
+            <CoachingRescheduleDialog booking={booking} disabled={pending} />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="ghost" className="h-8 rounded-full" disabled={pending}>
@@ -228,7 +234,7 @@ function BookingRow({ booking, onCancel, pending }: { booking: CoachingBookingRe
                 <AlertDialogHeader>
                   <AlertDialogTitle>Cancel this meeting?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This cancels your {formattedStart} coaching meeting with {booking.coachName} and removes the coach calendar event.
+                    This cancels your {formattedStart} coaching meeting with {booking.coachName} and removes the coach calendar event. Your credit is restored only with at least 4 hours notice; later cancellations forfeit it.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -246,26 +252,6 @@ function BookingRow({ booking, onCancel, pending }: { booking: CoachingBookingRe
   )
 }
 
-function SessionNotesField({ value, disabled, onChange }: { value: string; disabled: boolean; onChange: (value: string) => void }) {
-  return (
-    <div data-booking-notes-field="true" className="mt-1.5 flex flex-col gap-2">
-      <label htmlFor="coaching-session-notes" className="text-foreground text-sm font-medium">
-        Notes
-      </label>
-      <Textarea
-        id="coaching-session-notes"
-        name="attendee-notes"
-        value={value}
-        maxLength={COACHING_ATTENDEE_NOTES_MAX_LENGTH}
-        placeholder="Share priorities, questions, or context for the meeting…"
-        className="min-h-24 resize-none"
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
-  )
-}
-
 export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   const [step, setStep] = useState<FlowStep>("date")
   const [stepDirection, setStepDirection] = useState<1 | -1>(1)
@@ -276,7 +262,6 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   const [selectedSlot, setSelectedSlot] = useState<CoachingSlot | null>(null)
   const [attendeeNotes, setAttendeeNotes] = useState("")
   const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null)
-  const [pending, startTransition] = useTransition()
   const availabilityRequestId = useRef(0)
   const timezone = initialData.timezone || COACHING_DEFAULT_TIMEZONE
   const selectedDateHeading = selectedDate
@@ -318,6 +303,10 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   )
   const paidCheckoutRequired = initialData.creditSummary.available <= 0
   const checkoutUnavailable = paidCheckoutRequired && !initialData.paymentConfigured
+  const { pending, confirmSelection, cancelBooking } = useCoachingBookingActions({
+    selectedSlot, checkoutUnavailable, selectedCoachId: initialData.selectedCoachId,
+    timezone, attendeeNotes, onBooked: () => setStep("done"),
+  })
   const showCalendarStep = step === "date"
   const prefersReducedMotion = useReducedMotion()
   const stepTransition = {
@@ -419,45 +408,6 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   function showCalendar() {
     setStepDirection(-1)
     setStep("date")
-  }
-
-  function confirmSelection() {
-    if (!selectedSlot) return
-    if (checkoutUnavailable) {
-      toast.error("Coaching checkout is not configured yet.")
-      return
-    }
-    startTransition(async () => {
-      const result = await reserveCoachingBookingAction({
-        coachId: initialData.selectedCoachId,
-        startsAt: selectedSlot.startsAt,
-        timezone,
-        attendeeNotes,
-      })
-
-      if (!result.ok) {
-        toast.error(result.error)
-        return
-      }
-      if ("checkoutUrl" in result && result.checkoutUrl) {
-        window.location.assign(result.checkoutUrl)
-        return
-      }
-      toast.success("Meeting booked.")
-      setStep("done")
-    })
-  }
-
-  function cancelBooking(bookingId: string) {
-    startTransition(async () => {
-      const result = await cancelCoachingBookingAction({ bookingId })
-      if (!result.ok) {
-        toast.error(result.error)
-        return
-      }
-      toast.success("Meeting canceled.")
-      window.location.assign(COACHING_PATH)
-    })
   }
 
   return (

@@ -21,7 +21,7 @@ Applied manifest: `manifest-v3.json`, SHA256 `a967906ce42250db7f718db5219158235d
 
 Batch `b9d95f31-a465-5164-bc43-7a78159207c8` completed at **2026-09-28 17:21:35 UTC (1:21 PM EDT)**. Full native/source reconciliation passed. Four existing projects, six existing tasks and six existing assignments match their pre-import snapshots. Zero import assignment notifications; one summary activity event. Private evidence: `production-before-import.json` and `production-reconciled-v3.json` in the backup directory.
 
-Eight source priorities labeled **On Fire!** map to native **Urgent**; original labels remain in overview text and raw provenance. An earlier v2 attempt failed the native priority constraint and rolled back completely. The corrected rehearsal includes that production constraint, identical-retry verification, access checks and guarded rollback. Unknown priority labels now fail offline before any database call.
+Eight source priorities labeled **On Fire!** map to native **Urgent**; original labels remain in overview text and raw provenance. An earlier v2 attempt failed the native priority constraint and rolled back completely. The corrected rehearsal includes that production constraint, identical-retry verification, access checks and guarded rollback. Unknown priority labels now fail offline before any database call. Validation is entity-specific: projects accept Urgent/High/Medium/Low, while tasks also accept No-priority. The entity argument is required; missing project priorities still default to Medium, and missing task priorities to No-priority.
 
 Generate another candidate only after reviewing any source or mapping change:
 
@@ -81,3 +81,11 @@ Production `coachhouse.app` is Ready on merged SHA `335b96dca79b33a3aa3b3b8b23e2
 5. Open [Project Management Tool](https://coachhouse.app/projects/d032082c-4879-56bd-9e69-64cf018cb71b), then Notes, for template/recurrence/inbox references. They are references, not active generators.
 
 Read-back reconciliation and automated release checks passed. Joel-authenticated UI and edit/save/reopen review remain with Caleb/Joel; no browser permission was assumed. Franklin remains unlinked; 11 held personal/test source records remain private. No further feature work is required for this bounded release.
+
+## Final review-fix release — September 28, 1:53 PM EDT
+
+PR #261 was merged by Caleb as `5f02a334bdf8e97853ed4b36e8081950e115c1dc`. Hosted run `36459798320` passed static, acceptance, RLS, build, visual and aggregate quality on head `73edc1d5`; the head and merge trees match. Supabase Preview was cancelled because its existing concurrent-branch limit was reached; required local/hosted RLS passed.
+
+Applied only `20260928180000_require_monthly_project_dates.sql` after a dry run. Read-only catalog verification confirms `organization_projects_monthly_dates_check` exists and is validated: monthly recurrence requires both dates. No records changed. Vercel deployment `dpl_5pZ28Foz7FKDSibMmNU7z2jouUvc` is Ready on the merged revision and includes canonical alias coachhouse.app. Cross-organization proposals/collaborations remain visible with unchanged read-only permissions.
+
+Private verification: `review-guards-release-verification.json` alongside the original import evidence. Implementation and deployment are complete. Caleb confirmed Google login on the sole local server at localhost:3000; Joel-authenticated task view and edit/save/reopen review still remain with Caleb/Joel. No further migration or import run is needed.

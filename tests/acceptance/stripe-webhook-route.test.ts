@@ -153,6 +153,7 @@ function createAdminSupabaseStub(options?: {
         },
       },
       from,
+      rpc: vi.fn().mockResolvedValue({ data: "credit-grant", error: null }),
     },
     calls: {
       subscriptionsCreate: subscriptionsCreateMock,
@@ -300,6 +301,7 @@ describe("stripe webhook route acceptance", () => {
     createSupabaseAdminClientMock.mockReturnValue(admin)
     loadCoachingBookingForConfirmationMock.mockResolvedValue({
       id: "booking-1",
+      stripe_checkout_session_id: "cs_coaching",
       org_id: "org-1",
       user_id: "user-1",
       coach_id: "joel",
@@ -319,6 +321,7 @@ describe("stripe webhook route acceptance", () => {
       data: {
         object: {
           id: "cs_coaching",
+          payment_status: "paid",
           mode: "payment",
           metadata: {
             kind: "coaching_booking",

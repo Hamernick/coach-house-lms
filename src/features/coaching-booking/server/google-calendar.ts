@@ -20,6 +20,7 @@ type CoachingBusyWindow = {
 }
 
 type GoogleEventResponse = {
+  status?: string
   id?: string
   htmlLink?: string
   hangoutLink?: string
@@ -57,10 +58,8 @@ function normalizePrivateKey(value: string) {
   return value.replace(/\\n/g, "\n")
 }
 
-function getCoachCalendarId(coachId: CoachingCoachId) {
-  return coachId === "paula"
-    ? env.GOOGLE_COACHING_PAULA_CALENDAR_ID
-    : env.GOOGLE_COACHING_JOEL_CALENDAR_ID
+export function getCoachCalendarId(coachId: CoachingCoachId) {
+  return coachId === "paula" ? env.GOOGLE_COACHING_PAULA_CALENDAR_ID : env.GOOGLE_COACHING_JOEL_CALENDAR_ID
 }
 
 function getImpersonatedUser(coachId?: CoachingCoachId) {
@@ -75,21 +74,12 @@ function getImpersonatedUser(coachId?: CoachingCoachId) {
 
 export function getGoogleCoachingParticipantEmail(coachId: CoachingCoachId) {
   return (
-    getImpersonatedUser(coachId) ??
-    DEFAULT_COACHING_PARTICIPANT_EMAILS[coachId] ??
-    getCoachCalendarId(coachId) ??
-    null
+    getImpersonatedUser(coachId) ?? DEFAULT_COACHING_PARTICIPANT_EMAILS[coachId] ?? getCoachCalendarId(coachId) ?? null
   )
 }
 
 function normalizeInternalAttendeeEmails(emails: string[] = []) {
-  return Array.from(
-    new Set(
-      emails
-        .map((email) => email.trim())
-        .filter((email) => email.length > 0),
-    ),
-  )
+  return Array.from(new Set(emails.map((email) => email.trim()).filter((email) => email.length > 0)))
 }
 
 function buildGoogleEventAttendees({
@@ -102,16 +92,16 @@ function buildGoogleEventAttendees({
   return normalizeInternalAttendeeEmails([attendeeEmail ?? "", ...internalAttendeeEmails]).map((email) => ({ email }))
 }
 
-function isBrokerConfigured() {
+export function isBrokerConfigured() {
   return Boolean(env.GOOGLE_COACHING_BROKER_URL && env.GOOGLE_COACHING_BROKER_SECRET)
 }
 
 function isBrokerWorkloadIdentityConfigured() {
   return Boolean(
     env.GOOGLE_COACHING_GCP_PROJECT_NUMBER &&
-      env.GOOGLE_COACHING_WORKLOAD_IDENTITY_POOL_ID &&
-      env.GOOGLE_COACHING_WORKLOAD_IDENTITY_PROVIDER_ID &&
-      env.GOOGLE_COACHING_INVOKER_SERVICE_ACCOUNT_EMAIL,
+    env.GOOGLE_COACHING_WORKLOAD_IDENTITY_POOL_ID &&
+    env.GOOGLE_COACHING_WORKLOAD_IDENTITY_PROVIDER_ID &&
+    env.GOOGLE_COACHING_INVOKER_SERVICE_ACCOUNT_EMAIL
   )
 }
 
@@ -160,6 +150,7 @@ async function getAccessToken(coachId?: CoachingCoachId) {
   const assertion = `${unsignedJwt}.${base64Url(signature)}`
 
   const response = await fetch("https://oauth2.googleapis.com/token", {
+    signal: AbortSignal.timeout(5000),
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -172,7 +163,10 @@ async function getAccessToken(coachId?: CoachingCoachId) {
     throw new Error(`Unable to authenticate Google Calendar (${response.status}).`)
   }
 
-  const payload = (await response.json()) as { access_token?: string; expires_in?: number }
+  const payload = (await response.json()) as {
+    access_token?: string
+    expires_in?: number
+  }
   if (!payload.access_token) {
     throw new Error("Google Calendar token response did not include an access token.")
   }
@@ -184,7 +178,7 @@ async function getAccessToken(coachId?: CoachingCoachId) {
   return payload.access_token
 }
 
-async function requestGoogleCalendarDirect<T>({
+export async function requestGoogleCalendarDirect<T>({
   coachId,
   path,
   method = "GET",
@@ -197,6 +191,7 @@ async function requestGoogleCalendarDirect<T>({
 }) {
   const token = await getAccessToken(coachId)
   const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
+    signal: AbortSignal.timeout(8000),
     method,
     headers: {
       authorization: `Bearer ${token}`,
@@ -206,7 +201,7 @@ async function requestGoogleCalendarDirect<T>({
   })
 
   if (!response.ok) {
-    throw new Error(`Google Calendar request failed (${response.status}).`)
+    throw Object.assign(new Error(`Google Calendar request failed (${response.status}).`), { status: response.status })
   }
 
   if (response.status === 204) {
@@ -276,6 +271,7 @@ async function getBrokerIdentityToken() {
     `/locations/global/workloadIdentityPools/${env.GOOGLE_COACHING_WORKLOAD_IDENTITY_POOL_ID}` +
     `/providers/${env.GOOGLE_COACHING_WORKLOAD_IDENTITY_PROVIDER_ID}`
   const stsResponse = await fetch("https://sts.googleapis.com/v1/token", {
+    signal: AbortSignal.timeout(5000),
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -304,6 +300,7 @@ async function getBrokerIdentityToken() {
   const identityResponse = await fetch(
     `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${encodeURIComponent(env.GOOGLE_COACHING_INVOKER_SERVICE_ACCOUNT_EMAIL)}:generateIdToken`,
     {
+      signal: AbortSignal.timeout(5000),
       method: "POST",
       headers: {
         authorization: `Bearer ${stsToken.access_token}`,
@@ -313,7 +310,7 @@ async function getBrokerIdentityToken() {
         audience: brokerUrl,
         includeEmail: true,
       }),
-    },
+    }
   )
 
   if (!identityResponse.ok) {
@@ -331,13 +328,7 @@ async function getBrokerIdentityToken() {
   return brokerIdentityTokenCache.accessToken
 }
 
-async function requestGoogleCalendarBroker<T>({
-  operation,
-  payload,
-}: {
-  operation: string
-  payload: unknown
-}) {
+export async function requestGoogleCalendarBroker<T>({ operation, payload }: { operation: string; payload: unknown }) {
   if (!env.GOOGLE_COACHING_BROKER_URL || !env.GOOGLE_COACHING_BROKER_SECRET) {
     throw new Error("Google coaching calendar broker is not configured.")
   }
@@ -349,14 +340,13 @@ async function requestGoogleCalendarBroker<T>({
 
   const timestamp = String(Date.now())
   const body = JSON.stringify({ operation, payload })
-  const signature = createHmac("sha256", env.GOOGLE_COACHING_BROKER_SECRET)
-    .update(`${timestamp}.${body}`)
-    .digest("hex")
+  const signature = createHmac("sha256", env.GOOGLE_COACHING_BROKER_SECRET).update(`${timestamp}.${body}`).digest("hex")
   const identityToken =
     isBrokerWorkloadIdentityConfigured() && !isLocalBrokerUrl(brokerUrl) ? await getBrokerIdentityToken() : null
   let response: Response
   try {
     response = await fetch(brokerUrl, {
+      signal: AbortSignal.timeout(15000),
       method: "POST",
       headers: {
         ...(identityToken ? { authorization: `Bearer ${identityToken}` } : {}),
@@ -435,7 +425,9 @@ export async function listGoogleBusyWindows({
   timeMax: string
 }) {
   if (isBrokerConfigured()) {
-    const payload = await requestGoogleCalendarBroker<{ busy?: CoachingBusyWindow[] }>({
+    const payload = await requestGoogleCalendarBroker<{
+      busy?: CoachingBusyWindow[]
+    }>({
       operation: "freeBusy",
       payload: { coachId, timeMin, timeMax },
     })
@@ -475,6 +467,7 @@ export async function createGoogleCoachingEvent({
   timezone,
   attendeeEmail,
   internalAttendeeEmails = [],
+  eventId,
 }: {
   coachId: CoachingCoachId
   summary: string
@@ -484,6 +477,7 @@ export async function createGoogleCoachingEvent({
   timezone: string
   attendeeEmail: string | null
   internalAttendeeEmails?: string[]
+  eventId?: string
 }) {
   const internalAttendees = normalizeInternalAttendeeEmails(internalAttendeeEmails)
   const attendees = buildGoogleEventAttendees({ attendeeEmail, internalAttendeeEmails: internalAttendees })
@@ -499,6 +493,7 @@ export async function createGoogleCoachingEvent({
         timezone,
         attendeeEmail,
         internalAttendeeEmails: internalAttendees,
+        eventId,
       },
     })
   }
@@ -513,6 +508,7 @@ export async function createGoogleCoachingEvent({
     path: `/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
     method: "POST",
     body: {
+      ...(eventId ? { id: eventId } : {}),
       summary,
       description: attendeeEmail
         ? `${description}\n\nAttendee: ${attendeeEmail}\nUse this Google Calendar invite for updates or rescheduling.`
@@ -537,8 +533,16 @@ export async function createGoogleCoachingEvent({
         },
       },
     },
+  }).catch(async (error: unknown) => {
+    if (eventId && (error as { status?: number }).status === 409)
+      return requestGoogleCalendarDirect<GoogleEventResponse>({
+        coachId,
+        path: `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+      })
+    throw error
   })
 
+  if (event.status === "cancelled") throw new Error("Coach canceled the calendar event during confirmation.")
   const conference = await waitForMeetUrl({ coachId, calendarId, event })
   if (getImpersonatedUser(coachId) && !conference.meetUrl) {
     throw new Error("Google Calendar created the event but did not return a Meet link.")

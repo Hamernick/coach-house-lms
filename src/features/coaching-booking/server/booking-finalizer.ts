@@ -15,7 +15,11 @@ import {
 } from "../lib"
 import type { CoachingCoachId } from "../types"
 import { sendCoachingBookingConfirmationEmails } from "./email"
-import { createGoogleCoachingEvent, getGoogleCoachingParticipantEmail } from "./google-calendar"
+import {
+  createGoogleCoachingEvent,
+  deleteGoogleCoachingEvent,
+  getGoogleCoachingParticipantEmail,
+} from "./google-calendar"
 
 type AdminClient = SupabaseClient<Database>
 
@@ -32,58 +36,14 @@ type BookingForConfirmation = {
   attendee_notes: string | null
   google_event_id: string | null
   google_meet_url: string | null
+  calendar_pending_action?: string | null
+  stripe_checkout_session_id?: string | null
 }
 
 function buildCalendarEventDescription(booking: BookingForConfirmation) {
   const notes = booking.attendee_notes?.trim()
   const base = `Coach House coaching meeting with ${COACHING_JOINT_COACH_LABEL} booked inside the platform.`
   return notes ? `${base}\n\nMeeting notes from attendee:\n${notes}` : base
-}
-
-async function insertLedgerEntryIfMissing({
-  admin,
-  booking,
-  source,
-  quantity,
-  note,
-  stripeCheckoutSessionId,
-  stripePaymentIntentId,
-}: {
-  admin: AdminClient
-  booking: BookingForConfirmation
-  source: "purchase" | "booking" | "cancellation"
-  quantity: number
-  note: string
-  stripeCheckoutSessionId?: string | null
-  stripePaymentIntentId?: string | null
-}) {
-  const { data: existing, error: existingError } = await admin
-    .from("coaching_credit_ledger")
-    .select("id")
-    .eq("booking_id", booking.id)
-    .eq("source", source)
-    .maybeSingle<{ id: string }>()
-
-  if (existingError) {
-    throw supabaseErrorToError(existingError, "Unable to inspect coaching credit ledger.")
-  }
-
-  if (existing) return
-
-  const { error } = await admin.from("coaching_credit_ledger").insert({
-    org_id: booking.org_id,
-    user_id: booking.user_id,
-    booking_id: booking.id,
-    source,
-    quantity,
-    note,
-    stripe_checkout_session_id: stripeCheckoutSessionId ?? null,
-    stripe_payment_intent_id: stripePaymentIntentId ?? null,
-  })
-
-  if (error) {
-    throw supabaseErrorToError(error, "Unable to update coaching credit ledger.")
-  }
 }
 
 export async function confirmCoachingBooking({
@@ -101,17 +61,25 @@ export async function confirmCoachingBooking({
   stripePaymentIntentId?: string | null
   stripeCustomerId?: string | null
 }) {
-  if (booking.status === "confirmed" && booking.google_event_id) {
+  if (booking.status === "confirmed" && booking.google_event_id && booking.calendar_pending_action !== "create") {
     return booking
   }
 
+  const creditResult = await admin.rpc("confirm_coaching_credit_booking", {
+    p_booking_id: booking.id,
+    p_checkout_id: stripeCheckoutSessionId ?? null,
+    p_payment_id: stripePaymentIntentId ?? null,
+    p_customer_id: stripeCustomerId ?? null,
+  })
+  if (creditResult.error) throw supabaseErrorToError(creditResult.error, "Unable to reserve coaching credit.")
+
   const coachId = normalizeCoachId(booking.coach_id)
   const priceTier = normalizePriceTier(booking.price_tier)
-  const internalAttendeeEmails = COACHING_JOINT_COACH_IDS
-    .filter((participantId) => participantId !== coachId)
+  const internalAttendeeEmails = COACHING_JOINT_COACH_IDS.filter((participantId) => participantId !== coachId)
     .map((participantId) => getGoogleCoachingParticipantEmail(participantId))
     .filter((email): email is string => Boolean(email))
   const calendarEvent = await createGoogleCoachingEvent({
+    eventId: booking.id.replaceAll("-", ""),
     coachId,
     summary: `Coach House meeting with ${COACHING_JOINT_COACH_LABEL}`,
     description: buildCalendarEventDescription(booking),
@@ -120,35 +88,16 @@ export async function confirmCoachingBooking({
     timezone: booking.timezone,
     attendeeEmail,
     internalAttendeeEmails,
+  }).catch((error: unknown) => {
+    // The confirmed reservation and durable Calendar create action are retried by reconciliation.
+    console.error("Coaching calendar confirmation pending", error)
+    return null
   })
+  if (!calendarEvent) return { ...booking, status: "confirmed" }
+
   const googleEventId = getValidGoogleCalendarEventId(calendarEvent.googleEventId)
   const googleMeetUrl = getValidGoogleMeetUrl(calendarEvent.googleMeetUrl)
   const googleEventHtmlLink = getValidGoogleCalendarEventUrl(calendarEvent.googleEventHtmlLink)
-
-  if (priceTier !== "included") {
-    await insertLedgerEntryIfMissing({
-      admin,
-      booking,
-      source: "purchase",
-      quantity: 1,
-      note: "Paid coaching meeting purchased through Stripe.",
-      stripeCheckoutSessionId,
-      stripePaymentIntentId,
-    })
-  }
-
-  await insertLedgerEntryIfMissing({
-    admin,
-    booking,
-    source: "booking",
-    quantity: -1,
-    note:
-      priceTier === "included"
-        ? "Included coaching credit consumed by confirmed booking."
-        : "Paid coaching credit consumed by confirmed booking.",
-    stripeCheckoutSessionId,
-    stripePaymentIntentId,
-  })
 
   const now = new Date().toISOString()
   const { data: updated, error } = await admin
@@ -160,16 +109,30 @@ export async function confirmCoachingBooking({
       stripe_checkout_session_id: stripeCheckoutSessionId ?? undefined,
       stripe_payment_intent_id: stripePaymentIntentId ?? undefined,
       stripe_customer_id: stripeCustomerId ?? undefined,
+      calendar_pending_action: null,
       google_event_id: googleEventId,
       google_event_html_link: googleEventHtmlLink,
       google_meet_url: googleMeetUrl,
     })
     .eq("id", booking.id)
-    .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url")
-    .single<BookingForConfirmation>()
+    .eq("status", "confirmed")
+    .eq("calendar_pending_action", "create")
+    .select(
+      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url"
+    )
+    .maybeSingle<BookingForConfirmation>()
 
   if (error) {
     throw supabaseErrorToError(error, "Unable to confirm coaching booking.")
+  }
+
+  if (!updated) {
+    const current = await loadCoachingBookingForConfirmation({
+      admin,
+      bookingId: booking.id,
+    })
+    if (current?.status === "canceled" && googleEventId) await deleteGoogleCoachingEvent({ coachId, googleEventId })
+    return current ?? booking
   }
 
   const notifyResult = await createNotification(admin as never, {
@@ -197,9 +160,9 @@ export async function confirmCoachingBooking({
   try {
     await sendCoachingBookingConfirmationEmails({
       attendeeEmail,
-      coachEmails: COACHING_JOINT_COACH_IDS
-        .map((participantId) => getGoogleCoachingParticipantEmail(participantId))
-        .filter((email): email is string => Boolean(email)),
+      coachEmails: COACHING_JOINT_COACH_IDS.map((participantId) =>
+        getGoogleCoachingParticipantEmail(participantId)
+      ).filter((email): email is string => Boolean(email)),
       startsAt: booking.starts_at,
       endsAt: booking.ends_at,
       timezone: booking.timezone,
@@ -241,7 +204,9 @@ export async function loadCoachingBookingForConfirmation({
 }) {
   const { data, error } = await admin
     .from("coaching_bookings")
-    .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url")
+    .select(
+      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url, calendar_pending_action, stripe_checkout_session_id"
+    )
     .eq("id", bookingId)
     .maybeSingle<BookingForConfirmation>()
 
@@ -259,25 +224,12 @@ export async function restoreBookingCredit({
   admin: AdminClient
   booking: BookingForConfirmation
 }) {
-  const { data: consumedCredit, error } = await admin
-    .from("coaching_credit_ledger")
-    .select("id")
-    .eq("booking_id", booking.id)
-    .eq("source", "booking")
-    .maybeSingle<{ id: string }>()
-
-  if (error) {
-    throw supabaseErrorToError(error, "Unable to inspect consumed coaching credit.")
-  }
-  if (!consumedCredit) return
-
-  await insertLedgerEntryIfMissing({
-    admin,
-    booking,
-    source: "cancellation",
-    quantity: 1,
-    note: "Coaching credit restored after cancellation.",
+  const { error } = await admin.rpc("restore_coaching_credit", {
+    p_booking_id: booking.id,
+    p_actor_id: null,
+    p_reason: "Coaching credit restored after cancellation.",
   })
+  if (error) throw supabaseErrorToError(error, "Unable to restore coaching credit.")
 }
 
 export function resolveCoachDisplayName(_coachId: CoachingCoachId) {

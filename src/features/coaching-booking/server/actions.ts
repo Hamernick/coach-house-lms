@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 
-import { resolveStripePriceIdForCoaching, resolveStripeRuntimeConfigForCoaching } from "@/lib/billing/stripe-runtime"
+import {
+  resolveStripePriceIdForCoaching,
+  resolveStripeRuntimeConfigForCoaching,
+} from "@/lib/billing/stripe-runtime"
 import { env } from "@/lib/env"
-import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import {
+  resolveDevtoolsAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createNotification } from "@/lib/notifications"
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase"
+import {
+  createSupabaseAdminClient,
+  createSupabaseServerClient,
+} from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import {
@@ -19,7 +28,6 @@ import {
   COACHING_JOINT_PRIMARY_COACH_ID,
   COACHING_PATH,
   COACHING_SESSION_MINUTES,
-  getValidGoogleCalendarEventId,
   isValidFutureDate,
   normalizeCoachId,
 } from "../lib"
@@ -35,14 +43,12 @@ import type {
 import {
   confirmCoachingBooking,
   loadCoachingBookingForConfirmation,
-  restoreBookingCredit,
 } from "./booking-finalizer"
+import { flushCoachingCalendarChange } from "./calendar-reconciliation"
 import { listLocalBusyWindows, resolveCoachingCreditSummary } from "./data"
 import {
-  deleteGoogleCoachingEvent,
   isGoogleCoachingConfigured,
   listGoogleBusyWindows,
-  updateGoogleCoachingEvent,
 } from "./google-calendar"
 
 type AuthContext = {
@@ -56,18 +62,23 @@ async function getAppOrigin() {
   const requestOrigin = requestHeaders.get("origin")
   if (requestOrigin) return requestOrigin
 
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
   if (host) {
     const protocol =
       requestHeaders.get("x-forwarded-proto") ??
-      (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https")
+      (host.startsWith("localhost") || host.startsWith("127.0.0.1")
+        ? "http"
+        : "https")
     return `${protocol}://${host}`
   }
 
   return (
     env.NEXT_PUBLIC_SITE_URL ??
     env.NEXT_PUBLIC_APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000")
   )
 }
 
@@ -98,7 +109,11 @@ function parseRange(input: CoachingAvailabilityInput) {
   const from = new Date(input.from)
   const to = new Date(input.to)
   const timezone = input.timezone || COACHING_DEFAULT_TIMEZONE
-  if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from >= to) {
+  if (
+    !Number.isFinite(from.getTime()) ||
+    !Number.isFinite(to.getTime()) ||
+    from >= to
+  ) {
     throw new Error("Choose a valid date range.")
   }
   return { coachId, from, to, timezone }
@@ -107,7 +122,9 @@ function parseRange(input: CoachingAvailabilityInput) {
 function normalizeAttendeeNotes(value: string | undefined) {
   const notes = value?.trim() ?? ""
   if (notes.length > COACHING_ATTENDEE_NOTES_MAX_LENGTH) {
-    throw new Error(`Keep notes under ${COACHING_ATTENDEE_NOTES_MAX_LENGTH} characters.`)
+    throw new Error(
+      `Keep notes under ${COACHING_ATTENDEE_NOTES_MAX_LENGTH} characters.`
+    )
   }
   return notes.length > 0 ? notes : null
 }
@@ -137,8 +154,12 @@ async function listJointBusyWindows({
 }) {
   const admin = createSupabaseAdminClient()
   const windows = await Promise.all([
-    ...COACHING_JOINT_COACH_IDS.map((coachId) => listLocalBusyWindows({ supabase: admin, coachId, from, to })),
-    ...COACHING_JOINT_COACH_IDS.map((coachId) => listGoogleBusyWindows({ coachId, timeMin: from, timeMax: to })),
+    ...COACHING_JOINT_COACH_IDS.map((coachId) =>
+      listLocalBusyWindows({ supabase: admin, coachId, from, to })
+    ),
+    ...COACHING_JOINT_COACH_IDS.map((coachId) =>
+      listGoogleBusyWindows({ coachId, timeMin: from, timeMax: to })
+    ),
   ])
   return windows.flat()
 }
@@ -162,7 +183,10 @@ async function createStripeCheckout({
     userId,
     fallbackIsTester: resolveTesterMetadata({}),
   })
-  const config = resolveStripeRuntimeConfigForCoaching({ useTesterRuntime: audience.isAdmin, priceTier })
+  const config = resolveStripeRuntimeConfigForCoaching({
+    useTesterRuntime: audience.isAdmin,
+    priceTier,
+  })
   if (!config) {
     throw new Error("Stripe is not configured for coaching checkout.")
   }
@@ -198,8 +222,10 @@ async function createStripeCheckout({
 }
 
 export async function listCoachingAvailabilityAction(
-  input: CoachingAvailabilityInput,
-): Promise<CoachingActionResult<{ slots: CoachingSlot[]; calendarConfigured: boolean }>> {
+  input: CoachingAvailabilityInput
+): Promise<
+  CoachingActionResult<{ slots: CoachingSlot[]; calendarConfigured: boolean }>
+> {
   try {
     const { from, to, timezone } = parseRange(input)
     if (!isGoogleCoachingConfigured()) {
@@ -222,13 +248,16 @@ export async function listCoachingAvailabilityAction(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to load coaching availability.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to load coaching availability.",
     }
   }
 }
 
 export async function reserveCoachingBookingAction(
-  input: CoachingBookingInput,
+  input: CoachingBookingInput
 ): Promise<
   CoachingActionResult<{
     bookingId: string
@@ -254,7 +283,10 @@ export async function reserveCoachingBookingAction(
       to: endsAt.toISOString(),
     })
     if (hasOverlap({ startsAt, endsAt, windows: busyWindows })) {
-      return { ok: false, error: "That slot was just taken. Pick another time." }
+      return {
+        ok: false,
+        error: "That slot was just taken. Pick another time.",
+      }
     }
 
     const context = await resolveActionContext()
@@ -266,7 +298,10 @@ export async function reserveCoachingBookingAction(
     })
     const priceTier = creditSummary.priceTier
     const status = priceTier === "included" ? "held" : "pending_payment"
-    const holdExpiresAt = addMinutes(new Date(), COACHING_HOLD_MINUTES).toISOString()
+    const holdExpiresAt = addMinutes(
+      new Date(),
+      COACHING_HOLD_MINUTES
+    ).toISOString()
 
     const { data: booking, error } = await admin
       .from("coaching_bookings")
@@ -282,7 +317,9 @@ export async function reserveCoachingBookingAction(
         attendee_notes: attendeeNotes,
         hold_expires_at: holdExpiresAt,
       })
-      .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url")
+      .select(
+        "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url"
+      )
       .single()
 
     if (error) {
@@ -305,6 +342,7 @@ export async function reserveCoachingBookingAction(
             cancel_reason: "Unable to create the coach calendar event.",
           })
           .eq("id", booking.id)
+          .eq("status", "held")
         throw confirmError
       }
       revalidatePath(COACHING_PATH)
@@ -325,7 +363,10 @@ export async function reserveCoachingBookingAction(
       .eq("id", booking.id)
 
     if (checkoutUpdateError) {
-      throw supabaseErrorToError(checkoutUpdateError, "Unable to attach coaching checkout.")
+      throw supabaseErrorToError(
+        checkoutUpdateError,
+        "Unable to attach coaching checkout."
+      )
     }
 
     await trackUserJourneyMilestone({
@@ -354,14 +395,15 @@ export async function reserveCoachingBookingAction(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to book coaching.",
+      error:
+        error instanceof Error ? error.message : "Unable to book coaching.",
     }
   }
 }
 
 export async function cancelCoachingBookingAction(
-  input: CoachingManageBookingInput,
-): Promise<CoachingActionResult<{ success: true }>> {
+  input: CoachingManageBookingInput
+): Promise<CoachingActionResult<{ success: true; creditRestored?: boolean }>> {
   try {
     const context = await resolveActionContext()
     const admin = createSupabaseAdminClient()
@@ -370,40 +412,39 @@ export async function cancelCoachingBookingAction(
       bookingId: input.bookingId,
     })
 
-    if (!booking || booking.user_id !== context.userId || booking.org_id !== context.orgId) {
+    if (!booking || booking.user_id !== context.userId) {
       return { ok: false, error: "Coaching booking not found." }
     }
     if (Date.parse(booking.starts_at) <= Date.now()) {
-      return { ok: false, error: "Past coaching meetings cannot be canceled here." }
+      return {
+        ok: false,
+        error: "Past coaching meetings cannot be canceled here.",
+      }
     }
 
-    const googleEventId = getValidGoogleCalendarEventId(booking.google_event_id)
-    if (googleEventId) {
-      await deleteGoogleCoachingEvent({
-        coachId: normalizeCoachId(booking.coach_id),
-        googleEventId,
-      })
-    }
-    await restoreBookingCredit({ admin, booking })
-
-    const { error } = await admin
-      .from("coaching_bookings")
-      .update({
-        status: "canceled",
-        canceled_at: new Date().toISOString(),
-        cancel_reason: input.reason?.trim() || null,
-      })
-      .eq("id", booking.id)
-
-    if (error) {
-      throw supabaseErrorToError(error, "Unable to cancel coaching booking.")
-    }
+    const canceled = await admin.rpc("manage_coaching_credit_booking", {
+      p_booking_id: booking.id,
+      p_actor_id: context.userId,
+      p_action: "cancel",
+      p_staff: false,
+      p_reason: input.reason?.trim() || null,
+    })
+    if (canceled.error)
+      throw supabaseErrorToError(
+        canceled.error,
+        "Unable to cancel coaching booking."
+      )
+    const creditRestored =
+      (canceled.data as { creditRestored?: boolean }).creditRestored === true
+    await flushCoachingCalendarChange(booking.id).catch(() => undefined)
 
     const notifyResult = await createNotification(admin as never, {
       userId: booking.user_id,
       orgId: booking.org_id,
       title: "Coaching meeting canceled",
-      description: "Your coaching credit is back in your balance.",
+      description: creditRestored
+        ? "Your coaching credit was restored to its original grant."
+        : "Canceled with less than 4 hours notice. Your credit remains used.",
       href: COACHING_PATH,
       tone: "info",
       type: "coaching_booking_canceled",
@@ -411,21 +452,25 @@ export async function cancelCoachingBookingAction(
       metadata: { bookingId: booking.id },
     })
     if ("error" in notifyResult) {
-      console.error("Failed to create coaching cancellation notification", notifyResult.error)
+      console.error(
+        "Failed to create coaching cancellation notification",
+        notifyResult.error
+      )
     }
 
     revalidatePath(COACHING_PATH)
-    return { ok: true, success: true }
+    return { ok: true, success: true, creditRestored }
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to cancel coaching.",
+      error:
+        error instanceof Error ? error.message : "Unable to cancel coaching.",
     }
   }
 }
 
 export async function rescheduleCoachingBookingAction(
-  input: CoachingManageBookingInput & { startsAt: string; timezone: string },
+  input: CoachingManageBookingInput & { startsAt: string; timezone: string }
 ): Promise<CoachingActionResult<{ success: true }>> {
   try {
     const context = await resolveActionContext()
@@ -435,11 +480,14 @@ export async function rescheduleCoachingBookingAction(
       bookingId: input.bookingId,
     })
 
-    if (!booking || booking.user_id !== context.userId || booking.org_id !== context.orgId) {
+    if (!booking || booking.user_id !== context.userId) {
       return { ok: false, error: "Coaching booking not found." }
     }
     if (Date.parse(booking.starts_at) <= Date.now()) {
-      return { ok: false, error: "Past coaching meetings cannot be rescheduled here." }
+      return {
+        ok: false,
+        error: "Past coaching meetings cannot be rescheduled here.",
+      }
     }
     if (!isValidFutureDate(input.startsAt)) {
       return { ok: false, error: "Choose a future coaching slot." }
@@ -447,48 +495,51 @@ export async function rescheduleCoachingBookingAction(
 
     const startsAt = new Date(input.startsAt)
     const endsAt = addMinutes(startsAt, COACHING_SESSION_MINUTES)
-    const coachId = normalizeCoachId(booking.coach_id)
     const busyWindows = await listJointBusyWindows({
       from: startsAt.toISOString(),
       to: endsAt.toISOString(),
     })
     const conflictingWindows = busyWindows.filter(
-      (window) => window.startsAt !== booking.starts_at && window.endsAt !== booking.ends_at,
+      (window) =>
+        Date.parse(window.startsAt) !== Date.parse(booking.starts_at) ||
+        Date.parse(window.endsAt) !== Date.parse(booking.ends_at)
     )
     if (hasOverlap({ startsAt, endsAt, windows: conflictingWindows })) {
-      return { ok: false, error: "That slot was just taken. Pick another time." }
+      return {
+        ok: false,
+        error: "That slot was just taken. Pick another time.",
+      }
     }
 
-    const googleEventId = getValidGoogleCalendarEventId(booking.google_event_id)
-    if (googleEventId) {
-      await updateGoogleCoachingEvent({
-        coachId,
-        googleEventId,
-        startsAt: startsAt.toISOString(),
-        endsAt: endsAt.toISOString(),
-        timezone: input.timezone || booking.timezone,
-      })
-    }
-
-    const { error } = await admin
-      .from("coaching_bookings")
-      .update({
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        timezone: input.timezone || booking.timezone,
-      })
-      .eq("id", booking.id)
-
-    if (error) {
-      throw supabaseErrorToError(error, "Unable to reschedule coaching booking.")
-    }
+    if (!input.requestId)
+      return { ok: false, error: "Refresh before rescheduling this meeting." }
+    const moved = await admin.rpc("manage_coaching_credit_booking", {
+      p_booking_id: booking.id,
+      p_actor_id: context.userId,
+      p_action: "reschedule",
+      p_staff: false,
+      p_reason: input.reason?.trim() || null,
+      p_starts_at: startsAt.toISOString(),
+      p_timezone: input.timezone || booking.timezone,
+      p_request_id: input.requestId,
+      p_expected_starts_at: booking.starts_at,
+    })
+    if (moved.error)
+      throw supabaseErrorToError(
+        moved.error,
+        "Unable to reschedule coaching booking."
+      )
+    await flushCoachingCalendarChange(booking.id).catch(() => undefined)
 
     revalidatePath(COACHING_PATH)
     return { ok: true, success: true }
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to reschedule coaching.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to reschedule coaching.",
     }
   }
 }

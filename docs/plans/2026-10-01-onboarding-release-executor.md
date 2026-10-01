@@ -34,7 +34,7 @@ export PATH="/usr/local/opt/node@22/bin:$PATH"
 
 Read AGENTS.md, docs/RUNLOG.md, its current monthly entries and docs/agent/open-work-index.md. Then read docs/agent/workflow-quality.md and this document. Check branch/dirt/worktrees once and report a short checkpoint. The selected strategy is a fresh scoped release worktree; no branch-choice question is needed.
 
-Recorded source: `feat/internal-project-task-updates-20261001`, HEAD `90830359812af48c5f837704942c99bf0ffd0d3b`, no upstream. Runtime files and several new files are uncommitted. The reviewed source snapshot is fixed by [the 20-file manifest](2026-10-01-onboarding-release-files.json). A commit alone does not preserve these changes.
+Recorded source: `feat/internal-project-task-updates-20261001`, HEAD `90830359812af48c5f837704942c99bf0ffd0d3b`, no upstream. Runtime files and several new files are uncommitted. The reviewed source snapshot is fixed by [the 21-file manifest](2026-10-01-onboarding-release-files.json). A commit alone does not preserve these changes.
 
 The root checkout is unrelated dirty recovery work. Never reset/stash/clean it, prune stale worktrees, bulk stage the source, copy environment files, or stop another process. Preserve source files, ignored private audit data, review simulator and paused UI candidates. Do not copy root startup docs over this worktree. Existing ports 3000, 3014 and 3015 must be inspected before any server operation; this release does not need another local browser server.
 
@@ -42,7 +42,9 @@ Before remote work verify the remote is `Hamernick/coach-house-lms` and inspect 
 
 ## 3. Frozen production scope
 
-The JSON manifest enumerates all **15 runtime files and five tests**, their current SHA-256 values and source-HEAD baseline values. It includes:
+Scope amendment from automated review: `src/actions/organization.ts` trims provided names after validation before merge/storage. The existing preservation test verifies a padded 120-character name is stored trimmed. This is the sole additional runtime file.
+
+The JSON manifest enumerates all **16 runtime files and five tests**, their current SHA-256 values and source-HEAD baseline values. It includes:
 
 - Shared setup requirements and saved personal-handle defaults.
 - Dashboard/onboarding/Workspace integration and read-error handling.
@@ -248,7 +250,7 @@ Keep a concise evidence table in this document or its release log; fill it as wo
 
 | Step | Starting state | Completion evidence |
 | --- | --- | --- |
-| Scoped source snapshot | READY: manifest written | 20 source hashes verified; preservation inventory |
+| Scoped source snapshot | READY: manifest written | 21 source hashes verified; preservation inventory |
 | Release worktree/port | NOT STARTED | Fresh base SHA; final allowed diff |
 | Local evidence/scans | Prior focused checks PASS | Reuse justification or affected rerun; scan/pre-push results |
 | PR/current-head CI | NOT STARTED | PR URL, head SHA, required checks and run URL |
@@ -261,4 +263,4 @@ Stop only the dependent action for a source hash conflict, unknown production ta
 
 ## 10. Copy-ready worker prompt
 
-> Execute `/Users/calebhamernick/Development/coach-house-platform-internal-updates-20261001/docs/plans/2026-10-01-onboarding-release-executor.md` in order. Read the repository startup contract, then verify its 20-file source manifest. Use a fresh scoped onboarding release worktree. Reuse completed audit and accepted local review; no extensive local testing or real signup/payment tests. Caleb has authorized deployment after required current-head hosted CI and actual GitHub review/protection pass; do not ask for shipping approval again. Preserve documents/subscriptions, source worktrees and private evidence. No customer name restoration is proven or authorized. Finish onboarding PR/merge/production evidence, update the lane/log, then stop. Dialog/document scrolling is paused by latest instruction for another model to plan orchestration. Follow the plan's explicit stop rules; never bypass CI/review or silently expand scope.
+> Execute `/Users/calebhamernick/Development/coach-house-platform-internal-updates-20261001/docs/plans/2026-10-01-onboarding-release-executor.md` in order. Read the repository startup contract, then verify its 21-file source manifest. Use a fresh scoped onboarding release worktree. Reuse completed audit and accepted local review; no extensive local testing or real signup/payment tests. Caleb has authorized deployment after required current-head hosted CI and actual GitHub review/protection pass; do not ask for shipping approval again. Preserve documents/subscriptions, source worktrees and private evidence. No customer name restoration is proven or authorized. Finish onboarding PR/merge/production evidence, update the lane/log, then stop. Dialog/document scrolling is paused by latest instruction for another model to plan orchestration. Follow the plan's explicit stop rules; never bypass CI/review or silently expand scope.

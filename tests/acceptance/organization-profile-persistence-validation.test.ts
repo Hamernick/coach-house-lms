@@ -122,13 +122,13 @@ describe("organization profile persistence validation", () => {
     const save = prepareOrganizationSave(preserved)
     expect(
       await updateOrganizationProfileAction({
-        name: "Review Organization",
+        name: `  ${"R".repeat(120)}  `,
         formationStatus: "approved",
       })
     ).toMatchObject({ ok: true })
     expect(save.getUpdatedProfile()).toMatchObject({
       ...preserved,
-      name: "Review Organization",
+      name: "R".repeat(120),
       formationStatus: "approved",
     })
   })

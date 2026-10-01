@@ -4,7 +4,7 @@
   "source_head": "90830359812af48c5f837704942c99bf0ffd0d3b",
   "release_branch": "fix/organization-onboarding-recovery-20261001",
   "release_worktree": "/Users/calebhamernick/Development/coach-house-platform-organization-onboarding-release-20261001",
-  "policy": "Exact runtime/test allowlist. Generate acceptance manifest in release tree. Never copy excluded review or scrolling files. Hash mismatch requires source diff reconciliation, never blind hash regeneration.",
+  "policy": "Exact runtime/test allowlist. Generate acceptance manifest in release tree. Never copy excluded review or scrolling files. Hash mismatch requires source diff reconciliation, never blind hash regeneration. Reviewed scope amendment: Workspace action trims validated names before persistence (PR #265 P2 feedback); 21 runtime/test files.",
   "files": [
     {
       "path": "src/app/(dashboard)/my-organization/_lib/my-organization-page-content-support.ts",
@@ -122,9 +122,15 @@
     },
     {
       "path": "tests/acceptance/organization-profile-persistence-validation.test.ts",
-      "source_sha256": "eb70f9c7f61686390a47d0865084753872cc2bd0b106204c100db2eef5a7f78c",
+      "source_sha256": "648629e6e634cc826c69a2a1c6f13c83c7fd0e2f1001848b3b01b2ef9015ab18",
       "tracked_at_source_head": true,
       "base_sha256": "afc5d1a72292d6ddb29eb0a4c8b3e98562ff7b0353fd9735025e25c11482cf3f"
+    },
+    {
+      "path": "src/actions/organization.ts",
+      "source_sha256": "e9e1b3420eda9af2f91ec49e10d18c6cccfcb6a73a8d2eb2efee19b15f2434ce",
+      "tracked_at_source_head": true,
+      "base_sha256": "c75ba217a72d8e9ec654d683fd26a497ae606dacb068ba7cd69d968730d0fa09"
     }
   ]
 }

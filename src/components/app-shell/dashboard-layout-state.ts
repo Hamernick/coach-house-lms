@@ -87,6 +87,7 @@ const resolveDashboardLayoutStateCached = cache(
       (typeof userMeta?.avatar === "string" && userMeta.avatar.trim().length > 0
         ? userMeta.avatar
         : null)
+    const completed = Boolean(userMeta?.onboarding_completed)
     const metadataIntentFocus =
       typeof userMeta?.onboarding_intent_focus === "string"
         ? userMeta.onboarding_intent_focus

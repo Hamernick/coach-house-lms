@@ -24,6 +24,32 @@ describe("completeOnboardingAction", () => {
   })
 
   it.each([
+    ["", "Community House", "missing_formation_status"],
+    ["unknown", "Community House", "missing_formation_status"],
+    ["approved", "   ", "missing_org_name"],
+    ["approved", "x".repeat(121), "invalid_org_name"],
+  ])("rejects invalid organization basics before writing setup (%s)", async (formationStatus, orgName, errorCode) => {
+    const from = vi.fn()
+    const updateUser = vi.fn()
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "owner", email: "owner@example.com" } }, error: null }),
+        updateUser,
+      },
+      from,
+    })
+    const form = new FormData()
+    form.set("intentFocus", "build")
+    form.set("onboardingMode", "full")
+    form.set("orgName", orgName)
+    form.set("orgSlug", "community-house")
+    form.set("formationStatus", formationStatus)
+    expect(await captureRedirect(() => completeOnboardingAction(form))).toBe(`/onboarding?error=${errorCode}`)
+    expect(from).not.toHaveBeenCalled()
+    expect(updateUser).not.toHaveBeenCalled()
+  })
+
+  it.each([
     ["organization", "full", false],
     ["operations_support", "full", false],
     ["organization", "post_signup_access", true],
@@ -178,7 +204,14 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
   })
 
-  it("saves free workspace setup changes to the active organization", async () => {
+  it.each(["free", "operations_support"])("saves %s workspace setup while preserving existing documents and billing", async (planTier) => {
+    fetchLearningEntitlementsMock.mockResolvedValue({ hasActiveSubscription: true })
+    const savedProfile = {
+      mission_final_statement: "Existing mission",
+      roadmap: { sections: [{ id: "vision", content: "Existing vision" }, { id: "values", content: "Existing values" }] },
+      documents: { bylaws: { path: "owner/bylaws.pdf" } },
+      customField: "preserve this",
+    }
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const membershipsEqMock = vi.fn().mockReturnValue({
       returns: vi.fn().mockResolvedValue({
@@ -198,7 +231,7 @@ describe("completeOnboardingAction", () => {
       count: 0,
     })
     const organizationsSelectMaybeSingleMock = vi.fn().mockResolvedValue({
-      data: { profile: null, updated_at: "revision-1" },
+      data: { profile: savedProfile, updated_at: "revision-1" },
       error: null,
     })
     const organizationsUpdateMaybeSingleMock = vi.fn().mockResolvedValue({
@@ -319,7 +352,7 @@ describe("completeOnboardingAction", () => {
     const form = new FormData()
     form.set("intentFocus", "build")
     form.set("onboardingMode", "workspace_setup")
-    form.set("builderPlanTier", "free")
+    form.set("builderPlanTier", planTier)
     form.set("formationStatus", "approved")
     form.set("orgName", "Bright Futures Collective")
     form.set("orgSlug", "bright-futures-collective")
@@ -331,7 +364,7 @@ describe("completeOnboardingAction", () => {
       completeOnboardingAction(form)
     )
 
-    expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
+    expect(fetchLearningEntitlementsMock).toHaveBeenCalledTimes(planTier === "free" ? 0 : 1)
     expect(profilesUpsertMock).toHaveBeenCalled()
     expect(rpcMock).toHaveBeenCalledWith("claim_person_public_handle", {
       p_handle: "ada-lovelace",
@@ -346,6 +379,7 @@ describe("completeOnboardingAction", () => {
       expect.objectContaining({
         public_slug: "bright-futures-collective",
         profile: expect.objectContaining({
+          ...savedProfile,
           name: "Bright Futures Collective",
           formationStatus: "approved",
         }),

@@ -1,0 +1,130 @@
+{
+  "source_worktree": "/Users/calebhamernick/Development/coach-house-platform-internal-updates-20261001",
+  "source_branch": "feat/internal-project-task-updates-20261001",
+  "source_head": "90830359812af48c5f837704942c99bf0ffd0d3b",
+  "release_branch": "fix/organization-onboarding-recovery-20261001",
+  "release_worktree": "/Users/calebhamernick/Development/coach-house-platform-organization-onboarding-release-20261001",
+  "policy": "Exact runtime/test allowlist. Generate acceptance manifest in release tree. Never copy excluded review or scrolling files. Hash mismatch requires source diff reconciliation, never blind hash regeneration.",
+  "files": [
+    {
+      "path": "src/app/(dashboard)/my-organization/_lib/my-organization-page-content-support.ts",
+      "source_sha256": "19a520598454855fc0abd77003df5ebde3393b35ff0e309becbc6a7fe87de434",
+      "tracked_at_source_head": true,
+      "base_sha256": "711753357a08a05115dc5a3a7a9140a13e4f35d9faec8e0ec331002ccaff9d0c"
+    },
+    {
+      "path": "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx",
+      "source_sha256": "4c12ccae6e6c652897d8eaea67c604eb8a36c66e6ce6c9a28bbdb8110078015c",
+      "tracked_at_source_head": true,
+      "base_sha256": "76d1d85cf3913a1ff8e7878a956ccaa166efc7017ce1023ff57a92fcf5755cee"
+    },
+    {
+      "path": "src/app/(dashboard)/my-organization/_lib/my-organization-page-profile.ts",
+      "source_sha256": "357e84364b2f06a33ddfa9de062f918be201c8c5a05069b8f1982bd9459ef04b",
+      "tracked_at_source_head": true,
+      "base_sha256": "c372b65c43956e1460dec14ed0eebaf7ed05c21e75efb1e295e5279a9e5c660c"
+    },
+    {
+      "path": "src/app/(dashboard)/my-organization/_lib/my-organization-page-state.ts",
+      "source_sha256": "dd8b5d4f739cbaa6e4dd6c976588c21513eca15715cff4ccc5408c7befc18b7a",
+      "tracked_at_source_head": true,
+      "base_sha256": "de0684d9273666fa4113e0c55a43d211f73e98ad23b3634ac3c5f822e4e1fd27"
+    },
+    {
+      "path": "src/app/(dashboard)/onboarding/actions.ts",
+      "source_sha256": "fd3ae520188e87ed8f5a7e21ed753f23a00a6ce3f945d49f9c85a88d4ae99a52",
+      "tracked_at_source_head": true,
+      "base_sha256": "d0842bc6d6531b8d54343df23beec66c789763a1ea5dcc405a23f5d7a97f6630"
+    },
+    {
+      "path": "src/app/(dashboard)/onboarding/page.tsx",
+      "source_sha256": "8ad9a5604f1970e394cd2466b1a4a1653db7831c618bdf01d479d3f3f23c25ec",
+      "tracked_at_source_head": true,
+      "base_sha256": "b86681fda4b1bf88b012734862fbfe6e2174f14ce9f38a2f4801a8b752f10b0c"
+    },
+    {
+      "path": "src/components/app-shell/dashboard-layout-state-types.ts",
+      "source_sha256": "809d0612405d78ca95ed42e268388d966bc0cf8a9e948077fffdf57edde25b03",
+      "tracked_at_source_head": true,
+      "base_sha256": "7d8004d5262c78ef8335b4d6590e5664e26b2ed0464303db2ecd8bb6537fe878"
+    },
+    {
+      "path": "src/components/app-shell/dashboard-layout-state.ts",
+      "source_sha256": "50d3b12d94d145c2ea361617a0e44c305820b7827212e322fe5c1bd5e05ac818",
+      "tracked_at_source_head": true,
+      "base_sha256": "38f1b1e73de07c1cbdd9509bc93a736ff0aedbf6a1e77fb3b4a3ae1e11669607"
+    },
+    {
+      "path": "src/components/onboarding/onboarding-dialog/components/organization-step.tsx",
+      "source_sha256": "d538e9f1f6584dc5c67cbca8bd27528722526db73dd83baf29b66702c98e58fe",
+      "tracked_at_source_head": true,
+      "base_sha256": "eea447f7f1e09f3ea69052b6e2a9c9748b86d2ab12ca6c61717ecf6226b043d4"
+    },
+    {
+      "path": "src/components/onboarding/onboarding-dialog/helpers.ts",
+      "source_sha256": "f9826acd5ddc0616b1053a4d35d845263e31a7b0b4188e17af0ecb9ee5de58ab",
+      "tracked_at_source_head": true,
+      "base_sha256": "b77ee70d0a656ca2262263ef6cc7ac36abeffb64c0331706148bc987f0d6850b"
+    },
+    {
+      "path": "src/components/organization/org-profile-card/validation.ts",
+      "source_sha256": "62d5d8cc2ab22f43802344103a79aee06f3b8c523e1d7cea059fc05b6eb3a946",
+      "tracked_at_source_head": true,
+      "base_sha256": "2eb0d5338bbe2a290eea516ab67de34ee4b4e8d1d7a48753f2d5ef01bf4029be"
+    },
+    {
+      "path": "src/lib/onboarding/defaults.ts",
+      "source_sha256": "26b56dd53ff7d160a55e4379ff033c944ba72d28ec08241df17d72b4e12349fd",
+      "tracked_at_source_head": true,
+      "base_sha256": "2f2154451eb2eb7736efe455b856adcc12305b45584a5b16469ddd9319ed906a"
+    },
+    {
+      "path": "src/lib/onboarding/requirements.ts",
+      "source_sha256": "4f964dda60bd29afde8bf842f905be0fc5afc1f8ca0a8e7fcd47d8969cd0cb55",
+      "tracked_at_source_head": false,
+      "base_sha256": null
+    },
+    {
+      "path": "src/lib/onboarding/saved-defaults.ts",
+      "source_sha256": "6ec78249b8b94eacf3e36ae1c23b1ecd2ea297ab63df5e144bb73bdeebb82421",
+      "tracked_at_source_head": false,
+      "base_sha256": null
+    },
+    {
+      "path": "src/lib/organization/profile-persistence-validation.ts",
+      "source_sha256": "a810f8d6941e54853b3f1d44568a5f928b9c9273621ab89de07ce7cf89c0dfba",
+      "tracked_at_source_head": true,
+      "base_sha256": "170dcb23aea85dc823858cf1a47ead2f75ccfe16980aa90d76aebb6480865024"
+    },
+    {
+      "path": "tests/acceptance/onboarding-actions.test.ts",
+      "source_sha256": "59d9f025e74a16703b0d0d588a99db425c4b94a198ae2f03440437c850613669",
+      "tracked_at_source_head": true,
+      "base_sha256": "f2f755b8abe3f202df05dc973b61dbb328c4f2a7f5d9e8e5612d751bccb22337"
+    },
+    {
+      "path": "tests/acceptance/onboarding-defaults.test.ts",
+      "source_sha256": "7e41325e7a4fd7b6edb40d3dbba8a2d96b3105071d88b7ef9bf3bd268b7686b2",
+      "tracked_at_source_head": true,
+      "base_sha256": "717e28eb3b0e54a04d8b22492702499653f05a5a91632e490d5311c2b32e4e8b"
+    },
+    {
+      "path": "tests/acceptance/onboarding.test.ts",
+      "source_sha256": "eea7b79a4d9883161f28cd0a2245a730c446e4033134c641966c0fe2db3bcfe9",
+      "tracked_at_source_head": true,
+      "base_sha256": "1ee9879915e172a7979c4b55c88c59cc403719d70242bdd178187efe83d6cf42"
+    },
+    {
+      "path": "tests/acceptance/onboarding-requirements.test.ts",
+      "source_sha256": "0898e74504664c2d42fdc952687e9f4f092c39dea4c60fd482d82b48b71f04b2",
+      "tracked_at_source_head": false,
+      "base_sha256": null
+    },
+    {
+      "path": "tests/acceptance/organization-profile-persistence-validation.test.ts",
+      "source_sha256": "eb70f9c7f61686390a47d0865084753872cc2bd0b106204c100db2eef5a7f78c",
+      "tracked_at_source_head": true,
+      "base_sha256": "afc5d1a72292d6ddb29eb0a4c8b3e98562ff7b0353fd9735025e25c11482cf3f"
+    }
+  ]
+}

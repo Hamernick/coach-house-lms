@@ -21,8 +21,12 @@ export function slugify(input: string): string {
 
 export function resolveOnboardingError(raw: string | null) {
   switch (raw) {
+    case "missing_formation_status":
+      return "Choose your formation status to continue."
     case "missing_org_name":
       return "Enter an organization name to continue."
+    case "invalid_org_name":
+      return "Use an organization name of 1–120 characters."
     case "missing_org_slug":
       return "Enter an organization URL to continue."
     case "invalid_org_slug":

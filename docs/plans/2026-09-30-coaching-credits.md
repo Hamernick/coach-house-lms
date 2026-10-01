@@ -1,6 +1,6 @@
 # Personal coaching credits — bundled internal tools release
 
-Status: shipped in PR #263 at `59b89421`. Earlier preparation gates below are historical; the production closeout is authoritative.
+Status: closed. Shipped in PR #263 at `59b89421`; Caleb confirmed review complete on 2026-10-01. Earlier preparation gates below are historical; the production closeout and final review confirmation are authoritative.
 
 ## Approved behavior
 
@@ -63,3 +63,7 @@ Known operational limits: Google restoration requires explicit organizer-event c
 - Signed-in staff issuance/history/save/reload and member balance were verified in the actual isolated preview before merge. Production verification used provider calls and the real application reconciler/database; it did not impersonate a participant's signed-in UI. Prior SQL/preview policy checks remain the evidence for other cancellation/reschedule boundaries; no real payment was charged.
 - Removed only the temporary preview branch adef4e7e-b6f4-4809-ba8b-2af1e47dcd14 / jqbyuzgiizmfyzackxyo and eleven Git-branch-specific Vercel Preview overrides. The unrelated Calendar preview is preserved. User rejected the extra local HTML launcher; it was removed. Its deployment share link has a one-day expiry, and its database/auth destination no longer exists.
 - Stop: code, migrations, production app, Calendar broker and sync configuration are shipped. Do not reopen old review/preview gates or rerun broad suites without a new issue.
+
+## Final review confirmation — 2026-10-01
+
+Caleb confirmed coaching credits have been reviewed and requested final closure. Product review is complete; implementation, production activation, scheduler, live refund verification and preview cleanup are already recorded above. No coaching-credit work remains in the active lane list. PR #264 publishes the documentation closeout only. Reopen only for a reported issue or explicit new request.

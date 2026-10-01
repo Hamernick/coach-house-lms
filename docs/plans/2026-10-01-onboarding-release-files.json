@@ -110,7 +110,7 @@
     },
     {
       "path": "tests/acceptance/onboarding.test.ts",
-      "source_sha256": "eea7b79a4d9883161f28cd0a2245a730c446e4033134c641966c0fe2db3bcfe9",
+      "source_sha256": "fa1308538f45ea227ccdccdd14c0a8891c17860f9223a8b47dcee2470b9bdf3e",
       "tracked_at_source_head": true,
       "base_sha256": "1ee9879915e172a7979c4b55c88c59cc403719d70242bdd178187efe83d6cf42"
     },

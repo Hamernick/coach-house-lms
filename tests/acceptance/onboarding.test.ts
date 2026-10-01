@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+// Compile the mocked page before timed cases; per-case factories still reload
+// after resetModules, without a cold transform outliving a case’s mocks.
+import "@/app/(dashboard)/onboarding/page"
+
 import {
   captureRedirect,
   createSupabaseServerClientServerMock,
@@ -16,6 +20,13 @@ vi.mock("@/lib/accelerator/entitlements", () => ({
 
 vi.mock("@/lib/organization/active-org", () => ({
   resolveActiveOrganization: resolveActiveOrganizationMock,
+}))
+
+vi.mock("@/components/app-shell/dashboard-layout-state", () => ({
+  resolveDashboardLayoutState: async () => ({}),
+}))
+vi.mock("@/components/onboarding/onboarding-workspace-card", () => ({
+  OnboardingWorkspaceCard: () => null,
 }))
 
 describe("onboarding gate", () => {

@@ -36,3 +36,5 @@ Candidate remains local; Caleb now authorizes deployment after required hosted c
 Hosted build at e346dd16 found a removed tutorial-eligibility variable. Restored the original declaration in dashboard-layout-state.ts; changed-file ESLint and a single targeted production build (including TypeScript) passed. This build diagnosed the specific hosted failure; no full local quality suite or real provider test was added. New current-head hosted CI is required.
 
 Automated-review correction: Workspace saves now trim provided names before persistence. Existing profile-preservation test strengthened at the 120-character padded boundary; its focused suite passes 13/13, with changed-file lint and diff whitespace passing. No broad test rerun.
+
+Hosted onboarding-page cold-import timeout addressed by preloading the mocked page outside timed cases; focused onboarding page suite passes 6/6 and changed-file ESLint passes. Five-second timeout/assertions remain unchanged. Current-head hosted CI must validate the final correction.

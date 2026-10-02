@@ -38,6 +38,7 @@ export function buildOnboardingFlowDefaults({
   userMetadata,
   orgProfile,
   orgSlug,
+  personHandle = null,
   builderPlanTier = null,
 }: {
   userId: string
@@ -47,6 +48,7 @@ export function buildOnboardingFlowDefaults({
   userMetadata: OnboardingMetadata
   orgProfile: OnboardingProfile
   orgSlug: string | null
+  personHandle?: string | null
   builderPlanTier?: PricingPlanTier | null
 }): OnboardingFlowDefaults {
   const normalizedDisplayName = normalizeString(displayName)
@@ -119,7 +121,7 @@ export function buildOnboardingFlowDefaults({
         : null,
     defaultFirstName: metadataFirstName || fallbackFirstName || null,
     defaultLastName: metadataLastName || fallbackLastName || null,
-    defaultPersonHandle: null,
+    defaultPersonHandle: normalizeString(personHandle) || null,
     defaultPhone,
     defaultPublicEmail:
       orgEmail || ownerEmail || normalizeString(email) || null,

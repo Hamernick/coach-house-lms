@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+// Compile the mocked page before timed cases; per-case factories still reload
+// after resetModules, without a cold transform outliving a case’s mocks.
+import "@/app/(dashboard)/onboarding/page"
+
 import {
   captureRedirect,
   createSupabaseServerClientServerMock,
@@ -16,6 +20,13 @@ vi.mock("@/lib/accelerator/entitlements", () => ({
 
 vi.mock("@/lib/organization/active-org", () => ({
   resolveActiveOrganization: resolveActiveOrganizationMock,
+}))
+
+vi.mock("@/components/app-shell/dashboard-layout-state", () => ({
+  resolveDashboardLayoutState: async () => ({}),
+}))
+vi.mock("@/components/onboarding/onboarding-workspace-card", () => ({
+  OnboardingWorkspaceCard: () => null,
 }))
 
 describe("onboarding gate", () => {
@@ -84,6 +95,25 @@ describe("onboarding gate", () => {
     expect(
       (result as { props: { className: string } }).props.className
     ).toContain("py-0")
+  })
+
+  it("opens the existing setup form for a legacy paid owner instead of restarting pricing", async () => {
+    vi.doMock("@/components/app-shell/dashboard-layout-state", () => ({
+      resolveDashboardLayoutState: async () => ({
+        userPresent: true, onboardingLocked: true, onboardingIntentFocus: "build",
+        onboardingMode: "workspace_setup", currentPlanTier: "operations_support",
+        onboardingDefaults: { defaultOrgName: null, defaultEmail: "review@example.com" },
+      }),
+    }))
+    vi.doMock("@/components/onboarding/onboarding-workspace-card", () => ({
+      OnboardingWorkspaceCard: () => null,
+    }))
+    const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
+    const result = await Page()
+    expect(result.props.children.props).toMatchObject({
+      mode: "workspace_setup", defaultBuilderPlanTier: "operations_support", defaultEmail: "review@example.com",
+    })
+    expect(redirectMock).not.toHaveBeenCalled()
   })
 
   it("recovers a paid onboarding pricing return from Stripe-backed entitlements when the local subscription row was missing before sync", async () => {

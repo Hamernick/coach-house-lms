@@ -1,6 +1,6 @@
 # Open Work Index
 
-Updated 2026-09-28. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Current release base: `origin/main` `5f02a334`; recheck only before starting new work.
+Updated 2026-10-01. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Current release base: `origin/main` `59b89421`; recheck only before starting new work.
 
 Maintain one active entry per lane or preservation hold. Update entries in place:
 replace renamed branch references and obsolete next actions instead of appending
@@ -14,9 +14,7 @@ Caleb confirmed Public Documentation / S02 shipped and PRs #247–#251 merged. D
 
 AppShell/mobile is closed for implementation: Caleb confirmed PR [#254](https://github.com/Hamernick/coach-house-lms/pull/254) merged, approved appearance and confirmed authenticated Menu/dock/Details/desktop checks passed. The merged revision is `54ed2c3c`. Production deployment/smoke verification was not independently established in this session; do not infer it or reopen the lane without a reported issue or explicit request. Preserve `6b13dd82`, the release worktree, `/tmp/app-shell-draft-20260925.yv1Vat` and `/tmp/app-shell-recovery.6Y6oFk`.
 
-## Current bundled update
-
-`fix/internal-tools-updates-20260930`, draft PR #263, updated through main `7f82918f`, in the internal-tracker-release-20260928 worktree. Caleb explicitly chose one bundle: coach Resources navigation, medium-screen Documentation header containment, and personal coaching credits. The signed-in Documentation shell change was withdrawn. See [coaching implementation and activation checklist](../plans/2026-09-30-coaching-credits.md). Local implementation and focused validation are complete; hosted quality passed on `e6b9d2b6`; updated-head checks, appearance review, coordinated migration/app activation, broker rollout and scheduler/live canary are pending. Isolated preview `jqbyuzgiizmfyzackxyo` has the current public schema and all three coaching migrations; branch-specific Vercel Preview credentials isolate its review accounts and disable live payments/email/Calendar writes. Existing production data is unchanged. PR #262 is now merged; canonical production is Ready at `7f82918f`.
+Personal coaching credits and the bundled Resources/Documentation fixes are closed. Caleb confirmed review complete on 2026-10-01. PR #263 merged at `59b89421cb11181e09cb8454480953920efd2554`; canonical production is Ready on that revision (deployment `dpl_3y2sDsGpuJbxSmzYG7jJTojc34BE`). All three coaching migrations are applied; both existing Accelerator participants have ten available credits, with original history preserved. Cloud Run revision `coach-house-calendar-broker-00009-hud` serves live traffic. One Supabase cron job, `coaching-calendar-reconcile`, runs every minute. Live authenticated reconciliation and coach-calendar deletion/refund passed, including duplicate-refund prevention and restoration of the verification account's original balance. Temporary booking/webhook pause, review database and eleven branch-specific Preview overrides were removed; the unrelated Calendar preview remains. See [release record](../plans/2026-09-30-coaching-credits.md). Do not list coaching credits as an open lane or repeat completed review, activation, canary or cleanup gates without a reported issue. PR #264 records this closeout only; its documentation merge does not reopen the product lane.
 
 ## Open lanes
 

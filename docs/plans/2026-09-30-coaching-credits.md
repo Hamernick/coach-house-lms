@@ -1,5 +1,7 @@
 # Personal coaching credits — bundled internal tools release
 
+Status: closed. Shipped in PR #263 at `59b89421`; Caleb confirmed review complete on 2026-10-01. Earlier preparation gates below are historical; the production closeout and final review confirmation are authoritative.
+
 ## Approved behavior
 
 - Compact Coaching credits panel above organization Billing: choose a person, view available balance/history, issue quantity/source/reason/optional expiration. Staff access follows existing organization scope.
@@ -49,3 +51,19 @@ Known operational limits: Google restoration requires explicit organizer-event c
 - Preview has two explicitly labeled review accounts and a preview organization, with the real authenticated app/actions/database. Credentials are private under ~/.codex/backups/coaching-credits-20260930/. Canonical Vercel project branch-specific Preview variables use only this database and blank live Stripe, Resend, coaching broker/private-key and cron credentials. Production variables are unchanged. A fresh preview build is required to pick up these overrides.
 - Preview compute starts at $0.01344/hour plus usage; delete only this temporary branch and its branch-specific environment overrides after review/release. No production records were copied. Source: https://supabase.com/docs/guides/platform/manage-your-usage/branching.
 - Vercel CLI refreshed its expired session successfully. Google Cloud CLI requires interactive `gcloud auth login`; Caleb was asked asynchronously. No broker deployment or scheduler mutation has occurred.
+
+## Production closeout — 2026-09-30
+
+- PR #263 merged after all required hosted checks passed. Canonical coachhouse.app deployment `dpl_3y2sDsGpuJbxSmzYG7jJTojc34BE` is Ready at `59b89421`, including production cron configuration.
+- Applied exactly 20260930120000, 20260930121000, and 20260930122000 in one transaction with migration records and schema reload. Both Accelerator participants have ten available credits; all eight preexisting ledger rows and 25 existing bookings were preserved. Private before/after evidence remains under ~/.codex/backups/coaching-credits-20260930/.
+- Coaching and Stripe webhook paths were briefly paused on the canonical Vercel project during cutover; the owned firewall rule was then removed. The second historical Vercel project ID was unavailable and was not changed. No Stripe events arrived during the pause; no payment replay was needed. Public coaching route resumes normally; unauthenticated cron requests return 401.
+- Existing Cloud Run service coach-house-calendar-broker in us-central1 now sends 100% of traffic to revision 00009-hud. Its existing environment, service identity, resource limits and IAM were retained. Revision 00008-6t9 remains available for independent broker rollback.
+- Reused Supabase pg_cron and Vault; enabled pg_net for authenticated outbound requests. One job, coaching-calendar-reconcile (job 2), runs every minute against https://coachhouse.app/api/internal/cron/coaching-calendar. The token lives in production Vercel configuration and encrypted Vault; no token is recorded here. No Cloud Scheduler service/API was added. The first automatic scheduled request at 18:20 UTC returned HTTP 200, processed=3/failed=0. Pause using `select cron.alter_job(2, active := false);`. Inspect cron.job_run_details and net._http_response for execution/HTTP outcomes.
+- Live provider/app/database check: a clearly labeled temporary event in Joel's organizer calendar, with no attendees or invitations, received a Meet URL; one temporary credit was issued/reserved. Deleting that event less than four hours before its start was detected by the production app and restored exactly one credit. A second reconciliation did not add another refund. An explicit ledger adjustment removed the temporary issued credit and restored the account's original balance of ten. Event is deleted; canceled booking and audit entries remain labeled as release verification. Authenticated reconciliation returned processed=4/failed=0, then processed=3/failed=0.
+- Signed-in staff issuance/history/save/reload and member balance were verified in the actual isolated preview before merge. Production verification used provider calls and the real application reconciler/database; it did not impersonate a participant's signed-in UI. Prior SQL/preview policy checks remain the evidence for other cancellation/reschedule boundaries; no real payment was charged.
+- Removed only the temporary preview branch adef4e7e-b6f4-4809-ba8b-2af1e47dcd14 / jqbyuzgiizmfyzackxyo and eleven Git-branch-specific Vercel Preview overrides. The unrelated Calendar preview is preserved. User rejected the extra local HTML launcher; it was removed. Its deployment share link has a one-day expiry, and its database/auth destination no longer exists.
+- Stop: code, migrations, production app, Calendar broker and sync configuration are shipped. Do not reopen old review/preview gates or rerun broad suites without a new issue.
+
+## Final review confirmation — 2026-10-01
+
+Caleb confirmed coaching credits have been reviewed and requested final closure. Product review is complete; implementation, production activation, scheduler, live refund verification and preview cleanup are already recorded above. No coaching-credit work remains in the active lane list. PR #264 publishes the documentation closeout only. Reopen only for a reported issue or explicit new request.

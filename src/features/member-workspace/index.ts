@@ -21,6 +21,7 @@ export {
 export { setActiveOrganizationAction } from "./actions"
 export {
   loadAccessibleOrganizations,
+  loadOrganizationPrograms,
   loadMemberWorkspacePeoplePage,
   loadMemberWorkspaceProjectDetailPage,
   loadPlatformAdminOrganizationProjectDetailPage,
@@ -65,5 +66,3 @@ export type {
   MemberWorkspaceHeaderState,
   MemberWorkspaceWorkstreamCategory,
 } from "./types"
-
-export { loadOrganizationPrograms } from "./server/organization-programs"

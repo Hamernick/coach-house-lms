@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useMemo, useRef } from "react"
+import { Fragment, useMemo, useRef } from "react"
 import { format, parseISO } from "date-fns"
 import {
   CalendarBlank,
@@ -137,14 +137,22 @@ export function MemberWorkspaceProjectCard({
 
   const secondaryLine = (() => {
     if (project.projectKind === "organization_admin") {
+      const visibility = project.client === "Public" || project.client === "Private"
+        ? (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <span aria-hidden className={cn("inline-block size-1.5 rounded-full", project.client === "Public" ? "bg-emerald-500" : "bg-destructive")} />
+            {project.client}
+          </span>
+        ) : project.client
       const summary = [
-        primaryPersonName ? `Created by ${primaryPersonName}` : null,
         project.typeLabel,
-        project.client,
+        visibility,
         project.durationLabel,
       ].filter(Boolean)
       if (summary.length > 0) {
-        return summary.join(" • ")
+        return summary.map((item, index) => (
+          <Fragment key={index}>{index > 0 ? " • " : null}{item}</Fragment>
+        ))
       }
     }
 
@@ -242,7 +250,14 @@ export function MemberWorkspaceProjectCard({
             )
           ) : (
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              <Folder className="h-5 w-5" />
+              {project.projectKind === "organization_admin" && project.organizationImageUrl ? (
+                <Avatar className="size-6 rounded-md border border-gray-200 bg-white">
+                  <AvatarImage src={project.organizationImageUrl} alt={`${project.name} profile`} className="rounded-md object-contain p-0.5" />
+                  <AvatarFallback className="rounded-md bg-transparent">
+                    <Folder className="size-5" />
+                  </AvatarFallback>
+                </Avatar>
+              ) : <Folder className="h-5 w-5" />}
             </div>
           )}
           <div className="flex items-center gap-2">

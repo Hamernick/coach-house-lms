@@ -12,18 +12,29 @@ import {
 
 type NoteCardProps = {
     note: ProjectNote
+    isSaving?: boolean
     onEdit?: (noteId: string) => void
     onDelete?: (noteId: string) => void
     onClick?: () => void
 }
 
-export function NoteCard({ note, onEdit, onDelete, onClick }: NoteCardProps) {
+export function NoteCard({ note, isSaving, onEdit, onDelete, onClick }: NoteCardProps) {
     const isAudio = note.noteType === "audio"
     const canManageNote = Boolean(onEdit || onDelete)
     return (
         <div
-            className="flex flex-col gap-1 rounded-xl border border-border bg-muted p-1 hover:shadow-sm hover:cursor-pointer transition-shadow"
+            className="flex flex-col gap-1 rounded-xl border border-border bg-muted p-1 hover:shadow-sm hover:cursor-pointer transition-shadow motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
+            role="button"
+            tabIndex={0}
+            aria-label={`Open note: ${note.title}`}
+            aria-busy={isSaving}
             onClick={onClick}
+            onKeyDown={(event) => {
+                if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+                    event.preventDefault()
+                    onClick?.()
+                }
+            }}
         >
             <div className="flex items-center justify-between gap-2 p-1">
                 <div className="flex h-6 w-6 items-center justify-center">
@@ -40,11 +51,13 @@ export function NoteCard({ note, onEdit, onDelete, onClick }: NoteCardProps) {
                                 variant="ghost"
                                 size="icon-sm"
                                 className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                aria-label={`Actions for ${note.title}`}
+                                onClick={(event) => event.stopPropagation()}
                             >
                                 <DotsThree className="h-4 w-4" weight="bold" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
                             {onEdit ? (
                                 <DropdownMenuItem onClick={() => onEdit(note.id)}>
                                     Edit
@@ -65,7 +78,7 @@ export function NoteCard({ note, onEdit, onDelete, onClick }: NoteCardProps) {
                     {note.title}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                    {format(note.addedDate, "d MMM")}
+                    {isSaving ? "Saving…" : format(note.addedDate, "d MMM")}
                 </p>
             </div>
         </div>

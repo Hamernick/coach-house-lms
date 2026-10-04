@@ -34,6 +34,10 @@ describe("guided project creation", () => {
     expect(guidedProjectOverview(input)).toContain("Open two clinics")
     expect(guidedProjectOverview(input)).not.toContain("<script>")
   })
+  it("persists an optional fiscal tab in the atomic guided setup payload", async () => {
+    await createGuidedProjectAction({ ...input, fiscalSponsorshipEnabled: true })
+    expect(mocks.rpc).toHaveBeenCalledWith("create_guided_organization_project", expect.objectContaining({ p_setup: { ...input, fiscalSponsorshipEnabled: true } }))
+  })
   it("loads only the platform team for staff assignment", async () => {
     await loadGuidedProjectPeople(org)
     expect(mocks.people).toHaveBeenCalledWith(expect.objectContaining({ orgIds: [], includePlatformAdmins: true }))

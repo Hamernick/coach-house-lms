@@ -106,6 +106,7 @@ export function AddFileModal({
         <>
             <QuickCreateModalLayout
                 open={open}
+                title={isEditing ? "Edit file" : "Add file"}
                 onClose={handleClose}
                 isDescriptionExpanded={isExpanded}
                 onSubmitShortcut={handleCreateAsset}
@@ -130,6 +131,7 @@ export function AddFileModal({
                         variant="ghost"
                         size="icon-sm"
                         className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                        aria-label="Close file editor"
                         onClick={handleClose}
                     >
                         <X className="h-4 w-4 text-muted-foreground" />

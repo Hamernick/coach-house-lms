@@ -88,6 +88,9 @@ export function normalizeMemberWorkspaceCreateProjectInput(
     return { ok: false, error: "Monthly projects require a start date and an end date." }
   }
 
+  if (input.fiscalSponsorshipEnabled !== undefined && typeof input.fiscalSponsorshipEnabled !== "boolean") {
+    return { ok: false, error: "Choose a valid fiscal sponsorship option." }
+  }
   const settings = input.optionSettings === undefined ? undefined : projectOptionSettingsSchema.safeParse(input.optionSettings)
   if (settings && !settings.success) return { ok: false, error: "Check option names and colors." }
 

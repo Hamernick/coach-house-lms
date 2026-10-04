@@ -21,11 +21,14 @@ export function validateProgramMediaFile(file: File): string | null {
 
 export async function uploadProgramMedia({
   file,
+  organizationId,
 }: {
   file: File
+  organizationId?: string
 }): Promise<string> {
   const formData = new FormData()
   formData.append("file", file)
+  if (organizationId !== undefined) formData.append("organizationId", organizationId)
   const res = await fetch("/api/account/program-media", {
     method: "POST",
     body: formData,

@@ -6,6 +6,7 @@ const date = z
   .refine((value) => parseScheduleDay(value) !== null, "Enter a valid date.")
 export const guidedProjectSchema = z
   .object({
+    fiscalSponsorshipEnabled: z.boolean().optional(),
     recurrence: z.enum(["none", "monthly"]).optional(),
     requestId: z.string().uuid(),
     organizationId: z.union([z.string().uuid(), z.literal("")]),

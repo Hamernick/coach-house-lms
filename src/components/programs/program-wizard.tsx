@@ -10,7 +10,8 @@ import {
 } from "react"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
-import { createProgramAction, updateProgramAction } from "@/actions/programs"
+import { buildProgramUpdatePatch } from "@/lib/programs/update-patch"
+import { createProgramAction, updateProgramAction, type UpdateProgramPayload } from "@/actions/programs"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -56,6 +57,7 @@ function normalizeProgramWizardStep(value: number | null | undefined) {
 
 export function ProgramWizard({
   mode = "create",
+  organizationId,
   program,
   initialStep,
   open,
@@ -79,6 +81,21 @@ export function ProgramWizard({
 
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hydratedRef = useRef(false)
+  const editedRef = useRef(false)
+  const savedPayloadRef = useRef<UpdateProgramPayload>({})
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const saveProgram = useCallback((payload: UpdateProgramPayload) => {
+    const run = async () => {
+      const patch = organizationId ? buildProgramUpdatePatch(savedPayloadRef.current, payload) : payload
+      if (!Object.keys(patch).length) return { ok: true }
+      const response = await updateProgramAction(program?.id ?? "", patch, organizationId)
+      if (!("error" in response)) savedPayloadRef.current = payload
+      return response
+    }
+    const result = saveQueueRef.current.then(run, run)
+    saveQueueRef.current = result.then(() => undefined, () => undefined)
+    return result
+  }, [organizationId, program?.id])
 
   const setOpen = useCallback(
     (value: boolean) => {
@@ -94,6 +111,7 @@ export function ProgramWizard({
   useEffect(() => {
     if (!isOpen) {
       hydratedRef.current = false
+      editedRef.current = false
       setCurrentStep(initialStepIndex)
       setErrors({})
       return
@@ -102,7 +120,9 @@ export function ProgramWizard({
     setCurrentStep(initialStepIndex)
 
     if (mode === "edit" && program?.id) {
-      setForm(hydrateFromProgram(program))
+      const hydrated = hydrateFromProgram(program)
+      savedPayloadRef.current = serializePayload(hydrated)
+      setForm(hydrated)
       hydratedRef.current = true
       return
     }
@@ -158,20 +178,20 @@ export function ProgramWizard({
   }, [form, isOpen, mode])
 
   useEffect(() => {
-    if (!isOpen || mode !== "edit" || !program?.id || !hydratedRef.current)
+    if (!isOpen || mode !== "edit" || !program?.id || !hydratedRef.current || !editedRef.current)
       return
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
 
     autosaveTimerRef.current = setTimeout(async () => {
       setIsAutoSaving(true)
-      const response = await updateProgramAction(
-        program.id,
-        serializePayload(form)
-      )
-      if ("error" in response) {
-        toast.error(response.error)
+      try {
+        const response = await saveProgram(serializePayload(form))
+        if ("error" in response) toast.error(response.error)
+      } catch {
+        toast.error("Could not save activity. Try again.")
+      } finally {
+        setIsAutoSaving(false)
       }
-      setIsAutoSaving(false)
     }, 700)
 
     return () => {
@@ -179,9 +199,10 @@ export function ProgramWizard({
         clearTimeout(autosaveTimerRef.current)
       }
     }
-  }, [form, isOpen, mode, program?.id])
+  }, [form, isOpen, mode, program?.id, saveProgram])
 
   const update = (patch: Partial<ProgramWizardFormState>) => {
+    editedRef.current = true
     setForm((current) => {
       const next = {
         ...current,
@@ -240,7 +261,7 @@ export function ProgramWizard({
       const payload = serializePayload(form)
       const response =
         mode === "edit" && program?.id
-          ? await updateProgramAction(program.id, payload)
+          ? await saveProgram(payload)
           : await createProgramAction(payload)
 
       if ("error" in response) {
@@ -311,6 +332,7 @@ export function ProgramWizard({
 
           <div className="bg-muted/35 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-6">
             <ProgramWizardStepContent
+              organizationId={organizationId}
               mode={mode}
               currentStep={currentStep}
               form={form}

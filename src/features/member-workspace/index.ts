@@ -65,3 +65,5 @@ export type {
   MemberWorkspaceHeaderState,
   MemberWorkspaceWorkstreamCategory,
 } from "./types"
+
+export { loadOrganizationPrograms } from "./server/organization-programs"

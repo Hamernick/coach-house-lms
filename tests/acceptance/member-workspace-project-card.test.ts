@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+import { resolveOrganizationCardImage } from "@/features/member-workspace/lib/organization-card-image"
 import { MemberWorkspaceProjectCard } from "@/features/member-workspace/components/projects/member-workspace-project-card"
 
 const projectCardSource =
@@ -32,7 +33,7 @@ const organizationProject: PlatformAdminDashboardLabProject = {
   members: ["Paula Founder", "Chris Ops"],
   primaryPersonName: "Paula Founder",
   primaryPersonAvatarUrl: null,
-  client: "/community-builders",
+  client: "Private",
   typeLabel: "Approved nonprofit",
   durationLabel: "3 members",
   taskSummaryLabel: "Setup items",
@@ -93,11 +94,12 @@ describe("MemberWorkspaceProjectCard", () => {
     )
 
     expect(markup).toContain("Community Builders")
-    expect(markup).toContain("Created by Paula Founder")
+    expect(markup).not.toContain("Created by")
     expect(markup).toContain("Approved nonprofit")
     expect(markup).toContain("Fiscal sponsorship")
     expect(markup).toContain("Eligible")
-    expect(markup).toContain("/community-builders")
+    expect(markup).toContain("Private")
+    expect(markup).toContain("bg-destructive")
     expect(markup).toContain("62%")
     expect(markup).toContain("2 / 3 Setup items")
     expect(markup).toContain(">PF<")
@@ -196,5 +198,21 @@ describe("MemberWorkspaceProjectCard", () => {
     expect(boardMarkup).toContain(
       'data-react-grab-surface-slot="header-priority"'
     )
+  })
+})
+
+
+describe("organization card image identity", () => {
+  const personalPhoto = "https://example.com/person.jpg"
+  const organizationLogo = "https://example.com/organization.png"
+  it("does not turn an owner photo into a logo when the organization has none", () => {
+    expect(resolveOrganizationCardImage({ profile: {}, ownerAvatarUrl: personalPhoto, members: [] })).toBeNull()
+  })
+  it("rejects a legacy logo copied from the owner or an organization person", () => {
+    expect(resolveOrganizationCardImage({ profile: { logoUrl: personalPhoto }, ownerAvatarUrl: personalPhoto, members: [] })).toBeNull()
+    expect(resolveOrganizationCardImage({ profile: { logoUrl: personalPhoto, org_people: [{ image: personalPhoto }] }, ownerAvatarUrl: "https://example.com/new-photo.jpg", members: [] })).toBeNull()
+  })
+  it("keeps a distinct organization image", () => {
+    expect(resolveOrganizationCardImage({ profile: { logoUrl: organizationLogo }, ownerAvatarUrl: personalPhoto, members: [] })).toBe(organizationLogo)
   })
 })

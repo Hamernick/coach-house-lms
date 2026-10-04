@@ -109,7 +109,7 @@ const SPRINT_TYPES: StepQuickCreateOption[] = [
   { id: "planning", label: "Planning" },
 ];
 
-const WORKSTREAMS: StepQuickCreateOption[] = [
+export const PROJECT_WORKSTREAM_OPTIONS: StepQuickCreateOption[] = [
   { id: "frontend", label: "Frontend" },
   { id: "backend", label: "Backend" },
   { id: "design", label: "Design" },
@@ -294,7 +294,7 @@ export function StepQuickCreate({
   statuses = STATUSES,
   priorities = PRIORITIES,
   sprintTypes = SPRINT_TYPES,
-  workstreams = WORKSTREAMS,
+  workstreams = PROJECT_WORKSTREAM_OPTIONS,
   tags = TAGS,
   clients: clientOptions = EMPTY_ORGANIZATIONS,
 }: StepQuickCreateProps) {

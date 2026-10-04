@@ -56,6 +56,7 @@ export type PlatformAdminDashboardLabOrganizationCoachAssignment = {
 }
 
 export type PlatformAdminDashboardLabProject = {
+  fiscalSponsorshipEnabled?: boolean
   recurrence?: "none" | "monthly"
   id: string
   organizationId?: string
@@ -75,6 +76,7 @@ export type PlatformAdminDashboardLabProject = {
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
+  organizationImageUrl?: string | null
   organizationCoachAssignments?: PlatformAdminDashboardLabOrganizationCoachAssignment[]
   client?: string
   typeLabel?: string

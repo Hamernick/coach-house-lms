@@ -1,3 +1,4 @@
+import { resolveStaffProgramAccess } from "@/lib/programs/staff-access"
 import { NextResponse, type NextRequest } from "next/server"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import {
@@ -33,19 +34,26 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const [{ orgId, role }, profileAudience] = await Promise.all([
-    resolveActiveOrganization(supabase, user.id),
-    resolveProfileAudience({
-      supabase,
-      userId: user.id,
-      fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
-    }),
-  ])
-  if (!profileAudience.isAdmin && !canEditOrganization(role)) {
+  const form = await request.formData()
+  const targetOrganizationId = form.get("organizationId")
+  const profileAudience = await resolveProfileAudience({
+    supabase, userId: user.id,
+    fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+  })
+  if (targetOrganizationId !== null && typeof targetOrganizationId !== "string") {
+    return NextResponse.json({ error: "Invalid organization" }, { status: 400 })
+  }
+  const staffAccess = targetOrganizationId !== null
+    ? await resolveStaffProgramAccess({ organizationId: targetOrganizationId, userId: user.id, accessLevel: profileAudience.platformAccessLevel })
+    : null
+  if (staffAccess && "error" in staffAccess) return NextResponse.json({ error: staffAccess.error }, { status: 403 })
+  const activeOrg = staffAccess ? null : await resolveActiveOrganization(supabase, user.id)
+  if (!staffAccess && !profileAudience.isAdmin && (!activeOrg || !canEditOrganization(activeOrg.role))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
+  const orgId = staffAccess?.orgId ?? activeOrg!.orgId
+  const storageClient = staffAccess?.supabase ?? supabase
 
-  const form = await request.formData()
   const file = form.get("file")
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 })
@@ -67,13 +75,13 @@ export async function POST(request: NextRequest) {
   const objectName = `${orgId}/cover/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
 
-  const { error: uploadErr } = await supabase.storage
+  const { error: uploadErr } = await storageClient.storage
     .from(BUCKET)
     .upload(objectName, buf, { contentType: file.type })
   if (uploadErr) {
     return NextResponse.json({ error: uploadErr.message }, { status: 500 })
   }
-  const { data: publicUrl } = supabase.storage
+  const { data: publicUrl } = storageClient.storage
     .from(BUCKET)
     .getPublicUrl(objectName)
   return NextResponse.json({ url: publicUrl.publicUrl }, { status: 200 })

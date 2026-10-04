@@ -1,14 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus } from "@phosphor-icons/react/dist/ssr"
 import { toast } from "sonner"
 
 import type { ProjectNote, User } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
-import { Button } from "@/features/platform-admin-dashboard/upstream/components/ui/button"
-import { NoteCard } from "@/features/platform-admin-dashboard/upstream/components/projects/NoteCard"
-import { NotesTable } from "@/features/platform-admin-dashboard/upstream/components/projects/NotesTable"
+import { NotesCollection } from "./notes-collection"
+import { projectNoteReducer } from "../../lib/project-note-state"
 import { CreateNoteModal } from "@/features/platform-admin-dashboard/upstream/components/projects/CreateNoteModal"
 import { UploadAudioModal } from "@/features/platform-admin-dashboard/upstream/components/projects/UploadAudioModal"
 import { NotePreviewModal } from "@/features/platform-admin-dashboard/upstream/components/projects/NotePreviewModal"
@@ -64,9 +62,10 @@ export function NotesTab({
     deleteUploadedNoteAsset,
 }: NotesTabProps) {
     const router = useRouter()
-    const [items, setItems] = useState<ProjectNote[]>(notes)
-    const recentNotes = items.slice(0, 8)
-    const canManageNotes = Boolean(createNoteAction || updateNoteAction || deleteNoteAction)
+    const [{ items, savingNoteId }, dispatch] = useReducer(projectNoteReducer, { items: notes, localNotes: [] })
+    const savingRef = useRef(false)
+    const [recoveredDraft, setRecoveredDraft] = useState<{ title: string; content: string } | null>(null)
+    const [saveError, setSaveError] = useState<string | null>(null)
     const canUploadAttachments = Boolean(
         projectId && uploadNoteAssets && (createNoteAction || updateNoteAction),
     )
@@ -83,58 +82,63 @@ export function NotesTab({
     } | null>(null)
 
     useEffect(() => {
-        setItems(notes)
+        dispatch({ type: "sync", notes })
     }, [notes])
 
     const handleAddNote = () => {
+        setRecoveredDraft(null)
+        setSaveError(null)
         setEditingNote(null)
         setIsCreateModalOpen(true)
     }
 
     const handleCreateNote = async (title: string, content: string) => {
-        if (!projectId) {
-            toast.error("Project note context is missing.")
+        if (savingRef.current) return
+        if (!projectId || !(editingNote ? updateNoteAction : createNoteAction)) {
+            toast.error("Note saving is unavailable here.")
             return
         }
+        if (!title.trim()) return
 
-        if (editingNote && updateNoteAction) {
-            const result = await updateNoteAction({
-                projectId,
-                noteId: editingNote.id,
-                title,
-                content,
-            })
+        const original = editingNote ?? undefined
+        const note: ProjectNote = {
+            ...original,
+            id: original?.id ?? crypto.randomUUID(),
+            title: title.trim(),
+            content,
+            addedBy: original?.addedBy ?? currentUser,
+            addedDate: original?.addedDate ?? new Date(),
+            noteType: original?.noteType ?? "general",
+            status: original?.status ?? "completed",
+        }
+        savingRef.current = true
+        setSaveError(null)
+        dispatch({ type: "start", note })
+        setIsCreateModalOpen(false)
+        try {
+            const payload = { projectId, title: note.title, content, noteType: note.noteType }
+            const result = original
+                ? await updateNoteAction!({ ...payload, noteId: original.id })
+                : await createNoteAction!(payload)
+            if ("error" in result) throw new Error(result.error)
 
-            if ("error" in result) {
-                toast.error(result.error)
-                return
-            }
-
-            toast.success("Note updated")
+            dispatch({ type: "saved", temporaryId: note.id, noteId: result.noteId })
+            setSelectedNote((current) => current?.id === note.id ? { ...note, id: result.noteId } : current)
             setEditingNote(null)
+            setRecoveredDraft(null)
+            toast.success(original ? "Note updated" : "Note created")
             router.refresh()
-            return
+        } catch (error) {
+            dispatch({ type: "failed", temporaryId: note.id, original })
+            const message = error instanceof Error ? error.message : "Unable to save note. Try again."
+            setSaveError(message)
+            setIsPreviewModalOpen(false)
+            setRecoveredDraft({ title, content })
+            setIsCreateModalOpen(true)
+            toast.error(message)
+        } finally {
+            savingRef.current = false
         }
-
-        if (createNoteAction) {
-            const result = await createNoteAction({
-                projectId,
-                title,
-                content,
-            })
-
-            if ("error" in result) {
-                toast.error(result.error)
-                return
-            }
-
-            toast.success("Note created")
-            router.refresh()
-            return
-        }
-
-        console.log("Creating note:", { title, content })
-        toast.success("Note created")
     }
 
     const rollbackUploadedAssets = async (assets: UploadedNoteAsset[]) => {
@@ -172,6 +176,7 @@ export function NotesTab({
                 previousNoteType: editingNote?.noteType,
             })
 
+            let savedNoteId: string
             if (editingNote && updateNoteAction) {
                 const result = await updateNoteAction({
                     projectId,
@@ -187,6 +192,7 @@ export function NotesTab({
                     return false
                 }
 
+                savedNoteId = result.noteId
                 toast.success("Note updated with uploaded files")
             } else if (createNoteAction) {
                 const result = await createNoteAction({
@@ -202,6 +208,7 @@ export function NotesTab({
                     return false
                 }
 
+                savedNoteId = result.noteId
                 toast.success("Note created from uploaded files")
             } else {
                 await rollbackUploadedAssets(uploadedAssets)
@@ -209,6 +216,8 @@ export function NotesTab({
                 return false
             }
 
+            dispatch({ type: "start", note: { ...editingNote, id: savedNoteId, ...payload, addedBy: editingNote?.addedBy ?? currentUser, addedDate: editingNote?.addedDate ?? new Date(), status: "completed" } })
+            dispatch({ type: "saved", temporaryId: savedNoteId, noteId: savedNoteId })
             setIsUploadModalOpen(false)
             setIsCreateModalOpen(false)
             setIsPreviewModalOpen(false)
@@ -233,6 +242,8 @@ export function NotesTab({
     const handleEditNote = (noteId: string) => {
         const note = items.find((item) => item.id === noteId) ?? null
         if (!note) return
+        setRecoveredDraft(null)
+        setSaveError(null)
         setEditingNote(note)
         setIsPreviewModalOpen(false)
         setIsCreateModalOpen(true)
@@ -265,62 +276,30 @@ export function NotesTab({
 
         toast.success("Note deleted")
         setSelectedNote((current) => (current?.id === noteId ? null : current))
-        setItems((prev) => prev.filter((note) => note.id !== noteId))
+        dispatch({ type: "remove", noteId })
         router.refresh()
     }
 
     return (
         <div className="space-y-8">
-            <section>
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-accent-foreground">
-                        Recent notes
-                    </h2>
-                    {canManageNotes ? (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleAddNote}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add notes
-                        </Button>
-                    ) : null}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {recentNotes.map((note) => (
-                        <NoteCard
-                            key={note.id}
-                            note={note}
-                            onEdit={canManageNotes ? handleEditNote : undefined}
-                            onDelete={canManageNotes ? handleDeleteNote : undefined}
-                            onClick={() => handleNoteClick(note)}
-                        />
-                    ))}
-                </div>
-            </section>
-
-            <section>
-                <h2 className="mb-4 text-sm font-semibold text-accent-foreground">
-                    All notes
-                </h2>
-                <NotesTable
-                    notes={items}
-                    onAddNote={canManageNotes ? handleAddNote : undefined}
-                    onEditNote={canManageNotes ? handleEditNote : undefined}
-                    onDeleteNote={canManageNotes ? handleDeleteNote : undefined}
-                    onNoteClick={handleNoteClick}
-                />
-            </section>
+            <NotesCollection
+                notes={items}
+                savingNoteId={savingNoteId}
+                onAddNote={createNoteAction ? handleAddNote : undefined}
+                onEditNote={updateNoteAction && !savingNoteId ? handleEditNote : undefined}
+                onDeleteNote={deleteNoteAction && !savingNoteId ? handleDeleteNote : undefined}
+                onNoteClick={handleNoteClick}
+            />
 
             <CreateNoteModal
                 canUploadAttachments={canUploadAttachments}
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 currentUser={currentUser}
-                initialTitle={editingNote?.title}
-                initialContent={editingNote?.content}
+                initialTitle={recoveredDraft?.title ?? editingNote?.title}
+                initialContent={recoveredDraft?.content ?? editingNote?.content}
+                isEditing={Boolean(editingNote)}
+                error={saveError}
                 submitLabel={editingNote ? "Save note" : "Create Note"}
                 onCreateNote={handleCreateNote}
                 onRequestUpload={handleRequestUpload}
@@ -357,7 +336,7 @@ export function NotesTab({
                 open={isPreviewModalOpen}
                 onOpenChange={setIsPreviewModalOpen}
                 note={selectedNote}
-                onEditNote={handleEditNote}
+                onEditNote={updateNoteAction && !savingNoteId ? handleEditNote : undefined}
             />
         </div>
     )

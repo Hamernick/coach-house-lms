@@ -1,7 +1,6 @@
 "use client"
 
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { Label } from "@/components/ui/label"
 import type { MemberWorkspaceProjectDetailDraft } from "./member-workspace-project-detail-editing"
 import { MEMBER_WORKSPACE_PROJECT_OVERVIEW_EDITOR_CLASS_NAME } from "./member-workspace-project-overview-typography"
 
@@ -19,7 +18,6 @@ export function MemberWorkspaceProjectOverviewEditor({
 }: MemberWorkspaceProjectOverviewEditorProps) {
   return (
     <section className="flex min-w-0 flex-col gap-3">
-      <Label>Overview document</Label>
       <RichTextEditor
         value={draft.overviewDocument}
         onChange={(value) => onChangeDraftField("overviewDocument", value)}

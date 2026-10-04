@@ -1,3 +1,4 @@
+import { projectFiscalSponsorshipEnabled } from "../lib/project-fiscal-sponsorship"
 import type { Database } from "@/lib/supabase"
 import {
   type PlatformAdminDashboardLabProject,
@@ -54,6 +55,7 @@ export function mapOrganizationProjectToViewModel(
 ): PlatformAdminDashboardLabProject {
   return {
     id: project.id,
+    fiscalSponsorshipEnabled: projectFiscalSponsorshipEnabled(project.option_settings, project.guided_setup),
     recurrence: project.recurrence ?? "none",
     organizationId: project.org_id,
     organizationUnassigned: project.organization_unassigned ?? false,

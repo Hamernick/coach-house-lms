@@ -1,3 +1,4 @@
+import { resolveOrganizationCardImage } from "../lib/organization-card-image"
 import { addDays } from "date-fns"
 
 import { fetchAcceleratorProgressTotalsByUserId } from "@/lib/accelerator/progress"
@@ -587,19 +588,18 @@ export function mapAdminOrganizationSummaryToProject(
     members: organization.members.slice(0, 4).map((member) => member.name),
     primaryPersonName: organization.ownerName,
     primaryPersonAvatarUrl: organization.ownerAvatarUrl,
-    client:
-      organization.publicSlug && organization.publicSlug.length > 0
-        ? `/${organization.publicSlug}`
-        : organization.isPublic
-          ? "Public profile enabled"
-          : "Private organization",
+    organizationImageUrl: resolveOrganizationCardImage(organization),
+    client: organization.isPublic ? "Public" : "Private",
     typeLabel:
       organization.organizationStatus === "approved"
         ? "Approved nonprofit"
         : organization.organizationStatus === "pending"
           ? "Pending setup"
           : "Organization account",
-    durationLabel: `${organization.memberCount} member${organization.memberCount === 1 ? "" : "s"}`,
+    durationLabel: [
+      `${organization.memberCount} member${organization.memberCount === 1 ? "" : "s"}`,
+      `${organization.programs?.length ?? 0} program${organization.programs?.length === 1 ? "" : "s"}`,
+    ].join(" • "),
     taskSummaryLabel: "Setup items",
     tasks: organization.setupItems.map((item) => ({
       id: `${organization.orgId}-${item.id}`,

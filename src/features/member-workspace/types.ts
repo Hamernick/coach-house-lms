@@ -108,6 +108,7 @@ export type MemberWorkspaceTaskGroup = {
 }
 
 export type MemberWorkspaceCreateProjectFormInput = {
+  fiscalSponsorshipEnabled?: boolean
   recurrence?: "none" | "monthly"
   orgId?: string | null
   name: string

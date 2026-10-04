@@ -19,6 +19,7 @@ export function savedProject(
     status: input.status, priority: input.priority,
     startDate: input.startDate ? new Date(`${input.startDate}T00:00:00Z`) : null,
     endDate: input.endDate ? new Date(`${input.endDate}T00:00:00Z`) : null,
+    fiscalSponsorshipEnabled: input.fiscalSponsorshipEnabled ?? previous?.fiscalSponsorshipEnabled ?? false,
     recurrence: input.recurrence ?? previous?.recurrence ?? "none",
     client: organizationUnassigned ? undefined : organizations.find(org => org.orgId === organizationId)?.name ?? input.clientName ?? previous?.client,
     typeLabel: input.typeLabel, durationLabel: input.durationLabel,

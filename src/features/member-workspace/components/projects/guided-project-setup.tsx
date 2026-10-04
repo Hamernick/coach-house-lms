@@ -149,7 +149,7 @@ export function GuidedProjectSetup({
         setError(result.error)
         return
       }
-      onSaved?.(result.id, { name: value.name, description: value.description, orgId: value.organizationId || null, startDate: value.startDate, endDate: value.endDate, status: "planned", priority: "medium", recurrence: value.recurrence, memberLabels: people.filter(person => [value.ownerId, ...value.contributorIds].includes(person.id)).map(person => person.name).join(", ") }, value.tasks.length)
+      onSaved?.(result.id, { fiscalSponsorshipEnabled: value.fiscalSponsorshipEnabled, name: value.name, description: value.description, orgId: value.organizationId || null, startDate: value.startDate, endDate: value.endDate, status: "planned", priority: "medium", recurrence: value.recurrence, memberLabels: people.filter(person => [value.ownerId, ...value.contributorIds].includes(person.id)).map(person => person.name).join(", ") }, value.tasks.length)
       onClose()
       router.refresh()
       if (directoryHref !== "/projects") router.push(`${directoryHref}/${result.id}`)

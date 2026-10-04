@@ -100,10 +100,13 @@ export function useNotificationsMenuState() {
     setInboxItems((prev) => markNotificationUnread(prev, notificationId))
   }, [])
 
-  const handleSelect = useCallback(
-    (item: NotificationItem) => {
-      setSelectedId(item.id)
+  const handleSelect = useCallback((item: NotificationItem) => {
+    setSelectedId(item.id)
+  }, [])
 
+  const handleOpenSelected = useCallback(
+    (item: NotificationItem) => {
+      if (!item.href) return
       if (item.unread) {
         markReadOptimistic(item.id)
         void markNotificationReadAction(item.id).then((result) => {
@@ -113,18 +116,10 @@ export function useNotificationsMenuState() {
           }
         })
       }
-
-    },
-    [markReadOptimistic, refreshNotifications],
-  )
-
-  const handleOpenSelected = useCallback(
-    (item: NotificationItem) => {
-      if (!item.href) return
       setOpen(false)
       router.push(item.href)
     },
-    [router],
+    [markReadOptimistic, refreshNotifications, router],
   )
 
   const handleToggleRead = useCallback(
@@ -205,14 +200,16 @@ export function useNotificationsMenuState() {
     setBulkUpdating(true)
     setInboxItems((prev) => markAllNotificationsRead(prev))
 
-    void markAllNotificationsReadAction().then((result) => {
+    void markAllNotificationsReadAction(
+      inboxItems.filter((item) => item.unread).map((item) => item.id),
+    ).then((result) => {
       setBulkUpdating(false)
       if ("error" in result) {
         toast.error(result.error)
         void refreshNotifications()
       }
     })
-  }, [refreshNotifications, unreadCount])
+  }, [inboxItems, refreshNotifications, unreadCount])
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen)

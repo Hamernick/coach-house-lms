@@ -5,17 +5,17 @@ import { CoachingAvatarGroup, type CoachingAvatar } from "@/components/coaching/
 import type { ReactNode } from "react"
 
 import {
-  ArrowsClockwise,
-  Briefcase,
-  Flag,
+  Folder,
   Globe,
   PencilSimpleLine,
   Star,
-  Tag,
   Timer,
   User,
 } from "@phosphor-icons/react/dist/ssr"
 
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import { resolveOrganizationCardImage } from "../../lib/organization-card-image"
 import { Button } from "@/components/ui/button"
 import {
   Editable,
@@ -32,19 +32,19 @@ import {
 } from "@/features/platform-admin-dashboard"
 import { cn } from "@/lib/utils"
 import {
-  MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS,
   MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS,
+  MEMBER_WORKSPACE_STANDARD_PROJECT_STATUS_OPTIONS,
   type MemberWorkspaceProjectDetailDraft,
 } from "./member-workspace-project-detail-editing"
 import {
-  DateChip,
   HeaderMetaChip,
   MembersAssignmentMenu,
   SelectChip,
   headerChipIconClassName,
-  parseHeaderChipList,
+  headerChipClassName,
 } from "./member-workspace-project-detail-header-controls"
-import type { MemberWorkspacePersonOption } from "../../types"
+import { ProjectDetailHeaderFields } from "./member-workspace-project-detail-header-fields"
+import type { MemberWorkspacePersonOption, MemberWorkspaceAdminOrganizationSummary } from "../../types"
 
 function statusBadgeClasses(status: string) {
   switch (status) {
@@ -82,6 +82,8 @@ function formatBacklogStatusLabel(
 }
 
 type MemberWorkspaceProjectDetailHeaderProps = {
+  organizationSummary?: MemberWorkspaceAdminOrganizationSummary
+  coachControl?: ReactNode
   assignedCoaches?: CoachingAvatar[] | null
   assignedCoachNames?: string[] | null
   project: ProjectDetails
@@ -106,6 +108,7 @@ function InlineEditableText({
   previewClassName,
   value,
   onChange,
+  onBeginEdit,
 }: {
   ariaLabel: string
   className?: string
@@ -115,6 +118,7 @@ function InlineEditableText({
   previewClassName?: string
   value: string
   onChange: (value: string) => void
+  onBeginEdit?: () => void
 }) {
   return (
     <Editable
@@ -123,6 +127,7 @@ function InlineEditableText({
       placeholder={placeholder}
       triggerMode="click"
       className={cn("min-w-0 gap-0", className)}
+      onEdit={onBeginEdit}
       onValueChange={onChange}
       onSubmit={(nextValue) => onChange(nextValue.trim())}
     >
@@ -147,6 +152,8 @@ function InlineEditableText({
 }
 
 export function MemberWorkspaceProjectDetailHeader({
+  organizationSummary,
+  coachControl,
   assignedCoachNames,
   assignedCoaches,
   project,
@@ -158,22 +165,27 @@ export function MemberWorkspaceProjectDetailHeader({
   onEditProject,
   actions,
 }: MemberWorkspaceProjectDetailHeaderProps) {
+  const isOrganization = Boolean(organizationSummary)
+  const canEditFields = canEditProject && Boolean(draft && onChangeDraftField)
+  const beginEdit = () => { if (!isEditing) onEditProject?.() }
+  const organizationImage = organizationSummary ? resolveOrganizationCardImage(organizationSummary) : null
+  const statusOptions = project.source && "projectKind" in project.source && project.source.projectKind === "standard" ? MEMBER_WORKSPACE_STANDARD_PROJECT_STATUS_OPTIONS : MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS
   const statusLabel =
-    isEditing && draft
-      ? formatStatusLabel(draft.status)
+    canEditFields && draft
+      ? statusOptions.find((option) => option.value === draft.status)?.label ?? formatStatusLabel(draft.status)
       : formatBacklogStatusLabel(project.backlog.statusLabel)
   const coaches = assignedCoaches ?? assignedCoachNames?.map((name) => ({ id: name, name, imageUrl: null }))
   const metaItems = [
     {
       label: "Coach",
-      value: coaches == null ? "Unavailable" : coaches.length ? (
+      value: coachControl ?? (coaches == null ? "Unavailable" : coaches.length ? (
         <span className="inline-flex min-w-0 items-center gap-2">
           <CoachingAvatarGroup avatars={coaches} size="xs" limit={3} showOverflow label="Assigned coaches" />
           <span className="max-w-48 truncate" title={coaches.map((coach) => coach.name).join(", ")}>
             {coaches.map((coach) => coach.name).join(", ")}
           </span>
         </span>
-      ) : "Unassigned",
+      ) : "Unassigned"),
       icon: null,
     },
     { label: "ID", value: `#${project.id}`, icon: null },
@@ -198,38 +210,43 @@ export function MemberWorkspaceProjectDetailHeader({
       value: project.meta.sprintLabel,
       icon: <Timer className="h-4 w-4" />,
     },
-    {
-      label: "Last sync",
-      value: project.meta.lastSyncLabel,
-      icon: <ArrowsClockwise className="h-4 w-4" />,
-    },
+
   ].filter(
     (item) =>
       item.value !== undefined && item.value !== null && item.value !== ""
   )
 
   return (
-    <section className="mt-4 flex flex-col gap-5 lg:gap-2">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            {isEditing && draft && onChangeDraftField ? (
+    <section {...getReactGrabOwnerProps({ ownerId: `project-detail-header:${project.id}`, component: "MemberWorkspaceProjectDetailHeader", source: "src/features/member-workspace/components/projects/member-workspace-project-detail-header.tsx", tokenSource: "src/app/globals.css" })}
+      className={cn("mt-4 flex flex-col gap-5 lg:gap-2", isOrganization && "items-center text-center")}>
+      <div className={cn("flex flex-wrap items-start justify-between gap-3", isOrganization && "relative w-full justify-center")}>
+        <div className={cn("flex min-w-0 flex-1 flex-col gap-3", isOrganization && "items-center px-10")}>
+          {isOrganization ? (
+            <Avatar className="size-20 rounded-xl border border-gray-200 bg-white">
+              {organizationImage ? <AvatarImage src={organizationImage} alt={`${project.name} organization profile`} className="rounded-xl object-contain p-1" /> : null}
+              <AvatarFallback className="rounded-xl bg-transparent"><Folder className="text-muted-foreground size-9" aria-hidden /></AvatarFallback>
+            </Avatar>
+          ) : null}
+          <div className={cn("flex w-full min-w-0 flex-col items-start gap-3", isOrganization && "items-center")}>
+            {canEditFields && draft && onChangeDraftField ? (
               <InlineEditableText
+                className={cn("w-full min-w-0", isOrganization && "max-w-xl")}
                 id="member-workspace-project-name"
                 ariaLabel="Project name"
                 value={draft.name}
                 placeholder="Untitled organization..."
+                onBeginEdit={beginEdit}
                 onChange={(value) => onChangeDraftField("name", value)}
-                previewClassName="text-foreground max-w-[min(44rem,100%)] truncate text-2xl leading-tight font-semibold"
-                inputClassName="text-foreground h-auto min-w-[18rem] max-w-full text-2xl leading-tight font-semibold"
+                previewClassName="text-foreground w-full max-w-full whitespace-normal break-words overflow-visible text-3xl leading-tight font-semibold sm:text-4xl md:text-4xl"
+                inputClassName={cn("text-foreground h-auto w-full min-w-0 max-w-full text-3xl leading-tight font-semibold sm:text-4xl md:text-4xl", isOrganization && "text-center")}
               />
             ) : (
-              <h1 className="text-foreground text-2xl leading-tight font-semibold">
+              <h1 className="text-foreground max-w-full break-words text-3xl leading-tight font-semibold sm:text-4xl">
                 {project.name}
               </h1>
             )}
-            <div className="flex flex-wrap items-center gap-2">
-              {isEditing && draft && onChangeDraftField ? (
+            <div className={cn("flex flex-wrap items-center gap-2", isOrganization && "justify-center")}>
+              {canEditFields && draft && onChangeDraftField ? (
                 <SelectChip
                   id="member-workspace-project-status"
                   label="Project status"
@@ -237,23 +254,28 @@ export function MemberWorkspaceProjectDetailHeader({
                   leadingIcon={
                     <Star className={headerChipIconClassName} aria-hidden />
                   }
-                  options={MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS}
+                  options={statusOptions}
                   triggerClassName={statusBadgeClasses(statusLabel)}
+                  onBeginEdit={beginEdit}
                   onChange={(value) => onChangeDraftField("status", value)}
                 />
               ) : (
                 <Badge
                   variant="secondary"
-                  className={statusBadgeClasses(statusLabel)}
+                  className={cn(headerChipClassName, statusBadgeClasses(statusLabel))}
                 >
                   <Star className="h-3 w-3" />
                   {statusLabel}
                 </Badge>
               )}
-              {project.backlog.picUsers.length > 0 ? (
+              {canEditFields && draft && onChangeDraftField ? (
+                <MembersAssignmentMenu id="member-workspace-project-members" assigneeOptions={assigneeOptions}
+                  value={draft.memberLabels} onBeginEdit={beginEdit}
+                  onChange={(value) => onChangeDraftField("memberLabels", value)} />
+              ) : project.backlog.picUsers.length > 0 ? (
                 <Badge
                   variant="outline"
-                  className="flex items-center gap-1 border-none bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-100"
+                  className="flex h-7 items-center gap-1 border-none bg-orange-100 px-3 text-orange-800 dark:bg-orange-500/15 dark:text-orange-100"
                 >
                   <User className="h-3 w-3" />
                   Assigned
@@ -262,100 +284,14 @@ export function MemberWorkspaceProjectDetailHeader({
             </div>
           </div>
 
-          {isEditing && draft && onChangeDraftField ? (
-            <div className="flex max-w-5xl flex-wrap items-center gap-2 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="text-muted-foreground flex items-center gap-2">
-                  <span>ID:</span>
-                  <span className="text-foreground font-medium">
-                    #{project.id}
-                  </span>
-                </div>
-              </div>
-              <SelectChip
-                id="member-workspace-project-priority"
-                label="Project priority"
-                value={draft.priority}
-                options={MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS}
-                leadingIcon={
-                  <Flag className={headerChipIconClassName} aria-hidden />
-                }
-                onChange={(value) => onChangeDraftField("priority", value)}
-              />
-              {draft.clientName ? (
-                <HeaderMetaChip
-                  icon={
-                    <Briefcase
-                      className={headerChipIconClassName}
-                      aria-hidden
-                    />
-                  }
-                >
-                  {draft.clientName}
-                </HeaderMetaChip>
-              ) : null}
-              <DateChip
-                id="member-workspace-project-start-date"
-                label="Start"
-                value={draft.startDate}
-                onChange={(value) => onChangeDraftField("startDate", value)}
-              />
-              <DateChip
-                id="member-workspace-project-end-date"
-                label="End"
-                value={draft.endDate}
-                onChange={(value) => onChangeDraftField("endDate", value)}
-              />
-              {draft.typeLabel ? (
-                <HeaderMetaChip
-                  icon={
-                    <Timer className={headerChipIconClassName} aria-hidden />
-                  }
-                >
-                  {draft.typeLabel}
-                </HeaderMetaChip>
-              ) : null}
-              {draft.durationLabel ? (
-                <HeaderMetaChip>{draft.durationLabel}</HeaderMetaChip>
-              ) : null}
-              {parseHeaderChipList(draft.tags).map((tag) => (
-                <HeaderMetaChip
-                  key={tag}
-                  icon={<Tag className={headerChipIconClassName} aria-hidden />}
-                >
-                  {tag}
-                </HeaderMetaChip>
-              ))}
-              <MembersAssignmentMenu
-                id="member-workspace-project-members"
-                assigneeOptions={assigneeOptions}
-                value={draft.memberLabels}
-                onChange={(value) => onChangeDraftField("memberLabels", value)}
-              />
-              {project.meta.locationLabel ? (
-                <HeaderMetaChip
-                  icon={
-                    <Globe className={headerChipIconClassName} aria-hidden />
-                  }
-                >
-                  {project.meta.locationLabel}
-                </HeaderMetaChip>
-              ) : null}
-              <HeaderMetaChip
-                icon={
-                  <ArrowsClockwise
-                    className={headerChipIconClassName}
-                    aria-hidden
-                  />
-                }
-              >
-                {project.meta.lastSyncLabel}
-              </HeaderMetaChip>
-            </div>
+          {canEditFields && draft && onChangeDraftField ? (
+            <ProjectDetailHeaderFields project={project} draft={draft} isOrganization={isOrganization}
+              onChange={onChangeDraftField} onBeginEdit={beginEdit}
+              coach={isOrganization ? coachControl ?? <HeaderMetaChip>Coach: {metaItems[0].value}</HeaderMetaChip> : null} />
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", isOrganization && "absolute right-0 top-0")}>
           {actions}
           {canEditProject && !isEditing ? (
             <Button
@@ -372,9 +308,9 @@ export function MemberWorkspaceProjectDetailHeader({
         </div>
       </div>
 
-      {!isEditing ? (
+      {!canEditFields ? (
         <div className="mt-3 lg:mt-0">
-          <MetaChipsRow items={metaItems} />
+          <MetaChipsRow items={isOrganization ? metaItems : metaItems.filter((item) => item.label !== "Coach")} className={cn("[&>div]:min-h-7", isOrganization && "justify-center")} />
         </div>
       ) : null}
     </section>

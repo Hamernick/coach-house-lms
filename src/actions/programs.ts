@@ -17,6 +17,7 @@ import {
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import { resolveProgramBannerImageUrl } from "@/lib/programs/display"
+import { resolveStaffProgramAccess } from "@/lib/programs/staff-access"
 import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
 
 export type CreateProgramPayload = {
@@ -121,22 +122,25 @@ export type UpdateProgramPayload = Partial<CreateProgramPayload>
 
 export async function updateProgramAction(
   id: string,
-  payload: UpdateProgramPayload
+  payload: UpdateProgramPayload,
+  organizationId?: string
 ) {
-  const { supabase, session } = await requireServerSession("/organization")
+  const { supabase: sessionSupabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const [{ orgId, role }, profileAudience] = await Promise.all([
-    resolveActiveOrganization(supabase, userId),
-    resolveProfileAudience({
-      supabase,
-      userId,
-      fallbackIsTester: resolveTesterMetadata(
-        session.user.user_metadata ?? null
-      ),
-    }),
-  ])
-  const canEdit = profileAudience.isAdmin || canEditOrganization(role)
-  if (!canEdit) return { error: "Forbidden" }
+  const profileAudience = await resolveProfileAudience({
+    supabase: sessionSupabase, userId,
+    fallbackIsTester: resolveTesterMetadata(session.user.user_metadata ?? null),
+  })
+  const staffAccess = organizationId !== undefined
+    ? await resolveStaffProgramAccess({ organizationId, userId, accessLevel: profileAudience.platformAccessLevel })
+    : null
+  if (staffAccess && "error" in staffAccess) return staffAccess
+  const activeOrg = staffAccess ? null : await resolveActiveOrganization(sessionSupabase, userId)
+  if (!staffAccess && !profileAudience.isAdmin && (!activeOrg || !canEditOrganization(activeOrg.role))) {
+    return { error: "Forbidden" }
+  }
+  const orgId = staffAccess?.orgId ?? activeOrg!.orgId
+  const supabase = staffAccess?.supabase ?? sessionSupabase
   const allowPublicSharing = publicSharingEnabled
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
   const hasKey = (key: keyof UpdateProgramPayload) =>
@@ -164,7 +168,8 @@ export async function updateProgramAction(
       wizard_snapshot?: Record<string, unknown> | null
       updated_at?: string | null
     } | null
-    previousImageUrl = existingRow?.image_url ?? null
+    if (!existingRow) return { error: "Activity not found or no longer editable." }
+    previousImageUrl = existingRow.image_url ?? null
     expectedUpdatedAt = existingRow?.updated_at ?? null
     previousBannerImageUrl = existingRow
       ? resolveProgramBannerImageUrl(existingRow)
@@ -300,6 +305,8 @@ async function revalidateOrganizationProgramViews(
   supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"],
   userId: string
 ) {
+  revalidatePath("/organizations")
+  revalidatePath("/organizations/[id]", "page")
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")

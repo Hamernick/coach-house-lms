@@ -10,6 +10,7 @@ import {
   Trash,
 } from "@phosphor-icons/react/dist/ssr"
 import { toast } from "sonner"
+import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { withSaveFeedback } from "@/lib/with-save-feedback"
 import { savedTask } from "../../lib/saved-task"
 
@@ -312,9 +313,16 @@ export function MemberWorkspaceProjectTasksEditor({
                   </div>
 
                   {task.description ? (
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {task.description}
-                    </p>
+                    /<\/?[a-z][\s\S]*>/i.test(task.description) ? (
+                      <div
+                        className="prose prose-sm dark:prose-invert mt-2 max-w-none break-words text-sm leading-6 text-muted-foreground prose-p:my-2 prose-ul:list-disc prose-ol:list-decimal"
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(task.description) }}
+                      />
+                    ) : (
+                      <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-muted-foreground">
+                        {task.description}
+                      </p>
+                    )
                   ) : null}
 
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">

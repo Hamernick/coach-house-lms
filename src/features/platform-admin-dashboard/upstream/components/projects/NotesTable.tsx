@@ -1,14 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { DotsThree, MagnifyingGlass, Plus } from "@phosphor-icons/react/dist/ssr"
+import { DotsThree } from "@phosphor-icons/react/dist/ssr"
 import { format } from "date-fns"
 
 import type { ProjectNote, NoteStatus } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import { Button } from "@/features/platform-admin-dashboard/upstream/components/ui/button"
 import { Badge } from "@/features/platform-admin-dashboard/upstream/components/ui/badge"
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils"
-import { Input } from "@/features/platform-admin-dashboard/upstream/components/ui/input"
 import { Checkbox } from "@/features/platform-admin-dashboard/upstream/components/ui/checkbox"
 import {
     DropdownMenu,
@@ -27,20 +26,17 @@ import {
 
 type NotesTableProps = {
     notes: ProjectNote[]
-    onAddNote?: () => void
+    savingNoteId?: string
     onEditNote?: (noteId: string) => void
     onDeleteNote?: (noteId: string) => void
     onNoteClick?: (note: ProjectNote) => void
 }
 
-export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteClick }: NotesTableProps) {
-    const [searchQuery, setSearchQuery] = useState("")
+export function NotesTable({ notes, savingNoteId, onEditNote, onDeleteNote, onNoteClick }: NotesTableProps) {
     const [selectedNotes, setSelectedNotes] = useState<string[]>([])
-    const canManageNotes = Boolean(onAddNote || onEditNote || onDeleteNote)
+    const canManageNotes = Boolean(onEditNote || onDeleteNote)
 
-    const filteredNotes = notes.filter((note) =>
-        note.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filteredNotes = notes
 
     const toggleSelectAll = () => {
         if (selectedNotes.length === filteredNotes.length) {
@@ -60,25 +56,6 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <MagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9"
-                    />
-                </div>
-                {onAddNote ? (
-                    <Button variant="ghost" size="sm" onClick={onAddNote}>
-                        <Plus className="h-4 w-4" />
-                        Add notes
-                    </Button>
-                ) : null}
-            </div>
-
             <div className="rounded-lg border border-border bg-card">
                 <Table>
                     <TableHeader>
@@ -101,7 +78,7 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                     </TableHeader>
                     <TableBody>
                         {filteredNotes.map((note) => (
-                            <TableRow key={note.id} className="cursor-pointer" onClick={() => onNoteClick?.(note)}>
+                            <TableRow key={note.id} className="cursor-pointer motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200" aria-busy={savingNoteId === note.id} onClick={() => onNoteClick?.(note)}>
                                 <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                     <Checkbox
                                         checked={selectedNotes.includes(note.id)}
@@ -116,7 +93,7 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                                     {format(note.addedDate, "d MMM")}
                                 </TableCell>
                                 <TableCell>
-                                    <StatusBadge status={note.status} />
+                                    {savingNoteId === note.id ? <span role="status">Saving…</span> : <StatusBadge status={note.status} />}
                                 </TableCell>
                                 {canManageNotes ? (
                                     <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()}>
@@ -126,6 +103,7 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                                                     variant="ghost"
                                                     size="icon-sm"
                                                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    aria-label={`Actions for ${note.title}`}
                                                 >
                                                     <DotsThree className="h-4 w-4" weight="bold" />
                                                 </Button>

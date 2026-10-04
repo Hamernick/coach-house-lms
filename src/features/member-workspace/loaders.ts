@@ -6,3 +6,4 @@ export {
 } from "./server/project-detail-loader"
 export { loadMemberWorkspaceProjectsPage } from "./server/project-loaders"
 export { loadMemberWorkspaceTasksPage } from "./server/task-loaders"
+export { loadOrganizationPrograms } from "./server/organization-programs"

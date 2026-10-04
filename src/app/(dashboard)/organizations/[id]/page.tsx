@@ -1,5 +1,5 @@
 import { AdminCoachingCreditsPanel, loadAdminCoachingCredits, loadCoachingCreditsAction, issueCoachingCreditsAction, manageStaffCoachingBookingAction } from "@/features/coaching-booking"
-import { loadOrganizationCoachAssignmentData } from "@/features/organization-coach-assignments"
+import { loadOrganizationCoachAssignmentData, OrganizationCoachAssignmentControl, updateOrganizationCoachAssignmentAction } from "@/features/organization-coach-assignments"
 
 import { notFound } from "next/navigation"
 
@@ -28,6 +28,7 @@ import {
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
   loadPlatformAdminOrganizationProjectDetailPage,
+  loadOrganizationPrograms,
   MemberWorkspaceProjectDetailPage,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectScheduleAction,
@@ -101,6 +102,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     adminBilling,
     coachAssignmentData,
     coachingCredits,
+    organizationPrograms,
   ] = await Promise.all([
     result.scope === "platform-admin"
       ? canManageFiscalSponsorshipForOrganization({
@@ -117,7 +119,10 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     loadOrganizationCoachAssignmentData({
       organizationIds: [result.organizationSummary.orgId],
     }).catch(() => null),
-    loadAdminCoachingCredits(result.organizationSummary.orgId),
+    projectKind === "organization_admin"
+      ? loadAdminCoachingCredits(result.organizationSummary.orgId)
+      : Promise.resolve(null),
+    loadOrganizationPrograms(result.organizationSummary.orgId),
   ])
   const fiscalSponsorshipWorkflowData =
     "error" in fiscalSponsorshipWorkflowSummary
@@ -126,6 +131,18 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
 
   return (
     <MemberWorkspaceProjectDetailPage
+      organizationPrograms={organizationPrograms}
+      coachControl={coachAssignmentData?.available && staff.accessLevel === "developer" ? (
+        <OrganizationCoachAssignmentControl
+          assignments={coachAssignmentData.assignmentsByOrganizationId.get(result.organizationSummary.orgId) ?? []}
+          canManage
+          coachOptions={coachAssignmentData.coachOptions}
+          organizationId={result.organizationSummary.orgId}
+          organizationName={result.organizationSummary.name}
+          updateAssignmentAction={updateOrganizationCoachAssignmentAction}
+          className="h-7 rounded-full text-xs md:h-7 [&_[data-slot=avatar]]:size-5"
+        />
+      ) : undefined}
       assignedCoaches={
         coachAssignmentData?.available
           ? (
@@ -135,20 +152,21 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
             ).map(({ coach }) => ({ id: coach.id, name: coach.name, imageUrl: coach.avatarUrl }))
           : null
       }
-      adminBilling={
-        <div className="space-y-4">
-          <AdminCoachingCreditsPanel initialData={coachingCredits} loadAction={loadCoachingCreditsAction} issueAction={issueCoachingCreditsAction} manageAction={manageStaffCoachingBookingAction} />
-        {adminBilling ? (
-          <AdminOrganizationBillingPanel
-            billing={adminBilling}
-            changePlanAction={changeAdminOrganizationBillingPlanAction}
-            refundLatestPaymentAction={
-              refundLatestAdminOrganizationPaymentAction
-            }
-          />
-        ) : null}
-        </div>
-      }
+      coachingCredits={coachingCredits ? (
+        <AdminCoachingCreditsPanel
+          initialData={coachingCredits}
+          loadAction={loadCoachingCreditsAction}
+          issueAction={issueCoachingCreditsAction}
+          manageAction={manageStaffCoachingBookingAction}
+        />
+      ) : null}
+      adminBilling={adminBilling ? (
+        <AdminOrganizationBillingPanel
+          billing={adminBilling}
+          changePlanAction={changeAdminOrganizationBillingPlanAction}
+          refundLatestPaymentAction={refundLatestAdminOrganizationPaymentAction}
+        />
+      ) : null}
       project={result.project}
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}

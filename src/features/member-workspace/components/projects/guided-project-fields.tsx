@@ -1,5 +1,6 @@
 "use client"
 
+import { ProjectFiscalSponsorshipOption } from "./project-fiscal-sponsorship-option"
 import { ProjectRecurrenceSelect } from "./project-recurrence-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -104,6 +105,7 @@ export function GuidedProjectBasics({
         />
       </div>
       <ProjectRecurrenceSelect value={value.recurrence ?? "none"} onChange={(recurrence) => change({ recurrence })} />
+      <ProjectFiscalSponsorshipOption checked={value.fiscalSponsorshipEnabled ?? false} onChange={(fiscalSponsorshipEnabled) => change({ fiscalSponsorshipEnabled })} />
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="guided-project-start">Start date (optional)</Label>

@@ -70,12 +70,15 @@ describe("MemberWorkspaceProjectFiscalDocuments", () => {
       "utf8"
     )
 
-    expect(detailTabsSource).toContain(
-      "getMemberWorkspaceProjectFiscalDocumentAssetIds("
+    const folderSource = readFileSync(
+      join(process.cwd(), "src/features/member-workspace/components/projects/project-asset-folders.tsx"),
+      "utf8"
     )
-    expect(detailTabsSource).toContain("!fiscalDocumentAssetIds.has(file.id)")
-    expect(detailTabsSource).toContain("generalProjectFiles.map")
-    expect(detailTabsSource).toContain("<MemberWorkspaceProjectFiscalDocuments")
+    expect(detailTabsSource).toContain("<ProjectAssetFolders")
+    expect(folderSource).toContain("getMemberWorkspaceProjectFiscalDocuments(workflowSummary)")
+    expect(folderSource).toContain("!signedAssetIds.has(")
+    expect(folderSource).toContain('source: "fiscal"')
+    expect(detailTabsSource).not.toContain("<AssetsFilesTab")
   })
 
   it("shows legacy DocuSeal files through authorized project asset routes", () => {

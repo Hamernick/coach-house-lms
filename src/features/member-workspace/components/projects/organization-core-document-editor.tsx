@@ -84,37 +84,39 @@ export function OrganizationCoreDocumentEditor({
         if (!open) close()
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-y-auto sm:max-w-4xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden sm:max-w-4xl">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{section.title}</DialogTitle>
           <DialogDescription>
             Edit this organization’s core document.
           </DialogDescription>
         </DialogHeader>
-        <RichTextEditor
-          value={content}
-          onChange={setContent}
-          ariaLabel={section.title}
-          preserveImages
-          readOnly={saving}
-          minHeight={300}
-        />
-        {section.id === "budget" ? (
-          <RoadmapBudgetTableEditor
-            rows={rows}
-            canEdit={!saving}
-            isDirty={dirty}
-            isSaving={saving}
-            onRowsChange={setRows}
-            onSave={() => void save()}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <RichTextEditor
+            value={content}
+            onChange={setContent}
+            ariaLabel={section.title}
+            preserveImages
+            readOnly={saving}
+            minHeight={300}
           />
-        ) : null}
+          {section.id === "budget" ? (
+            <RoadmapBudgetTableEditor
+              rows={rows}
+              canEdit={!saving}
+              isDirty={dirty}
+              isSaving={saving}
+              onRowsChange={setRows}
+              onSave={() => void save()}
+            />
+          ) : null}
+        </div>
         {error ? (
           <p role="alert" className="text-destructive text-sm">
             {error}
           </p>
         ) : null}
-        <div className="flex justify-end gap-2">
+        <div className="flex shrink-0 justify-end gap-2">
           <Button variant="outline" onClick={close} disabled={saving}>
             Cancel
           </Button>

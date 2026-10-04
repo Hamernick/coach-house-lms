@@ -114,4 +114,4 @@ export type {
 } from "./types"
 
 export { EditableOptionPicker, type EditableOption } from "./upstream/components/project-wizard/EditableOptionPicker"
-export { PROJECT_WORKSTREAM_OPTIONS } from "./upstream/components/project-wizard/steps/StepQuickCreate"
+export { PROJECT_WORKSTREAM_OPTIONS } from "./upstream/lib/project-workstreams"

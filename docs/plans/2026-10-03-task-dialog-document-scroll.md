@@ -80,3 +80,7 @@ Keep the coaching-credit panel on organization detail pages only, with standard-
 ### Final scope correction and release authorization — 2026-10-03
 
 Caleb authorized release, then requested removing automatic organization document preloads from every new/existing standard project. Limit organization document catalogs and placements to saved organization_admin records; retain project-owned files/folders and project-scoped signed agreements. No document deletion or migration. 28 focused folder/fiscal checks pass. Prepare one release PR for this user-reviewed workstream; keep onboarding and other worktrees separate. Required hosted quality and valid independent review remain mandatory.
+
+### Deployed status — 2026-10-03
+
+Caleb merged PR #266 as ad1c480f. Vercel production deployment dpl_Dz5S2bwqXGxYwYfgYkLv2jrSHsDN is READY and assigned to coachhouse.app on that exact SHA. Hosted build/static/acceptance/RLS and all ten new interaction cases pass. The aggregate quality gate remains failed for two unchanged Calendar mobile screenshots; this is recorded separately from successful deployment, not waived. PR #267 contains the production-only Vercel rule requested after the merge and updated closeout evidence. Final independent review/quality closeout is still required; live authenticated review remains with Caleb.

@@ -110,6 +110,10 @@ export async function updateOrganizationProfileAction(
     return { error: validation.error, field: validation.field }
   }
 
+  if (typeof payload.name === "string") {
+    payload = { ...payload, name: payload.name.trim() }
+  }
+
   // Load existing profile to merge
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")

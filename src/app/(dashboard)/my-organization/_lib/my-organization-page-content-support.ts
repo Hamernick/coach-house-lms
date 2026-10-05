@@ -9,6 +9,7 @@ import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelera
 import type { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
+import { buildSavedOnboardingFlowDefaults } from "@/lib/onboarding/saved-defaults"
 import { buildInitialOrganizationProfile } from "./helpers"
 import { hydrateWorkspaceSeedAcceleratorState } from "./my-organization-page-content-helpers"
 import { resolveOrganizationProfileComplete } from "./my-organization-page-content-helpers"
@@ -65,13 +66,15 @@ const WORKSPACE_PROGRAM_LEGACY_SELECT = [
   "end_date",
 ].join(", ")
 
-export function buildWorkspaceOnboardingDefaults({
+export async function buildWorkspaceOnboardingDefaults({
+  needsOnboarding,
   builderPlanTier,
   orgProfile,
   orgSlug,
   requestContext,
   userMeta,
 }: {
+  needsOnboarding: boolean
   builderPlanTier: Parameters<
     typeof buildOnboardingFlowDefaults
   >[0]["builderPlanTier"]
@@ -81,7 +84,9 @@ export function buildWorkspaceOnboardingDefaults({
   userMeta: Record<string, unknown> | null
 }) {
   const { profileAudience, user } = requestContext
-  return buildOnboardingFlowDefaults({
+  return buildSavedOnboardingFlowDefaults({
+    supabase: requestContext.supabase,
+    needsOnboarding,
     userId: user.id,
     email: user.email ?? null,
     displayName:

@@ -65,6 +65,7 @@ export function OrganizationStep({
         <Input
           id="orgName"
           name="orgName"
+          maxLength={120}
           data-onboarding-primary-focus="true"
           placeholder="Acme Inc."
           defaultValue={initialOrgName}

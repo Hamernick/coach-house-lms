@@ -1,4 +1,5 @@
 export type Project = {
+  fiscalSponsorshipEnabled?: boolean
   id: string
   name: string
   taskCount: number

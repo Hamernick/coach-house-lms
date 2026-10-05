@@ -16,6 +16,15 @@ export const MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS = [
   label: string
 }>
 
+export const MEMBER_WORKSPACE_STANDARD_PROJECT_STATUS_OPTIONS = [
+  { value: "backlog", label: "Backlog" },
+  { value: "planned", label: "Planned" },
+  { value: "active", label: "Active" },
+  { value: "on-hold", label: "On hold" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+] as const
+
 export const MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS = [
   { value: "urgent", label: "Urgent" },
   { value: "high", label: "High" },
@@ -183,6 +192,7 @@ function buildOverviewDocument(project: ProjectDetails) {
 function normalizeProjectStatus(
   project: ProjectDetails
 ): PlatformAdminDashboardLabStatus {
+  if (project.source && "projectKind" in project.source && project.source.projectKind === "standard") return project.source.status
   if (project.source?.status) {
     if (project.source.status === "active") return "active"
     if (

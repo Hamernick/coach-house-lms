@@ -133,9 +133,13 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
         const viewModel = mapOrganizationProjectToViewModel(project)
         const organization = organizationByProjectId.get(project.id)
         if (!organization) return viewModel
+        const organizationView = mapAdminOrganizationSummaryToProject(organization)
 
         return {
           ...viewModel,
+          organizationImageUrl: organizationView.organizationImageUrl,
+          client: organizationView.client,
+          durationLabel: organizationView.durationLabel,
           progress: organization.setupProgress,
           primaryPersonName: organization.ownerName,
           primaryPersonAvatarUrl: organization.ownerAvatarUrl,

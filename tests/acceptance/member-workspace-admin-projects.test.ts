@@ -109,7 +109,7 @@ describe("ensureCanonicalAdminProjects", () => {
               progress: 68,
               start_date: "2026-01-01",
               end_date: "2026-01-14",
-              client_name: "/community-builders",
+              client_name: "Public",
               type_label: "Approved nonprofit",
               duration_label: "1 member",
               tags: ["organization", "approved"],
@@ -155,7 +155,7 @@ describe("ensureCanonicalAdminProjects", () => {
       expect.objectContaining({
         name: "Community Builders",
         progress: 68,
-        client_name: "/community-builders",
+        client_name: "Public",
         type_label: "Approved nonprofit",
         tags: ["organization", "approved"],
       })
@@ -174,7 +174,7 @@ describe("ensureCanonicalAdminProjects", () => {
       expect.objectContaining({
         id: "project-1",
         name: "Community Builders",
-        client_name: "/community-builders",
+        client_name: "Public",
       }),
     ])
   })

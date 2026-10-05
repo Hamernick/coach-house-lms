@@ -1,6 +1,6 @@
 "use client"
 
-import { LinkSimple, SquareHalf } from "@phosphor-icons/react/dist/ssr"
+import { SquareHalf } from "@phosphor-icons/react/dist/ssr"
 
 import { Button } from "@/features/platform-admin-dashboard"
 import { MemberWorkspaceProjectDeleteDialog } from "./member-workspace-project-delete-dialog"
@@ -15,7 +15,6 @@ export type ProjectDetailTopBarActionsProps = {
   deleteProjectOpen: boolean
   showMeta: boolean
   onCancelProjectEditing: () => void
-  onCopyLink: () => void
   onDeleteProject: () => void
   onDeleteProjectOpenChange: (open: boolean) => void
   onSaveProject: () => void
@@ -32,7 +31,6 @@ export function ProjectDetailTopBarActions({
   deleteProjectOpen,
   showMeta,
   onCancelProjectEditing,
-  onCopyLink,
   onDeleteProject,
   onDeleteProjectOpenChange,
   onSaveProject,
@@ -70,14 +68,6 @@ export function ProjectDetailTopBarActions({
           onOpenChange={onDeleteProjectOpenChange}
         />
       ) : null}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Copy link"
-        onClick={onCopyLink}
-      >
-        <LinkSimple className="h-4 w-4" />
-      </Button>
       <Button
         variant="ghost"
         size="icon-sm"

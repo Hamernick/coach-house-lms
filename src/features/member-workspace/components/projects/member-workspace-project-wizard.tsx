@@ -24,6 +24,7 @@ import type {
 } from "../../types"
 import { withSaveFeedback } from "@/lib/with-save-feedback"
 import { projectDateToLocalCalendar, projectDateToValue } from "@/lib/project-date"
+import { ProjectFiscalSponsorshipOption } from "./project-fiscal-sponsorship-option"
 import { ProjectRecurrenceSelect } from "./project-recurrence-select"
 import { ProjectWizardDeleteAction } from "./project-wizard-delete-action"
 
@@ -255,6 +256,8 @@ export function MemberWorkspaceProjectWizard({
       .finally(() => { if (active) { setOptionsLoading(false); setLoadedOptionsFor(initialProject?.id ?? "new"); } });
     return () => { active = false; };
   }, [open, initialProject?.id]);
+  const [fiscalSponsorshipEnabled, setFiscalSponsorshipEnabled] = useState(false)
+  useEffect(() => { if (open) setFiscalSponsorshipEnabled(false) }, [open])
   const [renderOpen, setRenderOpen] = useState(open)
   const [isPending, startTransition] = useTransition()
 
@@ -314,11 +317,11 @@ export function MemberWorkspaceProjectWizard({
       const result = await withSaveFeedback(
         async () => initialProject
           ? updateProjectAction?.(initialProject.id, input)
-          : createProjectAction?.(input),
+          : createProjectAction?.({ ...input, fiscalSponsorshipEnabled }),
         { pending: initialProject ? "Saving changes…" : `Creating ${label.toLowerCase()}…`, success: `${label} ${initialProject ? "updated" : "created"}` },
       )
       if ("error" in result) return
-      onSaved?.(result.id, input)
+      onSaved?.(result.id, initialProject ? input : { ...input, fiscalSponsorshipEnabled })
       closeWizard()
       router.refresh()
 
@@ -340,7 +343,12 @@ export function MemberWorkspaceProjectWizard({
 
   return (
     <ProjectWizard
-      quickCreateRecurrenceControl={directoryHref === "/projects" ? (value, onChange) => <ProjectRecurrenceSelect value={value} onChange={onChange} disabled={isPending} /> : undefined}
+      quickCreateRecurrenceControl={directoryHref === "/projects" ? (value, onChange) => (
+        <div className="flex flex-col gap-4">
+          <ProjectRecurrenceSelect value={value} onChange={onChange} disabled={isPending} />
+          {!initialProject ? <ProjectFiscalSponsorshipOption checked={fiscalSponsorshipEnabled} onChange={setFiscalSponsorshipEnabled} disabled={isPending} /> : null}
+        </div>
+      ) : undefined}
       quickCreateFooterAction={initialProject && initialProject.projectKind !== "organization_admin" && deleteProjectAction ? (
         <ProjectWizardDeleteAction projectId={initialProject.id} projectName={initialProject.name} disabled={isPending} deleteProjectAction={deleteProjectAction} onDeleted={() => { closeWizard(); router.refresh(); }} />
       ) : undefined}

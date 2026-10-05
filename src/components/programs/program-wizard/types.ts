@@ -24,6 +24,7 @@ export type ProgramRecord = {
 }
 
 export type ProgramWizardProps = {
+  organizationId?: string
   mode?: "create" | "edit"
   program?: (Partial<ProgramRecord> & { id: string }) | null
   initialStep?: number | null

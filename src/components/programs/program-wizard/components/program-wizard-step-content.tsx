@@ -10,6 +10,7 @@ import { StepScheduleLocation } from "./step-schedule-location"
 import { StepTypeFormat } from "./step-type-format"
 
 type ProgramWizardStepContentProps = {
+  organizationId?: string
   mode: "create" | "edit"
   currentStep: number
   form: ProgramWizardFormState
@@ -26,6 +27,7 @@ type ProgramWizardStepContentProps = {
 
 export function ProgramWizardStepContent({
   mode,
+  organizationId,
   currentStep,
   form,
   errors,
@@ -40,6 +42,7 @@ export function ProgramWizardStepContent({
       return (
         <StepBasicInfo
           mode={mode}
+          organizationId={organizationId}
           form={form}
           errors={errors}
           update={update}

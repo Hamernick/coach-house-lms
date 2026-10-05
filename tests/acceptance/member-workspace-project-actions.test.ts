@@ -39,7 +39,7 @@ describe("member workspace project actions", () => {
     resolveMemberWorkspaceActorContextMock.mockReset()
   })
 
-  it("allows platform admins to create organization projects for a chosen organization", async () => {
+  it.each([false, true])("creates a project with fiscal sponsorship opt-in %s", async (fiscalSponsorshipEnabled) => {
     const organizationQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -72,6 +72,7 @@ describe("member workspace project actions", () => {
       createMemberWorkspaceProjectAction({
         orgId: "org-1",
         name: "Internal admin project",
+        fiscalSponsorshipEnabled,
         status: "planned",
         priority: "medium",
         startDate: "2026-04-09",
@@ -81,13 +82,14 @@ describe("member workspace project actions", () => {
 
     expect(organizationQuery.maybeSingle).toHaveBeenCalled()
     expect(rpc).toHaveBeenCalledWith(
-      "create_organization_project_transition",
+      fiscalSponsorshipEnabled ? "create_organization_project_with_options" : "create_organization_project_transition",
       expect.objectContaining({
         p_actor_id: "platform-admin-1",
         p_org_id: "org-1",
         p_project: expect.objectContaining({
           name: "Internal admin project",
           project_kind: "standard",
+          ...(fiscalSponsorshipEnabled ? { option_settings: { tags: [], sprintTypes: [], fiscalSponsorshipEnabled: true } } : {}),
         }),
       })
     )

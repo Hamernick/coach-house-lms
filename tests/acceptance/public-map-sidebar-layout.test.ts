@@ -2096,7 +2096,7 @@ describe("public map sidebar layout", () => {
     expect(loadingMarkup).toContain("Loading resources")
     expect(loadingMarkup.match(/data-slot="skeleton"/g)).toHaveLength(12)
     expect(emptyMarkup).toContain('data-public-map-search-empty="true"')
-    expect(emptyMarkup).toContain("No matches for")
+    expect(emptyMarkup).toContain("No service listings match")
     expect(emptyMarkup).toContain("Clear search")
     expect(emptyMarkup).toContain('data-search-shortcut="guide"')
     expect(emptyMarkup).toContain("Housing guide")

@@ -135,7 +135,12 @@ function PublicMapOrganizationListComponent({
   })
 
   if (listItems.length === 0 && loadStatus === "loading") {
-    return <PublicMapOrganizationListSkeleton />
+    return (
+      <>
+        {leadingContent}
+        <PublicMapOrganizationListSkeleton />
+      </>
+    )
   }
 
   if (listItems.length === 0) {
@@ -149,7 +154,7 @@ function PublicMapOrganizationListComponent({
       : loadFailed
         ? "Resource directory unavailable"
         : hasSearchQuery
-          ? `No matches for “${normalizedQuery}”`
+          ? `No service listings match “${normalizedQuery}”`
           : hasCategoryFilter
             ? "No resources in this category"
             : "No resources available"

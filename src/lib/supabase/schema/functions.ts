@@ -2,6 +2,11 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  search_nonprofit_directory: {
+    Args: { p_query?: string; p_state?: string | null; p_after?: string | null; p_limit?: number }
+    Returns: Json
+  }
+  get_nonprofit_directory: { Args: { p_ein: string }; Returns: Json }
   coaching_credit_account: { Args: { p_user_id: string }; Returns: Json }
   issue_coaching_credits: { Args: { p_user_id: string; p_org_id: string | null; p_quantity: number; p_source_type: string; p_label: string; p_reason: string; p_expires_at: string | null; p_actor_id: string | null; p_request_key: string }; Returns: string }
   confirm_coaching_credit_booking: { Args: { p_booking_id: string; p_checkout_id: string | null; p_payment_id: string | null; p_customer_id: string | null }; Returns: undefined }

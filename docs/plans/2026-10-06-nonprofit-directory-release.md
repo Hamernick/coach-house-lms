@@ -1,6 +1,20 @@
 # Nonprofit directory release continuation
 
-## Purpose and state
+## Current checkpoint — October 6, 2026
+
+PR #270 merged as `e6361167`; the production schema and audited publication
+completed. All 10,001 identities are searchable, with 536 websites, 971 phones
+and 897 descriptions; no new map pins. Production readback matched all 10,001
+planned records. `~/.local/share/coach-house/nonprofit-enrichment/PUBLICATION.json`
+and the production plan/activation artifacts hold receipts. Do not rerun the
+historical activation steps below. Read private `CURRENT.json` to resume data work.
+
+The release checkout now carries `fix/nonprofit-directory-click-20261006` for a
+reported React #185 crash. A narrow NavigationMenu dependency patch has a passing
+browser regression; deployment and current-head hosted gates remain pending.
+The user's exact click and separate search HTTP 503 are not reproducible.
+
+## Historical pre-publication checkpoint
 
 Release the audited IRS organization directory separately from the private research harness. An identity can be searchable without contacts, services or coordinates. This release adds no map pins and does not relax approved-service rules.
 

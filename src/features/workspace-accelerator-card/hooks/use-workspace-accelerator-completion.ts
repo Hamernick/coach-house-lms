@@ -16,9 +16,13 @@ export function useWorkspaceAcceleratorCompletion({
   const saving = useRef(false)
   const completeModule = async () => {
     if (!controller.currentStep || saving.current) return false
+    if (!onModuleComplete) {
+      toast.error("Unable to save lesson progress. Reload and try again.")
+      return false
+    }
     saving.current = true
     try {
-      const result = await onModuleComplete?.(controller.currentStep.moduleId)
+      const result = await onModuleComplete(controller.currentStep.moduleId)
       if (result && "error" in result) {
         toast.error(result.error)
         return false

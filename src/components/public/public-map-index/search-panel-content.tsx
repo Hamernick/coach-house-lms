@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { NonprofitDirectoryResults } from "@/features/find-resource-index/client"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
 import { cn } from "@/lib/utils"
@@ -172,7 +173,16 @@ export function PublicMapOrganizationsStack({
         constrainedLayout={constrainedLayout}
         incrementalLoading
         scrollable={scrollable}
-        leadingContent={leadingContent}
+        leadingContent={
+          activeGroup === "all" && query.trim().length >= 2 ? (
+            <>
+              {leadingContent}
+              <NonprofitDirectoryResults query={query} />
+            </>
+          ) : (
+            leadingContent
+          )
+        }
         onClearCategory={onClearCategory}
         onClearQuery={onClearQuery}
         onRetryLoad={onRetryResourceItems}

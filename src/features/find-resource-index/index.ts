@@ -17,3 +17,7 @@ export type {
   FindResourceIndexResponse,
   FindResourceDetailResponse,
 } from "./types"
+export type {
+  NonprofitDirectoryItem,
+  NonprofitDirectorySearchResponse,
+} from "./nonprofit-types"

@@ -115,6 +115,15 @@ for (const width of [390, 1440])
       async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
         await page.emulateMedia({ colorScheme: scheme })
+        const hydrationErrors: string[] = []
+        page.on("console", (message) => {
+          if (
+            message.type() === "error" &&
+            /hydration|hydrated|server rendered/i.test(message.text())
+          ) {
+            hydrationErrors.push(message.text())
+          }
+        })
         await mockCalendar(page)
         await page.goto("/visual-regression/google-calendar")
         await page.evaluate(
@@ -127,6 +136,8 @@ for (const width of [390, 1440])
           })
         ).toBeVisible()
         await expect(page.getByText("Google · Only you")).toBeVisible()
+        await expect(page.getByRole("button", { name: "Today", exact: true })).toHaveCount(0)
+        expect(hydrationErrors).toEqual([])
         await expect(page).toHaveScreenshot(
           "google-calendar-" + width + "-" + scheme + ".png",
           { animations: "disabled", maxDiffPixelRatio: 0.02 }

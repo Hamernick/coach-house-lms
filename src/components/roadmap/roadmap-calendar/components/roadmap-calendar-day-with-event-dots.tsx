@@ -26,6 +26,7 @@ export function RoadmapCalendarDayWithEventDots({
       className={cn(
         className,
         "relative mx-auto size-(--cell-size) min-h-10 min-w-0 rounded-xl border border-transparent bg-transparent text-sm font-semibold text-foreground tabular-nums",
+        "before:absolute before:top-1/2 before:left-1/2 before:size-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] sm:before:hidden",
         "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring/45",
         "data-[selected-single=true]:!border-border/50 data-[selected-single=true]:!bg-muted/75 data-[selected-single=true]:!text-foreground data-[selected-single=true]:!shadow-none",
         "group-data-[focused=true]/day:ring-2 group-data-[focused=true]/day:ring-ring/35",

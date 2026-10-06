@@ -390,7 +390,7 @@ describe("roadmap calendar month agenda", () => {
       "flex min-w-0 shrink-0 items-center gap-1.5 justify-self-end"
     )
     expect(agendaPanel).toContain(
-      "const showTodayButton = !isSameCalendarMonth(month, new Date())"
+      "const showTodayButton = !isSameCalendarMonth(month, today ?? new Date())"
     )
     expect(agendaPanel).toContain("{showTodayButton ? (")
     expect(agendaPanel).toContain(") : null}")

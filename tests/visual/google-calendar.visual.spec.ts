@@ -115,6 +115,15 @@ for (const width of [390, 1440])
       async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
         await page.emulateMedia({ colorScheme: scheme })
+        const hydrationErrors: string[] = []
+        page.on("console", (message) => {
+          if (
+            message.type() === "error" &&
+            /hydration|hydrated|server rendered/i.test(message.text())
+          ) {
+            hydrationErrors.push(message.text())
+          }
+        })
         await mockCalendar(page)
         await page.goto("/visual-regression/google-calendar")
         await page.evaluate(
@@ -127,10 +136,30 @@ for (const width of [390, 1440])
           })
         ).toBeVisible()
         await expect(page.getByText("Google · Only you")).toBeVisible()
+        await expect(page.getByRole("button", { name: "Today", exact: true })).toHaveCount(0)
+        expect(hydrationErrors).toEqual([])
         await expect(page).toHaveScreenshot(
           "google-calendar-" + width + "-" + scheme + ".png",
           { animations: "disabled", maxDiffPixelRatio: 0.02 }
         )
+        if (width === 390) {
+          const nextDay = page.getByRole("button", {
+            name: "Wednesday, September 9th, 2026", exact: true,
+          })
+          const bounds = await nextDay.boundingBox()
+          expect(bounds).not.toBeNull()
+          const touchTarget = await nextDay.evaluate((element) => {
+            const style = getComputedStyle(element, "::before")
+            return { width: parseFloat(style.width), height: parseFloat(style.height) }
+          })
+          expect(touchTarget.width).toBeGreaterThanOrEqual(44)
+          expect(touchTarget.height).toBeGreaterThanOrEqual(44)
+          await page.mouse.click(bounds!.x + bounds!.width + 1, bounds!.y + bounds!.height / 2)
+          await expect(page.getByRole("gridcell", { selected: true })).toHaveAccessibleName(
+            /Wednesday, September 9th, 2026/
+          )
+          await page.getByRole("button", { name: /Today, Tuesday, September 8th, 2026/ }).click()
+        }
         await page
           .getByRole("button", { name: "Manage Google Calendar" })
           .click()

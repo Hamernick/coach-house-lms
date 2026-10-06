@@ -102,7 +102,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
         )
       : []
     const totalDayEvents = dayEvents.length + personalDayEvents.length
-    const showTodayButton = !isSameCalendarMonth(month, new Date())
+    const showTodayButton = !isSameCalendarMonth(month, today ?? new Date())
 
     return (
       <section

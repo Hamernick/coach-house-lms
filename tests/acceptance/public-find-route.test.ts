@@ -573,7 +573,7 @@ describe("public find routes", () => {
     expect(organizationListSource).toContain(
       'data-public-map-search-empty="true"'
     )
-    expect(organizationListSource).toContain("No matches for")
+    expect(organizationListSource).toContain("No service listings match")
     expect(resourceItemsSource).toContain("resourceItemsLoadByEndpoint")
     expect(resourceItemsSource).toContain(
       "warmPublicMapListItemSearchCache(resourceItems)"

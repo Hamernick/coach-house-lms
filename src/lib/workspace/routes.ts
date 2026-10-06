@@ -22,6 +22,8 @@ export function normalizeWorkspaceDrawerTab(
 ): WorkspaceDrawerTab | null {
   if (typeof value !== "string") return null
   const normalized = value.trim()
+  // Finance stays unavailable until its release is ready.
+  if (normalized === WORKSPACE_FINANCE_DRAWER_TAB) return null
   return WORKSPACE_DRAWER_TABS.includes(normalized as WorkspaceDrawerTab)
     ? (normalized as WorkspaceDrawerTab)
     : null

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react"
 
+import { markModuleCompleteAction } from "@/app/actions/module-progress"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
 import { listenForWorkspaceRoadmapDrawerRequests } from "@/lib/workspace/data-drawer-events"
 import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
@@ -170,6 +171,7 @@ export function useWorkspaceAcceleratorDrawer({
       storageKey: `${seed.orgId}:${seed.viewerId}`,
       initialCurrentStepId: boardState.accelerator.activeStepId,
       initialCompletedStepIds: boardState.accelerator.completedStepIds,
+      onModuleComplete: markModuleCompleteAction,
       onProgressChange,
       onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
     }),

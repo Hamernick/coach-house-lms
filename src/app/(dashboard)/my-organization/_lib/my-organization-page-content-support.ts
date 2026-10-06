@@ -86,7 +86,7 @@ export async function buildWorkspaceOnboardingDefaults({
   const { profileAudience, user } = requestContext
   return buildSavedOnboardingFlowDefaults({
     supabase: requestContext.supabase,
-    needsOnboarding,
+    needsOnboarding: needsOnboarding || Boolean(orgProfile.name),
     userId: user.id,
     email: user.email ?? null,
     displayName:

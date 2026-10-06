@@ -53,6 +53,26 @@ function slugify(input: string): string {
   return base.slice(0, 60).replace(/^-+|-+$/g, "")
 }
 
+function workspaceOnboardingMetadata({
+  preserveCompleted,
+  intentFocus,
+  accessSelectionOnly,
+  updatedAt,
+}: {
+  preserveCompleted: boolean
+  intentFocus: string | null
+  accessSelectionOnly: boolean
+  updatedAt: string
+}) {
+  if (preserveCompleted || intentFocus !== "build") return {}
+  return {
+    workspace_onboarding_stage: 2,
+    workspace_onboarding_active: !accessSelectionOnly,
+    workspace_onboarding_started_at: accessSelectionOnly ? null : updatedAt,
+    workspace_onboarding_completed_at: null,
+  }
+}
+
 export async function completeOnboardingAction(form: FormData) {
   const supabase = await createSupabaseServerClient()
   const {
@@ -330,6 +350,9 @@ export async function completeOnboardingAction(form: FormData) {
   }
 
   const onboardingUpdatedAt = new Date().toISOString()
+  const preserveCompletedWorkspaceOnboarding =
+    onboardingMode === "workspace_setup" &&
+    Boolean(user.user_metadata?.workspace_onboarding_completed_at)
 
   // Builder access selection precedes required organization and account setup.
   const { error: updateUserError } = await supabase.auth.updateUser({
@@ -347,21 +370,12 @@ export async function completeOnboardingAction(form: FormData) {
       ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       onboarding_intent_focus: intentFocus,
       onboarding_role_interest: roleInterest,
-      ...(intentFocus === "build" && !builderAccessSelectionOnly
-        ? {
-            workspace_onboarding_stage: 2,
-            workspace_onboarding_active: true,
-            workspace_onboarding_started_at: onboardingUpdatedAt,
-            workspace_onboarding_completed_at: null,
-          }
-        : builderAccessSelectionOnly
-          ? {
-              workspace_onboarding_stage: 2,
-              workspace_onboarding_active: false,
-              workspace_onboarding_started_at: null,
-              workspace_onboarding_completed_at: null,
-            }
-          : {}),
+      ...workspaceOnboardingMetadata({
+        preserveCompleted: preserveCompletedWorkspaceOnboarding,
+        intentFocus,
+        accessSelectionOnly: builderAccessSelectionOnly,
+        updatedAt: onboardingUpdatedAt,
+      }),
     },
   })
 
@@ -407,7 +421,9 @@ export async function completeOnboardingAction(form: FormData) {
       redirect("/workspace?source=onboarding_setup")
     }
     redirect(
-      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+      preserveCompletedWorkspaceOnboarding
+        ? "/workspace?source=organization_setup"
+        : "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
     )
   }
 

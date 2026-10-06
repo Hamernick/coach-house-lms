@@ -214,14 +214,16 @@ export function useWorkspaceAcceleratorCardController(
     [currentIndex, stepIdToIndex]
   )
 
-  const markCurrentStepComplete = useCallback(() => {
-    if (!currentStep || completedStepIds.includes(currentStep.id)) return
+  const markCurrentStepComplete = useCallback((wholeModule = false) => {
+    if (!currentStep || (!wholeModule && completedStepIds.includes(currentStep.id))) return
     pendingUserProgressChangeRef.current = true
     setCompletedStepIds((previous) => {
-      if (previous.includes(currentStep.id)) return previous
-      return [...previous, currentStep.id]
+      const ids = wholeModule
+        ? steps.filter((step) => step.moduleId === currentStep.moduleId).map((step) => step.id)
+        : [currentStep.id]
+      return Array.from(new Set([...previous, ...ids]))
     })
-  }, [completedStepIds, currentStep])
+  }, [completedStepIds, currentStep, steps])
 
   useEffect(() => {
     if (!allowAutoResize || !onSizeChange || !currentStep) return

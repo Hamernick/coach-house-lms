@@ -56,6 +56,13 @@ export function useOrgProfileEditorState({
   const [savedCompany, setSavedCompany] = useState<OrgProfile>(
     () => normalizedInitial
   )
+  const initialProfileRef = useRef(normalizedInitial)
+  useEffect(() => {
+    if (initialProfileRef.current === normalizedInitial || dirty) return
+    initialProfileRef.current = normalizedInitial
+    setCompany(normalizedInitial)
+    setSavedCompany(normalizedInitial)
+  }, [dirty, normalizedInitial])
   const savedCompanyRef = useRef(savedCompany)
   const pendingNavigationRef = useRef<string | null>(null)
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false)
@@ -288,8 +295,9 @@ export function useOrgProfileEditorState({
       setDirty(false)
       setCompany(savedCompany)
       setSavedCompany(savedCompany)
+      router.refresh()
     })
-  }, [company, canEdit, slugStatus])
+  }, [company, canEdit, slugStatus, router])
 
   const handleProgramEdit = useCallback(
     (program: OrgProgram) => {

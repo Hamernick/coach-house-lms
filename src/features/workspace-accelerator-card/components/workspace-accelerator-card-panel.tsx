@@ -16,6 +16,7 @@ import {
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   resolveWorkspaceAcceleratorOpenModuleId,
 } from "../lib"
+import { useWorkspaceAcceleratorCompletion } from "../hooks/use-workspace-accelerator-completion"
 import { useWorkspaceAcceleratorCardController } from "../hooks/use-workspace-accelerator-card-controller"
 import type {
   WorkspaceAcceleratorCardInput,
@@ -215,12 +216,16 @@ export function WorkspaceAcceleratorCardPanel({
       }),
     [controller.currentModuleSteps, controller.steps, currentStep?.id]
   )
+  const { completeModule, completeVideo } = useWorkspaceAcceleratorCompletion({
+    controller, onModuleComplete: input.onModuleComplete,
+  })
   const goPreviousWithinModule = useCallback(() => {
     if (!moduleStepNavigation.previousStepId) return
     controller.goToStep(moduleStepNavigation.previousStepId)
   }, [controller, moduleStepNavigation.previousStepId])
   const goNextWithinModule = useCallback(() => {
     if (!moduleStepNavigation.nextStepId) return
+    controller.markCurrentStepComplete()
     controller.goToStep(moduleStepNavigation.nextStepId)
   }, [controller, moduleStepNavigation.nextStepId])
   const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
@@ -418,7 +423,7 @@ export function WorkspaceAcceleratorCardPanel({
     }
   }
 
-  const handleCompleteModuleStep = () => {
+  const handleCompleteModuleStep = async () => {
     if (
       shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(tutorialMode)
     ) {
@@ -429,7 +434,7 @@ export function WorkspaceAcceleratorCardPanel({
       })
       return
     }
-    controller.markCurrentStepComplete()
+    if (!(await completeModule())) return
     if (moduleStepNavigation.nextStepId) {
       controller.goToStep(moduleStepNavigation.nextStepId)
     }
@@ -605,6 +610,7 @@ export function WorkspaceAcceleratorCardPanel({
             moduleCompleted={controller.isCurrentModuleCompleted}
             onPrevious={goPreviousWithinModule}
             onNext={goNextWithinModule}
+            onVideoComplete={tutorialMode ? undefined : () => void completeVideo()}
             onComplete={handleCompleteModuleStep}
             onClose={handleCloseModuleViewer}
             tutorialCallout={

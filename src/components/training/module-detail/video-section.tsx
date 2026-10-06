@@ -12,6 +12,7 @@ interface VideoSectionProps {
   videoUrl: string | null
   fallbackUrl: string | null
   variant?: "card" | "frame"
+  onEnded?: () => void
   className?: string
 }
 
@@ -21,6 +22,7 @@ export function VideoSection({
   fallbackUrl,
   variant = "card",
   className,
+  onEnded,
 }: VideoSectionProps) {
   const isFrame = variant === "frame"
   const mediaClass = isFrame ? "h-full" : "aspect-video"
@@ -41,6 +43,7 @@ export function VideoSection({
         src={videoUrl}
         className="absolute inset-0 h-full w-full"
         controls
+        onEnded={onEnded}
         playsInline
         preload="metadata"
       />

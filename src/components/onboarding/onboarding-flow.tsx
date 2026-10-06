@@ -123,7 +123,7 @@ export function OnboardingFlow({
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
-  const [slugEdited, setSlugEdited] = useState(false)
+  const [slugEdited, setSlugEdited] = useState(Boolean(initialOrgSlug))
   const [orgNameValue, setOrgNameValue] = useState(initialOrgName)
   const [orgSlugInputValue, setOrgSlugInputValue] = useState(initialOrgSlug)
   const [slugValue, setSlugValue] = useState(initialOrgSlug)
@@ -222,7 +222,8 @@ export function OnboardingFlow({
     saveDraft,
   })
   useOnboardingDraftState({
-    open,
+    // Saved organization details take precedence when revisiting setup.
+    open: open && !(mode === "workspace_setup" && initialOrgName && initialOrgSlug),
     step,
     formRef,
     resolveDraftFieldValue,
@@ -356,8 +357,8 @@ export function OnboardingFlow({
       orgNameValue={orgNameValue}
       orgSlugInputValue={orgSlugInputValue}
       slugValue={slugValue}
-      initialOrgName={initialOrgName}
-      initialOrgSlug={initialOrgSlug}
+      initialOrgName={orgNameValue}
+      initialOrgSlug={orgSlugInputValue}
       slugStatus={slugStatus}
       slugHint={slugHint}
       personHandleStatus={personHandleStatus}

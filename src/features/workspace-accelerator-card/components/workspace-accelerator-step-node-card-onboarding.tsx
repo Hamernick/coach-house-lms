@@ -88,17 +88,15 @@ export function WorkspaceAcceleratorOnboardingStepBody({
       <section className="space-y-1">
         <p className={WORKSPACE_TEXT_STYLES.meta}>Organization setup</p>
         <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-          Reuse the same onboarding form here so Formation starts with your real
-          organization details instead of placeholders.
+          Update your organization details. Changes also appear in your
+          organization profile.
         </p>
       </section>
 
       {onSubmit ? (
         <div className="relative min-h-0 overflow-hidden rounded-[24px] border border-border/60 bg-background/70">
           <div
-            className="pointer-events-none min-h-0 select-none"
-            aria-hidden="true"
-            inert
+            className="min-h-0"
           >
             <OnboardingWorkspaceCard
               {...(defaults ?? {})}
@@ -107,10 +105,6 @@ export function WorkspaceAcceleratorOnboardingStepBody({
               className="min-h-[520px] border-0 shadow-none"
             />
           </div>
-          <div
-            className="absolute inset-0 z-10 cursor-default"
-            aria-hidden="true"
-          />
         </div>
       ) : (
         <div className="border-border/60 bg-background/70 rounded-xl border p-4">

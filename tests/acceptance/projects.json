@@ -276,6 +276,7 @@
     ],
     "integration": [
       "tests/acceptance/accelerator-entitlements.test.ts",
+      "tests/acceptance/accelerator-progress-persistence.test.ts",
       "tests/acceptance/accelerator-progress-rail.test.ts",
       "tests/acceptance/accelerator-readiness.test.ts",
       "tests/acceptance/account-settings-delete-account-dialog.test.ts",

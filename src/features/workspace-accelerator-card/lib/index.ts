@@ -403,6 +403,7 @@ export function normalizeWorkspaceAcceleratorCardInput(
       input.initialCurrentStepId
     ),
     initialCompletedStepIds,
+    onModuleComplete: input.onModuleComplete,
     onProgressChange: input.onProgressChange,
     onWorkspaceOnboardingSubmit: input.onWorkspaceOnboardingSubmit,
   }

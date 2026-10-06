@@ -100,6 +100,7 @@ export type WorkspaceAcceleratorCardInput = {
   onSizeChange?: (nextSize: WorkspaceAcceleratorCardSize) => void
   initialCurrentStepId?: string | null
   initialCompletedStepIds?: string[]
+  onModuleComplete?: (moduleId: string) => Promise<{ ok: true } | { error: string }>
   onProgressChange?: (state: WorkspaceAcceleratorCardProgressState) => void
   onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
 }

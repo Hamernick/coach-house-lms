@@ -106,7 +106,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("Close lesson")
   })
 
-  it("renders the embedded organization setup flow as a clipped read-only preview", () => {
+  it("keeps the embedded organization setup editable", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorStepNodeCard, {
         step: {
@@ -159,9 +159,9 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("Organization setup")
     expect(markup).toContain("Step 1 of 3")
     expect(markup).toContain("Create your organization")
-    expect(markup).toContain("pointer-events-none min-h-0 select-none")
-    expect(markup).toContain("inert=")
-    expect(markup).toContain("absolute inset-0 z-10 cursor-default")
+    expect(markup).not.toContain("pointer-events-none min-h-0 select-none")
+    expect(markup).not.toContain("inert=")
+    expect(markup).not.toContain("absolute inset-0 z-10 cursor-default")
     expect(markup).toContain("min-h-[520px] border-0 shadow-none")
     expect(markup).not.toContain("max-h-[min(52dvh,360px)]")
     expect(markup).not.toContain(
@@ -275,7 +275,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("border-0")
     expect(markup).toContain("rounded-none")
     expect(markup).toContain("Previous accelerator step")
-    expect(markup).toContain("Close accelerator lesson")
+    expect(markup).toContain("Done reviewing this lesson")
     expect(markup).toContain("px-3 py-3 sm:px-4")
   })
 

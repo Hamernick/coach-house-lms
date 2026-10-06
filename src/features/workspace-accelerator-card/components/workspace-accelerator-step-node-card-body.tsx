@@ -76,6 +76,7 @@ export function WorkspaceAcceleratorStepBody({
   canGoNext,
   completed,
   onComplete,
+  onVideoComplete,
   onClose,
   tutorialInteractionPolicy,
   onBlockedPreviewAction,
@@ -88,6 +89,7 @@ export function WorkspaceAcceleratorStepBody({
   stepTotal: number
   canGoNext: boolean
   completed: boolean
+  onVideoComplete?: () => void
   onComplete: () => void
   onClose: () => void
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
@@ -172,6 +174,7 @@ export function WorkspaceAcceleratorStepBody({
     return (
       <div className="px-3 py-3 sm:px-4">
         <VideoSection
+          onEnded={onVideoComplete}
           embedUrl={null}
           videoUrl={effectiveVideoUrl}
           fallbackUrl={step.href}
@@ -227,7 +230,7 @@ export function WorkspaceAcceleratorStepBody({
       {showResources ? (
         moduleContext ? (
           <ModuleStepperResourcesStep
-            resources={moduleContext.moduleResources ?? []}
+            resources={overviewResources}
             moduleId={step.moduleId}
             hasDeck={step.hasDeck}
           />

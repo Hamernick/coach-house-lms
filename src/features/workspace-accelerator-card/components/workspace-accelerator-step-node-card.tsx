@@ -61,6 +61,7 @@ export type WorkspaceAcceleratorStepNodeCardProps = {
   moduleCompleted: boolean
   onPrevious: () => void
   onNext: () => void
+  onVideoComplete?: () => void
   onComplete: () => void
   onClose: () => void
   tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
@@ -209,6 +210,7 @@ export function WorkspaceAcceleratorStepNodeCard({
   onPrevious,
   onNext,
   onComplete,
+  onVideoComplete,
   onClose,
   tutorialCallout = null,
   tutorialInteractionPolicy = null,
@@ -335,6 +337,7 @@ export function WorkspaceAcceleratorStepNodeCard({
       stepTotal={stepTotal}
       canGoNext={canGoNext}
       completed={completed}
+      onVideoComplete={onVideoComplete}
       onComplete={onComplete}
       onClose={onClose}
       tutorialInteractionPolicy={tutorialInteractionPolicy}
@@ -478,11 +481,12 @@ export function WorkspaceAcceleratorStepNodeCard({
                 >
                   <div className="inline-flex">
                     <AcceleratorStepCloseButton
-                      done={isFinalAssignmentSection}
+                      done={!canGoNext && !workspaceOnboardingView}
                       moduleCompleted={moduleCompleted}
                       onClose={() => {
                         if (canClosePreview) {
-                          onClose()
+                          if (!canGoNext && !workspaceOnboardingView) onComplete()
+                          else onClose()
                           return
                         }
                         handleBlockedPreviewAction("preview-close", "close")

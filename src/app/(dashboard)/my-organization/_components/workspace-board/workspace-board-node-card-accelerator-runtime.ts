@@ -1,3 +1,4 @@
+import { markModuleCompleteAction } from "@/app/actions/module-progress"
 import type {
   WorkspaceAcceleratorCardInput,
 } from "@/features/workspace-accelerator-card"
@@ -73,6 +74,7 @@ export function buildWorkspaceBoardAcceleratorCardInput({
       : undefined,
     initialCurrentStepId: activeStepId,
     initialCompletedStepIds: completedStepIds,
+    onModuleComplete: shouldTrackEmbeddedAcceleratorRuntime ? markModuleCompleteAction : undefined,
     onProgressChange: shouldTrackEmbeddedAcceleratorRuntime
       ? handleAcceleratorProgressChange
       : undefined,

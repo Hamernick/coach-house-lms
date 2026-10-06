@@ -204,7 +204,10 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
   })
 
-  it.each(["free", "operations_support"])("saves %s workspace setup while preserving existing documents and billing", async (planTier) => {
+  it.each([
+    ["free", false], ["operations_support", false],
+    ["free", true], ["operations_support", true],
+  ] as const)("saves %s workspace setup with completed tutorial %s while preserving documents and billing", async (planTier, tutorialCompleted) => {
     fetchLearningEntitlementsMock.mockResolvedValue({ hasActiveSubscription: true })
     const savedProfile = {
       mission_final_statement: "Existing mission",
@@ -277,6 +280,9 @@ describe("completeOnboardingAction", () => {
             user: {
               id: "user_123",
               email: "founder@example.com",
+              user_metadata: tutorialCompleted
+                ? { workspace_onboarding_completed_at: "2026-09-01T00:00:00.000Z" }
+                : {},
             },
           },
           error: null,
@@ -396,11 +402,17 @@ describe("completeOnboardingAction", () => {
     expect(updateUserMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
         onboarding_completed: true,
-        workspace_onboarding_active: true,
-        workspace_onboarding_completed_at: null,
-        workspace_onboarding_stage: 2,
+        ...(tutorialCompleted ? {} : {
+          workspace_onboarding_active: true,
+          workspace_onboarding_completed_at: null,
+          workspace_onboarding_stage: 2,
+        }),
       }),
     })
+    if (tutorialCompleted) {
+      expect(updateUserMock.mock.calls[0][0].data).not.toHaveProperty("workspace_onboarding_completed_at")
+      expect(updateUserMock.mock.calls[0][0].data).not.toHaveProperty("workspace_onboarding_active")
+    }
     expect(moduleProgressUpsertMock).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user_123",
@@ -411,7 +423,9 @@ describe("completeOnboardingAction", () => {
       { onConflict: "user_id,module_id" }
     )
     expect(destination).toBe(
-      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+      tutorialCompleted
+        ? "/workspace?source=organization_setup"
+        : "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
     )
   })
 

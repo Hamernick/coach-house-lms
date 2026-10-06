@@ -5,7 +5,6 @@ import Link from "next/link"
 import NotebookPenIcon from "lucide-react/dist/esm/icons/notebook-pen"
 import FolderOpenIcon from "lucide-react/dist/esm/icons/folder-open"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import HomeIcon from "lucide-react/dist/esm/icons/home"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 
@@ -21,9 +20,7 @@ import { useModuleNotes } from "@/hooks/use-module-notes"
 import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
-const SUPPORT_EMAIL = "joel@coachhousesolutions.org"
-
-type ToolKey = "notes" | "resources" | "coach" | "ai"
+type ToolKey = "notes" | "resources" | "coach"
 
 type ModuleRightRailBreakAction =
   | {
@@ -66,7 +63,6 @@ export function ModuleRightRail({
           <ModuleResourcesPanel resources={normalizedResources} moduleId={moduleId} hasDeck={hasDeck} />
         ) : null}
         {activeTool === "coach" ? <ModuleCoachPanel /> : null}
-        {activeTool === "ai" ? <ModuleAiPanel /> : null}
         </div>
       </div>
       <ModuleToolTray
@@ -195,24 +191,6 @@ function ModuleCoachPanel() {
   )
 }
 
-function ModuleAiPanel() {
-  return (
-    <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
-      <CardHeader className="px-4 pb-2 pt-4">
-        <CardTitle className="text-base">AI Coach</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground">
-          Draft answers, summarize notes, and refine your thinking.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 pt-0">
-        <Button asChild size="sm" variant="secondary" className="w-full">
-          <a href={`mailto:${SUPPORT_EMAIL}?subject=AI%20Coach%20Access`}>Request access</a>
-        </Button>
-      </CardContent>
-    </Card>
-  )
-}
-
 function ModuleToolTray({
   activeTool,
   onToolChange,
@@ -224,7 +202,7 @@ function ModuleToolTray({
 }) {
   return (
     <div className="space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <ToolTrayButton
           icon={NotebookPenIcon}
           label="Notes"
@@ -242,12 +220,6 @@ function ModuleToolTray({
           label="Coach"
           isActive={activeTool === "coach"}
           onClick={() => onToolChange("coach")}
-        />
-        <ToolTrayButton
-          icon={SparklesIcon}
-          label="AI"
-          isActive={activeTool === "ai"}
-          onClick={() => onToolChange("ai")}
         />
       </div>
       {breakAction ? (

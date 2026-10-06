@@ -35,7 +35,7 @@ describe("workspace routes", () => {
       "roadmap",
     ])
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
-    expect(normalizeWorkspaceDrawerTab("finance")).toBe("finance")
+    expect(normalizeWorkspaceDrawerTab("finance")).toBeNull()
     expect(normalizeWorkspaceDrawerTab("tools")).toBe("tools")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })

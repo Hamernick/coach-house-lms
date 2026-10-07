@@ -103,6 +103,8 @@ export function PublicMapOrganizationDetail({
         onToggle={() => setAboutExpanded((previous) => !previous)}
       />
 
+      <OrganizationDetailActivitiesSection activities={activities} />
+
       <div className="grid grid-cols-2 gap-4 [&>section]:min-w-0 [&>section:only-child]:col-span-2">
         <OrganizationDetailFormationSection formationStatus={formationStatus} />
         <OrganizationDetailBrandKitSection
@@ -124,8 +126,6 @@ export function PublicMapOrganizationDetail({
       />
 
       <OrganizationDetailResourceLinksSection resources={resources} />
-
-      <OrganizationDetailActivitiesSection activities={activities} />
     </div>
   )
 }

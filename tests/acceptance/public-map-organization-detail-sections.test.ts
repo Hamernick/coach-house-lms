@@ -291,6 +291,22 @@ describe("OrganizationDetailActivitiesSection", () => {
     expect(markup).toContain("Ongoing")
     expect(markup).toContain("Online")
     expect(markup).toContain("https://hub.example.org")
+
+    const profile = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationDetail, {
+        organization: buildOrganization({
+          activityLinks: [{
+            id: "program-1", title: "Youth Resource Hub", subtitle: null,
+            description: "Public activity", activityKind: "Program", chips: [],
+            ctaLabel: null, ctaUrl: null, durationLabel: null,
+            locationUrl: null, locationType: null,
+          }],
+        }),
+      })
+    )
+    expect(profile.indexOf(">Activity<")).toBeGreaterThan(profile.indexOf(">About<"))
+    expect(profile.indexOf(">Activity<")).toBeLessThan(profile.indexOf(">Contact<"))
+    expect(profile.match(/Youth Resource Hub/g)).toHaveLength(1)
   })
 
   it("renders the full activity list from activity metadata, not the visual preview cap", () => {

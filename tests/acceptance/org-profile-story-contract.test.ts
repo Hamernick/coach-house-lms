@@ -115,7 +115,6 @@ describe("organization profile story contract", () => {
       createElement(StoryPreview, {
         company,
         addressLines: [],
-        hasAnyBrandLink: false,
       })
     )
     const publicMarkup = renderToStaticMarkup(

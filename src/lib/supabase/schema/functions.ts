@@ -2,6 +2,10 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  search_nonprofit_directory_v2: {
+    Args: { p_query?: string; p_state?: string | null; p_category?: string | null; p_after?: string | null; p_limit?: number }
+    Returns: Json
+  }
   search_nonprofit_directory: {
     Args: { p_query?: string; p_state?: string | null; p_after?: string | null; p_limit?: number }
     Returns: Json

@@ -2192,3 +2192,13 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("Open source")
   })
 })
+
+
+it("keeps national categories enabled without displaying loaded-resource totals", () => {
+  const markup = renderToStaticMarkup(React.createElement(PublicMapCategoryFilter, {
+    activeGroup: "food", counts: buildPublicMapGroupFilterCounts([]), onActiveGroupChange: () => {},
+  }))
+  expect(markup).not.toContain("disabled=")
+  expect(markup).not.toContain(">0</span>")
+  expect(markup).toContain("More categories")
+})

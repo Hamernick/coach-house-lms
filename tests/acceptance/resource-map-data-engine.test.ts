@@ -1938,7 +1938,7 @@ describe("resource map local data engine", () => {
       ["Debt Counseling", "finance", "finance_debt_counseling"],
       ["Housing Law", "legal", "legal_housing_law"],
       ["Veterans", "family", "family_veterans"],
-      ["Faith Organizations", "community", "community_faith_organizations"],
+      ["Faith Organizations", "faith", "community_faith_organizations"],
       [
         "Disaster Preparedness",
         "emergency",

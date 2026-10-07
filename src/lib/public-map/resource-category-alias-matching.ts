@@ -31,3 +31,19 @@ export function publicMapTextContainsCategoryAlias({
 }) {
   return createPublicMapCategoryAliasMatcher(text)(alias)
 }
+
+export const PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEYS = {
+  community_resource: "community",
+  dental: "health_dental",
+  education_resource: "education",
+  funding: "finance",
+  jobs: "employment",
+  legal_benefits: "legal",
+  medical: "health",
+  mental_health: "health_mental_health",
+  online_media: "community_internet_access",
+  shelter: "housing_emergency_shelter",
+  transportation: "community_transportation",
+  water: "food_water",
+  womens_health: "health_womens_health",
+} as const

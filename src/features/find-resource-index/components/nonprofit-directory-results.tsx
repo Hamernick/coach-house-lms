@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import type { PublicMapResourceCategoryKey } from "@/lib/public-map/resource-categories"
 import { Button } from "@/components/ui/button"
 import type { NonprofitDirectorySearchResponse } from "../nonprofit-types"
 import { loadNonprofitDirectoryPage } from "../lib/nonprofit-directory-client"
@@ -19,7 +20,13 @@ function sourceDate(period: string | null) {
     : `IRS filing ending ${new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric", timeZone: "UTC" }).format(date)}`
 }
 
-function SearchPage({ query }: { query: string }) {
+function SearchPage({
+  query,
+  category,
+}: {
+  query: string
+  category: PublicMapResourceCategoryKey | null
+}) {
   const heading = useRef<HTMLHeadingElement>(null)
   const pageNavigation = useRef(false)
   const [cursor, setCursor] = useState<string | null>(null)
@@ -32,13 +39,16 @@ function SearchPage({ query }: { query: string }) {
     const restore = () => {
       const params = new URL(window.location.href).searchParams
       setCursor(
-        params.get("nfpQuery") === query ? params.get("nfpCursor") : null
+        params.get("nfpQuery") === query &&
+          params.get("nfpCategory") === category
+          ? params.get("nfpCursor")
+          : null
       )
     }
     restore()
     window.addEventListener("popstate", restore)
     return () => window.removeEventListener("popstate", restore)
-  }, [query])
+  }, [query, category])
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
@@ -49,7 +59,8 @@ function SearchPage({ query }: { query: string }) {
         const result = await loadNonprofitDirectoryPage(
           query,
           cursor,
-          controller.signal
+          controller.signal,
+          category
         )
         if (!controller.signal.aborted) setPayload(result)
       } catch {
@@ -62,7 +73,7 @@ function SearchPage({ query }: { query: string }) {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [query, cursor, retry])
+  }, [query, category, cursor, retry])
 
   useEffect(() => {
     if (!loading && pageNavigation.current) {
@@ -77,9 +88,12 @@ function SearchPage({ query }: { query: string }) {
     if (next) {
       url.searchParams.set("nfpCursor", next)
       url.searchParams.set("nfpQuery", query)
+      if (category) url.searchParams.set("nfpCategory", category)
+      else url.searchParams.delete("nfpCategory")
     } else {
       url.searchParams.delete("nfpCursor")
       url.searchParams.delete("nfpQuery")
+      url.searchParams.delete("nfpCategory")
     }
     window.history.pushState(window.history.state, "", url)
     setCursor(next)
@@ -97,7 +111,8 @@ function SearchPage({ query }: { query: string }) {
       <p className="text-muted-foreground mt-1 text-xs">
         IRS-listed organizations. Current operating status, services and
         visiting locations are unconfirmed. City and state come from filing
-        addresses.
+        addresses. Categories describe organization topics, not confirmed
+        services.
       </p>
       <div
         role="status"
@@ -209,11 +224,20 @@ function SearchPage({ query }: { query: string }) {
 export function NonprofitDirectoryResults({
   query,
   enabled = true,
+  category = null,
 }: {
   query: string
   enabled?: boolean
+  category?: PublicMapResourceCategoryKey | null
 }) {
   const normalized = query.trim()
-  if (!enabled || normalized.length < 2 || normalized.length > 160) return null
-  return <SearchPage key={normalized} query={normalized} />
+  if (!enabled || normalized.length > 160 || normalized.length === 1)
+    return null
+  return (
+    <SearchPage
+      key={`${category ?? "all"}:${normalized}`}
+      query={normalized}
+      category={category}
+    />
+  )
 }

@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  PublicMapMoreCategories,
+  PUBLIC_MAP_MORE_CATEGORY_KEYS,
+} from "./more-categories"
 import type { CSSProperties } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -89,11 +93,13 @@ export function buildPublicMapGroupFilterCounts(
 export function PublicMapCategoryFilter({
   activeGroup,
   counts,
+  countsAreComplete = false,
   compact = false,
   onActiveGroupChange,
 }: {
   activeGroup: PublicMapGroupFilterKey
   counts: PublicMapGroupFilterCounts
+  countsAreComplete?: boolean
   compact?: boolean
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
 }) {
@@ -113,8 +119,9 @@ export function PublicMapCategoryFilter({
       }
       aria-label="Filter resources by category"
     >
-      {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
-        const count = counts[key]
+      {PUBLIC_MAP_GROUP_FILTER_ORDER.filter(
+        (key) => !PUBLIC_MAP_MORE_CATEGORY_KEYS.includes(key)
+      ).map((key) => {
         const selected =
           activeGroup === key ||
           (activeGroup !== "all" &&
@@ -122,7 +129,6 @@ export function PublicMapCategoryFilter({
             resolvePublicMapResourceTopLevelCategory(activeGroup) === key)
         const label = resolvePublicMapGroupFilterLabel(key)
         const accent = resolvePublicMapGroupFilterAccent(key)
-        const disabled = key !== "all" && count === 0
 
         return (
           <Button
@@ -140,10 +146,10 @@ export function PublicMapCategoryFilter({
             variant="ghost"
             size="sm"
             aria-pressed={selected}
-            disabled={disabled}
+            disabled={countsAreComplete && key !== "all" && counts[key] === 0}
             className={cn(
               PUBLIC_MAP_FILTER_PILL_CLASSNAME,
-              "group shrink-0 gap-1.5",
+              "group h-11 shrink-0 gap-1.5 sm:h-7",
               "text-muted-foreground transition-[background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
               "focus-visible:!bg-input/50 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
               "disabled:pointer-events-none disabled:opacity-35 motion-reduce:transition-none",
@@ -179,18 +185,18 @@ export function PublicMapCategoryFilter({
               )}
             </span>
             <span key="label">{label}</span>
-            <span
-              key="count"
-              className={cn(
-                "tabular-nums",
-                selected ? "text-foreground" : "text-muted-foreground/72"
-              )}
-            >
-              {count.toLocaleString()}
-            </span>
+            {countsAreComplete ? (
+              <span className="tabular-nums">
+                {counts[key].toLocaleString()}
+              </span>
+            ) : null}
           </Button>
         )
       })}
+      <PublicMapMoreCategories
+        activeGroup={activeGroup}
+        onActiveGroupChange={onActiveGroupChange}
+      />
     </ScrollFadeEffect>
   )
 }

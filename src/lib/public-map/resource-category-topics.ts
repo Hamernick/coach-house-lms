@@ -1,0 +1,43 @@
+export const PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS = [
+  {
+    key: "arts",
+    label: "Arts & Culture",
+    parentKey: null,
+    markerColor: "#d97706",
+    tailwindToken: "amber-600",
+    iconName: "book-open",
+    aliases: ["arts", "culture", "museums"],
+    description: "Arts, culture, museums, and humanities organizations.",
+  },
+  {
+    key: "faith",
+    label: "Faith & Religion",
+    parentKey: null,
+    markerColor: "#64748b",
+    tailwindToken: "slate-500",
+    iconName: "building-2",
+    aliases: ["faith", "religion", "religious"],
+    description: "Religious and spiritual organizations.",
+  },
+  {
+    key: "recreation",
+    label: "Sports & Recreation",
+    parentKey: null,
+    markerColor: "#0891b2",
+    tailwindToken: "cyan-600",
+    iconName: "users-round",
+    aliases: ["sports", "recreation", "athletics"],
+    description: "Sports, recreation, and leisure organizations.",
+  },
+  {
+    key: "philanthropy",
+    label: "Philanthropy & Grantmaking",
+    parentKey: null,
+    markerColor: "#059669",
+    tailwindToken: "emerald-600",
+    iconName: "hand-coins",
+    aliases: ["philanthropy", "grantmaking", "grantmakers"],
+    description:
+      "Foundations, grantmakers, and charitable giving organizations.",
+  },
+] as const

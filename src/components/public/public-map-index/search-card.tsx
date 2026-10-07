@@ -23,6 +23,7 @@ export type PublicMapSearchCardProps = {
   onHidePanel?: () => void
   activeGroup?: PublicMapGroupFilterKey
   groupCounts?: PublicMapGroupFilterCounts
+  categoryCountsComplete?: boolean
   onActiveGroupChange?: (group: PublicMapGroupFilterKey) => void
   compact?: boolean
   searchPending?: boolean
@@ -37,6 +38,7 @@ export function PublicMapSearchCard({
   onNavigateResults,
   activeGroup = "all",
   groupCounts,
+  categoryCountsComplete = false,
   onActiveGroupChange,
   compact = false,
   searchPending = false,
@@ -136,6 +138,7 @@ export function PublicMapSearchCard({
         <PublicMapCategoryFilter
           activeGroup={activeGroup}
           counts={groupCounts}
+          countsAreComplete={categoryCountsComplete}
           compact={compact}
           onActiveGroupChange={onActiveGroupChange}
         />

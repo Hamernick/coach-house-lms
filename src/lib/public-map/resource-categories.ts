@@ -1,5 +1,9 @@
+import { PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS } from "./resource-category-topics"
 import { PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES } from "./resource-category-subcategory-overrides"
-import { createPublicMapCategoryAliasMatcher } from "./resource-category-alias-matching"
+import {
+  createPublicMapCategoryAliasMatcher,
+  PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEYS,
+} from "./resource-category-alias-matching"
 
 export const PUBLIC_MAP_RESOURCE_CATEGORY_ORDER = [
   "health",
@@ -17,6 +21,10 @@ export const PUBLIC_MAP_RESOURCE_CATEGORY_ORDER = [
   "organizations",
   "international",
   "animals",
+  "arts",
+  "faith",
+  "recreation",
+  "philanthropy",
 ] as const
 
 export type PublicMapResourceTopLevelCategoryKey =
@@ -143,15 +151,11 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["family_caregivers", "Caregivers"],
   ],
   community: [
-    ["community_faith_organizations", "Faith Organizations"],
     ["community_volunteer_opportunities", "Volunteer Opportunities"],
     ["community_community_organizing", "Community Organizing"],
     ["community_civic_engagement", "Civic Engagement"],
     ["community_voter_services", "Voter Services"],
     ["community_events", "Events"],
-    ["community_recreation", "Recreation"],
-    ["community_sports", "Sports"],
-    ["community_arts_culture", "Arts & Culture"],
     ["community_libraries", "Libraries"],
     ["community_community_centers", "Community Centers"],
     ["community_transportation", "Transportation"],
@@ -159,6 +163,13 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["community_device_access", "Device Access"],
     ["community_neighborhood_associations", "Neighborhood Associations"],
   ],
+  arts: [["community_arts_culture", "Arts & Culture"]],
+  faith: [["community_faith_organizations", "Faith Organizations"]],
+  recreation: [
+    ["community_sports", "Sports"],
+    ["community_recreation", "Recreation"],
+  ],
+  philanthropy: [],
   emergency: [
     ["emergency_disaster_relief", "Disaster Relief"],
     ["emergency_crisis_response", "Crisis Response"],
@@ -413,6 +424,7 @@ export const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS = [
     description:
       "Animal welfare, pet support, veterinary assistance, rescue, and wildlife.",
   },
+  ...PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS,
 ] as const satisfies readonly PublicMapResourceCategoryDefinition[]
 
 const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_BY_KEY = Object.fromEntries(
@@ -530,21 +542,7 @@ const PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY = Object.fromEntries(
 const PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEY_MAP: Record<
   string,
   PublicMapResourceCategoryKey
-> = {
-  community_resource: "community",
-  dental: "health_dental",
-  education_resource: "education",
-  funding: "finance",
-  jobs: "employment",
-  legal_benefits: "legal",
-  medical: "health",
-  mental_health: "health_mental_health",
-  online_media: "community_internet_access",
-  shelter: "housing_emergency_shelter",
-  transportation: "community_transportation",
-  water: "food_water",
-  womens_health: "health_womens_health",
-}
+> = PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEYS
 
 function normalizeCategoryToken(value: string) {
   return value

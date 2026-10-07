@@ -307,6 +307,7 @@ export function PublicMapMemberRail({
                 onQueryChange={setSavedQuery}
                 activeGroup={savedActiveGroup}
                 groupCounts={savedGroupCounts}
+                categoryCountsComplete
                 onActiveGroupChange={setSavedActiveGroup}
                 compact
               />

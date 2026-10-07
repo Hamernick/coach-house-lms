@@ -36,25 +36,43 @@ import { PublicMapSidebarDrawer } from "./sidebar-drawer"
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
-const PublicMapDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapDrawerDetailPanel
+// Keep first-open code loading inside the panel. Suspending the entire Find
+// shell tears down layout refs whose state updates can repeatedly retry it.
+function PublicMapDetailLoading() {
+  return (
+    <p role="status" className="text-muted-foreground px-4 py-6 text-sm">
+      Loading details…
+    </p>
   )
+}
+
+const PublicMapDrawerDetailPanel = dynamic(
+  () =>
+    import("./sidebar-detail-panels").then(
+      (module) => module.PublicMapDrawerDetailPanel
+    ),
+  { loading: PublicMapDetailLoading }
 )
-const PublicMapRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapRailDetailPanel
-  )
+const PublicMapRailDetailPanel = dynamic(
+  () =>
+    import("./sidebar-detail-panels").then(
+      (module) => module.PublicMapRailDetailPanel
+    ),
+  { loading: PublicMapDetailLoading }
 )
-const PublicMapResourceDrawerDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceDrawerDetailPanel
-  )
+const PublicMapResourceDrawerDetailPanel = dynamic(
+  () =>
+    import("./sidebar-detail-panels").then(
+      (module) => module.PublicMapResourceDrawerDetailPanel
+    ),
+  { loading: PublicMapDetailLoading }
 )
-const PublicMapResourceRailDetailPanel = dynamic(() =>
-  import("./sidebar-detail-panels").then(
-    (module) => module.PublicMapResourceRailDetailPanel
-  )
+const PublicMapResourceRailDetailPanel = dynamic(
+  () =>
+    import("./sidebar-detail-panels").then(
+      (module) => module.PublicMapResourceRailDetailPanel
+    ),
+  { loading: PublicMapDetailLoading }
 )
 
 function PublicMapSidebarOpenButton({

@@ -1,0 +1,26 @@
+diff --git a/dist/index.js b/dist/index.js
+index 74b27be88f68fd7838f336e0b94e7cbc8a6d6202..94206ab43243d4083792f622d83582599d8da482 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -94,7 +94,7 @@ var NavigationMenu = React.forwardRef(
+       ...NavigationMenuProps
+     } = props;
+     const [navigationMenu, setNavigationMenu] = React.useState(null);
+-    const composedRef = (0, import_react_compose_refs.useComposedRefs)(forwardedRef, (node) => setNavigationMenu(node));
++    const composedRef = (0, import_react_compose_refs.useComposedRefs)(forwardedRef, setNavigationMenu);
+     const direction = (0, import_react_direction.useDirection)(dir);
+     const openTimerRef = React.useRef(0);
+     const closeTimerRef = React.useRef(0);
+diff --git a/dist/index.mjs b/dist/index.mjs
+index fb32adb48a936c4d338051ed0f2acb5e32d8555d..2461ce779763c7494be61ea346d1c860dd5df472 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -41,7 +41,7 @@ var NavigationMenu = React.forwardRef(
+       ...NavigationMenuProps
+     } = props;
+     const [navigationMenu, setNavigationMenu] = React.useState(null);
+-    const composedRef = useComposedRefs(forwardedRef, (node) => setNavigationMenu(node));
++    const composedRef = useComposedRefs(forwardedRef, setNavigationMenu);
+     const direction = useDirection(dir);
+     const openTimerRef = React.useRef(0);
+     const closeTimerRef = React.useRef(0);

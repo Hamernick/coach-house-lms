@@ -14,7 +14,7 @@ import {
   hydrateFromProgram,
   serializePayload,
 } from "@/components/programs/program-wizard/helpers"
-import { defaultProgramWizardForm } from "@/components/programs/program-wizard/schema"
+import { defaultProgramWizardForm, ProgramWizardSchema } from "@/components/programs/program-wizard/schema"
 import {
   resolveProgramBannerImageUrl,
   resolveProgramCardChips,
@@ -29,6 +29,12 @@ function readSource(relativePath: string) {
 }
 
 describe("program wizard media fields", () => {
+  it("keeps new activities private even when public sharing is enabled", () => {
+    expect(defaultProgramWizardForm.isPublic).toBe(false)
+    expect(ProgramWizardSchema.shape.isPublic.parse(undefined)).toBe(false)
+    expect(ProgramWizardSchema.shape.isPublic.parse(true)).toBe(true)
+  })
+
   it.each([true, false])("places the saved visibility switch outside the editable activity card (%s)", (isPublic) => {
     const props = {
       programs: [{ id: "program-1", title: "Youth mentoring", is_public: isPublic }],

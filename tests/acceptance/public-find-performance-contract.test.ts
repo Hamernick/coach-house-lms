@@ -60,7 +60,14 @@ describe("public Find performance contract", () => {
       "src/components/public/public-map-index/sidebar-panels.tsx"
     )
 
-    expect(sidebarSource).toContain('import("./sidebar-detail-panels")')
+    const lazyPanelsSource = readSource(
+      "src/components/public/public-map-index/sidebar-lazy-detail-panels.tsx"
+    )
+
+    expect(sidebarSource).toContain('from "./sidebar-lazy-detail-panels"')
+    expect(lazyPanelsSource).toContain('import("./sidebar-detail-panels")')
+    expect(sidebarSource).not.toContain('from "./sidebar-detail-panels"')
+    expect(lazyPanelsSource).not.toContain('from "./sidebar-detail-panels"')
     expect(panelsSource).not.toContain('from "./sidebar-detail-panels"')
   })
 

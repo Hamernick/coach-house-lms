@@ -321,7 +321,9 @@ test("links preserve ordinary, keyboard, modified and single scrub navigation", 
   // Keep destination rendering out of this AppShell interaction test.
   await context.route("**/*", (route) => {
     const request = route.request()
-    if (request.isNavigationRequest() && new URL(request.url()).pathname === "/workspace")
+    // Cover Next's RSC fetch as well as the full navigation/new-tab request.
+    // HTML makes the client router fall back to the same isolated destination.
+    if (new URL(request.url()).pathname === "/workspace")
       return route.fulfill({ contentType: "text/html", body: "<h1>Workspace destination</h1>" })
     return route.continue()
   })

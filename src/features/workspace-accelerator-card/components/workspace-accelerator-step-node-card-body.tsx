@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import type { ModuleResource, ModuleResourceProvider } from "@/lib/modules"
+import { cn } from "@/lib/utils"
 
 import type {
   WorkspaceAcceleratorCardStep,
@@ -82,6 +83,7 @@ export function WorkspaceAcceleratorStepBody({
   onBlockedPreviewAction,
   onWorkspaceOnboardingSubmit,
   immersiveOnboarding = false,
+  fitVideo = false,
 }: {
   step: WorkspaceAcceleratorCardStep
   placeholderVideoUrl?: string | null
@@ -99,12 +101,13 @@ export function WorkspaceAcceleratorStepBody({
   ) => void
   onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
   immersiveOnboarding?: boolean
+  fitVideo?: boolean
 }) {
   const [fallbackNotesValue, setFallbackNotesValue] = useState(
     "<p>Capture your notes for this class.</p>",
   )
   const moduleContext = step.moduleContext
-  const assignmentFields = moduleContext?.assignmentFields ?? []
+  const assignmentFields = useMemo(() => moduleContext?.assignmentFields ?? [], [moduleContext?.assignmentFields])
   const assignmentSubmission = moduleContext?.assignmentSubmission ?? null
   const completeOnSubmit = moduleContext?.completeOnSubmit ?? false
   const classTitle = moduleContext?.classTitle ?? "Accelerator"
@@ -172,14 +175,14 @@ export function WorkspaceAcceleratorStepBody({
 
   if (showVideo) {
     return (
-      <div className="px-3 py-3 sm:px-4">
+      <div className={cn("px-3 py-3 sm:px-4", fitVideo && "flex h-full min-h-0 items-start")}>
         <VideoSection
           onEnded={onVideoComplete}
           embedUrl={null}
           videoUrl={effectiveVideoUrl}
           fallbackUrl={step.href}
           variant="frame"
-          className="border-border/60 aspect-video w-full overflow-hidden rounded-xl border"
+          className={cn("border-border/60 aspect-video w-full overflow-hidden rounded-xl border", fitVideo && "max-h-full")}
         />
       </div>
     )
@@ -193,12 +196,6 @@ export function WorkspaceAcceleratorStepBody({
           : "space-y-4 px-4 py-4 sm:px-5"
       }
     >
-      {step.stepDescription && !showAssignment ? (
-        <p className="text-foreground text-sm leading-relaxed">
-          {step.stepDescription}
-        </p>
-      ) : null}
-
       {showStepMeta ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {showStepKindBadge ? (

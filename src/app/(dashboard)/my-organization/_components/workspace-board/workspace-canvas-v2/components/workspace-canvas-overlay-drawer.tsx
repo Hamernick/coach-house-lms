@@ -3,7 +3,6 @@
 import {
   memo,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -33,6 +32,7 @@ import { Toggle } from "@/components/ui/toggle"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
+import { useWorkspaceDrawerCanvasHeight } from "./use-workspace-drawer-canvas-height"
 import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-overlay-drawer-container"
 import {
   isWorkspaceDataDrawerCollapsedSnapPoint as isDrawerCollapsed,
@@ -92,6 +92,8 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     peopleCanvasActions: WorkspacePeopleCanvasActions
   }) {
     const canvasContainer = useWorkspaceCanvasOverlayDrawerContainer()
+    const canvasHeight = useWorkspaceDrawerCanvasHeight(canvasContainer)
+    const [preferencesReady, setPreferencesReady] = useState(false)
     const [open, setOpen] = useState(true)
     const [hasOpened, setHasOpened] = useState(true)
     const [activeSnapPoint, setActiveSnapPoint] = useState<
@@ -144,7 +146,8 @@ export const WorkspaceCanvasOverlayDrawer = memo(
       [uiPreferencesScope]
     )
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+      setPreferencesReady(true)
       const storedPreferences =
         readWorkspaceBoardUiPreferences(uiPreferencesScope)
       if (request) return
@@ -269,6 +272,10 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     const { tabIndicator, tabsHeaderRef, tabsListRef } =
       useWorkspaceDataDrawerTabIndicator({ tab })
 
+    // Mount Vaul with the restored snap and a measurable canvas, never the
+    // temporary collapsed/zero-height startup geometry.
+    if (!preferencesReady || canvasHeight <= 0) return null
+
     return (
       <Drawer
         open={canvasContainer ? open : false}
@@ -336,7 +343,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             className={cn(
               "border-border/70 bg-background/98 absolute right-0 bottom-0 left-0 !z-20 h-full max-h-none w-full max-w-full min-w-0 overflow-hidden p-0 shadow-[0_-24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl",
               "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:h-full data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:rounded-t-[20px]",
-              drawerFullscreen && "!z-40"
+              drawerFullscreen && "!z-40 bg-background backdrop-blur-none data-[vaul-drawer-direction=bottom]:rounded-t-none data-[vaul-drawer-direction=bottom]:border-t-0"
             )}
           >
             <div

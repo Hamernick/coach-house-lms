@@ -12,9 +12,9 @@ const baseStep: WorkspaceAcceleratorCardStep = {
   id: "naming:video", moduleId: "naming", moduleTitle: "Naming your NFP",
   moduleSlug: "naming-your-nfp", stepKind: "video", stepTitle: "Class video",
   stepDescription: null, href: "/visual-regression/project-feedback?scenario=accelerator",
-  status: "not_started", stepSequenceIndex: 1, stepSequenceTotal: 1,
+  status: "not_started", stepSequenceIndex: 2, stepSequenceTotal: 2,
   moduleSequenceIndex: 1, moduleSequenceTotal: 2, groupTitle: "Formation",
-  videoUrl: "/fixture-video.mp4", durationMinutes: null, resources: [],
+  videoUrl: "/fixture-video.mp4", durationMinutes: null, resources: [{ id: "lesson-link", title: "Nonprofit formation reference", url: "https://example.org/formation", kind: "generic" }],
   hasAssignment: false, hasDeck: false,
 }
 const registration: WorkspaceAcceleratorCardStep = {
@@ -26,6 +26,7 @@ const registration: WorkspaceAcceleratorCardStep = {
 }
 
 export function AcceleratorInteractionPreview() {
+  const [drawerContainer, setDrawerContainer] = useState<HTMLDivElement | null>(null)
   const [completed, setCompleted] = useState(false)
   const [failSave, setFailSave] = useState(false)
   const [pending, setPending] = useState(false)
@@ -33,7 +34,7 @@ export function AcceleratorInteractionPreview() {
   const [savedName, setSavedName] = useState("Saved organization")
   const [revision, setRevision] = useState(0)
   const input = useMemo(() => ({
-    steps: [{ ...baseStep, status: completed ? "completed" as const : "not_started" as const }, registration],
+    steps: [{ ...baseStep, id: "naming:intro-video", stepKind: "video" as const, stepTitle: "Introduction video", stepSequenceIndex: 1 }, { ...baseStep, status: completed ? "completed" as const : "not_started" as const }, registration],
     size: "lg" as const,
     initialCurrentStepId: baseStep.id,
     onModuleComplete: async () => {
@@ -52,9 +53,12 @@ export function AcceleratorInteractionPreview() {
       <Button onClick={() => setFailSave((value) => !value)}>{failSave ? "Allow saves" : "Fail saves"}</Button>
       <p role="status">{pending ? "Saving" : completed ? "Persisted completed" : "Persisted not started"}</p>
     </div>
-    {open ? <section data-testid="lesson-preview" className="h-[700px]">
+    <div data-testid="canvas-preview" data-workspace-canvas-flow-frame="true" className="relative overflow-hidden">
+      <div ref={setDrawerContainer} data-testid="lesson-preview" className="flex h-[min(700px,calc(100dvh-10rem))] min-h-0 flex-col empty:hidden" />
+    </div>
+    {open ? <section data-testid="accelerator-runtime" className="hidden">
       <WorkspaceAcceleratorCardPanelComponent key={revision} input={input}
-        presentationMode="workspace-drawer" initialModuleViewerOpen
+        presentationMode="workspace-drawer" drawerContainer={drawerContainer} initialModuleViewerOpen
         onModuleViewerClose={() => setOpen(false)} />
     </section> : <p>Overview: {completed ? "Completed" : "Not started"}</p>}
     <section data-testid="resource-preview">

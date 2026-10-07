@@ -19,7 +19,7 @@ export function DeckResourceCard({
   if (!hasDeck) return null
 
   const baseClass =
-    variant === "grid" ? "w-full max-w-[260px] aspect-square" : "w-full min-h-[220px]"
+    variant === "grid" ? "w-full max-w-[260px] aspect-square" : "w-full min-w-0 min-h-[220px] shadow-none hover:shadow-none"
 
   return (
     <DeckViewer

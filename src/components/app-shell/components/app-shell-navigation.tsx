@@ -55,7 +55,7 @@ export function AppShellSidebarNavigation({ children }: { children: ReactNode })
   const { isMobile, setOpenMobile } = useSidebar()
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col max-md:[&_a]:min-h-11 max-md:[&_a]:min-w-11 max-md:[&_button]:min-h-11 max-md:[&_button]:min-w-11"
+      className="flex min-h-0 flex-1 flex-col group-data-[collapsible=icon]:pt-[var(--shell-content-pad)] max-md:[&_a]:min-h-11 max-md:[&_a]:min-w-11 max-md:[&_button]:min-h-11 max-md:[&_button]:min-w-11"
       onClickCapture={(event) => {
         if (
           !isMobile ||

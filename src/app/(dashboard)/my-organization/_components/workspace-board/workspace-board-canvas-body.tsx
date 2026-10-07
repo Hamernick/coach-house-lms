@@ -12,7 +12,6 @@ import type {
 
 import { WorkspaceBoardFlowSurface } from "./workspace-board-flow-surface"
 import { WorkspaceBoardInitialOnboardingSurface } from "./workspace-board-initial-onboarding-surface"
-import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
 import { WorkspaceBoardTeamAccessHeaderAction } from "./workspace-board-team-access-header-action"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
 import type {
@@ -155,7 +154,6 @@ export function WorkspaceBoardCanvasBody({
         }
         onInvitesChange={onInvitesChange}
       />
-      <WorkspaceBoardRightRail roadmapSections={seed.roadmapSections} />
 
       <div className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden">
         <WorkspaceBoardFlowSurface

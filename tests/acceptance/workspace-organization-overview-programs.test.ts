@@ -286,7 +286,7 @@ describe("workspace organization overview programs", () => {
     )
     expect(orgProfileNavigation).not.toContain("shadow-sm")
     expect(programsTab).toContain("canEdit: boolean")
-    expect(programsTab).toContain('<FormRow title="Activity">')
+    expect(programsTab).toContain('<ProgramsCarousel heading={heading} introduction={introduction}>')
     expect(orgProfileShared).toContain('layout = "split"')
     expect(orgProfileShared).toContain('layout?: "split" | "stacked"')
     expect(orgProfileShared).toContain(
@@ -323,8 +323,7 @@ describe("workspace organization overview programs", () => {
       "canEdit ? () => onProgramEdit(program) : undefined"
     )
     expect(programsTab).toContain("Untitled activity")
-    expect(programsTab).toContain('title="No activity yet"')
-    expect(programsTab).toContain('title="No activity to display"')
+    expect(programsTab).toContain('title={editMode ? "No activity yet" : "No activity to display"}')
     expect(orgProfileConfig).toContain('{ value: "programs", label: "Activity"')
     expect(publicCardSections).toContain(
       '<h2 className="text-lg font-semibold">Activity</h2>'

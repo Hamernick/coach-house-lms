@@ -34,6 +34,7 @@ export type WorkspaceAcceleratorCardPanelProps = {
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   tutorialMode?: "module-preview" | null
   showEmbeddedClassPicker?: boolean
+  drawerContainer?: HTMLElement | null
   workspaceDrawerHeader?: ReactNode
   onTutorialActionComplete?: (
     mode?: "complete" | "complete-and-advance"

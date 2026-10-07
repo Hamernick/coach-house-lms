@@ -1,28 +1,19 @@
 "use client"
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import XIcon from "lucide-react/dist/esm/icons/x"
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useLayoutEffect, useMemo, useState, type ReactNode } from "react"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { ModuleRightRail } from "@/components/training/module-right-rail"
 import type { ModuleResource } from "@/components/training/types"
 import { Button } from "@/components/ui/button"
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer"
 import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { resolveWorkspaceCanvasStageMotion } from "@/lib/workspace-canvas/motion-spec"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -34,6 +25,7 @@ import {
   resolveWorkspaceAcceleratorDisplayStepTitle,
   shouldShowWorkspaceAcceleratorModuleTitle,
 } from "./workspace-accelerator-step-node-card-helpers"
+import { WorkspaceAcceleratorStepLayout } from "./workspace-accelerator-step-layout"
 import { WorkspaceAcceleratorStepBody } from "./workspace-accelerator-step-node-card-body"
 import {
   canWorkspaceAcceleratorTutorialPerformPreviewAction,
@@ -68,16 +60,17 @@ export type WorkspaceAcceleratorStepNodeCardProps = {
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   variant?: WorkspaceAcceleratorStepNodeCardVariant
   sidePanel?: ReactNode
+  drawerContainer?: HTMLElement | null
   onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
   immersive?: boolean
 }
 
 function headerButtonClassName() {
-  return "h-9 w-9 touch-manipulation rounded-lg border border-border/65 bg-background/80 hover:bg-background/95 sm:h-8 sm:w-8"
+  return "h-9 w-9 touch-manipulation rounded-lg border border-border/65 bg-background/80 hover:bg-background/95 lg:h-8 lg:w-8"
 }
 
 function headerDoneButtonClassName() {
-  return "h-9 min-w-[76px] touch-manipulation gap-1.5 rounded-full border border-border/70 bg-background/90 px-3 text-xs font-medium text-foreground shadow-xs hover:border-border hover:bg-muted/70 hover:text-foreground sm:h-8 sm:min-w-[72px] sm:px-3 dark:bg-background/75 dark:hover:bg-muted/45"
+  return "h-9 min-w-[76px] touch-manipulation gap-1.5 rounded-full bg-background/90 px-3 text-xs font-medium text-foreground shadow-none hover:bg-muted/70 hover:text-foreground lg:h-8 lg:min-w-[72px] sm:px-3 dark:bg-background/75 dark:hover:bg-muted/45"
 }
 
 function clampStepTitle(title: string) {
@@ -102,6 +95,7 @@ function normalizeRailResources(
 
 function AcceleratorStepCloseButton({
   done,
+  compact,
   moduleCompleted,
   onClose,
   reactGrabOwnerProps,
@@ -109,6 +103,7 @@ function AcceleratorStepCloseButton({
   variant,
 }: {
   done?: boolean
+  compact: boolean
   moduleCompleted: boolean
   onClose: () => void
   reactGrabOwnerProps?: Record<string, string>
@@ -119,11 +114,13 @@ function AcceleratorStepCloseButton({
     <Button
       type="button"
       size={done ? "sm" : "icon"}
-      variant={done ? "outline" : "ghost"}
+      variant="ghost"
       {...reactGrabOwnerProps}
       className={cn(
         done ? headerDoneButtonClassName() : headerButtonClassName(),
-        !done && "h-7 w-7",
+        compact
+          ? done ? "h-11 lg:h-11" : "h-11 w-11 lg:h-11 lg:w-11"
+          : done ? "h-8" : "h-8 w-8",
         !done &&
           moduleCompleted &&
           "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
@@ -171,32 +168,6 @@ function AcceleratorStepCloseButton({
   )
 }
 
-function WorkspaceAcceleratorStepMobileDetailsDrawer({
-  open,
-  onOpenChange,
-  children,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  children: ReactNode
-}) {
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh] rounded-t-[28px] p-0">
-        <DrawerHeader className="text-left">
-          <DrawerTitle>Details</DrawerTitle>
-          <DrawerDescription>
-            Notes, resources, and support for this accelerator step.
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-          {children}
-        </div>
-      </DrawerContent>
-    </Drawer>
-  )
-}
-
 // eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorStepNodeCard({
   step,
@@ -216,12 +187,25 @@ export function WorkspaceAcceleratorStepNodeCard({
   tutorialInteractionPolicy = null,
   variant = "node",
   sidePanel,
+  drawerContainer = null,
   onWorkspaceOnboardingSubmit,
   immersive = false,
 }: WorkspaceAcceleratorStepNodeCardProps) {
-  const prefersReducedMotion = useReducedMotion()
   const embedded = variant === "embedded"
-  const isMobile = useIsMobile()
+  const isMobileViewport = useIsMobile(1024)
+  const [compactDrawer, setCompactDrawer] = useState(true)
+  useLayoutEffect(() => {
+    if (!drawerContainer) return
+    const update = () => {
+      const width = drawerContainer.clientWidth
+      if (width > 0) setCompactDrawer(width < 960)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(drawerContainer)
+    return () => observer.disconnect()
+  }, [drawerContainer])
+  const isMobile = drawerContainer ? compactDrawer : isMobileViewport
   const previewLocked = isWorkspaceAcceleratorTutorialPreviewLocked({
     tutorialInteractionPolicy,
   })
@@ -233,7 +217,6 @@ export function WorkspaceAcceleratorStepNodeCard({
     durationMs: tutorialInteractionPolicy?.blockedMessageDurationMs ?? 3000,
   })
   const [blockedControlId, setBlockedControlId] = useState<string | null>(null)
-  const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const stepTitle = clampStepTitle(
     step.stepKind === "assignment" && step.moduleTitle.trim()
       ? step.moduleTitle
@@ -296,6 +279,80 @@ export function WorkspaceAcceleratorStepNodeCard({
     slot: "close-button",
     variant,
   } as const
+  const navigationControls = (
+    <>
+      <WorkspaceAcceleratorTutorialGuardTooltip
+        open={previewGuard.open && blockedControlId === "previous"}
+        message={previewGuard.message}
+        ownerDescriptor={previousButtonOwnerDescriptor}
+        side="top"
+        align="end"
+        sideOffset={8}
+      >
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          {...getReactGrabOwnerProps(previousButtonOwnerDescriptor)}
+          className={cn(
+            headerButtonClassName(),
+            drawerContainer
+              ? isMobile ? "h-11 w-11 lg:h-11 lg:w-11" : "h-9 w-9 lg:h-9 lg:w-9"
+              : "h-9 w-9 sm:h-7 sm:w-7"
+          )}
+          onClick={() => {
+            if (canNavigatePreview) {
+              onPrevious()
+              return
+            }
+            handleBlockedPreviewAction(
+              "preview-navigation",
+              "previous"
+            )
+          }}
+          disabled={!canGoPrevious}
+          aria-label="Previous accelerator step"
+        >
+          <ChevronLeftIcon className="h-4 w-4" aria-hidden />
+        </Button>
+      </WorkspaceAcceleratorTutorialGuardTooltip>
+      <span className="text-foreground shrink-0 px-1 text-[11px] font-medium tabular-nums">
+        {currentCount} of {stepCount}
+      </span>
+      <WorkspaceAcceleratorTutorialGuardTooltip
+        open={previewGuard.open && blockedControlId === "next"}
+        message={previewGuard.message}
+        ownerDescriptor={nextButtonOwnerDescriptor}
+        side="top"
+        align="end"
+        sideOffset={8}
+      >
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          {...getReactGrabOwnerProps(nextButtonOwnerDescriptor)}
+          className={cn(
+            headerButtonClassName(),
+            drawerContainer
+              ? isMobile ? "h-11 w-11 lg:h-11 lg:w-11" : "h-9 w-9 lg:h-9 lg:w-9"
+              : "h-9 w-9 sm:h-7 sm:w-7"
+          )}
+          onClick={() => {
+            if (canNavigatePreview) {
+              onNext()
+              return
+            }
+            handleBlockedPreviewAction("preview-navigation", "next")
+          }}
+          disabled={!canGoNext}
+          aria-label="Next accelerator step"
+        >
+          <ChevronRightIcon className="h-4 w-4" aria-hidden />
+        </Button>
+      </WorkspaceAcceleratorTutorialGuardTooltip>
+    </>
+  )
   const resolvedSidePanel =
     sidePanel ??
     (embedded && !workspaceOnboardingView ? (
@@ -316,19 +373,11 @@ export function WorkspaceAcceleratorStepNodeCard({
         }}
       />
     ) : null)
-  const contentSwapMotion = resolveWorkspaceCanvasStageMotion({
-    stage: "content-swap",
-    preset: "default",
-    prefersReducedMotion: !!prefersReducedMotion,
-  })
-  const showMobileRailDrawer = Boolean(resolvedSidePanel) && isMobile
+  const stackSidebar = Boolean(resolvedSidePanel) && isMobile
   const assignmentFooterNavigation = resolveAssignmentFooterNavigation(step)
   const isFinalAssignmentSection = Boolean(
     assignmentFooterNavigation && !assignmentFooterNavigation.nextSection
   )
-  useEffect(() => {
-    setMobileRailOpen(false)
-  }, [isMobile, step.id])
   const stepBody = (
     <WorkspaceAcceleratorStepBody
       step={step}
@@ -344,45 +393,41 @@ export function WorkspaceAcceleratorStepNodeCard({
       onBlockedPreviewAction={handleBlockedPreviewAction}
       onWorkspaceOnboardingSubmit={onWorkspaceOnboardingSubmit}
       immersiveOnboarding={immersiveOnboarding}
+      fitVideo={Boolean(drawerContainer) && !stackSidebar}
     />
   )
   return (
-    <article
-      className={cn(
-        "flex w-full min-w-0 flex-col overflow-hidden",
-        fullscreenEmbedded
-          ? "h-full min-h-0 rounded-none border-0 bg-transparent shadow-none"
-          : "border-border/70 bg-card border",
-        tutorialCallout?.focus === "close-module" && "overflow-visible",
-        embedded
-          ? fullscreenEmbedded
-            ? "relative z-10 h-full min-h-0"
-            : "relative z-10 h-full min-h-0 rounded-[24px] shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]"
-          : "h-auto rounded-[24px] shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]"
-      )}
-    >
-      {!immersiveOnboarding ? (
+    <WorkspaceAcceleratorStepLayout
+      drawerContainer={drawerContainer}
+      stepId={step.id}
+      embedded={embedded}
+      fullscreen={fullscreenEmbedded}
+      fillBody={!stackSidebar && (immersiveOnboarding || step.stepKind === "assignment" || (Boolean(drawerContainer) && step.stepKind === "video"))}
+      showCallout={tutorialCallout?.focus === "close-module"}
+      header={!immersiveOnboarding ? (
         <header
           className={cn(
-            "border-border/60 bg-muted/20 border-b px-3 py-3 sm:px-4",
+            "@container/lesson-header shrink-0 px-3 py-3 sm:px-4",
+            !stackSidebar && "border-border/60 border-b",
+            !drawerContainer && "bg-muted/20",
             tutorialCallout?.focus === "close-module" &&
               "relative z-20 overflow-visible",
             !embedded &&
               "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing"
           )}
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1 gap-y-2 @min-[26rem]/lesson-header:grid-cols-[minmax(0,1fr)_auto_auto] @min-[26rem]/lesson-header:gap-x-3">
+            <div className="col-span-2 min-w-0 @min-[26rem]/lesson-header:col-span-1">
               {showModuleTitle ? (
                 <p className={cn("truncate", WORKSPACE_TEXT_STYLES.meta)}>
                   {step.moduleTitle}
                 </p>
               ) : null}
               <h3
-                className={cn("line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}
+                className={cn("break-words", isMobile ? "line-clamp-2" : "line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}
               >
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px]">
+                <span className="flex items-start gap-1.5">
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px]">
                     <WaypointsIcon
                       className="h-3.5 w-3.5 text-fuchsia-500 dark:text-fuchsia-400"
                       aria-hidden
@@ -392,85 +437,12 @@ export function WorkspaceAcceleratorStepNodeCard({
                 </span>
               </h3>
             </div>
-            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
-              <div className="flex items-center gap-1">
-                <span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">
-                  {currentCount} of {stepCount}
-                </span>
-                {showMobileRailDrawer ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-9 touch-manipulation rounded-full px-3 text-xs sm:hidden"
-                    onClick={() => setMobileRailOpen(true)}
-                  >
-                    Details
-                  </Button>
-                ) : null}
-                <WorkspaceAcceleratorTutorialGuardTooltip
-                  open={previewGuard.open && blockedControlId === "previous"}
-                  message={previewGuard.message}
-                  ownerDescriptor={previousButtonOwnerDescriptor}
-                  side="top"
-                  align="end"
-                  sideOffset={8}
-                >
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    {...getReactGrabOwnerProps(previousButtonOwnerDescriptor)}
-                    className={cn(
-                      headerButtonClassName(),
-                      "h-9 w-9 sm:h-7 sm:w-7"
-                    )}
-                    onClick={() => {
-                      if (canNavigatePreview) {
-                        onPrevious()
-                        return
-                      }
-                      handleBlockedPreviewAction(
-                        "preview-navigation",
-                        "previous"
-                      )
-                    }}
-                    disabled={!canGoPrevious}
-                    aria-label="Previous accelerator step"
-                  >
-                    <ChevronLeftIcon className="h-4 w-4" aria-hidden />
-                  </Button>
-                </WorkspaceAcceleratorTutorialGuardTooltip>
-                <WorkspaceAcceleratorTutorialGuardTooltip
-                  open={previewGuard.open && blockedControlId === "next"}
-                  message={previewGuard.message}
-                  ownerDescriptor={nextButtonOwnerDescriptor}
-                  side="top"
-                  align="end"
-                  sideOffset={8}
-                >
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    {...getReactGrabOwnerProps(nextButtonOwnerDescriptor)}
-                    className={cn(
-                      headerButtonClassName(),
-                      "h-9 w-9 sm:h-7 sm:w-7"
-                    )}
-                    onClick={() => {
-                      if (canNavigatePreview) {
-                        onNext()
-                        return
-                      }
-                      handleBlockedPreviewAction("preview-navigation", "next")
-                    }}
-                    disabled={!canGoNext}
-                    aria-label="Next accelerator step"
-                  >
-                    <ChevronRightIcon className="h-4 w-4" aria-hidden />
-                  </Button>
-                </WorkspaceAcceleratorTutorialGuardTooltip>
+            <div className="col-start-1 row-start-2 flex min-w-0 items-center gap-1 @min-[26rem]/lesson-header:col-start-2 @min-[26rem]/lesson-header:row-start-1">
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                  {navigationControls}
+                </div>
+            </div>
+            <div className="col-start-2 row-start-2 justify-self-end @min-[26rem]/lesson-header:col-start-3 @min-[26rem]/lesson-header:row-start-1">
                 <WorkspaceAcceleratorTutorialGuardTooltip
                   open={previewGuard.open && blockedControlId === "close"}
                   message={previewGuard.message}
@@ -481,6 +453,7 @@ export function WorkspaceAcceleratorStepNodeCard({
                 >
                   <div className="inline-flex">
                     <AcceleratorStepCloseButton
+                      compact={isMobile}
                       done={!canGoNext && !workspaceOnboardingView}
                       moduleCompleted={moduleCompleted}
                       onClose={() => {
@@ -499,59 +472,13 @@ export function WorkspaceAcceleratorStepNodeCard({
                     />
                   </div>
                 </WorkspaceAcceleratorTutorialGuardTooltip>
-              </div>
             </div>
           </div>
         </header>
       ) : null}
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step.id}
-          initial={contentSwapMotion.initial}
-          animate={contentSwapMotion.animate}
-          exit={contentSwapMotion.exit}
-          transition={contentSwapMotion.transition}
-          className={cn(
-            "w-full min-w-0",
-            embedded && "flex h-full min-h-0 flex-1 flex-col"
-          )}
-        >
-          {resolvedSidePanel && !showMobileRailDrawer ? (
-            <div className="grid h-full min-h-0 flex-1 grid-cols-1 items-stretch lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[minmax(0,1fr)_260px]">
-              <div
-                className={cn(
-                  "min-h-0",
-                  immersiveOnboarding || step.stepKind === "assignment"
-                    ? "flex h-full flex-col overflow-hidden"
-                    : "overflow-y-auto"
-                )}
-              >
-                {stepBody}
-              </div>
-              <aside className="border-border/60 bg-muted/10 min-h-0 border-t p-3 sm:p-4 lg:border-t-0 lg:border-l">
-                {resolvedSidePanel}
-              </aside>
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "min-h-0",
-                embedded &&
-                  !immersiveOnboarding &&
-                  (step.stepKind === "assignment"
-                    ? "flex h-full flex-1 flex-col overflow-hidden"
-                    : "overflow-y-auto"),
-                immersiveOnboarding && "flex h-full flex-col overflow-hidden"
-              )}
-            >
-              {stepBody}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {!immersiveOnboarding && assignmentFooterNavigation ? (
+      sidebar={resolvedSidePanel}
+      stackSidebar={stackSidebar}
+      footer={!immersiveOnboarding && assignmentFooterNavigation ? (
         <WorkspaceAcceleratorStepFooter
           assignmentFooterNavigation={assignmentFooterNavigation}
           canGoNext={canGoNext}
@@ -564,14 +491,8 @@ export function WorkspaceAcceleratorStepNodeCard({
         />
       ) : null}
 
-      {showMobileRailDrawer ? (
-        <WorkspaceAcceleratorStepMobileDetailsDrawer
-          open={mobileRailOpen}
-          onOpenChange={setMobileRailOpen}
-        >
-          {resolvedSidePanel}
-        </WorkspaceAcceleratorStepMobileDetailsDrawer>
-      ) : null}
-    </article>
+    >
+      {stepBody}
+    </WorkspaceAcceleratorStepLayout>
   )
 }

@@ -100,7 +100,7 @@ export const WorkspacePeopleSegmentPersonPicker = memo(
             <div
               ref={anchorRef}
               className={cn(
-                "border-input focus-within:border-ring focus-within:ring-ring/50 w-full min-w-0 rounded-md border bg-transparent shadow-xs outline-none focus-within:ring-[3px] [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:border-0",
+                "border-input focus-within:border-ring focus-within:ring-ring/50 h-11 w-full min-w-0 rounded-xl md:h-8 border bg-transparent shadow-xs outline-none focus-within:ring-[3px] [&_[data-slot=command-input-wrapper]]:h-full [&_[data-slot=command-input]]:h-full [&_[data-slot=command-input]]:py-0 [&_[data-slot=command-input-wrapper]]:border-0",
                 allPeopleAdded && "opacity-50"
               )}
             >

@@ -224,11 +224,14 @@ export function useWorkspaceDataDrawerTabIndicator({
     }
 
     const headerRect = tabsHeader.getBoundingClientRect()
+    const listRect = tabsListRef.current!.getBoundingClientRect()
     const activeTriggerRect = activeTabTrigger.getBoundingClientRect()
+    const left = Math.max(activeTriggerRect.left, listRect.left)
+    const right = Math.min(activeTriggerRect.right, listRect.right)
     const nextIndicator = {
-      left: activeTriggerRect.left - headerRect.left,
-      width: activeTriggerRect.width,
-      visible: true,
+      left: left - headerRect.left,
+      width: Math.max(0, right - left),
+      visible: right > left,
     }
 
     setTabIndicator((current) => {
@@ -248,23 +251,36 @@ export function useWorkspaceDataDrawerTabIndicator({
   }, [])
 
   useEffect(() => {
-    updateTabIndicator()
+    const tabsList = tabsListRef.current
+    const revealActiveTab = () => {
+      const active = tabsList?.querySelector<HTMLElement>('[data-state="active"]')
+      if (tabsList && active) {
+        const listRect = tabsList.getBoundingClientRect()
+        const activeRect = active.getBoundingClientRect()
+        if (activeRect.left < listRect.left) tabsList.scrollLeft -= listRect.left - activeRect.left
+        else if (activeRect.right > listRect.right) tabsList.scrollLeft += activeRect.right - listRect.right
+      }
+      updateTabIndicator()
+    }
+    revealActiveTab()
 
-    const animationFrame = window.requestAnimationFrame(updateTabIndicator)
+    const animationFrame = window.requestAnimationFrame(revealActiveTab)
     const resizeObserver =
       typeof ResizeObserver === "undefined"
         ? null
-        : new ResizeObserver(updateTabIndicator)
+        : new ResizeObserver(revealActiveTab)
 
     if (tabsHeaderRef.current) resizeObserver?.observe(tabsHeaderRef.current)
     if (tabsListRef.current) resizeObserver?.observe(tabsListRef.current)
 
-    window.addEventListener("resize", updateTabIndicator)
+    tabsList?.addEventListener("scroll", updateTabIndicator, { passive: true })
+    window.addEventListener("resize", revealActiveTab)
 
     return () => {
       window.cancelAnimationFrame(animationFrame)
       resizeObserver?.disconnect()
-      window.removeEventListener("resize", updateTabIndicator)
+      tabsList?.removeEventListener("scroll", updateTabIndicator)
+      window.removeEventListener("resize", revealActiveTab)
     }
   }, [tab, updateTabIndicator])
 

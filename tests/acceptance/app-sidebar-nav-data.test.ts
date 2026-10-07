@@ -203,10 +203,9 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("links Documentation internally and preserves Community resources", () => {
+  it("links Documentation internally and keeps Community hidden", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
       "Documentation",
-      "Community",
     ])
     expect(
       RESOURCE_NAV.find((item) => item.name === "Find organizations")

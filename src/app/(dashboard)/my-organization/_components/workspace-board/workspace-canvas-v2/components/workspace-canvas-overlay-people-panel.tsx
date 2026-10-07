@@ -277,7 +277,7 @@ export const WorkspacePeopleDrawerPanel = memo(
     return (
       <div
         className={cn(
-          "mx-auto flex min-h-0 w-full max-w-3xl min-w-0 flex-1 flex-col overflow-hidden",
+          "flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden",
           draggingPersonIds.length > 0 && "select-none"
         )}
       >
@@ -306,8 +306,8 @@ export const WorkspacePeopleDrawerPanel = memo(
 
         <ScrollArea
           className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"
-          viewportClassName="h-full max-w-full overscroll-contain touch-pan-y [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"
-          contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 [&>*]:min-w-0 [&>*]:max-w-full"
+          viewportClassName="h-full max-w-full overscroll-contain touch-pan-y md:[&>div]:!h-full [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"
+          contentClassName="flex min-h-full max-w-full flex-col gap-3 md:h-full md:min-h-0 p-2 sm:p-3 [&>*]:min-w-0"
         >
           {people.length === 0 ? (
             <div className="border-border/70 text-muted-foreground grid min-h-48 place-items-center rounded-2xl border border-dashed px-6 text-center text-sm">

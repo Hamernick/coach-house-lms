@@ -77,6 +77,7 @@ export function WorkspaceAcceleratorCardPanel({
   tutorialMode = null,
   showEmbeddedClassPicker = true,
   workspaceDrawerHeader = null,
+  drawerContainer = null,
   onTutorialActionComplete,
 }: WorkspaceAcceleratorCardPanelProps) {
   const router = useRouter()
@@ -535,7 +536,7 @@ export function WorkspaceAcceleratorCardPanel({
             : "grid-cols-1"
         )}
       >
-        {!fullscreenEmbedded ? (
+        {!fullscreenEmbedded && !(workspaceDrawerEmbedded && isModuleViewerOpen) ? (
           <ScrollFadeEffect
             ref={workspaceDrawerScrollRef}
             enabled={workspaceDrawerHasScrollableOverflow}
@@ -563,6 +564,8 @@ export function WorkspaceAcceleratorCardPanel({
               headerControls={
                 workspaceDrawerEmbedded ? (
                   <WorkspaceAcceleratorDrawerHeaderControls
+                    roadmapSections={roadmapSections}
+                    roadmapBasePath={roadmapBasePath}
                     filteredProgressPercent={filteredProgressPercent}
                     lessonGroupOptions={lessonGroupSummaries}
                     onLessonGroupChange={handleLessonGroupChange}
@@ -571,9 +574,7 @@ export function WorkspaceAcceleratorCardPanel({
                     showMilestoneTooltips={showMilestoneTooltips}
                     showPicker={showEmbeddedClassPicker}
                     tutorialCallout={tutorialCallout}
-                    tutorialInteractionPolicy={
-                      tutorialInteractionPolicy ?? null
-                    }
+                    tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
                     viewerOpen={isModuleViewerOpen}
                   />
                 ) : null
@@ -584,9 +585,7 @@ export function WorkspaceAcceleratorCardPanel({
                     lessonGroupOptions={lessonGroupSummaries}
                     selectedLessonGroupKey={selectedLessonGroupKey}
                     tutorialCallout={tutorialCallout}
-                    tutorialInteractionPolicy={
-                      tutorialInteractionPolicy ?? null
-                    }
+                    tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
                     viewerOpen={isModuleViewerOpen}
                     layout="badge"
                     onLessonGroupChange={handleLessonGroupChange}
@@ -597,9 +596,10 @@ export function WorkspaceAcceleratorCardPanel({
           </ScrollFadeEffect>
         ) : null}
 
-        <WorkspaceAcceleratorStepViewerTransition open={isModuleViewerOpen}>
+        <WorkspaceAcceleratorStepViewerTransition open={isModuleViewerOpen} immediate={workspaceDrawerEmbedded && Boolean(drawerContainer)}>
           <WorkspaceAcceleratorStepNodeCard
             variant="embedded"
+            drawerContainer={workspaceDrawerEmbedded ? drawerContainer : null}
             step={currentStep}
             placeholderVideoUrl={placeholderVideoUrl}
             stepIndex={controller.currentModuleStepIndex}

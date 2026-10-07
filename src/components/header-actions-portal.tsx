@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 
 type HeaderActionsPortalProps = {
   children: React.ReactNode
-  slot?: "center" | "right"
+  slot?: "center" | "right" | "search"
 }
 
 export function HeaderActionsPortal({ children, slot = "center" }: HeaderActionsPortalProps) {
@@ -13,7 +13,7 @@ export function HeaderActionsPortal({ children, slot = "center" }: HeaderActions
   const content = useMemo(() => children, [children])
 
   useEffect(() => {
-    const targetId = slot === "right" ? "site-header-actions-right" : "site-header-actions-center"
+    const targetId = `site-header-actions-${slot}`
     const el = document.getElementById(targetId)
     setMountNode(el as HTMLElement | null)
   }, [slot])

@@ -20,9 +20,9 @@ import type { WorkspaceCardShortcutItemModel } from "./workspace-card-shortcut-m
 const WORKSPACE_SHORTCUT_VISIBLE_BUTTON_CLASSNAME =
   "text-foreground"
 const WORKSPACE_SHORTCUT_SELECTED_BUTTON_CLASSNAME =
-  "bg-accent text-accent-foreground shadow-sm hover:bg-accent"
+  "bg-accent text-accent-foreground shadow-none hover:bg-accent"
 const WORKSPACE_SHORTCUT_TUTORIAL_TOOLS_BUTTON_CLASSNAME =
-  "border-sky-300/70 bg-sky-50/85 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.85)] hover:bg-sky-100/90 dark:border-sky-400/45 dark:bg-sky-500/14 dark:text-sky-100 dark:hover:bg-sky-500/20"
+  "border-sky-300/70 bg-sky-50/85 text-sky-700 shadow-none hover:bg-sky-100/90 dark:border-sky-400/45 dark:bg-sky-500/14 dark:text-sky-100 dark:hover:bg-sky-500/20"
 const WORKSPACE_CARD_SHORTCUT_BUTTON_SOURCE =
   "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx"
 const WORKSPACE_TUTORIAL_THEME_SOURCE =

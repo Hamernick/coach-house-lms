@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import {
+  WORKSPACE_COMPACT_PICKER_CLASSNAME,
   WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME,
   WORKSPACE_TUTORIAL_NEUTRAL_SURFACE_CLASSNAME,
 } from "@/components/workspace/workspace-tutorial-theme"
@@ -56,7 +57,7 @@ const WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME =
 const WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME =
   "w-full max-w-none px-1.5"
 const WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME =
-  "h-8 min-h-8 w-fit max-w-72 rounded-full border-transparent bg-muted/55 px-3 py-1.5 text-foreground shadow-none hover:bg-muted/65 dark:bg-muted/45 dark:hover:bg-muted/60 data-[size=sm]:h-8 [&>svg]:size-3.5"
+  WORKSPACE_COMPACT_PICKER_CLASSNAME
 
 function WorkspaceAcceleratorHeaderPickerLabel({ label }: { label: string }) {
   const viewportRef = useRef<HTMLSpanElement | null>(null)
@@ -92,13 +93,19 @@ function WorkspaceAcceleratorHeaderPickerLabel({ label }: { label: string }) {
   return (
     <span
       ref={viewportRef}
-      className="min-w-0 flex-1 overflow-hidden"
-      onPointerEnter={() => setIsHovered(true)}
+      className="relative min-w-0 flex-1 overflow-hidden"
+      data-slot="class-picker-label"
+      onPointerEnter={(event) => setIsHovered(event.pointerType === "mouse")}
       onPointerLeave={() => setIsHovered(false)}
     >
       <span
         ref={contentRef}
-        className="inline-block min-w-full text-left whitespace-nowrap transition-transform duration-1000 ease-out will-change-transform"
+        className={cn(
+          "block min-w-full text-left whitespace-nowrap",
+          scrollDistance > 0 && isHovered
+            ? "w-max transition-transform duration-1000 ease-out motion-reduce:transition-none"
+            : "w-full truncate"
+        )}
         style={
           scrollDistance > 0 && isHovered
             ? { transform: `translateX(-${scrollDistance}px)` }
@@ -208,6 +215,7 @@ export function WorkspaceAcceleratorHeaderPicker({
           tutorialManagedPicker &&
             WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME
         )}
+        title={selectedLessonGroupLabel}
         aria-label={`Choose a class track. Current selection: ${selectedLessonGroupLabel}`}
         aria-disabled={classDropdownLocked ? "true" : undefined}
         data-tutorial-interaction-locked={
@@ -262,7 +270,7 @@ export function WorkspaceAcceleratorHeaderPicker({
       {...reactGrabWrapperProps}
       className={cn(
         layout === "badge"
-          ? "inline-flex items-center"
+          ? "inline-flex min-w-0 max-w-[min(18rem,100%)] items-center [&_[data-slot=badge]]:max-w-full"
           : layout === "rail"
             ? "flex w-full items-start"
             : "inline-flex items-start pb-1"

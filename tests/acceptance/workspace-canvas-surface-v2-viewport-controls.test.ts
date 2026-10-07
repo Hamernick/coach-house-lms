@@ -77,7 +77,7 @@ describe("workspace canvas v2 viewport controls", () => {
       "group-has-[[data-workspace-canvas-drawer-fullscreen=true]]/workspace-canvas-surface:hidden"
     )
     expect(
-      panelSource.match(/size-11 touch-manipulation rounded-xl md:size-9/g)
+      panelSource.match(/h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1\.5 md:w-8 md:after:hidden/g)
     ).toHaveLength(3)
     expect(panelSource).toContain(
       "ownerId: `workspace-canvas:viewport-${control}`"

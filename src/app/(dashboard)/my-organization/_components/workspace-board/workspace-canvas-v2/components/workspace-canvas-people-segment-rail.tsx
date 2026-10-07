@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/editable"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
+import { useScrollFadeEffect } from "@/lib/scroll-fade-effect"
 
 import { WorkspacePeopleSegmentActions } from "./workspace-canvas-people-segment-content-header"
 import type { WorkspacePeopleSegment } from "./workspace-canvas-people-segment-types"
@@ -218,8 +219,13 @@ export const WorkspacePeopleSegmentRail = memo(
     onSegmentDragLeave,
     onPersonDrop,
   }: WorkspacePeopleSegmentRailProps) {
+    const scrollFadeRef = useScrollFadeEffect(true, "horizontal")
+
     return (
-      <div className="min-w-0 flex-1 overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollFadeRef}
+        className="scroll-fade-effect-x min-w-0 flex-1 overflow-x-auto overscroll-x-contain px-1 py-1 [--mask-width:1.5rem] [scroll-padding-inline:1.5rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <ToggleGroup
           type="single"
           spacing={1}

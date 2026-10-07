@@ -9,7 +9,6 @@ import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
-import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
 import ShieldCheckIcon from "lucide-react/dist/esm/icons/shield-check"
@@ -130,11 +129,6 @@ export const RESOURCE_NAV = [
     name: "Documentation",
     url: "/documentation",
     icon: NotebookIcon,
-  },
-  {
-    name: "Community",
-    url: "/community",
-    icon: MessageCircleIcon,
   },
 ]
 

@@ -197,7 +197,7 @@ export function WorkspaceCanvasSurfaceV2View({
     <WorkspaceCanvasErrorBoundary>
       <div
         ref={setSurfaceContainer}
-        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#fcfcfc] dark:bg-zinc-800"
+        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#f5f5f5] dark:bg-zinc-800"
         data-layout-animating={layoutAnimating ? "true" : undefined}
       >
         <WorkspaceCanvasOverlayDrawerContainerProvider

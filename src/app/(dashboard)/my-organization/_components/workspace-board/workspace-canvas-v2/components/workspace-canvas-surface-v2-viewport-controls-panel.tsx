@@ -47,15 +47,15 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
   return (
     <div
       data-workspace-canvas-viewport-controls="true"
-      className="pointer-events-none absolute right-4 bottom-4 z-30 flex items-start justify-end group-has-[[data-workspace-canvas-drawer-fullscreen=true]]/workspace-canvas-surface:hidden md:top-4 md:bottom-auto"
+      className="pointer-events-none absolute right-4 bottom-[84px] z-10 flex items-start justify-end group-has-[[data-workspace-canvas-drawer-fullscreen=true]]/workspace-canvas-surface:hidden md:top-4 md:bottom-auto"
     >
-      <div className="border-border/70 bg-card/92 pointer-events-auto flex items-center gap-1 rounded-2xl border p-1 shadow-sm backdrop-blur transition-[box-shadow,background-color] duration-180 ease-out">
+      <div className="border-border/70 bg-card/92 pointer-events-auto flex items-center gap-1 rounded-xl border p-1 shadow-none backdrop-blur transition-[background-color] duration-180 ease-out">
         <Button
           type="button"
           variant="ghost"
           size="icon"
           {...getViewportControlOwnerProps("zoom-out")}
-          className="size-11 touch-manipulation rounded-xl md:size-9"
+          className="relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"
           onClick={onZoomOut}
           aria-label="Zoom out"
           title="Zoom out"
@@ -67,7 +67,7 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
           variant="ghost"
           size="icon"
           {...getViewportControlOwnerProps("zoom-in")}
-          className="size-11 touch-manipulation rounded-xl md:size-9"
+          className="relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"
           onClick={onZoomIn}
           aria-label="Zoom in"
           title="Zoom in"
@@ -79,7 +79,7 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
           variant="ghost"
           size="icon"
           {...getViewportControlOwnerProps("recenter")}
-          className="size-11 touch-manipulation rounded-xl md:size-9"
+          className="relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"
           onClick={onRecenterView}
           aria-label="Recenter view"
           title="Recenter view"

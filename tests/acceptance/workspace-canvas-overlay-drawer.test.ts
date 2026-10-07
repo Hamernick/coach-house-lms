@@ -139,18 +139,17 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("style={{ height: drawerViewportHeight }}")
     expect(
       tabsViewSource.match(
-        /mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col/g
+        /mx-auto flex min-h-0 w-full max-w-(?:7xl|none) min-w-0 flex-1 flex-col/g
       ) ?? []
-    ).toHaveLength(6)
+    ).toHaveLength(5)
     expect(source).toContain(
       "data-[vaul-drawer-direction=bottom]:rounded-t-[20px]"
     )
     expect(source).not.toContain(
       "data-[vaul-drawer-direction=bottom]:rounded-t-[24px]"
     )
-    expect(source).toContain('drawerFullscreen && "!z-40"')
-    expect(source).not.toContain(
-      "data-[vaul-drawer-direction=bottom]:rounded-none"
+    expect(source).toContain(
+      'drawerFullscreen && "!z-40 bg-background backdrop-blur-none data-[vaul-drawer-direction=bottom]:rounded-t-none data-[vaul-drawer-direction=bottom]:border-t-0"'
     )
     expect(source).not.toContain("container={container")
     expect(source).not.toContain("w-[min(38rem,calc(100%-1rem))]")
@@ -373,7 +372,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain('variant="line"')
     expect(source).toContain("ref={tabsListRef}")
     expect(source).toContain(
-      'className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"'
+      'className="h-11 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-11 md:h-7 md:w-auto md:group-data-[orientation=horizontal]/tabs:!h-7 [&::-webkit-scrollbar]:hidden"'
     )
     expect(source).not.toContain(
       'className="h-auto w-full min-w-0 self-end p-0 sm:w-auto"'
@@ -399,7 +398,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("pt-0.5")
     expect(source).not.toContain("pt-5")
     expect(source).toContain(
-      "h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
+      "h-11 min-w-0 flex-none gap-2 px-3 py-2 md:h-7 md:px-2 md:py-1 text-left after:hidden"
     )
     expect(source).not.toContain(
       "h-auto min-w-0 flex-1 gap-2 px-2 py-1.5 text-left after:hidden sm:flex-none"
@@ -437,7 +436,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain(
       "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
     )
-    expect(source.match(/max-w-7xl/g)).toHaveLength(6)
+    expect(source.match(/max-w-7xl/g)).toHaveLength(4)
+    expect(source.match(/max-w-none/g)).toHaveLength(2)
     expect(source).not.toContain('value="finance"')
     expect(source).not.toContain('{tab === "finance" ? (')
     expect(source).not.toContain("<WorkspaceFinancePanel")
@@ -764,7 +764,7 @@ describe("workspace canvas overlay drawer", () => {
       "target.focus({ preventScroll: true })"
     )
     expect(panelSource).toContain(
-      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-3xl min-w-0 flex-col p-2 sm:p-3"'
+      'className="mx-auto box-border w-full max-w-3xl min-w-0 p-2 sm:p-3 [&_[data-slot=organization-profile-section]]:grid-cols-1 [&_div:has(>[data-slot=organization-profile-field])]:grid-cols-1"'
     )
     expect(controllerSource).toContain(
       "organizationEditorData.initialProfileTab"
@@ -1080,11 +1080,11 @@ describe("workspace canvas overlay drawer", () => {
       "export const WorkspacePeopleDrawerControls"
     )
     expect(controlsSource).toContain(
-      "grid w-full max-w-full min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto] md:items-center"
+      "mx-auto grid w-full max-w-3xl min-w-0 shrink-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto] md:items-center"
     )
     expect(controlsSource).toContain('id="workspace-people-search"')
     expect(controlsSource).toContain('placeholder="Search people…"')
-    expect(controlsSource).toContain('className="h-10"')
+    expect(controlsSource).toContain('className="h-11 rounded-xl md:h-8"')
     expect(controlsSource).toContain('aria-label="Search workspace people"')
     expect(controlsSource).toContain("WorkspacePeopleSegmentPersonPicker")
     expect(controlsSource).toContain("customSegment && canEdit ? (")
@@ -1097,7 +1097,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(controlsSource).toContain("PERSON_CATEGORY_OPTIONS.map")
     expect(controlsSource).toContain("CreatePersonDialog")
     expect(controlsSource).toContain(
-      'triggerClassName="h-8 w-full justify-center rounded-xl px-2.5 md:w-auto"'
+      'triggerClassName="h-11 w-full justify-center rounded-xl px-2.5 pr-3.5 has-[>svg]:pr-3.5 md:h-8 md:w-auto"'
     )
     expect(controlsSource).not.toContain('from "@/components/ui/table"')
     expect(
@@ -1383,16 +1383,16 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("export const WorkspacePeopleDrawerPanel = memo(")
     expect(source).toContain("function WorkspacePeopleDrawerPanel({")
     expect(source).toContain(
-      "mx-auto flex min-h-0 w-full max-w-3xl min-w-0 flex-1 flex-col overflow-hidden"
+      "flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden"
     )
     expect(source).toContain(
       'className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"'
     )
     expect(source).toContain(
-      'viewportClassName="h-full max-w-full overscroll-contain touch-pan-y [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"'
+      'viewportClassName="h-full max-w-full overscroll-contain touch-pan-y md:[&>div]:!h-full [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"'
     )
     expect(source).toContain(
-      'contentClassName="flex min-h-full max-w-full flex-col gap-3 p-2 sm:p-3 [&>*]:min-w-0 [&>*]:max-w-full"'
+      'contentClassName="flex min-h-full max-w-full flex-col gap-3 md:h-full md:min-h-0 p-2 sm:p-3 [&>*]:min-w-0"'
     )
     expect(source).not.toContain(
       "const WorkspacePeopleDrawerTable = memo(function WorkspacePeopleDrawerTable"
@@ -1610,7 +1610,7 @@ describe("workspace canvas overlay drawer", () => {
       "export function WorkspacePeopleDrawerTableToolbar"
     )
     expect(tableToolbarSource).toContain(
-      'className="text-foreground hover:text-foreground h-8 shrink-0 gap-1.5 rounded-lg px-2.5"'
+      'className="text-foreground hover:text-foreground h-11 shrink-0 gap-1.5 rounded-xl px-2.5 md:h-8"'
     )
     expect(tableToolbarSource).not.toContain(
       "text-muted-foreground hover:text-foreground dark:text-foreground/80"
@@ -1635,12 +1635,12 @@ describe("workspace canvas overlay drawer", () => {
       "customSegmentLabel={customSegment?.label ?? null}"
     )
     expect(tableSource).toContain(
-      "[contain-intrinsic-size:0_24rem] [content-visibility:auto]"
+      "md:min-h-0 md:flex-1"
     )
     expect(tableSource).toContain(
-      "hidden max-h-[60vh] max-w-full overflow-auto overscroll-contain will-change-auto"
+      "hidden min-h-0 max-w-full flex-1 overflow-auto overscroll-contain will-change-auto"
     )
-    expect(tableSource.indexOf("hidden max-h-[60vh]")).toBeLessThan(
+    expect(tableSource.indexOf("hidden min-h-0 max-w-full flex-1")).toBeLessThan(
       tableSource.indexOf('className="grid w-auto border-collapse"')
     )
     expect(tableSizingSource).toContain(
@@ -1686,7 +1686,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(tableSource).toContain("<PeopleTablePagination")
     expect(tableSource).toContain("filteredCount={people.length}")
     expect(tableSource).toContain(
-      'className="border-border/60 border-t px-3 py-2"'
+      'className="border-border/60 shrink-0 border-t px-3 py-2"'
     )
     expect(peopleTablePaginationSource).toContain(
       "export function PeopleTablePagination<TData>"
@@ -2142,7 +2142,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(mobileShortcutOverlaySource).toContain(
       "pointer-events-none absolute bottom-4 left-4 z-10 md:hidden"
     )
-    expect(controlsSource).toContain("absolute right-4 bottom-4 z-30")
+    expect(controlsSource).toContain("absolute right-4 bottom-[84px] z-10")
     expect(controlsSource).toContain("md:top-4 md:bottom-auto")
     expect(rendererSource).not.toContain("<WorkspaceCanvasOverlayDrawer")
     expect(rendererSource).not.toContain("headerPickerAction")

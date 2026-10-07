@@ -31,7 +31,7 @@ export function ResourcesCard({ resources, variant = "grid", children }: Resourc
   const singleGridItem = !stacked && totalItems === 1
 
   const gridClass = stacked
-    ? "grid gap-3"
+    ? "grid min-w-0 gap-3"
     : `grid gap-4 justify-items-center ${singleGridItem ? "sm:grid-cols-1" : "sm:grid-cols-2"}`
 
   return (
@@ -69,7 +69,7 @@ export function ResourcesCard({ resources, variant = "grid", children }: Resourc
                 key={`${trimmedUrl || label}-${index}`}
                 className={
                   stacked
-                    ? "group w-full min-h-[220px] rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm transition hover:shadow-md focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 focus-within:ring-offset-background"
+                    ? "group min-w-0 w-full min-h-[220px] rounded-2xl border border-border/60 bg-card/70 p-3 focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 focus-within:ring-offset-background"
                     : "group aspect-square w-full max-w-[260px] rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm transition hover:shadow-md focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 focus-within:ring-offset-background"
                 }
               >
@@ -79,8 +79,8 @@ export function ResourcesCard({ resources, variant = "grid", children }: Resourc
                       <Icon className="h-5 w-5" />
                     </span>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground line-clamp-2">{displayLabel}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{metaLabel}</p>
+                      <p className="text-sm font-semibold text-foreground line-clamp-2 break-words">{displayLabel}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 break-words">{metaLabel}</p>
                     </div>
                   </div>
                   {hasUrl ? (

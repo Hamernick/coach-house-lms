@@ -679,7 +679,7 @@ describe("workspace accelerator header picker", () => {
     )
 
     expect(markup).toContain('aria-label="Strategic roadmap"')
-    expect(markup).toContain("Core Documents")
+    expect(markup).toContain("Strategic roadmap")
     expect(markup).toContain("Mission, Vision, Values")
     expect(markup).toContain(
       "hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"

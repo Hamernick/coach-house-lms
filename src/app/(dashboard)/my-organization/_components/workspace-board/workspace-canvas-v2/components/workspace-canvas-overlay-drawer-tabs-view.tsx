@@ -1,6 +1,6 @@
 "use client"
 
-import type { CSSProperties, RefObject } from "react"
+import { useState, type CSSProperties, type RefObject } from "react"
 
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
@@ -40,7 +40,7 @@ function WorkspaceDrawerTabTrigger({
     <TabsTrigger
       value={value}
       onClick={onOpen}
-      className="h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
+      className="h-11 min-w-0 flex-none gap-2 px-3 py-2 md:h-7 md:px-2 md:py-1 text-left after:hidden"
     >
       {children}
     </TabsTrigger>
@@ -96,6 +96,9 @@ export function WorkspaceDrawerTabs({
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   viewerId: string
 }) {
+  const [drawerContainer, setDrawerContainer] =
+    useState<HTMLDivElement | null>(null)
+
   return (
     <Tabs
       value={tab}
@@ -115,7 +118,7 @@ export function WorkspaceDrawerTabs({
         <TabsList
           variant="line"
           ref={tabsListRef}
-          className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"
+          className="h-11 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-11 md:h-7 md:w-auto md:group-data-[orientation=horizontal]/tabs:!h-7 [&::-webkit-scrollbar]:hidden"
         >
           <WorkspaceDrawerTabTrigger
             value="organization"
@@ -165,7 +168,8 @@ export function WorkspaceDrawerTabs({
       >
         <TabsContent
           value="organization"
-          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
+          data-organization-scroll-viewport="true"
+          className="mx-auto min-h-0 w-full max-w-none min-w-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y data-[state=inactive]:hidden md:px-8"
         >
           {tab === "organization" ? (
             <WorkspaceCanvasOverlayOrganizationPanel
@@ -178,9 +182,15 @@ export function WorkspaceDrawerTabs({
           value="accelerator"
           className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
         >
+          <div
+            ref={setDrawerContainer}
+            data-workspace-accelerator-lesson-slot="true"
+            className="flex min-h-0 flex-1 flex-col empty:hidden"
+          />
           {tab === "accelerator" ? (
             <WorkspaceCanvasOverlayAcceleratorPanel
               input={acceleratorInput}
+              drawerContainer={drawerContainer}
               roadmapSections={acceleratorRoadmapSections}
               hasAccess={acceleratorHasAccess}
               paywallHref={acceleratorPaywallHref}
@@ -208,7 +218,7 @@ export function WorkspaceDrawerTabs({
         </TabsContent>
         <TabsContent
           value="people"
-          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
+          className="mx-auto flex min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
         >
           <WorkspacePeopleDrawerPanel
             people={people}

@@ -18,6 +18,7 @@ describe("my organization editor view layout", () => {
     expect(source).toContain('"flex h-full min-h-0 flex-col"')
     expect(source).toContain('"flex min-h-0 flex-1 flex-col gap-3"')
     expect(source).toContain("<ScrollFadeEffect")
+    expect(source).toContain('if (scrollMode === "parent") return profileCard')
     expect(source).toContain("enabled={hasScrollableOverflow}")
     expect(source).toContain(
       'className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"'

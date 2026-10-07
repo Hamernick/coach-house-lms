@@ -46,7 +46,7 @@ export const WorkspacePeopleDrawerControls = memo(
     onAddPeopleToSegment,
   }: WorkspacePeopleDrawerControlsProps) {
     return (
-      <div className="grid w-full max-w-full min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto] md:items-center">
+      <div className="mx-auto grid w-full max-w-3xl min-w-0 shrink-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto] md:items-center">
         <div className="min-w-0">
           {customSegment && canEdit ? (
             <WorkspacePeopleSegmentPersonPicker
@@ -60,7 +60,7 @@ export const WorkspacePeopleDrawerControls = memo(
               placeholder="Search people…"
               value={searchValue}
               onChange={(event) => onSearchChange(event.target.value)}
-              className="h-10"
+              className="h-11 rounded-xl md:h-8"
               aria-label="Search workspace people"
             />
           )}
@@ -79,7 +79,7 @@ export const WorkspacePeopleDrawerControls = memo(
           <SelectTrigger
             id="workspace-people-category"
             size="sm"
-            className="h-10 w-full"
+            className="h-11 w-full rounded-xl data-[size=sm]:h-11 md:data-[size=sm]:h-8"
             aria-label="Filter workspace people by role"
           >
             <SelectValue placeholder="All roles" />
@@ -95,7 +95,7 @@ export const WorkspacePeopleDrawerControls = memo(
         </Select>
         {canEdit ? (
           <CreatePersonDialog
-            triggerClassName="h-8 w-full justify-center rounded-xl px-2.5 md:w-auto"
+            triggerClassName="h-11 w-full justify-center rounded-xl px-2.5 pr-3.5 has-[>svg]:pr-3.5 md:h-8 md:w-auto"
             people={people}
             extendedSocialLinksEnabled
           />

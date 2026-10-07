@@ -47,7 +47,7 @@ describe("workspace canvas help overlay", () => {
 
     expect(source).toContain('variant="ghost"')
     expect(source).toContain(
-      'className="pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"'
+      '"pointer-events-auto relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"'
     )
     expect(source).toContain('<InfoIcon className="h-4 w-4" aria-hidden />')
     expect(source).toContain("MousePointer2Icon")

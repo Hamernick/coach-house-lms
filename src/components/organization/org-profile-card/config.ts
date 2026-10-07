@@ -1,6 +1,5 @@
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
-import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import type {
@@ -17,7 +16,6 @@ export const ORG_PROFILE_TABS: Array<{
 }> = [
   { value: "company", label: "About", icon: BuildingIcon },
   { value: "programs", label: "Activity", icon: ClipboardListIcon },
-  { value: "people", label: "People", icon: UsersIcon },
 ]
 
 function isTrackingValue(value: unknown): value is BrandTypographyTracking {

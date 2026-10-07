@@ -101,6 +101,32 @@ for (const [width, height] of [[320, 640], [700, 900], [820, 480], [1024, 768]] 
   })
 }
 
+test("height-limited lesson video retains its aspect ratio", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/visual-regression/project-feedback?scenario=accelerator")
+  const lesson = page.getByTestId("lesson-preview")
+  const video = lesson.locator("video")
+  const frame = video.locator("../..")
+  for (const height of [240, 650, 300]) {
+    await lesson.evaluate((element, height) => {
+      element.style.height = `${height}px`
+    }, height)
+    await expect.poll(async () => {
+      const box = (await frame.boundingBox())!
+      return Math.abs(box.width / box.height - 16 / 9)
+    }).toBeLessThan(0.01)
+    const box = (await frame.boundingBox())!
+    const body = (await lesson.locator("[data-workspace-accelerator-lesson-content]").boundingBox())!
+    expect(box.width).toBeGreaterThan(0)
+    expect(box.height).toBeGreaterThan(0)
+    expect(box.y + box.height).toBeLessThanOrEqual(body.y + body.height + 1)
+    expect(box.x + box.width).toBeLessThanOrEqual(body.x + body.width + 1)
+    expect(Math.abs(box.x + box.width / 2 - body.x - body.width / 2)).toBeLessThan(1)
+    const media = (await video.boundingBox())!
+    expect(Math.abs(media.width / media.height - 16 / 9)).toBeLessThan(0.02)
+  }
+})
+
 test("lesson adapts to drawer width inside a wide desktop", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto("/visual-regression/project-feedback?scenario=accelerator")

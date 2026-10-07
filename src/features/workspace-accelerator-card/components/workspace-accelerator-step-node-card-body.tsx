@@ -175,14 +175,14 @@ export function WorkspaceAcceleratorStepBody({
 
   if (showVideo) {
     return (
-      <div className={cn("px-3 py-3 sm:px-4", fitVideo && "flex h-full min-h-0 items-start")}>
+      <div className={cn("px-3 py-3 sm:px-4", fitVideo && "flex h-full min-h-0 items-start justify-center [container-type:size]")}>
         <VideoSection
           onEnded={onVideoComplete}
           embedUrl={null}
           videoUrl={effectiveVideoUrl}
           fallbackUrl={step.href}
           variant="frame"
-          className={cn("border-border/60 aspect-video w-full overflow-hidden rounded-xl border", fitVideo && "max-h-full")}
+          className={cn("border-border/60 aspect-video w-full overflow-hidden rounded-xl border", fitVideo && "w-[min(100%,calc(100cqh*16/9))] shrink-0")}
         />
       </div>
     )

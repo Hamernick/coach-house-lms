@@ -1938,7 +1938,7 @@ describe("resource map local data engine", () => {
       ["Debt Counseling", "finance", "finance_debt_counseling"],
       ["Housing Law", "legal", "legal_housing_law"],
       ["Veterans", "family", "family_veterans"],
-      ["Faith Organizations", "community", "community_faith_organizations"],
+      ["Faith Organizations", "faith", "community_faith_organizations"],
       [
         "Disaster Preparedness",
         "emergency",
@@ -3811,5 +3811,91 @@ describe("resource map local data engine", () => {
     expect(packageJson).toContain('"data:refresh-stale"')
     expect(packageJson).toContain('"data:run-jobs"')
     expect(packageJson).toContain('"data:reprocess"')
+  })
+})
+
+
+describe("promoted resource topics", () => {
+  it("preserves actionable services without obsolete Community matches", async () => {
+    const { classifyResourceTaxonomy } = await import(
+      pathToFileURL(TAXONOMY_CLASSIFIER).href
+    )
+    const { buildCanonicalPayload } = await import(
+      pathToFileURL(join(ROOT, "scripts/resource-map/lib/promotion-payloads.mjs")).href
+    )
+    const { publicMapResourceCategoryMatchesTopLevel } = await import(
+      "@/lib/public-map/resource-categories"
+    )
+    const fields = {
+      sourceCategoryText: "Faith Organizations",
+      title: "Church Food Pantry",
+    }
+    const mixed = classifyResourceTaxonomy({ extractedFields: fields })
+    expect(mixed.resourceCategories).toContain("food_food_pantries")
+    expect(mixed.resourceCategories).toContain("faith")
+    expect(mixed.resourceCategories).not.toContain("community")
+    const payload = buildCanonicalPayload({
+      extracted_fields: {
+        ...fields,
+        resourceCategories: mixed.resourceCategories,
+        taxonomyClassification: mixed,
+      },
+    }, false)
+    expect(payload.categoryKeys).toEqual(mixed.resourceCategories)
+    expect(publicMapResourceCategoryMatchesTopLevel({
+      category: "food_food_pantries",
+      topLevelCategory: "food",
+    })).toBe(true)
+    for (const topic of ["faith", "recreation", "sports", "arts", "culture"]) {
+      const result = classifyResourceTaxonomy({
+        extractedFields: { sourceCategoryText: topic },
+      })
+      expect(result.resourceCategories).not.toContain("community")
+    }
+    expect(classifyResourceTaxonomy({
+      extractedFields: { sourceCategoryText: "Community Organizing" },
+    }).resourceCategories).toContain("community")
+  })
+
+  it("preserves canonical topics, promoted leaves and confidence through promotion", async () => {
+    const { buildCanonicalPayload } = await import(
+      pathToFileURL(join(ROOT, "scripts/resource-map/lib/promotion-payloads.mjs")).href
+    )
+    const { resolveResourceCategoryKey, RESOURCE_CATEGORY_GROUPS } = await import(
+      pathToFileURL(join(ROOT, "scripts/resource-map/lib/promotion-normalizers.mjs")).href
+    )
+    const {
+      PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
+      PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS,
+    } = await import("@/lib/public-map/resource-categories")
+    for (const key of PUBLIC_MAP_RESOURCE_CATEGORY_ORDER) {
+      expect(resolveResourceCategoryKey(key)).toBe(key)
+      const payload = buildCanonicalPayload({
+        extracted_fields: {
+          organizationName: "Category contract fixture",
+          title: "Category contract fixture",
+          resourceCategories: [key],
+          taxonomyClassification: { categories: [{ key, confidence: 91 }] },
+        },
+      }, false)
+      expect(payload.categoryKeys).toEqual([key])
+      expect(payload.categoryConfidenceByKey[key]).toBe(91)
+    }
+    for (const key of ["arts", "faith", "recreation", "philanthropy"] as const) {
+      expect(RESOURCE_CATEGORY_GROUPS[key]).toEqual(
+        PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS[key]
+      )
+      for (const [leaf] of RESOURCE_CATEGORY_GROUPS[key]) {
+        expect(resolveResourceCategoryKey(leaf)).toBe(leaf)
+      }
+    }
+    for (const [label, key] of [
+      ["Arts & Culture", "arts"],
+      ["Faith & Religion", "faith"],
+      ["Sports & Recreation", "recreation"],
+      ["Philanthropy & Grantmaking", "philanthropy"],
+    ]) {
+      expect(resolveResourceCategoryKey(label)).toBe(key)
+    }
   })
 })

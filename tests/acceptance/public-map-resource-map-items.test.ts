@@ -182,6 +182,10 @@ describe("public map resource map items", () => {
       "organizations",
       "international",
       "animals",
+      "arts",
+      "faith",
+      "recreation",
+      "philanthropy",
     ])
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")

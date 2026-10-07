@@ -59,10 +59,15 @@ test(
       grant usage on schema public to anon,authenticated,service_role;
       create table public.organizations(user_id uuid primary key default gen_random_uuid(),ein text);
       create table public.resource_map_organizations(id uuid primary key default gen_random_uuid(),ein text);
+      create table public.resource_map_categories(key text primary key,label text,parent_key text references public.resource_map_categories(key),sort_order integer,marker_color text,icon_name text,aliases text[],description text,updated_at timestamptz default now());
       create function public.test_assert(ok boolean,message text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception '%',message; end if; end$$;`)
       for (const file of [
         "20261006193000_nonprofit_directory.sql",
         "20261006193100_nonprofit_directory_publication.sql",
+        "20261007070000_nonprofit_categories.sql",
+        "20261007070100_nonprofit_category_publication.sql",
+        "20260628150000_resource_map_taxonomy_categories.sql",
+        "20261007070200_resource_category_topics.sql",
       ])
         sql(
           readFileSync(join(process.cwd(), "supabase/migrations", file), "utf8")
@@ -138,6 +143,7 @@ test(
         sql("select count(*) from public.nonprofit_publication_chunks;").trim(),
         "4"
       )
+      sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-categories.assertions.sql"), "utf8"))
       if (process.env.NONPROFIT_DIRECTORY_BENCHMARK) {
         const records = readFileSync(process.env.NONPROFIT_DIRECTORY_BENCHMARK, "utf8").trim().split("\n").map(JSON.parse)
         if (records.length > 10001 || records.some((r) => !/^\d{9}$/.test(r.ein))) throw new Error("Benchmark must be the bounded audited cohort")

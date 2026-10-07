@@ -174,14 +174,13 @@ export function PublicMapOrganizationsStack({
         incrementalLoading
         scrollable={scrollable}
         leadingContent={
-          activeGroup === "all" && query.trim().length >= 2 ? (
-            <>
-              {leadingContent}
-              <NonprofitDirectoryResults query={query} />
-            </>
-          ) : (
-            leadingContent
-          )
+          <>
+            {leadingContent}
+            <NonprofitDirectoryResults
+              query={query}
+              category={activeGroup === "all" ? null : activeGroup}
+            />
+          </>
         }
         onClearCategory={onClearCategory}
         onClearQuery={onClearQuery}

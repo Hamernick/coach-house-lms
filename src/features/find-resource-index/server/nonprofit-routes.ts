@@ -36,10 +36,11 @@ export async function nonprofitSearchGET(request: Request) {
   }
   try {
     const { data, error } = await publicClient().rpc(
-      "search_nonprofit_directory",
+      "search_nonprofit_directory_v2",
       {
         p_query: input.query,
         p_state: input.state,
+        p_category: input.category,
         p_after: input.after,
         p_limit: input.limit + 1,
       }

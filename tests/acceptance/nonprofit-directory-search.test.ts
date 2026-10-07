@@ -57,7 +57,7 @@ describe("bounded nonprofit organization search", () => {
     })
     expect(createClient.mock.calls[0][1]).toBe("anon-only")
     expect(rpc).toHaveBeenCalledWith(
-      "search_nonprofit_directory",
+      "search_nonprofit_directory_v2",
       expect.objectContaining({ p_limit: 51 })
     )
   })
@@ -83,7 +83,7 @@ describe("bounded nonprofit organization search", () => {
       )
     )
     expect(rpc).toHaveBeenLastCalledWith(
-      "search_nonprofit_directory",
+      "search_nonprofit_directory_v2",
       expect.objectContaining({ p_after: "012345678" })
     )
     const mismatch = await search(
@@ -140,9 +140,104 @@ describe("bounded nonprofit organization search", () => {
 
 it("loads one bounded browser page and passes the cancellation signal without following next cursors", async () => {
   const controller = new AbortController()
-  const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ version: 1, items: [item("012345678")], page: { hasMore: true, nextCursor: "next-page", limit: 20 } })))
-  const page = await loadNonprofitDirectoryPage("community", null, controller.signal)
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          version: 1,
+          items: [item("012345678")],
+          page: { hasMore: true, nextCursor: "next-page", limit: 20 },
+        })
+      )
+    )
+  const page = await loadNonprofitDirectoryPage(
+    "community",
+    null,
+    controller.signal
+  )
   expect(page.page.hasMore).toBe(true)
   expect(fetchMock).toHaveBeenCalledTimes(1)
-  expect(fetchMock).toHaveBeenCalledWith("/api/public/nonprofits/search?q=community&limit=20", expect.objectContaining({ signal: controller.signal }))
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/public/nonprofits/search?q=community&limit=20",
+    expect.objectContaining({ signal: controller.signal })
+  )
+})
+
+it("browses categories without a query and refuses cursors from another category", async () => {
+  rpc.mockResolvedValue({
+    data: [item("012345678"), item("012345679")],
+    error: null,
+  })
+  const first = await search(
+    new Request(
+      "https://coachhouse.app/api/public/nonprofits/search?category=food&limit=1"
+    )
+  )
+  const data = await first.json()
+  expect(first.status).toBe(200)
+  expect(rpc).toHaveBeenLastCalledWith(
+    "search_nonprofit_directory_v2",
+    expect.objectContaining({ p_query: "", p_category: "food" })
+  )
+  const cursor = encodeURIComponent(data.page.nextCursor)
+  const mismatch = await search(
+    new Request(
+      `https://coachhouse.app/api/public/nonprofits/search?category=health&limit=1&cursor=${cursor}`
+    )
+  )
+  expect(mismatch.status).toBe(400)
+  const next = await search(
+    new Request(
+      `https://coachhouse.app/api/public/nonprofits/search?category=food&limit=1&cursor=${cursor}`
+    )
+  )
+  expect(next.status).toBe(200)
+  expect(rpc).toHaveBeenLastCalledWith(
+    "search_nonprofit_directory_v2",
+    expect.objectContaining({ p_after: "012345678", p_category: "food" })
+  )
+})
+
+it("rejects unknown category keys and preserves exact service leaves", async () => {
+  const invalid = await search(
+    new Request(
+      "https://coachhouse.app/api/public/nonprofits/search?category=made_up"
+    )
+  )
+  expect(invalid.status).toBe(400)
+  expect(rpc).not.toHaveBeenCalled()
+  rpc.mockResolvedValue({ data: [], error: null })
+  await search(
+    new Request(
+      "https://coachhouse.app/api/public/nonprofits/search?category=food_food_pantries"
+    )
+  )
+  expect(rpc).toHaveBeenLastCalledWith(
+    "search_nonprofit_directory_v2",
+    expect.objectContaining({ p_category: "food_food_pantries" })
+  )
+})
+
+it("passes category-only browser queries with bounded pagination", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          version: 1,
+          items: [],
+          page: { hasMore: false, nextCursor: null, limit: 20 },
+        })
+      )
+    )
+  await loadNonprofitDirectoryPage(
+    "",
+    null,
+    new AbortController().signal,
+    "faith"
+  )
+  expect(fetchMock.mock.calls[0][0]).toBe(
+    "/api/public/nonprofits/search?q=&limit=20&category=faith"
+  )
 })

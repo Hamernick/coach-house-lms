@@ -20,6 +20,9 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## Open lanes
 
+National category integration: `feat/nonprofit-category-filters-20261007` in `/Users/calebhamernick/Development/coach-house-platform-category-filters-20261007`. See [current category plan](../plans/2026-10-07-national-nonprofit-category-filters.md). 1,337,767 private mapped EINs; serving/backfill implemented locally, no category publication. Permanent `CURRENT.json` still locates the private harness; retain it and running operators. Older directory totals below are historical.
+
+
 The original four `chore/*` backup branches start at `32d7e8d8` and remain backed up on GitHub. AppShell has since merged; the three remaining feature backups are **unfinished, not release-ready**. Original sources remain. Old runlog versions were excluded; Particles and Calendar acceptance manifest additions were merged with current main.
 
 | Lane | GitHub backup / source | Remaining work and validation |

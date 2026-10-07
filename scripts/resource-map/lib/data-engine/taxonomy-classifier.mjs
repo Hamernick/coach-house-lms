@@ -1,8 +1,16 @@
 import { readArray, readString } from "./shared.mjs"
 
-export const TAXONOMY_VERSION = "coach-house-taxonomy-v1"
+export const TAXONOMY_VERSION = "coach-house-taxonomy-v2"
 
 const TOP_LEVEL_TAXONOMY = [
+  ["arts", "Arts & Culture", ["arts", "culture", "museums"]],
+  ["faith", "Faith & Religion", ["religion", "religious"]],
+  ["recreation", "Sports & Recreation", ["sports", "recreation", "athletics"]],
+  [
+    "philanthropy",
+    "Philanthropy & Grantmaking",
+    ["philanthropy", "grantmaking", "grantmakers"],
+  ],
   [
     "health",
     "Health",
@@ -137,15 +145,10 @@ const TOP_LEVEL_TAXONOMY = [
     "Community",
     [
       "mutual aid",
-      "faith",
       "volunteer",
       "civic",
       "voter",
       "events",
-      "recreation",
-      "sports",
-      "arts",
-      "culture",
       "transportation",
       "internet",
       "device",
@@ -240,6 +243,13 @@ const TOP_LEVEL_TAXONOMY = [
 ]
 
 const SUBCATEGORY_GROUPS = {
+  arts: [["community_arts_culture", "Arts & Culture"]],
+  faith: [["community_faith_organizations", "Faith Organizations"]],
+  recreation: [
+    ["community_sports", "Sports"],
+    ["community_recreation", "Recreation"],
+  ],
+  philanthropy: [],
   health: [
     ["health_primary_care", "Primary Care"],
     ["health_dental", "Dental"],
@@ -360,15 +370,11 @@ const SUBCATEGORY_GROUPS = {
     ["family_caregivers", "Caregivers"],
   ],
   community: [
-    ["community_faith_organizations", "Faith Organizations"],
     ["community_volunteer_opportunities", "Volunteer Opportunities"],
     ["community_community_organizing", "Community Organizing"],
     ["community_civic_engagement", "Civic Engagement"],
     ["community_voter_services", "Voter Services"],
     ["community_events", "Events"],
-    ["community_recreation", "Recreation"],
-    ["community_sports", "Sports"],
-    ["community_arts_culture", "Arts & Culture"],
     ["community_libraries", "Libraries"],
     ["community_community_centers", "Community Centers"],
     ["community_transportation", "Transportation"],

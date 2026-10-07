@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
+import {
+  isPublicMapResourceCategoryKey,
+  type PublicMapResourceCategoryKey,
+} from "@/lib/public-map/resource-categories"
 
 const nullableText = z.string().nullable()
 const basis = z.enum(["source_reported", "provider_confirmed"]).nullable()
@@ -27,14 +31,25 @@ export const directoryItemSchema = z
   })
   .strict()
 
-export const queryBinding = (query: string, state: string | null) =>
+export const queryBinding = (
+  query: string,
+  state: string | null,
+  category: PublicMapResourceCategoryKey | null = null
+) =>
   createHash("sha256")
-    .update(JSON.stringify([query, state]))
+    .update(
+      JSON.stringify([2, query, state, category, "irs-organization-topics-v1"])
+    )
     .digest("hex")
 
 export function parseDirectoryQuery(params: URLSearchParams) {
   const query = (params.get("q") ?? "").trim(),
     state = params.get("state")?.trim().toUpperCase() || null
+  const rawCategory = params.get("category")
+  const category =
+    rawCategory === null || rawCategory === "all" ? null : rawCategory
+  if (category !== null && !isPublicMapResourceCategoryKey(category))
+    throw new Error("Invalid category")
   const rawLimit = params.get("limit") ?? "50"
   if (
     query.length > 160 ||
@@ -45,7 +60,7 @@ export function parseDirectoryQuery(params: URLSearchParams) {
   const limit = Number(rawLimit)
   if (limit < 1 || limit > 100)
     throw new Error("Limit must be between 1 and 100")
-  const binding = queryBinding(query, state),
+  const binding = queryBinding(query, state, category),
     cursor = params.get("cursor")
   let after: string | null = null
   if (cursor) {
@@ -55,7 +70,7 @@ export function parseDirectoryQuery(params: URLSearchParams) {
       Buffer.from(cursor, "base64url").toString("utf8")
     )
     if (
-      decoded.v !== 1 ||
+      decoded.v !== 2 ||
       decoded.binding !== binding ||
       typeof decoded.after !== "string" ||
       !/^\d{9}$/.test(decoded.after)
@@ -63,11 +78,11 @@ export function parseDirectoryQuery(params: URLSearchParams) {
       throw new Error("Cursor does not match the query")
     after = decoded.after
   }
-  return { query, state, limit, after, binding }
+  return { query, state, category, limit, after, binding }
 }
 
 export function directoryCursor(after: string, binding: string) {
-  return Buffer.from(JSON.stringify({ v: 1, after, binding })).toString(
+  return Buffer.from(JSON.stringify({ v: 2, after, binding })).toString(
     "base64url"
   )
 }

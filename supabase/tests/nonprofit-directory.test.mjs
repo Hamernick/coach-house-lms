@@ -68,6 +68,7 @@ test(
         "20261007070100_nonprofit_category_publication.sql",
         "20260628150000_resource_map_taxonomy_categories.sql",
         "20261007070200_resource_category_topics.sql",
+        "20261007190000_nonprofit_search_custom_plans.sql",
       ])
         sql(
           readFileSync(join(process.cwd(), "supabase/migrations", file), "utf8")
@@ -144,6 +145,7 @@ test(
         "4"
       )
       sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-categories.assertions.sql"), "utf8"))
+      sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-search-plans.assertions.sql"), "utf8"))
       if (process.env.NONPROFIT_DIRECTORY_BENCHMARK) {
         const records = readFileSync(process.env.NONPROFIT_DIRECTORY_BENCHMARK, "utf8").trim().split("\n").map(JSON.parse)
         if (records.length > 10001 || records.some((r) => !/^\d{9}$/.test(r.ein))) throw new Error("Benchmark must be the bounded audited cohort")

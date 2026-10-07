@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useRef, type ReactNode } from "react"
 
 import { RightRailSlot } from "@/components/app-shell/right-rail"
+import { RoadmapNavigatorDropdown } from "@/components/roadmap/roadmap-navigator-dropdown"
 import { RoadmapNavigatorSection } from "@/components/roadmap/roadmap-navigator-section"
 import { Button } from "@/components/ui/button"
 import type { RoadmapSection } from "@/lib/roadmap"
@@ -75,7 +76,7 @@ export function WorkspaceAcceleratorCardInlinePicker({
     <div
       className={cn(
         layout === "badge"
-          ? "inline-flex max-w-full items-start"
+          ? "inline-flex min-w-0 max-w-72 items-start"
           : "flex w-full items-start"
       )}
     >
@@ -101,6 +102,8 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
   lessonGroupOptions,
   onLessonGroupChange,
   readinessSummary,
+  roadmapSections = [],
+  roadmapBasePath,
   selectedLessonGroupKey,
   showMilestoneTooltips = true,
   showPicker = true,
@@ -112,6 +115,8 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
   lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
   onLessonGroupChange: (nextLessonGroupKey: string) => void
   readinessSummary: WorkspaceAcceleratorCardInput["readinessSummary"]
+  roadmapSections?: RoadmapSection[]
+  roadmapBasePath?: string
   selectedLessonGroupKey: string
   showMilestoneTooltips?: boolean
   showPicker?: boolean
@@ -134,7 +139,8 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
         className="min-w-0 sm:max-w-lg sm:flex-1"
       />
       {showPicker ? (
-        <div className="flex shrink-0 justify-end sm:self-end">
+        <div className="flex min-w-0 max-w-full items-center justify-end gap-2 sm:max-w-[70%] sm:self-end">
+          <RoadmapNavigatorDropdown sections={roadmapSections} basePath={roadmapBasePath} />
           <WorkspaceAcceleratorCardInlinePicker
             lessonGroupOptions={lessonGroupOptions}
             selectedLessonGroupKey={selectedLessonGroupKey}

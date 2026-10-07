@@ -94,7 +94,7 @@ export function WorkspacePeopleDrawerTableToolbar({
     .rows.map((row) => row.original)
 
   return (
-    <div className="border-border/60 flex min-h-11 min-w-0 flex-col items-stretch gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-border/60 flex min-h-11 min-w-0 shrink-0 flex-col items-stretch gap-2 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-muted-foreground max-w-full min-w-0 truncate text-xs font-medium sm:max-w-52">
         {selectedCount > 0
           ? `${selectedCount} selected`
@@ -120,9 +120,9 @@ export function WorkspacePeopleDrawerTableToolbar({
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="text-foreground hover:text-foreground h-8 shrink-0 gap-1.5 rounded-lg px-2.5"
+                className="text-foreground hover:text-foreground h-11 shrink-0 gap-1.5 rounded-xl px-2.5 md:h-8"
               >
                 <Columns3Icon aria-hidden />
                 Columns

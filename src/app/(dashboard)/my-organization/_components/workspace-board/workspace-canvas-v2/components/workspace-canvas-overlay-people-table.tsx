@@ -246,7 +246,10 @@ function WorkspacePeopleDrawerTableContent({
   )
 
   return (
-    <div className="border-border/60 bg-background/72 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border shadow-xs [contain-intrinsic-size:0_24rem] [content-visibility:auto]">
+    <div
+      className="border-border/60 bg-background/72 mx-auto flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border shadow-xs md:min-h-0 md:flex-1 md:max-w-[calc(var(--workspace-people-table-width)*1px+2px)]"
+      style={columnSizeVars}
+    >
       <WorkspacePeopleDrawerTableToolbar
         peopleCount={people.length}
         selectedCount={selectedCount}
@@ -306,13 +309,12 @@ function WorkspacePeopleDrawerTableContent({
       />
       <div
         ref={tableScrollRef}
-        className="hidden max-h-[60vh] max-w-full overflow-auto overscroll-contain will-change-auto md:block [&>[data-slot=table-container]]:overflow-visible"
+        className="hidden min-h-0 max-w-full flex-1 overflow-auto overscroll-contain will-change-auto md:block [&>[data-slot=table-container]]:overflow-visible"
       >
         <Table
           aria-label={label}
           className="grid w-auto border-collapse"
           style={{
-            ...columnSizeVars,
             width: "calc(var(--workspace-people-table-width) * 1px)",
             minWidth: "calc(var(--workspace-people-table-width) * 1px)",
           }}
@@ -398,7 +400,7 @@ function WorkspacePeopleDrawerTableContent({
         canEdit={canEdit}
         filteredCount={people.length}
         pageSizeOptions={[10, 20, 50, 100]}
-        className="border-border/60 border-t px-3 py-2"
+        className="border-border/60 shrink-0 border-t px-3 py-2"
       />
     </div>
   )

@@ -24,3 +24,6 @@ export const WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME =
 
 export const WORKSPACE_TUTORIAL_NEUTRAL_SURFACE_CLASSNAME =
   `${WORKSPACE_TUTORIAL_PICKER_LIGHT_SURFACE_CLASSNAME} ${WORKSPACE_TUTORIAL_PICKER_DARK_OUTLINE_SURFACE_CLASSNAME}`
+
+export const WORKSPACE_COMPACT_PICKER_CLASSNAME =
+  "relative touch-manipulation after:absolute after:inset-x-0 after:-inset-y-1.5 sm:after:hidden h-8 min-h-8 w-fit max-w-72 rounded-full border-transparent bg-muted/55 px-3 py-1.5 text-foreground shadow-none hover:bg-muted/65 dark:bg-muted/45 dark:hover:bg-muted/60 data-[size=sm]:h-8 [&>svg]:size-3.5"

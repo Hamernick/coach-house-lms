@@ -37,7 +37,7 @@ export function WorkspaceCanvasOverlayOrganizationPanel({
   return (
     <div
       data-workspace-organization-drawer-panel="true"
-      className="mx-auto box-border flex h-full min-h-0 w-full max-w-3xl min-w-0 flex-col p-2 sm:p-3"
+      className="mx-auto box-border w-full max-w-3xl min-w-0 p-2 sm:p-3 [&_[data-slot=organization-profile-section]]:grid-cols-1 [&_div:has(>[data-slot=organization-profile-field])]:grid-cols-1"
     >
       <MyOrganizationEditorView
         key={
@@ -46,6 +46,7 @@ export function WorkspaceCanvasOverlayOrganizationPanel({
             : "organization-default"
         }
         embedded
+        scrollMode="parent"
         initialProfile={data.initialProfile}
         people={data.people}
         programs={data.programs}

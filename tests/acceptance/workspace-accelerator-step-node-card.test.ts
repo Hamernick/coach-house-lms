@@ -41,7 +41,7 @@ describe("workspace accelerator step node card", () => {
       "rounded-full border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums"
     )
     expect(source).toContain(
-      '<span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">'
+      '<span className="text-foreground shrink-0 px-1 text-[11px] font-medium tabular-nums">'
     )
   })
 
@@ -99,7 +99,7 @@ describe("workspace accelerator step node card", () => {
     )
 
     expect(markup).toContain("grid-cols-1")
-    expect(markup).toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
+    expect(markup).toContain("lg:grid-cols-[minmax(0,1fr)_280px]")
     expect(markup).toContain("border-t")
     expect(markup).toContain("bg-muted/10")
     expect(markup).toContain("Notes")
@@ -457,7 +457,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup.match(/Where did you grow up\\?/g)).toHaveLength(1)
   })
 
-  it("moves module details into a mobile drawer flow instead of stacking the rail below the content", () => {
+  it("stacks module notes below lesson content on compact screens", () => {
     useIsMobileMock.mockReturnValue(true)
 
     const markup = renderToStaticMarkup(
@@ -496,7 +496,10 @@ describe("workspace accelerator step node card", () => {
       })
     )
 
-    expect(markup).toContain("Details")
-    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
+    expect(markup).not.toContain("Details")
+    expect(markup).toContain("Notes")
+    expect(markup).toContain("<aside")
+    expect(markup).toContain("auto-rows-min")
+    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_280px]")
   })
 })

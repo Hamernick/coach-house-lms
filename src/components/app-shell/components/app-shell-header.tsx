@@ -103,13 +103,14 @@ export function AppShellHeader({
           />
           <div
             className={cn(
-              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap md:gap-2 [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
+              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
             )}
           >
             <div
               id="site-header-actions-right"
-              className="flex flex-wrap items-center gap-2 md:flex-nowrap"
+              className="flex flex-wrap items-center gap-1 empty:hidden md:flex-nowrap"
             />
+            <div id="site-header-actions-search" className="flex items-center empty:hidden" />
             {hasUser && !isMobile && !onboardingLocked ? (
               <AppShellCalendarAction />
             ) : null}

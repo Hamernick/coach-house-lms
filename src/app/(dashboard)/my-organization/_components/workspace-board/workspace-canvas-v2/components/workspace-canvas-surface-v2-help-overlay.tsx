@@ -153,7 +153,11 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
               variant="ghost"
               size="icon"
               aria-label="Workspace canvas help"
-              className="pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"
+              className={
+                integrated
+                  ? "pointer-events-auto relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"
+                  : "pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"
+              }
               onClick={dismissTip}
             >
               <InfoIcon className="h-4 w-4" aria-hidden />

@@ -23,12 +23,14 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
   paywallHref,
   request,
   onRequestHandled,
+  drawerContainer,
 }: {
   input: WorkspaceAcceleratorCardInput
   roadmapSections: RoadmapSection[]
   hasAccess: boolean
   paywallHref: string
   request: WorkspaceDataDrawerRequest | null
+  drawerContainer?: HTMLElement | null
   onRequestHandled: (requestId: number) => void
 }) {
   const openStepRequest =
@@ -78,7 +80,9 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
         openStepRequest?.stepId ?? undefined
       }
       data-workspace-accelerator-request-module={requestedModuleId ?? undefined}
-      className="box-border flex h-full min-h-0 w-full min-w-0 flex-col p-2 sm:p-3"
+      className={isModuleViewerOpen && drawerContainer
+        ? "hidden"
+        : "box-border flex h-full min-h-0 w-full min-w-0 flex-col p-2 sm:p-3"}
     >
       {!hasAccess ? (
         <div className="flex min-h-0 flex-1 items-center justify-center p-4">
@@ -102,6 +106,7 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
             roadmapSections={roadmapSections}
             roadmapBasePath={WORKSPACE_ROADMAP_PATH}
             presentationMode="workspace-drawer"
+            drawerContainer={drawerContainer}
             initialModuleViewerOpen={Boolean(requestedModuleId)}
             initialOpenModuleId={requestedModuleId}
             openStepRequest={openStepRequest}

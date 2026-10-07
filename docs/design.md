@@ -472,7 +472,7 @@ The `components` tokens above give ready-to-use values per element (`backgroundC
 - Error button: solid `red-800` fill with white text, for destructive actions.
 - Input: `background-100` fill, translucent border, 6px radius.
 
-The variant tokens are the default medium (40px) size. Use the `button-small`/`input-small` (32px) and `button-large`/`input-large` (48px) tokens for the other sizes; large buttons step up to `button-16`. Hover and active states step up the scale: a `100` fill becomes `200` on hover and `300` on active, and borders move from `400` to `500` to `600`. Disabled uses a `gray-100` fill, `gray-700` text, and a not-allowed cursor. Focus shows a two-layer ring (`box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #006bff`): a 2px gap in the surface color, then a 2px `blue-700` ring.
+The variant tokens are the default medium (40px) size. Use the `button-small`/`input-small` (32px) and `button-large`/`input-large` (48px) tokens for the other sizes; large buttons step up to `button-16`. Hover and active states step up the scale: a `100` fill becomes `200` on hover and `300` on active, and borders move from `400` to `500` to `600`. Disabled uses a `gray-100` fill, `gray-700` text, and a not-allowed cursor. Shared controls use a crisp 2px neutral outline on `:focus-visible`, with a 2px offset. The semantic `--focus-ring` token maintains at least 3:1 contrast on standard light/dark surfaces; forced-colors mode uses the system Highlight color. Tabs and scroll viewports draw the outline directly inside their edge to avoid clipping. Text-entry fields may show focus after a pointer click, following browser accessibility heuristics.
 
 ## Voice & Content
 

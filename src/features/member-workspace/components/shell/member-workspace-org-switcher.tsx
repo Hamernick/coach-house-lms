@@ -173,18 +173,18 @@ export function MemberWorkspaceOrgSwitcher({
       type="button"
       variant="ghost"
       aria-label="Switch organization"
-      className="h-auto w-full justify-between rounded-xl border border-transparent bg-transparent px-2 py-2 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"
+      className="h-auto w-full justify-between gap-1 rounded-xl border border-transparent bg-transparent px-1 py-2 text-left md:py-px has-[>svg]:px-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0 group-data-[collapsible=icon]:has-[>svg]:px-0"
       disabled={isPending}
     >
-      <div className="flex min-w-0 items-center gap-3 group-data-[collapsible=icon]:min-w-auto group-data-[collapsible=icon]:gap-0">
-        <Avatar className="size-9 rounded-xl border border-transparent group-data-[collapsible=icon]:size-10">
+      <div className="flex min-w-0 flex-1 items-center gap-2 group-data-[collapsible=icon]:min-w-auto group-data-[collapsible=icon]:gap-0">
+        <Avatar className="size-9 rounded-xl border border-transparent md:self-start group-data-[collapsible=icon]:size-10">
           <AvatarImage alt={activeOrganization.name} src={activeOrganization.imageUrl ?? undefined} />
           <AvatarFallback className="rounded-xl text-[11px] font-semibold">
             {getOrganizationInitials(activeOrganization.name)}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-          <p className="truncate text-sm font-semibold text-foreground">
+        <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+          <p className="line-clamp-2 whitespace-normal break-words text-sm font-semibold text-foreground" title={activeOrganization.name}>
             {activeOrganization.name}
           </p>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>

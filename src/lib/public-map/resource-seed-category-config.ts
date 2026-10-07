@@ -2,6 +2,22 @@ import type { PublicMapResourceTopLevelCategoryKey } from "./resource-categories
 import type { PublicMapResourceDeliveryMode } from "./resource-map-items"
 
 export const SUPERADMIN_RESOURCE_SEED_CATEGORY_COPY = {
+  arts: {
+    noun: "Arts organization",
+    description: "Dummy arts organization marker for isolated preview.",
+  },
+  faith: {
+    noun: "Faith organization",
+    description: "Dummy faith organization marker for isolated preview.",
+  },
+  recreation: {
+    noun: "Recreation organization",
+    description: "Dummy recreation organization marker for isolated preview.",
+  },
+  philanthropy: {
+    noun: "Grantmaking organization",
+    description: "Dummy grantmaking organization marker for isolated preview.",
+  },
   health: {
     noun: "Health access",
     description: "Dummy health care and navigation marker for map preview.",
@@ -69,6 +85,10 @@ export const SUPERADMIN_RESOURCE_SEED_CATEGORY_COPY = {
 >
 
 export const SUPERADMIN_RESOURCE_SEED_DELIVERY_MODES = {
+  arts: ["hybrid"],
+  faith: ["hybrid"],
+  recreation: ["in_person"],
+  philanthropy: ["online"],
   health: ["in_person", "phone"],
   food: ["in_person"],
   housing: ["in_person", "phone"],

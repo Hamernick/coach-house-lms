@@ -1,3 +1,5 @@
+import type { PublicMapResourceCategoryDefinition } from "./resource-categories"
+
 export const PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS = [
   {
     key: "arts",
@@ -40,4 +42,4 @@ export const PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS = [
     description:
       "Foundations, grantmakers, and charitable giving organizations.",
   },
-] as const
+] satisfies readonly PublicMapResourceCategoryDefinition[]

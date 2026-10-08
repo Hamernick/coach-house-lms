@@ -146,6 +146,12 @@ test(
       )
       sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-categories.assertions.sql"), "utf8"))
       sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-search-plans.assertions.sql"), "utf8"))
+      const stateSearchProof = sql([
+        readFileSync("supabase/tests/nonprofit-state-search.fixtures.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
+        readFileSync("supabase/tests/nonprofit-state-search.assertions.sql", "utf8"),
+      ].join("\n"))
+      assert.match(stateSearchProof, /7830/, "state/query/category/cursor matrix completed")
       if (process.env.NONPROFIT_DIRECTORY_BENCHMARK) {
         const records = readFileSync(process.env.NONPROFIT_DIRECTORY_BENCHMARK, "utf8").trim().split("\n").map(JSON.parse)
         if (records.length > 10001 || records.some((r) => !/^\d{9}$/.test(r.ein))) throw new Error("Benchmark must be the bounded audited cohort")

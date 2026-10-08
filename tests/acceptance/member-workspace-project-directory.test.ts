@@ -78,4 +78,35 @@ describe("Projects directory", () => {
     expect(result.canCreateProjects).toBe(false)
     expect(mocks.canonical).not.toHaveBeenCalled()
   })
+
+  describe.each(["organizations", "projects"] as const)("%s demo visibility", (directory) => {
+    it.each(["admin", "assigned coach", "unassigned coach"])("preserves staff demo visibility and scope for %s", async (role) => {
+      const demo = { orgId: "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c", name: "Karissa is a Boss" }
+      const fixture = { orgId: "886455ec-a664-4f13-83f1-471ddd1f5ffd", name: "Recording fixture" }
+      const query = fixtureQuery([])
+      const supabase = { from: vi.fn(() => query) }
+      mocks.organizations.mockResolvedValue([demo, fixture])
+      mocks.canonical.mockResolvedValue([])
+      mocks.actor.mockResolvedValue({
+        isAdmin: role === "admin",
+        canAccessOrganizations: true,
+        organizationCoachScope: role === "admin"
+          ? { mode: "all" }
+          : { mode: "assigned", organizationIds: new Set(role === "assigned coach" ? [demo.orgId, fixture.orgId] : [fixture.orgId]) },
+        supabase,
+      })
+
+      const result = await loadMemberWorkspaceProjectsPage({ directory })
+      const expected = role === "unassigned coach" ? [] : [demo]
+
+      expect(result.organizationOptions).toEqual(expected)
+      if (directory === "organizations") {
+        expect(mocks.canonical).toHaveBeenCalledWith({ organizations: expected, supabase })
+      } else if (expected.length) {
+        expect(query.in).toHaveBeenCalledWith("org_id", [demo.orgId])
+      } else {
+        expect(supabase.from).not.toHaveBeenCalled()
+      }
+    })
+  })
 })

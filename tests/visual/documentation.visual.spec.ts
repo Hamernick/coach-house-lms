@@ -15,8 +15,10 @@ async function ready(page: Page) {
     new URL(page.url()).pathname === "/visual-regression/documentation" &&
     new URL(page.url()).searchParams.get("viewer") === "marketplace"
   ) {
-    await expect(page.getByRole("navigation", { name: "Main navigation", exact: true }))
+    await expect(page.getByRole("button", { name: "Menu", exact: true }))
       .toBeVisible()
+    await expect(page.getByRole("navigation", { name: "Main navigation", exact: true }))
+      .toHaveCount(0)
   }
   await expect(
     page.getByRole("searchbox", { name: "Search documentation", exact: true })

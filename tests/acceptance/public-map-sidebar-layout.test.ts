@@ -1782,7 +1782,8 @@ describe("public map sidebar layout", () => {
     const activityIndex = markup.indexOf(">Activity<")
     expect(addressIndex).toBeGreaterThan(-1)
     expect(linksIndex).toBeGreaterThan(addressIndex)
-    expect(activityIndex).toBeGreaterThan(linksIndex)
+    expect(activityIndex).toBeGreaterThan(markup.indexOf(">About<"))
+    expect(activityIndex).toBeLessThan(addressIndex)
     expect(markup).toContain(
       'data-public-map-sidebar-section="rail-detail-scroll"'
     )

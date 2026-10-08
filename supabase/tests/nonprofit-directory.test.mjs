@@ -1,5 +1,5 @@
 import { test } from "node:test"
-import { execFileSync, spawnSync } from "node:child_process"
+import { execFileSync, spawnSync, spawn } from "node:child_process"
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
@@ -8,7 +8,7 @@ import assert from "node:assert/strict"
 test(
   "directory SQL enforces access, atomic replay, owner precedence and revision-safe rollback",
   { timeout: 60000 },
-  () => {
+  async () => {
     const bin =
       process.env.POSTGRES_BINDIR ||
       execFileSync("pg_config", ["--bindir"], { encoding: "utf8" }).trim()
@@ -146,11 +146,27 @@ test(
       )
       sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-categories.assertions.sql"), "utf8"))
       sql(readFileSync(join(process.cwd(), "supabase/tests/nonprofit-search-plans.assertions.sql"), "utf8"))
+      sql([
+        "begin;",
+        readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008220000_nonprofit_category_search_probe.sql", "utf8"),
+        "select public.test_chunk('40000000-0000-4000-8000-000000000001',0,'800000001','Zephyr foundation'); select public.test_categories('40000000-0000-4000-8000-000000000002',0,'800000001','[\"food\"]'); select public.test_categories('40000000-0000-4000-8000-000000000003',0,'800000001','[\"housing\"]',(select record_digest from public.nonprofit_category_sets where ein='800000001'));",
+        readFileSync("supabase/tests/nonprofit-category-probe.fixtures.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008230000_nonprofit_category_search_index.sql", "utf8"),
+        readFileSync("supabase/tests/nonprofit-category-probe.assertions.sql", "utf8"),
+        "select public.backfill_nonprofit_category_search(array(select ein from public.nonprofit_directory where ein between '900000001' and '900000100'),'abcdefghijklmnopqrst');",
+        readFileSync("supabase/tests/nonprofit-category-probe.assertions.sql", "utf8"),
+        "do $$declare n integer; begin for n in 0..5 loop perform public.backfill_nonprofit_category_search(array(select ein from public.nonprofit_directory where ein between (900000001+n*100)::text and (900000100+n*100)::text),'abcdefghijklmnopqrst'); end loop; end$$;",
+        readFileSync("supabase/tests/nonprofit-category-probe.assertions.sql", "utf8"),
+        readFileSync("supabase/tests/nonprofit-category-index.assertions.sql", "utf8"),
+        "rollback;",
+      ].join("\n"))
       const stateSearchProof = sql([
         readFileSync("supabase/tests/nonprofit-state-search.fixtures.sql", "utf8"),
         readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
         readFileSync("supabase/migrations/20261008210000_nonprofit_stopword_state_search.sql", "utf8"),
         readFileSync("supabase/migrations/20261008220000_nonprofit_category_search_probe.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008230000_nonprofit_category_search_index.sql", "utf8"),
         readFileSync("supabase/tests/nonprofit-state-search.assertions.sql", "utf8"),
       ].join("\n"))
       assert.match(stateSearchProof, /7830/, "state/query/category/cursor matrix completed")
@@ -170,6 +186,30 @@ test(
         readFileSync("supabase/tests/nonprofit-category-probe.assertions.sql", "utf8"),
         "rollback;",
       ].join("\n"))
+      // Real concurrent sessions: category insertion must wait for a directory
+      // edit and copy its committed generated text, never the prior snapshot.
+      sql(readFileSync("supabase/migrations/20261008230000_nonprofit_category_search_index.sql", "utf8"))
+      sql("select public.test_chunk('50000000-0000-4000-8000-000000000001',0,'800000002','Original text'); insert into public.nonprofit_category_sets(ein,content,record_digest) values('800000002','{\"ein\":\"800000002\"}',repeat('a',64));")
+      const editor = spawn(join(bin, "psql"), ["-h", "/tmp", "-p", port, "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-qAt"], { stdio: ["pipe", "pipe", "pipe"] })
+      let editorError = ""
+      editor.stderr.on("data", (chunk) => { editorError += chunk })
+      const edited = new Promise((resolve, reject) => {
+        editor.on("error", reject)
+        editor.on("exit", (code) => code === 0 ? resolve() : reject(new Error(editorError)))
+      })
+      const locked = new Promise((resolve, reject) => {
+        let output = ""
+        editor.stdout.on("data", (chunk) => { output += chunk; if (output.includes("LOCKED")) resolve() })
+        editor.on("error", reject)
+        editor.on("exit", () => { if (!output.includes("LOCKED")) reject(new Error(editorError || "Editor exited before lock")) })
+      })
+      editor.stdin.end("begin; update public.nonprofit_directory set content=jsonb_set(content,'{name}','\"Concurrent zephyr\"') where ein='800000002'; select 'LOCKED'; select pg_sleep(0.5); commit;")
+      await locked
+      sql("insert into public.nonprofit_directory_categories(ein,category) values('800000002','food');")
+      await edited
+      sql("select public.test_assert((select c.search_document=d.search_document from public.nonprofit_directory_categories c join public.nonprofit_directory d using(ein) where c.ein='800000002'),'concurrent category insert copied stale text');")
+      sql(readFileSync("docs/plans/2026-10-08-nonprofit-category-search-index-rollback.sql", "utf8"))
+      sql("select public.test_assert(not exists(select 1 from information_schema.columns where table_schema='public' and table_name='nonprofit_directory_categories' and column_name='search_document'),'rollback left projection column'); select public.test_assert(public.search_nonprofit_directory_v2('zephyr',null,'food','800000001',21)->0->>'ein'='800000002','rollback lost canonical search result');")
       if (process.env.NONPROFIT_DIRECTORY_BENCHMARK) {
         const records = readFileSync(process.env.NONPROFIT_DIRECTORY_BENCHMARK, "utf8").trim().split("\n").map(JSON.parse)
         if (records.length > 10001 || records.some((r) => !/^\d{9}$/.test(r.ein))) throw new Error("Benchmark must be the bounded audited cohort")

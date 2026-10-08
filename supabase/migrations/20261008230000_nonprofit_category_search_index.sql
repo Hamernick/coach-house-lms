@@ -161,3 +161,5 @@ begin
 end;
 $$;
 
+-- Expose the bounded repair RPC after the migration commits.
+notify pgrst, 'reload schema';

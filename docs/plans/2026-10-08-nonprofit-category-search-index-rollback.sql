@@ -80,4 +80,5 @@ drop function public.backfill_nonprofit_category_search(text[],text);
 drop index public.nonprofit_category_text_idx;
 drop index public.nonprofit_category_text_missing_idx;
 alter table public.nonprofit_directory_categories drop column search_document;
+notify pgrst, 'reload schema';
 commit;

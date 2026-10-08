@@ -150,6 +150,7 @@ test(
         readFileSync("supabase/tests/nonprofit-state-search.fixtures.sql", "utf8"),
         readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
         readFileSync("supabase/migrations/20261008210000_nonprofit_stopword_state_search.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008220000_nonprofit_category_search_probe.sql", "utf8"),
         readFileSync("supabase/tests/nonprofit-state-search.assertions.sql", "utf8"),
       ].join("\n"))
       assert.match(stateSearchProof, /7830/, "state/query/category/cursor matrix completed")
@@ -158,6 +159,15 @@ test(
         readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
         readFileSync("supabase/migrations/20261008210000_nonprofit_stopword_state_search.sql", "utf8"),
         readFileSync("supabase/tests/nonprofit-stopword-index.assertions.sql", "utf8"),
+        "rollback;",
+      ].join("\n"))
+      sql([
+        "begin;",
+        readFileSync("supabase/migrations/20261008030000_nonprofit_state_search.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008210000_nonprofit_stopword_state_search.sql", "utf8"),
+        readFileSync("supabase/tests/nonprofit-category-probe.fixtures.sql", "utf8"),
+        readFileSync("supabase/migrations/20261008220000_nonprofit_category_search_probe.sql", "utf8"),
+        readFileSync("supabase/tests/nonprofit-category-probe.assertions.sql", "utf8"),
         "rollback;",
       ].join("\n"))
       if (process.env.NONPROFIT_DIRECTORY_BENCHMARK) {

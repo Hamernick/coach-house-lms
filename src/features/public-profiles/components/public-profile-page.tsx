@@ -420,8 +420,8 @@ export function PublicProfilePage({ profile }: { profile: PublicProfileView }) {
         ((profile.people?.length ?? 0) > 0 || profile.programs.length > 0) ? (
           <>
             <Separator />
-            <OrganizationPeople profile={profile} />
             <OrganizationActivity profile={profile} />
+            <OrganizationPeople profile={profile} />
           </>
         ) : null}
 

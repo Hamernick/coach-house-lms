@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createProgramAction, updateProgramAction } from "@/actions/programs"
 import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
+import { revalidateTagMock } from "./test-utils"
+
+vi.mock("@/lib/feature-flags", () => ({ publicSharingEnabled: true }))
 
 const actionMocks = vi.hoisted(() => ({
   requireServerSession: vi.fn(),
@@ -41,9 +44,35 @@ function prepareActor(supabase: Record<string, unknown>) {
 
 describe("program primary-object persistence", () => {
   beforeEach(() => {
+    revalidateTagMock.mockClear()
     for (const mock of Object.values(actionMocks)) {
       mock.mockReset()
     }
+  })
+
+  it.each([true, false])("saves only visibility (%s) within the active org and expires public projections", async (isPublic) => {
+    const query = {
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: { id: "program-1" }, error: null }),
+    }
+    const update = vi.fn((_values: Record<string, unknown>) => query)
+    prepareActor({ from: vi.fn(() => ({ update, select: () => query })) })
+    expect(await updateProgramAction("program-1", { isPublic })).toEqual({ ok: true })
+    expect(Object.fromEntries(Object.entries(update.mock.calls[0][0]).filter(([, value]) => value !== undefined))).toEqual({ is_public: isPublic })
+    expect(query.eq).toHaveBeenCalledWith("id", "program-1")
+    expect(query.eq).toHaveBeenCalledWith("user_id", "org-1")
+    expect(revalidateTagMock).toHaveBeenCalledWith("public-map-organizations", { expire: 0 })
+    expect(revalidateTagMock).toHaveBeenCalledWith("public-profiles", { expire: 0 })
+  })
+
+  it("denies visibility changes for a viewer without writing or invalidating public data", async () => {
+    const from = vi.fn()
+    prepareActor({ from })
+    actionMocks.canEditOrganization.mockReturnValue(false)
+    expect(await updateProgramAction("program-1", { isPublic: true })).toEqual({ error: "Forbidden" })
+    expect(from).not.toHaveBeenCalled()
+    expect(revalidateTagMock).not.toHaveBeenCalled()
   })
 
   it("merges builder updates without dropping future snapshot fields", () => {

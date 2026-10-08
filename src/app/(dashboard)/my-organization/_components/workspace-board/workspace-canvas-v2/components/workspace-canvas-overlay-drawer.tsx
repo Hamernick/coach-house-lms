@@ -313,6 +313,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             onClick={handleDataShortcutClick}
             className={cn(
               "nodrag nopan text-foreground size-9 h-9 w-9 rounded-xl",
+              "hidden",
               drawerExpanded &&
                 "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm"
             )}

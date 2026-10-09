@@ -445,3 +445,21 @@ for (const { width, height, theme } of visualCases) {
     }
   })
 }
+
+for (const step of ["account", "pricing"] as const) {
+  test(`onboarding ${step} scrolls the page with the pointer inside the form`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 600 })
+    await page.goto(`${fixture}?scenario=onboarding-${step}&rail=none`)
+    await expect(page.locator("[data-shell-ready]")).toHaveAttribute("data-shell-ready", "true")
+    const pageScroll = page.locator("[data-shell-scroll]")
+    const formScroll = page.locator('[data-onboarding-scroll-region="true"]')
+    await expect(formScroll).toBeVisible()
+    await expect.poll(() => pageScroll.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0)
+    await pageScroll.evaluate((element) => { element.scrollTop = 0 })
+    const box = await formScroll.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.move(box!.x + box!.width / 2, Math.min(box!.y + 80, 500))
+    await page.mouse.wheel(0, 400)
+    await expect.poll(() => pageScroll.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  })
+}

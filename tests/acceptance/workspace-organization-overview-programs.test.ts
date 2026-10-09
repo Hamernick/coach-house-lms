@@ -268,13 +268,13 @@ describe("workspace organization overview programs", () => {
       'data-org-profile-tabs-separator="true"'
     )
     expect(orgProfileNavigation).toContain(
-      "hidden w-full border-b px-6 sm:block"
+      "flex w-full border-b px-6"
     )
     expect(orgProfileNavigation).toContain(
-      "h-10 w-fit max-w-full items-end justify-start gap-1"
+      "h-10 w-fit max-w-full group-data-[orientation=horizontal]/tabs:h-10 items-end justify-start gap-1"
     )
     expect(orgProfileNavigation).toContain("h-10 flex-none items-center")
-    expect(orgProfileNavigation).toContain("after:bottom-0 after:z-10")
+    expect(orgProfileNavigation).toContain("group-data-[orientation=horizontal]/tabs:after:bottom-[-1px] after:z-10")
     expect(orgProfileNavigation).not.toContain(
       "h-10 w-full items-end justify-start gap-3"
     )

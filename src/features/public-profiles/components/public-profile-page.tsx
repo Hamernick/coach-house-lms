@@ -1,3 +1,4 @@
+import { FIND_PATH } from "@/lib/find/routes"
 import Link from "next/link"
 import { Building2Icon, ExternalLinkIcon, MapPinIcon } from "lucide-react"
 
@@ -354,7 +355,7 @@ export function PublicProfilePage({ profile, viewer = null }: { profile: PublicP
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
           <nav aria-label="Profile navigation" className="flex items-center justify-between gap-3 px-4">
             <Button asChild variant="ghost" className="rounded-full">
-              <Link href="/">Explore resources</Link>
+              <Link href={FIND_PATH}>Explore resources</Link>
             </Button>
             <PublicProfileCollectionButton id={profile.organizationId} kind="organization" viewer={viewer} />
           </nav>
@@ -438,8 +439,8 @@ export function PublicProfilePage({ profile, viewer = null }: { profile: PublicP
         ((profile.people?.length ?? 0) > 0 || profile.programs.length > 0) ? (
           <>
             <Separator />
-            <OrganizationPeople profile={profile} />
             <OrganizationActivity profile={profile} />
+            <OrganizationPeople profile={profile} />
           </>
         ) : null}
 

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { cn } from "@/lib/utils"
 import { ONBOARDING_PRICING_RETURN } from "@/lib/onboarding/pricing-return"
 import type { PublicHandleAvailabilityStatus } from "@/features/public-profiles/client"
 
@@ -190,7 +191,10 @@ export function OnboardingDialogContent({
 
         <div
           data-onboarding-scroll-region="true"
-          className="nodrag nopan min-h-0 flex-1 [scroll-padding-bottom:8rem] overflow-y-auto overscroll-contain px-4 py-0 md:px-6"
+          className={cn(
+            "nodrag nopan min-h-0 flex-1 [scroll-padding-bottom:8rem] overflow-y-auto px-4 py-0 md:px-6",
+            isInline ? "overscroll-auto" : "overscroll-contain",
+          )}
         >
           <div className="mx-auto w-full max-w-[640px] space-y-4 pb-4 sm:space-y-5 sm:pb-5 md:space-y-6 md:pb-6">
             <input type="hidden" name="intentFocus" value={intentFocus} />

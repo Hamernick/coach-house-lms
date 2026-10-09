@@ -1,4 +1,4 @@
-export { LegalConsentField, LegalDocumentPage } from "./components"
+export { LegalConsentNotice, LegalDocumentPage } from "./components"
 export {
   createSignupLegalConsent,
   isCurrentSignupLegalConsent,

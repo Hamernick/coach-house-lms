@@ -1,6 +1,5 @@
-// Explicit demo accounts only; tester-owned and unfinished real organizations remain visible.
+// Recording fixtures only; staff demo and unfinished real organizations remain visible.
 const DIRECTORY_FIXTURE_ORGANIZATION_IDS = new Set([
-  "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c", // testing123
   "886455ec-a664-4f13-83f1-471ddd1f5ffd", // Southside Community Table recording fixture
 ])
 

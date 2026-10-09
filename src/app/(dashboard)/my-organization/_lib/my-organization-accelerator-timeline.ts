@@ -329,15 +329,15 @@ export async function buildAcceleratorTimelineModules({
     )
   )
 
-  const moduleContextById = await loadModuleContextById({
-    supabase,
-    userId,
-    classSlugs: timelineClassSlugs,
-  })
-  const { contentRows, assignmentRows, moduleRows } = await loadTimelineModuleRows({
-    supabase,
-    moduleIds: timelineModuleIds,
-  })
+  const [moduleContextById, { contentRows, assignmentRows, moduleRows }] =
+    await Promise.all([
+      loadModuleContextById({
+        supabase,
+        userId,
+        classSlugs: timelineClassSlugs,
+      }),
+      loadTimelineModuleRows({ supabase, moduleIds: timelineModuleIds }),
+    ])
 
   const contentByModuleId = new Map<string, { videoUrl: string | null; resources: unknown }>()
   for (const row of contentRows) {

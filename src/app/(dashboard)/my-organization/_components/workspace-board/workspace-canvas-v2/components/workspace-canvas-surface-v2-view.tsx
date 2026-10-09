@@ -204,34 +204,32 @@ export function WorkspaceCanvasSurfaceV2View({
           container={flowFrameContainer}
           onOpenDataDrawer={onOpenWorkspaceDataDrawer}
         >
-          {shortcutItems.length > 0 ? (
-            <WorkspaceCardShortcutRail
-              items={shortcutItems}
-              dataAction={
-                <WorkspaceCanvasOverlayDrawer
-                  people={workspaceDataDrawerPeople}
-                  placedPersonIds={placedWorkspacePersonIds}
-                  viewerId={workspaceDataDrawerViewerId}
-                  organizationEditorData={workspaceDataDrawerOrganization}
-                  financeInput={workspaceDataDrawerFinance}
-                  documentsTab={workspaceDataDrawerDocuments}
-                  acceleratorInput={workspaceAcceleratorDrawerInput}
-                  acceleratorRoadmapSections={
-                    workspaceAcceleratorDrawerRoadmapSections
-                  }
-                  acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
-                  acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
-                  request={workspaceDataDrawerRequest}
-                  canEdit={workspaceDataDrawerCanEdit}
-                  uiPreferencesScope={uiPreferencesScope}
-                  peopleCanvasActions={{
-                    add: handleAddWorkspacePeopleToCanvas,
-                    remove: onRemoveWorkspacePersonFromCanvas,
-                  }}
-                />
-              }
-            />
-          ) : null}
+          <WorkspaceCardShortcutRail
+            items={shortcutItems}
+            dataAction={
+              <WorkspaceCanvasOverlayDrawer
+                people={workspaceDataDrawerPeople}
+                placedPersonIds={placedWorkspacePersonIds}
+                viewerId={workspaceDataDrawerViewerId}
+                organizationEditorData={workspaceDataDrawerOrganization}
+                financeInput={workspaceDataDrawerFinance}
+                documentsTab={workspaceDataDrawerDocuments}
+                acceleratorInput={workspaceAcceleratorDrawerInput}
+                acceleratorRoadmapSections={
+                  workspaceAcceleratorDrawerRoadmapSections
+                }
+                acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
+                acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
+                request={workspaceDataDrawerRequest}
+                canEdit={workspaceDataDrawerCanEdit}
+                uiPreferencesScope={uiPreferencesScope}
+                peopleCanvasActions={{
+                  add: handleAddWorkspacePeopleToCanvas,
+                  remove: onRemoveWorkspacePersonFromCanvas,
+                }}
+              />
+            }
+          />
           <WorkspaceCanvasSurfaceV2ViewportControls
             tutorialCalendarButtonCallout={
               tutorialCalendarButtonCallout ?? null

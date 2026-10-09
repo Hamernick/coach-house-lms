@@ -11,7 +11,7 @@ type AuthCardProps = {
 export function AuthCard({ title, description, children }: AuthCardProps) {
   return (
     <Card className="border-border/80 shadow-lg">
-      <CardHeader className="space-y-2 text-center">
+      <CardHeader className="gap-1 text-center">
         <CardTitle className="text-2xl font-semibold tracking-tight">{title}</CardTitle>
         {description ? (
           <CardDescription className="text-balance text-sm text-muted-foreground">

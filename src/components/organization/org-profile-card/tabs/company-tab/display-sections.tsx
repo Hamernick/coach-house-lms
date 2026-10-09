@@ -2,7 +2,6 @@
 
 import {
   AddressDisplay,
-  BrandLink,
   FieldText,
   FormRow,
   LinkText,
@@ -111,19 +110,6 @@ export function AddressPreview({ addressLines }: CompanyViewProps) {
   )
 }
 
-const socialFields: Array<{
-  key: keyof CompanyViewProps["company"]
-  label: string
-}> = [
-  { key: "twitter", label: "Twitter / X" },
-  { key: "facebook", label: "Facebook" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "instagram", label: "Instagram" },
-  { key: "youtube", label: "YouTube" },
-  { key: "tiktok", label: "TikTok" },
-  { key: "github", label: "GitHub" },
-]
-
 export function StoryPreview({ company }: CompanyViewProps) {
   const originStory =
     typeof company.originStory === "string"
@@ -184,63 +170,6 @@ export function StoryPreview({ company }: CompanyViewProps) {
   )
 }
 
-export function WebsitePreview({ company }: CompanyViewProps) {
-  if (!(typeof company.publicUrl === "string" && company.publicUrl.trim())) {
-    return null
-  }
-  return (
-    <FormRow title="Website">
-      <BrandLink href={company.publicUrl} />
-    </FormRow>
-  )
-}
-
-export function NewsletterPreview({ company }: CompanyViewProps) {
-  if (!(typeof company.newsletter === "string" && company.newsletter.trim())) {
-    return null
-  }
-  return (
-    <FormRow title="Newsletter">
-      <BrandLink href={company.newsletter} />
-    </FormRow>
-  )
-}
-
-export function DonationPreview({ company }: CompanyViewProps) {
-  if (!(typeof company.donateUrl === "string" && company.donateUrl.trim())) {
-    return null
-  }
-  return (
-    <FormRow title="Donation page">
-      <BrandLink href={company.donateUrl} />
-    </FormRow>
-  )
-}
-
-export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
-  if (!hasAnyBrandLink) {
-    return null
-  }
-
-  return (
-    <FormRow title="Social">
-      <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        {socialFields.map(({ key, label }) => {
-          const value = company[key]
-          if (typeof value === "string" && value.trim()) {
-            return (
-              <ProfileField key={String(key)} label={label}>
-                <BrandLink href={value} />
-              </ProfileField>
-            )
-          }
-          return null
-        })}
-      </div>
-    </FormRow>
-  )
-}
-
 export function BrandKitPreview({ company }: CompanyViewProps) {
   if (!hasWorkspaceBrandKitProfileContent(company)) {
     return null
@@ -259,10 +188,6 @@ export function ViewModeSections(props: CompanyViewProps) {
     { id: "contact", node: ContactPreview(props) },
     { id: "address", node: AddressPreview(props) },
     { id: "story", node: StoryPreview(props) },
-    { id: "website", node: WebsitePreview(props) },
-    { id: "newsletter", node: NewsletterPreview(props) },
-    { id: "donation", node: DonationPreview(props) },
-    { id: "social", node: SocialPreview(props) },
     { id: "brand-kit", node: BrandKitPreview(props) },
   ].filter((section) => Boolean(section.node))
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { z } from "zod"
-import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { BudgetTableRow } from "@/lib/modules"
 import { ORGANIZATION_ACTIVITY_KINDS } from "@/lib/organization/primary-objects"
 
@@ -94,7 +93,7 @@ export const ProgramWizardSchema = z.object({
   goalUsd: z.coerce.number().nonnegative().default(0),
   raisedUsd: z.coerce.number().nonnegative().default(0),
   features: z.array(z.string().min(1)).default([]),
-  isPublic: z.boolean().default(publicSharingEnabled),
+  isPublic: z.boolean().default(false),
   // Legacy fields kept for backwards compatibility with existing wizard step modules.
   description: z.string().max(2000).or(z.literal("")).default(""),
   location: z.string().max(160).or(z.literal("")).default(""),
@@ -168,5 +167,5 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   goalUsd: 0,
   raisedUsd: 0,
   features: [],
-  isPublic: publicSharingEnabled,
+  isPublic: false,
 }

@@ -27,6 +27,7 @@ let activityFails = false
 let organizationsFail = false
 let projectUnassigned = false
 let activity: Record<string, unknown>[] = []
+let organizations = [{ user_id: "assigned-org", profile: { name: "Assigned organization" } }]
 function query(table: string) {
   const calls: [string, unknown[]][] = []
   queries.push({ table, calls })
@@ -46,12 +47,10 @@ function query(table: string) {
       if (organizationsFail) return { data: null, error: { code: "offline" } }
     if (table === "organizations")
       return {
-        data: [
-          {
-            user_id: "assigned-org",
-            profile: { name: "Assigned organization" },
-          },
-        ],
+        data: organizations.filter((organization) => {
+          const ids = calls.find(([method, args]) => method === "in" && args[0] === "user_id")?.[1][1] as string[] | undefined
+          return !ids || ids.includes(organization.user_id)
+        }),
         error: null,
       }
     if (table === "organization_projects")
@@ -101,6 +100,7 @@ describe("coach dashboard", () => {
     organizationsFail = false
     projectUnassigned = false
     activity = []
+    organizations = [{ user_id: "assigned-org", profile: { name: "Assigned organization" } }]
     mocks.scope.mockResolvedValue({ mode: "all" })
     mocks.auth.mockResolvedValue({ userId: "coach", accessLevel: "coach" })
     mocks.from.mockImplementation(query)
@@ -161,6 +161,28 @@ describe("coach dashboard", () => {
     expect(result.scope).toBe("all")
     expect(result.organizations[0]?.href).toContain("coach=all")
     expect(queries.filter((q) => q.table === "organizations")).toHaveLength(2)
+  })
+  it.each(["coach", "developer"])("includes the staff demo throughout the %s dashboard while excluding recording fixtures", async (accessLevel) => {
+    const demoId = "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c"
+    const fixtureId = "886455ec-a664-4f13-83f1-471ddd1f5ffd"
+    organizations = [
+      { user_id: demoId, profile: { name: "Karissa is a Boss" } },
+      { user_id: fixtureId, profile: { name: "Recording fixture" } },
+    ]
+    mocks.auth.mockResolvedValue({ userId: "staff", accessLevel })
+    mocks.scope.mockResolvedValue(accessLevel === "coach"
+      ? { mode: "assigned", organizationIds: new Set([demoId, fixtureId]) }
+      : { mode: "all" })
+
+    const result = await loadCoachDashboard(accessLevel === "developer" ? "all" : "assigned")
+
+    expect(result.organizationCount).toBe(1)
+    expect(result.organizations).toEqual([{ id: demoId, name: "Karissa is a Boss", href: expect.stringContaining("Karissa%20is%20a%20Boss") }])
+    const scopedQueries = queries.filter((q) => q.calls.some(([method]) => method === "in"))
+    expect(scopedQueries).toHaveLength(4)
+    for (const q of scopedQueries) {
+      expect(q.calls).toContainEqual(["in", [q.table === "organizations" ? "user_id" : "org_id", [demoId]]])
+    }
   })
   it("reports missing activity without replacing it with fake events", async () => {
     activityFails = true

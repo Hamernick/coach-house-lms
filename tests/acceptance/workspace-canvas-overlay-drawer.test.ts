@@ -764,7 +764,7 @@ describe("workspace canvas overlay drawer", () => {
       "target.focus({ preventScroll: true })"
     )
     expect(panelSource).toContain(
-      'className="mx-auto box-border w-full max-w-3xl min-w-0 p-2 sm:p-3 [&_[data-slot=organization-profile-section]]:grid-cols-1 [&_div:has(>[data-slot=organization-profile-field])]:grid-cols-1"'
+      'className="mx-auto box-border w-full max-w-3xl min-w-0 select-text p-2 sm:p-3 [&_[data-slot=organization-profile-section]]:grid-cols-1 [&_div:has(>[data-slot=organization-profile-field])]:grid-cols-1"'
     )
     expect(controllerSource).toContain(
       "organizationEditorData.initialProfileTab"
@@ -782,7 +782,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(pageSource).not.toContain("showLegacyEditor")
     expect(profileHeaderControlsSource).toContain("View map profile")
     expect(profileHeaderControlsSource).toContain(
-      'className="absolute top-6 right-6 flex gap-2"'
+      'className="flex flex-wrap items-center justify-end gap-2 pb-3"'
     )
     expect(profileHeaderControlsSource).not.toContain(
       'className="absolute top-6 left-1/2 flex -translate-x-1/2 gap-2"'

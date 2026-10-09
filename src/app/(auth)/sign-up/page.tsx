@@ -99,7 +99,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const loginHref = `/login`
 
   return (
-    <AuthScreenShell>
+    <AuthScreenShell showBrand>
       <AuthCard
         title="Create your account"
         description="After email verification, Coach House will continue to your next step."

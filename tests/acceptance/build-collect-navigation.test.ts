@@ -34,7 +34,11 @@ describe("build-collect-navigation feature contract", () => {
     expect(source).toContain("<NavigationMenuTrigger")
     expect(source).toContain('<form action={FIND_PATH} method="get"')
     expect(source).toContain('name="q"')
-    expect(source).toContain('href: "/build"')
+    expect(source).toContain(
+      '{ href: "/sign-up?intent=build", label: "Sign up" }'
+    )
+    expect(source).toContain("<BuildCollectNavigation activeArea={activeArea} />")
+    expect(source).toContain("<NavigationCards items={BUILD_NAVIGATION_ITEMS} />")
   })
 
   it("keeps the build route composition-only and delegates its UI to the feature", () => {

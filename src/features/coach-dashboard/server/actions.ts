@@ -49,13 +49,8 @@ export async function loadCoachDashboard(
       issues.push("Organization directory could not be loaded.")
     ids = (allOrganizations.data ?? []).map((row) => row.user_id)
   }
-  ids = ids.filter(
-    (id) =>
-      ![
-        "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c",
-        "886455ec-a664-4f13-83f1-471ddd1f5ffd",
-      ].includes(id)
-  )
+  // Keep the recording fixture hidden; staff demonstration organizations remain visible.
+  ids = ids.filter((id) => id !== "886455ec-a664-4f13-83f1-471ddd1f5ffd")
   const coachFilter =
     scope === "all" ||
     (actorScope.mode === "assigned" && actorScope.canAccessUnassigned)

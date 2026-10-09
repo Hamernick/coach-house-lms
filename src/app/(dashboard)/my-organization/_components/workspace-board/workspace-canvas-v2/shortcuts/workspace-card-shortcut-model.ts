@@ -49,6 +49,7 @@ export type WorkspaceCardShortcutItemModel = {
 
 const WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
   "organization-overview",
+  "programs",
 ])
 
 const WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS =

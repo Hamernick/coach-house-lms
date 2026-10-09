@@ -11,7 +11,6 @@ describe("sign-up form schema", () => {
       email: "user@example.com",
       password: "password123",
       confirmPassword: "password123",
-      acceptedLegal: true,
     })
 
     expect(result.success).toBe(true)
@@ -22,7 +21,6 @@ describe("sign-up form schema", () => {
       email: "user@example.com",
       password: "password123",
       confirmPassword: "different123",
-      acceptedLegal: true,
     })
 
     expect(result.success).toBe(false)

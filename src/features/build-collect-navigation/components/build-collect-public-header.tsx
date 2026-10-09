@@ -196,7 +196,7 @@ export function BuildCollectPublicHeader({
   const builderCta =
     activeArea === "build"
       ? { href: "/sign-up?intent=build", label: "Start free" }
-      : { href: "/build", label: "Build" }
+      : { href: "/sign-up?intent=build", label: "Sign up" }
 
   return (
     <header

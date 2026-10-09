@@ -29,9 +29,8 @@ import { Input } from "@/components/ui/input"
 import { FIND_PATH } from "@/lib/find/routes"
 import {
   createSignupLegalConsent,
-  LegalConsentField,
+  LegalConsentNotice,
 } from "@/features/legal-consent"
-import { resolveGoogleAuthCapabilities } from "@/features/google-auth"
 
 const GoogleAuthPanel = dynamic(
   () =>
@@ -154,16 +153,8 @@ export function SignUpForm({
       email: "",
       password: "",
       confirmPassword: "",
-      acceptedLegal: false,
     },
   })
-  const acceptedLegal = form.watch("acceptedLegal")
-  const googleAuthConfigured = resolveGoogleAuthCapabilities({
-    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-    linkingEnabled: process.env.NEXT_PUBLIC_GOOGLE_LINKING_ENABLED,
-    loginEnabled: process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED,
-    signupEnabled: process.env.NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED,
-  }).signup
 
   useEffect(() => {
     if (status !== "success") return
@@ -277,18 +268,6 @@ export function SignUpForm({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="acceptedLegal"
-            render={({ field, fieldState }) => (
-              <LegalConsentField
-                checked={field.value}
-                disabled={isPending}
-                onCheckedChange={field.onChange}
-                error={fieldState.error?.message}
-              />
-            )}
-          />
           {status !== "idle" ? (
             <p
               className={`text-sm ${status === "success" ? "text-emerald-600" : "text-destructive"}`}
@@ -332,16 +311,12 @@ export function SignUpForm({
       <GoogleAuthPanel
         mode="signup"
         redirectTo={resolvedRedirectTo}
-        disabled={!acceptedLegal || isPending}
+        disabled={isPending}
         accountIntent={resolveLegacyAccountIntent(activeIntentFocus)}
         intentFocus={activeIntentFocus}
         signUpMetadata={signUpMetadata}
       />
-      {googleAuthConfigured && !acceptedLegal ? (
-        <p className="text-muted-foreground text-center text-xs">
-          Accept the Terms and Privacy Policy above to continue with Google.
-        </p>
-      ) : null}
+      <LegalConsentNotice />
       <div className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
         <Link href={resolvedLoginHref} className={authInlineLinkClassName}>

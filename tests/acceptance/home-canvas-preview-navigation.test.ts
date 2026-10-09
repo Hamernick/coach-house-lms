@@ -75,7 +75,7 @@ describe("home canvas preview navigation", () => {
     expect(publicHeaderSource).toContain(
       'activeArea === "build"\n      ? { href: "/sign-up?intent=build", label: "Start free" }'
     )
-    expect(publicHeaderSource).toContain(': { href: "/build", label: "Build" }')
+    expect(publicHeaderSource).toContain(': { href: "/sign-up?intent=build", label: "Sign up" }')
     expect(source.indexOf("<HomeCanvasMobileSidebarTrigger")).toBeGreaterThan(
       source.indexOf("<HomeCanvasLoginButton")
     )

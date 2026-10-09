@@ -1,7 +1,10 @@
 # Build and Collect Navigation
 
-Owns the public Collect/Build navigation contract and the dedicated `/build`
-landing surface. The root directory remains the Collect destination at `/`.
+Owns the public Collect/Build navigation, the `/build` landing surface, and the
+minimal home page at `/`. Explore leads to `/resources`, which contains the map,
+directory, profiles, guides, and collection/search dock. Home retains the shared
+header, an empty main canvas, and small Privacy Policy, Terms, and About controls.
+Legacy `/map` and `/find` links redirect to `/resources` with query parameters.
 
 ## Ownership
 

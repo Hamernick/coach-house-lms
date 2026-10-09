@@ -67,7 +67,7 @@ describe("onboarding gate", () => {
 
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
     const destination = await captureRedirect(() => Page())
-    expect(destination).toBe("/?member_onboarding=0&source=onboarding")
+    expect(destination).toBe("/resources?member_onboarding=0&source=onboarding")
   })
 
   it("renders onboarding workspace card while onboarding is still locked", async () => {
@@ -222,7 +222,7 @@ describe("onboarding gate", () => {
       completeMemberMapOnboardingAction(form)
     )
 
-    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe("/resources?member_onboarding=0&source=member_onboarding")
     expect(updateUser).toHaveBeenCalledWith({
       data: expect.objectContaining({
         onboarding_completed: true,

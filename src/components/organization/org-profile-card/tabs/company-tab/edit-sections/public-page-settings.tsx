@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { buildFindOrganizationHref } from "@/lib/find/routes"
 
 export function PublicPageSettings({
   company,
@@ -362,7 +363,7 @@ export function PublicPageSettings({
                 variant="secondary"
                 className="w-full lg:w-auto"
               >
-                <Link href={`/?organization=${encodeURIComponent(publicSlug)}`}>
+                <Link href={buildFindOrganizationHref(publicSlug)}>
                   Preview map profile
                 </Link>
               </Button>
@@ -370,7 +371,7 @@ export function PublicPageSettings({
                 url={
                   typeof window === "undefined"
                     ? undefined
-                    : `${window.location.origin}/?organization=${encodeURIComponent(publicSlug)}`
+                    : `${window.location.origin}${buildFindOrganizationHref(publicSlug)}`
                 }
                 title={company.name || company.publicSlug || "Organization"}
               />

@@ -28,6 +28,16 @@ const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next()
+  const pathname = request.nextUrl.pathname
+
+  // Documentation reads are public for every viewer. Avoid session/role lookups
+  // on page navigation and prefetch; mutations retain the normal auth pipeline.
+  if (
+    (request.method === "GET" || request.method === "HEAD") &&
+    (pathname === "/documentation" || pathname.startsWith("/documentation/"))
+  ) {
+    return response
+  }
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -50,7 +60,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   )

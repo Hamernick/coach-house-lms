@@ -25,13 +25,13 @@ function HomeCanvasMobileSidebarTrigger() {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       size="icon"
-      className="text-muted-foreground hover:bg-foreground/5 hover:text-foreground size-11 touch-manipulation rounded-md border-[color:var(--shell-border)] bg-transparent shadow-none md:hidden"
+      className="size-11 touch-manipulation rounded-full shadow-none md:hidden"
       aria-label={
         openMobile
-          ? "Close Find, Guides, and Saved"
-          : "Open Find, Guides, and Saved"
+          ? "Close sidebar"
+          : "Open sidebar"
       }
       aria-expanded={openMobile}
       onClick={toggleSidebar}
@@ -169,10 +169,7 @@ export function HomeCanvasPreviewHeader({
         <PublicThemeToggle
           variant="outline"
           size="icon"
-          className={cn(
-            "size-8 shrink-0 shadow-none",
-            showShellSidebar && "hidden md:inline-flex"
-          )}
+          className="relative size-8 shrink-0 touch-manipulation shadow-none after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-1/2"
         />
       }
       shellActions={

@@ -10,6 +10,8 @@ import { PublicMapIndex } from "@/components/public/public-map-index"
 import { updateResourceMapCanonicalStateAction } from "@/features/resource-map-admin"
 import { FIND_ORGANIZATION_QUERY_KEY, FIND_PATH } from "@/lib/find/routes"
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
+import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 
 import { fetchPublicMapViewerState } from "../viewer-state"
 import { AuthenticatedFindShell } from "./authenticated-find-shell"
@@ -19,6 +21,9 @@ const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT =
 
 export type PublicFindRouteProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
+  embedded?: boolean
+  initialOrganization?: PublicMapOrganization
+  initialResource?: ExternalResourceMapItem
 }
 
 function firstString(value: string | string[] | undefined) {
@@ -28,6 +33,9 @@ function firstString(value: string | string[] | undefined) {
 
 export async function PublicFindRoute({
   searchParams,
+  embedded = false,
+  initialOrganization,
+  initialResource,
 }: PublicFindRouteProps = {}) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const callbackParams = new URLSearchParams()
@@ -43,7 +51,7 @@ export async function PublicFindRoute({
   })
   if (authCallbackHref) redirect(authCallbackHref)
 
-  const requestedPublicSlug = firstString(
+  const requestedPublicSlug = initialOrganization ? (initialOrganization.publicSlug || initialOrganization.id) : firstString(
     resolvedSearchParams?.[FIND_ORGANIZATION_QUERY_KEY]
   )
     ?.trim()
@@ -55,8 +63,8 @@ export async function PublicFindRoute({
   const initialPublicSlug = requestedPublicSlug
     ? (organizations.find(
         (organization) =>
-          organization.publicSlug?.trim().toLowerCase() === requestedPublicSlug
-      )?.publicSlug ?? undefined)
+          (organization.publicSlug || organization.id).trim().toLowerCase() === requestedPublicSlug
+      ) ? requestedPublicSlug : undefined)
     : undefined
   const candidateTokens = [
     process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
@@ -65,6 +73,21 @@ export async function PublicFindRoute({
   const publicToken = candidateTokens
     .map((value) => value?.trim() ?? "")
     .find((value) => value.length > 0 && value.startsWith("pk."))
+
+  if (embedded) {
+    return (
+      <PublicMapIndex
+        embedded
+        organizations={organizations}
+        resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
+        mapboxToken={publicToken}
+        initialPublicSlug={initialPublicSlug}
+        initialResource={initialResource}
+        resourceItems={initialResource ? [initialResource] : undefined}
+        viewer={viewerState.viewer}
+      />
+    )
+  }
 
   if (viewerState.viewer) {
     const [shellState, defaultSidebarOpen] = await Promise.all([

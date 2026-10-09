@@ -310,7 +310,8 @@ async function revalidateOrganizationProgramViews(
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
-  revalidatePath("/")
+  revalidatePath("/map")
+  revalidatePath("/resources")
   try {
     const { data, error } = await supabase
       .from("organizations")

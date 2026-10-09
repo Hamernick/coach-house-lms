@@ -1,5 +1,6 @@
 "use client"
 
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import StatusIndicator from "@/components/8starlabs-ui/status-indicator"
 import { cn } from "@/lib/utils"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
@@ -36,28 +37,40 @@ export function PublicMapDirectoryStatusHeader({
 }
 
 export function PublicMapDirectoryStatusPill({
+  unstyled = false,
   className,
   count,
+  estimated = false,
   label = "Resources",
 }: {
   className?: string
   count: number | null
+  estimated?: boolean
   label?: string
+  unstyled?: boolean
 }) {
   const countLabel =
     count === null ? null : resolvePublicMapDirectoryStatusCount(count)
 
   return (
     <span
+      {...getReactGrabOwnerProps({
+        ownerId: "public-map-directory-status:active",
+        component: "PublicMapDirectoryStatusPill",
+        source: "src/components/public/public-map-index/directory-status-pill.tsx",
+        slot: "status",
+        tokenSource: "src/components/public/public-map-index/sidebar-theme.ts",
+        notes: "Active public directory listing count, independent of visible map pins.",
+      })}
       className={cn(
-        PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
+        "pointer-events-auto inline-flex h-8 shrink-0 items-center gap-2 text-xs font-medium",
+        !unstyled && [PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME, "rounded-full border px-2.5"],
         className
       )}
       aria-label={
         countLabel === null
           ? `${label} directory status: loading`
-          : `${label} directory status: active, ${countLabel}`
+          : `${estimated ? "Approximately " : ""}${countLabel} public directory listings; not a count of map pins or confirmed operating organizations`
       }
     >
       <span aria-hidden="true" className="inline-flex shrink-0">

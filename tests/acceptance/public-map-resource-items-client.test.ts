@@ -1,3 +1,4 @@
+import { clearFindResourceQueryCache, loadFindResourceQuery } from "@/features/find-resource-index/lib/client-cache"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -25,6 +26,7 @@ function buildResourceItemsResponse(resourceItems: unknown[]) {
 
 describe("public map resource items client", () => {
   afterEach(() => {
+    clearFindResourceQueryCache()
     clearPublicMapResourceItemsCache()
     vi.restoreAllMocks()
   })
@@ -264,7 +266,7 @@ describe("public map resource items client", () => {
     expect(resolvePublicMapDirectoryCount(19, null)).toBeNull()
     expect(resolvePublicMapDirectoryCount(19, 5_046)).toBe(5_065)
     expect(indexSource).toContain("resolvePublicMapDirectoryCount(")
-    expect(indexSource).toContain("filteredItems={directoryListItems}")
+    expect(indexSource).toContain("filteredItems={activeSearchContext?.items ?? filterState.filteredItems}")
     expect(surfaceSource).toContain("directoryCount={directoryCount}")
     expect(surfaceSource).not.toContain("directoryCount={filteredItems.length}")
   })
@@ -306,7 +308,7 @@ describe("public map resource items client", () => {
     ).toEqual([firstPageItem.id, selectedLaterItem.id])
   })
 
-  it("revalidates mounted resource lists when the tab becomes active", () => {
+  it("keeps tab activation stable while retaining scheduled refresh and reconnect", () => {
     const source = readFileSync(
       join(
         process.cwd(),
@@ -315,11 +317,37 @@ describe("public map resource items client", () => {
       "utf8"
     )
 
-    expect(source).toContain('window.addEventListener("focus"')
+    expect(source).not.toContain('window.addEventListener("focus"')
     expect(source).toContain('window.addEventListener("offline"')
     expect(source).toContain('window.addEventListener("online"')
-    expect(source).toContain('document.addEventListener("visibilitychange"')
+    expect(source).not.toContain('document.addEventListener("visibilitychange"')
     expect(source).toContain("PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS")
     expect(source).not.toContain('cache: "force-cache"')
+  })
+})
+
+
+describe("versioned resource query cache", () => {
+  afterEach(() => { clearFindResourceQueryCache(); vi.restoreAllMocks() })
+  const payload = { version: 3, revision: "v1", resourceItems: [], page: { hasMore: true, nextCursor: "next", totalCount: 90 } }
+  it("reuses fulfilled queries, deduplicates pending work and only fetches one page", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(payload), { headers: { ETag: '"v1"' } }))
+    const [first, second] = await Promise.all([loadFindResourceQuery("/api/test?mode=directory"), loadFindResourceQuery("/api/test?mode=directory")])
+    expect(first).toBe(second)
+    expect(await loadFindResourceQuery("/api/test?mode=directory")).toBe(first)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+  it("revalidates with an ETag and preserves identity on 304", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify(payload), { headers: { ETag: '"v1"' } })).mockResolvedValueOnce(new Response(null, { status: 304 }))
+    const first = await loadFindResourceQuery("/api/test?mode=directory")
+    expect(await loadFindResourceQuery("/api/test?mode=directory", true)).toBe(first)
+    expect(fetcher.mock.calls[1][1]).toMatchObject({ headers: { "If-None-Match": '"v1"' } })
+  })
+  it("keeps query caches isolated and permits retry after failure", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null, { status: 503 })).mockImplementation(async () => new Response(JSON.stringify(payload)))
+    await expect(loadFindResourceQuery("/api/test?q=food")).rejects.toThrow()
+    await loadFindResourceQuery("/api/test?q=food")
+    await loadFindResourceQuery("/api/test?q=health")
+    expect(fetcher).toHaveBeenCalledTimes(3)
   })
 })

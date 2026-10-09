@@ -2022,19 +2022,19 @@ describe("nonprofit documentation feature", () => {
     ).toHaveLength(8)
   })
 
-  it("uses the shared public and authenticated canvas shells", () => {
+  it("uses only the public shell without resolving account state", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
       "src/features/nonprofit-documentation/components/documentation-shell.tsx"
     )
 
-    expect(layout).toContain("resolveDashboardLayoutState")
-    expect(layout).toContain("readAppSidebarDefaultOpen")
-    expect(layout).toContain("shellState.userPresent ? shellState : null")
+    expect(layout).not.toContain("resolveDashboardLayoutState")
+    expect(layout).not.toContain("readAppSidebarDefaultOpen")
+    expect(layout).toContain("<DocumentationShell>{children}</DocumentationShell>")
     expect(shell).toContain("HomeCanvasFindShell")
-    expect(shell).toContain("<AppShell")
-    expect(shell).toContain("<DocumentationRail contextual />")
-    expect(shell).toContain("{headerSearch}")
+    expect(shell).not.toContain("<AppShell")
+    expect(shell).toContain("<DocumentationRail />")
+    expect(shell).toContain("<DocumentationSearchForm />")
   })
 
   it("keeps route files composition-only and exposes crawlable metadata", () => {

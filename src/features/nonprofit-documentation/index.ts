@@ -24,7 +24,6 @@ export {
   DocumentationSearchPage,
   DocumentationVisualFixture,
 } from "./components"
-export type { DocumentationShellState } from "./components"
 export {
   documentationSitemapEntries,
 } from "./lib/sitemap"

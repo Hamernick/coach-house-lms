@@ -21,22 +21,30 @@ function readRoute(relativePath: string) {
 }
 
 describe("public find routes", () => {
-  it("owns Find at the root and permanently redirects legacy links", () => {
+  it("owns discovery at /resources and leaves home clear with legacy redirects", () => {
     const rootRoute = readRoute("src/app/(public)/page.tsx")
-    const findRoute = readRoute(PUBLIC_FIND_ROUTE)
+    const resourcesRoute = readRoute("src/app/(public)/resources/page.tsx")
+    const mapRoute = readRoute("src/app/(public)/map/page.tsx")
+    const landing = readRoute("src/features/build-collect-navigation/components/public-home-landing.tsx")
     const nextConfig = readRoute("next.config.ts")
-    const sitemap = readRoute("src/app/sitemap.ts")
 
-    expect(rootRoute).toContain("<PublicFindRoute")
-    expect(rootRoute).toContain('alternates: { canonical: "/" }')
-    expect(findRoute).toContain("FIND_ORGANIZATION_QUERY_KEY")
-    expect(findRoute).toContain("initialPublicSlug={initialPublicSlug}")
+    expect(rootRoute).toContain("<PublicHomeLanding")
+    expect(rootRoute).not.toContain("PublicHomeResourceExplorer")
+    expect(rootRoute).toContain("resolvePublicAuthCallbackHref")
+    expect(landing).toContain("<BuildCollectPublicHeader")
+    expect(landing).toContain('<main aria-label="Home"')
+    expect(landing).toContain("<PublicMapFooter showClaim={false}")
+    expect(landing).not.toContain("PublicFindRoute")
+    expect(resourcesRoute).toContain("<PublicHomeResourceExplorer")
+    expect(resourcesRoute).toContain('canonical: "/resources"')
+    expect(mapRoute).toContain("permanentRedirect(buildFindHref(params))")
+    expect(nextConfig).toContain('source: "/map"')
     expect(nextConfig).toContain('source: "/find"')
-    expect(nextConfig).toContain('destination: "/"')
-    expect(nextConfig).toContain('source: "/find/:slug"')
-    expect(nextConfig).toContain('destination: "/?organization=:slug"')
-    expect(nextConfig.match(/permanent: true/g)).toHaveLength(2)
-    expect(sitemap).toContain("fetchPublishedPublicHandles")
+    expect(nextConfig).toContain('destination: "/resources"')
+    expect(nextConfig).toContain('destination: "/resources?organization=:slug"')
+    expect(nextConfig.match(/permanent: true/g)).toHaveLength(3)
+    expect(readRoute("src/app/sitemap.ts")).toContain("${origin}/resources")
+    expect(readRoute("src/lib/organization/reserved-public-slugs.ts")).toContain('"resources"')
   })
 
   it("uses the Mapbox Standard day and night basemap with streets", () => {
@@ -216,12 +224,13 @@ describe("public find routes", () => {
     }
   })
 
-  it("preserves selected organization detail wiring on the root query route", () => {
+  it("preserves selected organization detail wiring on the map query route", () => {
     const source = readRoute(PUBLIC_FIND_ROUTE)
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
     const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
     const firstInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={initialPublicSlug}"
+      "initialPublicSlug={initialPublicSlug}",
+      authenticatedBranchIndex
     )
     const secondInitialSlugIndex = source.indexOf(
       "initialPublicSlug={initialPublicSlug}",

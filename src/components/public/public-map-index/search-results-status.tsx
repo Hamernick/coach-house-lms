@@ -1,3 +1,7 @@
+"use client"
+
+import { useResourceDirectoryPagination } from "@/features/find-resource-index/client"
+
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 export function PublicMapSearchResultsStatus({
@@ -11,8 +15,10 @@ export function PublicMapSearchResultsStatus({
   resultCount: number
   searchPending: boolean
 }) {
-  const formattedCount = resultCount.toLocaleString()
-  const resultLabel = `${formattedCount} ${resultCount === 1 ? "result" : "results"}`
+  const pagination = useResourceDirectoryPagination()
+  const count = pagination?.totalCount ?? resultCount
+  const formattedCount = `${count.toLocaleString()}${pagination?.totalCount === undefined && pagination?.hasMore ? "+" : ""}`
+  const resultLabel = `${formattedCount} ${count === 1 ? "result" : "results"}`
   const statusLabel = searchPending
     ? `${resultLabel} · Updating map…`
     : resourceItemsLoadStatus === "loading"

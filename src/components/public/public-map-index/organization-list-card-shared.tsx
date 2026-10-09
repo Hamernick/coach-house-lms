@@ -7,10 +7,10 @@ import { buildPublicMapOrganizationListCardSurfaceProps } from "./react-grab"
 
 export const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   contentVisibility: "auto",
-  containIntrinsicSize: "80px",
+  containIntrinsicSize: "72px",
 } as const
 
-export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "min-h-20"
+export const PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME = "min-h-18"
 
 export function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)

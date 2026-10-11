@@ -27,8 +27,10 @@ to Pro. Scope: request-scoped verified-user deduplication, cookie-free public-re
 Proxy fast path, and exclusion of the independently bearer-authenticated coaching
 cron route. No UI, private-page caching, calendar timing, migration or provider
 changes. See [plan and evidence](../plans/2026-10-11-vercel-cpu-optimization.md).
-88 focused tests pass; hosted quality/review, merge and production measurement
-remain pending. Keep this lane separate from active UI/map worktrees.
+88 focused tests pass. PR [#285](https://github.com/Hamernick/coach-house-lms/pull/285)
+is open; hosted quality, code-owner approval, merge and production measurement
+remain pending. Automatic branch previews are disabled by the existing production-only
+Vercel rule. Keep this lane separate from active UI/map worktrees.
 
 Rapid Workspace UI release: `fix/rapid-ui-release-20261007` in `/private/tmp/coach-house-platform-rapid-ui-release-20261007`, based on current main `eb7c7d83`. Preserved user-reviewed localhost:3001 source in `feat/rapid-ui-ux-20261007` at `c1cf32d3`. Profile layout/links/mobile tabs, activity visibility, shortcut/navigation hiding and parallel server reads are implemented. Release audit adds mobile Find removal as explicitly requested, updates existing test expectations, and prepares required visual references. PR [#276](https://github.com/Hamernick/coach-house-lms/pull/276) is open. Run 37694419330 on e20cf0f7 passes static/acceptance/RLS/build and all owned navigation visual checks; aggregate quality is blocked by Marketplace desktop, three Drive snapshots and two shared-focus cases. The favicon privacy review fix b3425042 uses local link icons and passes nine contract tests; final-head CI, code-owner review, approved global public-sharing production activation and live verification remain pending. New activities default private even when sharing is enabled. Main already fails four unrelated Marketplace/Drive visual baselines; do not replace those references within this lane. Keep both worktrees until deployment is verified.
 

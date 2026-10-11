@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js"
 import { cache } from "react"
-import { getServerUser } from "@/lib/auth/server-user"
+import { getServerUser } from "@/server/auth/server-user"
 
 import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import { readActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"

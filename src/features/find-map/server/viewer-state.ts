@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { getServerUser } from "@/lib/auth/server-user"
+import { getServerUser } from "@/server/auth/server-user"
 
 export type PublicMapViewerState = {
   viewer: { id: string; email: string | null } | null

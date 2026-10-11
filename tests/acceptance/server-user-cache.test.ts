@@ -10,7 +10,7 @@ describe("server user request cache", () => {
       const ts = require("typescript");
       const React = require("react");
       const { renderToReadableStream } = require("next/dist/compiled/react-server-dom-webpack/server.node");
-      const source = ts.transpileModule(readFileSync("src/lib/auth/server-user.ts", "utf8"), {
+      const source = ts.transpileModule(readFileSync("src/server/auth/server-user.ts", "utf8"), {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
       }).outputText;
       const loaded = { exports: {} };

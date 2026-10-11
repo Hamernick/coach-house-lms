@@ -239,7 +239,6 @@
       "tests/acceptance/people-taxonomy-persistence.test.ts",
       "tests/acceptance/prepush-lint-optimization.test.ts",
       "tests/acceptance/prototype-lab-production-boundary.test.ts",
-      "tests/acceptance/proxy-auth-routes.test.ts",
       "tests/acceptance/public-find-performance-contract.test.ts",
       "tests/acceptance/public-home-surface.test.ts",
       "tests/acceptance/public-map-organization-curation.test.ts",
@@ -271,7 +270,8 @@
       "tests/acceptance/resource-map-import-records.test.ts",
       "tests/acceptance/resource-map-source-evidence.test.ts",
       "tests/acceptance/resource-map-source-search-plan.test.ts",
-      "tests/acceptance/seed-full-account-dry-run.test.ts"
+      "tests/acceptance/seed-full-account-dry-run.test.ts",
+      "tests/acceptance/server-user-cache.test.ts"
     ],
     "integration": [
       "tests/acceptance/accelerator-entitlements.test.ts",
@@ -293,6 +293,7 @@
       "tests/acceptance/budget-table-columns.test.ts",
       "tests/acceptance/coach-dashboard.test.ts",
       "tests/acceptance/coaching-booking.test.ts",
+      "tests/acceptance/coaching-calendar-cron.test.ts",
       "tests/acceptance/core-document-drive-source.test.ts",
       "tests/acceptance/documents-index-row-sorting.test.ts",
       "tests/acceptance/email-ops.test.ts",
@@ -378,6 +379,7 @@
       "tests/acceptance/project-wizard-ownership.test.ts",
       "tests/acceptance/prototype-finance-plan-response-inbox.test.ts",
       "tests/acceptance/prototype-finance-release-plan.test.ts",
+      "tests/acceptance/proxy-auth-routes.test.ts",
       "tests/acceptance/public-home-map-preview-selection.test.ts",
       "tests/acceptance/public-map-actions.test.ts",
       "tests/acceptance/public-map-cluster-runtime.test.ts",
@@ -410,6 +412,7 @@
       "tests/acceptance/roadmap-calendar-month-agenda.test.ts",
       "tests/acceptance/roadmap-editor-status.test.ts",
       "tests/acceptance/search-route.test.ts",
+      "tests/acceptance/server-user-consumers.test.ts",
       "tests/acceptance/supabase-management-api-auth.test.ts",
       "tests/acceptance/workspace-accelerator-card-checklist.test.ts",
       "tests/acceptance/workspace-accelerator-card-panel.test.ts",

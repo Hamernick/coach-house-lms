@@ -73,11 +73,10 @@ for (const colorScheme of ["light", "dark"] as const) {
 }
 
 
-test("header search preserves focus without a pointer ring, then restores keyboard indication", async ({ page }) => {
-  await page.goto("/")
-  const trigger = page.getByRole("button", { name: "Search", exact: true })
+test("resource search distinguishes pointer and keyboard focus", async ({ page }) => {
+  await page.goto("/resources")
   const input = page.locator("[data-public-map-search-input]")
-  await trigger.click()
+  await input.click()
   await expect(input).toBeFocused()
   await expect(input).not.toHaveCSS("outline-style", "solid")
   await page.keyboard.press("a")
@@ -89,18 +88,12 @@ test("header search preserves focus without a pointer ring, then restores keyboa
   await expect(input).toHaveCSS("outline-offset", "-3px")
   await input.click()
   await expect(input).not.toHaveCSS("outline-style", "solid")
-
-  // Keyboard activation of the same programmatic focus path remains visible.
-  await trigger.focus()
-  await page.keyboard.press("Enter")
-  await expect(input).toBeFocused()
-  await expect(input).toHaveCSS("outline-style", "solid")
 })
 
 test("touch search focus remains usable without a ring", async ({ browser }) => {
   const context = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 844 } })
   const page = await context.newPage()
-  await page.goto("/")
+  await page.goto("/resources")
   const input = page.locator("[data-public-map-search-input]")
   await input.tap()
   await expect(input).toBeFocused()

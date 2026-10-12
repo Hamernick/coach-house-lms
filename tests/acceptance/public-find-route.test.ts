@@ -148,7 +148,7 @@ describe("public find routes", () => {
 
     expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
     expect(publicMapSource).toContain(
-      "mapOverlay={memberOnboardingState.overlay}"
+      "mapOverlay={<>{memberOnboardingState.overlay}"
     )
     expect(mapSurfaceSource).toContain('data-public-map-overlay-layer=""')
     expect(mapSurfaceSource).toContain(
@@ -191,7 +191,7 @@ describe("public find routes", () => {
 
     expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
     expect(publicMapSource).toContain(
-      "mapOverlay={memberOnboardingState.overlay}"
+      "mapOverlay={<>{memberOnboardingState.overlay}"
     )
     expect(previewControlsSource).toContain(
       "PublicMapMemberOnboardingPreviewToggle"
@@ -433,11 +433,13 @@ describe("public find routes", () => {
     expect(memberRailSource).toContain('data-public-map-tabbed-rail=""')
     expect(memberRailSource).toContain('data-public-map-tab-list=""')
     expect(memberRailSource).toContain(
-      "const hasGuides = Boolean(onGuideSelect)"
+      "const hasGuides = showGuidesTab && Boolean(onGuideSelect)"
     )
-    expect(memberRailSource).toContain(">Find</span>")
-    expect(memberRailSource).toContain(">Guides</span>")
-    expect(memberRailSource).toContain(">My Map</span>")
+    const tabTriggers = readRoute("src/components/public/public-map-index/member-tab-triggers.tsx")
+    expect(memberRailSource).toContain("<PublicMapMemberTabTriggers")
+    expect(tabTriggers).toContain(">Find</span>")
+    expect(tabTriggers).toContain(">Guides</span>")
+    expect(tabTriggers).toContain("<PublicMapCollectedTabLabel")
   })
 
   it("wires category filtering through the search rail and map markers", () => {
@@ -495,7 +497,7 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain(
       "filteredOrganizations={filterState.filteredOrganizations}"
     )
-    expect(searchCardSource).toContain("PublicMapCategoryFilter")
+    expect(searchCardSource).toContain("onActiveGroupChange")
     expect(categoryFilterSource).toContain(
       'aria-label="Filter resources by category"'
     )
@@ -570,7 +572,7 @@ describe("public find routes", () => {
     expect(drawerSearchHandlersSource).toContain(
       "setActiveSnapIndex((current) => (current === 0 ? 1 : current))"
     )
-    expect(searchCardSource).toContain('aria-label="Clear search"')
+    expect(searchCardSource).toContain('aria-label={canCancel ? "Cancel search" : "Clear search"}')
     expect(searchCardSource).toContain("onFocus={onSearchEngage}")
     expect(searchCardSource).toContain("aria-busy={searchPending}")
     expect(searchResultsStatusSource).toContain(
@@ -583,7 +585,7 @@ describe("public find routes", () => {
     expect(organizationListSource).toContain(
       'data-public-map-search-empty="true"'
     )
-    expect(organizationListSource).toContain("No service listings match")
+    expect(organizationListSource).toContain("No listings match")
     expect(resourceItemsSource).toContain("resourceItemsLoadByEndpoint")
     expect(resourceItemsSource).toContain(
       "warmPublicMapListItemSearchCache(resourceItems)"
@@ -616,7 +618,7 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain(
       "preferNationalFallback: includeSeedResources && !initialPublicSlug"
     )
-    expect(publicMapSource).toContain("filteredItems={directoryListItems}")
+    expect(publicMapSource).toContain("filteredItems={activeSearchContext?.items ?? filterState.filteredItems}")
     expect(publicMapSource).toContain("selectedItemId={selectedListItemId}")
     expect(publicMapSource).toContain(
       "selectedResourceItem={selectedResourceItem}"

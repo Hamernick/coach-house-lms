@@ -7,10 +7,9 @@ import { cn } from "@/lib/utils"
 type FormationSummaryProps = {
   formationStatus: FormationStatusOption
   className?: string
-} & (
-  | { contained?: true; radioId?: never }
-  | { contained: false; radioId: string }
-)
+  contained?: boolean
+  radioId?: string
+}
 
 export function OrganizationFormationStatusSummary({
   formationStatus,
@@ -26,9 +25,9 @@ export function OrganizationFormationStatusSummary({
         className,
       )}
     >
-      {contained ? (
+      {!radioId ? (
         <span aria-hidden className="flex size-4 shrink-0 items-center justify-center rounded-full border border-primary">
-          <span className="size-2 rounded-full bg-primary" />
+          {contained ? <span className="size-2 rounded-full bg-primary" /> : null}
         </span>
       ) : (
         <RadioGroupItem

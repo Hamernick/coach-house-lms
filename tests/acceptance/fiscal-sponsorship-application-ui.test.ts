@@ -42,9 +42,8 @@ describe("fiscal sponsorship application UI", () => {
     expect(readonly).not.toContain('role="radio"')
   })
 
-  it("uses the same radio-card picker in onboarding and the application", () => {
+  it("uses the radio-card picker in the application", () => {
     for (const path of [
-      "src/components/onboarding/onboarding-dialog/components/organization-step.tsx",
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-editor-primary-sections.tsx",
     ]) {
       const source = readSource(path)

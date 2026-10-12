@@ -26,7 +26,7 @@ type PersistCheckoutSubscriptionInput = {
 function resolveSubscriptionStatus(status: string): SubscriptionStatus {
   return ALLOWED_SUBSCRIPTION_STATUSES.includes(status as SubscriptionStatus)
     ? (status as SubscriptionStatus)
-    : "trialing"
+    : "incomplete"
 }
 
 export async function persistCheckoutSubscription({
@@ -81,9 +81,10 @@ export async function persistCheckoutSubscription({
 
   try {
     const admin = createSupabaseAdminClient()
-    await admin
+    const { error } = await admin
       .from("subscriptions" satisfies keyof Database["public"]["Tables"])
       .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+    if (error) throw error
   } catch (error) {
     console.error("Unable to persist subscription after checkout", {
       sessionId: checkout.id,
@@ -92,6 +93,7 @@ export async function persistCheckoutSubscription({
       redirectTarget,
       error,
     })
+    throw new Error("Subscription activation is pending", { cause: error })
   }
 
   return {

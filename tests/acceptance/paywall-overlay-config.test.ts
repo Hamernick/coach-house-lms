@@ -80,6 +80,8 @@ describe("paywall overlay query handling", () => {
     expect(getSafeInternalPaywallPath("https://bad.example")).toBeNull()
     expect(getSafeInternalPaywallPath("//bad.example/path")).toBeNull()
     expect(getSafeInternalPaywallPath("/workspace")).toBe("/workspace")
+    expect(getSafeInternalPaywallPath("/\\bad.example")).toBeNull()
+    expect(getSafeInternalPaywallPath("/\t/bad.example")).toBeNull()
     expect(
       buildStripeCheckoutPath({
         plan: "operations_support",

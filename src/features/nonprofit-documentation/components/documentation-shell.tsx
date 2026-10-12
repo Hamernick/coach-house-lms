@@ -123,7 +123,7 @@ export function DocumentationShell({
         context="public"
         contentPresentation="full-bleed"
         brandHref="/documentation"
-        showWorkspaceHome={state.userPresent}
+        showWorkspaceHome
         showMemberWorkspace={state.showMemberWorkspace}
       >
         <div className="flex min-h-0 flex-1">

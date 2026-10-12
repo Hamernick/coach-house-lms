@@ -84,3 +84,12 @@ Snapshot and assemble the current-main release candidate, then fix activation pe
 - Recoverable snapshot: `~/.local/share/coach-house/worktree-backups/mvp-release-20261012T181202Z/` contains tracked binary patches, changed/untracked files and hashes for320 paths.
 - Three-way integration resolved10 conflicted files. Retained main onboarding scroll-chain and auth/Find fixes; kept latest workspace-on-Free, inline onboarding, activity targeting and publication-withdrawal behavior. Main-only migrations remain present. All retained source additions were copied without collisions.
 - No previously agreed features are excluded by scope freeze. Only the abandoned connected planner and other-chat public-map redesign/canvas-rail work are outside this release.
+
+
+## Activation and migration checkpoint
+
+- Checkout success now requires a saved active/trialing subscription. Returned database errors and missing subscription expansion show bounded retry/recovery, not a successful unlock. Inactive subscriptions show billing recovery. Checkout creation fails closed when the selected organization cannot be resolved; setup errors reopen pricing with the original return context. Backslash/control-character return paths are rejected.
+- Focused billing/return/overlay/webhook checks: 45 passing before the final JSX lint adjustment; focused lint passes after moving recovery rendering outside try/catch. The selected organization is covered separately from the buyer.
+- Recovered 15 remote-only migration files directly from linked Supabase history. These represent already-applied schema, not new feature deployment. Linked `db push --dry-run` lists exactly `20261012163000_gate_free_workspace_document_writes.sql`; nothing was applied remotely.
+- A migration-fetch command accidentally targeted the root checkout after temporary-folder preparation failed. Fetched content was archived, tracked migration files restored from the index, and only files newly created by that fetch removed using filesystem creation times. Root migration status is clean; source preview was untouched. Recovery archive: `/var/folders/l2/jpghvb_52t10fnrzxcs0bpd40000gn/T/mvp-remote-history-2j63adjp`.
+- Full TypeScript check after Next route generation reports 124 diagnostics, mostly stale test fixtures; two application errors identified and corrected (document fixture entitlement, documentation workspace navigation). Remaining type/CI failures are release blockers, not waived. Browser/payment/provider verification remains open.

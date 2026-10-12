@@ -6,6 +6,10 @@ for (const colorScheme of ["light", "dark"] as const) {
   test(`shared controls keep visible, contrasting focus (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme })
     await page.goto("/visual-regression/project-feedback?scenario=accelerator")
+    // The lazy-mounted setup form focuses its first field. Wait for that
+    // initial focus before checking deliberate pointer/keyboard transitions.
+    const input = page.getByTestId("setup-preview").locator("#orgName")
+    await expect(input).toBeFocused()
     const button = page.getByRole("button", { name: /^(Fail|Allow) saves$/ })
     await button.click()
     await expect(button).not.toHaveCSS("outline-style", "solid")
@@ -15,7 +19,6 @@ for (const colorScheme of ["light", "dark"] as const) {
     await expect(button).toHaveCSS("outline-width", "2px")
     await expect(button).toHaveCSS("outline-style", "solid")
 
-    const input = page.getByTestId("setup-preview").locator("#orgName")
     const notes = page.getByTestId("lesson-preview").locator("textarea")
     for (const control of [input, notes]) {
       await control.click()

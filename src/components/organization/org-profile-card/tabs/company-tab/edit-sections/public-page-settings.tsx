@@ -143,6 +143,7 @@ export function PublicPageSettings({
   return (
     <FormRow
       title="Public Map Profile"
+      focusKey="public-page"
       description="Publish your organization on the Coach House map index."
     >
       <div className="grid gap-4">

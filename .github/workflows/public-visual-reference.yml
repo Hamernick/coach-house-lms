@@ -27,7 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Generate public references for review
-        run: pnpm test:visual:update tests/visual/build-collect-navigation.visual.spec.ts tests/visual/public-shell.visual.spec.ts
+        run: pnpm test:visual:update all tests/visual/build-collect-navigation.visual.spec.ts tests/visual/public-shell.visual.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:

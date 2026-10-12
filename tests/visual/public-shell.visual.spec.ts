@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { mockPublicResourceDirectory } from "./fixtures/public-resource-directory"
 
 async function stabilizeForScreenshot(page: Page) {
   await page.addStyleTag({
@@ -295,6 +296,7 @@ test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
 for (const width of [390, 768, 1024, 1440]) {
   test(`public Resources keeps its map and search dock reachable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
+    await mockPublicResourceDirectory(page)
     await page.goto("/resources?react-grab=0")
     const map = page.locator("[data-public-map-card]")
     const dock = page.getByRole("navigation", { name: "Resource search and collection" })
@@ -313,6 +315,7 @@ for (const width of [390, 768, 1024, 1440]) {
 }
 
 test("public Resources searches and clears from its floating dock", async ({ page }) => {
+  await mockPublicResourceDirectory(page)
   await page.goto("/resources?react-grab=0")
   const search = page.getByRole("searchbox", { name: "Find organizations and resources" })
   await expect(search).toBeVisible()
@@ -321,5 +324,6 @@ test("public Resources searches and clears from its floating dock", async ({ pag
   await expect(page.locator("[data-public-map-search-results-status]")).toBeVisible()
   await search.press("Escape")
   await expect(search).toHaveValue("")
+  await search.press("Escape")
   await expect(page.getByRole("heading", { name: "Find Nearby" })).toBeVisible()
 })

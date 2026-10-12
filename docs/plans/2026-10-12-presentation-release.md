@@ -10,8 +10,21 @@ User now authorizes shipping public surfaces and a working guest fiscal MVP; thi
 - [x] Review pending migration dependency chain, apply only needed migrations with intake off, verify ledger and RLS.
 - [x] Configure internal host/reviewers, delivery/retention scheduling and secrets.
 - [ ] Activate submission/email flags after release gates; verify actual delivery. Provider webhook tracking remains separately disabled.
-- [ ] Commit/sync main, secret scan, PR/current-head hosted quality/review, affected Linux visuals.
-- [ ] Deploy public pages; activate guest submission only after required storage/email readiness.
+- [x] Commit/sync main and scan outgoing changes for secrets; PR #286 merged by Caleb as `7989b377`.
+- [ ] Complete current-head hosted quality/review and affected Linux visuals in follow-up PR #287.
+- [x] Deploy public pages: Vercel production `dpl_AuzbNEqTBB5Ttpqym5bAun5Sxv2m` Ready on `7989b377`; all six public routes return 200.
+- [ ] Activate guest submission/email only after remaining release checks.
 - [ ] Live controlled submission: one project, filled fiscal view, overview, two reviewer notifications and three emails; retry makes no duplicates.
 
-Deferred: optional profile import/new onboarding connection, final media/copy polish. Vercel login restored. Thirteen migrations applied atomically and verified, optional account-first/profile migrations excluded. Production intake and sending remain disabled. PR #286 has current-head CI in progress; independent review is required but the sole collaborator is also its author. No production deployment or actual email delivery claimed yet.
+Deferred: optional profile import/new onboarding connection, final media/copy polish. Thirteen migrations are applied; all fiscal tables have RLS. Host/reviewer setup and production secrets/schedules are configured. Intake, UI submission and sending flags remain false; no real application or email delivery is claimed.
+
+Production browser review confirms the new Build/menu and Resources interfaces and the fiscal preview with disabled submission. Unauthorized worker requests return 401; guest session/submission requests return 503 while disabled. Database inspection found zero guest submissions or email jobs.
+
+PR #286 was manually merged before aggregate quality passed. Static, acceptance and RLS pass; Next compilation passed but `/admin` initial JavaScript exceeded its 1000 KB budget by 0.7 KB. Visual assertions still targeted the removed homepage drawer. PR #287 addresses those issues and hides deferred profile-import copy. It must pass required checks and independent review before merge. Do not interpret the deployed public pages as fiscal MVP sign-off.
+
+Activation after gates:
+1. Verify the deployed main SHA, then enable `FISCAL_GUEST_INTAKE_ENABLED`, `FISCAL_GUEST_SUBMISSION_UI_ENABLED`, `FISCAL_GUEST_EMAILS_ENABLED`, and `FISCAL_STAFF_EMAILS_ENABLED` in production.
+2. Redeploy that verified production revision to pick up environment changes. Keep profile import and provider delivery-webhook tracking disabled.
+3. Verify guest session creation, draft save/reload, input validation and CAPTCHA without bypassing verification.
+4. Caleb submits one controlled application. Verify exactly one private project, populated Fiscal Sponsorship and Overview, Karissa/Joel assignment and in-app notifications.
+5. Verify applicant receipt and both reviewer emails. Provider acceptance is distinct from inbox delivery. Retry must not duplicate the project or messages.

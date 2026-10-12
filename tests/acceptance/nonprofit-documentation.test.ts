@@ -147,7 +147,8 @@ describe("nonprofit documentation feature", () => {
   it("gives every article a distinct authored image without a shared fallback", () => {
     const pages = DOCUMENTATION_SEARCH_DOCUMENTS.filter(
       ({ href }) =>
-        ![DOCUMENTATION_PATH, `${DOCUMENTATION_PATH}/marketplace`].includes(
+        // Intake is a working form, not an illustrated article.
+        ![DOCUMENTATION_PATH, `${DOCUMENTATION_PATH}/marketplace`, `${DOCUMENTATION_PATH}/fiscal-sponsorship`].includes(
           href
         )
     ).map(({ href }) => href.slice(DOCUMENTATION_PATH.length + 1))
@@ -178,6 +179,7 @@ describe("nonprofit documentation feature", () => {
     expect(DOCUMENTATION_NAVIGATION.map((section) => section.title)).toEqual([
       "Get started",
       "Best practices",
+      "Fund your project",
       "Tools",
       "Resources",
     ])
@@ -197,7 +199,7 @@ describe("nonprofit documentation feature", () => {
         "Marketplace",
       ])
     )
-    expect(items.find((item) => item.title === "Map")?.href).toBe("/")
+    expect(items.find((item) => item.title === "Map")?.href).toBe("/resources")
     expect(items.find((item) => item.title === "Quickstart")?.href).toBe(
       "/documentation/quickstart"
     )

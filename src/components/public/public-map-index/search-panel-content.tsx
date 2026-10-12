@@ -142,6 +142,7 @@ export function PublicMapOrganizationsStack({
   resourceItemsLoadStatus,
   scrollable = false,
   bounded = false,
+  paged = false,
   selectedItemId,
   selectedOrgId = null,
 }: {
@@ -161,6 +162,7 @@ export function PublicMapOrganizationsStack({
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
   scrollable?: boolean
   bounded?: boolean
+  paged?: boolean
   selectedItemId: string | null
   selectedOrgId?: string | null
 }) {
@@ -187,6 +189,7 @@ export function PublicMapOrganizationsStack({
         remotePagination
         scrollable={scrollable}
         bounded={bounded}
+        paged={paged}
         leadingContent={leadingContent}
         onClearCategory={onClearCategory}
         onClearQuery={onClearQuery}

@@ -129,6 +129,7 @@ export function PublicMapPlatformOrganizationListCard({
           </Avatar>
           <div className="min-w-0 flex-1 pt-0.5">
             <p
+              data-public-map-list-title=""
               className="text-foreground truncate text-base leading-snug font-semibold"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,

@@ -5,7 +5,8 @@ import { PublicHomeLanding } from "@/features/build-collect-navigation"
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 
 export const metadata: Metadata = {
-  title: "Home",
+  title: "The platform for nonprofits",
+  description: "Find, save, and share nonprofits. Build and run your organization with a shared Workspace, guided training, and Executive Coaches.",
   alternates: { canonical: "/" },
 }
 

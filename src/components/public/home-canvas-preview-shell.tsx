@@ -14,7 +14,7 @@ import { HomeCanvasLoginButton } from "@/components/public/home-canvas-login-but
 import type { CanvasSectionId } from "@/components/public/home-canvas-preview-config"
 import { Button } from "@/components/ui/button"
 import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
-import { BuildCollectPublicHeader } from "@/features/build-collect-navigation"
+import { BuildCollectPublicHeader } from "@/features/build-collect-navigation/client"
 import { cn } from "@/lib/utils"
 
 function HomeCanvasMobileSidebarTrigger() {
@@ -134,6 +134,7 @@ type HomeCanvasPreviewHeaderProps = {
   rightOpen: boolean
   showAuthActions?: boolean
   showPublicSearch?: boolean
+  showPublicNavigation?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
 }
@@ -146,6 +147,7 @@ export function HomeCanvasPreviewHeader({
   rightOpen,
   showAuthActions = true,
   showPublicSearch = true,
+  showPublicNavigation = true,
   showShellSidebar,
   showRightRailToggle,
 }: HomeCanvasPreviewHeaderProps) {
@@ -157,6 +159,7 @@ export function HomeCanvasPreviewHeader({
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
       showPublicSearch={showPublicSearch}
+      showPublicNavigation={showPublicNavigation}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton

@@ -18,6 +18,7 @@ export const RESERVED_PUBLIC_ORGANIZATION_SLUGS = new Set([
   "favicon",
   "find",
   "fiscal-sponsorship",
+  "fiscalsponsorship",
   "forgot-password",
   "go",
   "home",

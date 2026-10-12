@@ -21,7 +21,7 @@ function readRoute(relativePath: string) {
 }
 
 describe("public find routes", () => {
-  it("owns discovery at /resources and leaves home clear with legacy redirects", () => {
+  it("owns discovery at /resources and keeps the marketing home separate with legacy redirects", () => {
     const rootRoute = readRoute("src/app/(public)/page.tsx")
     const resourcesRoute = readRoute("src/app/(public)/resources/page.tsx")
     const mapRoute = readRoute("src/app/(public)/map/page.tsx")
@@ -31,7 +31,8 @@ describe("public find routes", () => {
     expect(rootRoute).toContain("<PublicHomeLanding")
     expect(rootRoute).not.toContain("PublicHomeResourceExplorer")
     expect(rootRoute).toContain("resolvePublicAuthCallbackHref")
-    expect(landing).toContain("<BuildCollectPublicHeader")
+    expect(landing).toContain("<PublicHomeLandingHeader")
+    expect(readRoute("src/features/build-collect-navigation/components/public-home-landing-header.tsx")).toContain("<BuildCollectPublicHeader")
     expect(landing).toContain('<main aria-label="Home"')
     expect(landing).toContain("<PublicMapFooter showClaim={false}")
     expect(landing).not.toContain("PublicFindRoute")

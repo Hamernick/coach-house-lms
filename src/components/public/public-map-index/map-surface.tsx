@@ -1,5 +1,7 @@
 "use client"
 
+import type { DirectoryFormationCounts } from "./directory-status-pill"
+
 import dynamic from "next/dynamic"
 import {
   useEffect,
@@ -70,6 +72,7 @@ export type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
   sidebarMode: SidebarMode
   directoryCount: number | null
+  directoryFormationCounts?: DirectoryFormationCounts
   directoryCountEstimated?: boolean
   filteredItems: PublicMapListItem[]
   filteredOrganizations: PublicMapOrganization[]
@@ -138,6 +141,7 @@ export function PublicMapSurface(props: PublicMapSurfaceProps) {
   sidebarMode,
   directoryCount,
   directoryCountEstimated = false,
+  directoryFormationCounts,
   filteredItems,
   filteredOrganizations,
   selectedItemId,
@@ -360,7 +364,7 @@ export function PublicMapSurface(props: PublicMapSurfaceProps) {
           {embedded ? <PublicMapLoadingState loading={!mapReady && !mapError} /> : null}
           {!embedded ? <PublicMapLocationControl
             {...locationControl}
-            directoryCount={directoryCount} directoryCountEstimated={directoryCountEstimated}
+            directoryCount={directoryCount} directoryFormationCounts={directoryFormationCounts} directoryCountEstimated={directoryCountEstimated}
           /> : null}
           <PublicMapWeatherController
             coordinates={locationControl.coordinates}
@@ -423,7 +427,7 @@ export function PublicMapSurface(props: PublicMapSurfaceProps) {
       map={mapSurface}
       panel={sidebar}
       toolbar={tokenAvailable ? <>
-        <PublicMapLocationControl {...locationControl} directoryCount={directoryCount} directoryCountEstimated={directoryCountEstimated} inline />
+        <PublicMapLocationControl {...locationControl} directoryCount={directoryCount} directoryFormationCounts={directoryFormationCounts} directoryCountEstimated={directoryCountEstimated} inline />
         <FindMapWeatherCard weather={weather} unstyled />
       </> : null}
     />

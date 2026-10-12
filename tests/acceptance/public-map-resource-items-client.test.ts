@@ -4,7 +4,7 @@ import { join } from "node:path"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { resolvePublicMapDirectoryCount } from "@/components/public/public-map-index/directory-status-pill"
+import { resolvePublicMapDirectoryCount, resolveDirectoryFormationCounts } from "@/components/public/public-map-index/directory-status-pill"
 import {
   clearPublicMapResourceItemsCache,
   loadPublicMapResourceItems,
@@ -350,4 +350,15 @@ describe("versioned resource query cache", () => {
     await loadFindResourceQuery("/api/test?q=health")
     expect(fetcher).toHaveBeenCalledTimes(3)
   })
+})
+
+
+it("counts reported formation statuses without treating unknown listings as registered", () => {
+  expect(resolveDirectoryFormationCounts([
+    { formationStatus: "approved" },
+    { formationStatus: "in_progress" },
+    { formationStatus: "pre_501c3" },
+    { formationStatus: null },
+  ])).toEqual({ registered: 1, inProgress: 2 })
+  expect(resolveDirectoryFormationCounts([])).toEqual({ registered: 0, inProgress: 0 })
 })

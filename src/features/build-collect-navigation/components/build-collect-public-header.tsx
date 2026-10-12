@@ -33,12 +33,12 @@ import type {
   BuildCollectNavigationItem,
 } from "../types"
 
-const MENU_FIGURES: Record<string, MenuFigureName> = {
-  [`/login?redirect=${encodeURIComponent(FIND_PATH)}`]: "drawer",
-  "/workspace": "exploded",
-  "/accelerator": "terrain",
-  "/documentation": "slow",
-  "/pricing": "basket",
+const MENU_FIGURES: Partial<Record<BuildCollectNavigationItem["id"], MenuFigureName>> = {
+  collections: "drawer",
+  workspace: "exploded",
+  accelerator: "terrain",
+  documentation: "slow",
+  pricing: "basket",
 }
 
 function BuildCollectBrand({
@@ -55,13 +55,13 @@ function BuildCollectBrand({
         hideOnDesktop && "md:hidden"
       )}
     >
-      <span className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+      <span className="relative flex size-8 shrink-0 items-center justify-center">
         <Image
           src="/coach-house-logo-light.png"
           alt=""
           width={32}
           height={32}
-          className="block dark:hidden"
+          className="block size-full rounded-[6px] object-contain dark:hidden"
           unoptimized
           priority
         />
@@ -70,7 +70,7 @@ function BuildCollectBrand({
           alt=""
           width={32}
           height={32}
-          className="hidden dark:block"
+          className="hidden size-full object-contain dark:block"
           unoptimized
           priority
         />
@@ -87,15 +87,15 @@ function BuildCollectBrand({
   )
 }
 
-function NavigationCards({ items }: { items: BuildCollectNavigationItem[] }) {
+function NavigationCards({ items, onNavigate }: { items: BuildCollectNavigationItem[]; onNavigate: () => void }) {
   return (
     <ul className="grid w-max max-w-[calc(100vw-3.5rem)] gap-1 p-1 md:grid-cols-[auto_auto]">
       {items.map((item) => {
-        const figure = MENU_FIGURES[item.href]
+        const figure = MENU_FIGURES[item.id]
         return (
-          <li key={item.href}>
+          <li key={item.id}>
             <NavigationMenuLink asChild className="h-full flex-row items-center gap-3 rounded-2xl p-3 [--hairline-plate:var(--popover)] hover:[--hairline-plate:var(--accent)] focus:[--hairline-plate:var(--accent)]">
-              <Link href={item.href} prefetch={item.href === "/documentation" ? true : undefined}>
+              <Link href={item.href} onClick={onNavigate} prefetch={item.href.startsWith("/build#") ? true : undefined}>
                 {figure ? <MenuFigure name={figure} /> : null}
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-medium">{item.label}</span>
@@ -122,7 +122,9 @@ function BuildCollectNavigation({
 
   function handleMenuChange(value: string) {
     setOpenMenu(value)
-    if (value === "build") router.prefetch("/documentation")
+    if (value === "build") {
+      router.prefetch("/build")
+    }
   }
 
   return (
@@ -144,7 +146,7 @@ function BuildCollectNavigation({
             Collect
           </NavigationMenuTrigger>
           <NavigationMenuContent className="absolute left-1/2 w-max -translate-x-1/2 group-data-[viewport=false]/navigation-menu:rounded-2xl">
-            <NavigationCards items={COLLECT_NAVIGATION_ITEMS} />
+            <NavigationCards items={COLLECT_NAVIGATION_ITEMS} onNavigate={() => setOpenMenu("")} />
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem value="build" className="static">
@@ -155,7 +157,7 @@ function BuildCollectNavigation({
             Build
           </NavigationMenuTrigger>
           <NavigationMenuContent className="absolute left-1/2 w-max -translate-x-1/2 group-data-[viewport=false]/navigation-menu:rounded-2xl">
-            <NavigationCards items={BUILD_NAVIGATION_ITEMS} />
+            <NavigationCards items={BUILD_NAVIGATION_ITEMS} onNavigate={() => setOpenMenu("")} />
           </NavigationMenuContent>
         </NavigationMenuItem>
       </NavigationMenuList>
@@ -169,6 +171,7 @@ export function BuildCollectPublicHeader({
   hideBrandOnDesktop = false,
   shellActions,
   showPublicSearch = true,
+  showPublicNavigation = true,
   themeAction,
 }: {
   activeArea: BuildCollectActiveArea
@@ -176,6 +179,7 @@ export function BuildCollectPublicHeader({
   hideBrandOnDesktop?: boolean
   shellActions?: ReactNode
   showPublicSearch?: boolean
+  showPublicNavigation?: boolean
   themeAction?: ReactNode
 }) {
   const router = useRouter()
@@ -191,9 +195,9 @@ export function BuildCollectPublicHeader({
     >
       <BuildCollectBrand hideOnDesktop={hideBrandOnDesktop} />
 
-      <div className="col-span-2 row-start-2 flex min-w-0 items-center justify-center min-[480px]:col-span-1 min-[480px]:col-start-2 min-[480px]:row-start-1">
+      {showPublicNavigation ? <div className="col-span-2 row-start-2 flex min-w-0 items-center justify-center min-[480px]:col-span-1 min-[480px]:col-start-2 min-[480px]:row-start-1">
         <BuildCollectNavigation activeArea={activeArea} />
-      </div>
+      </div> : null}
 
       <div className="col-start-2 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-3 min-[480px]:col-start-3">
         {showPublicSearch && activeArea === "collect" ? (

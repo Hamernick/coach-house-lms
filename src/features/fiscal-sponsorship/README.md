@@ -37,3 +37,9 @@
 - The intended real version should generate application/agreement/grant request
   documents from persisted applicant data, route signable documents through
   DocuSeal, and store executed files plus audit metadata in Documents.
+
+## Public entry
+
+`/documentation/fiscal-sponsorship` houses requirements and inline signup, draft and submission UI. `/fiscalsponsorship` permanently redirects there. Applicants use builder intent; `fund` remains donor intent. Public visits only read account state. Explicit Start/resume uses the authenticated, owner-only `start_public_fiscal_intake` RPC, preserving existing profiles and safely reusing one intake project. Existing draft and submission actions still enforce access and revision checks. No Workspace entitlement is granted.
+
+Requires migration `20261010090000_public_fiscal_intake.sql` before intake starts work against a deployed database. It has isolated database coverage in `pnpm test:rls:fiscal`; production is not migrated by local tests. Full free-tier profile/navigation and document-upload access review remains tracked in the homepage product journey plan. Completing information does not approve sponsorship or promise funding.

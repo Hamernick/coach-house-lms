@@ -79,6 +79,7 @@ export function PublicMapListMetadataStrip({
 }) {
   return (
     <div
+      data-public-map-list-metadata=""
       className={cn(
         "text-muted-foreground mt-0.5 flex max-w-full items-center gap-2 text-sm leading-snug",
         className

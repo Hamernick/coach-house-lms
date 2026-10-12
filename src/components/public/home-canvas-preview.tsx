@@ -223,7 +223,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                             Pricing is currently unavailable in this preview.
                           </p>
                           <Button asChild className="mt-4 rounded-xl">
-                            <Link href="/home-canvas?section=pricing">
+                            <Link href="/pricing">
                               Open pricing
                             </Link>
                           </Button>

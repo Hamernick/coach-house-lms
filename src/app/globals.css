@@ -215,10 +215,13 @@
 
 /* Match the home shell surround when browser overscroll exposes the document. */
 html.light:has([data-public-home-scroll]),
-html.light body:has([data-public-home-scroll]),
-html.light:has([data-public-home-landing]),
-html.light body:has([data-public-home-landing]) {
+html.light body:has([data-public-home-scroll]) {
   background-color: var(--muted);
+}
+
+html:has([data-public-home-landing]),
+html body:has([data-public-home-landing]) {
+  background-color: var(--background);
 }
 
 @layer base {

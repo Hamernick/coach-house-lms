@@ -52,7 +52,7 @@ import {
 } from "./public-map-index/use-resource-map-items"
 import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
 import { usePublicMapLocationWeather } from "./public-map-index/use-public-map-location-weather"
-import { resolvePublicMapDirectoryCount } from "./public-map-index/directory-status-pill"
+import { resolvePublicMapDirectoryCount, resolveDirectoryFormationCounts } from "./public-map-index/directory-status-pill"
 import {
   useFocusPublicMapCameraTarget,
   useInitialSidebarMode,
@@ -366,10 +366,10 @@ export function PublicMapIndex({
       embedded={embedded}
       containerRef={containerRef}
       sidebarMode={sidebarMode}
+      directoryFormationCounts={resolveDirectoryFormationCounts(organizations)}
       directoryCountEstimated={directory.countEstimated}
       directoryCount={resolvePublicMapDirectoryCount(
-        organizations.length,
-        totalResourceCount
+        organizations.length, totalResourceCount
       )}
       filteredItems={activeSearchContext?.items ?? filterState.filteredItems}
       filteredOrganizations={filterState.filteredOrganizations}

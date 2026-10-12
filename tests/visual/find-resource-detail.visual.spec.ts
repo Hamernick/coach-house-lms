@@ -49,7 +49,7 @@ for (const width of [1280, 390]) {
       .filter({ hasText: shelter.title })
     await expect(result).toBeVisible()
     await result.click()
-    const detail = page.locator('[data-public-map-profile="resource"]')
+    const detail = page.getByRole("region", { name: "Resource profile", exact: true })
     await expect(
       detail.getByRole("heading", { name: shelter.title, exact: true })
     ).toBeVisible()

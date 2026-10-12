@@ -1,27 +1,27 @@
 /* Leave room for complete result rows and their controls on short screens. */
-.layout:has([data-public-map-paged-results]) [data-public-map-screen] {
+.public-map-embedded-layout:has([data-public-map-paged-results]) [data-public-map-screen] {
   --map-available-height: min(var(--map-expanded-height), max(5rem, calc(100svh - 26rem)));
   --map-results-height: var(--map-available-height);
 }
 
-.layout:has([data-public-map-paged-results]) [data-public-map-pinned] {
+.public-map-embedded-layout:has([data-public-map-paged-results]) [data-public-map-pinned] {
   padding-bottom: 0;
 }
 
 /* The dock covers the bottom; only the scrolled top edge fades. */
-.layout [data-public-map-result-feed] {
+.public-map-embedded-layout [data-public-map-result-feed] {
   --feed-bottom-clearance: calc(var(--map-feed-dock-overlap, 32px) + 16px);
   scroll-padding-bottom: var(--feed-bottom-clearance);
 }
 
-.layout [data-public-map-result-feed] {
+.public-map-embedded-layout [data-public-map-result-feed] {
   --map-scroll-fade-inset: 0px;
 }
 
 /* Match the shared 64px scroll fade. Alpha reveals the actual page surface,
    so light, dark and system themes never acquire a mismatched color strip. */
-.layout [data-public-map-result-feed][data-scrolled="true"],
-.layout [data-public-map-explorer-panel][data-scrolled="true"] {
+.public-map-embedded-layout [data-public-map-result-feed][data-scrolled="true"],
+.public-map-embedded-layout [data-public-map-explorer-panel][data-scrolled="true"] {
   mask-image: linear-gradient(
     to bottom,
     transparent var(--map-scroll-fade-inset),
@@ -32,39 +32,39 @@
   );
 }
 
-.layout [data-public-map-feed-content] {
+.public-map-embedded-layout [data-public-map-feed-content] {
   /* At the end, the claim action can scroll fully above the dock. */
   padding-bottom: var(--feed-bottom-clearance);
 }
 
-.layout:has([data-public-map-paged-results]) [data-compact="true"] [data-public-map-screen] {
+.public-map-embedded-layout:has([data-public-map-paged-results]) [data-compact="true"] [data-public-map-screen] {
   --map-results-height: min(var(--map-available-height), clamp(5rem, calc(var(--map-available-height) * 0.5), 11.25rem));
 }
 
-.layout [data-public-map-paged-results] article {
+.public-map-embedded-layout [data-public-map-paged-results] article {
   height: 5rem;
   min-height: 5rem;
   padding: 0;
   content-visibility: visible !important;
-  animation: result-enter 180ms ease-out both;
+  animation: public-map-result-enter 180ms ease-out both;
 }
 
-@keyframes result-enter {
+@keyframes public-map-result-enter {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .layout [data-public-map-paged-results] article { animation: none; }
+  .public-map-embedded-layout [data-public-map-paged-results] article { animation: none; }
 }
 
-.layout [data-public-map-paged-results] [data-public-map-result-trigger] {
+.public-map-embedded-layout [data-public-map-paged-results] [data-public-map-result-trigger] {
   height: 100%;
   border-radius: inherit;
   padding: 0.75rem 1rem;
 }
 
-.layout [data-public-map-paged-results] [data-public-map-list-title] {
+.public-map-embedded-layout [data-public-map-paged-results] [data-public-map-list-title] {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -73,16 +73,16 @@
   line-height: 1.125rem;
 }
 
-.layout [data-public-map-paged-results] [data-public-map-list-metadata] {
+.public-map-embedded-layout [data-public-map-paged-results] [data-public-map-list-metadata] {
   font-size: 0.75rem;
   line-height: 1rem;
 }
 
-.layout [data-public-map-paged-results] [data-public-map-list-metadata] > div {
+.public-map-embedded-layout [data-public-map-paged-results] [data-public-map-list-metadata] > div {
   flex-wrap: nowrap;
 }
 
-.layout [data-public-map-paged-results] [data-public-map-list-metadata] span span:last-child {
+.public-map-embedded-layout [data-public-map-paged-results] [data-public-map-list-metadata] span span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

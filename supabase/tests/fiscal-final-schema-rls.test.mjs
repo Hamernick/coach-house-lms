@@ -144,8 +144,10 @@ try {
     runSql("supabase/migrations/20261010170000_guest_fiscal_email_proof.sql")
     runSql("supabase/tests/guest-fiscal-email-proof.assertions.sql")
     runSql("supabase/tests/guest-fiscal-profile-claim.bootstrap.sql")
-    runSql("supabase/migrations/20261010180000_guest_fiscal_profile_claim.sql")
-    runSql("supabase/tests/guest-fiscal-profile-claim.assertions.sql")
+    if (!process.argv.includes("--release-mvp")) {
+      runSql("supabase/migrations/20261010180000_guest_fiscal_profile_claim.sql")
+      runSql("supabase/tests/guest-fiscal-profile-claim.assertions.sql")
+    }
     runSql("supabase/tests/guest-fiscal-reviewer-scope.assertions.sql")
     runSql("supabase/migrations/20261011090000_guest_fiscal_followup.sql")
     runSql("supabase/migrations/20261011100000_guest_fiscal_followup_notifications.sql")

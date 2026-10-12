@@ -8,7 +8,7 @@ import { useCollapsingMap } from "./use-collapsing-map"
 import { PublicMapEmbeddedBackdrop } from "./embedded-map-backdrop"
 import { usePublicMapPageScroll } from "./use-public-map-page-scroll"
 import { EmbeddedProfileActiveContext } from "./embedded-profile"
-import styles from "./embedded-layout.module.css"
+import "./embedded-layout.css"
 
 export function PublicMapEmbeddedLayout({
   contentActive = false,
@@ -31,7 +31,7 @@ export function PublicMapEmbeddedLayout({
   // Keep the map inside the established screen; surrounding glass stays separate.
   return (
     <EmbeddedProfileActiveContext.Provider value={contentActive}>
-    <div ref={contentRef} className={cn(styles.layout, "pointer-events-none mx-auto flex w-full max-w-5xl min-w-0 flex-col items-center gap-2")}>
+    <div ref={contentRef} className={cn("public-map-embedded-layout", "pointer-events-none mx-auto flex w-full max-w-5xl min-w-0 flex-col items-center gap-2")}>
       <PublicMapEmbeddedBackdrop screenRef={screenRef} contentRef={contentRef} screenVisible={!contentActive} />
       <div data-public-map-pinned={pinned ? "" : undefined} data-compact={compact} aria-hidden={contentActive || undefined} inert={contentActive || undefined} className={cn(contentActive ? "pointer-events-none invisible h-0 w-full overflow-hidden" : "w-full max-w-2xl shrink-0", pinned && !contentActive && "sticky top-0 z-30 pb-2")}>
         <Card data-public-map-card="" className="pointer-events-auto gap-0 rounded-[32px] shadow-none">

@@ -29,12 +29,26 @@ const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next()
   const pathname = request.nextUrl.pathname
+  // Public documentation has no account-specific content; mutations still verify auth.
+  if ((request.method === "GET" || request.method === "HEAD") &&
+      (pathname === "/documentation" || pathname.startsWith("/documentation/"))) {
+    return response
+  }
+  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  )
+  const isAuthRoute = AUTH_ROUTES.has(pathname)
+  const isCoachRestricted = isCoachRestrictedPath(pathname)
 
-  // Documentation reads are public for every viewer. Avoid session/role lookups
-  // on page navigation and prefetch; mutations retain the normal auth pipeline.
+  // With no cookies there is no browser session to refresh. Limit the fast
+  // path to public page reads; guarded routes, APIs and mutations stay verified.
   if (
     (request.method === "GET" || request.method === "HEAD") &&
-    (pathname === "/documentation" || pathname.startsWith("/documentation/"))
+    !pathname.startsWith("/api/") &&
+    !isProtected &&
+    !isAuthRoute &&
+    !isCoachRestricted &&
+    request.cookies.getAll().length === 0
   ) {
     return response
   }
@@ -60,10 +74,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  )
-  const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)
@@ -81,7 +91,7 @@ export async function proxy(request: NextRequest) {
     return redirectResponse
   }
 
-  if (user && isCoachRestrictedPath(pathname)) {
+  if (user && isCoachRestricted) {
     const { data: platformStaff } = await supabase
       .from("platform_staff_members")
       .select("access_level")
@@ -109,5 +119,7 @@ function copyCookies(source: NextResponse, destination: NextResponse) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|.*\\..*|api/auth).*)"],
+  // This machine-only route verifies its own bearer secret. It does not need
+  // browser session refresh; keep all other page/API session behavior intact.
+  matcher: ["/((?!_next|.*\\..*|api/auth|api/internal/cron/coaching-calendar/?$).*)"],
 }

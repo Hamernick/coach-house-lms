@@ -5,7 +5,7 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), admin: vi.fn() }))
 vi.mock("server-only", () => ({}))
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: mocks.admin }))
-vi.mock("@/lib/env", () => ({ env: { RESEND_API_KEY: "re_test", RESEND_WEBHOOK_SECRET: "whsec_dGVzdC13ZWJob29rLXNpZ25pbmcta2V5" } }))
+vi.mock("@/lib/env", () => ({ env: { RESEND_API_KEY: "re_test", RESEND_WEBHOOK_SECRET: "whsec_" + Buffer.from("test-webhook-signing-key").toString("base64") } }))
 import { POST } from "@/app/api/webhooks/resend/route"
 import { recordVerifiedFiscalDelivery } from "@/lib/email/fiscal-delivery"
 

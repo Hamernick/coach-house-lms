@@ -8,7 +8,7 @@ import { guestApplicationPayload } from "@/features/fiscal-sponsorship/lib/guest
 import { guestCorrectionDraft, parseGuestFollowup } from "@/features/fiscal-sponsorship/lib/guest-followup"
 import { guestSubmissionInput } from "@/features/fiscal-sponsorship/lib/guest-submission-input"
 import { filterPrivateTelemetry } from "@/lib/telemetry-privacy"
-const secret = "followup-test-secret-at-least-32-characters"
+const secret = "test-followup-".repeat(4)
 const reference = "20000000-0000-4000-8000-000000000001"
 const answers = {
  applicantFirstName: "Sam", applicantLastName: "River", primaryEmail: "sam@example.test", mailingStreetAddress: "1 Main St", mailingStreetAddress2: "",

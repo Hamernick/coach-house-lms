@@ -684,7 +684,11 @@ describe("public find routes", () => {
       "src/features/find-map/server/viewer-state.ts"
     )
 
-    expect(viewerStateSource).toContain("supabase.auth.getUser()")
+    expect(viewerStateSource).toContain('from "@/server/auth/server-user"')
+    expect(viewerStateSource).toContain("getServerUser(supabase)")
+    expect(readRoute("src/server/auth/server-user.ts")).toContain(
+      "supabase.auth.getUser()"
+    )
     expect(viewerStateSource).not.toContain('.from("profiles")')
     expect(viewerStateSource).not.toContain("buildOnboardingFlowDefaults")
     expect(viewerStateSource).not.toContain("memberProfile")

@@ -93,3 +93,10 @@ Snapshot and assemble the current-main release candidate, then fix activation pe
 - Recovered 15 remote-only migration files directly from linked Supabase history. These represent already-applied schema, not new feature deployment. Linked `db push --dry-run` lists exactly `20261012163000_gate_free_workspace_document_writes.sql`; nothing was applied remotely.
 - A migration-fetch command accidentally targeted the root checkout after temporary-folder preparation failed. Fetched content was archived, tracked migration files restored from the index, and only files newly created by that fetch removed using filesystem creation times. Root migration status is clean; source preview was untouched. Recovery archive: `/var/folders/l2/jpghvb_52t10fnrzxcs0bpd40000gn/T/mvp-remote-history-2j63adjp`.
 - Full TypeScript check after Next route generation reports 124 diagnostics, mostly stale test fixtures; two application errors identified and corrected (document fixture entitlement, documentation workspace navigation). Remaining type/CI failures are release blockers, not waived. Browser/payment/provider verification remains open.
+
+
+## Current CI checkpoint
+
+- Release PR #288, candidate `62c017d0`: hosted static and RLS pass. Local document safety28, repaired acceptance96 and billing/return focused cases pass. The webhook test now imports a second application module; regenerated acceptance project classification so the required inventory guard can run the full suite.
+- Previous visual run had127 passed/26 failed. Public fixture/selector/reference fixes are being reviewed independently in #289; do not duplicate or revert that lane. This release still needs its internal shell/Tools references and keyboard-focus case reviewed. No screenshot threshold was weakened.
+- Public map curation remains available to platform admins; ordinary members still land in Workspace. Original source preview remains untouched. Required quality and browser/payment/rollout gates remain open.

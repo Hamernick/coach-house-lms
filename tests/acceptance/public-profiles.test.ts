@@ -309,7 +309,7 @@ describe("public-profiles feature contract", () => {
     const publicHeader = readSource(
       "src/components/organization/org-profile-card/public-card-header.tsx"
     )
-    const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
+    const publicMapQuery = readSource("src/lib/public-map/organization-projection.ts")
 
     expect(presence).toContain('name: "donateUrl"')
     expect(presence).toContain("Adds a Donate button")

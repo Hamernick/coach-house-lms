@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
@@ -12,6 +12,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
+
+import { PaywallOverlay } from "@/components/paywall/paywall-overlay"
+import { UpgradeButton } from "./nav-user/upgrade-button"
 
 import { useNavUserMenu } from "./nav-user/hooks/use-nav-user-menu"
 import { NavUserMenuContent } from "./nav-user/nav-user-menu-content"
@@ -28,6 +31,8 @@ const AccountSettingsDialog = dynamic(
 )
 
 type NavUserProps = {
+  showUpgrade?: boolean
+  planLabel?: string
   user: {
     name: string | null
     title?: string | null
@@ -43,6 +48,8 @@ type NavUserProps = {
 }
 
 export function NavUser({
+  showUpgrade = false,
+  planLabel,
   user,
   isAdmin = false,
   showOrgAdmin = false,
@@ -53,6 +60,8 @@ export function NavUser({
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const upgradeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [settingsInitialTab, setSettingsInitialTab] =
     useState<AccountSettingsTabKey>("profile")
   const registeredAccountMenuActions = useAppShellAccountMenuActions()
@@ -93,6 +102,13 @@ export function NavUser({
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
       <div ref={containerRef} className="relative">
         <SidebarMenu>
+          {showUpgrade ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Upgrade" aria-label="Upgrade" aria-haspopup="dialog">
+                <UpgradeButton ref={upgradeTriggerRef} onClick={() => setUpgradeOpen(true)} />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : null}
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -140,12 +156,15 @@ export function NavUser({
           user={user}
           displayName={displayName}
           displayEmail={displayEmail}
+          showUpgrade={showUpgrade}
+          planLabel={planLabel}
           avatarFallback={avatarFallback}
           isAdmin={isAdmin}
           showOrgAdmin={showOrgAdmin}
           canAccessOrgAdmin={canAccessOrgAdmin}
           accountMenuActions={accountMenuActions}
           signOutPending={signOutPending}
+          onOpenUpgrade={() => setUpgradeOpen(true)}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenSettings={(tab = "profile") => {
             setMenuOpen(false)
@@ -159,6 +178,13 @@ export function NavUser({
           }}
         />
       </div>
+      {showUpgrade ? (
+        <PaywallOverlay
+          open={upgradeOpen}
+          onOpenChange={setUpgradeOpen}
+          restoreFocus={() => (upgradeTriggerRef.current ?? triggerRef.current)?.focus()}
+        />
+      ) : null}
       <AccountSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}

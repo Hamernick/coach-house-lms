@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   MAP_STYLE,
@@ -85,7 +85,13 @@ describe("public find routes", () => {
     expect(runtimeSource).toContain("applyPublicMapSpaceFog(map)")
     expect(runtimeSource).toContain("applyPublicMapGlobePresentation(map)")
     expect(runtimeSource).not.toContain("setStyle(")
-    expect(runtimeSource).toContain("resolvePublicMapBasemapConfig")
+    expect(runtimeSource).toContain("publicMapViewOptions(themeRef.current)")
+    const optionsSource = readRoute("src/components/public/public-map-index/map-view-options.ts")
+    const previewSource = readRoute("src/components/public/public-map-index/public-map-preview.tsx")
+    expect(optionsSource).toContain("resolvePublicMapBasemapConfig(theme)")
+    expect(optionsSource).toContain('projection: "globe"')
+    expect(previewSource).toContain("publicMapViewOptions(theme)")
+    expect(previewSource).not.toContain("openfreemap")
     expect(runtimeSource).toContain("themeRef.current = theme")
     expect(runtimeSource).toContain(
       "applyPublicMapBasemapConfig(map, themeRef.current)"
@@ -112,102 +118,6 @@ describe("public find routes", () => {
     }
   })
 
-  it("wires onboarding-locked free/member users into the map-native intro", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
-    const publicMapSource = [
-      readRoute("src/components/public/public-map-index.tsx"),
-      readRoute(
-        "src/components/public/public-map-index/public-map-index-state.ts"
-      ),
-    ].join("\n")
-    const previewControlsSource = readRoute(
-      "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
-    )
-    const overlaySource = readRoute(
-      "src/components/public/public-map-index/member-onboarding-overlay.tsx"
-    )
-    const mapSurfaceSource = readRoute(
-      "src/components/public/public-map-index/map-surface.tsx"
-    )
-
-    for (const routeFile of routeFiles) {
-      const source = readRoute(routeFile)
-      expect(source).toContain("completeMemberMapOnboardingAction")
-      expect(source).toContain("memberOnboarding={")
-      expect(source).toContain("memberMapOnboarding.hasOrganizationSwitcher")
-    }
-
-    expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
-    expect(publicMapSource).toContain(
-      "mapOverlay={memberOnboardingState.overlay}"
-    )
-    expect(mapSurfaceSource).toContain('data-public-map-overlay-layer=""')
-    expect(mapSurfaceSource).toContain(
-      'className="pointer-events-none absolute inset-0"'
-    )
-    expect(mapSurfaceSource.match(/{mapOverlay}/g)).toHaveLength(1)
-    expect(previewControlsSource).toContain("PublicMapMemberOnboardingOverlay")
-    expect(previewControlsSource).toContain("left-1/2 z-30 -translate-x-1/2")
-    expect(overlaySource).toContain("absolute inset-0 z-50")
-    expect(overlaySource).not.toContain("OnboardingWorkspaceCard")
-    expect(overlaySource).toContain("Welcome to Find")
-    expect(overlaySource).toContain("Search resources")
-    expect(overlaySource).toContain("Search by organization")
-    expect(overlaySource).toContain("Save locations")
-    expect(overlaySource).toContain("Notifications")
-  })
-
-  it("lets platform admins preview the map intro from authenticated find", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
-    const publicMapSource = [
-      readRoute("src/components/public/public-map-index.tsx"),
-      readRoute(
-        "src/components/public/public-map-index/public-map-index-state.ts"
-      ),
-    ].join("\n")
-    const previewControlsSource = readRoute(
-      "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
-    )
-    const previewSource = readRoute(
-      "src/components/public/public-map-index/member-onboarding-preview.ts"
-    )
-
-    for (const routeFile of routeFiles) {
-      const source = readRoute(routeFile)
-      expect(source).toContain("adminOnboardingPreview={")
-      expect(source).toContain("shellState.isAdmin")
-      expect(source).toContain("canToggle: true")
-      expect(source).toContain("memberMapOnboarding.hasOrganizationSwitcher")
-    }
-
-    expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
-    expect(publicMapSource).toContain(
-      "mapOverlay={memberOnboardingState.overlay}"
-    )
-    expect(previewControlsSource).toContain(
-      "PublicMapMemberOnboardingPreviewToggle"
-    )
-    expect(previewControlsSource).toContain("Welcome")
-    expect(previewControlsSource).toContain("[html.light_&]:!text-zinc-950")
-    expect(previewControlsSource).toContain("Hide welcome")
-    expect(previewControlsSource).toContain(
-      "onDismiss={() => handleToggleAdminOnboardingPreview(false)}"
-    )
-    expect(previewSource).toContain(
-      'PUBLIC_MAP_MEMBER_ONBOARDING_PREVIEW_SOURCE = "admin_preview"'
-    )
-    expect(previewSource).toContain(
-      'PUBLIC_MAP_MEMBER_ONBOARDING_QUERY_KEY = "member_onboarding"'
-    )
-  })
-
-  it("renders authenticated users inside the app shell without moving find under workspace", () => {
-    const source = readRoute(PUBLIC_FIND_ROUTE)
-    expect(source).toContain("AuthenticatedFindShell")
-    expect(source).toContain('presentationMode="app-shell"')
-    expect(source).not.toContain("/workspace/find")
-  })
-
   it("never mixes synthetic resource seeds into live find routes", () => {
     const routeFiles = [PUBLIC_FIND_ROUTE]
 
@@ -216,24 +126,12 @@ describe("public find routes", () => {
     }
   })
 
-  it("preserves selected organization detail wiring on the root query route", () => {
+  it("preserves public organization detail wiring for signed-out visitors", () => {
     const source = readRoute(PUBLIC_FIND_ROUTE)
-    const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
-    const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
-    const firstInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={initialPublicSlug}"
-    )
-    const secondInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={initialPublicSlug}",
-      firstInitialSlugIndex + 1
-    )
-
-    expect(authenticatedBranchIndex).toBeGreaterThan(-1)
-    expect(publicBranchIndex).toBeGreaterThan(-1)
-    expect(source).toContain("organizationDetail={Boolean(initialPublicSlug)}")
-    expect(firstInitialSlugIndex).toBeGreaterThan(authenticatedBranchIndex)
-    expect(firstInitialSlugIndex).toBeLessThan(publicBranchIndex)
-    expect(secondInitialSlugIndex).toBeGreaterThan(publicBranchIndex)
+    expect(source).toContain("initialPublicSlug={initialPublicSlug}")
+    expect(source).toContain("<HomeCanvasFindShell>")
+    expect(source).not.toContain("AuthenticatedFindShell")
+    expect(source).not.toContain('presentationMode="app-shell"')
   })
 
   it("clears selected organization state when returning from detail to search", () => {
@@ -259,34 +157,8 @@ describe("public find routes", () => {
     expect(sidebarSource).toContain("onBack={onBackToSearch}")
   })
 
-  it("restores the saved sidebar preference in authenticated find", () => {
+  it("keeps the public map full bleed", () => {
     const routeFiles = [PUBLIC_FIND_ROUTE]
-    const shellSource = readRoute(
-      "src/features/find-map/components/authenticated-find-shell.tsx"
-    )
-    const appShellInnerSource = readRoute(
-      "src/components/app-shell/app-shell-inner.tsx"
-    )
-    const appShellTypesSource = readRoute("src/components/app-shell/types.ts")
-
-    for (const routeFile of routeFiles) {
-      const source = readRoute(routeFile)
-      expect(source).toContain("readAppSidebarDefaultOpen")
-      expect(source).toContain("defaultSidebarOpen")
-      expect(source).toContain("defaultSidebarOpen={defaultSidebarOpen}")
-    }
-
-    expect(appShellInnerSource).toContain("defaultSidebarOpen = false")
-    expect(appShellTypesSource).toContain("defaultSidebarOpen?: boolean")
-    expect(appShellInnerSource).toContain("defaultOpen={defaultSidebarOpen}")
-    expect(shellSource).toContain('contentPresentation="full-bleed"')
-  })
-
-  it("lets authenticated find use the full app-shell canvas instead of a bordered map frame", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
-    const shellSource = readRoute(
-      "src/features/find-map/components/authenticated-find-shell.tsx"
-    )
     const mapSurfaceSource = readRoute(
       "src/components/public/public-map-index/map-surface.tsx"
     )
@@ -316,7 +188,6 @@ describe("public find routes", () => {
       expect(source).not.toContain("rounded-lg border border-border/70")
     }
 
-    expect(shellSource).toContain('contentPresentation="full-bleed"')
     expect(mapSurfaceSource).toContain("h-full min-h-0 w-full min-w-0 flex-1")
     expect(publicMapSource).not.toContain("resolvePublicMapPresentationFlags")
     expect(publicMapChromeSource).not.toContain("PublicMapDirectoryRail")
@@ -324,7 +195,6 @@ describe("public find routes", () => {
     expect(mapViewHelpersSource).toContain('return "drawer"')
     expect(sidebarSource).toContain("dismissible={false}")
     expect(sidebarSource).toContain("<PublicMapMemberRail")
-    expect(shellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain(
       "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
@@ -340,15 +210,6 @@ describe("public find routes", () => {
     expect(appShellSource).toContain(
       "md:[--shell-right-rail-width:min(22rem,36vw)]"
     )
-    expect(shellSource).toContain(
-      "showWorkspaceHome={state.showMemberWorkspace}"
-    )
-    expect(shellSource).toContain(
-      "showMemberWorkspace={state.showMemberWorkspace}"
-    )
-    expect(shellSource).toContain("sidebarHeaderContent={")
-    expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
-    expect(shellSource).toContain("state.memberWorkspaceHeader")
     expect(appShellSource).toContain("isMobile")
     expect(shellMainContentSource).toContain(
       "rounded-none border-0 md:rounded-[28px] md:border md:border-[color:var(--shell-border)]"
@@ -682,5 +543,43 @@ describe("public find routes", () => {
     expect(viewerStateSource).not.toContain('.from("profiles")')
     expect(viewerStateSource).not.toContain("buildOnboardingFlowDefaults")
     expect(viewerStateSource).not.toContain("memberProfile")
+  })
+})
+
+const entryMocks = vi.hoisted(() => ({
+  viewer: vi.fn(),
+  organizations: vi.fn(),
+}))
+vi.mock("@/features/find-map/viewer-state", () => ({ fetchPublicMapViewerState: entryMocks.viewer }))
+vi.mock("@/lib/queries/public-map-index", () => ({ fetchPublicMapOrganizations: entryMocks.organizations }))
+vi.mock("next/navigation", () => ({ redirect: (href: string) => { throw new Error(`redirect:${href}`) } }))
+vi.mock("@/components/public/home-canvas-find-shell", () => ({ HomeCanvasFindShell: () => null }))
+vi.mock("@/components/public/public-map-index", () => ({ PublicMapIndex: () => null }))
+vi.mock("@/features/find-map/components/find-render-diagnostic", () => ({ FindRenderDiagnostic: () => null }))
+
+describe("signed-in root entry", () => {
+  beforeEach(() => {
+    entryMocks.viewer.mockReset().mockResolvedValue({ viewer: null })
+    entryMocks.organizations.mockReset().mockResolvedValue([])
+  })
+
+  it.each([{}, { member_onboarding: "1", source: "signup" }, { q: "table", org: "example" }])("redirects signed-in reloads before fetching map data: %j", async (params) => {
+    entryMocks.viewer.mockResolvedValue({ viewer: { id: "free-user", email: "test@example.com" } })
+    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
+    await expect(PublicFindRoute({ searchParams: Promise.resolve(params) })).rejects.toThrow("redirect:/workspace")
+    expect(entryMocks.organizations).not.toHaveBeenCalled()
+  })
+
+  it("keeps the map available to signed-out visitors", async () => {
+    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
+    await expect(PublicFindRoute()).resolves.toBeDefined()
+    expect(entryMocks.organizations).toHaveBeenCalledOnce()
+  })
+
+  it("processes email confirmation callbacks before workspace routing", async () => {
+    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
+    await expect(PublicFindRoute({ searchParams: Promise.resolve({ code: "confirmation-code" }) })).rejects.toThrow("redirect:/auth/callback?code=confirmation-code")
+    expect(entryMocks.viewer).not.toHaveBeenCalled()
+    expect(entryMocks.organizations).not.toHaveBeenCalled()
   })
 })

@@ -39,7 +39,7 @@ describe("sign up page", () => {
     expect(destination).toBe("/sign-up?redirect=%2Ffind&source=pricing")
   })
 
-  it("routes signed-in member-intent users into find", async () => {
+  it("routes signed-in member-intent users into onboarding", async () => {
     createSupabaseServerClientServerMock.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -63,7 +63,7 @@ describe("sign up page", () => {
       })
     )
 
-    expect(destination).toBe("/?member_onboarding=1&source=signup")
+    expect(destination).toBe("/onboarding?source=signup")
   })
 
   it("routes signed-in generic signup users into onboarding instead of find", async () => {

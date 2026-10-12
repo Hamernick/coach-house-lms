@@ -6,6 +6,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/public-visual-reference.yml
+      - tests/visual/build-collect-navigation.visual.spec.ts
+      - tests/visual/public-shell.visual.spec.ts
 
 permissions:
   contents: read

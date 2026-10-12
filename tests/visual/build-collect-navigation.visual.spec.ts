@@ -11,6 +11,7 @@ test("public Build landing and hover navigation", async ({ page }) => {
   ).toBeVisible()
 
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
+  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
   await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
@@ -33,6 +34,7 @@ test("public navigation menu layers above Documentation content", async ({
   await page.goto("/documentation?react-grab=0")
 
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
+  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
   const menuLayer = page.locator(
     '[data-slot="navigation-menu-content"][data-state="open"]'
@@ -105,6 +107,7 @@ for (const route of ["/", "/documentation"] as const) {
       const trigger = page
         .locator('[data-slot="navigation-menu-trigger"]')
         .filter({ hasText: menuName })
+      await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
       await trigger.hover()
       const link = page.locator(
         menuName === "Collect"

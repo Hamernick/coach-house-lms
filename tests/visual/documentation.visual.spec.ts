@@ -15,7 +15,7 @@ async function ready(page: Page) {
     new URL(page.url()).pathname === "/visual-regression/documentation" &&
     new URL(page.url()).searchParams.get("viewer") === "marketplace"
   ) {
-    await expect(page.getByRole("button", { name: "Menu", exact: true }))
+    await expect(page.getByRole("button", { name: "Open sidebar", exact: true }))
       .toBeVisible()
     await expect(page.getByRole("navigation", { name: "Main navigation", exact: true }))
       .toHaveCount(0)
@@ -42,6 +42,10 @@ async function ready(page: Page) {
       await page.keyboard.press("Escape")
       await expect(page.getByRole("dialog")).toHaveCount(0)
     }
+  }
+  // Avatar images mount after hydration; capture the actual provider logos.
+  for (const logo of await page.locator("[data-marketplace-provider-logo]").all()) {
+    await expect(logo.locator("img")).toBeVisible()
   }
   const loadExample = page.getByRole("button", {
     name: "Load example",

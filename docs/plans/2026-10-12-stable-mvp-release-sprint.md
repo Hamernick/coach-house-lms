@@ -131,3 +131,9 @@ where tgrelid = 'public.organizations'::regclass
 ```
 
 Current evidence: renewal-date compatibility is covered by49 focused tests; read-only local Stripe configuration checks confirm active Organization/Operations Support prices in live and test modes and an enabled live webhook. These are not a completed checkout canary or verification of Vercel's deployed secrets. No production migration, transaction, merge, or deployment was performed by this release lane.
+
+## Applied migration receipt — 2026-10-12T20:17:53+00:00
+
+The user explicitly authorized applying the access-control migration before remaining visual/browser gates. Production project `vswzhuwjtgzrkxknrmxu` now records `20261012163000_gate_free_workspace_document_writes.sql`. Verified eight restrictive policies, one enabled guard trigger and RLS on all protected tables. Existing data was retained. The two unapplied fiscal migrations (`20261010090000`, `20261010180000`) were excluded using an isolated CLI migration directory and remain outside this application.
+
+PR #288 is ready for review, not draft. It is not merged: visual CI has six failures (three Documentation, three Tools), with146 passing and one flaky mobile test. Acceptance, static, RLS and build pass. Application deployment, authenticated upgrade verification and live production UI verification remain outstanding. Earlier pending-migration statements above are historical checkpoints, superseded by this receipt.

@@ -33,7 +33,7 @@ async function ready(page: Page) {
     })
     if (!(await navigation.isVisible())) {
       const openTrigger = page.getByRole("button", {
-        name: "Open Find, Guides, and Saved",
+        name: "Open sidebar",
         exact: true,
       })
       await expect(openTrigger).toBeVisible()
@@ -293,7 +293,7 @@ test("mobile navigation closes after choosing a guide and contents links reach s
   await ready(page)
   await page
     .getByRole("button", {
-      name: "Open Find, Guides, and Saved",
+      name: "Open sidebar",
       exact: true,
     })
     .click()

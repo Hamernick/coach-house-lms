@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { getSubscriptionPeriodEndIso } from "@/lib/billing/subscription-period"
+
 import { captureRedirect, resetTestMocks } from "./test-utils"
 
 const {
@@ -205,7 +207,7 @@ describe("pricing success return handling", () => {
         planName: "Organization",
         plan_tier: "organization",
       },
-      current_period_end: 1_799_452_800,
+      items: { data: [{ current_period_end: 1_799_452_800 }] },
     })
     resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
       {
@@ -284,7 +286,7 @@ describe("pricing success return handling", () => {
                     kind: "organization",
                     stripe_mode: "test",
                   },
-                  current_period_end: 1_799_452_800,
+                  items: { data: [{ current_period_end: 1_799_452_800 }] },
                 },
               }),
             },
@@ -381,5 +383,24 @@ describe("pricing success return handling", () => {
     expect(result.props.returnHref).toBe("/onboarding?source=onboarding_pricing")
     expect(result.props.paymentRequired).not.toBe(true)
 
+  })
+})
+
+
+describe("subscription renewal dates", () => {
+  it("reads legacy webhook dates", () => {
+    expect(getSubscriptionPeriodEndIso({ current_period_end: 1_799_452_800 })).toBe("2027-01-09T00:00:00.000Z")
+  })
+
+  it("uses the next item renewal instead of a stale legacy date", () => {
+    expect(getSubscriptionPeriodEndIso({
+      current_period_end: 1_700_000_000,
+      items: { data: [{ current_period_end: 1_900_000_000 }, { current_period_end: 1_799_452_800 }] },
+    })).toBe("2027-01-09T00:00:00.000Z")
+  })
+
+  it("leaves absent or invalid dates unset", () => {
+    expect(getSubscriptionPeriodEndIso({ items: { data: [] } })).toBeNull()
+    expect(getSubscriptionPeriodEndIso({ current_period_end: NaN })).toBeNull()
   })
 })

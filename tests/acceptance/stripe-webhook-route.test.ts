@@ -422,7 +422,7 @@ describe("stripe webhook route acceptance", () => {
           id: "sub_accel_active",
           status: "active",
           customer: "cus_active",
-          current_period_end: 1_900_000_000,
+          items: { data: [{ current_period_end: 1_900_000_000 }] },
           cancel_at: 1_900_000_000,
           canceled_at: null,
           metadata: {

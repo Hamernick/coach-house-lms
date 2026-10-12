@@ -28,3 +28,5 @@ Activation after gates:
 3. Verify guest session creation, draft save/reload, input validation and CAPTCHA without bypassing verification.
 4. Caleb submits one controlled application. Verify exactly one private project, populated Fiscal Sponsorship and Overview, Karissa/Joel assignment and in-app notifications.
 5. Verify applicant receipt and both reviewer emails. Provider acceptance is distinct from inbox delivery. Retry must not duplicate the project or messages.
+
+Latest scoped verification: Linux reference run `38293346933` passes all 59 public/Documentation/shared-shell cases at `c7716611`. All intended reference changes were visually reviewed; screenshot tolerances unchanged. Draft #289 contains the final references; complete current-head quality and independent review remain required. Three pre-existing Workspace Tools snapshot failures (Stripe row removal from the internal lane) remain outside this task and block the aggregate gate. No fiscal production flag was enabled.

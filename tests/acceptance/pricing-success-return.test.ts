@@ -282,9 +282,7 @@ describe("pricing success return handling", () => {
                   customer: "cus_sidebar_upgrade",
                   metadata: {
                     kind: "organization",
-                    planName,
-                    plan_tier: planTier,
-                    org_user_id: "org_456",
+                    stripe_mode: "test",
                   },
                   current_period_end: 1_799_452_800,
                 },

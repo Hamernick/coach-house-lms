@@ -181,7 +181,7 @@ describe("organization launch", () => {
 
   it("uses saved publication independently of curriculum and location", () => {
     const result = resolveOrganizationLaunch({ ...draft, name: "Test", publicSlug: "test", mission: "Provide meals", isPublic: true })
-    expect(result.publicHref).toBe("/?organization=test")
+    expect(result.publicHref).toBe("/resources?organization=test")
     expect(result.completedCount).toBe(3)
     expect(result.steps.find((step) => step.id === "location")?.complete).toBe(false)
     expect(result.steps.find((step) => step.id === "program")?.complete).toBe(false)

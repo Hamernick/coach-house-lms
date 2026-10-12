@@ -13,12 +13,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 
-import { PaywallOverlay } from "@/components/paywall/paywall-overlay"
 import { UpgradeButton } from "./nav-user/upgrade-button"
 
 import { useNavUserMenu } from "./nav-user/hooks/use-nav-user-menu"
 import { NavUserMenuContent } from "./nav-user/nav-user-menu-content"
 import type { AccountSettingsTabKey } from "./account-settings/types"
+
+const PaywallOverlay = dynamic(
+  () => import("@/components/paywall/paywall-overlay").then((mod) => mod.PaywallOverlay),
+  { ssr: false },
+)
 
 const AccountSettingsDialog = dynamic(
   () =>

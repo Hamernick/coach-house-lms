@@ -62,7 +62,7 @@ export function StepFooter({
               variant="outline"
               onClick={onPrev}
               disabled={submitting}
-              className="h-11 rounded-full px-4 shadow-none sm:h-9"
+              className="h-auto min-h-11 rounded-full px-4 shadow-none whitespace-normal sm:min-h-9"
             >
               Back
             </Button>
@@ -98,7 +98,7 @@ export function StepFooter({
               (currentStepId === "account" && !isProfileStep && !accountStepReady)
             }
             aria-busy={submitting}
-            className="h-11 shrink-0 gap-1.5 rounded-full px-5 shadow-none sm:h-9"
+            className="h-auto min-h-11 shrink-0 gap-1.5 rounded-full px-5 shadow-none whitespace-normal sm:min-h-9"
           >
             {submitting ? <LoaderCircleIcon className="size-4 motion-safe:animate-spin" aria-hidden /> : null}
             {isLastStep ? (

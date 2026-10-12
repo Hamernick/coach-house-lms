@@ -1,5 +1,11 @@
 import { redirect } from "next/navigation"
 
+import { updatePublicMapOrganizationCurationAction } from "@/actions/public-map-organization-curation"
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
+import { updateResourceMapCanonicalStateAction } from "@/features/resource-map-admin"
+import { AuthenticatedFindShell } from "./authenticated-find-shell"
+
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
 import { PublicMapIndex } from "@/components/public/public-map-index"
@@ -47,7 +53,10 @@ async function PublicFindRouteContent({
   if (authCallbackHref) redirect(authCallbackHref)
 
   const viewerState = await fetchPublicMapViewerState()
-  if (viewerState.viewer && !embedded) redirect("/workspace")
+  const shellState = viewerState.viewer && !embedded
+    ? await resolveDashboardLayoutState()
+    : null
+  if (viewerState.viewer && !embedded && !shellState?.isAdmin) redirect("/workspace")
 
   const requestedPublicSlug = initialOrganization ? (initialOrganization.publicSlug || initialOrganization.id) : firstString(
     resolvedSearchParams?.[FIND_ORGANIZATION_QUERY_KEY]
@@ -81,6 +90,34 @@ async function PublicFindRouteContent({
         resourceItems={initialResource ? [initialResource] : undefined}
         viewer={viewerState.viewer}
       />
+    )
+  }
+
+  // Keep the existing administrative curation surface; members start in Workspace.
+  if (shellState?.userPresent && shellState.isAdmin) {
+    const defaultSidebarOpen = await readAppSidebarDefaultOpen()
+    return (
+      <AuthenticatedFindShell
+        state={shellState}
+        defaultSidebarOpen={defaultSidebarOpen}
+        organizationDetail={Boolean(initialPublicSlug)}
+      >
+        <PublicMapIndex
+          presentationMode="app-shell"
+          organizations={organizations}
+          resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
+          mapboxToken={publicToken}
+          initialPublicSlug={initialPublicSlug}
+          viewer={viewerState.viewer}
+          canManageResourceMap={shellState.isAdmin}
+          organizationCurationAction={updatePublicMapOrganizationCurationAction}
+          resourceMapCurationAction={updateResourceMapCanonicalStateAction}
+          adminOnboardingPreview={{
+            canToggle: true,
+            hasOrganizationSwitcher: shellState.memberMapOnboarding.hasOrganizationSwitcher,
+          }}
+        />
+      </AuthenticatedFindShell>
     )
   }
 

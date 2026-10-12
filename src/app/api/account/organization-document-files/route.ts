@@ -15,34 +15,10 @@ import {
 import { canEditOrganization } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
-import { fileResponse, sanitizeFilename, type FileRow } from "./file-record"
+import { fileResponse, loadFile, sanitizeFilename, type FileRow } from "./file-record"
 
 const BUCKET = "org-documents"
 const SIGNED_URL_TTL_SECONDS = 60 * 15
-
-async function loadFile(
-  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
-  orgId: string,
-  fileId: string
-) {
-  const result = await supabase
-    .from("organization_document_files")
-    .select(
-      "id, name, mime_type, size_bytes, storage_path, deleted_at, created_at, updated_at"
-    )
-    .eq("id", fileId)
-    .eq("org_id", orgId)
-    .is("document_kind", null)
-    .maybeSingle<FileRow>()
-  if (
-    result.data &&
-    (!result.data.storage_path.startsWith(`${orgId}/library/`) ||
-      result.data.storage_path.split("/").includes(".."))
-  ) {
-    return { ...result, data: null }
-  }
-  return result
-}
 
 export async function GET(request: NextRequest) {
   const response = NextResponse.next()

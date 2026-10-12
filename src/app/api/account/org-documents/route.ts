@@ -1,3 +1,4 @@
+import { loadProfile, updateDocumentsProfile } from "./document-profile"
 import { requireOrganizationDocumentStorage } from "@/lib/organization/document-storage-access"
 import {
   KIND_KEY_MAP,
@@ -29,39 +30,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function getDocumentKey(kind: string | null): DocumentKey | null {
   if (!kind) return null
   return KIND_KEY_MAP[kind as keyof typeof KIND_KEY_MAP] ?? null
-}
-
-async function loadProfile(
-  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
-  orgId: string
-) {
-  const { data: orgRow, error } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", orgId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return (orgRow?.profile ?? {}) as Record<string, unknown>
-}
-
-function updateDocumentsProfile(
-  profile: Record<string, unknown>,
-  key: DocumentKey,
-  nextDoc: DocumentMeta | null
-) {
-  const documents = isRecord(profile["documents"])
-    ? { ...profile["documents"] }
-    : {}
-  if (nextDoc) {
-    documents[key] = nextDoc
-  } else {
-    delete documents[key]
-  }
-  return { ...profile, documents }
 }
 
 export async function GET(request: NextRequest) {

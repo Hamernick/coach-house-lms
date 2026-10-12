@@ -52,7 +52,7 @@ export function toStatus(
   if (allowed.includes(value as Database["public"]["Enums"]["subscription_status"])) {
     return value as Database["public"]["Enums"]["subscription_status"]
   }
-  return "trialing"
+  return "incomplete"
 }
 
 export function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {

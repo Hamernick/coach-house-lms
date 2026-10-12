@@ -139,8 +139,8 @@ describe("public find routes", () => {
     const source = readRoute(PUBLIC_FIND_ROUTE)
     expect(source).toContain("initialPublicSlug={initialPublicSlug}")
     expect(source).toContain("<HomeCanvasFindShell>")
-    expect(source).not.toContain("AuthenticatedFindShell")
-    expect(source).not.toContain('presentationMode="app-shell"')
+    expect(source).toContain("if (shellState?.userPresent && shellState.isAdmin)")
+    expect(source).toContain('redirect("/workspace")')
   })
 
   it("clears selected organization state when returning from detail to search", () => {
@@ -559,8 +559,14 @@ describe("public find routes", () => {
 
 const entryMocks = vi.hoisted(() => ({
   viewer: vi.fn(),
+  dashboard: vi.fn(),
   organizations: vi.fn(),
 }))
+vi.mock("@/components/app-shell/dashboard-layout-state", () => ({ resolveDashboardLayoutState: entryMocks.dashboard }))
+vi.mock("@/components/app-shell/sidebar-state-server", () => ({ readAppSidebarDefaultOpen: async () => true }))
+vi.mock("@/features/find-map/components/authenticated-find-shell", () => ({ AuthenticatedFindShell: () => null }))
+vi.mock("@/actions/public-map-organization-curation", () => ({ updatePublicMapOrganizationCurationAction: vi.fn() }))
+vi.mock("@/features/resource-map-admin", () => ({ updateResourceMapCanonicalStateAction: vi.fn() }))
 vi.mock("@/features/find-map/viewer-state", () => ({ fetchPublicMapViewerState: entryMocks.viewer }))
 vi.mock("@/lib/queries/public-map-index", () => ({ fetchPublicMapOrganizations: entryMocks.organizations }))
 vi.mock("next/navigation", () => ({ redirect: (href: string) => { throw new Error(`redirect:${href}`) } }))
@@ -570,6 +576,7 @@ vi.mock("@/features/find-map/components/find-render-diagnostic", () => ({ FindRe
 
 describe("signed-in root entry", () => {
   beforeEach(() => {
+    entryMocks.dashboard.mockReset().mockResolvedValue({ userPresent: true, isAdmin: false })
     entryMocks.viewer.mockReset().mockResolvedValue({ viewer: null })
     entryMocks.organizations.mockReset().mockResolvedValue([])
   })
@@ -579,6 +586,19 @@ describe("signed-in root entry", () => {
     const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
     await expect(PublicFindRoute({ searchParams: Promise.resolve(params) })).rejects.toThrow("redirect:/workspace")
     expect(entryMocks.organizations).not.toHaveBeenCalled()
+  })
+
+  it("retains the existing curation surface for platform admins", async () => {
+    entryMocks.viewer.mockResolvedValue({ viewer: { id: "admin-user" } })
+    entryMocks.dashboard.mockResolvedValue({ userPresent: true, isAdmin: true, memberMapOnboarding: { hasOrganizationSwitcher: true } })
+    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
+    const result = await PublicFindRoute()
+    const shell = result.props.children
+    const map = shell.props.children
+    expect(map.props.canManageResourceMap).toBe(true)
+    expect(map.props.organizationCurationAction).toBeTypeOf("function")
+    expect(map.props.resourceMapCurationAction).toBeTypeOf("function")
+    expect(entryMocks.organizations).toHaveBeenCalledOnce()
   })
 
   it("keeps the map available to signed-out visitors", async () => {

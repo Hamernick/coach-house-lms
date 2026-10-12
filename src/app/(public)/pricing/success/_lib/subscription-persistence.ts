@@ -42,19 +42,11 @@ export async function persistCheckoutSubscription({
   const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
   const cancelAt = typeof subscription.cancel_at === "number" ? new Date(subscription.cancel_at * 1000).toISOString() : null
   const canceledAt = typeof subscription.canceled_at === "number" ? new Date(subscription.canceled_at * 1000).toISOString() : null
-  const metadataSource =
-    subscription.metadata && Object.keys(subscription.metadata).length > 0
-      ? subscription.metadata
-      : checkout.metadata ?? null
-  const metadataWithMode: Record<string, string> | null = metadataSource
-    ? {
-        ...(metadataSource as Record<string, string>),
-        stripe_mode:
-          typeof (metadataSource as Record<string, string>).stripe_mode === "string"
-            ? (metadataSource as Record<string, string>).stripe_mode
-            : stripeMode,
-      }
-    : null
+  const metadataWithMode: Record<string, string> = {
+    ...checkout.metadata,
+    ...subscription.metadata,
+    stripe_mode: stripeMode,
+  }
   const subscriptionOwnerId =
     typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
       ? metadataWithMode.org_user_id

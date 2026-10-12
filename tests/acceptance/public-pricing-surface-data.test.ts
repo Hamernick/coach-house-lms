@@ -27,9 +27,10 @@ describe("public pricing surface data", () => {
 })
 
 
-it("keeps free features limited to profiles and applications", () => {
+it("includes personal workspace tools and Drive while reserving paid organization capabilities", () => {
   expect(PLATFORM_TIERS[0].features).toEqual([
-    "Organization profile", "Optional public listing", "Fiscal sponsorship applications",
+    "1 Admin Seat (founder only)", "Organization Profile", "Connect your tools",
+    "Link files from your Google Drive", "Discord + WhatsApp Community access",
   ])
   const rows = FEATURE_GROUPS.flatMap(group => group.rows)
   for (const label of ["Strategic roadmap", "Secure & centralized document storage", "Shared Workspace for staff and board", "Accelerator access"]) {

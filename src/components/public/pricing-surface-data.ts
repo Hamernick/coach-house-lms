@@ -31,9 +31,11 @@ const TIERS: PricingTier[] = [
     ctaHref: "/sign-up?intent=build&plan=free",
     featureHeading: "Includes",
     features: [
-      "Organization profile",
-      "Optional public listing",
-      "Fiscal sponsorship applications",
+      "1 Admin Seat (founder only)",
+      "Organization Profile",
+      "Connect your tools",
+      "Link files from your Google Drive",
+      "Discord + WhatsApp Community access",
     ],
   },
   {
@@ -53,6 +55,8 @@ const TIERS: PricingTier[] = [
       "Shared Workspace for staff and board",
       "Projects, tasks, and documents",
       "Accelerator Access",
+      "Strategic roadmap editing",
+      "Coach House document storage",
       "Electives & additional learning",
       "Staff and board invitations",
     ],

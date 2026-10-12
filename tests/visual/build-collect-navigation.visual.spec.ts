@@ -13,9 +13,10 @@ test("public Build landing and hover navigation", async ({ page }) => {
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
   await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
-  await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
-  await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
-  await expect(page.getByRole("link", { name: /Pricing/ })).toBeVisible()
+  const menu = page.locator('[data-slot="navigation-menu-content"][data-state="open"]')
+  await expect(menu.getByRole("link", { name: /Workspace/ })).toBeVisible()
+  await expect(menu.getByRole("link", { name: /Accelerator/ })).toBeVisible()
+  await expect(menu.getByRole("link", { name: /Pricing/ })).toBeVisible()
   await page.mouse.move(20, 300)
   await expect(buildMenu).toHaveAttribute("data-state", "closed")
 

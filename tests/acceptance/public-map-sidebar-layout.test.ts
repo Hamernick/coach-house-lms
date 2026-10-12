@@ -85,6 +85,7 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
+    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -183,7 +184,7 @@ describe("public map sidebar layout", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapCategoryFilter, {
         activeGroup: "all",
-        counts: buildPublicMapGroupFilterCounts([organization]),
+        counts: buildPublicMapGroupFilterCounts(buildListItems(organization)),
         onActiveGroupChange: () => {},
       })
     )
@@ -239,6 +240,7 @@ describe("public map sidebar layout", () => {
         query: "",
         constrainedLayout: true,
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onSelectOrg: () => {},
       })
     )
@@ -314,7 +316,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the liquid glass shell for the public map rail surface", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const shellSource = readFileSync(
       join(
         process.cwd(),
@@ -361,6 +363,7 @@ describe("public map sidebar layout", () => {
           onActiveGroupChange: () => {},
           onToggleFavorite: () => {},
           onSelectItem: () => {},
+        onSelectOrganization: () => {},
           onOpenDetails: () => {},
           onBackToSearch: () => {},
           setSidebarMode: () => {},
@@ -402,7 +405,7 @@ describe("public map sidebar layout", () => {
 
   it("gives the rail search layout one scroll owner and a shared horizontal inset", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapSidebar, {
         sidebarMode: "search",
@@ -423,6 +426,7 @@ describe("public map sidebar layout", () => {
         setActiveGroup: () => {},
         toggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -557,7 +561,7 @@ describe("public map sidebar layout", () => {
       items: buildListItems(organization),
       onClear: () => {},
     }
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const shellMarkup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -577,6 +581,7 @@ describe("public map sidebar layout", () => {
           onActiveGroupChange: () => {},
           onToggleFavorite: () => {},
           onSelectItem: () => {},
+        onSelectOrganization: () => {},
           onOpenDetails: () => {},
           onBackToSearch: () => {},
           setSidebarMode: () => {},
@@ -599,6 +604,7 @@ describe("public map sidebar layout", () => {
         onActiveGroupChange: () => {},
         onToggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -737,6 +743,7 @@ describe("public map sidebar layout", () => {
         query: "food",
         constrainedLayout: true,
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onSelectOrg: () => {},
         onOpenDetails: () => {},
       })
@@ -865,6 +872,7 @@ describe("public map sidebar layout", () => {
         onActiveGroupChange: () => {},
         onToggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -1029,6 +1037,7 @@ describe("public map sidebar layout", () => {
         onActiveGroupChange: () => {},
         onToggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -1131,7 +1140,7 @@ describe("public map sidebar layout", () => {
         visualVariant: "nyc",
       },
     ] satisfies PublicMapResourceGuide[]
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const publicRightRailSource = readFileSync(
       join(
         process.cwd(),
@@ -1155,6 +1164,7 @@ describe("public map sidebar layout", () => {
         onActiveGroupChange: () => {},
         onToggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -1601,7 +1611,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the right rail directory detail view when a map organization is selected", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     expect(
       resolvePublicMapDirectoryRailMode({
         sidebarMode: "details",
@@ -1631,6 +1641,7 @@ describe("public map sidebar layout", () => {
         onActiveGroupChange: () => {},
         onToggleFavorite: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onBackToSearch: () => {},
         setSidebarMode: () => {},
@@ -1657,7 +1668,7 @@ describe("public map sidebar layout", () => {
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1680,6 +1691,7 @@ describe("public map sidebar layout", () => {
             onActiveGroupChange: () => {},
             onToggleFavorite: () => {},
             onSelectItem: () => {},
+        onSelectOrganization: () => {},
             onOpenDetails: () => {},
             onBackToSearch: () => {},
             setSidebarMode: () => {},
@@ -1734,7 +1746,7 @@ describe("public map sidebar layout", () => {
       ],
       programCount: 1,
     })
-    const groupCounts = buildPublicMapGroupFilterCounts([organization])
+    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1757,6 +1769,7 @@ describe("public map sidebar layout", () => {
             onActiveGroupChange: () => {},
             onToggleFavorite: () => {},
             onSelectItem: () => {},
+        onSelectOrganization: () => {},
             onOpenDetails: () => {},
             onBackToSearch: () => {},
             setSidebarMode: () => {},
@@ -1818,6 +1831,7 @@ describe("public map sidebar layout", () => {
         onQueryChange: () => {},
         onActiveGroupChange: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
       })
     )
@@ -1950,6 +1964,7 @@ describe("public map sidebar layout", () => {
         onQueryChange: () => {},
         onActiveGroupChange: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onGuideSelect: () => {},
         onToggleSavedGuide: () => {},
@@ -2123,6 +2138,7 @@ describe("public map sidebar layout", () => {
         onQueryChange: () => {},
         onActiveGroupChange: () => {},
         onSelectItem: () => {},
+        onSelectOrganization: () => {},
         onOpenDetails: () => {},
         onRetryResourceItems: () => {},
       })

@@ -30,11 +30,11 @@ describe("public map resource items client", () => {
   })
 
   it("deduplicates only concurrent resource requests", async () => {
-    let resolveFetch: ((response: Response) => void) | null = null
+    const deferred: { resolve?: (response: Response) => void } = {}
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
-          resolveFetch = resolve
+          deferred.resolve = resolve
         })
     )
     const endpoint = "/api/public/resource-map/items?test=concurrent"
@@ -44,7 +44,7 @@ describe("public map resource items client", () => {
 
     expect(secondLoad).toBe(firstLoad)
     expect(fetchSpy).toHaveBeenCalledTimes(1)
-    resolveFetch?.(buildResourceItemsResponse([]))
+    deferred.resolve?.(buildResourceItemsResponse([]))
     await expect(firstLoad).resolves.toEqual([])
   })
 

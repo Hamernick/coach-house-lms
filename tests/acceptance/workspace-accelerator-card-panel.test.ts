@@ -1,4 +1,5 @@
 import React from "react"
+import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -63,7 +64,7 @@ describe("workspace accelerator tutorial panel state", () => {
   })
 
   it("keeps module viewer arrow navigation inside the current module", () => {
-    const moduleSteps = [
+    const moduleSteps: WorkspaceAcceleratorCardStep[] = [
       {
         id: "need:video",
         moduleId: "need",
@@ -104,7 +105,7 @@ describe("workspace accelerator tutorial panel state", () => {
         hasAssignment: true,
         hasDeck: false,
       },
-    ] as const
+    ]
 
     expect(
       resolveWorkspaceAcceleratorModuleStepNavigation({
@@ -132,7 +133,7 @@ describe("workspace accelerator tutorial panel state", () => {
   })
 
   it("keeps arrow navigation inside the current module before Need video shortcuts", () => {
-    const needVideo = {
+    const needVideo: WorkspaceAcceleratorCardStep = {
       id: "what-is-the-need:video",
       moduleId: "module-need",
       moduleSlug: "what-is-the-need",
@@ -152,8 +153,8 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    } as const
-    const needAssignment = {
+    }
+    const needAssignment: WorkspaceAcceleratorCardStep = {
       ...needVideo,
       id: "what-is-the-need:assignment",
       stepKind: "assignment",
@@ -162,8 +163,8 @@ describe("workspace accelerator tutorial panel state", () => {
       durationMinutes: null,
       status: "not_started",
       stepSequenceIndex: 2,
-    } as const
-    const aiNeedVideo = {
+    }
+    const aiNeedVideo: WorkspaceAcceleratorCardStep = {
       id: "ai-the-need:video",
       moduleId: "module-ai-need",
       moduleSlug: "ai-the-need",
@@ -183,8 +184,8 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    } as const
-    const aiNeedAssignment = {
+    }
+    const aiNeedAssignment: WorkspaceAcceleratorCardStep = {
       ...aiNeedVideo,
       id: "ai-the-need:assignment",
       stepKind: "assignment",
@@ -192,7 +193,7 @@ describe("workspace accelerator tutorial panel state", () => {
       videoUrl: null,
       durationMinutes: null,
       stepSequenceIndex: 2,
-    } as const
+    }
     const steps = [needVideo, needAssignment, aiNeedVideo, aiNeedAssignment]
 
     expect(

@@ -71,4 +71,3 @@ revoke all on function public.claim_fiscal_staff_emails() from public, anon, aut
 revoke all on function public.finish_fiscal_staff_email(uuid,uuid,text,boolean) from public, anon, authenticated;
 grant execute on function public.claim_fiscal_staff_emails() to service_role;
 grant execute on function public.finish_fiscal_staff_email(uuid,uuid,text,boolean) to service_role;
-;

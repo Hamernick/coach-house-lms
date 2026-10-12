@@ -222,7 +222,7 @@ describe("onboarding gate", () => {
       completeMemberMapOnboardingAction(form)
     )
 
-    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe("/resources?member_onboarding=0&source=member_onboarding")
     expect(updateUser).toHaveBeenCalledWith({
       data: expect.objectContaining({
         onboarding_completed: true,

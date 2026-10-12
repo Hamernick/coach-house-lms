@@ -80,4 +80,3 @@ language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.consume_fiscal_guest_limit(text,integer,integer),public.get_fiscal_guest_receipt(text) from public,anon,authenticated;
 grant execute on function public.consume_fiscal_guest_limit(text,integer,integer),public.get_fiscal_guest_receipt(text) to service_role;
-;

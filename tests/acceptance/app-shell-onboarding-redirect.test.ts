@@ -53,7 +53,7 @@ describe("app shell onboarding redirect", () => {
         onboardingLocked: true,
         onboardingIntentFocus: "find",
         isAdminContext: false,
-        pathname: "/",
+        pathname: "/resources",
       })
     ).toBe("/onboarding?source=onboarding")
   })

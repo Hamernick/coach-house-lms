@@ -49,4 +49,3 @@ do $$ declare relation text; column_name text; begin
     execute format('create policy fiscal_guest_reviewer_select on public.%I for select to authenticated using (public.is_fiscal_guest_project_reviewer(%I))', relation, column_name);
   end loop;
 end $$;
-;

@@ -103,4 +103,3 @@ revoke all on function public.read_fiscal_guest_draft(text,timestamptz),
 grant execute on function public.read_fiscal_guest_draft(text,timestamptz),
   public.save_fiscal_guest_draft(text,timestamptz,integer,uuid,jsonb),
   public.purge_expired_fiscal_guest_drafts() to service_role;
-;

@@ -29,6 +29,18 @@ describe("proxy auth route redirects", () => {
     })
   })
 
+  it.each(["/documentation", "/documentation/quickstart", "/documentation/search?q=grants"])("keeps documentation public with session cookies at %s", async (path) => {
+    const response = await proxy(new NextRequest(`https://coachhouse.test${path}`, { headers: { cookie: "sb-test-auth-token=session" } }))
+    expect(response.headers.get("location")).toBeNull()
+    expect(createServerClientMock).not.toHaveBeenCalled()
+  })
+
+  it("keeps documentation mutations and similarly named session routes verified", async () => {
+    await proxy(new NextRequest("https://coachhouse.test/documentation", { method: "POST" }))
+    await proxy(new NextRequest("https://coachhouse.test/documentation-private", { headers: { cookie: "sb-test-auth-token=session" } }))
+    expect(getUserMock).toHaveBeenCalledTimes(2)
+  })
+
   it.each([
     ["/api/internal/cron/coaching-calendar", false],
     ["/api/internal/cron/coaching-calendar/", false],

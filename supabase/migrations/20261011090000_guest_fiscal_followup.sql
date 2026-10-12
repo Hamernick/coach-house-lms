@@ -117,4 +117,3 @@ revoke all on function public.fiscal_guest_editable_fields(),public.fiscal_guest
  from public,anon,authenticated;
 grant execute on function public.fiscal_guest_editable_fields(),public.fiscal_guest_application_access(uuid,text),
  public.read_fiscal_guest_application(uuid,text),public.resubmit_fiscal_guest_application(uuid,text,uuid,text,jsonb) to service_role;
-;

@@ -57,4 +57,3 @@ grant execute on function public.can_access_fiscal_guest_storage(text,text) to a
 create policy fiscal_guest_storage_scope on storage.objects as restrictive for all to authenticated
   using(public.can_access_fiscal_guest_storage(bucket_id,name))
   with check(public.can_access_fiscal_guest_storage(bucket_id,name));
-;

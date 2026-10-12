@@ -18,4 +18,3 @@ end $$;
 revoke all on function public.notify_guest_fiscal_submission() from public, anon, authenticated;
 create trigger fiscal_guest_submission_notifications after insert on public.fiscal_sponsorship_events
 for each row execute function public.notify_guest_fiscal_submission();
-;

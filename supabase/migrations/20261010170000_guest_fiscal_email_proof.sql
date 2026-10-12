@@ -79,4 +79,3 @@ revoke all on function public.prepare_fiscal_guest_email_proof(uuid,uuid,text,te
   public.verify_fiscal_guest_email(text,text,timestamptz),public.purge_expired_fiscal_guest_proofs() from public,anon,authenticated;
 grant execute on function public.prepare_fiscal_guest_email_proof(uuid,uuid,text,text,timestamptz),
   public.verify_fiscal_guest_email(text,text,timestamptz),public.purge_expired_fiscal_guest_proofs() to service_role;
-;

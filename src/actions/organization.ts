@@ -469,7 +469,8 @@ function revalidateOrganizationViews({
   revalidatePath("/workspace")
   revalidatePath("/my-organization")
   revalidatePath("/organization")
-  revalidatePath("/")
+  revalidatePath("/map")
+  revalidatePath("/resources")
 
   if (isPublic || wasPublic) {
     revalidateTag("public-map-organizations", { expire: 0 })

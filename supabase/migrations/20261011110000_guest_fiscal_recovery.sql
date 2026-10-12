@@ -49,4 +49,3 @@ begin
   select * into v_proof from public.fiscal_guest_email_proofs where job_id=v_job.id;
   return jsonb_build_object('nonce',v_proof.nonce,'expiresAt',v_proof.expires_at,'tokenHash',v_proof.token_hash);
 end $$;
-;

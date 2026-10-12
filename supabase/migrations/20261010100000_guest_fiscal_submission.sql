@@ -180,4 +180,3 @@ end;
 $$;
 revoke all on function public.submit_guest_fiscal_application(text, jsonb) from public, anon, authenticated;
 grant execute on function public.submit_guest_fiscal_application(text, jsonb) to service_role;
-;

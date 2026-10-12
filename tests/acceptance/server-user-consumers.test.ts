@@ -43,7 +43,7 @@ describe("shared verified user consumers", () => {
     const user = { id: "user-1", email: "user@example.test", user_metadata: {} }
     const supabase = { auth: { getUser: async () => ({ data: { user }, error: null }) } }
     createSupabaseServerClientServerMock.mockResolvedValue(supabase)
-    expect(await fetchPublicMapViewerState()).toEqual({ viewer: { id: user.id, email: user.email } })
+    expect(await fetchPublicMapViewerState()).toEqual({ viewer: { id: user.id, email: user.email, displayName: null, avatarUrl: null } })
     expect(await resolveOptionalAuthenticatedAppContext()).toEqual({
       supabase, user, profileAudience: { isAdmin: false }, activeOrg: { orgId: "org-1", role: "member" },
     })

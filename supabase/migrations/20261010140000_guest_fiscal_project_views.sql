@@ -45,4 +45,3 @@ begin
 end $$;
 revoke all on function public.get_fiscal_guest_notification_recipients(uuid) from public,anon,authenticated;
 grant execute on function public.get_fiscal_guest_notification_recipients(uuid) to service_role;
-;

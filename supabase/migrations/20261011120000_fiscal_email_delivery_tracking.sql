@@ -83,4 +83,3 @@ create index fiscal_guest_email_provider_idx on public.fiscal_guest_email_outbox
 create index fiscal_staff_email_provider_idx on public.fiscal_staff_email_outbox(provider_message_id) where provider_message_id is not null;
 revoke all on function public.purge_fiscal_email_delivery_events() from public,anon,authenticated;
 grant execute on function public.purge_fiscal_email_delivery_events() to service_role;
-;

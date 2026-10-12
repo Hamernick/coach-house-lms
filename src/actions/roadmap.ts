@@ -87,7 +87,8 @@ function revalidatePublicOrganizationProfile(sectionId: string | null) {
     return
   }
   revalidateTag("public-map-organizations", "max")
-  revalidatePath("/")
+  revalidatePath("/map")
+  revalidatePath("/resources")
 }
 
 export async function saveRoadmapSectionAction({

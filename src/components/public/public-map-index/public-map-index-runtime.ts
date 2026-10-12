@@ -12,6 +12,7 @@ import {
 import { publicMapViewOptions } from "./map-view-options"
 import { organizationHasMapLocation, type PublicMapBounds } from "./helpers"
 import { observePublicMapContainer, resolveMapBounds } from "./layout-sync"
+import { resolvePublicMapScreenPadding } from "./screen-camera"
 import {
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
@@ -25,9 +26,6 @@ import {
 
 export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
-
-const PUBLIC_MAP_INTERACTION_READY_DELAY_MS = 8_000
-const PUBLIC_MAP_COARSE_POINTER_MEDIA_QUERY = "(pointer: coarse)"
 
 function applyPublicMapGlobePresentation(map: mapboxgl.Map) {
   map.setProjection("globe")
@@ -108,7 +106,7 @@ export function useSyncSidebarCameraPadding({
     const frame = requestAnimationFrame(() => {
       if (mapRef.current !== map) return
       map.easeTo({
-        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
+        padding: resolvePublicMapScreenPadding(map.getContainer?.()) ?? resolvePublicMapCameraPadding(sidebarInsetLeft),
         duration,
         essential: true,
       })
@@ -194,6 +192,8 @@ export function useResolveInitialPublicMapViewport({
 }
 
 export function useInitializePublicMap({
+  enabled = true,
+  setMapReady,
   token,
   tokenAvailable,
   containerRef,
@@ -209,6 +209,8 @@ export function useInitializePublicMap({
   retryVersion,
   theme,
 }: {
+  enabled?: boolean
+  setMapReady: (ready: boolean) => void
   token: string
   tokenAvailable: boolean
   containerRef: RefObject<HTMLDivElement | null>
@@ -234,13 +236,15 @@ export function useInitializePublicMap({
   }, [mapLoadedRef, mapRef, theme])
 
   useEffect(() => {
-    if (!tokenAvailable) return
+    if (!enabled || !tokenAvailable) return
     if (!containerRef.current) return
     if (mapRef.current) return
 
     let cancelled = false
     let stopObservingMapContainer = () => {}
     let hasMarkedMapReady = false
+    let hasScheduledMapReveal = false
+    setMapReady(false)
     setInitialViewportResolved(false)
 
     async function initializeMap() {
@@ -263,6 +267,8 @@ export function useInitializePublicMap({
           attributionControl: false,
         })
         mapRef.current = map
+        const screenPadding = resolvePublicMapScreenPadding(containerRef.current)
+        if (screenPadding) map.setPadding(screenPadding)
 
         if (typeof map.setRenderWorldCopies === "function") {
           map.setRenderWorldCopies(false)
@@ -306,9 +312,23 @@ export function useInitializePublicMap({
           markMapReady()
         })
 
+        map.on("sourcedata", (event) => {
+          // Wait for real basemap content, then reveal its next painted frame.
+          // Full load also waits for unrelated tiles and changing directory sources.
+          if (hasScheduledMapReveal || !event.coord || event.sourceDataType !== "content") return
+          if (event.source?.type !== "vector" && event.source?.type !== "raster") return
+          hasScheduledMapReveal = true
+          map.once("render", () => {
+            if (cancelled || mapRef.current !== map) return
+            setMapReady(true)
+          })
+        })
+
         map.on("load", () => {
+          if (cancelled || mapRef.current !== map) return
           applyPublicMapGlobePresentation(map)
           markMapReady()
+          setMapReady(true)
         })
 
         map.on("moveend", () => {
@@ -333,53 +353,17 @@ export function useInitializePublicMap({
     }
 
     let initializationStarted = false
-    let initializeTimeoutId: number | null = null
-    let initializeFrameId: number | null = null
-    const mapContainer = containerRef.current
     const startMap = () => {
       if (cancelled || initializationStarted) return
       initializationStarted = true
-      if (initializeTimeoutId !== null) {
-        window.clearTimeout(initializeTimeoutId)
-        initializeTimeoutId = null
-      }
       void initializeMap()
     }
     mapStartRef.current = startMap
-    const startMapFromKeyboard = (event: KeyboardEvent) => {
-      if (event.key !== "Enter" && event.key !== " ") return
-      event.preventDefault()
-      startMap()
-    }
-    mapContainer.addEventListener("pointerdown", startMap, {
-      once: true,
-      passive: true,
-    })
-    mapContainer.addEventListener("keydown", startMapFromKeyboard)
-
-    const hasCoarsePointer = window.matchMedia(
-      PUBLIC_MAP_COARSE_POINTER_MEDIA_QUERY
-    ).matches
-    if (!hasCoarsePointer) {
-      initializeFrameId = window.requestAnimationFrame(() => {
-        if (cancelled || initializationStarted) return
-        initializeTimeoutId = window.setTimeout(() => {
-          startMap()
-        }, PUBLIC_MAP_INTERACTION_READY_DELAY_MS)
-      })
-    }
+    startMap()
 
     return () => {
       cancelled = true
       if (mapStartRef.current === startMap) mapStartRef.current = null
-      mapContainer.removeEventListener("pointerdown", startMap)
-      mapContainer.removeEventListener("keydown", startMapFromKeyboard)
-      if (initializeFrameId !== null) {
-        window.cancelAnimationFrame(initializeFrameId)
-      }
-      if (initializeTimeoutId !== null) {
-        window.clearTimeout(initializeTimeoutId)
-      }
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
@@ -389,6 +373,8 @@ export function useInitializePublicMap({
       hasResolvedInitialViewportRef.current = false
     }
   }, [
+    enabled,
+    setMapReady,
     containerRef,
     hasResolvedInitialViewportRef,
     mapLoadedRef,

@@ -100,3 +100,34 @@ Snapshot and assemble the current-main release candidate, then fix activation pe
 - Release PR #288, candidate `62c017d0`: hosted static and RLS pass. Local document safety28, repaired acceptance96 and billing/return focused cases pass. The webhook test now imports a second application module; regenerated acceptance project classification so the required inventory guard can run the full suite.
 - Previous visual run had127 passed/26 failed. Public fixture/selector/reference fixes are being reviewed independently in #289; do not duplicate or revert that lane. This release still needs its internal shell/Tools references and keyboard-focus case reviewed. No screenshot threshold was weakened.
 - Public map curation remains available to platform admins; ordinary members still land in Workspace. Original source preview remains untouched. Required quality and browser/payment/rollout gates remain open.
+
+## Coordinated rollout and recovery
+
+1. Require passing `quality` on the reviewed PR head and finish the authenticated Stripe test-mode return/unlock check. Confirm test mode before payment; the locally configured primary key is live. Do not claim a webhook canary without a configured test endpoint/forwarder.
+2. Immediately before deployment, rerun `supabase migration list --linked` and `supabase db push --linked --dry-run` from this release checkout. Target must be `vswzhuwjtgzrkxknrmxu`; the only pending migration must be `20261012163000_gate_free_workspace_document_writes.sql`. Stop if either differs.
+3. Record the current production deployment ID/SHA as the application rollback target. Apply the reviewed migration in the same release window, then verify its history and the policies/trigger below before releasing application code. Existing rows are retained; no backfill or destructive data change is required.
+4. Merge only after required checks and branch protection pass. Verify Vercel is Ready for the actual merged SHA; run free/paid access and checkout-return checks against that deployment.
+5. If the application regresses, restore the recorded prior deployment and retain the migration's restrictive policies. Do not drop the paid-access restrictions as a routine rollback. A schema defect needs a separately reviewed forward correction preserving free read access and paid write authorization; keep the application release blocked until corrected.
+
+Read-only migration verification (expected: one history row, eight restrictive policies, one enabled trigger):
+
+```sql
+select version from supabase_migrations.schema_migrations
+where version = '20261012163000';
+
+select schemaname, tablename, policyname, permissive
+from pg_policies
+where policyname in (
+  'document_storage_paid_insert', 'document_storage_paid_update', 'document_storage_paid_delete',
+  'document_library_paid_insert', 'document_library_paid_update', 'document_library_paid_delete',
+  'workspace_collaboration_paid_insert', 'workspace_collaboration_paid_update'
+)
+order by policyname;
+
+select tgname, tgenabled from pg_trigger
+where tgrelid = 'public.organizations'::regclass
+  and tgfoid = 'public.guard_free_workspace_documents()'::regprocedure
+  and not tgisinternal;
+```
+
+Current evidence: renewal-date compatibility is covered by49 focused tests; read-only local Stripe configuration checks confirm active Organization/Operations Support prices in live and test modes and an enabled live webhook. These are not a completed checkout canary or verification of Vercel's deployed secrets. No production migration, transaction, merge, or deployment was performed by this release lane.

@@ -44,7 +44,7 @@ describe("app shell onboarding redirect", () => {
         isAdminContext: false,
         pathname: "/community",
       })
-    ).toBe("/?member_onboarding=1&source=onboarding")
+    ).toBe("/resources?member_onboarding=1&source=onboarding")
   })
 
   it("does not redirect member onboarding users away from find", () => {
@@ -53,7 +53,7 @@ describe("app shell onboarding redirect", () => {
         onboardingLocked: true,
         onboardingIntentFocus: "find",
         isAdminContext: false,
-        pathname: "/",
+        pathname: "/resources",
       })
     ).toBeNull()
   })

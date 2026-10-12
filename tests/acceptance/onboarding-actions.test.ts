@@ -201,7 +201,7 @@ describe("completeOnboardingAction", () => {
     expect(rpcMock).toHaveBeenCalledWith("claim_person_public_handle", {
       p_handle: "ada-lovelace",
     })
-    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe("/resources?member_onboarding=0&source=member_onboarding")
   })
 
   it.each([

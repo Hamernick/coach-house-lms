@@ -29,6 +29,11 @@ const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next()
   const pathname = request.nextUrl.pathname
+  // Public documentation has no account-specific content; mutations still verify auth.
+  if ((request.method === "GET" || request.method === "HEAD") &&
+      (pathname === "/documentation" || pathname.startsWith("/documentation/"))) {
+    return response
+  }
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   )

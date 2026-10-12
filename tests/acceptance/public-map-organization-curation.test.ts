@@ -41,7 +41,7 @@ describe("public map organization curation", () => {
     expect(action).toContain("before_state")
     expect(action).toContain("after_state")
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
-    expect(action).toContain('revalidatePath("/")')
+    expect(action).toContain('revalidatePath("/map")')
     expect(action).not.toContain(".delete(")
 
     expect(migration).toContain(

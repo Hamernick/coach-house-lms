@@ -85,9 +85,9 @@ export function FiscalSponsorshipPublicIntake({ draftPersistenceEnabled = false,
           <p className="text-xs leading-5 text-muted-foreground">No payment or account needed to apply.</p>
         </div>
       </form>
-      <p className="mx-auto mt-3 max-w-md text-center text-xs leading-5 text-muted-foreground">
+      {profileImportEnabled && <p className="mx-auto mt-3 max-w-md text-center text-xs leading-5 text-muted-foreground">
         After submitting, you’ll have the option to create a free profile and reuse your details. You can skip that step.
-      </p>
+      </p>}
     </section>
   )
 }

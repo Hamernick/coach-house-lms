@@ -3,7 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const PROCESS = [
   ["Apply", "Tell us about your project, its public benefit, and your funding plan. No account required."],
   ["Hear from us", "Coach House reviews your application and contacts you about next steps."],
-  ["Keep your details", "After applying, optionally create a free profile and reuse the information you’ve shared."],
+  ["Stay informed", "Keep your confirmation email to follow your application and respond to requests from our team."],
 ] as const
 
 export function FiscalSponsorshipOverview() {

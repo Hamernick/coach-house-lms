@@ -10,8 +10,8 @@ describe("Vercel observability wiring", () => {
 
     expect(packageSource).toContain('"@vercel/analytics"')
     expect(packageSource).toContain('"@vercel/speed-insights"')
-    expect(telemetrySource).toContain('from "@vercel/analytics/next"')
-    expect(telemetrySource).toContain('from "@vercel/speed-insights/next"')
+    expect(telemetrySource).toContain('import("@vercel/analytics/next")')
+    expect(telemetrySource).toContain('import("@vercel/speed-insights/next")')
     expect(layoutSource).toContain("<AppTelemetry />")
     expect(telemetrySource).toContain("<Analytics beforeSend={filterPrivateTelemetry} />")
     expect(telemetrySource).toContain("<SpeedInsights sampleRate={0.5} beforeSend={filterPrivateTelemetry} />")

@@ -5,7 +5,7 @@ export type Project = {
   progress: number
   startDate: Date
   endDate: Date
-  status: "backlog" | "planned" | "active" | "cancelled" | "completed"
+  status: "backlog" | "planned" | "active" | "on-hold" | "cancelled" | "completed"
   priority: "urgent" | "high" | "medium" | "low"
   tags: string[]
   members: string[]
@@ -18,7 +18,7 @@ export type Project = {
     name: string
     type: "bug" | "improvement" | "task"
     assignee: string
-    status: "todo" | "in-progress" | "done"
+    status: "todo" | "in-progress" | "waiting" | "done"
     startDate: Date
     endDate: Date
   }>

@@ -40,7 +40,7 @@ export function ProjectRow({ project, isExpanded, onToggle, dates, cellWidth }: 
 
         {/* Project Timeline */}
         <div className="relative py-3 pr-4 pt-4 pb-4 shrink-0" style={{ width: timelineWidth }}>
-          <TimelineBar
+          {project.startDate && project.endDate ? <TimelineBar
             startDate={project.startDate}
             endDate={project.endDate}
             dates={dates}
@@ -48,7 +48,7 @@ export function ProjectRow({ project, isExpanded, onToggle, dates, cellWidth }: 
             label={project.name}
             progress={project.progress}
             variant="project"
-          />
+          /> : <span className="text-muted-foreground text-xs">No date range set</span>}
         </div>
       </div>
 

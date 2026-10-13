@@ -34,18 +34,18 @@ export async function transitionOrganizationProjectDeletion({
           error:
             "Organizations are not available until the latest workspace database migrations are applied.",
         }
-      : { error: "Unable to delete organization." }
+      : { error: "Unable to delete project." }
   }
 
   if (!data || typeof data !== "object" || Array.isArray(data)) {
-    return { error: "Unable to delete organization." }
+    return { error: "Unable to delete project." }
   }
   const result = data as Record<string, unknown>
   if (result.ok === true && typeof result.projectId === "string") {
     return { ok: true as const, projectId: result.projectId }
   }
   if (result.ok !== false || typeof result.code !== "string") {
-    return { error: "Unable to delete organization." }
+    return { error: "Unable to delete project." }
   }
   if (result.code === "stale" || result.code === "scope_changed") {
     return { error: "This project changed. Refresh before deleting it." }
@@ -57,7 +57,7 @@ export async function transitionOrganizationProjectDeletion({
     }
   }
   if (result.code === "not_found") {
-    return { error: "Unable to find that organization." }
+    return { error: "Unable to find that project." }
   }
-  return { error: "Unable to delete organization." }
+  return { error: "Unable to delete project." }
 }

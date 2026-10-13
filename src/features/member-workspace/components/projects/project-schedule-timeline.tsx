@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react"
 import { useRouter } from "next/navigation"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import type { TimeSummary } from "@/features/platform-admin-dashboard"
-import { getProjectSchedule } from "../../lib/project-schedule"
+import { getProjectSchedule, parseScheduleDay } from "../../lib/project-schedule"
 
 export type UpdateScheduleAction = (
   id: string,
@@ -71,7 +72,9 @@ export function ProjectScheduleTimeline({
       document.removeEventListener("visibilitychange", refresh)
     }
   }, [])
-  const schedule = time.schedule
+  const [savedSchedule, setSavedSchedule] = useState(time.schedule)
+  useEffect(() => setSavedSchedule(time.schedule), [time.schedule])
+  const schedule = savedSchedule
   const summary =
     schedule && now
       ? getProjectSchedule(schedule.startDate, schedule.endDate, now)
@@ -81,18 +84,19 @@ export function ProjectScheduleTimeline({
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (!onSave || saving) return
-    if (!getProjectSchedule(startDate, endDate)) {
+    if ((startDate && parseScheduleDay(startDate) === null) || (endDate && parseScheduleDay(endDate) === null) || (startDate && endDate && endDate < startDate)) {
       setError("Choose valid dates, with the due date on or after the start.")
       return
     }
     setSaving(true)
     setError(null)
     try {
-      const result = await onSave(projectId, startDate, endDate)
+      const result = await withSaveFeedback(() => onSave(projectId, startDate, endDate), { pending: "Saving dates…", success: "Project dates updated" })
       if ("error" in result) {
         setError(result.error)
         return
       }
+      setSavedSchedule({ startDate, endDate })
       setOpen(false)
       router.refresh()
     } catch {
@@ -128,27 +132,25 @@ export function ProjectScheduleTimeline({
               <DialogHeader>
                 <DialogTitle>Timeline dates</DialogTitle>
                 <DialogDescription>
-                  Set the start and due date for this organization’s work.
+                  Set either date, both, or leave them blank.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={save} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`${id}-start`}>Start date</Label>
+                  <Label htmlFor={`${id}-start`}>Start date (optional)</Label>
                   <Input
                     id={`${id}-start`}
                     type="date"
-                    required
                     disabled={saving}
                     value={startDate}
                     onChange={(event) => setStartDate(event.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`${id}-end`}>Due date</Label>
+                  <Label htmlFor={`${id}-end`}>Due date (optional)</Label>
                   <Input
                     id={`${id}-end`}
                     type="date"
-                    required
                     min={startDate || undefined}
                     disabled={saving}
                     value={endDate}
@@ -206,7 +208,7 @@ export function ProjectScheduleTimeline({
         </>
       ) : (
         <p className="text-muted-foreground text-sm">
-          {schedule && !now ? "Loading timeline…" : "No dates set."}
+          {schedule?.startDate && !schedule.endDate ? `Starts ${formatDay(schedule.startDate)}` : schedule?.endDate && !schedule.startDate ? `Due ${formatDay(schedule.endDate)}` : schedule && !now ? "Loading timeline…" : "No dates set."}
         </p>
       )}
       {onSave && !time.scheduleAvailable ? (

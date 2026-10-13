@@ -27,6 +27,8 @@ import type { MemberWorkspaceProjectFilterChip as FilterChip } from "./member-wo
 import {
   MEMBER_WORKSPACE_FISCAL_SPONSORSHIP_STATUS_OPTIONS,
   MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS,
+  MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS,
+  normalizeProjectStatusFilter,
   normalizeMemberWorkspaceOrganizationStatusFilterValue,
 } from "./member-workspace-project-status"
 
@@ -39,6 +41,7 @@ type FilterTemp = {
 }
 
 type MemberWorkspaceProjectFilterPopoverProps = {
+  directory?: "organizations" | "projects"
   coachOptions?: OrganizationCoachOption[]
   coachFilter?: string
   onCoachFilterChange?: (value: string) => void
@@ -98,6 +101,7 @@ function capitalize(value: string) {
 }
 
 export function MemberWorkspaceProjectFilterPopover({
+  directory = "organizations",
   projects,
   coachOptions = [],
   coachFilter = "all",
@@ -107,6 +111,7 @@ export function MemberWorkspaceProjectFilterPopover({
   onClear,
   counts,
 }: MemberWorkspaceProjectFilterPopoverProps) {
+  const statusOptions = directory === "projects" ? MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS : MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [tagSearch, setTagSearch] = useState("")
@@ -162,9 +167,7 @@ export function MemberWorkspaceProjectFilterPopover({
     for (const chip of initialChips ?? []) {
       const key = chip.key.toLowerCase()
       if (key === "status") {
-        const status = normalizeMemberWorkspaceOrganizationStatusFilterValue(
-          chip.value
-        )
+        const status = (directory === "projects" ? normalizeProjectStatusFilter : normalizeMemberWorkspaceOrganizationStatusFilterValue)(chip.value)
         if (status) next.status.add(status)
       }
       if (key === "fiscal sponsorship") {
@@ -180,15 +183,15 @@ export function MemberWorkspaceProjectFilterPopover({
     }
 
     setTemp(next)
-  }, [initialChips, open])
+  }, [directory, initialChips, open])
 
   const filteredCategories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) return FILTER_CATEGORIES
-    return FILTER_CATEGORIES.filter((category) =>
-      category.label.toLowerCase().includes(normalizedQuery)
-    )
-  }, [query])
+    return FILTER_CATEGORIES
+      .filter(category => directory !== "projects" || category.id !== "fiscalSponsorship")
+      .map(category => category.id === "status" && directory === "projects" ? { ...category, label: "Project status" } : category)
+      .filter(category => category.label.toLowerCase().includes(normalizedQuery))
+  }, [directory, query])
 
   const handleApply = () => {
     const chips: FilterChip[] = (initialChips ?? []).filter(
@@ -239,7 +242,7 @@ export function MemberWorkspaceProjectFilterPopover({
         align="start"
         className="w-[calc(100vw-2rem)] max-w-[720px] rounded-xl p-0"
       >
-        <CoachFilter coachOptions={coachOptions} coachFilter={coachFilter} onCoachFilterChange={onCoachFilterChange} />
+        {directory === "organizations" ? <CoachFilter coachOptions={coachOptions} coachFilter={coachFilter} onCoachFilterChange={onCoachFilterChange} /> : null}
         <div className="grid grid-cols-1 sm:grid-cols-[260px_minmax(0,1fr)]">
           <div className="border-border/40 border-r p-3">
             <div className="px-1 pb-2">
@@ -310,7 +313,7 @@ export function MemberWorkspaceProjectFilterPopover({
 
             {active === "status" ? (
               <div className="grid grid-cols-2 gap-2">
-                {MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS.map((option) => (
+                {statusOptions.map((option) => (
                   <label
                     key={option.value}
                     className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"

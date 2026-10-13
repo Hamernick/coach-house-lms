@@ -40,7 +40,7 @@ export type MemberWorkspaceProjectDetailDraft = {
   overviewDocument: string
 }
 
-function toDateValue(date?: Date) {
+function toDateValue(date?: Date | null) {
   return date ? date.toISOString().slice(0, 10) : ""
 }
 

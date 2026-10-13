@@ -17,7 +17,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { toast } from "sonner"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { useRouter } from "next/navigation"
 
 import type { ProjectDetails, ProjectTask } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import { getProjectTasks } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
@@ -58,7 +59,8 @@ export function ProjectTasksTab({
 }: ProjectTasksTabProps) {
   const [tasks, setTasks] = useState<ProjectTask[]>(() => getProjectTasks(project))
   const [filters, setFilters] = useState<FilterChipType[]>([])
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   useEffect(() => {
     setTasks(getProjectTasks(project))
@@ -111,7 +113,7 @@ export function ProjectTasksTab({
   )
 
   const toggleTask = (taskId: string) => {
-    if (!canToggleTasks) {
+    if (isPending || !canToggleTasks) {
       return
     }
 
@@ -131,7 +133,7 @@ export function ProjectTasksTab({
     )
 
     startTransition(async () => {
-      const result = await onUpdateTaskStatus!(taskId, nextStatus)
+      const result = await withSaveFeedback(() => onUpdateTaskStatus!(taskId, nextStatus), { pending: "Saving task…", success: nextStatus === "done" ? "Task completed" : "Task reopened" })
       if ("error" in result) {
         setTasks((prev) =>
           prev.map((task) =>
@@ -143,12 +145,14 @@ export function ProjectTasksTab({
               : task,
           ),
         )
-        toast.error(result.error)
+        return
       }
+      router.refresh()
     })
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (isPending) return
     const { active, over } = event
 
     if (over && active.id !== over.id) {
@@ -166,14 +170,15 @@ export function ProjectTasksTab({
       }
 
       startTransition(async () => {
-        const result = await onReorderTasks(
+        const result = await withSaveFeedback(() => onReorderTasks(
           project.id,
           nextTasks.map((task) => task.id),
-        )
+        ), { pending: "Saving task order…", success: "Task order saved" })
         if ("error" in result) {
           setTasks(previousTasks)
-          toast.error(result.error)
+          return
         }
+        router.refresh()
       })
     }
   }
@@ -191,6 +196,7 @@ export function ProjectTasksTab({
       <header className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
         <div className="flex items-center gap-2">
           <FilterPopover
+            entityType="task"
             initialChips={filters}
             onApply={setFilters}
             onClear={() => setFilters([])}
@@ -282,6 +288,8 @@ function getStatusLabel(status: ProjectTask["status"]): string {
   switch (status) {
     case "done":
       return "Done"
+    case "waiting":
+      return "Waiting"
     case "in-progress":
       return "In Progress"
     default:

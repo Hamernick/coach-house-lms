@@ -774,3 +774,25 @@ describe("member workspace task actions", () => {
     })
   })
 })
+
+describe("task assignment access", () => {
+  it.each([true, false])("allows status updates only for the explicitly assigned task outside coach scope (assigned=%s)", async (assigned) => {
+    const task = { id: "task-1", org_id: "outside-org", project_id: "project-1", status: "todo" }
+    const query = (data: unknown) => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data, error: null }) })
+    const supabase = { from: vi.fn((table: string) => {
+      if (table === "organization_tasks") return query(task)
+      if (table === "organization_projects") return query({ id: task.project_id, org_id: task.org_id, project_kind: "standard", created_source: "user", task_count: 1 })
+      if (table === "organization_task_assignees") return query(assigned ? { task_id: task.id } : null)
+      throw new Error(table)
+    }) }
+    const updateQuery = { update: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve) }
+    createSupabaseAdminClientMock.mockReset().mockReturnValue({ from: () => updateQuery })
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase, userId: "coach-1", isAdmin: false, canAccessOrganizations: true, isPlatformStaff: true, canEdit: false, organizationCoachScope: { mode: "assigned", organizationIds: new Set() } })
+    const result = await updateMemberWorkspaceTaskStatusAction(task.id, "done")
+    if (assigned) expect(result).toMatchObject({ ok: true, taskId: task.id, status: "done" })
+    else {
+      expect(result).toHaveProperty("error")
+      expect(updateQuery.update).not.toHaveBeenCalled()
+    }
+  })
+})

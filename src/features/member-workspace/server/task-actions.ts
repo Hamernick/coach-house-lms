@@ -76,12 +76,12 @@ export async function createMemberWorkspaceTaskAction(
     return { error: "Choose a valid task priority." }
   }
 
-  const startDate = toDateOnly(input.startDate)
-  const endDate = toDateOnly(input.endDate)
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+  const startDate = input.startDate ? toDateOnly(input.startDate) : null
+  const endDate = input.endDate ? toDateOnly(input.endDate) : null
+  if ((startDate && Number.isNaN(startDate.getTime())) || (endDate && Number.isNaN(endDate.getTime()))) {
     return { error: "Enter valid task dates." }
   }
-  if (endDate.getTime() < startDate.getTime()) {
+  if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
     return { error: "Target date must be on or after the start date." }
   }
 
@@ -119,9 +119,12 @@ export async function createMemberWorkspaceTaskAction(
   })
   if ("error" in result) return result
 
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${project.id}`)
+  revalidatePath(`/projects/${project.id}`)
 
   return result
 }
@@ -160,12 +163,12 @@ export async function updateMemberWorkspaceTaskAction(
     return { error: "Choose a valid task priority." }
   }
 
-  const startDate = toDateOnly(input.startDate)
-  const endDate = toDateOnly(input.endDate)
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+  const startDate = input.startDate ? toDateOnly(input.startDate) : null
+  const endDate = input.endDate ? toDateOnly(input.endDate) : null
+  if ((startDate && Number.isNaN(startDate.getTime())) || (endDate && Number.isNaN(endDate.getTime()))) {
     return { error: "Enter valid task dates." }
   }
-  if (endDate.getTime() < startDate.getTime()) {
+  if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
     return { error: "Target date must be on or after the start date." }
   }
 
@@ -236,11 +239,15 @@ export async function updateMemberWorkspaceTaskAction(
   })
   if ("error" in result) return result
 
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${existingTask.project_id}`)
+  revalidatePath(`/projects/${existingTask.project_id}`)
   if (existingTask.project_id !== project.id) {
     revalidatePath(`/organizations/${project.id}`)
+    revalidatePath(`/projects/${project.id}`)
   }
 
   return { ok: true, taskId: result.taskId }
@@ -314,6 +321,7 @@ export async function updateMemberWorkspaceTaskStatusAction(
   const projectResult = await resolveTaskTargetProject({
     actor,
     projectId: task.project_id,
+    assignedTaskId: task.id,
   })
   if ("error" in projectResult) {
     return projectResult
@@ -337,9 +345,12 @@ export async function updateMemberWorkspaceTaskStatusAction(
     return { error: "Unable to update task status." }
   }
 
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${task.project_id}`)
+  revalidatePath(`/projects/${task.project_id}`)
 
   return { ok: true, taskId: normalizedTaskId, status: nextStatus }
 }
@@ -386,8 +397,11 @@ export async function updateMemberWorkspaceTaskOrderAction(
   })
   if ("error" in result) return result
 
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath(`/organizations/${project.id}`)
+  revalidatePath(`/projects/${project.id}`)
 
   return result
 }
@@ -445,9 +459,12 @@ export async function deleteMemberWorkspaceTaskAction(
   })
   if ("error" in result) return result
 
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${task.project_id}`)
+  revalidatePath(`/projects/${task.project_id}`)
 
   return result
 }

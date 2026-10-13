@@ -169,7 +169,7 @@ export function ProjectTimeline() {
         const taskDuration = differenceInCalendarDays(task.endDate, task.startDate) + 1
         const newEnd = addDays(newStart, taskDuration - 1)
 
-        const needsExpand = newStart < p.startDate || newEnd > p.endDate
+        const needsExpand = (p.startDate && newStart < p.startDate) || (p.endDate && newEnd > p.endDate)
         if (needsExpand) {
           showConfirmDialog(
             "This task is outside the project range. Expand project to fit?",
@@ -179,8 +179,8 @@ export function ProjectTimeline() {
                   if (proj.id !== p.id) return proj
                   return {
                     ...proj,
-                    startDate: newStart < proj.startDate ? newStart : proj.startDate,
-                    endDate: newEnd > proj.endDate ? newEnd : proj.endDate,
+                    startDate: !proj.startDate || newStart < proj.startDate ? newStart : proj.startDate,
+                    endDate: !proj.endDate || newEnd > proj.endDate ? newEnd : proj.endDate,
                     tasks: proj.tasks.map((t) => (t.id === taskId ? { ...t, startDate: newStart, endDate: newEnd } : t)),
                   }
                 })
@@ -250,7 +250,7 @@ export function ProjectTimeline() {
   const handleUpdateProject = (projectId: string, newStart: Date, confirmed: boolean = false) => {
     setProjects((prev) =>
       prev.map((p) => {
-        if (p.id !== projectId) return p
+        if (p.id !== projectId || !p.startDate || !p.endDate) return p
 
         const durationDays = differenceInCalendarDays(p.endDate, p.startDate) + 1
         const newEnd = addDays(newStart, durationDays - 1)
@@ -312,8 +312,8 @@ export function ProjectTimeline() {
       projectId,
       taskId: taskId || null
     })
-    setEditStartDate(item.startDate.toISOString().split('T')[0])
-    setEditEndDate(item.endDate.toISOString().split('T')[0])
+    setEditStartDate(item.startDate?.toISOString().split('T')[0] ?? '')
+    setEditEndDate(item.endDate?.toISOString().split('T')[0] ?? '')
   }
 
   return (
@@ -512,7 +512,7 @@ export function ProjectTimeline() {
                         })}
                       </div>
 
-                      <DraggableBar
+                      {project.startDate && project.endDate ? <DraggableBar
                         item={{
                           id: project.id,
                           name: project.name,
@@ -526,7 +526,7 @@ export function ProjectTimeline() {
                         onUpdateStart={(id, newStart) => handleUpdateProject(id, newStart)}
                         onUpdateDuration={(id, newStart, newEnd) => handleUpdateProjectDuration(id, newStart, newEnd)}
                         onDoubleClick={() => handleDoubleClick("project", project.id)}
-                      />
+                      /> : null}
                     </div>
                   </div>
 
@@ -644,7 +644,7 @@ export function ProjectTimeline() {
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {project.startDate.toLocaleDateString("vi")} - {project.endDate.toLocaleDateString("vi")}
+                    {project.startDate?.toLocaleDateString() ?? "No start date"} - {project.endDate?.toLocaleDateString() ?? "No due date"}
                   </div>
                 </div>
               </div>

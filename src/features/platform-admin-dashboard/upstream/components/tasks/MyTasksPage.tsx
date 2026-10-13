@@ -303,6 +303,7 @@ export function MyTasksPage() {
         <div className="flex items-center justify-between px-4 pb-3 pt-3">
           <div className="flex items-center gap-2">
             <FilterPopover
+              entityType="task"
               initialChips={filters}
               onApply={setFilters}
               onClear={() => setFilters([])}

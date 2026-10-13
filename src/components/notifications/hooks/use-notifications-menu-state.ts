@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useVisibleRefresh } from "@/hooks/use-visible-refresh"
 import { useRouter } from "next/navigation"
 
 import {
@@ -81,6 +82,8 @@ export function useNotificationsMenuState() {
     if (!open) return
     void refreshNotifications()
   }, [open, refreshNotifications])
+
+  useVisibleRefresh(refreshNotifications, mounted && !bulkUpdating && !selectedUpdating && !requestUpdating)
 
   useEffect(() => {
     const nextSelectedId = resolveSelectedNotificationId(filteredItems, selectedId)

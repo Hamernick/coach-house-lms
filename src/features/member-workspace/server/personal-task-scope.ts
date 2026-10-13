@@ -1,8 +1,9 @@
+import { readTaskTrackerDetails } from "@/lib/task-tracker"
 import type { Database } from "@/lib/supabase"
 import type { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { toMemberWorkspaceDataError } from "./table-errors"
 
-type TaskIdentity = { id: string; org_id: string; created_by: string | null }
+type TaskIdentity = { id: string; org_id: string; created_by: string | null; status?: string; tracker_metadata?: unknown }
 type Assignment = { task_id: string; user_id: string }
 
 export function personalTaskIds(
@@ -21,7 +22,9 @@ export function personalTaskIds(
       .filter(
         (task) =>
           mine.has(task.id) ||
-          (task.created_by === userId && !assigned.has(task.id))
+          (task.created_by === userId && !assigned.has(task.id) && !readTaskTrackerDetails(task.tracker_metadata)) ||
+          readTaskTrackerDetails(task.tracker_metadata)?.collaboratorUserIds.includes(userId) ||
+          (!assigned.has(task.id) && task.status !== "done" && readTaskTrackerDetails(task.tracker_metadata)?.assignmentStatus === "Proposed" && readTaskTrackerDetails(task.tracker_metadata)?.proposedUserId === userId)
       )
       .map((task) => task.id)
   )

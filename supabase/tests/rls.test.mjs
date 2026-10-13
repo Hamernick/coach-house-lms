@@ -42,6 +42,17 @@ if (!url || !anonKey || !serviceRole) {
   process.exit(0)
 }
 
+// This suite creates users, subscriptions and projects. Loading an app's local
+// credentials must not silently populate its shared database with test records.
+const hostname = new URL(url).hostname
+const isLocalDatabase = ["localhost", "127.0.0.1", "[::1]", "supabase_kong"].includes(hostname)
+if (!isLocalDatabase && process.env.SUPABASE_RLS_TEST_PROJECT_REF !== hostname.split(".")[0]) {
+  console.log(
+    "[supabase] Skipping destructive remote RLS tests. Use a local database or explicitly set SUPABASE_RLS_TEST_PROJECT_REF to an isolated test project's ref."
+  )
+  process.exit(0)
+}
+
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })

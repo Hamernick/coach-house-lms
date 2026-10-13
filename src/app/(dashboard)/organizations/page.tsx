@@ -61,6 +61,7 @@ export default async function OrganizationsPage() {
 
   return (
     <MemberWorkspaceProjectsPage
+      viewerUserId={staff.userId}
       projects={assignedProjects}
       showPlatformRevenue
       defaultCoachFilter={defaultCoachFilter}

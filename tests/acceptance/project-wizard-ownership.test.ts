@@ -55,3 +55,25 @@ describe("project wizard ownership directory", () => {
     expect(actual).toContain("Coach Directory Person")
   })
 })
+
+import { formatProjectDate, projectDateToLocalCalendar, projectDateToValue } from "@/lib/project-date"
+
+describe("project calendar dates", () => {
+  it.each(["America/New_York", "Pacific/Honolulu", "Asia/Kolkata", "Pacific/Auckland"])("preserves the saved calendar day in %s", (timezone) => {
+    const prior = process.env.TZ
+    process.env.TZ = timezone
+    try {
+      const saved = new Date("2026-10-18T00:00:00.000Z")
+      const selected = projectDateToLocalCalendar(saved)
+      expect(selected.getDate()).toBe(18)
+      expect(selected.getMonth()).toBe(9)
+      expect(projectDateToValue(selected)).toBe("2026-10-18")
+      expect(projectDateToValue(new Date(2026, 9, 18))).toBe("2026-10-18")
+      expect(formatProjectDate(selected, "en-US")).toBe("Oct 18, 2026")
+      expect(formatProjectDate(selected, "en-GB")).toBe("18 Oct 2026")
+    } finally {
+      if (prior === undefined) delete process.env.TZ
+      else process.env.TZ = prior
+    }
+  })
+})

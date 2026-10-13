@@ -12,6 +12,8 @@ import {
 } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { useProjectSavedState } from "./use-project-saved-state"
 import { AnimatePresence, motion } from "motion/react"
 
 import type {
@@ -84,9 +86,9 @@ type MemberWorkspaceProjectDetailPageProps = {
   ) => Promise<{ ok: true; id: string } | { error: string }>
   updateTaskStatusAction?: (
     taskId: string,
-    nextStatus: "todo" | "in-progress" | "done"
+    nextStatus: "todo" | "in-progress" | "waiting" | "done"
   ) => Promise<
-    | { ok: true; taskId: string; status: "todo" | "in-progress" | "done" }
+    | { ok: true; taskId: string; status: "todo" | "in-progress" | "waiting" | "done" }
     | { error: string }
   >
   updateTaskOrderAction?: (
@@ -192,7 +194,7 @@ export function MemberWorkspaceProjectDetailPage({
   adminBilling,
   assignedCoachNames,
   assignedCoaches,
-  project,
+  project: serverProject,
   assigneeOptions,
   currentUser,
   fiscalSponsorshipWorkflowSummary,
@@ -200,10 +202,10 @@ export function MemberWorkspaceProjectDetailPage({
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
-  createTaskAction,
-  updateTaskAction,
+  createTaskAction: createTask,
+  updateTaskAction: updateTask,
   deleteTaskAction,
-  updateProjectAction,
+  updateProjectAction: updateProject,
   updateScheduleAction,
   deleteProjectAction,
   updateTaskStatusAction,
@@ -220,6 +222,7 @@ export function MemberWorkspaceProjectDetailPage({
   reviewFiscalSponsorshipDocumentAction,
   sendFiscalSponsorshipAgreementForSignatureAction,
 }: MemberWorkspaceProjectDetailPageProps) {
+  const { project, createTaskAction, updateTaskAction, updateProjectAction } = useProjectSavedState({ serverProject, people: assigneeOptions, createTask, updateTask, updateProject })
   const canManageProject =
     canManageProjectProp ??
     Boolean(
@@ -253,8 +256,8 @@ export function MemberWorkspaceProjectDetailPage({
   )
 
   useEffect(() => {
-    setProjectDraft(initialProjectDraft)
-  }, [initialProjectDraft])
+    if (!isEditing) setProjectDraft(initialProjectDraft)
+  }, [initialProjectDraft, isEditing])
 
   const hasProjectChanges = useMemo(
     () =>
@@ -311,6 +314,7 @@ export function MemberWorkspaceProjectDetailPage({
   }, [initialProjectDraft])
 
   const handleSaveProject = useCallback(() => {
+    if (isSavingProject) return
     if (!updateProjectAction) {
       toast.error("Project editing is unavailable.")
       return
@@ -322,24 +326,18 @@ export function MemberWorkspaceProjectDetailPage({
     }
 
     startProjectSaveTransition(async () => {
-      const result = await updateProjectAction(
+      const result = await withSaveFeedback(() => updateProjectAction(
         project.id,
         buildMemberWorkspaceProjectUpdateInput({
           project,
           draft: projectDraft,
         })
-      )
-
-      if ("error" in result) {
-        toast.error(result.error)
-        return
-      }
-
-      toast.success(directoryHref === "/projects" ? "Project updated" : "Organization updated")
+      ), { pending: "Saving changes…", success: directoryHref === "/projects" ? "Project updated" : "Organization updated" })
+      if ("error" in result) return
       setIsEditing(false)
       router.refresh()
     })
-  }, [directoryHref, hasProjectChanges, project, projectDraft, router, updateProjectAction])
+  }, [directoryHref, hasProjectChanges, isSavingProject, project, projectDraft, router, updateProjectAction])
 
   const canDeleteProject =
     Boolean(deleteProjectAction) &&

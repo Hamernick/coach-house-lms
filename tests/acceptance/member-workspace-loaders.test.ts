@@ -296,7 +296,7 @@ describe("member workspace loaders", () => {
     })
   })
 
-  it("returns a global admin projects state for platform admins", async () => {
+  it("returns only organization cards in the default platform-admin directory", async () => {
     loadAdminOrganizationSummariesMock.mockResolvedValue([
       {
         orgId: "org-1",
@@ -414,10 +414,7 @@ describe("member workspace loaders", () => {
         }),
       ],
     })
-    expect(standardProjectsQuery.neq).toHaveBeenCalledWith(
-      "created_source",
-      "starter_seed"
-    )
+    expect(standardProjectsQuery.select).not.toHaveBeenCalled()
   })
 
   it("returns manageable platform-admin task views for real projects", async () => {
@@ -565,6 +562,25 @@ describe("member workspace loaders", () => {
       "standard",
       "organization_admin",
     ])
+  })
+
+  it("includes explicitly assigned tasks outside a coach's organization list without including other tasks", async () => {
+    const task = { id: "assigned-task", org_id: "outside-org", project_id: "project-1", title: "Assigned to coach", task_type: "task", status: "todo", start_date: "2026-09-28", end_date: "2026-09-29", priority: "medium", created_source: "user", created_by: "admin-1", organization_projects: { id: "project-1", name: "Outside project" } }
+    const assignment = { task_id: task.id, user_id: "coach-1" }
+    const makeQuery = (rows: unknown[]) => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), neq: vi.fn().mockReturnThis(), or: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: rows, error: null }) })
+    const supabase = { from: vi.fn((table: string) => {
+      if (table === "organization_projects") return makeQuery([{ id: "project-1", org_id: "outside-org", name: "Outside project", project_kind: "standard", created_source: "user" }])
+      if (table === "organization_tasks") return makeQuery([task, { ...task, id: "unrelated-task" }])
+      if (table === "organization_task_assignees") return makeQuery([assignment])
+      if (table === "organizations") return makeQuery([{ user_id: "outside-org", profile: { name: "Outside organization" } }])
+      if (table === "profiles") return makeQuery([{ id: "coach-1", full_name: "Assigned Coach", email: null, avatar_url: null }])
+      throw new Error(`Unexpected table ${table}`)
+    }) }
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase, userId: "coach-1", currentUser: { id: "coach-1", name: "Assigned Coach" }, isAdmin: false, canAccessOrganizations: true, canEdit: false, organizationCoachScope: { mode: "assigned", organizationIds: new Set() } })
+    const result = await loadMemberWorkspaceTasksPage()
+    expect(result.taskGroups.flatMap((group) => group.tasks).map((item) => item.id)).toEqual(["assigned-task"])
+    expect(result.taskGroups[0].tasks[0]).toMatchObject({ canUpdate: false, assignee: { id: "coach-1" } })
+    expect(result.projectOptions).toEqual([])
   })
 
   it("returns an empty tasks state when member workspace task tables are missing", async () => {

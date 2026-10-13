@@ -254,11 +254,11 @@ export async function transitionOrganizationProjectSchedule({
   startDate,
 }: {
   actorId: string
-  endDate: string
+  endDate: string | null
   expectedOrgId: string
   expectedUpdatedAt: string
   projectId: string
-  startDate: string
+  startDate: string | null
 }) {
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin.rpc(

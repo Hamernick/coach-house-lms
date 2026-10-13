@@ -25,8 +25,10 @@ function getProjectTone(project: PlatformAdminDashboardLabProject) {
 }
 
 export function PlatformAdminDashboardProjectTimelineView({
-  projects,
+  projects: sourceProjects,
 }: PlatformAdminDashboardProjectTimelineViewProps) {
+  const projects = sourceProjects.filter((project): project is PlatformAdminDashboardLabProject & { startDate: Date; endDate: Date } => Boolean(project.startDate && project.endDate))
+  if (!projects.length) return <p className="text-muted-foreground text-sm">No scheduled projects.</p>
   const start = startOfWeek(
     new Date(Math.min(...projects.map((project) => project.startDate.getTime()))),
     {

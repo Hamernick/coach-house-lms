@@ -247,7 +247,7 @@ function buildFallbackOutcomes(
   const memberCount = project.member_labels?.length ?? 0
 
   return [
-    `Deliver ${project.name} by ${format(parseDateOnly(project.end_date), "MMM d, yyyy")}`,
+    `Deliver ${project.name}${project.end_date ? ` by ${format(parseDateOnly(project.end_date), "MMM d, yyyy")}` : ""}`,
     project.task_count > 0
       ? `Complete ${project.task_count} tracked task${project.task_count === 1 ? "" : "s"}`
       : "Add and complete the first tracked tasks",

@@ -48,12 +48,12 @@ function normalizeTaskFilterBuckets(chips: FilterChipType[]): TaskFilterBuckets 
     const value = chip.value.trim().toLowerCase()
 
     if (key.startsWith("status")) {
-      buckets.status.add(value)
+      buckets.status.add(value.replace("to do", "todo").replace("in progress", "in-progress"))
       continue
     }
 
     if (key.startsWith("priority")) {
-      buckets.priority.add(value)
+      buckets.priority.add(value.replace("no priority", "no-priority"))
       continue
     }
 
@@ -361,6 +361,8 @@ function getStatusLabel(status: ProjectTask["status"]): string {
   switch (status) {
     case "done":
       return "Done"
+    case "waiting":
+      return "Waiting"
     case "in-progress":
       return "In Progress"
     default:
@@ -545,7 +547,7 @@ export function ProjectTaskListView({
       (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0) || a.name.localeCompare(b.name)
     )
     return <div role="list" aria-label="My tasks" className="divide-border divide-y">
-      {tasks.map((task) => <div key={task.id} role="listitem">
+      {tasks.map((task) => <div key={task.id} role="listitem" className="py-1">
         <TaskRowDnD task={task} canReorder={false}
           organizationName={task.organizationName ?? task.projectName}
           onToggle={() => onToggleTask(task.id)}

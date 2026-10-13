@@ -282,7 +282,7 @@ export function TimelineCanvas({
         {projects.map((project) => (
           <div key={project.id}>
             <div className="border-border relative h-[54px] border-b">
-              <MemberWorkspaceProjectTimelineDraggableBar
+              {project.startDate && project.endDate ? <MemberWorkspaceProjectTimelineDraggableBar
                 item={{
                   id: project.id,
                   name: project.name,
@@ -301,7 +301,7 @@ export function TimelineCanvas({
                   canEdit ? () => onEditProject(project.id) : undefined
                 }
                 disabled={!canEdit}
-              />
+              /> : <span className="text-muted-foreground px-3 text-xs">No date range set</span>}
             </div>
 
             {expandedProjects.includes(project.id)

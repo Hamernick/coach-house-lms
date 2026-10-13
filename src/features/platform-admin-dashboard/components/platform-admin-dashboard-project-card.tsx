@@ -94,7 +94,7 @@ export function PlatformAdminDashboardProjectCard({
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <CalendarDaysIcon className="h-3.5 w-3.5" aria-hidden />
-            <span>{format(project.endDate, "MMM d, yyyy")}</span>
+            <span>{project.endDate ? format(project.endDate, "MMM d, yyyy") : "No due date"}</span>
           </div>
           <div className="flex items-center gap-2">
             <CircleAlertIcon className="h-3.5 w-3.5" aria-hidden />

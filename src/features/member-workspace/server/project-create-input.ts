@@ -1,3 +1,4 @@
+import { parseScheduleDay } from "../lib/project-schedule"
 import { projectOptionSettingsSchema, type ProjectOptionSettings } from "../lib/project-option-settings"
 import type { MemberWorkspaceCreateProjectFormInput } from "../types"
 import type {
@@ -6,17 +7,18 @@ import type {
 } from "@/features/platform-admin-dashboard"
 
 export type MemberWorkspaceNormalizedCreateProjectInput = {
+  recurrence?: "none" | "monthly"
   name: string
   description: string | null
   overviewDocumentHtml: string | null
   hasOverviewDocumentHtml: boolean
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
-  startDate: string
-  endDate: string
+  startDate: string | null
+  endDate: string | null
   clientName: string | null
   typeLabel: string | null
-  durationLabel: string
+  durationLabel: string | null
   optionSettings?: ProjectOptionSettings
   tags: string[]
   memberLabels: string[]
@@ -69,22 +71,18 @@ export function normalizeMemberWorkspaceCreateProjectInput(
     return { ok: false, error: "Project name is required." }
   }
 
-  if (!input.startDate || !input.endDate) {
-    return { ok: false, error: "Start and end dates are required." }
-  }
-
-  const start = toUtcDate(input.startDate)
-  const end = toUtcDate(input.endDate)
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+  const startDate = input.startDate?.trim() || null
+  const endDate = input.endDate?.trim() || null
+  if ((startDate && parseScheduleDay(startDate) === null) ||
+      (endDate && parseScheduleDay(endDate) === null)) {
     return { ok: false, error: "Enter valid project dates." }
   }
+  if (startDate && endDate && endDate < startDate) {
+    return { ok: false, error: "End date must be on or after the start date." }
+  }
 
-  if (end.getTime() < start.getTime()) {
-    return {
-      ok: false,
-      error: "End date must be on or after the start date.",
-    }
+  if (input.recurrence !== undefined && input.recurrence !== "none" && input.recurrence !== "monthly") {
+    return { ok: false, error: "Choose a valid repeat schedule." }
   }
 
   const settings = input.optionSettings === undefined ? undefined : projectOptionSettingsSchema.safeParse(input.optionSettings)
@@ -93,6 +91,7 @@ export function normalizeMemberWorkspaceCreateProjectInput(
   return {
     ok: true,
     value: {
+      ...(input.recurrence === undefined ? {} : { recurrence: input.recurrence }),
       ...(settings?.success ? { optionSettings: settings.data } : {}),
       name,
       description: input.description?.trim() ? input.description.trim() : null,
@@ -103,13 +102,13 @@ export function normalizeMemberWorkspaceCreateProjectInput(
       hasOverviewDocumentHtml: typeof input.overviewDocumentHtml === "string",
       status: input.status,
       priority: input.priority,
-      startDate: input.startDate,
-      endDate: input.endDate,
+      startDate,
+      endDate,
       clientName: input.clientName?.trim() ? input.clientName.trim() : null,
       typeLabel: input.typeLabel?.trim() ? input.typeLabel.trim() : null,
       durationLabel: input.durationLabel?.trim()
         ? input.durationLabel.trim()
-        : formatDurationLabel(input.startDate, input.endDate),
+        : startDate && endDate ? formatDurationLabel(startDate, endDate) : null,
       tags: parseList(input.tags),
       memberLabels: parseList(input.memberLabels),
     },

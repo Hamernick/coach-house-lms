@@ -93,6 +93,15 @@ describe("member workspace project actions", () => {
     )
   })
 
+  it("creates projects with no displayed organization and no dates without removing ownership", async () => {
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "coach-house" }, error: null }) }
+    const rpc = vi.fn().mockResolvedValue({ data: { ok: true, projectId: "new-project" }, error: null })
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase: { from: () => query }, userId: "admin-1", isAdmin: true, canEdit: true, hasMemberWorkspaceAccess: true })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
+    expect(await createMemberWorkspaceProjectAction({ name: "Internal project", status: "planned", priority: "medium", orgId: null })).toEqual({ ok: true, id: "new-project" })
+    expect(rpc).toHaveBeenCalledWith("create_organization_project_transition", expect.objectContaining({ p_org_id: "coach-house", p_project: expect.objectContaining({ organization_unassigned: true, start_date: null, end_date: null, client_name: null }) }))
+  })
+
   it("allows platform admins to update existing organization projects", async () => {
     const existingProjectQuery = {
       select: vi.fn().mockReturnThis(),
@@ -393,5 +402,22 @@ describe("project option atomic save routing", () => {
     const result = await transitionOrganizationProjectUpdate({ actorId: "actor", expectedOrgId: "org", expectedUpdatedAt: "stamp", projectId: "project", project: { option_settings: { tags: [], sprintTypes: [] } }, hasOverviewDocument: false, overviewDocumentHtml: null, overviewDocumentText: null })
     expect(rpc).toHaveBeenCalledWith("update_organization_project_with_options", expect.anything())
     expect(result).toEqual({ error: expect.stringContaining("migrations") })
+  })
+})
+
+describe("coach project deletion scope", () => {
+  it.each([true, false])("enforces assigned organization access (assigned=%s)", async (assigned) => {
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: "project-1", org_id: "org-1", project_kind: "standard", canonical_org_id: null, updated_at: "2026-09-28T00:00:00Z" }, error: null }) }
+    const rpc = vi.fn().mockResolvedValue({ data: { ok: true, projectId: "project-1" }, error: null })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase: { from: () => query }, userId: "coach-1", isAdmin: false, canAccessOrganizations: true, canEdit: true, hasMemberWorkspaceAccess: true, organizationCoachScope: { mode: "assigned", organizationIds: new Set(assigned ? ["org-1"] : []), canAccessUnassigned: true } })
+    const result = await deleteMemberWorkspaceProjectAction("project-1")
+    if (assigned) {
+      expect(result).toEqual({ ok: true, id: "project-1" })
+      expect(rpc).toHaveBeenCalledTimes(1)
+    } else {
+      expect(result).toEqual({ error: "You do not have access to that organization's projects." })
+      expect(rpc).not.toHaveBeenCalled()
+    }
   })
 })

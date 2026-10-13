@@ -1,5 +1,7 @@
 export type CoachDashboardInput = {
   scope?: "assigned" | "all"
+  directoryCoachFilter?: string
+  includesUnassigned?: boolean
   user: {
     id: string
     name: string
@@ -12,7 +14,7 @@ export type CoachDashboardInput = {
     id: string
     name: string
     organization: string
-    dueDate: string
+    dueDate: string | null
     status: string
   }[]
   organizationCount: number | null

@@ -1,5 +1,6 @@
 "use client"
 
+import { ProjectRecurrenceSelect } from "./project-recurrence-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -67,10 +68,10 @@ export function GuidedProjectBasics({
       <div className="space-y-1.5">
         <Label>Organization</Label>
         <Select
-          value={value.organizationId}
+          value={value.organizationId || "unassigned"}
           onValueChange={(organizationId) =>
             change({
-              organizationId,
+              organizationId: organizationId === "unassigned" ? "" : organizationId,
               ownerId: "",
               contributorIds: [],
               tasks: value.tasks.map((task) => ({
@@ -84,6 +85,7 @@ export function GuidedProjectBasics({
             <SelectValue placeholder="Choose organization" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="unassigned">No organization</SelectItem>
             {organizations.map((org) => (
               <SelectItem key={org.orgId} value={org.orgId}>
                 {org.name}
@@ -101,9 +103,10 @@ export function GuidedProjectBasics({
           onChange={(e) => change({ name: e.target.value })}
         />
       </div>
+      <ProjectRecurrenceSelect value={value.recurrence ?? "none"} onChange={(recurrence) => change({ recurrence })} />
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="guided-project-start">Start date</Label>
+          <Label htmlFor="guided-project-start">Start date (optional)</Label>
           <Input
             id="guided-project-start"
             type="date"
@@ -112,7 +115,7 @@ export function GuidedProjectBasics({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="guided-project-end">Due date</Label>
+          <Label htmlFor="guided-project-end">Due date (optional)</Label>
           <Input
             id="guided-project-end"
             type="date"

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { MemberWorkspaceProjectCard } from "@/features/member-workspace/components/projects/member-workspace-project-card"
 import { MemberWorkspaceProjectDetailPage } from "@/features/member-workspace/components/projects/member-workspace-project-detail-page"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import {
@@ -457,7 +458,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).not.toContain("New Task")
   })
 
-  it("shows a confirmation-backed delete action for standard organization records", () => {
+  it("shows a confirmation-backed delete action for standard projects", () => {
     const detailPageSource = readFileSync(
       join(
         process.cwd(),
@@ -489,8 +490,8 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     )
 
     expect(deleteDialogSource).toContain("Delete {projectName}?")
-    expect(deleteDialogSource).toContain("Delete organization")
-    expect(deleteDialogSource).toContain("This removes the organization record")
+    expect(deleteDialogSource).toContain("Delete Project")
+    expect(deleteDialogSource).toContain("This permanently deletes this project")
   })
 
   it("hides the delete action for canonical admin organization records", () => {
@@ -505,7 +506,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       updateProjectAction: async () => ({ ok: true, id: project.id }),
     })
 
-    expect(markup).not.toContain("Delete organization")
+    expect(markup).not.toContain("Delete Project")
     expect(markup).not.toContain(`Delete ${project.name}?`)
   })
 
@@ -793,5 +794,19 @@ describe("organization coach header metadata", () => {
     )
     expect(markup).toContain("Coach:")
     expect(markup).toContain(expected)
+  })
+})
+
+describe("undated projects", () => {
+  it("renders both card variants and keeps editor dates blank", () => {
+    const source = { ...project.source!, startDate: null, endDate: null, client: undefined }
+    const detail = { ...project, source, time: { ...project.time, dueDate: null, schedule: null } }
+    expect(buildMemberWorkspaceProjectDetailDraft(detail)).toMatchObject({ startDate: "", endDate: "" })
+    for (const variant of ["list", "board"] as const) {
+      const html = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectCard, { project: source, variant }))
+      expect(html).toContain("No due date")
+      expect(html).not.toContain("Invalid Date")
+    }
+    expect(renderProjectDetailPage({ project: detail })).not.toContain("Invalid Date")
   })
 })

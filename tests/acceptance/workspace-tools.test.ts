@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -6,6 +8,14 @@ import {
   WORKSPACE_TOOL_DEFINITIONS,
   workspaceToolMatchesQuery,
 } from "@/features/workspace-tools"
+import { GoogleCalendarPanel } from "@/features/google-calendar/components/google-calendar-panel"
+
+vi.mock("@/features/google-calendar/hooks/use-google-calendar-controller", () => ({
+  useGoogleCalendarController: () => ({
+    summary: { configured: true, connected: true, enabled: true, selectedCalendars: [{ id: "primary", name: "Calendar" }] },
+    pending: false, error: null, perform: vi.fn(), refresh: vi.fn(),
+  }),
+}))
 
 const ROOT = process.cwd()
 
@@ -14,6 +24,13 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace-tools feature contract", () => {
+  it("keeps Calendar settings accessible when sync is already enabled", () => {
+    const markup = renderToStaticMarkup(createElement(GoogleCalendarPanel))
+    expect(markup).toContain('aria-label="Manage Google Calendar"')
+    expect(markup).toContain('aria-label="Google Calendar sync"')
+    expect(markup).toContain('aria-checked="true"')
+    expect(markup).toContain("Sync on")
+  })
   it("offers the approved Stripe, Calendar, and Google Drive catalog", () => {
     expect(WORKSPACE_TOOL_DEFINITIONS.map((tool) => tool.id)).toEqual([
       "stripe",

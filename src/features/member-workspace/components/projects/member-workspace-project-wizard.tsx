@@ -1,5 +1,7 @@
 "use client"
 
+import { defaultProjectOrganizationId, NO_PROJECT_ORGANIZATION } from "../../lib/project-organization"
+
 import { loadSharedProjectOptions, manageSharedProjectOption } from "../../project-workflow-actions"
 import type { ProjectOptionSettings } from "../../lib/project-option-settings"
 
@@ -20,9 +22,14 @@ import type {
   MemberWorkspacePersonOption,
   MemberWorkspaceProjectOrganizationOption,
 } from "../../types"
-import { toast } from "@/lib/toast"
+import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { projectDateToLocalCalendar, projectDateToValue } from "@/lib/project-date"
+import { ProjectRecurrenceSelect } from "./project-recurrence-select"
+import { ProjectWizardDeleteAction } from "./project-wizard-delete-action"
 
 type MemberWorkspaceProjectWizardProps = {
+  onSaved?: (id: string, input: MemberWorkspaceCreateProjectFormInput, taskCount?: number) => void
+  deleteProjectAction?: (projectId: string) => Promise<{ ok: true; id: string } | { error: string }>
   createProjectAction?: (
     input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
@@ -47,22 +54,13 @@ const PROJECT_STATUS_OPTIONS = [
   { id: "backlog", label: "Backlog", dotClass: "bg-zinc-500" },
   { id: "planned", label: "Planned", dotClass: "bg-blue-600" },
   { id: "active", label: "Active", dotClass: "bg-teal-600" },
+  { id: "on-hold", label: "On hold", dotClass: "bg-amber-500" },
   { id: "completed", label: "Completed", dotClass: "bg-emerald-600" },
   { id: "cancelled", label: "Cancelled", dotClass: "bg-zinc-500" },
 ]
 
-function todayDateValue() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function defaultEndDateValue(startDate: string) {
-  const date = new Date(`${startDate}T00:00:00.000Z`)
-  date.setUTCDate(date.getUTCDate() + 28)
-  return date.toISOString().slice(0, 10)
-}
-
 function toDateValue(date?: Date) {
-  return date ? date.toISOString().slice(0, 10) : undefined
+  return date ? projectDateToValue(date) : undefined
 }
 
 function mapProjectStatusToQuickStatus(
@@ -86,6 +84,7 @@ function mapQuickStatusToProjectStatus(
     case "backlog":
     case "planned":
     case "active":
+    case "on-hold":
     case "completed":
     case "cancelled":
       return statusId
@@ -107,16 +106,17 @@ function mapQuickCreateToInput({
   value: StepQuickCreateValue
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
 }): MemberWorkspaceCreateProjectFormInput {
-  const startDate = toDateValue(value.startDate) ?? todayDateValue()
+  const startDate = toDateValue(value.startDate) ?? null
   const endDate =
-    toDateValue(value.targetDate) ?? defaultEndDateValue(startDate)
+    toDateValue(value.targetDate) ?? null
   const selectedOrganization =
     organizationOptions.find(
       (organization) => organization.orgId === value.clientId
-    ) ?? organizationOptions[0]
+    )
 
   return {
-    orgId: selectedOrganization?.orgId,
+    recurrence: value.recurrence,
+    orgId: selectedOrganization?.orgId ?? null,
     name: value.title,
     description: value.description,
     status: mapQuickStatusToProjectStatus(value.statusId),
@@ -188,7 +188,7 @@ function buildQuickCreateInitialValue({
   assigneeOptions: MemberWorkspacePersonOption[]
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
 }): Partial<StepQuickCreateValue> | undefined {
-  if (!initialProject) return undefined
+  if (!initialProject) return { clientId: defaultProjectOrganizationId(organizationOptions) ?? NO_PROJECT_ORGANIZATION }
 
   const firstMember = initialProject.members[0]?.trim().toLowerCase()
   const matchingAssigneeId =
@@ -197,14 +197,15 @@ function buildQuickCreateInitialValue({
     )?.id ?? initialProject.members[0]
 
   return {
+    recurrence: initialProject.recurrence ?? "none",
     title: initialProject.name,
     description: initialProject.description,
     assigneeId: matchingAssigneeId,
-    startDate: initialProject.startDate,
+    startDate: initialProject.startDate ? projectDateToLocalCalendar(initialProject.startDate) : undefined,
     statusId: mapProjectStatusToQuickStatus(initialProject.status),
-    targetDate: initialProject.endDate,
+    targetDate: initialProject.endDate ? projectDateToLocalCalendar(initialProject.endDate) : undefined,
     priorityId: initialProject.priority,
-    clientId: initialProject.organizationId ?? organizationOptions[0]?.orgId,
+    clientId: initialProject.organizationUnassigned ? NO_PROJECT_ORGANIZATION : initialProject.organizationId,
     sprintTypeId:
       initialProject.typeLabel === "Design Sprint"
         ? "design"
@@ -228,6 +229,8 @@ function buildQuickCreateInitialValue({
 }
 
 export function MemberWorkspaceProjectWizard({
+  onSaved,
+  deleteProjectAction,
   createProjectAction,
   initialProject,
   onOpenChange,
@@ -264,12 +267,12 @@ export function MemberWorkspaceProjectWizard({
 
   const clientOptions = useMemo<Client[]>(
     () =>
-      organizationOptions.map((organization) => ({
+      [...(initialProject?.projectKind === "organization_admin" ? [] : [{ id: NO_PROJECT_ORGANIZATION, name: "No organization", status: "active" as const }]), ...organizationOptions.map((organization) => ({
         id: organization.orgId,
         name: organization.name,
-        status: "active",
-      })),
-    [organizationOptions]
+        status: "active" as const,
+      }))],
+    [initialProject?.projectKind, organizationOptions]
   )
 
   const quickCreateUsers = useMemo(
@@ -306,25 +309,15 @@ export function MemberWorkspaceProjectWizard({
 
   const submitProjectInput = (input: MemberWorkspaceCreateProjectFormInput) => {
     startTransition(async () => {
-      const result = initialProject
-        ? await updateProjectAction?.(initialProject.id, input)
-        : await createProjectAction?.(input)
-
-      if (!result) {
-        toast.error("Project actions are unavailable.")
-        return
-      }
-
-      if ("error" in result) {
-        toast.error(result.error)
-        return
-      }
-
-      toast.success(
-        directoryHref === "/projects"
-          ? initialProject ? "Project updated" : "Project created"
-          : initialProject ? "Organization updated" : "Organization created"
+      const label = directoryHref === "/projects" ? "Project" : "Organization"
+      const result = await withSaveFeedback(
+        async () => initialProject
+          ? updateProjectAction?.(initialProject.id, input)
+          : createProjectAction?.(input),
+        { pending: initialProject ? "Saving changes…" : `Creating ${label.toLowerCase()}…`, success: `${label} ${initialProject ? "updated" : "created"}` },
       )
+      if ("error" in result) return
+      onSaved?.(result.id, input)
       closeWizard()
       router.refresh()
 
@@ -346,8 +339,12 @@ export function MemberWorkspaceProjectWizard({
 
   return (
     <ProjectWizard
-      renderGuidedSetup={() => <GuidedProjectSetup organizations={organizationOptions} onClose={closeWizard} directoryHref={directoryHref} />}
-      onClose={closeWizard}
+      quickCreateRecurrenceControl={directoryHref === "/projects" ? (value, onChange) => <ProjectRecurrenceSelect value={value} onChange={onChange} disabled={isPending} /> : undefined}
+      quickCreateFooterAction={initialProject && initialProject.projectKind !== "organization_admin" && deleteProjectAction ? (
+        <ProjectWizardDeleteAction projectId={initialProject.id} projectName={initialProject.name} disabled={isPending} deleteProjectAction={deleteProjectAction} onDeleted={() => { closeWizard(); router.refresh(); }} />
+      ) : undefined}
+      renderGuidedSetup={() => <GuidedProjectSetup organizations={organizationOptions} onSaved={onSaved} onClose={closeWizard} directoryHref={directoryHref} />}
+      onClose={() => { if (!isPending) closeWizard() }}
       mode={initialProject ? "edit" : "create"}
       skipModeStep={Boolean(initialProject)}
       quickCreateInitialValue={resolvedInitialValue}

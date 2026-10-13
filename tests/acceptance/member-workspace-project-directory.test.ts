@@ -36,6 +36,7 @@ describe("Projects directory", () => {
     expect(query.in).toHaveBeenCalledWith("org_id", ["org-1"])
     expect(query.eq).toHaveBeenCalledWith("project_kind", "standard")
     expect(query.neq).toHaveBeenCalledWith("created_source", "starter_seed")
+    expect(query.order.mock.calls).toEqual([["created_at", { ascending: false }]])
     expect(mocks.canonical).not.toHaveBeenCalled()
     expect(result.canCreateProjects).toBe(true)
   })
@@ -46,6 +47,28 @@ describe("Projects directory", () => {
     const result = await loadMemberWorkspaceProjectsPage({ directory: "projects" })
     expect(query.in).toHaveBeenCalledWith("org_id", ["allowed"])
     expect(result.organizationOptions).toEqual([{ orgId: "allowed", name: "Allowed" }])
+  })
+  it("shows only canonical organization cards in the Organizations directory", async () => {
+    const query = fixtureQuery([{
+      id: "project-1", org_id: "org-1", project_kind: "standard", name: "Clinic launch",
+      start_date: "2026-09-01", end_date: "2026-09-30", status: "active", priority: "medium",
+      task_count: 2, progress: 25, tags: [], member_labels: [], created_source: "user",
+    }])
+    const from = vi.fn(() => query)
+    mocks.actor.mockResolvedValue({ isAdmin: true, supabase: { from } })
+    mocks.canonical.mockResolvedValue([{
+      id: "org-card", org_id: "org-1", canonical_org_id: "org-1",
+      project_kind: "organization_admin", name: "Legal Wellness",
+      start_date: "2026-09-01", end_date: "2026-09-30", status: "planned", priority: "medium",
+      task_count: 0, progress: 0, tags: [], member_labels: [], created_source: "system",
+    }])
+
+    const result = await loadMemberWorkspaceProjectsPage({ directory: "organizations" })
+
+    expect(result.projects.map(({ id }) => id)).toEqual(["org-card"])
+    expect(result.projects[0].projectKind).toBe("organization_admin")
+    expect(from).not.toHaveBeenCalled()
+    expect(mocks.canonical).toHaveBeenCalledOnce()
   })
   it("does not substitute organization cards when project storage is unavailable", async () => {
     const query = fixtureQuery(null, { code: "42P01", message: 'relation "organization_projects" does not exist' })

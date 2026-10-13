@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from gates import effective_stage, gate, require, validate_queue
+from plans import bind_plan, catalog, print_prompt, validate_refs
 from recovery import load_receipts, read_snapshot, snapshot_name
 from providers import reconcile
 from store import atomic, canonical, dead, digest, identity, receipt_path, run, utc
@@ -34,7 +35,8 @@ def snapshot(state, directory):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['init', 'inspect', 'status', 'claim', 'resume', 'checkpoint',
-                                            'validate', 'reconcile', 'closeout', 'export', 'enqueue'])
+                                            'validate', 'reconcile', 'closeout', 'export', 'enqueue',
+                                            'plans', 'prompt', 'bind-plan'])
     parser.add_argument('--slice')
     parser.add_argument('--owner')
     parser.add_argument('--pid', type=int, default=os.getppid())
@@ -44,8 +46,23 @@ def main():
     parser.add_argument('--to', choices=['in_progress', 'locally_validated', 'awaiting_review', 'approved',
                                        'pr_ready', 'merged', 'deployed', 'production_verified', 'blocked'])
     parser.add_argument('--pr', type=int)
+    parser.add_argument('--workstream', help='Original packet ID for a read-only prompt preview')
+    parser.add_argument('--stage', type=int, nargs='+', help='Original numbered stages for prompt preview')
+    parser.add_argument('--plans-root', type=Path, help='Private original packet directory (never a state override)')
     args = parser.parse_args()
+    if args.operation == 'plans':
+        print(json.dumps(catalog(), indent=2))
+        return
+    if args.operation == 'prompt' and args.workstream:
+        require(not args.slice and args.stage, 'Select either --slice or --workstream with --stage')
+        print_prompt(dict(plan_refs=[dict(workstream=args.workstream, stages=args.stage)]), args.plans_root)
+        return
     store = canonical()
+    if args.operation == 'prompt':
+        require(args.slice and not args.stage, 'Supply --slice or --workstream with --stage')
+        row = next(r for r in store.read()['queue'] if r['id'] == args.slice)
+        print_prompt(row, args.plans_root)
+        return
     if args.operation == 'init':
         seed = read_snapshot(args.receipt) if args.receipt else json.loads((HERE / 'queue.json').read_text())
         validate_queue(seed)
@@ -87,7 +104,21 @@ def main():
                 require(row.get('status') == 'queued' and row.get('workstream') and row.get('exclusions')
                         and row.get('kind') in ('application', 'tooling'), 'Supply a reviewed, sanitized queued slice')
                 require(current['head'] == args.head, 'Working head changed')
+                validate_refs(row)
                 state['queue'].append(row)
+            elif args.operation == 'bind-plan':
+                require(not args.to and not args.pr and set(receipt) == {'plan_refs'},
+                        'bind-plan only accepts plan_refs and no transition or PR')
+                require(current['head'] == args.head, 'Working head changed')
+                if active:
+                    require(current['worktree'] == active['worktree'] and current['branch'] == active['branch'],
+                            'Use the recorded worktree/branch')
+                    require(active['claim']['owner'] == args.owner, 'Not the active owner')
+                    require(not dead(active['claim']), 'Owner stopped; use resume with process evidence')
+                queued = next(r for r in state['queue'] if r['id'] == args.slice)
+                require(queued['status'] == 'queued', 'Only queued slices can be rebound')
+                queued['plan_refs'] = receipt['plan_refs']
+                bind_plan(queued, args.plans_root)
             elif args.operation == 'claim':
                 require(not active, 'An unfinished slice already owns SHIP; resume it')
                 row = next(r for r in state['queue'] if r['id'] == args.slice)
@@ -99,8 +130,9 @@ def main():
                 run('git', 'fetch', 'origin')
                 require(run('git', 'merge-base', 'HEAD', 'origin/main') == run('git', 'rev-parse', 'origin/main'), 'Reconcile current origin/main before claiming')
                 require(current['branch'].startswith(('chore/', 'fix/', 'feat/')), 'Use an isolated task branch')
+                binding = bind_plan(row, args.plans_root)
                 state['active'] = dict(slice=row['id'], claim=identity(args.owner, args.pid),
-                                       base=run('git', 'rev-parse', 'origin/main'), **current, evidence={})
+                                       base=run('git', 'rev-parse', 'origin/main'), **current, evidence={'plan_binding': binding})
                 row['status'] = 'in_progress'
             else:
                 require(active is not None, 'No active slice')
@@ -117,6 +149,7 @@ def main():
                 if current['head'] != active['head']:
                     require(args.operation in ('checkpoint', 'resume'), 'Checkpoint changed head before proceeding')
                     require(effective_stage(row) not in ('merged', 'deployed', 'production_verified', 'closed'), 'Do not change released revision')
+                    require(not active['evidence'].get('merge'), 'Do not change an externally merged revision')
                     active['head'] = current['head']
                     active['evidence'] = {}
                     row['status'] = 'in_progress'
@@ -129,8 +162,13 @@ def main():
                         remote['github']['protection_satisfied'] = True
                         remote['github']['premerge_observation'] = prior
                     active['evidence'].update(remote)
-                require(not any(k in receipt for k in ('github', 'merge')), 'GitHub evidence comes only from reconcile')
+                require(not any(k in receipt for k in ('github', 'merge', 'plan_binding')), 'GitHub and plan bindings must come from the runner')
                 active['evidence'].update(receipt)
+                if row.get('plan_refs') and args.operation in ('checkpoint', 'resume'):
+                    binding = bind_plan(row, args.plans_root)
+                    prior = active['evidence'].get('plan_binding')
+                    require(prior is None or prior == binding, 'Original plans changed; reconcile scope before continuing')
+                    active['evidence']['plan_binding'] = binding
                 target = 'closed' if args.operation == 'closeout' else args.to
                 if remote is not None and row['status'] in ('pr_ready', 'merged', 'deployed', 'production_verified'):
                     try:

@@ -1,0 +1,174 @@
+{
+  "at": "2026-10-13T17:16:05.658378+00:00",
+  "operation": "resume",
+  "owner": "ship-global-tracker-20261013",
+  "previous_revision": 19,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Previous one-shot checkpoint process exited; runner checks host/PID/start. This checkpoint process also exits after saving.",
+    "next_action": "Start LIVE-01 and LIVE-02 using packet09 stages1\u20132: reconcile pricing destinations, fix confirmed wrong targets, add approved direct Donate header/footer link; focused preview/checks then release gates. Preserve SHIP000 original head; do not replay completed roster correction.",
+    "global_todo_tracker": {
+      "updated_at": "2026-10-13T17:15:49.237640+00:00",
+      "original_requirement_count": 176,
+      "additional_requirements": [
+        {
+          "id": "U20261013-01",
+          "packet": "03",
+          "scope": "Free-account upgrade banner size, vertical spacing and max width",
+          "status": "pending"
+        }
+      ],
+      "recorded_requirement_count": 177,
+      "master": "Desktop/Coach House Codex Workstreams/WORKSTREAMS.md",
+      "view": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md",
+      "items": [
+        {
+          "id": "LIVE-01",
+          "priority": 1,
+          "task": "Repair pricing-link destinations",
+          "source_ids": [
+            "O037-04"
+          ],
+          "packet": "09",
+          "stages": [
+            1,
+            2
+          ],
+          "status": "next"
+        },
+        {
+          "id": "LIVE-02",
+          "priority": 2,
+          "task": "Homepage Donate: third centered header link plus footer, external target, no hover menu",
+          "source_ids": [
+            "O029-01"
+          ],
+          "packet": "09",
+          "stages": [
+            2
+          ],
+          "status": "next"
+        },
+        {
+          "id": "LIVE-03",
+          "priority": 3,
+          "task": "Missing map markers and duplicate places",
+          "source_ids": [
+            "O036-01"
+          ],
+          "packet": "05",
+          "stages": [
+            3
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-04",
+          "priority": 4,
+          "task": "Free-account upgrade banner size, vertical spacing and max width",
+          "source_ids": [
+            "U20261013-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-05",
+          "priority": 5,
+          "task": "Production Google Calendar connection",
+          "source_ids": [
+            "O065-01",
+            "O071-01"
+          ],
+          "packet": "04",
+          "stages": [
+            5
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-06",
+          "priority": 6,
+          "task": "Remove formation-class verification prerequisite",
+          "source_ids": [
+            "O043-01"
+          ],
+          "packet": "05",
+          "stages": [
+            1
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-07",
+          "priority": 7,
+          "task": "Public fiscal application/flow, internal project management, new-application email to fs@coachhousesolutions.org",
+          "source_ids": [
+            "O010-01",
+            "O011-01",
+            "O012-01",
+            "O023-01",
+            "O024-01",
+            "O025-01"
+          ],
+          "packet": "03",
+          "stages": [
+            3,
+            5,
+            6
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-08",
+          "priority": 8,
+          "task": "Correct mistaken coaching grant using supplied roster",
+          "source_ids": [
+            "O005-01",
+            "O006-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "production_verified",
+          "evidence": "Verified 2026-10-13T17:10:09.500Z: 13 matched accounts at10; 17 unmatched roster emails; 56 unused broad grants reversed, four retained, nine issued. Historical legitimate balances preserved."
+        }
+      ],
+      "next_scope": {
+        "packet": "09",
+        "stages": [
+          1,
+          2
+        ],
+        "items": [
+          "LIVE-01",
+          "LIVE-02"
+        ],
+        "boundary": "Prepare narrow pricing/navigation and Donate changes; current-head CI, appearance/code-owner review and release approval remain separate."
+      }
+    },
+    "public_indexing_candidate_status": {
+      "pr": 293,
+      "head": "d82d3f150f6d4280b8c0aee8639ee670f53d93a9",
+      "state": "OPEN",
+      "draft": true,
+      "passed": [
+        "static",
+        "acceptance",
+        "rls",
+        "build"
+      ],
+      "failed": [
+        "visual",
+        "quality"
+      ],
+      "review": "REVIEW_REQUIRED",
+      "observed_at": "2026-10-13T17:16:05.587147+00:00"
+    }
+  },
+  "remote": null
+}

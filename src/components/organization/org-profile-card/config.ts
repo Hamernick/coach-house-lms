@@ -1,5 +1,6 @@
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import type {
@@ -16,6 +17,7 @@ export const ORG_PROFILE_TABS: Array<{
 }> = [
   { value: "company", label: "About", icon: BuildingIcon },
   { value: "programs", label: "Activity", icon: ClipboardListIcon },
+  { value: "people", label: "People", icon: UsersIcon },
 ]
 
 function isTrackingValue(value: unknown): value is BrandTypographyTracking {
@@ -121,7 +123,6 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandMarkUrl: source.brandMarkUrl ?? "",
     headerUrl: source.headerUrl ?? "",
     publicUrl: source.publicUrl ?? "",
-    donateUrl: source.donateUrl ?? "",
     twitter: source.twitter ?? "",
     facebook: source.facebook ?? "",
     linkedin: source.linkedin ?? "",
@@ -145,11 +146,6 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandVoicePersonality: source.brandVoicePersonality ?? "",
     brandVoiceGuidelines: source.brandVoiceGuidelines ?? "",
     brandVoiceAvoid: source.brandVoiceAvoid ?? "",
-    narrativeRevisions: source.narrativeRevisions ?? {
-      mission: null,
-      vision: null,
-      values: null,
-    },
     brandPrimary: source.brandPrimary ?? "",
     brandColors: Array.isArray(source.brandColors) ? source.brandColors : [],
     brandThemePresetId: source.brandThemePresetId ?? "",
@@ -158,5 +154,10 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandTypography: normalizeTypography(source),
     publicSlug: source.publicSlug ?? "",
     isPublic: Boolean(source.isPublic ?? false),
+    narrativeRevisions: source.narrativeRevisions ?? {
+      mission: null,
+      vision: null,
+      values: null,
+    },
   }
 }

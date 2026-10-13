@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { format } from "date-fns"
-import { ChartBar, DotsSixVertical, FolderSimple, Plus } from "@phosphor-icons/react/dist/ssr"
+import { ChartBar, DotsSixVertical, FolderSimple, Plus, Sparkle } from "@phosphor-icons/react/dist/ssr"
 import {
   DndContext,
   type DragEndEvent,
@@ -303,7 +303,6 @@ export function MyTasksPage() {
         <div className="flex items-center justify-between px-4 pb-3 pt-3">
           <div className="flex items-center gap-2">
             <FilterPopover
-              entityType="task"
               initialChips={filters}
               onApply={setFilters}
               onClear={() => setFilters([])}
@@ -319,6 +318,14 @@ export function MyTasksPage() {
           </div>
           <div className="flex items-center gap-2">
             <ViewOptionsPopover options={viewOptions} onChange={setViewOptions} allowedViewTypes={["list", "board"]} />
+            <div className="relative">
+              <div className="relative">
+                <Button className="h-8 gap-2 shadow-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 relative z-10 px-3">
+                  <Sparkle className="h-4 w-4" weight="fill" />
+                  Ask AI
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </header>

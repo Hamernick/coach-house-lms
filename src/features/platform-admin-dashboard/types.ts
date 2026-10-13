@@ -11,15 +11,8 @@ export type PlatformAdminDashboardLabStatus =
   | "backlog"
   | "planned"
   | "active"
-  | "on-hold"
   | "cancelled"
   | "completed"
-
-export type PlatformAdminDashboardLabFiscalSponsorshipStatus =
-  | "not_eligible"
-  | "eligible"
-  | "in_progress"
-  | "active"
 
 export type PlatformAdminDashboardLabPriority =
   | "urgent"
@@ -28,7 +21,6 @@ export type PlatformAdminDashboardLabPriority =
   | "low"
 
 export type PlatformAdminDashboardLabTaskStatus =
-  | "waiting"
   | "todo"
   | "in-progress"
   | "done"
@@ -43,41 +35,34 @@ export type PlatformAdminDashboardLabTask = {
   endDate: Date
 }
 
-export type PlatformAdminDashboardLabOrganizationCoachAssignment = {
-  organizationId: string
-  coach: {
-    id: string
-    name: string
-    email: string | null
-    avatarUrl: string | null
-  }
-  assignedBy: string | null
-  updatedAt: string
-}
-
 export type PlatformAdminDashboardLabProject = {
-  fiscalSponsorshipEnabled?: boolean
-  recurrence?: "none" | "monthly"
   id: string
   organizationId?: string
-  organizationUnassigned?: boolean
   projectKind?: "standard" | "organization_admin"
   workstreamCategoryId?: string
-  fiscalSponsorshipStatus?: PlatformAdminDashboardLabFiscalSponsorshipStatus
   name: string
   description?: string
   taskCount: number
   progress: number
-  startDate: Date | null
-  endDate: Date | null
+  startDate: Date
+  endDate: Date
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
   tags: string[]
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
-  organizationImageUrl?: string | null
-  organizationCoachAssignments?: PlatformAdminDashboardLabOrganizationCoachAssignment[]
+  organizationCoachAssignments?: Array<{
+    organizationId: string
+    coach: {
+      id: string
+      name: string
+      email: string | null
+      avatarUrl: string | null
+    }
+    assignedBy: string | null
+    updatedAt: string
+  }>
   client?: string
   typeLabel?: string
   durationLabel?: string

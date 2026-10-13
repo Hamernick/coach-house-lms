@@ -21,12 +21,8 @@ export function slugify(input: string): string {
 
 export function resolveOnboardingError(raw: string | null) {
   switch (raw) {
-    case "missing_formation_status":
-      return "Choose your formation status to continue."
     case "missing_org_name":
       return "Enter an organization name to continue."
-    case "invalid_org_name":
-      return "Use an organization name of 1–120 characters."
     case "missing_org_slug":
       return "Enter an organization URL to continue."
     case "invalid_org_slug":
@@ -35,14 +31,6 @@ export function resolveOnboardingError(raw: string | null) {
       return "That URL is reserved. Try something else."
     case "slug_taken":
       return "That URL is already taken. Try another."
-    case "missing_person_handle":
-      return "Choose a username to finish your account."
-    case "invalid_person_handle":
-      return "Use 2–48 lowercase letters, numbers, or single hyphens for your username."
-    case "reserved_person_handle":
-      return "That username is reserved. Try another."
-    case "person_handle_taken":
-      return "That username was just claimed. Try another."
     case "missing_intent_focus":
       return "Select your focus to continue."
     case "builder_plan_required":
@@ -59,7 +47,7 @@ type SearchParamReader = {
 }
 
 export function resolveOnboardingPricingPlanOverride(
-  searchParams: SearchParamReader
+  searchParams: SearchParamReader,
 ): PricingPlanTier | null {
   if (!isOnboardingPricingSource(searchParams)) return null
   if (searchParams.get("checkout") !== "success") return null
@@ -71,7 +59,7 @@ export function resolveOnboardingPricingPlanOverride(
 
 export function resolveOnboardingPricingEntryStepId(
   searchParams: SearchParamReader,
-  mode: OnboardingFlowMode = "full"
+  mode: OnboardingFlowMode = "full",
 ): OnboardingStepId | null {
   if (!isOnboardingPricingSource(searchParams)) return null
   if (searchParams.get("checkout") === "success") {
@@ -82,12 +70,12 @@ export function resolveOnboardingPricingEntryStepId(
 
 export async function getCroppedBlob(
   imageSrc: string,
-  area: { x: number; y: number; width: number; height: number }
+  area: { x: number; y: number; width: number; height: number },
 ): Promise<Blob | null> {
   return new Promise((resolve) => {
     const img = new window.Image()
     img.onload = () => {
-      const size = Math.min(area.width, area.height, 512)
+      const size = Math.min(area.width, area.height)
       const canvas = document.createElement("canvas")
       canvas.width = size
       canvas.height = size
@@ -104,7 +92,7 @@ export async function getCroppedBlob(
         0,
         0,
         size,
-        size
+        size,
       )
       canvas.toBlob((blob) => resolve(blob), "image/png", 0.92)
     }
@@ -114,18 +102,11 @@ export async function getCroppedBlob(
 }
 
 export function isFormationStatus(value: unknown): value is FormationStatus {
-  return (
-    value === "pre_501c3" || value === "in_progress" || value === "approved"
-  )
+  return value === "pre_501c3" || value === "in_progress" || value === "approved"
 }
 
 export function isIntentFocus(value: unknown): value is IntentFocus {
-  return (
-    value === "build" ||
-    value === "find" ||
-    value === "fund" ||
-    value === "support"
-  )
+  return value === "build" || value === "find" || value === "fund" || value === "support"
 }
 
 export function isRoleInterest(value: unknown): value is RoleInterest {

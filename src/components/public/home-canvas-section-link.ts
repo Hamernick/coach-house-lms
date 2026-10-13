@@ -21,7 +21,7 @@ export type HomeCanvasSectionLinkTarget = {
 }
 
 function normalizeCanvasPath(pathname: string) {
-  return pathname
+  return pathname === "/home-canvas" ? "/" : pathname
 }
 
 function resolveCanvasSection(value: string | null): CanvasSectionId | null {
@@ -53,24 +53,20 @@ export function resolveHomeCanvasSectionLinkTarget({
 
   const currentPath = normalizeCanvasPath(currentUrl.pathname)
   const targetPath = normalizeCanvasPath(targetUrl.pathname)
-  if (currentPath !== "/home-canvas" || targetPath !== "/home-canvas") {
-    return null
-  }
+  if (currentPath !== "/" || targetPath !== "/") return null
 
   const section = resolveCanvasSection(targetUrl.searchParams.get("section"))
   if (!section) return null
 
   return {
     href: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
-    loginRedirectTo: getSafeRedirectPath(
-      targetUrl.searchParams.get("redirect")
-    ),
+    loginRedirectTo: getSafeRedirectPath(targetUrl.searchParams.get("redirect")),
     section,
     signupIntentFocus: resolveSignupIntentFocus(
-      targetUrl.searchParams.get("intent")
+      targetUrl.searchParams.get("intent"),
     ),
     signupPlanTier: resolveSignupBuilderPlanTier(
-      targetUrl.searchParams.get("plan")
+      targetUrl.searchParams.get("plan"),
     ),
   }
 }

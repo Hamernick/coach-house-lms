@@ -15,38 +15,6 @@ const supabaseImageHosts = Array.from(
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  async headers() {
-    return [
-      {
-        source: "/resources",
-        headers: [
-          {
-            key: "Permissions-Policy",
-            value: "geolocation=(self)",
-          },
-        ],
-      },
-    ]
-  },
-  async redirects() {
-    return [
-      {
-        source: "/map",
-        destination: "/resources",
-        permanent: true,
-      },
-      {
-        source: "/find",
-        destination: "/resources",
-        permanent: true,
-      },
-      {
-        source: "/find/:slug",
-        destination: "/resources?organization=:slug",
-        permanent: true,
-      },
-    ]
-  },
   turbopack: {
     root: __dirname, // ensure Turbopack resolves Next from the repo root
   },
@@ -73,10 +41,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
       },
       {
         protocol: "https",

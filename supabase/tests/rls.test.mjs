@@ -42,17 +42,6 @@ if (!url || !anonKey || !serviceRole) {
   process.exit(0)
 }
 
-// This suite creates users, subscriptions and projects. Loading an app's local
-// credentials must not silently populate its shared database with test records.
-const hostname = new URL(url).hostname
-const isLocalDatabase = ["localhost", "127.0.0.1", "[::1]", "supabase_kong"].includes(hostname)
-if (!isLocalDatabase && process.env.SUPABASE_RLS_TEST_PROJECT_REF !== hostname.split(".")[0]) {
-  console.log(
-    "[supabase] Skipping destructive remote RLS tests. Use a local database or explicitly set SUPABASE_RLS_TEST_PROJECT_REF to an isolated test project's ref."
-  )
-  process.exit(0)
-}
-
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
@@ -82,14 +71,6 @@ const orgAdminEmail = `org-admin-${suffix}@example.com`
 const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
-const signupLegalConsent = {
-  version: "2026-09-10.1",
-  termsSha256:
-    "8757308d709eac552572d79642b0374f6c41ee7c5277b50b961ce9948577e03c",
-  privacySha256:
-    "dd58c9175fd80b067658f07e503883f4f983c357413092e1533df8aeeccc0135",
-  acceptedAt: new Date().toISOString(),
-}
 
 async function ensureProfile(id, role, fullName) {
   const { error } = await adminClient.from("profiles").upsert(
@@ -104,8 +85,6 @@ async function ensureProfile(id, role, fullName) {
 }
 
 async function createUsers() {
-  // All synthetic users include consent at insertion time; do not depend on
-  // exemption metadata being available when the signup trigger executes.
   const {
     data: { user: member },
     error: memberError,
@@ -113,7 +92,6 @@ async function createUsers() {
     email: memberEmail,
     password,
     email_confirm: true,
-    user_metadata: { legal_consent: signupLegalConsent },
   })
   if (memberError) throw memberError
 
@@ -121,7 +99,6 @@ async function createUsers() {
     data: { user: admin },
     error: adminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: adminEmail,
     password,
     email_confirm: true,
@@ -132,7 +109,6 @@ async function createUsers() {
     data: { user: owner },
     error: ownerError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: ownerEmail,
     password,
     email_confirm: true,
@@ -143,7 +119,6 @@ async function createUsers() {
     data: { user: staff },
     error: staffError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: staffEmail,
     password,
     email_confirm: true,
@@ -154,7 +129,6 @@ async function createUsers() {
     data: { user: board },
     error: boardError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: boardEmail,
     password,
     email_confirm: true,
@@ -165,7 +139,6 @@ async function createUsers() {
     data: { user: orgAdmin },
     error: orgAdminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: orgAdminEmail,
     password,
     email_confirm: true,
@@ -176,7 +149,6 @@ async function createUsers() {
     data: { user: coach },
     error: coachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: coachEmail,
     password,
     email_confirm: true,
@@ -187,7 +159,6 @@ async function createUsers() {
     data: { user: secondCoach },
     error: secondCoachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: secondCoachEmail,
     password,
     email_confirm: true,
@@ -327,81 +298,6 @@ async function run() {
   })
 
   const results = []
-
-  if (await tableExists("platform_legal_acceptances")) {
-    const { data: ownAcceptance, error: ownAcceptanceError } =
-      await memberClient
-        .from("platform_legal_acceptances")
-        .select(
-          "id,user_id,document_version,terms_sha256,privacy_sha256,accepted_at,source"
-        )
-        .eq("user_id", member.id)
-        .eq("document_version", signupLegalConsent.version)
-        .maybeSingle()
-    results.push({
-      name: "signup trigger records the current immutable legal acceptance",
-      passed:
-        !ownAcceptanceError &&
-        ownAcceptance?.user_id === member.id &&
-        ownAcceptance?.document_version === signupLegalConsent.version &&
-        ownAcceptance?.terms_sha256 === signupLegalConsent.termsSha256 &&
-        ownAcceptance?.privacy_sha256 === signupLegalConsent.privacySha256 &&
-        ownAcceptance?.source === "signup" &&
-        typeof ownAcceptance?.accepted_at === "string" &&
-        new Date(ownAcceptance?.accepted_at).toISOString() ===
-          new Date(member.created_at).toISOString(),
-    })
-
-    const { data: otherAcceptance, error: otherAcceptanceError } =
-      await adminSessionClient
-        .from("platform_legal_acceptances")
-        .select("id")
-        .eq("user_id", member.id)
-        .maybeSingle()
-    results.push({
-      name: "authenticated users cannot read another legal acceptance",
-      passed: !otherAcceptanceError && !otherAcceptance,
-    })
-
-    const { data: anonAcceptance, error: anonAcceptanceError } =
-      await anonClient
-        .from("platform_legal_acceptances")
-        .select("id")
-        .eq("user_id", member.id)
-    results.push({
-      name: "anonymous users cannot read legal acceptances",
-      passed:
-        !!anonAcceptanceError ||
-        (Array.isArray(anonAcceptance) && anonAcceptance.length === 0),
-    })
-
-    const acceptanceId = ownAcceptance?.id ?? -1
-    const { error: acceptanceInsertError } = await memberClient
-      .from("platform_legal_acceptances")
-      .insert({
-        user_id: member.id,
-        document_version: "rls-write-probe",
-        terms_sha256: "a".repeat(64),
-        privacy_sha256: "b".repeat(64),
-        accepted_at: new Date().toISOString(),
-        source: "signup",
-      })
-    const { error: acceptanceUpdateError } = await memberClient
-      .from("platform_legal_acceptances")
-      .update({ accepted_at: new Date().toISOString() })
-      .eq("id", acceptanceId)
-    const { error: acceptanceDeleteError } = await memberClient
-      .from("platform_legal_acceptances")
-      .delete()
-      .eq("id", acceptanceId)
-    results.push({
-      name: "authenticated users cannot mutate immutable legal acceptances",
-      passed:
-        !!acceptanceInsertError &&
-        !!acceptanceUpdateError &&
-        !!acceptanceDeleteError,
-    })
-  }
 
   if (await tableExists("platform_staff_members")) {
     const [
@@ -977,80 +873,6 @@ async function run() {
   }
 
   // Programs write access for members
-  if (
-    orgAccessReady &&
-    (await tableExists("google_drive_connections")) &&
-    (await tableExists("organization_external_documents"))
-  ) {
-    const documentId = randomUUID()
-    const { error: seedError } = await adminClient
-      .from("organization_external_documents")
-      .insert({
-        id: documentId,
-        org_id: member.id,
-        provider_file_id: `drive-file-${suffix}`,
-        name: "Drive document",
-        mime_type: "application/vnd.google-apps.document",
-        web_view_link: "https://docs.google.com/document/d/test",
-        status: "available",
-        attached_by: member.id,
-      })
-    results.push({
-      name: "service role can create Google Drive document metadata",
-      passed: !seedError,
-    })
-
-    for (const [label, client] of [
-      ["owner", memberClient],
-      ["staff", staffClient],
-      ["board", boardClient],
-    ]) {
-      const { data, error } = await client
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-        .maybeSingle()
-      results.push({
-        name: `${label} can read organization Google Drive metadata`,
-        passed: !!data && !error,
-      })
-    }
-
-    const { data: unrelatedRead, error: unrelatedReadError } =
-      await adminSessionClient
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-    results.push({
-      name: "unrelated authenticated user cannot read Google Drive metadata",
-      passed:
-        !!unrelatedReadError ||
-        (Array.isArray(unrelatedRead) && unrelatedRead.length === 0),
-    })
-
-    const { error: ownerWriteError } = await memberClient
-      .from("organization_external_documents")
-      .update({ name: "Forbidden rename" })
-      .eq("id", documentId)
-    results.push({
-      name: "authenticated users cannot write Google Drive metadata directly",
-      passed: !!ownerWriteError,
-    })
-
-    const { error: credentialReadError } = await memberClient
-      .from("google_drive_connections")
-      .select("id")
-    results.push({
-      name: "authenticated users cannot read Google Drive credentials",
-      passed: !!credentialReadError,
-    })
-
-    await adminClient
-      .from("organization_external_documents")
-      .delete()
-      .eq("id", documentId)
-  }
-
   if (orgAccessReady) {
     const { data: createdProgram, error: staffProgramError } = await staffClient
       .from("programs")
@@ -3346,9 +3168,11 @@ async function run() {
   }
 
   if (await tableExists("app_page_health_events")) {
-    const { error: directInsertError } = await adminClient
+    const pageHealthEventId = randomUUID()
+    const { error: insertError } = await adminClient
       .from("app_page_health_events")
       .insert({
+        id: pageHealthEventId,
         event_type: "route_error",
         route_path: "/workspace",
         severity: "critical",
@@ -3356,41 +3180,11 @@ async function run() {
         user_id: member.id,
       })
     results.push({
-      name: "service role cannot bypass bounded page health recorder",
-      passed:
-        directInsertError?.code === "42501" ||
-        /permission denied/i.test(directInsertError?.message ?? ""),
+      name: "service role can insert page health events",
+      passed: !insertError,
     })
 
-    const { data: recordResult, error: recordError } = await adminClient.rpc(
-      "record_page_health_event",
-      {
-        p_event: {
-          eventType: "route_error",
-          routePath: "/workspace",
-          severity: "critical",
-          source: "client",
-        },
-        p_org_id: null,
-        p_user_id: member.id,
-      }
-    )
-    const pageHealthEventId =
-      recordResult &&
-      typeof recordResult === "object" &&
-      !Array.isArray(recordResult) &&
-      typeof recordResult.id === "string"
-        ? recordResult.id
-        : null
-    results.push({
-      name: "service role can record a bounded page health event",
-      passed:
-        !recordError &&
-        recordResult?.status === "recorded" &&
-        !!pageHealthEventId,
-    })
-
-    if (pageHealthEventId) {
+    if (!insertError) {
       const { data: memberRows, error: memberReadError } = await memberClient
         .from("app_page_health_events")
         .select("id")
@@ -3438,12 +3232,10 @@ async function run() {
       passed: !!memberInsertError,
     })
 
-    if (pageHealthEventId) {
-      await adminClient
-        .from("app_page_health_events")
-        .delete()
-        .eq("id", pageHealthEventId)
-    }
+    await adminClient
+      .from("app_page_health_events")
+      .delete()
+      .eq("id", pageHealthEventId)
   }
 
   await runResourceMapRlsTests({

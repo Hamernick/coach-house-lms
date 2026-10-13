@@ -1,14 +1,6 @@
 "use client"
 
-import { OrganizationProgramsTab } from "./organization-programs-tab"
-import type { OrgProgram } from "@/components/organization/org-profile-card/types"
-import { ProjectAssetFolders } from "./project-asset-folders"
-
-import { useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import { ProjectDetailTabsList } from "./project-detail-tabs-list"
-import { enableProjectFiscalSponsorshipAction } from "../../project-actions"
-import { hasFiscalSponsorshipWork } from "../../lib/project-fiscal-sponsorship"
+import type { ReactNode } from "react"
 
 import type {
   FiscalSponsorshipProjectWorkbenchAdminActionProps,
@@ -16,11 +8,15 @@ import type {
   FiscalSponsorshipProjectWorkflowSummary,
 } from "@/features/fiscal-sponsorship"
 import {
+  AssetsFilesTab,
   NotesTab,
   ProjectTasksTab,
   Tabs,
   TabsContent,
+  TabsList,
+  TabsTrigger,
   TimelineGantt,
+  WorkstreamTab,
   type CreateTaskContext,
   type UploadedNoteAsset,
   type ProjectDetails,
@@ -35,13 +31,34 @@ import type {
 } from "../../types"
 import type { MemberWorkspaceProjectDetailDraft } from "./member-workspace-project-detail-editing"
 import { MemberWorkspaceProjectFiscalWorkbench } from "./member-workspace-project-fiscal-workbench"
+import {
+  getMemberWorkspaceProjectFiscalDocumentAssetIds,
+  MemberWorkspaceProjectFiscalDocuments,
+} from "./member-workspace-project-fiscal-documents"
 import { MemberWorkspaceProjectOverviewDocument } from "./member-workspace-project-overview-document"
 import { MemberWorkspaceProjectOverviewEditor } from "./member-workspace-project-overview-editor"
 import { MemberWorkspaceProjectTasksEditor } from "./member-workspace-project-tasks-editor"
 import { MemberWorkspaceProjectActivityTimeline } from "./member-workspace-project-activity-timeline"
 
+function ProjectDetailTabsList() {
+  return (
+    <div className="-mx-1 overflow-x-auto pb-2">
+      <TabsList className="inline-flex w-max min-w-full gap-2 px-1 sm:w-full sm:gap-6">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsTrigger value="workstream">Workstream</TabsTrigger>
+        <TabsTrigger value="tasks">Tasks</TabsTrigger>
+        <TabsTrigger value="notes">Notes</TabsTrigger>
+        <TabsTrigger value="assets">Assets &amp; Files</TabsTrigger>
+      </TabsList>
+    </div>
+  )
+}
+
 type ProjectDetailOverviewContentProps = {
   draft: MemberWorkspaceProjectDetailDraft
+  fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
+  fiscalSponsorshipWorkbench?: ReactNode
   isEditing: boolean
   project: ProjectDetails
   onChangeDraftField: (
@@ -52,6 +69,8 @@ type ProjectDetailOverviewContentProps = {
 
 function ProjectDetailOverviewContent({
   draft,
+  fiscalSponsorshipWorkflowSummary,
+  fiscalSponsorshipWorkbench,
   isEditing,
   project,
   onChangeDraftField,
@@ -63,6 +82,19 @@ function ProjectDetailOverviewContent({
           draft={draft}
           onChangeDraftField={onChangeDraftField}
         />
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-foreground text-base font-semibold">
+              Timeline
+            </h2>
+            <p className="text-muted-foreground text-sm leading-6">
+              Timeline stays task-driven for now. Edit dates in the project
+              header or update individual tasks in the tasks tab.
+            </p>
+          </div>
+          <TimelineGantt tasks={project.timelineTasks} />
+        </section>
+        {fiscalSponsorshipWorkbench}
       </div>
     )
   }
@@ -70,13 +102,13 @@ function ProjectDetailOverviewContent({
   return (
     <div className="space-y-10">
       <MemberWorkspaceProjectOverviewDocument project={project} />
+      <TimelineGantt tasks={project.timelineTasks} />
+      {fiscalSponsorshipWorkbench}
     </div>
   )
 }
 
 type MemberWorkspaceProjectDetailTabsProps = {
-  showOrganizationPrograms?: boolean
-  organizationPrograms?: OrgProgram[]
   activeTab: string
   assigneeOptions: MemberWorkspacePersonOption[]
   createNoteAction?: (
@@ -87,7 +119,6 @@ type MemberWorkspaceProjectDetailTabsProps = {
   ) => Promise<{ ok: true; taskId: string } | { error: string }>
   currentUser: User
   canConnectFiscalDocuments?: boolean
-  canAddProjectTabs?: boolean
   deleteNoteAction?: (input: {
     noteId: string
     projectId: string
@@ -146,24 +177,21 @@ type MemberWorkspaceProjectDetailTabsProps = {
   ) => Promise<{ ok: true; projectId: string } | { error: string }>
   updateTaskStatusAction?: (
     taskId: string,
-    nextStatus: "todo" | "in-progress" | "waiting" | "done"
+    nextStatus: "todo" | "in-progress" | "done"
   ) => Promise<
-    | { ok: true; taskId: string; status: "todo" | "in-progress" | "waiting" | "done" }
+    | { ok: true; taskId: string; status: "todo" | "in-progress" | "done" }
     | { error: string }
   >
 } & FiscalSponsorshipProjectWorkbenchAdminActionProps &
   FiscalSponsorshipProjectWorkbenchDocumentActionProps
 
 export function MemberWorkspaceProjectDetailTabs({
-  organizationPrograms,
-  showOrganizationPrograms = false,
   activeTab,
   assigneeOptions,
   createNoteAction,
   createTaskAction,
   currentUser,
   canConnectFiscalDocuments = false,
-  canAddProjectTabs = false,
   connectFiscalSponsorshipDocumentAssetAction,
   deleteNoteAction,
   deleteTaskAction,
@@ -175,10 +203,13 @@ export function MemberWorkspaceProjectDetailTabs({
   onActiveTabChange,
   onChangeDraftField,
   organizationSummary,
+  onCreateAsset,
   onCreateTask,
   onDeleteNoteAsset,
+  onDeleteAsset,
   onPendingInlineTaskContextHandled,
   onUploadNoteAssets,
+  onUpdateAsset,
   pendingInlineTaskContext,
   project,
   reviewFiscalSponsorshipApplicationAction,
@@ -189,28 +220,6 @@ export function MemberWorkspaceProjectDetailTabs({
   updateTaskOrderAction,
   updateTaskStatusAction,
 }: MemberWorkspaceProjectDetailTabsProps) {
-  const router = useRouter()
-  const [addedProjectId, setAddedProjectId] = useState<string | null>(null)
-  const [addingFiscal, setAddingFiscal] = useState(false)
-  const [tabError, setTabError] = useState<string | null>(null)
-  const fiscalEnabled = project.source?.fiscalSponsorshipEnabled === true ||
-    addedProjectId === project.id || hasFiscalSponsorshipWork(fiscalSponsorshipWorkflowSummary)
-  const addFiscal = async () => {
-    if (addingFiscal || fiscalEnabled || !canAddProjectTabs) return
-    setAddingFiscal(true)
-    setTabError(null)
-    try {
-      const result = await enableProjectFiscalSponsorshipAction(project.id)
-      if ("error" in result) { setTabError(result.error ?? "Could not add Fiscal Sponsorship."); return }
-      setAddedProjectId(project.id)
-      onActiveTabChange("fiscal-sponsorship")
-      router.refresh()
-    } catch {
-      setTabError("Could not add Fiscal Sponsorship. Try again.")
-    } finally {
-      setAddingFiscal(false)
-    }
-  }
   const resolvedFiscalSponsorshipWorkbench = fiscalSponsorshipWorkbench ?? (
     <MemberWorkspaceProjectFiscalWorkbench
       canConnectDocuments={canConnectFiscalDocuments}
@@ -235,33 +244,27 @@ export function MemberWorkspaceProjectDetailTabs({
       }
     />
   )
-
-  const hasPrograms = showOrganizationPrograms && Boolean(organizationPrograms?.length)
-  const visibleTab = (activeTab === "fiscal-sponsorship" && !fiscalEnabled) || (activeTab === "programs" && !hasPrograms) ? "overview" : activeTab
+  const fiscalDocumentAssetIds =
+    getMemberWorkspaceProjectFiscalDocumentAssetIds(
+      fiscalSponsorshipWorkflowSummary
+    )
+  const generalProjectFiles = project.files.filter(
+    (file) => !fiscalDocumentAssetIds.has(file.id)
+  )
 
   return (
-    <Tabs value={visibleTab} onValueChange={onActiveTabChange}>
-      <ProjectDetailTabsList hasPrograms={hasPrograms} fiscalEnabled={fiscalEnabled} canAdd={canAddProjectTabs} adding={addingFiscal} onAddFiscal={() => void addFiscal()} />
-      {tabError ? <p role="alert" className="text-destructive mt-2 text-sm">{tabError}</p> : null}
+    <Tabs value={activeTab} onValueChange={onActiveTabChange}>
+      <ProjectDetailTabsList />
 
-      {hasPrograms && organizationPrograms ? (
-        <TabsContent value="programs">
-          <OrganizationProgramsTab programs={organizationPrograms} organizationId={organizationSummary.orgId} organizationName={organizationSummary.name} />
-        </TabsContent>
-      ) : null}
-
-      <TabsContent value="overview" className="lg:mt-2">
+      <TabsContent value="overview">
         <ProjectDetailOverviewContent
           draft={draft}
+          fiscalSponsorshipWorkbench={resolvedFiscalSponsorshipWorkbench}
           isEditing={isEditing}
           project={project}
           onChangeDraftField={onChangeDraftField}
         />
       </TabsContent>
-
-      {fiscalEnabled ? (
-        <TabsContent value="fiscal-sponsorship">{resolvedFiscalSponsorshipWorkbench}</TabsContent>
-      ) : null}
 
       <TabsContent value="activity">
         <MemberWorkspaceProjectActivityTimeline
@@ -271,15 +274,12 @@ export function MemberWorkspaceProjectDetailTabs({
       </TabsContent>
 
       <TabsContent value="workstream">
-        <TimelineGantt
-          activity={project.activity}
-          programs={showOrganizationPrograms ? organizationSummary.programs : undefined}
-          tasks={project.timelineTasks}
-          onCreateTask={
-            onCreateTask
-              ? () => onCreateTask({ projectId: project.id })
-              : undefined
-          }
+        <WorkstreamTab
+          workstreams={project.workstreams}
+          canReorder={false}
+          canToggleTasks={Boolean(updateTaskStatusAction)}
+          onCreateTask={onCreateTask}
+          onUpdateTaskStatus={updateTaskStatusAction}
         />
       </TabsContent>
 
@@ -320,7 +320,17 @@ export function MemberWorkspaceProjectDetailTabs({
       </TabsContent>
 
       <TabsContent value="assets">
-        <ProjectAssetFolders key={project.id} projectId={project.id} workflowSummary={fiscalSponsorshipWorkflowSummary} />
+        <div className="space-y-8">
+          <MemberWorkspaceProjectFiscalDocuments
+            workflowSummary={fiscalSponsorshipWorkflowSummary}
+          />
+          <AssetsFilesTab
+            files={generalProjectFiles}
+            onCreateAsset={onCreateAsset}
+            onUpdateAsset={onUpdateAsset}
+            onDeleteAsset={onDeleteAsset}
+          />
+        </div>
       </TabsContent>
     </Tabs>
   )

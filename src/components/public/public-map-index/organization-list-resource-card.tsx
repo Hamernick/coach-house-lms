@@ -4,12 +4,7 @@ import {
   resolvePublicMapItemSelectableId,
   type ExternalResourceMapItem,
 } from "@/lib/public-map/resource-map-items"
-import {
-  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
-  resolvePublicMapResourceCategoryColor,
-} from "@/lib/public-map/resource-categories"
-import { Button } from "@/components/ui/button"
-import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
+import { resolvePublicMapResourceCategoryColor } from "@/lib/public-map/resource-categories"
 import { cn } from "@/lib/utils"
 import {
   buildPublicMapOrganizationListCardOwnerId,
@@ -17,43 +12,44 @@ import {
   buildPublicMapOrganizationListCardSurfaceProps,
 } from "./react-grab"
 import {
-  PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME,
+  buildResourceMetadataItems,
   PUBLIC_MAP_LIST_CARD_PERF_STYLE,
-  PublicMapHighlightedText,
   PublicMapListMetadataStrip,
+  PublicMapListViewButton,
 } from "./organization-list-card-shared"
 import { PublicMapResourceCategoryIcon } from "./resource-category-icon"
+
+function normalizeResourceListCardText(value: string | null | undefined) {
+  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
+}
+
+function resolveResourceListCardSubtitle(item: ExternalResourceMapItem) {
+  const subtitle = item.subtitle?.trim()
+  if (!subtitle) return null
+  return normalizeResourceListCardText(subtitle) ===
+    normalizeResourceListCardText(item.title)
+    ? null
+    : subtitle
+}
 
 export function PublicMapResourceListCard({
   constrainedLayout,
   item,
   selected,
-  query,
   onSelectItem,
-  collected = false,
-  onToggleCollected,
 }: {
   constrainedLayout: boolean
   item: ExternalResourceMapItem
   selected: boolean
-  query?: string
   onSelectItem?: (id: string) => void
-  collected?: boolean
-  onToggleCollected?: (id: string) => void
 }) {
   const selectableItemId = resolvePublicMapItemSelectableId(item)
-  const metadataItems = item.nonprofit
-    ? ["Nonprofit organization", [item.city, item.state].filter(Boolean).join(", ")]
-    : [
-        PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory],
-        item.latitude === null && item.longitude === null
-          ? "Online resource"
-          : [item.city, item.state].filter(Boolean).join(", ") || item.country || "Location available",
-      ]
+  const metadataItems = buildResourceMetadataItems({ item })
   const ownerId = buildPublicMapOrganizationListCardOwnerId(selectableItemId)
   const markerColor = resolvePublicMapResourceCategoryColor(
     item.primaryResourceCategory
   )
+  const subtitle = resolveResourceListCardSubtitle(item)
   const openResourceDetails = () => onSelectItem?.(selectableItemId)
 
   return (
@@ -61,9 +57,24 @@ export function PublicMapResourceListCard({
       key={item.id}
       style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
       className={cn(
-        "text-foreground relative w-full max-w-full min-w-0 overflow-hidden bg-transparent p-1",
-        PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
+        "group text-foreground relative w-full max-w-full min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-transparent shadow-none transition-[border-color,background-color,color] outline-none",
+        "focus-within:border-border/80 focus-within:bg-accent focus-within:text-accent-foreground dark:focus-within:bg-accent/50",
+        "focus-visible:border-border/80 focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/35 dark:focus-visible:bg-accent/50 focus-visible:ring-2",
+        "motion-reduce:transition-none",
+        selected
+          ? "border-primary/35 bg-accent text-accent-foreground dark:bg-accent/50"
+          : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
       )}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open details for ${item.title}`}
+      onClick={openResourceDetails}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return
+        if (event.key !== "Enter" && event.key !== " ") return
+        event.preventDefault()
+        openResourceDetails()
+      }}
       {...buildPublicMapOrganizationListCardOwnerProps({
         ownerId,
         slot: "card",
@@ -71,19 +82,10 @@ export function PublicMapResourceListCard({
           "Clicking the non-action parts of the card opens the resource detail panel.",
       })}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        data-public-map-result-trigger="true"
-        aria-label={`Open details for ${item.title}`}
-        onClick={openResourceDetails}
+      <div
         className={cn(
-          "group relative z-10 flex h-auto min-h-16 w-full min-w-0 justify-start rounded-xl text-left whitespace-normal transition-[background-color,color] motion-reduce:transition-none",
-          "focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:ring-inset",
-          selected
-            ? "bg-accent text-accent-foreground dark:bg-accent/50"
-            : "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-          "px-3 py-2"
+          "relative z-10 flex min-w-0 flex-col",
+          constrainedLayout ? "gap-2.5 p-2.5" : "gap-3 p-3"
         )}
         {...buildPublicMapOrganizationListCardSurfaceProps({
           ownerId,
@@ -95,7 +97,7 @@ export function PublicMapResourceListCard({
         <div
           className={cn(
             "flex min-w-0 items-center",
-            constrainedLayout ? "gap-3" : "gap-4"
+            constrainedLayout ? "gap-2.5" : "gap-3"
           )}
           {...buildPublicMapOrganizationListCardSurfaceProps({
             ownerId,
@@ -105,11 +107,7 @@ export function PublicMapResourceListCard({
           })}
         >
           <span
-            className={cn(
-              "mt-0.5 inline-flex shrink-0 items-center justify-center rounded-full shadow-sm",
-              constrainedLayout ? "size-11" : "size-12"
-            )}
-            style={{ backgroundColor: markerColor }}
+            className="border-border/60 bg-background/85 mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl border"
             {...buildPublicMapOrganizationListCardSurfaceProps({
               ownerId,
               slot: "avatar",
@@ -117,59 +115,47 @@ export function PublicMapResourceListCard({
               notes: "Resource category marker surface.",
             })}
           >
-            <PublicMapResourceCategoryIcon
-              category={item.primaryResourceCategory}
-              className="size-5 text-white"
+            <span
+              className="inline-flex size-7 items-center justify-center rounded-full shadow-sm"
+              style={{ backgroundColor: markerColor }}
               aria-hidden
-            />
+            >
+              <PublicMapResourceCategoryIcon
+                category={item.primaryResourceCategory}
+                className="size-4 text-white"
+              />
+            </span>
           </span>
-          <div
-            className={cn(
-              "min-w-0 flex-1 pt-0.5",
-              onToggleCollected && "pr-12"
-            )}
-          >
+          <div className="min-w-0 flex-1 pt-0.5">
             <p
-              data-public-map-list-title=""
-              className="text-foreground truncate text-base leading-snug font-semibold"
+              className="text-foreground line-clamp-2 text-[15px] leading-tight font-semibold"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
-                notes: "Primary resource category text block.",
+                notes: "Resource name text block.",
               })}
             >
-              <PublicMapHighlightedText query={query} text={item.title} />
+              {item.title}
             </p>
             <PublicMapListMetadataStrip
               itemKeyPrefix="resource"
               items={metadataItems}
               notes="Inline metadata strip for the resource list card."
               ownerId={ownerId}
-              query={query}
             />
           </div>
-        </div>
-      </Button>
-      {onToggleCollected ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="border-border/70 bg-background/85 text-muted-foreground hover:bg-muted hover:text-foreground absolute top-1/2 right-2.5 z-20 size-11 -translate-y-1/2 rounded-full border"
-          aria-label={
-            collected
-              ? `Remove ${item.title} from My Map`
-              : `Collect ${item.title} in My Map`
-          }
-          aria-pressed={collected}
-          onClick={() => onToggleCollected(item.id)}
-        >
-          <BookmarkIcon
-            className={cn("size-4", collected && "fill-current")}
-            aria-hidden
+          <PublicMapListViewButton
+            ownerId={ownerId}
+            onClick={openResourceDetails}
+            notes="Explicit right-aligned call-to-action button for opening resource details."
           />
-        </Button>
-      ) : null}
+        </div>
+        {subtitle ? (
+          <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
     </article>
   )
 }

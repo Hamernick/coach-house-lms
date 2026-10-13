@@ -8,22 +8,15 @@ import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import type { MemberWorkspaceCreateProjectFormInput } from "../../types"
 
 export const MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS = [
-  { value: "planned", label: "Onboarding" },
+  { value: "backlog", label: "Backlog" },
+  { value: "planned", label: "Planned" },
   { value: "active", label: "Active" },
-  { value: "cancelled", label: "Archived" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
 ] as const satisfies ReadonlyArray<{
   value: PlatformAdminDashboardLabStatus
   label: string
 }>
-
-export const MEMBER_WORKSPACE_STANDARD_PROJECT_STATUS_OPTIONS = [
-  { value: "backlog", label: "Backlog" },
-  { value: "planned", label: "Planned" },
-  { value: "active", label: "Active" },
-  { value: "on-hold", label: "On hold" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-] as const
 
 export const MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS = [
   { value: "urgent", label: "Urgent" },
@@ -49,7 +42,7 @@ export type MemberWorkspaceProjectDetailDraft = {
   overviewDocument: string
 }
 
-function toDateValue(date?: Date | null) {
+function toDateValue(date?: Date) {
   return date ? date.toISOString().slice(0, 10) : ""
 }
 
@@ -192,26 +185,21 @@ function buildOverviewDocument(project: ProjectDetails) {
 function normalizeProjectStatus(
   project: ProjectDetails
 ): PlatformAdminDashboardLabStatus {
-  if (project.source && "projectKind" in project.source && project.source.projectKind === "standard") return project.source.status
   if (project.source?.status) {
-    if (project.source.status === "active") return "active"
-    if (
-      project.source.status === "completed" ||
-      project.source.status === "cancelled"
-    ) {
-      return "cancelled"
-    }
-    return "planned"
+    return project.source.status
   }
 
   switch (project.backlog.statusLabel) {
     case "Active":
       return "active"
+    case "Planned":
+      return "planned"
     case "Completed":
+      return "completed"
     case "Cancelled":
       return "cancelled"
     default:
-      return "planned"
+      return "backlog"
   }
 }
 

@@ -11,7 +11,6 @@ import {
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { PlatformAccessLevel } from "@/features/platform-access"
-import { FIND_PATH } from "@/lib/find/routes"
 
 type AuthenticatedFindShellState = {
   sidebarTree: SidebarClass[]
@@ -62,7 +61,7 @@ export function AuthenticatedFindShell({
   organizationDetail?: boolean
 }) {
   const segments = organizationDetail
-    ? [{ label: "Find", href: FIND_PATH }, { label: "Organization" }]
+    ? [{ label: "Find", href: "/find" }, { label: "Organization" }]
     : [{ label: "Find" }]
 
   return (
@@ -107,7 +106,7 @@ export function AuthenticatedFindShell({
         resizableRightRail
         context="public"
         contentPresentation="full-bleed"
-        brandHref={FIND_PATH}
+        brandHref="/find"
         showWorkspaceHome={state.showMemberWorkspace}
         showMemberWorkspace={state.showMemberWorkspace}
       >

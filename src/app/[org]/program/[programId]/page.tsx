@@ -1,7 +1,5 @@
 import { notFound, redirect } from "next/navigation"
 
-import { buildFindOrganizationHref } from "@/lib/find/routes"
-
 export const revalidate = 300
 
 export default async function PublicProgramRedirectPage({
@@ -12,7 +10,7 @@ export default async function PublicProgramRedirectPage({
   const { org, programId } = await params
   if (!org || !programId) return notFound()
 
-  redirect(
-    buildFindOrganizationHref(org, new URLSearchParams({ program: programId }))
-  )
+  const encodedOrg = encodeURIComponent(org)
+  const query = new URLSearchParams({ program: programId }).toString()
+  redirect(`/find/${encodedOrg}?${query}`)
 }

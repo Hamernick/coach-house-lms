@@ -1,79 +1,183 @@
-import { existsSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
+import {
+  isWorkspaceFoundationRolloutEnabled,
+  resolveWorkspaceFoundationLegacyDestination,
+} from "@/lib/workspace/foundation-rollout"
+import { resolveWorkspaceFoundationPageMode } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-rollout"
 import { resolveMyOrganizationPageSearchState } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-search"
-import { resolveInitialWorkspaceDrawerData } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-state"
 
+const identity = { orgId: "org-1", userId: "user-1" }
 const ROOT = process.cwd()
 
 function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
-async function resolveDrawerData(
-  searchParams: Record<string, string>,
-  needsInitialOnboarding = false
-) {
-  const searchState = await resolveMyOrganizationPageSearchState(
-    Promise.resolve(searchParams)
-  )
-
-  return resolveInitialWorkspaceDrawerData({
-    acceleratorGroupParam: searchState.acceleratorGroupParam,
-    acceleratorModuleParam: searchState.acceleratorModuleParam,
-    acceleratorStepParam: searchState.acceleratorStepParam,
-    drawerParam: searchState.drawerParam,
-    focusParam: searchState.focusParam,
-    needsInitialOnboarding,
-    programIdParam: searchState.programIdParam,
-    roadmapSectionParam: searchState.roadmapSectionParam,
-    tabParam: searchState.tabParam,
-    viewParam: searchState.viewParam,
-  }).initialDrawerData
-}
-
-describe("workspace foundation core availability", () => {
-  it("preserves the launch focus on a full page reload", async () => {
-    await expect(
-      resolveDrawerData({ drawer: "accelerator", focus: "organization-launch" })
-    ).resolves.toMatchObject({
-      initialDrawerTab: "accelerator",
-      initialFocus: "organization-launch",
-    })
+describe("workspace foundation rollout", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
-  it("opens every core drawer without rollout configuration", async () => {
-    await expect(
-      resolveDrawerData({ drawer: "documents", focus: "w9" })
-    ).resolves.toMatchObject({
-      initialDrawerTab: "documents",
-      initialFocus: "w9",
-    })
-    await expect(
-      resolveDrawerData({ drawer: "roadmap", section: "origin-story" })
-    ).resolves.toMatchObject({
-      initialDrawerTab: "roadmap",
-      initialRoadmapSectionSlug: "origin-story",
-    })
-    await expect(
-      resolveDrawerData({
+  it("defaults off and requires the private kill switch plus an allowlist match", () => {
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {},
+      })
+    ).toBe(false)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+        },
+      })
+    ).toBe(false)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "0",
+          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "org-1",
+          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "user-1",
+        },
+      })
+    ).toBe(false)
+  })
+
+  it("allows only a matching organization or user when enabled", () => {
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "other, ORG-1 ",
+        },
+      })
+    ).toBe(true)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: " USER-1 ",
+        },
+      })
+    ).toBe(true)
+    expect(
+      isWorkspaceFoundationRolloutEnabled({
+        ...identity,
+        environment: {
+          WORKSPACE_FOUNDATION_ROLLOUT_ENABLED: "1",
+          WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS: "org-2",
+          WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS: "user-2",
+        },
+      })
+    ).toBe(false)
+  })
+
+  it("preserves legacy destinations when later drawer routes are disabled", () => {
+    const baseRequest = {
+      acceleratorGroup: null,
+      acceleratorModuleId: null,
+      acceleratorStepId: null,
+      drawer: "",
+      focus: "",
+      organizationTab: "",
+      programId: "",
+      roadmapSection: null,
+      view: "",
+    }
+
+    expect(
+      resolveWorkspaceFoundationLegacyDestination({
+        ...baseRequest,
+        drawer: "organization",
+        organizationTab: "programs",
+        programId: "program-1",
+      })
+    ).toBe("/workspace?view=editor&tab=programs&programId=program-1")
+    expect(
+      resolveWorkspaceFoundationLegacyDestination({
+        ...baseRequest,
+        drawer: "people",
+      })
+    ).toBe("/workspace?view=editor&tab=people")
+    expect(
+      resolveWorkspaceFoundationLegacyDestination({
+        ...baseRequest,
+        drawer: "documents",
+        focus: "w9",
+      })
+    ).toBe("/organization/documents?focus=w9")
+    expect(
+      resolveWorkspaceFoundationLegacyDestination({
+        ...baseRequest,
+        drawer: "roadmap",
+        roadmapSection: "origin-story",
+      })
+    ).toBe("/workspace/roadmap/origin-story")
+    expect(
+      resolveWorkspaceFoundationLegacyDestination({
+        ...baseRequest,
+        acceleratorModuleId: "module-1",
+        acceleratorStepId: "module-1:video",
+        view: "accelerator",
+      })
+    ).toBe("/accelerator?module=module-1&step=module-1%3Avideo")
+    expect(resolveWorkspaceFoundationLegacyDestination(baseRequest)).toBeNull()
+  })
+
+  it("keeps page mode default-off and preserves legacy editor routing", async () => {
+    vi.stubEnv("WORKSPACE_FOUNDATION_ROLLOUT_ENABLED", "0")
+    vi.stubEnv("WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS", identity.orgId)
+    const searchState = await resolveMyOrganizationPageSearchState(
+      Promise.resolve({
         programId: "program-1",
         tab: "programs",
         view: "editor",
       })
-    ).resolves.toMatchObject({
-      initialDrawerTab: "organization",
-      initialEditMode: true,
-      initialProfileTab: "programs",
-      initialProgramId: "program-1",
+    )
+
+    expect(
+      resolveWorkspaceFoundationPageMode({
+        needsInitialOnboarding: false,
+        ...identity,
+        searchState,
+      })
+    ).toMatchObject({
+      enabled: false,
+      initialDrawerData: {
+        initialDrawerTab: null,
+        initialProgramId: null,
+        initialProfileTab: null,
+      },
+      legacyDestination: null,
+      showLegacyEditor: true,
     })
+
+    const drawerSearchState = await resolveMyOrganizationPageSearchState(
+      Promise.resolve({ drawer: "people" })
+    )
+    expect(
+      resolveWorkspaceFoundationPageMode({
+        needsInitialOnboarding: false,
+        ...identity,
+        searchState: drawerSearchState,
+      }).legacyDestination
+    ).toBe("/workspace?view=editor&tab=people")
   })
 
-  it("has no environment gate around rendering, taxonomy, or People mutations", () => {
+  it("gates server rendering, taxonomy reads, and later People mutations", () => {
     const pageSource = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+    const pageRolloutSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-rollout.ts"
     )
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
@@ -81,29 +185,45 @@ describe("workspace foundation core availability", () => {
     const peopleStateSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-people-state.ts"
     )
+    const peoplePlacementSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-placement-controller.ts"
+    )
+    const peoplePlacementStorageSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-stored-workspace-person-placements.ts"
+    )
+    const peopleDrawerTableSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table.tsx"
+    )
     const peopleSource = readSource("src/actions/people.ts")
     const segmentSource = readSource("src/actions/people-segments.ts")
     const tagSource = readSource("src/actions/people-tags.ts")
 
-    expect(
-      existsSync(join(ROOT, "src/lib/workspace/foundation-rollout.ts"))
-    ).toBe(false)
-    expect(pageSource).toContain("resolveInitialWorkspaceDrawerData")
-    expect(pageSource).toContain(
-      "loadOrganizationPeopleTaxonomy({ orgId, supabase })"
+    expect(pageRolloutSource).toContain("isWorkspaceFoundationRolloutEnabled")
+    expect(pageSource).toMatch(
+      /workspaceFoundationEnabled\s+\? loadOrganizationPeopleTaxonomy/
     )
-    expect(pageSource).not.toContain("workspaceFoundationEnabled")
+    expect(pageSource).toContain("showLegacyEditor")
     expect(surfaceSource).toContain(
-      "onOpenDataDrawer={onOpenWorkspaceDataDrawer}"
+      "workspaceFoundationEnabled ? onOpenWorkspaceDataDrawer : null"
     )
-    expect(surfaceSource).toContain("<WorkspaceCanvasOverlayDrawer")
-    expect(surfaceSource).not.toContain("workspaceFoundationEnabled")
+    expect(surfaceSource).toMatch(
+      /workspaceFoundationEnabled \? \(\s+<WorkspaceCanvasOverlayDrawer/
+    )
     expect(peopleStateSource).toContain(
-      "allowEditing || workspaceDataDrawerCanEdit"
+      "workspaceFoundationEnabled && (allowEditing || workspaceDataDrawerCanEdit)"
     )
-    expect(peopleStateSource).not.toContain("workspaceFoundationEnabled")
-    expect(peopleSource).not.toContain("isWorkspaceFoundationRolloutEnabled")
-    expect(segmentSource).not.toContain("isWorkspaceFoundationRolloutEnabled")
-    expect(tagSource).not.toContain("isWorkspaceFoundationRolloutEnabled")
+    expect(peoplePlacementStorageSource).toContain(
+      "resolveWorkspaceCanvasPersonPlacements"
+    )
+    expect(peoplePlacementSource).toContain("canMutateWorkspaceCanvasPeople")
+    expect(peoplePlacementSource).toContain(
+      "workspacePersonFitRequest: enabled ? fitRequest : null"
+    )
+    expect(peoplePlacementSource).toContain("if (!enabled) return")
+    expect(peopleSource).toContain('return { error: "Not available." }')
+    expect(peopleSource).toContain("extendedSocialWriteRequested")
+    expect(peopleDrawerTableSource).toContain("extendedSocialLinksEnabled")
+    expect(segmentSource).toContain("isWorkspaceFoundationRolloutEnabled")
+    expect(tagSource).toContain("isWorkspaceFoundationRolloutEnabled")
   })
 })

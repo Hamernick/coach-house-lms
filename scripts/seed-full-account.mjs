@@ -1239,7 +1239,6 @@ async function ensureUser({
       ? password
       : generateStrongTempPassword()
   const { data, error } = await adminClient.auth.admin.createUser({
-    app_metadata: { legal_consent_exempt: "service_provisioned" },
     email,
     password: resolvedPassword,
     email_confirm: true,
@@ -1291,7 +1290,6 @@ async function ensureMemberUser({ adminClient, email, fullName, timezone }) {
 
   const password = `TempPass!${rand(10)}`
   const { data, error } = await adminClient.auth.admin.createUser({
-    app_metadata: { legal_consent_exempt: "service_provisioned" },
     email,
     password,
     email_confirm: true,

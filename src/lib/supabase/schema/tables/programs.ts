@@ -1,4 +1,4 @@
-import type { Json } from "../../types"
+import type { Json } from "../json"
 
 export type ProgramsTable = {
   Row: {
@@ -11,6 +11,12 @@ export type ProgramsTable = {
     location: string | null
     location_type: string
     location_url: string | null
+    team_ids: string[]
+    address_street: string | null
+    address_city: string | null
+    address_state: string | null
+    address_postal: string | null
+    address_country: string | null
     image_url: string | null
     duration_label: string | null
     start_date: string | null
@@ -22,12 +28,6 @@ export type ProgramsTable = {
     is_public: boolean
     cta_label: string | null
     cta_url: string | null
-    address_street: string | null
-    address_city: string | null
-    address_state: string | null
-    address_postal: string | null
-    address_country: string | null
-    team_ids: string[]
     wizard_snapshot: Json
     created_at: string
     updated_at: string
@@ -42,6 +42,12 @@ export type ProgramsTable = {
     location?: string | null
     location_type?: string
     location_url?: string | null
+    team_ids?: string[]
+    address_street?: string | null
+    address_city?: string | null
+    address_state?: string | null
+    address_postal?: string | null
+    address_country?: string | null
     image_url?: string | null
     duration_label?: string | null
     start_date?: string | null
@@ -53,12 +59,6 @@ export type ProgramsTable = {
     is_public?: boolean
     cta_label?: string | null
     cta_url?: string | null
-    address_street?: string | null
-    address_city?: string | null
-    address_state?: string | null
-    address_postal?: string | null
-    address_country?: string | null
-    team_ids?: string[]
     wizard_snapshot?: Json
     created_at?: string
     updated_at?: string
@@ -73,6 +73,12 @@ export type ProgramsTable = {
     location?: string | null
     location_type?: string
     location_url?: string | null
+    team_ids?: string[]
+    address_street?: string | null
+    address_city?: string | null
+    address_state?: string | null
+    address_postal?: string | null
+    address_country?: string | null
     image_url?: string | null
     duration_label?: string | null
     start_date?: string | null
@@ -84,15 +90,16 @@ export type ProgramsTable = {
     is_public?: boolean
     cta_label?: string | null
     cta_url?: string | null
-    address_street?: string | null
-    address_city?: string | null
-    address_state?: string | null
-    address_postal?: string | null
-    address_country?: string | null
-    team_ids?: string[]
     wizard_snapshot?: Json
     created_at?: string
     updated_at?: string
   }
-  Relationships: []
+  Relationships: [
+    {
+      foreignKeyName: "programs_user_id_fkey"
+      columns: ["user_id"]
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },
+  ]
 }

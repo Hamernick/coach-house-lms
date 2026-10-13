@@ -276,7 +276,7 @@ export function buildBaseSearchItems({
     {
       id: "page-find",
       label: "Find",
-      href: "/",
+      href: "/find",
       group: "Pages",
       keywords: ["map", "organizations"],
     },

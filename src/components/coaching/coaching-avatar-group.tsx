@@ -5,16 +5,10 @@ import { cn } from "@/lib/utils"
 
 type AvatarSize = "xs" | "sm" | "md"
 
-export type CoachingAvatar = { id: string; name: string; imageUrl: string | null }
-
 type CoachingAvatarGroupProps = {
-  avatars?: CoachingAvatar[]
   className?: string
   size?: AvatarSize
   label?: string
-  limit?: number
-  showStatus?: boolean
-  showOverflow?: boolean
 }
 
 const COACHING_TEAM_AVATARS: Array<{
@@ -55,16 +49,8 @@ export function CoachingAvatarGroup({
   className,
   size = "sm",
   label = "Coach House coaching team",
-  limit,
-  showStatus = false,
-  showOverflow = false,
-  avatars = COACHING_TEAM_AVATARS,
 }: CoachingAvatarGroupProps) {
   const styles = SIZE_STYLES[size]
-  const visibleAvatars = avatars.slice(
-    0,
-    limit ?? avatars.length
-  )
 
   return (
     <div className={cn("inline-flex items-center", className)}>
@@ -76,50 +62,32 @@ export function CoachingAvatarGroup({
           size === "xs" ? "-space-x-1.5" : "-space-x-2"
         )}
       >
-        {visibleAvatars.map((avatar, index) => (
+        {COACHING_TEAM_AVATARS.map((avatar) => (
           <li
             key={avatar.id}
-            className={cn("relative shrink-0", styles.avatar)}
+            className={cn(
+              "border-background ring-border/70 relative overflow-hidden rounded-full border-2 ring-1",
+              styles.avatar
+            )}
           >
-            <span className="border-background ring-border/70 absolute inset-0 overflow-hidden rounded-full border-2 ring-1">
-              {avatar.imageUrl ? (
-                <Image
-                  src={avatar.imageUrl}
-                  alt={avatar.name}
-                  fill
-                  sizes={styles.sizes}
-                  className="object-cover"
-                />
-              ) : (
-                <span
-                  className="bg-muted text-muted-foreground inline-flex size-full items-center justify-center"
-                  aria-label={avatar.name}
-                >
-                  {avatars === COACHING_TEAM_AVATARS ? (
-                    <UserRoundIcon className={styles.icon} aria-hidden />
-                  ) : (
-                    <span className="text-[10px] font-medium" aria-hidden>
-                      {avatar.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("") || <UserRoundIcon className={styles.icon} />}
-                    </span>
-                  )}
-                </span>
-              )}
-            </span>
-            {showStatus && index === 0 ? (
-              <span
-                className="border-background absolute right-0 bottom-0 z-10 size-2.5 rounded-full border-2 bg-emerald-500"
-                aria-hidden
+            {avatar.imageUrl ? (
+              <Image
+                src={avatar.imageUrl}
+                alt={avatar.name}
+                fill
+                sizes={styles.sizes}
+                className="object-cover"
               />
-            ) : null}
+            ) : (
+              <span
+                className="bg-muted text-muted-foreground inline-flex h-full w-full items-center justify-center"
+                aria-label={avatar.name}
+              >
+                <UserRoundIcon className={styles.icon} aria-hidden />
+              </span>
+            )}
           </li>
         ))}
-        {showOverflow && avatars.length > visibleAvatars.length ? (
-          <li className={cn("bg-muted border-background relative flex shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-medium", styles.avatar)}
-            aria-label={avatars.slice(visibleAvatars.length).map((avatar) => avatar.name).join(", ")}
-            title={avatars.slice(visibleAvatars.length).map((avatar) => avatar.name).join(", ")}>
-            +{avatars.length - visibleAvatars.length}
-          </li>
-        ) : null}
       </ul>
     </div>
   )

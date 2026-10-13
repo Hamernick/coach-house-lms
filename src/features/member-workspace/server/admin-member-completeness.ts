@@ -5,16 +5,16 @@ function hasText(value: string | null) {
 export function buildAdminMemberCompleteness({
   avatarUrl,
   email,
+  fullName,
   headline,
-  name,
 }: {
   avatarUrl: string | null
   email: string | null
+  fullName: string | null
   headline: string | null
-  name: string
 }) {
   const fields = [
-    { label: "name", complete: hasText(name) && name !== "Unknown member" },
+    { label: "name", complete: hasText(fullName) },
     { label: "email", complete: hasText(email) },
     { label: "headline", complete: hasText(headline) },
     { label: "profile photo", complete: hasText(avatarUrl) },

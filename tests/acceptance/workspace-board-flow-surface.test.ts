@@ -42,10 +42,10 @@ function createProps(
     } as WorkspaceBoardFlowSurfaceProps["seed"],
     organizationEditorData:
       {} as WorkspaceBoardFlowSurfaceProps["organizationEditorData"],
-    financeInput: {},
     boardState: {} as WorkspaceBoardFlowSurfaceProps["boardState"],
     allowEditing: true,
     workspaceDataDrawerCanEdit: true,
+    workspaceFoundationEnabled: true,
     presentationMode: false,
     workspaceRoomName: "org:org-1:workspace",
     layoutFitRequestKey: 0,
@@ -101,6 +101,7 @@ describe("WorkspaceBoardFlowSurface", () => {
     expect(workspaceCanvasSurfaceV2Mock).toHaveBeenCalledTimes(1)
     expect(workspaceCanvasSurfaceV2Mock.mock.calls[0]?.[0]).toMatchObject({
       workspaceDataDrawerCanEdit: true,
+      workspaceFoundationEnabled: true,
     })
     expect(workspaceRealtimeCursorsOverlayMock).toHaveBeenCalledTimes(1)
     expect(

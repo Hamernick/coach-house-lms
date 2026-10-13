@@ -18,16 +18,15 @@ import { cn } from "@/lib/utils"
 
 import { PublicMapMediaImage } from "./media-image"
 import {
+  truncateAtWordBoundary,
   type OrganizationDetailContactRow,
   type OrganizationDetailStoryField,
 } from "./organization-detail-helpers"
 import {
-  PUBLIC_MAP_DETAIL_BODY_CLASSNAME,
-  PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
-  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_MEDIA_SURFACE_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
 } from "./sidebar-theme"
 
 type DetailBrandKitProps = {
@@ -37,6 +36,8 @@ type DetailBrandKitProps = {
 
 type DetailOriginProps = {
   storyFields: OrganizationDetailStoryField[]
+  expandedStoryFields: Record<string, boolean>
+  onToggleField: (fieldLabel: string) => void
 }
 
 export function OrganizationDetailBrandKitSection({
@@ -61,24 +62,22 @@ export function OrganizationDetailBrandKitSection({
   if (!brandKitDownloadHref && logoCards.length === 0) return null
 
   return (
-    <section className={cn("relative", PUBLIC_MAP_DETAIL_SECTION_CLASSNAME)}>
-      <div className="min-w-0 pr-12">
-        <h3 className="text-base font-semibold">Brand kit</h3>
+    <section className="p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">Brand kit</p>
         {brandKitDownloadHref ? (
           <Button
             asChild
             variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground absolute top-1 right-1 size-11 rounded-full border border-transparent bg-transparent hover:bg-transparent dark:hover:bg-transparent"
+            size="sm"
+            className={cn(
+              "h-7 rounded-md px-2 text-[11px]",
+              PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
+            )}
           >
-            <a
-              href={brandKitDownloadHref}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Download brand kit"
-              title="Download brand kit"
-            >
-              <DownloadIcon className="size-3" aria-hidden />
+            <a href={brandKitDownloadHref} target="_blank" rel="noreferrer">
+              <DownloadIcon className="h-3.5 w-3.5" aria-hidden />
+              Download
             </a>
           </Button>
         ) : null}
@@ -87,7 +86,7 @@ export function OrganizationDetailBrandKitSection({
       {logoCards.length > 0 ? (
         <div
           className={cn(
-            "mt-1.5 grid gap-2",
+            "mt-2 grid gap-2",
             logoCards.length > 1 ? "grid-cols-2" : "grid-cols-1"
           )}
         >
@@ -115,8 +114,8 @@ function OrganizationDetailLogoCard({
   alt: string
 }) {
   return (
-    <div className={cn("p-3", PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME)}>
-      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+    <div className={cn("p-2", PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME)}>
+      <p className="text-muted-foreground text-[11px]">{label}</p>
       <PublicMapMediaImage
         src={imageUrl}
         alt={alt}
@@ -132,25 +131,50 @@ function OrganizationDetailLogoCard({
 
 export function OrganizationDetailOriginSection({
   storyFields,
+  expandedStoryFields,
+  onToggleField,
 }: DetailOriginProps) {
-  if (storyFields.length === 0) return null
-
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Organization story</h3>
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">About</p>
       <Accordion type="single" collapsible className="mt-1 w-full">
         {storyFields.map((field) => {
+          const hasCopy = field.value.length > 0
+          const expanded = Boolean(expandedStoryFields[field.label])
+          const needsToggle = hasCopy && field.value.length > 260
+          const copy = hasCopy
+            ? expanded
+              ? field.value
+              : truncateAtWordBoundary(field.value, 260)
+            : "Not provided yet."
+
           return (
             <AccordionItem
               key={field.label}
               value={field.label}
               className="border-border/60"
             >
-              <AccordionTrigger className="text-muted-foreground pt-1 pb-[3px] text-sm font-medium hover:no-underline">
+              <AccordionTrigger className="text-muted-foreground py-2 text-sm font-medium hover:no-underline">
                 {field.label}
               </AccordionTrigger>
               <AccordionContent>
-                <OrganizationDetailStoryContent value={field.value} />
+                <p className="text-foreground text-sm leading-relaxed break-words whitespace-pre-wrap">
+                  {copy}
+                  {needsToggle ? (
+                    <>
+                      {" "}
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="text-primary h-auto px-0 py-0 text-sm"
+                        onClick={() => onToggleField(field.label)}
+                      >
+                        {expanded ? "View less" : "View more"}
+                      </Button>
+                    </>
+                  ) : null}
+                </p>
               </AccordionContent>
             </AccordionItem>
           )
@@ -160,32 +184,18 @@ export function OrganizationDetailOriginSection({
   )
 }
 
-export function OrganizationDetailStoryContent({ value }: { value: string }) {
-  return (
-    <div
-      className={cn(
-        "prose prose-sm dark:prose-invert text-foreground max-w-none overflow-x-auto text-sm leading-relaxed break-words",
-        "prose-p:my-2 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
-        "[&_img]:border-border/60 [&_img]:my-4 [&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-lg [&_img]:border"
-      )}
-      // Public narrative HTML is sanitized by resolvePublicOrganizationProfileNarratives.
-      dangerouslySetInnerHTML={{ __html: value }}
-    />
-  )
-}
-
 export function OrganizationDetailContactSection({
   contactRows,
 }: {
   contactRows: OrganizationDetailContactRow[]
 }) {
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Contact</h3>
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Contact</p>
       {contactRows.length > 0 ? (
-        <div className="mt-2 space-y-2">
+        <div className="mt-1.5 space-y-1.5">
           {contactRows.map((row) => (
-            <p key={row.label} className="text-foreground text-sm leading-5">
+            <p key={row.label} className="text-foreground text-xs">
               <span className="text-muted-foreground font-medium">
                 {row.label}:
               </span>{" "}
@@ -194,7 +204,7 @@ export function OrganizationDetailContactSection({
           ))}
         </div>
       ) : (
-        <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
+        <p className="text-muted-foreground mt-1 text-xs">
           No contact details listed.
         </p>
       )}
@@ -210,10 +220,10 @@ export function OrganizationDetailFormationSection({
   if (!formationStatus) return null
 
   return (
-    <section className={cn("space-y-2", PUBLIC_MAP_DETAIL_SECTION_CLASSNAME)}>
-      <h3 className="text-base font-semibold">Formation status</h3>
+    <div className="mr-auto w-full max-w-[22.5rem] space-y-1.5">
+      <p className="text-sm font-medium">Formation status</p>
       <OrganizationFormationStatusSummary formationStatus={formationStatus} />
-    </section>
+    </div>
   )
 }
 
@@ -231,37 +241,37 @@ export function OrganizationDetailAddressSection({
     : null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Address</h3>
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Address</p>
       {isOnlineOnly ? (
-        <div className="mt-2 space-y-2">
+        <div className="mt-1.5 space-y-2">
           {resourceHref && webAddress ? (
             <a
               href={resourceHref}
               target="_blank"
               rel="noreferrer"
-              className="text-foreground block text-sm leading-5 break-all underline-offset-4 hover:underline"
+              className="text-foreground block text-xs break-all underline-offset-4 hover:underline"
             >
               {webAddress}
             </a>
           ) : (
-            <p className={PUBLIC_MAP_DETAIL_BODY_CLASSNAME}>
+            <p className="text-muted-foreground text-xs">
               No web address listed yet.
             </p>
           )}
         </div>
       ) : addressLines.length > 0 ? (
-        <ul className="mt-2 space-y-1">
+        <ul className="mt-1.5 space-y-0.5">
           {addressLines.map((line) => (
-            <li key={line} className="text-foreground text-sm leading-5">
+            <li key={line} className="text-foreground text-xs">
               {line}
             </li>
           ))}
         </ul>
       ) : (
-        <p className={cn("mt-1.5", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}>
-          No address listed yet. This profile can still appear in Find, but it
-          will not render a map marker until an address is added.
+        <p className="text-muted-foreground mt-1 text-xs">
+          No address listed yet. This profile can still appear on `/find`, but
+          it will not render a map marker until an address is added.
         </p>
       )}
     </section>
@@ -276,10 +286,10 @@ export function OrganizationDetailActivitiesSection({
   if (activities.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-semibold">Activity</h3>
-        <span className="text-muted-foreground text-xs tabular-nums">
+        <p className="text-sm font-medium">Activity</p>
+        <span className="text-muted-foreground text-[11px] tabular-nums">
           {activities.length}
         </span>
       </div>
@@ -288,17 +298,17 @@ export function OrganizationDetailActivitiesSection({
           <article
             key={activity.id}
             className={cn(
-              "rounded-xl px-3 py-2.5",
+              "rounded-lg px-2 py-1.5",
               PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME
             )}
           >
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                <p className="text-foreground line-clamp-1 text-xs font-medium">
                   {activity.title}
                 </p>
                 {activity.description || activity.subtitle ? (
-                  <p className="text-muted-foreground mt-1 line-clamp-3 text-sm leading-5">
+                  <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px]">
                     {activity.description || activity.subtitle}
                   </p>
                 ) : null}
@@ -309,8 +319,7 @@ export function OrganizationDetailActivitiesSection({
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "text-muted-foreground hover:text-foreground shrink-0",
-                    PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME,
+                    "text-muted-foreground hover:text-foreground h-7 w-7 shrink-0 rounded-full",
                     PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
                   )}
                 >
@@ -332,20 +341,20 @@ export function OrganizationDetailActivitiesSection({
                 .map((chip) => (
                   <span
                     key={chip}
-                    className="bg-muted text-muted-foreground inline-flex min-h-6 max-w-full items-center rounded-full px-2 text-xs leading-none"
+                    className="bg-muted text-muted-foreground inline-flex h-5 max-w-full items-center rounded-full px-1.5 text-[10px] leading-none"
                   >
                     <span className="truncate">{chip}</span>
                   </span>
                 ))}
               {activity.locationType ? (
-                <span className="text-muted-foreground inline-flex min-h-6 items-center gap-1 text-xs leading-none">
+                <span className="text-muted-foreground inline-flex h-5 items-center gap-1 text-[10px] leading-none">
                   <MapPinIcon className="size-3" aria-hidden />
                   {activity.locationType === "online" ? "Online" : "In person"}
                 </span>
               ) : null}
             </div>
             {activity.chips.length > 2 ? (
-              <p className="text-muted-foreground/80 mt-1.5 line-clamp-2 text-xs leading-4">
+              <p className="text-muted-foreground/80 mt-1 line-clamp-1 text-[10px]">
                 {activity.chips.slice(2, 5).join(" · ")}
               </p>
             ) : null}

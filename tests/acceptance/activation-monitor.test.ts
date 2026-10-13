@@ -165,7 +165,7 @@ describe("activation-monitor feature contract", () => {
       "utf8",
     )
     const sidebarSource = readFileSync(
-      "src/lib/prototype-lab-sidebar-tree.ts",
+      "src/features/prototype-lab/lib/sidebar-tree.ts",
       "utf8",
     )
     const pageSource = readFileSync(

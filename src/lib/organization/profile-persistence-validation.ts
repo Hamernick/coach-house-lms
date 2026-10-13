@@ -60,15 +60,8 @@ export function organizationProfileNarrativeSchema(label: string) {
 
 const narrativeRevisionSchema = z.string().nullable().optional()
 
-export const organizationProfileNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Name is required")
-  .max(120)
-
 export const organizationProfilePersistencePatchSchema = z
   .object({
-    name: organizationProfileNameSchema.optional(),
     mission: organizationProfileNarrativeSchema("Mission")
       .nullable()
       .optional(),
@@ -99,7 +92,7 @@ export const organizationProfilePersistencePatchSchema = z
     brandVoiceAvoid: organizationProfileBrandVoiceLongFormSchema
       .nullable()
       .optional(),
-    brandPrimary: organizationProfileHexColorInputSchema.nullable(),
+    brandPrimary: organizationProfileHexColorInputSchema.nullable().optional(),
     brandColors: z
       .array(organizationProfileHexColorInputSchema)
       .max(

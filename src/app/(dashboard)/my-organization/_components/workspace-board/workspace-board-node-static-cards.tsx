@@ -391,17 +391,12 @@ export function EconomicEngineCard({
 }
 
 export function WorkspaceBoardFiscalSponsorshipCard({
-  actionRequest = null,
   applicationPrefill,
   fiscalSponsorshipProjectId,
   fiscalSponsorshipWorkflowSummary,
   organizationName,
   programs,
 }: {
-  actionRequest?: {
-    id: number
-    phaseId: "application-intake" | "required-documents"
-  } | null
   applicationPrefill?: FiscalSponsorshipApplicationPrefill | null
   fiscalSponsorshipProjectId?: string | null
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
@@ -410,7 +405,6 @@ export function WorkspaceBoardFiscalSponsorshipCard({
 }) {
   return (
     <FiscalSponsorshipWorkspaceCardSummary
-      actionRequest={actionRequest}
       applicationPrefill={applicationPrefill}
       fiscalSponsorshipProjectId={fiscalSponsorshipProjectId}
       fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowSummary}

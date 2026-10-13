@@ -1,7 +1,5 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
-
 import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
@@ -12,7 +10,10 @@ import type {
   MemberWorkspaceUpdateProjectQuickLinkInput,
 } from "../types"
 import { ensureMemberWorkspaceFeatureAccess } from "./access"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
   isMissingOrganizationProjectNotesTableError,
@@ -79,7 +80,6 @@ async function resolveProjectForDetailMutation({
 > {
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
 
   const { data: project, error } = await actor.supabase
     .from("organization_projects")
@@ -101,12 +101,9 @@ async function resolveProjectForDetailMutation({
     return { error: "Unable to find that project." }
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    project.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, project.org_id)) {
     return {
-      error: "You can only manage project details for the active organization.",
+      error: "You do not have access to that organization's project details.",
     }
   }
 

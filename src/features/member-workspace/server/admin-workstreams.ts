@@ -1,9 +1,11 @@
-import { DEFAULT_WORKSTREAM_CATEGORIES as DEFAULT_CATEGORIES, simplifyWorkstreamCategories } from "./workstream-categories"
 import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceWorkstreamCategory } from "../types"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 
 type CategoryRow =
@@ -16,6 +18,44 @@ type PlatformAdminActor = Awaited<
   ReturnType<typeof resolveMemberWorkspaceActorContext>
 >
 
+const DEFAULT_CATEGORIES = [
+  {
+    default_key: "backlog",
+    name: "New Intake",
+    color: "slate",
+    position: 0,
+  },
+  {
+    default_key: "planned",
+    name: "Coach Action",
+    color: "amber",
+    position: 1,
+  },
+  {
+    default_key: "waiting_on_organization",
+    name: "Waiting on Organization",
+    color: "rose",
+    position: 2,
+  },
+  {
+    default_key: "review_approval",
+    name: "Review & Approval",
+    color: "blue",
+    position: 3,
+  },
+  {
+    default_key: "active",
+    name: "Ongoing Support",
+    color: "violet",
+    position: 4,
+  },
+  {
+    default_key: "completed",
+    name: "Complete",
+    color: "emerald",
+    position: 5,
+  },
+] as const
 
 function isMissingTableError(error: unknown) {
   const code = (error as { code?: string } | null)?.code
@@ -88,19 +128,18 @@ async function ensureDefaultCategoryRows({
   )
 
   if (missingDefaults.length > 0) {
-    const { error } = await supabase
-      .from("platform_admin_workstream_categories")
-      .insert(
-        missingDefaults.map((category) => ({ owner_id: ownerId, ...category }))
+    const insertResults = await Promise.all(
+      missingDefaults.map((category) =>
+        supabase
+          .from("platform_admin_workstream_categories")
+          .insert({ owner_id: ownerId, ...category })
       )
+    )
 
-    if (error) {
+    for (const { error } of insertResults) {
+      if (!error || error.code === "23505") continue
       if (isMissingTableError(error)) return null
-      throw new Error(
-        error.code === "23505"
-          ? "A custom category conflicts with a default workstream category."
-          : "Unable to create default workstream categories."
-      )
+      throw new Error("Unable to create default workstream categories.")
     }
   }
 
@@ -127,7 +166,7 @@ export async function loadPlatformAdminWorkstreamConfiguration({
   })
   if (!categoryRows) return null
 
-  const { categories, aliases } = simplifyWorkstreamCategories(categoryRows.map(mapCategory))
+  const categories = categoryRows.map(mapCategory)
   const uniqueProjectIds = Array.from(
     new Set(projectIds.map((projectId) => projectId.trim()).filter(Boolean))
   )
@@ -153,7 +192,7 @@ export async function loadPlatformAdminWorkstreamConfiguration({
   return {
     categories,
     categoryIdByProjectId: new Map(
-      (data ?? []).map((row) => [row.project_id, aliases.get(row.category_id) ?? row.category_id] as const)
+      (data ?? []).map((row) => [row.project_id, row.category_id] as const)
     ),
   }
 }
@@ -214,7 +253,6 @@ export async function createPlatformAdminWorkstreamCategoryAction(
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/projects")
   return { ok: true as const, id: data.id }
 }
 
@@ -248,7 +286,6 @@ export async function updatePlatformAdminWorkstreamCategoryAction(
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/projects")
   return { ok: true as const, id: data.id }
 }
 
@@ -297,7 +334,6 @@ export async function deletePlatformAdminWorkstreamCategoryAction(
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/projects")
   return { ok: true as const, id: deletedCategory.id }
 }
 
@@ -368,7 +404,6 @@ export async function restorePlatformAdminWorkstreamDefaultsAction(): Promise<Wo
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/projects")
   return { ok: true as const }
 }
 
@@ -390,9 +425,9 @@ export async function updatePlatformAdminProjectWorkstreamAction(
   const [{ data: project }, { data: category }] = await Promise.all([
     actor.supabase
       .from("organization_projects")
-      .select("id")
+      .select("id, org_id")
       .eq("id", normalizedProjectId)
-      .maybeSingle<{ id: string }>(),
+      .maybeSingle<{ id: string; org_id: string }>(),
     actor.supabase
       .from("platform_admin_workstream_categories")
       .select("id")
@@ -401,7 +436,11 @@ export async function updatePlatformAdminProjectWorkstreamAction(
       .maybeSingle<{ id: string }>(),
   ])
 
-  if (!project || !category) {
+  if (
+    !project ||
+    !category ||
+    !actorCanAccessOrganization(actor, project.org_id)
+  ) {
     return {
       error: "That project or category is no longer available.",
     } as const
@@ -424,6 +463,5 @@ export async function updatePlatformAdminProjectWorkstreamAction(
   if (error) return { error: "Unable to move organization." } as const
 
   revalidatePath("/organizations")
-  revalidatePath("/projects")
   return { ok: true as const, id: normalizedProjectId }
 }

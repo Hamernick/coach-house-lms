@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
@@ -212,17 +211,6 @@ function WorkflowActionButton({
     (phase.actionType === "document" || phase.actionType === "signature") &&
     phase.href
   ) {
-    if (phase.actionType === "signature") {
-      return (
-        <Button asChild size="sm" className="h-8 rounded-full px-3">
-          <Link href={phase.href}>
-            <Icon data-icon="inline-start" aria-hidden />
-            {phase.actionLabel}
-          </Link>
-        </Button>
-      )
-    }
-
     return (
       <Button asChild size="sm" className="h-8 rounded-full px-3">
         <a href={phase.href} target="_blank" rel="noreferrer">
@@ -420,14 +408,14 @@ export function SigningActions({
           title={action.title}
           description={action.description}
           statusLabel={action.statusLabel}
-          complete={action.complete}
+          complete={!action.href}
         >
           {action.href ? (
             <Button asChild size="sm" className="w-fit rounded-full">
-              <Link href={action.href}>
+              <a href={action.href} target="_blank" rel="noreferrer">
                 <PenLineIcon data-icon="inline-start" aria-hidden />
-                {action.actionLabel}
-              </Link>
+                Sign
+              </a>
             </Button>
           ) : null}
         </FiscalWorkflowDisclosureRow>

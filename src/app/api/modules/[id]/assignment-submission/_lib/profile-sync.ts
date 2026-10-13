@@ -4,9 +4,9 @@ import {
   shouldStripOrgProfileHtml,
 } from "@/lib/organization/profile-cleanup"
 import {
-  getOrganizationCoreDocumentKey,
-  type OrganizationCoreDocuments,
-  updateOrganizationCoreDocuments,
+  isOrganizationNarrativeKey,
+  type OrganizationNarratives,
+  updateOrganizationNarratives,
 } from "@/lib/roadmap"
 
 import type { SupabaseServerClient } from "./types"
@@ -48,7 +48,7 @@ export async function syncMappedAnswersToOrganizationProfile({
     unknown
   >
   let nextProfile: Record<string, unknown> = { ...currentProfile }
-  const coreDocumentUpdates: Partial<OrganizationCoreDocuments> = {}
+  const narrativeUpdates: Partial<OrganizationNarratives> = {}
 
   for (const [fieldName, organizationKey] of Object.entries(orgKeyMapping)) {
     const value = sanitizedAnswers[fieldName]
@@ -70,9 +70,8 @@ export async function syncMappedAnswersToOrganizationProfile({
     }
 
     if (normalizedValue === null) continue
-    const coreDocumentKey = getOrganizationCoreDocumentKey(organizationKey)
-    if (coreDocumentKey) {
-      coreDocumentUpdates[coreDocumentKey] = Array.isArray(normalizedValue)
+    if (isOrganizationNarrativeKey(organizationKey)) {
+      narrativeUpdates[organizationKey] = Array.isArray(normalizedValue)
         ? normalizedValue.join("\n")
         : String(normalizedValue)
       continue
@@ -92,9 +91,9 @@ export async function syncMappedAnswersToOrganizationProfile({
     }
   }
 
-  nextProfile = updateOrganizationCoreDocuments(
+  nextProfile = updateOrganizationNarratives(
     nextProfile,
-    coreDocumentUpdates
+    narrativeUpdates
   ).nextProfile
 
   if (!organizationRow) {

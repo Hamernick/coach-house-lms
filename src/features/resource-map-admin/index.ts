@@ -1,7 +1,4 @@
 export {
-  buildResourceMapReviewSummary,
-  formatResourceMapReviewValue,
-  safeResourceMapExternalUrl,
   normalizeCanonicalEditInput,
   normalizeCanonicalStateInput,
   normalizeImportReviewInput,
@@ -10,14 +7,7 @@ export {
   normalizeResourceMapAdminReason,
   normalizeVisibilityInput,
 } from "./lib"
-export { ResourceMapAdminReviewPage } from "./components"
-export {
-  loadResourceMapAdminReviewQueue,
-  loadResourceMapAdminReviewRecord,
-  reviewResourceMapImportRecordFormAction,
-  setResourceMapPublicVisibilityFormAction,
-  updateResourceMapCanonicalStateAction,
-} from "./route-api"
+export { updateResourceMapCanonicalStateAction } from "./route-api"
 export type {
   ResourceMapAdminActionResult,
   ResourceMapAdminCanonicalAction,
@@ -28,7 +18,6 @@ export type {
   ResourceMapAdminCanonicalServiceRow,
   ResourceMapAdminCurationEventRow,
   ResourceMapAdminImportMatchRow,
-  ResourceMapAdminImportRecordDetailRow,
   ResourceMapAdminImportRecordRow,
   ResourceMapAdminImportReviewInput,
   ResourceMapAdminImportReviewStatus,
@@ -36,8 +25,6 @@ export type {
   ResourceMapAdminMatchStatus,
   ResourceMapAdminPromotionInput,
   ResourceMapAdminReviewQueue,
-  ResourceMapAdminReviewRecord,
-  ResourceMapAdminReviewerProfile,
   ResourceMapAdminVisibilityContactRow,
   ResourceMapAdminVisibilityInput,
   ResourceMapAdminVisibilityLinkRow,

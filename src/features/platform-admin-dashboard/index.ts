@@ -32,12 +32,7 @@ export {
 export { Input } from "./upstream/components/ui/input"
 export { Separator } from "./upstream/components/ui/separator"
 export { Skeleton } from "./upstream/components/ui/skeleton"
-export {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "./upstream/components/ui/tabs"
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./upstream/components/ui/tabs"
 export { BacklogCard } from "./upstream/components/projects/BacklogCard"
 export { Breadcrumbs } from "./upstream/components/projects/Breadcrumbs"
 export { KeyFeaturesColumns } from "./upstream/components/projects/KeyFeaturesColumns"
@@ -71,10 +66,7 @@ export {
   type ProjectTaskGroup,
 } from "./upstream/components/tasks/task-helpers"
 export type { StepQuickCreateValue } from "./upstream/components/project-wizard/steps/StepQuickCreate"
-export type {
-  ProjectData,
-  ProjectIntent,
-} from "./upstream/components/project-wizard/types"
+export type { ProjectData, ProjectIntent } from "./upstream/components/project-wizard/types"
 export type { Client } from "./upstream/lib/data/clients"
 export type {
   BacklogSummary,
@@ -104,7 +96,6 @@ export {
   summarizePlatformAdminDashboardLabProjects,
 } from "./lib/platform-admin-dashboard-lab"
 export type {
-  PlatformAdminDashboardLabFiscalSponsorshipStatus,
   PlatformAdminDashboardLabPriority,
   PlatformAdminDashboardLabProject,
   PlatformAdminDashboardLabState,
@@ -112,6 +103,3 @@ export type {
   PlatformAdminDashboardLabTask,
   PlatformAdminDashboardLabViewType,
 } from "./types"
-
-export { EditableOptionPicker, type EditableOption } from "./upstream/components/project-wizard/EditableOptionPicker"
-export { PROJECT_WORKSTREAM_OPTIONS } from "./upstream/lib/project-workstreams"

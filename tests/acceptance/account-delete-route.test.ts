@@ -4,15 +4,9 @@ import { NextRequest } from "next/server"
 const {
   createSupabaseRouteHandlerClientMock,
   createSupabaseAdminClientMock,
-  disconnectGoogleDriveMock,
 } = vi.hoisted(() => ({
   createSupabaseRouteHandlerClientMock: vi.fn(),
   createSupabaseAdminClientMock: vi.fn(),
-  disconnectGoogleDriveMock: vi.fn(),
-}))
-
-vi.mock("@/features/google-drive", () => ({
-  disconnectGoogleDrive: disconnectGoogleDriveMock,
 }))
 
 vi.mock("@/lib/supabase/route", () => ({
@@ -133,7 +127,6 @@ function buildAdminSupabaseStub({
 describe("account delete route", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    disconnectGoogleDriveMock.mockResolvedValue(undefined)
   })
 
   it("returns 401 without an authenticated user", async () => {
@@ -159,27 +152,8 @@ describe("account delete route", () => {
 
     expect(response.status).toBe(204)
     expect(calls.deleteUser).toHaveBeenCalledWith("user-delete")
-    expect(disconnectGoogleDriveMock).toHaveBeenCalledWith({
-      admin,
-      userId: "user-delete",
-      revoke: true,
-    })
     expect(calls.organizationDelete).not.toHaveBeenCalled()
     expect(routeCalls.signOut).toHaveBeenCalledTimes(1)
-  })
-
-  it("continues local account deletion when provider revocation fails", async () => {
-    const { supabase } = buildRouteSupabaseStub()
-    const { admin, calls } = buildAdminSupabaseStub()
-    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
-    createSupabaseAdminClientMock.mockReturnValue(admin)
-    disconnectGoogleDriveMock.mockRejectedValue(new Error("provider unavailable"))
-
-    const { DELETE } = await import("@/app/api/account/delete/route")
-    const response = await DELETE(buildRequest())
-
-    expect(response.status).toBe(204)
-    expect(calls.deleteUser).toHaveBeenCalledWith("user-delete")
   })
 
   it("reassigns shared workspace authorship before deleting an invited org member", async () => {

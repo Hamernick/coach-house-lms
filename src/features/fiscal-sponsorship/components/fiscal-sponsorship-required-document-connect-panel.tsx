@@ -56,6 +56,7 @@ export function FiscalSponsorshipRequiredDocumentConnectPanel({
       toast.error("Choose a new or existing project file.")
       return
     }
+
     startTransition(async () => {
       const toastId = toast.loading(
         selectedFile ? `Uploading ${selectedFile.name}…` : "Connecting file…"

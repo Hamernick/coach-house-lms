@@ -5,12 +5,6 @@ export {
 } from "./roadmap/definitions"
 export { removeRoadmapSection, updateRoadmapSection } from "./roadmap/mutations"
 export {
-  getOrganizationCoreDocumentKey,
-  ORGANIZATION_CORE_DOCUMENT_SECTION_IDS,
-  resolveOrganizationCoreDocuments,
-  updateOrganizationCoreDocuments,
-} from "./roadmap/organization-core-documents"
-export {
   findOrganizationNarrativeRevisionConflict,
   getOrganizationNarrativeKeyForSectionId,
   isOrganizationNarrativeKey,
@@ -37,17 +31,9 @@ export {
   resolveRoadmapSections,
 } from "./roadmap/sections"
 export {
-  resolvePublicOrganizationProfileNarratives,
-} from "./roadmap/public-organization-profile"
-export { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "./roadmap/public-organization-profile-sections"
-export {
   getRoadmapWorkspaceRevalidationPaths,
   resolveRoadmapSectionDerivedStatus,
 } from "./roadmap/helpers"
-export type {
-  OrganizationCoreDocumentKey,
-  OrganizationCoreDocuments,
-} from "./roadmap/organization-core-documents"
 export type {
   RoadmapHomeworkLink,
   RoadmapHomeworkStatus,
@@ -60,7 +46,6 @@ export type {
   OrganizationNarrativeRevisions,
   OrganizationNarratives,
 } from "./roadmap/organization-narratives"
-export type { PublicOrganizationProfileNarratives } from "./roadmap/public-organization-profile"
 export type {
   MvvMigrationAction,
   MvvMigrationPlan,
@@ -69,4 +54,7 @@ export type {
   MvvMigrationOrganizationReport,
   MvvMigrationRun,
 } from "./roadmap/mvv-migration-runner"
-export type { MvvReviewExtract, MvvReviewProposal } from "./roadmap/mvv-review"
+export type {
+  MvvReviewExtract,
+  MvvReviewProposal,
+} from "./roadmap/mvv-review"

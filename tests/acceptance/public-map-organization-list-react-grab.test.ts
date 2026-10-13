@@ -50,7 +50,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -92,35 +91,6 @@ function buildOrganization(
 }
 
 describe("public map organization list react grab", () => {
-  it("keeps the centered stack fixed while the rounded list surface scrolls", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationList, {
-        organizations: [buildOrganization()],
-        selectedOrgId: null,
-        scrollable: true,
-        onSelectOrg: () => {},
-      })
-    )
-
-    expect(markup).toContain('data-public-map-organization-list-scroll="true"')
-    expect(markup).toContain("mx-auto flex w-full max-w-3xl")
-    expect(markup).toContain(
-      'data-public-map-organization-list-section="rounded-scroll"'
-    )
-    expect(markup).toContain(
-      "divide-border/60 bg-background/85 rounded-2xl"
-    )
-    expect(markup).not.toContain("scroll-fade-effect-y")
-    expect(markup).not.toContain('data-scroll-fade-managed="true"')
-    expect(markup).toContain("overflow-y-auto")
-    expect(markup).toContain("overscroll-contain")
-    expect(markup).toContain("pb-[env(safe-area-inset-bottom)]")
-    expect(markup).not.toContain(
-      "pb-[max(env(safe-area-inset-bottom),0.75rem)]"
-    )
-    expect(markup).toContain("[-webkit-overflow-scrolling:touch]")
-  })
-
   it("supports scroll-pagination batches with a load-more fallback", () => {
     const organizations = Array.from({ length: 10 }, (_, index) =>
       buildOrganization({
@@ -191,16 +161,6 @@ describe("public map organization list react grab", () => {
         onOpenDetails: () => {},
       })
     )
-    const roomyMarkup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationList, {
-        organizations: [buildOrganization()],
-        selectedOrgId: null,
-        query: "",
-        constrainedLayout: false,
-        onSelectOrg: () => {},
-        onOpenDetails: () => {},
-      })
-    )
 
     expect(markup).toContain(
       'data-react-grab-anchor="PublicMapOrganizationListCard"'
@@ -216,36 +176,23 @@ describe("public map organization list react grab", () => {
     )
     expect(markup).not.toContain("Add Atlas Collective to favorites")
     expect(markup).toContain('data-react-grab-surface-slot="body"')
-    expect(markup).toContain(
-      "group relative z-10 flex h-auto min-h-16 w-full min-w-0 justify-start"
-    )
-    expect(markup).toContain("px-3 py-2")
-    expect(roomyMarkup).toContain("px-3 py-2")
     expect(markup).toContain('data-react-grab-surface-slot="identity-row"')
     expect(markup).toContain('data-react-grab-surface-slot="avatar"')
     expect(markup).toContain('data-react-grab-surface-slot="title"')
     expect(markup).toContain('data-react-grab-surface-slot="location"')
-    expect(markup).not.toContain(
-      'data-react-grab-surface-slot="featured-program"'
-    )
-    expect(markup).not.toContain(
+    expect(markup).toContain('data-react-grab-surface-slot="featured-program"')
+    expect(markup).toContain(
       'data-react-grab-surface-slot="program-preview-grid"'
     )
+    expect(markup).toContain(
+      'data-react-grab-surface-slot="program-preview-card"'
+    )
     expect(markup).toContain('data-react-grab-surface-slot="meta-row"')
-    expect(markup).not.toContain('data-react-grab-surface-slot="view-button"')
-    expect(markup).toContain('data-public-map-result-trigger="true"')
-    expect(markup).toContain("min-h-18")
-    expect(markup).toContain(
-      "text-foreground truncate text-base leading-snug font-semibold"
-    )
-    expect(markup).toContain(
-      "text-muted-foreground mt-0.5 flex max-w-full items-center"
-    )
-    expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
-    expect(markup).toContain("min-w-0 text-pretty break-words")
-    expect(markup).not.toContain("max-w-[55%]")
-    expect(markup).not.toContain("max-w-[45%]")
-    expect(markup).toContain(">Community<")
-    expect(markup).not.toContain("Weekly mutual-aid meals")
+    expect(markup).toContain('data-react-grab-surface-slot="view-button"')
+    expect(markup).toContain("Program")
+    expect(markup).toContain("Weekly")
+    expect(markup).toContain("Weekly mutual-aid meals")
+    expect(markup).toContain("https://example.com/kitchen")
+    expect(markup).not.toContain("Featured Programs")
   })
 })

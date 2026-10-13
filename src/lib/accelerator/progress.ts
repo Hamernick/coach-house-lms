@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { SidebarClass } from "@/lib/academy"
 import { fetchSidebarTree } from "@/lib/academy"
-import { isNonProductAcceleratorClass } from "@/lib/accelerator/class-visibility"
 import {
   parseAssignmentCompletionMode,
   parseAssignmentFields,
@@ -55,6 +54,15 @@ type ProgressOptions = {
   isAdmin?: boolean
   classes?: SidebarClass[]
   basePath?: string
+}
+
+const LEGACY_CLASS_TITLES = new Set(["published class"])
+const LEGACY_CLASS_SLUGS = new Set(["published-class"])
+
+function isLegacyClass(klass: SidebarClass): boolean {
+  const title = klass.title.trim().toLowerCase()
+  const slug = klass.slug.trim().toLowerCase()
+  return LEGACY_CLASS_TITLES.has(title) || LEGACY_CLASS_SLUGS.has(slug)
 }
 
 function normalizeClassesForProgress(
@@ -150,16 +158,14 @@ function buildAcceleratorProgressTotals({
 
   for (const moduleId of moduleIds) {
     const progressStatus = progressStatusByModuleId.get(moduleId)
-    if (progressStatus === "completed") {
-      completedModules += 1
+    if (progressStatus && progressStatus !== "not_started") {
+      if (progressStatus === "completed") completedModules += 1
+      if (progressStatus === "in_progress") inProgressModules += 1
       continue
     }
 
     const submission = submissionByModuleId.get(moduleId)
-    if (!submission) {
-      if (progressStatus === "in_progress") inProgressModules += 1
-      continue
-    }
+    if (!submission) continue
 
     const assignment = assignmentByModuleId.get(moduleId)
     const completed = assignment
@@ -213,7 +219,7 @@ export async function fetchAcceleratorProgressTotalsByUserId({
     Boolean(isAdmin)
   )
   const filteredClasses = normalizedClasses.filter(
-    (klass) => !isNonProductAcceleratorClass(klass)
+    (klass) => !isLegacyClass(klass)
   )
   const moduleIds = filteredClasses.flatMap((klass) =>
     klass.modules.map((module) => module.id)
@@ -436,7 +442,7 @@ export async function fetchAcceleratorProgressSummary({
     Boolean(resolvedIsAdmin)
   )
   const filteredClasses = normalizedClasses.filter(
-    (klass) => !isNonProductAcceleratorClass(klass)
+    (klass) => !isLegacyClass(klass)
   )
   const moduleIds = filteredClasses.flatMap((klass) =>
     klass.modules.map((module) => module.id)
@@ -566,16 +572,13 @@ export async function fetchAcceleratorProgressSummary({
 
   for (const moduleId of moduleIds) {
     const progressStatus = progressStatusByModuleId.get(moduleId)
-    if (progressStatus === "completed") {
+    if (progressStatus && progressStatus !== "not_started") {
       progressMap.set(moduleId, progressStatus)
       continue
     }
 
     const submission = submissionByModuleId.get(moduleId)
-    if (!submission) {
-      if (progressStatus) progressMap.set(moduleId, progressStatus)
-      continue
-    }
+    if (!submission) continue
 
     const assignment = assignmentByModuleId.get(moduleId)
     const completed = assignment

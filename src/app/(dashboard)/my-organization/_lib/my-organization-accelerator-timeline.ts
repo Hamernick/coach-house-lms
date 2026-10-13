@@ -79,19 +79,11 @@ async function loadModuleContextById({
     })
   )
 
-  const moduleContextById = new Map<
-    string,
-    {
-      classPublished: boolean
-      classTitle: string
-      module: ModuleRecord
-    }
-  >()
+  const moduleContextById = new Map<string, { classTitle: string; module: ModuleRecord }>()
   for (const classContext of classContexts) {
     if (!classContext.context) continue
     for (const moduleRecord of classContext.context.modules) {
       moduleContextById.set(moduleRecord.id, {
-        classPublished: classContext.context.classPublished,
         classTitle: classContext.context.classTitle,
         module: moduleRecord,
       })
@@ -180,24 +172,14 @@ function buildModuleSeed({
   onboardingDefaults,
 }: {
   roadmapModule: ModuleCard
-  groupMetaById: Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >
+  groupMetaById: Map<string, { title: string; order: number }>
   contentByModuleId: Map<string, { videoUrl: string | null; resources: unknown }>
   moduleMetaById: Map<
     string,
     { videoUrl: string | null; durationMinutes: number | null; hasDeck: boolean }
   >
   modulesWithAssignments: Set<string>
-  moduleContextById: Map<
-    string,
-    {
-      classPublished: boolean
-      classTitle: string
-      module: ModuleRecord
-    }
-  >
+  moduleContextById: Map<string, { classTitle: string; module: ModuleRecord }>
   onboardingDefaults?: OnboardingFlowDefaults | null
 }): WorkspaceAcceleratorTimelineModuleSeed {
   const content = contentByModuleId.get(roadmapModule.id)
@@ -260,12 +242,6 @@ function buildModuleSeed({
 
   return {
     id: roadmapModule.id,
-    published:
-      groupMeta?.published ??
-      (moduleContextEntry
-        ? moduleContextEntry.classPublished &&
-          moduleContextEntry.module.published
-        : true),
     slug: roadmapModule.slug,
     title: isOrganizationSetupModule ? "Organization setup" : roadmapModule.title,
     description: roadmapModule.description ?? null,
@@ -286,19 +262,11 @@ function buildModuleSeed({
 
 export function buildModuleGroupMetaById(
   groups: ModuleGroup[]
-): Map<string, { title: string; order: number; published: boolean }> {
-  const lookup = new Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >()
+): Map<string, { title: string; order: number }> {
+  const lookup = new Map<string, { title: string; order: number }>()
   groups.forEach((group, groupIndex) => {
     for (const groupModule of group.modules) {
-      lookup.set(groupModule.id, {
-        title: group.title,
-        order: groupIndex,
-        published:
-          group.published !== false && groupModule.published !== false,
-      })
+      lookup.set(groupModule.id, { title: group.title, order: groupIndex })
     }
   })
   return lookup
@@ -314,10 +282,7 @@ export async function buildAcceleratorTimelineModules({
   supabase: SupabaseServerClient
   userId: string
   sortedRoadmapModules: ModuleCard[]
-  groupMetaById: Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >
+  groupMetaById: Map<string, { title: string; order: number }>
   onboardingDefaults?: OnboardingFlowDefaults | null
 }) {
   const timelineModuleIds = sortedRoadmapModules.map((roadmapModule) => roadmapModule.id)
@@ -329,15 +294,15 @@ export async function buildAcceleratorTimelineModules({
     )
   )
 
-  const [moduleContextById, { contentRows, assignmentRows, moduleRows }] =
-    await Promise.all([
-      loadModuleContextById({
-        supabase,
-        userId,
-        classSlugs: timelineClassSlugs,
-      }),
-      loadTimelineModuleRows({ supabase, moduleIds: timelineModuleIds }),
-    ])
+  const moduleContextById = await loadModuleContextById({
+    supabase,
+    userId,
+    classSlugs: timelineClassSlugs,
+  })
+  const { contentRows, assignmentRows, moduleRows } = await loadTimelineModuleRows({
+    supabase,
+    moduleIds: timelineModuleIds,
+  })
 
   const contentByModuleId = new Map<string, { videoUrl: string | null; resources: unknown }>()
   for (const row of contentRows) {

@@ -1,16 +1,8 @@
 import { readArray, readString } from "./shared.mjs"
 
-export const TAXONOMY_VERSION = "coach-house-taxonomy-v2"
+export const TAXONOMY_VERSION = "coach-house-taxonomy-v1"
 
 const TOP_LEVEL_TAXONOMY = [
-  ["arts", "Arts & Culture", ["arts", "culture", "museums"]],
-  ["faith", "Faith & Religion", ["religion", "religious"]],
-  ["recreation", "Sports & Recreation", ["sports", "recreation", "athletics"]],
-  [
-    "philanthropy",
-    "Philanthropy & Grantmaking",
-    ["philanthropy", "grantmaking", "grantmakers"],
-  ],
   [
     "health",
     "Health",
@@ -145,10 +137,15 @@ const TOP_LEVEL_TAXONOMY = [
     "Community",
     [
       "mutual aid",
+      "faith",
       "volunteer",
       "civic",
       "voter",
       "events",
+      "recreation",
+      "sports",
+      "arts",
+      "culture",
       "transportation",
       "internet",
       "device",
@@ -243,13 +240,6 @@ const TOP_LEVEL_TAXONOMY = [
 ]
 
 const SUBCATEGORY_GROUPS = {
-  arts: [["community_arts_culture", "Arts & Culture"]],
-  faith: [["community_faith_organizations", "Faith Organizations"]],
-  recreation: [
-    ["community_sports", "Sports"],
-    ["community_recreation", "Recreation"],
-  ],
-  philanthropy: [],
   health: [
     ["health_primary_care", "Primary Care"],
     ["health_dental", "Dental"],
@@ -262,7 +252,7 @@ const SUBCATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Reproductive Health"],
+    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],
@@ -370,11 +360,15 @@ const SUBCATEGORY_GROUPS = {
     ["family_caregivers", "Caregivers"],
   ],
   community: [
+    ["community_faith_organizations", "Faith Organizations"],
     ["community_volunteer_opportunities", "Volunteer Opportunities"],
     ["community_community_organizing", "Community Organizing"],
     ["community_civic_engagement", "Civic Engagement"],
     ["community_voter_services", "Voter Services"],
     ["community_events", "Events"],
+    ["community_recreation", "Recreation"],
+    ["community_sports", "Sports"],
+    ["community_arts_culture", "Arts & Culture"],
     ["community_libraries", "Libraries"],
     ["community_community_centers", "Community Centers"],
     ["community_transportation", "Transportation"],
@@ -874,31 +868,6 @@ function shouldKeepWeatherReliefMatch({ fields, input, match, record }) {
   return hasWeatherReliefServiceIntent(record, fields, pattern)
 }
 
-const ANIMAL_CATEGORY_PATTERN = /^animals(?:_|$)/u
-const EXPLICIT_ANIMAL_SERVICE_PATTERN =
-  /\b(animal|animals|cat|cats|dog|dogs|pet|pets|veterinary|veterinarian|wildlife)\b/u
-
-function shouldKeepAnimalMatch({ fields, match }) {
-  if (!ANIMAL_CATEGORY_PATTERN.test(match.key)) return true
-  const serviceText = normalizeTerm(
-    [
-      fields.sourceCategoryText,
-      fields.category,
-      fields.subcategory,
-      fields.serviceName,
-      fields.serviceTitle,
-      fields.title,
-      fields.organizationName,
-      fields.description,
-      fields.eligibility,
-    ]
-      .map((value) => readString(value))
-      .filter(Boolean)
-      .join(" ")
-  )
-  return EXPLICIT_ANIMAL_SERVICE_PATTERN.test(serviceText)
-}
-
 function boostWeatherReliefCategory(categories, fields, record, pattern, key) {
   if (!hasWeatherReliefServiceIntent(record, fields, pattern)) return
   const rawTerm = readString(fields.sourceCategoryText)
@@ -1024,10 +993,7 @@ export function classifyResourceTaxonomy(record) {
         match.score >= 65 &&
         (match.score >= best.score - 3 || match.score >= 90)
       if (!scoreSelected) return false
-      return (
-        shouldKeepWeatherReliefMatch({ fields, input, match, record }) &&
-        shouldKeepAnimalMatch({ fields, match })
-      )
+      return shouldKeepWeatherReliefMatch({ fields, input, match, record })
     })
     if (selectedMatches.length > 0) {
       for (const match of selectedMatches) addCategory(categories, match)

@@ -2,17 +2,13 @@ import { readFileSync } from "node:fs"
 
 import { describe, expect, it } from "vitest"
 
-import { QUALITY_GATE_PROFILES } from "../../scripts/run-quality-gate.mjs"
-
 describe("large-file guard", () => {
   it("runs as part of the pre-push and quality gates", () => {
     const packageJson = JSON.parse(readFileSync("package.json", "utf8"))
 
-    expect(packageJson.scripts["check:large-files"]).toBe(
-      "node scripts/check-large-files.mjs"
-    )
-    expect(QUALITY_GATE_PROFILES.prepush).toContain("check:large-files")
-    expect(QUALITY_GATE_PROFILES.full).toContain("check:large-files")
+    expect(packageJson.scripts["check:large-files"]).toBe("node scripts/check-large-files.mjs")
+    expect(packageJson.scripts["check:prepush"]).toContain("pnpm check:large-files")
+    expect(packageJson.scripts["check:quality"]).toContain("pnpm check:large-files")
   })
 
   it("budgets public SVGs and duplicate public assets", () => {

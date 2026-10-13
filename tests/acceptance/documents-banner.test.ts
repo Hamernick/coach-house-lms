@@ -1,86 +1,60 @@
 import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { DocumentsBanner } from "@/components/organization/org-profile-card/tabs/documents-tab/components"
 
 describe("documents banner", () => {
-  it("owns the persistent documents library surface", () => {
-    const props: React.ComponentProps<typeof DocumentsBanner> = {
-      canEdit: true,
-      children: React.createElement(
-        "h1",
-        { id: "documents-title" },
-        "Documents"
-      ),
-    }
+  it("centers the banner and identifies its owning surface", () => {
     const markup = renderToStaticMarkup(
-      React.createElement(DocumentsBanner, props)
+      React.createElement(DocumentsBanner, {
+        hasRoadmapDocuments: true,
+        canEdit: true,
+      })
     )
 
-    expect(markup).toContain("Documents")
-    expect(markup).toContain("rounded-2xl")
-    expect(markup).toContain("max-w-xl")
+    expect(markup).toContain("Store, track, and act on every key document")
+    expect(markup).toContain("text-center")
+    expect(markup).toContain("flex-col items-center")
+    expect(markup).not.toContain("animate-[soft-pop")
     expect(markup).toContain(
       'data-react-grab-owner-id="organization-documents:banner"'
     )
-    expect(markup).not.toContain("Library")
-    expect(markup).not.toContain("Start chat")
+    expect(markup.indexOf('aria-hidden="true"')).toBeLessThan(
+      markup.indexOf('id="documents-title"')
+    )
+    expect(markup).not.toContain("<button")
+    expect(markup).not.toContain("Dismiss documents banner")
+    expect(markup).not.toContain("h-8 w-8 shrink-0 rounded-lg")
   })
 
-  it("keeps Notes inside the organization Documents surface", () => {
-    const root = process.cwd()
-    const pageSource = readFileSync(
-      join(
-        root,
-        "src/app/(dashboard)/organization/documents/organization-documents-page-content.tsx"
-      ),
+  it("keeps the rendered visual fixture closed unless explicitly enabled", () => {
+    const proxySource = readFileSync(
+      join(process.cwd(), "src/proxy.ts"),
       "utf8"
     )
-    const tabSource = readFileSync(
+    const fixtureSource = readFileSync(
       join(
-        root,
-        "src/components/organization/org-profile-card/tabs/documents-tab.tsx"
-      ),
-      "utf8"
-    )
-    const notesSource = readFileSync(
-      join(root, "src/components/organization/documents-notes-right-rail.tsx"),
-      "utf8"
-    )
-
-    expect(pageSource).toContain("notes={moduleNotes}")
-    expect(pageSource).not.toContain("DocumentsNotesRightRail")
-    expect(tabSource).toContain("<DocumentsNotesPanel notes={notes} />")
-    expect(notesSource).not.toContain("RightRailSlot")
-    expect(notesSource).toContain("rounded-[2rem]")
-  })
-
-  it("switches cards into multi-selection mode with batch actions", () => {
-    const root = process.cwd()
-    const gridSource = readFileSync(
-      join(
-        root,
-        "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-library-grid.tsx"
-      ),
-      "utf8"
-    )
-    const toolbarSource = readFileSync(
-      join(
-        root,
-        "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-selection-toolbar.tsx"
+        process.cwd(),
+        "src/app/(public)/visual-regression/documents-banner/page.tsx"
       ),
       "utf8"
     )
 
-    expect(gridSource).toContain("selection.selectedIds.length > 0")
-    expect(gridSource).toContain("selection.toggle(item.id)")
-    expect(gridSource).toContain("<DocumentsLibraryCard")
-    expect(toolbarSource).toContain("Download")
-    expect(toolbarSource).toContain("Delete")
-    expect(toolbarSource).toContain("{count} selected")
-    expect(toolbarSource).toContain('aria-live="polite"')
+    expect(proxySource).toContain(
+      'const VISUAL_REGRESSION_PREFIX = "/visual-regression"'
+    )
+    expect(proxySource).toContain(
+      "!canAccessVisualRegressionRoute(request.headers)"
+    )
+    expect(proxySource).toContain(
+      'new NextResponse("Not Found", { status: 404 })'
+    )
+    expect(fixtureSource).toContain(
+      "!canAccessVisualRegressionRoute(await headers())"
+    )
+    expect(fixtureSource).toContain("notFound()")
   })
 })

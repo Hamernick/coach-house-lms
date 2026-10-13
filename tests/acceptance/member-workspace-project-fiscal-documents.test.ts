@@ -23,7 +23,6 @@ function buildWorkflowSummary(
     latestSignaturePacket: null,
     legalEntityType: "corporation",
     requiredDocuments: [],
-    reviewNotes: null,
     reviewedAt: null,
     submittedAt: null,
     ...override,
@@ -45,6 +44,8 @@ describe("MemberWorkspaceProjectFiscalDocuments", () => {
     )
 
     expect(projectAssetRouteSource).toContain("canAccessProjectOrg({")
+    expect(projectAssetRouteSource).toContain("createSupabaseAdminClient()")
+    expect(projectAssetRouteSource).toContain("supabase: admin")
     expect(projectAssetRouteSource).toContain("createSignedUrl(")
     expect(fiscalDocumentRouteSource).toContain("supabase.auth.getUser()")
     expect(fiscalDocumentRouteSource).toContain(
@@ -70,15 +71,12 @@ describe("MemberWorkspaceProjectFiscalDocuments", () => {
       "utf8"
     )
 
-    const folderSource = readFileSync(
-      join(process.cwd(), "src/features/member-workspace/components/projects/project-asset-folders.tsx"),
-      "utf8"
+    expect(detailTabsSource).toContain(
+      "getMemberWorkspaceProjectFiscalDocumentAssetIds("
     )
-    expect(detailTabsSource).toContain("<ProjectAssetFolders")
-    expect(folderSource).toContain("getMemberWorkspaceProjectFiscalDocuments(workflowSummary)")
-    expect(folderSource).toContain("!signedAssetIds.has(")
-    expect(folderSource).toContain('source: "fiscal"')
-    expect(detailTabsSource).not.toContain("<AssetsFilesTab")
+    expect(detailTabsSource).toContain("!fiscalDocumentAssetIds.has(file.id)")
+    expect(detailTabsSource).toContain("files={generalProjectFiles}")
+    expect(detailTabsSource).toContain("<MemberWorkspaceProjectFiscalDocuments")
   })
 
   it("shows legacy DocuSeal files through authorized project asset routes", () => {

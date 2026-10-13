@@ -17,12 +17,12 @@ import {
 } from "@/lib/people/social-links"
 import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
 import { fetchLinkedInProfileImage } from "@/lib/people/linkedin-image-refresh"
-import { readPeopleRoles, resolvePersonRole } from "@/lib/people/roles"
 import { normalizePersonTags } from "@/lib/people/tags"
 import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
+import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 export type OrgPerson = {
   id: string
@@ -30,12 +30,19 @@ export type OrgPerson = {
   title?: string | null
   email?: string | null
   category: PersonCategory
-  customRole?: string | null
   image?: string | null
   reportsToId?: string | null
   pos?: { x: number; y: number } | null
   tags?: string[]
 } & Partial<Record<PersonSocialPlatform, string | null>>
+
+const EXTENDED_PERSON_SOCIAL_PLATFORMS = [
+  "instagram",
+  "facebook",
+  "twitter",
+  "youtube",
+  "tiktok",
+] as const satisfies readonly PersonSocialPlatform[]
 
 function resolvePeopleAvatarCleanupPath(
   previous: string | null | undefined,
@@ -81,6 +88,9 @@ async function resolvePeopleManagementAccess(
 export async function upsertPersonAction(
   person: Omit<OrgPerson, "id"> & { id?: string }
 ) {
+  const extendedSocialWriteRequested = EXTENDED_PERSON_SOCIAL_PLATFORMS.some(
+    (platform) => person[platform] !== undefined
+  )
   const socialLinkError = findPersonSocialLinkError(person)
   if (socialLinkError) return { error: socialLinkError }
 
@@ -91,6 +101,12 @@ export async function upsertPersonAction(
     userId
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    extendedSocialWriteRequested &&
+    !isWorkspaceFoundationRolloutEnabled({ orgId, userId })
+  ) {
+    return { error: "Not available." }
+  }
 
   const id =
     person.id && person.id.length > 0
@@ -135,17 +151,13 @@ export async function upsertPersonAction(
   >({
     supabase,
     orgId,
-    mutate: (people, profile) => {
+    mutate: (people) => {
       const existingIndex = people.findIndex((item) => item.id === id)
       if (person.id && existingIndex < 0) {
         return { error: "Person not found." }
       }
 
       const existingPerson = existingIndex >= 0 ? people[existingIndex] : null
-      const roles = readPeopleRoles(profile)
-      const role = resolvePersonRole({ category: normalizedCategory, customRole:
-        person.customRole === undefined ? existingPerson?.customRole : person.customRole }, roles)
-      if ("error" in role) return role
       const socialLinks = normalizePersonSocialLinks(person, existingPerson)
       const nextItem: OrgPerson = {
         id,
@@ -153,7 +165,7 @@ export async function upsertPersonAction(
         title: person.title?.trim() || null,
         email: person.email?.trim() || null,
         ...socialLinks,
-        ...role,
+        category: normalizedCategory,
         image,
         reportsToId:
           canAssignManager(normalizedCategory) &&
@@ -175,7 +187,6 @@ export async function upsertPersonAction(
         ok: true,
         changed: true,
         people: nextPeople,
-        peopleRoles: role.customRole ? [...new Set([...roles, role.customRole])] : roles,
         value: {
           id,
           previousImage:
@@ -209,8 +220,7 @@ export async function upsertPersonAction(
 
 export async function updatePersonCategoryAction(
   id: string,
-  category: PersonCategory,
-  customRole: string | null = null
+  category: PersonCategory
 ): Promise<{ ok: true } | { error: string }> {
   const personId = id.trim()
   if (!personId) return { error: "Person not found." }
@@ -224,26 +234,30 @@ export async function updatePersonCategoryAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,
     orgId,
-    mutate: (people, profile) => {
+    mutate: (people) => {
       const person = people.find((item) => item.id === personId)
       if (!person) return { error: "Person not found." }
-      const roles = readPeopleRoles(profile)
-      const role = resolvePersonRole({ category, customRole }, roles)
-      if ("error" in role) return role
-      if (person.category === role.category && (person.customRole ?? null) === role.customRole) {
+      if (person.category === category) {
         return { ok: true, changed: false, value: null }
       }
       return {
         ok: true,
         changed: true,
         people: people.map((item) =>
-          item.id === personId ? { ...item, ...role } : item
+          item.id === personId ? { ...item, category } : item
         ),
-        peopleRoles: role.customRole ? [...new Set([...roles, role.customRole])] : roles,
         value: null,
       }
     },
@@ -270,6 +284,14 @@ export async function updatePersonTagsAction(
     session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
 
   const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
     supabase,

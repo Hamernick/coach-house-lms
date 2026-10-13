@@ -139,7 +139,6 @@ describe("workspace roadmap card title", () => {
     expect(roadmapCard).toContain("showHeader={false}")
     expect(roadmapCard).toContain("collapsed={collapsed}")
     expect(roadmapCard).toContain('className="px-1 pb-3"')
-    expect(navigator).toContain("requestWorkspaceRoadmapDrawer(next.slug)")
     expect(roadmapCard).not.toContain(
       'resolveCardDimensions(cardSize, "roadmap")'
     )

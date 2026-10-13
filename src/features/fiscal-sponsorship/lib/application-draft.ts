@@ -1,4 +1,3 @@
-import { parseFundraisingAmount, readFundraisingGoal, type FundraisingPeriod } from "./fundraising-goal"
 import type {
   FiscalSponsorshipApplicationInput,
   FiscalSponsorshipApplicationRecord,
@@ -43,8 +42,6 @@ export type FiscalSponsorshipApplicationDraft = {
   projectDescription: string
   projectLocation: string
   budgetRows: BudgetTableRow[]
-  fundraisingGoalDollars: string
-  fundraisingGoalPeriod: FundraisingPeriod
   estimatedBudgetDollars: string
   expenseSummary: string
   prospectiveFundingSources: string
@@ -128,7 +125,7 @@ function booleanValue(value: FiscalSponsorshipBooleanChoice) {
 }
 
 function applicantNameFromWorkbench(
-  data: Pick<FiscalSponsorshipProjectWorkbenchData, "applicantName">
+  data: FiscalSponsorshipProjectWorkbenchData
 ) {
   return data.applicantName === "Applicant needed" ? "" : data.applicantName
 }
@@ -160,9 +157,8 @@ export function buildFiscalSponsorshipApplicationDraft({
   data,
 }: {
   application?: FiscalSponsorshipApplicationRecord | null
-  data: Pick<FiscalSponsorshipProjectWorkbenchData, "projectId" | "projectName" | "applicantName" | "applicationPrefill">
+  data: FiscalSponsorshipProjectWorkbenchData
 }): FiscalSponsorshipApplicationDraft {
-  const fundraisingGoal = readFundraisingGoal(application?.metadata)
   const prefill = data.applicationPrefill ?? null
   const prefillApplicantName = firstText(
     prefill?.applicantFullName,
@@ -182,9 +178,7 @@ export function buildFiscalSponsorshipApplicationDraft({
   )
   const selectedActivityId = prefill?.sourceActivityId?.trim() || null
   const sourceActivityChanged = Boolean(
-    selectedActivityId &&
-    savedBudgetActivityId &&
-    selectedActivityId !== savedBudgetActivityId
+    selectedActivityId && selectedActivityId !== savedBudgetActivityId
   )
   const prefillBudgetRows = normalizeFiscalSponsorshipBudgetRows(
     prefill?.budgetRows
@@ -276,8 +270,6 @@ export function buildFiscalSponsorshipApplicationDraft({
       prefill?.projectLocation
     ),
     budgetRows,
-    fundraisingGoalDollars: formatBudgetCentsForDraft(fundraisingGoal?.amountCents),
-    fundraisingGoalPeriod: fundraisingGoal?.period ?? "total",
     estimatedBudgetDollars,
     expenseSummary: firstText(
       application?.expenseSummary,
@@ -418,8 +410,6 @@ export function buildFiscalSponsorshipApplicationInput({
       },
     },
     metadata: {
-      budgetMode: "fundraising_goal",
-      fundraisingGoal: { amountCents: parseFundraisingAmount(draft.fundraisingGoalDollars), period: draft.fundraisingGoalPeriod },
       budgetRows: draft.budgetRows,
       lastEditedSurface: "project-fiscal-sponsorship-drawer",
       selectedActivityId: data.applicationPrefill?.sourceActivityId ?? null,

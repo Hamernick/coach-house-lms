@@ -4,18 +4,13 @@ import { useEffect, useRef, type RefObject } from "react"
 import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
-import {
-  applyPublicMapBasemapConfig,
-  applyPublicMapSpaceFog,
-} from "./constants"
-import { publicMapViewOptions } from "./map-view-options"
+import { MAP_STYLE, applyPublicMapSpaceFog } from "./constants"
 import { organizationHasMapLocation, type PublicMapBounds } from "./helpers"
 import { observePublicMapContainer, resolveMapBounds } from "./layout-sync"
-import { resolvePublicMapScreenPadding } from "./screen-camera"
 import {
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
+  focusChicagoFallback,
   focusOrganizationOnMap,
   resolvePublicMapCameraPadding,
 } from "./map-view-helpers"
@@ -23,6 +18,7 @@ import {
   isRecoverablePublicMapTileError,
   resolvePublicMapRuntimeErrorMessage,
 } from "./public-map-runtime-errors"
+import type { UserLocationStatus } from "./user-location"
 
 export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
@@ -106,7 +102,7 @@ export function useSyncSidebarCameraPadding({
     const frame = requestAnimationFrame(() => {
       if (mapRef.current !== map) return
       map.easeTo({
-        padding: resolvePublicMapScreenPadding(map.getContainer?.()) ?? resolvePublicMapCameraPadding(sidebarInsetLeft),
+        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
         duration,
         essential: true,
       })
@@ -117,12 +113,17 @@ export function useSyncSidebarCameraPadding({
 }
 
 function markInitialViewportResolved({
+  status,
   hasResolvedInitialViewportRef,
+  setUserLocationStatus,
   setInitialViewportResolved,
 }: {
+  status: UserLocationStatus
   hasResolvedInitialViewportRef: RefObject<boolean>
+  setUserLocationStatus: (status: UserLocationStatus) => void
   setInitialViewportResolved: (resolved: boolean) => void
 }) {
+  setUserLocationStatus(status)
   hasResolvedInitialViewportRef.current = true
   setInitialViewportResolved(true)
 }
@@ -133,6 +134,7 @@ export function useResolveInitialPublicMapViewport({
   hasResolvedInitialViewportRef,
   initialOrganization,
   preferNationalFallback = false,
+  setUserLocationStatus,
   setInitialViewportResolved,
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
@@ -140,6 +142,7 @@ export function useResolveInitialPublicMapViewport({
   hasResolvedInitialViewportRef: RefObject<boolean>
   initialOrganization: PublicMapOrganization | null
   preferNationalFallback?: boolean
+  setUserLocationStatus: (status: UserLocationStatus) => void
   setInitialViewportResolved: (resolved: boolean) => void
 }) {
   useEffect(() => {
@@ -158,7 +161,9 @@ export function useResolveInitialPublicMapViewport({
     ) {
       focusOrganizationOnMap({ map, organization: initialOrganization })
       markInitialViewportResolved({
+        status: "idle",
         hasResolvedInitialViewportRef,
+        setUserLocationStatus,
         setInitialViewportResolved,
       })
       return
@@ -171,16 +176,60 @@ export function useResolveInitialPublicMapViewport({
         duration: 0,
       })
       markInitialViewportResolved({
+        status: "idle",
         hasResolvedInitialViewportRef,
+        setUserLocationStatus,
         setInitialViewportResolved,
       })
       return
     }
 
-    markInitialViewportResolved({
-      hasResolvedInitialViewportRef,
-      setInitialViewportResolved,
-    })
+    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
+      focusChicagoFallback({ map })
+      markInitialViewportResolved({
+        status: "unavailable",
+        hasResolvedInitialViewportRef,
+        setUserLocationStatus,
+        setInitialViewportResolved,
+      })
+      return
+    }
+
+    setUserLocationStatus("requesting")
+    window.navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const activeMap = mapRef.current
+        if (!activeMap) return
+        activeMap.flyTo({
+          center: [position.coords.longitude, position.coords.latitude],
+          zoom: 9.25,
+          duration: 900,
+          essential: true,
+        })
+        markInitialViewportResolved({
+          status: "centered",
+          hasResolvedInitialViewportRef,
+          setUserLocationStatus,
+          setInitialViewportResolved,
+        })
+      },
+      (error) => {
+        const activeMap = mapRef.current
+        if (!activeMap) return
+        focusChicagoFallback({ map: activeMap })
+        markInitialViewportResolved({
+          status: error.code === 1 ? "denied" : "error",
+          hasResolvedInitialViewportRef,
+          setUserLocationStatus,
+          setInitialViewportResolved,
+        })
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 60_000,
+      }
+    )
   }, [
     hasResolvedInitialViewportRef,
     initialOrganization,
@@ -188,63 +237,43 @@ export function useResolveInitialPublicMapViewport({
     mapRef,
     preferNationalFallback,
     setInitialViewportResolved,
+    setUserLocationStatus,
   ])
 }
 
 export function useInitializePublicMap({
-  enabled = true,
-  setMapReady,
   token,
   tokenAvailable,
   containerRef,
   mapRef,
   mapboxRef,
-  mapStartRef,
   mapLoadedRef,
   hasResolvedInitialViewportRef,
   setInitialViewportResolved,
   setMapLoadVersion,
   setMapError,
   setAppliedBounds,
-  retryVersion,
-  theme,
 }: {
-  enabled?: boolean
-  setMapReady: (ready: boolean) => void
   token: string
   tokenAvailable: boolean
   containerRef: RefObject<HTMLDivElement | null>
   mapRef: RefObject<mapboxgl.Map | null>
   mapboxRef: RefObject<PublicMapMapboxApi | null>
-  mapStartRef: RefObject<(() => void) | null>
   mapLoadedRef: RefObject<boolean>
   hasResolvedInitialViewportRef: RefObject<boolean>
   setInitialViewportResolved: (resolved: boolean) => void
   setMapLoadVersion: (value: number | ((current: number) => number)) => void
   setMapError: (value: string | null) => void
   setAppliedBounds: (value: PublicMapBounds | null) => void
-  retryVersion: number
-  theme: PublicMapTheme
 }) {
-  const themeRef = useRef(theme)
-  themeRef.current = theme
-
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !mapLoadedRef.current) return
-    applyPublicMapBasemapConfig(map, theme)
-  }, [mapLoadedRef, mapRef, theme])
-
-  useEffect(() => {
-    if (!enabled || !tokenAvailable) return
+    if (!tokenAvailable) return
     if (!containerRef.current) return
     if (mapRef.current) return
 
     let cancelled = false
     let stopObservingMapContainer = () => {}
     let hasMarkedMapReady = false
-    let hasScheduledMapReveal = false
-    setMapReady(false)
     setInitialViewportResolved(false)
 
     async function initializeMap() {
@@ -262,13 +291,13 @@ export function useInitializePublicMap({
 
         const map = new mapboxgl.Map({
           container: containerRef.current,
-          ...publicMapViewOptions(themeRef.current),
+          style: MAP_STYLE,
+          center: FALLBACK_CENTER,
+          zoom: FALLBACK_ZOOM,
+          projection: "globe",
           cooperativeGestures: false,
-          attributionControl: false,
         })
         mapRef.current = map
-        const screenPadding = resolvePublicMapScreenPadding(containerRef.current)
-        if (screenPadding) map.setPadding(screenPadding)
 
         if (typeof map.setRenderWorldCopies === "function") {
           map.setRenderWorldCopies(false)
@@ -307,28 +336,13 @@ export function useInitializePublicMap({
         })
 
         map.on("style.load", () => {
-          applyPublicMapBasemapConfig(map, themeRef.current)
           applyPublicMapGlobePresentation(map)
           markMapReady()
-        })
-
-        map.on("sourcedata", (event) => {
-          // Wait for real basemap content, then reveal its next painted frame.
-          // Full load also waits for unrelated tiles and changing directory sources.
-          if (hasScheduledMapReveal || !event.coord || event.sourceDataType !== "content") return
-          if (event.source?.type !== "vector" && event.source?.type !== "raster") return
-          hasScheduledMapReveal = true
-          map.once("render", () => {
-            if (cancelled || mapRef.current !== map) return
-            setMapReady(true)
-          })
         })
 
         map.on("load", () => {
-          if (cancelled || mapRef.current !== map) return
           applyPublicMapGlobePresentation(map)
           markMapReady()
-          setMapReady(true)
         })
 
         map.on("moveend", () => {
@@ -352,18 +366,10 @@ export function useInitializePublicMap({
       }
     }
 
-    let initializationStarted = false
-    const startMap = () => {
-      if (cancelled || initializationStarted) return
-      initializationStarted = true
-      void initializeMap()
-    }
-    mapStartRef.current = startMap
-    startMap()
+    void initializeMap()
 
     return () => {
       cancelled = true
-      if (mapStartRef.current === startMap) mapStartRef.current = null
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
@@ -373,20 +379,16 @@ export function useInitializePublicMap({
       hasResolvedInitialViewportRef.current = false
     }
   }, [
-    enabled,
-    setMapReady,
     containerRef,
     hasResolvedInitialViewportRef,
     mapLoadedRef,
     mapRef,
     mapboxRef,
-    mapStartRef,
     setAppliedBounds,
     setInitialViewportResolved,
     setMapLoadVersion,
     setMapError,
     token,
     tokenAvailable,
-    retryVersion,
   ])
 }

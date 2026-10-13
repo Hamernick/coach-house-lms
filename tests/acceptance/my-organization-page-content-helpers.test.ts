@@ -92,7 +92,7 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: true,
         workspaceOnboardingCompletedAt: null,
-      }
+      },
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(true)
@@ -108,8 +108,7 @@ describe("my organization page content helpers", () => {
 
   it("does not reactivate a completed tutorial from the onboarding query", () => {
     const boardState = buildDefaultBoardState()
-    const completionHiddenCardIds =
-      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+    const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
     boardState.onboardingFlow = {
       ...boardState.onboardingFlow,
       active: false,
@@ -124,12 +123,12 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: true,
         workspaceOnboardingCompletedAt: null,
-      }
+      },
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(false)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(
-      resolveWorkspaceCanvasTutorialStepCount() - 1
+      resolveWorkspaceCanvasTutorialStepCount() - 1,
     )
     expect(next.boardState.hiddenCardIds).toEqual(boardState.hiddenCardIds)
   })
@@ -149,15 +148,15 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: "2026-03-18T21:00:00.000Z",
-      }
+      },
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(false)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(
-      resolveWorkspaceCanvasTutorialStepCount() - 1
+      resolveWorkspaceCanvasTutorialStepCount() - 1,
     )
     expect(next.boardState.hiddenCardIds).toEqual(
-      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+      buildWorkspaceCanvasTutorialCompletionHiddenCardIds(),
     )
   })
 
@@ -168,10 +167,9 @@ describe("my organization page content helpers", () => {
       active: false,
       tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
     }
-    boardState.hiddenCardIds =
-      buildWorkspaceCanvasTutorialCompletionHiddenCardIds().filter(
-        (cardId) => cardId !== "fiscal-sponsorship"
-      )
+    boardState.hiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds().filter(
+      (cardId) => cardId !== "fiscal-sponsorship"
+    )
     boardState.nodes = boardState.nodes.map((node) =>
       node.id === "fiscal-sponsorship"
         ? { ...node, x: 898, y: -510, size: "sm" as const }
@@ -185,7 +183,7 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: "2026-06-05T15:43:37.000Z",
-      }
+      },
     )
 
     expect(next.boardState.hiddenCardIds).not.toContain("fiscal-sponsorship")
@@ -198,7 +196,7 @@ describe("my organization page content helpers", () => {
     })
   })
 
-  it("keeps the workspace tutorial inactive until required setup is complete", () => {
+  it("activates the workspace tutorial when initial onboarding is still required", () => {
     const boardState = buildDefaultBoardState()
 
     const next = applyWorkspaceTutorialActivationToSeed(
@@ -208,17 +206,18 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: false,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: null,
-      }
+      },
     )
 
-    expect(next.boardState.onboardingFlow.active).toBe(false)
-    expect(next.boardState.connections).toEqual(boardState.connections)
+    expect(next.boardState.onboardingFlow.active).toBe(true)
+    expect(next.boardState.connections.length).toBeGreaterThanOrEqual(
+      boardState.connections.length,
+    )
   })
 
   it("restarts a completed tutorial when auth metadata reactivates onboarding", () => {
     const boardState = buildDefaultBoardState()
-    const completionHiddenCardIds =
-      buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+    const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
     boardState.onboardingFlow = {
       ...boardState.onboardingFlow,
       active: false,
@@ -233,15 +232,13 @@ describe("my organization page content helpers", () => {
         workspaceOnboardingActive: true,
         workspaceTutorialRequested: false,
         workspaceOnboardingCompletedAt: null,
-      }
+      },
     )
 
     expect(next.boardState.onboardingFlow.active).toBe(true)
     expect(next.boardState.onboardingFlow.tutorialStepIndex).toBe(0)
     expect(next.boardState.onboardingFlow.openedTutorialStepIds).toEqual([])
-    expect(next.boardState.onboardingFlow.acknowledgedTutorialStepIds).toEqual(
-      []
-    )
+    expect(next.boardState.onboardingFlow.acknowledgedTutorialStepIds).toEqual([])
     expect(next.boardState.hiddenCardIds).toContain("organization-overview")
     expect(next.boardState.hiddenCardIds).toContain("accelerator")
   })

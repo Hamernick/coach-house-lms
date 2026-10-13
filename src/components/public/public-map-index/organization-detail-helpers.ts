@@ -1,8 +1,9 @@
 "use client"
 
 import type { ComponentType } from "react"
+import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import FacebookIcon from "lucide-react/dist/esm/icons/facebook"
-import HeartIcon from "lucide-react/dist/esm/icons/heart"
+import GlobeIcon from "lucide-react/dist/esm/icons/globe"
 import InstagramIcon from "lucide-react/dist/esm/icons/instagram"
 import LinkedinIcon from "lucide-react/dist/esm/icons/linkedin"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
@@ -16,7 +17,6 @@ import {
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { buildPublicMapResourceLinks } from "@/lib/public-map/resource-links"
 import type { PublicMapOrganizationResourceLink } from "@/lib/public-map/resource-links"
-import { stripHtml } from "@/lib/markdown/convert"
 
 export type PublicMapSocialKey = keyof Pick<
   PublicMapOrganization,
@@ -209,7 +209,7 @@ export function buildStoryFields(
   return [
     { label: "Origin story", value: normalizeText(organization.originStory) },
     {
-      label: "Need",
+      label: "Need statement",
       value: normalizeText(organization.needStatement),
     },
     { label: "Mission", value: normalizeText(organization.mission) },
@@ -219,13 +219,7 @@ export function buildStoryFields(
       label: "Theory of change",
       value: normalizeText(organization.theoryOfChange),
     },
-  ].filter((field) => hasRenderableNarrativeContent(field.value))
-}
-
-export function hasRenderableNarrativeContent(value: string) {
-  const trimmed = value.trim()
-  if (!trimmed) return false
-  return stripHtml(trimmed).trim().length > 0 || /<img\b/i.test(trimmed)
+  ]
 }
 
 export function buildContactRows(
@@ -247,11 +241,22 @@ export function buildResourceLinks(
 export function buildActionLinks(
   organization: PublicMapOrganization
 ): OrganizationDetailActionLink[] {
-  const donateHref = normalizeHref(organization.donateUrl)
+  const website = normalizeHref(organization.website)
   const email = normalizeText(organization.email)
   const phone = normalizeText(organization.phone)
+  const brandKitHref = resolveBrandKitDownloadHref(organization)
 
   const actions: Array<OrganizationDetailActionLink | null> = [
+    website
+      ? {
+          key: "website",
+          kind: "link",
+          label: "Website",
+          href: website,
+          external: true,
+          icon: GlobeIcon,
+        }
+      : null,
     email
       ? {
           key: "email",
@@ -271,14 +276,14 @@ export function buildActionLinks(
           icon: PhoneIcon,
         }
       : null,
-    donateHref
+    brandKitHref
       ? {
-          key: "donate",
+          key: "brand-kit",
           kind: "link",
-          label: "Donate",
-          href: donateHref,
+          label: "Brand kit",
+          href: brandKitHref,
           external: true,
-          icon: HeartIcon,
+          icon: DownloadIcon,
         }
       : null,
   ]

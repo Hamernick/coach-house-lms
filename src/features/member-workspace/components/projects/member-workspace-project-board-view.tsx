@@ -1,7 +1,5 @@
 "use client"
 
-import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
-
 import {
   useEffect,
   useMemo,
@@ -11,40 +9,34 @@ import {
 } from "react"
 import { useRouter } from "next/navigation"
 import {
-  DotsThreeVertical,
   Plus,
   StackSimple,
   Spinner,
   CircleNotch,
   CheckCircle,
 } from "@phosphor-icons/react/dist/ssr"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+import { Button } from "@/components/ui/button"
+import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
+import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import {
   type OrganizationCoachAssignmentAction,
   type OrganizationCoachOption,
 } from "@/features/organization-coach-assignments"
 import type { OrganizationKanbanVisibilityMode } from "@/features/organization-kanban-visibility"
-import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
-import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import {
   MemberWorkspaceProjectBoardCategoryMenu,
   MemberWorkspaceProjectBoardCategoryToolbar,
 } from "./member-workspace-project-board-category-controls"
 import { MemberWorkspaceOrganizationStaffActions } from "./member-workspace-organization-staff-actions"
+import { MemberWorkspaceProjectBoardMoveMenu } from "./member-workspace-project-board-move-menu"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
   "planned",
   "active",
-  "on-hold",
 ]
 
 const CLOSED_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
@@ -85,8 +77,6 @@ function getColumnStatusLabel(
       return "Backlog"
     case "planned":
       return "Planned"
-    case "on-hold":
-      return "On hold"
     case "active":
       return "Active"
     case "completed":
@@ -98,66 +88,27 @@ function getColumnStatusLabel(
   }
 }
 
-function useMemberWorkspaceProjectBoardColumns({
-  hiddenWorkstreamCategoryKeys,
+export function MemberWorkspaceProjectBoardView({
+  projects,
+  onAddProject,
+  onEditProject,
+  updateProjectStatusAction,
   showClosedProjects,
-  usesCustomWorkstreams,
-  workstreamCategories,
+  visibleProperties,
+  workstreamCategories = [],
+  createWorkstreamCategoryAction,
+  updateWorkstreamCategoryAction,
+  deleteWorkstreamCategoryAction,
+  restoreWorkstreamDefaultsAction,
+  updateProjectWorkstreamAction,
+  coachOptions = [],
+  canManageCoachAssignments = false,
+  updateCoachAssignmentAction,
+  canUnassignCoachAssignments = true,
+  kanbanVisibilityMode = "visible",
+  pendingVisibilityOrganizationIds = [],
+  onOrganizationVisibilityChange,
 }: {
-  hiddenWorkstreamCategoryKeys: string[]
-  showClosedProjects: boolean
-  usesCustomWorkstreams: boolean
-  workstreamCategories: MemberWorkspaceWorkstreamCategory[]
-}) {
-  const allColumns = useMemo(() => {
-    if (usesCustomWorkstreams) {
-      return workstreamCategories.map((category) => ({
-        id: category.id,
-        label: category.name,
-        color: category.color,
-        defaultKey: category.defaultKey,
-      }))
-    }
-
-    return getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects).map(
-      (status) => ({
-        id: status,
-        label: getColumnStatusLabel(status),
-        color: "slate",
-        defaultKey: status,
-      })
-    )
-  }, [showClosedProjects, usesCustomWorkstreams, workstreamCategories])
-  const hiddenCategoryKeySet = useMemo(
-    () => new Set(hiddenWorkstreamCategoryKeys),
-    [hiddenWorkstreamCategoryKeys]
-  )
-  const columns = useMemo(
-    () =>
-      usesCustomWorkstreams
-        ? allColumns.filter(
-            (column) =>
-              !column.defaultKey || !hiddenCategoryKeySet.has(column.defaultKey)
-          )
-        : allColumns,
-    [allColumns, hiddenCategoryKeySet, usesCustomWorkstreams]
-  )
-  const hiddenCategories = useMemo(
-    () =>
-      usesCustomWorkstreams
-        ? allColumns.flatMap((column) =>
-            column.defaultKey && hiddenCategoryKeySet.has(column.defaultKey)
-              ? [{ key: column.defaultKey, name: column.label }]
-              : []
-          )
-        : [],
-    [allColumns, hiddenCategoryKeySet, usesCustomWorkstreams]
-  )
-
-  return { allColumns, columns, hiddenCategories }
-}
-
-type MemberWorkspaceProjectBoardViewProps = {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
@@ -166,8 +117,6 @@ type MemberWorkspaceProjectBoardViewProps = {
     status: PlatformAdminDashboardLabProject["status"]
   ) => Promise<{ ok: true; id: string } | { error: string }>
   showClosedProjects: boolean
-  hiddenWorkstreamCategoryKeys?: string[]
-  onHiddenWorkstreamCategoryKeysChange?: (categoryKeys: string[]) => void
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
   workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
   createWorkstreamCategoryAction?: (
@@ -197,31 +146,7 @@ type MemberWorkspaceProjectBoardViewProps = {
     organizationId: string,
     hidden: boolean
   ) => void
-}
-
-export function MemberWorkspaceProjectBoardView({
-  projects,
-  onAddProject,
-  onEditProject,
-  updateProjectStatusAction,
-  showClosedProjects,
-  hiddenWorkstreamCategoryKeys = [],
-  onHiddenWorkstreamCategoryKeysChange,
-  visibleProperties,
-  workstreamCategories = [],
-  createWorkstreamCategoryAction,
-  updateWorkstreamCategoryAction,
-  deleteWorkstreamCategoryAction,
-  restoreWorkstreamDefaultsAction,
-  updateProjectWorkstreamAction,
-  coachOptions = [],
-  canManageCoachAssignments = false,
-  updateCoachAssignmentAction,
-  canUnassignCoachAssignments = true,
-  kanbanVisibilityMode = "visible",
-  pendingVisibilityOrganizationIds = [],
-  onOrganizationVisibilityChange,
-}: MemberWorkspaceProjectBoardViewProps) {
+}) {
   const router = useRouter()
   const [items, setItems] =
     useState<PlatformAdminDashboardLabProject[]>(projects)
@@ -232,13 +157,25 @@ export function MemberWorkspaceProjectBoardView({
   const canManageBoard = usesCustomWorkstreams
     ? Boolean(updateProjectWorkstreamAction)
     : Boolean(updateProjectStatusAction)
-  const { allColumns, columns, hiddenCategories } =
-    useMemberWorkspaceProjectBoardColumns({
-      hiddenWorkstreamCategoryKeys,
-      showClosedProjects,
-      usesCustomWorkstreams,
-      workstreamCategories,
-    })
+  const columns = useMemo(() => {
+    if (usesCustomWorkstreams) {
+      return workstreamCategories.map((category) => ({
+        id: category.id,
+        label: category.name,
+        color: category.color,
+        defaultKey: category.defaultKey,
+      }))
+    }
+
+    return getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects).map(
+      (status) => ({
+        id: status,
+        label: getColumnStatusLabel(status),
+        color: "slate",
+        defaultKey: status,
+      })
+    )
+  }, [showClosedProjects, usesCustomWorkstreams, workstreamCategories])
 
   useEffect(() => {
     setItems(projects)
@@ -246,17 +183,15 @@ export function MemberWorkspaceProjectBoardView({
 
   const groups = useMemo(() => {
     const grouped = new Map<string, PlatformAdminDashboardLabProject[]>()
-    for (const column of allColumns) {
+    for (const column of columns) {
       grouped.set(column.id, [])
     }
     for (const project of items) {
-      const statusCategory = allColumns.find(
+      const statusCategory = columns.find(
         (column) => column.defaultKey === project.status
       )
       const columnId = usesCustomWorkstreams
-        ? (project.workstreamCategoryId ??
-          statusCategory?.id ??
-          allColumns[0]?.id)
+        ? (project.workstreamCategoryId ?? statusCategory?.id ?? columns[0]?.id)
         : project.status
 
       if (!columnId || !grouped.has(columnId)) {
@@ -265,25 +200,13 @@ export function MemberWorkspaceProjectBoardView({
       grouped.get(columnId)?.push(project)
     }
     return grouped
-  }, [allColumns, items, usesCustomWorkstreams])
-
-  const hideCategory = (categoryKey: string) => {
-    onHiddenWorkstreamCategoryKeysChange?.(
-      Array.from(new Set([...hiddenWorkstreamCategoryKeys, categoryKey]))
-    )
-  }
-
-  const showCategory = (categoryKey: string) => {
-    onHiddenWorkstreamCategoryKeysChange?.(
-      hiddenWorkstreamCategoryKeys.filter((key) => key !== categoryKey)
-    )
-  }
+  }, [columns, items, usesCustomWorkstreams])
 
   const commitProjectStatus = (
     projectId: string,
     status: PlatformAdminDashboardLabProject["status"]
   ) => {
-    if (!updateProjectStatusAction || pendingProjectIds.includes(projectId)) {
+    if (!updateProjectStatusAction) {
       return
     }
 
@@ -298,14 +221,15 @@ export function MemberWorkspaceProjectBoardView({
     )
 
     startTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectStatusAction(projectId, status), { pending: "Saving project…", success: "Project status updated" })
+      const result = await updateProjectStatusAction(projectId, status)
 
       setPendingProjectIds((current) =>
         current.filter((value) => value !== projectId)
       )
 
       if ("error" in result) {
-        setItems(current => current.map(item => item.id === projectId ? previousItems.find(previous => previous.id === projectId) ?? item : item))
+        setItems(previousItems)
+        toast.error(result.error)
         return
       }
 
@@ -314,7 +238,7 @@ export function MemberWorkspaceProjectBoardView({
   }
 
   const commitProjectWorkstream = (projectId: string, categoryId: string) => {
-    if (!updateProjectWorkstreamAction || pendingProjectIds.includes(projectId)) return
+    if (!updateProjectWorkstreamAction) return
 
     const previousItems = items
     setItems((current) =>
@@ -329,13 +253,14 @@ export function MemberWorkspaceProjectBoardView({
     )
 
     startTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectWorkstreamAction(projectId, categoryId), { pending: "Saving project…", success: "Project workstream updated" })
+      const result = await updateProjectWorkstreamAction(projectId, categoryId)
       setPendingProjectIds((current) =>
         current.filter((value) => value !== projectId)
       )
 
       if ("error" in result) {
-        setItems(current => current.map(item => item.id === projectId ? previousItems.find(previous => previous.id === projectId) ?? item : item))
+        setItems(previousItems)
+        toast.error(result.error)
         return
       }
 
@@ -368,27 +293,24 @@ export function MemberWorkspaceProjectBoardView({
   }
 
   return (
-    <div className="min-w-0 space-y-3 p-3 sm:p-4">
+    <div className="space-y-3 p-4">
       {usesCustomWorkstreams ? (
         <MemberWorkspaceProjectBoardCategoryToolbar
           createCategoryAction={createWorkstreamCategoryAction}
-          hiddenCategories={hiddenCategories}
-          onShowAllCategories={() => onHiddenWorkstreamCategoryKeysChange?.([])}
-          onShowCategory={showCategory}
           restoreDefaultsAction={restoreWorkstreamDefaultsAction}
         />
       ) : null}
 
-      <div className="grid w-full min-w-0 snap-x snap-proximity auto-cols-[calc(100%_-_1rem)] grid-flow-col items-start gap-3 overflow-x-auto pb-2 sm:auto-cols-[18rem] sm:gap-4 lg:auto-cols-[minmax(18rem,1fr)]">
+      <div className="grid auto-cols-[minmax(17rem,1fr)] grid-flow-col gap-4 overflow-x-auto pb-2 lg:auto-cols-[minmax(18rem,1fr)]">
         {columns.map((column) => (
           <div
             key={column.id}
-            className="bg-muted flex max-h-[max(16rem,calc(100dvh-18rem))] min-h-0 min-w-0 snap-start flex-col overflow-hidden rounded-xl lg:max-h-[calc(100dvh-16rem)]"
+            className="bg-muted min-w-0 rounded-xl"
             onDragOver={canManageBoard ? handleDragOver : undefined}
             onDrop={canManageBoard ? handleDropTo(column.id) : undefined}
           >
-            <div className="flex shrink-0 items-center justify-between px-3 py-3">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="flex items-center justify-between px-3 py-3">
+              <div className="flex items-center gap-2">
                 {column.defaultKey ? (
                   getColumnStatusIcon(
                     column.defaultKey as PlatformAdminDashboardLabProject["status"]
@@ -396,7 +318,7 @@ export function MemberWorkspaceProjectBoardView({
                 ) : (
                   <StackSimple className="text-muted-foreground h-4 w-4" />
                 )}
-                <span className="min-w-0 break-words text-sm font-medium">
+                <span className="inline-flex items-center gap-1 text-sm font-medium">
                   {column.label}
                 </span>
                 <span className="text-muted-foreground text-xs">
@@ -408,7 +330,7 @@ export function MemberWorkspaceProjectBoardView({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-lg sm:size-7"
+                    className="h-7 w-7 rounded-lg"
                     type="button"
                     onClick={onAddProject}
                   >
@@ -425,17 +347,12 @@ export function MemberWorkspaceProjectBoardView({
                       defaultKey: column.defaultKey,
                     }}
                     deleteCategoryAction={deleteWorkstreamCategoryAction}
-                    onHideCategory={
-                      column.defaultKey
-                        ? () => hideCategory(column.defaultKey as string)
-                        : undefined
-                    }
                     updateCategoryAction={updateWorkstreamCategoryAction}
                   />
                 ) : null}
               </div>
             </div>
-            <ScrollFadeEffect aria-label={`${column.label} projects`} tabIndex={0} className="min-h-0 space-y-3 overflow-y-auto overscroll-y-contain px-3 pb-3">
+            <div className="min-h-[120px] space-y-3 px-3 pb-3">
               {(groups.get(column.id) ?? []).map((project) => {
                 const canManageProjectCard =
                   canManageBoard &&
@@ -477,69 +394,45 @@ export function MemberWorkspaceProjectBoardView({
                       }
                       visibleProperties={visibleProperties}
                       actions={
-                        project.projectKind === "organization_admin" &&
-                        project.organizationId ? (
-                          <MemberWorkspaceOrganizationStaffActions
-                            canManageCoachAssignments={
-                              canManageCoachAssignments
-                            }
-                            canUnassignCoachAssignments={
-                              canUnassignCoachAssignments
-                            }
-                            coachOptions={coachOptions}
-                            kanbanVisibilityMode={kanbanVisibilityMode}
-                            onOrganizationVisibilityChange={
-                              onOrganizationVisibilityChange
-                            }
-                            pendingVisibilityOrganizationIds={
-                              pendingVisibilityOrganizationIds
-                            }
-                            project={project}
-                            updateCoachAssignmentAction={
-                              updateCoachAssignmentAction
-                            }
-                          />
-                        ) : canManageProjectCard ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-11 rounded-lg sm:size-7"
-                                disabled={pendingProjectIds.includes(
-                                  project.id
-                                )}
-                                type="button"
-                              >
-                                <DotsThreeVertical className="h-4 w-4" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-40 p-2" align="end">
-                              <div className="space-y-1">
-                                {columns.map((nextColumn) => (
-                                  <button
-                                    key={nextColumn.id}
-                                    type="button"
-                                    className="hover:bg-accent min-h-11 w-full rounded-md px-2 py-2 text-left text-sm sm:min-h-0 sm:py-1"
-                                    onClick={() =>
-                                      moveProject(project.id, nextColumn.id)
-                                    }
-                                  >
-                                    Move to {nextColumn.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        ) : undefined
+                        <>
+                          {project.projectKind === "organization_admin" &&
+                          project.organizationId ? (
+                            <MemberWorkspaceOrganizationStaffActions
+                              canManageCoachAssignments={
+                                canManageCoachAssignments
+                              }
+                              canUnassignCoachAssignments={
+                                canUnassignCoachAssignments
+                              }
+                              coachOptions={coachOptions}
+                              kanbanVisibilityMode={kanbanVisibilityMode}
+                              onOrganizationVisibilityChange={
+                                onOrganizationVisibilityChange
+                              }
+                              pendingVisibilityOrganizationIds={
+                                pendingVisibilityOrganizationIds
+                              }
+                              project={project}
+                              updateCoachAssignmentAction={
+                                updateCoachAssignmentAction
+                              }
+                            />
+                          ) : null}
+                          {canManageProjectCard ? (
+                            <MemberWorkspaceProjectBoardMoveMenu
+                              columns={columns}
+                              moveProject={moveProject}
+                              pending={pendingProjectIds.includes(project.id)}
+                              projectId={project.id}
+                            />
+                          ) : null}
+                        </>
                       }
                     />
                   </div>
                 )
               })}
-            </ScrollFadeEffect>
-            {onAddProject ? (
-              <div className="shrink-0 px-3 pb-3">
+              {onAddProject ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -549,8 +442,8 @@ export function MemberWorkspaceProjectBoardView({
                   <Plus className="mr-1 h-4 w-4" />
                   Add project
                 </Button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         ))}
       </div>

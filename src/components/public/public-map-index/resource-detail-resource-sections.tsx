@@ -1,5 +1,4 @@
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
-import MailIcon from "lucide-react/dist/esm/icons/mail"
 import PhoneIcon from "lucide-react/dist/esm/icons/phone"
 
 import { Button } from "@/components/ui/button"
@@ -16,9 +15,8 @@ import {
   PUBLIC_MAP_RESOURCE_LINK_TYPE_LABELS,
 } from "./resource-detail-helpers"
 import {
-  PUBLIC_MAP_DETAIL_BODY_CLASSNAME,
-  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
 } from "./sidebar-theme"
 
 function rankPublicMapResourceLink(
@@ -49,9 +47,9 @@ export function PublicMapResourceLinksSection({
   if (links.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Links</h3>
-      <div className="mt-3 grid gap-2">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Links</p>
+      <div className="mt-2 grid gap-1.5">
         {links.map((link) => {
           const external = isExternalHttpHref(link.href)
 
@@ -62,7 +60,7 @@ export function PublicMapResourceLinksSection({
               target={external ? "_blank" : undefined}
               rel={external ? "noreferrer" : undefined}
               className={cn(
-                "flex min-h-12 min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm",
+                "flex min-h-11 min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
               )}
             >
@@ -91,20 +89,19 @@ export function PublicMapResourceContactSection({
   if (contacts.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Contact</h3>
-      <div className="mt-3 grid gap-2">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Contact</p>
+      <div className="mt-2 grid gap-1.5">
         {contacts.map((contact) => {
           const href = normalizeResourceHref(contact.url)
-          const ContactIcon = contact.type === "email" ? MailIcon : PhoneIcon
           const content = (
             <>
-              <ContactIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <PhoneIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="min-w-0">
                 <span className="block truncate font-medium">
                   {contact.value}
                 </span>
-                <span className="text-muted-foreground block truncate text-xs">
+                <span className="text-muted-foreground block truncate text-[11px]">
                   {contact.label ??
                     PUBLIC_MAP_RESOURCE_CONTACT_TYPE_LABELS[contact.type]}
                 </span>
@@ -116,7 +113,7 @@ export function PublicMapResourceContactSection({
             return (
               <div
                 key={contact.id}
-                className="border-border/55 bg-muted/20 flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm"
+                className="border-border/55 bg-muted/20 flex min-h-11 min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs"
               >
                 {content}
               </div>
@@ -128,7 +125,7 @@ export function PublicMapResourceContactSection({
               key={contact.id}
               href={href}
               className={cn(
-                "flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm",
+                "flex min-h-11 min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-xs",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
               )}
             >
@@ -162,18 +159,13 @@ export function PublicMapResourceAccessSection({
   if (rows.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Access</h3>
-      <dl className="mt-3 grid gap-2.5">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Access</p>
+      <dl className="mt-2 grid gap-2">
         {rows.map((row) => (
-          <div
-            key={row.label}
-            className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3"
-          >
-            <dt className="text-muted-foreground text-sm leading-5">
-              {row.label}
-            </dt>
-            <dd className="text-foreground min-w-0 text-sm leading-5 font-medium break-words">
+          <div key={row.label} className="grid grid-cols-[4.5rem_1fr] gap-2">
+            <dt className="text-muted-foreground text-xs">{row.label}</dt>
+            <dd className="text-foreground min-w-0 text-xs font-medium break-words">
               {row.value}
             </dd>
           </div>
@@ -192,30 +184,25 @@ export function PublicMapResourceServicesSection({
   if (services.length === 0) return null
 
   return (
-    <section className={PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}>
-      <h3 className="text-base font-semibold">Services</h3>
-      <div className="divide-border/55 mt-3 divide-y">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
+      <p className="text-sm font-medium">Services</p>
+      <div className="divide-border/55 mt-2 divide-y">
         {services.map((service) => {
           const intakeHref = normalizeResourceHref(service.intakeUrl)
-          const showServiceIdentity =
-            service.title.trim().toLowerCase() !==
-              item.title.trim().toLowerCase() ||
-            (Boolean(service.description) &&
-              service.description !== item.description)
           const serviceRows = [
-            { label: "Who it helps", value: service.whoItHelps },
+            { label: "Helps", value: service.whoItHelps },
             { label: "Eligibility", value: service.eligibility },
             { label: "Cost", value: service.cost },
             {
               label: "Languages",
               value: formatResourceList(service.languages),
             },
-            { label: "How to access", value: service.appointmentInfo },
+            { label: "Appointment", value: service.appointmentInfo },
             {
               label: "Documents",
               value: formatResourceList(service.documentsNeeded),
             },
-            { label: "Accessibility", value: service.accessibilityNotes },
+            { label: "Access", value: service.accessibilityNotes },
             { label: "Urgent", value: service.urgentAvailability },
             { label: "Age", value: service.ageRange },
             { label: "Area", value: formatResourceList(service.serviceArea) },
@@ -224,28 +211,22 @@ export function PublicMapResourceServicesSection({
           )
 
           return (
-            <div key={service.id} className="py-3 first:pt-0 last:pb-0">
+            <div key={service.id} className="py-2 first:pt-0 last:pb-0">
               <div className="flex min-w-0 items-start justify-between gap-2">
-                {showServiceIdentity ? (
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{service.title}</p>
-                    {service.description ? (
-                      <p
-                        className={cn("mt-1", PUBLIC_MAP_DETAIL_BODY_CLASSNAME)}
-                      >
-                        {service.description}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <span />
-                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{service.title}</p>
+                  {service.description ? (
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {service.description}
+                    </p>
+                  ) : null}
+                </div>
                 {intakeHref ? (
                   <Button
                     asChild
                     variant="ghost"
                     className={cn(
-                      "min-h-11 shrink-0 rounded-full px-3 text-sm",
+                      "h-8 shrink-0 rounded-full px-2.5 text-[11px]",
                       PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
                     )}
                   >
@@ -266,16 +247,16 @@ export function PublicMapResourceServicesSection({
                 ) : null}
               </div>
               {serviceRows.length > 0 ? (
-                <dl className="mt-3 grid gap-2.5">
+                <dl className="mt-2 grid gap-1.5">
                   {serviceRows.map((row) => (
                     <div
                       key={row.label}
-                      className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3"
+                      className="grid grid-cols-[5rem_1fr] gap-2"
                     >
-                      <dt className="text-muted-foreground text-sm leading-5">
+                      <dt className="text-muted-foreground text-[11px]">
                         {row.label}
                       </dt>
-                      <dd className="text-foreground min-w-0 text-sm leading-5 font-medium break-words">
+                      <dd className="text-foreground min-w-0 text-[11px] font-medium break-words">
                         {row.value}
                       </dd>
                     </div>

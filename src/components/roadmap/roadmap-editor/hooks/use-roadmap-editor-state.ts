@@ -18,16 +18,12 @@ import {
 import { toast } from "@/lib/toast"
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
 import {
-  hasMeaningfulRoadmapBudgetRows,
-  roadmapBudgetRowsEqual,
-} from "@/lib/roadmap/budget"
-import {
+  WORKSPACE_PATH,
   WORKSPACE_ROADMAP_PATH,
   getWorkspaceRoadmapSectionPath,
 } from "@/lib/workspace/routes"
 
 import { resolveRoadmapBasePath } from "../paths"
-import { withEditorReturnTo } from "@/lib/workspace/editor-navigation"
 import { deriveRoadmapEditorSectionUi } from "../ui-state"
 import {
   createDraft,
@@ -45,7 +41,6 @@ import type {
 } from "./use-roadmap-editor-state-types"
 
 export function useRoadmapEditorState({
-  sourceScope,
   sections: initialSections,
   publicSlug,
   canEdit = true,
@@ -55,11 +50,8 @@ export function useRoadmapEditorState({
   onRegisterDiscard,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
   const storageKey = useMemo(
-    () =>
-      sourceScope
-        ? `roadmap-draft:${sourceScope.userId}:${sourceScope.organizationId}`
-        : `roadmap-draft:${publicSlug ?? "private"}`,
-    [publicSlug, sourceScope]
+    () => `roadmap-draft:${publicSlug ?? "private"}`,
+    [publicSlug]
   )
   const initialActiveId = useMemo(() => {
     if (!initialSectionId) return ""
@@ -84,6 +76,11 @@ export function useRoadmapEditorState({
   const activeIdRef = useRef(activeId)
   const pathname = usePathname()
   const basePath = useMemo(() => resolveRoadmapBasePath(pathname), [pathname])
+  const isWorkspaceRoadmapView = basePath === WORKSPACE_ROADMAP_PATH
+  const roadmapReturnHref = isWorkspaceRoadmapView ? WORKSPACE_PATH : null
+  const roadmapReturnLabel = isWorkspaceRoadmapView
+    ? "Return To Workspace"
+    : null
   const getSectionHref = useCallback(
     (slug: string) =>
       basePath === WORKSPACE_ROADMAP_PATH
@@ -109,15 +106,6 @@ export function useRoadmapEditorState({
     setDrafts(() => loadRoadmapDraftsFromStorage(storageKey, initialSections))
     setActiveId((prev) => prev || initialSections[0]?.id || "")
   }, [initialSections, storageKey])
-
-  const initialActiveIdRef = useRef(initialActiveId)
-
-  useEffect(() => {
-    if (!initialActiveId) return
-    if (initialActiveIdRef.current === initialActiveId) return
-    initialActiveIdRef.current = initialActiveId
-    setActiveId(initialActiveId)
-  }, [initialActiveId])
 
   useEffect(() => {
     setIsHydrated(true)
@@ -158,7 +146,6 @@ export function useRoadmapEditorState({
     editorPlaceholder,
     status,
     isCalendarSection,
-    isBudgetSection,
     contentMaxWidth,
   } = useMemo(
     () => deriveRoadmapEditorSectionUi({ sections, activeId, drafts }),
@@ -198,7 +185,6 @@ export function useRoadmapEditorState({
       const shouldMarkInProgress =
         section.status === "not_started" &&
         (draft.content.trim().length > 0 ||
-          hasMeaningfulRoadmapBudgetRows(draft.budgetRows) ||
           draft.title.trim().length > 0 ||
           draft.subtitle.trim().length > 0)
 
@@ -206,14 +192,11 @@ export function useRoadmapEditorState({
       startTransition(async () => {
         try {
           const result = await saveRoadmapSectionAction({
-            expectedOrganizationId: sourceScope?.organizationId,
-            expectedUserId: sourceScope?.userId,
             sectionId: section.id,
             expectedLastUpdated: section.lastUpdated,
             title: draft.title,
             subtitle: draft.subtitle,
             content: draft.content,
-            budgetRows: section.id === "budget" ? draft.budgetRows : undefined,
             imageUrl: draft.imageUrl,
             status: shouldMarkInProgress ? "in_progress" : undefined,
           })
@@ -245,7 +228,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [canEdit, isPending, savingId, sourceScope]
+    [canEdit, isPending, savingId]
   )
 
   const flushActiveSectionDraft = useCallback(() => {
@@ -269,9 +252,8 @@ export function useRoadmapEditorState({
       setActiveId(next.id)
       if (navigationMode === "embedded") return
       if (typeof window === "undefined") return
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo")
-      const nextHref = returnTo ? withEditorReturnTo(getSectionHref(next.slug), returnTo) : getSectionHref(next.slug)
-      if (`${window.location.pathname}${window.location.search}` === nextHref) return
+      const nextHref = getSectionHref(next.slug)
+      if (window.location.pathname === nextHref) return
       window.history.replaceState(window.history.state, "", nextHref)
     },
     [flushActiveSectionDraft, getSectionHref, navigationMode]
@@ -287,7 +269,6 @@ export function useRoadmapEditorState({
     const baseline = getRoadmapSectionBaseline(activeSection)
     return (
       activeDraft.content !== baseline.content ||
-      !roadmapBudgetRowsEqual(activeDraft.budgetRows, baseline.budgetRows) ||
       activeDraft.imageUrl !== baseline.imageUrl
     )
   }, [activeDraft, activeSection])
@@ -347,57 +328,29 @@ export function useRoadmapEditorState({
       if (!canEdit) return
       if (!activeSection) return
       if (savingId || isPending) return
-      const draft =
-        draftsRef.current[activeSection.id] ?? createDraft(activeSection)
-      const draftIsDirty = isRoadmapDraftDirty(activeSection, draft)
       setSavingId(activeSection.id)
       startTransition(async () => {
-        try {
-          const result = await saveRoadmapSectionAction({
-            expectedOrganizationId: sourceScope?.organizationId,
-            expectedUserId: sourceScope?.userId,
-            sectionId: activeSection.id,
-            expectedLastUpdated: activeSection.lastUpdated,
-            status: nextStatus,
-            ...(draftIsDirty
-              ? {
-                  title: draft.title,
-                  subtitle: draft.subtitle,
-                  content: draft.content,
-                  budgetRows:
-                    activeSection.id === "budget"
-                      ? draft.budgetRows
-                      : undefined,
-                  imageUrl: draft.imageUrl,
-                }
-              : {}),
-          })
+        const result = await saveRoadmapSectionAction({
+          sectionId: activeSection.id,
+          status: nextStatus,
+        })
 
-          if ("error" in result) {
-            toast.error(result.error)
-            return
-          }
-
-          const nextSection = result.section
-          setSections((prev) =>
-            prev.map((section) =>
-              section.id === nextSection.id ? nextSection : section
-            )
-          )
-          setDrafts((prev) => ({
-            ...prev,
-            [nextSection.id]: createDraft(nextSection),
-          }))
-        } catch {
-          toast.error(
-            "The roadmap could not save. Your draft is still available; retry or refresh."
-          )
-        } finally {
+        if ("error" in result) {
           setSavingId(null)
+          toast.error(result.error)
+          return
         }
+
+        const nextSection = result.section
+        setSections((prev) =>
+          prev.map((section) =>
+            section.id === nextSection.id ? nextSection : section
+          )
+        )
+        setSavingId(null)
       })
     },
-    [activeSection, canEdit, isPending, savingId, sourceScope]
+    [activeSection, canEdit, isPending, savingId]
   )
 
   return {
@@ -406,6 +359,8 @@ export function useRoadmapEditorState({
     drafts,
     handleSectionSelect,
     roadmapBasePath: basePath,
+    roadmapReturnHref,
+    roadmapReturnLabel,
     headerTitle,
     headerSubtitle,
     showSectionHeader,
@@ -415,7 +370,6 @@ export function useRoadmapEditorState({
     statusSelectDisabled: isPending,
     isHydrated,
     isCalendarSection,
-    isBudgetSection,
     contentMaxWidth,
     editorPlaceholder,
     handleDraftChange,

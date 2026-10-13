@@ -203,15 +203,3 @@ export function normalizePromotionInput(
     reason: normalizeResourceMapAdminReason(input.reason),
   }
 }
-
-export {
-  buildResourceMapReviewSummary,
-  formatResourceMapReviewValue,
-  safeResourceMapExternalUrl,
-} from "./review-view-model"
-export type {
-  ResourceMapReviewCheck,
-  ResourceMapReviewCitation,
-  ResourceMapReviewComparison,
-  ResourceMapReviewSummary,
-} from "./review-view-types"

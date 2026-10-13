@@ -2,7 +2,6 @@
 
 import * as React from "react"
 
-import { parseFundraisingAmount } from "../lib/fundraising-goal"
 import type { FiscalSponsorshipApplicationDraft } from "../lib/application-draft"
 import {
   ApplicantContactSection,
@@ -34,9 +33,6 @@ const APPLICATION_SECTION_IDS: ApplicationSectionId[] = [
 ]
 
 type FiscalSponsorshipApplicationEditorFieldsProps = {
-  showAllSections?: boolean
-  guest?: boolean
-  lockEmail?: boolean
   applicationReady: boolean
   draft: FiscalSponsorshipApplicationDraft
   formId: string
@@ -68,16 +64,18 @@ function resolveApplicationSectionCompletion(
     hasText(draft.projectDurationType) &&
     hasText(draft.projectDescription)
   const budget =
-    parseFundraisingAmount(draft.fundraisingGoalDollars) !== null &&
+    hasText(draft.estimatedBudgetDollars) &&
     hasText(draft.prospectiveFundingSources) &&
     hasText(draft.publicBenefit)
   const hasRiskSignal = [
     draft.operatesOutsideUnitedStates,
+    draft.receivesInvestorReturnFunds,
     draft.engagesInLobbying,
     draft.hasLegalComplianceFinancialConcerns,
   ].includes("yes")
   const eligibility =
     draft.operatesOutsideUnitedStates !== "unknown" &&
+    draft.receivesInvestorReturnFunds !== "unknown" &&
     draft.engagesInLobbying !== "unknown" &&
     draft.hasLegalComplianceFinancialConcerns !== "unknown" &&
     (!hasRiskSignal || hasText(draft.concernsExplanation))
@@ -92,10 +90,7 @@ function resolveApplicationSectionCompletion(
 }
 
 export function FiscalSponsorshipApplicationEditorFields({
-  showAllSections = false,
   applicationReady,
-  guest = false,
-  lockEmail = false,
   draft,
   formId,
   onFieldChange,
@@ -118,15 +113,14 @@ export function FiscalSponsorshipApplicationEditorFields({
   ): EditorSectionChromeProps {
     return {
       complete: sectionCompletion[sectionId],
-      open: showAllSections || openSectionId === sectionId,
+      open: openSectionId === sectionId,
       onOpenChange: (open) => setOpenSectionId(open ? sectionId : null),
     }
   }
 
   return (
-    <div className={guest ? "flex flex-col gap-2" : "flex flex-col gap-4"}>
+    <div className="flex flex-col gap-4">
       <ApplicantContactSection
-        lockEmail={lockEmail}
         draft={draft}
         formId={formId}
         sectionChrome={getSectionChrome("applicant")}
@@ -145,7 +139,6 @@ export function FiscalSponsorshipApplicationEditorFields({
         onFieldChange={onFieldChange}
       />
       <BudgetBenefitSection
-        guest={guest}
         applicationReady={applicationReady}
         draft={draft}
         formId={formId}

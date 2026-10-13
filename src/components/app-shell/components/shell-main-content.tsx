@@ -10,6 +10,7 @@ type ShellMainContentProps = {
   isAcceleratorContext: boolean
   isMobile: boolean
   showMobileNavigation?: boolean
+  hasNestedScrollContent?: boolean
   onboardingRedirectTarget: string | null
   routeTransitionRef: RefObject<HTMLDivElement | null>
   useFlushContentBody: boolean
@@ -22,6 +23,7 @@ export function ShellMainContent({
   isAcceleratorContext,
   isMobile,
   showMobileNavigation = true,
+  hasNestedScrollContent = false,
   onboardingRedirectTarget,
   routeTransitionRef,
   useFlushContentBody,
@@ -32,7 +34,6 @@ export function ShellMainContent({
     <div
       className={cn(
         "flex min-h-0 w-full min-w-0 flex-1 flex-col",
-        useFullBleedContent && "pb-[var(--shell-mobile-nav-clearance)]",
         showMobileNavigation
           ? "[--shell-mobile-nav-clearance:calc(5.5rem+env(safe-area-inset-bottom))] md:[--shell-mobile-nav-clearance:0px]"
           : "[--shell-mobile-nav-clearance:env(safe-area-inset-bottom)] md:[--shell-mobile-nav-clearance:0px]"
@@ -40,8 +41,9 @@ export function ShellMainContent({
     >
       <div
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--shell-bg)] shadow-none has-[[data-onboarding-page]]:bg-[#f5f5f5] dark:has-[[data-onboarding-page]]:bg-[var(--shell-bg)]",
-          "rounded-none border-0 md:rounded-[28px] md:border md:border-[color:var(--shell-border)]"
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--shell-bg)] shadow-none",
+          "border-[color:var(--shell-border)] md:rounded-[28px] md:border",
+          "rounded-none border-0"
         )}
       >
         <ScrollFadeEffect
@@ -63,7 +65,8 @@ export function ShellMainContent({
               "@container/shell flex w-full min-w-0 flex-col",
               useFullBleedContent ? "h-full min-h-0" : "min-h-full",
               !useFullBleedContent &&
-                "shrink-0 pb-[var(--shell-mobile-nav-clearance)]"
+                !hasNestedScrollContent &&
+                "pb-[var(--shell-mobile-nav-clearance)]"
             )}
           >
             <div
@@ -75,8 +78,7 @@ export function ShellMainContent({
               data-shell-mode={useFullBleedContent ? "full-bleed" : "default"}
               ref={routeTransitionRef}
               className={cn(
-                "flex min-w-0 flex-1 flex-col",
-                useFullBleedContent ? "min-h-0" : "min-h-fit",
+                "flex min-h-0 min-w-0 flex-1 flex-col",
                 useFlushContentBody
                   ? "gap-0 px-0 py-0"
                   : "gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]",

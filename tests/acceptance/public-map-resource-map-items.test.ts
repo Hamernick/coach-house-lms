@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest"
-import { createPublicMapCategoryAliasMatcher } from "@/lib/public-map/resource-category-alias-matching"
 
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -71,7 +70,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -183,10 +181,6 @@ describe("public map resource map items", () => {
       "organizations",
       "international",
       "animals",
-      "arts",
-      "faith",
-      "recreation",
-      "philanthropy",
     ])
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")
@@ -389,27 +383,6 @@ describe("public map resource map items", () => {
         })
       )
     ).toEqual(expect.arrayContaining(["animals"]))
-  })
-
-  it.each([
-    ["FOOD & Water", "food and water", true],
-    ["Women's health-care", "womens health care", true],
-    ["Children’s\n dental care", "childrens dental", true],
-    ["Emergency: legal aid.", "legal aid", true],
-    ["Culturally competent collaboration", "pet", false],
-    ["", "food", false],
-    ["food", "---", false],
-  ])("preserves category word matching for %s / %s", (text, alias, matches) => {
-    expect(createPublicMapCategoryAliasMatcher(text)(alias)).toBe(matches)
-  })
-
-  it("keeps separately prepared organization text independent", () => {
-    const food = createPublicMapCategoryAliasMatcher("Food pantry")
-    const legal = createPublicMapCategoryAliasMatcher("Legal aid")
-    expect(food("food")).toBe(true)
-    expect(legal("food")).toBe(false)
-    expect(food("legal aid")).toBe(false)
-    expect(legal("legal aid")).toBe(true)
   })
 
   it("supports exact subcategory filters without widening to the parent", () => {
@@ -1049,7 +1022,7 @@ describe("public map resource map items", () => {
         primaryResourceCategory: primaryCategory,
       })
     }
-    expect(Array.from(guideById.keys())).not.toContain("gary-food-access")
+    expect(guideById.has("gary-food-access")).toBe(false)
 
     const featuredGuides = filterPublicMapFeaturedResourceGuides(
       Array.from(guideById.values())

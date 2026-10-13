@@ -1,7 +1,6 @@
 import "server-only"
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 import { loadMemberWorkspaceTasksPage } from "@/features/member-workspace"
 import type { CoachDashboardInput } from "../types"
 
@@ -34,14 +33,6 @@ export async function loadCoachDashboard(
   if (!personalTasks) issues.push("Tasks could not be loaded.")
   let ids = (assignments.data ?? []).map((row) => row.organization_id)
   let organizationScopeError = Boolean(assignments.error)
-  const actorScope = await loadOrganizationCoachActorScope({
-    accessLevel: actor.accessLevel,
-    supabase: db,
-    userId: actor.userId,
-  })
-  if (scope === "assigned" && actorScope.mode === "assigned") {
-    ids = [...actorScope.organizationIds]
-  }
   if (scope === "all") {
     const allOrganizations = await db.from("organizations").select("user_id")
     organizationScopeError = Boolean(allOrganizations.error)
@@ -49,13 +40,14 @@ export async function loadCoachDashboard(
       issues.push("Organization directory could not be loaded.")
     ids = (allOrganizations.data ?? []).map((row) => row.user_id)
   }
-  // Keep the recording fixture hidden; staff demonstration organizations remain visible.
-  ids = ids.filter((id) => id !== "886455ec-a664-4f13-83f1-471ddd1f5ffd")
-  const coachFilter =
-    scope === "all" ||
-    (actorScope.mode === "assigned" && actorScope.canAccessUnassigned)
-      ? "all"
-      : actor.userId
+  ids = ids.filter(
+    (id) =>
+      ![
+        "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c",
+        "886455ec-a664-4f13-83f1-471ddd1f5ffd",
+      ].includes(id)
+  )
+  const coachFilter = scope === "all" ? "all" : actor.userId
   const since = new Date(now)
   since.setDate(since.getDate() - 372)
   const [orgs, projects, events, personal] = ids.length
@@ -63,7 +55,7 @@ export async function loadCoachDashboard(
         db.from("organizations").select("user_id,profile").in("user_id", ids),
         db
           .from("organization_projects")
-          .select("id,name,org_id,end_date,status,organization_unassigned", { count: "exact" })
+          .select("id,name,org_id,end_date,status", { count: "exact" })
           .in("org_id", ids)
           .eq("project_kind", "standard")
           .neq("created_source", "system")
@@ -73,7 +65,7 @@ export async function loadCoachDashboard(
           .limit(5),
         db
           .from("organization_project_activity_events")
-          .select("id,title,org_id,project_id,entity_type,occurred_at,project:organization_projects(project_kind)")
+          .select("id,title,org_id,project_id,entity_type,occurred_at")
           .in("org_id", ids)
           .order("occurred_at", { ascending: false })
           .limit(10),
@@ -109,8 +101,6 @@ export async function loadCoachDashboard(
       .sort((a, b) => a.endDate.localeCompare(b.endDate)) ?? []
   return {
     scope,
-    directoryCoachFilter: coachFilter,
-    includesUnassigned: actorScope.mode === "assigned" && Boolean(actorScope.canAccessUnassigned),
     user: {
       id: actor.userId,
       name:
@@ -129,11 +119,11 @@ export async function loadCoachDashboard(
     projects: (projects?.data ?? []).map((row) => ({
       id: row.id,
       name: row.name,
-      organization: row.organization_unassigned ? "No organization" : names.get(row.org_id) ?? "Organization",
+      organization: names.get(row.org_id) ?? "Organization",
       dueDate: row.end_date,
       status: row.status,
     })),
-    organizationCount: organizationScopeError || orgs?.error ? null : names.size,
+    organizationCount: organizationScopeError ? null : ids.length,
     projectCount:
       projects?.error || organizationScopeError ? null : (projects?.count ?? 0),
     tasks: tasks.slice(0, 5).map((task) => ({
@@ -151,8 +141,8 @@ export async function loadCoachDashboard(
       occurredAt: row.occurred_at,
       kind: row.entity_type,
       href: row.project_id
-        ? `/${row.project?.project_kind === "organization_admin" ? "organizations" : "projects"}/${row.project_id}`
-        : `/organizations?coach=${coachFilter}&search=${encodeURIComponent(names.get(row.org_id) ?? "")}`,
+        ? `/projects/${row.project_id}`
+        : `/organizations?search=${encodeURIComponent(names.get(row.org_id) ?? "")}`,
     })),
     personalActivity: (personal?.data ?? []).map((row) => row.occurred_at),
     activityTruncated: (personal?.count ?? 0) > (personal?.data?.length ?? 0),

@@ -30,7 +30,6 @@ export async function buildWorkspaceOrganizationEditorData({
   initialProfile,
   initialProfileTab,
   initialProgramId,
-  organizationLocation,
   peopleNormalized,
   peopleSegments,
   peopleTags,
@@ -55,7 +54,6 @@ export async function buildWorkspaceOrganizationEditorData({
   initialProfile: OrgProfile
   initialProfileTab: ProfileTab | null
   initialProgramId: string | null
-  organizationLocation?: { latitude: number | null; longitude: number | null }
   peopleNormalized: OrgPerson[]
   peopleSegments: OrganizationPeopleSegment[]
   peopleTags: OrganizationPeopleTag[]
@@ -78,7 +76,6 @@ export async function buildWorkspaceOrganizationEditorData({
     initialProfile,
     initialProfileTab,
     initialProgramId,
-    organizationLocation,
     roadmapSections,
     roadmapPublicSlug: publicSlug,
     people,

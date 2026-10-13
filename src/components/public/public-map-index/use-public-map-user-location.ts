@@ -163,36 +163,30 @@ export function usePublicMapUserLocation({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapLoadedRef.current || typeof window === "undefined") return
-    const screen = map.getContainer().closest("[data-public-map-screen]")
-    let screenVisible = !screen
-    const isMapActive = () => screenVisible && screen?.getAttribute("data-public-map-screen-mode") !== "content"
-    const canSpin = !coordinates && !hasGrantedLocation && !suppressAutomaticEntrance && !welcomeOpen && !userMovedMapRef.current
-    const rotation = canSpin ? startSpinningMapGlobe({
+    if (
+      !map ||
+      !mapLoadedRef.current ||
+      coordinates ||
+      hasGrantedLocation ||
+      suppressAutomaticEntrance ||
+      welcomeOpen ||
+      userMovedMapRef.current ||
+      typeof window === "undefined"
+    ) {
+      return
+    }
+
+    const rotation = startSpinningMapGlobe({
       map,
-      onUserMovement: () => { userMovedMapRef.current = true },
-      shouldRotate: () => isMapActive() && !userMovedMapRef.current,
+      onUserMovement: () => {
+        userMovedMapRef.current = true
+      },
+      shouldRotate: () => !userMovedMapRef.current,
       stopOnUserMovement: true,
-    }) : null
-    const syncActivity = () => {
-      if (isMapActive()) rotation?.refresh()
-      else map.stop()
-    }
-    const observer = screen ? new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting === screenVisible) return
-      screenVisible = entry.isIntersecting
-      syncActivity()
-    }, { root: screen.closest<HTMLElement>("[data-public-home-scroll], main"), rootMargin: "-64px 0px 0px 0px" }) : null
-    const modeObserver = screen ? new MutationObserver(syncActivity) : null
-    if (screen) {
-      observer?.observe(screen)
-      modeObserver?.observe(screen, { attributes: true, attributeFilter: ["data-public-map-screen-mode"] })
-    }
-    if (screen?.getAttribute("data-public-map-screen-mode") === "content") map.stop()
+    })
+
     return () => {
-      observer?.disconnect()
-      modeObserver?.disconnect()
-      rotation?.stop()
+      rotation.stop()
     }
   }, [
     coordinates,

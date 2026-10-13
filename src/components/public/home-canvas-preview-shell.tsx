@@ -14,7 +14,7 @@ import { HomeCanvasLoginButton } from "@/components/public/home-canvas-login-but
 import type { CanvasSectionId } from "@/components/public/home-canvas-preview-config"
 import { Button } from "@/components/ui/button"
 import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
-import { BuildCollectPublicHeader } from "@/features/build-collect-navigation/client"
+import { BuildCollectPublicHeader } from "@/features/build-collect-navigation"
 import { cn } from "@/lib/utils"
 
 function HomeCanvasMobileSidebarTrigger() {
@@ -25,13 +25,13 @@ function HomeCanvasMobileSidebarTrigger() {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon"
-      className="size-11 touch-manipulation rounded-full shadow-none md:hidden"
+      className="text-muted-foreground hover:bg-foreground/5 hover:text-foreground size-11 touch-manipulation rounded-md border-[color:var(--shell-border)] bg-transparent shadow-none md:hidden"
       aria-label={
         openMobile
-          ? "Close sidebar"
-          : "Open sidebar"
+          ? "Close Find, Guides, and Saved"
+          : "Open Find, Guides, and Saved"
       }
       aria-expanded={openMobile}
       onClick={toggleSidebar}
@@ -133,8 +133,6 @@ type HomeCanvasPreviewHeaderProps = {
   railToggleClassName: string
   rightOpen: boolean
   showAuthActions?: boolean
-  showPublicSearch?: boolean
-  showPublicNavigation?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
 }
@@ -146,8 +144,6 @@ export function HomeCanvasPreviewHeader({
   railToggleClassName,
   rightOpen,
   showAuthActions = true,
-  showPublicSearch = true,
-  showPublicNavigation = true,
   showShellSidebar,
   showRightRailToggle,
 }: HomeCanvasPreviewHeaderProps) {
@@ -158,8 +154,6 @@ export function HomeCanvasPreviewHeader({
     <BuildCollectPublicHeader
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
-      showPublicSearch={showPublicSearch}
-      showPublicNavigation={showPublicNavigation}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton
@@ -172,7 +166,10 @@ export function HomeCanvasPreviewHeader({
         <PublicThemeToggle
           variant="outline"
           size="icon"
-          className="relative size-8 shrink-0 touch-manipulation shadow-none after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-1/2"
+          className={cn(
+            "size-9 shrink-0 sm:size-10",
+            showShellSidebar && "hidden md:inline-flex"
+          )}
         />
       }
       shellActions={

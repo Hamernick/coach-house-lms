@@ -1,7 +1,7 @@
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
-import { DocumentsPreview } from "./documents-preview"
+import { DocumentsBanner } from "@/components/organization/org-profile-card/tabs/documents-tab/components/documents-banner"
 import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
 export default async function DocumentsBannerVisualRegressionPage() {
@@ -10,9 +10,9 @@ export default async function DocumentsBannerVisualRegressionPage() {
   }
 
   return (
-    <main className="bg-background text-foreground flex min-h-screen items-start p-3 sm:px-6 sm:py-10">
+    <main className="bg-background text-foreground flex min-h-screen items-center px-6 py-10">
       <div className="mx-auto w-full max-w-4xl">
-        <DocumentsPreview />
+        <DocumentsBanner hasRoadmapDocuments canEdit={false} />
       </div>
     </main>
   )

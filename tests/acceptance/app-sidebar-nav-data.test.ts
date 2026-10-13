@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 
@@ -69,8 +70,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find"])
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -103,6 +105,7 @@ describe("app sidebar nav data", () => {
 
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
+      "Find",
       "Admin Dashboard",
     ])
     const adminItems = nav.find((item) => item.title === "Admin Dashboard")?.children
@@ -140,14 +143,14 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Admin Dashboard"])
+    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find", "Admin Dashboard"])
     const admin = nav.find((item) => item.title === "Admin Dashboard")
     expect(admin?.href).toBe("/admin/dashboard")
     expect(admin?.children?.map((item) => item.title)).toEqual(["Organizations", "Projects", "Tasks"])
 
   })
 
-  it("shows Workspace for free accounts without exposing paid or admin tools", () => {
+  it("shows Find only for free self-only member accounts", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
@@ -156,9 +159,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
-    expect(nav.find((item) => item.title === "Workspace")?.href).toBe("/workspace")
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
+    expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -176,7 +179,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
+    expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -193,23 +198,23 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
     expect(nav.find((item) => item.title === "Admin Dashboard")).toBeUndefined()
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("links Documentation internally and keeps Community hidden", () => {
+  it("preserves production Knowledge base and Community resources", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
-      "Documentation",
+      "Knowledge base",
+      "Community",
     ])
     expect(
       RESOURCE_NAV.find((item) => item.name === "Find organizations")
     ).toBeUndefined()
-    const documentation = RESOURCE_NAV.find(
-      (item) => item.name === "Documentation"
-    )
-    expect(documentation).toMatchObject({ url: "/documentation" })
-    expect(documentation).not.toHaveProperty("external")
+    expect(RESOURCE_NAV.find((item) => item.name === "Knowledge base")).toMatchObject({
+      url: "https://coach-house.gitbook.io/coach-house", external: true,
+    })
+    expect(RESOURCE_NAV.find((item) => item.url === "/documentation")).toBeUndefined()
     expect(RESOURCE_NAV.find((item) => item.url === "/find")).toBeUndefined()
   })
 })

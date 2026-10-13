@@ -28,8 +28,7 @@
     "test:acceptance:integration": "pnpm check:acceptance-projects && vitest run --config vitest.projects.config.ts --project integration",
     "test:acceptance:manifest:update": "node scripts/sync-acceptance-projects.mjs --write",
     "test": "pnpm test:snapshots && pnpm test:rls",
-    "test:rls": "pnpm test:rls:project-recurrence && pnpm test:rls:signup-consent && pnpm test:rls:fiscal && pnpm test:rls:finance && pnpm test:rls:page-health && pnpm test:rls:claims && pnpm test:rls:public-profiles && pnpm test:rls:google-drive && pnpm test:rls:document-files && pnpm test:rls:document-activity && pnpm test:rls:nonprofit-directory && node supabase/tests/rls.test.mjs",
-    "test:rls:project-recurrence": "node supabase/tests/recurring-projects.test.mjs",
+    "test:rls": "pnpm test:rls:signup-consent && pnpm test:rls:fiscal && pnpm test:rls:finance && pnpm test:rls:page-health && pnpm test:rls:claims && pnpm test:rls:public-profiles && pnpm test:rls:google-drive && pnpm test:rls:document-files && pnpm test:rls:document-activity && node supabase/tests/rls.test.mjs",
     "test:rls:signup-consent": "node supabase/tests/signup-legal-consent.test.mjs",
     "test:rls:fiscal": "node supabase/tests/fiscal-final-schema-rls.test.mjs",
     "test:rls:finance": "node supabase/tests/finance-storage-rls.test.mjs",
@@ -100,8 +99,7 @@
     "verify:settings": "node scripts/verify-account-settings.mjs",
     "import:curriculum": "node scripts/import-curriculum.mjs",
     "test:rls:document-files": "node supabase/tests/organization-document-files-rls.test.mjs",
-    "test:rls:document-activity": "node supabase/tests/organization-document-activity.test.mjs",
-    "test:rls:nonprofit-directory": "node supabase/tests/nonprofit-directory.test.mjs"
+    "test:rls:document-activity": "node supabase/tests/organization-document-activity.test.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",
@@ -116,7 +114,6 @@
     "@fontsource-variable/sora": "^5.3.0",
     "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@hookform/resolvers": "^5.2.2",
-    "@lucasmarkes/hairline": "0.3.0",
     "@maily-to/core": "^0.3.7",
     "@monaco-editor/react": "^4.7.0",
     "@ncdai/react-wheel-picker": "^1.2.2",
@@ -200,7 +197,6 @@
     "gsap": "^3.14.2",
     "iconoir-react": "^7.11.1",
     "input-otp": "^1.4.2",
-    "lenis": "1.3.26",
     "lucide-react": "^0.544.0",
     "mapbox-gl": "^3.15.0",
     "mathjs": "^15.2.0",
@@ -233,7 +229,6 @@
     "stripe": "^18.5.0",
     "supercluster": "^8.0.1",
     "tailwind-merge": "^3.3.1",
-    "three": "0.174.0",
     "vaul": "^1.1.2",
     "zod": "^4.1.8"
   },
@@ -248,7 +243,6 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
     "@types/supercluster": "^7.1.3",
-    "@types/three": "0.174.0",
     "baseline-browser-mapping": "^2.9.18",
     "eslint": "^9",
     "eslint-config-next": "^16.2.6",
@@ -275,9 +269,6 @@
       "protocol-buffers-schema@3.6.0": "3.6.1",
       "qs": "^6.14.2",
       "vite@7.3.1": "7.3.2"
-    },
-    "patchedDependencies": {
-      "@radix-ui/react-navigation-menu@1.2.14": "src/lib/vendor-patches/@radix-ui__react-navigation-menu@1.2.14.patch"
     }
   },
   "engines": {

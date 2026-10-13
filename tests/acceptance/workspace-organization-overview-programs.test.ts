@@ -268,13 +268,13 @@ describe("workspace organization overview programs", () => {
       'data-org-profile-tabs-separator="true"'
     )
     expect(orgProfileNavigation).toContain(
-      "flex w-full border-b px-6"
+      "hidden w-full border-b px-6 sm:block"
     )
     expect(orgProfileNavigation).toContain(
-      "h-10 w-fit max-w-full group-data-[orientation=horizontal]/tabs:h-10 items-end justify-start gap-1"
+      "h-10 w-fit max-w-full items-end justify-start gap-1"
     )
     expect(orgProfileNavigation).toContain("h-10 flex-none items-center")
-    expect(orgProfileNavigation).toContain("group-data-[orientation=horizontal]/tabs:after:bottom-[-1px] after:z-10")
+    expect(orgProfileNavigation).toContain("after:bottom-0 after:z-10")
     expect(orgProfileNavigation).not.toContain(
       "h-10 w-full items-end justify-start gap-3"
     )
@@ -286,7 +286,7 @@ describe("workspace organization overview programs", () => {
     )
     expect(orgProfileNavigation).not.toContain("shadow-sm")
     expect(programsTab).toContain("canEdit: boolean")
-    expect(programsTab).toContain('<ProgramsCarousel heading={heading} introduction={introduction}>')
+    expect(programsTab).toContain('<FormRow title="Activity">')
     expect(orgProfileShared).toContain('layout = "split"')
     expect(orgProfileShared).toContain('layout?: "split" | "stacked"')
     expect(orgProfileShared).toContain(
@@ -323,7 +323,8 @@ describe("workspace organization overview programs", () => {
       "canEdit ? () => onProgramEdit(program) : undefined"
     )
     expect(programsTab).toContain("Untitled activity")
-    expect(programsTab).toContain('title={editMode ? "No activity yet" : "No activity to display"}')
+    expect(programsTab).toContain('title="No activity yet"')
+    expect(programsTab).toContain('title="No activity to display"')
     expect(orgProfileConfig).toContain('{ value: "programs", label: "Activity"')
     expect(publicCardSections).toContain(
       '<h2 className="text-lg font-semibold">Activity</h2>'

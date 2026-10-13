@@ -19,7 +19,7 @@ import {
 } from "@/lib/workspace/routes"
 
 describe("workspace Finance identity", () => {
-  it("keeps the Finance drawer inactive without enabling a card", () => {
+  it("activates the Finance drawer tab without enabling a card", () => {
     expect(WORKSPACE_FINANCE_CARD_ID).toBe("finance")
     expect(WORKSPACE_FINANCE_CARD_ID).not.toBe("economic-engine")
     expect(WORKSPACE_CARD_IDS).toContain("economic-engine")
@@ -28,13 +28,15 @@ describe("workspace Finance identity", () => {
 
     expect(WORKSPACE_FINANCE_DRAWER_TAB).toBe("finance")
     expect(WORKSPACE_DRAWER_TABS).toContain(WORKSPACE_FINANCE_DRAWER_TAB)
-    expect(normalizeWorkspaceDrawerTab(WORKSPACE_FINANCE_DRAWER_TAB)).toBeNull()
+    expect(normalizeWorkspaceDrawerTab(WORKSPACE_FINANCE_DRAWER_TAB)).toBe(
+      WORKSPACE_FINANCE_DRAWER_TAB
+    )
     expect(getWorkspaceDrawerPath({ tab: WORKSPACE_FINANCE_DRAWER_TAB })).toBe(
       "/workspace?drawer=finance"
     )
     expect(
       resolveWorkspaceDataDrawerRequest("/workspace?drawer=finance")
-    ).toBeNull()
+    ).toEqual({ tab: WORKSPACE_FINANCE_DRAWER_TAB })
   })
 
   it("keeps reserved Finance layout state opaque until activation", () => {

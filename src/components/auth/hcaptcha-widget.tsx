@@ -11,7 +11,6 @@ type HCaptchaWidgetProps = {
   onError: (message: string) => void
   onExpire: () => void
   onVerify: (token: string) => void
-  size?: "normal" | "compact"
 }
 
 export function HCaptchaWidget({
@@ -19,7 +18,6 @@ export function HCaptchaWidget({
   onError,
   onExpire,
   onVerify,
-  size = "normal",
 }: HCaptchaWidgetProps) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -36,7 +34,6 @@ export function HCaptchaWidget({
     <HCaptcha
       ref={captchaRef}
       sitekey={clientEnv.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-      size={size}
       theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
       onVerify={(token) => onVerify(token)}
       onExpire={onExpire}

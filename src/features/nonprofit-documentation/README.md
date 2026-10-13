@@ -113,9 +113,11 @@
 - Marketplace catalog entries require a direct official source, visible review
   and recheck dates, qualified cost language, and no ranking or endorsement.
   Shortlists stay in local storage and exports remain formula-safe.
-- Marketplace in this release covers source-backed tools, offers, resource banks,
-  and practical workflows. Public member profiles and the Coach House people
-  directory remain outside this Documentation release.
+- Marketplace People separates the curated, explicitly authorized Coach House
+  roster from published member profiles. The public people query selects only
+  `is_public=true`, person-owned handles, and a minimal directory projection.
+  Never infer coaching status from membership or publish private account data.
+  Do not connect the roster to private booking records or invent availability.
 - Marketplace resource details live at `/documentation/marketplace/[slug]`;
   new offers include source-backed terms and suggested workflows. Keep resource
   guides in the public search corpus and sitemap. Resource banks are verified

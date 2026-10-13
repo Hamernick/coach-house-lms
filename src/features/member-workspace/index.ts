@@ -21,7 +21,6 @@ export {
 export { setActiveOrganizationAction } from "./actions"
 export {
   loadAccessibleOrganizations,
-  loadOrganizationPrograms,
   loadMemberWorkspacePeoplePage,
   loadMemberWorkspaceProjectDetailPage,
   loadPlatformAdminOrganizationProjectDetailPage,

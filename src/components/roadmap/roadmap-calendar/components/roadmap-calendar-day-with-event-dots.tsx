@@ -25,8 +25,7 @@ export function RoadmapCalendarDayWithEventDots({
       modifiers={modifiers}
       className={cn(
         className,
-        "relative mx-auto size-(--cell-size) min-h-10 min-w-0 rounded-xl border border-transparent bg-transparent text-sm font-semibold text-foreground tabular-nums",
-        "before:absolute before:top-1/2 before:left-1/2 before:size-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-[''] sm:before:hidden",
+        "relative min-h-10 min-w-0 rounded-xl border border-transparent bg-transparent text-sm font-semibold text-foreground tabular-nums",
         "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring/45",
         "data-[selected-single=true]:!border-border/50 data-[selected-single=true]:!bg-muted/75 data-[selected-single=true]:!text-foreground data-[selected-single=true]:!shadow-none",
         "group-data-[focused=true]/day:ring-2 group-data-[focused=true]/day:ring-ring/35",
@@ -39,14 +38,11 @@ export function RoadmapCalendarDayWithEventDots({
       <span className="absolute inset-x-0 top-2 text-center !text-sm leading-none">
         {children}
       </span>
-      {visibleDots.length > 0 || modifiers?.google_calendar ? (
+      {visibleDots.length > 0 ? (
         <span
           className="absolute inset-x-0 bottom-1.5 flex justify-center gap-1"
           aria-hidden
         >
-          {modifiers?.google_calendar ? (
-            <span className="bg-foreground size-1.5 rounded-full" />
-          ) : null}
           {visibleDots.map((eventType) => (
             <span
               key={eventType}

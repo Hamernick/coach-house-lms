@@ -38,7 +38,6 @@ export const PLATFORM_ADMIN_DASHBOARD_LAB_STATUSES = [
   "backlog",
   "planned",
   "active",
-  "on-hold",
   "cancelled",
   "completed",
 ] as const satisfies readonly PlatformAdminDashboardLabStatus[]
@@ -164,7 +163,6 @@ export function groupPlatformAdminDashboardLabProjectsByStatus(
     backlog: projects.filter((project) => project.status === "backlog"),
     planned: projects.filter((project) => project.status === "planned"),
     active: projects.filter((project) => project.status === "active"),
-    "on-hold": projects.filter((project) => project.status === "on-hold"),
     cancelled: projects.filter((project) => project.status === "cancelled"),
     completed: projects.filter((project) => project.status === "completed"),
   }

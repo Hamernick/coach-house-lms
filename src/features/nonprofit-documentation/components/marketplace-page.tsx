@@ -17,7 +17,7 @@ export function MarketplacePage() {
           "@type": "CollectionPage",
           name: "Nonprofit Marketplace",
           description:
-            "Nonprofit tools, offers, and resource banks, with practical guides to getting started.",
+            "Nonprofit tools, offers, resource banks, and people, with practical guides to getting started.",
           url: pageUrl,
           dateModified: "2026-09-04",
           breadcrumb: {
@@ -58,7 +58,7 @@ export function MarketplacePage() {
             Marketplace
           </h1>
           <p className="text-muted-foreground max-w-2xl text-base sm:text-lg">
-            Compare tools, offers, and resource banks for your nonprofit.
+            Tools, offers, and people for your nonprofit.
           </p>
         </header>
         <MarketplaceDirectory />

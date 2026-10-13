@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useVisibleRefresh } from "@/hooks/use-visible-refresh"
 import { useRouter } from "next/navigation"
 
 import {
@@ -83,8 +82,6 @@ export function useNotificationsMenuState() {
     void refreshNotifications()
   }, [open, refreshNotifications])
 
-  useVisibleRefresh(refreshNotifications, mounted && !bulkUpdating && !selectedUpdating && !requestUpdating)
-
   useEffect(() => {
     const nextSelectedId = resolveSelectedNotificationId(filteredItems, selectedId)
     if (nextSelectedId !== selectedId) {
@@ -100,13 +97,10 @@ export function useNotificationsMenuState() {
     setInboxItems((prev) => markNotificationUnread(prev, notificationId))
   }, [])
 
-  const handleSelect = useCallback((item: NotificationItem) => {
-    setSelectedId(item.id)
-  }, [])
-
-  const handleOpenSelected = useCallback(
+  const handleSelect = useCallback(
     (item: NotificationItem) => {
-      if (!item.href) return
+      setSelectedId(item.id)
+
       if (item.unread) {
         markReadOptimistic(item.id)
         void markNotificationReadAction(item.id).then((result) => {
@@ -116,10 +110,18 @@ export function useNotificationsMenuState() {
           }
         })
       }
+
+    },
+    [markReadOptimistic, refreshNotifications],
+  )
+
+  const handleOpenSelected = useCallback(
+    (item: NotificationItem) => {
+      if (!item.href) return
       setOpen(false)
       router.push(item.href)
     },
-    [markReadOptimistic, refreshNotifications, router],
+    [router],
   )
 
   const handleToggleRead = useCallback(
@@ -200,16 +202,14 @@ export function useNotificationsMenuState() {
     setBulkUpdating(true)
     setInboxItems((prev) => markAllNotificationsRead(prev))
 
-    void markAllNotificationsReadAction(
-      inboxItems.filter((item) => item.unread).map((item) => item.id),
-    ).then((result) => {
+    void markAllNotificationsReadAction().then((result) => {
       setBulkUpdating(false)
       if ("error" in result) {
         toast.error(result.error)
         void refreshNotifications()
       }
     })
-  }, [inboxItems, refreshNotifications, unreadCount])
+  }, [refreshNotifications, unreadCount])
 
   const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen)

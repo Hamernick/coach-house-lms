@@ -112,6 +112,3 @@ export type {
   PlatformAdminDashboardLabTask,
   PlatformAdminDashboardLabViewType,
 } from "./types"
-
-export { EditableOptionPicker, type EditableOption } from "./upstream/components/project-wizard/EditableOptionPicker"
-export { PROJECT_WORKSTREAM_OPTIONS } from "./upstream/lib/project-workstreams"

@@ -23,7 +23,6 @@ import type { ProgramWizardFormState } from "../schema"
 import type { ProgramWizardFieldErrors, ProgramWizardUpdate } from "../types"
 
 type StepBasicInfoProps = {
-  organizationId?: string
   mode: "create" | "edit"
   form: ProgramWizardFormState
   errors: ProgramWizardFieldErrors
@@ -148,7 +147,6 @@ function ProgramMediaField({
 
 export function StepBasicInfo({
   mode,
-  organizationId,
   form,
   errors,
   update,
@@ -178,7 +176,7 @@ export function StepBasicInfo({
     setUploading(true)
     const toastId = toast.loading(`Uploading ${label.toLowerCase()}…`)
     try {
-      const url = await uploadProgramMedia({ file, organizationId })
+      const url = await uploadProgramMedia({ file })
       update({ [field]: url } as Partial<ProgramWizardFormState>)
       toast.success(`${label} saved`, { id: toastId })
     } catch (error: unknown) {

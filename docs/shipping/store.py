@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import subprocess
 import tempfile
@@ -21,6 +22,17 @@ def utc():
 
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def receipt_path(directory, name):
+    # Accept only generated receipt basenames, never config/lock/state paths.
+    if not isinstance(name, str) or not re.fullmatch(r'receipt-[0-9]{6,}-[0-9a-f]{16}\.json', name):
+        raise ValueError('Unsafe receipt filename')
+    root = Path(directory).resolve()
+    path = root / name
+    if path.is_symlink() or path.resolve().parent != root:
+        raise ValueError('Receipt must remain directly inside its directory without symlinks')
+    return path
 
 
 def atomic(path, value):
@@ -80,10 +92,13 @@ class Store:
     def read(self):
         return json.loads(self.path.read_text())
 
-    def initialize(self, seed):
+    def initialize(self, seed, receipts=()):
         with self.lock():
             if self.path.exists():
                 raise ValueError('Already initialized; use status/resume')
+            destinations = [(receipt_path(self.directory, name), data) for name, data in receipts]
+            for path, data in destinations:
+                atomic(path, data)
             atomic(self.path, seed)
 
     def update(self, revision, head, change):

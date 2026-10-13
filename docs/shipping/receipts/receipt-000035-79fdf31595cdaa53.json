@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-13T21:29:56.976759+00:00",
+  "operation": "resume",
+  "owner": "ship-upgrade-banners-20261013",
+  "previous_revision": 34,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-map-review-20261013",
+        "pid": 85402,
+        "started": "Tue Oct 13 17:14:20 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T21:14:23.238779+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T21:29:56.107609+00:00"
+    },
+    "map_repair": {
+      "source": "User explicitly continued to next work on /resources; packet05 B036 stage3 and scoped stage6; LIVE03. /map remains legacy redirect.",
+      "branch": "fix/live-map-markers-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+      "base": "89c409bcede47421be909cdd85c2936120b2ae30",
+      "status": "Ready for review; not merge-ready",
+      "scope": "Projection-aware marker query bounds; conservative same-place grouping with service detail and saved/deep-link preservation. Published877entries become875places. No acquisition, public data mutation, geocoding or provider preview.",
+      "checks": "57 focused tests, lint, prepush and Graphify update passed.",
+      "boundary": "Prior release gates preserved; not silently closed. Explicit user direction authorizes map implementation preparation.",
+      "head": "64977505c89f1268d79a6630765bd60a06c46af6",
+      "remote_sha": "64977505c89f1268d79a6630765bd60a06c46af6",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/297",
+      "browser": "Local /resources Legler listing consolidated; both service schedules and normalized contact verified. Canvas remains blank, so visible marker verification and appearance remain open. Raw browser network diagnostics were denied and not retried. User normal-UI rendering check requested.",
+      "release": "User confirmed PR297 merged. Accepted without querying merge status per explicit request. User owns production/map/appearance check; no production verification inferred. Historical failed gates remain preserved.",
+      "plan": "Original packet05 B036 stage3/scoped stage6; repo docs/plans/2026-10-13-live-map-markers.md; localhost3115; Desktop/Coach House Map Review",
+      "review_fix": "Unwrap Mercator corner longitudes around the visible screen center; preserve narrow antimeridian intervals, genuinely wide views and explicit whole-world coverage."
+    },
+    "upgrade_banner_repair": {
+      "source": "Packet03 later intake U20261013-01, scoped stage2; LIVE04. User owns visual checks, no agent browser sweep.",
+      "branch": "fix/upgrade-banner-layout-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-upgrade-banners-20261013",
+      "base": "e49a31bd3544094a18e11905e13192fac2ee93c6",
+      "head": "5a6341664b8c7e18da70899983f128a11e894d29",
+      "remote_verified": true,
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/298",
+      "scope": "Shared compact banner: maximum768px,16px gaps/insets, responsive horizontal CTA,44px target in narrow containers. Existing copy/entitlements/focus/paywall unchanged.",
+      "checks": "Changed-file ESLint, route-entry, diff and normal prepush pass. Local review route returned200; no visual checks/screenshots/baseline updates. Graphify update running.",
+      "preview": "http://localhost:3116/visual-regression/upgrade-banners",
+      "listener": {
+        "pid": 86942,
+        "cwd_verified": true
+      },
+      "release": "User appearance review, current-head CI/code-owner review and release remain open. No provider/data writes or Supabase previews."
+    },
+    "next_action": "Finish PR298 user appearance review and exact-head CI/code-owner gates, then release. User owns map/visual checks; accept reported merges without rechecking. Calendar LIVE05 follows this bounded slice."
+  },
+  "remote": null
+}

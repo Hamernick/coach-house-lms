@@ -153,97 +153,6 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/workspace?source=onboarding_setup")
   })
 
-  it.each([false, true])("saves signup basics and completes only the new profile flow (%s)", async (profileSetup) => {
-    const insert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue({ data: { updated_at: "revision-1" }, error: null }),
-    }) })
-    const updateUser = vi.fn().mockResolvedValue({ error: null })
-    const from = vi.fn((table: string) => {
-      if (table === "profiles") return { upsert: vi.fn().mockResolvedValue({ error: null }) }
-      if (table === "organizations") return {
-        select: vi.fn((_columns: string, options?: { head?: boolean }) => options?.head
-          ? { ilike: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ count: 0, error: null }) }) }
-          : { eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
-        insert,
-      }
-      throw new Error(`Unexpected table: ${table}`)
-    })
-    createSupabaseServerClientServerMock.mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "owner", email: "owner@example.com" } }, error: null }), updateUser }, from,
-      rpc: vi.fn().mockResolvedValue({ data: { ok: true }, error: null }),
-    })
-    const form = new FormData()
-    for (const [key, value] of Object.entries({
-      intentFocus: "build", onboardingMode: "post_signup_access", builderPlanTier: "free",
-      orgName: "Community Table", orgSlug: "community-table", formationStatus: "pre_501c3",
-    })) form.set(key, value)
-    if (profileSetup) {
-      form.set("onboardingVersion", "workspace_profile")
-      form.set("personHandle", "community-founder")
-      form.delete("formationStatus")
-    }
-    expect(await captureRedirect(() => completeOnboardingAction(form))).toBe(profileSetup ? "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding" : "/workspace?source=onboarding_setup")
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
-      user_id: "owner", public_slug: "community-table",
-      profile: expect.objectContaining({ name: "Community Table", ...(profileSetup ? {} : { formationStatus: "pre_501c3" }) }),
-    }))
-    expect(updateUser).toHaveBeenCalledWith({ data: expect.objectContaining({ onboarding_completed: profileSetup }) })
-    expect(from).not.toHaveBeenCalledWith("module_progress")
-    expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
-  })
-
-  it.each([
-    ["", true, "missing_person_handle"],
-    ["ada-lovelace", true, null],
-    ["ada-lovelace", false, "person_handle_taken"],
-    ["admin", true, "reserved_person_handle"],
-    ["a", true, "invalid_person_handle"],
-  ] as const)("validates and claims signup username %s (claim=%s)", async (handle, claimOk, errorCode) => {
-    const rpc = vi.fn().mockResolvedValue({ data: { ok: claimOk, code: claimOk ? "available" : "taken" }, error: null })
-    const updateUser = vi.fn().mockResolvedValue({ error: null })
-    const insert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: { updated_at: "revision-1" }, error: null }) }) })
-    createSupabaseServerClientServerMock.mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "owner", email: "owner@example.com" } }, error: null }), updateUser },
-      rpc,
-      from: vi.fn((table: string) => {
-        if (table === "profiles") return { upsert: vi.fn().mockResolvedValue({ error: null }) }
-        if (table === "organizations") return {
-          select: vi.fn((_columns: string, options?: { head?: boolean }) => options?.head
-            ? { ilike: vi.fn().mockReturnValue({ neq: vi.fn().mockResolvedValue({ count: 0, error: null }) }) }
-            : { eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }), insert,
-        }
-        throw new Error(`Unexpected table: ${table}`)
-      }),
-    })
-    const form = new FormData()
-    for (const [key, value] of Object.entries({ intentFocus: "build", onboardingMode: "post_signup_access", onboardingVersion: "workspace_profile", orgName: "Community Table", orgSlug: "community-table", personHandle: handle })) form.set(key, value)
-    const destination = await captureRedirect(() => completeOnboardingAction(form))
-    if (errorCode) {
-      expect(destination).toContain(`error=${errorCode}`)
-      expect(updateUser).not.toHaveBeenCalled()
-      expect(insert).not.toHaveBeenCalled()
-    } else {
-      expect(destination).toContain("onboarding_stage=2")
-      expect(updateUser).toHaveBeenCalled()
-    }
-    if (handle === "ada-lovelace") expect(rpc).toHaveBeenCalledWith("claim_person_public_handle", { p_handle: handle })
-    else expect(rpc).not.toHaveBeenCalled()
-  })
-
-  it("rejects an unavailable signup organization URL before saving", async () => {
-    const updateUser = vi.fn()
-    const insert = vi.fn()
-    createSupabaseServerClientServerMock.mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "owner" } }, error: null }), updateUser },
-      from: vi.fn(() => ({ select: vi.fn(() => ({ ilike: vi.fn(() => ({ neq: vi.fn().mockResolvedValue({ count: 1, error: null }) })) })), insert })),
-    })
-    const form = new FormData()
-    for (const [key, value] of Object.entries({ intentFocus: "build", onboardingMode: "post_signup_access", orgName: "Taken", orgSlug: "taken", formationStatus: "approved" })) form.set(key, value)
-    expect(await captureRedirect(() => completeOnboardingAction(form))).toContain("error=slug_taken")
-    expect(insert).not.toHaveBeenCalled()
-    expect(updateUser).not.toHaveBeenCalled()
-  })
-
   it("sends completed member onboarding to find", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
@@ -292,13 +201,10 @@ describe("completeOnboardingAction", () => {
     expect(rpcMock).toHaveBeenCalledWith("claim_person_public_handle", {
       p_handle: "ada-lovelace",
     })
-    expect(destination).toBe("/workspace?member_onboarding=0&source=member_onboarding")
+    expect(destination).toBe("/?member_onboarding=0&source=member_onboarding")
   })
 
-  it.each([
-    ["free", false], ["operations_support", false],
-    ["free", true], ["operations_support", true],
-  ] as const)("saves %s workspace setup with completed tutorial %s while preserving documents and billing", async (planTier, tutorialCompleted) => {
+  it.each(["free", "operations_support"])("saves %s workspace setup while preserving existing documents and billing", async (planTier) => {
     fetchLearningEntitlementsMock.mockResolvedValue({ hasActiveSubscription: true })
     const savedProfile = {
       mission_final_statement: "Existing mission",
@@ -371,9 +277,6 @@ describe("completeOnboardingAction", () => {
             user: {
               id: "user_123",
               email: "founder@example.com",
-              user_metadata: tutorialCompleted
-                ? { workspace_onboarding_completed_at: "2026-09-01T00:00:00.000Z" }
-                : {},
             },
           },
           error: null,
@@ -493,17 +396,11 @@ describe("completeOnboardingAction", () => {
     expect(updateUserMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
         onboarding_completed: true,
-        ...(tutorialCompleted ? {} : {
-          workspace_onboarding_active: true,
-          workspace_onboarding_completed_at: null,
-          workspace_onboarding_stage: 2,
-        }),
+        workspace_onboarding_active: true,
+        workspace_onboarding_completed_at: null,
+        workspace_onboarding_stage: 2,
       }),
     })
-    if (tutorialCompleted) {
-      expect(updateUserMock.mock.calls[0][0].data).not.toHaveProperty("workspace_onboarding_completed_at")
-      expect(updateUserMock.mock.calls[0][0].data).not.toHaveProperty("workspace_onboarding_active")
-    }
     expect(moduleProgressUpsertMock).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user_123",
@@ -514,9 +411,7 @@ describe("completeOnboardingAction", () => {
       { onConflict: "user_id,module_id" }
     )
     expect(destination).toBe(
-      tutorialCompleted
-        ? "/workspace?source=organization_setup"
-        : "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
     )
   })
 

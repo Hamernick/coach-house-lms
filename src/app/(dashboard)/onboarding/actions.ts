@@ -11,6 +11,7 @@ import { organizationProfileNameSchema } from "@/lib/organization/profile-persis
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { FIND_PATH } from "@/lib/find/routes"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import {
   type ActiveOrganization,
@@ -22,6 +23,7 @@ import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
 
 function buildOnboardingErrorRedirect({
+  intentFocus,
   error,
   slug,
 }: {
@@ -32,6 +34,10 @@ function buildOnboardingErrorRedirect({
   const params = new URLSearchParams({ error })
   if (slug) {
     params.set("slug", slug)
+  }
+  if (intentFocus && intentFocus !== "build") {
+    params.set("member_onboarding", "1")
+    return `${FIND_PATH}?${params.toString()}`
   }
   return `/onboarding?${params.toString()}`
 }
@@ -45,26 +51,6 @@ function slugify(input: string): string {
     .replace(/\\s+/g, "-")
     .replace(/-+/g, "-")
   return base.slice(0, 60).replace(/^-+|-+$/g, "")
-}
-
-function workspaceOnboardingMetadata({
-  preserveCompleted,
-  intentFocus,
-  accessSelectionOnly,
-  updatedAt,
-}: {
-  preserveCompleted: boolean
-  intentFocus: string | null
-  accessSelectionOnly: boolean
-  updatedAt: string
-}) {
-  if (preserveCompleted || intentFocus !== "build") return {}
-  return {
-    workspace_onboarding_stage: 2,
-    workspace_onboarding_active: !accessSelectionOnly,
-    workspace_onboarding_started_at: accessSelectionOnly ? null : updatedAt,
-    workspace_onboarding_completed_at: null,
-  }
 }
 
 export async function completeOnboardingAction(form: FormData) {
@@ -114,9 +100,8 @@ export async function completeOnboardingAction(form: FormData) {
     builderPlanTierRaw === "operations_support"
       ? builderPlanTierRaw
       : "free"
-  const profileSetup = onboardingMode === "post_signup_access" && intentFocus === "build" && form.get("onboardingVersion") === "workspace_profile"
   const builderAccessSelectionOnly =
-    intentFocus === "build" && onboardingMode === "post_signup_access" && !profileSetup
+    intentFocus === "build" && onboardingMode === "post_signup_access"
   const personHandleRaw = String(form.get("personHandle") || "").trim()
   const personHandleValidation = validatePublicHandle(personHandleRaw)
 
@@ -136,9 +121,7 @@ export async function completeOnboardingAction(form: FormData) {
   }
 
   const requiresOrganizationSetup =
-    intentFocus === "build" &&
-    (onboardingMode !== "post_signup_access" ||
-      profileSetup || Boolean(orgName || orgSlugRaw || formationStatus))
+    intentFocus === "build" && onboardingMode !== "post_signup_access"
   let organizationTarget: ActiveOrganization = { orgId: user.id, role: "owner" }
   if (requiresOrganizationSetup && onboardingMode === "workspace_setup") {
     organizationTarget = await resolveActiveOrganization(supabase, user.id)
@@ -154,7 +137,7 @@ export async function completeOnboardingAction(form: FormData) {
   const targetOrgId = organizationTarget.orgId
 
   if (intentFocus === "build") {
-    if (builderPlanTier !== "free" && !profileSetup) {
+    if (builderPlanTier !== "free") {
       const entitlements = await fetchLearningEntitlements({
         supabase,
         userId: user.id,
@@ -171,7 +154,7 @@ export async function completeOnboardingAction(form: FormData) {
     }
 
     if (requiresOrganizationSetup) {
-      if (!formationStatus && !profileSetup) {
+      if (!formationStatus) {
         redirect(buildOnboardingErrorRedirect({ intentFocus, error: "missing_formation_status" }))
       }
       if (!organizationProfileNameSchema.safeParse(orgName).success) {
@@ -347,11 +330,8 @@ export async function completeOnboardingAction(form: FormData) {
   }
 
   const onboardingUpdatedAt = new Date().toISOString()
-  const preserveCompletedWorkspaceOnboarding =
-    onboardingMode === "workspace_setup" &&
-    Boolean(user.user_metadata?.workspace_onboarding_completed_at)
 
-  // Workspace basics may be saved during access selection; account setup still follows.
+  // Builder access selection precedes required organization and account setup.
   const { error: updateUserError } = await supabase.auth.updateUser({
     data: {
       onboarding_completed: !builderAccessSelectionOnly,
@@ -367,12 +347,21 @@ export async function completeOnboardingAction(form: FormData) {
       ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       onboarding_intent_focus: intentFocus,
       onboarding_role_interest: roleInterest,
-      ...workspaceOnboardingMetadata({
-        preserveCompleted: preserveCompletedWorkspaceOnboarding,
-        intentFocus,
-        accessSelectionOnly: builderAccessSelectionOnly,
-        updatedAt: onboardingUpdatedAt,
-      }),
+      ...(intentFocus === "build" && !builderAccessSelectionOnly
+        ? {
+            workspace_onboarding_stage: 2,
+            workspace_onboarding_active: true,
+            workspace_onboarding_started_at: onboardingUpdatedAt,
+            workspace_onboarding_completed_at: null,
+          }
+        : builderAccessSelectionOnly
+          ? {
+              workspace_onboarding_stage: 2,
+              workspace_onboarding_active: false,
+              workspace_onboarding_started_at: null,
+              workspace_onboarding_completed_at: null,
+            }
+          : {}),
     },
   })
 
@@ -384,7 +373,7 @@ export async function completeOnboardingAction(form: FormData) {
     throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
   }
 
-  if (requiresOrganizationSetup && !builderAccessSelectionOnly && !profileSetup) {
+  if (requiresOrganizationSetup) {
     await markOrganizationSetupModuleCompleted({
       supabase,
       userId: user.id,
@@ -418,9 +407,7 @@ export async function completeOnboardingAction(form: FormData) {
       redirect("/workspace?source=onboarding_setup")
     }
     redirect(
-      preserveCompletedWorkspaceOnboarding
-        ? "/workspace?source=organization_setup"
-        : "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
     )
   }
 
@@ -430,7 +417,7 @@ export async function completeOnboardingAction(form: FormData) {
     eventName: "member_onboarding_completed",
     journey: "member_onboarding",
     source: "onboarding_action",
-    surface: "workspace_onboarding",
+    surface: "find_map_onboarding",
     checkpoint: "member_onboarding_completed",
     metadata: {
       intentFocus,
@@ -439,5 +426,5 @@ export async function completeOnboardingAction(form: FormData) {
     },
   })
 
-  redirect("/workspace?member_onboarding=0&source=member_onboarding")
+  redirect(`${FIND_PATH}?member_onboarding=0&source=member_onboarding`)
 }

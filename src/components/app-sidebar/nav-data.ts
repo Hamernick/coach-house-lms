@@ -3,11 +3,13 @@
 import type { LucideIcon } from "lucide-react"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import DatabaseIcon from "lucide-react/dist/esm/icons/database"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
+import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
 import ShieldCheckIcon from "lucide-react/dist/esm/icons/shield-check"
@@ -21,6 +23,7 @@ import {
   hasPlatformCapability,
   type PlatformAccessLevel,
 } from "@/features/platform-access"
+import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
 type MainNavItem = {
@@ -76,12 +79,13 @@ export function buildMainNav({
       ]
     : []
   const items: MainNavItem[] = [
-    ...workspaceHomeItem,
     ...(showMemberWorkspace
       ? [
+          ...workspaceHomeItem,
+          { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...(canAccessOrganizations ? [] : memberWorkspaceItems),
         ]
-      : []),
+      : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]
 
   if (canAccessOrganizations) {
@@ -126,6 +130,11 @@ export const RESOURCE_NAV = [
     name: "Documentation",
     url: "/documentation",
     icon: NotebookIcon,
+  },
+  {
+    name: "Community",
+    url: "/community",
+    icon: MessageCircleIcon,
   },
 ]
 

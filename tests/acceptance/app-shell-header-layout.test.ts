@@ -26,20 +26,23 @@ describe("app shell header layout", () => {
       "pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))]"
     )
     expect(rightRailSource).toContain('"w-[var(--shell-right-rail-width)]"')
-    expect(rightRailSource).toContain('<SheetDescription className="sr-only">')
+    expect(rightRailSource).toContain("<SheetDescription>")
     expect(rightRailSource).toContain(
       "Contextual details for the current workspace view."
     )
     expect(rightRailSource).toContain('"pointer-events-none w-0"')
   })
 
-  it("keeps optional rail resizing scoped to desktop", () => {
+  it("keeps resizing scoped to the desktop find rail", () => {
     const appShellSource = readSource(
       "src/components/app-shell/app-shell-inner.tsx"
     )
     const appShellTypesSource = readSource("src/components/app-shell/types.ts")
     const rightRailStateSource = readSource(
       "src/components/app-shell/use-app-shell-right-rail-state.ts"
+    )
+    const authenticatedFindShellSource = readSource(
+      "src/features/find-map/components/authenticated-find-shell.tsx"
     )
     const rightRailSource = readSource(
       "src/components/app-shell/components/shell-right-rail.tsx"
@@ -67,6 +70,7 @@ describe("app shell header layout", () => {
     )
     expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(appShellTypesSource).toContain("resizableRightRail?: boolean")
+    expect(authenticatedFindShellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain('id="app-shell-right-rail-layout"')
     expect(appShellSource).toContain('id="app-shell-main-content-panel"')
     expect(appShellSource).toContain('id="app-shell-right-rail-panel"')
@@ -114,10 +118,8 @@ describe("app shell header layout", () => {
     expect(headerSource).toContain(
       "hidden min-w-0 items-center overflow-hidden"
     )
-    expect(headerSource).toContain("flex min-w-0 shrink-0 flex-wrap items-center")
-    expect(globalSearchTriggersSource).toContain('slot="search"')
-    expect(globalSearchTriggersSource).toContain('aria-label="Open search"')
-    expect(headerSource.indexOf('id="site-header-actions-search"')).toBeLessThan(headerSource.indexOf("<AppShellCalendarAction />"))
+    expect(headerSource).toContain("flex shrink-0 flex-wrap items-center")
+    expect(globalSearchTriggersSource).toContain("w-full max-w-[520px] min-w-0")
     expect(globalSearchTriggersSource).not.toContain("min-w-[240px]")
     expect(resizableSource).toContain("react-resizable-panels")
     expect(resizableSource).toContain("ResizablePanelGroup")

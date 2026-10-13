@@ -5,6 +5,7 @@ import type { ReactNode } from "react"
 import {
   BacklogCard,
   Separator,
+  TimeCard,
   type ProjectDetails,
 } from "@/features/platform-admin-dashboard"
 import {
@@ -13,7 +14,6 @@ import {
   type FiscalSponsorshipProjectWorkflowSummary,
 } from "@/features/fiscal-sponsorship"
 import type { MemberWorkspaceAdminOrganizationSummary } from "../../types"
-import { ProjectScheduleTimeline, type UpdateScheduleAction } from "./project-schedule-timeline"
 import { MemberWorkspaceProjectOrganizationCard } from "./member-workspace-project-organization-card"
 import { MemberWorkspaceProjectQuickLinksCard } from "./member-workspace-project-quick-links-card"
 
@@ -90,7 +90,6 @@ function resolveFiscalUpdateHref({
 
 export function MemberWorkspaceProjectRightMetaPanel({
   adminBilling,
-  updateScheduleAction,
   project,
   organizationSummary,
   fiscalSponsorshipWorkflowSummary,
@@ -100,7 +99,6 @@ export function MemberWorkspaceProjectRightMetaPanel({
   deleteQuickLinkAction,
 }: {
   adminBilling?: ReactNode
-  updateScheduleAction?: UpdateScheduleAction
   project: ProjectDetails
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
@@ -139,7 +137,7 @@ export function MemberWorkspaceProjectRightMetaPanel({
           <Separator />
         </>
       ) : null}
-      <ProjectScheduleTimeline projectId={project.id} time={project.time} onSave={updateScheduleAction} />
+      <TimeCard time={project.time} />
       <Separator />
       <BacklogCard backlog={project.backlog} />
       <Separator />

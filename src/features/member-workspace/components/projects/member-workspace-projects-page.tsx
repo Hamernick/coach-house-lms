@@ -1,10 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { projectDirectoryFilters } from "./member-workspace-project-status"
-import { useProjectDirectorySavedState } from "./use-project-saved-state"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { restoreDirectoryQuery, saveDirectoryQuery } from "../../lib/directory-preferences"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import type {
   MemberWorkspaceCreateProjectFormInput,
@@ -58,9 +55,6 @@ import {
 } from "./member-workspace-project-view-options"
 
 type MemberWorkspaceProjectsPageProps = {
-  deleteProjectAction?: (projectId: string) => Promise<{ ok: true; id: string } | { error: string }>
-  directory?: "organizations" | "projects"
-  viewerUserId?: string
   projects: PlatformAdminDashboardLabProject[]
   storageMode: MemberWorkspaceStorageMode
   canResetStarterData: boolean
@@ -85,8 +79,6 @@ type MemberWorkspaceProjectsPageProps = {
   canCreateProjects: boolean
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
   assigneeOptions: MemberWorkspacePersonOption[]
-  showPlatformRevenue?: boolean
-  defaultCoachFilter?: OrganizationCoachFilterValue
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
@@ -127,32 +119,11 @@ function getView(
     : viewType
 }
 
-function parseDirectoryState(
-  query: string,
-  directory: "organizations" | "projects",
-  coachOptions: OrganizationCoachOption[],
-  defaultCoachFilter: OrganizationCoachFilterValue
-) {
-  const params = new URLSearchParams(query)
-  if (directory === "projects" && !params.has("view")) params.set("view", "board")
-  return {
-    filters: directory === "projects" ? projectDirectoryFilters(paramsToChips(params)) : paramsToChips(params),
-    coachFilter: directory === "projects" ? "all" : normalizeOrganizationCoachFilter({
-      coachOptions,
-      value: params.get("coach") ?? defaultCoachFilter,
-    }),
-    viewOptions: paramsToViewOptions(params),
-    visibility: directory === "projects" ? "visible" : normalizeOrganizationKanbanVisibilityMode(params.get("visibility")),
-  }
-}
-
 export function MemberWorkspaceProjectsPage(
   props: MemberWorkspaceProjectsPageProps
 ) {
   const {
-    directory = "organizations",
-    viewerUserId,
-    projects: serverProjects,
+    projects,
     canResetStarterData,
     clearStarterDataAction,
     createProjectAction,
@@ -164,8 +135,6 @@ export function MemberWorkspaceProjectsPage(
     assigneeOptions,
     scope,
     coachOptions = [],
-    defaultCoachFilter = ORGANIZATION_COACH_FILTER_ALL,
-    showPlatformRevenue = false,
     canManageCoachAssignments = false,
     updateCoachAssignmentAction,
     assignAllCoachesAction,
@@ -186,15 +155,14 @@ export function MemberWorkspaceProjectsPage(
     restoreWorkstreamDefaultsAction,
     updateProjectWorkstreamAction,
   } = props
-  const { projects, onSaved } = useProjectDirectorySavedState(serverProjects, organizationOptions)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [filters, setFilters] = useState<FilterChip[]>([])
   const [coachFilter, setCoachFilter] = useState<OrganizationCoachFilterValue>(
-    defaultCoachFilter
+    ORGANIZATION_COACH_FILTER_ALL
   )
-  const [viewOptions, setViewOptions] = useState({ ...DEFAULT_VIEW_OPTIONS, ...(directory === "projects" ? { viewType: "board" as const } : {}) })
+  const [viewOptions, setViewOptions] = useState(DEFAULT_VIEW_OPTIONS)
   const [kanbanVisibilityMode, setKanbanVisibilityMode] =
     useState<OrganizationKanbanVisibilityMode>(
       ORGANIZATION_KANBAN_VISIBILITY_VISIBLE
@@ -211,22 +179,25 @@ export function MemberWorkspaceProjectsPage(
 
   useEffect(() => {
     const currentParams = searchParams.toString()
-    const currentStateKey = `${viewerUserId}|${directory}|${defaultCoachFilter}|${currentParams}|${coachOptions
+    const currentStateKey = `${currentParams}|${coachOptions
       .map((coach) => coach.id)
       .join(",")}`
     if (prevParamsRef.current === currentStateKey) return
 
     prevParamsRef.current = currentStateKey
-    const restoredQuery = restoreDirectoryQuery({ directory, viewerUserId }, currentParams)
-    const state = parseDirectoryState(restoredQuery, directory, coachOptions, defaultCoachFilter)
-    setFilters(state.filters)
-    setCoachFilter(state.coachFilter)
-    setViewOptions(state.viewOptions)
-    setKanbanVisibilityMode(state.visibility)
-    if (restoredQuery !== currentParams) {
-      router.replace(`${pathname}?${restoredQuery}`, { scroll: false })
-    }
-  }, [coachOptions, defaultCoachFilter, directory, pathname, router, searchParams, viewerUserId])
+    const params = new URLSearchParams(currentParams)
+    setFilters(paramsToChips(params))
+    setCoachFilter(
+      normalizeOrganizationCoachFilter({
+        coachOptions,
+        value: params.get("coach"),
+      })
+    )
+    setViewOptions(paramsToViewOptions(params))
+    setKanbanVisibilityMode(
+      normalizeOrganizationKanbanVisibilityMode(params.get("visibility"))
+    )
+  }, [coachOptions, searchParams])
 
   const replaceSearchState = ({
     nextFilters = filters,
@@ -241,12 +212,9 @@ export function MemberWorkspaceProjectsPage(
   }) => {
     const params = chipsToParams(nextFilters)
     applyOrganizationCoachFilterToParams(params, nextCoachFilter)
-    if (defaultCoachFilter !== "all" && nextCoachFilter === "all") params.set("coach", "all")
     applyOrganizationKanbanVisibilityToParams(params, nextKanbanVisibilityMode)
     applyViewOptionsToParams(params, nextViewOptions)
-    if (directory === "projects") params.set("view", nextViewOptions.viewType)
     const nextQuery = params.toString()
-    saveDirectoryQuery({ directory, viewerUserId }, nextQuery, nextCoachFilter)
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
       scroll: false,
     })
@@ -324,21 +292,21 @@ export function MemberWorkspaceProjectsPage(
   const filteredProjects = useMemo(
     () =>
       filterMemberWorkspaceProjects({
-        directory, filters,
+        filters,
         projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [directory, filters, kanbanVisibleProjects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
 
   const counts = useMemo(
     () =>
       computeMemberWorkspaceProjectFilterCounts({
-        directory, filters,
+        filters,
         projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [directory, filters, kanbanVisibleProjects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
   const hasActiveFilters =
     filters.length > 0 ||
@@ -366,14 +334,11 @@ export function MemberWorkspaceProjectsPage(
         className={`${styles.surface} bg-background -mx-[var(--shell-content-pad)] -mt-[var(--shell-content-pad)] -mb-[var(--shell-content-pad)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden`}
       >
         <MemberWorkspaceProjectsHeader
-          directory={directory}
-          onCreateProject={directory === "projects" && canCreateProjects ? () => { setEditingProject(null); setIsProjectWizardOpen(true) } : undefined}
           assignAllCoachesAction={assignAllCoachesAction}
           canManageCoachAssignments={canManageCoachAssignments}
           canResetStarterData={canResetStarterData}
           clearStarterDataAction={clearStarterDataAction}
           coachAssignmentCoverage={coachAssignmentCoverage}
-          showPlatformRevenue={showPlatformRevenue}
           coachFilter={coachFilter}
           coachOptions={coachOptions}
           coachScopeStatus={coachScopeStatus}
@@ -397,7 +362,6 @@ export function MemberWorkspaceProjectsPage(
 
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           <MemberWorkspaceProjectsEmptyStates
-            directory={directory}
             onClearFilters={handleClearAllFilters}
             onVisibilityModeChange={handleKanbanVisibilityModeChange}
             showAssignedOrganizationsEmpty={showAssignedOrganizationsEmpty}
@@ -497,33 +461,22 @@ export function MemberWorkspaceProjectsPage(
         </div>
       </div>
 
-      <ProjectWizardOverlay
-        onSaved={onSaved}
-        open={isProjectWizardOpen}
-        onOpenChange={(open) => { setIsProjectWizardOpen(open); if (!open) setEditingProject(null) }}
-        initialProject={editingProject}
-        organizationOptions={organizationOptions}
-        assigneeOptions={assigneeOptions}
-        createProjectAction={createProjectAction}
-        updateProjectAction={updateProjectAction}
-        deleteProjectAction={props.deleteProjectAction}
-      />
+      {createProjectAction ? (
+        <MemberWorkspaceProjectWizard
+          open={isProjectWizardOpen}
+          onOpenChange={(nextOpen) => {
+            setIsProjectWizardOpen(nextOpen)
+            if (!nextOpen) {
+              setEditingProject(null)
+            }
+          }}
+          initialProject={editingProject}
+          organizationOptions={organizationOptions}
+          assigneeOptions={assigneeOptions}
+          createProjectAction={createProjectAction}
+          updateProjectAction={updateProjectAction}
+        />
+      ) : null}
     </>
   )
-}
-
-
-function ProjectWizardOverlay(props: {
-  onSaved: (id: string, input: MemberWorkspaceCreateProjectFormInput, taskCount?: number) => void
-  deleteProjectAction?: MemberWorkspaceProjectsPageProps["deleteProjectAction"]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  initialProject: PlatformAdminDashboardLabProject | null
-  organizationOptions: MemberWorkspaceProjectsPageProps["organizationOptions"]
-  assigneeOptions: MemberWorkspaceProjectsPageProps["assigneeOptions"]
-  createProjectAction: MemberWorkspaceProjectsPageProps["createProjectAction"]
-  updateProjectAction: MemberWorkspaceProjectsPageProps["updateProjectAction"]
-}) {
-  if (!props.createProjectAction) return null
-  return <MemberWorkspaceProjectWizard {...props} createProjectAction={props.createProjectAction} />
 }

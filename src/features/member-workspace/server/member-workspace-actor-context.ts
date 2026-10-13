@@ -33,7 +33,7 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
           : null
   const isPlatformStaff =
     profileAudience.isPlatformStaff || profileAudience.isAdmin
-  const adminSupabase = createSupabaseAdminClient({ actorId: user.id })
+  const adminSupabase = createSupabaseAdminClient()
   const dataSupabase = isPlatformStaff ? adminSupabase : supabase
   const paidAccess = isPlatformStaff
     ? { hasPaidTeamAccess: true }

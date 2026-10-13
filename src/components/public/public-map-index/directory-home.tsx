@@ -1,11 +1,12 @@
 "use client"
 
+import { lazy, Suspense } from "react"
+import Link from "next/link"
 import CloudOffIcon from "lucide-react/dist/esm/icons/cloud-off"
 import SearchXIcon from "lucide-react/dist/esm/icons/search-x"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
-import { cn } from "@/lib/utils"
 import type {
   PublicMapGroupFilterCounts,
   PublicMapGroupFilterKey,
@@ -18,11 +19,13 @@ import {
   type PublicMapResourceGuide,
 } from "./resource-guides"
 
-import { PublicMapClaimPrompt, PublicMapFooter } from "./footer"
+const PublicMapClaimDialog = lazy(() =>
+  import("@/features/public-map-claims").then((module) => ({
+    default: module.PublicMapClaimDialog,
+  }))
+)
 
 export function PublicMapDirectoryHome({
-  scrollable = true,
-  showFooter = true,
   counts,
   featuredGuides,
   onCategorySelect,
@@ -33,8 +36,6 @@ export function PublicMapDirectoryHome({
   resourceItemsLoadStatus,
   savedGuideIds,
 }: {
-  scrollable?: boolean
-  showFooter?: boolean
   counts: PublicMapGroupFilterCounts
   featuredGuides: PublicMapResourceGuide[]
   onCategorySelect: (category: PublicMapGroupFilterKey) => void
@@ -52,11 +53,7 @@ export function PublicMapDirectoryHome({
   return (
     <div
       data-public-map-directory-home=""
-      data-lenis-prevent={scrollable ? "" : undefined}
-      className={cn(
-        "min-h-0 flex-1 px-2.5 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)]",
-        scrollable && "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-      )}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pt-1 pb-[max(env(safe-area-inset-bottom),1rem)] [-webkit-overflow-scrolling:touch]"
     >
       <div
         data-public-map-directory-home-content=""
@@ -124,7 +121,29 @@ export function PublicMapDirectoryHome({
             />
           </div>
         ) : null}
-        {showFooter ? <PublicMapFooter /> : <PublicMapClaimPrompt />}
+        <div className="pt-1">
+          <Suspense fallback={<div className="h-[76px]" aria-hidden />}>
+            <PublicMapClaimDialog />
+          </Suspense>
+          <nav aria-label="Legal" className="flex justify-center gap-2">
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/privacy">Privacy Policy</Link>
+            </Button>
+            <Button
+              asChild
+              variant="link"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground active:text-foreground focus-visible:text-foreground h-11 touch-manipulation"
+            >
+              <Link href="/terms">Terms of Service</Link>
+            </Button>
+          </nav>
+        </div>
       </div>
     </div>
   )

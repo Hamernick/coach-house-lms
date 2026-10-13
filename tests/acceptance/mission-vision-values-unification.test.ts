@@ -366,7 +366,7 @@ describe("Mission, Vision, and Values integration guardrails", () => {
       sanitizedAnswers: { vision_final: "A thriving future." },
       orgKeyMapping: { vision_final: "vision" },
     })
-    const writtenProfile = (updatePayload as { profile: Record<string, unknown> } | null)?.profile
+    const writtenProfile = updatePayload?.profile as Record<string, unknown>
 
     expect(result).toEqual({ ok: true })
     expect(filters).toContainEqual(["user_id", "defy-org-id"])

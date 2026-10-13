@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { Resend } from "resend"
 
-import { recordVerifiedFiscalDelivery } from "@/lib/email/fiscal-delivery"
 import { env } from "@/lib/env"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
@@ -158,15 +157,6 @@ export async function POST(request: NextRequest) {
     return new NextResponse("Missing Resend event type.", { status: 400 })
   }
 
-  let fiscal = false
-  try {
-    fiscal = await recordVerifiedFiscalDelivery(id, event)
-    if (fiscal && !mapResendEventTypeToSuppressionReason(eventType)) return NextResponse.json({ ok: true })
-  } catch {
-    // Non-2xx keeps the provider retryable. Do not log private webhook contents.
-    return new NextResponse("Unable to record fiscal delivery.", { status: 503 })
-  }
-
   const providerMessageId = resolveProviderMessageId(event)
   const occurredAt = resolveOccurredAt(event)
   const supabase = createSupabaseAdminClient()
@@ -174,7 +164,7 @@ export async function POST(request: NextRequest) {
   let campaignId: string | null = null
   let recipientEmail: string | null = null
 
-  if (providerMessageId && !fiscal) {
+  if (providerMessageId) {
     const { data: delivery, error: deliveryError } = await supabase
       .from("platform_email_deliveries")
       .select("id,campaign_id,recipient_email")
@@ -191,26 +181,24 @@ export async function POST(request: NextRequest) {
   }
   recipientEmail = resolveRecipientEmail(event, recipientEmail)
 
-  if (!fiscal) {
-    const { error: eventError } = await supabase
-      .from("platform_email_events")
-      .upsert(
-        {
-          provider: "resend",
-          provider_event_id: id,
-          event_type: eventType,
-          occurred_at: occurredAt,
-          campaign_id: campaignId,
-          delivery_id: deliveryId,
-          payload: event,
-        },
-        { onConflict: "provider_event_id" }
-      )
+  const { error: eventError } = await supabase
+    .from("platform_email_events")
+    .upsert(
+      {
+        provider: "resend",
+        provider_event_id: id,
+        event_type: eventType,
+        occurred_at: occurredAt,
+        campaign_id: campaignId,
+        delivery_id: deliveryId,
+        payload: event,
+      },
+      { onConflict: "provider_event_id" }
+    )
 
-    if (eventError) {
-      console.error("[resend-webhook] Unable to persist event.", eventError)
-      return new NextResponse("Unable to persist webhook event.", { status: 500 })
-    }
+  if (eventError) {
+    console.error("[resend-webhook] Unable to persist event.", eventError)
+    return new NextResponse("Unable to persist webhook event.", { status: 500 })
   }
 
   const nextStatus = mapResendEventTypeToDeliveryStatus(eventType)

@@ -37,7 +37,7 @@ describe("organization document write safety", () => {
     }
   })
 
-  it("commits replacement metadata before removing a prior storage object", () => {
+  it("commits replacement metadata before removing any storage object", () => {
     for (const source of [
       documentRoute,
       policyDocumentRoute,
@@ -46,19 +46,11 @@ describe("organization document write safety", () => {
       const post = handler(source, "POST")
       const upload = post.indexOf(".upload(")
       const mutation = post.indexOf("mutateOrganizationProfile")
-      const beforeMutation = post.slice(upload, mutation)
-      const priorObjectRemovals = ["existingPath", "previousPath"]
-        .map((name) => post.indexOf(`.remove([${name}])`))
-        .filter((index) => index !== -1)
+      const firstRemoval = post.indexOf(".remove(")
 
       expect(upload).toBeGreaterThan(-1)
       expect(mutation).toBeGreaterThan(upload)
-      expect(beforeMutation).not.toMatch(
-        /\.remove\(\[(?:existingPath|previousPath)\]\)/
-      )
-      for (const removal of priorObjectRemovals) {
-        expect(removal).toBeGreaterThan(mutation)
-      }
+      expect(firstRemoval).toBeGreaterThan(mutation)
     }
   })
 

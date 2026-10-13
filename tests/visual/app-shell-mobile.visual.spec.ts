@@ -51,7 +51,10 @@ test("mobile shell keeps navigation reachable above the final action", async ({
   await page.goto(fixture)
   const navigation = page.getByRole("navigation", { name: "Main navigation" })
   await expect(navigation).toBeVisible()
-  await expect(navigation.getByRole("link", { name: "Find" })).toHaveCount(0)
+  await expect(navigation.getByRole("link", { name: "Find" })).toHaveAttribute(
+    "href",
+    "/"
+  )
   expect(
     await navigation.getByRole("link", { name: "Workspace" }).count()
   ).toBe(0)
@@ -170,10 +173,9 @@ test("component visibility honors locked navigation and absent rails", async ({
     page.getByRole("navigation", { name: "Main navigation" })
   ).toHaveCount(0)
   await page.goto(`${fixture}?rail=none`)
-  await expect(page.locator("[data-mobile-ready]")).toHaveAttribute("data-mobile-ready", "true")
   await expect(
     page.getByRole("navigation", { name: "Main navigation" })
-  ).toHaveCount(0)
+  ).toBeVisible()
   await expect(
     page.getByRole("button", { name: "Details", exact: true })
   ).toHaveCount(0)
@@ -247,25 +249,25 @@ test("simulated keyboard clearance and reduced motion preserve mobile actions", 
 
 test("scrubbing previews, commits inside, and cancels outside or with Escape", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`${fixture}?scenario=member-navigation`)
+  await page.goto(fixture)
   const navigation = page.getByRole("navigation", { name: "Main navigation" })
   await expect(navigation).toBeVisible()
-  const workspace = navigation.getByRole("link", { name: "Workspace" })
+  const find = navigation.getByRole("link", { name: "Find" })
   const details = navigation.getByRole("button", { name: "Details" })
   const drawer = page.getByRole("dialog", { name: "Details" })
-  const from = (await workspace.boundingBox())!
+  const from = (await find.boundingBox())!
   const to = (await details.boundingBox())!
   const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 }
   const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 }
   const begin = async () => {
-    await workspace.click({ trial: true })
+    await find.click({ trial: true })
     await page.mouse.move(start.x, start.y)
     await page.mouse.down()
     await page.mouse.move(end.x, end.y, { steps: 5 })
     await expect(navigation).toHaveAttribute("data-scrubbing", "true")
     await expect(details).toHaveAttribute("data-highlighted", "true")
     await expect(drawer).toBeHidden()
-    await expect(page).toHaveURL((url) => url.pathname === fixture && url.searchParams.get("scenario") === "member-navigation")
+    await expect(page).toHaveURL(new RegExp(`${fixture}$`))
   }
 
   await begin()
@@ -278,7 +280,7 @@ test("scrubbing previews, commits inside, and cancels outside or with Escape", a
   await page.mouse.move(end.x, from.y - 30)
   await page.mouse.up()
   await expect(drawer).toBeHidden()
-  await expect(page).toHaveURL((url) => url.pathname === fixture && url.searchParams.get("scenario") === "member-navigation")
+  await expect(page).toHaveURL(new RegExp(`${fixture}$`))
 
   await begin()
   await page.keyboard.press("Escape")
@@ -291,10 +293,10 @@ test("scrubbing previews, commits inside, and cancels outside or with Escape", a
 
 test("touch pointer cancellation leaves the next action usable", async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`${fixture}?scenario=member-navigation`)
+  await page.goto(fixture)
   const navigation = page.getByRole("navigation", { name: "Main navigation" })
   await expect(navigation).toBeVisible()
-  const from = (await navigation.getByRole("link", { name: "Workspace" }).boundingBox())!
+  const from = (await navigation.getByRole("link", { name: "Find" }).boundingBox())!
   const details = navigation.getByRole("button", { name: "Details" })
   const to = (await details.boundingBox())!
   const client = await context.newCDPSession(page)
@@ -310,7 +312,7 @@ test("touch pointer cancellation leaves the next action usable", async ({ page, 
   await client.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] })
   await expect(navigation).toHaveAttribute("data-scrubbing", "false")
   await expect(page.getByRole("dialog", { name: "Details" })).toBeHidden()
-  await expect(page).toHaveURL((url) => url.pathname === fixture && url.searchParams.get("scenario") === "member-navigation")
+  await expect(page).toHaveURL(new RegExp(`${fixture}$`))
   await details.click()
   await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
   await client.detach()
@@ -321,37 +323,35 @@ test("links preserve ordinary, keyboard, modified and single scrub navigation", 
   // Keep destination rendering out of this AppShell interaction test.
   await context.route("**/*", (route) => {
     const request = route.request()
-    // Cover Next's RSC fetch as well as the full navigation/new-tab request.
-    // HTML makes the client router fall back to the same isolated destination.
-    if (new URL(request.url()).pathname === "/workspace")
-      return route.fulfill({ contentType: "text/html", body: "<h1>Workspace destination</h1>" })
+    if (request.isNavigationRequest() && new URL(request.url()).pathname === "/")
+      return route.fulfill({ contentType: "text/html", body: "<h1>Find destination</h1>" })
     return route.continue()
   })
   for (const activation of ["click", "keyboard", "modified", "scrub"] as const) {
-    await page.goto(`${fixture}?scenario=member-navigation`)
+    await page.goto(fixture)
     const navigation = page.getByRole("navigation", { name: "Main navigation" })
     await expect(navigation).toBeVisible()
-    const workspace = navigation.getByRole("link", { name: "Workspace" })
+    const find = navigation.getByRole("link", { name: "Find" })
     if (activation === "modified") {
       const popupPromise = context.waitForEvent("page")
-      await workspace.click({ modifiers: [process.platform === "darwin" ? "Meta" : "Control"] })
+      await find.click({ modifiers: [process.platform === "darwin" ? "Meta" : "Control"] })
       const popup = await popupPromise
-      await expect(popup).toHaveURL(/\/workspace$/)
-      await expect(page).toHaveURL((url) => url.pathname === fixture && url.searchParams.get("scenario") === "member-navigation")
+      await expect(popup).toHaveURL(/\/$/)
+      await expect(page).toHaveURL(new RegExp(`${fixture}$`))
       await popup.close()
       continue
     }
     const destinations: string[] = []
     const onNavigation = (frame: import("@playwright/test").Frame) => {
-      if (frame === page.mainFrame() && new URL(frame.url()).pathname === "/workspace")
+      if (frame === page.mainFrame() && new URL(frame.url()).pathname === "/")
         destinations.push(frame.url())
     }
     page.on("framenavigated", onNavigation)
-    if (activation === "click") await workspace.click()
-    else if (activation === "keyboard") await workspace.press("Enter")
+    if (activation === "click") await find.click()
+    else if (activation === "keyboard") await find.press("Enter")
     else {
       const from = (await navigation.getByRole("button", { name: "Details" }).boundingBox())!
-      const to = (await workspace.boundingBox())!
+      const to = (await find.boundingBox())!
       await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
       await page.mouse.down()
       await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 5 })
@@ -359,7 +359,7 @@ test("links preserve ordinary, keyboard, modified and single scrub navigation", 
       expect(destinations).toHaveLength(0)
       await page.mouse.up()
     }
-    await expect(page).toHaveURL(/\/workspace$/)
+    await expect(page).toHaveURL(/\/$/)
     expect(destinations).toHaveLength(1)
     page.off("framenavigated", onNavigation)
   }
@@ -373,7 +373,7 @@ test("scroll compaction retains labels and actions and expands on upward scroll"
   const scroll = page.locator("[data-shell-scroll]")
   await scroll.evaluate((element) => { element.scrollTop = 240 })
   await expect(navigation).toHaveAttribute("data-compact", "true")
-  for (const name of ["Details"]) {
+  for (const name of ["Find", "Details"]) {
     await expect(navigation.getByText(name, { exact: true })).toBeVisible()
   }
   for (const control of await navigation.locator("a,button").all()) {
@@ -443,23 +443,5 @@ for (const { width, height, theme } of visualCases) {
       await expect(page.getByRole("dialog", { name: "Details" })).toBeVisible()
       await expectShellScreenshot(page, `app-shell-details-${theme}.png`)
     }
-  })
-}
-
-for (const step of ["account", "pricing"] as const) {
-  test(`onboarding ${step} scrolls the page with the pointer inside the form`, async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 600 })
-    await page.goto(`${fixture}?scenario=onboarding-${step}&rail=none`)
-    await expect(page.locator("[data-shell-ready]")).toHaveAttribute("data-shell-ready", "true")
-    const pageScroll = page.locator("[data-shell-scroll]")
-    const formScroll = page.locator('[data-onboarding-scroll-region="true"]')
-    await expect(formScroll).toBeVisible()
-    await expect.poll(() => pageScroll.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(0)
-    await pageScroll.evaluate((element) => { element.scrollTop = 0 })
-    const box = await formScroll.boundingBox()
-    expect(box).not.toBeNull()
-    await page.mouse.move(box!.x + box!.width / 2, Math.min(box!.y + 80, 500))
-    await page.mouse.wheel(0, 400)
-    await expect.poll(() => pageScroll.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
   })
 }

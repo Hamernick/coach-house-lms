@@ -2,12 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, vi } from "vitest"
-
-import { PublicMapInlinePanel } from "@/components/public/public-map-index/inline-panel"
-import { PublicMapDockViewerContext } from "@/components/public/public-map-index/dock-viewer"
-
-import { formatCollectedCount } from "@/components/public/public-map-index/collected-tab-label"
+import { describe, expect, it } from "vitest"
 
 import { PublicMapOrganizationList } from "@/components/public/public-map-index/organization-list"
 import {
@@ -46,10 +41,6 @@ import type {
   PublicMapOrganization,
   PublicMapProgramPreview,
 } from "@/lib/queries/public-map-index"
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
-}))
 
 function buildProgramPreview(
   overrides: Partial<PublicMapProgramPreview> = {}
@@ -94,7 +85,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -193,7 +183,7 @@ describe("public map sidebar layout", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapCategoryFilter, {
         activeGroup: "all",
-        counts: buildPublicMapGroupFilterCounts(buildListItems(organization)),
+        counts: buildPublicMapGroupFilterCounts([organization]),
         onActiveGroupChange: () => {},
       })
     )
@@ -324,7 +314,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the liquid glass shell for the public map rail surface", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const shellSource = readFileSync(
       join(
         process.cwd(),
@@ -397,12 +387,8 @@ describe("public map sidebar layout", () => {
       "utf8"
     )
 
-    expect(source).toContain('data-public-map-overscan={embedded ? undefined : "12px"}')
-    expect(source).not.toContain("data-public-map-background=")
-    expect(source).not.toContain("--map-backdrop-height")
-    expect(source).toContain("pointer-events-auto absolute inset-0 z-0")
-    expect(source).toContain("pointer-events-none overflow-hidden rounded-3xl")
-    expect(source).toContain(': "absolute -inset-3"')
+    expect(source).toContain('data-public-map-overscan="12px"')
+    expect(source).toContain('className="absolute -inset-3"')
     expect(source).toContain("[&_.mapboxgl-ctrl-logo]:!hidden")
     expect(source).not.toContain("mapboxgl-ctrl-attrib")
     expect(source).not.toContain("[&_.mapboxgl-control-container")
@@ -416,10 +402,9 @@ describe("public map sidebar layout", () => {
 
   it("gives the rail search layout one scroll owner and a shared horizontal inset", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapSidebar, {
-        onSelectOrganization: () => {},
         sidebarMode: "search",
         sidebarWidth: 374,
         surfaceHeight: 720,
@@ -494,7 +479,16 @@ describe("public map sidebar layout", () => {
     expect(resultsStatusClassName).toContain("mx-auto")
     expect(resultsStatusClassName).toContain("w-full")
     expect(resultsStatusClassName).toContain("max-w-3xl")
-    expect(categoryFilterClassName).toBe("")
+    expect(categoryFilterClassName).toContain("overflow-x-auto")
+    expect(categoryFilterClassName).toContain("mx-auto")
+    expect(categoryFilterClassName).toContain("w-full")
+    expect(categoryFilterClassName).toContain("max-w-3xl")
+    expect(categoryFilterClassName).toContain("scroll-fade-effect-x")
+    expect(markup).toContain('data-orientation="horizontal"')
+    expect(categoryFilterClassName).toContain("[scrollbar-width:none]")
+    expect(categoryFilterClassName).toContain(
+      "[&amp;::-webkit-scrollbar]:hidden"
+    )
     expect(scrollClassName).not.toContain("px-")
     expect(scrollClassName).toContain("pr-2.5")
     expect(scrollClassName).toContain("h-full")
@@ -524,8 +518,10 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("mx-auto flex w-full max-w-xl items-center")
     expect(markup).toContain("relative min-w-0 flex-1")
     expect(markup).toContain("rounded-full pl-8 text-base")
-    expect(markup).not.toContain('aria-label="Filter resources by category"')
-    expect(markup).not.toContain('data-react-grab-owner-id="public-map-category-filter:all"')
+    expect(markup).toContain('aria-label="Filter resources by category"')
+    expect(markup).toContain(">All<")
+    expect(markup).toContain(">Community<")
+    expect(markup).toContain('aria-pressed="true"')
     expect(
       markup.indexOf('data-public-map-sidebar-section="rail-status-header"')
     ).toBeLessThan(
@@ -561,7 +557,7 @@ describe("public map sidebar layout", () => {
       items: buildListItems(organization),
       onClear: () => {},
     }
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const shellMarkup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -686,7 +682,7 @@ describe("public map sidebar layout", () => {
     expect(cardGridClassName.split(" ")).toContain("grid-cols-1")
     expect(cardGridClassName.split(" ")).toContain("divide-y")
     expect(cardGridClassName.split(" ")).toContain("items-stretch")
-    expect(cardGridClassName).toContain("@min-[38rem]/results:grid-cols-2")
+    expect(markup).not.toContain("grid-cols-2")
     expect(markup).toContain("w-full max-w-full min-w-0")
     expect(markup).toContain("overflow-hidden")
     expect(markup).toContain('data-public-map-result-trigger="true"')
@@ -778,8 +774,7 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("Chicago, IL")
     expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
     expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(markup.match(/min-h-18/g)).toHaveLength(2)
-    expect(markup.match(/min-h-16/g)).toHaveLength(2)
+    expect(markup.match(/min-h-20/g)).toHaveLength(4)
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -1136,7 +1131,7 @@ describe("public map sidebar layout", () => {
         visualVariant: "nyc",
       },
     ] satisfies PublicMapResourceGuide[]
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const publicRightRailSource = readFileSync(
       join(
         process.cwd(),
@@ -1183,18 +1178,19 @@ describe("public map sidebar layout", () => {
         savedOrganizations: [],
         onGuideSelect: () => {},
         onToggleSavedGuide: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
     const guidesRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapMemberRail, {
-        showGuidesTab: true,
         directoryRail: null,
         directoryMode: null,
         guides,
         savedOrganizations: [],
         onGuideSelect: () => {},
         onToggleSavedGuide: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1218,9 +1214,10 @@ describe("public map sidebar layout", () => {
       )
     )
     expect(directoryMarkup).not.toContain(">Resource map<")
-    expect(directoryMarkup).not.toContain(
+    expect(directoryMarkup).toContain(
       'aria-label="Filter resources by category"'
     )
+    expect(directoryMarkup).toContain('aria-pressed="true"')
     expect(directoryMarkup).toContain(organization.name)
     expect(resolvePublicMapDirectoryStatusCount(1)).toBe("1")
     expect(resolvePublicMapDirectoryStatusCount(1234)).toBe("1,234")
@@ -1236,14 +1233,14 @@ describe("public map sidebar layout", () => {
     expect(directoryMarkup).not.toContain("users online")
     expect(directoryMarkup).toContain('data-public-map-list-pagination="true"')
     expect(directoryMarkup).toContain("Showing 1 of 1 resources")
-    expect(directoryMarkup).toContain("@min-[38rem]/results:grid-cols-2")
+    expect(directoryMarkup).not.toContain("grid-cols-2")
     expect(directoryMarkup).not.toContain(
       'data-public-map-sidebar-section="resource-guides"'
     )
     expect(directoryMarkup).not.toContain("NYC Cooling Centers")
     expect(memberRailMarkup).toContain(">Find<")
-    expect(memberRailMarkup).not.toContain(">Guides<")
-    expect(memberRailMarkup).toContain(">Collect<")
+    expect(memberRailMarkup).toContain(">Guides<")
+    expect(memberRailMarkup).toContain(">My Map<")
     expect(memberRailMarkup).not.toContain(">Recent<")
     expect(memberRailMarkup).not.toContain(">Joined<")
     expect(memberRailMarkup).not.toContain(">Alerts<")
@@ -1266,7 +1263,7 @@ describe("public map sidebar layout", () => {
       "rounded-full border border-border/70 bg-background/70 p-1"
     )
     expect(memberRailMarkup).toContain(
-      "flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden"
+      "flex h-full min-h-0 flex-col gap-3 overflow-hidden"
     )
     expect(directoryMarkup).toContain(
       "flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden"
@@ -1306,17 +1303,16 @@ describe("public map sidebar layout", () => {
 
     const emptyGuidesMarkup = renderToStaticMarkup(
       React.createElement(PublicMapMemberRail, {
-        activeTab: "guides",
         directoryRail: React.createElement("div", null, "Directory"),
         directoryMode: "search",
         guides: [],
         savedOrganizations: [],
         onGuideSelect: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
-    expect(emptyGuidesMarkup).not.toContain(">Guides<")
-    expect(emptyGuidesMarkup).toContain(">Directory</div>")
+    expect(emptyGuidesMarkup).toContain(">Guides<")
     expect(guidesRailMarkup).toContain(
       'data-public-map-member-rail-section="guides-panel"'
     )
@@ -1368,46 +1364,7 @@ describe("public map sidebar layout", () => {
     expect(memberRailMarkup).toContain("Directory")
   })
 
-  it("keeps home results mounted beside a floating search dock without Find tabs", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapDockViewerContext.Provider, {
-        value: { id: "viewer-1", email: "member@example.org", displayName: "Member" },
-      }, React.createElement(PublicMapInlinePanel, {
-        query: "food", onQueryChange: () => {},
-      }, React.createElement(PublicMapMemberRail, {
-          directoryRail: React.createElement("div", null, "Current results"),
-          collectedCount: 2, savedOrganizations: [],
-          onSelectOrganization: () => {}, onToggleFavorite: () => {},
-        })
-      ))
-    )
-    expect(markup).toContain("Current results")
-    expect(markup).toContain('data-public-map-search-dock=""')
-    expect(markup).not.toContain('role="tab"')
-    expect(markup).toContain(">Collected (2)<")
-    expect(markup).toContain('aria-haspopup="dialog"')
-    expect(markup).toContain('aria-label="Open your account"')
-    expect(markup).toContain('aria-haspopup="menu"')
-    expect(markup.match(/data-public-map-search-input="true"/g)).toHaveLength(1)
-  })
-
-  it("keeps the collection count independent of loaded rows and formats compact numbers", () => {
-    for (const [count, label] of [[1, "1"], [999, "999"], [1000, "1k"], [2500, "2.5k"], [1000000, "1m"]] as const) {
-      expect(formatCollectedCount(count)).toBe(label)
-    }
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapMemberRail, {
-        collectedCount: 2500,
-        directoryRail: React.createElement("div", null, "Directory"),
-        savedOrganizations: [],
-        onToggleFavorite: () => {},
-      })
-    )
-    expect(markup).toContain(">Collected (2.5k)<")
-    expect(markup).toContain(">Collected 2,500 items<")
-  })
-
-  it("lets My Map search collected organizations without redundant category pills", () => {
+  it("lets My Map search and category-filter collected organizations", () => {
     const communityOrganization = buildOrganization({
       id: "community-org",
       name: "Atlas Collective",
@@ -1456,17 +1413,18 @@ describe("public map sidebar layout", () => {
             visualVariant: "nyc",
           },
         ],
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
         onToggleSavedGuide: () => {},
       })
     )
 
-    expect(markup).toContain(">Collected (3)<")
-    expect(markup).toContain(">Collected 3 items<")
+    expect(markup).toContain(">My Map<")
     const savedRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapSavedRail, {
         savedOrganizations: [communityOrganization, healthOrganization],
         favoritesCount: 2,
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1499,9 +1457,12 @@ describe("public map sidebar layout", () => {
       'data-public-map-member-rail-section="saved-search-controls"'
     )
     expect(markup).toContain('aria-label="Find organizations and resources"')
-    expect(markup).not.toContain('aria-label="Filter resources by category"')
+    expect(markup).toContain('aria-label="Filter resources by category"')
     expect(markup).toContain(">All<")
-
+    expect(markup).toContain(">Community<")
+    expect(markup).toContain(">Health<")
+    expect(markup).toContain(">2<")
+    expect(markup).toContain(">1<")
     expect(markup).toContain("My Map")
     expect(markup).toContain("mx-2 min-h-0 flex-1 bg-transparent")
     expect(markup).not.toContain("bg-card/95")
@@ -1562,6 +1523,7 @@ describe("public map sidebar layout", () => {
       React.createElement(PublicMapMemberRail, {
         savedOrganizations: [],
         savedResources: [resource],
+        onSelectOrganization: () => {},
         onSelectResource: () => {},
         onToggleFavorite: () => {},
         onToggleCollectedResource: () => {},
@@ -1612,6 +1574,7 @@ describe("public map sidebar layout", () => {
         savedResources: [],
         unresolvedCollectedResourceCount: 2,
         resourceItemsLoadStatus: "loading",
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1623,6 +1586,7 @@ describe("public map sidebar layout", () => {
         resourceItemsLoadStatus: "error",
         resourceItemsLoadError: PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
         onRetryResourceItems: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1637,7 +1601,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the right rail directory detail view when a map organization is selected", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     expect(
       resolvePublicMapDirectoryRailMode({
         sidebarMode: "details",
@@ -1693,7 +1657,7 @@ describe("public map sidebar layout", () => {
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1726,7 +1690,7 @@ describe("public map sidebar layout", () => {
 
     expect(markup).not.toContain(">Resource map<")
     expect(markup).toContain('aria-label="Find organizations and resources"')
-    expect(markup).not.toContain('aria-label="Filter resources by category"')
+    expect(markup).toContain('aria-label="Filter resources by category"')
     expect(markup).toContain(
       'data-public-map-sidebar-section="rail-organizations-scroll"'
     )
@@ -1770,7 +1734,7 @@ describe("public map sidebar layout", () => {
       ],
       programCount: 1,
     })
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1818,8 +1782,7 @@ describe("public map sidebar layout", () => {
     const activityIndex = markup.indexOf(">Activity<")
     expect(addressIndex).toBeGreaterThan(-1)
     expect(linksIndex).toBeGreaterThan(addressIndex)
-    expect(activityIndex).toBeGreaterThan(markup.indexOf(">About<"))
-    expect(activityIndex).toBeLessThan(addressIndex)
+    expect(activityIndex).toBeGreaterThan(linksIndex)
     expect(markup).toContain(
       'data-public-map-sidebar-section="rail-detail-scroll"'
     )
@@ -1903,7 +1866,7 @@ describe("public map sidebar layout", () => {
     expect(resultListScrollClassName).toContain("overflow-y-auto")
     expect(resultListScrollClassName).toContain("rounded-2xl")
     expect(resultListScrollClassName).toContain("border")
-    expect(resultListScrollClassName).not.toContain("scroll-fade-effect-y")
+    expect(resultListScrollClassName).toContain("scroll-fade-effect-y")
     expect(resultListScrollClassName).toContain("overscroll-contain")
     expect(resultListScrollClassName).toContain(
       "[-webkit-overflow-scrolling:touch]"
@@ -1918,7 +1881,7 @@ describe("public map sidebar layout", () => {
     expect(organizationDetailMarkup).toContain('aria-label="Back to search"')
     expect(
       organizationDetailMarkup.indexOf('aria-label="Back to search"')
-    ).toBeGreaterThan(
+    ).toBeLessThan(
       organizationDetailMarkup.indexOf(
         'data-public-map-sidebar-section="drawer-detail-scroll"'
       )
@@ -1931,7 +1894,7 @@ describe("public map sidebar layout", () => {
     expect(organizationDetailScrollClassName).toContain("min-h-0")
     expect(organizationDetailScrollClassName).toContain("flex-1")
     expect(organizationDetailScrollClassName).toContain("overflow-y-auto")
-    expect(organizationDetailScrollClassName).not.toContain("scroll-fade-effect-y")
+    expect(organizationDetailScrollClassName).toContain("scroll-fade-effect-y")
     expect(organizationDetailScrollClassName).toContain("overscroll-contain")
     expect(resourceDetailMarkup).toContain(
       'data-public-map-sidebar-section="drawer-detail-scroll"'
@@ -1943,7 +1906,7 @@ describe("public map sidebar layout", () => {
     expect(resourceDetailScrollClassName).toContain("min-h-0")
     expect(resourceDetailScrollClassName).toContain("flex-1")
     expect(resourceDetailScrollClassName).toContain("overflow-y-auto")
-    expect(resourceDetailScrollClassName).not.toContain("scroll-fade-effect-y")
+    expect(resourceDetailScrollClassName).toContain("scroll-fade-effect-y")
     expect(resourceDetailScrollClassName).toContain("overscroll-contain")
   })
 
@@ -2133,7 +2096,7 @@ describe("public map sidebar layout", () => {
     expect(loadingMarkup).toContain("Loading resources")
     expect(loadingMarkup.match(/data-slot="skeleton"/g)).toHaveLength(12)
     expect(emptyMarkup).toContain('data-public-map-search-empty="true"')
-    expect(emptyMarkup).toContain("No listings match")
+    expect(emptyMarkup).toContain("No service listings match")
     expect(emptyMarkup).toContain("Clear search")
     expect(emptyMarkup).toContain('data-search-shortcut="guide"')
     expect(emptyMarkup).toContain("Housing guide")
@@ -2228,14 +2191,4 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("Socrata endpoint")
     expect(markup).not.toContain("Open source")
   })
-})
-
-
-it("keeps national categories enabled without displaying loaded-resource totals", () => {
-  const markup = renderToStaticMarkup(React.createElement(PublicMapCategoryFilter, {
-    activeGroup: "food", counts: buildPublicMapGroupFilterCounts([]), onActiveGroupChange: () => {},
-  }))
-  expect(markup).not.toContain("disabled=")
-  expect(markup).not.toContain(">0</span>")
-  expect(markup).toContain("More categories")
 })

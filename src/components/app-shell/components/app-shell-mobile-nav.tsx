@@ -1,4 +1,5 @@
 import { usePathname } from "next/navigation"
+import CompassIcon from "lucide-react/dist/esm/icons/compass"
 import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
 import PanelRightIcon from "lucide-react/dist/esm/icons/panel-right"
 
@@ -31,6 +32,7 @@ export function AppShellMobileNav({
 
   const items: MobileNavigationItem[] = []
   if (!onboardingLocked) {
+    items.push({ id: "find", label: "Find", href: "/", icon: CompassIcon })
     if (showWorkspace)
       items.push({
         id: "workspace",

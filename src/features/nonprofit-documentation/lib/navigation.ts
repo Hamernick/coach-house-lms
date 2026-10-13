@@ -76,19 +76,6 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
     ],
   },
   {
-    id: "fund-your-project",
-    title: "Fund your project",
-    items: [
-      {
-        title: "Fiscal sponsorship",
-        description: "Review project requirements and the application process.",
-        href: "/documentation/fiscal-sponsorship",
-        status: "live",
-        isNew: true,
-      },
-    ],
-  },
-  {
     id: "tools",
     title: "Tools",
     items: [
@@ -97,7 +84,6 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
         description: "Create a usable nonprofit brand system.",
         href: `${DOCUMENTATION_PATH}/tools/brand-identity`,
         status: "live",
-        isNew: true,
       },
       {
         title: "Social media",
@@ -150,7 +136,7 @@ export const DOCUMENTATION_NAVIGATION: DocumentationNavSection[] = [
       {
         title: "Map",
         description: "Explore nonprofit organizations and services.",
-        href: "/resources",
+        href: "/",
         status: "live",
       },
       {

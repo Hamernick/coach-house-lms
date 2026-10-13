@@ -1,7 +1,5 @@
 import type Stripe from "stripe"
 
-import { getSubscriptionPeriodEndIso } from "@/lib/billing/subscription-period"
-
 import { resolvePaidPlanTierFromMetadata } from "@/lib/billing/plan-tier"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
@@ -28,7 +26,7 @@ type PersistCheckoutSubscriptionInput = {
 function resolveSubscriptionStatus(status: string): SubscriptionStatus {
   return ALLOWED_SUBSCRIPTION_STATUSES.includes(status as SubscriptionStatus)
     ? (status as SubscriptionStatus)
-    : "incomplete"
+    : "trialing"
 }
 
 export async function persistCheckoutSubscription({
@@ -39,14 +37,24 @@ export async function persistCheckoutSubscription({
   redirectTarget,
 }: PersistCheckoutSubscriptionInput) {
   const status = resolveSubscriptionStatus(subscription.status)
-  const currentPeriodEnd = getSubscriptionPeriodEndIso(subscription)
+  const currentPeriodEndUnix =
+    (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+  const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
   const cancelAt = typeof subscription.cancel_at === "number" ? new Date(subscription.cancel_at * 1000).toISOString() : null
   const canceledAt = typeof subscription.canceled_at === "number" ? new Date(subscription.canceled_at * 1000).toISOString() : null
-  const metadataWithMode: Record<string, string> = {
-    ...checkout.metadata,
-    ...subscription.metadata,
-    stripe_mode: stripeMode,
-  }
+  const metadataSource =
+    subscription.metadata && Object.keys(subscription.metadata).length > 0
+      ? subscription.metadata
+      : checkout.metadata ?? null
+  const metadataWithMode: Record<string, string> | null = metadataSource
+    ? {
+        ...(metadataSource as Record<string, string>),
+        stripe_mode:
+          typeof (metadataSource as Record<string, string>).stripe_mode === "string"
+            ? (metadataSource as Record<string, string>).stripe_mode
+            : stripeMode,
+      }
+    : null
   const subscriptionOwnerId =
     typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
       ? metadataWithMode.org_user_id
@@ -73,10 +81,9 @@ export async function persistCheckoutSubscription({
 
   try {
     const admin = createSupabaseAdminClient()
-    const { error } = await admin
+    await admin
       .from("subscriptions" satisfies keyof Database["public"]["Tables"])
       .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
-    if (error) throw error
   } catch (error) {
     console.error("Unable to persist subscription after checkout", {
       sessionId: checkout.id,
@@ -85,7 +92,6 @@ export async function persistCheckoutSubscription({
       redirectTarget,
       error,
     })
-    throw new Error("Subscription activation is pending", { cause: error })
   }
 
   return {

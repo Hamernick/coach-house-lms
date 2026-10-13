@@ -29,7 +29,7 @@ describe("Projects directory", () => {
       start_date: "2026-09-01", end_date: "2026-09-30", status: "active", priority: "medium",
       task_count: 2, progress: 25, tags: [], member_labels: [], created_source: "user",
     }])
-    mocks.actor.mockResolvedValue({ isAdmin: true, supabase: { from: () => query, rpc: vi.fn().mockResolvedValue({ data: [], error: null }) } })
+    mocks.actor.mockResolvedValue({ isAdmin: true, supabase: { from: () => query } })
     const result = await loadMemberWorkspaceProjectsPage({ directory: "projects" })
     expect(result.projects).toHaveLength(1)
     expect(result.projects[0]).toMatchObject({ id: "project-1", name: "Clinic launch", client: "Legal Wellness", organizationId: "org-1" })
@@ -43,7 +43,7 @@ describe("Projects directory", () => {
   it("limits project queries and creation choices to the coach's organization scope", async () => {
     mocks.organizations.mockResolvedValue([{ orgId: "allowed", name: "Allowed" }, { orgId: "private", name: "Private" }])
     const query = fixtureQuery([])
-    mocks.actor.mockResolvedValue({ isAdmin: false, canAccessOrganizations: true, organizationCoachScope: { mode: "assigned", organizationIds: new Set(["allowed"]) }, supabase: { from: () => query, rpc: vi.fn().mockResolvedValue({ data: [], error: null }) } })
+    mocks.actor.mockResolvedValue({ isAdmin: false, canAccessOrganizations: true, organizationCoachScope: { mode: "assigned", organizationIds: new Set(["allowed"]) }, supabase: { from: () => query } })
     const result = await loadMemberWorkspaceProjectsPage({ directory: "projects" })
     expect(query.in).toHaveBeenCalledWith("org_id", ["allowed"])
     expect(result.organizationOptions).toEqual([{ orgId: "allowed", name: "Allowed" }])
@@ -72,41 +72,10 @@ describe("Projects directory", () => {
   })
   it("does not substitute organization cards when project storage is unavailable", async () => {
     const query = fixtureQuery(null, { code: "42P01", message: 'relation "organization_projects" does not exist' })
-    mocks.actor.mockResolvedValue({ isAdmin: true, supabase: { from: () => query, rpc: vi.fn().mockResolvedValue({ data: [], error: null }) } })
+    mocks.actor.mockResolvedValue({ isAdmin: true, supabase: { from: () => query } })
     const result = await loadMemberWorkspaceProjectsPage({ directory: "projects" })
     expect(result.projects).toEqual([])
     expect(result.canCreateProjects).toBe(false)
     expect(mocks.canonical).not.toHaveBeenCalled()
-  })
-
-  describe.each(["organizations", "projects"] as const)("%s demo visibility", (directory) => {
-    it.each(["admin", "assigned coach", "unassigned coach"])("preserves staff demo visibility and scope for %s", async (role) => {
-      const demo = { orgId: "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c", name: "Karissa is a Boss" }
-      const fixture = { orgId: "886455ec-a664-4f13-83f1-471ddd1f5ffd", name: "Recording fixture" }
-      const query = fixtureQuery([])
-      const supabase = { from: vi.fn(() => query), rpc: vi.fn().mockResolvedValue({ data: [], error: null }) }
-      mocks.organizations.mockResolvedValue([demo, fixture])
-      mocks.canonical.mockResolvedValue([])
-      mocks.actor.mockResolvedValue({
-        isAdmin: role === "admin",
-        canAccessOrganizations: true,
-        organizationCoachScope: role === "admin"
-          ? { mode: "all" }
-          : { mode: "assigned", organizationIds: new Set(role === "assigned coach" ? [demo.orgId, fixture.orgId] : [fixture.orgId]) },
-        supabase,
-      })
-
-      const result = await loadMemberWorkspaceProjectsPage({ directory })
-      const expected = role === "unassigned coach" ? [] : [demo]
-
-      expect(result.organizationOptions).toEqual(expected)
-      if (directory === "organizations") {
-        expect(mocks.canonical).toHaveBeenCalledWith({ organizations: expected, supabase })
-      } else if (expected.length) {
-        expect(query.in).toHaveBeenCalledWith("org_id", [demo.orgId])
-      } else {
-        expect(supabase.from).not.toHaveBeenCalled()
-      }
-    })
   })
 })

@@ -1,4 +1,3 @@
-import type { TaskTrackerDetails } from "@/lib/task-tracker"
 import type { OrgPerson } from "@/actions/people"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
 import type {
@@ -54,7 +53,7 @@ export type MemberWorkspaceWorkstreamCategory = {
   defaultKey: string | null
 }
 
-export type MemberWorkspaceTaskStatus = "todo" | "in-progress" | "waiting" | "done"
+export type MemberWorkspaceTaskStatus = "todo" | "in-progress" | "done"
 
 export type MemberWorkspaceTaskType = "bug" | "improvement" | "task"
 
@@ -65,8 +64,6 @@ export type MemberWorkspaceTaskAssignee = {
 }
 
 export type MemberWorkspaceTaskItem = {
-  tracker?: TaskTrackerDetails
-  organizationName?: string
   id: string
   projectId: string
   projectName: string
@@ -108,21 +105,18 @@ export type MemberWorkspaceTaskGroup = {
 }
 
 export type MemberWorkspaceCreateProjectFormInput = {
-  fiscalSponsorshipEnabled?: boolean
-  recurrence?: "none" | "monthly"
-  orgId?: string | null
+  orgId?: string
   name: string
   description?: string
   overviewDocumentHtml?: string
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
-  startDate?: string | null
-  endDate?: string | null
+  startDate: string
+  endDate: string
   clientName?: string
   typeLabel?: string
   durationLabel?: string
   tags?: string
-  optionSettings?: import("./lib/project-option-settings").ProjectOptionSettings
   memberLabels?: string
 }
 
@@ -136,7 +130,7 @@ export type MemberWorkspaceCreateTaskInput = {
   priority?: "no-priority" | "low" | "medium" | "high" | "urgent"
   tagLabel?: string
   workstreamName?: string
-  assigneeUserId?: string | null
+  assigneeUserId?: string
 }
 
 export type MemberWorkspaceCreateProjectNoteInput = {

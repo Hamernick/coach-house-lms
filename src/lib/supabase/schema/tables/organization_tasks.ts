@@ -1,19 +1,14 @@
-import type { Json } from "../json"
-
 export type OrganizationTasksTable = {
   Row: {
     id: string
-    tracker_metadata?: Json | null
     org_id: string
     project_id: string
-    recurrence_anchor_start?: string | null
-    recurrence_anchor_end?: string | null
     title: string
     description: string | null
     task_type: string
     status: string
-    start_date: string | null
-    end_date: string | null
+    start_date: string
+    end_date: string
     priority: string
     tag_label: string | null
     workstream_name: string | null
@@ -28,17 +23,14 @@ export type OrganizationTasksTable = {
   }
   Insert: {
     id?: string
-    tracker_metadata?: Json | null
     org_id: string
     project_id: string
-    recurrence_anchor_start?: string | null
-    recurrence_anchor_end?: string | null
     title: string
     description?: string | null
     task_type?: string
     status?: string
-    start_date: string | null
-    end_date: string | null
+    start_date: string
+    end_date: string
     priority?: string
     tag_label?: string | null
     workstream_name?: string | null
@@ -53,17 +45,14 @@ export type OrganizationTasksTable = {
   }
   Update: {
     id?: string
-    tracker_metadata?: Json | null
     org_id?: string
     project_id?: string
-    recurrence_anchor_start?: string | null
-    recurrence_anchor_end?: string | null
     title?: string
     description?: string | null
     task_type?: string
     status?: string
-    start_date?: string | null
-    end_date?: string | null
+    start_date?: string
+    end_date?: string
     priority?: string
     tag_label?: string | null
     workstream_name?: string | null

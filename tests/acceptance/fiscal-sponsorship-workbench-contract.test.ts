@@ -297,7 +297,9 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(memberProjectDetailTabs).toContain(
       "resolvedFiscalSponsorshipWorkbench"
     )
-    expect(memberProjectDetailTabs).toMatch(/<TabsContent value="fiscal-sponsorship">\s*\{resolvedFiscalSponsorshipWorkbench\}\s*<\/TabsContent>/)
+    expect(memberProjectDetailTabs.indexOf("<TimelineGantt")).toBeLessThan(
+      memberProjectDetailTabs.indexOf("{fiscalSponsorshipWorkbench}")
+    )
     expect(memberProjectRightMetaPanel).not.toContain(
       "FiscalSponsorshipProjectWorkbench"
     )
@@ -309,7 +311,7 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(memberProjectRightMetaPanel).toContain("<Separator />")
     expect(
       memberProjectRightMetaPanel.indexOf("<FiscalSponsorshipWorkflowTimeline")
-    ).toBeLessThan(memberProjectRightMetaPanel.indexOf("<ProjectScheduleTimeline"))
+    ).toBeLessThan(memberProjectRightMetaPanel.indexOf("<TimeCard"))
     expect(memberProjectDetailPage).toContain("revealFiscalUpdateTarget")
     expect(memberProjectDetailPage).toContain("handleNavigateFiscalUpdate")
 

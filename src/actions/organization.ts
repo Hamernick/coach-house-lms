@@ -96,8 +96,7 @@ type OrgProfilePayload = {
 }
 
 export async function updateOrganizationProfileAction(
-  payload: OrgProfilePayload,
-  expectedReview?: { organizationId: string; updatedAt: string },
+  payload: OrgProfilePayload
 ) {
   const { supabase, session } = await requireServerSession("/organization")
 
@@ -105,15 +104,10 @@ export async function updateOrganizationProfileAction(
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
-  if (expectedReview && expectedReview.organizationId !== orgId) return { error: "Your active organization changed. Reload the preview before publishing." }
 
   const validation = validateOrganizationProfilePersistencePatch(payload)
   if (!validation.success) {
     return { error: validation.error, field: validation.field }
-  }
-
-  if (typeof payload.name === "string") {
-    payload = { ...payload, name: payload.name.trim() }
   }
 
   // Load existing profile to merge
@@ -136,8 +130,6 @@ export async function updateOrganizationProfileAction(
   if (orgErr) {
     return { error: orgErr.message }
   }
-
-  if (expectedReview && expectedReview.updatedAt !== orgRow?.updated_at) return { error: "This organization was updated elsewhere. Reload before publishing." }
 
   const current = (orgRow?.profile ?? {}) as Record<string, unknown>
   const previousLogoUrl =
@@ -367,7 +359,7 @@ export async function updateOrganizationProfileAction(
   if (isOnlineOnly || (typeof next.address !== "string" && !fallbackAddress)) {
     locationLat = null
     locationLng = null
-  } else if (!orgRow || ["address", "addressStreet", "addressCity", "addressState", "addressPostal", "addressCountry", "locationType"].some((key) => key in payload)) {
+  } else {
     const coords = await geocodeOrganizationLocation({
       street: normalizedLocation.street,
       city: normalizedLocation.city,
@@ -376,10 +368,9 @@ export async function updateOrganizationProfileAction(
       country: normalizedLocation.country,
       fallbackAddress,
     })
-    const addressChanged = normalizeWhitespace(next.address) !== normalizeWhitespace(current.address)
-    if (coords || addressChanged) {
-      locationLat = coords?.lat ?? null
-      locationLng = coords?.lng ?? null
+    if (coords) {
+      locationLat = coords.lat
+      locationLng = coords.lng
     }
   }
 
@@ -440,7 +431,6 @@ export async function updateOrganizationProfileAction(
   return {
     ok: true,
     narrativeRevisions: resolveOrganizationNarrativeRevisions(next),
-    location: { latitude: locationLat, longitude: locationLng },
   }
 }
 
@@ -469,12 +459,11 @@ function revalidateOrganizationViews({
   revalidatePath("/workspace")
   revalidatePath("/my-organization")
   revalidatePath("/organization")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/")
 
   if (isPublic || wasPublic) {
-    revalidateTag("public-map-organizations", { expire: 0 })
-    revalidateTag("public-profiles", { expire: 0 })
+    revalidateTag("public-map-organizations", "max")
+    revalidateTag("public-profiles", "max")
     revalidatePath("/community")
   }
 

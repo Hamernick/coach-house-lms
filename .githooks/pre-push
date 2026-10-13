@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 set -eu
 
-echo "[pre-push] Checking supply chain, file sizes, and changed-file lint..."
+echo "[pre-push] Running structural quality subset..."
 PREPUSH_REMOTE="${1:-origin}" pnpm check:prepush

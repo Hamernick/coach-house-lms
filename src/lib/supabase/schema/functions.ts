@@ -2,65 +2,6 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
-  record_fiscal_email_delivery: { Args: { p_event_id: string; p_message_id: string; p_event_type: string; p_occurred_at: string }; Returns: undefined }
-  get_fiscal_guest_email_status: { Args: { p_project_id: string; p_user_id: string }; Returns: Json }
-  purge_fiscal_email_delivery_events: { Args: Record<string, never>; Returns: number }
-  request_fiscal_guest_recovery: { Args: { p_reference: string; p_email: string; p_request_id: string }; Returns: Json }
-  read_fiscal_guest_application: { Args: { p_reference: string; p_key_hash: string }; Returns: Json }
-  resubmit_fiscal_guest_application: { Args: { p_reference: string; p_key_hash: string; p_request_id: string; p_version: string; p_application: Json }; Returns: Json }
-  preview_fiscal_guest_profile: { Args: { p_reference: string; p_key_hash: string; p_user_id: string }; Returns: Json }
-  save_fiscal_guest_profile: { Args: { p_reference: string; p_key_hash: string; p_user_id: string; p_request_id: string; p_version: string; p_fields: Json }; Returns: Json }
-  prepare_fiscal_guest_email_proof: { Args: { p_job_id: string; p_lease_token: string; p_nonce: string; p_token_hash: string; p_expires_at: string }; Returns: Json }
-  verify_fiscal_guest_email: { Args: { p_token_hash: string; p_key_hash: string; p_expires_at: string }; Returns: Json }
-  purge_expired_fiscal_guest_proofs: { Args: Record<string, never>; Returns: number }
-  read_fiscal_guest_draft: { Args: { p_key_hash: string; p_expires_at: string }; Returns: Json }
-  save_fiscal_guest_draft: { Args: { p_key_hash: string; p_expires_at: string; p_version: number; p_request_id: string; p_draft: Json }; Returns: Json }
-  purge_expired_fiscal_guest_drafts: { Args: Record<string, never>; Returns: number }
-  submit_guest_fiscal_application: { Args: { p_submission_key_hash: string; p_application: Json }; Returns: Json }
-  consume_fiscal_guest_limit: { Args: { p_key_hash: string; p_limit: number; p_window_seconds: number }; Returns: boolean }
-  get_fiscal_guest_receipt: { Args: { p_key_hash: string }; Returns: Json }
-  claim_fiscal_guest_emails: { Args: Record<string, never>; Returns: Json }
-  finish_fiscal_guest_email: { Args: { p_id: string; p_lease_token: string; p_message_id: string | null; p_success: boolean }; Returns: boolean }
-
-  get_fiscal_guest_notification_recipients: {
-    Args: { p_project_id: string }
-    Returns: Json
-  }
-  list_fiscal_guest_projects: { Args: { p_user_id: string }; Returns: Json }
-  get_fiscal_guest_project_summary: { Args: { p_project_id: string; p_user_id: string }; Returns: Json }
-  fiscal_guest_project_reviewer_access: {
-    Args: { p_project_id: string; p_user_id: string }
-    Returns: boolean | null
-  }
-  claim_fiscal_staff_emails: { Args: Record<string, never>; Returns: Json }
-  finish_fiscal_staff_email: {
-    Args: { p_event_id: string; p_lease_token: string; p_message_id: string | null; p_success: boolean }
-    Returns: boolean
-  }
-  start_public_fiscal_intake: {
-    Args: { p_organization_name: string }
-    Returns: string
-  }
-  search_nonprofit_directory_v2: {
-    Args: { p_query?: string; p_state?: string | null; p_category?: string | null; p_after?: string | null; p_limit?: number }
-    Returns: Json
-  }
-  search_nonprofit_directory: {
-    Args: { p_query?: string; p_state?: string | null; p_after?: string | null; p_limit?: number }
-    Returns: Json
-  }
-  get_nonprofit_directory: { Args: { p_ein: string }; Returns: Json }
-  coaching_credit_account: { Args: { p_user_id: string }; Returns: Json }
-  issue_coaching_credits: { Args: { p_user_id: string; p_org_id: string | null; p_quantity: number; p_source_type: string; p_label: string; p_reason: string; p_expires_at: string | null; p_actor_id: string | null; p_request_key: string }; Returns: string }
-  confirm_coaching_credit_booking: { Args: { p_booking_id: string; p_checkout_id: string | null; p_payment_id: string | null; p_customer_id: string | null }; Returns: undefined }
-  restore_coaching_credit: { Args: { p_booking_id: string; p_actor_id: string | null; p_reason: string }; Returns: boolean }
-  manage_coaching_credit_booking: { Args: { p_booking_id: string; p_actor_id: string | null; p_action: string; p_staff: boolean; p_reason: string | null; p_starts_at?: string; p_timezone?: string; p_request_id?: string; p_expected_starts_at?: string }; Returns: Json }
-
-  create_guided_organization_project: {
-    Args: { p_actor_id: string; p_org_id: string; p_request_id: string; p_setup: Json; p_member_labels: string[]; p_overview_html: string; p_overview_text: string }
-    Returns: Json
-  }
-
   public_handle_availability: {
     Args: { p_handle: string }
     Returns: Json
@@ -242,11 +183,11 @@ export type PublicFunctions = {
   update_organization_project_schedule_transition: {
     Args: {
       p_actor_id: string
-      p_end_date: string | null
+      p_end_date: string
       p_expected_org_id: string
       p_expected_updated_at: string
       p_project_id: string
-      p_start_date: string | null
+      p_start_date: string
     }
     Returns: Json
   }
@@ -257,35 +198,6 @@ export type PublicFunctions = {
       p_expected_updated_at: string
       p_project_id: string
       p_status: string
-    }
-    Returns: Json
-  }
-  load_shared_project_options: { Args: Record<string, never>; Returns: Json }
-  manage_shared_project_option: {
-    Args: { p_actor_id: string; p_action: string; p_kind: string; p_option: Json; p_expected_updated_at: string | null }
-    Returns: Json
-  }
-  update_organization_project_with_options: {
-    Args: {
-      p_actor_id: string
-      p_expected_org_id: string
-      p_expected_updated_at: string
-      p_has_overview_document: boolean
-      p_overview_document_html: string | null
-      p_overview_document_text: string | null
-      p_project: Json
-      p_project_id: string
-    }
-    Returns: Json
-  }
-  create_organization_project_with_options: {
-    Args: {
-      p_actor_id: string
-      p_has_overview_document: boolean
-      p_org_id: string
-      p_overview_document_html: string | null
-      p_overview_document_text: string | null
-      p_project: Json
     }
     Returns: Json
   }
@@ -362,10 +274,10 @@ export type PublicFunctions = {
       p_actor_id: string
       p_assignee_id: string | null
       p_description: string | null
-      p_end_date: string | null
+      p_end_date: string
       p_priority: string
       p_project_id: string
-      p_start_date: string | null
+      p_start_date: string
       p_status: string
       p_tag_label: string | null
       p_task_type: string
@@ -379,12 +291,12 @@ export type PublicFunctions = {
       p_actor_id: string
       p_assignee_id: string | null
       p_description: string | null
-      p_end_date: string | null
+      p_end_date: string
       p_expected_org_id: string
       p_expected_project_id: string
       p_priority: string
       p_project_id: string
-      p_start_date: string | null
+      p_start_date: string
       p_status: string
       p_tag_label: string | null
       p_task_id: string

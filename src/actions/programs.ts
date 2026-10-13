@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import {
@@ -17,7 +17,6 @@ import {
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import { resolveProgramBannerImageUrl } from "@/lib/programs/display"
-import { resolveStaffProgramAccess } from "@/lib/programs/staff-access"
 import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
 
 export type CreateProgramPayload = {
@@ -63,9 +62,6 @@ export async function createProgramAction(payload: CreateProgramPayload) {
   const canEdit = profileAudience.isAdmin || canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
   const wizardSnapshotResult = mergeProgramWizardSnapshot({
     existing: null,
     incoming: payload.wizardSnapshot ?? {},
@@ -125,29 +121,23 @@ export type UpdateProgramPayload = Partial<CreateProgramPayload>
 
 export async function updateProgramAction(
   id: string,
-  payload: UpdateProgramPayload,
-  organizationId?: string
+  payload: UpdateProgramPayload
 ) {
-  const { supabase: sessionSupabase, session } = await requireServerSession("/organization")
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const profileAudience = await resolveProfileAudience({
-    supabase: sessionSupabase, userId,
-    fallbackIsTester: resolveTesterMetadata(session.user.user_metadata ?? null),
-  })
-  const staffAccess = organizationId !== undefined
-    ? await resolveStaffProgramAccess({ organizationId, userId, accessLevel: profileAudience.platformAccessLevel })
-    : null
-  if (staffAccess && "error" in staffAccess) return staffAccess
-  const activeOrg = staffAccess ? null : await resolveActiveOrganization(sessionSupabase, userId)
-  if (!staffAccess && !profileAudience.isAdmin && (!activeOrg || !canEditOrganization(activeOrg.role))) {
-    return { error: "Forbidden" }
-  }
-  const orgId = staffAccess?.orgId ?? activeOrg!.orgId
-  const supabase = staffAccess?.supabase ?? sessionSupabase
+  const [{ orgId, role }, profileAudience] = await Promise.all([
+    resolveActiveOrganization(supabase, userId),
+    resolveProfileAudience({
+      supabase,
+      userId,
+      fallbackIsTester: resolveTesterMetadata(
+        session.user.user_metadata ?? null
+      ),
+    }),
+  ])
+  const canEdit = profileAudience.isAdmin || canEditOrganization(role)
+  if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
   const hasKey = (key: keyof UpdateProgramPayload) =>
     Object.prototype.hasOwnProperty.call(payload, key)
@@ -174,8 +164,7 @@ export async function updateProgramAction(
       wizard_snapshot?: Record<string, unknown> | null
       updated_at?: string | null
     } | null
-    if (!existingRow) return { error: "Activity not found or no longer editable." }
-    previousImageUrl = existingRow.image_url ?? null
+    previousImageUrl = existingRow?.image_url ?? null
     expectedUpdatedAt = existingRow?.updated_at ?? null
     previousBannerImageUrl = existingRow
       ? resolveProgramBannerImageUrl(existingRow)
@@ -311,16 +300,10 @@ async function revalidateOrganizationProgramViews(
   supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"],
   userId: string
 ) {
-  // Visibility changes must expire public projections, including withdrawals.
-  revalidateTag("public-map-organizations", { expire: 0 })
-  revalidateTag("public-profiles", { expire: 0 })
-  revalidatePath("/organizations")
-  revalidatePath("/organizations/[id]", "page")
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/")
   try {
     const { data, error } = await supabase
       .from("organizations")

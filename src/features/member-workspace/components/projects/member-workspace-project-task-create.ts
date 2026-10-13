@@ -83,13 +83,13 @@ export function useMemberWorkspaceProjectTaskCreate({
         return { error: "Task creation is unavailable." }
       }
 
-      const tagLabel = value.tagLabel?.trim() || TAG_OPTIONS.find(
+      const tagLabel = TAG_OPTIONS.find(
         (option) => option.id === value.tagId
       )?.label
       const startDate =
         value.startDate?.toISOString().slice(0, 10) ??
-        ""
-      const endDate = value.targetDate?.toISOString().slice(0, 10) ?? ""
+        new Date().toISOString().slice(0, 10)
+      const endDate = value.targetDate?.toISOString().slice(0, 10) ?? startDate
       const result = await createTaskAction({
         projectId: value.projectId,
         title: value.title,

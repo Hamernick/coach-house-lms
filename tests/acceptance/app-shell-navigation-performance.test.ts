@@ -44,7 +44,7 @@ describe("app shell navigation performance", () => {
     expect(shellMainContentSource).toContain("ref={routeTransitionRef}")
     expect(transitionHookSource).toContain("element.animate")
     expect(transitionHookSource).toContain("prefers-reduced-motion: reduce")
-    expect(transitionHookSource).toContain("translate3d(0, 6px, 0)")
+    expect(transitionHookSource).toContain("translate3d(0, 3px, 0)")
     expect(shellSource).not.toContain("key={pathname}")
   })
 
@@ -102,12 +102,9 @@ describe("app shell navigation performance", () => {
     )
 
     expect(publicMapSource).toContain("useDeferredValue")
-    expect(publicMapSource).toContain("deferredQuery,")
+    expect(publicMapSource).toContain("deferredQuery: query")
     expect(publicMapSource).toContain(
-      "filteredMapItems: filterState.filteredItems"
-    )
-    expect(publicMapSource).toContain(
-      "organizations: filterState.filteredOrganizations"
+      "filteredOrganizations: mapFilteredOrganizations"
     )
     expect(publicMapSource).toContain("query,")
     expect(searchIndexSource).not.toContain("new Map(organizations.map")

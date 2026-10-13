@@ -42,17 +42,6 @@ if (!url || !anonKey || !serviceRole) {
   process.exit(0)
 }
 
-// This suite creates users, subscriptions and projects. Loading an app's local
-// credentials must not silently populate its shared database with test records.
-const hostname = new URL(url).hostname
-const isLocalDatabase = ["localhost", "127.0.0.1", "[::1]", "supabase_kong"].includes(hostname)
-if (!isLocalDatabase && process.env.SUPABASE_RLS_TEST_PROJECT_REF !== hostname.split(".")[0]) {
-  console.log(
-    "[supabase] Skipping destructive remote RLS tests. Use a local database or explicitly set SUPABASE_RLS_TEST_PROJECT_REF to an isolated test project's ref."
-  )
-  process.exit(0)
-}
-
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
@@ -83,12 +72,15 @@ const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 const signupLegalConsent = {
-  version: "2026-09-10.1",
+  version: "2026-08-12.1",
   termsSha256:
-    "8757308d709eac552572d79642b0374f6c41ee7c5277b50b961ce9948577e03c",
+    "405e53cfa64e4dba9ecb4e04289d82ed0b8f20b70a233a4b310996d63493e5a2",
   privacySha256:
-    "dd58c9175fd80b067658f07e503883f4f983c357413092e1533df8aeeccc0135",
+    "c4ff2282fa5033042d4bcee3ed26ac4b1a5863b4cabd1346084c3d6097853d92",
   acceptedAt: new Date().toISOString(),
+}
+const trustedProvisioningMetadata = {
+  legal_consent_exempt: "service_provisioned",
 }
 
 async function ensureProfile(id, role, fullName) {
@@ -104,8 +96,6 @@ async function ensureProfile(id, role, fullName) {
 }
 
 async function createUsers() {
-  // All synthetic users include consent at insertion time; do not depend on
-  // exemption metadata being available when the signup trigger executes.
   const {
     data: { user: member },
     error: memberError,
@@ -121,7 +111,7 @@ async function createUsers() {
     data: { user: admin },
     error: adminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: adminEmail,
     password,
     email_confirm: true,
@@ -132,7 +122,7 @@ async function createUsers() {
     data: { user: owner },
     error: ownerError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: ownerEmail,
     password,
     email_confirm: true,
@@ -143,7 +133,7 @@ async function createUsers() {
     data: { user: staff },
     error: staffError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: staffEmail,
     password,
     email_confirm: true,
@@ -154,7 +144,7 @@ async function createUsers() {
     data: { user: board },
     error: boardError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: boardEmail,
     password,
     email_confirm: true,
@@ -165,7 +155,7 @@ async function createUsers() {
     data: { user: orgAdmin },
     error: orgAdminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: orgAdminEmail,
     password,
     email_confirm: true,
@@ -176,7 +166,7 @@ async function createUsers() {
     data: { user: coach },
     error: coachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: coachEmail,
     password,
     email_confirm: true,
@@ -187,7 +177,7 @@ async function createUsers() {
     data: { user: secondCoach },
     error: secondCoachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
+    app_metadata: trustedProvisioningMetadata,
     email: secondCoachEmail,
     password,
     email_confirm: true,
@@ -977,80 +967,6 @@ async function run() {
   }
 
   // Programs write access for members
-  if (
-    orgAccessReady &&
-    (await tableExists("google_drive_connections")) &&
-    (await tableExists("organization_external_documents"))
-  ) {
-    const documentId = randomUUID()
-    const { error: seedError } = await adminClient
-      .from("organization_external_documents")
-      .insert({
-        id: documentId,
-        org_id: member.id,
-        provider_file_id: `drive-file-${suffix}`,
-        name: "Drive document",
-        mime_type: "application/vnd.google-apps.document",
-        web_view_link: "https://docs.google.com/document/d/test",
-        status: "available",
-        attached_by: member.id,
-      })
-    results.push({
-      name: "service role can create Google Drive document metadata",
-      passed: !seedError,
-    })
-
-    for (const [label, client] of [
-      ["owner", memberClient],
-      ["staff", staffClient],
-      ["board", boardClient],
-    ]) {
-      const { data, error } = await client
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-        .maybeSingle()
-      results.push({
-        name: `${label} can read organization Google Drive metadata`,
-        passed: !!data && !error,
-      })
-    }
-
-    const { data: unrelatedRead, error: unrelatedReadError } =
-      await adminSessionClient
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-    results.push({
-      name: "unrelated authenticated user cannot read Google Drive metadata",
-      passed:
-        !!unrelatedReadError ||
-        (Array.isArray(unrelatedRead) && unrelatedRead.length === 0),
-    })
-
-    const { error: ownerWriteError } = await memberClient
-      .from("organization_external_documents")
-      .update({ name: "Forbidden rename" })
-      .eq("id", documentId)
-    results.push({
-      name: "authenticated users cannot write Google Drive metadata directly",
-      passed: !!ownerWriteError,
-    })
-
-    const { error: credentialReadError } = await memberClient
-      .from("google_drive_connections")
-      .select("id")
-    results.push({
-      name: "authenticated users cannot read Google Drive credentials",
-      passed: !!credentialReadError,
-    })
-
-    await adminClient
-      .from("organization_external_documents")
-      .delete()
-      .eq("id", documentId)
-  }
-
   if (orgAccessReady) {
     const { data: createdProgram, error: staffProgramError } = await staffClient
       .from("programs")

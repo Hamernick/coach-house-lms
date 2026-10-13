@@ -11,6 +11,7 @@ import {
   buildContactRows,
   buildInitials,
   buildResourceLinks,
+  buildSocialLinks,
   buildStoryFields,
   formatAddressLines,
   formatLocation,
@@ -34,19 +35,30 @@ import {
   OrganizationDetailAboutSection,
   OrganizationDetailActionLinks,
   OrganizationDetailIdentitySection,
+  OrganizationDetailPanelChrome,
+  OrganizationDetailSocialsSection,
 } from "./organization-detail-shell-sections"
+import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
 import { PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME } from "./sidebar-theme"
 
 type PublicMapOrganizationDetailProps = {
+  canManageResourceMap?: boolean
+  organizationCurationAction?: PublicMapOrganizationCurationAction
   organization: PublicMapOrganization
+  favorites: string[]
+  onBack: () => void
+  onToggleFavorite: (organizationId: string) => void
   compact?: boolean
-  standalone?: boolean
 }
 
 export function PublicMapOrganizationDetail({
+  canManageResourceMap = false,
+  organizationCurationAction,
   organization,
+  favorites,
+  onBack,
+  onToggleFavorite,
   compact = false,
-  standalone = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
 
@@ -58,6 +70,7 @@ export function PublicMapOrganizationDetail({
   )
   const profileInitials = buildInitials(organization.name)
   const location = formatLocation(organization)
+  const socials = buildSocialLinks(organization)
   const storyFields = buildStoryFields(organization)
   const contactRows = buildContactRows(organization)
   const addressLines = formatAddressLines(organization)
@@ -82,12 +95,19 @@ export function PublicMapOrganizationDetail({
       data-public-map-profile="organization"
       className={cn(
         PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME,
-        "[&_*]:shadow-none",
         compact ? "mb-[max(env(safe-area-inset-bottom),0.75rem)]" : "mb-3"
       )}
     >
+      <OrganizationDetailPanelChrome
+        canManageResourceMap={canManageResourceMap}
+        organizationCurationAction={organizationCurationAction}
+        organization={organization}
+        favorites={favorites}
+        onBack={onBack}
+        onToggleFavorite={onToggleFavorite}
+      />
+
       <OrganizationDetailIdentitySection
-        headingLevel={standalone ? "h1" : "h2"}
         organization={organization}
         profileImageSrc={profileImageSrc}
         profileInitials={profileInitials}
@@ -97,24 +117,20 @@ export function PublicMapOrganizationDetail({
       <OrganizationDetailActionLinks actionLinks={actionLinks} />
 
       <OrganizationDetailAboutSection
-        isOnlineOnly={organization.isOnlineOnly}
-        primaryGroup={organization.primaryGroup}
         aboutCopy={aboutCopy}
         aboutExpanded={aboutExpanded}
         aboutNeedsToggle={aboutNeedsToggle}
         onToggle={() => setAboutExpanded((previous) => !previous)}
       />
 
-      <OrganizationDetailActivitiesSection activities={activities} />
+      <OrganizationDetailFormationSection formationStatus={formationStatus} />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 [&>section]:min-w-0 [&>section:only-child]:col-span-2">
-        <OrganizationDetailFormationSection formationStatus={formationStatus} />
-        <OrganizationDetailBrandKitSection
-          organization={organization}
-          brandKitDownloadHref={brandKitDownloadHref}
-        />
-      </div>
+      <OrganizationDetailSocialsSection socials={socials} />
 
+      <OrganizationDetailBrandKitSection
+        organization={organization}
+        brandKitDownloadHref={brandKitDownloadHref}
+      />
 
       <OrganizationDetailOriginSection storyFields={storyFields} />
 
@@ -127,6 +143,8 @@ export function PublicMapOrganizationDetail({
       />
 
       <OrganizationDetailResourceLinksSection resources={resources} />
+
+      <OrganizationDetailActivitiesSection activities={activities} />
     </div>
   )
 }

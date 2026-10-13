@@ -4,7 +4,6 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
-  buildLocationFeedback,
   hasGrantedPublicMapLocation,
   hasRunPublicMapLocationEntrance,
   markPublicMapLocationGranted,
@@ -31,18 +30,15 @@ describe("public map user location", () => {
     expect(resolvePublicMapLocationPermissionAction("denied")).toBe("denied")
   })
 
-  it("uses low-accuracy location requests with bounded caching", () => {
+  it("uses one low-accuracy location request with bounded caching", () => {
     expect(PUBLIC_MAP_GEOLOCATION_OPTIONS).toEqual({
       enableHighAccuracy: false,
-      timeout: 15_000,
+      timeout: 7_000,
       maximumAge: 300_000,
     })
     expect(resolveUserLocationStatusFromError({ code: 1 })).toBe("denied")
     expect(resolveUserLocationStatusFromError({ code: 2 })).toBe("unavailable")
-    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("timed_out")
-    expect(buildLocationFeedback("timed_out")?.message).toContain(
-      "location request timed out"
-    )
+    expect(resolveUserLocationStatusFromError({ code: 3 })).toBe("error")
   })
 
   it("rejects invalid coordinates", () => {
@@ -95,32 +91,6 @@ describe("public map user location", () => {
     expect(runtimeSource).not.toContain("getCurrentPosition")
   })
 
-  it("checks permission before the deferred map starts without flashing consent", () => {
-    const hookSource = readSource(
-      "src/components/public/public-map-index/use-public-map-user-location.ts"
-    )
-
-    expect(hookSource).toContain(
-      "const [controlOpen, setControlOpen] = useState(false)"
-    )
-    expect(hookSource).not.toContain("entranceStartedRef")
-    expect(hookSource).toMatch(
-      /setStatus\("checking"\)[\s\S]*?\.query\(\{ name: "geolocation" \}\)/
-    )
-    expect(hookSource).not.toContain(
-      "else if (hasRunPublicMapLocationEntrance(window.sessionStorage))"
-    )
-    expect(hookSource).not.toContain(
-      "if (!coordinates && entranceStartedRef.current) setControlOpen(true)"
-    )
-    expect(hookSource).toContain(
-      'source === "entrance" && attempt === 0 && error.code === 2'
-    )
-    expect(hookSource).toContain("readPosition(1)")
-    expect(hookSource.match(/if \(storedGrant\) \{/g)).toHaveLength(3)
-    expect(hookSource.match(/requestPosition\("entrance"\)/g)).toHaveLength(3)
-  })
-
   it("keeps the location indicator unchanged under night lighting", () => {
     const hookSource = readSource(
       "src/components/public/public-map-index/use-public-map-user-location.ts"
@@ -133,9 +103,6 @@ describe("public map user location", () => {
     const hookSource = readSource(
       "src/components/public/public-map-index/use-public-map-user-location.ts"
     )
-    const rotationSource = readSource(
-      "src/components/public/public-map-index/spinning-globe.ts"
-    )
     const locationControlSource = readSource(
       "src/components/public/public-map-index/location-control.tsx"
     )
@@ -144,19 +111,16 @@ describe("public map user location", () => {
     )
 
     expect(FALLBACK_ZOOM).toBe(1.5)
-    expect(hookSource).toContain('setStatus("prompt")')
+    expect(hookSource).toContain("!suppressAutomaticEntrance && !welcomeOpen")
     expect(hookSource).toContain("setControlOpen(!storedGrant)")
-    expect(rotationSource).toContain(
+    expect(hookSource).toContain(
       "PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION = 180"
     )
-    expect(rotationSource).toContain('"(prefers-reduced-motion: reduce)"')
-    expect(rotationSource).toContain('map.on("moveend", spinGlobe)')
-    expect(rotationSource).toContain(
-      "const rotationLatitude = map.getCenter().lat"
+    expect(hookSource).toContain(
+      'window.matchMedia("(prefers-reduced-motion: reduce)").matches'
     )
-    expect(rotationSource).toContain("!event.originalEvent")
-    expect(rotationSource).toContain('document.visibilityState !== "hidden"')
-    expect(hookSource).toContain("startSpinningMapGlobe")
+    expect(hookSource).toContain('map.on("moveend", spinGlobe)')
+    expect(hookSource).toContain("if (!event.originalEvent) return")
     expect(locationControlSource).toContain(
       "absolute inset-0 flex items-center justify-center p-4"
     )
@@ -191,9 +155,6 @@ describe("public map user location", () => {
 
   it("keeps a fast location result until the deferred map is ready", () => {
     const indexSource = readSource("src/components/public/public-map-index.tsx")
-    const locationWeatherSource = readSource(
-      "src/components/public/public-map-index/use-public-map-location-weather.ts"
-    )
     const runtimeSource = readSource(
       "src/components/public/public-map-index/public-map-index-runtime.ts"
     )
@@ -202,7 +163,7 @@ describe("public map user location", () => {
     )
 
     expect(indexSource).toContain("mapStartRef")
-    expect(locationWeatherSource).toContain(
+    expect(indexSource).toContain(
       "onRequestMapStart: () => mapStartRef.current?.()"
     )
     expect(runtimeSource).toContain("mapStartRef.current = startMap")
@@ -218,15 +179,9 @@ describe("public map user location", () => {
     )
   })
 
-  it("keeps mobile map controls in separate safe-area overlay zones", () => {
+  it("renders the control at map top-left and Welcome at top-center", () => {
     const locationControlSource = readSource(
       "src/components/public/public-map-index/location-control.tsx"
-    )
-    const mapSurfaceSource = readSource(
-      "src/components/public/public-map-index/map-surface.tsx"
-    )
-    const sidebarSource = readSource(
-      "src/components/public/public-map-index/sidebar.tsx"
     )
     const welcomeControlSource = readSource(
       "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
@@ -237,14 +192,6 @@ describe("public map user location", () => {
 
     expect(locationControlSource).toContain("safe-area-inset-top")
     expect(locationControlSource).toContain("safe-area-inset-left")
-    expect(locationControlSource).toContain("data-public-map-location-controls")
-    expect(locationControlSource).toContain("absolute inset-0 z-[60]")
-    expect(locationControlSource).toContain("Location timed out")
-    expect(locationControlSource).toContain(
-      "public-map-location-card:current-location"
-    )
-    expect(locationControlSource).toContain("getReactGrabOwnerProps")
-    expect(locationControlSource).toContain("getReactGrabLinkedSurfaceProps")
     expect(locationControlSource).toContain("PublicMapDirectoryStatusPill")
     expect(locationControlSource).toContain(
       "PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME"
@@ -260,25 +207,12 @@ describe("public map user location", () => {
     expect(welcomeControlSource).toContain('"Welcome"')
     expect(welcomeControlSource).toContain('"Hide welcome"')
     expect(welcomeControlSource).toContain("PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME")
-    expect(welcomeControlSource).toContain("top-[max(4.25rem")
-    expect(welcomeControlSource).toContain("sm:top-[max(0.75rem")
-    expect(welcomeControlSource).toContain("data-public-map-welcome-control")
-    expect(mapSurfaceSource).toContain("data-public-map-status-overlays")
-    expect(mapSurfaceSource).toContain("safe-area-inset-top")
-    expect(mapSurfaceSource).toContain("safe-area-inset-right")
-    expect(mapSurfaceSource).toContain("max-w-[calc(100%_-_2rem)]")
-    expect(sidebarSource).toContain("safe-area-inset-bottom")
-    expect(sidebarSource).toContain("safe-area-inset-left")
-    expect(sidebarSource).toContain("data-public-map-sidebar-open-control")
-    expect(sidebarSource).not.toContain(
-      '"absolute top-4 left-4 z-20 transition-[opacity,transform]'
-    )
   })
 
   it("limits geolocation to same-origin find routes", () => {
     const configSource = readSource("next.config.ts")
 
-    expect(configSource).toContain('source: "/resources"')
+    expect(configSource).toContain('source: "/find/:path*"')
     expect(configSource).toContain('key: "Permissions-Policy"')
     expect(configSource).toContain('value: "geolocation=(self)"')
   })

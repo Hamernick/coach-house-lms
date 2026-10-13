@@ -1,7 +1,4 @@
-export {
-  WorkspaceFinancePanel,
-  WorkspaceFinanceStripeConnection,
-} from "./components"
+export { WorkspaceFinancePanel } from "./components"
 export {
   buildWorkspaceFinanceProgramInputs,
   normalizeWorkspaceFinanceInput,

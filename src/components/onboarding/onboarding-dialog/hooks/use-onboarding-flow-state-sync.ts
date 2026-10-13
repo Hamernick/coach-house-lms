@@ -13,7 +13,6 @@ import {
 export function buildInitialAccountValues({
   firstName,
   lastName,
-  personHandle,
   phone,
   publicEmail,
   title,
@@ -23,7 +22,6 @@ export function buildInitialAccountValues({
 }: {
   firstName: string
   lastName: string
-  personHandle: string
   phone: string
   publicEmail: string
   title: string
@@ -34,7 +32,6 @@ export function buildInitialAccountValues({
   return {
     firstName,
     lastName,
-    personHandle,
     phone,
     publicEmail,
     title,
@@ -45,7 +42,7 @@ export function buildInitialAccountValues({
 }
 
 export function readAccountValuesFromForm(
-  form: HTMLFormElement | null
+  form: HTMLFormElement | null,
 ): OnboardingAccountValues | null {
   if (!form) return null
   return readOnboardingAccountValues(new FormData(form))
@@ -60,24 +57,15 @@ export function clearResolvedAccountStepErrors({
   previousErrors,
   firstName,
   lastName,
-  personHandle,
 }: {
   previousErrors: Record<string, string>
   firstName: string
   lastName: string
-  personHandle: string
 }) {
-  if (
-    !previousErrors.firstName &&
-    !previousErrors.lastName &&
-    !previousErrors.personHandle
-  ) {
-    return previousErrors
-  }
+  if (!previousErrors.firstName && !previousErrors.lastName) return previousErrors
   const nextErrors = { ...previousErrors }
   if (firstName) delete nextErrors.firstName
   if (lastName) delete nextErrors.lastName
-  if (personHandle) delete nextErrors.personHandle
   return nextErrors
 }
 
@@ -92,7 +80,7 @@ function resolvePrimaryFocusSelector(stepId: string) {
     return 'input[name="orgName"]'
   }
   if (stepId === "account") {
-    return '[data-onboarding-step-id="account"] [data-onboarding-primary-focus="true"]'
+    return 'input[name="firstName"]'
   }
   return '[data-onboarding-step-id="community"] a[href], [data-onboarding-step-id="community"] button'
 }
@@ -112,7 +100,7 @@ export function useOnboardingStepFocus({
 
     const frameId = window.requestAnimationFrame(() => {
       const scrollRegion = formRef.current?.querySelector<HTMLElement>(
-        '[data-onboarding-scroll-region="true"]'
+        '[data-onboarding-scroll-region="true"]',
       )
       scrollRegion?.scrollTo({ top: 0 })
       const target = formRef.current?.querySelector<HTMLElement>(targetSelector)
@@ -160,9 +148,7 @@ export function useOnboardingStateSnapshot({
 }: {
   formRef: React.RefObject<HTMLFormElement | null>
   setAccountStepReady: React.Dispatch<React.SetStateAction<boolean>>
-  setAccountValues: React.Dispatch<
-    React.SetStateAction<OnboardingAccountValues>
-  >
+  setAccountValues: React.Dispatch<React.SetStateAction<OnboardingAccountValues>>
   setOrgNameValue: React.Dispatch<React.SetStateAction<string>>
   setOrgSlugInputValue: React.Dispatch<React.SetStateAction<string>>
   setSlugValue: React.Dispatch<React.SetStateAction<string>>
@@ -179,7 +165,6 @@ export function useOnboardingStateSnapshot({
       if (
         previous.firstName === nextValues.firstName &&
         previous.lastName === nextValues.lastName &&
-        previous.personHandle === nextValues.personHandle &&
         previous.phone === nextValues.phone &&
         previous.publicEmail === nextValues.publicEmail &&
         previous.title === nextValues.title &&
@@ -197,8 +182,7 @@ export function useOnboardingStateSnapshot({
       isOnboardingAccountStepReady({
         firstName: nextValues.firstName,
         lastName: nextValues.lastName,
-        personHandle: nextValues.personHandle,
-      })
+      }),
     )
   }, [accountValuesRef, formRef, setAccountStepReady, setAccountValues])
 
@@ -207,13 +191,13 @@ export function useOnboardingStateSnapshot({
     if (!nextValues) return
 
     setOrgNameValue((previous) =>
-      previous === nextValues.orgName ? previous : nextValues.orgName
+      previous === nextValues.orgName ? previous : nextValues.orgName,
     )
     setOrgSlugInputValue((previous) =>
-      previous === nextValues.orgSlug ? previous : nextValues.orgSlug
+      previous === nextValues.orgSlug ? previous : nextValues.orgSlug,
     )
     setSlugValue((previous) =>
-      previous === nextValues.orgSlug ? previous : nextValues.orgSlug
+      previous === nextValues.orgSlug ? previous : nextValues.orgSlug,
     )
     organizationValuesRef.current = nextValues
   }, [

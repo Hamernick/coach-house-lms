@@ -4,19 +4,14 @@ import type { CSSProperties, RefObject } from "react"
 
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
-import IdCardIcon from "lucide-react/dist/esm/icons/id-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import { UpgradeButton } from "./upgrade-button"
 import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
 import type { AppShellAccountMenuAction } from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import type { AccountSettingsTabKey } from "@/components/account-settings/types"
 
 type NavUserMenuContentProps = {
-  showUpgrade?: boolean
-  planLabel?: string
   open: boolean
   menuRef: RefObject<HTMLDivElement | null>
   menuStyle: CSSProperties | null
@@ -31,15 +26,12 @@ type NavUserMenuContentProps = {
   canAccessOrgAdmin: boolean
   accountMenuActions?: AppShellAccountMenuAction[]
   signOutPending: boolean
-  onOpenUpgrade: () => void
   onCloseMenu: () => void
-  onOpenSettings: (tab?: AccountSettingsTabKey) => void
+  onOpenSettings: () => void
   onSignOut: () => void
 }
 
 export function NavUserMenuContent({
-  showUpgrade = false,
-  planLabel,
   open,
   menuRef,
   menuStyle,
@@ -52,7 +44,6 @@ export function NavUserMenuContent({
   canAccessOrgAdmin,
   accountMenuActions = [],
   signOutPending,
-  onOpenUpgrade,
   onCloseMenu,
   onOpenSettings,
   onSignOut,
@@ -82,28 +73,16 @@ export function NavUserMenuContent({
             {displayName}
           </span>
           <span className="text-muted-foreground truncate text-xs">
-            {planLabel ?? displayEmail}
+            {displayEmail}
           </span>
         </div>
       </div>
       <div className="bg-border/60 my-2 h-px" />
-      {showUpgrade ? (
-        <UpgradeButton className="mb-1" onClick={() => { onCloseMenu(); onOpenUpgrade() }} />
-      ) : null}
       <Button
         type="button"
         variant="ghost"
         className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-        onClick={() => onOpenSettings("public-profile")}
-      >
-        <IdCardIcon className="size-4" />
-        Public profile
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-        onClick={() => onOpenSettings("profile")}
+        onClick={onOpenSettings}
       >
         <CircleUserIcon className="size-4" />
         Account settings

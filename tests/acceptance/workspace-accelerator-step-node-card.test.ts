@@ -41,7 +41,7 @@ describe("workspace accelerator step node card", () => {
       "rounded-full border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums"
     )
     expect(source).toContain(
-      '<span className="text-foreground shrink-0 px-1 text-[11px] font-medium tabular-nums">'
+      '<span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">'
     )
   })
 
@@ -99,14 +99,14 @@ describe("workspace accelerator step node card", () => {
     )
 
     expect(markup).toContain("grid-cols-1")
-    expect(markup).toContain("lg:grid-cols-[minmax(0,1fr)_280px]")
+    expect(markup).toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
     expect(markup).toContain("border-t")
     expect(markup).toContain("bg-muted/10")
     expect(markup).toContain("Notes")
     expect(markup).toContain("Close lesson")
   })
 
-  it("keeps the embedded organization setup editable", () => {
+  it("renders the embedded organization setup flow as a clipped read-only preview", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorStepNodeCard, {
         step: {
@@ -158,10 +158,10 @@ describe("workspace accelerator step node card", () => {
 
     expect(markup).toContain("Organization setup")
     expect(markup).toContain("Step 1 of 3")
-    expect(markup).toContain("Name your organization")
-    expect(markup).not.toContain("pointer-events-none min-h-0 select-none")
-    expect(markup).not.toContain("inert=")
-    expect(markup).not.toContain("absolute inset-0 z-10 cursor-default")
+    expect(markup).toContain("Create your organization")
+    expect(markup).toContain("pointer-events-none min-h-0 select-none")
+    expect(markup).toContain("inert=")
+    expect(markup).toContain("absolute inset-0 z-10 cursor-default")
     expect(markup).toContain("min-h-[520px] border-0 shadow-none")
     expect(markup).not.toContain("max-h-[min(52dvh,360px)]")
     expect(markup).not.toContain(
@@ -222,7 +222,7 @@ describe("workspace accelerator step node card", () => {
       })
     )
 
-    expect(markup).toContain("Name your organization")
+    expect(markup).toContain("Create your organization")
     expect(markup).toContain("rounded-none")
     expect(markup).toContain("border-0")
     expect(markup).toContain(
@@ -275,7 +275,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("border-0")
     expect(markup).toContain("rounded-none")
     expect(markup).toContain("Previous accelerator step")
-    expect(markup).toContain("Done reviewing this lesson")
+    expect(markup).toContain("Close accelerator lesson")
     expect(markup).toContain("px-3 py-3 sm:px-4")
   })
 
@@ -351,7 +351,6 @@ describe("workspace accelerator step node card", () => {
             completeOnSubmit: true,
             assignmentFields: [
               {
-                required: false,
                 name: "origin_intro",
                 label: "How to approach this exercise",
                 type: "subtitle",
@@ -359,7 +358,6 @@ describe("workspace accelerator step node card", () => {
                 description: "Review the context first.",
               },
               {
-                required: true,
                 name: "origin_roots_place",
                 label: "Where did you grow up?",
                 type: "long_text",
@@ -424,7 +422,6 @@ describe("workspace accelerator step node card", () => {
             completeOnSubmit: true,
             assignmentFields: [
               {
-                required: true,
                 name: "origin_roots_place",
                 label: "Where did you grow up?",
                 type: "long_text",
@@ -460,7 +457,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup.match(/Where did you grow up\\?/g)).toHaveLength(1)
   })
 
-  it("stacks module notes below lesson content on compact screens", () => {
+  it("moves module details into a mobile drawer flow instead of stacking the rail below the content", () => {
     useIsMobileMock.mockReturnValue(true)
 
     const markup = renderToStaticMarkup(
@@ -499,10 +496,7 @@ describe("workspace accelerator step node card", () => {
       })
     )
 
-    expect(markup).not.toContain("Details")
-    expect(markup).toContain("Notes")
-    expect(markup).toContain("<aside")
-    expect(markup).toContain("auto-rows-min")
-    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_280px]")
+    expect(markup).toContain("Details")
+    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
   })
 })

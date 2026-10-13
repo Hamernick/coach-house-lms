@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { DocumentsNotesRightRail } from "@/components/organization/documents-notes-right-rail"
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import { buildDocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import {
@@ -94,6 +95,7 @@ export default async function MyOrganizationDocumentsPage({
 
   return (
     <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-6">
+      <DocumentsNotesRightRail notes={moduleNotes} />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <p className="text-muted-foreground text-sm">
@@ -103,9 +105,7 @@ export default async function MyOrganizationDocumentsPage({
         </p>
       </div>
       <DocumentsTab
-        notes={moduleNotes}
         userId={user.id}
-        organizationId={orgId}
         {...documentsTabData}
         editMode={canEdit}
         canEdit={canEdit}

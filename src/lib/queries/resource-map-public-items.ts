@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs"
-import { readFile, stat } from "node:fs/promises"
+import { readFile } from "node:fs/promises"
 import { isAbsolute, resolve } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
@@ -14,7 +14,6 @@ import type { Database } from "@/lib/supabase/types"
 
 export type FetchPublicResourceMapItemsOptions = {
   enabled?: boolean
-  ignoreLocalPreviewFile?: boolean
   includeDiscoveryCandidates?: boolean
   localEnginePreviewFile?: string | null
   localPreviewFile?: string | null
@@ -31,16 +30,6 @@ export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000
 export const RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500
 const RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-type LocalResourceMapPreviewCacheEntry = {
-  signature: string
-  itemsPromise: Promise<ExternalResourceMapItem[]>
-}
-
-const localResourceMapPreviewCache = new Map<
-  string,
-  LocalResourceMapPreviewCacheEntry
->()
 
 export function isResourceMapPublicDbEnabled(
   value = env.RESOURCE_MAP_PUBLIC_DB_ENABLED
@@ -114,41 +103,6 @@ function parseLocalPreviewRows(raw: string): unknown[] {
     })
 }
 
-export function clearResourceMapLocalPreviewCache() {
-  localResourceMapPreviewCache.clear()
-}
-
-async function loadLocalResourceMapPreviewItems(filePath: string) {
-  const fileMetadata = await stat(filePath)
-  const signature = `${fileMetadata.mtimeMs}:${fileMetadata.size}`
-  const cached = localResourceMapPreviewCache.get(filePath)
-  if (cached?.signature === signature) return cached.itemsPromise
-
-  const itemsPromise = readFile(filePath, "utf8").then((raw) =>
-    parseLocalPreviewRows(raw)
-      .map((row, index) =>
-        row && typeof row === "object"
-          ? buildExternalResourceMapItemFromLocalPreviewRecord(
-              row as Record<string, unknown>,
-              index
-            )
-          : null
-      )
-      .filter((item): item is ExternalResourceMapItem => item !== null)
-  )
-  const entry = { signature, itemsPromise }
-  localResourceMapPreviewCache.set(filePath, entry)
-
-  try {
-    return await itemsPromise
-  } catch (error) {
-    if (localResourceMapPreviewCache.get(filePath) === entry) {
-      localResourceMapPreviewCache.delete(filePath)
-    }
-    throw error
-  }
-}
-
 async function fetchLocalResourceMapPreviewItems({
   filePath,
   includeDiscoveryCandidates = false,
@@ -158,7 +112,17 @@ async function fetchLocalResourceMapPreviewItems({
   includeDiscoveryCandidates?: boolean
   limit?: number
 }) {
-  return (await loadLocalResourceMapPreviewItems(filePath))
+  const raw = await readFile(filePath, "utf8")
+  return parseLocalPreviewRows(raw)
+    .map((row, index) =>
+      row && typeof row === "object"
+        ? buildExternalResourceMapItemFromLocalPreviewRecord(
+            row as Record<string, unknown>,
+            index
+          )
+        : null
+    )
+    .filter((item): item is ExternalResourceMapItem => item !== null)
     .filter(
       (item) =>
         includeDiscoveryCandidates || shouldShowPublicMapResourceItem(item)
@@ -261,11 +225,9 @@ export async function fetchPublicResourceMapItems(
   const includeDiscoveryCandidates =
     options.includeDiscoveryCandidates ??
     isResourceMapLocalDiscoveryPreviewEnabled()
-  const localPreviewFile = options.ignoreLocalPreviewFile
-    ? null
-    : normalizeLocalPreviewFile(
-        options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
-      )
+  const localPreviewFile = normalizeLocalPreviewFile(
+    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
+  )
   if (localPreviewFile) {
     try {
       return await fetchLocalResourceMapPreviewItems({
@@ -357,72 +319,6 @@ export async function fetchPublicResourceMapItemById(
 
   const item = buildExternalResourceMapItemFromPublicRow(data)
   return item && shouldShowPublicMapResourceItem(item) ? item : null
-}
-
-export async function fetchPublicResourceMapItemsByIds(
-  ids: string[],
-  options: FetchPublicResourceMapItemsOptions = {}
-): Promise<ExternalResourceMapItem[]> {
-  const normalizedIds = Array.from(
-    new Set(ids.map((id) => id.trim()).filter(Boolean))
-  ).slice(0, 120)
-  if (normalizedIds.length === 0) return []
-
-  const localPreviewFile = normalizeLocalPreviewFile(
-    options.localPreviewFile ?? env.RESOURCE_MAP_LOCAL_PREVIEW_FILE
-  )
-  const localEnginePreviewFile = normalizeLocalPreviewFile(
-    options.localEnginePreviewFile
-  )
-  if (
-    localPreviewFile ||
-    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
-  ) {
-    const requestedIds = new Set(normalizedIds)
-    return (await fetchPublicResourceMapItems(options)).filter((item) =>
-      requestedIds.has(item.id)
-    )
-  }
-
-  const enabled = options.enabled ?? isResourceMapPublicDbEnabled()
-  if (!enabled) return []
-  const itemIds = normalizedIds.flatMap((id) => {
-    if (!id.startsWith("resource_map:")) return []
-    const itemId = id.slice("resource_map:".length)
-    return RESOURCE_MAP_PUBLIC_ITEM_UUID_PATTERN.test(itemId) ? [itemId] : []
-  })
-  if (itemIds.length === 0) return []
-
-  const supabase = createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { auth: { persistSession: false } }
-  )
-  const { data, error } = await supabase
-    .from("resource_map_public_items")
-    .select("*")
-    .in("item_id", itemIds)
-    .returns<ResourceMapPublicItemsView["Row"][]>()
-  if (error) {
-    console.warn("[resource-map] public item batch lookup unavailable", {
-      code: error.code,
-      message: error.message,
-    })
-    return []
-  }
-
-  const itemById = new Map(
-    (data ?? []).flatMap((row) => {
-      const item = buildExternalResourceMapItemFromPublicRow(row)
-      return item && shouldShowPublicMapResourceItem(item)
-        ? ([[item.id, item]] as const)
-        : []
-    })
-  )
-  return normalizedIds.flatMap((id) => {
-    const item = itemById.get(id)
-    return item ? [item] : []
-  })
 }
 
 export async function fetchPublicResourceMapItemsPageById({

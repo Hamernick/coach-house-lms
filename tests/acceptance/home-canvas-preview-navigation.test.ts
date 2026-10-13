@@ -48,12 +48,9 @@ describe("home canvas preview navigation", () => {
     })
   })
 
-  it("keeps shell controls while delegating public navigation to the shared header", () => {
+  it("keeps branding and signup in the top rail while reserving the menu for Find", () => {
     const source = readSource(
       "src/components/public/home-canvas-preview-shell.tsx"
-    )
-    const publicHeaderSource = readSource(
-      "src/features/build-collect-navigation/components/build-collect-public-header.tsx"
     )
 
     expect(source).not.toContain("function HomeCanvasMobileHeaderBrand")
@@ -63,19 +60,18 @@ describe("home canvas preview navigation", () => {
     expect(source).toContain(
       "const { isMobile, openMobile, toggleSidebar } = useSidebar()"
     )
-    expect(source).toContain('"Close sidebar"')
-    expect(source).toContain('"Open sidebar"')
+    expect(source).toContain('"Close Find, Guides, and Saved"')
+    expect(source).toContain('"Open Find, Guides, and Saved"')
     expect(source).toContain("aria-expanded={openMobile}")
     expect(source).toContain("onClick={toggleSidebar}")
     expect(source).toContain("size-11")
-    expect(source).toContain("showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null")
-    expect(source).toContain("<BuildCollectPublicHeader")
-    expect(source).toContain("hideBrandOnDesktop={showShellSidebar}")
-    expect(source).not.toContain('onClick={() => changeSection("signup")}')
-    expect(publicHeaderSource).toContain(
-      'activeArea === "build"\n      ? { href: "/sign-up?intent=build", label: "Start free" }'
+    expect(source).toContain('className="size-10 touch-manipulation md:hidden"')
+    expect(source).toContain('showShellSidebar && "md:hidden"')
+    expect(source).toContain('onClick={() => changeSection("signup")}')
+    expect(source).toContain("Sign up")
+    expect(source.indexOf("<HomeCanvasBrandLink")).toBeLessThan(
+      source.indexOf("<HomeCanvasLoginButton")
     )
-    expect(publicHeaderSource).toContain(': { href: "/sign-up?intent=build", label: "Sign up" }')
     expect(source.indexOf("<HomeCanvasMobileSidebarTrigger")).toBeGreaterThan(
       source.indexOf("<HomeCanvasLoginButton")
     )

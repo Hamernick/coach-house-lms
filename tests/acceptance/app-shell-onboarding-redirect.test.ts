@@ -10,7 +10,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: false,
         pathname: "/accelerator",
-      })
+      }),
     ).toBe("/onboarding?source=onboarding")
   })
 
@@ -21,7 +21,7 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: false,
         pathname: "/onboarding",
-      })
+      }),
     ).toBeNull()
   })
 
@@ -32,29 +32,29 @@ describe("app shell onboarding redirect", () => {
         onboardingIntentFocus: "build",
         isAdminContext: true,
         pathname: "/admin",
-      })
+      }),
     ).toBeNull()
   })
 
-  it("keeps member onboarding in the dedicated setup flow", () => {
+  it("redirects member onboarding users to find instead of workspace", () => {
     expect(
       resolveAppShellOnboardingRedirectTarget({
         onboardingLocked: true,
         onboardingIntentFocus: "find",
         isAdminContext: false,
         pathname: "/community",
-      })
-    ).toBe("/onboarding?source=onboarding")
+      }),
+    ).toBe("/find?member_onboarding=1&source=onboarding")
   })
 
-  it("redirects unfinished member setup from the map to onboarding", () => {
+  it("does not redirect member onboarding users away from find", () => {
     expect(
       resolveAppShellOnboardingRedirectTarget({
         onboardingLocked: true,
         onboardingIntentFocus: "find",
         isAdminContext: false,
-        pathname: "/resources",
-      })
-    ).toBe("/onboarding?source=onboarding")
+        pathname: "/find",
+      }),
+    ).toBeNull()
   })
 })

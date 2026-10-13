@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   title: "Home",
   description: "Prototype home page inspired by Molly Studio.",
 }
+
 export const runtime = "edge"
 export const revalidate = 86400
 
@@ -97,7 +98,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="rounded-full px-6">
-                <Link href="/pricing">
+                <Link href="/?section=pricing">
                   View pricing <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
                 </Link>
               </Button>
@@ -212,7 +213,7 @@ export default function HomePage() {
               when it matters most.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-6 rounded-full px-6">
-              <Link href="/pricing">Explore tiers</Link>
+              <Link href="/?section=pricing">Explore tiers</Link>
             </Button>
           </div>
         </section>
@@ -228,7 +229,7 @@ export default function HomePage() {
               <Link href="/sign-up">Start free</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-              <Link href="/pricing">View pricing</Link>
+              <Link href="/?section=pricing">View pricing</Link>
             </Button>
           </div>
         </section>

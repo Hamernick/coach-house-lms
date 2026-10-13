@@ -24,7 +24,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -77,7 +76,7 @@ describe("buildStoryFields", () => {
 
     expect(fields.map((field) => field.label)).toEqual([
       "Origin story",
-      "Need",
+      "Need statement",
       "Mission",
       "Vision",
       "Values",
@@ -110,7 +109,7 @@ describe("buildStoryFields", () => {
 
     expect(fields).toEqual([
       {
-        label: "Need",
+        label: "Need statement",
         value:
           '<img src="https://example.org/need.png" alt="Community need map">',
       },

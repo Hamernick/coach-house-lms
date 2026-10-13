@@ -22,7 +22,6 @@ import {
   type PublicMapUserCoordinates,
   type UserLocationStatus,
 } from "./user-location"
-import { startSpinningMapGlobe } from "./spinning-globe"
 
 export const PUBLIC_MAP_USER_LOCATION_SOURCE_ID = "public-map-user-location"
 export const PUBLIC_MAP_USER_LOCATION_HALO_LAYER_ID =
@@ -31,6 +30,8 @@ export const PUBLIC_MAP_USER_LOCATION_CORE_LAYER_ID =
   "public-map-user-location-core"
 
 const PUBLIC_MAP_USER_LOCATION_ZOOM = 13
+const PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION = 180
+const PUBLIC_MAP_GLOBE_MAX_SPIN_ZOOM = 5
 
 function buildUserLocationFeature(
   coordinates: PublicMapUserCoordinates
@@ -128,7 +129,10 @@ export function usePublicMapUserLocation({
   const [coordinates, setCoordinates] =
     useState<PublicMapUserCoordinates | null>(null)
   const [hasGrantedLocation, setHasGrantedLocation] = useState(false)
-  const [controlOpen, setControlOpen] = useState(false)
+  const [controlOpen, setControlOpen] = useState(
+    !suppressAutomaticEntrance && !welcomeOpen
+  )
+  const entranceStartedRef = useRef(false)
   const requestSequenceRef = useRef(0)
   const shouldFocusLocationRef = useRef(false)
   const userMovedMapRef = useRef(false)
@@ -145,7 +149,7 @@ export function usePublicMapUserLocation({
 
     const storedGrant = hasGrantedPublicMapLocation(window.sessionStorage)
     setHasGrantedLocation(storedGrant)
-    if (storedGrant) setControlOpen(false)
+    setControlOpen(!storedGrant)
   }, [suppressAutomaticEntrance, welcomeOpen])
 
   useEffect(() => {
@@ -163,36 +167,55 @@ export function usePublicMapUserLocation({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapLoadedRef.current || typeof window === "undefined") return
-    const screen = map.getContainer().closest("[data-public-map-screen]")
-    let screenVisible = !screen
-    const isMapActive = () => screenVisible && screen?.getAttribute("data-public-map-screen-mode") !== "content"
-    const canSpin = !coordinates && !hasGrantedLocation && !suppressAutomaticEntrance && !welcomeOpen && !userMovedMapRef.current
-    const rotation = canSpin ? startSpinningMapGlobe({
-      map,
-      onUserMovement: () => { userMovedMapRef.current = true },
-      shouldRotate: () => isMapActive() && !userMovedMapRef.current,
-      stopOnUserMovement: true,
-    }) : null
-    const syncActivity = () => {
-      if (isMapActive()) rotation?.refresh()
-      else map.stop()
+    if (
+      !map ||
+      !mapLoadedRef.current ||
+      coordinates ||
+      hasGrantedLocation ||
+      suppressAutomaticEntrance ||
+      welcomeOpen ||
+      userMovedMapRef.current ||
+      typeof window === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return
     }
-    const observer = screen ? new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting === screenVisible) return
-      screenVisible = entry.isIntersecting
-      syncActivity()
-    }, { root: screen.closest<HTMLElement>("[data-public-home-scroll], main"), rootMargin: "-64px 0px 0px 0px" }) : null
-    const modeObserver = screen ? new MutationObserver(syncActivity) : null
-    if (screen) {
-      observer?.observe(screen)
-      modeObserver?.observe(screen, { attributes: true, attributeFilter: ["data-public-map-screen-mode"] })
+
+    let cancelled = false
+    const spinGlobe = () => {
+      if (
+        cancelled ||
+        userMovedMapRef.current ||
+        map.getZoom() >= PUBLIC_MAP_GLOBE_MAX_SPIN_ZOOM
+      ) {
+        return
+      }
+
+      const center = map.getCenter()
+      map.easeTo({
+        center: [
+          center.lng - 360 / PUBLIC_MAP_GLOBE_SECONDS_PER_REVOLUTION,
+          center.lat,
+        ],
+        duration: 1_000,
+        easing: (progress) => progress,
+        essential: false,
+      })
     }
-    if (screen?.getAttribute("data-public-map-screen-mode") === "content") map.stop()
+    const stopOnUserMovement = (event: mapboxgl.MapEventOf<"movestart">) => {
+      if (!event.originalEvent) return
+      userMovedMapRef.current = true
+      map.stop()
+    }
+
+    map.on("movestart", stopOnUserMovement)
+    map.on("moveend", spinGlobe)
+    spinGlobe()
+
     return () => {
-      observer?.disconnect()
-      modeObserver?.disconnect()
-      rotation?.stop()
+      cancelled = true
+      map.off("movestart", stopOnUserMovement)
+      map.off("moveend", spinGlobe)
     }
   }, [
     coordinates,
@@ -221,22 +244,22 @@ export function usePublicMapUserLocation({
     []
   )
 
-  const requestPosition = useCallback((source: "entrance" | "manual") => {
-    if (
-      typeof window === "undefined" ||
-      window.isSecureContext === false ||
-      !("geolocation" in window.navigator)
-    ) {
-      setStatus("unavailable")
-      setControlOpen(true)
-      return
-    }
+  const requestPosition = useCallback(
+    (source: "entrance" | "manual") => {
+      if (
+        typeof window === "undefined" ||
+        window.isSecureContext === false ||
+        !("geolocation" in window.navigator)
+      ) {
+        setStatus("unavailable")
+        setControlOpen(true)
+        return
+      }
 
-    const requestSequence = requestSequenceRef.current + 1
-    requestSequenceRef.current = requestSequence
-    setStatus("requesting")
+      const requestSequence = requestSequenceRef.current + 1
+      requestSequenceRef.current = requestSequence
+      setStatus("requesting")
 
-    function readPosition(attempt: number) {
       window.navigator.geolocation.getCurrentPosition(
         (position) => {
           if (requestSequenceRef.current !== requestSequence) return
@@ -260,34 +283,37 @@ export function usePublicMapUserLocation({
         },
         (error) => {
           if (requestSequenceRef.current !== requestSequence) return
-          if (source === "entrance" && attempt === 0 && error.code === 2) {
-            readPosition(1)
-            return
-          }
           setStatus(resolveUserLocationStatusFromError(error))
           setControlOpen(true)
         },
         PUBLIC_MAP_GEOLOCATION_OPTIONS
       )
-    }
-
-    readPosition(0)
-  }, [])
+    },
+    []
+  )
 
   useEffect(() => {
     if (
+      entranceStartedRef.current ||
       suppressAutomaticEntrance ||
       welcomeOpen ||
+      !mapLoadedRef.current ||
+      !mapRef.current ||
       typeof window === "undefined"
     ) {
       return
     }
 
+    entranceStartedRef.current = true
     const storedGrant = hasGrantedPublicMapLocation(window.sessionStorage)
     if (storedGrant) {
       setHasGrantedLocation(true)
       setControlOpen(false)
-    } else if (!hasRunPublicMapLocationEntrance(window.sessionStorage)) {
+    } else if (hasRunPublicMapLocationEntrance(window.sessionStorage)) {
+      setStatus("prompt")
+      setControlOpen(true)
+      return
+    } else {
       markPublicMapLocationEntranceRun(window.sessionStorage)
     }
 
@@ -301,12 +327,8 @@ export function usePublicMapUserLocation({
     }
 
     if (!("permissions" in window.navigator)) {
-      if (storedGrant) {
-        requestPosition("entrance")
-        return
-      }
       setStatus("prompt")
-      setControlOpen(true)
+      setControlOpen(!storedGrant)
       return
     }
 
@@ -328,18 +350,21 @@ export function usePublicMapUserLocation({
       })
       .catch(() => {
         if (cancelled) return
-        if (storedGrant) {
-          requestPosition("entrance")
-          return
-        }
         setStatus("prompt")
-        setControlOpen(true)
+        setControlOpen(!storedGrant)
       })
 
     return () => {
       cancelled = true
     }
-  }, [requestPosition, suppressAutomaticEntrance, welcomeOpen])
+  }, [
+    mapLoadVersion,
+    mapLoadedRef,
+    mapRef,
+    requestPosition,
+    suppressAutomaticEntrance,
+    welcomeOpen,
+  ])
 
   useEffect(() => {
     if (suppressAutomaticEntrance || welcomeOpen) {
@@ -348,7 +373,9 @@ export function usePublicMapUserLocation({
     }
     if (coordinates || hasGrantedLocation) {
       setControlOpen(false)
+      return
     }
+    if (!coordinates && entranceStartedRef.current) setControlOpen(true)
   }, [coordinates, hasGrantedLocation, suppressAutomaticEntrance, welcomeOpen])
 
   const handleControlClick = useCallback(() => {

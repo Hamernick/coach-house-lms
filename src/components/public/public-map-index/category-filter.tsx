@@ -1,33 +1,25 @@
 "use client"
 
-import {
-  PublicMapMoreCategories,
-  PUBLIC_MAP_MORE_CATEGORY_KEYS,
-} from "./more-categories"
-import type { CSSProperties } from "react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
   PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
   PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
-  isPublicMapResourceCategoryKey,
-  resolvePublicMapResourceTopLevelCategory,
+  publicMapResourceCategoryMatchesTopLevel,
   type PublicMapResourceCategoryKey,
+  type PublicMapResourceTopLevelCategoryKey,
 } from "@/lib/public-map/resource-categories"
 import { cn } from "@/lib/utils"
 import {
   PublicMapAllCategoryIcon,
   PublicMapResourceCategoryIcon,
 } from "./resource-category-icon"
-import { PUBLIC_MAP_FILTER_PILL_CLASSNAME } from "./sidebar-theme"
 
-const PUBLIC_MAP_CATEGORY_FILTER_SOURCE =
-  "src/components/public/public-map-index/category-filter.tsx"
-
-export type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
+export type PublicMapGroupFilterKey =
+  | PublicMapResourceTopLevelCategoryKey
+  | "all"
 
 export type PublicMapGroupFilterCounts = Record<PublicMapGroupFilterKey, number>
 
@@ -35,7 +27,6 @@ export const PUBLIC_MAP_GROUP_FILTER_ORDER = [
   "all",
   ...PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
 ] satisfies PublicMapGroupFilterKey[]
-
 
 function resolvePublicMapGroupFilterLabel(key: PublicMapGroupFilterKey) {
   return key === "all" ? "All" : PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[key]
@@ -50,7 +41,7 @@ function resolvePublicMapGroupFilterAccent(key: PublicMapGroupFilterKey) {
 export function isPublicMapGroupFilterKey(
   value: string | null | undefined
 ): value is PublicMapGroupFilterKey {
-  return value === "all" || isPublicMapResourceCategoryKey(value)
+  return PUBLIC_MAP_GROUP_FILTER_ORDER.some((key) => key === value)
 }
 
 export function resolvePublicMapGroupFilterParam(
@@ -59,68 +50,87 @@ export function resolvePublicMapGroupFilterParam(
   return isPublicMapGroupFilterKey(value) ? value : "all"
 }
 
-export { buildPublicMapGroupFilterCounts } from "@/lib/public-map/resource-map-counts"
+export function buildPublicMapGroupFilterCounts(
+  items: Array<{ resourceCategories?: readonly PublicMapResourceCategoryKey[] }>
+): PublicMapGroupFilterCounts {
+  const counts = Object.fromEntries(
+    PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => [key, 0])
+  ) as PublicMapGroupFilterCounts
+
+  counts.all = items.length
+  for (const item of items) {
+    const matchedTopLevelCategories =
+      new Set<PublicMapResourceTopLevelCategoryKey>()
+    const categories =
+      item.resourceCategories && item.resourceCategories.length > 0
+        ? item.resourceCategories
+        : (["community"] as const)
+    for (const category of categories) {
+      for (const topLevelCategory of PUBLIC_MAP_RESOURCE_CATEGORY_ORDER) {
+        if (
+          publicMapResourceCategoryMatchesTopLevel({
+            category,
+            topLevelCategory,
+          })
+        ) {
+          matchedTopLevelCategories.add(topLevelCategory)
+        }
+      }
+    }
+    for (const category of matchedTopLevelCategories) {
+      counts[category] += 1
+    }
+  }
+
+  return counts
+}
 
 export function PublicMapCategoryFilter({
   activeGroup,
   counts,
-  countsAreComplete = false,
   compact = false,
   onActiveGroupChange,
 }: {
   activeGroup: PublicMapGroupFilterKey
   counts: PublicMapGroupFilterCounts
-  countsAreComplete?: boolean
   compact?: boolean
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
 }) {
+  const [hasScrolledCategories, setHasScrolledCategories] = useState(false)
+
   return (
-    <ScrollFadeEffect
-      orientation="horizontal"
+    <div
       className={cn(
-        "scroll-fade-effect-x mx-auto flex w-full max-w-3xl min-w-0 gap-1 overflow-x-auto px-1 pb-0.5",
+        "-mx-1 flex min-w-0 gap-1 overflow-x-auto px-1 pb-0.5",
+        hasScrolledCategories &&
+          "scroll-fade-effect-x [--mask-width:1.25rem] [--scroll-buffer:1rem]",
         "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         compact ? "pt-0.5" : "pt-1"
       )}
-      style={
-        {
-          "--mask-width": "1.25rem",
-          "--scroll-buffer": "1rem",
-        } as CSSProperties
-      }
       aria-label="Filter resources by category"
+      onScroll={(event) => {
+        if (!hasScrolledCategories && event.currentTarget.scrollLeft > 0) {
+          setHasScrolledCategories(true)
+        }
+      }}
     >
-      {PUBLIC_MAP_GROUP_FILTER_ORDER.filter(
-        (key) => !PUBLIC_MAP_MORE_CATEGORY_KEYS.includes(key)
-      ).map((key) => {
-        const selected =
-          activeGroup === key ||
-          (activeGroup !== "all" &&
-            key !== "all" &&
-            resolvePublicMapResourceTopLevelCategory(activeGroup) === key)
+      {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
+        const count = counts[key]
+        const selected = activeGroup === key
         const label = resolvePublicMapGroupFilterLabel(key)
         const accent = resolvePublicMapGroupFilterAccent(key)
+        const disabled = key !== "all" && count === 0
 
         return (
           <Button
-            {...getReactGrabOwnerProps({
-              ownerId: `public-map-category-filter:${key}`,
-              component: "PublicMapCategoryFilterButton",
-              source: PUBLIC_MAP_CATEGORY_FILTER_SOURCE,
-              slot: "button",
-              variant: selected ? "selected" : "default",
-              primitiveImport: "@/components/ui/button",
-              notes: "Filters the public Find directory by resource category.",
-            })}
             key={key}
             type="button"
             variant="ghost"
             size="sm"
             aria-pressed={selected}
-            disabled={countsAreComplete && key !== "all" && counts[key] === 0}
+            disabled={disabled}
             className={cn(
-              PUBLIC_MAP_FILTER_PILL_CLASSNAME,
-              "group h-11 shrink-0 gap-1.5 sm:h-7",
+              "group border-input bg-input/30 h-7 shrink-0 gap-1.5 rounded-full border px-2.5 text-[11px] leading-none backdrop-blur",
               "text-muted-foreground transition-[background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
               "focus-visible:!bg-input/50 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
               "disabled:pointer-events-none disabled:opacity-35 motion-reduce:transition-none",
@@ -131,7 +141,6 @@ export function PublicMapCategoryFilter({
             onClick={() => onActiveGroupChange(key)}
           >
             <span
-              key="icon"
               data-public-map-category-filter-icon=""
               className="inline-flex size-4 items-center justify-center"
               aria-hidden
@@ -155,19 +164,18 @@ export function PublicMapCategoryFilter({
                 />
               )}
             </span>
-            <span key="label">{label}</span>
-            {countsAreComplete ? (
-              <span className="tabular-nums">
-                {counts[key].toLocaleString()}
-              </span>
-            ) : null}
+            <span>{label}</span>
+            <span
+              className={cn(
+                "tabular-nums",
+                selected ? "text-foreground" : "text-muted-foreground/72"
+              )}
+            >
+              {count.toLocaleString()}
+            </span>
           </Button>
         )
       })}
-      <PublicMapMoreCategories
-        activeGroup={activeGroup}
-        onActiveGroupChange={onActiveGroupChange}
-      />
-    </ScrollFadeEffect>
+    </div>
   )
 }

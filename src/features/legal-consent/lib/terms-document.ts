@@ -11,7 +11,7 @@ export const TERMS_DOCUMENT: LegalDocument = {
     "These Terms govern access to Coach House's nonprofit discovery, organizational, educational, reporting, and related services.",
   effectiveDate: LEGAL_DOCUMENT_EFFECTIVE_DATE,
   version: LEGAL_DOCUMENT_VERSION,
-  sha256: "8757308d709eac552572d79642b0374f6c41ee7c5277b50b961ce9948577e03c",
+  sha256: "405e53cfa64e4dba9ecb4e04289d82ed0b8f20b70a233a4b310996d63493e5a2",
   sections: [
     {
       id: "agreement",
@@ -80,7 +80,7 @@ export const TERMS_DOCUMENT: LegalDocument = {
       heading: "Resource directory and third-party services",
       body: [
         "Resource listings and external opportunities are informational. We may use provider sites, public records, partner directories, and other sources, but we do not guarantee that a listing is current, available, accurate, safe, licensed, eligible for you, or endorsed by Coach House. Confirm critical details directly with the provider, and contact emergency services when appropriate.",
-        "The service may link to or depend on third parties such as Google, Stripe, Supabase, Vercel, Mapbox, Resend, hCaptcha, and OpenAI. Their products, availability, terms, and privacy practices are their responsibility. Your use of a third-party service may create a separate agreement with that provider.",
+        "The service may link to or depend on third parties such as Stripe, Supabase, Vercel, Mapbox, Resend, hCaptcha, and OpenAI. Their products, availability, terms, and privacy practices are their responsibility. Your use of a third-party service may create a separate agreement with that provider.",
       ],
     },
     {

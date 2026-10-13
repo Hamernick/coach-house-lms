@@ -7,13 +7,12 @@ import { AppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
 import { measureServerStep } from "@/lib/performance/server-timing"
 
-import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
+import { resolveDashboardLayoutState } from "./_lib/dashboard-layout-state"
 
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode
-  breadcrumbs: ReactNode
 }) {
   const [state, defaultSidebarOpen] = await Promise.all([
     measureServerStep(

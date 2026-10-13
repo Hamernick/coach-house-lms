@@ -6,7 +6,6 @@ export type UserLocationStatus =
   | "centered"
   | "denied"
   | "unavailable"
-  | "timed_out"
   | "error"
 
 export type UserLocationFeedback = {
@@ -28,7 +27,7 @@ export const PUBLIC_MAP_LOCATION_GRANTED_SESSION_KEY =
 
 export const PUBLIC_MAP_GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
-  timeout: 15_000,
+  timeout: 7_000,
   maximumAge: 300_000,
 }
 
@@ -48,15 +47,7 @@ export function buildLocationFeedback(
   if (status === "unavailable") {
     return {
       tone: "error",
-      message:
-        "Your device could not provide a location. Check Location Services, then try again.",
-    }
-  }
-  if (status === "timed_out") {
-    return {
-      tone: "error",
-      message:
-        "The location request timed out. Check Location Services, then try again.",
+      message: "Location is unavailable in this browser.",
     }
   }
   if (status === "error") {
@@ -73,7 +64,6 @@ export function resolveUserLocationStatusFromError(
 ): UserLocationStatus {
   if (error.code === 1) return "denied"
   if (error.code === 2) return "unavailable"
-  if (error.code === 3) return "timed_out"
   return "error"
 }
 

@@ -72,7 +72,7 @@ function OrganizationMapAdminActionDialog({
         isDelete ? "Organization removed from map" : "Organization hidden"
       )
       onComplete?.()
-      router.replace("/")
+      router.replace("/find")
       router.refresh()
     })
   }

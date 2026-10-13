@@ -1,4 +1,3 @@
-import { FIND_PATH } from "@/lib/find/routes"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
@@ -97,7 +96,7 @@ export function HomeCanvasMapHeroPanel({
           </p>
 
           <form
-            action={FIND_PATH}
+            action="/find"
             method="get"
             className="mt-5 flex w-full max-w-xl items-center gap-2 rounded-full border border-white/25 bg-black/45 p-1.5 pl-4 shadow-lg backdrop-blur-xl"
           >
@@ -130,7 +129,7 @@ export function HomeCanvasMapHeroPanel({
               size="lg"
               className="rounded-full bg-white px-6 text-black hover:bg-white/90"
             >
-              <Link href={FIND_PATH}>
+              <Link href="/find">
                 Explore the map
                 <ArrowRightIcon aria-hidden />
               </Link>
@@ -141,7 +140,7 @@ export function HomeCanvasMapHeroPanel({
               variant="outline"
               className="rounded-full border-white/25 bg-black/35 px-6 text-white backdrop-blur hover:bg-white hover:text-black dark:border-white/25 dark:bg-black/35 dark:hover:bg-white"
             >
-              <Link href="/home-canvas?section=platform">Start building</Link>
+              <Link href="/?section=platform">Start building</Link>
             </Button>
           </div>
         </div>
@@ -189,7 +188,7 @@ export function HomeCanvasBuildPanel({
               ))}
             </div>
             <Button asChild size="lg" className="mt-7 rounded-full px-6">
-              <Link href="/home-canvas?section=signup&intent=build">
+              <Link href="/?section=signup&intent=build">
                 Start building
                 <ArrowRightIcon aria-hidden />
               </Link>
@@ -277,7 +276,7 @@ export function HomeCanvasFundPanel() {
               size="lg"
               className="mt-7 rounded-full bg-white px-6 text-black hover:bg-white/90"
             >
-              <Link href="/home-canvas?section=signup&intent=fund">
+              <Link href="/?section=signup&intent=fund">
                 Start a project
                 <ArrowRightIcon aria-hidden />
               </Link>
@@ -289,7 +288,7 @@ export function HomeCanvasFundPanel() {
           <div data-home-canvas-reveal="" className="min-w-0">
             <FiscalSponsorshipWorkspaceCardSurface
               className="mx-auto max-w-full"
-              openFlowHref="/home-canvas?section=signup&intent=fund"
+              openFlowHref="/?section=signup&intent=fund"
               programs={PUBLIC_FISCAL_SPONSORSHIP_PROGRAMS}
               selectedProgramId="public-fiscal-preview"
             />

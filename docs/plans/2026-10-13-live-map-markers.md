@@ -23,6 +23,10 @@ The local map canvas remains blank blue during normal UI review, so visible mark
 
 PR296 externally merged as base89c409bc. The intended coachhouse Production deployment HruY5bkCQ9FYce2f1hpJ7TAr6KFt is Ready and assigned coachhouse.app. Static/acceptance/RLS/build passed; visual/aggregate quality failed and review remained REVIEW_REQUIRED. This also contains PR295. User's username workaround passed, but fresh validation/checkout-return/menu production checks are not asserted. Historical appearance/Collect/SHIP gates remain open. This map implementation preparation is the next explicitly authorized bounded run; it does not rewrite those releases.
 
+## Review and backup
+
+[PR297](https://github.com/Hamernick/CoachHouse/pull/297) is Ready for review, not merge-ready. Implementation23896c39 was pushed and its remote SHA verified; normal pre-push passed. CI and code-owner review remain pending. The active branch/PR provides the current head; the original SHIP000 released head is unchanged.
+
 ## Resume
 
 Inspect branch/status/remote head and this plan, then the Desktop SHIP record and original packet05. Finish the unresolved visible map rendering check, address current-head CI/review findings, and obtain appearance review before replacing visual references. Stop before claiming release until the actual gates pass. Preserve unrelated root/worktrees/servers and the completed roster correction.

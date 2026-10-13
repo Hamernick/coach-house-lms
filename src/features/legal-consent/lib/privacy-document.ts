@@ -11,7 +11,7 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
     "This Policy explains what personal information Coach House handles, why we use it, how it is disclosed, and the choices available to you.",
   effectiveDate: LEGAL_DOCUMENT_EFFECTIVE_DATE,
   version: LEGAL_DOCUMENT_VERSION,
-  sha256: "dd58c9175fd80b067658f07e503883f4f983c357413092e1533df8aeeccc0135",
+  sha256: "c4ff2282fa5033042d4bcee3ed26ac4b1a5863b4cabd1346084c3d6097853d92",
   sections: [
     {
       id: "scope",
@@ -34,7 +34,7 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
         "Communications, including support requests, survey or feedback responses, email preferences, and messages you send through the service.",
         "Device, network, and usage information, including IP address, browser and device characteristics, pages and features used, referring pages, timestamps, errors, performance measurements, authentication events, and security logs.",
         "Location information when you choose a location feature, plus organization addresses, service areas, map searches, and map viewport requests.",
-        "Information from integrations and third-party sources, such as payment status from Stripe, authentication events from Supabase, basic identity and profile information from Google when you choose Google Sign-In, public resource directories, provider websites, public records, and information supplied by an organization administrator.",
+        "Information from integrations and third-party sources, such as payment status from Stripe, authentication events from Supabase, public resource directories, provider websites, public records, and information supplied by an organization administrator.",
       ],
     },
     {
@@ -78,7 +78,6 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
       ],
       items: [
         "Supabase provides authentication, database, storage, and related infrastructure.",
-        "Google provides optional account sign-in. When you choose Google Sign-In, Google provides your verified email address, name, profile image, and Google account identifier so we can create, authenticate, secure, and link your Coach House account. Google also receives the site origin, OAuth client identifier, and device and network information needed to complete sign-in. Google Sign-In does not give Coach House access to Google Drive, Calendar, contacts, or email content.",
         "Vercel provides hosting, logs, performance monitoring, and privacy-oriented site analytics.",
         "Stripe processes payments and provides subscription, invoice, and transaction status. Stripe receives payment information directly under its own policy.",
         "Mapbox provides maps, geocoding, tiles, and map interactions and receives map requests and associated device and network information.",
@@ -88,34 +87,6 @@ export const PRIVACY_DOCUMENT: LegalDocument = {
         "Professional advisers, auditors, insurers, contractors, and support providers may receive information when reasonably necessary and subject to confidentiality or legal duties.",
         "Government authorities or other parties may receive information when we reasonably believe disclosure is legally required or necessary to protect rights, safety, security, users, or the public.",
         "A successor may receive information as part of a merger, financing, reorganization, bankruptcy, or transfer of all or part of the service, subject to appropriate protections and notice where required.",
-      ],
-    },
-    {
-      id: "google-sign-in",
-      heading: "Google Sign-In",
-      body: [
-        "Google Sign-In is optional. Coach House uses the basic Google identity information described above only to create, authenticate, secure, support, and link your Coach House account. We do not use Google identity information for advertising or sell it.",
-        "You can use email and password instead. You may manage or revoke Coach House access through your Google Account, but revocation does not automatically delete your Coach House account or records we must retain. Google handles information under its own privacy policy, and Coach House's use of information received from Google follows applicable Google API Services User Data Policy requirements, including Limited Use requirements where applicable.",
-      ],
-    },
-    {
-      id: "google-drive",
-      heading: "Google Drive",
-      body: [
-        "Google Drive is optional and requires separate permission from Google Sign-In. Coach House accesses files you explicitly choose through Google's file picker. We receive your Google account identifier and verified email address, and store selected file identifiers, names, file types, Google links, modification times, connection status, and the workspace and account that attached them. We use this information to connect and display the selected files in Documents; we do not browse your entire Drive.",
-        "Where document import is available, choosing to import a supported file lets Coach House read that file's content and prepare it for your document editor. Saving the imported content stores a copy in your Coach House workspace. Authorized workspace members can access linked file details and saved copies according to workspace permissions; public sharing follows the settings you or an administrator choose. Linking or importing a file does not change its Google sharing permissions, edit the Google original, or send it to AI providers.",
-        "Drive connection credentials are encrypted and restricted by server-side authorization. Disconnecting Drive removes its stored refresh credential and stops further access through that connection. It does not delete your Google files, disconnect Calendar or Google Sign-In, or remove file links and imported copies already saved in a workspace. Those workspace records remain until removed under the retention and deletion practices described below. Google may apply account-wide revocation to other Coach House Google integrations.",
-        "Coach House does not sell Drive data or use it for advertising. We use it to provide the file connection and import features you request, subject to the Google API Services User Data Policy, including applicable Limited Use requirements. Google handles information under its own privacy policy; the service providers described in this Policy support Coach House's hosting and storage.",
-      ],
-    },
-    {
-      id: "google-calendar",
-      heading: "Google Calendar",
-      body: [
-        "Google Calendar is optional and requires separate permission from Google Sign-In. When you connect it, Coach House receives your Google account identifier and verified email address, a list of calendars you can access, and event information from the calendars you select. We store calendar names and identifiers, time zones, event titles, dates, start and end times, all-day status, links to Google events, and sync information to display and refresh your private agenda.",
-        "Connection credentials are encrypted, and server-side authorization restricts access to stored Calendar data. Imported personal events are visible only to you in Coach House; they are not added to shared organization boards or public pages. Coach House does not sell Calendar data, use it for advertising, or send it to AI providers for this integration. Our use of Google data follows the Google API Services User Data Policy, including applicable Limited Use requirements.",
-        "Turning sync off pauses updates and hides imported events while retaining your connection and selections. Disconnecting removes the stored refresh credential and event cache from active storage. It does not delete events in Google Calendar or disconnect Google Sign-In or Drive. Connection identifiers and prior export mappings may remain to support reconnection without duplicate exports. You can also revoke access in your Google Account; Google may apply that revocation to other Coach House Google integrations.",
-        "If you enable optional board export, Coach House sends your selected workspace's board event details to a separate Google calendar it creates for that purpose. Coach House updates its exported events when those board events change. It does not edit your existing Google-native events. Google processes information under its own privacy policy, and your Google sharing settings control access to the exported calendar.",
       ],
     },
     {

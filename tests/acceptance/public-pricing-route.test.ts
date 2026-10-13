@@ -1,16 +1,21 @@
-import { createElement } from "react"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
-vi.mock("@/components/public/pricing-surface", () => ({
-  PricingSurface: () => createElement("div", null, "Pricing"),
-}))
+import PricingPage from "@/app/(public)/pricing/page"
 
-import PricingPage, { metadata } from "@/app/(public)/pricing/page"
-import { PricingSurface } from "@/components/public/pricing-surface"
+import { captureRedirect } from "./test-utils"
 
 describe("public pricing route", () => {
-  it("renders pricing directly without waiting for auth or redirecting into the canvas", () => {
-    expect(PricingPage().type).toBe(PricingSurface)
-    expect(metadata.alternates?.canonical).toBe("/pricing")
+  it("redirects legacy pricing traffic to the home pricing section", async () => {
+    const destination = await captureRedirect(() =>
+      PricingPage({
+        searchParams: Promise.resolve({
+          source: "campaign",
+          plan: "organization",
+          embed: "1",
+        }),
+      }),
+    )
+
+    expect(destination).toBe("/?section=pricing&source=campaign&plan=organization")
   })
 })

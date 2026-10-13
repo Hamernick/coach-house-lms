@@ -1,4 +1,6 @@
-import type { WorkspaceAcceleratorCardStepResource } from "@/features/workspace-accelerator-card"
+import type {
+  WorkspaceAcceleratorCardStepResource,
+} from "@/features/workspace-accelerator-card"
 import type { ModuleCard } from "@/lib/accelerator/progress"
 import type { ModuleRecord } from "@/lib/modules"
 
@@ -28,7 +30,7 @@ const COMMUNITY_RESOURCE_LINKS: WorkspaceAcceleratorCardStepResource[] = [
   {
     id: "community-find",
     title: "Find organizations",
-    url: "/",
+    url: "/find",
     kind: "resource",
   },
 ]
@@ -75,9 +77,7 @@ function hasOrganizationSetupSlugSignal(value: string | null | undefined) {
   if (typeof value !== "string") return false
   const normalized = value.trim().toLowerCase()
   if (!normalized) return false
-  return ORGANIZATION_SETUP_SLUG_SIGNALS.some((signal) =>
-    normalized.includes(signal)
-  )
+  return ORGANIZATION_SETUP_SLUG_SIGNALS.some((signal) => normalized.includes(signal))
 }
 
 function hasOrganizationSetupTitleSignal(value: string | null | undefined) {
@@ -123,10 +123,10 @@ export function resolveWorkspaceAcceleratorSupplementalResources({
 
 export function mergeWorkspaceAcceleratorResources(
   resources: WorkspaceAcceleratorCardStepResource[],
-  supplementalResources: WorkspaceAcceleratorCardStepResource[]
+  supplementalResources: WorkspaceAcceleratorCardStepResource[],
 ) {
   const seenUrls = new Set(
-    resources.map((resource) => resource.url.toLowerCase())
+    resources.map((resource) => resource.url.toLowerCase()),
   )
   const next = [...resources]
   for (const resource of supplementalResources) {

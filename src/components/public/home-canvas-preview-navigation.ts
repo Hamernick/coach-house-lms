@@ -67,7 +67,8 @@ export function useHomeCanvasNavigation({
     if (typeof window === "undefined") return
 
     const nextUrl = new URL(window.location.href)
-    nextUrl.pathname = "/home-canvas"
+    nextUrl.pathname =
+      nextUrl.pathname === "/home-canvas" ? "/" : nextUrl.pathname
     nextUrl.searchParams.set("section", nextSection)
     window.history.replaceState(
       null,

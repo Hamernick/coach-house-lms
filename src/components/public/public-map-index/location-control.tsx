@@ -5,30 +5,19 @@ import LocateFixedIcon from "lucide-react/dist/esm/icons/locate-fixed"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-  getReactGrabLinkedSurfaceProps,
-  getReactGrabOwnerProps,
-} from "@/components/dev/react-grab-surface"
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-import { PublicMapDirectoryStatusPill, type DirectoryFormationCounts } from "./directory-status-pill"
+import { PublicMapDirectoryStatusPill } from "./directory-status-pill"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 import type {
   PublicMapUserCoordinates,
   UserLocationFeedback,
   UserLocationStatus,
 } from "./user-location"
-
-const PUBLIC_MAP_LOCATION_CARD_SOURCE =
-  "src/components/public/public-map-index/location-control.tsx"
-const PUBLIC_MAP_LOCATION_CONTROL_OWNER_ID =
-  "public-map-location-control:current-location"
-const PUBLIC_MAP_LOCATION_CARD_OWNER_ID =
-  "public-map-location-card:current-location"
 
 export type PublicMapLocationControlState = {
   active: boolean
@@ -52,57 +41,28 @@ function resolveLocationControlLabel({
   return "Use my location"
 }
 
-function resolveLocationFeedbackTitle(
-  status: UserLocationStatus,
-  isPending: boolean
-) {
-  if (isPending) return "Finding your location"
-  if (status === "denied") return "Location blocked"
-  if (status === "timed_out") return "Location timed out"
-  return "Location unavailable"
-}
-
 export function PublicMapLocationControl({
-  inline = false,
   active,
   controlOpen,
   directoryCount,
-  directoryCountEstimated = false,
-  directoryFormationCounts,
   feedback,
   onConfirm,
   onControlClick,
   onOpenChange,
   status,
-}: PublicMapLocationControlState & { directoryCount: number | null; directoryCountEstimated?: boolean; directoryFormationCounts?: DirectoryFormationCounts; inline?: boolean }) {
+}: PublicMapLocationControlState & { directoryCount: number }) {
   const isPending = status === "checking" || status === "requesting"
   const isConsentPrompt = status === "idle" || status === "prompt"
   const label = resolveLocationControlLabel({ active, status })
 
   return (
-    <div
-      className={cn(
-        inline ? "pointer-events-auto relative z-[60]" : "pointer-events-none absolute inset-0 z-[60]"
-      )}
-    >
-      <div
-        data-public-map-location-controls="true"
-        className={cn("flex items-center gap-2", !inline && "absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))]")}
-      >
+    <div className="pointer-events-none absolute inset-0 z-40">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))] flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              {...getReactGrabOwnerProps({
-                ownerId: PUBLIC_MAP_LOCATION_CONTROL_OWNER_ID,
-                component: "PublicMapLocationControl",
-                source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-                slot: "trigger",
-                primitiveImport: "@/components/ui/button",
-                tokenSource: "src/components/public/public-map-index/sidebar-theme.ts",
-                notes: "Requests location access or recenters the map on the current location.",
-              })}
               type="button"
-              variant={inline ? "ghost" : "outline"}
+              variant="outline"
               size="icon"
               aria-label={label}
               aria-pressed={active}
@@ -110,53 +70,24 @@ export function PublicMapLocationControl({
               aria-expanded={controlOpen}
               aria-controls="public-map-location-card"
               className={cn(
-                !inline && PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-                "hover:bg-input/50 pointer-events-auto size-8 rounded-full [&_svg]:pointer-events-auto",
-                inline && "size-11 touch-manipulation sm:size-8",
-                !inline && "shadow-sm",
-                active && "text-blue-600 dark:text-blue-400",
-                active && !inline && "border-blue-500/60"
+                PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
+                "hover:bg-input/50 pointer-events-auto size-8 rounded-full shadow-sm",
+                active && "border-blue-500/60 text-blue-600 dark:text-blue-400"
               )}
               onClick={onControlClick}
             >
-              <LocateFixedIcon aria-hidden {...getReactGrabLinkedSurfaceProps({
-                ownerId: PUBLIC_MAP_LOCATION_CONTROL_OWNER_ID,
-                component: "PublicMapLocationControl",
-                source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-                slot: "icon",
-                surfaceKind: "indicator",
-              })} />
+              <LocateFixedIcon aria-hidden />
             </Button>
           </TooltipTrigger>
-          <TooltipContent
-            {...getReactGrabLinkedSurfaceProps({
-              ownerId: PUBLIC_MAP_LOCATION_CONTROL_OWNER_ID,
-              component: "PublicMapLocationControl",
-              source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-              slot: "tooltip",
-              surfaceKind: "content",
-              primitiveImport: "@/components/ui/tooltip",
-            })}
-            side={inline ? "top" : "right"}
-            sideOffset={8}
-          >
+          <TooltipContent side="right" sideOffset={8}>
             {label}
           </TooltipContent>
         </Tooltip>
-        <PublicMapDirectoryStatusPill count={directoryCount} formationCounts={directoryFormationCounts} estimated={directoryCountEstimated} unstyled={inline} />
+        <PublicMapDirectoryStatusPill count={directoryCount} />
       </div>
       {controlOpen ? (
-        <div className={inline ? "absolute top-full left-0 w-72 pt-2" : "absolute inset-0 flex items-center justify-center p-4"}>
+        <div className="absolute inset-0 flex items-center justify-center p-4">
           <Card
-            {...getReactGrabOwnerProps({
-              ownerId: PUBLIC_MAP_LOCATION_CARD_OWNER_ID,
-              component: "PublicMapLocationCard",
-              source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-              slot: "card",
-              primitiveImport: "@/components/ui/card",
-              notes:
-                "Location consent and status card layered above the public map drawer.",
-            })}
             id="public-map-location-card"
             role="dialog"
             aria-modal="false"
@@ -165,22 +96,13 @@ export function PublicMapLocationControl({
               "pointer-events-auto w-full max-w-72 rounded-2xl py-0 shadow-lg"
             )}
           >
-            <CardContent
-              {...getReactGrabLinkedSurfaceProps({
-                ownerId: PUBLIC_MAP_LOCATION_CARD_OWNER_ID,
-                component: "PublicMapLocationCard",
-                source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-                slot: "content",
-                surfaceKind: "content",
-              })}
-              className="p-4"
-            >
+            <CardContent className="p-4">
               {isConsentPrompt ? (
                 <>
                   <p className="text-sm font-semibold">Use your location?</p>
                   <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                    Coach House uses your location to center the map and show
-                    local weather. Your location is not saved.
+                    Coach House uses it only to center this map. Your location
+                    is not saved.
                   </p>
                   <div className="mt-3 flex items-center gap-2">
                     <Button
@@ -205,7 +127,9 @@ export function PublicMapLocationControl({
               ) : (
                 <>
                   <p className="text-sm font-semibold">
-                    {resolveLocationFeedbackTitle(status, isPending)}
+                    {isPending
+                      ? "Finding your location"
+                      : "Location unavailable"}
                   </p>
                   {feedback ? (
                     <p

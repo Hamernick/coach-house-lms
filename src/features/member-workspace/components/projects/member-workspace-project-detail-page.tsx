@@ -1,8 +1,5 @@
 "use client"
 
-import type { OrgProgram } from "@/components/organization/org-profile-card/types"
-import type { CoachingAvatar } from "@/components/coaching/coaching-avatar-group"
-
 import {
   useCallback,
   useEffect,
@@ -11,12 +8,11 @@ import {
   useTransition,
   type ReactNode,
 } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
-import { useProjectSavedState } from "./use-project-saved-state"
 import { AnimatePresence, motion } from "motion/react"
 
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import type {
   FiscalSponsorshipProjectWorkbenchAdminActionProps,
   FiscalSponsorshipProjectWorkbenchDocumentActionProps,
@@ -54,12 +50,7 @@ import { useProjectAssetActions } from "./member-workspace-project-asset-actions
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
 
 type MemberWorkspaceProjectDetailPageProps = {
-  organizationPrograms?: OrgProgram[]
-  coachControl?: ReactNode
-  assignedCoaches?: CoachingAvatar[] | null
-  assignedCoachNames?: string[] | null
   adminBilling?: ReactNode
-  coachingCredits?: ReactNode
   project: ProjectDetails
   assigneeOptions: MemberWorkspacePersonOption[]
   currentUser: User
@@ -80,7 +71,6 @@ type MemberWorkspaceProjectDetailPageProps = {
   ) => Promise<
     { ok: true; taskId: string; projectId: string } | { error: string }
   >
-  updateScheduleAction?: (id: string, startDate: string, endDate: string) => Promise<{ ok: true; id: string } | { error: string }>
   updateProjectAction?: (
     projectId: string,
     input: MemberWorkspaceCreateProjectFormInput
@@ -90,9 +80,9 @@ type MemberWorkspaceProjectDetailPageProps = {
   ) => Promise<{ ok: true; id: string } | { error: string }>
   updateTaskStatusAction?: (
     taskId: string,
-    nextStatus: "todo" | "in-progress" | "waiting" | "done"
+    nextStatus: "todo" | "in-progress" | "done"
   ) => Promise<
-    | { ok: true; taskId: string; status: "todo" | "in-progress" | "waiting" | "done" }
+    | { ok: true; taskId: string; status: "todo" | "in-progress" | "done" }
     | { error: string }
   >
   updateTaskOrderAction?: (
@@ -168,7 +158,7 @@ function useMemberWorkspaceProjectDelete({
 
   const handleDeleteProject = useCallback(() => {
     if (!deleteProjectAction) {
-      toast.error("Project deletion is unavailable.")
+      toast.error("Organization deletion is unavailable.")
       return
     }
 
@@ -180,7 +170,7 @@ function useMemberWorkspaceProjectDelete({
         return
       }
 
-      toast.success("Project deleted")
+      toast.success("Organization deleted")
       setDeleteProjectOpen(false)
       onDeleted()
     })
@@ -195,13 +185,8 @@ function useMemberWorkspaceProjectDelete({
 }
 
 export function MemberWorkspaceProjectDetailPage({
-  organizationPrograms,
   adminBilling,
-  coachingCredits,
-  coachControl,
-  assignedCoachNames,
-  assignedCoaches,
-  project: serverProject,
+  project,
   assigneeOptions,
   currentUser,
   fiscalSponsorshipWorkflowSummary,
@@ -209,11 +194,10 @@ export function MemberWorkspaceProjectDetailPage({
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
-  createTaskAction: createTask,
-  updateTaskAction: updateTask,
+  createTaskAction,
+  updateTaskAction,
   deleteTaskAction,
-  updateProjectAction: updateProject,
-  updateScheduleAction,
+  updateProjectAction,
   deleteProjectAction,
   updateTaskStatusAction,
   updateTaskOrderAction,
@@ -229,7 +213,6 @@ export function MemberWorkspaceProjectDetailPage({
   reviewFiscalSponsorshipDocumentAction,
   sendFiscalSponsorshipAgreementForSignatureAction,
 }: MemberWorkspaceProjectDetailPageProps) {
-  const { project, createTaskAction, updateTaskAction, updateProjectAction } = useProjectSavedState({ serverProject, people: assigneeOptions, createTask, updateTask, updateProject })
   const canManageProject =
     canManageProjectProp ??
     Boolean(
@@ -242,7 +225,6 @@ export function MemberWorkspaceProjectDetailPage({
     canEditProjectDetailsProp ?? Boolean(updateProjectAction)
   const canManageProjectAssets = canManageProjectAssetsProp ?? canManageProject
   const router = useRouter()
-  const directoryHref = (usePathname() ?? "").startsWith("/projects") ? "/projects" : "/organizations"
   const [showMeta, setShowMeta] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
   const [isEditing, setIsEditing] = useState(false)
@@ -256,15 +238,15 @@ export function MemberWorkspaceProjectDetailPage({
 
   const breadcrumbs = useMemo(
     () => [
-      { label: directoryHref === "/projects" ? "Projects" : "Organizations", href: directoryHref },
+      { label: "Organizations", href: "/organizations" },
       { label: project.name },
     ],
-    [directoryHref, project.name]
+    [project.name]
   )
 
   useEffect(() => {
-    if (!isEditing) setProjectDraft(initialProjectDraft)
-  }, [initialProjectDraft, isEditing])
+    setProjectDraft(initialProjectDraft)
+  }, [initialProjectDraft])
 
   const hasProjectChanges = useMemo(
     () =>
@@ -274,6 +256,20 @@ export function MemberWorkspaceProjectDetailPage({
       ),
     [projectDraft, initialProjectDraft]
   )
+
+  const copyLink = useCallback(async () => {
+    if (!navigator.clipboard) {
+      toast.error("Clipboard not available")
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success("Link copied")
+    } catch {
+      toast.error("Failed to copy link")
+    }
+  }, [])
 
   const handleNavigateFiscalUpdate = useCallback((href: string) => {
     if (!href.startsWith("#")) return
@@ -307,7 +303,6 @@ export function MemberWorkspaceProjectDetailPage({
   }, [initialProjectDraft])
 
   const handleSaveProject = useCallback(() => {
-    if (isSavingProject) return
     if (!updateProjectAction) {
       toast.error("Project editing is unavailable.")
       return
@@ -319,26 +314,32 @@ export function MemberWorkspaceProjectDetailPage({
     }
 
     startProjectSaveTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectAction(
+      const result = await updateProjectAction(
         project.id,
         buildMemberWorkspaceProjectUpdateInput({
           project,
           draft: projectDraft,
         })
-      ), { pending: "Saving changes…", success: directoryHref === "/projects" ? "Project updated" : "Organization updated" })
-      if ("error" in result) return
+      )
+
+      if ("error" in result) {
+        toast.error(result.error)
+        return
+      }
+
+      toast.success("Organization updated")
       setIsEditing(false)
       router.refresh()
     })
-  }, [directoryHref, hasProjectChanges, isSavingProject, project, projectDraft, router, updateProjectAction])
+  }, [hasProjectChanges, project, projectDraft, router, updateProjectAction])
 
   const canDeleteProject =
     Boolean(deleteProjectAction) &&
     getProjectSourceProjectKind(project.source) !== "organization_admin"
   const handleProjectDeleted = useCallback(() => {
-    router.push(directoryHref)
+    router.push("/organizations")
     router.refresh()
-  }, [directoryHref, router])
+  }, [router])
   const {
     deleteProjectOpen,
     handleDeleteProject,
@@ -389,6 +390,10 @@ export function MemberWorkspaceProjectDetailPage({
     >
       <div className="border-border flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4">
         <div className="flex min-w-0 items-center gap-3">
+          <SidebarTrigger
+            aria-label="Toggle sidebar"
+            className="text-muted-foreground hover:text-foreground size-8 rounded-lg"
+          />
           <div className="hidden sm:block">
             <Breadcrumbs items={breadcrumbs} />
           </div>
@@ -404,6 +409,7 @@ export function MemberWorkspaceProjectDetailPage({
           deleteProjectOpen={deleteProjectOpen}
           showMeta={showMeta}
           onCancelProjectEditing={handleCancelProjectEditing}
+          onCopyLink={copyLink}
           onDeleteProject={handleDeleteProject}
           onDeleteProjectOpenChange={setDeleteProjectOpen}
           onSaveProject={handleSaveProject}
@@ -425,10 +431,7 @@ export function MemberWorkspaceProjectDetailPage({
               >
                 <div className="space-y-6 pt-4 pb-8">
                   <MemberWorkspaceProjectDetailHeader
-                    coachControl={coachControl}
-                    assignedCoachNames={assignedCoachNames}
-                    assignedCoaches={assignedCoaches}
-                    project={project} organizationSummary={directoryHref === "/organizations" ? organizationSummary : undefined}
+                    project={project}
                     assigneeOptions={assigneeOptions}
                     canEditProject={
                       canEditProjectDetails && Boolean(updateProjectAction)
@@ -440,11 +443,9 @@ export function MemberWorkspaceProjectDetailPage({
                   />
 
                   <MemberWorkspaceProjectDetailTabs
-                    showOrganizationPrograms={directoryHref === "/organizations"}
-                    organizationPrograms={organizationPrograms} activeTab={activeTab}
+                    activeTab={activeTab}
                     assigneeOptions={assigneeOptions}
                     canConnectFiscalDocuments={canEditProjectDetails}
-                    canAddProjectTabs={canEditProjectDetails}
                     connectFiscalSponsorshipDocumentAssetAction={
                       connectFiscalSponsorshipDocumentAssetAction
                     }
@@ -516,13 +517,7 @@ export function MemberWorkspaceProjectDetailPage({
                       className="lg:border-border pb-8 lg:border-l lg:pl-6"
                     >
                       <MemberWorkspaceProjectRightMetaPanel
-                        updateScheduleAction={canEditProjectDetails ? updateScheduleAction : undefined}
-                        adminBilling={adminBilling || (directoryHref === "/organizations" && coachingCredits) ? (
-                          <div className="space-y-4">
-                            {directoryHref === "/organizations" ? coachingCredits : null}
-                            {adminBilling}
-                          </div>
-                        ) : null}
+                        adminBilling={adminBilling}
                         project={project}
                         organizationSummary={organizationSummary}
                         fiscalSponsorshipWorkflowSummary={

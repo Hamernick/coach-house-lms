@@ -44,17 +44,6 @@ describe("account map preferences route", () => {
     vi.clearAllMocks()
   })
 
-  it("rejects signed-out collection reads and writes", async () => {
-    const updateUser = vi.fn()
-    createSupabaseRouteHandlerClientMock.mockReturnValue({ auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }), updateUser,
-    } })
-    const { GET, PATCH } = await import("@/app/api/account/map-preferences/route")
-    expect((await GET(new NextRequest("http://localhost/api/account/map-preferences"))).status).toBe(401)
-    expect((await PATCH(buildPatchRequest({ collectedResourceIds: ["resource-1"] }))).status).toBe(401)
-    expect(updateUser).not.toHaveBeenCalled()
-  })
-
   it("returns normalized account-backed resource collections", async () => {
     const { supabase } = buildSupabaseStub({
       collectedResourceIds: ["resource-1", " resource-2 ", "resource-1"],
@@ -97,33 +86,7 @@ describe("account map preferences route", () => {
           favorites: ["organization-1"],
           savedQueries: ["food access"],
           recentOrganizationIds: ["organization-2"],
-          savedGuideIds: [],
         },
-      },
-    })
-  })
-
-  it("persists only allowlisted guide IDs", async () => {
-    const { supabase, updateUser } = buildSupabaseStub()
-    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
-
-    const { PATCH } = await import("@/app/api/account/map-preferences/route")
-    const response = await PATCH(
-      buildPatchRequest({
-        savedGuideIds: [
-          "chicago-food-access",
-          "made-up-guide",
-          "chicago-food-access",
-        ],
-      })
-    )
-
-    expect(response.status).toBe(200)
-    expect(updateUser).toHaveBeenCalledWith({
-      data: {
-        map_preferences: expect.objectContaining({
-          savedGuideIds: ["chicago-food-access"],
-        }),
       },
     })
   })

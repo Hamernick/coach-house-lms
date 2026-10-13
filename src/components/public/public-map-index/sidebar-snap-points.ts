@@ -7,14 +7,6 @@ export type PublicMapDrawerSnapPointIndex = 0 | 1 | 2
 
 const PUBLIC_MAP_DRAWER_COLLAPSED_HEIGHT = 168
 
-export function resolveNextPublicMapDrawerSnapPointIndex(
-  currentIndex: PublicMapDrawerSnapPointIndex
-): PublicMapDrawerSnapPointIndex {
-  if (currentIndex === 0) return 1
-  if (currentIndex === 1) return 2
-  return 1
-}
-
 export function buildPublicMapDrawerSnapPoints(
   surfaceHeight: number
 ): PublicMapDrawerSnapPoints {
@@ -44,20 +36,6 @@ function parseSnapPointPixels(
       : Number.parseFloat(snapPoint.replace("px", ""))
 
   return Number.isFinite(pixels) ? pixels : null
-}
-
-export function resolvePublicMapDrawerVisibleHeight({
-  snapPoint,
-  surfaceHeight,
-}: {
-  snapPoint: number | string
-  surfaceHeight: number
-}) {
-  const safeSurfaceHeight = Math.max(0, Math.round(surfaceHeight))
-  const pixels = parseSnapPointPixels(snapPoint, safeSurfaceHeight)
-
-  if (pixels == null) return 0
-  return Math.round(clamp(pixels, 0, safeSurfaceHeight))
 }
 
 export function resolvePublicMapDrawerSnapPointIndex({

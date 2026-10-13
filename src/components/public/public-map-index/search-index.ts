@@ -6,13 +6,11 @@ import {
 } from "@/lib/public-map/resource-links"
 
 import { isPointWithinBounds } from "./helpers"
-import {
-  normalizePublicMapSearchText,
-  scorePublicMapSearchFields,
-  type PublicMapWeightedSearchField,
-} from "./search-text"
 
-type PublicMapSearchField = PublicMapWeightedSearchField
+type PublicMapSearchField = {
+  text: string
+  weight: number
+}
 
 const PUBLIC_MAP_NAME_COLLATOR = new Intl.Collator(undefined, {
   sensitivity: "base",
@@ -33,6 +31,10 @@ export type PublicMapSearchIndex = {
   orderedIds: string[]
 }
 
+function normalizeText(value: string | null | undefined) {
+  return typeof value === "string" ? value.trim().toLowerCase() : ""
+}
+
 function buildProgramTitles(organization: PublicMapOrganization) {
   const activities =
     organization.activityLinks.length > 0
@@ -41,15 +43,15 @@ function buildProgramTitles(organization: PublicMapOrganization) {
 
   return activities
     .flatMap((program) => [
-      normalizePublicMapSearchText(program.title),
-      normalizePublicMapSearchText(program.subtitle),
-      normalizePublicMapSearchText(program.description),
-      normalizePublicMapSearchText(program.activityKind),
-      normalizePublicMapSearchText(program.durationLabel),
-      normalizePublicMapSearchText(program.ctaLabel),
+      normalizeText(program.title),
+      normalizeText(program.subtitle),
+      normalizeText(program.description),
+      normalizeText(program.activityKind),
+      normalizeText(program.durationLabel),
+      normalizeText(program.ctaLabel),
       normalizeSearchHref(program.ctaUrl),
       normalizeSearchHref(program.locationUrl),
-      ...program.chips.map((chip) => normalizePublicMapSearchText(chip)),
+      ...program.chips.map((chip) => normalizeText(chip)),
     ])
     .filter((text) => text.length > 0)
     .join(" ")
@@ -57,13 +59,12 @@ function buildProgramTitles(organization: PublicMapOrganization) {
 
 function normalizeSearchHref(value: string | null | undefined) {
   if (!value) return ""
-  return normalizePublicMapSearchText(
-    value
-      .trim()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .replace(/\/$/, "")
-  )
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/$/, "")
 }
 
 function buildSearchFields(
@@ -72,47 +73,30 @@ function buildSearchFields(
   const resourceLinks = buildPublicMapResourceLinks(organization)
 
   return [
-    { text: normalizePublicMapSearchText(organization.name), weight: 0 },
-    { text: normalizePublicMapSearchText(organization.tagline), weight: 2 },
-    { text: normalizePublicMapSearchText(organization.description), weight: 3 },
-    { text: normalizePublicMapSearchText(organization.mission), weight: 2 },
-    { text: normalizePublicMapSearchText(organization.vision), weight: 2 },
-    { text: normalizePublicMapSearchText(organization.values), weight: 3 },
-    {
-      text: normalizePublicMapSearchText(organization.needStatement),
-      weight: 2,
-    },
-    { text: normalizePublicMapSearchText(organization.originStory), weight: 2 },
-    {
-      text: normalizePublicMapSearchText(organization.theoryOfChange),
-      weight: 2,
-    },
-    { text: normalizePublicMapSearchText(organization.contactName), weight: 3 },
-    { text: normalizePublicMapSearchText(organization.email), weight: 3 },
-    { text: normalizePublicMapSearchText(organization.phone), weight: 3 },
-    {
-      text: normalizePublicMapSearchText(organization.addressStreet),
-      weight: 2,
-    },
-    { text: normalizePublicMapSearchText(organization.city), weight: 2 },
-    { text: normalizePublicMapSearchText(organization.state), weight: 2 },
-    { text: normalizePublicMapSearchText(organization.country), weight: 2 },
+    { text: normalizeText(organization.name), weight: 0 },
+    { text: normalizeText(organization.tagline), weight: 2 },
+    { text: normalizeText(organization.description), weight: 3 },
+    { text: normalizeText(organization.mission), weight: 2 },
+    { text: normalizeText(organization.vision), weight: 2 },
+    { text: normalizeText(organization.values), weight: 3 },
+    { text: normalizeText(organization.needStatement), weight: 2 },
+    { text: normalizeText(organization.originStory), weight: 2 },
+    { text: normalizeText(organization.theoryOfChange), weight: 2 },
+    { text: normalizeText(organization.contactName), weight: 3 },
+    { text: normalizeText(organization.email), weight: 3 },
+    { text: normalizeText(organization.phone), weight: 3 },
+    { text: normalizeText(organization.addressStreet), weight: 2 },
+    { text: normalizeText(organization.city), weight: 2 },
+    { text: normalizeText(organization.state), weight: 2 },
+    { text: normalizeText(organization.country), weight: 2 },
     { text: normalizeSearchHref(organization.website), weight: 2 },
     { text: normalizeSearchHref(organization.locationUrl), weight: 2 },
     {
-      text: normalizePublicMapSearchText(
-        buildPublicMapResourceLinkSearchText(resourceLinks)
-      ),
+      text: normalizeText(buildPublicMapResourceLinkSearchText(resourceLinks)),
       weight: 2,
     },
-    {
-      text: normalizePublicMapSearchText(organization.programPreview?.title),
-      weight: 1,
-    },
-    {
-      text: normalizePublicMapSearchText(organization.programPreview?.subtitle),
-      weight: 2,
-    },
+    { text: normalizeText(organization.programPreview?.title), weight: 1 },
+    { text: normalizeText(organization.programPreview?.subtitle), weight: 2 },
     { text: buildProgramTitles(organization), weight: 1 },
   ].filter((field) => field.text.length > 0)
 }
@@ -124,7 +108,7 @@ export function buildPublicMapSearchIndex(
   for (const organization of organizations) {
     byId.set(organization.id, {
       id: organization.id,
-      sortName: normalizePublicMapSearchText(organization.name),
+      sortName: normalizeText(organization.name),
       groups: organization.groups,
       isOnlineOnly: organization.isOnlineOnly,
       latitude: organization.latitude,
@@ -143,6 +127,48 @@ export function buildPublicMapSearchIndex(
     byId,
     orderedIds,
   }
+}
+
+function resolveQueryRelevanceScore({
+  document,
+  normalizedQuery,
+}: {
+  document: PublicMapSearchDocument
+  normalizedQuery: string
+}) {
+  if (!normalizedQuery) return Number.POSITIVE_INFINITY
+
+  let best = Number.POSITIVE_INFINITY
+  for (const field of document.fields) {
+    if (field.text === normalizedQuery) {
+      best = Math.min(best, field.weight)
+      continue
+    }
+    if (field.text.startsWith(normalizedQuery)) {
+      best = Math.min(best, field.weight + 1)
+      continue
+    }
+    if (field.text.includes(` ${normalizedQuery}`)) {
+      best = Math.min(best, field.weight + 2)
+      continue
+    }
+    if (field.text.includes(normalizedQuery)) {
+      best = Math.min(best, field.weight + 3)
+    }
+  }
+
+  return best
+}
+
+function matchesQuery({
+  document,
+  normalizedQuery,
+}: {
+  document: PublicMapSearchDocument
+  normalizedQuery: string
+}) {
+  if (!normalizedQuery) return true
+  return document.fields.some((field) => field.text.includes(normalizedQuery))
 }
 
 export function filterPublicMapOrganizationIds({
@@ -165,7 +191,7 @@ export function filterPublicMapOrganizationIds({
   activeGroup: PublicMapGroupKey | "all"
   sortByFavorites?: boolean
 }) {
-  const normalizedQuery = normalizePublicMapSearchText(query)
+  const normalizedQuery = normalizeText(query)
   const favoriteIds = sortByFavorites ? new Set(favorites) : null
 
   const filteredIds: string[] = []
@@ -174,13 +200,7 @@ export function filterPublicMapOrganizationIds({
     if (!document) continue
     if (activeGroup !== "all" && !document.groups.includes(activeGroup))
       continue
-    if (
-      !Number.isFinite(
-        scorePublicMapSearchFields({ fields: document.fields, query })
-      )
-    ) {
-      continue
-    }
+    if (!matchesQuery({ document, normalizedQuery })) continue
     if (appliedBounds !== null && !document.isOnlineOnly) {
       if (
         typeof document.longitude !== "number" ||
@@ -207,13 +227,13 @@ export function filterPublicMapOrganizationIds({
     if (!leftDocument || !rightDocument) return 0
 
     if (normalizedQuery.length > 0) {
-      const leftRelevance = scorePublicMapSearchFields({
-        fields: leftDocument.fields,
-        query,
+      const leftRelevance = resolveQueryRelevanceScore({
+        document: leftDocument,
+        normalizedQuery,
       })
-      const rightRelevance = scorePublicMapSearchFields({
-        fields: rightDocument.fields,
-        query,
+      const rightRelevance = resolveQueryRelevanceScore({
+        document: rightDocument,
+        normalizedQuery,
       })
       if (leftRelevance !== rightRelevance)
         return leftRelevance - rightRelevance

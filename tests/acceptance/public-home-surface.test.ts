@@ -1,55 +1,16 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { resolvePublicMapScreenMode } from "@/components/public/public-map-index/embedded-screen-state"
-
-import { resolveEmbeddedProfileId } from "@/components/public/public-map-index/use-public-map-profile-navigation"
 
 const ROOT = process.cwd()
-
-describe("home profile history resolution", () => {
-  const organizations = new Map([
-    ["org-1", { id: "org-1", publicSlug: "manoextendida" }],
-    ["org-2", { id: "org-2", publicSlug: null }],
-  ])
-  it("restores organization selections from public slugs or published ID fallbacks", () => {
-    expect(resolveEmbeddedProfileId("/manoextendida", organizations)).toBe("org-1")
-    expect(resolveEmbeddedProfileId("/org-2", organizations)).toBe("org-2")
-    expect(resolveEmbeddedProfileId("/", organizations)).toBeNull()
-    expect(resolveEmbeddedProfileId("/private-handle", organizations)).toBeNull()
-  })
-  it("restores supported directory identities and rejects malformed paths", () => {
-    expect(resolveEmbeddedProfileId("/find/resources/010044660", organizations)).toBe("nonprofit:010044660")
-    const id = "95601a05-635f-46cf-bbb0-41d7f648a440"
-    expect(resolveEmbeddedProfileId(`/find/resources/${id}`, organizations)).toBe(`resource_map:${id}`)
-    expect(resolveEmbeddedProfileId("/find/resources/not-public", organizations)).toBeNull()
-    expect(resolveEmbeddedProfileId("/find/resources/010044660/extra", organizations)).toBeNull()
-  })
-})
-
-describe("public map screen presentation", () => {
-  const base = { embedded: true, detailsOpen: false }
-
-  it("keeps the map present while the adjacent panel displays results", () => {
-    expect(resolvePublicMapScreenMode(base)).toBe("map")
-    expect(resolvePublicMapScreenMode({ ...base, detailsOpen: true })).toBe("detail")
-    expect(resolvePublicMapScreenMode(base)).toBe("map")
-  })
-
-  it("uses the same profile surface for every embedded selection and preserves standalone map behavior", () => {
-    expect(resolvePublicMapScreenMode({ ...base, detailsOpen: true })).toBe("detail")
-    expect(resolvePublicMapScreenMode({ ...base, embedded: false, detailsOpen: true })).toBe("map")
-  })
-
-})
 
 function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
-describe("public marketing canvas", () => {
-  it("keeps the established shell at the home-canvas route", () => {
-    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
+describe("public home canvas", () => {
+  it("keeps the established shell as the home route owner", () => {
+    const routeSource = readSource("src/app/(public)/page.tsx")
 
     expect(routeSource).toContain("<HomeCanvasPreview")
     expect(routeSource).toContain("<PricingSurface embedded />")
@@ -81,8 +42,8 @@ describe("public marketing canvas", () => {
     )
     expect(source).not.toContain("HomeFundingPreview")
     expect(source).toContain("data-public-home-build-pricing")
-    expect(source).toContain('action={FIND_PATH}')
-    expect(source).toContain('href="/home-canvas?section=platform"')
+    expect(source).toContain('action="/find"')
+    expect(source).toContain('href="/?section=platform"')
   })
 
   it("keeps Find, Build, and Fund centered over the rounded canvas", () => {
@@ -99,7 +60,7 @@ describe("public marketing canvas", () => {
       "src/components/public/home-canvas-preview-shell.tsx"
     )
 
-    expect(source).toContain('href={FIND_PATH}')
+    expect(source).toContain('href="/find"')
     expect(source).toContain(
       'aria-current={activeSection === "hero" ? "true" : undefined}'
     )
@@ -110,8 +71,6 @@ describe("public marketing canvas", () => {
     expect(source).toContain("grid-cols-3 rounded-full")
     expect(source).toContain("backdrop-blur-xl")
     expect(source).toContain('data-public-home-product-navigator=""')
-    expect(source.match(/variant=\{null\}/g)).toHaveLength(3)
-    expect(source).not.toContain("hover:")
     expect(shellSource).toContain("<HomeCanvasPreviewSidebar")
     expect(shellSource).toContain("showFindSidebarShell ? (")
     expect(shellSource).toContain("<ShellRightRail")
@@ -123,10 +82,7 @@ describe("public marketing canvas", () => {
     expect(sidebarSource).not.toContain("SIDEBAR_CANVAS_NAV")
     expect(sidebarSource).not.toContain("About")
     expect(sidebarSource).not.toContain("Sign up")
-    expect(headerSource).toContain("<BuildCollectPublicHeader")
-    expect(headerSource).toContain(
-      'activeArea={activeSection === "find" ? "collect" : "build"}'
-    )
+    expect(headerSource).toContain('onClick={() => changeSection("signup")}')
   })
 
   it("uses GSAP for focused reveals and respects reduced motion", () => {
@@ -144,30 +100,16 @@ describe("public marketing canvas", () => {
     const previewSource = readSource(
       "src/components/public/home-find-map-mini.tsx"
     )
-    const assetPath = join(ROOT, "public/home/find-map-preview.webp")
-    const obsoleteMarkerPath = join(
-      ROOT,
+    const markerSource = readSource(
       "src/components/public/home-find-map-marker-canvas.ts"
     )
+    const assetPath = join(ROOT, "public/home/find-map-preview.webp")
 
     expect(existsSync(assetPath)).toBe(false)
-    expect(existsSync(obsoleteMarkerPath)).toBe(false)
     expect(previewSource).toContain('import("mapbox-gl")')
-    expect(previewSource).toContain("PUBLIC_MAP_STANDARD_STYLE")
-    expect(previewSource).toContain("HOME_MAP_DEVELOPMENT_FALLBACK_STYLE")
-    expect(previewSource).toContain("https://tiles.openfreemap.org/styles/dark")
-    expect(previewSource).toContain('map.on("idle", markGlobeReady)')
-    expect(previewSource).toContain('process.env.NODE_ENV === "production"')
-    expect(previewSource).toContain(
-      '["localhost", "127.0.0.1"].includes(window.location.hostname)'
-    )
-    expect(previewSource).not.toContain('status !== "ready"')
-    expect(previewSource).toContain("startSpinningMapGlobe")
-    expect(previewSource).toContain("syncPublicMapMarkerArtwork")
-    expect(previewSource.match(/showLabels: false/g)).toHaveLength(2)
-    expect(previewSource).toContain("PublicMapPointFeature[]")
-    expect(previewSource).not.toContain("HOME_MAP_POINTS")
-    expect(previewSource).not.toContain("satellite-v9")
+    expect(previewSource).toContain("createHomeFindMapMarkerImage")
+    expect(previewSource).not.toContain("public-map-marker-canvas")
+    expect(previewSource).toContain("HOME_MAP_POINTS")
     expect(previewSource).toContain("interactive: false")
     expect(previewSource).toContain('logoPosition: "bottom-left"')
     expect(previewSource).toContain(
@@ -178,12 +120,6 @@ describe("public marketing canvas", () => {
     )
     expect(previewSource).toContain(
       'data-home-map-controls-position="bottom-right"'
-    )
-    expect(previewSource).toContain("<figure")
-    expect(previewSource).toContain('<figcaption className="sr-only">')
-    expect(previewSource).not.toContain('role="img"')
-    expect(previewSource).not.toContain(
-      'aria-label="Public organizations and community resources on a rotating globe"'
     )
     expect(previewSource).toContain("className={`absolute inset-0")
     expect(previewSource).not.toContain("mapboxgl-map absolute inset-0")
@@ -199,34 +135,10 @@ describe("public marketing canvas", () => {
     expect(previewSource).not.toContain("HomeMapSelectedPreview")
     expect(previewSource).not.toContain("data-home-map-selected-preview")
     expect(previewSource).not.toContain("Public resource map")
-    expect(previewSource).not.toContain("geolocation")
-    expect(previewSource).not.toContain("usePublicMapUserLocation")
-  })
-
-  it("builds the home globe from a capped published marker preview", () => {
-    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
-    const previewComponentSource = readSource(
-      "src/components/public/home-find-map-mini.tsx"
-    )
-    const previewDataSource = readSource(
-      "src/lib/public-map/home-map-preview.ts"
-    )
-    const previewQuerySource = readSource("src/lib/queries/home-map-preview.ts")
-
-    expect(routeSource).not.toContain("fetchPublicMapOrganizations")
-    expect(routeSource).not.toContain("fetchPublicResourceMapItems")
-    expect(previewComponentSource).toContain(
-      'fetch("/api/public/home-map-preview"'
-    )
-    expect(previewQuerySource).toContain("fetchPublicResourceMapItems")
-    expect(previewQuerySource).toContain("ignoreLocalPreviewFile: true")
-    expect(previewQuerySource).toContain("includeDiscoveryCandidates: false")
-    expect(previewDataSource).toContain("HOME_MAP_PREVIEW_MARKER_LIMIT = 36")
-    expect(previewDataSource).toContain("resolveCandidateSpreadScore")
-    expect(previewDataSource).toContain("markerOverviewOffsetIndex")
-    expect(previewDataSource).toContain('item.visibility === "published"')
-    expect(previewDataSource).toContain("includeSeedItems: false")
-    expect(previewDataSource).not.toContain("resource-seed-items")
+    expect(markerSource).toContain("PUBLIC_MAP_GROUP_ACCENTS")
+    expect(markerSource).toContain("HOME_MAP_MARKER_BACKING_SCALE = 4")
+    expect(markerSource).toContain("HOME_MAP_MARKER_IMAGE_PIXEL_RATIO = 8")
+    expect(markerSource).not.toContain("resource-categories")
   })
 
   it("keeps public fiscal sponsorship actions active", () => {
@@ -235,13 +147,13 @@ describe("public marketing canvas", () => {
     )
 
     expect(source).toContain(
-      'openFlowHref="/home-canvas?section=signup&intent=fund"'
+      'openFlowHref="/?section=signup&intent=fund"'
     )
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {
     const tokenSource = readSource("src/lib/mapbox/token.ts")
-    const routeSource = readSource("src/app/(public)/home-canvas/page.tsx")
+    const routeSource = readSource("src/app/(public)/page.tsx")
 
     expect(tokenSource).toContain("getPublicMapboxToken")
     expect(tokenSource).toContain('startsWith("pk.")')

@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { redirect as redirectTo } from "next/navigation"
+import { FIND_PATH } from "@/lib/find/routes"
 import {
   buildPostSignupBuilderRedirect,
   resolveSignupBuilderPlanTier,
@@ -77,8 +78,8 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const memberRedirectTarget =
     redirect ??
     (fallbackQuery
-      ? `/onboarding?source=signup&${fallbackQuery}`
-      : `/onboarding?source=signup`)
+      ? `${FIND_PATH}?member_onboarding=1&source=signup&${fallbackQuery}`
+      : `${FIND_PATH}?member_onboarding=1&source=signup`)
 
   const supabase = await createSupabaseServerClient()
   const {
@@ -98,7 +99,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const loginHref = `/login`
 
   return (
-    <AuthScreenShell showBrand>
+    <AuthScreenShell>
       <AuthCard
         title="Create your account"
         description="After email verification, Coach House will continue to your next step."

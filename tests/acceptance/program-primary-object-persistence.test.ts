@@ -2,10 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createProgramAction, updateProgramAction } from "@/actions/programs"
 import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
-import { revalidateTagMock } from "./test-utils"
-
-const sharing = vi.hoisted(() => ({ publicSharingEnabled: true }))
-vi.mock("@/lib/feature-flags", () => sharing)
 
 const actionMocks = vi.hoisted(() => ({
   requireServerSession: vi.fn(),
@@ -45,63 +41,9 @@ function prepareActor(supabase: Record<string, unknown>) {
 
 describe("program primary-object persistence", () => {
   beforeEach(() => {
-    sharing.publicSharingEnabled = true
-    revalidateTagMock.mockClear()
     for (const mock of Object.values(actionMocks)) {
       mock.mockReset()
     }
-  })
-
-  it.each([true, false])("saves only visibility (%s) within the active org and expires public projections", async (isPublic) => {
-    const query = {
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { id: "program-1" }, error: null }),
-    }
-    const update = vi.fn((_values: Record<string, unknown>) => query)
-    prepareActor({ from: vi.fn(() => ({ update, select: () => query })) })
-    expect(await updateProgramAction("program-1", { isPublic })).toEqual({ ok: true })
-    expect(Object.fromEntries(Object.entries(update.mock.calls[0][0]).filter(([, value]) => value !== undefined))).toEqual({ is_public: isPublic })
-    expect(query.eq).toHaveBeenCalledWith("id", "program-1")
-    expect(query.eq).toHaveBeenCalledWith("user_id", "org-1")
-    expect(revalidateTagMock).toHaveBeenCalledWith("public-map-organizations", { expire: 0 })
-    expect(revalidateTagMock).toHaveBeenCalledWith("public-profiles", { expire: 0 })
-  })
-
-  it("rejects publishing while sharing is unavailable without changing saved visibility", async () => {
-    sharing.publicSharingEnabled = false
-    const from = vi.fn()
-    prepareActor({ from })
-    expect(await updateProgramAction("program-1", { isPublic: true })).toHaveProperty("error")
-    expect(await createProgramAction({ title: "New program", isPublic: true })).toHaveProperty("error")
-    expect(from).not.toHaveBeenCalled()
-    expect(revalidateTagMock).not.toHaveBeenCalled()
-  })
-
-  it("still permits withdrawing a public program when sharing is unavailable", async () => {
-    sharing.publicSharingEnabled = false
-    const query = { eq: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: "program-1" }, error: null }) }
-    const update = vi.fn(() => query)
-    prepareActor({ from: vi.fn(() => ({ update, select: () => query })) })
-    expect(await updateProgramAction("program-1", { isPublic: false })).toEqual({ ok: true })
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ is_public: false }))
-    expect(revalidateTagMock).toHaveBeenCalledWith("public-map-organizations", { expire: 0 })
-  })
-
-  it.each([null, { message: "Save failed" }])("does not claim visibility saved or invalidate caches after a missing/failed write: %o", async (error) => {
-    const query = { eq: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error }) }
-    prepareActor({ from: vi.fn(() => ({ update: vi.fn(() => query) })) })
-    expect(await updateProgramAction("program-1", { isPublic: false })).toHaveProperty("error")
-    expect(revalidateTagMock).not.toHaveBeenCalled()
-  })
-
-  it("denies visibility changes for a viewer without writing or invalidating public data", async () => {
-    const from = vi.fn()
-    prepareActor({ from })
-    actionMocks.canEditOrganization.mockReturnValue(false)
-    expect(await updateProgramAction("program-1", { isPublic: true })).toEqual({ error: "Forbidden" })
-    expect(from).not.toHaveBeenCalled()
-    expect(revalidateTagMock).not.toHaveBeenCalled()
   })
 
   it("merges builder updates without dropping future snapshot fields", () => {

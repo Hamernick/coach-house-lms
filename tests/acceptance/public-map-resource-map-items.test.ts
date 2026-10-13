@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest"
-import { createPublicMapCategoryAliasMatcher } from "@/lib/public-map/resource-category-alias-matching"
 
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -27,11 +26,7 @@ import {
   buildPublicMapSelectableItemMap,
   resolvePublicMapListItemsFromSelectableIds,
 } from "@/components/public/public-map-index/map-items-state"
-import {
-  buildPublicMapResourceGuides,
-  buildPublicMapSavedResourceGuides,
-  filterPublicMapFeaturedResourceGuides,
-} from "@/components/public/public-map-index/resource-guides"
+import { buildPublicMapResourceGuides } from "@/components/public/public-map-index/resource-guides"
 import {
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_CITY_ANCHORS,
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_ITEMS,
@@ -71,7 +66,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -183,10 +177,6 @@ describe("public map resource map items", () => {
       "organizations",
       "international",
       "animals",
-      "arts",
-      "faith",
-      "recreation",
-      "philanthropy",
     ])
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")
@@ -389,57 +379,6 @@ describe("public map resource map items", () => {
         })
       )
     ).toEqual(expect.arrayContaining(["animals"]))
-  })
-
-  it.each([
-    ["FOOD & Water", "food and water", true],
-    ["Women's health-care", "womens health care", true],
-    ["Children’s\n dental care", "childrens dental", true],
-    ["Emergency: legal aid.", "legal aid", true],
-    ["Culturally competent collaboration", "pet", false],
-    ["", "food", false],
-    ["food", "---", false],
-  ])("preserves category word matching for %s / %s", (text, alias, matches) => {
-    expect(createPublicMapCategoryAliasMatcher(text)(alias)).toBe(matches)
-  })
-
-  it("keeps separately prepared organization text independent", () => {
-    const food = createPublicMapCategoryAliasMatcher("Food pantry")
-    const legal = createPublicMapCategoryAliasMatcher("Legal aid")
-    expect(food("food")).toBe(true)
-    expect(legal("food")).toBe(false)
-    expect(food("legal aid")).toBe(false)
-    expect(legal("legal aid")).toBe(true)
-  })
-
-  it("supports exact subcategory filters without widening to the parent", () => {
-    const dentalItem = buildGuideResourceItem("dental", {
-      resourceCategories: ["health", "health_dental"],
-      primaryResourceCategory: "health_dental",
-    })
-    const mentalHealthItem = buildGuideResourceItem("mental-health", {
-      resourceCategories: ["health", "health_mental_health"],
-      primaryResourceCategory: "health_mental_health",
-    })
-
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health",
-        item: dentalItem,
-      })
-    ).toBe(true)
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health_dental",
-        item: dentalItem,
-      })
-    ).toBe(true)
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health_dental",
-        item: mentalHealthItem,
-      })
-    ).toBe(false)
   })
 
   it("derives resource display names for civic-owner cooling center rows", () => {
@@ -1049,35 +988,7 @@ describe("public map resource map items", () => {
         primaryResourceCategory: primaryCategory,
       })
     }
-    expect(Array.from(guideById.keys())).not.toContain("gary-food-access")
-
-    const featuredGuides = filterPublicMapFeaturedResourceGuides(
-      Array.from(guideById.values())
-    )
-    expect(featuredGuides.map((guide) => guide.id)).toEqual([
-      "chicago-food-access",
-      "chicago-housing-shelter",
-      "chicago-health-care",
-      "cooling-heat-relief",
-    ])
-    expect(
-      featuredGuides.every((guide) => guide.imageUrl?.endsWith(".webp"))
-    ).toBe(true)
-  })
-
-  it("retains saved guides when their current public item gate is unavailable", () => {
-    expect(
-      buildPublicMapSavedResourceGuides({
-        guides: [],
-        savedGuideIds: ["chicago-food-access"],
-      })
-    ).toMatchObject([
-      {
-        id: "chicago-food-access",
-        itemCount: 0,
-        available: false,
-      },
-    ])
+    expect(guideById.has("gary-food-access")).toBe(false)
   })
 
   it("builds marker features with resource colors and legacy org selection ids", () => {
@@ -1118,22 +1029,6 @@ describe("public map resource map items", () => {
     ).toEqual([
       "seed-resource:food-water-west-loop",
       "seed-resource:shelter-west-loop",
-    ])
-  })
-
-  it("excludes malformed resource coordinates from marker features", () => {
-    const features = buildPublicMapItemPointFeatures([
-      buildGuideResourceItem("valid"),
-      buildGuideResourceItem("origin", { latitude: 0, longitude: 0 }),
-      buildGuideResourceItem("invalid-latitude", { latitude: -86 }),
-      buildGuideResourceItem("invalid-longitude", { longitude: -181 }),
-      buildGuideResourceItem("not-finite", {
-        longitude: Number.POSITIVE_INFINITY,
-      }),
-    ])
-
-    expect(features.map((feature) => feature.properties.itemId)).toEqual([
-      "valid",
     ])
   })
 

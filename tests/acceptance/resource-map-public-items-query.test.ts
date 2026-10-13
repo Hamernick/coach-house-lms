@@ -1,4 +1,3 @@
-import { readPublicResourceIndexPage, PUBLIC_RESOURCE_INDEX_COLUMNS } from "@/lib/queries/resource-map-index-snapshot"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -18,7 +17,6 @@ import { buildExternalResourceMapItemFromPublicRow } from "@/lib/public-map/reso
 import { serializeFindResourceDetailItem } from "@/features/find-resource-index"
 import { resolveResourceAvailability } from "@/lib/public-map/resource-availability"
 import {
-  clearResourceMapLocalPreviewCache,
   fetchPublicResourceMapItemById,
   fetchPublicResourceMapItems,
   fetchPublicResourceMapItemsPageById,
@@ -379,7 +377,6 @@ describe("resource map availability", () => {
 
 describe("fetchPublicResourceMapItems", () => {
   afterEach(() => {
-    clearResourceMapLocalPreviewCache()
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -671,66 +668,13 @@ describe("fetchPublicResourceMapItems", () => {
       )
       expect(
         discoveryPreviewItems.filter((item) =>
-          item.sourceLabel?.toLowerCase().includes("wikidata")
+          item.sourceLabel.toLowerCase().includes("wikidata")
         )
       ).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ visibility: "superadmin_preview" }),
         ])
       )
-    } finally {
-      rmSync(directory, { force: true, recursive: true })
-    }
-  })
-
-  it("keeps cached local preview pages coherent and invalidates changed files", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "resource-map-page-cache-"))
-    const previewFile = join(directory, "preview.jsonl")
-    const buildPreviewRows = (count: number) =>
-      Array.from({ length: count }, (_, index) =>
-        JSON.stringify({
-          sourceRecordId: `cached-resource-${index + 1}`,
-          sourceName: "Local cache test",
-          sourceUrl: `https://example.org/resource-${index + 1}`,
-          extractedFields: {
-            organizationName: `Cached organization ${index + 1}`,
-            title: `Cached resource ${index + 1}`,
-            description: "Locally reviewed public resource.",
-            category: "food pantry",
-          },
-        })
-      ).join("\n")
-
-    try {
-      writeFileSync(previewFile, buildPreviewRows(3))
-      const options = {
-        enabled: true,
-        includeDiscoveryCandidates: true,
-        localPreviewFile: previewFile,
-      }
-
-      const firstPage = await fetchPublicResourceMapItemsPageById({
-        cursor: null,
-        limit: 1,
-        options,
-      })
-      const secondPage = await fetchPublicResourceMapItemsPageById({
-        cursor: firstPage.items[0]?.id ?? null,
-        limit: 1,
-        options,
-      })
-
-      expect(firstPage.totalCount).toBe(3)
-      expect(secondPage.totalCount).toBe(3)
-
-      writeFileSync(previewFile, buildPreviewRows(4))
-      const refreshedPage = await fetchPublicResourceMapItemsPageById({
-        cursor: null,
-        limit: 1,
-        options,
-      })
-
-      expect(refreshedPage.totalCount).toBe(4)
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }
@@ -860,27 +804,5 @@ describe("fetchPublicResourceMapItems", () => {
       "[resource-map] public RPC unavailable; using seed fallback",
       expect.objectContaining({ code: "42883" })
     )
-  })
-})
-
-
-describe("compact cached resource index projection", () => {
-  it("selects index columns without an exact count and advances by item ID", async () => {
-    const rows = [buildPublicResourceRow()]
-    const builder = { select: vi.fn(), order: vi.fn(), limit: vi.fn(), gt: vi.fn(), then: (resolve: (result: unknown) => unknown) => Promise.resolve({ data: rows, error: null }).then(resolve) }
-    for (const method of [builder.select, builder.order, builder.limit, builder.gt]) method.mockReturnValue(builder)
-    createClientMock.mockReturnValue({ from: vi.fn(() => builder) })
-    expect(await readPublicResourceIndexPage("previous-id")).toEqual(rows)
-    expect(builder.select).toHaveBeenCalledWith(PUBLIC_RESOURCE_INDEX_COLUMNS)
-    expect(PUBLIC_RESOURCE_INDEX_COLUMNS).not.toContain("description")
-    expect(PUBLIC_RESOURCE_INDEX_COLUMNS).not.toContain("public_contacts")
-    expect(PUBLIC_RESOURCE_INDEX_COLUMNS).toContain("source_attribution")
-    expect(builder.limit).toHaveBeenCalledWith(500)
-    expect(builder.gt).toHaveBeenCalledWith("item_id", "previous-id")
-  })
-
-  it("normalizes compact rows without requiring detail arrays", () => {
-    const item = buildExternalResourceMapItemFromPublicRow({ item_id: "compact", title: "Resource", resource_categories: ["food"], city: "Chicago" })
-    expect(item).toMatchObject({ id: "resource_map:compact", title: "Resource", latitude: null, longitude: null, resourceCategories: ["food"] })
   })
 })

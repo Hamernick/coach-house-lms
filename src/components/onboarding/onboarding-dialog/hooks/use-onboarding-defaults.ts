@@ -18,7 +18,6 @@ type UseOnboardingDefaultsParams = Pick<
   | "defaultRoleInterest"
   | "defaultFirstName"
   | "defaultLastName"
-  | "defaultPersonHandle"
   | "defaultPhone"
   | "defaultPublicEmail"
   | "defaultTitle"
@@ -37,7 +36,6 @@ export function useOnboardingDefaults({
   defaultRoleInterest,
   defaultFirstName,
   defaultLastName,
-  defaultPersonHandle,
   defaultPhone,
   defaultPublicEmail,
   defaultTitle,
@@ -57,7 +55,6 @@ export function useOnboardingDefaults({
         defaultRoleInterest,
         defaultFirstName,
         defaultLastName,
-        defaultPersonHandle,
         defaultPhone,
         defaultPublicEmail,
         defaultTitle,
@@ -73,7 +70,6 @@ export function useOnboardingDefaults({
       defaultFormationStatus,
       defaultIntentFocus,
       defaultLastName,
-      defaultPersonHandle,
       defaultLinkedin,
       defaultNewsletterOptIn,
       defaultOptInUpdates,
@@ -83,7 +79,7 @@ export function useOnboardingDefaults({
       defaultPublicEmail,
       defaultRoleInterest,
       defaultTitle,
-    ]
+    ],
   )
 
   const {
@@ -94,7 +90,6 @@ export function useOnboardingDefaults({
     initialRoleInterest,
     initialFirstName,
     initialLastName,
-    initialPersonHandle,
     initialPhone,
     initialPublicEmail,
     initialTitle,
@@ -112,7 +107,6 @@ export function useOnboardingDefaults({
       orgSlug: initialOrgSlug,
       firstName: initialFirstName,
       lastName: initialLastName,
-      personHandle: initialPersonHandle,
       phone: initialPhone,
       publicEmail: initialPublicEmail,
       title: initialTitle,
@@ -125,23 +119,18 @@ export function useOnboardingDefaults({
       initialOrgSlug,
       initialFirstName,
       initialLastName,
-      initialPersonHandle,
       initialPhone,
       initialPublicEmail,
       initialTitle,
       initialLinkedin,
-    ]
+    ],
   )
 
   const resolveDraftFieldValue = React.useCallback(
     (key: string, draftValue: unknown) => {
-      return resolveDraftFieldValueFromDefaults(
-        persistedFieldDefaults,
-        key,
-        draftValue
-      )
+      return resolveDraftFieldValueFromDefaults(persistedFieldDefaults, key, draftValue)
     },
-    [persistedFieldDefaults]
+    [persistedFieldDefaults],
   )
 
   return {

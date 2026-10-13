@@ -15,7 +15,7 @@ describe("public map organization curation", () => {
     const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
 
     expect(organizationAction).toContain(
-      'revalidateTag("public-map-organizations", { expire: 0 })'
+      'revalidateTag("public-map-organizations", "max")'
     )
     expect(publicMapQuery).toContain('["public-map-organizations-v8"]')
   })
@@ -41,7 +41,7 @@ describe("public map organization curation", () => {
     expect(action).toContain("before_state")
     expect(action).toContain("after_state")
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
-    expect(action).toContain('revalidatePath("/map")')
+    expect(action).toContain('revalidatePath("/find")')
     expect(action).not.toContain(".delete(")
 
     expect(migration).toContain(
@@ -65,15 +65,13 @@ describe("public map organization curation", () => {
   })
 
   it("passes org curation only through the authenticated super-admin find shell", () => {
-    const findPage = readSource(
-      "src/features/find-map/components/public-find-route.tsx"
-    )
-    const findSlugPage = findPage
+    const findPage = readSource("src/app/(public)/find/page.tsx")
+    const findSlugPage = readSource("src/app/(public)/find/[slug]/page.tsx")
     const publicMapIndex = readSource(
       "src/components/public/public-map-index.tsx"
     )
-    const organizationHeaderSlots = readSource(
-      "src/components/public/public-map-index/organization-detail-header-slots.tsx"
+    const organizationDetail = readSource(
+      "src/components/public/public-map-index/organization-detail.tsx"
     )
     const organizationChrome = readSource(
       "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
@@ -87,14 +85,8 @@ describe("public map organization curation", () => {
     expect(findPage).toContain("organizationCurationAction={")
     expect(findSlugPage).toContain("organizationCurationAction={")
     expect(publicMapIndex).toContain("organizationCurationAction")
-    expect(organizationHeaderSlots).toContain(
-      "canManageResourceMap={canManageResourceMap}"
-    )
-    expect(organizationHeaderSlots).toContain(
-      "organizationCurationAction={organizationCurationAction}"
-    )
-    expect(organizationChrome).toContain("canManageResourceMap?: boolean")
-    expect(organizationChrome).toContain("organizationCurationAction")
+    expect(organizationDetail).toContain("canManageResourceMap?: boolean")
+    expect(organizationDetail).toContain("organizationCurationAction")
     expect(organizationChrome).toContain("PublicMapOrganizationAdminActions")
     expect(organizationChrome).toContain(
       "canManageResourceMap && organizationCurationAction"

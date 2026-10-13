@@ -5,12 +5,15 @@ import { useSearchParams } from "next/navigation"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { resolveOnboardingSteps } from "./onboarding-dialog/constants"
+import { clearOnboardingDraft } from "./onboarding-dialog/draft"
 import type { SaveOnboardingDraftExtra } from "./onboarding-dialog/draft-writer"
 import {
   resolveOnboardingError,
   resolveOnboardingPricingEntryStepId,
 } from "./onboarding-dialog/helpers"
-import { clearResolvedAccountStepErrors } from "./onboarding-dialog/hooks/use-onboarding-flow-state-sync"
+import {
+  clearResolvedAccountStepErrors,
+} from "./onboarding-dialog/hooks/use-onboarding-flow-state-sync"
 import {
   syncOnboardingCarryForwardInputs,
   type OnboardingAccountValues,
@@ -27,10 +30,10 @@ import type {
 } from "./onboarding-dialog/types"
 
 export function resolveOnboardingModeVisibleStepIds(
-  mode: OnboardingFlowMode
+  mode: OnboardingFlowMode,
 ): OnboardingFlowVisibleStepId[] | undefined {
   if (mode === "post_signup_access") {
-    return ["intent", "account"]
+    return ["intent", "pricing"]
   }
   if (mode === "workspace_setup") {
     return ["org", "account", "community"]
@@ -85,7 +88,6 @@ export function useApplyPricingEntryPoint({
     if (pricingEntryAppliedRef.current) return
     const entryStepId = resolveOnboardingPricingEntryStepId(searchParams, mode)
     if (!entryStepId) return
-    if (entryStepId === "pricing" && visibleStepIds && !visibleStepIds.includes("pricing")) return
     pricingEntryAppliedRef.current = true
     setIntentFocus("build")
     const resolvedSteps = filterOnboardingSteps({
@@ -93,7 +95,7 @@ export function useApplyPricingEntryPoint({
       visibleStepIds,
     })
     const pricingStepIndex = resolvedSteps.findIndex(
-      (candidate) => candidate.id === entryStepId
+      (candidate) => candidate.id === entryStepId,
     )
     if (pricingStepIndex >= 0) {
       setStep(pricingStepIndex)
@@ -155,10 +157,7 @@ export function buildOnboardingFormHandlers({
   intentFocus: IntentFocus | ""
   roleInterest: RoleInterest | ""
   formationStatus: FormationStatus | ""
-  organizationValuesRef: React.MutableRefObject<{
-    orgName: string
-    orgSlug: string
-  }>
+  organizationValuesRef: React.MutableRefObject<{ orgName: string; orgSlug: string }>
   accountValuesRef: React.MutableRefObject<OnboardingAccountValues>
 }) {
   const handleFormChange = () => {
@@ -166,24 +165,18 @@ export function buildOnboardingFormHandlers({
     saveDraft()
     syncProgress()
     syncAccountStateFromForm()
-    if (
-      steps[step]?.id === "account" &&
-      attemptedStep === step &&
-      formRef.current
-    ) {
+    if (steps[step]?.id === "account" && attemptedStep === step && formRef.current) {
       const data = new FormData(formRef.current)
       const firstName = String(data.get("firstName") ?? "").trim()
       const lastName = String(data.get("lastName") ?? "").trim()
-      const personHandle = String(data.get("personHandle") ?? "").trim()
       setErrors((previous) =>
         clearResolvedAccountStepErrors({
           previousErrors: previous,
           firstName,
           lastName,
-          personHandle,
-        })
+        }),
       )
-      if (firstName && lastName && personHandle) {
+      if (firstName && lastName) {
         setAttemptedStep(null)
       }
     }
@@ -211,6 +204,7 @@ export function buildOnboardingFormHandlers({
     }
     setSubmitting(true)
     saveDraft({ step })
+    clearOnboardingDraft()
   }
 
   return {
@@ -228,8 +222,6 @@ export function buildOnboardingStepControls({
   intentFocus,
   slugStatus,
   slugHint,
-  personHandleStatus,
-  personHandleHint,
   builderPlanTier,
   syncOrganizationStateFromForm,
   syncAccountStateFromForm,
@@ -247,8 +239,6 @@ export function buildOnboardingStepControls({
   intentFocus: IntentFocus | ""
   slugStatus: OnboardingSlugStatus
   slugHint: string | null
-  personHandleStatus: OnboardingSlugStatus
-  personHandleHint: string | null
   builderPlanTier: PricingPlanTier
   syncOrganizationStateFromForm: () => void
   syncAccountStateFromForm: () => void
@@ -270,8 +260,6 @@ export function buildOnboardingStepControls({
       intentFocus,
       slugStatus,
       slugHint,
-      personHandleStatus,
-      personHandleHint,
       builderPlanTier,
     })
     setErrors(nextErrors)

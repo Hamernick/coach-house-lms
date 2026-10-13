@@ -18,7 +18,6 @@ function buildFeature({
   longitude,
   organizationIds = id,
   verificationStatus = "external_data",
-  weatherEligible = false,
 }: {
   category?: PublicMapResourceCategoryKey
   id: string
@@ -26,7 +25,6 @@ function buildFeature({
   longitude: number
   organizationIds?: string
   verificationStatus?: "external_data" | "verified_platform"
-  weatherEligible?: boolean
 }): PublicMapPointFeature {
   return {
     type: "Feature",
@@ -54,13 +52,12 @@ function buildFeature({
       sameLocationKey: id,
       sameLocationLabel: "Chicago, IL",
       verificationStatus,
-      weatherEligible,
     },
   }
 }
 
 describe("public map marker relevance", () => {
-  it("shows one exact-coordinate category representative on the overview globe", () => {
+  it("progressively reveals one, two, then every nearby category marker", () => {
     const features = [
       buildFeature({ id: "food-a", latitude: 41.88, longitude: -87.63 }),
       buildFeature({ id: "food-b", latitude: 41.881, longitude: -87.631 }),
@@ -77,14 +74,6 @@ describe("public map marker relevance", () => {
     expect(countAtTier(1)).toBe(1)
     expect(countAtTier(2)).toBe(2)
     expect(countAtTier(3)).toBe(4)
-    expect(
-      relevant.every(
-        (feature) => feature.properties.markerOverviewOffsetIndex === undefined
-      )
-    ).toBe(true)
-    expect(relevant.map((feature) => feature.geometry.coordinates)).toEqual(
-      features.map((feature) => feature.geometry.coordinates)
-    )
   })
 
   it("reserves overview representation for each resource category", () => {
@@ -118,52 +107,6 @@ describe("public map marker relevance", () => {
       relevant.find((feature) => feature.properties.itemId === "near")
         ?.properties.markerRelevanceTier
     ).toBe(0)
-  })
-
-  it("prioritizes only eligible cooling resources during active heat", () => {
-    const features = [
-      buildFeature({
-        category: "environment",
-        id: "near-environment",
-        latitude: 41.88,
-        longitude: -87.63,
-      }),
-      buildFeature({
-        category: "emergency_cooling_centers",
-        id: "eligible-cooling",
-        latitude: 41.9,
-        longitude: -87.65,
-        weatherEligible: true,
-      }),
-    ]
-    const inactive = buildPublicMapMarkerRelevance({
-      features,
-      userCoordinates: { latitude: 41.88, longitude: -87.63 },
-    })
-    const active = buildPublicMapMarkerRelevance({
-      boostCoolingCenters: true,
-      features,
-      userCoordinates: { latitude: 41.88, longitude: -87.63 },
-    })
-
-    expect(
-      inactive.find(
-        (feature) => feature.properties.itemId === "near-environment"
-      )?.properties.markerRelevanceTier
-    ).toBe(0)
-    expect(
-      inactive.find(
-        (feature) => feature.properties.itemId === "eligible-cooling"
-      )?.properties.markerRelevanceTier
-    ).toBeGreaterThan(0)
-    expect(
-      active.find((feature) => feature.properties.itemId === "eligible-cooling")
-        ?.properties.markerRelevanceTier
-    ).toBe(0)
-    expect(
-      active.find((feature) => feature.properties.itemId === "near-environment")
-        ?.properties.markerRelevanceTier
-    ).toBeGreaterThan(0)
   })
 
   it("keeps any saved organization in a same-location marker prioritized", () => {

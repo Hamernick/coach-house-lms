@@ -1,87 +1,126 @@
 import { redirect } from "next/navigation"
 
-import { OnboardingWorkspaceCard } from "@/components/onboarding/onboarding-workspace-card"
-import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
-import type { Json } from "@/lib/supabase"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
-import { completeOnboardingAction } from "./actions"
+import { CommunityJoinCards } from "@/components/community/community-join-cards"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckboxField } from "@/components/form/checkbox-field"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { requireServerSession } from "@/lib/auth"
+import { revalidatePath } from "next/cache"
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>
+export default async function OnboardingPage() {
+  const { supabase, session } = await requireServerSession("/onboarding")
 
-async function resolvePricingReturnPlanTierOverride(
-  state: Awaited<ReturnType<typeof resolveDashboardLayoutState>>,
-  searchParams?: SearchParams,
-): Promise<PricingPlanTier | null> {
-  const params = searchParams ? await searchParams : {}
-  const source = typeof params?.source === "string" ? params.source : null
-  if (source !== "onboarding_pricing") return null
-  if (!state.userPresent || !state.onboardingLocked || state.isAdmin) return null
-  if (state.onboardingIntentFocus !== "build") return null
-  if (state.currentPlanTier !== "free") return state.currentPlanTier
-
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { orgId } = await resolveActiveOrganization(supabase, user.id)
-  const entitlements = await fetchLearningEntitlements({
-    supabase,
-    userId: user.id,
-    orgUserId: orgId,
-    isAdmin: state.isAdmin,
-    forceStripeSync: true,
-  })
-  if (!entitlements.hasActiveSubscription) return null
-
-  const { data: activeSubscription } = await supabase
-    .from("subscriptions")
-    .select("status, metadata")
-    .eq("user_id", orgId)
-    .in("status", ["active", "trialing", "past_due", "incomplete"])
-    .not("stripe_subscription_id", "ilike", "stub_%")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ status: string | null; metadata: Json | null }>()
-
-  const resolvedPlanTier = resolvePricingPlanTier(activeSubscription ?? null)
-  return resolvedPlanTier === "free" ? "organization" : resolvedPlanTier
-}
-
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams
-} = {}) {
-  const state = await resolveDashboardLayoutState()
-  const pricingReturnPlanTierOverride = await resolvePricingReturnPlanTierOverride(
-    state,
-    searchParams,
-  )
-
-  if (!state.userPresent) {
-    redirect("/login?redirect=/onboarding")
+  // If already completed, do not show onboarding
+  const completed = Boolean((session.user.user_metadata as Record<string, unknown> | null)?.onboarding_completed)
+  if (completed) {
+    redirect("/organization")
   }
 
-  if (!state.onboardingLocked) {
-    redirect("/workspace")
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, headline")
+    .eq("id", session.user.id)
+    .maybeSingle<{ full_name: string | null; headline: string | null }>()
+
+  const metadata = session.user.user_metadata ?? {}
+
+  const marketingOptIn = Boolean(metadata.marketing_opt_in ?? true)
+  const newsletterOptIn = Boolean(metadata.newsletter_opt_in ?? true)
 
   return (
-    <div data-onboarding-page className="mx-auto flex w-full max-w-[980px] min-h-0 flex-1 flex-col py-0 sm:py-2 md:py-4">
-      <OnboardingWorkspaceCard
-        className="mx-auto my-auto h-auto max-h-none shrink-0 shadow-none [&>form]:h-auto max-w-[480px]"
-        {...state.onboardingDefaults}
-        defaultBuilderPlanTier={pricingReturnPlanTierOverride ?? state.currentPlanTier}
-        mode={state.onboardingMode ?? "post_signup_access"}
-        onSubmit={completeOnboardingAction}
-      />
+    <div className="flex flex-col gap-6">
+      <section>
+        <Card className="border bg-card/60">
+          <CardHeader>
+            <CardTitle>Welcome to Coach House</CardTitle>
+            <CardDescription>Tell us a bit about you to personalize your experience.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={completeOnboarding} className="space-y-6">
+              <input type="hidden" name="redirect" value="/organization" />
+              <div className="grid gap-2">
+                <Label htmlFor="fullName">Full name</Label>
+                <Input id="fullName" name="fullName" defaultValue={profile?.full_name ?? ""} placeholder="Your name" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="goals">Learning goals (optional)</Label>
+                <Textarea id="goals" name="goals" defaultValue={profile?.headline ?? ""} placeholder="What would you like to achieve?" />
+              </div>
+              <div className="space-y-3">
+                <CheckboxField
+                  id="marketingOptIn"
+                  name="marketingOptIn"
+                  label="Product communication"
+                  description="Get product updates, tips, and offers."
+                  defaultChecked={marketingOptIn}
+                />
+                <CheckboxField
+                  id="newsletterOptIn"
+                  name="newsletterOptIn"
+                  label="Weekly newsletter"
+                  description="Curated learning resources and community news."
+                  defaultChecked={newsletterOptIn}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="submit">Finish</Button>
+                <Button variant="ghost" type="submit" name="skip" value="1">
+                  Skip
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="mx-auto w-full max-w-3xl">
+        <CommunityJoinCards
+          title="Meet the community"
+          description="Optional now, helpful later. Join the Coach House communities while you set up your workspace."
+        />
+      </section>
     </div>
   )
+}
+
+async function completeOnboarding(formData: FormData) {
+  "use server"
+
+  const { supabase, session } = await requireServerSession("/onboarding")
+
+  const redirectTo = typeof formData.get("redirect") === "string" ? (formData.get("redirect") as string) : "/organization"
+  const skipped = formData.get("skip") === "1"
+
+  const fullName = formData.get("fullName")
+  const goals = formData.get("goals")
+  const marketingOptIn = formData.get("marketingOptIn") === "on"
+  const newsletterOptIn = formData.get("newsletterOptIn") === "on"
+
+  // Update profile (non-destructive)
+  if (!skipped) {
+    await supabase
+      .from("profiles")
+      .update({
+        full_name: typeof fullName === "string" && fullName.trim().length > 0 ? fullName.trim() : null,
+        headline: typeof goals === "string" && goals.trim().length > 0 ? goals.trim() : null,
+      })
+      .eq("id", session.user.id)
+  }
+
+  // Update auth metadata and mark completed
+  await supabase.auth.updateUser({
+    data: {
+      marketing_opt_in: skipped ? true : marketingOptIn,
+      newsletter_opt_in: skipped ? true : newsletterOptIn,
+      onboarding_completed: true,
+    },
+  })
+
+  revalidatePath("/organization")
+  redirect(redirectTo)
 }

@@ -7,10 +7,26 @@ export const GlobalSearch = dynamic(
   { loading: () => null, ssr: false },
 )
 
+export const CaseStudyAutofillFab = dynamic(
+  () =>
+    import("@/components/dev/case-study-autofill-fab").then((mod) => ({
+      default: mod.CaseStudyAutofillFab,
+    })),
+  { loading: () => null, ssr: false },
+)
+
 export const OnboardingDialogEntry = dynamic(
   () =>
     import("@/components/onboarding/onboarding-dialog-entry").then((mod) => ({
       default: mod.OnboardingDialogEntry,
+    })),
+  { loading: () => null, ssr: false },
+)
+
+export const OnboardingWelcome = dynamic(
+  () =>
+    import("@/components/onboarding/onboarding-welcome").then((mod) => ({
+      default: mod.OnboardingWelcome,
     })),
   { loading: () => null, ssr: false },
 )

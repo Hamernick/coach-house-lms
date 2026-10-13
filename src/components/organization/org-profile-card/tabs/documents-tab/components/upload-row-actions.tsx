@@ -10,30 +10,14 @@ import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
 
 import { Button } from "@/components/ui/button"
 import {
-  MAX_UPLOAD_MB,
-  ORGANIZATION_DOCUMENT_ACCEPT,
-} from "@/lib/organization/document-storage"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { DocumentDefinition, UploadRow } from "../types"
-import {
-  DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME,
-  type DocumentRowActionPresentation,
-  getDocumentRowActionButtonClassName,
-  getDocumentRowActionButtonSize,
-  getDocumentRowActionsClassName,
-  shouldShowDocumentRowActionLabel,
-} from "./document-row-action-styles"
 
 type UploadRowActionsProps = {
   definition: DocumentDefinition
@@ -48,7 +32,6 @@ type UploadRowActionsProps = {
   onDelete: (definition: DocumentDefinition) => Promise<void>
   onView: (definition: DocumentDefinition) => Promise<void>
   onDownload: (definition: DocumentDefinition) => Promise<void>
-  presentation?: DocumentRowActionPresentation
 }
 
 export function UploadRowActions({
@@ -64,25 +47,20 @@ export function UploadRowActions({
   onDelete,
   onView,
   onDownload,
-  presentation = "table",
 }: UploadRowActionsProps) {
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hasDocument = Boolean(document?.path)
   const menuBusy = isUploading || isDeleting || isViewing || isDownloading
-  const showLabels = shouldShowDocumentRowActionLabel(presentation)
-  const framedButtonClassName =
-    getDocumentRowActionButtonClassName(presentation)
-  const framedButtonSize = getDocumentRowActionButtonSize(presentation)
 
   return (
-    <div className={getDocumentRowActionsClassName(presentation)}>
+    <div className="flex min-w-[170px] items-center justify-end gap-1.5">
       {canEdit && editMode ? (
         <input
           id={inputId}
           ref={inputRef}
           type="file"
-          accept={ORGANIZATION_DOCUMENT_ACCEPT}
+          accept="application/pdf"
           className="sr-only"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]
@@ -98,23 +76,17 @@ export function UploadRowActions({
           <TooltipTrigger asChild>
             <Button
               type="button"
-              size={framedButtonSize}
-              variant="ghost"
-              className={framedButtonClassName}
+              size="icon"
+              variant="secondary"
+              className="h-8 w-8"
               disabled={isViewing}
               onClick={() => void onView(definition)}
               aria-label="View document"
             >
-              <ExternalLink
-                data-icon={showLabels ? "inline-start" : undefined}
-                aria-hidden
-              />
-              {showLabels ? <span className="truncate">View</span> : null}
+              <ExternalLink className="h-4 w-4" aria-hidden />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">
-            {isViewing ? "Opening…" : "View"}
-          </TooltipContent>
+          <TooltipContent side="top">{isViewing ? "Opening…" : "View"}</TooltipContent>
         </Tooltip>
       ) : null}
 
@@ -123,23 +95,17 @@ export function UploadRowActions({
           <TooltipTrigger asChild>
             <Button
               type="button"
-              size={framedButtonSize}
-              variant="ghost"
-              className={framedButtonClassName}
+              size="icon"
+              variant="outline"
+              className="h-8 w-8"
               disabled={isDownloading}
               onClick={() => void onDownload(definition)}
               aria-label="Download document"
             >
-              <Download
-                data-icon={showLabels ? "inline-start" : undefined}
-                aria-hidden
-              />
-              {showLabels ? <span className="truncate">Download</span> : null}
+              <Download className="h-4 w-4" aria-hidden />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">
-            {isDownloading ? "Preparing…" : "Download"}
-          </TooltipContent>
+          <TooltipContent side="top">{isDownloading ? "Preparing…" : "Download"}</TooltipContent>
         </Tooltip>
       ) : null}
 
@@ -149,30 +115,19 @@ export function UploadRowActions({
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                size={framedButtonSize}
-                variant="ghost"
-                className={framedButtonClassName}
+                size="icon"
+                variant="outline"
+                className="h-8 w-8"
                 disabled={menuBusy}
                 aria-label="Document actions"
               >
-                <MoreHorizontal
-                  data-icon={showLabels ? "inline-start" : undefined}
-                  aria-hidden
-                />
-                {showLabels ? <span className="truncate">Manage</span> : null}
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                asChild
-                disabled={isUploading}
-                className="cursor-pointer"
-              >
-                <label
-                  htmlFor={inputId}
-                  className="flex w-full cursor-pointer items-center gap-2"
-                >
-                  <RefreshCw />
+              <DropdownMenuItem asChild disabled={isUploading} className="cursor-pointer">
+                <label htmlFor={inputId} className="flex w-full cursor-pointer items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
                   {isUploading ? "Uploading…" : "Replace file"}
                 </label>
               </DropdownMenuItem>
@@ -182,7 +137,7 @@ export function UploadRowActions({
                 disabled={isDeleting}
                 onSelect={() => void onDelete(definition)}
               >
-                <Trash2 />
+                <Trash2 className="h-4 w-4" />
                 {isDeleting ? "Removing…" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -192,30 +147,23 @@ export function UploadRowActions({
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                size="sm"
-                variant={presentation === "mobile" ? "ghost" : "outline"}
-                className={
-                  presentation === "mobile"
-                    ? DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME
-                    : undefined
-                }
+                size="icon"
+                variant="outline"
+                className="h-8 w-8"
                 disabled={isUploading}
                 onClick={() => inputRef.current?.click()}
                 aria-label="Upload document"
               >
-                <UploadCloud data-icon="inline-start" aria-hidden />
-                {isUploading ? "Uploading…" : "Upload"}
+                <UploadCloud className="h-4 w-4" aria-hidden />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isUploading
-                ? "Uploading…"
-                : `Upload PDF or image (${MAX_UPLOAD_MB} MB max)`}
+              {isUploading ? "Uploading…" : "Upload PDF (15 MB max)"}
             </TooltipContent>
           </Tooltip>
         )
       ) : !hasDocument ? (
-        <span className="text-muted-foreground text-xs">Admins only</span>
+        <span className="text-xs text-muted-foreground">Admins only</span>
       ) : null}
     </div>
   )

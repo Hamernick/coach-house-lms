@@ -23,7 +23,6 @@ import type { ProgramWizardFormState } from "../schema"
 import type { ProgramWizardFieldErrors, ProgramWizardUpdate } from "../types"
 
 type StepBasicInfoProps = {
-  organizationId?: string
   mode: "create" | "edit"
   form: ProgramWizardFormState
   errors: ProgramWizardFieldErrors
@@ -64,7 +63,7 @@ function ProgramMediaField({
       <div className="space-y-2">
         {value ? (
           <div
-            className={`border-border/60 bg-muted/20 overflow-hidden rounded-xl border ${previewClassName}`}
+            className={`overflow-hidden rounded-xl border border-border/60 bg-muted/20 ${previewClassName}`}
           >
             <Image
               src={value}
@@ -146,13 +145,7 @@ function ProgramMediaField({
   )
 }
 
-export function StepBasicInfo({
-  mode,
-  organizationId,
-  form,
-  errors,
-  update,
-}: StepBasicInfoProps) {
+export function StepBasicInfo({ mode, form, errors, update }: StepBasicInfoProps) {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isRemovingBanner, setIsRemovingBanner] = useState(false)
@@ -178,13 +171,14 @@ export function StepBasicInfo({
     setUploading(true)
     const toastId = toast.loading(`Uploading ${label.toLowerCase()}…`)
     try {
-      const url = await uploadProgramMedia({ file, organizationId })
+      const url = await uploadProgramMedia({ file })
       update({ [field]: url } as Partial<ProgramWizardFormState>)
       toast.success(`${label} saved`, { id: toastId })
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed", {
-        id: toastId,
-      })
+      toast.error(
+        error instanceof Error ? error.message : "Upload failed",
+        { id: toastId },
+      )
     } finally {
       setUploading(false)
     }
@@ -218,7 +212,7 @@ export function StepBasicInfo({
         error instanceof Error
           ? error.message
           : "Removed from the form, but cleanup failed",
-        { id: toastId }
+        { id: toastId },
       )
     } finally {
       setRemoving(false)
@@ -228,7 +222,7 @@ export function StepBasicInfo({
   return (
     <section className="grid gap-4 sm:grid-cols-2">
       <div className="grid gap-1.5 sm:col-span-2">
-        <Label htmlFor="programTitle">Activity name</Label>
+        <Label htmlFor="programTitle">Program name</Label>
         <Input
           id="programTitle"
           value={form.title}
@@ -236,23 +230,19 @@ export function StepBasicInfo({
           placeholder="Community Career Bridge"
           className="text-base"
         />
-        {errors.title ? (
-          <p className="text-destructive text-xs">{errors.title}</p>
-        ) : null}
+        {errors.title ? <p className="text-xs text-destructive">{errors.title}</p> : null}
       </div>
       <div className="grid gap-1.5 sm:col-span-2">
         <Label htmlFor="oneSentence">One-sentence description</Label>
         <Textarea
           id="oneSentence"
           value={form.oneSentence}
-          onChange={(event) =>
-            update({ oneSentence: event.currentTarget.value })
-          }
-          placeholder="Describe the activity in one clear sentence."
+          onChange={(event) => update({ oneSentence: event.currentTarget.value })}
+          placeholder="Describe the program in one clear sentence."
           className="min-h-[96px] text-base"
         />
         {errors.oneSentence ? (
-          <p className="text-destructive text-xs">{errors.oneSentence}</p>
+          <p className="text-xs text-destructive">{errors.oneSentence}</p>
         ) : null}
       </div>
       <div className="grid gap-1.5">
@@ -267,10 +257,10 @@ export function StepBasicInfo({
       </div>
       <div className="sm:col-span-2">
         <ProgramMediaField
-          label="Activity banner (optional)"
+          label="Program banner (optional)"
           value={form.bannerImageUrl}
           placeholder="Paste a wide banner image URL or upload a file"
-          helpText="Used for the wide activity header on larger cards and previews."
+          helpText="Used for the wide program header on larger cards and program previews."
           previewClassName="h-32"
           isUploading={isUploadingBanner}
           isRemoving={isRemovingBanner}
@@ -280,7 +270,7 @@ export function StepBasicInfo({
               file,
               field: "bannerImageUrl",
               setUploading: setIsUploadingBanner,
-              label: "Activity banner",
+              label: "Program banner",
             })
           }
           onRemove={() =>
@@ -293,10 +283,10 @@ export function StepBasicInfo({
         />
       </div>
       <ProgramMediaField
-        label="Activity profile image (optional)"
+        label="Program profile image (optional)"
         value={form.imageUrl}
         placeholder="Paste a profile image URL or upload a file"
-        helpText="Used for compact activity cards and thumbnail surfaces."
+        helpText="Used for compact program cards and thumbnail surfaces."
         previewClassName="h-32"
         isUploading={isUploadingImage}
         isRemoving={isRemovingImage}
@@ -306,7 +296,7 @@ export function StepBasicInfo({
             file,
             field: "imageUrl",
             setUploading: setIsUploadingImage,
-            label: "Activity profile image",
+            label: "Program profile image",
           })
         }
         onRemove={() =>

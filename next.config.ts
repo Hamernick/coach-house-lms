@@ -4,49 +4,10 @@ import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer"
 const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
   : undefined
-const supabaseImageHosts = Array.from(
-  new Set(
-    ["vswzhuwjtgzrkxknrmxu.supabase.co", supabaseHost].filter(
-      (host): host is string => Boolean(host)
-    )
-  )
-)
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  async headers() {
-    return [
-      {
-        source: "/resources",
-        headers: [
-          {
-            key: "Permissions-Policy",
-            value: "geolocation=(self)",
-          },
-        ],
-      },
-    ]
-  },
-  async redirects() {
-    return [
-      {
-        source: "/map",
-        destination: "/resources",
-        permanent: true,
-      },
-      {
-        source: "/find",
-        destination: "/resources",
-        permanent: true,
-      },
-      {
-        source: "/find/:slug",
-        destination: "/resources?organization=:slug",
-        permanent: true,
-      },
-    ]
-  },
   turbopack: {
     root: __dirname, // ensure Turbopack resolves Next from the repo root
   },
@@ -55,11 +16,9 @@ const nextConfig: NextConfig = {
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: "static",
-          reportFilename: options.isServer
-            ? "analyze-server.html"
-            : "analyze-client.html",
+          reportFilename: options.isServer ? "analyze-server.html" : "analyze-client.html",
           openAnalyzer: false,
-        })
+        }),
       )
     }
     // Reduce cache serialization warnings in CI by disabling filesystem cache
@@ -76,19 +35,19 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-      },
-      {
-        protocol: "https",
         hostname: "api.mapbox.com",
         pathname: "/styles/v1/**",
       },
       // Allow images served from Supabase Storage buckets for this project
-      ...supabaseImageHosts.map((hostname) => ({
-        protocol: "https" as const,
-        hostname,
-        pathname: "/storage/v1/object/**",
-      })),
+      ...(supabaseHost
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: supabaseHost,
+              pathname: "/storage/v1/object/**",
+            },
+          ]
+        : []),
     ],
   },
 }

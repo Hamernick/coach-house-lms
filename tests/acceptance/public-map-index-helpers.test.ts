@@ -3,9 +3,7 @@ import { describe, expect, it } from "vitest"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { filterPublicMapOrganizations } from "@/components/public/public-map-index/helpers"
 
-function buildOrganization(
-  overrides: Partial<PublicMapOrganization> = {}
-): PublicMapOrganization {
+function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): PublicMapOrganization {
   return {
     id: "org-1",
     name: "Alpha Org",
@@ -16,15 +14,12 @@ function buildOrganization(
     mission: null,
     values: null,
     needStatement: null,
-    originStory: null,
-    theoryOfChange: null,
     formationStatus: null,
     contactName: null,
     logoUrl: null,
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -48,7 +43,6 @@ function buildOrganization(
     country: "United States",
     locationUrl: null,
     publicSlug: "alpha-org",
-    activityLinks: [],
     programPreview: null,
     programs: [],
     programCount: 0,
@@ -122,9 +116,7 @@ describe("filterPublicMapOrganizations", () => {
       activeGroup: "all",
     })
 
-    expect(results.map((organization) => organization.id)).toEqual([
-      "mapped-org",
-    ])
+    expect(results.map((organization) => organization.id)).toEqual(["mapped-org"])
   })
 
   it("keeps online-only organizations in the list even when map bounds are applied", () => {

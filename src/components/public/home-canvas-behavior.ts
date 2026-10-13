@@ -4,15 +4,9 @@ export type CanvasSectionBehavior = {
   lockNavigationGestures: boolean
 }
 
-export function resolveCanvasSectionBehavior(
-  sectionId: string
-): CanvasSectionBehavior {
+export function resolveCanvasSectionBehavior(sectionId: string): CanvasSectionBehavior {
   const isMapSection = sectionId === "find"
-  const scrollable =
-    sectionId === "hero" ||
-    sectionId === "pricing" ||
-    sectionId === "platform" ||
-    sectionId === "accelerator"
+  const scrollable = sectionId === "pricing" || sectionId === "accelerator"
   return {
     scrollable,
     touchAction: isMapSection ? "auto" : scrollable ? "pan-y" : "pan-x",

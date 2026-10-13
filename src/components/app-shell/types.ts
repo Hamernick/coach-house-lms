@@ -2,12 +2,10 @@ import type { ReactNode } from "react"
 
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-import type { PlatformAccessLevel } from "@/features/platform-access"
 
 export type AppShellProps = {
   children: ReactNode
   breadcrumbs?: ReactNode
-  sidebarHeaderContent?: ReactNode
   sidebarTree: SidebarClass[]
   user?: {
     name: string | null
@@ -16,7 +14,6 @@ export type AppShellProps = {
     avatar?: string | null
   } | null
   isAdmin: boolean
-  platformAccessLevel?: PlatformAccessLevel | null
   isTester?: boolean
   showOrgAdmin?: boolean
   canAccessOrgAdmin?: boolean
@@ -24,20 +21,14 @@ export type AppShellProps = {
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
-  hasBillingCancellationRisk?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
   currentPlanTier?: PricingPlanTier
   organizationName?: string | null
+  tutorialWelcome?: { platform: boolean; accelerator: boolean }
   onboardingLocked?: boolean
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   context?: "platform" | "accelerator" | "public" | "admin"
-  contentPresentation?: "default" | "full-bleed"
-  defaultSidebarOpen?: boolean
-  resizableRightRail?: boolean
   formationStatus?: string | null
-  brandHref?: string
-  showWorkspaceHome?: boolean
-  showMemberWorkspace?: boolean
 }

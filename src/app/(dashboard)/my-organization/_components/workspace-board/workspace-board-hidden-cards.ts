@@ -1,7 +1,4 @@
-import {
-  resolveWorkspaceAlwaysHiddenCardIds,
-  resolveWorkspaceDefaultHiddenCardIds,
-} from "@/lib/workspace-card-policy"
+import { DEFAULT_HIDDEN_CARD_IDS } from "./workspace-board-layout-config"
 import {
   WORKSPACE_CARD_IDS,
   type WorkspaceBoardState,
@@ -13,17 +10,14 @@ import {
   getWorkspaceCanvasCardDescendants,
 } from "./workspace-canvas-v2/contracts/workspace-card-tree-contract"
 
-const ALWAYS_HIDDEN_CARD_IDS: WorkspaceCardId[] = [
-  ...resolveWorkspaceAlwaysHiddenCardIds(),
-]
+const ALWAYS_HIDDEN_CARD_IDS: WorkspaceCardId[] = ["brand-kit", "deck", "atlas"]
 const FIXED_VISIBLE_CARD_IDS: WorkspaceCardId[] = ["organization-overview"]
 
 function isWorkspaceTreeCardId(cardId: WorkspaceCardId) {
   return (
     cardId === "organization-overview" ||
     cardId === "programs" ||
-    cardId === "roadmap" ||
-    cardId === "deck" ||
+    cardId === "vault" ||
     cardId === "accelerator" ||
     cardId === "economic-engine" ||
     cardId === "calendar" ||
@@ -101,7 +95,7 @@ function buildDefaultHiddenSet({
   nodeIdSet: Set<WorkspaceCardId>
 }) {
   return toWorkspaceHiddenSet({
-    hiddenCardIds: [...resolveWorkspaceDefaultHiddenCardIds()],
+    hiddenCardIds: DEFAULT_HIDDEN_CARD_IDS,
     nodeIdSet,
   })
 }
@@ -124,7 +118,7 @@ export function normalizeWorkspaceHiddenCardIds(
       hiddenSet.add(normalizedCardId)
     }
   } else {
-    for (const cardId of resolveWorkspaceDefaultHiddenCardIds()) {
+    for (const cardId of DEFAULT_HIDDEN_CARD_IDS) {
       hiddenSet.add(cardId)
     }
   }
@@ -139,14 +133,14 @@ export function normalizeWorkspaceHiddenCardIds(
     }
   }
 
-  // Migrate legacy default where the former Documents card was hidden with deck/atlas.
+  // Migrate legacy default where vault was hidden with deck/atlas.
   const isLegacyToolingDefault =
     hiddenSet.size === 3 &&
     hiddenSet.has("deck") &&
     hiddenSet.has("atlas") &&
-    hiddenSet.has("roadmap")
+    hiddenSet.has("vault")
   if (isLegacyToolingDefault) {
-    hiddenSet.delete("roadmap")
+    hiddenSet.delete("vault")
   }
 
   if (enforceFallbackVisibleCards) {

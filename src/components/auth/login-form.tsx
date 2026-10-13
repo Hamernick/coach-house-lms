@@ -1,19 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import dynamic from "next/dynamic"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
+import { HCaptchaWidget } from "@/components/auth/hcaptcha-widget"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import {
-  DEFAULT_POST_AUTH_REDIRECT,
-  getSafeRedirectPath,
-} from "@/lib/auth/redirects"
+import { isCaptchaConfigured } from "@/components/auth/sign-up-form-schema"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -25,12 +22,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/auth/password-input"
-
-const GoogleAuthPanel = dynamic(
-  () =>
-    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
-  { ssr: false }
-)
+import { clientEnv } from "@/lib/env"
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -43,23 +35,13 @@ type LoginFormProps = {
   redirectTo?: string
   initialError?: string | null
   signUpHref?: string
-  onAuthenticated?: () => void
-  onSignUp?: () => void
 }
 
-type ExistingAuthSession = { access_token?: string | null } | null | undefined
-
-const authFooterLinkClassName =
-  "rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-
-export function resolveExistingAuthSessionRedirect({
-  session,
-  redirectTo,
-}: {
-  session: ExistingAuthSession
-  redirectTo: string
-}) {
-  return session ? redirectTo : null
+function getSafeRedirect(value: string | null): string | null {
+  if (!value) return null
+  if (!value.startsWith("/")) return null
+  if (value.startsWith("//")) return null
+  return value
 }
 
 function mapAuthErrorMessage(raw: string | null | undefined) {
@@ -95,27 +77,22 @@ function mapAuthNoticeMessage(raw: string | null | undefined) {
   }
 }
 
-export function LoginForm({
-  redirectTo,
-  initialError,
-  signUpHref,
-  onAuthenticated,
-  onSignUp,
-}: LoginFormProps) {
+export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
   const searchError = mapAuthErrorMessage(searchParams.get("error"))
   const noticeMessage = mapAuthNoticeMessage(searchParams.get("notice"))
-  const redirectFromSearch = getSafeRedirectPath(searchParams.get("redirect"))
-  const resolvedRedirectTo =
-    redirectFromSearch ??
-    getSafeRedirectPath(redirectTo) ??
-    DEFAULT_POST_AUTH_REDIRECT
+  const redirectFromSearch = getSafeRedirect(searchParams.get("redirect"))
+  const resolvedRedirectTo = redirectFromSearch ?? redirectTo ?? "/organization"
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    mapAuthErrorMessage(initialError) ?? searchError
+    mapAuthErrorMessage(initialError) ?? searchError,
   )
-  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const captchaRef = useRef<HCaptcha | null>(null)
+  const captchaRequired = isCaptchaConfigured(clientEnv.NEXT_PUBLIC_HCAPTCHA_SITE_KEY)
   const resolvedSignUpHref = useMemo(() => {
     const base = signUpHref ?? "/sign-up"
     if (!resolvedRedirectTo || base.includes("redirect=")) return base
@@ -135,65 +112,47 @@ export function LoginForm({
       password: "",
     },
   })
-  const isConfirmationMessage =
-    errorMessage === "Email confirmed. Sign in to continue."
+  const isConfirmationMessage = errorMessage === "Email confirmed. Sign in to continue."
 
   useEffect(() => {
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
   }, [initialError, searchError])
 
-  useEffect(() => {
-    let cancelled = false
-
-    void supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (cancelled) return
-        const redirectPath = resolveExistingAuthSessionRedirect({
-          session: data.session,
-          redirectTo: resolvedRedirectTo,
-        })
-        if (!redirectPath) return
-
-        if (onAuthenticated) { onAuthenticated(); return }
-        router.replace(redirectPath)
-        router.refresh()
-      })
-      .catch(() => {
-        // A failed session check should leave the sign-in form usable.
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [resolvedRedirectTo, router, supabase, onAuthenticated])
+  function resetCaptchaState() {
+    setCaptchaToken(null)
+    setCaptchaError(null)
+    captchaRef.current?.resetCaptcha()
+  }
 
   async function onSubmit(values: LoginFormValues) {
-    if (isSigningIn) return
-
     setErrorMessage(null)
-    setIsSigningIn(true)
+    setCaptchaError(null)
 
-    try {
+    if (captchaRequired && !captchaToken) {
+      setCaptchaError("Complete the security check to continue.")
+      return
+    }
+
+    startTransition(async () => {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
+        options: {
+          captchaToken: captchaRequired ? captchaToken ?? undefined : undefined,
+        },
       })
 
       if (error) {
+        resetCaptchaState()
         setErrorMessage(mapAuthErrorMessage(error.message))
-        setIsSigningIn(false)
         return
       }
 
+      resetCaptchaState()
       form.reset()
-      if (onAuthenticated) { onAuthenticated(); return }
       router.replace(resolvedRedirectTo)
       router.refresh()
-    } catch {
-      setErrorMessage("Unable to sign in. Please try again.")
-      setIsSigningIn(false)
-    }
+    })
   }
 
   return (
@@ -207,12 +166,7 @@ export function LoginForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                  />
+                  <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -231,12 +185,36 @@ export function LoginForm({
               </FormItem>
             )}
           />
+          {captchaRequired ? (
+            <div className="space-y-2">
+              <HCaptchaWidget
+                captchaRef={captchaRef}
+                onVerify={(token) => {
+                  setCaptchaToken(token)
+                  setCaptchaError(null)
+                }}
+                onExpire={() => {
+                  setCaptchaToken(null)
+                  setCaptchaError("The security check expired. Complete it again to continue.")
+                }}
+                onError={(message) => {
+                  setCaptchaToken(null)
+                  setCaptchaError(message)
+                }}
+              />
+              {captchaError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {captchaError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {errorMessage ? (
             <p
               className={
                 isConfirmationMessage
                   ? "text-sm text-emerald-600 dark:text-emerald-400"
-                  : "text-destructive text-sm"
+                  : "text-sm text-destructive"
               }
               role={isConfirmationMessage ? "status" : "alert"}
             >
@@ -247,36 +225,16 @@ export function LoginForm({
               {noticeMessage}
             </p>
           ) : null}
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={isSigningIn}
-            aria-busy={isSigningIn || undefined}
-          >
-            {isSigningIn ? (
-              <>
-                <LoaderCircleIcon
-                  className="animate-spin"
-                  data-icon="inline-start"
-                  aria-hidden
-                />
-                <span>Signing in…</span>
-              </>
-            ) : (
-              "Sign in"
-            )}
+          <Button className="w-full" type="submit" disabled={isPending}>
+            {isPending ? "Signing in..." : "Sign in"}
           </Button>
         </form>
       </Form>
-      <GoogleAuthPanel mode="login" redirectTo={resolvedRedirectTo} onSuccess={onAuthenticated} redirectOnSuccess={!onAuthenticated} />
-      <div className="text-muted-foreground flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm">
-        {onSignUp ? <Button type="button" variant="link" className="h-auto p-0" onClick={onSignUp}>Need an account? Sign up</Button> : <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
+      <div className="flex justify-between text-sm text-muted-foreground">
+        <Link href={resolvedSignUpHref} className="hover:text-foreground">
           Need an account? Sign up
-        </Link>}
-        <Link
-          href={resolvedForgotPasswordHref}
-          className={authFooterLinkClassName}
-        >
+        </Link>
+        <Link href={resolvedForgotPasswordHref} className="hover:text-foreground">
           Forgot password?
         </Link>
       </div>

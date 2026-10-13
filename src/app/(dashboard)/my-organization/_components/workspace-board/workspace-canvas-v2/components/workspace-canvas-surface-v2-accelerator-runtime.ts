@@ -3,7 +3,6 @@ import { useCallback, useRef, useState } from "react"
 import type {
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
-  WorkspaceAcceleratorTutorialCallout,
 } from "@/features/workspace-accelerator-card"
 
 import { areRuntimeSnapshotsEqual } from "./workspace-canvas-runtime-snapshot"
@@ -12,14 +11,10 @@ export function useWorkspaceCanvasAcceleratorRuntime({
   activeStepId,
   onOpenAcceleratorStepNode,
   onCloseAcceleratorStepNode,
-  tutorialCallout,
-  onTutorialActionComplete,
 }: {
   activeStepId: string | null
   onOpenAcceleratorStepNode: (stepId: string | null) => void
   onCloseAcceleratorStepNode: (source?: "dock" | "card" | "unknown") => void
-  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
-  onTutorialActionComplete?: () => void
 }) {
   const acceleratorRuntimeActionsRef =
     useRef<WorkspaceAcceleratorCardRuntimeActions | null>(null)
@@ -50,10 +45,7 @@ export function useWorkspaceCanvasAcceleratorRuntime({
 
   const handleHideStepNode = useCallback(() => {
     onCloseAcceleratorStepNode("card")
-    if (tutorialCallout?.focus === "close-module") {
-      onTutorialActionComplete?.()
-    }
-  }, [onCloseAcceleratorStepNode, onTutorialActionComplete, tutorialCallout?.focus])
+  }, [onCloseAcceleratorStepNode])
 
   const handlePreviousStep = useCallback(() => {
     acceleratorRuntimeActionsRef.current?.goPrevious()

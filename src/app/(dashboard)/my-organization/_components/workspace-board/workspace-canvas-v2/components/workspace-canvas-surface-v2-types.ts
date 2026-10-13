@@ -1,5 +1,4 @@
 import type { WorkspaceBoardToggleContext } from "../../workspace-board-debug"
-import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardState,
@@ -11,26 +10,20 @@ import type {
   WorkspaceSeedData,
   WorkspaceTrackerState,
 } from "../../workspace-board-types"
-import type {
-  WorkspaceCanvasCardFocusRequest,
-  WorkspaceCanvasTutorialCompletionExitRequest,
-} from "../runtime/workspace-canvas-viewport-command"
 
 export type WorkspaceCanvasSurfaceV2Props = {
   boardState: WorkspaceBoardState
   allowEditing: boolean
-  workspaceDataDrawerCanEdit: boolean
   presentationMode: boolean
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
-  financeInput: WorkspaceFinanceInput
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
-  tutorialRestartRequestKey: number
-  focusCardRequest: WorkspaceCanvasCardFocusRequest
-  tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
+  focusCardRequest: {
+    cardId: WorkspaceCardId
+    requestKey: number
+  } | null
   journeyGuideState: WorkspaceJourneyGuideState
-  onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
   onCommunicationsChange: (next: WorkspaceCommunicationsState) => void
   onTrackerChange: (next: WorkspaceTrackerState) => void
@@ -39,7 +32,6 @@ export type WorkspaceCanvasSurfaceV2Props = {
   onCloseAcceleratorStepNode: (source?: "dock" | "card" | "unknown") => void
   onTutorialPrevious: () => void
   onTutorialNext: () => void
-  onTutorialRestart: () => void
   onTutorialShortcutOpened: () => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   onPersistNodePosition: (cardId: WorkspaceCardId, x: number, y: number) => void
@@ -48,7 +40,6 @@ export type WorkspaceCanvasSurfaceV2Props = {
   onDisconnectAllConnections: () => void
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext
+    context?: WorkspaceBoardToggleContext,
   ) => void
-  onTutorialCompletionExitHandled: () => void
 }

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { memo, useRef } from "react"
 import { Handle, Position, type NodeProps } from "reactflow"
 
+import { WorkspaceAcceleratorStepNodeCard } from "@/features/workspace-accelerator-card"
 import { resolveWorkspaceBoardHandleClassName } from "@/lib/workspace-canvas/handle-styles"
 import { useWorkspaceNodeInternalsSync } from "@/lib/workspace-canvas/node-internals-sync"
 
@@ -11,7 +12,6 @@ import {
   ACCELERATOR_STEP_BOTTOM_TARGET_HANDLE_ID,
   ACCELERATOR_STEP_SIDE_TARGET_HANDLE_ID,
 } from "./workspace-board-accelerator-step-layout"
-import { WorkspaceBoardLazyAcceleratorStepNodeCard } from "./workspace-board-accelerator-lazy"
 import type { WorkspaceBoardAcceleratorStepNodeData } from "./workspace-board-node"
 
 export const WorkspaceBoardAcceleratorStepNode = memo(
@@ -75,9 +75,8 @@ export const WorkspaceBoardAcceleratorStepNode = memo(
               isAbovePlacement ? "origin-bottom" : "origin-left",
             ].join(" ")}
           >
-            <WorkspaceBoardLazyAcceleratorStepNodeCard
+            <WorkspaceAcceleratorStepNodeCard
               step={data.step}
-              placeholderVideoUrl={data.placeholderVideoUrl}
               stepIndex={data.stepIndex}
               stepTotal={data.stepTotal}
               canGoPrevious={data.canGoPrevious}
@@ -88,8 +87,6 @@ export const WorkspaceBoardAcceleratorStepNode = memo(
               onNext={data.onNext}
               onComplete={data.onComplete}
               onClose={data.onClose}
-              tutorialCallout={data.tutorialCallout}
-              onWorkspaceOnboardingSubmit={data.onWorkspaceOnboardingSubmit}
             />
           </motion.div>
         </AnimatePresence>

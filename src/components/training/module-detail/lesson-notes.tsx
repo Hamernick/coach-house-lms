@@ -40,10 +40,10 @@ export function LessonNotes({ title, content }: LessonNotesProps) {
           <div className="mt-4 rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
-                Want help drafting your origin story? Book a coaching meeting.
+                Want help drafting your origin story? Book a coaching session.
               </p>
               <Button type="button" size="sm" onClick={() => void schedule()} disabled={pending}>
-                {pending ? "Opening..." : "Book a meeting"}
+                {pending ? "Opening..." : "Book a session"}
               </Button>
             </div>
             <div className="mt-2">

@@ -1,19 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
-import dynamic from "next/dynamic"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
+import { HCaptchaWidget } from "@/components/auth/hcaptcha-widget"
 import { clearOnboardingDraft } from "@/components/onboarding/onboarding-dialog/draft"
-import {
-  signUpSchema,
-  type SignUpValues,
-} from "@/components/auth/sign-up-form-schema"
+import { isCaptchaConfigured, signUpSchema, type SignUpValues } from "@/components/auth/sign-up-form-schema"
 import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
@@ -26,21 +25,38 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import {
-  createSignupLegalConsent,
-  LegalConsentNotice,
-} from "@/features/legal-consent"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { clientEnv } from "@/lib/env"
 
-const GoogleAuthPanel = dynamic(
-  () =>
-    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
-  { ssr: false }
-)
+const DEFAULT_BUILDER_REDIRECT = "/workspace?onboarding_flow=1&source=signup"
+const DEFAULT_MEMBER_REDIRECT = "/find?member_onboarding=1&source=signup"
 
-const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
-const DEFAULT_MEMBER_REDIRECT = "/onboarding?source=signup"
-const authInlineLinkClassName =
-  "rounded-sm underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+const JOURNEY_OPTIONS: Array<{
+  value: IntentFocus
+  label: string
+  description: string
+}> = [
+  {
+    value: "build",
+    label: "Build a nonprofit",
+    description: "Create your organization workspace and unlock builder onboarding.",
+  },
+  {
+    value: "find",
+    label: "Find nonprofits",
+    description: "Save organizations, follow your interests, and stay connected.",
+  },
+  {
+    value: "fund",
+    label: "Fund nonprofits",
+    description: "Track organizations you support and review funder-ready updates.",
+  },
+  {
+    value: "support",
+    label: "Support teams",
+    description: "Join organizations, collaborate, and help teams execute.",
+  },
+]
 
 type SignUpFormProps = {
   redirectTo?: string
@@ -49,8 +65,6 @@ type SignUpFormProps = {
   loginHref?: string
   signUpMetadata?: Record<string, unknown>
   defaultIntentFocus?: IntentFocus
-  onAuthenticated?: () => void
-  onSignIn?: () => void
   lockedIntentFocus?: IntentFocus | null
 }
 
@@ -98,18 +112,16 @@ function appendRedirectToHref({
   return `${base}${separator}redirect=${encodeURIComponent(redirectTo)}`
 }
 
-function isExistingAccountResponse(
-  user: { identities?: unknown[] } | null | undefined
-) {
-  return Boolean(
-    user && Array.isArray(user.identities) && user.identities.length === 0
-  )
+function isExistingAccountResponse(user: { identities?: unknown[] } | null | undefined) {
+  return Boolean(user && Array.isArray(user.identities) && user.identities.length === 0)
 }
 
-function resolveSignUpErrorMessage(raw: string) {
+function resolveSignUpErrorMessage(raw: string, isTesterInstantSignup: boolean) {
   const normalized = raw.toLowerCase()
   if (normalized.includes("email rate limit exceeded")) {
-    return "Too many verification emails were requested. Wait a minute and retry."
+    return isTesterInstantSignup
+      ? "Tester sign up is temporarily throttled. Retry in a moment."
+      : "Too many verification emails were requested. Wait a minute and retry. Internal testers can use /tester/sign-up."
   }
   return raw
 }
@@ -122,16 +134,20 @@ export function SignUpForm({
   signUpMetadata,
   defaultIntentFocus = "build",
   lockedIntentFocus = null,
-  onAuthenticated,
-  onSignIn,
 }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
+  const [intentFocus, setIntentFocus] = useState<IntentFocus>(
+    lockedIntentFocus ?? defaultIntentFocus,
+  )
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
   const [countdown, setCountdown] = useState(20)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const activeIntentFocus = lockedIntentFocus ?? defaultIntentFocus
+  const captchaRef = useRef<HCaptcha | null>(null)
+  const activeIntentFocus = lockedIntentFocus ?? intentFocus
   const resolvedRedirectTo = useMemo(
     () =>
       resolvePostSignUpRedirect({
@@ -140,7 +156,7 @@ export function SignUpForm({
         memberRedirectTo,
         redirectTo,
       }),
-    [activeIntentFocus, builderRedirectTo, memberRedirectTo, redirectTo]
+    [activeIntentFocus, builderRedirectTo, memberRedirectTo, redirectTo],
   )
   const resolvedLoginHref = useMemo(
     () =>
@@ -148,8 +164,11 @@ export function SignUpForm({
         baseHref: loginHref,
         redirectTo: resolvedRedirectTo,
       }),
-    [loginHref, resolvedRedirectTo]
+    [loginHref, resolvedRedirectTo],
   )
+  const isTesterInstantSignup = signUpMetadata?.qa_tester === true
+  const captchaRequired = isCaptchaConfigured(clientEnv.NEXT_PUBLIC_HCAPTCHA_SITE_KEY) && !isTesterInstantSignup
+
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -159,8 +178,14 @@ export function SignUpForm({
     },
   })
 
+  function resetCaptchaState() {
+    setCaptchaToken(null)
+    setCaptchaError(null)
+    captchaRef.current?.resetCaptcha()
+  }
+
   useEffect(() => {
-    if (status !== "success" || onAuthenticated) return
+    if (status !== "success") return
 
     setCountdown(20)
     const intervalId = window.setInterval(() => {
@@ -175,71 +200,128 @@ export function SignUpForm({
       window.clearInterval(intervalId)
       window.clearTimeout(timeoutId)
     }
-  }, [resolvedLoginHref, router, status, onAuthenticated])
+  }, [resolvedLoginHref, router, status])
 
   async function onSubmit(values: SignUpValues) {
     setStatus("idle")
     setMessage("")
     setCountdown(20)
+    setCaptchaError(null)
+
+    if (captchaRequired && !captchaToken) {
+      setCaptchaError("Complete the security check to continue.")
+      return
+    }
 
     startTransition(async () => {
-      try {
-        const legalConsent = createSignupLegalConsent()
-        const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
-
-        const { data, error } = await supabase.auth.signUp({
+      if (isTesterInstantSignup) {
+        const createResult = await createTesterAccountAction({
           email: values.email,
           password: values.password,
-          options: {
-            emailRedirectTo,
-            data: {
-              ...(signUpMetadata ?? {}),
-              account_intent: resolveLegacyAccountIntent(activeIntentFocus),
-              onboarding_intent_focus: activeIntentFocus,
-              legal_consent: legalConsent,
-            },
-          },
         })
 
-        if (error) {
+        if (!createResult.ok) {
           setStatus("error")
-          setMessage(resolveSignUpErrorMessage(error.message))
+          setMessage(createResult.error)
           return
         }
 
-        if (isExistingAccountResponse(data.user)) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        })
+        if (signInError) {
           setStatus("error")
           setMessage(
-            "An account with this email already exists. Sign in instead."
+            "Tester account is ready, but we could not sign you in automatically. Please use sign in."
           )
           return
         }
 
-        if (data.session && onAuthenticated) { onAuthenticated(); return }
         clearOnboardingDraft()
-        setStatus("success")
-        setMessage(
-          "Check your inbox for your verification link from Coach House."
-        )
-        form.reset()
-      } catch {
-        setStatus("error")
-        setMessage("Unable to create an account. Please try again.")
+        router.replace(resolvedRedirectTo)
+        router.refresh()
+        return
       }
-    })
-  }
 
-  if (status === "success" && onAuthenticated) {
-    return <div className="space-y-4">
-      <p role="status" className="text-sm leading-relaxed">Check your inbox to confirm your email. We’ll keep this resource ready to collect when you return.</p>
-      {onSignIn ? <Button type="button" variant="outline" className="min-h-11 w-full" onClick={onSignIn}>Already confirmed? Sign in</Button> : null}
-    </div>
+      const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
+
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          emailRedirectTo,
+          captchaToken: captchaRequired ? captchaToken ?? undefined : undefined,
+          data: {
+            ...(signUpMetadata ?? {}),
+            account_intent: resolveLegacyAccountIntent(activeIntentFocus),
+            onboarding_intent_focus: activeIntentFocus,
+          },
+        },
+      })
+
+      if (error) {
+        resetCaptchaState()
+        setStatus("error")
+        setMessage(resolveSignUpErrorMessage(error.message, isTesterInstantSignup))
+        return
+      }
+
+      if (isExistingAccountResponse(data.user)) {
+        resetCaptchaState()
+        setStatus("error")
+        setMessage("An account with this email already exists. Sign in instead.")
+        return
+      }
+
+      resetCaptchaState()
+      clearOnboardingDraft()
+      setStatus("success")
+      setMessage(
+        "Check your inbox for your verification link from Coach House."
+      )
+      form.reset()
+    })
   }
 
   return (
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {lockedIntentFocus ? null : (
+            <div className="space-y-2">
+              <FormLabel>How will you use Coach House?</FormLabel>
+              <Select
+                value={intentFocus}
+                onValueChange={(value) => {
+                  if (
+                    value === "build" ||
+                    value === "find" ||
+                    value === "fund" ||
+                    value === "support"
+                  ) {
+                    setIntentFocus(value)
+                  }
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose your journey" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {JOURNEY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Builder accounts continue into pricing and workspace onboarding. Member journeys stay on the internal map.
+              </p>
+            </div>
+          )}
           <FormField
             control={form.control}
             name="email"
@@ -247,12 +329,7 @@ export function SignUpForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                  />
+                  <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -284,64 +361,70 @@ export function SignUpForm({
               </FormItem>
             )}
           />
+          {captchaRequired ? (
+            <div className="grid gap-2">
+              <FormLabel>Security check</FormLabel>
+              <div className="overflow-hidden rounded-xl border border-border/60 bg-background p-3">
+                <HCaptchaWidget
+                  captchaRef={captchaRef}
+                  onVerify={(token) => {
+                    setCaptchaToken(token)
+                    setCaptchaError(null)
+                  }}
+                  onExpire={() => {
+                    setCaptchaToken(null)
+                    setCaptchaError("Security check expired. Please try again.")
+                  }}
+                  onError={(nextError) => {
+                    setCaptchaToken(null)
+                    setCaptchaError(nextError)
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Complete the hCaptcha check before creating your account.
+              </p>
+              {captchaError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {captchaError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {status !== "idle" ? (
             <p
               className={`text-sm ${status === "success" ? "text-emerald-600" : "text-destructive"}`}
-              role={status === "error" ? "alert" : "status"}
+              role="status"
             >
               {message}
-              {onSignIn ? (
-                <Button type="button" variant="link" className="h-auto px-1 py-0" onClick={onSignIn}>Sign in</Button>
-              ) : status === "success" ? (
+              {status === "success" ? (
                 <>
                   {" "}
                   Redirecting to sign in in {countdown}s.{" "}
-                  <Link
-                    href={resolvedLoginHref}
-                    className={`underline hover:no-underline ${authInlineLinkClassName}`}
-                  >
+                  <Link href={resolvedLoginHref} className="underline underline-offset-2 hover:no-underline">
                     Go now
                   </Link>
                 </>
               ) : (
                 <>
                   {" "}
-                  <Link
-                    href={resolvedLoginHref}
-                    className={`underline hover:no-underline ${authInlineLinkClassName}`}
-                  >
+                  <Link href={resolvedLoginHref} className="underline underline-offset-2 hover:no-underline">
                     Go to sign in
                   </Link>
                 </>
               )}
             </p>
           ) : null}
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={isPending}
-            aria-busy={isPending || undefined}
-          >
+          <Button className="w-full" type="submit" disabled={isPending}>
             {isPending ? "Creating account..." : "Create account"}
           </Button>
         </form>
       </Form>
-      <GoogleAuthPanel
-        mode="signup"
-        onSuccess={onAuthenticated}
-        redirectOnSuccess={!onAuthenticated}
-        redirectTo={resolvedRedirectTo}
-        disabled={isPending}
-        accountIntent={resolveLegacyAccountIntent(activeIntentFocus)}
-        intentFocus={activeIntentFocus}
-        signUpMetadata={signUpMetadata}
-      />
-      <LegalConsentNotice />
-      <div className="text-muted-foreground text-center text-sm">
-        Already have an account?{" "}
-        {onSignIn ? <Button type="button" variant="link" className="h-auto p-0" onClick={onSignIn}>Sign in</Button> : <Link href={resolvedLoginHref} className={authInlineLinkClassName}>
+      <div className="text-center text-sm text-muted-foreground">
+        Already have an account? {" "}
+        <Link href={loginHref ?? "/login"} className="hover:text-foreground">
           Sign in
-        </Link>}
+        </Link>
       </div>
     </div>
   )

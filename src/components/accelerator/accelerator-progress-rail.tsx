@@ -1,18 +1,11 @@
-import * as ProgressPrimitive from "@radix-ui/react-progress"
 import BadgeCheckIcon from "lucide-react/dist/esm/icons/badge-check"
 import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 
 import { clampPercent } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
-import { ACCELERATOR_PROGRESS_SEGMENT_VISUALS } from "@/components/accelerator/accelerator-progress-segments"
 import { Button } from "@/components/ui/button"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
-  type AcceleratorReadinessChecklistItem,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
 import { cn } from "@/lib/utils"
@@ -21,10 +14,6 @@ type AcceleratorProgressRailProps = {
   progressPercent: number
   fundableCheckpoint?: number
   verifiedCheckpoint?: number
-  fundableChecklist?: AcceleratorReadinessChecklistItem[]
-  verifiedChecklist?: AcceleratorReadinessChecklistItem[]
-  showMilestones?: boolean
-  showMilestoneTooltips?: boolean
   className?: string
 }
 
@@ -38,132 +27,27 @@ type AcceleratorProgressRailState = {
   verifiedReached: boolean
   firstSegmentClass: string
   secondSegmentClass: string
-  segments: AcceleratorProgressRailSegment[]
-}
-
-type AcceleratorProgressRailSegment = {
-  id: "build" | "fundable" | "verified"
-  label: string
-  rangeLabel: string
-  start: number
-  end: number
-  width: number
-  fillPercent: number
-  reached: boolean
-  active: boolean
-  trackClassName: string
-  fillClassName: string
-}
-
-const MILESTONE_VISUALS = {
-  fundable: {
-    icon: DollarSignIcon,
-    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.iconClassName,
-  },
-  verified: {
-    icon: BadgeCheckIcon,
-    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.iconClassName,
-  },
-} as const
-
-function resolveSegmentFillPercent({
-  end,
-  progress,
-  start,
-}: {
-  end: number
-  progress: number
-  start: number
-}) {
-  const width = Math.max(1, end - start)
-  return Math.max(
-    0,
-    Math.min(100, Math.round(((progress - start) / width) * 100))
-  )
 }
 
 export function resolveAcceleratorProgressRailState({
   progressPercent,
   fundableCheckpoint = ACCELERATOR_FUNDABLE_THRESHOLD,
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
-}: Omit<
-  AcceleratorProgressRailProps,
-  "className"
->): AcceleratorProgressRailState {
+}: Omit<AcceleratorProgressRailProps, "className">): AcceleratorProgressRailState {
   const progress = clampPercent(progressPercent)
-  const fundable = Math.max(1, Math.min(98, clampPercent(fundableCheckpoint)))
-  const verified = Math.max(
-    fundable + 1,
-    Math.min(99, clampPercent(verifiedCheckpoint))
-  )
+  const fundable = clampPercent(fundableCheckpoint)
+  const verified = Math.max(fundable + 1, clampPercent(verifiedCheckpoint))
 
   const firstSegmentFill = Math.min(progress, fundable)
   const secondSegmentFill = Math.max(
     0,
-    Math.min(progress - fundable, verified - fundable)
+    Math.min(progress - fundable, verified - fundable),
   )
   const fundableReached = progress >= fundable
   const verifiedReached = progress >= verified
   const secondSegmentWidth = verifiedReached
     ? 100 - fundable
     : secondSegmentFill
-  const segments = [
-    {
-      id: "build",
-      label: "Build",
-      rangeLabel: `0-${fundable}%`,
-      start: 0,
-      end: fundable,
-      width: fundable,
-      fillPercent: resolveSegmentFillPercent({
-        end: fundable,
-        progress,
-        start: 0,
-      }),
-      reached: progress >= fundable,
-      active: progress > 0 && progress < fundable,
-      trackClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.trackClassName,
-      fillClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
-    },
-    {
-      id: "fundable",
-      label: "Fundable",
-      rangeLabel: `${fundable}-${verified}%`,
-      start: fundable,
-      end: verified,
-      width: verified - fundable,
-      fillPercent: resolveSegmentFillPercent({
-        end: verified,
-        progress,
-        start: fundable,
-      }),
-      reached: progress >= verified,
-      active: progress >= fundable && progress < verified,
-      trackClassName:
-        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.trackClassName,
-      fillClassName:
-        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
-    },
-    {
-      id: "verified",
-      label: "Verified",
-      rangeLabel: `${verified}-100%`,
-      start: verified,
-      end: 100,
-      width: 100 - verified,
-      fillPercent: resolveSegmentFillPercent({
-        end: 100,
-        progress,
-        start: verified,
-      }),
-      reached: progress >= 100,
-      active: progress >= verified && progress < 100,
-      trackClassName:
-        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.trackClassName,
-      fillClassName:
-        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.fillClassName,
-    },
-  ] satisfies AcceleratorProgressRailSegment[]
 
   return {
     progress,
@@ -173,28 +57,17 @@ export function resolveAcceleratorProgressRailState({
     secondSegmentWidth,
     fundableReached,
     verifiedReached,
-    firstSegmentClass: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
-    secondSegmentClass:
-      ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
-    segments,
+    firstSegmentClass: fundableReached ? "bg-emerald-500" : "bg-amber-500",
+    secondSegmentClass: verifiedReached
+      ? "bg-emerald-500"
+      : "bg-zinc-400 dark:bg-zinc-500",
   }
-}
-
-function formatSegmentStatusLabel(items: AcceleratorReadinessChecklistItem[]) {
-  if (items.length === 0) return "Waiting on data"
-
-  const completeCount = items.filter((item) => item.complete).length
-  return `${completeCount}/${items.length} ready`
 }
 
 export function AcceleratorProgressRail({
   progressPercent,
   fundableCheckpoint = ACCELERATOR_FUNDABLE_THRESHOLD,
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
-  fundableChecklist = [],
-  verifiedChecklist = [],
-  showMilestones = true,
-  showMilestoneTooltips = true,
   className,
 }: AcceleratorProgressRailProps) {
   const state = resolveAcceleratorProgressRailState({
@@ -202,104 +75,88 @@ export function AcceleratorProgressRail({
     fundableCheckpoint,
     verifiedCheckpoint,
   })
-  const segmentStatusLabels = {
-    build: `${state.progress}% complete`,
-    fundable: formatSegmentStatusLabel(fundableChecklist),
-    verified: formatSegmentStatusLabel(verifiedChecklist),
-  } satisfies Record<AcceleratorProgressRailSegment["id"], string>
 
   return (
-    <div className={cn("relative w-full", className)}>
-      <ProgressPrimitive.Root
-        data-slot="accelerator-segmented-progress"
-        value={state.progress}
-        max={100}
-        aria-label={`Accelerator progress ${state.progress}%`}
-        className="bg-border/40 flex h-3 w-full gap-0.5 overflow-hidden rounded-full p-0.5"
-      >
-        {state.segments.map((segment) => (
-          <span
-            key={segment.id}
-            data-slot="accelerator-progress-segment"
-            data-state={
-              segment.reached ? "complete" : segment.active ? "active" : "idle"
-            }
-            aria-hidden
+    <div
+      className={cn(
+        "relative h-2 rounded-full bg-zinc-300/65 dark:bg-zinc-700/55",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "absolute left-0 top-0 h-full rounded-full",
+          state.firstSegmentClass,
+        )}
+        style={{ width: `${state.firstSegmentFill}%` }}
+      />
+      <div
+        className={cn(
+          "absolute top-0 h-full rounded-full",
+          state.secondSegmentClass,
+        )}
+        style={{
+          left: `${state.fundable}%`,
+          width: `${state.secondSegmentWidth}%`,
+        }}
+      />
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Fundable checkpoint"
             className={cn(
-              "relative h-full min-w-0 flex-none overflow-hidden rounded-full",
-              segment.trackClassName
+              "absolute top-1/2 z-10 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+              state.fundableReached
+                ? "border-emerald-500 bg-emerald-500 text-white hover:!border-emerald-500 hover:!bg-emerald-500 hover:!text-white"
+                : "border-emerald-500 bg-background text-emerald-600 hover:!border-emerald-500 hover:!bg-background hover:!text-emerald-600 dark:text-emerald-300 dark:hover:!border-emerald-500 dark:hover:!bg-background dark:hover:!text-emerald-300",
             )}
-            style={{ width: `${segment.width}%` }}
+            style={{ left: `${state.fundable}%` }}
           >
-            <ProgressPrimitive.Indicator
-              data-slot="accelerator-progress-segment-indicator"
-              className={cn(
-                "absolute inset-y-0 left-0 rounded-full transition-[width]",
-                segment.fillClassName
-              )}
-              style={{ width: `${segment.fillPercent}%` }}
-            />
-          </span>
-        ))}
-      </ProgressPrimitive.Root>
+            <DollarSignIcon className="size-2.5" aria-hidden />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          sideOffset={8}
+          className="inline-flex items-center gap-1.5"
+        >
+          <DollarSignIcon className="size-3" aria-hidden />
+          <span>Fundable</span>
+        </TooltipContent>
+      </Tooltip>
 
-      {showMilestones && showMilestoneTooltips ? (
-        <div className="absolute inset-0 flex gap-0.5 p-0.5">
-          {state.segments.map((segment) => {
-            const milestoneVisual =
-              segment.id === "build" ? null : MILESTONE_VISUALS[segment.id]
-            const MilestoneIcon = milestoneVisual?.icon
-
-            return (
-              <Tooltip
-                key={segment.id}
-                delayDuration={140}
-                disableHoverableContent
-              >
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`${segment.label} segment, ${segment.rangeLabel}`}
-                    className="focus-visible:ring-ring/70 data-[state=delayed-open]:ring-foreground/20 data-[state=instant-open]:ring-foreground/20 h-full min-w-0 flex-none rounded-full p-0 shadow-none transition-[box-shadow] hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 data-[state=delayed-open]:ring-1 data-[state=instant-open]:ring-1"
-                    style={{ width: `${segment.width}%` }}
-                  />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  sideOffset={6}
-                  className="px-2.5 py-1.5"
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    {MilestoneIcon ? (
-                      <MilestoneIcon
-                        aria-hidden
-                        className={cn(
-                          "size-4 shrink-0",
-                          milestoneVisual.iconClassName
-                        )}
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "size-2 rounded-full",
-                          segment.fillClassName
-                        )}
-                      />
-                    )}
-                    <span className="font-medium">{segment.label}</span>
-                    <span className="text-muted-foreground">
-                      {segmentStatusLabels[segment.id]}
-                    </span>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            )
-          })}
-        </div>
-      ) : null}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Verified checkpoint"
+            className={cn(
+              "absolute right-0 top-1/2 z-10 size-5 -translate-y-1/2 rounded-full border transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+              state.verifiedReached
+                ? "border-sky-500 bg-sky-500 text-white hover:!border-sky-500 hover:!bg-sky-500 hover:!text-white"
+                : "border-sky-400/70 bg-background text-sky-600 hover:!border-sky-400/70 hover:!bg-background hover:!text-sky-600 dark:text-sky-300 dark:hover:!border-sky-400/70 dark:hover:!bg-background dark:hover:!text-sky-300",
+            )}
+          >
+            <BadgeCheckIcon className="size-2.5" aria-hidden />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          sideOffset={8}
+          className="inline-flex items-center gap-1.5"
+        >
+          <BadgeCheckIcon className="size-2.5" aria-hidden />
+          <span>Verified</span>
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }

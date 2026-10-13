@@ -1,24 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import {
-  resolveProfileAudience,
-  resolveTesterMetadata,
-} from "@/lib/devtools/audience"
-import {
-  PROGRAM_MEDIA_BUCKET,
-  resolveProgramMediaCleanupPath,
-} from "@/lib/storage/program-media"
-import {
-  canEditOrganization,
-  resolveActiveOrganization,
-} from "@/lib/organization/active-org"
+import { PROGRAM_MEDIA_BUCKET, resolveProgramMediaCleanupPath } from "@/lib/storage/program-media"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { resolveProgramBannerImageUrl } from "@/lib/programs/display"
-import { resolveStaffProgramAccess } from "@/lib/programs/staff-access"
-import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
 
 export type CreateProgramPayload = {
   title: string
@@ -50,32 +38,10 @@ export type CreateProgramPayload = {
 export async function createProgramAction(payload: CreateProgramPayload) {
   const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const [{ orgId, role }, profileAudience] = await Promise.all([
-    resolveActiveOrganization(supabase, userId),
-    resolveProfileAudience({
-      supabase,
-      userId,
-      fallbackIsTester: resolveTesterMetadata(
-        session.user.user_metadata ?? null
-      ),
-    }),
-  ])
-  const canEdit = profileAudience.isAdmin || canEditOrganization(role)
+  const { orgId, role } = await resolveActiveOrganization(supabase, userId)
+  const canEdit = canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
-  const wizardSnapshotResult = mergeProgramWizardSnapshot({
-    existing: null,
-    incoming: payload.wizardSnapshot ?? {},
-  })
-  if (!wizardSnapshotResult.success) {
-    return {
-      error: wizardSnapshotResult.error,
-      field: wizardSnapshotResult.field,
-    }
-  }
 
   const insert = {
     user_id: orgId,
@@ -93,12 +59,8 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     address_country: payload.addressCountry ?? null,
     image_url: payload.imageUrl ?? null,
     duration_label: payload.duration ?? null,
-    start_date: payload.startDate
-      ? (new Date(payload.startDate).toISOString() as unknown as any)
-      : null,
-    end_date: payload.endDate
-      ? (new Date(payload.endDate).toISOString() as unknown as any)
-      : null,
+    start_date: payload.startDate ? new Date(payload.startDate).toISOString() as unknown as any : null,
+    end_date: payload.endDate ? new Date(payload.endDate).toISOString() as unknown as any : null,
     features: payload.features ?? [],
     status_label: payload.statusLabel ?? null,
     goal_cents: payload.goalCents ?? 0,
@@ -106,14 +68,14 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     is_public: allowPublicSharing ? Boolean(payload.isPublic ?? false) : false,
     cta_label: payload.ctaLabel ?? null,
     cta_url: payload.ctaUrl ?? null,
-    wizard_snapshot: wizardSnapshotResult.snapshot,
+    wizard_snapshot: payload.wizardSnapshot ?? {},
   }
 
-  let { error } = await (supabase as any).from("programs").insert(insert)
+  let { error } = await (supabase.from("programs") as any).insert(insert)
   if (error && /wizard_snapshot/i.test(error.message)) {
     const legacyInsert = { ...insert }
     delete (legacyInsert as { wizard_snapshot?: unknown }).wizard_snapshot
-    const retry = await (supabase as any).from("programs").insert(legacyInsert)
+    const retry = await (supabase.from("programs") as any).insert(legacyInsert)
     error = retry.error
   }
   if (error) return { error: error.message }
@@ -123,47 +85,25 @@ export async function createProgramAction(payload: CreateProgramPayload) {
 
 export type UpdateProgramPayload = Partial<CreateProgramPayload>
 
-export async function updateProgramAction(
-  id: string,
-  payload: UpdateProgramPayload,
-  organizationId?: string
-) {
-  const { supabase: sessionSupabase, session } = await requireServerSession("/organization")
+export async function updateProgramAction(id: string, payload: UpdateProgramPayload) {
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const profileAudience = await resolveProfileAudience({
-    supabase: sessionSupabase, userId,
-    fallbackIsTester: resolveTesterMetadata(session.user.user_metadata ?? null),
-  })
-  const staffAccess = organizationId !== undefined
-    ? await resolveStaffProgramAccess({ organizationId, userId, accessLevel: profileAudience.platformAccessLevel })
-    : null
-  if (staffAccess && "error" in staffAccess) return staffAccess
-  const activeOrg = staffAccess ? null : await resolveActiveOrganization(sessionSupabase, userId)
-  if (!staffAccess && !profileAudience.isAdmin && (!activeOrg || !canEditOrganization(activeOrg.role))) {
-    return { error: "Forbidden" }
-  }
-  const orgId = staffAccess?.orgId ?? activeOrg!.orgId
-  const supabase = staffAccess?.supabase ?? sessionSupabase
+  const { orgId, role } = await resolveActiveOrganization(supabase, userId)
+  const canEdit = canEditOrganization(role)
+  if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
   const hasKey = (key: keyof UpdateProgramPayload) =>
     Object.prototype.hasOwnProperty.call(payload, key)
-  const pick = <K extends keyof UpdateProgramPayload>(
-    key: K
-  ): UpdateProgramPayload[K] | undefined =>
+  const pick = <K extends keyof UpdateProgramPayload>(key: K): UpdateProgramPayload[K] | undefined =>
     hasKey(key) ? payload[key] : undefined
 
   let previousImageUrl: string | null = null
   let previousBannerImageUrl: string | null = null
-  let expectedUpdatedAt: string | null = null
-  let nextWizardSnapshot: Record<string, unknown> | undefined
   if (imageTouched || hasKey("wizardSnapshot")) {
-    const { data: existing, error: existingError } = await (supabase as any)
-      .from("programs")
-      .select("image_url, wizard_snapshot, updated_at")
+    const { data: existing, error: existingError } = await (supabase
+      .from("programs") as any)
+      .select("image_url, wizard_snapshot")
       .eq("id", id)
       .eq("user_id", orgId)
       .maybeSingle()
@@ -172,28 +112,11 @@ export async function updateProgramAction(
     const existingRow = existing as {
       image_url?: string | null
       wizard_snapshot?: Record<string, unknown> | null
-      updated_at?: string | null
     } | null
-    if (!existingRow) return { error: "Activity not found or no longer editable." }
-    previousImageUrl = existingRow.image_url ?? null
-    expectedUpdatedAt = existingRow?.updated_at ?? null
+    previousImageUrl = existingRow?.image_url ?? null
     previousBannerImageUrl = existingRow
       ? resolveProgramBannerImageUrl(existingRow)
       : null
-
-    if (hasKey("wizardSnapshot")) {
-      const wizardSnapshotResult = mergeProgramWizardSnapshot({
-        existing: existingRow?.wizard_snapshot,
-        incoming: payload.wizardSnapshot,
-      })
-      if (!wizardSnapshotResult.success) {
-        return {
-          error: wizardSnapshotResult.error,
-          field: wizardSnapshotResult.field,
-        }
-      }
-      nextWizardSnapshot = wizardSnapshotResult.snapshot
-    }
   }
 
   const startDate = pick("startDate")
@@ -213,74 +136,41 @@ export async function updateProgramAction(
     address_state: pick("addressState"),
     address_postal: pick("addressPostal"),
     address_country: pick("addressCountry"),
-    image_url:
-      payload.imageUrl === null ? null : (payload.imageUrl ?? undefined),
+    image_url: payload.imageUrl === null ? null : payload.imageUrl ?? undefined,
     duration_label: pick("duration"),
     start_date:
-      startDate === undefined
-        ? undefined
-        : startDate
-          ? (new Date(startDate).toISOString() as unknown as any)
-          : null,
+      startDate === undefined ? undefined : startDate ? (new Date(startDate).toISOString() as unknown as any) : null,
     end_date:
-      endDate === undefined
-        ? undefined
-        : endDate
-          ? (new Date(endDate).toISOString() as unknown as any)
-          : null,
+      endDate === undefined ? undefined : endDate ? (new Date(endDate).toISOString() as unknown as any) : null,
     features: pick("features"),
     status_label: pick("statusLabel"),
     goal_cents: pick("goalCents"),
     raised_cents: pick("raisedCents"),
-    is_public:
-      isPublic === undefined
-        ? undefined
-        : allowPublicSharing
-          ? Boolean(isPublic)
-          : false,
+    is_public: isPublic === undefined ? undefined : allowPublicSharing ? Boolean(isPublic) : false,
     cta_label: pick("ctaLabel"),
     cta_url: pick("ctaUrl"),
-    wizard_snapshot: hasKey("wizardSnapshot")
-      ? (nextWizardSnapshot ?? {})
-      : undefined,
+    wizard_snapshot: hasKey("wizardSnapshot") ? (payload.wizardSnapshot ?? {}) : undefined,
   }
 
-  const executeUpdate = async (values: Record<string, unknown>) => {
-    let query = (supabase as any)
-      .from("programs")
-      .update(values)
-      .eq("id", id)
-      .eq("user_id", orgId)
-    if (expectedUpdatedAt) {
-      query = query.eq("updated_at", expectedUpdatedAt)
-    }
-    return query.select("id").maybeSingle()
-  }
-
-  let { data: updatedProgram, error } = await executeUpdate(update)
+  let { error } = await (supabase
+    .from("programs") as any)
+    .update(update)
+    .eq("id", id)
+    .eq("user_id", orgId)
 
   if (error && /wizard_snapshot/i.test(error.message)) {
     const legacyUpdate = { ...update }
     delete (legacyUpdate as { wizard_snapshot?: unknown }).wizard_snapshot
-    const retry = await executeUpdate(legacyUpdate)
-    updatedProgram = retry.data
+    const retry = await (supabase
+      .from("programs") as any)
+      .update(legacyUpdate)
+      .eq("id", id)
+      .eq("user_id", orgId)
     error = retry.error
   }
 
   if (error) return { error: error.message }
-  if (!updatedProgram) {
-    return {
-      error: expectedUpdatedAt
-        ? "This activity was updated elsewhere. Reload before saving."
-        : "Activity not found or no longer editable.",
-      conflict: Boolean(expectedUpdatedAt),
-    }
-  }
 
-  /*
-   * Keep media cleanup after the guarded write. A conflicting request must not
-   * delete assets that still belong to the winning program version.
-   */
   if (imageTouched) {
     const cleanupPath = resolveProgramMediaCleanupPath({
       previousUrl: previousImageUrl,
@@ -295,7 +185,7 @@ export async function updateProgramAction(
     const cleanupPath = resolveProgramMediaCleanupPath({
       previousUrl: previousBannerImageUrl,
       nextUrl: resolveProgramBannerImageUrl({
-        wizard_snapshot: nextWizardSnapshot ?? null,
+        wizard_snapshot: payload.wizardSnapshot ?? null,
       }),
       userId: orgId,
     })
@@ -307,20 +197,11 @@ export async function updateProgramAction(
   return { ok: true }
 }
 
-async function revalidateOrganizationProgramViews(
-  supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"],
-  userId: string
-) {
-  // Visibility changes must expire public projections, including withdrawals.
-  revalidateTag("public-map-organizations", { expire: 0 })
-  revalidateTag("public-profiles", { expire: 0 })
-  revalidatePath("/organizations")
-  revalidatePath("/organizations/[id]", "page")
+async function revalidateOrganizationProgramViews(supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"], userId: string) {
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/find")
   try {
     const { data, error } = await supabase
       .from("organizations")
@@ -330,18 +211,16 @@ async function revalidateOrganizationProgramViews(
 
     if (error) return
 
-    const slug =
-      typeof data?.public_slug === "string" && data.public_slug.length > 0
-        ? data.public_slug
-        : null
+    const slug = typeof data?.public_slug === "string" && data.public_slug.length > 0 ? data.public_slug : null
     const isPublic = Boolean(data?.is_public)
 
     if (isPublic) revalidatePath("/community")
     if (slug) {
       revalidatePath(`/${slug}`)
-      revalidatePath(`/${slug}`)
+      revalidatePath(`/find/${slug}`)
     }
   } catch {
     // Swallow revalidation errors; they should not block program writes.
   }
 }
+ 

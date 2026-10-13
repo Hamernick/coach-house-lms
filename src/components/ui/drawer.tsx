@@ -17,16 +17,10 @@ function Drawer({
     (open: boolean) => {
       scheduleInteractionLockGuardOnClose({ open, onOpenChange })
     },
-    [onOpenChange]
+    [onOpenChange],
   )
 
-  return (
-    <DrawerPrimitive.Root
-      data-slot="drawer"
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  )
+  return <DrawerPrimitive.Root data-slot="drawer" onOpenChange={handleOpenChange} {...props} />
 }
 
 function DrawerTrigger({
@@ -47,22 +41,6 @@ function DrawerClose({
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
 }
 
-function DrawerHandle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Handle>) {
-  return (
-    <DrawerPrimitive.Handle
-      data-slot="drawer-handle"
-      className={cn(
-        "bg-muted mx-auto hidden !h-[3px] !w-32 shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
 function DrawerOverlay({
   className,
   ...props
@@ -71,7 +49,7 @@ function DrawerOverlay({
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
       className={cn(
-        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 data-[state=closed]:pointer-events-none data-[state=closed]:invisible data-[state=closed]:opacity-0 data-[state=open]:visible data-[state=open]:opacity-100",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
         className
       )}
       {...props}
@@ -81,28 +59,21 @@ function DrawerOverlay({
 
 function DrawerContent({
   className,
-  overlayClassName,
-  showHandle = true,
   children,
-  forceMount,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
-  overlayClassName?: string
-  showHandle?: boolean
-}) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
   React.useEffect(
     () => () => {
       scheduleInteractionLockGuard()
     },
-    []
+    [],
   )
 
   return (
-    <DrawerPortal data-slot="drawer-portal" forceMount={forceMount}>
-      <DrawerOverlay className={overlayClassName} />
+    <DrawerPortal data-slot="drawer-portal">
+      <DrawerOverlay />
       <DrawerPrimitive.Content
         data-slot="drawer-content"
-        forceMount={forceMount}
         className={cn(
           "group/drawer-content bg-background fixed z-50 flex h-auto flex-col",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",
@@ -113,7 +84,7 @@ function DrawerContent({
         )}
         {...props}
       >
-        {showHandle ? <DrawerHandle className="mt-4" /> : null}
+        <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
@@ -175,7 +146,6 @@ export {
   DrawerOverlay,
   DrawerTrigger,
   DrawerClose,
-  DrawerHandle,
   DrawerContent,
   DrawerHeader,
   DrawerFooter,

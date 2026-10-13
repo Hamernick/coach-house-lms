@@ -1,5 +1,4 @@
 import { SECTION_MAP } from "./definitions"
-import { normalizeRoadmapBudgetRows } from "./budget"
 import {
   buildRoadmapSection,
   ensureUniqueSlugs,
@@ -10,9 +9,6 @@ import {
 } from "./helpers"
 import { resolveRoadmapSections } from "./sections"
 import type { RoadmapSection, RoadmapSectionStatus } from "./types"
-import type { BudgetTableRow } from "@/lib/modules"
-import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "./public-organization-profile-sections"
-import { resolveLegacyPublicProfileSectionContent } from "./public-profile-publication-state"
 
 export function updateRoadmapSection(
   profile: Record<string, unknown> | null | undefined,
@@ -20,16 +16,14 @@ export function updateRoadmapSection(
   updates: {
     title?: string
     subtitle?: string
-    driveSource?: RoadmapSection["driveSource"]
     content?: string
-    budgetRows?: BudgetTableRow[]
     imageUrl?: string | null
     isPublic?: boolean
     layout?: RoadmapSection["layout"]
     status?: RoadmapSectionStatus
     ctaLabel?: string
     ctaUrl?: string
-  }
+  },
 ): { nextProfile: Record<string, unknown>; section: RoadmapSection } {
   const nextProfile = isRecord(profile) ? { ...profile } : {}
   const roadmapRecord = isRecord(nextProfile.roadmap)
@@ -67,10 +61,6 @@ export function updateRoadmapSection(
 
     const nextContent =
       typeof updates.content === "string" ? updates.content : current.content
-    const nextBudgetRows =
-      updates.budgetRows === undefined
-        ? (current.budgetRows ?? [])
-        : normalizeRoadmapBudgetRows(updates.budgetRows)
     const nextImageUrlRaw =
       typeof updates.imageUrl === "string"
         ? updates.imageUrl.trim()
@@ -80,30 +70,9 @@ export function updateRoadmapSection(
     const nextImageUrl =
       nextImageUrlRaw.length > 0 ? nextImageUrlRaw : undefined
     const nextIsPublic =
-      typeof updates.isPublic === "boolean"
-        ? updates.isPublic
-        : current.isPublic
+      typeof updates.isPublic === "boolean" ? updates.isPublic : current.isPublic
     const nextLayout = updates.layout ?? current.layout
     const nextStatus = updates.status ?? current.status ?? "not_started"
-    let nextPublishedContent = current.publishedContent
-    let nextPublicProfileStatusControlled =
-      current.publicProfileStatusControlled
-    if (
-      (updates.status !== undefined || updates.content !== undefined) &&
-      PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(current.id)
-    ) {
-      nextPublicProfileStatusControlled = true
-      if (nextStatus === "complete" || nextStatus === "not_started") {
-        nextPublishedContent = undefined
-      } else if (!current.publicProfileStatusControlled) {
-        nextPublishedContent = resolveLegacyPublicProfileSectionContent(
-          nextProfile,
-          current
-        )
-      } else if (current.status === "complete") {
-        nextPublishedContent = current.content
-      }
-    }
     const nextCtaLabel =
       typeof updates.ctaLabel === "string" ? updates.ctaLabel : current.ctaLabel
     const nextCtaUrl =
@@ -118,19 +87,6 @@ export function updateRoadmapSection(
       title: nextTitle,
       subtitle: nextSubtitle,
       content: nextContent,
-      driveSource:
-        updates.driveSource === undefined
-          ? current.driveSource
-          : updates.driveSource,
-      documentSource:
-        updates.driveSource === undefined
-          ? current.documentSource
-          : updates.driveSource
-            ? "google_drive"
-            : "editor",
-      publishedContent: nextPublishedContent,
-      publicProfileStatusControlled: nextPublicProfileStatusControlled,
-      budgetRows: nextBudgetRows,
       imageUrl: nextImageUrl,
       isPublic: nextIsPublic,
       layout: nextLayout,
@@ -147,15 +103,13 @@ export function updateRoadmapSection(
     }
 
     nextSections = resolved.map((section, index) =>
-      index === existingIndex ? nextSection : section
+      index === existingIndex ? nextSection : section,
     )
   } else {
     const base = SECTION_MAP.get(targetId) ?? null
     const nextTitle = normalizeText(updates.title) || base?.title || ""
     const nextSubtitle = normalizeText(updates.subtitle) || base?.subtitle || ""
-    const nextContent =
-      typeof updates.content === "string" ? updates.content : ""
-    const nextBudgetRows = normalizeRoadmapBudgetRows(updates.budgetRows)
+    const nextContent = typeof updates.content === "string" ? updates.content : ""
     const nextImageUrlRaw =
       typeof updates.imageUrl === "string"
         ? updates.imageUrl.trim()
@@ -174,9 +128,6 @@ export function updateRoadmapSection(
         : nextContent.trim().length > 0
           ? "in_progress"
           : "not_started"
-    const controlsPublicProfile =
-      (updates.status !== undefined || updates.content !== undefined) &&
-      PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(targetId)
     const nextCtaLabel =
       typeof updates.ctaLabel === "string" ? updates.ctaLabel : undefined
     const nextCtaUrl =
@@ -191,9 +142,6 @@ export function updateRoadmapSection(
           subtitle: nextSubtitle,
           slug: nextSlug,
           content: nextContent,
-          driveSource: updates.driveSource,
-          publicProfileStatusControlled: controlsPublicProfile || undefined,
-          budgetRows: nextBudgetRows,
           imageUrl: nextImageUrl,
           isPublic: nextIsPublic,
           layout: nextLayout,
@@ -203,7 +151,7 @@ export function updateRoadmapSection(
           lastUpdated: now,
         },
         base,
-        resolved.length
+        resolved.length,
       ),
       lastUpdated: now,
     }
@@ -226,7 +174,7 @@ export function updateRoadmapSection(
 
 export function removeRoadmapSection(
   profile: Record<string, unknown> | null | undefined,
-  sectionId: string | null | undefined
+  sectionId: string | null | undefined,
 ): {
   nextProfile: Record<string, unknown>
   sections: RoadmapSection[]

@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DynamicForm } from '@/components/dynamic-form'
 import { SqlEditor } from '@/components/sql-editor'
-import { extractSupabaseManagerErrorMessage } from '@/components/supabase-manager/error-message'
 import { useSheetNavigation } from '@/contexts/SheetNavigationContext'
 import { useRunQuery } from '@/hooks/use-run-query'
 import { useListTables } from '@/hooks/use-tables'
@@ -244,12 +243,7 @@ function TableRecordsView({ projectRef, table }: { projectRef: string; table: an
 
 export function DatabaseManager({ projectRef }: { projectRef: string }) {
   const { push } = useSheetNavigation()
-  const {
-    data: tables,
-    isLoading,
-    isError,
-    error,
-  } = useListTables(projectRef, ['public'])
+  const { data: tables, isLoading, isError } = useListTables(projectRef, ['public'])
 
   const handleTableClick = useCallback(
     (table: any) => {
@@ -294,12 +288,7 @@ export function DatabaseManager({ projectRef }: { projectRef: string }) {
         <Alert variant="destructive" className="mt-8">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error loading tables</AlertTitle>
-          <AlertDescription>
-            {extractSupabaseManagerErrorMessage(
-              error as { message?: string; response?: { data?: { message?: string } } } | null,
-              'There was a problem loading your database tables.'
-            )}
-          </AlertDescription>
+          <AlertDescription>There was a problem loading your database tables.</AlertDescription>
         </Alert>
       )}
 

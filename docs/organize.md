@@ -10,10 +10,10 @@ Legacy full notes: `deprecated/docs/organize-legacy-2026-02-07.md`
 - `docs/organize.md` (this file): launch status board
 - `docs/briefs/accelerator-launch-active-worklog.md`: active execution queue
 - `docs/briefs/INDEX.md`: brief relevance/status map
-- `docs/RUNLOG.md`: chronological implementation-log index
+- `docs/RUNLOG.md`: chronological implementation log
 
 ## Pending (P0)
-- [ ] Set Vercel prod envs: Supabase, Stripe keys, price IDs, coaching links, `NEXT_PUBLIC_SITE_URL=https://coachhouse.app`.
+- [ ] Set Vercel prod envs: Supabase, Stripe keys, price IDs, coaching links, `NEXT_PUBLIC_SITE_URL=https://coachhouse.vercel.app`.
 - [ ] Confirm Stripe webhook target + secret in prod: `/api/stripe/webhook`.
 - [ ] Apply all Supabase migrations in production.
 - [ ] Run launch gates: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
@@ -41,7 +41,7 @@ Legacy full notes: `deprecated/docs/organize-legacy-2026-02-07.md`
 - [x] Stripe pricing lifecycle updated to exact totals (`$49.90 x10`, `$34.90 x10`) and tests/docs updated.
 - [x] Stripe test catalog bootstrap script added (`scripts/setup-stripe-test-prices.sh`).
 - [x] Stripe webhook setup script added (`scripts/setup-stripe-webhook.sh`).
-- [x] Domain/webhook switched to `coachhouse.app` and old webhook removed.
+- [x] Domain/webhook switched to `coachhouse.vercel.app` and old webhook removed.
 - [x] Main branch deploy blockers fixed (TypeScript/build pass) and pushed (`fb077bb`).
 
 ## Docs Relevance Triage
@@ -60,6 +60,6 @@ Archive candidates (likely stale; review before deletion):
 
 ## Next Cleanup Rule
 - Keep new launch decisions in `docs/organize.md`.
-- Keep implementation details in the current monthly log linked from `docs/RUNLOG.md`.
+- Keep implementation details in `docs/RUNLOG.md`.
 - Keep feature specs in briefs only when still active.
 - Archive superseded docs in `deprecated/docs/` instead of deleting.

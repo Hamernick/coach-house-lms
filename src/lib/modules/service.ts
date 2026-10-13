@@ -15,10 +15,6 @@ import {
   type ModuleResource,
   type ModuleProgressStatus,
 } from "./types"
-import {
-  parseAssignmentCompletionMode,
-  shouldTreatAssignmentSubmissionAsComplete,
-} from "./assignment-completion"
 import { parseAssignmentFields, parseLegacyHomework } from "./assignment"
 import {
   buildClassResourcesAndVideo,
@@ -193,7 +189,6 @@ export async function getClassModulesForUser({
       assignmentByModuleId.set(row.module_id, {
         fields,
         completeOnSubmit: Boolean(row.complete_on_submit),
-        completionMode: parseAssignmentCompletionMode(row.schema),
       })
     }
   }
@@ -232,7 +227,7 @@ export async function getClassModulesForUser({
     const resolvedAssignment = assignment
       ? assignment
       : legacyAssignment.length > 0
-        ? { fields: legacyAssignment, completeOnSubmit: false, completionMode: "on_submit" as const }
+        ? { fields: legacyAssignment, completeOnSubmit: false }
         : null
 
     const moduleVideo = (module as { video_url?: string | null }).video_url ?? null
@@ -311,17 +306,10 @@ export async function getClassModulesForUser({
     const submission = submissionByModuleId.get(moduleRecord.id)
     if (!submission) continue
 
-      const assignment = assignmentMetaByModuleId.get(moduleRecord.id)
-    const completed = assignment
-      ? shouldTreatAssignmentSubmissionAsComplete({
-          completeOnSubmit: assignment.completeOnSubmit,
-          completionMode: assignment.completionMode,
-          fields: assignment.fields,
-          answers: submission.answers,
-          status: submission.status,
-        })
-      : false
-    progressMap[moduleRecord.id] = completed ? "completed" : "in_progress"
+    const assignment = assignmentMetaByModuleId.get(moduleRecord.id)
+    const completeOnSubmit = Boolean(assignment?.completeOnSubmit)
+    progressMap[moduleRecord.id] =
+      completeOnSubmit && submission.status !== "revise" ? "completed" : "in_progress"
   }
 
   return {

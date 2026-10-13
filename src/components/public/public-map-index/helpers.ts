@@ -1,13 +1,10 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapGroupKey } from "@/lib/public-map/groups"
-import type { PublicMapResourceGuideId } from "@/lib/public-map/resource-guide-ids"
 
 export type PublicMapPreferences = {
-  collectedResourceIds: string[]
   favorites: string[]
   savedQueries: string[]
   recentOrganizationIds: string[]
-  savedGuideIds: PublicMapResourceGuideId[]
 }
 
 export type PublicMapBounds = {
@@ -162,7 +159,6 @@ export function filterPublicMapOrganizations({
   sortByFavorites?: boolean
 }) {
   const normalizedQuery = query.trim().toLowerCase()
-  const favoriteIds = sortByFavorites ? new Set(favorites) : null
 
   const groupFiltered =
     activeGroup === "all"
@@ -217,9 +213,9 @@ export function filterPublicMapOrganizations({
       if (leftRelevance !== rightRelevance) return leftRelevance - rightRelevance
     }
 
-    if (favoriteIds) {
-      const leftFavorite = favoriteIds.has(left.id)
-      const rightFavorite = favoriteIds.has(right.id)
+    if (sortByFavorites) {
+      const leftFavorite = favorites.includes(left.id)
+      const rightFavorite = favorites.includes(right.id)
       if (leftFavorite !== rightFavorite) return leftFavorite ? -1 : 1
     }
 

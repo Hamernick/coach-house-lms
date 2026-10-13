@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  memo,
-  useCallback,
-  useDeferredValue,
-  useMemo,
-  useState,
-  useTransition,
-} from "react"
+import { memo, useCallback, useDeferredValue, useMemo, useState, useTransition } from "react"
 import {
   getCoreRowModel,
   getPaginationRowModel,
@@ -17,7 +10,7 @@ import {
 } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
 import { toast } from "@/lib/toast"
-import { deletePersonAction, upsertPersonAction } from "@/actions/people"
+import { deletePersonAction, refreshPersonLinkedInImageAction, upsertPersonAction } from "@/actions/people"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { CreatePersonDialog } from "@/components/people/create-person-dialog"
 import { buildPeopleTableColumns } from "@/components/people/people-table-columns"
@@ -44,9 +37,7 @@ export function PeopleTableShell({
   controlsPlacement = "rail",
 }: PeopleTableShellProps) {
   const [globalFilter, setGlobalFilter] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState<
-    OrgPerson["category"] | "all"
-  >("all")
+  const [categoryFilter, setCategoryFilter] = useState<OrgPerson["category"] | "all">("all")
 
   const controls = (
     <PeopleTableControls
@@ -62,17 +53,8 @@ export function PeopleTableShell({
 
   return (
     <>
-      {controlsPlacement === "rail" ? (
-        <RightRailSlot>{controls}</RightRailSlot>
-      ) : (
-        controls
-      )}
-      <PeopleTable
-        people={people}
-        canEdit={canEdit}
-        globalFilter={globalFilter}
-        categoryFilter={categoryFilter}
-      />
+      {controlsPlacement === "rail" ? <RightRailSlot>{controls}</RightRailSlot> : controls}
+      <PeopleTable people={people} canEdit={canEdit} globalFilter={globalFilter} categoryFilter={categoryFilter} />
     </>
   )
 }
@@ -92,13 +74,9 @@ function PeopleTableComponent({
   const deferredFilter = useDeferredValue(globalFilter)
   const filtered = useMemo(() => {
     let out = people
-    if (categoryFilter !== "all")
-      out = out.filter((p) => p.category === categoryFilter)
+    if (categoryFilter !== "all") out = out.filter((p) => p.category === categoryFilter)
     const q = deferredFilter.trim().toLowerCase()
-    if (q)
-      out = out.filter((p) =>
-        `${p.name} ${p.title ?? ""}`.toLowerCase().includes(q)
-      )
+    if (q) out = out.filter((p) => `${p.name} ${p.title ?? ""}`.toLowerCase().includes(q))
     return out
   }, [people, categoryFilter, deferredFilter])
 
@@ -115,6 +93,7 @@ function PeopleTableComponent({
           name: person.name,
           title: person.title ?? null,
           email: person.email ?? null,
+          linkedin: person.linkedin ?? null,
           category: person.category,
           image: person.image ?? null,
           reportsToId,
@@ -127,7 +106,21 @@ function PeopleTableComponent({
         }
       })
     },
-    [router, startTransition]
+    [router, startTransition],
+  )
+
+  const handleRefreshLinkedInPhoto = useCallback(
+    async (person: PersonRow) => {
+      const toastId = toast.loading("Refreshing photo…")
+      const result = await refreshPersonLinkedInImageAction(person.id)
+      if ("error" in result) {
+        toast.error(result.error, { id: toastId })
+      } else {
+        toast.success("Photo updated", { id: toastId })
+        router.refresh()
+      }
+    },
+    [router],
   )
 
   const handleDeletePerson = useCallback(
@@ -141,7 +134,7 @@ function PeopleTableComponent({
         router.refresh()
       }
     },
-    [router]
+    [router],
   )
 
   const columns = useMemo(
@@ -151,9 +144,10 @@ function PeopleTableComponent({
         people,
         onEditPerson: handleEditPerson,
         onManagerChange: handleManagerChange,
+        onRefreshLinkedInPhoto: handleRefreshLinkedInPhoto,
         onDeletePerson: handleDeletePerson,
       }),
-    [canEdit, handleDeletePerson, handleEditPerson, handleManagerChange, people]
+    [canEdit, handleDeletePerson, handleEditPerson, handleManagerChange, handleRefreshLinkedInPhoto, people],
   )
 
   const table = useReactTable({
@@ -174,11 +168,7 @@ function PeopleTableComponent({
   return (
     <div className="flex flex-col gap-3 pb-8">
       <PeopleTableGrid table={table} columnCount={columns.length} />
-      <PeopleTablePagination
-        table={table}
-        canEdit={canEdit}
-        filteredCount={filtered.length}
-      />
+      <PeopleTablePagination table={table} canEdit={canEdit} filteredCount={filtered.length} />
 
       {/* Edit dialog reuse */}
       {editing && canEdit ? (

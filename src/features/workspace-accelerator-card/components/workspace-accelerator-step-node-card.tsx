@@ -1,50 +1,31 @@
 "use client"
 
+import { AnimatePresence, motion } from "framer-motion"
+import Link from "next/link"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
+import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import XIcon from "lucide-react/dist/esm/icons/x"
-import { useLayoutEffect, useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState } from "react"
 
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-import { ModuleRightRail } from "@/components/training/module-right-rail"
-import type { ModuleResource } from "@/components/training/types"
+import { RichTextEditor } from "@/components/rich-text-editor"
+import { AssignmentForm } from "@/components/training/module-detail/assignment-form"
+import { DeckViewer } from "@/components/training/module-detail/deck-viewer"
+import { LessonNotes } from "@/components/training/module-detail/lesson-notes"
+import { ModuleStepperCompleteStep } from "@/components/training/module-detail/module-stepper-complete-step"
+import { ModuleStepperResourcesStep } from "@/components/training/module-detail/module-stepper-resources-step"
+import { useAssignmentSubmission } from "@/components/training/module-detail/use-assignment-submission"
+import { VideoSection } from "@/components/training/module-detail/video-section"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
-import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
-import type {
-  WorkspaceAcceleratorCardStep,
-  WorkspaceAcceleratorTutorialCallout,
-  WorkspaceAcceleratorTutorialInteractionPolicy,
-} from "../types"
-import {
-  resolveWorkspaceAcceleratorDisplayStepTitle,
-  shouldShowWorkspaceAcceleratorModuleTitle,
-} from "./workspace-accelerator-step-node-card-helpers"
-import { WorkspaceAcceleratorStepLayout } from "./workspace-accelerator-step-layout"
-import { WorkspaceAcceleratorStepBody } from "./workspace-accelerator-step-node-card-body"
-import {
-  canWorkspaceAcceleratorTutorialPerformPreviewAction,
-  isWorkspaceAcceleratorTutorialPreviewLocked,
-} from "./workspace-accelerator-card-tutorial-guards"
-import {
-  resolveAssignmentFooterNavigation,
-  WorkspaceAcceleratorStepFooter,
-} from "./workspace-accelerator-step-node-card-footer"
-import { WorkspaceAcceleratorTutorialGuardTooltip } from "./workspace-accelerator-tutorial-guard-tooltip"
-import { useWorkspaceAcceleratorTutorialGuard } from "./use-workspace-accelerator-tutorial-guard"
-
-type WorkspaceAcceleratorStepNodeCardVariant = "node" | "embedded"
-const WORKSPACE_ACCELERATOR_STEP_NODE_CARD_SOURCE =
-  "src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx"
+import type { WorkspaceAcceleratorCardStep } from "../types"
 
 export type WorkspaceAcceleratorStepNodeCardProps = {
   step: WorkspaceAcceleratorCardStep
-  placeholderVideoUrl?: string | null
   stepIndex: number
   stepTotal: number
   canGoPrevious: boolean
@@ -53,24 +34,12 @@ export type WorkspaceAcceleratorStepNodeCardProps = {
   moduleCompleted: boolean
   onPrevious: () => void
   onNext: () => void
-  onVideoComplete?: () => void
   onComplete: () => void
   onClose: () => void
-  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
-  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
-  variant?: WorkspaceAcceleratorStepNodeCardVariant
-  sidePanel?: ReactNode
-  drawerContainer?: HTMLElement | null
-  onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
-  immersive?: boolean
 }
 
 function headerButtonClassName() {
-  return "h-9 w-9 touch-manipulation rounded-lg border border-border/65 bg-background/80 hover:bg-background/95 lg:h-8 lg:w-8"
-}
-
-function headerDoneButtonClassName() {
-  return "h-9 min-w-[76px] touch-manipulation gap-1.5 rounded-full bg-background/90 px-3 text-xs font-medium text-foreground shadow-none hover:bg-muted/70 hover:text-foreground lg:h-8 lg:min-w-[72px] sm:px-3 dark:bg-background/75 dark:hover:bg-muted/45"
+  return "h-8 w-8 rounded-lg border border-border/65 bg-background/80 hover:bg-background/95"
 }
 
 function clampStepTitle(title: string) {
@@ -79,99 +48,8 @@ function clampStepTitle(title: string) {
   return trimmed
 }
 
-function normalizeRailResources(
-  step: WorkspaceAcceleratorCardStep
-): ModuleResource[] {
-  if (step.moduleContext?.moduleResources?.length) {
-    return step.moduleContext.moduleResources
-  }
-
-  return step.resources.map((resource) => ({
-    label: resource.title,
-    url: resource.url,
-    provider: "generic" as const,
-  }))
-}
-
-function AcceleratorStepCloseButton({
-  done,
-  compact,
-  moduleCompleted,
-  onClose,
-  reactGrabOwnerProps,
-  tutorialCallout,
-  variant,
-}: {
-  done?: boolean
-  compact: boolean
-  moduleCompleted: boolean
-  onClose: () => void
-  reactGrabOwnerProps?: Record<string, string>
-  tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
-  variant: WorkspaceAcceleratorStepNodeCardVariant
-}) {
-  const button = (
-    <Button
-      type="button"
-      size={done ? "sm" : "icon"}
-      variant="ghost"
-      {...reactGrabOwnerProps}
-      className={cn(
-        done ? headerDoneButtonClassName() : headerButtonClassName(),
-        compact
-          ? done ? "h-11 lg:h-11" : "h-11 w-11 lg:h-11 lg:w-11"
-          : done ? "h-8" : "h-8 w-8",
-        !done &&
-          moduleCompleted &&
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
-      )}
-      onClick={onClose}
-      aria-label={
-        done
-          ? "Done reviewing this lesson"
-          : moduleCompleted
-            ? "Lesson complete"
-            : variant === "embedded"
-              ? "Close accelerator lesson"
-              : "Close accelerator step node"
-      }
-    >
-      {done ? (
-        <>
-          <CheckIcon
-            className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
-            aria-hidden
-          />
-          <span>Done</span>
-        </>
-      ) : moduleCompleted ? (
-        <CheckIcon className="h-4 w-4" aria-hidden />
-      ) : (
-        <XIcon className="h-4 w-4" aria-hidden />
-      )}
-    </Button>
-  )
-
-  if (tutorialCallout?.focus !== "close-module") {
-    return button
-  }
-
-  return (
-    <div className="relative inline-flex shrink-0">
-      <WorkspaceTutorialCallout
-        reactGrabOwnerId="workspace-accelerator-step-node-card:close-module-callout"
-        mode="indicator"
-        indicatorOffsetY={-12}
-      />
-      {button}
-    </div>
-  )
-}
-
-// eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorStepNodeCard({
   step,
-  placeholderVideoUrl = null,
   stepIndex,
   stepTotal,
   canGoPrevious,
@@ -181,318 +59,350 @@ export function WorkspaceAcceleratorStepNodeCard({
   onPrevious,
   onNext,
   onComplete,
-  onVideoComplete,
   onClose,
-  tutorialCallout = null,
-  tutorialInteractionPolicy = null,
-  variant = "node",
-  sidePanel,
-  drawerContainer = null,
-  onWorkspaceOnboardingSubmit,
-  immersive = false,
 }: WorkspaceAcceleratorStepNodeCardProps) {
-  const embedded = variant === "embedded"
-  const isMobileViewport = useIsMobile(1024)
-  const [compactDrawer, setCompactDrawer] = useState(true)
-  useLayoutEffect(() => {
-    if (!drawerContainer) return
-    const update = () => {
-      const width = drawerContainer.clientWidth
-      if (width > 0) setCompactDrawer(width < 960)
-    }
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(drawerContainer)
-    return () => observer.disconnect()
-  }, [drawerContainer])
-  const isMobile = drawerContainer ? compactDrawer : isMobileViewport
-  const previewLocked = isWorkspaceAcceleratorTutorialPreviewLocked({
-    tutorialInteractionPolicy,
-  })
-  const previewGuard = useWorkspaceAcceleratorTutorialGuard({
-    enabled: previewLocked,
-    defaultMessage:
-      tutorialInteractionPolicy?.blockedMessage ??
-      "We'll go over this soon, I promise! :)",
-    durationMs: tutorialInteractionPolicy?.blockedMessageDurationMs ?? 3000,
-  })
-  const [blockedControlId, setBlockedControlId] = useState<string | null>(null)
-  const stepTitle = clampStepTitle(
-    step.stepKind === "assignment" && step.moduleTitle.trim()
-      ? step.moduleTitle
-      : resolveWorkspaceAcceleratorDisplayStepTitle({
-          moduleTitle: step.moduleTitle,
-          stepTitle: step.stepTitle,
-        })
+  const [fallbackNotesValue, setFallbackNotesValue] = useState(
+    "<p>Capture your notes for this lesson.</p>"
   )
-  const showModuleTitle =
-    step.stepKind !== "assignment" &&
-    shouldShowWorkspaceAcceleratorModuleTitle({
-      moduleTitle: step.moduleTitle,
-      stepTitle,
-    })
+  const moduleContext = step.moduleContext
+  const assignmentFields = moduleContext?.assignmentFields ?? []
+  const assignmentSubmission = moduleContext?.assignmentSubmission ?? null
+  const completeOnSubmit = moduleContext?.completeOnSubmit ?? false
+  const classTitle = moduleContext?.classTitle ?? "Accelerator"
+
+  const {
+    formSeed,
+    handleSubmit,
+    isSubmitting,
+    lastSavedAt,
+    message,
+    statusMeta,
+    submissionError,
+  } = useAssignmentSubmission({
+    assignmentFields,
+    moduleId: step.moduleId,
+    submission: assignmentSubmission,
+  })
+
+  const statusLabel = useMemo(() => {
+    if (completed) return "Completed"
+    return statusMeta?.label ?? null
+  }, [completed, statusMeta?.label])
+
+  const statusVariant = useMemo(() => {
+    if (completed) return "default" as const
+    return statusMeta?.variant ?? "secondary"
+  }, [completed, statusMeta?.variant])
+
+  const stepTitle = clampStepTitle(step.stepTitle)
   const stepCount = Math.max(stepTotal, 1)
   const currentCount = Math.min(stepIndex + 1, stepCount)
-  const workspaceOnboardingView =
-    step.moduleContext?.workspaceOnboarding?.view ?? null
-  const fullscreenEmbedded = embedded && immersive
-  const immersiveOnboarding =
-    fullscreenEmbedded && workspaceOnboardingView === "organization-setup"
-  const handleBlockedPreviewAction = (
-    action:
-      | "preview-navigation"
-      | "preview-close"
-      | "preview-link"
-      | "preview-submit",
-    controlId: string
-  ) => {
-    setBlockedControlId(controlId)
-    previewGuard.showBlockedFeedback(action)
-  }
-  const canNavigatePreview =
-    canWorkspaceAcceleratorTutorialPerformPreviewAction({
-      tutorialInteractionPolicy,
-      action: "preview-navigation",
-    })
-  const canClosePreview = canWorkspaceAcceleratorTutorialPerformPreviewAction({
-    tutorialInteractionPolicy,
-    action: "preview-close",
-  })
-  const previousButtonOwnerDescriptor = {
-    ownerId: `workspace-accelerator-step-node-card:${step.id}:previous`,
-    component: "WorkspaceAcceleratorStepNodeCard",
-    source: WORKSPACE_ACCELERATOR_STEP_NODE_CARD_SOURCE,
-    slot: "previous-button",
-    variant,
-  } as const
-  const nextButtonOwnerDescriptor = {
-    ownerId: `workspace-accelerator-step-node-card:${step.id}:next`,
-    component: "WorkspaceAcceleratorStepNodeCard",
-    source: WORKSPACE_ACCELERATOR_STEP_NODE_CARD_SOURCE,
-    slot: "next-button",
-    variant,
-  } as const
-  const closeButtonOwnerDescriptor = {
-    ownerId: `workspace-accelerator-step-node-card:${step.id}:close`,
-    component: "WorkspaceAcceleratorStepNodeCard",
-    source: WORKSPACE_ACCELERATOR_STEP_NODE_CARD_SOURCE,
-    slot: "close-button",
-    variant,
-  } as const
-  const navigationControls = (
-    <>
-      <WorkspaceAcceleratorTutorialGuardTooltip
-        open={previewGuard.open && blockedControlId === "previous"}
-        message={previewGuard.message}
-        ownerDescriptor={previousButtonOwnerDescriptor}
-        side="top"
-        align="end"
-        sideOffset={8}
-      >
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          {...getReactGrabOwnerProps(previousButtonOwnerDescriptor)}
-          className={cn(
-            headerButtonClassName(),
-            drawerContainer
-              ? isMobile ? "h-11 w-11 lg:h-11 lg:w-11" : "h-9 w-9 lg:h-9 lg:w-9"
-              : "h-9 w-9 sm:h-7 sm:w-7"
-          )}
-          onClick={() => {
-            if (canNavigatePreview) {
-              onPrevious()
-              return
-            }
-            handleBlockedPreviewAction(
-              "preview-navigation",
-              "previous"
-            )
-          }}
-          disabled={!canGoPrevious}
-          aria-label="Previous accelerator step"
-        >
-          <ChevronLeftIcon className="h-4 w-4" aria-hidden />
-        </Button>
-      </WorkspaceAcceleratorTutorialGuardTooltip>
-      <span className="text-foreground shrink-0 px-1 text-[11px] font-medium tabular-nums">
-        {currentCount} of {stepCount}
-      </span>
-      <WorkspaceAcceleratorTutorialGuardTooltip
-        open={previewGuard.open && blockedControlId === "next"}
-        message={previewGuard.message}
-        ownerDescriptor={nextButtonOwnerDescriptor}
-        side="top"
-        align="end"
-        sideOffset={8}
-      >
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          {...getReactGrabOwnerProps(nextButtonOwnerDescriptor)}
-          className={cn(
-            headerButtonClassName(),
-            drawerContainer
-              ? isMobile ? "h-11 w-11 lg:h-11 lg:w-11" : "h-9 w-9 lg:h-9 lg:w-9"
-              : "h-9 w-9 sm:h-7 sm:w-7"
-          )}
-          onClick={() => {
-            if (canNavigatePreview) {
-              onNext()
-              return
-            }
-            handleBlockedPreviewAction("preview-navigation", "next")
-          }}
-          disabled={!canGoNext}
-          aria-label="Next accelerator step"
-        >
-          <ChevronRightIcon className="h-4 w-4" aria-hidden />
-        </Button>
-      </WorkspaceAcceleratorTutorialGuardTooltip>
-    </>
-  )
-  const resolvedSidePanel =
-    sidePanel ??
-    (embedded && !workspaceOnboardingView ? (
-      <ModuleRightRail
-        moduleId={step.moduleId}
-        resources={normalizeRailResources(step)}
-        hasDeck={step.hasDeck}
-        breakAction={{
-          kind: "button",
-          label: "Close lesson",
-          onClick: () => {
-            if (canClosePreview) {
-              onClose()
-              return
-            }
-            handleBlockedPreviewAction("preview-close", "rail-close")
-          },
-        }}
-      />
-    ) : null)
-  const stackSidebar = Boolean(resolvedSidePanel) && isMobile
-  const assignmentFooterNavigation = resolveAssignmentFooterNavigation(step)
-  const isFinalAssignmentSection = Boolean(
-    assignmentFooterNavigation && !assignmentFooterNavigation.nextSection
-  )
-  const stepBody = (
-    <WorkspaceAcceleratorStepBody
-      step={step}
-      placeholderVideoUrl={placeholderVideoUrl}
-      stepIndex={stepIndex}
-      stepTotal={stepTotal}
-      canGoNext={canGoNext}
-      completed={completed}
-      onVideoComplete={onVideoComplete}
-      onComplete={onComplete}
-      onClose={onClose}
-      tutorialInteractionPolicy={tutorialInteractionPolicy}
-      onBlockedPreviewAction={handleBlockedPreviewAction}
-      onWorkspaceOnboardingSubmit={onWorkspaceOnboardingSubmit}
-      immersiveOnboarding={immersiveOnboarding}
-      fitVideo={Boolean(drawerContainer) && !stackSidebar}
-    />
-  )
+  const acceleratorBreakHref = step.href.includes("paywall=")
+    ? step.href
+    : "/accelerator"
+  const showVideo = step.stepKind === "video"
+  const showResources = step.stepKind === "resources"
+  const showAssignment = step.stepKind === "assignment"
+  const showDeck = step.stepKind === "deck"
+  const showComplete = step.stepKind === "complete"
+  const showLessonNotes =
+    step.stepKind === "lesson" && Boolean(moduleContext?.lessonNotesContent)
+  const showStepKindBadge = !showAssignment
+  const showDurationBadge = Boolean(step.durationMinutes)
+  const showStepMeta = showStepKindBadge || showDurationBadge
+
   return (
-    <WorkspaceAcceleratorStepLayout
-      drawerContainer={drawerContainer}
-      stepId={step.id}
-      embedded={embedded}
-      fullscreen={fullscreenEmbedded}
-      fillBody={!stackSidebar && (immersiveOnboarding || step.stepKind === "assignment" || (Boolean(drawerContainer) && step.stepKind === "video"))}
-      showCallout={tutorialCallout?.focus === "close-module"}
-      header={!immersiveOnboarding ? (
-        <header
-          className={cn(
-            "@container/lesson-header shrink-0 px-3 py-3 sm:px-4",
-            !stackSidebar && "border-border/60 border-b",
-            !drawerContainer && "bg-muted/20",
-            tutorialCallout?.focus === "close-module" &&
-              "relative z-20 overflow-visible",
-            !embedded &&
-              "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing"
-          )}
-        >
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1 gap-y-2 @min-[26rem]/lesson-header:grid-cols-[minmax(0,1fr)_auto_auto] @min-[26rem]/lesson-header:gap-x-3">
-            <div className="col-span-2 min-w-0 @min-[26rem]/lesson-header:col-span-1">
-              {showModuleTitle ? (
-                <p className={cn("truncate", WORKSPACE_TEXT_STYLES.meta)}>
-                  {step.moduleTitle}
-                </p>
-              ) : null}
-              <h3
-                className={cn("break-words", isMobile ? "line-clamp-2" : "line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}
-              >
-                <span className="flex items-start gap-1.5">
-                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px]">
-                    <WaypointsIcon
-                      className="h-3.5 w-3.5 text-fuchsia-500 dark:text-fuchsia-400"
-                      aria-hidden
-                    />
-                  </span>
-                  {stepTitle}
+    <article className="border-border/70 bg-card flex h-auto w-full min-w-0 flex-col overflow-hidden rounded-[24px] border shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]">
+      <header className="accelerator-step-node-drag-handle border-border/60 bg-muted/20 cursor-grab active:cursor-grabbing border-b px-4 py-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-muted-foreground truncate text-[11px]">
+              {step.moduleTitle}
+            </p>
+            <h3 className="text-foreground line-clamp-1 text-sm font-semibold">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px]">
+                  <WaypointsIcon
+                    className="h-3.5 w-3.5 text-fuchsia-500 dark:text-fuchsia-400"
+                    aria-hidden
+                  />
                 </span>
-              </h3>
-            </div>
-            <div className="col-start-1 row-start-2 flex min-w-0 items-center gap-1 @min-[26rem]/lesson-header:col-start-2 @min-[26rem]/lesson-header:row-start-1">
-                <div className="ml-auto flex shrink-0 items-center gap-1">
-                  {navigationControls}
-                </div>
-            </div>
-            <div className="col-start-2 row-start-2 justify-self-end @min-[26rem]/lesson-header:col-start-3 @min-[26rem]/lesson-header:row-start-1">
-                <WorkspaceAcceleratorTutorialGuardTooltip
-                  open={previewGuard.open && blockedControlId === "close"}
-                  message={previewGuard.message}
-                  ownerDescriptor={closeButtonOwnerDescriptor}
-                  side="top"
-                  align="end"
-                  sideOffset={8}
-                >
-                  <div className="inline-flex">
-                    <AcceleratorStepCloseButton
-                      compact={isMobile}
-                      done={!canGoNext && !workspaceOnboardingView}
-                      moduleCompleted={moduleCompleted}
-                      onClose={() => {
-                        if (canClosePreview) {
-                          if (!canGoNext && !workspaceOnboardingView) onComplete()
-                          else onClose()
-                          return
-                        }
-                        handleBlockedPreviewAction("preview-close", "close")
-                      }}
-                      reactGrabOwnerProps={getReactGrabOwnerProps(
-                        closeButtonOwnerDescriptor
-                      )}
-                      tutorialCallout={tutorialCallout}
-                      variant={variant}
-                    />
-                  </div>
-                </WorkspaceAcceleratorTutorialGuardTooltip>
+                {stepTitle}
+              </span>
+            </h3>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className={cn(headerButtonClassName(), "h-7 w-7")}
+                onClick={onPrevious}
+                disabled={!canGoPrevious}
+                aria-label="Previous accelerator step"
+              >
+                <ChevronLeftIcon className="h-4 w-4" aria-hidden />
+              </Button>
+              <p className="bg-muted/60 text-foreground min-w-[4rem] rounded-md px-2 py-1 text-center text-[11px] font-medium tabular-nums">
+                {currentCount} of {stepCount}
+              </p>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className={cn(headerButtonClassName(), "h-7 w-7")}
+                onClick={onNext}
+                disabled={!canGoNext}
+                aria-label="Next accelerator step"
+              >
+                <ChevronRightIcon className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  headerButtonClassName(),
+                  "h-7 w-7",
+                  moduleCompleted &&
+                    "border-sky-500/45 bg-sky-500/12 text-sky-600 hover:bg-sky-500/20 dark:text-sky-400",
+                )}
+                onClick={onClose}
+                aria-label={
+                  moduleCompleted
+                    ? "Lesson complete"
+                    : "Close accelerator step node"
+                }
+              >
+                {moduleCompleted ? (
+                  <CheckIcon className="h-4 w-4" aria-hidden />
+                ) : (
+                  <XIcon className="h-4 w-4" aria-hidden />
+                )}
+              </Button>
             </div>
           </div>
-        </header>
-      ) : null}
-      sidebar={resolvedSidePanel}
-      stackSidebar={stackSidebar}
-      footer={!immersiveOnboarding && assignmentFooterNavigation ? (
-        <WorkspaceAcceleratorStepFooter
-          assignmentFooterNavigation={assignmentFooterNavigation}
-          canGoNext={canGoNext}
-          canGoPrevious={canGoPrevious}
-          completed={completed}
-          isFinalAssignmentSection={isFinalAssignmentSection}
-          onComplete={onComplete}
-          onNext={onNext}
-          onPrevious={onPrevious}
-        />
-      ) : null}
+        </div>
+      </header>
 
-    >
-      {stepBody}
-    </WorkspaceAcceleratorStepLayout>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="w-full min-w-0"
+        >
+          {showVideo ? (
+            <div className="px-4 py-3">
+              <VideoSection
+                embedUrl={null}
+                videoUrl={step.videoUrl}
+                fallbackUrl={step.href}
+                variant="frame"
+                className="border-border/60 aspect-video w-full overflow-hidden rounded-xl border"
+              />
+            </div>
+          ) : (
+            <div className="space-y-4 px-5 py-4">
+              {step.stepDescription ? (
+                !showAssignment ? (
+                  <p className="text-foreground text-sm leading-relaxed">
+                    {step.stepDescription}
+                  </p>
+                ) : null
+              ) : null}
+
+              {showStepMeta ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {showStepKindBadge ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-md text-[10px] font-medium"
+                    >
+                      {step.stepKind}
+                    </Badge>
+                  ) : null}
+                  {showDurationBadge ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-md text-[10px] font-medium"
+                    >
+                      {step.durationMinutes} min
+                    </Badge>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {showLessonNotes && moduleContext?.lessonNotesContent ? (
+                <LessonNotes
+                  title={step.moduleTitle}
+                  content={moduleContext.lessonNotesContent}
+                />
+              ) : null}
+
+              {showResources ? (
+                moduleContext ? (
+                  <ModuleStepperResourcesStep
+                    resources={moduleContext.moduleResources ?? []}
+                    moduleId={step.moduleId}
+                    hasDeck={step.hasDeck}
+                  />
+                ) : (
+                  <section className="space-y-1.5">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Resources
+                    </p>
+                    <div className="space-y-1.5">
+                      {step.resources.map((resource) => (
+                        <a
+                          key={resource.id}
+                          href={resource.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="border-border/60 bg-background/75 hover:bg-muted/25 flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm"
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {resource.title}
+                          </span>
+                          <ExternalLinkIcon
+                            className="text-muted-foreground h-4 w-4"
+                            aria-hidden
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                )
+              ) : null}
+
+              {showAssignment ? (
+                assignmentFields.length > 0 ? (
+                  <AssignmentForm
+                    mode="stepper"
+                    fields={assignmentFields}
+                    initialValues={formSeed}
+                    pending={isSubmitting}
+                    onSubmit={handleSubmit}
+                    statusLabel={statusLabel}
+                    statusVariant={statusVariant}
+                    statusNote={statusMeta?.note ?? null}
+                    helperText={message}
+                    errorMessage={submissionError}
+                    updatedAt={lastSavedAt}
+                    completeOnSubmit={completeOnSubmit}
+                    moduleId={step.moduleId}
+                    moduleTitle={step.moduleTitle}
+                    classTitle={classTitle}
+                    currentStep={stepIndex + 1}
+                    totalSteps={stepTotal}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Assignment
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      This module assignment schema is not available yet. Use
+                      notes below until it is published.
+                    </p>
+                    <RichTextEditor
+                      value={fallbackNotesValue}
+                      onChange={setFallbackNotesValue}
+                      mode="homework"
+                      minHeight={180}
+                      maxHeight={320}
+                      className="border-border/60 rounded-xl"
+                    />
+                  </div>
+                )
+              ) : null}
+
+              {showDeck ? (
+                step.hasDeck ? (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Deck
+                    </p>
+                    <DeckViewer
+                      moduleId={step.moduleId}
+                      hasDeck
+                      variant="frame"
+                      showPreviewTrigger={false}
+                      inlinePreview
+                      className="border-border/60 h-[420px] overflow-hidden rounded-xl border"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Deck
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      No deck is attached to this module yet.
+                    </p>
+                  </div>
+                )
+              ) : null}
+
+              {showComplete ? (
+                <ModuleStepperCompleteStep
+                  completionCount={currentCount}
+                  moduleCount={stepCount}
+                  progressPercent={Math.round((currentCount / stepCount) * 100)}
+                  breakHref={acceleratorBreakHref}
+                  nextHref={canGoNext ? step.href : null}
+                  nextLocked={!canGoNext}
+                  schedulePending={false}
+                  coachingTier={null}
+                  coachingRemaining={null}
+                  onContinue={onNext}
+                  onSchedule={onClose}
+                />
+              ) : null}
+
+              {!showLessonNotes &&
+              !showResources &&
+              !showAssignment &&
+              !showDeck &&
+              !showComplete ? (
+                <section className="space-y-2">
+                  <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                    Step focus
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Complete this lesson step, then move forward in sequence.
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-lg text-xs"
+                  >
+                    <Link href={step.href}>
+                      Open full lesson
+                      <ExternalLinkIcon className="h-3.5 w-3.5" aria-hidden />
+                    </Link>
+                  </Button>
+                </section>
+              ) : null}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+      <footer className="border-border/60 bg-muted/15 flex items-center justify-end border-t px-4 py-2.5">
+        <Button
+          type="button"
+          size="sm"
+          variant={completed ? "default" : "secondary"}
+          className="h-7 rounded-lg px-2.5 text-[11px]"
+          onClick={onComplete}
+        >
+          {completed ? "Completed" : "Complete"}
+        </Button>
+      </footer>
+    </article>
   )
 }

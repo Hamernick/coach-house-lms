@@ -1,21 +1,18 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
-import {
-  resolveOrganizationNarrativePlainText,
-  type RoadmapSection,
-} from "@/lib/roadmap"
+import type { RoadmapSection } from "@/lib/roadmap"
 
 export const ACCELERATOR_FUNDABLE_THRESHOLD = 70
 export const ACCELERATOR_VERIFIED_THRESHOLD = 90
 
 const CORE_FORMATION_MODULE_SLUGS = new Set(["naming-your-nfp", "nfp-registration", "filing-1023"])
-export const CORE_ROADMAP_SECTION_IDS = new Set([
+const CORE_ROADMAP_SECTION_IDS = new Set([
   "origin_story",
   "need",
   "mission_vision_values",
   "theory_of_change",
   "program",
 ])
-export const PROFILE_COMPLETENESS_KEYS = [
+const PROFILE_COMPLETENESS_KEYS = [
   "name",
   "tagline",
   "mission",
@@ -24,13 +21,7 @@ export const PROFILE_COMPLETENESS_KEYS = [
   "address_city",
   "address_state",
 ] as const
-export const VERIFIED_DOC_KEYS = [
-  "verificationLetter",
-  "bylaws",
-  "stateRegistration",
-  "goodStandingCertificate",
-  "w9",
-] as const
+const VERIFIED_DOC_KEYS = ["verificationLetter", "bylaws", "stateRegistration", "goodStandingCertificate", "w9"] as const
 
 type ReadinessModule = {
   slug: string
@@ -49,12 +40,6 @@ type ReadinessInput = {
   peopleCount: number
 }
 
-export type AcceleratorReadinessChecklistItem = {
-  id: string
-  label: string
-  complete: boolean
-}
-
 export type AcceleratorReadinessSummary = {
   score: number
   progressPercent: number
@@ -62,8 +47,6 @@ export type AcceleratorReadinessSummary = {
   verifiedCheckpoint: number
   fundable: boolean
   verified: boolean
-  fundableChecklist: AcceleratorReadinessChecklistItem[]
-  verifiedChecklist: AcceleratorReadinessChecklistItem[]
   fundableMissing: string[]
   verifiedMissing: string[]
 }
@@ -112,12 +95,7 @@ export function resolveAcceleratorReadiness({
   const hasProgram = programs.length > 0
   const hasFundingGoal = programs.some((program) => Number(program.goal_cents ?? 0) > 0)
 
-  const profileFieldsCompleted = PROFILE_COMPLETENESS_KEYS.filter((key) => {
-    if (key === "mission" || key === "values") {
-      return hasText(resolveOrganizationNarrativePlainText(profile, key))
-    }
-    return hasText(profile[key])
-  }).length
+  const profileFieldsCompleted = PROFILE_COMPLETENESS_KEYS.filter((key) => hasText(profile[key])).length
   const profileScore = Math.round((profileFieldsCompleted / PROFILE_COMPLETENESS_KEYS.length) * 20)
 
   const roadmapCoreCompleted = roadmapSections.filter(
@@ -169,59 +147,17 @@ export function resolveAcceleratorReadiness({
         )
       : clamp(score, 0, ACCELERATOR_FUNDABLE_THRESHOLD - 1)
 
-  const fundableChecklist: AcceleratorReadinessChecklistItem[] = [
-    {
-      id: "formation-lessons",
-      label: "Complete the Formation class",
-      complete: coreLessonsComplete,
-    },
-    {
-      id: "program-funding-goal",
-      label: "Set a program funding goal",
-      complete: hasFundingGoal,
-    },
-    {
-      id: "legal-formation-document",
-      label: "Upload legal formation document",
-      complete: hasVerificationLetter || hasArticles,
-    },
-  ]
+  const fundableMissing: string[] = []
+  if (!coreLessonsComplete) fundableMissing.push("Complete formation lessons")
+  if (!hasFundingGoal) fundableMissing.push("Set a program funding goal")
+  if (!(hasVerificationLetter || hasArticles)) fundableMissing.push("Upload legal formation document")
 
-  const verifiedChecklist: AcceleratorReadinessChecklistItem[] = [
-    {
-      id: "verification-letter",
-      label: "Upload verification letter",
-      complete: hasVerificationLetter,
-    },
-    {
-      id: "approved-formation-status",
-      label: "Formation status must be approved",
-      complete: formationStatus === "approved",
-    },
-    {
-      id: "formation-lessons",
-      label: "Complete the Formation class",
-      complete: coreLessonsComplete,
-    },
-    {
-      id: "core-roadmap-sections",
-      label: "Complete core roadmap sections",
-      complete: roadmapCoreCompleted === CORE_ROADMAP_SECTION_IDS.size,
-    },
-    {
-      id: "program-funding-goal",
-      label: "Set a program funding goal",
-      complete: hasFundingGoal,
-    },
-  ]
-
-  const fundableMissing = fundableChecklist
-    .filter((item) => !item.complete)
-    .map((item) => item.label)
-
-  const verifiedMissing = verifiedChecklist
-    .filter((item) => !item.complete)
-    .map((item) => item.label)
+  const verifiedMissing: string[] = []
+  if (!hasVerificationLetter) verifiedMissing.push("Upload verification letter")
+  if (formationStatus !== "approved") verifiedMissing.push("Formation status must be approved")
+  if (!coreLessonsComplete) verifiedMissing.push("Complete formation lessons")
+  if (roadmapCoreCompleted !== CORE_ROADMAP_SECTION_IDS.size) verifiedMissing.push("Complete core roadmap sections")
+  if (!hasFundingGoal) verifiedMissing.push("Set a program funding goal")
 
   return {
     score,
@@ -230,8 +166,6 @@ export function resolveAcceleratorReadiness({
     verifiedCheckpoint: ACCELERATOR_VERIFIED_THRESHOLD,
     fundable,
     verified,
-    fundableChecklist,
-    verifiedChecklist,
     fundableMissing,
     verifiedMissing,
   }

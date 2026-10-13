@@ -1,34 +1,14 @@
-import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
-
-import { PublicProfilePage } from "@/features/public-profiles"
-import { PublicHomeResourceExplorer } from "@/components/public/home-resource-explorer"
-import { fetchPublicMapViewerState } from "@/features/find-map"
-import { buildFindOrganizationHref } from "@/lib/find/routes"
-import { buildPublicProfileMetadata } from "@/lib/public-profile-metadata"
-import {
-  fetchPublicProfileByHandle,
-} from "@/lib/queries/public-profile"
 
 export const revalidate = 300
 
-type PublicHandlePageProps = {
-  params: Promise<{ org: string }>
-  searchParams?: Promise<{ program?: string | string[] }>
-}
-
-export async function generateMetadata({
-  params,
-}: PublicHandlePageProps): Promise<Metadata> {
-  const { org } = await params
-  const profile = await fetchPublicProfileByHandle(org)
-  return buildPublicProfileMetadata(profile, org)
-}
-
-export default async function PublicHandlePage({
+export default async function LegacyPublicOrgPage({
   params,
   searchParams,
-}: PublicHandlePageProps) {
+}: {
+  params: Promise<{ org: string }>
+  searchParams?: Promise<{ program?: string | string[] }>
+}) {
   const { org } = await params
   const slug = String(org).trim()
   if (!slug) return notFound()
@@ -44,23 +24,11 @@ export default async function PublicHandlePage({
     return null
   })()
 
+  const encodedSlug = encodeURIComponent(slug)
   if (selectedProgramId) {
-    redirect(
-      buildFindOrganizationHref(
-        slug,
-        new URLSearchParams({ program: selectedProgramId })
-      )
-    )
+    const query = new URLSearchParams({ program: selectedProgramId }).toString()
+    redirect(`/find/${encodedSlug}?${query}`)
   }
 
-  const profile = await fetchPublicProfileByHandle(slug)
-  if (profile?.kind === "organization" && profile.organization) {
-    return <PublicHomeResourceExplorer searchParams={searchParams} initialOrganization={profile.organization} />
-  }
-  if (profile) {
-    const { viewer } = await fetchPublicMapViewerState()
-    return <PublicProfilePage profile={profile} viewer={viewer} />
-  }
-
-  notFound()
+  redirect(`/find/${encodedSlug}`)
 }

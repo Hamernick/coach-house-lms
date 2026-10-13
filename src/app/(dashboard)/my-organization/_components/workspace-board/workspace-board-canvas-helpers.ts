@@ -1,44 +1,41 @@
 "use client"
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-} from "react"
+import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react"
 
 import {
+  buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   resolveWorkspaceCanvasTutorialStepCount,
   resolveWorkspaceCanvasTutorialContinueMode,
   resolveWorkspaceCanvasTutorialSelectedCardId,
   resolveWorkspaceCanvasTutorialVisibleCardIds,
 } from "@/features/workspace-canvas-tutorial"
+
+import { completeWorkspaceCanvasTutorialAction } from "../../_lib/workspace-actions"
+import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
 import {
-  completeWorkspaceCanvasTutorialAction,
-  saveWorkspaceBoardStateAction,
-} from "../../_lib/workspace-actions"
-import {
-  type WorkspaceCanvasCardFocusRequest,
-  type WorkspaceCanvasTutorialCompletionExitRequest,
-} from "./workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
+  beginWorkspaceBoardInteraction,
+  clearWorkspaceBoardInteraction,
+  logWorkspaceBoardDebug,
+  logWorkspaceBoardPhase,
+  summarizeWorkspaceBoardVisibility,
+  type WorkspaceBoardToggleContext,
+} from "./workspace-board-debug"
 import type {
   WorkspaceAutoLayoutMode,
   WorkspaceBoardState,
   WorkspaceCardId,
   WorkspaceJourneyGuideState,
 } from "./workspace-board-types"
-import { isWorkspaceRestVisibleCardId } from "@/lib/workspace-card-policy"
-import { buildCompletedWorkspaceTutorialBoardState } from "./workspace-board-onboarding-flow"
-export { buildToggleCardVisibilityHandler } from "./workspace-board-canvas-visibility-toggle"
+import { reduceWorkspaceBoardVisibility } from "./workspace-board-visibility-reducer"
 
-export type WorkspaceCardFocusRequest = WorkspaceCanvasCardFocusRequest
-export type WorkspaceTutorialCompletionExitRequest =
-  WorkspaceCanvasTutorialCompletionExitRequest
+export type WorkspaceCardFocusRequest = {
+  cardId: WorkspaceCardId
+  requestKey: number
+} | null
 
 export function isBoardStateContentEqual(
   left: WorkspaceBoardState,
-  right: WorkspaceBoardState
+  right: WorkspaceBoardState,
 ) {
   return (
     left.version === right.version &&
@@ -60,38 +57,173 @@ export function areOrderedStringListsEqual(left: string[], right: string[]) {
   return left.every((value, index) => value === right[index])
 }
 
-export function buildWorkspaceBoardStateWithNodePosition({
-  boardState,
-  cardId,
-  x,
-  y,
+function ensureWorkspaceConnection({
+  connections,
+  source,
+  target,
 }: {
-  boardState: WorkspaceBoardState
-  cardId: WorkspaceCardId
-  x: number
-  y: number
+  connections: WorkspaceBoardState["connections"]
+  source: WorkspaceCardId
+  target: WorkspaceCardId
 }) {
-  let changed = false
-  const nextNodes = boardState.nodes.map((entry) => {
-    if (entry.id !== cardId) return entry
-    if (entry.x === x && entry.y === y && entry.positionMode === "manual") {
-      return entry
-    }
-    changed = true
-    return {
-      ...entry,
-      x,
-      y,
-      positionMode: "manual" as const,
-    }
-  })
+  const hasConnection = connections.some(
+    (connection) => connection.source === source && connection.target === target,
+  )
+  if (hasConnection) return connections
 
-  return changed
-    ? {
-        ...boardState,
+  return [
+    ...connections,
+    {
+      id: `edge-${source}-to-${target}`,
+      source,
+      target,
+    },
+  ]
+}
+
+function areOrderedCardListsEqual(
+  left: WorkspaceCardId[],
+  right: WorkspaceCardId[],
+) {
+  if (left.length !== right.length) return false
+  return left.every((cardId, index) => cardId === right[index])
+}
+
+export function buildToggleCardVisibilityHandler({
+  setBoardState,
+  setAcceleratorFocusRequestKey,
+}: {
+  setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
+  setAcceleratorFocusRequestKey: Dispatch<SetStateAction<number>>
+}) {
+  return (cardId: WorkspaceCardId, context?: WorkspaceBoardToggleContext) => {
+    const interaction =
+      context?.interactionId
+        ? {
+            id: context.interactionId,
+            source: context.source,
+            cardId,
+          }
+        : beginWorkspaceBoardInteraction({
+            source: context?.source ?? "unknown",
+            cardId,
+          })
+    let acceleratorVisibleAfterToggle = false
+    let shouldRequestAcceleratorFocus = false
+    const actionType: "context_hide_card" | "dock_toggle_card" =
+      context?.source === "context-menu" ? "context_hide_card" : "dock_toggle_card"
+
+    setBoardState((previous) => {
+      const next = reduceWorkspaceBoardVisibility(previous, {
+        type: actionType,
+        cardId,
+      })
+      const nextNodes = buildAutoLayoutNodesForMode({
+        mode: next.autoLayoutMode,
+        existingNodes: previous.nodes,
+        hiddenCardIds: next.hiddenCardIds,
+        connections: previous.connections,
+      })
+      const before = summarizeWorkspaceBoardVisibility(previous)
+      const after = summarizeWorkspaceBoardVisibility({
+        ...next,
+        nodes: nextNodes,
+      })
+      const beforeHiddenWithoutTarget = before.hiddenCardIds.filter((id) => id !== cardId)
+      const afterHiddenWithoutTarget = after.hiddenCardIds.filter((id) => id !== cardId)
+      const nonTargetHiddenChanged = !areOrderedCardListsEqual(
+        beforeHiddenWithoutTarget,
+        afterHiddenWithoutTarget,
+      )
+      const visibleCountDelta = after.visibleCount - before.visibleCount
+
+      logWorkspaceBoardDebug("toggle_card_visibility", {
+        cardId,
+        interactionId: interaction.id,
+        interactionSource: interaction.source,
+        interactionCardId: interaction.cardId,
+        before,
+        after,
+        nonTargetHiddenChanged,
+        visibleCountDelta,
+      })
+      logWorkspaceBoardPhase("toggle_reduced", {
+        cardId,
+        interactionId: interaction.id,
+        interactionSource: interaction.source,
+        nonTargetHiddenChanged,
+        visibleCountDelta,
+      })
+
+      logWorkspaceBoardDebug("toggle_card_visibility_tree_reflow", {
+        cardId,
+        interactionId: interaction.id,
+        interactionSource: interaction.source,
+        beforeHiddenWithoutTarget,
+        afterHiddenWithoutTarget,
+      })
+      if (cardId === "accelerator") {
+        const acceleratorVisibleBeforeToggle = !before.hiddenCardIds.includes("accelerator")
+        acceleratorVisibleAfterToggle = !after.hiddenCardIds.includes("accelerator")
+        shouldRequestAcceleratorFocus =
+          actionType === "dock_toggle_card" &&
+          !acceleratorVisibleBeforeToggle &&
+          acceleratorVisibleAfterToggle
+      }
+
+      return {
+        ...next,
         nodes: nextNodes,
       }
-    : boardState
+    })
+    if (cardId === "accelerator") {
+      logWorkspaceBoardDebug("layout_fit_requested_after_accelerator_toggle", {
+        cardId,
+        interactionId: interaction.id,
+        interactionSource: interaction.source,
+        acceleratorVisibleAfterToggle,
+      })
+      if (shouldRequestAcceleratorFocus) {
+        setAcceleratorFocusRequestKey((previous) => previous + 1)
+      }
+    }
+    clearWorkspaceBoardInteraction(interaction.id)
+  }
+}
+
+export function buildCompletedWorkspaceTutorialBoardState(
+  previous: WorkspaceBoardState,
+): WorkspaceBoardState {
+  const nextHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+  const nextConnections = ensureWorkspaceConnection({
+    connections: previous.connections,
+    source: "organization-overview",
+    target: "accelerator",
+  })
+  const nextState: WorkspaceBoardState = {
+    ...previous,
+    onboardingFlow: {
+      ...previous.onboardingFlow,
+      active: false,
+      tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
+      updatedAt: new Date().toISOString(),
+    },
+    connections: nextConnections,
+    hiddenCardIds: nextHiddenCardIds,
+    visibility: {
+      allCardsHiddenExplicitly: false,
+    },
+  }
+
+  return {
+    ...nextState,
+    nodes: buildAutoLayoutNodesForMode({
+      mode: previous.autoLayoutMode,
+      existingNodes: previous.nodes,
+      hiddenCardIds: nextHiddenCardIds,
+      connections: nextConnections,
+    }),
+  }
 }
 
 export function useWorkspaceTutorialAutoFocus({
@@ -110,19 +242,20 @@ export function useWorkspaceTutorialAutoFocus({
     if (
       resolveWorkspaceCanvasTutorialContinueMode(
         tutorialStepIndex,
-        openedTutorialStepIds
+        openedTutorialStepIds,
       ) === "shortcut"
     ) {
       return
     }
-    const tutorialTargetCardId = resolveWorkspaceCanvasTutorialSelectedCardId(
-      tutorialStepIndex,
-      openedTutorialStepIds
-    )
+    const tutorialTargetCardId =
+      resolveWorkspaceCanvasTutorialSelectedCardId(
+        tutorialStepIndex,
+        openedTutorialStepIds,
+      )
     if (!tutorialTargetCardId) return
     const visibleCardIds = resolveWorkspaceCanvasTutorialVisibleCardIds(
       tutorialStepIndex,
-      openedTutorialStepIds
+      openedTutorialStepIds,
     )
     if (!visibleCardIds.includes(tutorialTargetCardId)) return
 
@@ -139,85 +272,17 @@ export function useWorkspaceTutorialAutoFocus({
 }
 
 export function useWorkspaceTutorialCompletion({
-  allowEditing,
-  boardState,
-  journeyGuideState,
   setBoardState,
-  setTutorialCompletionExitRequest,
+  setLayoutFitRequestKey,
 }: {
-  allowEditing: boolean
-  boardState: WorkspaceBoardState
-  journeyGuideState: WorkspaceJourneyGuideState
   setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
-  setTutorialCompletionExitRequest: Dispatch<
-    SetStateAction<WorkspaceTutorialCompletionExitRequest>
-  >
+  setLayoutFitRequestKey: Dispatch<SetStateAction<number>>
 }) {
   return useCallback(() => {
-    const nextBoardState = buildCompletedWorkspaceTutorialBoardState(boardState)
-    setBoardState(nextBoardState)
-    setTutorialCompletionExitRequest((previous) => {
-      const requestKey = (previous?.requestKey ?? 0) + 1
-      return resolveWorkspaceTutorialCompletionExitRequest({
-        boardState: nextBoardState,
-        targetCardId: journeyGuideState.targetCardId,
-        requestKey,
-      })
-    })
-    void (async () => {
-      if (allowEditing) {
-        const persistResult =
-          await saveWorkspaceBoardStateAction(nextBoardState)
-        if ("error" in persistResult) {
-          console.error(
-            "[workspace-board] Unable to persist completed tutorial state.",
-            persistResult.error
-          )
-        }
-      }
-
-      const completionResult = await completeWorkspaceCanvasTutorialAction()
-      if ("error" in completionResult) {
-        console.error(
-          "[workspace-board] Unable to mark workspace tutorial complete.",
-          completionResult.error
-        )
-      }
-    })()
-  }, [
-    allowEditing,
-    boardState,
-    journeyGuideState.targetCardId,
-    setBoardState,
-    setTutorialCompletionExitRequest,
-  ])
-}
-
-export function resolveWorkspaceTutorialCompletionExitRequest({
-  boardState,
-  targetCardId,
-  requestKey,
-}: {
-  boardState: WorkspaceBoardState
-  targetCardId: WorkspaceCardId
-  requestKey: number
-}): NonNullable<WorkspaceTutorialCompletionExitRequest> {
-  if (
-    boardState.autoLayoutMode === "timeline" &&
-    isWorkspaceRestVisibleCardId(targetCardId) &&
-    !boardState.hiddenCardIds.includes(targetCardId)
-  ) {
-    return {
-      kind: "focus-card",
-      cardId: targetCardId,
-      requestKey,
-    }
-  }
-
-  return {
-    kind: "fit-visible",
-    requestKey,
-  }
+    setBoardState((previous) => buildCompletedWorkspaceTutorialBoardState(previous))
+    setLayoutFitRequestKey((previous) => previous + 1)
+    void completeWorkspaceCanvasTutorialAction()
+  }, [setBoardState, setLayoutFitRequestKey])
 }
 
 export function useWorkspaceTutorialLayoutFit({
@@ -256,50 +321,35 @@ export function useWorkspaceJourneyAutoFocus({
   journeyGuideState,
   setFocusCardRequest,
   disabled = false,
-  preserveFocusKeyWhenDisabled = false,
 }: {
   autoLayoutMode: WorkspaceAutoLayoutMode
   journeyGuideState: WorkspaceJourneyGuideState
   setFocusCardRequest: Dispatch<SetStateAction<WorkspaceCardFocusRequest>>
   disabled?: boolean
-  preserveFocusKeyWhenDisabled?: boolean
 }) {
   const lastJourneyFocusKeyRef = useRef<string | null>(null)
-  const didInitializeJourneyFocusRef = useRef(false)
-  const nextFocusKey = `${autoLayoutMode}:${journeyGuideState.stage}:${journeyGuideState.targetCardId}`
 
   useEffect(() => {
-    if (!didInitializeJourneyFocusRef.current) {
-      didInitializeJourneyFocusRef.current = true
-      lastJourneyFocusKeyRef.current =
-        autoLayoutMode === "timeline" && !disabled ? nextFocusKey : null
-      return
-    }
     if (disabled) {
-      if (preserveFocusKeyWhenDisabled && autoLayoutMode === "timeline") {
-        lastJourneyFocusKeyRef.current = nextFocusKey
-      } else {
-        lastJourneyFocusKeyRef.current = null
-      }
+      lastJourneyFocusKeyRef.current = null
       return
     }
     if (autoLayoutMode !== "timeline") {
       lastJourneyFocusKeyRef.current = null
       return
     }
+    const nextFocusKey = `${autoLayoutMode}:${journeyGuideState.stage}:${journeyGuideState.targetCardId}`
     if (lastJourneyFocusKeyRef.current === nextFocusKey) return
     lastJourneyFocusKeyRef.current = nextFocusKey
     setFocusCardRequest((previous) => ({
-      cardId: journeyGuideState.targetCardId,
-      requestKey: (previous?.requestKey ?? 0) + 1,
-    }))
+        cardId: journeyGuideState.targetCardId,
+        requestKey: (previous?.requestKey ?? 0) + 1,
+      }))
   }, [
     autoLayoutMode,
     disabled,
     journeyGuideState.stage,
     journeyGuideState.targetCardId,
-    nextFocusKey,
-    preserveFocusKeyWhenDisabled,
     setFocusCardRequest,
   ])
 }

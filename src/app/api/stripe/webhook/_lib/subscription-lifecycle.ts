@@ -12,8 +12,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import {
   extractUserIdFromMetadata,
-  getCancelAtIso,
-  getCanceledAtIso,
   getCurrentPeriodEndIso,
   toStatus,
 } from "./metadata"
@@ -83,7 +81,12 @@ export async function maybeStartOrganizationSubscription({
     idempotencyKey,
   })
 
-  const currentPeriodEnd = getCurrentPeriodEndIso(subscription)
+  const periodUnix = (
+    subscription as Stripe.Subscription & { current_period_end?: number }
+  ).current_period_end ?? null
+  const currentPeriodEnd = periodUnix
+    ? new Date(periodUnix * 1000).toISOString()
+    : null
 
   await upsertSubscription({
     userId,
@@ -91,8 +94,6 @@ export async function maybeStartOrganizationSubscription({
     subscriptionId: subscription.id,
     status: toStatus(subscription.status),
     currentPeriodEnd,
-    cancelAt: getCancelAtIso(subscription),
-    canceledAt: getCanceledAtIso(subscription),
     metadata: { planName: "Organization", context, stripe_mode: stripeMode },
   })
 }
@@ -169,8 +170,6 @@ export async function handleAcceleratorMonthlyInstallmentInvoice({
     subscriptionId: effectiveSubscription.id,
     status: toStatus(effectiveSubscription.status),
     currentPeriodEnd: getCurrentPeriodEndIso(effectiveSubscription),
-    cancelAt: getCancelAtIso(effectiveSubscription),
-    canceledAt: getCanceledAtIso(effectiveSubscription),
     metadata: effectiveSubscription.metadata as Record<string, string> | null,
   })
 }

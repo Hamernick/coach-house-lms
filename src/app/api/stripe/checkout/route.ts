@@ -12,7 +12,6 @@ import {
 } from "@/lib/billing/stripe-runtime"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase"
-import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
 type CheckoutErrorCode =
   | "stripe_unavailable"
@@ -62,7 +61,7 @@ function getSafeInternalRedirect(raw: string | null) {
   if (!raw) return null
   const value = raw.trim()
   if (!value.startsWith("/")) return null
-  if (value.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(value)) return null
+  if (value.startsWith("//")) return null
   return value
 }
 
@@ -149,10 +148,11 @@ function buildErrorRedirect({
     request,
     target: returnTarget ?? "/organization",
   })
-  destination.searchParams.set("paywall", "organization")
-  destination.searchParams.set("plan", planTier)
-  if (returnTarget) destination.searchParams.set("redirect", returnTarget)
-  else destination.searchParams.set("source", source)
+  if (!returnTarget) {
+    destination.searchParams.set("paywall", "organization")
+    destination.searchParams.set("plan", planTier)
+    destination.searchParams.set("source", source)
+  }
   destination.searchParams.set("checkout_error", code)
   if (detail) {
     destination.searchParams.set("checkout_detail", detail)
@@ -260,13 +260,12 @@ export async function GET(request: NextRequest) {
   }
 
   const userId = user.id
-  let orgId: string
+  let orgId = userId
   try {
     const resolved = await resolveActiveOrganization(supabase, userId)
     orgId = resolved.orgId
   } catch {
-    return buildErrorRedirect({ request, supabaseResponse, returnTarget: cancelTarget ?? redirectTarget,
-      planTier, source, code: "checkout_failed", detail: "organization_unavailable", debugToken })
+    orgId = userId
   }
 
   try {
@@ -328,26 +327,6 @@ export async function GET(request: NextRequest) {
         debugToken,
       })
     }
-
-    await trackUserJourneyMilestone({
-      userId,
-      orgId,
-      eventName: "checkout_started",
-      journey: "paid_builder",
-      source: "stripe_checkout_route",
-      surface: "pricing_checkout",
-      planTier,
-      checkpoint: "checkout_started",
-      metadata: {
-        requestSource: source,
-        checkoutContext,
-        checkoutSessionId: checkout.id,
-        stripeMode: stripeConfig.mode,
-        stripeTarget: stripeConfig.target,
-        hasRedirectTarget: Boolean(redirectTarget),
-        hasCancelTarget: Boolean(cancelTarget),
-      },
-    })
 
     const response = NextResponse.redirect(checkout.url)
     copySupabaseCookies(supabaseResponse, response)

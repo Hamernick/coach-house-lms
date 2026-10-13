@@ -14,12 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StepperRail, type StepperRailStep } from "@/components/ui/stepper-rail"
 import { getTrackIcon } from "@/lib/accelerator/track-icons"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
-import { resolveRoadmapSectionDerivedStatus } from "@/lib/roadmap/helpers"
 import type { RoadmapSection } from "@/lib/roadmap"
-import {
-  WORKSPACE_ROADMAP_PATH,
-  getWorkspaceRoadmapSectionPath,
-} from "@/lib/workspace/routes"
 import { cn } from "@/lib/utils"
 import { RoadmapRailCardSnakeGrid } from "./roadmap-rail-card/roadmap-rail-card-snake-grid"
 import type { LessonGroupOption, RoadmapRailItem, RoadmapTimelineModule, TimelineCard } from "./roadmap-rail-card/types"
@@ -47,7 +42,7 @@ export function RoadmapRailCard({
   subtitle = "Jump into any section and continue building.",
   pageSize = 4,
   surface = "card",
-  hrefBase = WORKSPACE_ROADMAP_PATH,
+  hrefBase = "/workspace/roadmap",
   layout = "rail",
   modules = [],
 }: RoadmapRailCardProps) {
@@ -56,18 +51,14 @@ export function RoadmapRailCard({
 
   const normalizedHrefBase = useMemo(() => {
     const trimmed = hrefBase.trim()
-    if (!trimmed) return WORKSPACE_ROADMAP_PATH
+    if (!trimmed) return "/workspace/roadmap"
     const withLeadingSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`
     return withLeadingSlash.replace(/\/+$/, "")
   }, [hrefBase])
 
   const items = useMemo<RoadmapRailItem[]>(() => {
     return sections.map((section, idx) => {
-      const sectionSlug = section.slug ?? section.id
-      const href =
-        normalizedHrefBase === WORKSPACE_ROADMAP_PATH
-          ? getWorkspaceRoadmapSectionPath(sectionSlug)
-          : `${normalizedHrefBase}/${sectionSlug}`
+      const href = `${normalizedHrefBase}/${section.slug ?? section.id}`
       const displayTitle = section.titleIsTemplate
         ? section.templateTitle
         : section.title?.trim() || section.templateTitle
@@ -76,7 +67,6 @@ export function RoadmapRailCard({
         : section.subtitle?.trim() || section.templateSubtitle
       return {
         ...section,
-        status: resolveRoadmapSectionDerivedStatus(section),
         displayTitle,
         displaySubtitle,
         href,
@@ -271,7 +261,7 @@ export function RoadmapRailCard({
             <Select value={selectedLessonGroup} onValueChange={setSelectedLessonGroup}>
               <SelectTrigger
                 id="lesson-group-picker"
-                aria-label="Choose a class track"
+                aria-label="Filter by lesson group"
                 className="h-9 w-full justify-start bg-background/80 text-left [&_[data-slot=select-value]]:justify-start [&_[data-slot=select-value]]:text-left [&>svg:last-child]:ml-auto"
               >
                 <ActiveLessonGroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden />

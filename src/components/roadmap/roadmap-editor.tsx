@@ -16,6 +16,8 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     drafts,
     handleSectionSelect,
     roadmapBasePath,
+    roadmapReturnHref,
+    roadmapReturnLabel,
     headerTitle,
     headerSubtitle,
     showSectionHeader,
@@ -25,7 +27,6 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     statusSelectDisabled,
     isHydrated,
     isCalendarSection,
-    isBudgetSection,
     contentMaxWidth,
     editorPlaceholder,
     handleDraftChange,
@@ -44,14 +45,13 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
 
   return (
     <RoadmapEditorShell
-      key={`${props.sourceScope?.userId}:${props.sourceScope?.organizationId}:${activeSection.id}`}
-      sourceScope={props.sourceScope}
       sections={props.sections}
       activeSection={activeSection}
       drafts={drafts}
       roadmapBasePath={roadmapBasePath}
       onSectionSelect={handleSectionSelect}
-      showRightRail={props.showRightRail ?? true}
+      roadmapReturnHref={roadmapReturnHref}
+      roadmapReturnLabel={roadmapReturnLabel}
       headerTitle={headerTitle}
       headerSubtitle={headerSubtitle}
       showSectionHeader={showSectionHeader}
@@ -63,7 +63,6 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       statusSelectDisabled={statusSelectDisabled}
       isHydrated={isHydrated}
       isCalendarSection={isCalendarSection}
-      isBudgetSection={isBudgetSection}
       contentMaxWidth={contentMaxWidth}
       activeDraft={activeDraft}
       editorPlaceholder={editorPlaceholder}

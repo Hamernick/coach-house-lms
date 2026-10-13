@@ -9,26 +9,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ManagerSelect } from "@/components/people/manager-select"
-import {
-  PERSON_CATEGORY_META,
-  PERSON_CATEGORY_OPTIONS,
-} from "@/lib/people/categories"
+import { PERSON_CATEGORY_META, PERSON_CATEGORY_OPTIONS } from "@/lib/people/categories"
 import { cn } from "@/lib/utils"
 
 import type { PersonRow } from "./people-table-types"
 
-const CATEGORY_LABEL: Record<OrgPerson["category"], string> =
-  Object.fromEntries(
-    PERSON_CATEGORY_OPTIONS.map((option) => [option.value, option.label])
-  ) as Record<OrgPerson["category"], string>
+const CATEGORY_LABEL: Record<OrgPerson["category"], string> = Object.fromEntries(
+  PERSON_CATEGORY_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<OrgPerson["category"], string>
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -46,6 +36,7 @@ type BuildPeopleTableColumnsArgs = {
   people: PersonRow[]
   onEditPerson: (person: PersonRow) => void
   onManagerChange: (person: PersonRow, reportsToId: string | null) => void
+  onRefreshLinkedInPhoto: (person: PersonRow) => Promise<void>
   onDeletePerson: (person: PersonRow) => Promise<void>
 }
 
@@ -54,6 +45,7 @@ export function buildPeopleTableColumns({
   people,
   onEditPerson,
   onManagerChange,
+  onRefreshLinkedInPhoto,
   onDeletePerson,
 }: BuildPeopleTableColumnsArgs): ColumnDef<PersonRow>[] {
   const cols: ColumnDef<PersonRow>[] = []
@@ -64,13 +56,8 @@ export function buildPeopleTableColumns({
       header: ({ table }) => (
         <div className="flex items-center justify-center">
           <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
           />
         </div>
@@ -98,34 +85,20 @@ export function buildPeopleTableColumns({
       const content = (
         <>
           <Avatar className="size-8">
-            <AvatarImage
-              src={person.displayImage ?? person.image ?? undefined}
-              alt={person.name}
-            />
+            <AvatarImage src={person.displayImage ?? person.image ?? undefined} alt={person.name} />
             <AvatarFallback>{initials(person.name)}</AvatarFallback>
           </Avatar>
           <span className="min-w-0">
-            <span
-              className={cn(
-                "text-foreground block truncate font-medium",
-                canEdit && "group-hover:underline"
-              )}
-            >
+            <span className={cn("block truncate font-medium text-foreground", canEdit && "group-hover:underline")}>
               {person.name}
             </span>
-            <span className="text-muted-foreground block truncate text-xs">
-              {person.title}
-            </span>
+            <span className="block truncate text-xs text-muted-foreground">{person.title}</span>
           </span>
         </>
       )
 
       if (!canEdit) {
-        return (
-          <div className="flex w-full items-center gap-3 text-left">
-            {content}
-          </div>
-        )
+        return <div className="flex w-full items-center gap-3 text-left">{content}</div>
       }
 
       return (
@@ -143,14 +116,11 @@ export function buildPeopleTableColumns({
 
   cols.push({
     accessorKey: "category",
-    header: "Relationship",
+    header: "Category",
     cell: ({ row }) => {
       const category = row.original.category
       return (
-        <Badge
-          variant="outline"
-          className={`px-1.5 ${PERSON_CATEGORY_META[category].badgeClass}`}
-        >
+        <Badge variant="outline" className={`px-1.5 ${PERSON_CATEGORY_META[category].badgeClass}`}>
           {CATEGORY_LABEL[category]}
         </Badge>
       )
@@ -167,11 +137,9 @@ export function buildPeopleTableColumns({
       }
 
       if (!canEdit) {
-        const manager =
-          people.find((candidate) => candidate.id === person.reportsToId) ??
-          null
+        const manager = people.find((candidate) => candidate.id === person.reportsToId) ?? null
         return manager ? (
-          <span className="text-foreground text-sm">{manager.name}</span>
+          <span className="text-sm text-foreground">{manager.name}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         )
@@ -193,10 +161,7 @@ export function buildPeopleTableColumns({
     cell: ({ row }) => {
       const email = row.original.email
       return email ? (
-        <a
-          href={`mailto:${email}`}
-          className="text-foreground underline-offset-4 hover:underline"
-        >
+        <a href={`mailto:${email}`} className="text-foreground underline-offset-4 hover:underline">
           {email}
         </a>
       ) : (
@@ -211,30 +176,18 @@ export function buildPeopleTableColumns({
     cell: ({ row }) => {
       const url = row.original.linkedin
       if (!url) return <span className="text-muted-foreground">—</span>
-      const href = url.startsWith("http")
-        ? url
-        : `https://www.linkedin.com/in/${url.replace(/^\//, "")}`
+      const href = url.startsWith("http") ? url : `https://www.linkedin.com/in/${url.replace(/^\//, "")}`
       try {
         const parsed = new URL(href)
         return (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="text-foreground inline-flex items-center gap-1 underline-offset-4 hover:underline"
-          >
+          <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline">
             {parsed.hostname.replace(/^www\./, "")}
             <ExternalLinkIcon className="size-3" />
           </a>
         )
       } catch {
         return (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="text-foreground inline-flex items-center gap-1 underline-offset-4 hover:underline"
-          >
+          <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline">
             LinkedIn <ExternalLinkIcon className="size-3" />
           </a>
         )
@@ -250,24 +203,17 @@ export function buildPeopleTableColumns({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                aria-label={`Open actions for ${person.name}`}
-              >
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
                 <MoreVerticalIcon />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => onEditPerson(person)}>
-                Edit
+              <DropdownMenuItem onClick={() => onEditPerson(person)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void onRefreshLinkedInPhoto(person)}>
+                Refresh LinkedIn Photo
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => void onDeletePerson(person)}
-              >
+              <DropdownMenuItem className="text-destructive" onClick={() => void onDeletePerson(person)}>
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

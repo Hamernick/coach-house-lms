@@ -1,6 +1,6 @@
 "use client"
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
@@ -13,10 +13,7 @@ import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
 import { buildAssignmentSections } from "./assignment-sections"
-import {
-  ModuleStepperActiveStepContent,
-  preloadAssignmentForm,
-} from "./module-stepper-active-step-content"
+import { ModuleStepperActiveStepContent } from "./module-stepper-active-step-content"
 import {
   buildModuleStepperRailSteps,
   buildModuleStepperSteps,
@@ -25,14 +22,6 @@ import {
 import { useModuleStepperCompletionEffects } from "./module-stepper/hooks/use-module-stepper-completion-effects"
 import { useModuleStepperNavigationState } from "./module-stepper/hooks/use-module-stepper-navigation-state"
 import type { ModuleStepperProps } from "./module-stepper-types"
-
-type IdleWindow = Window & {
-  requestIdleCallback?: (
-    callback: IdleRequestCallback,
-    options?: IdleRequestOptions,
-  ) => number
-  cancelIdleCallback?: (handle: number) => void
-}
 
 export function ModuleStepper({
   moduleId,
@@ -67,7 +56,6 @@ export function ModuleStepper({
   showModuleHeading = true,
 }: ModuleStepperProps) {
   const router = useRouter()
-  const prefersReducedMotion = useReducedMotion()
   const { tabSections } = useMemo(() => buildAssignmentSections(assignmentFields), [assignmentFields])
   const contentCacheRef = useRef<Record<string, ReactNode>>({})
   const { schedule, pending: schedulePending } = useCoachingBooking()
@@ -130,28 +118,6 @@ export function ModuleStepper({
     contentCacheRef.current = {}
   }, [moduleId, steps.length])
 
-  useEffect(() => {
-    if (!steps.some((step) => step.type === "assignment")) return
-
-    const preload = () => {
-      void preloadAssignmentForm()
-    }
-    const idleWindow = window as IdleWindow
-
-    if (idleWindow.requestIdleCallback) {
-      const idleId = idleWindow.requestIdleCallback(preload, { timeout: 1000 })
-      return () => idleWindow.cancelIdleCallback?.(idleId)
-    }
-
-    const timeoutId = window.setTimeout(preload, 120)
-    return () => window.clearTimeout(timeoutId)
-  }, [steps])
-
-  useEffect(() => {
-    if (!nextHref?.startsWith("/")) return
-    router.prefetch(nextHref)
-  }, [nextHref, router])
-
   const markModuleComplete = useCallback(() => {
     return markModuleCompleteAction(moduleId)
   }, [moduleId])
@@ -169,14 +135,6 @@ export function ModuleStepper({
       // non-blocking best-effort completion sync
     })
   }, [markModuleComplete, nextHref, router])
-
-  const handlePreviousStep = useCallback(() => {
-    setActiveIndex((prev) => Math.max(prev - 1, 0))
-  }, [setActiveIndex])
-
-  const handleNextStep = useCallback(() => {
-    setActiveIndex((prev) => Math.min(prev + 1, Math.max(totalSteps - 1, 0)))
-  }, [setActiveIndex, totalSteps])
 
   const handleSchedule = useCallback(async () => {
     const payload = await schedule()
@@ -203,7 +161,7 @@ export function ModuleStepper({
     <>
       {useHeaderStepper ? (
         <ShellContentHeaderPortal>
-          <header className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+          <header className="flex min-w-0 flex-wrap items-center gap-3">
             <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
                 <ModuleIcon className="h-4 w-4" aria-hidden />
@@ -215,7 +173,7 @@ export function ModuleStepper({
                 ) : null}
               </div>
             </div>
-            <div className="flex w-full min-w-0 items-center justify-start sm:justify-center lg:ml-auto lg:w-auto lg:max-w-[560px] lg:justify-end">
+            <div className="flex w-full min-w-0 items-center justify-center lg:ml-auto lg:w-auto lg:max-w-[560px] lg:justify-end">
               {stepperRail}
             </div>
           </header>
@@ -224,10 +182,9 @@ export function ModuleStepper({
 
       <section
         className={cn(
-          "mx-auto flex w-full max-w-3xl flex-col py-4 sm:py-6",
+          "mx-auto flex w-full max-w-3xl flex-col py-6",
           showBodyStepperContext ? "gap-8" : "gap-0",
-          activeStep?.type === "video" &&
-            "min-h-[min(48svh,420px)] justify-center sm:min-h-[clamp(420px,68vh,760px)]",
+          activeStep?.type === "video" && "min-h-[clamp(420px,68vh,760px)] justify-center",
         )}
       >
         {showBodyStepperContext ? (
@@ -248,22 +205,18 @@ export function ModuleStepper({
           className={cn(
             "w-full",
             activeStep?.type === "video"
-              ? "flex min-h-[min(44svh,380px)] items-center justify-center sm:min-h-[clamp(360px,62vh,680px)]"
+              ? "flex min-h-[clamp(360px,62vh,680px)] items-center justify-center"
               : "min-h-[360px]",
-            activeStep?.type === "assignment" &&
-              "flex min-h-[calc(100svh-280px)] sm:min-h-[calc(100vh-320px)]",
+            activeStep?.type === "assignment" && "flex min-h-[calc(100vh-320px)]",
           )}
         >
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep?.id ?? "empty"}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-              transition={{
-                duration: prefersReducedMotion ? 0 : 0.18,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className={cn(
                 "w-full",
                 activeStep?.type === "video" && "mx-auto max-w-[min(1100px,100%)]",
@@ -301,12 +254,9 @@ export function ModuleStepper({
                 nextLocked={nextLocked}
                 completionCount={completionCount}
                 progressPercent={progressPercent}
-                totalSteps={totalSteps}
                 schedulePending={schedulePending}
                 coachingTier={coachingTier}
                 coachingRemaining={coachingRemaining}
-                onPreviousStep={handlePreviousStep}
-                onNextStep={handleNextStep}
                 onContinue={() => void handleContinue()}
                 onSchedule={() => void handleSchedule()}
               />

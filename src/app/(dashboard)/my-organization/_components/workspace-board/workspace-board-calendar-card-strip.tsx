@@ -21,7 +21,6 @@ export {
 }
 
 export function renderCalendarCanvasPreviewCard({
-  eventActionRequest,
   calendar,
   stripSelectedDate,
   stripDays,
@@ -32,7 +31,6 @@ export function renderCalendarCanvasPreviewCard({
   onSelectStripDate,
   onShiftStripDays,
 }: {
-  eventActionRequest?: { id: number; eventId: string } | null
   calendar: MyOrganizationCalendarView
   stripSelectedDate: Date
   stripDays: Date[]
@@ -45,7 +43,6 @@ export function renderCalendarCanvasPreviewCard({
 }) {
   return (
     <CalendarDateStripEventsPanel
-      eventActionRequest={eventActionRequest}
       calendar={calendar}
       compactCanvasCard
       showTopDivider={false}

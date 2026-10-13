@@ -48,8 +48,7 @@ export function useWorkspaceObjectiveEditorState({
   const [editingTicketId, setEditingTicketId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editDescription, setEditDescription] = useState("")
-  const [editPriority, setEditPriority] =
-    useState<WorkspaceTrackerTicketPriority>("normal")
+  const [editPriority, setEditPriority] = useState<WorkspaceTrackerTicketPriority>("normal")
   const [editDueDate, setEditDueDate] = useState("")
   const [editCategoryId, setEditCategoryId] = useState("")
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([])
@@ -78,25 +77,21 @@ export function useWorkspaceObjectiveEditorState({
 
   const toggleEditAssignee = (userId: string) => {
     setEditAssigneeIds((previous) =>
-      previous.includes(userId)
-        ? previous.filter((entry) => entry !== userId)
-        : [...previous, userId]
+      previous.includes(userId) ? previous.filter((entry) => entry !== userId) : [...previous, userId],
     )
   }
 
   const saveTicketEdits = () => {
-    if (!editingTicketId || !canManageObjectives) return
+    if (!editingTicketId) return
     const normalizedTitle = trimToSingleLine(editTitle)
     if (!normalizedTitle) return
 
     const normalizedDescription = editDescription.trim() || null
-    const normalizedDueAt = editDueDate
-      ? new Date(`${editDueDate}T12:00:00.000Z`).toISOString()
-      : null
-    const normalizedCategoryId =
-      editCategoryId || activeCategories[0]?.id || "general"
+    const normalizedDueAt = editDueDate ? new Date(`${editDueDate}T12:00:00.000Z`).toISOString() : null
+    const normalizedCategoryId = editCategoryId || activeCategories[0]?.id || "general"
 
     if (
+      !canManageObjectives ||
       objectivesMode !== "normalized" ||
       isLegacyOrRuntimeTrackerId(editingTicketId)
     ) {
@@ -112,7 +107,7 @@ export function useWorkspaceObjectiveEditorState({
             categoryId: normalizedCategoryId,
             assigneeUserIds: editAssigneeIds,
           },
-        })
+        }),
       )
       closeTicketEditor()
       return
@@ -153,9 +148,7 @@ export function useWorkspaceObjectiveEditorState({
       closeTicketEditor()
       return
     }
-    const allowedCategoryIds = new Set(
-      activeCategories.map((category) => category.id)
-    )
+    const allowedCategoryIds = new Set(activeCategories.map((category) => category.id))
     if (!allowedCategoryIds.has(editCategoryId)) {
       setEditCategoryId(ticket.categoryId)
     }
@@ -170,13 +163,7 @@ export function useWorkspaceObjectiveEditorState({
       }
       return filtered
     })
-  }, [
-    activeCategories,
-    editCategoryId,
-    editingTicketId,
-    members,
-    tracker.tickets,
-  ])
+  }, [activeCategories, editCategoryId, editingTicketId, members, tracker.tickets])
 
   return {
     editingTicketId,

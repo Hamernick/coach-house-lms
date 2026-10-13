@@ -5,10 +5,7 @@ import type {
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
 
-export type MyOrganizationSearchParams = Record<
-  string,
-  string | string[] | undefined
->
+export type MyOrganizationSearchParams = Record<string, string | string[] | undefined>
 
 export type UpcomingEvent = {
   id: string
@@ -21,7 +18,6 @@ export type UpcomingEvent = {
   recurrence: RoadmapCalendarRecurrence | null
   status: "active" | "canceled"
   assigned_roles: RoadmapCalendarAssignedRole[]
-  updated_at: string
 }
 
 export type FormationStepState = "completed" | "active" | "pending"

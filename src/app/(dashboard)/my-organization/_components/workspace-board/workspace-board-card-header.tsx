@@ -1,19 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import type { MouseEvent, ReactNode } from "react"
+import type { ReactNode } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ExpandIcon from "lucide-react/dist/esm/icons/expand"
 import Maximize2Icon from "lucide-react/dist/esm/icons/maximize-2"
 import Minimize2Icon from "lucide-react/dist/esm/icons/minimize-2"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
-import PencilIcon from "lucide-react/dist/esm/icons/pencil"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import { CardHeader, CardTitle } from "@/components/ui/card"
-import { FrameHeader, FrameTitle } from "@/components/ui/frame"
-import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import {
   Popover,
   PopoverClose,
@@ -24,40 +21,12 @@ import { cn } from "@/lib/utils"
 
 import type { WorkspaceCardOverflowAction } from "./workspace-board-types"
 
-type WorkspaceBoardCardHeaderProps = {
-  title: string
-  subtitle: string
-  tone?: "default" | "accelerator"
-  titleIcon?: ReactNode
-  titleBadge?: ReactNode
-  headerDetails?: ReactNode
-  headerMeta?: ReactNode
-  headerAction?: ReactNode
-  hideTitle?: boolean
-  hideSubtitle?: boolean
-  presentationMode: boolean
-  fullHref: string
-  canEdit: boolean
-  editorHref?: string | null
-  onEditorOpen?: () => void
-  menuActions?: WorkspaceCardOverflowAction[]
-  isCanvasFullscreen?: boolean
-  onToggleCanvasFullscreen?: () => void
-  fullscreenControlMode?: "overflow" | "inline"
-  compactTitleBottomGap?: boolean
-  surface?: "frame" | "card"
-}
-
-const CARD_SURFACE_ICON_BUTTON_HOVER_CLASS_NAME =
-  "[&_[data-slot=button]:hover]:!bg-background [&_[data-slot=button]:hover]:!text-foreground"
-
 export function WorkspaceBoardCardHeader({
   title,
   subtitle,
   tone = "default",
   titleIcon,
   titleBadge,
-  headerDetails,
   headerMeta,
   headerAction,
   hideTitle = false,
@@ -66,69 +35,50 @@ export function WorkspaceBoardCardHeader({
   fullHref: _fullHref,
   canEdit,
   editorHref = null,
-  onEditorOpen,
   menuActions = [],
   isCanvasFullscreen = false,
   onToggleCanvasFullscreen,
   fullscreenControlMode = "overflow",
-  compactTitleBottomGap = false,
-  surface = "frame",
-}: WorkspaceBoardCardHeaderProps) {
+}: {
+  title: string
+  subtitle: string
+  tone?: "default" | "accelerator"
+  titleIcon?: ReactNode
+  titleBadge?: ReactNode
+  headerMeta?: ReactNode
+  headerAction?: ReactNode
+  hideTitle?: boolean
+  hideSubtitle?: boolean
+  presentationMode: boolean
+  fullHref: string
+  canEdit: boolean
+  editorHref?: string | null
+  menuActions?: WorkspaceCardOverflowAction[]
+  isCanvasFullscreen?: boolean
+  onToggleCanvasFullscreen?: () => void
+  fullscreenControlMode?: "overflow" | "inline"
+}) {
   const showCanvasFullscreenAction = Boolean(onToggleCanvasFullscreen)
   const showInlineFullscreenControl =
     showCanvasFullscreenAction && fullscreenControlMode === "inline"
   const showEditorAction = Boolean(editorHref)
   const hasCustomMenuActions = menuActions.length > 0
-  const showDirectEditorLink =
-    !isCanvasFullscreen && showEditorAction && !hasCustomMenuActions
   const showOverflowMenu =
     !isCanvasFullscreen &&
-    !showDirectEditorLink &&
-    ((showCanvasFullscreenAction && !showInlineFullscreenControl) ||
+    (
+      (showCanvasFullscreenAction && !showInlineFullscreenControl) ||
       showEditorAction ||
-      hasCustomMenuActions)
+      hasCustomMenuActions
+    )
   const showTitle = !hideTitle
   const showSubtitle = !hideSubtitle && subtitle.trim().length > 0
-  const showHeaderCopy = showTitle || showSubtitle || Boolean(headerDetails)
-  const showHeaderTitleRow = showTitle || showSubtitle
-  const Header = surface === "card" ? CardHeader : FrameHeader
-  const Title = surface === "card" ? CardTitle : FrameTitle
-  const cardSurfaceTitleClassName =
-    "text-foreground truncate text-lg font-semibold tracking-tight"
-  const defaultTitleClassName = presentationMode
-    ? WORKSPACE_TEXT_STYLES.cardTitleCompact
-    : WORKSPACE_TEXT_STYLES.cardTitle
-  const handleEditorLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      !onEditorOpen ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return
-    }
-
-    event.preventDefault()
-    onEditorOpen()
-  }
+  const showHeaderCopy = showTitle || showSubtitle
 
   return (
-    <Header
+    <CardHeader
       className={cn(
-        surface === "card"
-          ? "relative -mt-1 flex flex-col gap-2 px-3 pt-0 pb-2"
-          : "px-4 pt-3 pb-2",
-        surface === "frame" &&
-          (presentationMode ? "space-y-1.5 px-3.5 pt-2.5 pb-1.5" : "space-y-2"),
-        surface === "card" &&
-          presentationMode &&
-          "gap-1.5 px-3.5 pt-2.5 pb-1.5",
-        surface === "card" && CARD_SURFACE_ICON_BUTTON_HOVER_CLASS_NAME,
-        compactTitleBottomGap &&
-          !presentationMode &&
-          showHeaderCopy &&
-          "pb-1.5",
+        "px-4 pt-3 pb-2",
+        presentationMode ? "space-y-1.5 px-3.5 pt-2.5 pb-1.5" : "space-y-2",
         !showHeaderCopy && (presentationMode ? "pt-2 pb-1" : "pt-2.5 pb-1"),
         canEdit &&
           !presentationMode &&
@@ -136,13 +86,8 @@ export function WorkspaceBoardCardHeader({
           "workspace-card-drag-handle cursor-grab select-none active:cursor-grabbing"
       )}
     >
-      <div
-        className={cn(
-          "flex w-full justify-between gap-2",
-          surface === "card" ? "items-center" : "items-start"
-        )}
-      >
-        {showHeaderTitleRow ? (
+      <div className="flex items-start justify-between gap-2">
+        {showHeaderCopy ? (
           <div
             className={cn(
               "min-w-0 flex-1 space-y-0.5",
@@ -150,11 +95,10 @@ export function WorkspaceBoardCardHeader({
             )}
           >
             {showTitle ? (
-              <Title
+              <CardTitle
                 className={cn(
-                  surface === "card"
-                    ? cardSurfaceTitleClassName
-                    : defaultTitleClassName
+                  "truncate text-sm font-semibold tracking-tight",
+                  presentationMode && "text-[13px]"
                 )}
               >
                 <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
@@ -170,27 +114,20 @@ export function WorkspaceBoardCardHeader({
                       {titleIcon}
                     </span>
                   ) : null}
-                  <span
-                    className={cn(
-                      "min-w-0 truncate",
-                      surface === "frame" && defaultTitleClassName
-                    )}
-                  >
-                    {title}
-                  </span>
+                  <span className="truncate">{title}</span>
                   {titleBadge ? (
-                    <span className="shrink-0">{titleBadge}</span>
+                    <span className="shrink-0">
+                      {titleBadge}
+                    </span>
                   ) : null}
                 </span>
-              </Title>
+              </CardTitle>
             ) : null}
             {showSubtitle ? (
               <p
                 className={cn(
-                  "line-clamp-1",
-                  presentationMode
-                    ? "text-muted-foreground text-[10px] leading-4"
-                    : WORKSPACE_TEXT_STYLES.cardSubtitle
+                  "text-muted-foreground line-clamp-1 text-[11px]",
+                  presentationMode && "text-[10px]"
                 )}
               >
                 {subtitle}
@@ -200,29 +137,9 @@ export function WorkspaceBoardCardHeader({
         ) : (
           <div className="min-w-0 flex-1" aria-hidden />
         )}
-        <div className="nodrag nopan ml-auto flex shrink-0 items-center gap-1">
-          {headerMeta ? (
-            <div className="nodrag nopan shrink-0">{headerMeta}</div>
-          ) : null}
-          {headerAction ? (
-            <div className="nodrag nopan shrink-0">{headerAction}</div>
-          ) : null}
-          {showDirectEditorLink ? (
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="nodrag nopan relative"
-            >
-              <Link
-                href={editorHref as string}
-                aria-label="Edit card"
-                onClick={handleEditorLinkClick}
-              >
-                <PencilIcon className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
-          ) : null}
+        <div className="nodrag nopan flex items-center gap-1">
+          {headerMeta ? <div className="nodrag nopan shrink-0">{headerMeta}</div> : null}
+          {headerAction ? <div className="nodrag nopan shrink-0">{headerAction}</div> : null}
           {showOverflowMenu ? (
             <Popover>
               <PopoverTrigger asChild>
@@ -242,7 +159,7 @@ export function WorkspaceBoardCardHeader({
               <PopoverContent align="end" className="nodrag nopan w-44 p-2">
                 <div className="grid gap-1">
                   {hasCustomMenuActions
-                    ? menuActions.map((action) =>
+                    ? menuActions.map((action) => (
                         action.kind === "callback" ? (
                           <PopoverClose key={action.id} asChild>
                             <Button
@@ -253,18 +170,9 @@ export function WorkspaceBoardCardHeader({
                               disabled={action.disabled}
                               onClick={action.onSelect}
                             >
-                              {action.icon ?? (
-                                <span className="h-3.5 w-3.5" aria-hidden />
-                              )}
-                              <span className="min-w-0 flex-1 text-left">
-                                {action.label}
-                              </span>
-                              {action.active ? (
-                                <CheckIcon
-                                  className="h-3.5 w-3.5"
-                                  aria-hidden
-                                />
-                              ) : null}
+                              {action.icon ?? <span className="h-3.5 w-3.5" aria-hidden />}
+                              <span className="min-w-0 flex-1 text-left">{action.label}</span>
+                              {action.active ? <CheckIcon className="h-3.5 w-3.5" aria-hidden /> : null}
                             </Button>
                           </PopoverClose>
                         ) : (
@@ -277,18 +185,9 @@ export function WorkspaceBoardCardHeader({
                                 className="nodrag nopan h-8 justify-start"
                                 disabled
                               >
-                                {action.icon ?? (
-                                  <span className="h-3.5 w-3.5" aria-hidden />
-                                )}
-                                <span className="min-w-0 flex-1 text-left">
-                                  {action.label}
-                                </span>
-                                {action.active ? (
-                                  <CheckIcon
-                                    className="h-3.5 w-3.5"
-                                    aria-hidden
-                                  />
-                                ) : null}
+                                {action.icon ?? <span className="h-3.5 w-3.5" aria-hidden />}
+                                <span className="min-w-0 flex-1 text-left">{action.label}</span>
+                                {action.active ? <CheckIcon className="h-3.5 w-3.5" aria-hidden /> : null}
                               </Button>
                             ) : (
                               <Button
@@ -303,33 +202,22 @@ export function WorkspaceBoardCardHeader({
                                   target={action.target}
                                   download={action.download}
                                 >
-                                  {action.icon ?? (
-                                    <span className="h-3.5 w-3.5" aria-hidden />
-                                  )}
-                                  <span className="min-w-0 flex-1 text-left">
-                                    {action.label}
-                                  </span>
-                                  {action.active ? (
-                                    <CheckIcon
-                                      className="h-3.5 w-3.5"
-                                      aria-hidden
-                                    />
-                                  ) : null}
+                                  {action.icon ?? <span className="h-3.5 w-3.5" aria-hidden />}
+                                  <span className="min-w-0 flex-1 text-left">{action.label}</span>
+                                  {action.active ? <CheckIcon className="h-3.5 w-3.5" aria-hidden /> : null}
                                 </Link>
                               </Button>
                             )}
                           </PopoverClose>
                         )
-                      )
+                      ))
                     : null}
                   {hasCustomMenuActions &&
-                  ((showCanvasFullscreenAction &&
-                    !showInlineFullscreenControl) ||
+                  ((showCanvasFullscreenAction && !showInlineFullscreenControl) ||
                     showEditorAction) ? (
                     <div className="bg-border/70 my-1 h-px w-full" />
                   ) : null}
-                  {showCanvasFullscreenAction &&
-                  !showInlineFullscreenControl ? (
+                  {showCanvasFullscreenAction && !showInlineFullscreenControl ? (
                     <PopoverClose asChild>
                       <Button
                         type="button"
@@ -350,11 +238,8 @@ export function WorkspaceBoardCardHeader({
                       size="sm"
                       className="nodrag nopan h-8 justify-start"
                     >
-                      <Link
-                        href={editorHref as string}
-                        onClick={handleEditorLinkClick}
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" aria-hidden />
+                      <Link href={editorHref as string}>
+                        <ExpandIcon className="h-3.5 w-3.5" aria-hidden />
                         Edit
                       </Link>
                     </Button>
@@ -371,9 +256,7 @@ export function WorkspaceBoardCardHeader({
               variant={isCanvasFullscreen ? "secondary" : "outline"}
               className="nodrag nopan h-7 w-7 rounded-full px-0"
               onClick={onToggleCanvasFullscreen}
-              aria-label={
-                isCanvasFullscreen ? "Exit fullscreen" : "Open fullscreen"
-              }
+              aria-label={isCanvasFullscreen ? "Exit fullscreen" : "Open fullscreen"}
             >
               {isCanvasFullscreen ? (
                 <Minimize2Icon className="h-3.5 w-3.5" aria-hidden />
@@ -396,11 +279,6 @@ export function WorkspaceBoardCardHeader({
           ) : null}
         </div>
       </div>
-      {headerDetails ? (
-        <div className={cn("pt-1", presentationMode && "pt-0.5")}>
-          {headerDetails}
-        </div>
-      ) : null}
-    </Header>
+    </CardHeader>
   )
 }

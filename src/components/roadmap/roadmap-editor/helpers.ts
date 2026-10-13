@@ -1,21 +1,22 @@
-import { ROADMAP_SECTION_IDS } from "@/lib/roadmap"
 import {
-  hasMeaningfulRoadmapBudgetRows,
-  normalizeRoadmapBudgetRows,
-  roadmapBudgetRowsEqual,
-} from "@/lib/roadmap/budget"
-import { resolveRoadmapSectionDerivedStatus } from "@/lib/roadmap/helpers"
-import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
+  ROADMAP_SECTION_IDS,
+  type RoadmapSection,
+  type RoadmapSectionStatus,
+} from "@/lib/roadmap"
 
 import {
   DEFAULT_PLACEHOLDER,
   ROADMAP_DRAFT_STORAGE_VERSION,
   ROADMAP_TOC_GROUPS,
 } from "./constants"
-import type { RoadmapDraft, RoadmapDraftStorage, RoadmapTocItem } from "./types"
+import type {
+  RoadmapDraft,
+  RoadmapDraftStorage,
+  RoadmapTocItem,
+} from "./types"
 
 const ROADMAP_SECTION_ORDER = new Map<string, number>(
-  ROADMAP_SECTION_IDS.map((id, index) => [id, index])
+  ROADMAP_SECTION_IDS.map((id, index) => [id, index]),
 )
 
 export function isFrameworkSection(section: RoadmapSection) {
@@ -26,9 +27,8 @@ export function createDraft(section: RoadmapSection): RoadmapDraft {
   return {
     id: section.id,
     title: section.titleIsTemplate ? "" : section.title,
-    subtitle: section.subtitleIsTemplate ? "" : (section.subtitle ?? ""),
+    subtitle: section.subtitleIsTemplate ? "" : section.subtitle ?? "",
     content: section.content ?? "",
-    budgetRows: section.budgetRows ?? [],
     imageUrl: section.imageUrl ?? "",
     layout: section.layout ?? "square",
     ctaLabel: section.ctaLabel,
@@ -40,10 +40,10 @@ export function createDraft(section: RoadmapSection): RoadmapDraft {
 }
 
 export function createDraftMap(
-  sections: RoadmapSection[]
+  sections: RoadmapSection[],
 ): Record<string, RoadmapDraft> {
   return Object.fromEntries(
-    sections.map((section) => [section.id, createDraft(section)] as const)
+    sections.map((section) => [section.id, createDraft(section)] as const),
   )
 }
 
@@ -51,75 +51,35 @@ type RoadmapSectionBaseline = {
   title: string
   subtitle: string
   content: string
-  budgetRows: RoadmapDraft["budgetRows"]
   imageUrl: string
 }
 
 export function getRoadmapSectionBaseline(
-  section: RoadmapSection
+  section: RoadmapSection,
 ): RoadmapSectionBaseline {
   return {
     title: section.titleIsTemplate ? "" : section.title,
-    subtitle: section.subtitleIsTemplate ? "" : (section.subtitle ?? ""),
+    subtitle: section.subtitleIsTemplate ? "" : section.subtitle ?? "",
     content: section.content ?? "",
-    budgetRows: section.budgetRows ?? [],
     imageUrl: section.imageUrl ?? "",
   }
 }
 
 export function isRoadmapDraftDirty(
   section: RoadmapSection,
-  draft: RoadmapDraft
+  draft: RoadmapDraft,
 ): boolean {
   const baseline = getRoadmapSectionBaseline(section)
   return (
     draft.title !== baseline.title ||
     draft.subtitle !== baseline.subtitle ||
     draft.content !== baseline.content ||
-    !roadmapBudgetRowsEqual(draft.budgetRows, baseline.budgetRows) ||
     draft.imageUrl !== baseline.imageUrl
   )
 }
 
-function timestampMs(value: unknown): number | null {
-  if (typeof value !== "string") return null
-  const parsed = Date.parse(value)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-function latestSectionUpdatedAtMs(sections: RoadmapSection[]): number | null {
-  const latest = sections.reduce((max, section) => {
-    const parsed = timestampMs(section.lastUpdated)
-    return parsed === null ? max : Math.max(max, parsed)
-  }, 0)
-  return latest > 0 ? latest : null
-}
-
-function hasSavedSectionValue(section: RoadmapSection): boolean {
-  return (
-    section.content.trim().length > 0 ||
-    hasMeaningfulRoadmapBudgetRows(section.budgetRows ?? []) ||
-    (section.imageUrl?.trim().length ?? 0) > 0 ||
-    (!section.titleIsTemplate && section.title.trim().length > 0) ||
-    (!section.subtitleIsTemplate && (section.subtitle ?? "").trim().length > 0)
-  )
-}
-
-function isBlankStoredDraft(
-  draft: RoadmapDraftStorage["drafts"][string]
-): boolean {
-  return (
-    [draft.title, draft.subtitle, draft.content, draft.imageUrl].every(
-      (value) => typeof value !== "string" || value.trim().length === 0
-    ) &&
-    !hasMeaningfulRoadmapBudgetRows(
-      normalizeRoadmapBudgetRows(draft.budgetRows)
-    )
-  )
-}
-
 export function buildRoadmapTocItems(
-  sections: RoadmapSection[]
+  sections: RoadmapSection[],
 ): RoadmapTocItem[] {
   const sectionMap = new Map(sections.map((section) => [section.id, section]))
   const items: RoadmapTocItem[] = []
@@ -150,7 +110,7 @@ export function buildRoadmapTocItems(
 
 export function loadRoadmapDraftsFromStorage(
   storageKey: string,
-  sections: RoadmapSection[]
+  sections: RoadmapSection[],
 ): Record<string, RoadmapDraft> {
   const next = createDraftMap(sections)
   if (typeof window === "undefined") return next
@@ -163,29 +123,15 @@ export function loadRoadmapDraftsFromStorage(
     if (parsed?.version !== ROADMAP_DRAFT_STORAGE_VERSION || !parsed.drafts) {
       return next
     }
-    const storageUpdatedAtMs = timestampMs(parsed.updatedAt)
-    const latestServerUpdatedAtMs = latestSectionUpdatedAtMs(sections)
-    if (
-      storageUpdatedAtMs !== null &&
-      latestServerUpdatedAtMs !== null &&
-      storageUpdatedAtMs < latestServerUpdatedAtMs
-    ) {
-      return next
-    }
 
     sections.forEach((section) => {
       const draft = parsed.drafts[section.id]
       if (!draft) return
-      if (hasSavedSectionValue(section) && isBlankStoredDraft(draft)) return
       next[section.id] = {
         ...next[section.id],
         title: draft.title ?? next[section.id].title,
         subtitle: draft.subtitle ?? next[section.id].subtitle,
         content: draft.content ?? next[section.id].content,
-        budgetRows:
-          draft.budgetRows === undefined
-            ? next[section.id].budgetRows
-            : normalizeRoadmapBudgetRows(draft.budgetRows),
         imageUrl: draft.imageUrl ?? next[section.id].imageUrl,
       }
     })
@@ -220,7 +166,6 @@ export function persistRoadmapDraftsToStorage({
       title: draft.title,
       subtitle: draft.subtitle,
       content: draft.content,
-      budgetRows: draft.budgetRows,
       imageUrl: draft.imageUrl,
     }
   })
@@ -235,19 +180,10 @@ export function persistRoadmapDraftsToStorage({
 
 export function resolveRoadmapSectionStatus(
   section: RoadmapSection,
-  draft?: RoadmapDraft | null
 ): RoadmapSectionStatus {
-  if (section.status === "complete") return "complete"
-  if (
-    draft &&
-    (draft.content.trim().length > 0 ||
-      hasMeaningfulRoadmapBudgetRows(draft.budgetRows) ||
-      draft.title.trim().length > 0 ||
-      draft.subtitle.trim().length > 0 ||
-      draft.imageUrl.trim().length > 0) &&
-    isRoadmapDraftDirty(section, draft)
-  ) {
-    return "in_progress"
-  }
-  return resolveRoadmapSectionDerivedStatus(section)
+  if (section.status) return section.status
+  if (section.content.trim().length > 0) return "in_progress"
+  if (section.homework?.status === "complete") return "complete"
+  if (section.homework?.status === "in_progress") return "in_progress"
+  return "not_started"
 }

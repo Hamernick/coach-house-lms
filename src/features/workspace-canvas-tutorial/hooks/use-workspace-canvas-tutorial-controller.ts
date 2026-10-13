@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import {
   resolveWorkspaceCanvasTutorialContinueMode,
@@ -21,11 +21,27 @@ export function useWorkspaceCanvasTutorialController(
     () => resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds),
     [openedStepIds, stepIndex],
   )
+  const [typedMessage, setTypedMessage] = useState("")
+
+  useEffect(() => {
+    setTypedMessage("")
+    let cursor = 0
+    const fullMessage = step.message
+    const intervalId = window.setInterval(() => {
+      cursor += 1
+      setTypedMessage(fullMessage.slice(0, cursor))
+      if (cursor >= fullMessage.length) {
+        window.clearInterval(intervalId)
+      }
+    }, 12)
+
+    return () => window.clearInterval(intervalId)
+  }, [step.message])
 
   return {
     step,
     stepCount: resolveWorkspaceCanvasTutorialStepCount(),
     continueMode,
-    message: step.message,
+    typedMessage,
   }
 }

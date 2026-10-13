@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     kindParam === "header" ||
     kindParam === "roadmap" ||
     kindParam === "roadmap-inline" ||
-    kindParam === "email" ||
     kindParam === "cover"
       ? kindParam
       : "cover"

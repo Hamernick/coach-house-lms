@@ -3,31 +3,13 @@
 import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
-import { useScrollFadeEffect } from "@/lib/scroll-fade-effect"
 import { cn } from "@/lib/utils"
 
 function ScrollArea({
   className,
-  viewportClassName,
-  contentClassName,
   children,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
-  viewportClassName?: string
-  contentClassName?: string
-}) {
-  const verticalFadeEnabled = Boolean(
-    viewportClassName?.includes("scroll-fade-effect-y")
-  )
-  const horizontalFadeEnabled = Boolean(
-    viewportClassName?.includes("scroll-fade-effect-x")
-  )
-  const fadeOrientation = horizontalFadeEnabled ? "horizontal" : "vertical"
-  const scrollFadeRef = useScrollFadeEffect(
-    verticalFadeEnabled || horizontalFadeEnabled,
-    fadeOrientation
-  )
-
+}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -35,26 +17,10 @@ function ScrollArea({
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
-        ref={scrollFadeRef}
         data-slot="scroll-area-viewport"
-        className={cn(
-          "size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-ring",
-          viewportClassName
-        )}
+        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
       >
-        {contentClassName ? (
-          <div
-            data-slot="scroll-area-content"
-            className={cn(
-              "box-border w-full max-w-full min-w-0",
-              contentClassName
-            )}
-          >
-            {children}
-          </div>
-        ) : (
-          children
-        )}
+        {children}
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
       <ScrollAreaPrimitive.Corner />

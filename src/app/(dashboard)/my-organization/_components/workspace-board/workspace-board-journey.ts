@@ -1,5 +1,3 @@
-import { isWorkspaceTemporarilyUnavailableCardId } from "@/lib/workspace-card-policy"
-import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceCardId,
@@ -8,7 +6,8 @@ import type {
   WorkspaceSeedData,
 } from "./workspace-board-types"
 
-const ACCELERATOR_PAYWALL_HREF = getWorkspaceAcceleratorPaywallPath()
+const ACCELERATOR_PAYWALL_HREF =
+  "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
 
 function resolveWorkspaceDocumentStageComplete(seed: WorkspaceSeedData) {
   return seed.journeyReadiness.workspaceDocumentCount > 0
@@ -25,34 +24,23 @@ function resolveAcceleratorCompletedStepCount(
 }
 
 function resolveOperatingTargetCard(seed: WorkspaceSeedData): WorkspaceCardId {
-  const fallbackTargetCardId: WorkspaceCardId = "accelerator"
-
-  if (seed.programsCount <= 0) return "programs"
+  if (seed.programsCount <= 0) {
+    return "programs"
+  }
   const hasBrandSignals = Boolean(
     seed.initialProfile.brandPrimary ||
       (Array.isArray(seed.initialProfile.brandColors) &&
         seed.initialProfile.brandColors.length > 0) ||
       seed.initialProfile.boilerplate,
   )
-
-  const preferredTargetCardId: WorkspaceCardId =
-    !hasBrandSignals
-      ? "communications"
-      : seed.fundingGoalCents <= 0
-        ? "economic-engine"
-        : !seed.calendar.nextEvent && seed.calendar.upcomingEvents.length === 0
-          ? "calendar"
-          : "communications"
-
-  if (!isWorkspaceTemporarilyUnavailableCardId(preferredTargetCardId)) {
-    return preferredTargetCardId
+  if (!hasBrandSignals) return "communications"
+  if (seed.fundingGoalCents <= 0) {
+    return "economic-engine"
   }
-
   if (!seed.calendar.nextEvent && seed.calendar.upcomingEvents.length === 0) {
     return "calendar"
   }
-
-  return fallbackTargetCardId
+  return "communications"
 }
 
 export function resolveWorkspaceJourneyStage({
@@ -131,20 +119,20 @@ export function resolveWorkspaceJourneyGuideState({
   if (stage === "materials") {
     return {
       stage,
-      title: "Set the roadmap inside the workspace",
+      title: "Drop the source materials into Documents",
       description:
-        "Use the roadmap to keep board strategy, fundraising priorities, and the next operating moves sequenced in one place.",
+        "Use the vault as the working center so your accelerator steps reference real files and policies.",
       checklist: [
-        "Open the roadmap card once",
-        "Review the current section groups",
-        "Keep planning context inside the workspace",
+        "Upload the first operating document",
+        "Open the vault search or viewer once",
+        "Keep your source materials inside the workspace",
       ],
       tone: "guide",
-      targetCardId: "roadmap",
+      targetCardId: "vault",
       primaryAction: {
         kind: "focus-card",
-        label: "Focus roadmap",
-        cardId: "roadmap",
+        label: "Focus documents",
+        cardId: "vault",
       },
       accentLabel: "Step 2",
     }
@@ -183,15 +171,14 @@ export function resolveWorkspaceJourneyGuideState({
   const targetLabelByCardId: Record<WorkspaceCardId, string> = {
     "organization-overview": "organization",
     programs: "programs",
-    roadmap: "roadmap",
     accelerator: "accelerator",
     "brand-kit": "brand kit",
     "economic-engine": "fundraising",
     calendar: "calendar",
     communications: "communications",
     deck: "deck",
+    vault: "documents",
     atlas: "atlas",
-    "fiscal-sponsorship": "fiscal sponsorship",
   }
 
   return {

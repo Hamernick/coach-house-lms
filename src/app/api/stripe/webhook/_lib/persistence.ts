@@ -7,37 +7,12 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { Database } from "@/lib/supabase"
 import { toWebhookPayload } from "./metadata"
 
-function isMissingProfileForeignKeyError(error: { code?: string; message?: string }, foreignKeyName: string) {
-  return error.code === "23503" && typeof error.message === "string" && error.message.includes(foreignKeyName)
-}
-
-function logSkippedOrphanStripeRecord({
-  table,
-  userId,
-  stripeId,
-  error,
-}: {
-  table: string
-  userId: string
-  stripeId: string
-  error: { code?: string; message?: string }
-}) {
-  console.warn("Skipping Stripe webhook record for missing profile", {
-    table,
-    userId,
-    stripeId,
-    code: error.code ?? null,
-  })
-}
-
 export async function upsertSubscription({
   userId,
   customerId,
   subscriptionId,
   status,
   currentPeriodEnd,
-  cancelAt,
-  canceledAt,
   metadata,
 }: {
   userId: string
@@ -45,8 +20,6 @@ export async function upsertSubscription({
   subscriptionId: string
   status: Database["public"]["Enums"]["subscription_status"]
   currentPeriodEnd?: string | null
-  cancelAt?: string | null
-  canceledAt?: string | null
   metadata?: Database["public"]["Tables"]["subscriptions"]["Insert"]["metadata"]
 }) {
   const admin = createSupabaseAdminClient()
@@ -57,27 +30,12 @@ export async function upsertSubscription({
     stripe_subscription_id: subscriptionId,
     status,
     current_period_end: currentPeriodEnd ?? null,
-    cancel_at: cancelAt ?? null,
-    canceled_at: canceledAt ?? null,
     metadata: metadata ?? null,
   }
 
-  const { error } = await uncheckedAdmin
+  await uncheckedAdmin
     .from("subscriptions")
     .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
-
-  if (error) {
-    if (isMissingProfileForeignKeyError(error, "subscriptions_user_id_fkey")) {
-      logSkippedOrphanStripeRecord({
-        table: "subscriptions",
-        userId,
-        stripeId: subscriptionId,
-        error,
-      })
-      return
-    }
-    throw supabaseErrorToError(error, "Stripe webhook: unable to upsert subscription.")
-  }
 }
 
 export async function upsertAcceleratorPurchase({
@@ -106,25 +64,9 @@ export async function upsertAcceleratorPurchase({
     status,
   }
 
-  const { error } = await uncheckedAdmin
+  await uncheckedAdmin
     .from("accelerator_purchases")
     .upsert(payload, { onConflict: "stripe_checkout_session_id" })
-
-  if (error) {
-    if (isMissingProfileForeignKeyError(error, "accelerator_purchases_user_id_fkey")) {
-      logSkippedOrphanStripeRecord({
-        table: "accelerator_purchases",
-        userId,
-        stripeId: checkoutSessionId,
-        error,
-      })
-      return
-    }
-    throw supabaseErrorToError(
-      error,
-      "Stripe webhook: unable to upsert accelerator purchase.",
-    )
-  }
 }
 
 export async function upsertElectivePurchase({
@@ -153,25 +95,9 @@ export async function upsertElectivePurchase({
     status,
   }
 
-  const { error } = await uncheckedAdmin
+  await uncheckedAdmin
     .from("elective_purchases")
     .upsert(payload, { onConflict: "user_id,module_slug" })
-
-  if (error) {
-    if (isMissingProfileForeignKeyError(error, "elective_purchases_user_id_fkey")) {
-      logSkippedOrphanStripeRecord({
-        table: "elective_purchases",
-        userId,
-        stripeId: checkoutSessionId,
-        error,
-      })
-      return
-    }
-    throw supabaseErrorToError(
-      error,
-      "Stripe webhook: unable to upsert elective purchase.",
-    )
-  }
 }
 
 export async function shouldProcessEvent(event: Stripe.Event): Promise<boolean> {
@@ -228,7 +154,7 @@ export async function markWebhookEventFailed(
 ) {
   const admin = createSupabaseAdminClient()
   const uncheckedAdmin = admin as SupabaseClient<any>
-  const { error: updateError } = await uncheckedAdmin
+  await uncheckedAdmin
     .from("stripe_webhook_events")
     .update({
       payload:
@@ -239,19 +165,12 @@ export async function markWebhookEventFailed(
         }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
     })
     .eq("id", event.id)
-
-  if (updateError) {
-    throw supabaseErrorToError(
-      updateError,
-      "Stripe webhook: unable to mark failed event.",
-    )
-  }
 }
 
 export async function markWebhookEventProcessed(event: Stripe.Event) {
   const admin = createSupabaseAdminClient()
   const uncheckedAdmin = admin as SupabaseClient<any>
-  const { error } = await uncheckedAdmin
+  await uncheckedAdmin
     .from("stripe_webhook_events")
     .update({
       payload:
@@ -261,11 +180,4 @@ export async function markWebhookEventProcessed(event: Stripe.Event) {
         }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
     })
     .eq("id", event.id)
-
-  if (error) {
-    throw supabaseErrorToError(
-      error,
-      "Stripe webhook: unable to mark processed event.",
-    )
-  }
 }

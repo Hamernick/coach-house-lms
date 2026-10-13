@@ -1,15 +1,4 @@
-import { normalizeCoreDocumentDriveSource } from "./core-document-source"
 import { SECTION_DEFINITIONS } from "./definitions"
-import {
-  MY_ORGANIZATION_PATH,
-  WORKSPACE_PATH,
-  WORKSPACE_ROADMAP_PATH,
-  getWorkspaceRoadmapSectionPath,
-} from "@/lib/workspace/routes"
-import {
-  hasMeaningfulRoadmapBudgetRows,
-  normalizeRoadmapBudgetRows,
-} from "./budget"
 import type {
   RoadmapSection,
   RoadmapSectionDefinition,
@@ -31,50 +20,14 @@ const ROADMAP_SECTION_STATUSES = new Set<RoadmapSectionStatus>([
   "in_progress",
   "complete",
 ])
-const LEGACY_TEMPLATE_TITLES = new Map([
-  ["mission_vision_values", new Set(["Mission, Vision, Values"])],
-])
-const LEGACY_TEMPLATE_SUBTITLES = new Map([
-  [
-    "mission_vision_values",
-    new Set(["Your guiding statements and principles."]),
-  ],
-])
-const STORED_SECTION_KEYS = new Set([
-  "id",
-  "title",
-  "subtitle",
-  "slug",
-  "content",
-  "driveSource",
-  "documentSource",
-  "publishedContent",
-  "publicProfileStatusControlled",
-  "budgetRows",
-  "imageUrl",
-  "lastUpdated",
-  "isPublic",
-  "layout",
-  "status",
-  "ctaLabel",
-  "ctaUrl",
-])
 
-export const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (
+  value: unknown,
+): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
 export const normalizeText = (value: unknown): string =>
   typeof value === "string" ? value.trim() : ""
-
-function normalizeRoadmapSectionStatus(
-  value: unknown
-): RoadmapSectionStatus | null {
-  if (value === "completed") return "complete"
-  return typeof value === "string" &&
-    ROADMAP_SECTION_STATUSES.has(value as RoadmapSectionStatus)
-    ? (value as RoadmapSectionStatus)
-    : null
-}
 
 export function isTestSectionValue(value: unknown): boolean {
   const normalized = normalizeText(value).toLowerCase()
@@ -83,7 +36,7 @@ export function isTestSectionValue(value: unknown): boolean {
 
 export function shouldRemoveTestSection(
   entry: StoredSection | null | undefined,
-  key?: string
+  key?: string,
 ): boolean {
   if (isTestSectionValue(key)) return true
   const keyNormalized = normalizeText(key).toLowerCase()
@@ -101,7 +54,7 @@ export function shouldRemoveTestSection(
 }
 
 export function getStoredRoadmap(
-  profile: Record<string, unknown> | null | undefined
+  profile: Record<string, unknown> | null | undefined,
 ): StoredRoadmap {
   const roadmap = isRecord(profile?.roadmap)
     ? (profile.roadmap as Record<string, unknown>)
@@ -119,7 +72,7 @@ export function slugify(value: string): string {
 export function buildRoadmapSection(
   stored: StoredSection | null | undefined,
   fallback: RoadmapSectionDefinition | null,
-  index: number
+  index: number,
 ): RoadmapSection {
   const fallbackId = fallback?.id ?? `section-${index + 1}`
   const id = normalizeText(stored?.id) || fallbackId
@@ -128,12 +81,9 @@ export function buildRoadmapSection(
   const templateTitle = fallback?.title ?? ""
   const templateSubtitle = fallback?.subtitle || ""
   const storedTitleIsTemplate =
-    (templateTitle.length > 0 && storedTitle === templateTitle.trim()) ||
-    Boolean(LEGACY_TEMPLATE_TITLES.get(id)?.has(storedTitle))
+    templateTitle.length > 0 && storedTitle === templateTitle.trim()
   const storedSubtitleIsTemplate =
-    (templateSubtitle.length > 0 &&
-      storedSubtitle === templateSubtitle.trim()) ||
-    Boolean(LEGACY_TEMPLATE_SUBTITLES.get(id)?.has(storedSubtitle))
+    templateSubtitle.length > 0 && storedSubtitle === templateSubtitle.trim()
   const effectiveStoredTitle = storedTitleIsTemplate ? "" : storedTitle
   const effectiveStoredSubtitle = storedSubtitleIsTemplate ? "" : storedSubtitle
   const title = effectiveStoredTitle || templateTitle
@@ -143,29 +93,25 @@ export function buildRoadmapSection(
   const subtitleIsTemplate =
     effectiveStoredSubtitle.length === 0 && templateSubtitle.length > 0
   const content = typeof stored?.content === "string" ? stored.content : ""
-  const publishedContent =
-    typeof stored?.publishedContent === "string"
-      ? stored.publishedContent
-      : undefined
-  const publicProfileStatusControlled =
-    stored?.publicProfileStatusControlled === true ? true : undefined
-  const budgetRows = normalizeRoadmapBudgetRows(stored?.budgetRows)
   const imageUrlRaw = normalizeText(stored?.imageUrl)
   const imageUrl = imageUrlRaw.length > 0 ? imageUrlRaw : undefined
   const lastUpdated =
     typeof stored?.lastUpdated === "string" || stored?.lastUpdated === null
       ? (stored?.lastUpdated ?? null)
       : null
-  const isPublic =
-    typeof stored?.isPublic === "boolean" ? stored.isPublic : false
+  const isPublic = typeof stored?.isPublic === "boolean" ? stored.isPublic : false
   const layout =
     typeof stored?.layout === "string" &&
     ROADMAP_SECTION_LAYOUTS.has(stored.layout as RoadmapSection["layout"])
       ? (stored.layout as RoadmapSection["layout"])
       : "square"
   const status =
-    normalizeRoadmapSectionStatus(stored?.status) ??
-    (content.trim().length > 0 ? "in_progress" : "not_started")
+    typeof stored?.status === "string" &&
+    ROADMAP_SECTION_STATUSES.has(stored.status as RoadmapSectionStatus)
+      ? (stored.status as RoadmapSectionStatus)
+      : content.trim().length > 0
+        ? "in_progress"
+        : "not_started"
   const ctaLabel =
     typeof stored?.ctaLabel === "string" && stored.ctaLabel.trim().length > 0
       ? stored.ctaLabel.trim()
@@ -176,11 +122,6 @@ export function buildRoadmapSection(
       : undefined
   const slugRaw = normalizeText(stored?.slug)
   const slug = slugRaw || fallback?.slug || slugify(title) || fallbackId
-  const storageExtras = stored
-    ? Object.fromEntries(
-        Object.entries(stored).filter(([key]) => !STORED_SECTION_KEYS.has(key))
-      )
-    : {}
   const prompt =
     fallback?.prompt ??
     fallback?.placeholder ??
@@ -207,16 +148,6 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
-    driveSource: normalizeCoreDocumentDriveSource(stored?.driveSource),
-    documentSource:
-      stored?.documentSource === "editor" ||
-      stored?.documentSource === "google_drive"
-        ? stored.documentSource
-        : undefined,
-    publishedContent,
-    publicProfileStatusControlled,
-    budgetRows,
-    storageExtras,
     imageUrl,
     lastUpdated,
     isPublic,
@@ -231,51 +162,7 @@ export function buildRoadmapSection(
   }
 }
 
-export function resolveRoadmapSectionDerivedStatus(
-  section: RoadmapSection
-): RoadmapSectionStatus {
-  if (section.status === "complete") return "complete"
-  if (section.status === "in_progress") return "in_progress"
-
-  if (section.homework?.status === "complete") return "complete"
-  if (
-    section.homework?.status === "in_progress" ||
-    section.content.trim().length > 0 ||
-    hasMeaningfulRoadmapBudgetRows(section.budgetRows ?? [])
-  ) {
-    return "in_progress"
-  }
-
-  return "not_started"
-}
-
-export function getRoadmapWorkspaceRevalidationPaths({
-  publicSlug,
-  sectionSlug,
-  includePublicRoadmap = true,
-}: {
-  publicSlug?: string | null
-  sectionSlug?: string | null
-  includePublicRoadmap?: boolean
-}): string[] {
-  const normalizedSectionSlug =
-    typeof sectionSlug === "string" ? sectionSlug.trim() : ""
-  const paths = [WORKSPACE_PATH, MY_ORGANIZATION_PATH, WORKSPACE_ROADMAP_PATH]
-
-  if (normalizedSectionSlug) {
-    paths.push(getWorkspaceRoadmapSectionPath(normalizedSectionSlug))
-  }
-
-  if (includePublicRoadmap && publicSlug) {
-    paths.push(`/${publicSlug}/roadmap`)
-  }
-
-  return paths
-}
-
-export function ensureUniqueSlugs(
-  sections: RoadmapSection[]
-): RoadmapSection[] {
+export function ensureUniqueSlugs(sections: RoadmapSection[]): RoadmapSection[] {
   const used = new Set<string>()
   return sections.map((section, index) => {
     const base =
@@ -294,25 +181,11 @@ export function ensureUniqueSlugs(
 
 export function serializeRoadmapSections(sections: RoadmapSection[]) {
   return sections.map((section) => ({
-    ...(section.storageExtras ?? {}),
     id: section.id,
     title: section.title,
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
-    driveSource: section.driveSource ?? null,
-    ...(section.documentSource
-      ? { documentSource: section.documentSource }
-      : {}),
-    ...(section.publishedContent !== undefined
-      ? { publishedContent: section.publishedContent }
-      : {}),
-    ...(section.publicProfileStatusControlled
-      ? { publicProfileStatusControlled: true }
-      : {}),
-    ...(section.id === "budget" || (section.budgetRows?.length ?? 0) > 0
-      ? { budgetRows: section.budgetRows ?? [] }
-      : {}),
     imageUrl: section.imageUrl,
     lastUpdated: section.lastUpdated,
     isPublic: section.isPublic,
@@ -325,6 +198,6 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
 
 export function defaultRoadmapSections() {
   return SECTION_DEFINITIONS.map((definition, index) =>
-    buildRoadmapSection(null, definition, index)
+    buildRoadmapSection(null, definition, index),
   )
 }

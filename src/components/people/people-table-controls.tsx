@@ -78,10 +78,7 @@ export function PeopleTableControls({
       {canEdit ? (
         <div className={cn("pt-2", isInline && "ml-auto pt-0")}>
           <CreatePersonDialog
-            triggerClassName={cn(
-              "h-8 w-full justify-center rounded-xl px-2.5",
-              isInline && "w-auto",
-            )}
+            triggerClassName={cn("h-10 w-full justify-center", isInline && "w-auto px-4")}
             people={people}
           />
         </div>

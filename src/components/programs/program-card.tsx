@@ -4,14 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item"
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +27,6 @@ export type ProgramCardProps = {
   onCtaClick?: () => void
   patternId?: string
   variant?: "list" | "medium" | "full"
-  contentFill?: boolean
   className?: string
 }
 
@@ -57,7 +49,6 @@ export function ProgramCard({
   onCtaClick,
   patternId,
   variant = "medium",
-  contentFill = true,
   className,
 }: ProgramCardProps) {
   const heroImageUrl = bannerImageUrl || imageUrl
@@ -68,11 +59,9 @@ export function ProgramCard({
   const asOfText = asOf
 
   const money = (cents: number) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(Math.max(0, Math.round(cents / 100)))
+    new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
+      Math.max(0, Math.round(cents / 100)),
+    )
 
   const headerSquares: Array<[number, number]> = [
     [4, 4],
@@ -95,37 +84,25 @@ export function ProgramCard({
   if (variant === "list") {
     return (
       <Item className={cn("min-h-[112px] items-start", className)}>
-        <ItemMedia className="bg-muted relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl">
+        <ItemMedia className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-muted">
           {thumbImageUrl ? (
-            <Image
-              src={thumbImageUrl}
-              alt=""
-              fill
-              sizes="48px"
-              className="object-cover"
-            />
+            <Image src={thumbImageUrl} alt="" fill sizes="48px" className="object-cover" />
           ) : (
-            <>
-              <div className="bg-background absolute inset-0" aria-hidden />
-              <GridPattern
-                patternId={patternId}
-                squares={headerSquares}
-                className="absolute inset-0 [mask-image:radial-gradient(100px_circle_at_center,white,transparent)] fill-gray-500/50 stroke-gray-500/50 opacity-80 dark:fill-white/15 dark:stroke-white/25"
-              />
-            </>
+            <GridPattern
+              patternId={patternId}
+              squares={headerSquares}
+              className="absolute inset-0 opacity-80 fill-gray-500/50 stroke-gray-500/50 dark:fill-white/15 dark:stroke-white/25 [mask-image:radial-gradient(100px_circle_at_center,white,transparent)]"
+            />
           )}
         </ItemMedia>
         <ItemContent className="space-y-1.5">
           {showStatusBadge && statusLabel ? (
-            <Badge
-              variant="secondary"
-              className="w-fit rounded-full px-2 py-0.5 text-[10px]"
-            >
+            <Badge variant="secondary" className="w-fit rounded-full px-2 py-0.5 text-[10px]">
               {statusLabel}
             </Badge>
           ) : null}
           <ItemTitle className="line-clamp-2">{title}</ItemTitle>
-          {org || location ? (
+          {(org || location) ? (
             <ItemDescription className="line-clamp-1 text-xs">
               {[org, location].filter(Boolean).join(" · ")}
             </ItemDescription>
@@ -139,21 +116,12 @@ export function ProgramCard({
         <ItemActions className="self-start">
           {ctaHref ? (
             <Button size="sm" variant="outline" asChild>
-              <a
-                href={ctaHref}
-                target={ctaTarget}
-                rel={ctaTarget === "_blank" ? "noopener noreferrer" : undefined}
-              >
+              <a href={ctaHref} target={ctaTarget} rel={ctaTarget === "_blank" ? "noopener noreferrer" : undefined}>
                 {ctaLabel}
               </a>
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onCtaClick}
-              disabled={!onCtaClick}
-            >
+            <Button size="sm" variant="outline" onClick={onCtaClick} disabled={!onCtaClick}>
               {ctaLabel}
             </Button>
           )}
@@ -170,16 +138,16 @@ export function ProgramCard({
   return (
     <Card
       className={cn(
-        "border-muted/50 flex w-full flex-col gap-0 overflow-hidden rounded-3xl py-0 shadow-sm",
+        "w-full overflow-hidden rounded-3xl border-muted/50 shadow-sm flex flex-col py-0 gap-0",
         cardSizeClasses,
-        className
+        className,
       )}
     >
       <div className="relative">
         <div
           className={cn(
-            "bg-muted relative overflow-hidden",
-            variant === "full" ? "aspect-[21/9]" : "aspect-[16/9]"
+            "relative overflow-hidden bg-muted",
+            variant === "full" ? "aspect-[21/9]" : "aspect-[16/9]",
           )}
         >
           {heroImageUrl ? (
@@ -188,27 +156,20 @@ export function ProgramCard({
               alt="Program visual"
               fill
               className="object-cover"
-              sizes={
-                variant === "full"
-                  ? "(max-width: 1024px) 90vw, 900px"
-                  : "(max-width: 768px) 90vw, 380px"
-              }
+              sizes={variant === "full" ? "(max-width: 1024px) 90vw, 900px" : "(max-width: 768px) 90vw, 380px"}
             />
           ) : (
-            <>
-              <div className="bg-background absolute inset-0" aria-hidden />
-              <GridPattern
-                patternId={patternId}
-                squares={headerSquares}
-                className="absolute inset-0 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)] fill-gray-500/50 stroke-gray-500/50 opacity-85 dark:fill-white/15 dark:stroke-white/25"
-              />
-            </>
+            <GridPattern
+              patternId={patternId}
+              squares={headerSquares}
+              className="absolute inset-0 opacity-85 fill-gray-500/50 stroke-gray-500/50 dark:fill-white/15 dark:stroke-white/25 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
+            />
           )}
           {showStatusBadge && statusLabel ? (
-            <div className="absolute top-3 right-3">
+            <div className="absolute right-3 top-3">
               <Badge
                 variant="secondary"
-                className="rounded-full border border-white/30 bg-white/50 px-3 py-1 text-xs font-medium backdrop-blur-sm dark:border-white/20 dark:bg-black/40"
+                className="rounded-full px-3 py-1 text-xs font-medium border border-white/30 bg-white/50 backdrop-blur-sm dark:border-white/20 dark:bg-black/40"
               >
                 {statusLabel}
               </Badge>
@@ -217,23 +178,14 @@ export function ProgramCard({
         </div>
       </div>
 
-      <CardContent
-        className={cn(
-          "bg-background flex flex-col gap-3 px-4 pt-3 pb-4",
-          contentFill && "flex-1"
-        )}
-      >
+      <CardContent className="flex flex-1 flex-col gap-3 px-4 pt-3 pb-4">
         <div className="space-y-1">
-          <h3 className="line-clamp-2 text-lg leading-6 font-semibold">
-            {title}
-          </h3>
-          {org || location ? (
-            <p className="text-muted-foreground line-clamp-1 text-sm">
-              {[org, location].filter(Boolean).join(" · ")}
-            </p>
+          <h3 className="line-clamp-2 text-lg font-semibold leading-6">{title}</h3>
+          {(org || location) ? (
+            <p className="line-clamp-1 text-sm text-muted-foreground">{[org, location].filter(Boolean).join(" · ")}</p>
           ) : null}
           {description ? (
-            <p className="text-muted-foreground line-clamp-2 text-sm leading-5">
+            <p className="line-clamp-2 text-sm leading-5 text-muted-foreground">
               {description}
             </p>
           ) : null}
@@ -244,19 +196,12 @@ export function ProgramCard({
         {visibleChips.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             {visibleChips.map((c, i) => (
-              <Badge
-                key={`${c}-${i}`}
-                variant="secondary"
-                className="rounded-full px-2 py-0.5 text-xs"
-              >
+              <Badge key={`${c}-${i}`} variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
                 {c}
               </Badge>
             ))}
             {extraChipCount > 0 ? (
-              <Badge
-                variant="secondary"
-                className="rounded-full px-2 py-0.5 text-xs"
-              >
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
                 +{extraChipCount}
               </Badge>
             ) : null}
@@ -268,17 +213,16 @@ export function ProgramCard({
         <div className="mt-2 space-y-1.5">
           <div className="flex items-baseline justify-between text-sm">
             <span className="font-medium">Fundraising Progress</span>
-            <span className="text-muted-foreground tabular-nums">
-              {money(raised)} / {money(goal)}
-              {asOfText ? ` · ${asOfText}` : ""}
+            <span className="tabular-nums text-muted-foreground">
+              {money(raised)} / {money(goal)}{asOfText ? ` · ${asOfText}` : ""}
             </span>
           </div>
           <Progress value={pct} aria-label={`Funding progress ${pct}%`} />
-          <div className="text-muted-foreground text-xs">{pct}% funded</div>
+          <div className="text-xs text-muted-foreground">{pct}% funded</div>
         </div>
       </CardContent>
 
-      <CardFooter className="bg-background flex justify-end px-4 pt-0 pb-4">
+      <CardFooter className="px-4 pb-4 pt-0 flex justify-end">
         {ctaHref ? (
           <Button size="sm" asChild>
             <a

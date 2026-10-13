@@ -61,3 +61,23 @@ no Supabase preview branches or provider preview setup.
 - No provider configuration, database mutation, email or production deployment
   occurred in this slice. Original SHIP-000 blocked history and separate PRs
   #292/#293 remain independent; this preparation does not create another claim.
+
+## Pricing button family verification
+
+The user requested the same protection for primary/secondary plan buttons and
+the repeated card section. Both `/pricing` and `/build` compose the same
+`PricingTierCardsSection`; variant colors do not affect hrefs. Browser tests
+clicked all six cards and verified selected-plan signup plus the retained sign-in
+return. Individual goes to free onboarding; Organization and Operations Support
+preserve the selected checkout plan and onboarding return/cancel destinations.
+
+Inspected seven generic signup links across home, Build and Pricing; one browser
+click-through per route verified signup and `/onboarding?source=signup` return.
+Accelerator/support exploration links intentionally target the existing Build
+pricing section. No additional runtime or style change was needed.
+
+Expanded regressions cover anonymous/signed-in card selection, encoded email
+destinations, and actual confirmation form actions for generic/free/both paid
+signups. The six-file focused suite passes 40 tests; two added browser tests
+cover all six cards. Existing Donate/menu checks remain applicable. This verifies
+local routing, not a live payment or production confirmation retest.

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { captureRedirect, createSupabaseServerClientServerMock, headersMock } from "./test-utils"
 
 import { buildSupabaseAuthEmailPreviews } from "@/features/organization-access"
+import { buildPostSignupBuilderRedirect } from "@/lib/onboarding/signup-plan"
 import {
   buildLoginUrlWithAuthConfirmationError,
   getSafeEmailOtpType,
@@ -13,10 +14,31 @@ import {
 } from "@/lib/supabase/auth-confirmation"
 
 describe("auth confirmation", () => {
-  it.each([false, true])("only resumes the selected plan after successful human confirmation (OTP error: %s)", async (otpError) => {
+  it.each(["free", "organization", "operations_support"] as const)("preserves every %s checkout/onboarding parameter through the email link", (planTier) => {
+    const destination = buildPostSignupBuilderRedirect({ planTier, source: "signup" })
+    const callback = `https://coachhouse.app/auth/callback?redirect=${encodeURIComponent(destination)}`
+    const template = buildSupabaseAuthEmailPreviews("https://coachhouse.app").find((item) => item.id === "supabase-confirm-sign-up")!.html
+    // Supabase renders with Go html/template, which escapes query-context values.
+    // Model that encoding here rather than raw text substitution into the URL.
+    const html = template
+      .replaceAll("{{ .TokenHash }}", "test-token")
+      .replaceAll("{{ .RedirectTo }}", encodeURIComponent(callback))
+    const href = html.match(/href="([^"]*\/auth\/confirm[^"]*)"/)![1].replaceAll("&amp;", "&")
+    const emailLink = new URL(href)
+    expect(resolveAuthConfirmationDestination(emailLink.searchParams.get("next"), "https://coachhouse.app"))
+      .toBe(`https://coachhouse.app${destination}`)
+  })
+
+  it.each([
+    { plan: null, otpError: false },
+    { plan: "free", otpError: false },
+    { plan: "organization", otpError: false },
+    { plan: "operations_support", otpError: false },
+    { plan: "organization", otpError: true },
+  ])("only resumes $plan after successful human confirmation (OTP error: $otpError)", async ({ plan, otpError }) => {
     headersMock.mockResolvedValue({ get: (name: string) => name === "host" ? "coachhouse.app" : undefined })
     const verifyOtp = vi.fn().mockResolvedValue({
-      data: { user: { user_metadata: { onboarding_intent_focus: "build", onboarding_selected_builder_plan_tier: "organization" } } },
+      data: { user: { user_metadata: { onboarding_intent_focus: "build", onboarding_selected_builder_plan_tier: plan } } },
       error: otpError ? { message: "Expired token" } : null,
     })
     createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp } })
@@ -31,9 +53,9 @@ describe("auth confirmation", () => {
     }
     const result = new URL(await captureRedirect(() => form.props.action(formData)), "https://coachhouse.app")
     expect(verifyOtp).toHaveBeenCalledWith({ token_hash: "test-token", type: "email" })
-    expect(result.pathname).toBe(otpError ? "/login" : "/api/stripe/checkout")
+    expect(result.pathname).toBe(otpError ? "/login" : plan === null || plan === "free" ? "/onboarding" : "/api/stripe/checkout")
     if (otpError) expect(result.searchParams.get("error")).toContain("invalid or expired")
-    else expect(result.searchParams.get("plan")).toBe("organization")
+    else expect(result.searchParams.get("plan")).toBe(plan)
   })
 
   it.each(["organization", "operations_support", "free"])("recovers the %s signup when the provider replaces the callback with its Site URL", (plan) => {

@@ -1,6 +1,24 @@
 import { expect, test } from "@playwright/test"
 import { COACH_HOUSE_DONATE_URL } from "../../src/lib/public-links"
 
+for (const route of ["/pricing", "/build"] as const) {
+  test(`all public plan buttons preserve their selection from ${route}`, async ({ page }) => {
+    for (const [title, plan] of [["Individual", "free"], ["Organization", "organization"], ["Operations Support", "operations_support"]]) {
+      await page.goto(`${route}?react-grab=0`)
+      const card = page.getByRole("group", { name: `${title} plan`, exact: true })
+      const link = card.getByRole("link")
+      await expect(link).toHaveAttribute("href", `/sign-up?intent=build&plan=${plan}`)
+      await link.click()
+      await expect(page).toHaveURL(new RegExp(`/sign-up\\?intent=build&plan=${plan}$`))
+      await expect(page.locator('[data-slot="card-title"]').filter({ hasText: /^Create your account$/ })).toBeVisible()
+      const login = new URL(await page.getByRole("link", { name: "Sign in", exact: true }).getAttribute("href") ?? "", "https://coachhouse.app")
+      const destination = new URL(login.searchParams.get("redirect") ?? "", "https://coachhouse.app")
+      expect(destination.pathname).toBe(plan === "free" ? "/onboarding" : "/api/stripe/checkout")
+      expect(destination.searchParams.get("plan")).toBe(plan)
+    }
+  })
+}
+
 test("Donate is a direct external link and fits beside public navigation", async ({ page, context }) => {
   await page.setViewportSize({ width: 600, height: 900 })
   await page.goto("/build?react-grab=0")

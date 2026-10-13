@@ -1,6 +1,7 @@
 import "./test-utils"
 
 import { FISCAL_SPONSORSHIP_APPLY_HREF } from "@/features/fiscal-sponsorship/lib/public-entry"
+import { PLATFORM_TIERS } from "@/components/public/pricing-surface-data"
 
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -15,6 +16,30 @@ describe("sign up page", () => {
     resetTestMocks()
     vi.resetModules()
     vi.clearAllMocks()
+  })
+
+  it.each(PLATFORM_TIERS)("preserves $title card selection for anonymous and signed-in visitors", async (tier) => {
+    const query = Object.fromEntries(new URL(tier.ctaHref, "https://coachhouse.app").searchParams)
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }) },
+    })
+    const { default: SignUpPage } = await import("@/app/(auth)/sign-up/page")
+    const page = await SignUpPage({ searchParams: Promise.resolve(query) })
+    const form = page.props.children.props.children
+    expect(form.props.lockedIntentFocus).toBe("build")
+    expect(form.props.signUpMetadata.onboarding_selected_builder_plan_tier).toBe(query.plan)
+    const target = new URL(form.props.builderRedirectTo, "https://coachhouse.app")
+    expect(target.pathname).toBe(query.plan === "free" ? "/onboarding" : "/api/stripe/checkout")
+    expect(target.searchParams.get("plan")).toBe(query.plan)
+    if (query.plan !== "free") {
+      expect(target.searchParams.get("redirect")).toBe("/onboarding?source=onboarding_pricing")
+      expect(target.searchParams.get("cancel")).toBe("/onboarding?source=onboarding_pricing")
+    }
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "signed-in-user" } }, error: null }) },
+    })
+    expect(await captureRedirect(() => SignUpPage({ searchParams: Promise.resolve(query) })))
+      .toBe(form.props.builderRedirectTo)
   })
 
   it("redirects deprecated individual-plan links to the canonical signup flow", async () => {

@@ -19,6 +19,7 @@ const PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT =
 
 export type PublicFindRouteProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
+  embedded?: boolean
 }
 
 function firstString(value: string | string[] | undefined) {
@@ -28,6 +29,7 @@ function firstString(value: string | string[] | undefined) {
 
 export async function PublicFindRoute({
   searchParams,
+  embedded = false,
 }: PublicFindRouteProps = {}) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const callbackParams = new URLSearchParams()
@@ -65,6 +67,19 @@ export async function PublicFindRoute({
   const publicToken = candidateTokens
     .map((value) => value?.trim() ?? "")
     .find((value) => value.length > 0 && value.startsWith("pk."))
+
+  if (embedded) {
+    return (
+      <PublicMapIndex
+        embedded
+        organizations={organizations}
+        resourceItemsEndpoint={PUBLIC_RESOURCE_MAP_ITEMS_ENDPOINT}
+        mapboxToken={publicToken}
+        initialPublicSlug={initialPublicSlug}
+        viewer={viewerState.viewer}
+      />
+    )
+  }
 
   if (viewerState.viewer) {
     const [shellState, defaultSidebarOpen] = await Promise.all([

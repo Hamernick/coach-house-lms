@@ -48,7 +48,7 @@ export function HomeCanvasLoginButton({
     <Button
       variant={activeSection === "login" ? "default" : "outline"}
       size="sm"
-      className="rounded-full shadow-none"
+      className="h-11 rounded-full shadow-none md:h-8"
       disabled={isLoginRoutePending}
       aria-busy={isLoginRoutePending || undefined}
       onClick={handleLoginClick}

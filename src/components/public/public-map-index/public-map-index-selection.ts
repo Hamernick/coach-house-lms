@@ -115,11 +115,11 @@ export function usePublicMapListItemSelection({
   )
 
   const handleSelectMapMarker = useCallback(
-    (selectableId: string) => {
+    (selectableId: string, preserveSearchContext = false) => {
       const item = selectableMapItemById.get(selectableId)
+      if (!preserveSearchContext) setSameLocationSelection(null)
       focusMapItemOnMap(selectableId)
       if (item?.itemType === "external_resource") {
-        setSameLocationSelection(null)
         setSelectedOrgId(null)
         setSelectedListItemId(selectableId)
         setSidebarMode("details")
@@ -151,19 +151,14 @@ export function usePublicMapListItemSelection({
       )
       if (selectableIds.length === 0) return
 
-      focusMapItemOnMap(selectableIds[0])
-      setSelectedOrgId(null)
-      setSelectedListItemId(null)
+      // Keep the other places available when returning from the detail drawer.
       setSameLocationSelection({ ...group, organizationIds: selectableIds })
-      setSidebarMode("search")
+      handleSelectMapMarker(selectableIds[0], true)
     },
     [
-      focusMapItemOnMap,
+      handleSelectMapMarker,
       selectableMapItemById,
       setSameLocationSelection,
-      setSelectedListItemId,
-      setSelectedOrgId,
-      setSidebarMode,
     ]
   )
 

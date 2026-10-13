@@ -3,6 +3,7 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
+import { resolvePublicMapScreenPadding } from "./screen-camera"
 import { FIND_ORGANIZATION_QUERY_KEY, FIND_PATH } from "@/lib/find/routes"
 import {
   buildPublicMapOrganizationFeatureCollection,
@@ -178,7 +179,7 @@ export function fitMapToOrganizations({
   }
 
   map.fitBounds(bounds, {
-    padding: ORGANIZATION_PADDING,
+    padding: resolvePublicMapScreenPadding(map.getContainer?.()) ?? ORGANIZATION_PADDING,
     maxZoom: 7,
     duration,
   })

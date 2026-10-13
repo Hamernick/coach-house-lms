@@ -1,16 +1,13 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import {
-  buildPublicMapDrawerSnapPoints,
-  resolvePublicMapDrawerVisibleHeight,
-} from "./sidebar-snap-points"
+import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
 import { PublicMapMemberRail, type PublicMapMemberTab } from "./member-rail"
 import {
   PublicMapRailPanel,
@@ -33,6 +30,8 @@ import { buildOrganizationDetailHeaderSlots } from "./organization-detail-header
 import { usePublicMapDrawerSearchSession } from "./use-public-map-drawer-search-session"
 import { PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME } from "./sidebar-theme"
 import { PublicMapSidebarDrawer } from "./sidebar-drawer"
+import { PublicMapInlinePanel } from "./inline-panel"
+import { usePublicMapSidebarPresentation } from "./use-public-map-sidebar-presentation"
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
@@ -91,6 +90,7 @@ function PublicMapSidebarOpenButton({
 }
 
 export function PublicMapSidebar({
+  inline = false,
   sidebarMode,
   sidebarWidth,
   surfaceHeight,
@@ -159,40 +159,19 @@ export function PublicMapSidebar({
     activeSnapPoint,
     fullscreen: drawerIsFullscreen,
   })
-  useEffect(() => {
-    if (compact && sidebarMode === "hidden") {
-      setSidebarMode("search")
-    }
-  }, [compact, setSidebarMode, sidebarMode])
-  useEffect(() => {
-    if (panelPresentation !== "drawer") return
-    if (!panelOpen) {
-      setActiveSnapIndex(0)
-      return
-    }
-    if (effectiveSidebarMode === "details") {
-      setActiveSnapIndex(1)
-    }
-  }, [effectiveSidebarMode, panelOpen, panelPresentation])
-  useEffect(() => {
-    const drawerInset =
-      panelPresentation === "drawer" && panelOpen && !drawerIsFullscreen
-        ? resolvePublicMapDrawerVisibleHeight({
-            snapPoint: activeSnapPoint,
-            surfaceHeight,
-          })
-        : 0
-
-    onDrawerInsetChange?.(drawerInset)
-  }, [
-    activeSnapPoint,
-    drawerIsFullscreen,
-    onDrawerInsetChange,
-    panelOpen,
+  usePublicMapSidebarPresentation({
+    compact,
+    sidebarMode,
+    setSidebarMode,
     panelPresentation,
+    panelOpen,
+    effectiveSidebarMode,
+    setActiveSnapIndex,
+    drawerIsFullscreen,
+    activeSnapPoint,
     surfaceHeight,
-  ])
-  useEffect(() => () => onDrawerInsetChange?.(0), [onDrawerInsetChange])
+    onDrawerInsetChange,
+  })
   const listItems = searchContext?.items ?? filteredItems
   const handleDrawerTabChange = useCallback(
     (nextTab: PublicMapMemberTab) => {
@@ -317,6 +296,10 @@ export function PublicMapSidebar({
   const drawerDirectoryPanel =
     effectiveSidebarMode === "search" ? (
       <PublicMapDrawerSearchPanel
+        showResults={!inline || !searchContext}
+        directoryScrollable={!inline}
+        showSearch={!inline}
+        showFooter={!inline}
         query={query}
         searchContext={searchContext}
         items={listItems}
@@ -377,6 +360,7 @@ export function PublicMapSidebar({
       </div>
     ) : (
       <PublicMapMemberRail
+        showSavedSearch={!inline}
         activeTab={drawerTab}
         directoryHeaderStart={organizationDetailHeaderSlots.start}
         directoryHeaderEnd={organizationDetailHeaderSlots.end}
@@ -400,6 +384,25 @@ export function PublicMapSidebar({
         onToggleCollectedResource={toggleCollectedResource}
       />
     )
+
+  if (inline) {
+    return (
+      <PublicMapInlinePanel
+        query={query}
+        onQueryChange={handleDrawerQueryChange}
+        onSearchEngage={handleDrawerSearchEngage}
+        onSearchCancel={handleDrawerSearchCancel}
+        activeGroup={activeGroup}
+        groupCounts={drawerSearchActive ? groupCounts : undefined}
+        onActiveGroupChange={handleDrawerGroupChange}
+        compact
+        searchPending={searchPending}
+        showCancel={drawerSearchActive}
+      >
+        {drawerPanel}
+      </PublicMapInlinePanel>
+    )
+  }
 
   return (
     <>

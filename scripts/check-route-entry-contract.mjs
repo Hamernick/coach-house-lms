@@ -15,7 +15,7 @@ const PAGE_LAYOUT_BUDGET_ALLOWLIST = new Set()
 const PAGE_LAYOUT_BUDGET_ALLOWLIST_MAX = 0
 const ROUTE_IMPORT_CONTRACTS = new Map([
   [
-    "src/app/(public)/page.tsx",
+    "src/app/(public)/map/page.tsx",
     {
       requireImports: ["@/features/find-map"],
       forbidImports: ["@/components/public/public-header"],

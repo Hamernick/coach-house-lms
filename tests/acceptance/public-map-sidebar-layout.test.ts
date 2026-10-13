@@ -387,8 +387,12 @@ describe("public map sidebar layout", () => {
       "utf8"
     )
 
-    expect(source).toContain('data-public-map-overscan="12px"')
-    expect(source).toContain('className="absolute -inset-3"')
+    expect(source).toContain('data-public-map-overscan={embedded ? undefined : "12px"}')
+    expect(source).not.toContain("data-public-map-background=")
+    expect(source).not.toContain("--map-backdrop-height")
+    expect(source).toContain("pointer-events-auto absolute inset-0 z-0")
+    expect(source).toContain("pointer-events-none overflow-hidden rounded-3xl")
+    expect(source).toContain(': "absolute -inset-3"')
     expect(source).toContain("[&_.mapboxgl-ctrl-logo]:!hidden")
     expect(source).not.toContain("mapboxgl-ctrl-attrib")
     expect(source).not.toContain("[&_.mapboxgl-control-container")
@@ -479,16 +483,7 @@ describe("public map sidebar layout", () => {
     expect(resultsStatusClassName).toContain("mx-auto")
     expect(resultsStatusClassName).toContain("w-full")
     expect(resultsStatusClassName).toContain("max-w-3xl")
-    expect(categoryFilterClassName).toContain("overflow-x-auto")
-    expect(categoryFilterClassName).toContain("mx-auto")
-    expect(categoryFilterClassName).toContain("w-full")
-    expect(categoryFilterClassName).toContain("max-w-3xl")
-    expect(categoryFilterClassName).toContain("scroll-fade-effect-x")
-    expect(markup).toContain('data-orientation="horizontal"')
-    expect(categoryFilterClassName).toContain("[scrollbar-width:none]")
-    expect(categoryFilterClassName).toContain(
-      "[&amp;::-webkit-scrollbar]:hidden"
-    )
+    expect(categoryFilterClassName).toBe("")
     expect(scrollClassName).not.toContain("px-")
     expect(scrollClassName).toContain("pr-2.5")
     expect(scrollClassName).toContain("h-full")
@@ -518,10 +513,8 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("mx-auto flex w-full max-w-xl items-center")
     expect(markup).toContain("relative min-w-0 flex-1")
     expect(markup).toContain("rounded-full pl-8 text-base")
-    expect(markup).toContain('aria-label="Filter resources by category"')
-    expect(markup).toContain(">All<")
-    expect(markup).toContain(">Community<")
-    expect(markup).toContain('aria-pressed="true"')
+    expect(markup).not.toContain('aria-label="Filter resources by category"')
+    expect(markup).not.toContain('data-react-grab-owner-id="public-map-category-filter:all"')
     expect(
       markup.indexOf('data-public-map-sidebar-section="rail-status-header"')
     ).toBeLessThan(
@@ -774,7 +767,8 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("Chicago, IL")
     expect(organizationMetadataClassName.split(" ")).toContain("mt-0.5")
     expect(resourceMetadataClassName.split(" ")).toContain("mt-0.5")
-    expect(markup.match(/min-h-20/g)).toHaveLength(4)
+    expect(markup.match(/min-h-18/g)).toHaveLength(2)
+    expect(markup.match(/min-h-16/g)).toHaveLength(2)
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")
@@ -1214,10 +1208,9 @@ describe("public map sidebar layout", () => {
       )
     )
     expect(directoryMarkup).not.toContain(">Resource map<")
-    expect(directoryMarkup).toContain(
+    expect(directoryMarkup).not.toContain(
       'aria-label="Filter resources by category"'
     )
-    expect(directoryMarkup).toContain('aria-pressed="true"')
     expect(directoryMarkup).toContain(organization.name)
     expect(resolvePublicMapDirectoryStatusCount(1)).toBe("1")
     expect(resolvePublicMapDirectoryStatusCount(1234)).toBe("1,234")
@@ -1240,7 +1233,7 @@ describe("public map sidebar layout", () => {
     expect(directoryMarkup).not.toContain("NYC Cooling Centers")
     expect(memberRailMarkup).toContain(">Find<")
     expect(memberRailMarkup).toContain(">Guides<")
-    expect(memberRailMarkup).toContain(">My Map<")
+    expect(memberRailMarkup).toContain(">Collect<")
     expect(memberRailMarkup).not.toContain(">Recent<")
     expect(memberRailMarkup).not.toContain(">Joined<")
     expect(memberRailMarkup).not.toContain(">Alerts<")
@@ -1263,7 +1256,7 @@ describe("public map sidebar layout", () => {
       "rounded-full border border-border/70 bg-background/70 p-1"
     )
     expect(memberRailMarkup).toContain(
-      "flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+      "flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden"
     )
     expect(directoryMarkup).toContain(
       "flex h-full min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden"
@@ -1364,7 +1357,7 @@ describe("public map sidebar layout", () => {
     expect(memberRailMarkup).toContain("Directory")
   })
 
-  it("lets My Map search and category-filter collected organizations", () => {
+  it("lets My Map search collected organizations without redundant category pills", () => {
     const communityOrganization = buildOrganization({
       id: "community-org",
       name: "Atlas Collective",
@@ -1419,7 +1412,7 @@ describe("public map sidebar layout", () => {
       })
     )
 
-    expect(markup).toContain(">My Map<")
+    expect(markup).toContain(">Collect<")
     const savedRailMarkup = renderToStaticMarkup(
       React.createElement(PublicMapSavedRail, {
         savedOrganizations: [communityOrganization, healthOrganization],
@@ -1457,12 +1450,9 @@ describe("public map sidebar layout", () => {
       'data-public-map-member-rail-section="saved-search-controls"'
     )
     expect(markup).toContain('aria-label="Find organizations and resources"')
-    expect(markup).toContain('aria-label="Filter resources by category"')
+    expect(markup).not.toContain('aria-label="Filter resources by category"')
     expect(markup).toContain(">All<")
-    expect(markup).toContain(">Community<")
-    expect(markup).toContain(">Health<")
-    expect(markup).toContain(">2<")
-    expect(markup).toContain(">1<")
+
     expect(markup).toContain("My Map")
     expect(markup).toContain("mx-2 min-h-0 flex-1 bg-transparent")
     expect(markup).not.toContain("bg-card/95")
@@ -1690,7 +1680,7 @@ describe("public map sidebar layout", () => {
 
     expect(markup).not.toContain(">Resource map<")
     expect(markup).toContain('aria-label="Find organizations and resources"')
-    expect(markup).toContain('aria-label="Filter resources by category"')
+    expect(markup).not.toContain('aria-label="Filter resources by category"')
     expect(markup).toContain(
       'data-public-map-sidebar-section="rail-organizations-scroll"'
     )
@@ -1866,7 +1856,7 @@ describe("public map sidebar layout", () => {
     expect(resultListScrollClassName).toContain("overflow-y-auto")
     expect(resultListScrollClassName).toContain("rounded-2xl")
     expect(resultListScrollClassName).toContain("border")
-    expect(resultListScrollClassName).toContain("scroll-fade-effect-y")
+    expect(resultListScrollClassName).not.toContain("scroll-fade-effect-y")
     expect(resultListScrollClassName).toContain("overscroll-contain")
     expect(resultListScrollClassName).toContain(
       "[-webkit-overflow-scrolling:touch]"
@@ -1894,7 +1884,7 @@ describe("public map sidebar layout", () => {
     expect(organizationDetailScrollClassName).toContain("min-h-0")
     expect(organizationDetailScrollClassName).toContain("flex-1")
     expect(organizationDetailScrollClassName).toContain("overflow-y-auto")
-    expect(organizationDetailScrollClassName).toContain("scroll-fade-effect-y")
+    expect(organizationDetailScrollClassName).not.toContain("scroll-fade-effect-y")
     expect(organizationDetailScrollClassName).toContain("overscroll-contain")
     expect(resourceDetailMarkup).toContain(
       'data-public-map-sidebar-section="drawer-detail-scroll"'
@@ -1906,7 +1896,7 @@ describe("public map sidebar layout", () => {
     expect(resourceDetailScrollClassName).toContain("min-h-0")
     expect(resourceDetailScrollClassName).toContain("flex-1")
     expect(resourceDetailScrollClassName).toContain("overflow-y-auto")
-    expect(resourceDetailScrollClassName).toContain("scroll-fade-effect-y")
+    expect(resourceDetailScrollClassName).not.toContain("scroll-fade-effect-y")
     expect(resourceDetailScrollClassName).toContain("overscroll-contain")
   })
 

@@ -71,7 +71,7 @@ describe("app sidebar nav data", () => {
     })
 
     expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find"])
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/map")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
@@ -161,7 +161,7 @@ describe("app sidebar nav data", () => {
 
     expect(nav.map((item) => item.title)).toEqual(["Find"])
     expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/map")
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -179,7 +179,7 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/map")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()

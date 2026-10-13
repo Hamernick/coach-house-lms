@@ -130,6 +130,7 @@ export function PublicMapOrganizationsStack({
   resourceItemsLoadError = null,
   resourceItemsLoadStatus,
   scrollable = false,
+  bounded = false,
   selectedItemId,
   selectedOrgId = null,
 }: {
@@ -148,6 +149,7 @@ export function PublicMapOrganizationsStack({
   resourceItemsLoadError?: string | null
   resourceItemsLoadStatus: PublicMapResourceItemsLoadStatus
   scrollable?: boolean
+  bounded?: boolean
   selectedItemId: string | null
   selectedOrgId?: string | null
 }) {
@@ -171,7 +173,9 @@ export function PublicMapOrganizationsStack({
         loadError={resourceItemsLoadError}
         constrainedLayout={constrainedLayout}
         incrementalLoading
+        remotePagination
         scrollable={scrollable}
+        bounded={bounded}
         leadingContent={leadingContent}
         onClearCategory={onClearCategory}
         onClearQuery={onClearQuery}

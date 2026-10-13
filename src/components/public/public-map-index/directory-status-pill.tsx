@@ -36,6 +36,7 @@ export function PublicMapDirectoryStatusHeader({
 }
 
 export function PublicMapDirectoryStatusPill({
+  unstyled = false,
   className,
   count,
   label = "Resources",
@@ -43,6 +44,7 @@ export function PublicMapDirectoryStatusPill({
   className?: string
   count: number | null
   label?: string
+  unstyled?: boolean
 }) {
   const countLabel =
     count === null ? null : resolvePublicMapDirectoryStatusCount(count)
@@ -50,8 +52,8 @@ export function PublicMapDirectoryStatusPill({
   return (
     <span
       className={cn(
-        PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-2.5 text-xs font-medium",
+        "inline-flex h-8 shrink-0 items-center gap-2 text-xs font-medium",
+        !unstyled && [PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME, "rounded-full border px-2.5"],
         className
       )}
       aria-label={

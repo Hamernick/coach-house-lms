@@ -63,7 +63,7 @@ describe("sign up page", () => {
       })
     )
 
-    expect(destination).toBe("/?member_onboarding=1&source=signup")
+    expect(destination).toBe("/map?member_onboarding=1&source=signup")
   })
 
   it("routes signed-in generic signup users into onboarding instead of find", async () => {

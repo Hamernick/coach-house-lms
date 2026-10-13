@@ -1,3 +1,4 @@
+import { FIND_PATH } from "@/lib/find/routes"
 import { usePathname } from "next/navigation"
 import CompassIcon from "lucide-react/dist/esm/icons/compass"
 import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
@@ -32,7 +33,7 @@ export function AppShellMobileNav({
 
   const items: MobileNavigationItem[] = []
   if (!onboardingLocked) {
-    items.push({ id: "find", label: "Find", href: "/", icon: CompassIcon })
+    items.push({ id: "find", label: "Find", href: FIND_PATH, icon: CompassIcon })
     if (showWorkspace)
       items.push({
         id: "workspace",

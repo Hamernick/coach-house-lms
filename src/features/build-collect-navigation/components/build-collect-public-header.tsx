@@ -1,7 +1,10 @@
 "use client"
 
+import { FIND_PATH } from "@/lib/find/routes"
+
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 import { type ReactNode, useState } from "react"
@@ -39,7 +42,7 @@ function BuildCollectBrand({
       href="/"
       aria-label="Coach House home"
       className={cn(
-        "hover:bg-accent flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors",
+        "hover:bg-accent flex w-fit min-w-0 max-w-full items-center gap-2 rounded-lg px-2 py-1.5 transition-colors",
         hideOnDesktop && "md:hidden"
       )}
     >
@@ -108,10 +111,10 @@ function BuildCollectDesktopNavigation({
       value={openMenu}
       viewport={false}
     >
-      <NavigationMenuList className="bg-background/90 rounded-full border p-1 shadow-none backdrop-blur">
+      <NavigationMenuList className="rounded-full border bg-background p-1 shadow-none dark:border-input dark:bg-input/30">
         <NavigationMenuItem value="collect">
           <NavigationMenuTrigger
-            className="data-[active=true]:bg-accent h-8 rounded-full px-3"
+            className="data-[active=true]:bg-accent h-8 rounded-full bg-transparent px-3 dark:hover:bg-input/50 dark:focus:bg-input/50 dark:data-[active=true]:bg-input/50 dark:data-[state=open]:bg-input/50"
             data-active={activeArea === "collect"}
             onPointerEnter={() => setOpenMenu("collect")}
           >
@@ -123,7 +126,7 @@ function BuildCollectDesktopNavigation({
         </NavigationMenuItem>
         <NavigationMenuItem value="build">
           <NavigationMenuTrigger
-            className="data-[active=true]:bg-accent h-8 rounded-full px-3"
+            className="data-[active=true]:bg-accent h-8 rounded-full bg-transparent px-3 dark:hover:bg-input/50 dark:focus:bg-input/50 dark:data-[active=true]:bg-input/50 dark:data-[state=open]:bg-input/50"
             data-active={activeArea === "build"}
             onPointerEnter={() => setOpenMenu("build")}
           >
@@ -151,11 +154,11 @@ function BuildCollectMobileNavigation({
       <Button
         asChild
         size="sm"
-        variant={activeArea === "collect" ? "secondary" : "ghost"}
-        className="rounded-full px-2 shadow-none"
+        variant="ghost"
+        className="h-11 rounded-full px-2 shadow-none underline-offset-8 hover:bg-transparent hover:underline aria-[current=page]:underline dark:hover:bg-transparent"
       >
         <Link
-          href="/"
+          href={FIND_PATH}
           aria-current={activeArea === "collect" ? "page" : undefined}
         >
           Collect
@@ -164,8 +167,8 @@ function BuildCollectMobileNavigation({
       <Button
         asChild
         size="sm"
-        variant={activeArea === "build" ? "secondary" : "ghost"}
-        className="rounded-full px-2 shadow-none"
+        variant="ghost"
+        className="h-11 rounded-full px-2 shadow-none underline-offset-8 hover:bg-transparent hover:underline aria-[current=page]:underline dark:hover:bg-transparent"
       >
         <Link
           href="/build"
@@ -193,6 +196,7 @@ export function BuildCollectPublicHeader({
   showPublicSearch?: boolean
   themeAction?: ReactNode
 }) {
+  const router = useRouter()
   const builderCta =
     activeArea === "build"
       ? { href: "/sign-up?intent=build", label: "Start free" }
@@ -219,15 +223,17 @@ export function BuildCollectPublicHeader({
             className="hidden size-8 rounded-full shadow-none xl:inline-flex"
             aria-label="Search"
             onClick={() => {
-              document
-                .querySelector<HTMLInputElement>("[data-public-map-search-input]")
-                ?.focus()
+              const searchInput = document.querySelector<HTMLInputElement>(
+                "[data-public-map-search-input]"
+              )
+              if (searchInput) searchInput.focus()
+              else router.push(FIND_PATH)
             }}
           >
             <SearchIcon aria-hidden />
           </Button>
         ) : showPublicSearch ? (
-          <form action="/" method="get" className="hidden w-52 xl:block">
+          <form action={FIND_PATH} method="get" className="hidden w-52 xl:block">
             <label
               htmlFor={`public-header-search-${activeArea}`}
               className="sr-only"
@@ -259,7 +265,7 @@ export function BuildCollectPublicHeader({
         ) : null}
 
         {authAction}
-        <Button asChild size="sm" className="rounded-full shadow-none">
+        <Button asChild size="sm" className={cn("rounded-full shadow-none", activeArea === "collect" && "hidden md:inline-flex")}>
           <Link href={builderCta.href}>
             {builderCta.label}
             <ArrowUpRightIcon data-icon="inline-end" aria-hidden />

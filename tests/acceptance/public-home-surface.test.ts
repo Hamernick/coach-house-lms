@@ -1,8 +1,34 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
+import { hasPublicMapScreenLocation, resolvePublicMapScreenMode } from "@/components/public/public-map-index/embedded-screen-state"
 
 const ROOT = process.cwd()
+
+describe("public map screen presentation", () => {
+  const base = { embedded: true, detailsOpen: false, hasLocation: false, collectionKey: null, mapKey: null }
+
+  it("opens collections in the screen and permits returning to the same map", () => {
+    expect(resolvePublicMapScreenMode(base)).toBe("map")
+    expect(resolvePublicMapScreenMode({ ...base, collectionKey: "category:food" })).toBe("collection")
+    expect(resolvePublicMapScreenMode({ ...base, collectionKey: "category:food", mapKey: "category:food" })).toBe("map")
+    expect(resolvePublicMapScreenMode({ ...base, collectionKey: "guide:health", mapKey: "category:food" })).toBe("collection")
+  })
+
+  it("shows locationless details directly and preserves the located detail map", () => {
+    expect(resolvePublicMapScreenMode({ ...base, detailsOpen: true })).toBe("detail")
+    expect(resolvePublicMapScreenMode({ ...base, detailsOpen: true, hasLocation: true })).toBe("map")
+    expect(resolvePublicMapScreenMode({ ...base, embedded: false, detailsOpen: true })).toBe("map")
+  })
+
+  it("requires usable coordinates and respects online-only resources", () => {
+    expect(hasPublicMapScreenLocation({ latitude: 0, longitude: 0 })).toBe(true)
+    expect(hasPublicMapScreenLocation({ latitude: 42, longitude: -87, isOnlineOnly: true })).toBe(false)
+    expect(hasPublicMapScreenLocation({ latitude: null, longitude: -87 })).toBe(false)
+    expect(hasPublicMapScreenLocation({ latitude: NaN, longitude: 0 })).toBe(false)
+    expect(hasPublicMapScreenLocation({ latitude: 91, longitude: 181 })).toBe(false)
+  })
+})
 
 function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
@@ -42,7 +68,7 @@ describe("public marketing canvas", () => {
     )
     expect(source).not.toContain("HomeFundingPreview")
     expect(source).toContain("data-public-home-build-pricing")
-    expect(source).toContain('action="/"')
+    expect(source).toContain('action={FIND_PATH}')
     expect(source).toContain('href="/home-canvas?section=platform"')
   })
 
@@ -60,7 +86,7 @@ describe("public marketing canvas", () => {
       "src/components/public/home-canvas-preview-shell.tsx"
     )
 
-    expect(source).toContain('href="/"')
+    expect(source).toContain('href={FIND_PATH}')
     expect(source).toContain(
       'aria-current={activeSection === "hero" ? "true" : undefined}'
     )

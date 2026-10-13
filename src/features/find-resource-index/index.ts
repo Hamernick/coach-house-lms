@@ -17,3 +17,7 @@ export type {
   FindResourceIndexResponse,
   FindResourceDetailResponse,
 } from "./types"
+
+export { hydrateFindResourceIndexItem } from "./lib/hydrate"
+export { mergeResourceGuideSummaries } from "./lib/merge-guides"
+export type { FindResourceCatalogResponse } from "./lib/catalog-query"

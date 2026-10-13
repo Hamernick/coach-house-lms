@@ -18,7 +18,8 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
-import { focusOrganizationOnMap } from "./map-view-helpers"
+import { focusOrganizationOnMap, resolveInitialPublicMapOrganization } from "./map-view-helpers"
+import { resolveInitialCameraTarget } from "./public-map-index-selection"
 import {
   usePublicMapCollectedResources,
   usePublicMapSavedOrganizations,
@@ -93,4 +94,15 @@ export function usePublicMapOnboardingState(
 
 export function useInitialSidebarMode(publicSlug: string | null | undefined) {
   return useState<SidebarMode>(publicSlug ? "details" : "search")
+}
+
+export function useInitialPublicMapSelection(
+  organizations: PublicMapOrganization[],
+  publicSlug: string | null | undefined
+) {
+  const initialOrganization = resolveInitialPublicMapOrganization({ organizations, publicSlug })
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(initialOrganization?.id ?? null)
+  const [selectedListItemId, setSelectedListItemId] = useState<string | null>(initialOrganization?.id ?? null)
+  const [cameraTarget, setCameraTarget] = useState(resolveInitialCameraTarget(initialOrganization))
+  return { initialOrganization, selectedOrgId, setSelectedOrgId, selectedListItemId, setSelectedListItemId, cameraTarget, setCameraTarget }
 }

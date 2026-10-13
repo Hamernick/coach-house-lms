@@ -38,6 +38,7 @@ import {
   type PublicMapResourceGuide,
 } from "./resource-guides"
 import { PublicMapSearchCard } from "./search-card"
+import { usePublicMapInlineSearch } from "./inline-panel"
 import type { PublicMapResourceItemsLoadStatus } from "./use-resource-map-items"
 
 export {
@@ -52,7 +53,11 @@ const PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME =
 const PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME =
   "h-7 min-w-0 flex-none rounded-none bg-transparent px-2 py-1 text-center text-xs leading-none text-muted-foreground shadow-none transition-[color] after:pointer-events-none group-data-[orientation=horizontal]/tabs:after:bottom-0 hover:bg-transparent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:!bg-transparent [html.light_&]:!text-zinc-700 [html.light_&]:hover:!text-zinc-950 [html.light_&]:data-[state=active]:!text-zinc-950"
 
+const PUBLIC_MAP_INLINE_TAB_TRIGGER_CLASSNAME =
+  "h-11 min-w-16 flex-none touch-manipulation rounded-full border-0 px-3 text-sm text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground data-[state=active]:shadow-none group-data-[variant=default]/tabs-list:data-[state=active]:shadow-none dark:hover:bg-input/50 dark:data-[state=active]:bg-input/50 after:hidden sm:h-8 motion-reduce:transition-none"
+
 type PublicMapMemberRailProps = {
+  showSavedSearch?: boolean
   activeTab?: PublicMapMemberTab
   directoryHeaderEnd?: ReactNode
   directoryHeaderStart?: ReactNode
@@ -79,7 +84,24 @@ type PublicMapMemberRailProps = {
 export type PublicMapMemberTab = "directory" | "guides" | "saved"
 type PublicMapSavedKind = "all" | "organizations" | "resources" | "guides"
 
+function buildTabPanelProps(tab: PublicMapMemberTab, activeTab: PublicMapMemberTab, persistent: boolean) {
+  const inactive = persistent && activeTab !== tab
+  return {
+    value: tab,
+    forceMount: persistent ? true as const : undefined,
+    inert: inactive || undefined,
+    "aria-hidden": inactive || undefined,
+    // Parent opacity suppresses children whose visibility transitions outlive the tab switch.
+    style: persistent ? { opacity: inactive ? 0 : 1, transition: "none" } : undefined,
+    className: cn(
+      "mt-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden",
+      persistent && "col-start-1 row-start-1 h-auto self-start data-[state=inactive]:invisible data-[state=inactive]:pointer-events-none"
+    ),
+  }
+}
+
 export function PublicMapMemberRail({
+  showSavedSearch = true,
   activeTab: controlledActiveTab,
   directoryHeaderEnd = null,
   directoryHeaderStart = null,
@@ -102,6 +124,8 @@ export function PublicMapMemberRail({
   onToggleFavorite,
   onToggleCollectedResource,
 }: PublicMapMemberRailProps) {
+  const inlineSearch = usePublicMapInlineSearch()
+  const tabClassName = inlineSearch ? PUBLIC_MAP_INLINE_TAB_TRIGGER_CLASSNAME : PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME
   const hasDirectoryRail = Boolean(directoryRail)
   const hasGuides = Boolean(onGuideSelect)
   const defaultTab: PublicMapMemberTab = hasDirectoryRail
@@ -217,18 +241,19 @@ export function PublicMapMemberRail({
   return (
     <div
       data-public-map-tabbed-rail=""
-      className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+      className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden"
     >
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as PublicMapMemberTab)}
-        className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+        className={cn("flex h-full min-h-0 min-w-0 flex-col overflow-hidden", inlineSearch ? "gap-1" : "gap-3")}
       >
         <div
           data-public-map-tab-header=""
           className={cn(
             "grid shrink-0 grid-cols-[minmax(2.75rem,1fr)_auto_minmax(2.75rem,1fr)] items-center gap-1 px-2",
-            showDirectoryHeaderControls ? "min-h-11" : "h-7"
+            inlineSearch && "mb-3",
+            showDirectoryHeaderControls ? "min-h-11" : inlineSearch ? "h-[54px] sm:h-[42px]" : "h-7"
           )}
         >
           <div className="flex min-w-0 items-center justify-start">
@@ -236,13 +261,15 @@ export function PublicMapMemberRail({
           </div>
           <TabsList
             data-public-map-tab-list=""
-            variant="line"
-            className={cn("shrink-0", PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME)}
+            variant={inlineSearch ? "default" : "line"}
+            className={inlineSearch
+              ? "mx-auto w-fit max-w-full min-w-0 shrink-0 justify-center gap-1 self-center rounded-full border bg-background p-1 shadow-none dark:border-input dark:bg-input/30 group-data-[orientation=horizontal]/tabs:h-[54px] sm:group-data-[orientation=horizontal]/tabs:h-[42px]"
+              : cn("shrink-0", PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME)}
           >
             {hasDirectoryRail ? (
               <TabsTrigger
                 value="directory"
-                className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+                className={tabClassName}
               >
                 <span className="truncate">Find</span>
               </TabsTrigger>
@@ -250,16 +277,16 @@ export function PublicMapMemberRail({
             {hasGuides ? (
               <TabsTrigger
                 value="guides"
-                className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+                className={tabClassName}
               >
                 <span className="truncate">Guides</span>
               </TabsTrigger>
             ) : null}
             <TabsTrigger
               value="saved"
-              className={PUBLIC_MAP_MEMBER_TAB_TRIGGER_CLASSNAME}
+              className={tabClassName}
             >
-              <span className="truncate">My Map</span>
+              <span className="truncate">Collect</span>
             </TabsTrigger>
           </TabsList>
           <div className="flex min-w-0 items-center justify-end">
@@ -267,164 +294,164 @@ export function PublicMapMemberRail({
           </div>
         </div>
 
-        {hasDirectoryRail ? (
-          <TabsContent
-            value="directory"
-            className="mt-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden"
-          >
-            {directoryRail}
-          </TabsContent>
-        ) : null}
-
-        {hasGuides ? (
-          <TabsContent
-            value="guides"
-            className="mt-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden"
-          >
-            <PublicMapGuidesRail
-              guides={guides}
-              onGuideSelect={handleGuideSelect}
-              onToggleSavedGuide={onToggleSavedGuide}
-              savedGuideIds={savedGuideIds}
-            />
-          </TabsContent>
-        ) : null}
-
-        <TabsContent
-          value="saved"
-          className="mt-0 flex h-full min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <div
-            data-public-map-member-rail-section="saved-panel"
-            className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-3 overflow-hidden"
-          >
-            <div
-              data-public-map-member-rail-section="saved-search-controls"
-              className="shrink-0 px-2.5"
+        {inlineSearch}
+        <div className={inlineSearch ? "grid min-h-0 min-w-0 flex-1" : "contents"}>
+          {hasDirectoryRail ? (
+            <TabsContent
+              {...buildTabPanelProps("directory", activeTab, Boolean(inlineSearch))}
             >
-              <PublicMapSearchCard
-                query={savedQuery}
-                onQueryChange={setSavedQuery}
-                activeGroup={savedActiveGroup}
-                groupCounts={savedGroupCounts}
-                onActiveGroupChange={setSavedActiveGroup}
-                compact
+              {directoryRail}
+            </TabsContent>
+          ) : null}
+
+          {hasGuides ? (
+            <TabsContent
+              {...buildTabPanelProps("guides", activeTab, Boolean(inlineSearch))}
+            >
+              <PublicMapGuidesRail
+                guides={guides}
+                onGuideSelect={handleGuideSelect}
+                onToggleSavedGuide={onToggleSavedGuide}
+                savedGuideIds={savedGuideIds}
               />
-            </div>
+            </TabsContent>
+          ) : null}
 
+          <TabsContent
+            {...buildTabPanelProps("saved", activeTab, Boolean(inlineSearch))}
+          >
             <div
-              className="mx-2 flex shrink-0 items-center gap-1 overflow-x-auto"
-              role="group"
-              aria-label="Filter My Map items"
+              data-public-map-member-rail-section="saved-panel"
+              className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-3 overflow-hidden"
             >
-              {(
-                [
-                  ["all", "All"],
-                  ["organizations", "Organizations"],
-                  ["resources", "Resources"],
-                  ["guides", "Guides"],
-                ] as const
-              ).map(([value, label]) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "h-9 shrink-0 rounded-full px-3 text-xs",
-                    savedKind === value && "bg-accent text-accent-foreground"
-                  )}
-                  aria-pressed={savedKind === value}
-                  onClick={() => setSavedKind(value)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-
-            <PublicMapOrganizationsRailSection
-              title="My Map"
-              icon={
-                <BookmarkIcon
-                  className="text-muted-foreground h-4 w-4"
-                  aria-hidden
-                />
-              }
-              organizations={
-                savedKind === "all" || savedKind === "organizations"
-                  ? filteredSavedOrganizations
-                  : []
-              }
-              resources={
-                savedKind === "all" || savedKind === "resources"
-                  ? filteredSavedResources
-                  : []
-              }
-              leadingContent={
-                (savedKind === "all" || savedKind === "guides") &&
-                filteredSavedGuides.length > 0 ? (
-                  <PublicMapResourceGuides
-                    guides={filteredSavedGuides}
-                    onGuideSelect={handleGuideSelect}
-                    onToggleSavedGuide={onToggleSavedGuide}
-                    savedGuideIds={savedGuideIds}
-                    showHeader={false}
-                  />
-                ) : null
-              }
-              emptyTitle={
-                unresolvedCollectedResourceCount > 0 && !hasSavedFilters
-                  ? resourceItemsLoadStatus === "loading"
-                    ? "Loading My Map"
-                    : "Collected resources unavailable"
-                  : hasSavedFilters
-                    ? "No saved results"
-                    : "Nothing collected yet"
-              }
-              emptyDescription={
-                unresolvedCollectedResourceCount > 0 && !hasSavedFilters
-                  ? resourceItemsLoadStatus === "loading"
-                    ? "Your collected resources will appear here."
-                    : (resourceItemsLoadError ??
-                      "Try again to restore your collected resources.")
-                  : hasSavedFilters
-                    ? "Try a different search, category, or item filter."
-                    : "Collect nonprofits, resources, and guides to keep them here."
-              }
-              className="mx-2 min-h-0 flex-1 bg-transparent"
-              onSelectOrganization={handleSelectOrganization}
-              onSelectResource={handleSelectResource}
-              onToggleFavorite={onToggleFavorite}
-              onToggleCollectedResource={onToggleCollectedResource}
-              removable
-            />
-            {unresolvedCollectedResourceCount > 0 ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="border-border/70 bg-background/80 text-muted-foreground mx-2 flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs"
+              {showSavedSearch ? <div
+                data-public-map-member-rail-section="saved-search-controls"
+                className="shrink-0 px-2.5"
               >
-                <span className="min-w-0 break-words">
-                  {resourceItemsLoadStatus === "loading"
-                    ? "Loading collected resources…"
-                    : (resourceItemsLoadError ??
-                      "Some collected resources are temporarily unavailable.")}
-                </span>
-                {resourceItemsLoadStatus === "error" && onRetryResourceItems ? (
+                <PublicMapSearchCard
+                  query={savedQuery}
+                  onQueryChange={setSavedQuery}
+                  activeGroup={savedActiveGroup}
+                  groupCounts={savedGroupCounts}
+                  onActiveGroupChange={setSavedActiveGroup}
+                  compact
+                />
+              </div> : null}
+
+              <div
+                className="mx-2 flex shrink-0 items-center gap-1 overflow-x-auto"
+                role="group"
+                aria-label="Filter My Map items"
+              >
+                {(
+                  [
+                    ["all", "All"],
+                    ["organizations", "Organizations"],
+                    ["resources", "Resources"],
+                    ["guides", "Guides"],
+                  ] as const
+                ).map(([value, label]) => (
                   <Button
+                    key={value}
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="h-11 shrink-0"
-                    onClick={onRetryResourceItems}
+                    className={cn(
+                      "h-11 shrink-0 touch-manipulation rounded-full px-3 text-xs sm:h-9",
+                      savedKind === value && "bg-accent text-accent-foreground"
+                    )}
+                    aria-pressed={savedKind === value}
+                    onClick={() => setSavedKind(value)}
                   >
-                    Try again
+                    {label}
                   </Button>
-                ) : null}
+                ))}
               </div>
-            ) : null}
-          </div>
-        </TabsContent>
+
+              <PublicMapOrganizationsRailSection
+                title="My Map"
+                icon={
+                  <BookmarkIcon
+                    className="text-muted-foreground h-4 w-4"
+                    aria-hidden
+                  />
+                }
+                organizations={
+                  savedKind === "all" || savedKind === "organizations"
+                    ? filteredSavedOrganizations
+                    : []
+                }
+                resources={
+                  savedKind === "all" || savedKind === "resources"
+                    ? filteredSavedResources
+                    : []
+                }
+                leadingContent={
+                  (savedKind === "all" || savedKind === "guides") &&
+                  filteredSavedGuides.length > 0 ? (
+                    <PublicMapResourceGuides
+                      guides={filteredSavedGuides}
+                      onGuideSelect={handleGuideSelect}
+                      onToggleSavedGuide={onToggleSavedGuide}
+                      savedGuideIds={savedGuideIds}
+                      showHeader={false}
+                    />
+                  ) : null
+                }
+                emptyTitle={
+                  unresolvedCollectedResourceCount > 0 && !hasSavedFilters
+                    ? resourceItemsLoadStatus === "loading"
+                      ? "Loading My Map"
+                      : "Collected resources unavailable"
+                    : hasSavedFilters
+                      ? "No saved results"
+                      : "Nothing collected yet"
+                }
+                emptyDescription={
+                  unresolvedCollectedResourceCount > 0 && !hasSavedFilters
+                    ? resourceItemsLoadStatus === "loading"
+                      ? "Your collected resources will appear here."
+                      : (resourceItemsLoadError ??
+                        "Try again to restore your collected resources.")
+                    : hasSavedFilters
+                      ? "Try a different search, category, or item filter."
+                      : "Collect nonprofits, resources, and guides to keep them here."
+                }
+                className="mx-2 min-h-0 flex-1 bg-transparent"
+                onSelectOrganization={handleSelectOrganization}
+                onSelectResource={handleSelectResource}
+                onToggleFavorite={onToggleFavorite}
+                onToggleCollectedResource={onToggleCollectedResource}
+                removable
+              />
+              {unresolvedCollectedResourceCount > 0 ? (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="border-border/70 bg-background/80 text-muted-foreground mx-2 flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 break-words">
+                    {resourceItemsLoadStatus === "loading"
+                      ? "Loading collected resources…"
+                      : (resourceItemsLoadError ??
+                        "Some collected resources are temporarily unavailable.")}
+                  </span>
+                  {resourceItemsLoadStatus === "error" && onRetryResourceItems ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-11 shrink-0"
+                      onClick={onRetryResourceItems}
+                    >
+                      Try again
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   )

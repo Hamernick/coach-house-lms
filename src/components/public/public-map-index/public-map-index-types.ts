@@ -10,6 +10,7 @@ import type { PublicMapOrganizationCurationAction } from "./organization-detail-
 import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 
 export type PublicMapIndexProps = {
+  embedded?: boolean
   organizations: PublicMapOrganization[]
   mapboxToken?: string
   initialPublicSlug?: string

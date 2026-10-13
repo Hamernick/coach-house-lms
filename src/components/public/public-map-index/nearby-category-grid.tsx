@@ -63,14 +63,14 @@ function PublicMapNearbyCategoryButton({
       type="button"
       variant="ghost"
       className={cn(
-        "border-input bg-input/30 text-foreground hover:bg-input/50 h-14 min-w-0 justify-start gap-2.5 rounded-xl border px-2.5 text-left shadow-none",
+        "border-input bg-input/30 text-foreground hover:bg-input/50 h-14 min-w-0 justify-start gap-2 rounded-xl border px-2 text-left shadow-none sm:gap-2.5 sm:px-2.5",
         "focus-visible:ring-ring/45 focus-visible:ring-2 motion-reduce:transition-none"
       )}
       aria-label={`${category.label}, ${count.toLocaleString()} ${count === 1 ? "result" : "results"}`}
       onClick={() => onSelect(category.key)}
     >
       <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-full"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full sm:size-8"
         style={{ backgroundColor: `${accent}1f`, color: accent }}
         aria-hidden
       >
@@ -79,7 +79,7 @@ function PublicMapNearbyCategoryButton({
           className="size-4"
         />
       </span>
-      <span className="min-w-0 truncate text-sm font-medium">
+      <span className="min-w-0 text-sm leading-tight font-medium whitespace-normal sm:truncate">
         {category.label}
       </span>
     </Button>
@@ -112,7 +112,7 @@ export function PublicMapNearbyCategoryGrid({
   onSelect: (category: PublicMapGroupFilterKey) => void
 }) {
   const allCategoriesId = useId()
-  const [showAllCategories, setShowAllCategories] = useState(false)
+  const [showAllCategories, setShowAllCategories] = useState(true)
   const availableTopLevelCategories = PUBLIC_MAP_RESOURCE_CATEGORY_ORDER.filter(
     (key) => counts[key] > 0
   )

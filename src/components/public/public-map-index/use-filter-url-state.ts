@@ -106,16 +106,18 @@ export function usePublicMapFilterUrlState({
     (value: string) => {
       onFilterChange()
       setQuery(value)
+      setActiveGroup("all")
       setActiveGuideId(null)
-      scheduleFilterHistoryReplace(value, activeGroup)
+      scheduleFilterHistoryReplace(value, "all")
     },
-    [activeGroup, onFilterChange, scheduleFilterHistoryReplace]
+    [onFilterChange, scheduleFilterHistoryReplace]
   )
 
   const handleActiveGroupChange = useCallback(
     (value: PublicMapGroupFilterKey) => {
       onFilterChange()
       setActiveGroup(value)
+      setQuery("")
       if (filterUrlSyncTimerRef.current) {
         clearTimeout(filterUrlSyncTimerRef.current)
         filterUrlSyncTimerRef.current = null
@@ -123,11 +125,11 @@ export function usePublicMapFilterUrlState({
       replaceFilterHistory({
         nextActiveGroup: value,
         nextActiveGuideId: null,
-        nextQuery: query,
+        nextQuery: "",
       })
       setActiveGuideId(null)
     },
-    [onFilterChange, query, replaceFilterHistory]
+    [onFilterChange, replaceFilterHistory]
   )
 
   const handleGuideChange = useCallback(

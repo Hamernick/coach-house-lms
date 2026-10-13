@@ -1,3 +1,4 @@
+import { FIND_PATH } from "@/lib/find/routes"
 import type { BuildCollectNavigationItem } from "../types"
 
 export const COLLECT_NAVIGATION_ITEMS: BuildCollectNavigationItem[] = [
@@ -5,12 +6,12 @@ export const COLLECT_NAVIGATION_ITEMS: BuildCollectNavigationItem[] = [
     label: "Explore resources",
     description:
       "Find nonprofit organizations, programs, and support near you.",
-    href: "/",
+    href: FIND_PATH,
   },
   {
     label: "Save a collection",
     description: "Sign in to keep useful resources together in your map.",
-    href: "/login?redirect=%2F",
+    href: `/login?redirect=${encodeURIComponent(FIND_PATH)}`,
   },
 ]
 

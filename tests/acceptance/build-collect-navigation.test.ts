@@ -15,8 +15,8 @@ function readSource(path: string) {
 }
 
 describe("build-collect-navigation feature contract", () => {
-  it("keeps Collect at the canonical root and exposes real builder destinations", () => {
-    expect(COLLECT_NAVIGATION_ITEMS[0]?.href).toBe("/")
+  it("keeps Collect at the canonical map route and exposes real builder destinations", () => {
+    expect(COLLECT_NAVIGATION_ITEMS[0]?.href).toBe("/map")
     expect(BUILD_NAVIGATION_ITEMS.map((item) => item.href)).toEqual([
       "/workspace",
       "/accelerator",
@@ -25,14 +25,14 @@ describe("build-collect-navigation feature contract", () => {
     ])
   })
 
-  it("uses an accessible shadcn navigation menu and a working root search form", () => {
+  it("uses an accessible shadcn navigation menu and a working map search form", () => {
     const source = readSource(
       "src/features/build-collect-navigation/components/build-collect-public-header.tsx"
     )
 
     expect(source).toContain("<NavigationMenu")
     expect(source).toContain("<NavigationMenuTrigger")
-    expect(source).toContain('<form action="/" method="get"')
+    expect(source).toContain('<form action={FIND_PATH} method="get"')
     expect(source).toContain('name="q"')
     expect(source).toContain('href: "/build"')
   })
@@ -47,7 +47,7 @@ describe("build-collect-navigation feature contract", () => {
     expect(route).not.toContain("<main")
   })
 
-  it("places the shared public header in the root Find shell", () => {
+  it("places the shared public header in the Find shell", () => {
     const shell = readSource(
       "src/components/public/home-canvas-preview-shell.tsx"
     )

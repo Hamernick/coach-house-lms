@@ -107,9 +107,12 @@ describe("public map organization list react grab", () => {
       'data-public-map-organization-list-section="rounded-scroll"'
     )
     expect(markup).toContain(
-      "bg-background/85 border-input w-full min-w-0 rounded-2xl border"
+      "bg-background/85 w-full min-w-0 rounded-2xl"
     )
     expect(markup).toContain("scroll-fade-effect-y")
+    expect(markup).toContain('data-scroll-fade-managed="true"')
+    expect(markup).toContain('data-scroll-fade-start="hidden"')
+    expect(markup).toContain('data-scroll-fade-end="hidden"')
     expect(markup).toContain("overflow-y-auto")
     expect(markup).toContain("overscroll-contain")
     expect(markup).toContain('data-orientation="vertical"')

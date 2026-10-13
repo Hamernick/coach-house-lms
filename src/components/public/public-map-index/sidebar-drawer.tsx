@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
 
 import {
   Drawer,
@@ -22,6 +22,9 @@ import { resetPublicMapDrawer } from "./sidebar-state-helpers"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 
 export function PublicMapSidebarDrawer({
+  autoFocus = false,
+  contentClassName,
+  onCloseAutoFocus,
   activeSnapIndex,
   activeSnapPoint,
   drawerIsFullscreen,
@@ -36,6 +39,9 @@ export function PublicMapSidebarDrawer({
   snapPoints,
   surfaceHeight,
 }: {
+  autoFocus?: boolean
+  contentClassName?: string
+  onCloseAutoFocus?: ComponentProps<typeof DrawerContent>["onCloseAutoFocus"]
   activeSnapIndex: 0 | 1 | 2
   activeSnapPoint: number | string
   drawerIsFullscreen: boolean
@@ -52,6 +58,7 @@ export function PublicMapSidebarDrawer({
 }) {
   return (
     <Drawer
+      autoFocus={autoFocus}
       container={portalContainer}
       activeSnapPoint={activeSnapPoint}
       disablePreventScroll
@@ -88,6 +95,7 @@ export function PublicMapSidebarDrawer({
       }}
     >
       <DrawerContent
+        onCloseAutoFocus={onCloseAutoFocus}
         data-public-map-drawer-mode={
           drawerIsFullscreen ? "fullscreen" : "floating"
         }
@@ -98,7 +106,8 @@ export function PublicMapSidebarDrawer({
           PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
           "pointer-events-auto h-full gap-0 overflow-hidden border p-0 shadow-sm",
           "data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:rounded-t-[28px]",
-          "touch-pan-y overscroll-contain"
+          "touch-pan-y overscroll-contain",
+          contentClassName
         )}
         style={{ height: "100%", maxHeight: "100%" }}
       >

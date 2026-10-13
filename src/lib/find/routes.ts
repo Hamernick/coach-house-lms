@@ -1,4 +1,4 @@
-export const FIND_PATH = "/"
+export const FIND_PATH = "/map"
 export const LEGACY_FIND_PATH = "/find"
 export const FIND_ORGANIZATION_QUERY_KEY = "organization"
 

@@ -1,14 +1,14 @@
 "use client"
 
-import { useId, useRef } from "react"
+import { useId, useRef, useState } from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { PUBLIC_MAP_RESOURCE_CATEGORY_LABELS } from "@/lib/public-map/resource-categories"
 import {
-  PublicMapCategoryFilter,
   type PublicMapGroupFilterCounts,
   type PublicMapGroupFilterKey,
 } from "./category-filter"
@@ -36,13 +36,20 @@ export function PublicMapSearchCard({
   onSearchCancel,
   onNavigateResults,
   activeGroup = "all",
-  groupCounts,
   onActiveGroupChange,
   compact = false,
   searchPending = false,
   showCancel = false,
 }: PublicMapSearchCardProps) {
-  const showCategoryFilter = Boolean(groupCounts && onActiveGroupChange)
+  const [pointerFocused, setPointerFocused] = useState(false)
+  const canCancel = showCancel && Boolean(onSearchCancel)
+  const displayQuery =
+    query ||
+    (activeGroup === "all" ? "" : PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[activeGroup])
+  const clearSearch = () => {
+    if (activeGroup !== "all") onActiveGroupChange?.("all")
+    onQueryChange("")
+  }
   const searchInputId = useId()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -67,8 +74,10 @@ export function PublicMapSearchCard({
             id={searchInputId}
             data-public-map-search-input="true"
             type="search"
-            value={query}
+            value={displayQuery}
             onChange={(event) => onQueryChange(event.currentTarget.value)}
+            onPointerDown={() => setPointerFocused(true)}
+            onBlur={() => setPointerFocused(false)}
             onFocus={onSearchEngage}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -80,19 +89,19 @@ export function PublicMapSearchCard({
               }
               if (event.key !== "Escape") return
               event.preventDefault()
-              if (query) {
-                onQueryChange("")
+              if (displayQuery) {
+                clearSearch()
                 return
               }
               onSearchCancel?.()
             }}
             className={cn(
               cn(
-                "placeholder:text-muted-foreground touch-manipulation rounded-full pl-8 text-base [&::-webkit-search-cancel-button]:appearance-none",
+                "placeholder:text-muted-foreground touch-manipulation rounded-full pl-8 text-base pr-12 focus-visible:ring-inset [&::-webkit-search-cancel-button]:appearance-none",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
               ),
-              compact ? "h-10" : "h-11",
-              query && "pr-10"
+              compact ? "h-11 sm:h-10" : "h-11",
+              pointerFocused && "focus-visible:border-input focus-visible:ring-0"
             )}
             placeholder="Search resources and organizations…"
             aria-label="Find organizations and resources"
@@ -102,15 +111,20 @@ export function PublicMapSearchCard({
             enterKeyHint="search"
             spellCheck={false}
           />
-          {query ? (
+          {displayQuery || canCancel ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-full"
-              aria-label="Clear search"
-              onClick={() => {
-                onQueryChange("")
+              className="bg-muted text-muted-foreground hover:bg-accent hover:text-foreground absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-full before:absolute before:-inset-1.5 before:content-['']"
+              aria-label={canCancel ? "Cancel search" : "Clear search"}
+              onClick={(event) => {
+                if (canCancel) {
+                  onSearchCancel?.()
+                  return
+                }
+                clearSearch()
+                setPointerFocused(event.detail > 0)
                 searchInputRef.current?.focus()
               }}
             >
@@ -118,28 +132,8 @@ export function PublicMapSearchCard({
             </Button>
           ) : null}
         </div>
-        {showCancel && onSearchCancel ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className={cn(
-              "text-primary hover:text-primary h-10 shrink-0 rounded-full px-2.5 text-sm font-medium",
-              "hover:bg-primary/10 focus-visible:bg-primary/10"
-            )}
-            onClick={onSearchCancel}
-          >
-            Cancel
-          </Button>
-        ) : null}
       </div>
-      {showCategoryFilter && groupCounts && onActiveGroupChange ? (
-        <PublicMapCategoryFilter
-          activeGroup={activeGroup}
-          counts={groupCounts}
-          compact={compact}
-          onActiveGroupChange={onActiveGroupChange}
-        />
-      ) : null}
+
     </div>
   )
 }

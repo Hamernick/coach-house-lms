@@ -170,7 +170,7 @@ export function HomeCanvasPreviewHeader({
           variant="outline"
           size="icon"
           className={cn(
-            "size-8 shrink-0 shadow-none",
+            "size-11 shrink-0 shadow-none md:size-8",
             showShellSidebar && "hidden md:inline-flex"
           )}
         />

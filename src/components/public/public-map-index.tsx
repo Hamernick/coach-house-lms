@@ -1,5 +1,8 @@
 "use client"
 
+import { useResourceDirectory } from "@/features/find-resource-index/client"
+import { useResourcePresentation } from "@/features/find-resource-index/client"
+
 import { useCallback, useDeferredValue, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -12,7 +15,6 @@ import {
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
 import {
-  resolveInitialPublicMapOrganization,
   resolveBounds,
   resolvePublicMapboxToken,
 } from "./public-map-index/map-view-helpers"
@@ -42,14 +44,12 @@ import {
 } from "./public-map-index/resource-guides"
 import type { PublicMapIndexProps } from "./public-map-index/public-map-index-types"
 import {
-  resolveInitialCameraTarget,
   usePublicMapIndexNavigationHandlers,
   usePublicMapListItemSelection,
   useSyncPublicMapSelectedListItem,
 } from "./public-map-index/public-map-index-selection"
 import {
   EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
-  usePublicMapResourceItems,
 } from "./public-map-index/use-resource-map-items"
 import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
 import { usePublicMapLocationWeather } from "./public-map-index/use-public-map-location-weather"
@@ -57,6 +57,7 @@ import { resolvePublicMapDirectoryCount } from "./public-map-index/directory-sta
 import {
   useFocusPublicMapCameraTarget,
   useInitialSidebarMode,
+  useInitialPublicMapSelection,
   usePublicMapOnboardingState,
   usePublicMapSavedItems,
   useSelectedPublicMapResource,
@@ -74,6 +75,7 @@ function usePublicMapRetryState() {
 }
 
 export function PublicMapIndex({
+  embedded = false,
   organizations,
   mapboxToken,
   initialPublicSlug,
@@ -95,35 +97,32 @@ export function PublicMapIndex({
   const mapStartRef = useRef<(() => void) | null>(null)
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
+  const [mapReady, setMapReady] = useState(false)
   const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
   const token = resolvePublicMapboxToken(mapboxToken)
   const tokenAvailable = Boolean(token)
   const { mapError, retryMap, retryVersion, setMapError } =
     usePublicMapRetryState()
   const [sidebarMode, setSidebarMode] = useInitialSidebarMode(initialPublicSlug)
-  const initialOrganization = resolveInitialPublicMapOrganization({
-    organizations,
-    publicSlug: initialPublicSlug,
-  })
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
-    initialOrganization?.id ?? null
-  )
-  const [cameraTarget, setCameraTarget] = useState(
-    resolveInitialCameraTarget(initialOrganization)
-  )
+  const {
+    initialOrganization,
+    selectedOrgId,
+    setSelectedOrgId,
+    selectedListItemId,
+    setSelectedListItemId,
+    cameraTarget,
+    setCameraTarget,
+  } = useInitialPublicMapSelection(organizations, initialPublicSlug)
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
     useState<PublicMapSameLocationSelection | null>(null)
-  const [selectedListItemId, setSelectedListItemId] = useState<string | null>(
-    initialOrganization?.id ?? null
-  )
   const clearMapTransientSelection = useCallback(() => {
     setSameLocationSelection(null)
     setSelectedListItemId(null)
-  }, [])
+  }, [setSelectedListItemId])
   const {
     activeGroup,
     activeGuideId,
@@ -135,13 +134,6 @@ export function PublicMapIndex({
   } = usePublicMapFilterUrlState({
     onFilterChange: clearMapTransientSelection,
   })
-  const {
-    error: resourceItemsLoadError,
-    resourceItems,
-    retry: retryResourceItems,
-    status: resourceItemsLoadStatus,
-    totalResourceCount,
-  } = usePublicMapResourceItems({ initialResourceItems, resourceItemsEndpoint })
   const deferredQuery = useDeferredValue(query)
   const {
     collectedResourceIds,
@@ -154,6 +146,13 @@ export function PublicMapIndex({
     setCollectedResourceIds,
     setRecentOrganizationIds,
   } = usePublicMapPreferences({ initialViewer })
+  const directory = useResourceDirectory({
+    endpoint: resourceItemsEndpoint, initialResourceItems, query, category: activeGroup,
+    guide: activeGuideId, mapRef, mapLoadVersion,
+    retainedIds: [...collectedResourceIds, ...(selectedListItemId?.startsWith("resource_map:") || selectedListItemId?.startsWith("local_resource_map:") ? [selectedListItemId] : [])],
+  })
+  const { resourceItems, error: resourceItemsLoadError, retry: retryResourceItems, status: resourceItemsLoadStatus, totalResourceCount } = directory
+  const remotePresentation = useResourcePresentation({ organizations, mapItems: directory.mapItems, query: deferredQuery, category: activeGroup, guide: activeGuideId, metadata: directory.metadata })
   const memberOnboardingState = usePublicMapOnboardingState(
     Boolean(viewer ?? initialViewer),
     memberOnboarding,
@@ -166,20 +165,21 @@ export function PublicMapIndex({
     favorites,
     includeSeedResources,
     organizations,
-    resourceItems,
+    resourceItems: directory.directoryItems,
   })
   const {
     activeGuideSearchContext,
     clearActiveGuide,
     handleGuideSelect,
     resourceGuides,
-    visibleMapItems,
+    visibleMapItems: localVisibleMapItems,
   } = usePublicMapResourceGuideState({
     activeGuideId,
     filteredMapItems: filterState.filteredItems,
     organizations,
     includeSeedResources,
-    resourceItems,
+    resourceItems: directory.directoryItems,
+    guideSummaries: directory.enabled ? directory.metadata?.guides : undefined,
     setSameLocationSelection,
     setSelectedListItemId,
     setSelectedOrgId,
@@ -192,7 +192,8 @@ export function PublicMapIndex({
       savedGuideIds,
       setSavedGuideIds,
     })
-  const selectableMapItemById = usePublicMapSelectableItemMap(visibleMapItems)
+  const visibleMapItems = directory.enabled ? remotePresentation.mapItems : localVisibleMapItems
+  const selectableMapItemById = usePublicMapSelectableItemMap(visibleMapItems, directory.enabled ? resourceItems : undefined)
   const selectedOrganization = resolvePublicMapSelectedOrganization({
     organizationById,
     selectedOrgId,
@@ -215,17 +216,17 @@ export function PublicMapIndex({
     favorites,
     organizationById,
     resourceItems,
-    retainMissingResources: resourceItemsLoadStatus !== "ready",
+    retainMissingResources: directory.enabled || resourceItemsLoadStatus !== "ready",
     setCollectedResourceIds,
   })
   const authAction = searchParams.get("auth_action")
   const authOrganizationId = searchParams.get("auth_org")
   const handleSameLocationSelectionChange = useCallback(
     (selection: PublicMapSameLocationSelection | null) => {
-      setSameLocationSelection(selection)
       if (selection) {
         clearActiveGuide()
       }
+      setSameLocationSelection(selection)
     },
     [clearActiveGuide]
   )
@@ -247,7 +248,7 @@ export function PublicMapIndex({
       organizationId,
       requestId: (current?.requestId ?? 0) + 1,
     }))
-  }, [])
+  }, [setCameraTarget])
   useSyncPublicMapLayout({
     containerRef,
     mapRef,
@@ -310,6 +311,7 @@ export function PublicMapIndex({
     setSelectedOrgId,
   })
   useInitializePublicMap({
+    setMapReady,
     token,
     tokenAvailable,
     containerRef,
@@ -358,10 +360,11 @@ export function PublicMapIndex({
     sidebarInsetLeft,
   })
   useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
-  const directoryListItems =
-    activeSearchContext?.items ?? filterState.filteredItems
+  const directoryListItems = activeSearchContext?.items ?? filterState.filteredItems
   const mapSurface = (
     <PublicMapSurface
+      mapReady={mapReady}
+      embedded={embedded}
       containerRef={containerRef}
       sidebarMode={sidebarMode}
       directoryCount={resolvePublicMapDirectoryCount(
@@ -387,11 +390,11 @@ export function PublicMapIndex({
       unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
       query={query}
       activeGroup={activeGroup}
-      discoveryGroupCounts={filterState.discoveryGroupCounts}
-      groupCounts={filterState.groupCounts}
+      discoveryGroupCounts={directory.enabled ? remotePresentation.discoveryCounts : filterState.discoveryGroupCounts}
+      groupCounts={directory.enabled ? remotePresentation.groupCounts : filterState.groupCounts}
       resourceItemsLoadStatus={resourceItemsLoadStatus}
       resourceItemsLoadError={resourceItemsLoadError}
-      searchPending={deferredQuery !== query}
+      searchPending={directory.pending || deferredQuery !== query}
       searchContext={activeSearchContext}
       tokenAvailable={tokenAvailable}
       mapError={mapError}
@@ -416,8 +419,8 @@ export function PublicMapIndex({
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
-      mapOverlay={memberOnboardingState.overlay}
+      mapOverlay={<>{memberOnboardingState.overlay}{directory.viewportLimited ? <p className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-background/90 px-3 py-1 text-xs">Zoom in to see more places</p> : null}</>}
     />
   )
-  return <PublicMapIndexChrome mapSurface={mapSurface} />
+  return <PublicMapIndexChrome mapSurface={mapSurface} pagination={sameLocationSearchContext ? null : directory.pagination ? { ...directory.pagination, totalCount: remotePresentation.resultCount } : null} />
 }

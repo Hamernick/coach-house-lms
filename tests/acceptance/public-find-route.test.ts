@@ -21,20 +21,27 @@ function readRoute(relativePath: string) {
 }
 
 describe("public find routes", () => {
-  it("owns Find at the root and permanently redirects legacy links", () => {
+  it("owns Find at /map, embeds it on home, and permanently redirects legacy links", () => {
     const rootRoute = readRoute("src/app/(public)/page.tsx")
+    const mapRoute = readRoute("src/app/(public)/map/page.tsx")
     const findRoute = readRoute(PUBLIC_FIND_ROUTE)
     const nextConfig = readRoute("next.config.ts")
     const sitemap = readRoute("src/app/sitemap.ts")
 
-    expect(rootRoute).toContain("<PublicFindRoute")
+    expect(rootRoute).toContain("<PublicFindRoute embedded")
+    expect(rootRoute).not.toContain("HomeFindMapMini")
+    expect(rootRoute).toContain("<HomeCanvasFindShell")
+    expect(rootRoute).toContain("overflow-hidden")
+    expect(rootRoute).toContain("resolvePublicAuthCallbackHref")
+    expect(mapRoute).toContain("<PublicFindRoute")
+    expect(mapRoute).toContain('alternates: { canonical: "/map" }')
     expect(rootRoute).toContain('alternates: { canonical: "/" }')
     expect(findRoute).toContain("FIND_ORGANIZATION_QUERY_KEY")
     expect(findRoute).toContain("initialPublicSlug={initialPublicSlug}")
     expect(nextConfig).toContain('source: "/find"')
-    expect(nextConfig).toContain('destination: "/"')
+    expect(nextConfig).toContain('destination: "/map"')
     expect(nextConfig).toContain('source: "/find/:slug"')
-    expect(nextConfig).toContain('destination: "/?organization=:slug"')
+    expect(nextConfig).toContain('destination: "/map?organization=:slug"')
     expect(nextConfig.match(/permanent: true/g)).toHaveLength(2)
     expect(sitemap).toContain("fetchPublishedPublicHandles")
   })
@@ -216,12 +223,13 @@ describe("public find routes", () => {
     }
   })
 
-  it("preserves selected organization detail wiring on the root query route", () => {
+  it("preserves selected organization detail wiring on the map query route", () => {
     const source = readRoute(PUBLIC_FIND_ROUTE)
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
     const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
     const firstInitialSlugIndex = source.indexOf(
-      "initialPublicSlug={initialPublicSlug}"
+      "initialPublicSlug={initialPublicSlug}",
+      authenticatedBranchIndex
     )
     const secondInitialSlugIndex = source.indexOf(
       "initialPublicSlug={initialPublicSlug}",

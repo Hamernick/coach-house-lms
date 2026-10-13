@@ -1,11 +1,12 @@
 "use client"
 
-import { memo, type CSSProperties, type ReactNode } from "react"
+import { useResourceDirectoryPagination } from "@/features/find-resource-index/client"
+
+import { memo, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
   buildPlatformOrganizationMapItem,
   resolvePublicMapItemSelectableId,
@@ -81,6 +82,8 @@ function PublicMapOrganizationListComponent({
   constrainedLayout = false,
   incrementalLoading = false,
   scrollable = false,
+  bounded = false,
+  remotePagination = false,
   leadingContent,
   initialVisibleCount = PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
   pageSize = PUBLIC_MAP_LIST_PAGE_SIZE,
@@ -102,6 +105,8 @@ function PublicMapOrganizationListComponent({
   constrainedLayout?: boolean
   incrementalLoading?: boolean
   scrollable?: boolean
+  bounded?: boolean
+  remotePagination?: boolean
   leadingContent?: ReactNode
   initialVisibleCount?: number
   pageSize?: number
@@ -115,6 +120,8 @@ function PublicMapOrganizationListComponent({
   onSelectOrg: (id: string) => void
   onOpenDetails?: (id: string) => void
 }) {
+  const remoteContext = useResourceDirectoryPagination()
+  const remote = remotePagination ? remoteContext : null
   const listItems = buildPublicMapListItems({ items, organizations })
   const resolvedSelectedItemId = selectedItemId ?? selectedOrgId
   const {
@@ -125,11 +132,13 @@ function PublicMapOrganizationListComponent({
     paginationEnabled,
     visibleItems,
   } = usePublicMapOrganizationListPagination({
+    remote,
     getItemId: resolvePublicMapItemSelectableId,
     items: listItems,
-    selectedItemId: resolvedSelectedItemId,
+    selectedItemId: bounded ? null : resolvedSelectedItemId,
     query,
     incrementalLoading,
+    autoLoadMore: !bounded,
     initialVisibleCount,
     pageSize,
   })
@@ -206,7 +215,7 @@ function PublicMapOrganizationListComponent({
 
     return (
       <div className="flex w-full min-w-0 flex-col gap-2">
-        <div className="divide-border/60 bg-background/85 border-input divide-y overflow-hidden rounded-2xl border backdrop-blur-xl">
+        <div className="divide-border/60 bg-background/85 divide-y overflow-hidden rounded-2xl backdrop-blur-xl">
           {leadingContent}
         </div>
         {emptyState}
@@ -223,26 +232,18 @@ function PublicMapOrganizationListComponent({
         scrollable && "min-h-0 flex-1"
       )}
     >
-      <ScrollFadeEffect
-        enabled={scrollable}
-        orientation="vertical"
+      <div
+        data-lenis-prevent={bounded ? "" : undefined}
         data-public-map-organization-list-section="rounded-scroll"
         data-public-map-organization-list-scroll={
           scrollable ? "true" : undefined
         }
-        style={
-          scrollable
-            ? ({
-                "--mask-height": "1.5rem",
-                "--scroll-buffer": "1rem",
-              } as CSSProperties)
-            : undefined
-        }
         className={cn(
-          "divide-border/60 bg-background/85 border-input w-full min-w-0 rounded-2xl border backdrop-blur-xl",
+          "divide-border/60 bg-background/85 w-full min-w-0 rounded-2xl backdrop-blur-xl",
           scrollable
-            ? "min-h-0 flex-1 [scroll-padding-bottom:max(env(safe-area-inset-bottom),0.75rem)] overflow-x-hidden overscroll-contain pr-1 pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch]"
-            : "overflow-hidden"
+            ? "min-h-0 flex-1 [scroll-padding-bottom:max(env(safe-area-inset-bottom),0.75rem)] overflow-x-hidden overflow-y-auto overscroll-contain pr-1 pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch]"
+            : "overflow-hidden",
+          bounded && "max-h-full flex-[0_1_auto]"
         )}
       >
         <div
@@ -285,11 +286,13 @@ function PublicMapOrganizationListComponent({
           loadMoreSentinelRef={loadMoreSentinelRef}
           loadNextPage={loadNextPage}
           nextPageCount={nextPageCount}
-          organizationCount={listItems.length}
+          organizationCount={remote?.totalCount ?? listItems.length}
+          loading={remote?.loading}
+          error={remote?.error}
           paginationEnabled={paginationEnabled}
           visibleCount={visibleItems.length}
         />
-      </ScrollFadeEffect>
+      </div>
     </div>
   )
 }

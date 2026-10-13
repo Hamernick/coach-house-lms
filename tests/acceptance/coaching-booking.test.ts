@@ -670,7 +670,7 @@ describe("coaching booking feature", () => {
     expect(shellMainContent).toContain(': "overflow-y-auto"')
     expect(scrollFade).toContain("enabled?: boolean")
     expect(scrollFade).toContain(
-      "data-[orientation=vertical]:scroll-fade-effect-y"
+      "scroll-fade-effect-y overflow-y-auto"
     )
     expect(scrollFade).toContain("useScrollFadeEffect")
     expect(scrollFadeLogic).toContain("dataset.scrollFadeStart")

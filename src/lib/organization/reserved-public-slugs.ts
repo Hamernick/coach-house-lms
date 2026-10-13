@@ -26,6 +26,7 @@ export const RESERVED_PUBLIC_ORGANIZATION_SLUGS = new Set([
   "join-organization",
   "legacy-home",
   "login",
+  "map",
   "marketplace",
   "my-organization",
   "my-tasks",

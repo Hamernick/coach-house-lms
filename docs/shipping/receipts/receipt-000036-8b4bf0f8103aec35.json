@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-13T21:37:26.483378+00:00",
+  "operation": "resume",
+  "owner": "ship-resource-fixtures-20261013",
+  "previous_revision": 35,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-upgrade-banners-20261013",
+        "pid": 87753,
+        "started": "Tue Oct 13 17:29:55 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T21:29:56.973835+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T21:37:26.259756+00:00"
+    },
+    "resource_fixture_followup": {
+      "source": "User supplied two duplicate RLS Resource Service links; LIVE03 packet05 B036 stage3/scoped stage6.",
+      "branch": "fix/public-resource-test-records-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+      "base": "e49a31bd3544094a18e11905e13192fac2ee93c6",
+      "head": "43b84630d85c99417621c5f1b75c3193095cedad",
+      "remote_verified": true,
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/299",
+      "diagnosis": "Both public responses match resource-map RLS fixture: exact test name/organization, public approved test description, example.org/service source and fake phone. These are synthetic entries without street addresses, not legitimate places to consolidate.",
+      "scope": "Shared public visibility excludes complete fixture signature; partial matches remain; cached index/detail keys advance. No database deletion/provider mutation. Existing remote RLS execution guard preserved.",
+      "checks": "Four regressions failed before correction;64 focused tests, ESLint/diff and normal prepush pass. Graphify refresh started. No browser sweep, screenshots or live-removal assertion.",
+      "release": "Current-head CI/code-owner review and deployment remain required; user owns visible checks. PR298 banners separate."
+    },
+    "next_action": "Finish PR299 RLS-fixture exclusion CI/review/deployment, then pending PR298 banner review. User owns visible checks and reported merges are accepted without rechecking. Preserve original release blockers."
+  },
+  "remote": null
+}

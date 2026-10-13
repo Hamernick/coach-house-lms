@@ -1,6 +1,5 @@
 "use server"
 
-import { resolveProjectCreateOrgId } from "./project-organization"
 import { revalidatePath } from "next/cache"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import {
@@ -10,6 +9,7 @@ import {
 } from "../lib/guided-project"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
+  actorCanAccessOrganization,
   actorCanAccessOrganizations,
 } from "./member-workspace-actor-permissions"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
@@ -17,12 +17,13 @@ import { buildProjectOverviewDocumentContent } from "./project-overview-document
 
 export async function loadGuidedProjectPeople(organizationId: string) {
   const actor = await resolveMemberWorkspaceActorContext()
-  const target = await resolveProjectCreateOrgId({ actor, input: {
-    orgId: organizationId || null, name: "", status: "planned", priority: "medium",
-  } })
-  if ("error" in target) return target
+  if (
+    !actorCanAccessOrganization(actor, organizationId) ||
+    (!actor.canEdit && !actorCanAccessOrganizations(actor))
+  )
+    return { error: "You cannot create projects for this organization." }
   const people = await loadMemberWorkspacePersonOptionsForOrganizations({
-    orgIds: actorCanAccessOrganizations(actor) ? [] : [target.orgId],
+    orgIds: actorCanAccessOrganizations(actor) ? [] : [organizationId],
     supabase: actor.supabase,
     includePlatformAdmins: actorCanAccessOrganizations(actor),
   })
@@ -39,12 +40,20 @@ export async function createGuidedProjectAction(
     }
   const value = parsed.data
   const actor = await resolveMemberWorkspaceActorContext()
-  const target = await resolveProjectCreateOrgId({ actor, input: {
-    orgId: value.organizationId || null, name: value.name, status: "planned", priority: "medium",
-  } })
-  if ("error" in target) return target
+  if (
+    !actorCanAccessOrganization(actor, value.organizationId) ||
+    (!actor.canEdit && !actorCanAccessOrganizations(actor))
+  )
+    return { error: "You cannot create projects for this organization." }
+  const { data: organization, error: organizationError } = await actor.supabase
+    .from("organizations")
+    .select("user_id")
+    .eq("user_id", value.organizationId)
+    .maybeSingle()
+  if (organizationError || !organization)
+    return { error: "Choose an accessible organization." }
   const people = await loadMemberWorkspacePersonOptionsForOrganizations({
-    orgIds: actorCanAccessOrganizations(actor) ? [] : [target.orgId],
+    orgIds: actorCanAccessOrganizations(actor) ? [] : [value.organizationId],
     supabase: actor.supabase,
     includePlatformAdmins: actorCanAccessOrganizations(actor),
   })
@@ -68,7 +77,7 @@ export async function createGuidedProjectAction(
     "create_guided_organization_project",
     {
       p_actor_id: actor.userId,
-      p_org_id: target.orgId,
+      p_org_id: value.organizationId,
       p_request_id: value.requestId,
       p_setup: value,
       p_member_labels: memberIds.map((id) => peopleById.get(id)!.name),
@@ -86,7 +95,6 @@ export async function createGuidedProjectAction(
   const result = data as { ok?: boolean; projectId?: string } | null
   if (!result?.ok || !result.projectId)
     return { error: "Project creation could not be completed." }
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath("/organizations")
   revalidatePath("/tasks")

@@ -13,7 +13,6 @@ export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode
-  breadcrumbs: ReactNode
 }) {
   const [state, defaultSidebarOpen] = await Promise.all([
     measureServerStep(

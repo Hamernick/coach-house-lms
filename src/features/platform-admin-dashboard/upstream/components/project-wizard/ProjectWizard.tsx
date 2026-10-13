@@ -29,8 +29,6 @@ import type { Client } from "@/features/platform-admin-dashboard/upstream/lib/da
 const QUICK_CREATE_STEP = 100;
 
 interface ProjectWizardProps {
-  quickCreateRecurrenceControl?: (value: "none" | "monthly", onChange: (value: "none" | "monthly") => void) => ReactNode;
-  quickCreateFooterAction?: ReactNode;
   renderGuidedSetup?: () => ReactNode;
   onClose: () => void;
   onCreate?: () => void | Promise<void>;
@@ -55,8 +53,6 @@ interface ProjectWizardProps {
 }
 
 export function ProjectWizard({
-  quickCreateFooterAction,
-  quickCreateRecurrenceControl,
   renderGuidedSetup,
   onClose,
   onCreate,
@@ -211,9 +207,7 @@ export function ProjectWizard({
                 onClose={handleClose}
              />
         ) : step === QUICK_CREATE_STEP ? (
-            <StepQuickCreate
-                footerAction={quickCreateFooterAction}
-                recurrenceControl={quickCreateRecurrenceControl}
+            <StepQuickCreate 
                 onClose={handleClose} 
                 mode={mode}
                 onCreate={(value) => {

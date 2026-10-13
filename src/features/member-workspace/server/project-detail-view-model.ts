@@ -1,4 +1,3 @@
-import { readTaskTrackerDetails } from "@/lib/task-tracker"
 import { differenceInCalendarDays, format } from "date-fns"
 import { getProjectSchedule } from "../lib/project-schedule"
 
@@ -36,7 +35,6 @@ export type MemberWorkspaceProjectTaskRecord = Pick<
   | "project_id"
   | "title"
   | "description"
-  | "tracker_metadata"
   | "task_type"
   | "status"
   | "start_date"
@@ -156,8 +154,6 @@ function mapProjectStatusToBacklogLabel(
   status: OrganizationProjectRecord["status"]
 ): BacklogSummary["statusLabel"] {
   switch (status) {
-    case "on-hold":
-      return "On hold"
     case "active":
       return "Active"
     case "planned":
@@ -177,8 +173,6 @@ function mapTaskStatus(
   switch (status) {
     case "done":
       return "done"
-    case "waiting":
-      return "waiting"
     case "in-progress":
       return "in-progress"
     default:
@@ -195,8 +189,6 @@ function mapTimelineStatus(
     case "done":
     case "completed":
       return "done"
-    case "waiting":
-      return "waiting"
     case "in-progress":
     case "active":
       return "in-progress"
@@ -210,7 +202,7 @@ function buildProjectMeta(project: OrganizationProjectRecord): ProjectMeta {
     priorityLabel: toTitleCase(project.priority),
     sprintLabel:
       [project.type_label, project.duration_label].filter(Boolean).join(" ") ||
-      (project.start_date && project.end_date ? `${differenceInCalendarDays(parseDateOnly(project.end_date), parseDateOnly(project.start_date)) + 1} days` : "No dates set"),
+      `${differenceInCalendarDays(parseDateOnly(project.end_date), parseDateOnly(project.start_date)) + 1} days`,
     lastSyncLabel: format(new Date(project.updated_at), "MMM d, yyyy"),
   }
 }
@@ -238,12 +230,13 @@ function buildProjectKeyFeatures(
 }
 
 function buildProjectTime(project: OrganizationProjectRecord): TimeSummary {
-  const startDate = project.start_date ? parseDateOnly(project.start_date) : null
-  const endDate = project.end_date ? parseDateOnly(project.end_date) : null
-  const dayCount = startDate && endDate ? Math.max(differenceInCalendarDays(endDate, startDate) + 1, 1) : null
-  const schedule = startDate && endDate ? getProjectSchedule(project.start_date!, project.end_date!) : null
+  const startDate = parseDateOnly(project.start_date)
+  const endDate = parseDateOnly(project.end_date)
+  const dayCount = Math.max(differenceInCalendarDays(endDate, startDate) + 1, 1)
+  const schedule = getProjectSchedule(project.start_date, project.end_date)
+
   return {
-    estimateLabel: project.duration_label || (dayCount ? `${dayCount} days` : "No dates set"),
+    estimateLabel: project.duration_label || `${dayCount} days`,
     dueDate: endDate,
     daysRemainingLabel: schedule?.status ?? "No dates set",
     progressPercent: schedule?.progress ?? 0,
@@ -283,9 +276,8 @@ function buildProjectWorkstreams(
     list.push({
       id: task.id,
       name: task.title,
-      tracker: readTaskTrackerDetails(task.tracker_metadata),
       status: mapTaskStatus(task.status),
-      dueLabel: task.end_date ? format(parseDateOnly(task.end_date), "MMM d") : undefined,
+      dueLabel: format(parseDateOnly(task.end_date), "MMM d"),
       assignee:
         task.assignee_id && task.assignee_name
           ? {
@@ -294,8 +286,8 @@ function buildProjectWorkstreams(
               avatarUrl: task.assignee_avatar_url?.trim() || undefined,
             }
           : undefined,
-      startDate: task.start_date ? parseDateOnly(task.start_date) : undefined,
-      endDate: task.end_date ? parseDateOnly(task.end_date) : undefined,
+      startDate: parseDateOnly(task.start_date),
+      endDate: parseDateOnly(task.end_date),
       sortOrder: task.sort_order ?? 0,
       priority: task.priority as WorkstreamTask["priority"],
       tag: task.tag_label?.trim() || toTitleCase(task.task_type),
@@ -313,7 +305,7 @@ function buildProjectWorkstreams(
         return sortOrderDiff
       }
 
-      return (left.startDate?.getTime() ?? Infinity) - (right.startDate?.getTime() ?? Infinity)
+      return left.startDate!.getTime() - right.startDate!.getTime()
     }),
   }))
 }
@@ -323,7 +315,6 @@ function buildProjectTimeline(
   tasks: MemberWorkspaceProjectTaskRecord[]
 ): TimelineTask[] {
   if (tasks.length === 0) {
-    if (!project.start_date || !project.end_date) return []
     return [
       {
         id: `${project.id}-timeline-1`,
@@ -335,15 +326,15 @@ function buildProjectTimeline(
     ]
   }
 
-  return tasks.filter((task) => task.start_date && task.end_date).map((task) => ({
+  return tasks.map((task) => ({
     assignee: task.assignee_id && task.assignee_name ? {
       id: task.assignee_id, name: task.assignee_name,
       avatarUrl: task.assignee_avatar_url?.trim() || undefined,
     } : undefined,
     id: task.id,
     name: task.title,
-    startDate: parseDateOnly(task.start_date!),
-    endDate: parseDateOnly(task.end_date!),
+    startDate: parseDateOnly(task.start_date),
+    endDate: parseDateOnly(task.end_date),
     status: mapTimelineStatus(task.status),
   }))
 }
@@ -463,8 +454,8 @@ export function buildMemberWorkspaceProjectDetails({
     time: {
       ...buildProjectTime(project),
       scheduleAvailable,
-      schedule: (project.start_date || project.end_date) && (scheduleConfirmed || (project.created_source === "user" && !project.starter_seed_key))
-        ? { startDate: project.start_date ?? "", endDate: project.end_date ?? "" }
+      schedule: scheduleConfirmed || (project.created_source === "user" && !project.starter_seed_key)
+        ? { startDate: project.start_date, endDate: project.end_date }
         : null,
     },
     backlog: {

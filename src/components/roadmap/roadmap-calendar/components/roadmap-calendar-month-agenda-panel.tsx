@@ -1,9 +1,8 @@
 "use client"
 
-import { memo, type ReactNode } from "react"
+import { memo } from "react"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
-import CircleIcon from "lucide-react/dist/esm/icons/circle"
 
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
@@ -15,12 +14,6 @@ import {
   type RoadmapCalendarEventInput,
   type RoadmapCalendarEventType,
 } from "@/lib/roadmap/calendar"
-import {
-  PersonalCalendarAgenda,
-  calendarEventOccursOnDay,
-  type CalendarEvent,
-} from "@/features/google-calendar/client"
-
 import { cn } from "@/lib/utils"
 
 import { RoadmapCalendarDayWithEventDots } from "./roadmap-calendar-day-with-event-dots"
@@ -39,10 +32,6 @@ import {
 } from "./roadmap-calendar-month-agenda-panel-parts"
 
 type RoadmapCalendarMonthAgendaPanelProps = {
-  personalEvents?: CalendarEvent[]
-  googleCalendarControls?: ReactNode
-  compactHeaderControls?: boolean
-  today?: Date
   month: Date
   selectedDate: Date | undefined
   events: RoadmapCalendarEvent[]
@@ -68,10 +57,6 @@ const ROADMAP_CALENDAR_MONTH_AGENDA_PANEL_SOURCE =
 
 export const RoadmapCalendarMonthAgendaPanel = memo(
   function RoadmapCalendarMonthAgendaPanel({
-    compactHeaderControls = false,
-    personalEvents = [],
-    googleCalendarControls,
-    today,
     month,
     selectedDate,
     events,
@@ -96,13 +81,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
       },
       {} as Record<string, Date[]>
     )
-    const personalDayEvents = selectedDate
-      ? personalEvents.filter((event) =>
-          calendarEventOccursOnDay(event, selectedDate)
-        )
-      : []
-    const totalDayEvents = dayEvents.length + personalDayEvents.length
-    const showTodayButton = !isSameCalendarMonth(month, today ?? new Date())
+    const showTodayButton = !isSameCalendarMonth(month, new Date())
 
     return (
       <section
@@ -111,7 +90,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
           className
         )}
       >
-        <div className="grid grid-cols-1 items-center gap-2 px-2 pt-1 pb-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pt-1 pb-3">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-foreground shrink-0 text-lg font-semibold tracking-normal whitespace-nowrap">
               {formatMonthLabel(month)}
@@ -120,15 +99,24 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
               variant="secondary"
               className="bg-muted-foreground/10 text-muted-foreground h-6 min-w-8 rounded-full border-0 px-2 text-xs tabular-nums"
             >
-              {events.length + personalEvents.length}
+              {events.length}
             </Badge>
           </div>
-          <div className="flex min-w-0 shrink-0 items-center gap-1.5 justify-self-end">
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5">
             <RoadmapCalendarAddEventMenu
               disabled={!canManageCalendar}
-              iconOnly={compactHeaderControls}
               onOpenCreate={onOpenCreate}
             />
+            {showTodayButton ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 rounded-full px-3 text-sm shadow-none"
+                onClick={onGoToToday}
+              >
+                Today
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -139,26 +127,6 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             >
               <ChevronLeftIcon data-icon aria-hidden />
             </Button>
-            {showTodayButton ? (
-              <Button
-                type="button"
-                variant="outline"
-                size={compactHeaderControls ? "icon" : "default"}
-                className={cn(
-                  "h-8 rounded-full shadow-none",
-                  compactHeaderControls ? "w-8" : "px-3 text-sm"
-                )}
-                onClick={onGoToToday}
-                aria-label={compactHeaderControls ? "Go to today" : undefined}
-                title={compactHeaderControls ? "Go to today" : undefined}
-              >
-                {compactHeaderControls ? (
-                  <CircleIcon className="size-2 fill-current" aria-hidden />
-                ) : (
-                  "Today"
-                )}
-              </Button>
-            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -187,16 +155,9 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             mode="single"
             selected={selectedDate}
             month={month}
-            today={today}
             onMonthChange={onMonthChange}
             onSelect={(date) => onSelectDate(date ?? undefined)}
-            modifiers={{
-              ...eventModifiers,
-              google_calendar: (date) =>
-                personalEvents.some((event) =>
-                  calendarEventOccursOnDay(event, date)
-                ),
-            }}
+            modifiers={eventModifiers}
             className="w-full shrink-0 bg-transparent p-0 [--cell-size:2.45rem] sm:[--cell-size:2.55rem]"
             classNames={{
               root: "w-full",
@@ -218,37 +179,32 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             components={{ DayButton: RoadmapCalendarDayWithEventDots }}
           />
 
-          {googleCalendarControls}
-
           <Separator className="bg-border/40 mt-3" />
 
           <div className="flex min-h-0 flex-col pt-3">
             <p className="text-muted-foreground/70 text-xs font-semibold tracking-[0.2em] uppercase">
               {formatAgendaHeading({
                 selectedDate,
-                eventCount: totalDayEvents,
+                eventCount: dayEvents.length,
               })}
             </p>
             <RoadmapCalendarAgendaScroll
-              fadeEligible={totalDayEvents > 1 && !isLoading}
+              fadeEligible={dayEvents.length > 1 && !isLoading}
             >
               {isLoading ? (
                 <p className="text-muted-foreground px-2 py-3 text-sm">
                   Loading…
                 </p>
-              ) : totalDayEvents > 0 ? (
-                <>
-                  {dayEvents.map((event) => (
-                    <RoadmapCalendarAgendaRow
-                      key={event.id}
-                      event={event}
-                      canManageCalendar={canManageCalendar}
-                      formatTimeRange={formatTimeRange}
-                      onEditEvent={onEditEvent}
-                    />
-                  ))}
-                  <PersonalCalendarAgenda events={personalDayEvents} />
-                </>
+              ) : dayEvents.length > 0 ? (
+                dayEvents.map((event) => (
+                  <RoadmapCalendarAgendaRow
+                    key={event.id}
+                    event={event}
+                    canManageCalendar={canManageCalendar}
+                    formatTimeRange={formatTimeRange}
+                    onEditEvent={onEditEvent}
+                  />
+                ))
               ) : (
                 <p className="text-muted-foreground px-2 py-3 text-sm">
                   {selectedDate

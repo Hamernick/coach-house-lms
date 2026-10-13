@@ -370,7 +370,6 @@ export default async function MyOrganizationPage({
           fiscalSponsorshipWorkflowSummary,
           initialProfile,
           ...initialDrawerData,
-          organizationLocation: { latitude: orgRow?.location_lat ?? null, longitude: orgRow?.location_lng ?? null },
           peopleNormalized,
           peopleSegments,
           peopleTags,

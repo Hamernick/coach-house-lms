@@ -38,7 +38,3 @@ export type {
   WorkspaceCanvasTutorialStep,
   WorkspaceCanvasTutorialStepId,
 } from "./types"
-
-export { WorkspaceSetupGuide } from "./components/workspace-setup-guide"
-
-export { setupGuideStackViewport } from "./lib/setup-guide-stack"

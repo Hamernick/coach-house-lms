@@ -60,8 +60,10 @@ describe("find-map feature", () => {
     )
 
     expect(routeSource).toContain("<PublicFindRouteLoading />")
-    expect(routeLoadingSource).toContain('role="status"')
-    expect(routeLoadingSource).not.toContain("HomeCanvasFindShell")
+    expect(routeLoadingSource).toContain("<FindMapLoadingState />")
+    expect(routeLoadingSource).toContain("<FindMapLoadingSidebar />")
+    expect(routeLoadingSource).toContain("sidebarFallback={")
+    expect(routeLoadingSource).toContain("showAuthActions={false}")
     expect(routeSource).toContain("function PublicFindLoading()")
     expect(routeSource).not.toContain("async function PublicFindLoading")
     expect(routeSource).not.toContain("fetchPublicMapViewerState")

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { resolveOnboardingSteps } from "./onboarding-dialog/constants"
+import { clearOnboardingDraft } from "./onboarding-dialog/draft"
 import type { SaveOnboardingDraftExtra } from "./onboarding-dialog/draft-writer"
 import {
   resolveOnboardingError,
@@ -30,7 +31,7 @@ export function resolveOnboardingModeVisibleStepIds(
   mode: OnboardingFlowMode
 ): OnboardingFlowVisibleStepId[] | undefined {
   if (mode === "post_signup_access") {
-    return ["intent", "account"]
+    return ["intent", "pricing"]
   }
   if (mode === "workspace_setup") {
     return ["org", "account", "community"]
@@ -85,7 +86,6 @@ export function useApplyPricingEntryPoint({
     if (pricingEntryAppliedRef.current) return
     const entryStepId = resolveOnboardingPricingEntryStepId(searchParams, mode)
     if (!entryStepId) return
-    if (entryStepId === "pricing" && visibleStepIds && !visibleStepIds.includes("pricing")) return
     pricingEntryAppliedRef.current = true
     setIntentFocus("build")
     const resolvedSteps = filterOnboardingSteps({
@@ -211,6 +211,7 @@ export function buildOnboardingFormHandlers({
     }
     setSubmitting(true)
     saveDraft({ step })
+    clearOnboardingDraft()
   }
 
   return {

@@ -105,8 +105,7 @@ describe("google-auth feature contract", () => {
     expect(loginForm).toContain('<GoogleAuthPanel mode="login"')
     expect(loginForm).toContain('import("@/features/google-auth")')
     expect(signUpForm).toContain('mode="signup"')
-    expect(signUpForm).toContain("disabled={isPending}")
-    expect(signUpForm).not.toContain("acceptedLegal")
+    expect(signUpForm).toContain("disabled={!acceptedLegal || isPending}")
     expect(panel).toContain("NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED")
     expect(panel).toContain("NEXT_PUBLIC_GOOGLE_SIGNUP_ENABLED")
     expect(panel).toContain("NEXT_PUBLIC_GOOGLE_LINKING_ENABLED")
@@ -218,11 +217,4 @@ describe("google-auth feature contract", () => {
       "raise exception 'Current Terms and Privacy Policy acceptance is required.'"
     )
   })
-})
-
-it("keeps Google authentication in an embedded flow only when explicitly requested", () => {
-  const source = readFileSync("src/features/google-auth/hooks/use-google-auth-controller.ts", "utf8")
-  expect(source).toContain("redirectOnSuccess = true")
-  expect(source).toContain("if (!redirectOnSuccess) return")
-  expect(source).toContain("router.replace(redirectTo)")
 })

@@ -11,7 +11,6 @@ export function getSafeRedirect(value: string | string[] | undefined) {
   if (typeof raw !== "string") return null
   if (!raw.startsWith("/")) return null
   if (raw.startsWith("//")) return null
-  if (/[\\\u0000-\u001f\u007f]/.test(raw)) return null
   return raw
 }
 

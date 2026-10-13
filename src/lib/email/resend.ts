@@ -3,7 +3,6 @@ import { auditEmailContentForDelivery } from "@/lib/email/content-audit"
 import { buildEmailUnsubscribeUrls } from "@/lib/email/preference-tokens"
 
 type SendResendEmailInput = {
-  signal?: AbortSignal
   to: string | string[]
   subject: string
   html: string
@@ -170,7 +169,6 @@ export async function sendResendEmail(
   const tags = normalizeResendTags(input.tags)
 
   const response = await fetch(RESEND_API_URL, {
-    ...(input.signal ? { signal: input.signal } : {}),
     method: "POST",
     headers: {
       Authorization: `Bearer ${resendApiKey}`,

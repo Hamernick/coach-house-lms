@@ -285,6 +285,7 @@
       "tests/acceptance/coach-dashboard.test.ts",
       "tests/acceptance/coaching-booking.test.ts",
       "tests/acceptance/coaching-calendar-cron.test.ts",
+      "tests/acceptance/community-indexing.test.ts",
       "tests/acceptance/core-document-drive-source.test.ts",
       "tests/acceptance/documents-index-row-sorting.test.ts",
       "tests/acceptance/email-ops.test.ts",

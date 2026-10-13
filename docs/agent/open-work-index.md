@@ -30,6 +30,14 @@ human approval, current-head quality, code-owner review and merge remain open.
 Use the canonical shared record before selecting any new release slice. Source
 packets are private references; existing closed lanes remain closed.
 
+## Public indexing correction
+
+[Original-packet implementation](../plans/2026-10-13-public-indexing.md):
+`fix/public-indexing-20261013` in `coach-house-platform-public-indexing-20261013`,
+base `ce1436a2`. Community sitemap/robots now follow existing public access;
+focused tests and changed-file checks pass. Preserve the unrelated blocked SHIP
+release record; this candidate still requires hosted quality and review.
+
 ## Open lanes
 
 Vercel CPU optimization: `fix/vercel-cpu-optimization-20261011` in

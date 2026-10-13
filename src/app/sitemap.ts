@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 
+import { publicSharingEnabled } from "@/lib/feature-flags"
 import { fetchPublishedPublicHandles } from "@/lib/queries/public-profile-sitemap"
 import { documentationSitemapEntries } from "@/features/nonprofit-documentation"
 
@@ -25,7 +26,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: origin, changeFrequency: "daily", priority: 1 },
     { url: `${origin}/resources`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${origin}/community`, changeFrequency: "weekly", priority: 0.7 },
+    ...(publicSharingEnabled
+      ? [{ url: `${origin}/community`, changeFrequency: "weekly" as const, priority: 0.7 }]
+      : []),
     { url: `${origin}/pricing`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${origin}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${origin}/terms`, changeFrequency: "yearly", priority: 0.2 },

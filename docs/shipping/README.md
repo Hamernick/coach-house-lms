@@ -53,6 +53,8 @@ tooling), concrete `review_packet`, exact-head/scope human approval with actor,
 time, source reference and no unresolved conditions. UX approval is separate
 from GitHub review. Do not invent either. `github` and `merge` evidence can only
 come from live `reconcile --pr`. Protected transitions require fresh `--pr` reads.
+If fresh evidence invalidates an already reached gate, reconciliation saves the
+failed observation and blocks the slice instead of retaining stale success.
 Pre-merge protection must have been observed CLEAN with required checks and review;
 a later merged state cannot retroactively prove skipped protection passed.
 

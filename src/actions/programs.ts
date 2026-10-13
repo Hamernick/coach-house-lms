@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import {
@@ -63,9 +63,6 @@ export async function createProgramAction(payload: CreateProgramPayload) {
   const canEdit = profileAudience.isAdmin || canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
   const wizardSnapshotResult = mergeProgramWizardSnapshot({
     existing: null,
     incoming: payload.wizardSnapshot ?? {},
@@ -145,9 +142,6 @@ export async function updateProgramAction(
   const orgId = staffAccess?.orgId ?? activeOrg!.orgId
   const supabase = staffAccess?.supabase ?? sessionSupabase
   const allowPublicSharing = publicSharingEnabled
-  if (payload.isPublic === true && !allowPublicSharing) {
-    return { error: "Public sharing is not available yet. Your activity visibility has not changed." }
-  }
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
   const hasKey = (key: keyof UpdateProgramPayload) =>
     Object.prototype.hasOwnProperty.call(payload, key)
@@ -311,16 +305,12 @@ async function revalidateOrganizationProgramViews(
   supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"],
   userId: string
 ) {
-  // Visibility changes must expire public projections, including withdrawals.
-  revalidateTag("public-map-organizations", { expire: 0 })
-  revalidateTag("public-profiles", { expire: 0 })
   revalidatePath("/organizations")
   revalidatePath("/organizations/[id]", "page")
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/")
   try {
     const { data, error } = await supabase
       .from("organizations")

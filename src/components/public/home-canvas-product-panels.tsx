@@ -1,4 +1,3 @@
-import { FIND_PATH } from "@/lib/find/routes"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
@@ -97,7 +96,7 @@ export function HomeCanvasMapHeroPanel({
           </p>
 
           <form
-            action={FIND_PATH}
+            action="/"
             method="get"
             className="mt-5 flex w-full max-w-xl items-center gap-2 rounded-full border border-white/25 bg-black/45 p-1.5 pl-4 shadow-lg backdrop-blur-xl"
           >
@@ -130,7 +129,7 @@ export function HomeCanvasMapHeroPanel({
               size="lg"
               className="rounded-full bg-white px-6 text-black hover:bg-white/90"
             >
-              <Link href={FIND_PATH}>
+              <Link href="/">
                 Explore the map
                 <ArrowRightIcon aria-hidden />
               </Link>

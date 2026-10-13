@@ -30,6 +30,7 @@ const PUBLIC_MAP_NEARBY_CATEGORY_GROUPS = [
       { key: "food", label: "Food" },
       { key: "food_water", label: "Water" },
       { key: "housing_emergency_shelter", label: "Shelter" },
+      { key: "emergency", label: "Emergency" },
     ],
   },
   {
@@ -62,7 +63,7 @@ function PublicMapNearbyCategoryButton({
       type="button"
       variant="ghost"
       className={cn(
-        "border-input bg-white text-foreground hover:bg-input/50 dark:bg-input/30 h-14 min-w-0 justify-start gap-2 rounded-xl border px-2 text-left shadow-none sm:gap-2.5 sm:px-2.5",
+        "border-input bg-input/30 text-foreground hover:bg-input/50 h-14 min-w-0 justify-start gap-2 rounded-xl border px-2 text-left shadow-none sm:gap-2.5 sm:px-2.5",
         "focus-visible:ring-ring/45 focus-visible:ring-2 motion-reduce:transition-none"
       )}
       aria-label={`${category.label}, ${count.toLocaleString()} ${count === 1 ? "result" : "results"}`}
@@ -113,7 +114,7 @@ export function PublicMapNearbyCategoryGrid({
   const allCategoriesId = useId()
   const [showAllCategories, setShowAllCategories] = useState(true)
   const availableTopLevelCategories = PUBLIC_MAP_RESOURCE_CATEGORY_ORDER.filter(
-    (key) => key !== "emergency" && counts[key] > 0
+    (key) => counts[key] > 0
   )
 
   return (

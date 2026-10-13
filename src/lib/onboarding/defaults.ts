@@ -7,7 +7,6 @@ type RoleInterest = "staff" | "operator" | "volunteer" | "board_member"
 type PricingPlanTier = "free" | "organization" | "operations_support"
 
 export type OnboardingFlowDefaults = {
-  draftScope?: string | null
   defaultEmail?: string | null
   defaultOrgName?: string | null
   defaultOrgSlug?: string | null
@@ -33,11 +32,9 @@ function normalizeString(value: unknown) {
 
 export function buildOnboardingFlowDefaults({
   userId,
-  organizationId = userId,
   email,
   displayName,
   avatarUrl,
-  profileTitle = null,
   userMetadata,
   orgProfile,
   orgSlug,
@@ -45,20 +42,16 @@ export function buildOnboardingFlowDefaults({
   builderPlanTier = null,
 }: {
   userId: string
-  organizationId?: string
   email: string | null
   displayName: string | null
   avatarUrl: string | null
-  profileTitle?: string | null
   userMetadata: OnboardingMetadata
   orgProfile: OnboardingProfile
   orgSlug: string | null
   personHandle?: string | null
   builderPlanTier?: PricingPlanTier | null
 }): OnboardingFlowDefaults {
-  const normalizedDisplayName = normalizeString(displayName) ||
-    normalizeString(userMetadata?.full_name) || normalizeString(userMetadata?.name) ||
-    [normalizeString(userMetadata?.given_name), normalizeString(userMetadata?.family_name)].filter(Boolean).join(" ")
+  const normalizedDisplayName = normalizeString(displayName)
   const parsedDisplayParts = normalizedDisplayName
     ? normalizedDisplayName.split(/\s+/)
     : []
@@ -103,7 +96,6 @@ export function buildOnboardingFlowDefaults({
   const defaultPhone = metadataPhone || orgPhone || null
 
   return {
-    draftScope: `${userId}:${organizationId}`,
     defaultEmail: normalizeString(email) || null,
     defaultOrgName: orgName || null,
     defaultOrgSlug: normalizeString(orgSlug) || null,
@@ -133,9 +125,9 @@ export function buildOnboardingFlowDefaults({
     defaultPhone,
     defaultPublicEmail:
       orgEmail || ownerEmail || normalizeString(email) || null,
-    defaultTitle: normalizeString(profileTitle) || ownerTitle || normalizeString(userMetadata?.headline) || normalizeString(userMetadata?.title) || null,
+    defaultTitle: ownerTitle || null,
     defaultLinkedin: orgLinkedin || ownerLinkedin || null,
-    defaultAvatarUrl: normalizeString(avatarUrl) || normalizeString(userMetadata?.avatar_url) || normalizeString(userMetadata?.picture) || null,
+    defaultAvatarUrl: normalizeString(avatarUrl) || null,
     defaultOptInUpdates: metadataOptInUpdates,
     defaultNewsletterOptIn: metadataNewsletterOptIn,
     defaultBuilderPlanTier: builderPlanTier,

@@ -94,7 +94,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -193,7 +192,7 @@ describe("public map sidebar layout", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapCategoryFilter, {
         activeGroup: "all",
-        counts: buildPublicMapGroupFilterCounts(buildListItems(organization)),
+        counts: buildPublicMapGroupFilterCounts([organization]),
         onActiveGroupChange: () => {},
       })
     )
@@ -324,7 +323,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the liquid glass shell for the public map rail surface", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const shellSource = readFileSync(
       join(
         process.cwd(),
@@ -416,10 +415,9 @@ describe("public map sidebar layout", () => {
 
   it("gives the rail search layout one scroll owner and a shared horizontal inset", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapSidebar, {
-        onSelectOrganization: () => {},
         sidebarMode: "search",
         sidebarWidth: 374,
         surfaceHeight: 720,
@@ -561,7 +559,7 @@ describe("public map sidebar layout", () => {
       items: buildListItems(organization),
       onClear: () => {},
     }
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const shellMarkup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1136,7 +1134,7 @@ describe("public map sidebar layout", () => {
         visualVariant: "nyc",
       },
     ] satisfies PublicMapResourceGuide[]
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const publicRightRailSource = readFileSync(
       join(
         process.cwd(),
@@ -1183,6 +1181,7 @@ describe("public map sidebar layout", () => {
         savedOrganizations: [],
         onGuideSelect: () => {},
         onToggleSavedGuide: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1195,6 +1194,7 @@ describe("public map sidebar layout", () => {
         savedOrganizations: [],
         onGuideSelect: () => {},
         onToggleSavedGuide: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1312,6 +1312,7 @@ describe("public map sidebar layout", () => {
         guides: [],
         savedOrganizations: [],
         onGuideSelect: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1400,6 +1401,7 @@ describe("public map sidebar layout", () => {
         collectedCount: 2500,
         directoryRail: React.createElement("div", null, "Directory"),
         savedOrganizations: [],
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1456,6 +1458,7 @@ describe("public map sidebar layout", () => {
             visualVariant: "nyc",
           },
         ],
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
         onToggleSavedGuide: () => {},
       })
@@ -1467,6 +1470,7 @@ describe("public map sidebar layout", () => {
       React.createElement(PublicMapSavedRail, {
         savedOrganizations: [communityOrganization, healthOrganization],
         favoritesCount: 2,
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1562,6 +1566,7 @@ describe("public map sidebar layout", () => {
       React.createElement(PublicMapMemberRail, {
         savedOrganizations: [],
         savedResources: [resource],
+        onSelectOrganization: () => {},
         onSelectResource: () => {},
         onToggleFavorite: () => {},
         onToggleCollectedResource: () => {},
@@ -1612,6 +1617,7 @@ describe("public map sidebar layout", () => {
         savedResources: [],
         unresolvedCollectedResourceCount: 2,
         resourceItemsLoadStatus: "loading",
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1623,6 +1629,7 @@ describe("public map sidebar layout", () => {
         resourceItemsLoadStatus: "error",
         resourceItemsLoadError: PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
         onRetryResourceItems: () => {},
+        onSelectOrganization: () => {},
         onToggleFavorite: () => {},
       })
     )
@@ -1637,7 +1644,7 @@ describe("public map sidebar layout", () => {
 
   it("uses the right rail directory detail view when a map organization is selected", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     expect(
       resolvePublicMapDirectoryRailMode({
         sidebarMode: "details",
@@ -1693,7 +1700,7 @@ describe("public map sidebar layout", () => {
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {
     const organization = buildOrganization()
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -1770,7 +1777,7 @@ describe("public map sidebar layout", () => {
       ],
       programCount: 1,
     })
-    const groupCounts = buildPublicMapGroupFilterCounts(buildListItems(organization))
+    const groupCounts = buildPublicMapGroupFilterCounts([organization])
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,

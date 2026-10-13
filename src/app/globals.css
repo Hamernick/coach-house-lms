@@ -215,13 +215,10 @@
 
 /* Match the home shell surround when browser overscroll exposes the document. */
 html.light:has([data-public-home-scroll]),
-html.light body:has([data-public-home-scroll]) {
+html.light body:has([data-public-home-scroll]),
+html.light:has([data-public-home-landing]),
+html.light body:has([data-public-home-landing]) {
   background-color: var(--muted);
-}
-
-html:has([data-public-home-landing]),
-html body:has([data-public-home-landing]) {
-  background-color: var(--background);
 }
 
 @layer base {
@@ -525,13 +522,6 @@ html body:has([data-public-home-landing]) {
 
 .workspace-flow .react-flow__pane {
   touch-action: none;
-}
-
-/* React Flow's explicit pointer-events must not bypass a modal menu's
-   outside-click lock and activate nodes behind the nonmodal drawer. */
-body[style*="pointer-events: none"] .workspace-flow,
-body[style*="pointer-events: none"] .workspace-flow * {
-  pointer-events: none !important;
 }
 
 .workspace-flow .react-flow__node {

@@ -15,7 +15,7 @@ describe("public map organization curation", () => {
     const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
 
     expect(organizationAction).toContain(
-      'revalidateTag("public-map-organizations", { expire: 0 })'
+      'revalidateTag("public-map-organizations", "max")'
     )
     expect(publicMapQuery).toContain('["public-map-organizations-v8"]')
   })

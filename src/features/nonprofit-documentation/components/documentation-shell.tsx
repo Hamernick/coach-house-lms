@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react"
 
 import { HomeCanvasFindShell } from "@/components/public/home-canvas-find-shell"
-import { SidebarContent } from "@/components/ui/sidebar"
 
 import { DocumentationRail } from "./documentation-rail"
 import { DocumentationSearchForm } from "./documentation-search-form"
@@ -9,11 +8,7 @@ import { DocumentationSearchForm } from "./documentation-search-form"
 export function DocumentationShell({ children }: { children: ReactNode }) {
   return (
     <HomeCanvasFindShell
-      sidebarFallback={
-        <SidebarContent>
-          <DocumentationRail />
-        </SidebarContent>
-      }
+      sidebarFallback={<DocumentationRail />}
       showPublicSearch={false}
     >
       <div className="flex h-full min-h-0 flex-1 flex-col">

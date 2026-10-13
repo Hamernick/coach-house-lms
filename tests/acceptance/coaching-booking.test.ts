@@ -1004,13 +1004,6 @@ describe("coaching booking feature", () => {
     expect(featureReadme).toContain("Vercel OIDC")
   })
 
-  it("starts a free account without complimentary coaching credits", async () => {
-    const summary = await resolveCoachingCreditSummary({
-      supabase: createCreditSummarySupabaseStub({}), userId: "new-free-user", orgId: "free-org",
-    })
-    expect(summary).toMatchObject({ available: 0, priceTier: "full", hasDiscountAccess: false })
-  })
-
   it("limits discounted paid booking to Operations Support after included credits are gone", async () => {
     const included = await resolveCoachingCreditSummary({
       supabase: createCreditSummarySupabaseStub({

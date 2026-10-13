@@ -52,7 +52,6 @@ export function usePublicMapOrganizationListPagination<
   query,
   incrementalLoading,
   autoLoadMore = true,
-  autoLoadRemote = false,
   remote,
   initialVisibleCount,
   pageSize,
@@ -63,7 +62,6 @@ export function usePublicMapOrganizationListPagination<
   query?: string
   incrementalLoading: boolean
   autoLoadMore?: boolean
-  autoLoadRemote?: boolean
   remote?: ResourceDirectoryPagination | null
   initialVisibleCount: number
   pageSize: number
@@ -130,7 +128,7 @@ export function usePublicMapOrganizationListPagination<
   }, [items.length, remainingCount, remote, resetKey, resolvedPageSize])
 
   useEffect(() => {
-    if ((remote && !autoLoadRemote) || remote?.loading || remote?.error || !autoLoadMore || !paginationEnabled || !hasMoreOrganizations) return
+    if (remote || !autoLoadMore || !paginationEnabled || !hasMoreOrganizations) return
     if (typeof IntersectionObserver === "undefined") return
     const sentinel = loadMoreSentinelRef.current
     if (!sentinel) return
@@ -152,7 +150,7 @@ export function usePublicMapOrganizationListPagination<
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [remote, autoLoadRemote, autoLoadMore, hasMoreOrganizations, loadNextPage, paginationEnabled])
+  }, [remote, autoLoadMore, hasMoreOrganizations, loadNextPage, paginationEnabled])
 
   return {
     hasMoreOrganizations,
@@ -165,7 +163,6 @@ export function usePublicMapOrganizationListPagination<
 }
 
 export function PublicMapOrganizationListPaginationFooter({
-  compact = false,
   hasMoreOrganizations,
   loadMoreSentinelRef,
   loadNextPage,
@@ -176,7 +173,6 @@ export function PublicMapOrganizationListPaginationFooter({
   loading = false,
   error = null,
 }: {
-  compact?: boolean
   hasMoreOrganizations: boolean
   loadMoreSentinelRef: RefObject<HTMLDivElement | null>
   loadNextPage: () => void
@@ -192,7 +188,7 @@ export function PublicMapOrganizationListPaginationFooter({
   return (
     <div
       data-public-map-list-pagination="true"
-      className={hasMoreOrganizations ? `flex min-w-0 shrink-0 flex-col items-center px-2 text-center ${compact ? "gap-0 py-0" : "gap-1.5 pt-1 pb-2"}` : "sr-only"}
+      className={hasMoreOrganizations ? "flex min-w-0 shrink-0 flex-col items-center gap-1.5 px-2 pt-1 pb-2 text-center" : "sr-only"}
     >
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         Showing {visibleCount.toLocaleString()}{organizationCount === undefined ? "" : ` of ${organizationCount.toLocaleString()}`} resources

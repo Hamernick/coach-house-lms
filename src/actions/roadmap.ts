@@ -2,8 +2,6 @@
 
 import { revalidatePath, revalidateTag } from "next/cache"
 
-import { requireOrganizationDocumentStorage, resolveOrganizationDocumentStorageAccess, DOCUMENT_STORAGE_UPGRADE_MESSAGE } from "@/lib/organization/document-storage-access"
-
 import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
 
 import { getSelectedGoogleDriveFile } from "@/features/google-drive"
@@ -135,12 +133,6 @@ export async function saveRoadmapSectionAction({
   supabase = access.supabase
   const { orgId, role } = access
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-  const driveOnly = driveFileId !== undefined && Boolean(sectionId) &&
-    [title, subtitle, content, budgetRows, imageUrl, isPublic, layout, status, ctaLabel, ctaUrl].every((value) => value === undefined)
-  if (!documentAccess.hasStorageAccess && !driveOnly) return { error: DOCUMENT_STORAGE_UPGRADE_MESSAGE }
-
   if (
     (expectedOrganizationId && orgId !== expectedOrganizationId) ||
     (expectedUserId && user.id !== expectedUserId)
@@ -334,9 +326,6 @@ export async function deleteRoadmapSectionAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
@@ -433,9 +422,6 @@ export async function setRoadmapPublicAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
@@ -500,9 +486,6 @@ export async function setRoadmapHeroImageAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const nextHero =
     typeof heroUrl === "string" && heroUrl.trim().length > 0

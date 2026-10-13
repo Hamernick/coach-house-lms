@@ -28,8 +28,6 @@ export function HomeCanvasFindShell({
   glassHeader = false,
   showAuthActions = true,
   showPublicSearch = true,
-  showPublicNavigation = true,
-  frameCanvas = true,
   sidebarFallback = null,
   canvasClassName,
   className,
@@ -40,8 +38,6 @@ export function HomeCanvasFindShell({
   glassHeader?: boolean
   showAuthActions?: boolean
   showPublicSearch?: boolean
-  showPublicNavigation?: boolean
-  frameCanvas?: boolean
   sidebarFallback?: ReactNode
   canvasClassName?: string
   className?: string
@@ -55,8 +51,6 @@ export function HomeCanvasFindShell({
           glassHeader={glassHeader}
           showAuthActions={showAuthActions}
           showPublicSearch={showPublicSearch}
-          showPublicNavigation={showPublicNavigation}
-          frameCanvas={frameCanvas}
           sidebarFallback={sidebarFallback}
           canvasClassName={canvasClassName}
           className={className}
@@ -75,8 +69,6 @@ function HomeCanvasFindShellContent({
   glassHeader,
   showAuthActions,
   showPublicSearch,
-  showPublicNavigation,
-  frameCanvas,
   sidebarFallback,
   canvasClassName,
   className,
@@ -87,8 +79,6 @@ function HomeCanvasFindShellContent({
   glassHeader: boolean
   showAuthActions: boolean
   showPublicSearch: boolean
-  showPublicNavigation: boolean
-  frameCanvas: boolean
   sidebarFallback: ReactNode
   canvasClassName?: string
   className?: string
@@ -135,9 +125,7 @@ function HomeCanvasFindShellContent({
               data-public-header-glass={glassHeader ? "" : undefined}
               className={cn(
                 "shrink-0",
-                glassHeader && "z-40 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75",
-                glassHeader && !frameCanvas && "[html.light_&]:bg-transparent [html.light_&]:backdrop-blur-none",
-                glassHeader && (inset && frameCanvas ? "relative" : "absolute inset-x-0 top-0")
+                glassHeader && (inset ? "relative z-40 backdrop-blur-xl" : "absolute inset-x-0 top-0 z-40 backdrop-blur-xl")
               )}
             >
             <HomeCanvasPreviewHeader
@@ -148,13 +136,12 @@ function HomeCanvasFindShellContent({
               rightOpen={rightOpen}
               showAuthActions={showAuthActions}
               showPublicSearch={showPublicSearch}
-              showPublicNavigation={showPublicNavigation}
               showShellSidebar={showSidebarShell}
               showRightRailToggle={hasRightRail}
             />
             </div>
 
-            {inset && frameCanvas ? (
+            {inset ? (
               <div
                 data-public-find-content-frame=""
                 className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-[var(--shell-content-pad)]"
@@ -169,7 +156,7 @@ function HomeCanvasFindShellContent({
               children
             )}
             {searchDockBelowCanvas ? (
-              <div ref={setDockHost} data-public-home-dock-host="" className={cn("z-30 min-h-[calc(110px+max(var(--shell-content-pad),env(safe-area-inset-bottom)))] shrink-0 px-[var(--shell-content-pad)] pb-[max(var(--shell-content-pad),env(safe-area-inset-bottom))] [&:has([data-public-map-search-dock])>[data-public-map-search-dock-loading]]:hidden", frameCanvas ? "relative" : "pointer-events-none absolute inset-x-0 bottom-0")}>
+              <div ref={setDockHost} data-public-home-dock-host="" className="relative z-30 min-h-[calc(110px+max(var(--shell-content-pad),env(safe-area-inset-bottom)))] shrink-0 px-[var(--shell-content-pad)] pb-[max(var(--shell-content-pad),env(safe-area-inset-bottom))] [&:has([data-public-map-search-dock])>[data-public-map-search-dock-loading]]:hidden">
                 <HomeCanvasSearchDockSkeleton />
               </div>
             ) : null}

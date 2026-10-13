@@ -1,5 +1,4 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { getServerUser } from "@/server/auth/server-user"
 
 export type PublicMapViewerState = {
   viewer: { id: string; email: string | null; displayName?: string | null; avatarUrl?: string | null } | null
@@ -9,7 +8,7 @@ export async function fetchPublicMapViewerState(): Promise<PublicMapViewerState>
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
-  } = await getServerUser(supabase)
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return {

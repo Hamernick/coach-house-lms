@@ -1,5 +1,3 @@
-export { DocumentationSurface } from "./components/documentation-surface"
-export { DocumentationPageHeader } from "./components/documentation-page-header"
 export {
   DocumentationHome,
   DocumentationRail,

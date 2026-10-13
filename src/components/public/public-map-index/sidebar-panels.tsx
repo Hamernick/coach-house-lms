@@ -317,7 +317,7 @@ export function PublicMapDrawerSearchPanel({
             data-public-map-results-region=""
             className={cn(
               "flex min-h-0 flex-1 flex-col overflow-hidden px-2",
-              !directoryScrollable && "col-start-1 row-start-1 flex-none self-start"
+              !directoryScrollable && "col-start-1 row-start-1 max-h-[calc(min(60svh,28rem)+2rem)] flex-none self-start"
             )}
           >
             <PublicMapSearchResultsStatus
@@ -358,10 +358,9 @@ export function PublicMapDrawerSearchPanel({
                 activeGroup={activeGroup}
                 resourceItemsLoadStatus={resourceItemsLoadStatus}
                 resourceItemsLoadError={resourceItemsLoadError}
-                bounded={directoryScrollable && !showSearch}
-                className={directoryScrollable ? "h-full pt-2" : "pt-0.5"}
-                scrollable={directoryScrollable}
-                paged={!directoryScrollable}
+                bounded={!showSearch || !directoryScrollable}
+                className="h-full pt-2"
+                scrollable
                 leadingContent={
                   <PublicMapSearchShortcuts
                     activeGroup={activeGroup}

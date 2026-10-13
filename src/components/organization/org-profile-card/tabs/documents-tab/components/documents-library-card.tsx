@@ -1,7 +1,5 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
-
 import Link from "next/link"
 import { useId, type ReactNode } from "react"
 import {
@@ -138,7 +136,7 @@ export function DocumentsLibraryCard({
           <Link
             href={
               item.coreDriveSource?.webViewLink ??
-              getDocumentEditorHref(item.row.section.slug)
+              `/roadmap/${item.row.section.slug}`
             }
             target={item.coreDriveSource ? "_blank" : undefined}
             rel={item.coreDriveSource ? "noopener noreferrer" : undefined}

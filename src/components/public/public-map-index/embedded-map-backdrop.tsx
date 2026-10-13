@@ -22,7 +22,7 @@ export function PublicMapEmbeddedBackdrop({
     const backdrop = backdropRef.current
     const content = contentRef.current
     const page = screen?.closest<HTMLElement>("[data-public-home-scroll], main")
-    if (!screen || !backdrop || !page || !content || page.hasAttribute("data-public-resource-unframed")) return
+    if (!screen || !backdrop || !page || !content) return
 
     let frame = 0
     let previousGeometry = ""

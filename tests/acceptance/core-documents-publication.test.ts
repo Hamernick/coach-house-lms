@@ -288,7 +288,7 @@ describe("Core Documents publication", () => {
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
     )
     const action = readSource("src/actions/roadmap.ts")
-    const publicMapQuery = readSource("src/lib/public-map/organization-projection.ts")
+    const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
 
     expect(panel).toContain(
       '<SelectItem value="not_started">Not started</SelectItem>'

@@ -130,7 +130,6 @@ export function PublicMapResourceListCard({
             )}
           >
             <p
-              data-public-map-list-title=""
               className="text-foreground truncate text-base leading-snug font-semibold"
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-import { PublicMapDirectoryStatusPill, type DirectoryFormationCounts } from "./directory-status-pill"
+import { PublicMapDirectoryStatusPill } from "./directory-status-pill"
 import { PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME } from "./sidebar-theme"
 import type {
   PublicMapUserCoordinates,
@@ -68,13 +68,12 @@ export function PublicMapLocationControl({
   controlOpen,
   directoryCount,
   directoryCountEstimated = false,
-  directoryFormationCounts,
   feedback,
   onConfirm,
   onControlClick,
   onOpenChange,
   status,
-}: PublicMapLocationControlState & { directoryCount: number | null; directoryCountEstimated?: boolean; directoryFormationCounts?: DirectoryFormationCounts; inline?: boolean }) {
+}: PublicMapLocationControlState & { directoryCount: number | null; directoryCountEstimated?: boolean; inline?: boolean }) {
   const isPending = status === "checking" || status === "requesting"
   const isConsentPrompt = status === "idle" || status === "prompt"
   const label = resolveLocationControlLabel({ active, status })
@@ -111,7 +110,7 @@ export function PublicMapLocationControl({
               aria-controls="public-map-location-card"
               className={cn(
                 !inline && PUBLIC_MAP_OVERLAY_GLASS_CLASSNAME,
-                "hover:bg-input/50 pointer-events-auto size-8 rounded-full [&_svg]:pointer-events-auto",
+                "hover:bg-input/50 pointer-events-auto size-8 rounded-full",
                 inline && "size-11 touch-manipulation sm:size-8",
                 !inline && "shadow-sm",
                 active && "text-blue-600 dark:text-blue-400",
@@ -119,13 +118,7 @@ export function PublicMapLocationControl({
               )}
               onClick={onControlClick}
             >
-              <LocateFixedIcon aria-hidden {...getReactGrabLinkedSurfaceProps({
-                ownerId: PUBLIC_MAP_LOCATION_CONTROL_OWNER_ID,
-                component: "PublicMapLocationControl",
-                source: PUBLIC_MAP_LOCATION_CARD_SOURCE,
-                slot: "icon",
-                surfaceKind: "indicator",
-              })} />
+              <LocateFixedIcon aria-hidden />
             </Button>
           </TooltipTrigger>
           <TooltipContent
@@ -143,7 +136,7 @@ export function PublicMapLocationControl({
             {label}
           </TooltipContent>
         </Tooltip>
-        <PublicMapDirectoryStatusPill count={directoryCount} formationCounts={directoryFormationCounts} estimated={directoryCountEstimated} unstyled={inline} />
+        <PublicMapDirectoryStatusPill count={directoryCount} estimated={directoryCountEstimated} unstyled={inline} />
       </div>
       {controlOpen ? (
         <div className={inline ? "absolute top-full left-0 w-72 pt-2" : "absolute inset-0 flex items-center justify-center p-4"}>

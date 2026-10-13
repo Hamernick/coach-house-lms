@@ -4,7 +4,7 @@ import { createContext } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export const HOME_SEARCH_DOCK_SURFACE_CLASSNAME =
-  "pointer-events-auto z-40 mx-auto w-full max-w-2xl rounded-[28px] border border-border bg-card p-2 pt-1 text-card-foreground shadow-none backdrop-blur-2xl supports-[backdrop-filter]:bg-card/80"
+  "pointer-events-auto z-40 mx-auto w-full max-w-2xl rounded-[28px] border border-border/80 bg-background p-2 pt-1 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/90 dark:bg-card dark:supports-[backdrop-filter]:bg-card/90"
 
 // Undefined keeps the existing floating presentation; null waits for the shell host.
 export const HomeCanvasDockHostContext = createContext<HTMLElement | null | undefined>(undefined)

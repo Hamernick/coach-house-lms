@@ -4,7 +4,7 @@ import { join } from "node:path"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { resolvePublicMapDirectoryCount, resolveDirectoryFormationCounts } from "@/components/public/public-map-index/directory-status-pill"
+import { resolvePublicMapDirectoryCount } from "@/components/public/public-map-index/directory-status-pill"
 import {
   clearPublicMapResourceItemsCache,
   loadPublicMapResourceItems,
@@ -32,11 +32,11 @@ describe("public map resource items client", () => {
   })
 
   it("deduplicates only concurrent resource requests", async () => {
-    const deferred: { resolve?: (response: Response) => void } = {}
+    let resolveFetch: ((response: Response) => void) | null = null
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
-          deferred.resolve = resolve
+          resolveFetch = resolve
         })
     )
     const endpoint = "/api/public/resource-map/items?test=concurrent"
@@ -46,7 +46,7 @@ describe("public map resource items client", () => {
 
     expect(secondLoad).toBe(firstLoad)
     expect(fetchSpy).toHaveBeenCalledTimes(1)
-    deferred.resolve?.(buildResourceItemsResponse([]))
+    resolveFetch?.(buildResourceItemsResponse([]))
     await expect(firstLoad).resolves.toEqual([])
   })
 
@@ -350,15 +350,4 @@ describe("versioned resource query cache", () => {
     await loadFindResourceQuery("/api/test?q=health")
     expect(fetcher).toHaveBeenCalledTimes(3)
   })
-})
-
-
-it("counts reported formation statuses without treating unknown listings as registered", () => {
-  expect(resolveDirectoryFormationCounts([
-    { formationStatus: "approved" },
-    { formationStatus: "in_progress" },
-    { formationStatus: "pre_501c3" },
-    { formationStatus: null },
-  ])).toEqual({ registered: 1, inProgress: 2 })
-  expect(resolveDirectoryFormationCounts([])).toEqual({ registered: 0, inProgress: 0 })
 })

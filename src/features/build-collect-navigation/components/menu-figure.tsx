@@ -22,15 +22,6 @@ export function MenuFigure({ name }: { name: MenuFigureName }) {
       const start = () => {
         host.replaceChildren()
         figure = hairline[name](host)
-        // The library leaves different amounts of whitespace around each figure.
-        // Center its resting artwork without changing the shared illustration scale.
-        const svg = host.querySelector("svg")
-        if (svg) {
-          const bounds = svg.getBBox()
-          if (bounds.width && bounds.height) {
-            svg.setAttribute("viewBox", `${bounds.x + bounds.width / 2 - 200} ${bounds.y + bounds.height / 2 - 160} 400 320`)
-          }
-        }
       }
       // Version 0.3 has no pause API. Retain its own SVG and dispose the engine
       // so idle menu items have no animation loop or pointer listeners.
@@ -83,7 +74,7 @@ export function MenuFigure({ name }: { name: MenuFigureName }) {
 
   return (
     <div aria-hidden="true" className="aspect-[5/4] w-20 shrink-0 [--hairline-hi:var(--foreground)] [--hairline-edge:var(--muted-foreground)] [--hairline-mid:var(--muted-foreground)] [--hairline-lo:var(--border)]">
-      <div ref={ref} data-hairline={name} className="pointer-events-none size-full [&>svg]:block [&>svg]:!size-full" />
+      <div ref={ref} data-hairline={name} className="pointer-events-none w-full [&>svg]:!size-full" />
     </div>
   )
 }

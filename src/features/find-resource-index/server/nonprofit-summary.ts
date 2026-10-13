@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 // Fixed public projection only: excludes suppressed records and EINs owned by
 // platform/curated listings. No user predicates, private rows, or exact scan.
-export const readPublicNonprofitCount = unstable_cache(
+const readCount = unstable_cache(
   async () => {
     const { count, error } = await createSupabaseAdminClient()
       .from("nonprofit_directory_public" as never)
@@ -22,7 +22,7 @@ export const readPublicNonprofitCount = unstable_cache(
 export async function nonprofitSummaryGET() {
   try {
     return NextResponse.json(
-      { count: await readPublicNonprofitCount(), estimated: true },
+      { count: await readCount(), estimated: true },
       {
         headers: {
           "Cache-Control":

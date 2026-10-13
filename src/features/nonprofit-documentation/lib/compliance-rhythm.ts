@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   ComplianceAssetsBand,
   ComplianceRhythmDraft,
@@ -250,7 +249,7 @@ export function buildComplianceTasks(
 }
 
 function csvCell(value: string) {
-  return documentationCsvCell(value)
+  return `"${value.replaceAll('"', '""')}"`
 }
 
 export function buildComplianceCsv(draft: ComplianceRhythmDraft) {

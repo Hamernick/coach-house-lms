@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 
-import { loadNonprofitMapItem } from "@/features/find-resource-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+
+import { resolvePublicMapResourceDetailPresentation } from "@/lib/public-map/resource-seasonal-presentation"
 
 const PUBLIC_RESOURCE_DETAIL_ENDPOINT = "/api/public/resource-map/items"
 const PUBLIC_RESOURCE_DETAIL_CACHE_MS = 5 * 60 * 1000
@@ -16,26 +17,26 @@ export function loadPublicMapResourceItemDetail(id: string) {
   const cached = resourceDetailLoadById.get(id)
   if (cached && cached.expiresAt > Date.now()) return cached.load
 
-  const load = (
-    id.startsWith("nonprofit:")
-      ? loadNonprofitMapItem(id)
-      : fetch(`${PUBLIC_RESOURCE_DETAIL_ENDPOINT}/${encodeURIComponent(id)}`, {
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        }).then(async (response) => {
-          if (!response.ok) {
-            throw new Error(`Resource detail failed: ${response.status}`)
-          }
-          const payload = (await response.json()) as { resourceItem?: unknown }
-          return payload.resourceItem &&
-            typeof payload.resourceItem === "object"
-            ? (payload.resourceItem as ExternalResourceMapItem)
-            : null
-        })
-  ).catch((error) => {
-    resourceDetailLoadById.delete(id)
-    throw error
-  })
+  const load = fetch(
+    `${PUBLIC_RESOURCE_DETAIL_ENDPOINT}/${encodeURIComponent(id)}`,
+    {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    }
+  )
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Resource detail failed: ${response.status}`)
+      }
+      const payload = (await response.json()) as { resourceItem?: unknown }
+      return payload.resourceItem && typeof payload.resourceItem === "object"
+        ? (payload.resourceItem as ExternalResourceMapItem)
+        : null
+    })
+    .catch((error) => {
+      resourceDetailLoadById.delete(id)
+      throw error
+    })
 
   resourceDetailLoadById.set(id, {
     expiresAt: Date.now() + PUBLIC_RESOURCE_DETAIL_CACHE_MS,
@@ -57,7 +58,9 @@ export function usePublicMapResourceItemDetail(
     let cancelled = false
     void loadPublicMapResourceItemDetail(item.id)
       .then((loadedItem) => {
-        if (!cancelled && loadedItem) setDetailItem(loadedItem)
+        if (!cancelled && loadedItem) {
+          setDetailItem(resolvePublicMapResourceDetailPresentation(item, loadedItem))
+        }
       })
       .catch((error) => {
         if (cancelled) return
@@ -71,5 +74,7 @@ export function usePublicMapResourceItemDetail(
     }
   }, [enabled, item])
 
-  return detailItem?.id === item?.id ? detailItem : item
+  return detailItem && item && detailItem.id === item.id
+    ? resolvePublicMapResourceDetailPresentation(item, detailItem)
+    : item
 }

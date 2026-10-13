@@ -49,8 +49,8 @@ function buildRuntimeSnapshot(
     readinessSummary: {
       score: 13,
       progressPercent: 13,
-      fundableCheckpoint: 60,
-      verifiedCheckpoint: 100,
+      fundableCheckpoint: 70,
+      verifiedCheckpoint: 90,
       fundable: false,
       verified: false,
       fundableMissing: [],
@@ -72,8 +72,8 @@ describe("workspace accelerator runtime snapshot equality", () => {
       readinessSummary: {
         score: 13,
         progressPercent: 13,
-        fundableCheckpoint: 60,
-        verifiedCheckpoint: 100,
+        fundableCheckpoint: 70,
+        verifiedCheckpoint: 90,
         fundable: false,
         verified: false,
         fundableMissing: [],

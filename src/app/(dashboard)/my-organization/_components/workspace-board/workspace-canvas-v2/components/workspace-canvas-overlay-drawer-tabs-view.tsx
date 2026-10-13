@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, type CSSProperties, type RefObject } from "react"
+import { WorkspaceParticlesPanel } from "@/features/workspace-particles/client"
+
+import type { CSSProperties, RefObject } from "react"
 
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
@@ -8,6 +10,7 @@ import type { OrgPersonWithImage } from "@/components/people/supporters-showcase
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
 import {
+  WorkspaceFinancePanel,
   type WorkspaceFinanceInput,
 } from "@/features/workspace-finance"
 import { WorkspaceToolsPanel } from "@/features/workspace-tools"
@@ -39,9 +42,9 @@ function WorkspaceDrawerTabTrigger({
   return (
     <TabsTrigger
       value={value}
-      data-setup-guide-tab={value}
+      data-particle-return-target={value === "particles" ? "tab" : undefined}
       onClick={onOpen}
-      className="h-11 min-w-0 flex-none gap-2 px-3 py-2 md:h-7 md:px-2 md:py-1 text-left after:hidden"
+      className="h-7 min-w-0 flex-none gap-2 px-2 py-1 text-left after:hidden"
     >
       {children}
     </TabsTrigger>
@@ -97,22 +100,10 @@ export function WorkspaceDrawerTabs({
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   viewerId: string
 }) {
-  const [hasExpanded, setHasExpanded] = useState(false)
-  const showSelectedTab = !drawerCollapsed || hasExpanded
-  useEffect(() => {
-    if (!drawerCollapsed) setHasExpanded(true)
-  }, [drawerCollapsed])
-
-  const [drawerContainer, setDrawerContainer] =
-    useState<HTMLDivElement | null>(null)
-
   return (
     <Tabs
-      value={showSelectedTab ? tab : ""}
-      onValueChange={(value) => {
-        handleTabChange(value)
-        handleTabOpen()
-      }}
+      value={tab}
+      onValueChange={handleTabChange}
       className={cn(
         "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-0",
         drawerCollapsed ? "overflow-visible" : "overflow-hidden"
@@ -128,7 +119,7 @@ export function WorkspaceDrawerTabs({
         <TabsList
           variant="line"
           ref={tabsListRef}
-          className="h-11 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-11 md:h-7 md:w-auto md:group-data-[orientation=horizontal]/tabs:!h-7 [&::-webkit-scrollbar]:hidden"
+          className="h-7 w-full min-w-0 justify-start overflow-x-auto p-0 [scrollbar-width:none] group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto [&::-webkit-scrollbar]:hidden"
         >
           <WorkspaceDrawerTabTrigger
             value="organization"
@@ -136,11 +127,17 @@ export function WorkspaceDrawerTabs({
           >
             Organization
           </WorkspaceDrawerTabTrigger>
+          <WorkspaceDrawerTabTrigger value="finance" onOpen={handleTabOpen}>
+            Finance
+          </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="people" onOpen={handleTabOpen}>
             People
           </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="documents" onOpen={handleTabOpen}>
             Documents
+          </WorkspaceDrawerTabTrigger>
+          <WorkspaceDrawerTabTrigger value="particles" onOpen={handleTabOpen}>
+            Particles
           </WorkspaceDrawerTabTrigger>
           <WorkspaceDrawerTabTrigger value="tools" onOpen={handleTabOpen}>
             Tools
@@ -154,7 +151,7 @@ export function WorkspaceDrawerTabs({
           data-workspace-data-drawer-tab-indicator="true"
           className={cn(
             "bg-foreground absolute bottom-[-1px] left-0 z-10 h-0.5 rounded-full transition-[transform,width,opacity] duration-200 ease-out motion-reduce:transition-none",
-            showSelectedTab && tabIndicator.visible ? "opacity-100" : "opacity-0"
+            tabIndicator.visible ? "opacity-100" : "opacity-0"
           )}
           style={
             {
@@ -177,9 +174,14 @@ export function WorkspaceDrawerTabs({
         )}
       >
         <TabsContent
+          value="particles"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain data-[state=inactive]:hidden"
+        >
+          {tab === "particles" ? <WorkspaceParticlesPanel /> : null}
+        </TabsContent>
+        <TabsContent
           value="organization"
-          data-organization-scroll-viewport="true"
-          className="mx-auto min-h-0 w-full max-w-none min-w-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y data-[state=inactive]:hidden md:px-8"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
         >
           {tab === "organization" ? (
             <WorkspaceCanvasOverlayOrganizationPanel
@@ -192,23 +194,9 @@ export function WorkspaceDrawerTabs({
           value="accelerator"
           className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
         >
-          <div
-            ref={setDrawerContainer}
-            data-workspace-accelerator-lesson-slot="true"
-            className="flex min-h-0 flex-1 flex-col empty:hidden"
-          />
           {tab === "accelerator" ? (
             <WorkspaceCanvasOverlayAcceleratorPanel
               input={acceleratorInput}
-              uiPreferencesScope={uiPreferencesScope}
-              organizationLaunch={{
-                ...organizationEditorData.initialProfile,
-                ...organizationEditorData.organizationLocation,
-                programCount: organizationEditorData.programs.length,
-                programs: organizationEditorData.programs.map(({ id, title, description }) => ({ id, title, description })),
-                canEdit: organizationEditorData.canEdit,
-              }}
-              drawerContainer={drawerContainer}
               roadmapSections={acceleratorRoadmapSections}
               hasAccess={acceleratorHasAccess}
               paywallHref={acceleratorPaywallHref}
@@ -223,7 +211,7 @@ export function WorkspaceDrawerTabs({
         >
           {tab === "roadmap" ? (
             <WorkspaceCanvasOverlayRoadmapPanel
-              sourceScope={{
+              draftScope={{
                 userId: viewerId,
                 organizationId: uiPreferencesScope.orgId,
               }}
@@ -236,7 +224,7 @@ export function WorkspaceDrawerTabs({
         </TabsContent>
         <TabsContent
           value="people"
-          className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
         >
           <WorkspacePeopleDrawerPanel
             people={people}
@@ -256,9 +244,9 @@ export function WorkspaceDrawerTabs({
           {tab === "documents" ? (
             <div className="box-border min-h-full w-full max-w-full min-w-0 p-2 sm:p-3">
               <DocumentsTab
+                organizationId={uiPreferencesScope.orgId}
                 key={`documents:${request?.id ?? 0}`}
                 userId={viewerId}
-                organizationId={uiPreferencesScope.orgId}
                 {...documentsTab}
                 editMode={canEdit}
                 canEdit={canEdit}
@@ -281,6 +269,14 @@ export function WorkspaceDrawerTabs({
                 },
               }}
             />
+          ) : null}
+        </TabsContent>
+        <TabsContent
+          value="finance"
+          className="mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+        >
+          {tab === "finance" ? (
+            <WorkspaceFinancePanel input={financeInput} />
           ) : null}
         </TabsContent>
       </div>

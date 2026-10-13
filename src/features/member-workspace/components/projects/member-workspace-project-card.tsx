@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Fragment, useMemo, useRef } from "react"
+import { useMemo, useRef } from "react"
 import { format, parseISO } from "date-fns"
 import {
   CalendarBlank,
@@ -39,7 +39,7 @@ type MemberWorkspaceProjectCardProps = {
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
 }
 
-function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]): { label: string; dot: string; pill: string } {
+function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]) {
   switch (resolveMemberWorkspaceOrganizationStatus(status)) {
     case "active":
       return {
@@ -113,9 +113,6 @@ export function MemberWorkspaceProjectCard({
   const router = useRouter()
   const directoryHref = (usePathname() ?? "").startsWith("/projects") ? "/projects" : "/organizations"
   const status = getStatusConfig(project.status)
-  if (directoryHref === "/projects") {
-    status.label = ({ backlog: "Backlog", planned: "Planned", active: "Active", "on-hold": "On hold", completed: "Completed", cancelled: "Cancelled" } as const)[project.status]
-  }
   const fiscalSponsorshipStatus = project.fiscalSponsorshipStatus
     ? getFiscalSponsorshipStatusConfig(project.fiscalSponsorshipStatus)
     : null
@@ -137,22 +134,14 @@ export function MemberWorkspaceProjectCard({
 
   const secondaryLine = (() => {
     if (project.projectKind === "organization_admin") {
-      const visibility = project.client === "Public" || project.client === "Private"
-        ? (
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span aria-hidden className={cn("inline-block size-1.5 rounded-full", project.client === "Public" ? "bg-emerald-500" : "bg-destructive")} />
-            {project.client}
-          </span>
-        ) : project.client
       const summary = [
+        primaryPersonName ? `Created by ${primaryPersonName}` : null,
         project.typeLabel,
-        visibility,
+        project.client,
         project.durationLabel,
       ].filter(Boolean)
       if (summary.length > 0) {
-        return summary.map((item, index) => (
-          <Fragment key={index}>{index > 0 ? " • " : null}{item}</Fragment>
-        ))
+        return summary.join(" • ")
       }
     }
 
@@ -243,21 +232,14 @@ export function MemberWorkspaceProjectCard({
                 className="text-muted-foreground flex items-center gap-1.5 text-xs"
               >
                 <Flag className="h-4 w-4" />
-                <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d") : "No due date"}</span>
+                <span>{format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d")}</span>
               </div>
             ) : (
               <div className="h-4" />
             )
           ) : (
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              {project.projectKind === "organization_admin" && project.organizationImageUrl ? (
-                <Avatar className="size-6 rounded-md border border-gray-200 bg-white">
-                  <AvatarImage src={project.organizationImageUrl} alt={`${project.name} profile`} className="rounded-md object-contain p-0.5" />
-                  <AvatarFallback className="rounded-md bg-transparent">
-                    <Folder className="size-5" />
-                  </AvatarFallback>
-                </Avatar>
-              ) : <Folder className="h-5 w-5" />}
+              <Folder className="h-5 w-5" />
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -369,7 +351,7 @@ export function MemberWorkspaceProjectCard({
                   className="flex items-center gap-2"
                 >
                   <CalendarBlank className="h-4 w-4" />
-                  <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d, yyyy") : "No due date"}</span>
+                  <span>{format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d, yyyy")}</span>
                 </div>
               ) : (
                 <div />

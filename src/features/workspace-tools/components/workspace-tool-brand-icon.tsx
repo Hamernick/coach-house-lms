@@ -14,7 +14,7 @@ export function WorkspaceToolBrandIcon({
   toolId,
   className,
 }: {
-  toolId: WorkspaceToolId | "google-calendar"
+  toolId: WorkspaceToolId
   className?: string
 }) {
   const brand = TOOL_BRANDS[toolId]

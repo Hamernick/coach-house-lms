@@ -11,12 +11,10 @@ export function RoadmapCalendarPreview() {
     new Date(2026, 8, 8)
   )
   const personalEvents = usePersonalCalendarEvents(month)
-  const today = new Date(2026, 8, 8)
   return (
     <RoadmapCalendarMonthAgendaPanel
       month={month}
       selectedDate={selectedDate}
-      today={today}
       events={[]}
       dayEvents={[]}
       personalEvents={personalEvents}

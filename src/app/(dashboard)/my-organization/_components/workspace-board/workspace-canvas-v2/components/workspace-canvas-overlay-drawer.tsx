@@ -1,10 +1,9 @@
 "use client"
 
-import { useWorkspaceDrawerGuide, useWorkspaceDrawerGuideState } from "./use-workspace-drawer-guide"
-
 import {
   memo,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -33,19 +32,20 @@ import {
 import { Toggle } from "@/components/ui/toggle"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
-import { useWorkspaceDrawerCanvasSize } from "./use-workspace-drawer-canvas-height"
+import { useWorkspaceDrawerSnapPoints } from "./use-workspace-drawer-snap-points"
 import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-overlay-drawer-container"
 import {
   isWorkspaceDataDrawerCollapsedSnapPoint as isDrawerCollapsed,
   isWorkspaceDataDrawerFullscreenSnapPoint as isDrawerFullscreen,
   resolveWorkspaceDataDrawerSnapPoint,
-  resolveWorkspaceDataDrawerRequestSnapPoint,
+  resolveWorkspaceDataDrawerDisplaySnapPoint,
+  resolveWorkspaceDataDrawerStoredSnapPoint,
   resolveWorkspaceDataDrawerViewportHeight,
   WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT,
   WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT,
   WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT,
-  WORKSPACE_DATA_DRAWER_SNAP_POINTS,
 } from "./workspace-canvas-overlay-drawer-state"
 import {
   type WorkspaceCanvasDrawerTab,
@@ -95,17 +95,23 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     peopleCanvasActions: WorkspacePeopleCanvasActions
   }) {
     const canvasContainer = useWorkspaceCanvasOverlayDrawerContainer()
-    const canvasSize = useWorkspaceDrawerCanvasSize(canvasContainer)
-    const guideState = useWorkspaceDrawerGuideState()
-    const restoredPreferencesScopeRef = useRef<string | null>(null)
-    const [preferencesReady, setPreferencesReady] = useState(false)
     const [open, setOpen] = useState(true)
     const [hasOpened, setHasOpened] = useState(true)
     const [activeSnapPoint, setActiveSnapPoint] = useState<
       number | string | null
-    >(() => guideState?.snapPoint ?? resolveWorkspaceDataDrawerRequestSnapPoint(request))
+    >(
+      request
+        ? WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT
+        : WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT
+    )
     const [tab, setTab] = useState<WorkspaceCanvasDrawerTab>(
-      guideState?.tab ?? request?.tab ?? "organization"
+      request?.tab ?? "accelerator"
+    )
+    const isMobile = useIsMobile()
+    const mobileParticles = isMobile && tab === "particles"
+    const snapPoints = useWorkspaceDrawerSnapPoints(
+      canvasContainer,
+      mobileParticles
     )
     const handledRequestIdRef = useRef(0)
     const handledAcceleratorRequestIdRef = useRef(0)
@@ -114,8 +120,10 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     const drawerCollapsed = open && isDrawerCollapsed(activeSnapPoint)
     const drawerExpanded = open && !isDrawerCollapsed(activeSnapPoint)
     const drawerFullscreen = open && isDrawerFullscreen(activeSnapPoint)
-    const drawerViewportHeight =
-      resolveWorkspaceDataDrawerViewportHeight(activeSnapPoint)
+    const drawerViewportHeight = resolveWorkspaceDataDrawerViewportHeight(
+      activeSnapPoint,
+      mobileParticles
+    )
     const dataShortcutLabel = drawerExpanded
       ? "Collapse workspace data"
       : "Open workspace data"
@@ -133,8 +141,10 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             typeof nextSnapPoint === "function"
               ? nextSnapPoint(current)
               : nextSnapPoint
-          const storedSnapPoint =
-            resolveWorkspaceDataDrawerSnapPoint(resolvedSnapPoint)
+          const storedSnapPoint = resolveWorkspaceDataDrawerStoredSnapPoint(
+            resolvedSnapPoint,
+            mobileParticles
+          )
           if (storedSnapPoint === null) {
             return current ?? WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT
           }
@@ -144,17 +154,13 @@ export const WorkspaceCanvasOverlayDrawer = memo(
           return storedSnapPoint
         })
       },
-      [uiPreferencesScope]
+      [uiPreferencesScope, mobileParticles]
     )
 
-    useLayoutEffect(() => {
-      setPreferencesReady(true)
-      const scopeKey = JSON.stringify([uiPreferencesScope.orgId, uiPreferencesScope.viewerId])
-      if (restoredPreferencesScopeRef.current === scopeKey) return
-      restoredPreferencesScopeRef.current = scopeKey
-      if (request || guideState) return
+    useEffect(() => {
       const storedPreferences =
         readWorkspaceBoardUiPreferences(uiPreferencesScope)
+      if (request) return
       setTab(storedPreferences.dataDrawerTab)
       const storedSnapPoint = resolveWorkspaceDataDrawerSnapPoint(
         storedPreferences.dataDrawerSnapPoint
@@ -163,7 +169,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
       setOpen(true)
       setHasOpened(true)
       setActiveSnapPoint(storedSnapPoint)
-    }, [request, uiPreferencesScope, guideState])
+    }, [request, uiPreferencesScope])
 
     useLayoutEffect(() => {
       if (!request || handledRequestIdRef.current === request.id) return
@@ -176,11 +182,11 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         dataDrawerTab: request.tab,
       })
       handleActiveSnapPointChange(
-        resolveWorkspaceDataDrawerRequestSnapPoint(request)
+        request.tab === "roadmap"
+          ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT
+          : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT
       )
     }, [handleActiveSnapPointChange, request, uiPreferencesScope])
-
-    useWorkspaceDrawerGuide({ state: guideState, setOpen, setHasOpened, setTab, setSnap: setActiveSnapPoint })
 
     const handleOpenChange = useCallback(
       (nextOpen: boolean) => {
@@ -267,13 +273,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         requestId
       )
     }, [])
-    const handleAddPeopleToCanvas = useCallback((personIds: string[]) => {
-      const added = peopleCanvasActions.add(personIds)
-      if (added > 0 && drawerFullscreen) {
-        handleActiveSnapPointChange(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)
-      }
-      return added
-    }, [drawerFullscreen, handleActiveSnapPointChange, peopleCanvasActions])
     const pendingAcceleratorRequest =
       request?.tab === "accelerator" &&
       request.id > handledAcceleratorRequestIdRef.current
@@ -281,17 +280,16 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         : null
 
     const { tabIndicator, tabsHeaderRef, tabsListRef } =
-      useWorkspaceDataDrawerTabIndicator({ tab, expanded: drawerExpanded })
-
-    // Mount Vaul with the restored snap and a measurable canvas, never the
-    // temporary collapsed/zero-height startup geometry.
-    if (!preferencesReady || !canvasSize || canvasSize.height <= 0 || canvasSize.width <= 0) return null
+      useWorkspaceDataDrawerTabIndicator({ tab })
 
     return (
       <Drawer
         open={canvasContainer ? open : false}
         onOpenChange={handleOpenChange}
-        activeSnapPoint={activeSnapPoint}
+        activeSnapPoint={resolveWorkspaceDataDrawerDisplaySnapPoint(
+          activeSnapPoint,
+          mobileParticles
+        )}
         direction="bottom"
         container={canvasContainer ?? undefined}
         disablePreventScroll
@@ -302,7 +300,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         noBodyStyles
         repositionInputs={false}
         setActiveSnapPoint={handleActiveSnapPointChange}
-        snapPoints={[...WORKSPACE_DATA_DRAWER_SNAP_POINTS]}
+        snapPoints={snapPoints}
         snapToSequentialPoint
         shouldScaleBackground={false}
       >
@@ -324,7 +322,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             onClick={handleDataShortcutClick}
             className={cn(
               "nodrag nopan text-foreground size-9 h-9 w-9 rounded-xl",
-              "hidden",
               drawerExpanded &&
                 "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm"
             )}
@@ -338,10 +335,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         {drawerContentMounted ? (
           <DrawerContent
             data-workspace-canvas-overlay-drawer="true"
-            style={{
-              height: canvasSize.height,
-              width: canvasSize.width,
-            }}
             data-workspace-data-drawer-request-step={
               request?.acceleratorStepId ?? undefined
             }
@@ -357,9 +350,9 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             }
             overlayClassName="pointer-events-none absolute inset-0 !z-10 bg-background/10 backdrop-blur-[1px]"
             className={cn(
-              "border-border/70 bg-background/98 absolute right-0 bottom-0 left-0 !z-20 h-full max-h-full w-full max-w-full min-h-0 min-w-0 box-border overflow-hidden p-0 shadow-[0_-24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl",
-              "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:h-full data-[vaul-drawer-direction=bottom]:max-h-full data-[vaul-drawer-direction=bottom]:rounded-t-[20px]",
-              drawerFullscreen && "!z-40 bg-background backdrop-blur-none data-[vaul-drawer-direction=bottom]:rounded-t-none data-[vaul-drawer-direction=bottom]:border-t-0"
+              "border-border/70 bg-background/98 absolute right-0 bottom-0 left-0 !z-20 h-full max-h-none w-full max-w-full min-w-0 overflow-hidden p-0 shadow-[0_-24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl",
+              "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:h-full data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:rounded-t-[20px]",
+              drawerFullscreen && "!z-40"
             )}
           >
             <div
@@ -386,7 +379,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             </div>
             <DrawerDescription className="sr-only">
               Switch between your organization profile, people, documents,
-              Finance, and Accelerator.
+              Particles, Finance, Tools, and Accelerator.
             </DrawerDescription>
             <div
               data-workspace-data-drawer-content-viewport="true"
@@ -409,7 +402,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
                 }
                 handleTabOpen={handleTabOpen}
                 handleTabChange={handleTabChange}
-                peopleCanvasActions={{ ...peopleCanvasActions, add: handleAddPeopleToCanvas }}
+                peopleCanvasActions={peopleCanvasActions}
                 organizationEditorData={organizationEditorData}
                 financeInput={financeInput}
                 pendingAcceleratorRequest={pendingAcceleratorRequest}

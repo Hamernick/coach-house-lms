@@ -1,5 +1,9 @@
 "use client"
 
+import { pickGoogleDriveFiles } from "@/features/google-drive/client"
+
+import { DocumentImportButton } from "@/features/document-import/client"
+import { pasteEditorClipboard } from "@/components/rich-text-editor/clipboard"
 import { EditorContent, useEditor } from "@tiptap/react"
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
@@ -17,6 +21,8 @@ import { useLinkPreviews } from "@/components/rich-text-editor/hooks/use-link-pr
 import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
 
 export function RichTextEditor({
+  enableDocumentImport = false,
+  documentTitle,
   value,
   onChange,
   ariaLabel,
@@ -111,6 +117,16 @@ export function RichTextEditor({
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
       },
       handleKeyDown: (_view, event) => {
+        if (
+          (event.metaKey || event.ctrlKey) &&
+          event.shiftKey &&
+          event.key.toLowerCase() === "v" &&
+          editor
+        ) {
+          event.preventDefault()
+          void pasteEditorClipboard(editor, true)
+          return true
+        }
         if (
           (event.metaKey || event.ctrlKey) &&
           event.key.toLowerCase() === "a"
@@ -213,7 +229,19 @@ export function RichTextEditor({
       enableImages={enableImages}
       uploadingImage={uploadingImage}
       onImagePick={() => fileInputRef.current?.click()}
-      toolbarActions={toolbarActions}
+      toolbarActions={
+        <>
+          {toolbarActions}
+          {enableDocumentImport ? (
+            <DocumentImportButton
+              onPickGoogleDrive={pickGoogleDriveFiles}
+              title={documentTitle}
+              content={editor.getHTML()}
+              onChange={(html) => editor.commands.setContent(html)}
+            />
+          ) : null}
+        </>
+      }
       toolbarTrailingActions={toolbarTrailingActions}
       toolbarClassName={toolbarClassName}
     />

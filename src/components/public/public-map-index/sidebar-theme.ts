@@ -17,10 +17,10 @@ export const PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME =
   "mx-auto w-full max-w-3xl space-y-4 bg-transparent p-4 text-card-foreground shadow-none sm:p-6"
 
 export const PUBLIC_MAP_DETAIL_SECTION_CLASSNAME =
-  "overflow-hidden rounded-2xl border border-border/75 bg-background/90 p-4 shadow-none"
+  "rounded-2xl border border-border/75 bg-background/90 p-4 shadow-sm backdrop-blur-md"
 
 export const PUBLIC_MAP_DETAIL_ICON_BUTTON_CLASSNAME =
-  "relative size-9 rounded-full after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-1/2 after:rounded-full"
+  "relative size-9 rounded-full max-md:mx-px max-md:after:absolute max-md:after:-inset-[5px]"
 
 export const PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME =
   "border border-input !bg-input/35 text-foreground backdrop-blur-xl hover:!bg-input/50 hover:text-foreground/75"
@@ -41,7 +41,7 @@ export const PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME =
   "rounded-md border border-input bg-input/30 text-foreground"
 
 export const PUBLIC_MAP_FILTER_PILL_CLASSNAME =
-  "border-input bg-input/30 h-11 touch-manipulation rounded-full border px-2.5 text-xs leading-none backdrop-blur sm:h-7 sm:text-[11px]"
+  "border-input bg-input/30 h-7 rounded-full border px-2.5 text-[11px] leading-none backdrop-blur"
 
 export const PUBLIC_MAP_SIDEBAR_MEDIA_SURFACE_CLASSNAME =
   "border border-border/60 bg-muted/30"

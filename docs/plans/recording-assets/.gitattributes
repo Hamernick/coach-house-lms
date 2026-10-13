@@ -1,0 +1,2 @@
+# Preserve the recording kit's intentional calendar-file line endings.
+*.ics -text whitespace=cr-at-eol

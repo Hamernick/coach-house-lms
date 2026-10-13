@@ -39,7 +39,7 @@ export function GoogleCalendarDialog({
       }}
     >
       <DialogContent
-        className="max-h-[85svh] overflow-y-auto overscroll-contain rounded-2xl p-4 sm:max-w-md sm:rounded-lg sm:p-6 [&>[data-slot=dialog-close]]:top-2 [&>[data-slot=dialog-close]]:right-2 [&>[data-slot=dialog-close]]:inline-flex [&>[data-slot=dialog-close]]:size-11 [&>[data-slot=dialog-close]]:items-center [&>[data-slot=dialog-close]]:justify-center [&>[data-slot=dialog-close]]:rounded-full sm:[&>[data-slot=dialog-close]]:top-4 sm:[&>[data-slot=dialog-close]]:right-4 sm:[&>[data-slot=dialog-close]]:size-4 sm:[&>[data-slot=dialog-close]]:rounded-xs"
+        className="max-h-[85svh] overflow-y-auto overscroll-contain sm:max-w-md"
         {...getReactGrabLinkedSurfaceProps({
           ownerId: "google-calendar:connection",
           component: "GoogleCalendarDialog",
@@ -49,7 +49,7 @@ export function GoogleCalendarDialog({
           surfaceKind: "content",
         })}
       >
-        <DialogHeader className="pr-10 text-left sm:pr-0">
+        <DialogHeader>
           <DialogTitle>Google Calendar</DialogTitle>
           <DialogDescription>
             {summary?.email ?? "Bring your schedule into Coach House."}

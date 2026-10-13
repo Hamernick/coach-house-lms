@@ -9,14 +9,12 @@ import {
   useState,
 } from "react"
 
-import { markModuleCompleteAction } from "@/app/actions/module-progress"
 import type { WorkspaceAcceleratorCardInput } from "@/features/workspace-accelerator-card"
 import { listenForWorkspaceRoadmapDrawerRequests } from "@/lib/workspace/data-drawer-events"
 import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 
 import { resolveWorkspaceAcceleratorReadinessSummary } from "../../workspace-board-accelerator-card-helpers"
 import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
-import { resolveWorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 
 type WorkspaceAcceleratorDrawerArgs = Pick<
@@ -48,7 +46,6 @@ function resolveInitialWorkspaceDataDrawerRequest(
   if (initialDrawerTab === "accelerator") {
     return {
       tab: "accelerator",
-      focusKey: organizationEditorData.initialFocus,
       acceleratorStepId: organizationEditorData.initialAcceleratorStepId,
       acceleratorModuleId: organizationEditorData.initialAcceleratorModuleId,
       acceleratorLessonGroupKey: organizationEditorData.initialAcceleratorGroup,
@@ -79,6 +76,10 @@ function resolveInitialWorkspaceDataDrawerRequest(
 
   if (initialDrawerTab === "tools") {
     return { tab: "tools" }
+  }
+
+  if (initialDrawerTab === "particles") {
+    return { tab: "particles" }
   }
 
   return null
@@ -125,14 +126,6 @@ export function useWorkspaceAcceleratorDrawer({
       }),
     [open]
   )
-  useEffect(() => {
-    const restoreFromUrl = () => {
-      const next = resolveWorkspaceDataDrawerRequest(window.location.href)
-      if (next) open(next)
-    }
-    window.addEventListener("popstate", restoreFromUrl)
-    return () => window.removeEventListener("popstate", restoreFromUrl)
-  }, [open])
   useEffect(() => {
     if (
       handledInitialDrawerRequestRef.current === initialDrawerRequestSignature
@@ -181,7 +174,6 @@ export function useWorkspaceAcceleratorDrawer({
       storageKey: `${seed.orgId}:${seed.viewerId}`,
       initialCurrentStepId: boardState.accelerator.activeStepId,
       initialCompletedStepIds: boardState.accelerator.completedStepIds,
-      onModuleComplete: markModuleCompleteAction,
       onProgressChange,
       onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
     }),

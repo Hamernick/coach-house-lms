@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   FinancePeriodMonths,
   FinancePlanAction,
@@ -381,7 +380,9 @@ export function buildFinanceReviewPrompt(draft: FinancePlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  return documentationCsvCell(value)
+  let text = String(value)
+  if (/^[=+\-@]/.test(text)) text = `'${text}`
+  return `"${text.replaceAll('"', '""')}"`
 }
 
 export function buildFinanceCsv(draft: FinancePlanDraft) {

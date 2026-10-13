@@ -1,54 +1,18 @@
-import CheckIcon from "lucide-react/dist/esm/icons/check"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import {
+  RoadmapTocStatusDot,
+  RoadmapTocCompletedRailSegment,
+  RoadmapTocCompletionCheck,
+} from "@/components/roadmap/roadmap-status-indicators"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import type { CSSProperties, RefObject } from "react"
 
 import { Button } from "@/components/ui/button"
+import { SectionRailIndicator } from "@/components/ui/section-rail-indicator"
 import { cn } from "@/lib/utils"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
 import type { RoadmapDraft, RoadmapTocItem } from "../types"
-
-function RoadmapTocStatusDot({ status }: { status: RoadmapSectionStatus }) {
-  const statusClass =
-    status === "complete"
-      ? "bg-emerald-500"
-      : status === "in_progress"
-        ? "bg-amber-500"
-        : "bg-border"
-
-  return (
-    <span
-      aria-hidden
-      className={cn("h-2 w-2 shrink-0 rounded-full", statusClass)}
-    />
-  )
-}
-
-function RoadmapTocCompletedRailSegment() {
-  return (
-    <span
-      aria-hidden
-      className="bg-foreground/90 pointer-events-none absolute top-0 left-[calc(var(--roadmap-toc-rail-offset)-var(--roadmap-toc-content-offset))] z-10 h-full w-[2px] rounded-full"
-    />
-  )
-}
-
-const ROADMAP_TOC_INLINE_ICON_CLASS_NAME =
-  "text-muted-foreground/70 ml-auto inline-flex h-4 w-4 shrink-0 items-center justify-center"
-
-function RoadmapTocCompletionCheck({
-  status,
-}: {
-  status: RoadmapSectionStatus
-}) {
-  if (status !== "complete") return null
-
-  return (
-    <span aria-hidden className={ROADMAP_TOC_INLINE_ICON_CLASS_NAME}>
-      <CheckIcon className="h-3.5 w-3.5" strokeWidth={2} />
-    </span>
-  )
-}
 
 function resolveRoadmapTocButtonStateClassName({
   isActive,
@@ -95,6 +59,13 @@ export function RoadmapEditorToc({
   return (
     <div
       ref={sectionsListRef}
+      {...getReactGrabOwnerProps({
+        ownerId: "roadmap-editor:navigation",
+        component: "RoadmapEditorToc",
+        source:
+          "src/components/roadmap/roadmap-editor/components/roadmap-editor-toc.tsx",
+        slot: "root",
+      })}
       id="roadmap-section-picker-trigger"
       className="relative w-full min-w-0 space-y-1.5 pr-2 pl-4 text-sm"
       style={
@@ -108,16 +79,9 @@ export function RoadmapEditorToc({
         aria-hidden
         className="bg-border/60 absolute top-0 left-[var(--roadmap-toc-rail-offset)] h-full w-px rounded-full"
       />
-      <span
-        aria-hidden
-        className={cn(
-          "bg-foreground/90 absolute left-[var(--roadmap-toc-rail-offset)] z-10 w-[2px] rounded-full transition-[transform,height,opacity] duration-200 ease-out motion-reduce:transition-none",
-          tocIndicator.visible ? "opacity-100" : "opacity-0"
-        )}
-        style={{
-          height: `${tocIndicator.height}px`,
-          transform: `translateY(${tocIndicator.top}px)`,
-        }}
+      <SectionRailIndicator
+        {...tocIndicator}
+        className="left-[var(--roadmap-toc-rail-offset)] z-10"
       />
       {tocItems.map((item) => {
         if (item.type === "group") {

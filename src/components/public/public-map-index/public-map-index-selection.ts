@@ -6,10 +6,7 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import {
-  ORGANIZATION_MARKER_OFFSET_Y,
-  PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-} from "./map-view-helpers"
+import { PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM } from "./map-view-helpers"
 import { useSyncSelectedOrganization } from "./public-map-index-runtime"
 import {
   shouldRenderPublicMapDesktopSidebar,
@@ -55,7 +52,6 @@ export function resolvePublicMapPresentationFlags(
 
 export function usePublicMapListItemSelection({
   handleSelectOrganization,
-  navigateToProfile,
   mapRef,
   selectableMapItemById,
   setSameLocationSelection,
@@ -63,7 +59,6 @@ export function usePublicMapListItemSelection({
   setSelectedOrgId,
   setSidebarMode,
 }: {
-  navigateToProfile?: (id: string) => boolean
   handleSelectOrganization: SelectPublicMapOrganization
   mapRef: RefObject<mapboxgl.Map | null>
   selectableMapItemById: Map<string, PublicMapItem>
@@ -89,7 +84,6 @@ export function usePublicMapListItemSelection({
       map.flyTo({
         center: [item.longitude, item.latitude],
         zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
-        offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
         duration: 780,
         essential: true,
       })
@@ -99,7 +93,6 @@ export function usePublicMapListItemSelection({
 
   const handleSelectListItem = useCallback(
     (selectableId: string) => {
-      if (navigateToProfile?.(selectableId)) return
       const item = selectableMapItemById.get(selectableId)
       if (!item || item.itemType !== "external_resource") return
 
@@ -109,7 +102,6 @@ export function usePublicMapListItemSelection({
       focusMapItemOnMap(selectableId)
     },
     [
-      navigateToProfile,
       focusMapItemOnMap,
       selectableMapItemById,
       setSelectedListItemId,
@@ -119,12 +111,11 @@ export function usePublicMapListItemSelection({
   )
 
   const handleSelectMapMarker = useCallback(
-    (selectableId: string, preserveSearchContext = false) => {
-      if (navigateToProfile?.(selectableId)) return
+    (selectableId: string) => {
       const item = selectableMapItemById.get(selectableId)
-      if (!preserveSearchContext) setSameLocationSelection(null)
       focusMapItemOnMap(selectableId)
       if (item?.itemType === "external_resource") {
+        setSameLocationSelection(null)
         setSelectedOrgId(null)
         setSelectedListItemId(selectableId)
         setSidebarMode("details")
@@ -139,7 +130,6 @@ export function usePublicMapListItemSelection({
       })
     },
     [
-      navigateToProfile,
       focusMapItemOnMap,
       handleSelectOrganization,
       selectableMapItemById,
@@ -157,14 +147,19 @@ export function usePublicMapListItemSelection({
       )
       if (selectableIds.length === 0) return
 
-      // Keep the other places available when returning from the detail drawer.
+      focusMapItemOnMap(selectableIds[0])
+      setSelectedOrgId(null)
+      setSelectedListItemId(null)
       setSameLocationSelection({ ...group, organizationIds: selectableIds })
-      handleSelectMapMarker(selectableIds[0], true)
+      setSidebarMode("search")
     },
     [
-      handleSelectMapMarker,
+      focusMapItemOnMap,
       selectableMapItemById,
       setSameLocationSelection,
+      setSelectedListItemId,
+      setSelectedOrgId,
+      setSidebarMode,
     ]
   )
 
@@ -177,13 +172,11 @@ export function usePublicMapListItemSelection({
 
 export function usePublicMapIndexNavigationHandlers({
   handleSelectOrganization,
-  navigateToProfile,
   setSameLocationSelection,
   setSelectedListItemId,
   setSelectedOrgId,
   setSidebarMode,
 }: {
-  navigateToProfile?: (id: string) => boolean
   handleSelectOrganization: SelectPublicMapOrganization
   setSameLocationSelection: (
     selection: PublicMapSameLocationSelection | null
@@ -194,7 +187,6 @@ export function usePublicMapIndexNavigationHandlers({
 }) {
   const handleOpenDetails = useCallback(
     (organizationId: string, options?: { preserveSearchContext?: boolean }) => {
-      if (navigateToProfile?.(organizationId)) return
       setSelectedListItemId(organizationId)
       if (!options?.preserveSearchContext) {
         setSameLocationSelection(null)
@@ -204,18 +196,17 @@ export function usePublicMapIndexNavigationHandlers({
         openDetails: true,
       })
     },
-    [navigateToProfile, handleSelectOrganization, setSameLocationSelection, setSelectedListItemId]
+    [handleSelectOrganization, setSameLocationSelection, setSelectedListItemId]
   )
   const handleRailSelectOrganization = useCallback(
     (organizationId: string) => {
-      if (navigateToProfile?.(organizationId)) return
       setSelectedListItemId(organizationId)
       handleSelectOrganization({
         organizationId,
         openDetails: true,
       })
     },
-    [navigateToProfile, handleSelectOrganization, setSelectedListItemId]
+    [handleSelectOrganization, setSelectedListItemId]
   )
   const handleBackToSearch = useCallback(() => {
     setSelectedOrgId(null)

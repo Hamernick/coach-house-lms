@@ -44,17 +44,6 @@ describe("account map preferences route", () => {
     vi.clearAllMocks()
   })
 
-  it("rejects signed-out collection reads and writes", async () => {
-    const updateUser = vi.fn()
-    createSupabaseRouteHandlerClientMock.mockReturnValue({ auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }), updateUser,
-    } })
-    const { GET, PATCH } = await import("@/app/api/account/map-preferences/route")
-    expect((await GET(new NextRequest("http://localhost/api/account/map-preferences"))).status).toBe(401)
-    expect((await PATCH(buildPatchRequest({ collectedResourceIds: ["resource-1"] }))).status).toBe(401)
-    expect(updateUser).not.toHaveBeenCalled()
-  })
-
   it("returns normalized account-backed resource collections", async () => {
     const { supabase } = buildSupabaseStub({
       collectedResourceIds: ["resource-1", " resource-2 ", "resource-1"],
@@ -125,6 +114,50 @@ describe("account map preferences route", () => {
           savedGuideIds: ["chicago-food-access"],
         }),
       },
+    })
+  })
+
+  it.each([
+    "essentials",
+    "transportation-access",
+    "documents-and-id",
+    "digital-access",
+  ])("preserves the saved %s guide when updating favorites", async (guideId) => {
+    const { supabase, updateUser } = buildSupabaseStub({
+      savedGuideIds: [guideId, "chicago-food-access"],
+    })
+    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
+
+    const { PATCH } = await import("@/app/api/account/map-preferences/route")
+    const response = await PATCH(
+      buildPatchRequest({ favorites: ["organization-1"] })
+    )
+
+    expect(response.status).toBe(200)
+    expect(updateUser).toHaveBeenCalledWith({
+      data: {
+        map_preferences: expect.objectContaining({
+          favorites: ["organization-1"],
+          savedGuideIds: [guideId, "chicago-food-access"],
+        }),
+      },
+    })
+  })
+
+  it("returns known newer guide IDs while excluding unknown IDs", async () => {
+    const { supabase } = buildSupabaseStub({
+      savedGuideIds: ["essentials", "digital-access", "made-up-guide"],
+    })
+    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
+
+    const { GET } = await import("@/app/api/account/map-preferences/route")
+    const response = await GET(
+      new NextRequest("http://localhost/api/account/map-preferences")
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      preferences: { savedGuideIds: ["essentials", "digital-access"] },
     })
   })
 

@@ -138,7 +138,6 @@ export function MemberWorkspaceProjectsHeader({
               }
             />
             <MemberWorkspaceProjectFilterPopover
-              directory={directory}
               coachOptions={coachOptions}
               coachFilter={coachFilter}
               onCoachFilterChange={onCoachFilterChange}

@@ -14,7 +14,6 @@ import {
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
-import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 
 export default async function OrganizationsPage() {
   const staff = await requirePlatformCapability("organizations", {
@@ -42,14 +41,7 @@ export default async function OrganizationsPage() {
     id: staff.userId, name: profile?.full_name ?? "You",
     email: profile?.email ?? null, avatarUrl: profile?.avatar_url ?? null,
   }
-  const coachScope = await loadOrganizationCoachActorScope({
-    accessLevel: staff.accessLevel,
-    userId: staff.userId,
-  })
-  const defaultCoachFilter =
-    coachScope.mode === "assigned" && coachScope.canAccessUnassigned
-      ? "all"
-      : defaultOrganizationCoachFilter(currentCoach)
+  const defaultCoachFilter = defaultOrganizationCoachFilter(currentCoach)
   const coachOptions = assignments.coachOptions.some((coach) => coach.id === staff.userId)
     ? assignments.coachOptions : [...assignments.coachOptions, currentCoach]
   const assignedProjects = projects.map((project) => ({
@@ -61,7 +53,6 @@ export default async function OrganizationsPage() {
 
   return (
     <MemberWorkspaceProjectsPage
-      viewerUserId={staff.userId}
       projects={assignedProjects}
       showPlatformRevenue
       defaultCoachFilter={defaultCoachFilter}

@@ -1,8 +1,5 @@
 "use client"
 
-import { mergeResourceGuideSummaries } from "@/features/find-resource-index"
-import type { FindResourceCatalogResponse } from "@/features/find-resource-index"
-
 import { useCallback, useMemo, type Dispatch, type SetStateAction } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -51,11 +48,11 @@ export type PublicMapResourceGuideSearchContext = {
 
 export function usePublicMapResourceGuideState({
   activeGuideId,
+  showCoolingCenters = true,
   filteredMapItems,
   organizations,
   includeSeedResources,
   resourceItems,
-  guideSummaries,
   setSameLocationSelection,
   setSelectedListItemId,
   setSelectedOrgId,
@@ -63,11 +60,11 @@ export function usePublicMapResourceGuideState({
   setActiveGuideId,
 }: {
   activeGuideId: PublicMapResourceGuideId | null
+  showCoolingCenters?: boolean
   filteredMapItems: PublicMapItem[]
   organizations: PublicMapOrganization[]
   includeSeedResources: boolean
   resourceItems: ExternalResourceMapItem[]
-  guideSummaries?: FindResourceCatalogResponse["guides"]
   setSameLocationSelection: (
     selection: PublicMapSameLocationSelection | null
   ) => void
@@ -86,12 +83,8 @@ export function usePublicMapResourceGuideState({
     [includeSeedResources, organizations, resourceItems]
   )
   const resourceGuides = useMemo(
-    () => mergeResourceGuideSummaries(
-      buildPublicMapResourceGuides(guideSourceMapItems),
-      buildPublicMapResourceGuides(buildPublicMapItems({ organizations })),
-      guideSummaries
-    ),
-    [guideSourceMapItems, organizations, guideSummaries]
+    () => buildPublicMapResourceGuides(guideSourceMapItems, { showCoolingCenters }),
+    [guideSourceMapItems, showCoolingCenters]
   )
   const activeGuide = useMemo<PublicMapResourceGuide | null>(
     () => resourceGuides.find((guide) => guide.id === activeGuideId) ?? null,
@@ -108,7 +101,7 @@ export function usePublicMapResourceGuideState({
         activeGuide
           ? {
               title: activeGuide.title,
-              description: `${activeGuide.itemCount.toLocaleString()} places from the current resource map data.`,
+              description: `${activeGuide.itemCount.toLocaleString()} ${activeGuide.itemCount === 1 ? "resource" : "resources"} in this guide.`,
               guideId: activeGuide.id,
               items: activeGuide.items,
               onClear: clearActiveGuide,
@@ -229,7 +222,7 @@ export function PublicMapResourceGuideActions({
           type="button"
           variant="outline"
           size="icon"
-          className="bg-background/90 size-11 touch-manipulation rounded-full backdrop-blur-md sm:size-9"
+          className="bg-background/90 size-9 rounded-full backdrop-blur-md"
           aria-label={
             saved
               ? `Remove ${guideTitle} from My Map`
@@ -249,7 +242,7 @@ export function PublicMapResourceGuideActions({
         title={guideTitle}
         label={`Share ${guideTitle}`}
         iconOnly
-        className="bg-background/90 size-11 touch-manipulation rounded-full backdrop-blur-md sm:size-9"
+        className="bg-background/90 size-9 rounded-full backdrop-blur-md"
       />
     </div>
   )
@@ -306,7 +299,7 @@ function PublicMapResourceGuideCard({
             </span>
             <span className="text-muted-foreground mt-1.5 block text-sm leading-tight font-medium">
               {available
-                ? `${guide.itemCount.toLocaleString()} places`
+                ? `${guide.itemCount.toLocaleString()} ${guide.itemCount === 1 ? "resource" : "resources"}`
                 : "Unavailable right now"}
             </span>
           </span>
@@ -360,7 +353,6 @@ export function PublicMapResourceGuides({
       ) : null}
       <div
         data-public-map-resource-guides-grid="true"
-        data-lenis-prevent-horizontal=""
         data-presentation={presentation}
         className={cn(
           "min-w-0 items-stretch gap-3",

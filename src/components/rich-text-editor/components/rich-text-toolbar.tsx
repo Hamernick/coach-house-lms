@@ -1,4 +1,3 @@
-import { RichTextPasteMenu } from "./rich-text-paste-menu"
 import type { Editor } from "@tiptap/react"
 import type { ComponentType, ReactNode } from "react"
 import AlignCenter from "lucide-react/dist/esm/icons/align-center"
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { RichTextPasteMenu } from "./rich-text-paste-menu"
 
 type RichTextToolbarProps = {
   editor: Editor
@@ -158,7 +158,6 @@ export function RichTextToolbar({
       )}
     >
       <RichTextPasteMenu editor={editor} />
-      {toolbarActions ? <div className="flex items-center gap-1">{toolbarActions}</div> : null}
       <DropdownMenu>
         <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
         <DropdownMenuContent align="start" className="w-44">
@@ -358,6 +357,7 @@ export function RichTextToolbar({
         </>
       ) : null}
       <ToolbarSpacer />
+      {toolbarActions ? <div className="flex items-center gap-1">{toolbarActions}</div> : null}
       <ToolbarButton
         icon={Undo2}
         label="Undo"

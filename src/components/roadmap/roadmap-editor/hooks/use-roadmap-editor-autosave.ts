@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 import type { RoadmapDraft } from "@/components/roadmap/roadmap-editor/types"
 import type { RoadmapSection } from "@/lib/roadmap"
@@ -11,7 +11,13 @@ type UseRoadmapEditorAutosaveArgs = {
   bodyDirty: boolean
   isPending: boolean
   savingId: string | null
-  saveSectionById: ({ sectionId, showToast }: { sectionId: string; showToast: boolean }) => void
+  saveSectionById: ({
+    sectionId,
+    showToast,
+  }: {
+    sectionId: string
+    showToast: boolean
+  }) => void
   flushActiveSectionDraft: () => void
 }
 
@@ -26,19 +32,36 @@ export function useRoadmapEditorAutosave({
   saveSectionById,
   flushActiveSectionDraft,
 }: UseRoadmapEditorAutosaveArgs) {
+  const flushRef = useRef(flushActiveSectionDraft)
+  useEffect(() => {
+    flushRef.current = flushActiveSectionDraft
+  }, [flushActiveSectionDraft])
+
   useEffect(() => {
     if (!canEdit) return
     if (!activeSection || !activeDraft) return
     if (!isDirty) return
     if (savingId || isPending) return
 
-    const timeout = window.setTimeout(() => {
-      if (savingId || isPending) return
-      saveSectionById({ sectionId: activeSection.id, showToast: false })
-    }, bodyDirty ? 2500 : 1200)
+    const timeout = window.setTimeout(
+      () => {
+        if (savingId || isPending) return
+        saveSectionById({ sectionId: activeSection.id, showToast: false })
+      },
+      bodyDirty ? 2500 : 1200
+    )
 
     return () => window.clearTimeout(timeout)
-  }, [activeDraft, activeSection, bodyDirty, canEdit, isDirty, isPending, saveSectionById, savingId])
+  }, [
+    activeDraft,
+    activeSection,
+    bodyDirty,
+    canEdit,
+    isDirty,
+    isPending,
+    saveSectionById,
+    savingId,
+  ])
 
   useEffect(() => {
     if (!canEdit) return
@@ -51,12 +74,20 @@ export function useRoadmapEditorAutosave({
     }, 10000)
 
     return () => window.clearInterval(interval)
-  }, [activeDraft, activeSection, canEdit, isDirty, isPending, saveSectionById, savingId])
+  }, [
+    activeDraft,
+    activeSection,
+    canEdit,
+    isDirty,
+    isPending,
+    saveSectionById,
+    savingId,
+  ])
 
   useEffect(() => {
     if (!canEdit) return
     return () => {
-      flushActiveSectionDraft()
+      flushRef.current()
     }
-  }, [canEdit, flushActiveSectionDraft])
+  }, [canEdit])
 }

@@ -1,4 +1,3 @@
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
 import { isDocumentsSectionVisible } from "@/lib/organization/core-document-uploads"
 import { stripHtml } from "@/lib/markdown/convert"
 import type { DriveLibraryDocument } from "../hooks/use-google-drive-library"
@@ -33,7 +32,6 @@ export type LibraryItem = {
   row?: DocumentIndexRow
   uploadedFile?: OrganizationDocumentFile
   driveDocument?: DriveLibraryDocument
-  coreDriveSource?: import("@/lib/roadmap/types").CoreDocumentDriveSource | null
 }
 
 export function resolveDocumentsLibraryFileType(
@@ -71,9 +69,7 @@ export function buildLibraryItems(
     if (row.source === "upload" && !row.document?.path && !includeMissing)
       return []
     const coreFile =
-      row.source === "roadmap" &&
-      !row.section.driveSource &&
-      !row.section.documentSource
+      row.source === "roadmap"
         ? uploadedFiles.find(
             (file) => file.coreSectionId === row.section.id && !file.deletedAt
           )
@@ -82,10 +78,8 @@ export function buildLibraryItems(
     return [
       {
         id: row.id,
-        coreDriveSource:
-          row.source === "roadmap" ? row.section.driveSource : null,
         contentPreview:
-          row.source === "roadmap" && !row.section.driveSource
+          row.source === "roadmap"
             ? stripHtml(row.section.content ?? "").slice(0, 800)
             : undefined,
         hasContent:
@@ -94,12 +88,7 @@ export function buildLibraryItems(
             Boolean(stripHtml(row.section.content ?? "").trim())),
         name: row.name,
         description: row.description,
-        source:
-          row.source === "upload" ||
-          coreFile ||
-          (row.source === "roadmap" && row.section.driveSource)
-            ? "uploaded"
-            : "generated",
+        source: row.source === "upload" || coreFile ? "uploaded" : "generated",
         fileType: coreFile
           ? resolveDocumentsLibraryFileType(coreFile.mimeType, coreFile.name)
           : row.source === "upload"
@@ -120,8 +109,7 @@ export function buildLibraryItems(
             : row.source === "policy" && !row.policy.document?.path
               ? null
               : row.source === "roadmap"
-                ? row.section.driveSource ||
-                  row.section.hasContent ||
+                ? row.section.hasContent ||
                   stripHtml(row.section.content ?? "").trim()
                   ? row.updatedAt
                   : null
@@ -142,10 +130,7 @@ export function buildLibraryItems(
               : undefined,
         deleted: false,
         href:
-          row.source === "roadmap"
-            ? (row.section.driveSource?.webViewLink ??
-              getDocumentEditorHref(row.section.slug))
-            : undefined,
+          row.source === "roadmap" ? `/roadmap/${row.section.slug}` : undefined,
         uploadedFile: coreFile,
         row,
       } satisfies LibraryItem,
@@ -191,10 +176,7 @@ export function buildLibraryItems(
 export function isEmptyDocumentSlot(item: LibraryItem) {
   return (
     (item.row?.source === "upload" && !item.row.document?.path) ||
-    (item.row?.source === "roadmap" &&
-      !item.coreDriveSource &&
-      !item.uploadedFile &&
-      !item.hasContent)
+    (item.row?.source === "roadmap" && !item.uploadedFile && !item.hasContent)
   )
 }
 

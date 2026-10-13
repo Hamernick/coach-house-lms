@@ -18,7 +18,6 @@ import {
 } from "@/lib/workspace/routes"
 import { getLegacyMyOrganizationTabDestination } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-search"
 
-
 const ROOT = process.cwd()
 
 describe("workspace routes", () => {
@@ -31,12 +30,13 @@ describe("workspace routes", () => {
       "finance",
       "people",
       "documents",
+      "particles",
       "tools",
       "accelerator",
       "roadmap",
     ])
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
-    expect(normalizeWorkspaceDrawerTab("finance")).toBeNull()
+    expect(normalizeWorkspaceDrawerTab("finance")).toBe("finance")
     expect(normalizeWorkspaceDrawerTab("tools")).toBe("tools")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })
@@ -50,6 +50,9 @@ describe("workspace routes", () => {
     )
     expect(getWorkspaceDrawerPath({ tab: "tools" })).toBe(
       "/workspace?drawer=tools"
+    )
+    expect(getWorkspaceDrawerPath({ tab: "particles" })).toBe(
+      "/workspace?drawer=particles"
     )
     expect(
       getWorkspaceDrawerPath({
@@ -156,11 +159,16 @@ describe("workspace routes", () => {
     )
   })
 
-  it("does not gate the workspace entry route on a paid subscription or intent", () => {
-    const source = readFileSync(join(ROOT, "src/app/(dashboard)/workspace/page.tsx"), "utf8")
-    expect(source).not.toContain("resolveWorkspaceEntryRedirect")
-    expect(source).not.toContain("redirect(")
-    expect(source).toContain("MyOrganizationPageContent({")
+  it("keeps self-only free users from landing on the workspace canvas", () => {
+    const source = readFileSync(
+      join(ROOT, "src/app/(dashboard)/workspace/page.tsx"),
+      "utf8"
+    )
+
+    expect(source).toContain("resolveDashboardLayoutState")
+    expect(source).toContain("!state.showMemberWorkspace")
+    expect(source).toContain("member_onboarding=1")
+    expect(source).toContain("redirect(FIND_PATH)")
   })
 
   it("preserves document focus through authentication", () => {

@@ -189,8 +189,6 @@ export function buildDocumentsRoadmapSections({
     .filter((section) => isDocumentsSectionVisible(section.id))
     .map((section) => ({
       content: section.content,
-      driveSource: section.driveSource,
-      documentSource: section.documentSource,
       hasContent:
         Boolean(
           stripHtml(section.content).trim() || /<img\b/i.test(section.content)

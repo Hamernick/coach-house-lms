@@ -60,6 +60,24 @@ const ACCELERATOR_STEP = {
 } satisfies WorkspaceAcceleratorCardStep
 
 describe("workspace board card frame", () => {
+  it("adds particle-style hover tools to Organization and Activity cards", () => {
+    const cardSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx"
+    )
+    const toolbarSource = readSource(
+      "src/features/workspace-particles/components/existing-canvas-particle-toolbar.tsx"
+    )
+
+    expect(cardSource).toContain("<ExistingCanvasParticleToolbar")
+    expect(cardSource).toContain('cardId === "organization-overview"')
+    expect(cardSource).toContain('cardId === "programs"')
+    expect(toolbarSource).toContain("<NodeToolbar")
+    expect(toolbarSource).toContain("<ToggleGroup")
+    expect(toolbarSource).toContain("Small")
+    expect(toolbarSource).toContain("Medium")
+    expect(toolbarSource).toContain("Large")
+    expect(toolbarSource).toContain("onRemove")
+  })
   it("keeps the Frame primitive slim and defines explicit header, body, and footer slots", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
@@ -107,20 +125,20 @@ describe("workspace board card frame", () => {
   })
 
   it("renders the shared workspace card shell with Frame primitives", () => {
-    const cardProps = {
-          cardId: "brand-kit",
-          title: "Brand kit",
-          subtitle: "Voice and assets",
-          size: "md",
-          presentationMode: false,
-          onSizeChange: vi.fn(),
-          fullHref: "/workspace/brand-kit",
-          canEdit: true,
-          footer: React.createElement("button", null, "Run action"),
-        children: React.createElement("div", null, "Brand kit body"),
-    } satisfies React.ComponentProps<typeof WorkspaceBoardCardFrame>
+    const props: React.ComponentProps<typeof WorkspaceBoardCardFrame> = {
+      cardId: "brand-kit",
+      title: "Brand kit",
+      subtitle: "Voice and assets",
+      size: "md",
+      presentationMode: false,
+      onSizeChange: vi.fn(),
+      fullHref: "/workspace/brand-kit",
+      canEdit: true,
+      footer: React.createElement("button", null, "Run action"),
+      children: React.createElement("div", null, "Brand kit body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(WorkspaceBoardCardFrame, cardProps)
+      React.createElement(WorkspaceBoardCardFrame, props)
     )
 
     expect(markup).toContain('data-workspace-card="brand-kit"')
@@ -154,21 +172,21 @@ describe("workspace board card frame", () => {
     const shellSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-shell.tsx"
     )
-    const cardProps = {
-          cardId: "programs",
-          title: "Programs",
-          subtitle: "Offers and services",
-          hideSubtitle: true,
-          size: "md",
-          presentationMode: false,
-          fullHref: "/workspace/programs",
-          canEdit: true,
-          headerAction: React.createElement("button", null, "Add"),
-          contentSurface: "plain",
-        children: React.createElement("div", null, "Programs body"),
-    } satisfies React.ComponentProps<typeof WorkspaceBoardNodeCardShell>
+    const props: React.ComponentProps<typeof WorkspaceBoardNodeCardShell> = {
+      cardId: "programs",
+      title: "Programs",
+      subtitle: "Offers and services",
+      hideSubtitle: true,
+      size: "md",
+      presentationMode: false,
+      fullHref: "/workspace/programs",
+      canEdit: true,
+      headerAction: React.createElement("button", null, "Add"),
+      contentSurface: "plain",
+      children: React.createElement("div", null, "Programs body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(WorkspaceBoardNodeCardShell, cardProps)
+      React.createElement(WorkspaceBoardNodeCardShell, props)
     )
 
     expect(markup).toContain('data-workspace-card="programs"')
@@ -226,17 +244,19 @@ describe("workspace board card frame", () => {
   })
 
   it("renders the organization overview shell through the card-style node anatomy", () => {
-    const cardProps = {
-          title: "Organization",
-          subtitle: "Profile",
-          size: "md",
-          presentationMode: false,
-          fullHref: "/workspace/profile",
-          canEdit: true,
-        children: React.createElement("div", null, "Organization body"),
-    } satisfies React.ComponentProps<typeof WorkspaceBoardOrganizationCardShell>
+    const props: React.ComponentProps<
+      typeof WorkspaceBoardOrganizationCardShell
+    > = {
+      title: "Organization",
+      subtitle: "Profile",
+      size: "md",
+      presentationMode: false,
+      fullHref: "/workspace/profile",
+      canEdit: true,
+      children: React.createElement("div", null, "Organization body"),
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(WorkspaceBoardOrganizationCardShell, cardProps)
+      React.createElement(WorkspaceBoardOrganizationCardShell, props)
     )
 
     expect(markup).toContain('data-workspace-card="organization-overview"')
@@ -343,15 +363,15 @@ describe("workspace board card frame", () => {
     expect(source).not.toContain("px-4 pt-4 pb-1")
     expect(markup).toContain("Accelerator")
     expect(markup).toContain("1 step")
-    expect(markup).toContain("10% lessons complete")
-    expect(markup).toContain('aria-label="Lessons complete"')
-    expect(markup).toContain('aria-valuenow="10"')
+    expect(markup).toContain("10% complete")
+    expect(markup).toContain("Fundable segment, 70-90%")
+    expect(markup).toContain("Verified segment, 90-100%")
     expect(markup).toContain(
       'data-react-grab-anchor="WorkspaceAcceleratorCardProgressSummary"'
     )
     expect(markup).toContain('data-react-grab-surface-slot="progress-rail"')
     expect(markup).toContain(
-      "Owns lesson completion and the separate organization readiness checklists."
+      "Owns the accelerator percent, progress rail, and milestone checkpoint triggers as one progress cluster."
     )
     expect(markup).toContain("nodrag nopan")
     expect(source).not.toContain('from "lucide-react/dist/esm/icons/play"')

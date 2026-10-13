@@ -1,4 +1,3 @@
-import { normalizeCoreDocumentDriveSource } from "./core-document-source"
 import { SECTION_DEFINITIONS } from "./definitions"
 import {
   MY_ORGANIZATION_PATH,
@@ -46,8 +45,6 @@ const STORED_SECTION_KEYS = new Set([
   "subtitle",
   "slug",
   "content",
-  "driveSource",
-  "documentSource",
   "publishedContent",
   "publicProfileStatusControlled",
   "budgetRows",
@@ -207,12 +204,6 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
-    driveSource: normalizeCoreDocumentDriveSource(stored?.driveSource),
-    documentSource:
-      stored?.documentSource === "editor" ||
-      stored?.documentSource === "google_drive"
-        ? stored.documentSource
-        : undefined,
     publishedContent,
     publicProfileStatusControlled,
     budgetRows,
@@ -260,7 +251,12 @@ export function getRoadmapWorkspaceRevalidationPaths({
 }): string[] {
   const normalizedSectionSlug =
     typeof sectionSlug === "string" ? sectionSlug.trim() : ""
-  const paths = [WORKSPACE_PATH, MY_ORGANIZATION_PATH, WORKSPACE_ROADMAP_PATH]
+  const paths = [
+    WORKSPACE_PATH,
+    MY_ORGANIZATION_PATH,
+    WORKSPACE_ROADMAP_PATH,
+    "/organization/documents",
+  ]
 
   if (normalizedSectionSlug) {
     paths.push(getWorkspaceRoadmapSectionPath(normalizedSectionSlug))
@@ -300,10 +296,6 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
-    driveSource: section.driveSource ?? null,
-    ...(section.documentSource
-      ? { documentSource: section.documentSource }
-      : {}),
     ...(section.publishedContent !== undefined
       ? { publishedContent: section.publishedContent }
       : {}),

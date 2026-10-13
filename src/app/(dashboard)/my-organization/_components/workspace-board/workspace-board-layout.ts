@@ -1,3 +1,4 @@
+import { resolveWorkspaceBoardParticleState } from "./workspace-board-particle-compatibility"
 import {
   buildDefaultWorkspaceOntologyState,
   normalizeWorkspaceOntologyState,
@@ -14,7 +15,6 @@ import {
   type WorkspaceNodeState,
 } from "./workspace-board-types"
 import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
-import { arrangeInitialWorkspaceNodes } from "./workspace-board-initial-layout"
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
 import { DEFAULT_HIDDEN_CARD_IDS } from "./workspace-board-layout-config"
 import {
@@ -121,11 +121,11 @@ export function buildDefaultBoardState(
     version: 1,
     preset,
     autoLayoutMode,
-    nodes: arrangeInitialWorkspaceNodes(buildAutoLayoutNodesForMode({
+    nodes: buildAutoLayoutNodesForMode({
       mode: autoLayoutMode,
       hiddenCardIds,
       connections,
-    })),
+    }),
     connections,
     communications: buildDefaultWorkspaceCommunicationsState(),
     tracker: buildDefaultWorkspaceTrackerState(),
@@ -343,6 +343,10 @@ export function normalizeWorkspaceBoardState(
     hiddenCardIds: record.hiddenCardIds,
     nodes: record.nodes,
   })
+  const particleState = resolveWorkspaceBoardParticleState(
+    record.particles,
+    forwardCompatibleInput.forwardCompatibility
+  )
   const normalizedAccelerator = normalizeWorkspaceAcceleratorState(
     record.accelerator
   )
@@ -380,11 +384,12 @@ export function normalizeWorkspaceBoardState(
     ),
     hiddenCardIds: normalizedHiddenCardIds,
     visibility: normalizeWorkspaceVisibilityState(record.visibility),
+    ...(particleState.particles ? { particles: particleState.particles } : {}),
     ontology: record.ontology
       ? normalizeWorkspaceOntologyState(record.ontology)
       : undefined,
-    ...(forwardCompatibleInput.forwardCompatibility
-      ? { forwardCompatibility: forwardCompatibleInput.forwardCompatibility }
+    ...(particleState.forwardCompatibility
+      ? { forwardCompatibility: particleState.forwardCompatibility }
       : {}),
     updatedAt:
       typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0

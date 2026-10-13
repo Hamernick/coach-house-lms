@@ -15,6 +15,7 @@ drop trigger if exists sync_account_public_identity on public.profiles;
 create trigger sync_account_public_identity
   after insert or update of full_name, headline, avatar_url on public.profiles
   for each row execute function public.sync_account_public_identity();
+
 create or replace function public.set_person_public_profile_visibility(p_is_public boolean)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare actor uuid := auth.uid();
@@ -34,6 +35,7 @@ begin
   return jsonb_build_object('ok', found);
 end;
 $$;
+
 create or replace function public.save_person_public_profile_details(p_bio text, p_location_label text, p_website_url text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare actor uuid := auth.uid();
@@ -52,9 +54,11 @@ revoke all on function public.set_person_public_profile_visibility(boolean) from
 revoke all on function public.save_person_public_profile_details(text, text, text) from public, anon;
 grant execute on function public.set_person_public_profile_visibility(boolean) to authenticated;
 grant execute on function public.save_person_public_profile_details(text, text, text) to authenticated;
+
 insert into public.platform_email_topics(id, label, description, required)
 values ('newsletter', 'Weekly newsletter', 'Curated resources and Coach House news.', false)
 on conflict(id) do nothing;
+
 -- Carry forward explicit account choices without overriding existing unsubscribes.
 insert into public.platform_email_preferences(email, topic_id, status, source, person_id)
 select lower(btrim(account.email)), choice.topic,
@@ -65,6 +69,7 @@ cross join (values ('marketing_opt_in', 'product_updates'), ('newsletter_opt_in'
 where nullif(btrim(account.email), '') is not null
   and jsonb_typeof(account.raw_user_meta_data->choice.key) = 'boolean'
 on conflict(email, topic_id) do nothing;
+
 create or replace function public.save_account_email_preferences(p_marketing_opt_in boolean, p_newsletter_opt_in boolean)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare actor uuid := auth.uid(); address text; choice record;

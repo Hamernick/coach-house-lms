@@ -52,9 +52,6 @@ export const ScrollFadeEffect = forwardRef<
     <div
       ref={mergedRef}
       data-orientation={orientation}
-      data-scroll-fade-managed={enabled ? "true" : undefined}
-      data-scroll-fade-start={enabled ? "hidden" : undefined}
-      data-scroll-fade-end={enabled ? "hidden" : undefined}
       className={cn(
         enabled &&
           (orientation === "horizontal"

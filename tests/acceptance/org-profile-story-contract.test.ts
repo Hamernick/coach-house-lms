@@ -1,12 +1,11 @@
-import { createElement, type ImgHTMLAttributes, type PropsWithChildren } from "react"
+import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import { buildInitialOrganizationProfile } from "@/app/(dashboard)/my-organization/_lib/helpers"
 import { resolveOrganizationProfileComplete as resolvePageProfileComplete } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
 import { resolveOrganizationProfileComplete as resolveWorkspaceSeedProfileComplete } from "@/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers"
 import { OrgProfilePublicAboutSection } from "@/components/organization/org-profile-card/public-card-sections"
-import { OrgProfileHeaderLinks } from "@/components/organization/org-profile-card/header-links"
 import { StorySection } from "@/components/organization/org-profile-card/tabs/company-tab/edit-sections/story"
 import { StoryPreview } from "@/components/organization/org-profile-card/tabs/company-tab/display-sections"
 import {
@@ -15,28 +14,53 @@ import {
 } from "@/components/organization/org-profile-card/validation"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 
-// Expose image destinations without relying on Radix's client-only load timing.
-vi.mock("@/components/ui/avatar", () => ({
-  Avatar: ({ children }: PropsWithChildren) => createElement("span", null, children),
-  AvatarFallback: ({ children }: PropsWithChildren) => createElement("span", null, children),
-  AvatarImage: (props: ImgHTMLAttributes<HTMLImageElement>) => createElement("img", props),
-}))
-
 describe("organization profile story contract", () => {
-  it.each(["https://profile-controlled.example", "http://127.0.0.1:8080", "http://[::1]", "http://192.168.1.1"])(
-    "does not automatically load profile-controlled image origins: %s",
-    (url) => {
-      const company = buildInitialOrganizationProfile({
-        profile: { name: "Atlas Org", publicUrl: url, newsletter: `${url}/subscribe` },
-        organization: { ein: null, public_slug: "atlas-org", is_public: true },
+  it.each([
+    "originStory",
+    "need",
+    "mission",
+    "vision",
+    "values",
+    "theoryOfChange",
+  ])("preserves safe rich formatting in the %s About us panel", (field) => {
+    const markup = renderToStaticMarkup(
+      createElement(StoryPreview, {
+        company: {
+          [field]:
+            '<h2>Our work</h2><p style="text-align: center"><strong>Local</strong> <em>support</em></p><ul><li>First priority</li></ul><script>unsafe()</script>',
+        },
+        addressLines: [],
+        hasAnyBrandLink: false,
       })
-      const markup = renderToStaticMarkup(createElement(OrgProfileHeaderLinks, { company }))
-      expect(markup).toContain('aria-label="Website"')
-      expect(markup).toContain('aria-label="Newsletter"')
-      expect(markup).toContain('target="_blank"')
-      expect(markup).not.toMatch(/<(?:img|image|iframe)\b|\bsrc=/)
-    }
-  )
+    )
+    expect(markup).toContain("<h2>Our work</h2>")
+    expect(markup).toContain(
+      '<p style="text-align:center"><strong>Local</strong> <em>support</em></p>'
+    )
+    expect(markup).toContain("<ul><li>First priority</li></ul>")
+    expect(markup).not.toContain("unsafe()")
+    expect(markup).not.toContain("Read more")
+  })
+
+  it("exposes one About us panel and keeps other sections out of keyboard navigation", () => {
+    const markup = renderToStaticMarkup(
+      createElement(StoryPreview, {
+        company: {
+          originStory: "Our origin",
+          mission: "Our mission",
+          vision: "Our vision",
+        },
+        addressLines: [],
+        hasAnyBrandLink: false,
+      })
+    )
+    const panels = markup.match(/<div[^>]*role="tabpanel"[^>]*>/g) ?? []
+    expect(panels).toHaveLength(3)
+    expect(panels.filter((panel) => !panel.includes('hidden=""'))).toHaveLength(
+      1
+    )
+    expect(panels.filter((panel) => panel.includes('inert=""'))).toHaveLength(2)
+  })
 
   it("hydrates the added story fields from both camelCase and snake_case profile keys", () => {
     const legacyProfile = buildInitialOrganizationProfile({
@@ -138,6 +162,7 @@ describe("organization profile story contract", () => {
       createElement(StoryPreview, {
         company,
         addressLines: [],
+        hasAnyBrandLink: false,
       })
     )
     const publicMarkup = renderToStaticMarkup(

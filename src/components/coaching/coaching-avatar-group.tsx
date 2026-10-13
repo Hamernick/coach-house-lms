@@ -80,6 +80,7 @@ export function CoachingAvatarGroup({
           <li
             key={avatar.id}
             className={cn("relative shrink-0", styles.avatar)}
+            title={avatar.name}
           >
             <span className="border-background ring-border/70 absolute inset-0 overflow-hidden rounded-full border-2 ring-1">
               {avatar.imageUrl ? (
@@ -95,13 +96,9 @@ export function CoachingAvatarGroup({
                   className="bg-muted text-muted-foreground inline-flex size-full items-center justify-center"
                   aria-label={avatar.name}
                 >
-                  {avatars === COACHING_TEAM_AVATARS ? (
-                    <UserRoundIcon className={styles.icon} aria-hidden />
-                  ) : (
-                    <span className="text-[10px] font-medium" aria-hidden>
-                      {avatar.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("") || <UserRoundIcon className={styles.icon} />}
-                    </span>
-                  )}
+                  <span className="text-[10px] font-medium" aria-hidden>
+                    {avatar.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("") || <UserRoundIcon className={styles.icon} />}
+                  </span>
                 </span>
               )}
             </span>

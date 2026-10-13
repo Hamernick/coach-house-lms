@@ -25,7 +25,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const admin = createSupabaseAdminClient()
-  await disconnectGoogleDrive({ admin, userId: user.id, revoke: true }).catch(() => undefined)
+  await disconnectGoogleDrive({ admin, userId: user.id }).catch(() => undefined)
   try {
     await reassignSharedWorkspaceAuthorReferences(admin, user.id)
   } catch (cleanupError) {

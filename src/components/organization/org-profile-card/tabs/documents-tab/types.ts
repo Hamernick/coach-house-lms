@@ -1,11 +1,5 @@
-import type {
-  DocumentDefinition,
-  DocumentsPolicyEntry,
-} from "@/lib/organization/document-types"
-export type {
-  DocumentDefinition,
-  DocumentsPolicyEntry,
-} from "@/lib/organization/document-types"
+import type { DocumentDefinition, DocumentsPolicyEntry } from "@/lib/organization/document-types"
+export type { DocumentDefinition, DocumentsPolicyEntry } from "@/lib/organization/document-types"
 import type { ModuleNoteIndexEntry } from "@/lib/modules/notes-index"
 
 import type { OrgDocument, OrgDocuments } from "../../types"
@@ -29,8 +23,6 @@ export type SortColumn =
 export type SortDirection = "asc" | "desc"
 
 export type DocumentsRoadmapSection = {
-  documentSource?: "editor" | "google_drive"
-  driveSource?: import("@/lib/roadmap/types").CoreDocumentDriveSource | null
   content?: string
   hasContent?: boolean
   id: string

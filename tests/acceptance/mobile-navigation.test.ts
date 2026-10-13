@@ -1,23 +1,45 @@
 import { describe, expect, it } from "vitest"
-
 import {
   isMobileNavigationPathActive,
-  shouldShowMobileNavigation,
+  resolveMobileNavigationIndex,
 } from "@/features/mobile-navigation/lib"
 
-describe("mobile navigation", () => {
-  it("matches exact and nested navigation paths without treating root as global", () => {
-    expect(isMobileNavigationPathActive("/workspace", "/workspace")).toBe(true)
+const bar = { left: 12, top: 720, width: 360, height: 64, count: 5 }
+
+describe("mobile navigation gestures", () => {
+  it.each([
+    [12, 0],
+    [83, 0],
+    [85, 1],
+    [228, 3],
+    [372, 4],
+  ])("selects the released destination at x=%s", (x, expected) => {
+    expect(resolveMobileNavigationIndex({ ...bar, x, y: 750 })).toBe(expected)
+  })
+  it.each([
+    [11, 750],
+    [373, 750],
+    [100, 719],
+    [100, 785],
+  ])("cancels a release outside the bar (%s, %s)", (x, y) => {
+    expect(resolveMobileNavigationIndex({ ...bar, x, y })).toBeNull()
+  })
+  it("ignores an unmeasured or empty bar", () => {
     expect(
-      isMobileNavigationPathActive("/workspace/calendar", "/workspace")
+      resolveMobileNavigationIndex({ ...bar, width: 0, x: 12, y: 750 })
+    ).toBeNull()
+    expect(
+      resolveMobileNavigationIndex({ ...bar, count: 0, x: 12, y: 750 })
+    ).toBeNull()
+  })
+  it("matches nested routes without selecting Find everywhere or matching route prefixes", () => {
+    expect(
+      isMobileNavigationPathActive("/workspace/roadmap", "/workspace")
     ).toBe(true)
     expect(isMobileNavigationPathActive("/workspace", "/")).toBe(false)
-  })
-
-  it("hides the dock only on the admin dashboard and descendants", () => {
-    expect(shouldShowMobileNavigation("/admin/dashboard")).toBe(false)
-    expect(shouldShowMobileNavigation("/admin/dashboard/activity")).toBe(false)
-    expect(shouldShowMobileNavigation("/admin/people")).toBe(true)
-    expect(shouldShowMobileNavigation("/workspace")).toBe(true)
+    expect(isMobileNavigationPathActive("/coaching-other", "/coaching")).toBe(
+      false
+    )
+    expect(isMobileNavigationPathActive("/", "/")).toBe(true)
   })
 })

@@ -5,6 +5,75 @@ Use this directory for local resource-map scrape/search dumps only.
 For the local discovery/fetch/parse/normalize/classify/dedupe/scoring engine,
 see `docs/resource-map-data-engine-runbook.md`.
 
+Large IRS EO BMF files use `pnpm resource-map:eo-import` and
+`pnpm resource-map:eo-run`. Bounded search candidates can be checked with
+`pnpm resource-map:eo-resolve-websites -- --candidates <file> --network true
+--write`; it never guesses provider domains or treats directories as websites.
+For matched providers, `pnpm resource-map:eo-collect-service-evidence -- --ein
+<ein> --max-records 1 --max-pages 3 --network true --write` checks the confirmed
+page first, reuses website evidence, and retains bounded same-site service
+evidence without creating public claims.
+The identity pool, work queue, evidence cache, result ledger, and checkpoints
+stay under ignored `.engine/eo/` storage and never feed `/find` directly.
+
+Build the full-corpus performance and coverage benchmark separately:
+
+```bash
+pnpm resource-map:eo-plan-benchmark -- --input <eo1.csv,eo2.csv,...> --sample 10000
+pnpm resource-map:eo-plan-benchmark -- --input <eo1.csv,eo2.csv,...> --sample 10000 --write
+```
+
+It includes every valid EIN regardless of direct-service score, excludes already
+researched records, balances the sample by filing state and NTEE major group,
+retains population projection weights, and writes only private signed cohort and
+identity-event files. It never writes to the application database or `/find`.
+
+Split a signed benchmark into resumable discovery work:
+
+```bash
+pnpm resource-map:eo-plan-work -- --package-size 25 --write
+pnpm resource-map:eo-work-lease -- --action status --plan <plan-directory>
+```
+
+Plans, packages, leases, heartbeats, failure history, dead letters, and completion
+receipts stay under ignored `.engine/eo/work/`. Package generation and status are
+offline. Claim, heartbeat, completion, and failure mutations require `--write`.
+
+Plan provider discovery for one signed package:
+
+```bash
+pnpm resource-map:eo-plan-search -- --package <package.json>
+pnpm resource-map:eo-plan-search -- --package <package.json> --adapter-results <results.jsonl> --write
+```
+
+The adapter contract keeps search replaceable. It normalizes and deduplicates
+URLs, shares one fetch across matching EIN consumers, enforces exact-host
+budgets, plans robots checks, and emits private stage telemetry. It performs no
+network calls itself and never treats a snippet as service evidence.
+
+Offline adapters use the same signed plan:
+
+```bash
+pnpm resource-map:eo-run-search-adapter -- --plan <search-plan.json> --adapter local_evidence_cache --input <candidate-sets.jsonl>
+pnpm resource-map:eo-run-search-adapter -- --plan <search-plan.json> --adapter authoritative_directory_index --input <directory-records.jsonl>
+```
+
+Add `--write` only after reviewing the report. A directory match requires exact
+EIN or exact normalized provider name plus state; misses remain eligible for the
+next adapter.
+
+Plan the owned discovery tiers from private evidence already collected:
+
+```bash
+pnpm resource-map:eo-plan-owned-discovery -- --plan <search-plan.json> --evidence-documents <evidence.jsonl> --directory-records <directory-records.jsonl>
+```
+
+The owned planner uses no paid provider. It builds a private sharded evidence
+index, requires exact EIN or exact normalized name plus state, creates at most
+two explicitly unverified `.org` hypotheses for distinctive names, and emits a
+deduplicated robots-aware crawl plan. It performs no network calls and writes
+only with `--write`.
+
 ## Write Batches Here
 
 ```text

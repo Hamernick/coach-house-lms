@@ -18,15 +18,19 @@ import {
   ORGANIZATION_FOCUS_TARGET_CLASSNAME,
 } from "./organization-deep-link-focus"
 
+export type ProfileFieldProps = {
+  label: ReactNode
+  children: ReactNode
+  focusKey?: string
+  hideLabel?: boolean
+}
+
 export function ProfileField({
   label,
   children,
   focusKey,
-}: {
-  label: ReactNode
-  children: ReactNode
-  focusKey?: string
-}) {
+  hideLabel = false,
+}: ProfileFieldProps) {
   const childArray = Children.toArray(children).filter((child) => {
     if (child == null) return false
     if (typeof child === "string") return child.trim().length > 0
@@ -37,14 +41,16 @@ export function ProfileField({
 
   return (
     <div
-      data-slot="organization-profile-field"
       {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
       className={cn(
         "grid min-w-0 content-start gap-1 self-start",
         focusKey && ORGANIZATION_FOCUS_TARGET_CLASSNAME
       )}
     >
-      <Label htmlFor={focusKey} className="text-muted-foreground text-xs">
+      <Label
+        htmlFor={focusKey}
+        className={cn("text-muted-foreground text-xs", hideLabel && "sr-only")}
+      >
         {label}
       </Label>
       {children}
@@ -132,7 +138,6 @@ export function FormRow({
 
   return (
     <div
-      data-slot="organization-profile-section"
       {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
       className={cn(rowClass, focusKey && ORGANIZATION_FOCUS_TARGET_CLASSNAME)}
     >

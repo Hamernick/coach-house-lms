@@ -2,12 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache"
 
-import { requireOrganizationDocumentStorage, resolveOrganizationDocumentStorageAccess, DOCUMENT_STORAGE_UPGRADE_MESSAGE } from "@/lib/organization/document-storage-access"
-
 import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
-
-import { getSelectedGoogleDriveFile } from "@/features/google-drive"
-import { normalizeCoreDocumentDriveSource } from "@/lib/roadmap/core-document-source"
 
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -37,7 +32,6 @@ import {
 import { createNotification } from "@/lib/notifications"
 
 type SaveInput = {
-  driveFileId?: string | null
   targetOrganizationId?: string
   expectedOrganizationId?: string
   expectedUserId?: string
@@ -87,12 +81,10 @@ function revalidatePublicOrganizationProfile(sectionId: string | null) {
     return
   }
   revalidateTag("public-map-organizations", "max")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/")
 }
 
 export async function saveRoadmapSectionAction({
-  driveFileId,
   targetOrganizationId,
   expectedOrganizationId,
   expectedUserId,
@@ -135,12 +127,6 @@ export async function saveRoadmapSectionAction({
   supabase = access.supabase
   const { orgId, role } = access
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-  const driveOnly = driveFileId !== undefined && Boolean(sectionId) &&
-    [title, subtitle, content, budgetRows, imageUrl, isPublic, layout, status, ctaLabel, ctaUrl].every((value) => value === undefined)
-  if (!documentAccess.hasStorageAccess && !driveOnly) return { error: DOCUMENT_STORAGE_UPGRADE_MESSAGE }
-
   if (
     (expectedOrganizationId && orgId !== expectedOrganizationId) ||
     (expectedUserId && user.id !== expectedUserId)
@@ -193,37 +179,6 @@ export async function saveRoadmapSectionAction({
       error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.`,
     }
   }
-  let driveSource: RoadmapSection["driveSource"] | undefined
-  if (driveFileId !== undefined) {
-    if (
-      !previousSection ||
-      !expectedOrganizationId ||
-      !expectedUserId ||
-      expectedLastUpdated === undefined
-    ) {
-      return { error: "Reopen this document before changing its source." }
-    }
-    if (driveFileId === null) {
-      driveSource = null
-    } else {
-      try {
-        const file = await getSelectedGoogleDriveFile(user.id, driveFileId)
-        driveSource = normalizeCoreDocumentDriveSource({
-          provider: "google_drive",
-          fileId: file.id,
-          name: file.name,
-          webViewLink: file.webViewLink,
-        })
-        if (!driveSource)
-          return { error: "Choose a valid Google Drive document." }
-      } catch {
-        return {
-          error:
-            "Unable to access this Google Drive file. Reconnect in Tools and try again.",
-        }
-      }
-    }
-  }
   const isNewSection = !previousSection
   const narrativeKey =
     getOrganizationNarrativeKeyForSectionId(normalizedSectionId)
@@ -234,13 +189,12 @@ export async function saveRoadmapSectionAction({
         : sanitizeHtml(content)
       : content
   const sectionUpdates = {
-    driveSource,
-    title: driveFileId !== undefined ? previousSection?.title : title,
+    title,
     subtitle,
     content: sanitizedContent,
     budgetRows,
     imageUrl,
-    isPublic: driveSource ? false : allowPublicSharing ? isPublic : false,
+    isPublic: allowPublicSharing ? isPublic : false,
     layout,
     status,
     ctaLabel,
@@ -334,9 +288,6 @@ export async function deleteRoadmapSectionAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
@@ -433,9 +384,6 @@ export async function setRoadmapPublicAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
@@ -500,9 +448,6 @@ export async function setRoadmapHeroImageAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const nextHero =
     typeof heroUrl === "string" && heroUrl.trim().length > 0

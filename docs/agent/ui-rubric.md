@@ -2,6 +2,9 @@
 
 Use this as the canonical UI implementation/review checklist.
 
+Apply the focused craft references in [`design-craft/README.md`](design-craft/README.md)
+for image edges, optical alignment, nested radii, and frequent interactions.
+
 ## Design Source
 
 - MUST: For UI-visible work, read `docs/design.md` before editing and use it as the product-specific visual source of truth.
@@ -91,6 +94,8 @@ Use this as the canonical UI implementation/review checklist.
 - MUST: Respect safe areas (`env(safe-area-inset-*)`).
 - MUST: Eliminate unwanted scrollbars/overflow.
 - SHOULD: Prefer flex/grid over JS measurement for layout.
+- MUST: Follow `docs/design.md` text grouping: 4px eyebrow/title/subtitle gaps, 8px before related content, and 16px between sections. Use the feature's existing heading group instead of accumulating child margins.
+- NEVER: Use section-sized margins (`mt-3` or larger) between a title and its subtitle, or stack parent gaps with child vertical margins/padding. Inspect computed spacing and wrapped lines before handoff.
 
 ## Content And Accessibility
 

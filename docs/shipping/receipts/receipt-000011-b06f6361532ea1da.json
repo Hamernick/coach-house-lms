@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-13T04:58:00.240732+00:00",
+  "operation": "resume",
+  "owner": "ship-review-20261013",
+  "previous_revision": 10,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "tests": {
+      "status": "passed",
+      "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+      "reference": "27 Python unittest cases, including 8 automated-review regression tests; normal Node 22 pre-push checks; staged gitleaks; diff hygiene"
+    },
+    "ui": {
+      "na_reason": "Tooling-only; no UI changes"
+    },
+    "review_packet": "docs/shipping/review.md",
+    "changed_files": [
+      "AGENTS.md",
+      "docs/RUNLOG.md",
+      "docs/SHIP.md",
+      "docs/agent/open-work-index.md",
+      "docs/agent/workflow-quality.md",
+      "docs/runlog/2026-10.md",
+      "docs/shipping/.gitignore",
+      "docs/shipping/README.md",
+      "docs/shipping/gates.py",
+      "docs/shipping/intake.json",
+      "docs/shipping/providers.py",
+      "docs/shipping/queue.json",
+      "docs/shipping/receipts/bootstrap-connectivity.json",
+      "docs/shipping/reconciliation.md",
+      "docs/shipping/review.md",
+      "docs/shipping/ship.py",
+      "docs/shipping/store.py",
+      "docs/shipping/test_ship.py"
+    ],
+    "recovery": {
+      "verified_sha": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+      "reference": "git ls-remote origin refs/heads/chore/ship-harness-20261013 matched"
+    },
+    "deployment": {
+      "na_reason": "Tooling-only runner/docs; no deployed application artifact"
+    },
+    "production": {
+      "na_reason": "Tooling-only runner/docs; no runtime application behavior changed"
+    },
+    "providers": "No provider or migration changes; Vercel access 403",
+    "rollback": "Revert tooling PR; shared state and recovery receipts retained",
+    "next_action": "Automated-review fixes pushed; inspect current-head CI and reviewer feedback. User has not approved release; do not request approval prematurely.",
+    "owner_evidence": "Prior controller PID 97510 intentionally exited at previous handoff. Resume validates host/PID/start before takeover.",
+    "review_findings": {
+      "4254822559": "Effective pre-block release stage guards head changes in checkpoint/resume",
+      "4254822567": "Shared safe-basename and direct-child path checks for restore/export/validate; symlinks rejected",
+      "4254822575": "Snapshot filename/revision/full-state digest checked before any restore writes"
+    }
+  },
+  "remote": null
+}

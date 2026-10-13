@@ -47,3 +47,7 @@ Private handoff: `~/Desktop/Coach House Map Audit/` contains all audited publish
 Stop after the bounded code PR and reviewed coordinate correction step, current-head quality/code-owner review, deployment, and the user's map check. Do not claim production removal, new pins, comprehensive address verification, or IRS geocoding from local tests. Preserve PR298 and later Calendar/fiscal work. Do not delete resource rows or lose saved/deep-link IDs.
 
 Validation: 128 focused behavior tests pass across ten files; complete data-to-feature audit passes. Changed-code ESLint, structure, features, thresholds, import boundaries, acceptance manifest and diff hygiene pass. Graphify refresh is in progress. Required hosted quality/code-owner review remains open.
+
+## Review follow-up: claims and cached public profiles
+
+The bot review of43b84630 identified two remaining leaks. Claim search and submission now apply the same fixture/Wikidata visibility rule using title, organization name and source identity. Fixture-only targets are rejected before any claim recording/delivery. A bounded set of service rows allows legitimate services after hidden rows. The public profile page's independent cache key advances fromv1 tov2. Three failing regressions reproduce the old behavior;30focused fixture/claim/directory tests pass after correction. No live records deleted, data repair applied, claims sent or production result asserted.

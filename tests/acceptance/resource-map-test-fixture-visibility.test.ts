@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { createClientMock } = vi.hoisted(() => ({ createClientMock: vi.fn() }))
+const { createClientMock, adminMock } = vi.hoisted(() => ({ createClientMock: vi.fn(), adminMock: vi.fn() }))
+vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: adminMock }))
 vi.mock("@supabase/supabase-js", () => ({ createClient: createClientMock }))
-vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }))
+vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown, keys: string[]) =>
+  keys.includes("public-resource-profile-v1") ? async () => ({ title: "stale fixture" }) : fn }))
 vi.mock("@/lib/env", () => ({ env: {
   RESOURCE_MAP_PUBLIC_DB_ENABLED: "true",
+  PUBLIC_MAP_CLAIM_OWNER_USER_ID: "owner",
   NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-only",
 } }))
@@ -13,6 +16,10 @@ import { fetchPublicResourceIndexSnapshot } from "@/lib/queries/resource-map-ind
 import { fetchPublicResourceMapItemById, fetchPublicResourceMapItems } from "@/lib/queries/resource-map-public-items"
 import { buildExternalResourceMapItemFromPublicRow } from "@/lib/public-map/resource-map-public-item-adapter"
 import { shouldShowPublicMapResourceItem } from "@/lib/public-map/resource-item-visibility"
+
+import { searchPublicMapClaimListings } from "@/features/public-map-claims/server/search"
+import { submitPublicMapClaimRequest } from "@/features/public-map-claims/server/submission"
+import { fetchPublicResourceProfile } from "@/lib/queries/public-resource-profile"
 
 const ids = ["8b2441bf-7acc-4219-b108-142167c18252", "ada4ffc9-20ce-42a6-9d92-02e44fe7ed08"]
 const fixture = (id: string) => ({
@@ -46,5 +53,50 @@ describe("public resource test-fixture exclusion", () => {
   ])("does not suppress a real resource based on a partial fixture match: %j", (changes) => {
     const item = buildExternalResourceMapItemFromPublicRow({ ...fixture("real"), ...changes })!
     expect(shouldShowPublicMapResourceItem(item)).toBe(true)
+  })
+})
+
+const targetId = "a74bfebe-7af2-4980-a371-0a7967eda380"
+const claimRow = { ...fixture(ids[0]), organization_id: targetId, platform_org_id: null, source_label: "RLS fixture" }
+function mockClaimRows(rows: Record<string, unknown>[]) {
+  const result = { data: rows, error: null }
+  const query = {
+    select: vi.fn().mockReturnThis(), is: vi.fn().mockReturnThis(), not: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(), maybeSingle: async () => ({ data: rows[0], error: null }),
+    then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve),
+  }
+  const rpc = vi.fn(async (name: string) => ({ data: name === "submit_public_map_claim_request"
+    ? { status: "recorded", claimId: "claim" } : { ok: true }, error: null }))
+  adminMock.mockReturnValue({ from: () => query, rpc })
+  return rpc
+}
+function submitClaim() {
+  return submitPublicMapClaimRequest({
+    request: new Request("https://coachhouse.app/api/public/organization-claims"),
+    value: { claimantEmail: "person@example.org", claimantName: "Casey Founder", listingName: "Untrusted client name",
+      submissionKey: "f9ff4f91-a252-46aa-b19d-c7b8b8bf2021", targetKind: "resource_map_organization", targetId, website: "" },
+  })
+}
+
+describe("claim and profile fixture boundaries", () => {
+  it("removes fixture-only organizations from claim searches without suppressing partial matches", async () => {
+    mockClaimRows([claimRow, { ...claimRow, organization_id: "real", source_url: "https://provider.test/service" }])
+    expect(await searchPublicMapClaimListings("RLS")).toEqual([{ id: "real", name: "RLS Resource Org" }])
+  })
+  it("rejects direct fixture claims before recording or delivering them", async () => {
+    const rpc = mockClaimRows([claimRow])
+    expect(await submitClaim()).toEqual({ code: "invalid", ok: false })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+  it("allows an organization with a legitimate service after a hidden service", async () => {
+    const rpc = mockClaimRows([claimRow, { ...claimRow, title: "Community Pantry" }])
+    expect(await submitClaim()).toEqual({ claimId: "claim", ok: true })
+    expect(rpc).toHaveBeenCalledWith("submit_public_map_claim_request", expect.objectContaining({ p_target_id: targetId, p_listing_name: "RLS Resource Org" }))
+  })
+  it("does not reuse a profile cached before fixture exclusion", async () => {
+    createClientMock.mockReturnValue({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: fixture(ids[0]), error: null }) }) }) }) })
+    expect(await fetchPublicResourceProfile(ids[0])).toBeNull()
+    expect(createClientMock).toHaveBeenCalled()
   })
 })

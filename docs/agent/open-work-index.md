@@ -22,6 +22,14 @@ AppShell/mobile is closed for implementation: Caleb confirmed PR [#254](https://
 
 Personal coaching credits and the bundled Resources/Documentation fixes are closed. Caleb confirmed review complete on 2026-10-01. PR #263 merged at `59b89421cb11181e09cb8454480953920efd2554`; canonical production is Ready on that revision (deployment `dpl_3y2sDsGpuJbxSmzYG7jJTojc34BE`). All three coaching migrations are applied; both existing Accelerator participants have ten available credits, with original history preserved. Cloud Run revision `coach-house-calendar-broker-00009-hud` serves live traffic. One Supabase cron job, `coaching-calendar-reconcile`, runs every minute. Live authenticated reconciliation and coach-calendar deletion/refund passed, including duplicate-refund prevention and restoration of the verification account's original balance. Temporary booking/webhook pause, review database and eleven branch-specific Preview overrides were removed; the unrelated Calendar preview remains. See [release record](../plans/2026-09-30-coaching-credits.md). Do not list coaching credits as an open lane or repeat completed review, activation, canary or cleanup gates without a reported issue. PR #264 records this closeout only; its documentation merge does not reopen the product lane.
 
+## SHIP orchestration
+
+[Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
+worktree `coach-house-platform-ship-20261013`. Phase 0 locally implemented;
+human approval, current-head quality, code-owner review and merge remain open.
+Use the canonical shared record before selecting any new release slice. Source
+packets are private references; existing closed lanes remain closed.
+
 ## Open lanes
 
 Vercel CPU optimization: `fix/vercel-cpu-optimization-20261011` in

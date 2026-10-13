@@ -1,0 +1,115 @@
+# SHIP operator
+
+Python 3.9+ standard library, Git, authenticated `gh`; macOS/Linux. No new packages,
+model provider, dashboard or scheduled process. Adapted from FLIGHTPLAN's stable
+IDs, per-checkpoint receipts, separate release evidence and preservation rules;
+its existing recovery ledger stays intact on `chore/flightplan-20261012`.
+
+## Commands
+
+Run `python3 docs/shipping/ship.py --help`. After the active slice closes, use
+`enqueue --owner CHAT_ID --revision REV --head HEAD --receipt FILE` with a reviewed
+`slice` object matching the seed schema to add the next sanitized scope. Status/inspect/validate/reconcile never
+merge, deploy or modify provider settings. Reconcile reads GitHub and records the
+observation locally. All writes take a kernel-exclusive lock and atomic rename.
+State updates require the expected state revision and recorded head. Competing
+operators fail immediately; there is no timed ownership expiry.
+
+```sh
+python3 docs/shipping/ship.py init
+python3 docs/shipping/ship.py status
+python3 docs/shipping/ship.py claim --slice SHIP-000 --owner CHAT_ID --pid OWNER_PID --revision 0 --head HEAD_SHA
+python3 docs/shipping/ship.py checkpoint --owner CHAT_ID --revision REV --head OLD_HEAD --receipt /private/reviewed.json --to locally_validated
+python3 docs/shipping/ship.py checkpoint --owner CHAT_ID --revision REV --head HEAD_SHA --receipt /private/reviewed.json --to awaiting_review
+python3 docs/shipping/ship.py reconcile --owner CHAT_ID --revision REV --head HEAD_SHA --pr NUMBER
+python3 docs/shipping/ship.py export
+python3 docs/shipping/ship.py validate
+```
+
+Use the live operator's persistent process PID, not a one-shot CLI process.
+Claims record host/PID/process start identity and UTC time. Same owner may continue
+while that process lives. `resume` requires an evidence receipt with
+`owner_evidence` and `next_action`; it checks the original process has stopped or
+its PID has been reused before recording the new owner/PID. A foreign-host claim
+fails closed: resolve it on the original host. No automatic takeover, cleanup,
+branch deletion or server termination. A same-host reboot normally changes start
+identity. Never unlink `write.lock`: kernel locks release on process exit.
+
+New claims require a clean isolated branch containing freshly fetched main.
+After committing new code, checkpoint with the previous recorded head: tests,
+approval and GitHub evidence are invalidated and status returns to in progress.
+Record fresh tests for the new head. This intentionally also invalidates approval
+on documentation commits; finish reviewable changes before requesting approval.
+
+## Evidence and transitions
+
+`checkpoint --to STATE --receipt FILE` merges a reviewed sanitized JSON receipt.
+The field contract and cumulative gates are in `gates.py`; tests include examples.
+Stages cannot be skipped. `blocked` requires `blocker` and `next_action` and retains
+the last stage. It holds the exclusive slice until resumed or closed.
+
+Required evidence includes current-head tests and UI review (reasoned N/A for
+tooling), concrete `review_packet`, exact-head/scope human approval with actor,
+time, source reference and no unresolved conditions. UX approval is separate
+from GitHub review. Do not invent either. `github` and `merge` evidence can only
+come from live `reconcile --pr`. Protected transitions require fresh `--pr` reads.
+Pre-merge protection must have been observed CLEAN with required checks and review;
+a later merged state cannot retroactively prove skipped protection passed.
+
+Application deployment evidence needs the actual intended project/domain/ID,
+matching merge SHA, provider verification, observation time and reference. GitHub
+integration labels alone are observations, not deployment proof. Production smoke
+checks, provider/migration work and rollback are separate records. Tooling-only
+N/A needs an explicit reason. `closeout` takes the same owner/revision/head/receipt
+arguments plus `--pr`; it requires remote recovery, mirror synchronization and
+explicit safe retirement or preservation. No filesystem cleanup is performed.
+
+The tool validates evidence structure and provenance of fetched GitHub data;
+it cannot independently authenticate a human's pasted approval or a manually
+supplied smoke-test receipt. Those remain attributed operator attestations.
+GitHub protection remains the final independent merge enforcement.
+
+## Checkpoints, privacy and recovery
+
+Review receipt text before export; public snapshots must contain no credentials,
+account details, raw intake or private test data. Source intake retains IDs,
+line locations and file hashes only. Read the private original wording before
+selecting a slice; reconcile existing releases before turning intake into work.
+Do not change source checkbox states merely because a test passed.
+
+`export` copies immutable state and its hash-linked receipt payloads to
+`docs/shipping/receipts/`. Commit, run normal pre-push checks, push the task branch,
+and verify `git ls-remote` matches the local head. Record that remote SHA in the
+next checkpoint. A snapshot's own containing commit is established by Git history;
+never put a guessed self-referential commit SHA into the file. State after that
+export is local-only until another export/push. Ignored private state needs its
+own private backup; Git does not protect it.
+
+On restart in this repository, use status and resume; never reinitialize. On a
+fresh recovery clone, inspect the newest `NNNNNN-HASH.json` snapshot, then:
+
+```sh
+python3 docs/shipping/ship.py init --receipt docs/shipping/receipts/NNNNNN-HASH.json
+python3 docs/shipping/ship.py validate
+```
+
+Restore refuses to overwrite existing canonical state and checks every receipt
+hash. Old-host owner and worktree identity still need reconciliation; do not
+silently rewrite them. Cross-machine relocation is deliberately a manual recovery
+boundary, not automatic takeover. Orphaned `.pending-*` files after a hard crash
+are non-authoritative; the prior state or fully replaced state remains readable.
+
+At checkpoints update the repository runlog/open-work entry, export/push/verify,
+then deliberately update the private Desktop SHIP checkpoint with the canonical
+path, latest remote receipt and next action. Apple Notes links and checkboxes are
+preserved; no Notes automation is installed. Do not claim continuous synchronization.
+
+## Validation
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s docs/shipping -p 'test_*.py' -v
+```
+
+Simulations never mutate production. Hosted repository quality and required
+code-owner review remain mandatory. This harness does not bypass failing visual
+CI, manufacture approvals or turn a successful merge into production verification.

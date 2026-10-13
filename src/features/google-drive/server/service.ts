@@ -336,13 +336,14 @@ export async function listGoogleDriveDocuments(
 ): Promise<GoogleDriveDocument[]> {
   const { data, error } = await supabase
     .from("organization_external_documents")
-    .select("id,name,mime_type,web_view_link,modified_at,status")
+    .select("id,provider_file_id,name,mime_type,web_view_link,modified_at,status")
     .eq("org_id", orgId)
     .eq("provider", "google_drive")
     .order("name", { ascending: true })
   if (error) throw new GoogleDriveError("provider_unavailable", 503)
   return (data ?? []).map((row) => ({
     id: row.id,
+    fileId: row.provider_file_id,
     name: row.name,
     mimeType: row.mime_type,
     webViewLink: row.web_view_link,

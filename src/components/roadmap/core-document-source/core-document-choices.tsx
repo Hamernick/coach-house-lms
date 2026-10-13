@@ -6,14 +6,12 @@ import { Button } from "@/components/ui/button"
 import { GoogleDriveMark } from "./google-drive-mark"
 
 export function CoreDocumentChoices({
-  canWrite = true,
   title,
   pending,
   error,
   onWrite,
   onDrive,
 }: {
-  canWrite?: boolean
   title: string
   pending: boolean
   error?: string | null
@@ -34,10 +32,10 @@ export function CoreDocumentChoices({
           type="button"
           className="min-h-11"
           onClick={onWrite}
-          disabled={pending || !canWrite}
+          disabled={pending}
         >
           <PenLineIcon aria-hidden="true" />
-          {canWrite ? "Start writing" : "Start writing · Upgrade"}
+          Start writing
         </Button>
         <Button
           type="button"

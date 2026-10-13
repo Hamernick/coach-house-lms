@@ -18,7 +18,7 @@ import {
   CircleNotch,
   CheckCircle,
 } from "@phosphor-icons/react/dist/ssr"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import {
@@ -44,7 +44,6 @@ const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
   "planned",
   "active",
-  "on-hold",
 ]
 
 const CLOSED_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
@@ -85,8 +84,6 @@ function getColumnStatusLabel(
       return "Backlog"
     case "planned":
       return "Planned"
-    case "on-hold":
-      return "On hold"
     case "active":
       return "Active"
     case "completed":
@@ -283,7 +280,7 @@ export function MemberWorkspaceProjectBoardView({
     projectId: string,
     status: PlatformAdminDashboardLabProject["status"]
   ) => {
-    if (!updateProjectStatusAction || pendingProjectIds.includes(projectId)) {
+    if (!updateProjectStatusAction) {
       return
     }
 
@@ -298,14 +295,15 @@ export function MemberWorkspaceProjectBoardView({
     )
 
     startTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectStatusAction(projectId, status), { pending: "Saving project…", success: "Project status updated" })
+      const result = await updateProjectStatusAction(projectId, status)
 
       setPendingProjectIds((current) =>
         current.filter((value) => value !== projectId)
       )
 
       if ("error" in result) {
-        setItems(current => current.map(item => item.id === projectId ? previousItems.find(previous => previous.id === projectId) ?? item : item))
+        setItems(previousItems)
+        toast.error(result.error)
         return
       }
 
@@ -314,7 +312,7 @@ export function MemberWorkspaceProjectBoardView({
   }
 
   const commitProjectWorkstream = (projectId: string, categoryId: string) => {
-    if (!updateProjectWorkstreamAction || pendingProjectIds.includes(projectId)) return
+    if (!updateProjectWorkstreamAction) return
 
     const previousItems = items
     setItems((current) =>
@@ -329,13 +327,14 @@ export function MemberWorkspaceProjectBoardView({
     )
 
     startTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectWorkstreamAction(projectId, categoryId), { pending: "Saving project…", success: "Project workstream updated" })
+      const result = await updateProjectWorkstreamAction(projectId, categoryId)
       setPendingProjectIds((current) =>
         current.filter((value) => value !== projectId)
       )
 
       if ("error" in result) {
-        setItems(current => current.map(item => item.id === projectId ? previousItems.find(previous => previous.id === projectId) ?? item : item))
+        setItems(previousItems)
+        toast.error(result.error)
         return
       }
 
@@ -537,9 +536,7 @@ export function MemberWorkspaceProjectBoardView({
                   </div>
                 )
               })}
-            </ScrollFadeEffect>
-            {onAddProject ? (
-              <div className="shrink-0 px-3 pb-3">
+              {onAddProject ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -549,8 +546,8 @@ export function MemberWorkspaceProjectBoardView({
                   <Plus className="mr-1 h-4 w-4" />
                   Add project
                 </Button>
-              </div>
-            ) : null}
+              ) : null}
+            </ScrollFadeEffect>
           </div>
         ))}
       </div>

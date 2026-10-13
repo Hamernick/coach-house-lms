@@ -81,7 +81,6 @@ export function OrganizationCoachAssignmentControl({
   updateAssignmentAction,
   preventEmpty = false,
   compact = false,
-  className,
 }: {
   assignments: OrganizationCoachAssignment[]
   canManage: boolean
@@ -91,7 +90,6 @@ export function OrganizationCoachAssignmentControl({
   updateAssignmentAction?: AssignmentAction
   preventEmpty?: boolean
   compact?: boolean
-  className?: string
 }) {
   const controller = useOrganizationCoachAssignmentController({
     assignments,
@@ -128,8 +126,7 @@ export function OrganizationCoachAssignmentControl({
           size="sm"
           className={cn(
             "h-11 min-w-0 justify-start gap-2 rounded-lg px-2 md:h-9",
-            compact ? "max-w-36" : "max-w-52",
-            className
+            compact ? "max-w-36" : "max-w-52"
           )}
           disabled={controller.pending}
           aria-busy={controller.pending}

@@ -7,12 +7,10 @@ import {
   updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
-import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { requireMemberWorkspacePageAccess } from "@/lib/workspace/member-workspace-access"
 
 export default async function TasksPage() {
   await requireMemberWorkspacePageAccess("tasks")
-  const { user } = await resolveAuthenticatedAppContext()
 
   const {
     taskGroups,
@@ -28,7 +26,6 @@ export default async function TasksPage() {
 
   return (
     <MemberWorkspaceTasksPage
-      viewerUserId={user.id}
       initialTaskGroups={taskGroups}
       storageMode={storageMode}
       starterTaskCount={starterTaskCount}

@@ -21,7 +21,6 @@ type OpenDetails = (orgId: string, options?: OpenDetailsOptions) => void
 export const noopPublicMapSidebarAction = () => undefined
 
 export type PublicMapSidebarProps = {
-  inline?: boolean
   sidebarMode: SidebarMode
   sidebarWidth: number
   surfaceHeight: number

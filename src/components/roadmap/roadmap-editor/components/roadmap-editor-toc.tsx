@@ -1,3 +1,5 @@
+import { ParticleSourceHandle } from "@/features/workspace-particles/client"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import type { CSSProperties, RefObject } from "react"
@@ -95,6 +97,13 @@ export function RoadmapEditorToc({
   return (
     <div
       ref={sectionsListRef}
+      {...getReactGrabOwnerProps({
+        ownerId: "roadmap-editor:navigation",
+        component: "RoadmapEditorToc",
+        source:
+          "src/components/roadmap/roadmap-editor/components/roadmap-editor-toc.tsx",
+        slot: "root",
+      })}
       id="roadmap-section-picker-trigger"
       className="relative w-full min-w-0 space-y-1.5 pr-2 pl-4 text-sm"
       style={
@@ -169,6 +178,10 @@ export function RoadmapEditorToc({
                   </span>
                   <RoadmapTocCompletionCheck status={itemStatus} />
                 </Button>
+                <ParticleSourceHandle
+                  source={{ kind: "roadmap", id: item.section.id }}
+                  title={displayTitle}
+                />
                 <Button
                   type="button"
                   variant="ghost"
@@ -238,6 +251,10 @@ export function RoadmapEditorToc({
                           </span>
                           <RoadmapTocCompletionCheck status={childStatus} />
                         </Button>
+                        <ParticleSourceHandle
+                          source={{ kind: "roadmap", id: child.id }}
+                          title={childDisplayTitle}
+                        />
                       </div>
                     )
                   })
@@ -293,6 +310,10 @@ export function RoadmapEditorToc({
               </span>
               <RoadmapTocCompletionCheck status={itemStatus} />
             </Button>
+            <ParticleSourceHandle
+              source={{ kind: "roadmap", id: item.section.id }}
+              title={displayTitle}
+            />
           </div>
         )
       })}

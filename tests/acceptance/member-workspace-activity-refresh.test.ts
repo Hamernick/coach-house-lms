@@ -121,7 +121,7 @@ describe("activity refresh authorization", () => {
       canAccessOrganizations: true,
       isAdmin: false,
       organizationCoachScope: { mode: "assigned", organizationIds: new Set() },
-      supabase: { from, rpc: vi.fn().mockResolvedValue({ data: null, error: null }) },
+      supabase: { from },
     })
     expect(
       await refreshOrganizationProjectActivity({ orgId, projectId })
@@ -135,7 +135,7 @@ describe("activity refresh authorization", () => {
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     }
-    const supabase = { from: () => query, rpc: vi.fn().mockResolvedValue({ data: null, error: null }) }
+    const supabase = { from: () => query }
     accessMocks.actor.mockResolvedValue({
       hasMemberWorkspaceAccess: true,
       canAccessOrganizations: true,

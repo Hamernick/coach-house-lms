@@ -1,5 +1,3 @@
-import { loadProfile, updateDocumentsProfile } from "./document-profile"
-import { requireOrganizationDocumentStorage } from "@/lib/organization/document-storage-access"
 import {
   KIND_KEY_MAP,
   type DocumentKey,
@@ -30,6 +28,39 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function getDocumentKey(kind: string | null): DocumentKey | null {
   if (!kind) return null
   return KIND_KEY_MAP[kind as keyof typeof KIND_KEY_MAP] ?? null
+}
+
+async function loadProfile(
+  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
+  orgId: string
+) {
+  const { data: orgRow, error } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (orgRow?.profile ?? {}) as Record<string, unknown>
+}
+
+function updateDocumentsProfile(
+  profile: Record<string, unknown>,
+  key: DocumentKey,
+  nextDoc: DocumentMeta | null
+) {
+  const documents = isRecord(profile["documents"])
+    ? { ...profile["documents"] }
+    : {}
+  if (nextDoc) {
+    documents[key] = nextDoc
+  } else {
+    delete documents[key]
+  }
+  return { ...profile, documents }
 }
 
 export async function GET(request: NextRequest) {
@@ -153,10 +184,6 @@ export async function POST(request: NextRequest) {
     const { orgId, role } = access
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const safeName = sanitizeTrackedDocumentFilename(file.name)
@@ -314,10 +341,6 @@ export async function PATCH(request: NextRequest) {
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
-    }
 
     const mutation = await mutateOrganizationProfile({
       supabase,
@@ -409,10 +432,6 @@ export async function DELETE(request: NextRequest) {
     const { orgId, role } = access
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const mutation = await mutateOrganizationProfile({

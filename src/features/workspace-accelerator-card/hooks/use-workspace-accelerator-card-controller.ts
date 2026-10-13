@@ -205,10 +205,10 @@ export function useWorkspaceAcceleratorCardController(
       const nextIndex = stepIdToIndex.get(stepId)
       if (typeof nextIndex !== "number" || nextIndex === currentIndex) return
       pendingUserProgressChangeRef.current = true
-      // Commit the selection with the caller's viewer-open update. Deferring it
-      // mounts the previous lesson (including organization setup) first.
-      setCurrentIndex((previous) =>
-        previous === nextIndex ? previous : nextIndex
+      startTransition(() =>
+        setCurrentIndex((previous) =>
+          previous === nextIndex ? previous : nextIndex
+        )
       )
     },
     [currentIndex, stepIdToIndex]

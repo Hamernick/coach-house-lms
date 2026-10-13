@@ -10,7 +10,6 @@ import {
   type ChangeEvent,
 } from "react"
 import { useRouter } from "next/navigation"
-import { getOrganizationLaunchReturnHref } from "@/lib/workspace/editor-navigation"
 
 import { updateOrganizationProfileAction } from "@/actions/organization"
 import { toast } from "@/lib/toast"
@@ -296,9 +295,7 @@ export function useOrgProfileEditorState({
       setDirty(false)
       setCompany(savedCompany)
       setSavedCompany(savedCompany)
-      const returnHref = getOrganizationLaunchReturnHref(window.location.search)
-      if (returnHref) router.push(returnHref)
-      else router.refresh()
+      router.refresh()
     })
   }, [company, canEdit, slugStatus, router])
 

@@ -1,7 +1,5 @@
 import Stripe from "stripe"
 
-import { getSubscriptionPeriodEndIso } from "@/lib/billing/subscription-period"
-
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
 
@@ -46,7 +44,9 @@ export async function maybeStartOrganizationTrialFromAccelerator({
     { idempotencyKey: `accelerator_bundle_${checkoutSessionId}` },
   )
 
-  const currentPeriodEnd = getSubscriptionPeriodEndIso(subscription)
+  const currentPeriodEndUnix =
+    (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+  const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
   const cancelAt = typeof subscription.cancel_at === "number" ? new Date(subscription.cancel_at * 1000).toISOString() : null
   const canceledAt = typeof subscription.canceled_at === "number" ? new Date(subscription.canceled_at * 1000).toISOString() : null
 

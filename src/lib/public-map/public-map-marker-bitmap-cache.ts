@@ -1,5 +1,3 @@
-import { buildPublicImageTransformUrl } from "@/lib/storage/public-url"
-
 import type { PublicMapGroupKey } from "@/lib/public-map/groups"
 
 import {
@@ -181,7 +179,7 @@ async function loadPublicMapMarkerImageBitmap({
   }
 
   try {
-    const response = await fetch(buildPublicImageTransformUrl(imageUrl, { width: 144, height: 144, resize: "contain" }) ?? imageUrl, {
+    const response = await fetch(imageUrl, {
       cache: "force-cache",
       mode: "cors",
     })

@@ -81,7 +81,6 @@ export function OrganizationCoachAssignmentControl({
   updateAssignmentAction,
   preventEmpty = false,
   compact = false,
-  className,
 }: {
   assignments: OrganizationCoachAssignment[]
   canManage: boolean
@@ -91,7 +90,6 @@ export function OrganizationCoachAssignmentControl({
   updateAssignmentAction?: AssignmentAction
   preventEmpty?: boolean
   compact?: boolean
-  className?: string
 }) {
   const controller = useOrganizationCoachAssignmentController({
     assignments,
@@ -114,7 +112,7 @@ export function OrganizationCoachAssignmentControl({
         aria-label={`${organizationName} coaches: ${accessibleSummary}`}
       >
         <CoachAvatarStack assignments={controller.assignments} />
-        {!compact ? <span className="truncate">{summary}</span> : null}
+        <span className="truncate">{summary}</span>
       </div>
     )
   }
@@ -128,15 +126,14 @@ export function OrganizationCoachAssignmentControl({
           size="sm"
           className={cn(
             "h-11 min-w-0 justify-start gap-2 rounded-lg px-2 md:h-9",
-            compact ? "max-w-36" : "max-w-52",
-            className
+            compact ? "max-w-36" : "max-w-52"
           )}
           disabled={controller.pending}
           aria-busy={controller.pending}
           aria-label={`Manage coaches for ${organizationName}; ${accessibleSummary}`}
         >
           <CoachAvatarStack assignments={controller.assignments} />
-          {!compact ? <span className="truncate">{summary}</span> : null}
+          <span className="truncate">{summary}</span>
           {controller.pending ? (
             <CircleNotch className="text-muted-foreground ml-auto animate-spin" />
           ) : (
@@ -159,7 +156,7 @@ export function OrganizationCoachAssignmentControl({
           </p>
         ) : null}
         <div className="mt-1 space-y-1">
-          {coachOptions.filter((coach) => coach.assignable !== false).map((coach) => {
+          {coachOptions.map((coach) => {
             const selected = controller.assignedCoachIds.has(coach.id)
             const removingLast =
               selected && preventEmpty && controller.assignments.length === 1

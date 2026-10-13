@@ -1,12 +1,8 @@
 export const organizationProjectSelectFields = [
   "id",
   "org_id",
-  "organization_unassigned",
   "canonical_org_id",
   "project_kind",
-  "recurrence",
-  "option_settings",
-  "guided_setup",
   "name",
   "description",
   "status",

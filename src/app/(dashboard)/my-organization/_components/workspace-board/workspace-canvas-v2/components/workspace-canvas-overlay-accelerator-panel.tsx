@@ -1,10 +1,8 @@
 "use client"
 
-import { FeatureUpgradeNotice } from "@/components/paywall/feature-upgrade-notice"
-import { useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import { useCallback, useMemo, useState } from "react"
 
-import { OrganizationLaunchPanel, type OrganizationLaunchInput } from "@/features/organization-launch/client"
 import { Button } from "@/components/ui/button"
 import { WorkspaceAcceleratorBanner } from "@/features/workspace-accelerator-card"
 import type {
@@ -15,41 +13,28 @@ import type {
 import type { RoadmapSection } from "@/lib/roadmap"
 import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
-import {
-  buildWorkspaceBoardUiPreferencesStorageKey,
-  patchWorkspaceBoardUiPreferences,
-  readWorkspaceBoardUiPreferences,
-  type WorkspaceBoardUiPreferenceScope,
-} from "../../workspace-board-ui-preferences"
 import { WorkspaceBoardLazyAcceleratorCardPanel } from "../../workspace-board-accelerator-lazy"
 import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-overlay-drawer-tabs"
 
 export function WorkspaceCanvasOverlayAcceleratorPanel({
   input,
-  uiPreferencesScope,
-  organizationLaunch,
   roadmapSections,
   hasAccess,
+  paywallHref,
   request,
   onRequestHandled,
-  drawerContainer,
 }: {
-  organizationLaunch: OrganizationLaunchInput
-  uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   input: WorkspaceAcceleratorCardInput
   roadmapSections: RoadmapSection[]
   hasAccess: boolean
   paywallHref: string
   request: WorkspaceDataDrawerRequest | null
-  drawerContainer?: HTMLElement | null
   onRequestHandled: (requestId: number) => void
 }) {
-  const searchParams = useSearchParams()
-  const guideOverview = searchParams.get("guide") === "1"
   const openStepRequest =
     useMemo<WorkspaceAcceleratorOpenStepRequest | null>(() => {
       if (
-        !hasAccess || guideOverview || request?.tab !== "accelerator" ||
+        request?.tab !== "accelerator" ||
         !request.acceleratorStepId ||
         !request.acceleratorModuleId
       ) {
@@ -62,22 +47,20 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
         moduleId: request.acceleratorModuleId,
         lessonGroupKey: request.acceleratorLessonGroupKey ?? null,
       }
-    }, [request, guideOverview, hasAccess])
+    }, [request])
   const requestedModuleId =
-    hasAccess && !guideOverview && request?.tab === "accelerator"
+    request?.tab === "accelerator"
       ? (request.acceleratorModuleId ?? null)
       : null
   const panelInput = useMemo<WorkspaceAcceleratorCardInput>(
     () =>
-      !hasAccess
-        ? { ...input, onProgressChange: undefined, onModuleComplete: undefined, onWorkspaceOnboardingSubmit: undefined }
-        : openStepRequest
+      openStepRequest
         ? {
             ...input,
             initialCurrentStepId: openStepRequest.stepId,
           }
         : input,
-    [input, openStepRequest, hasAccess]
+    [input, openStepRequest]
   )
   const [isModuleViewerOpen, setIsModuleViewerOpen] = useState(false)
   const handleRuntimeChange = useCallback(
@@ -86,28 +69,7 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
     },
     []
   )
-  const showBanner = guideOverview || (!requestedModuleId && !isModuleViewerOpen)
-  const preferenceKey = buildWorkspaceBoardUiPreferencesStorageKey(uiPreferencesScope)
-  const { orgId, viewerId } = uiPreferencesScope
-  const [introduction, setIntroduction] = useState<{ key: string; dismissed: boolean } | null>(null)
-  useEffect(() => {
-    setIntroduction({
-      key: preferenceKey,
-      dismissed: readWorkspaceBoardUiPreferences({ orgId, viewerId }).acceleratorIntroductionDismissed,
-    })
-  }, [preferenceKey, orgId, viewerId])
-  const introductionActionRef = useRef<HTMLButtonElement>(null)
-  const introductionFocusRequested = useRef(false)
-  useEffect(() => {
-    if (!introductionFocusRequested.current) return
-    introductionFocusRequested.current = false
-    introductionActionRef.current?.focus({ preventScroll: true })
-  }, [introduction])
-  const setIntroductionDismissed = (dismissed: boolean) => {
-    introductionFocusRequested.current = true
-    patchWorkspaceBoardUiPreferences(uiPreferencesScope, { acceleratorIntroductionDismissed: dismissed })
-    setIntroduction({ key: preferenceKey, dismissed })
-  }
+  const showBanner = !requestedModuleId && !isModuleViewerOpen
 
   return (
     <div
@@ -116,50 +78,42 @@ export function WorkspaceCanvasOverlayAcceleratorPanel({
         openStepRequest?.stepId ?? undefined
       }
       data-workspace-accelerator-request-module={requestedModuleId ?? undefined}
-      className={isModuleViewerOpen && drawerContainer
-        ? "hidden"
-        : "box-border flex h-full min-h-0 w-full min-w-0 flex-col px-2 sm:px-3"}
+      className="box-border flex h-full min-h-0 w-full min-w-0 flex-col p-2 sm:p-3"
     >
-      <div className="flex min-h-0 flex-1">
-        <WorkspaceBoardLazyAcceleratorCardPanel
-          key={guideOverview ? "guide-overview" : "accelerator"}
-          input={panelInput}
-          overviewOnly={!hasAccess}
-          workspaceOverviewNotice={!hasAccess ? (
-            <FeatureUpgradeNotice title="Build with the Accelerator">
-              Upgrade to unlock organization setup, guided lessons, checklists, and frameworks.
-            </FeatureUpgradeNotice>
-          ) : null}
-          roadmapSections={roadmapSections}
-          roadmapBasePath={WORKSPACE_ROADMAP_PATH}
-          presentationMode="workspace-drawer"
-          drawerContainer={drawerContainer}
-          initialModuleViewerOpen={Boolean(requestedModuleId)}
-          initialOpenModuleId={requestedModuleId}
-          openStepRequest={openStepRequest}
-          onOpenStepRequestHandled={onRequestHandled}
-          onRuntimeChange={handleRuntimeChange}
-          showEmbeddedClassPicker
-          workspaceDrawerHeader={
-            showBanner ? (
-              <div className="contents">
-                {introduction?.key === preferenceKey ? (
-                  introduction.dismissed ? (
-                    <div className="col-span-full mx-auto flex w-full max-w-[420px] justify-end @min-[900px]/accelerator-overview:max-w-none">
-                      <Button ref={introductionActionRef} type="button" variant="ghost" size="sm" className="min-h-11 text-muted-foreground sm:min-h-8" onClick={() => setIntroductionDismissed(false)}>
-                        About Accelerator
-                      </Button>
-                    </div>
-                  ) : (
-                    <WorkspaceAcceleratorBanner dismissButtonRef={introductionActionRef} onDismiss={() => setIntroductionDismissed(true)} />
-                  )
-                ) : null}
-                <OrganizationLaunchPanel input={organizationLaunch} hasAccess={hasAccess} />
-              </div>
-            ) : null
-          }
-        />
-      </div>
+      {!hasAccess ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+          <div className="flex max-w-md flex-col items-center gap-3 text-center">
+            <h2 className="text-lg font-semibold text-balance">
+              Unlock the Accelerator
+            </h2>
+            <p className="text-muted-foreground text-sm text-pretty">
+              Get guided classes, videos, resources, and assignments inside your
+              workspace.
+            </p>
+            <Button asChild>
+              <Link href={paywallHref}>View access options</Link>
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <WorkspaceBoardLazyAcceleratorCardPanel
+            input={panelInput}
+            roadmapSections={roadmapSections}
+            roadmapBasePath={WORKSPACE_ROADMAP_PATH}
+            presentationMode="workspace-drawer"
+            initialModuleViewerOpen={Boolean(requestedModuleId)}
+            initialOpenModuleId={requestedModuleId}
+            openStepRequest={openStepRequest}
+            onOpenStepRequestHandled={onRequestHandled}
+            onRuntimeChange={handleRuntimeChange}
+            showEmbeddedClassPicker
+            workspaceDrawerHeader={
+              showBanner ? <WorkspaceAcceleratorBanner /> : null
+            }
+          />
+        </div>
+      )}
     </div>
   )
 }

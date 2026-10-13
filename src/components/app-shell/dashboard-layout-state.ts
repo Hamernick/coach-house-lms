@@ -15,9 +15,7 @@ import { loadAppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { loadAccessibleOrganizations } from "@/features/member-workspace"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { Json } from "@/lib/supabase"
-import { buildSavedOnboardingFlowDefaults } from "@/lib/onboarding/saved-defaults"
-import { resolveOnboardingRequirements } from "@/lib/onboarding/requirements"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import { shouldForceStripeEntitlementSyncForWorkspace } from "@/lib/workspace/member-workspace-nav-access"
 import {
   EMPTY_STATE,
@@ -126,10 +124,15 @@ const resolveDashboardLayoutStateCached = cache(
 
     avatar = profileAudience.avatarUrl ?? metadataAvatarUrl
 
+    needsOnboarding = !isPlatformStaff && !completed
+
     const { orgId, role } = activeOrg
     showOrgAdmin = role === "owner" || role === "admin"
     if (isAdmin) {
       showOrgAdmin = true
+    }
+    if (orgId !== user.id) {
+      needsOnboarding = false
     }
 
     const accessibleOrganizationsPromise =
@@ -195,9 +198,6 @@ const resolveDashboardLayoutStateCached = cache(
         ? false
         : accountBillingResult.hasBillingCancellationRisk
 
-    if (orgRowResult.error) {
-      throw supabaseErrorToError(orgRowResult.error, "Unable to load organization setup.")
-    }
     const orgProfile =
       (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
     const orgPeople = Array.isArray(orgProfile?.org_people)
@@ -215,24 +215,11 @@ const resolveDashboardLayoutStateCached = cache(
     const orgName =
       typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
     organizationName = orgName.length > 0 ? orgName : null
-    const onboarding = resolveOnboardingRequirements({
-      userId: user.id,
-      organizationId: orgId,
-      isPlatformStaff,
-      userMetadata: userMeta,
-      organizationProfile: orgProfile,
-      publicSlug: orgSlug,
-    })
-    needsOnboarding = onboarding.required
-    const onboardingDefaults = await buildSavedOnboardingFlowDefaults({
-      organizationId: orgId,
-      supabase,
-      needsOnboarding,
+    const onboardingDefaults = buildOnboardingFlowDefaults({
       userId: user.id,
       email,
       displayName,
       avatarUrl: avatar,
-      profileTitle: profileAudience.headline,
       userMetadata: userMeta,
       orgProfile,
       orgSlug,
@@ -357,7 +344,6 @@ const resolveDashboardLayoutStateCached = cache(
         ...onboardingDefaults,
       },
       onboardingLocked: needsOnboarding,
-      onboardingMode: onboarding.mode,
       onboardingIntentFocus:
         metadataIntentFocus === "build" ||
         metadataIntentFocus === "find" ||

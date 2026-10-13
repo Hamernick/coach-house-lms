@@ -1,17 +1,28 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
-import { hasSupabaseManagementApiToken } from "@/lib/supabase/management-api-config"
-
-afterEach(() => vi.unstubAllEnvs())
+import {
+  PLATFORM_SETUP_NOTIFICATION_ID,
+  buildPlatformSetupNotification,
+  isPlatformSetupNotificationId,
+} from "@/lib/supabase/management-api-config"
 
 describe("supabase management api config", () => {
-  it.each([undefined, "", "   "])("treats %s as missing configuration", (token) => {
-    vi.stubEnv("SUPABASE_MANAGEMENT_API_TOKEN", token)
-    expect(hasSupabaseManagementApiToken()).toBe(false)
+  it("builds the synthetic platform setup notification", () => {
+    const notification = buildPlatformSetupNotification("2026-03-11T17:00:00.000Z")
+
+    expect(notification).toMatchObject({
+      id: PLATFORM_SETUP_NOTIFICATION_ID,
+      title: "Platform tools need setup",
+      href: "/admin/platform",
+      tone: "warning",
+      createdAt: "2026-03-11T17:00:00.000Z",
+      readAt: null,
+      archivedAt: null,
+    })
   })
 
-  it("recognizes a configured token for the platform tools page", () => {
-    vi.stubEnv("SUPABASE_MANAGEMENT_API_TOKEN", "configured-token")
-    expect(hasSupabaseManagementApiToken()).toBe(true)
+  it("recognizes only the synthetic platform setup notification id", () => {
+    expect(isPlatformSetupNotificationId(PLATFORM_SETUP_NOTIFICATION_ID)).toBe(true)
+    expect(isPlatformSetupNotificationId("notification_123")).toBe(false)
   })
 })

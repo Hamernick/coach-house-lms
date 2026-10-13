@@ -3,7 +3,7 @@
 import "./picker.css"
 import { GoogleDrivePickerError } from "../lib/picker-error"
 
-type PickerDocument = { id?: string; name?: string }
+type PickerDocument = { id?: string }
 type PickerData = { action?: string; docs?: PickerDocument[] }
 type PickerInstance = { setVisible: (visible: boolean) => void }
 type PickerBuilder = {
@@ -113,9 +113,9 @@ function loadPickerScript() {
   return pickerScriptPromise
 }
 
-export async function pickGoogleDriveFileReferences(
+export async function pickGoogleDriveFiles(
   multiple = false
-): Promise<Array<{ id: string; name: string }>> {
+): Promise<string[]> {
   const response = await fetch("/api/integrations/google-drive/picker-token", {
     method: "POST",
     cache: "no-store",
@@ -154,15 +154,11 @@ export async function pickGoogleDriveFileReferences(
         if (data.action === picker.Action.PICKED)
           resolve(
             (data.docs ?? [])
-              .filter((document): document is { id: string; name?: string } => Boolean(document.id))
-              .map((document) => ({ id: document.id, name: document.name?.trim() || "Drive file" }))
+              .map((document) => document.id)
+              .filter((id): id is string => Boolean(id))
           )
       })
     if (multiple) builder.enableFeature(picker.Feature.MULTISELECT_ENABLED)
     builder.build().setVisible(true)
   })
-}
-
-export async function pickGoogleDriveFiles(multiple = false): Promise<string[]> {
-  return (await pickGoogleDriveFileReferences(multiple)).map((file) => file.id)
 }

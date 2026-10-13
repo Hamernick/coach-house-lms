@@ -6,7 +6,7 @@ import "reactflow/dist/style.css"
 import { useWorkspaceAcceleratorDrawer } from "./use-workspace-accelerator-drawer"
 import { useWorkspaceOntologyActionRequest } from "./use-workspace-ontology-action-request"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
-import { WorkspaceCanvasSurfaceV2View } from "./workspace-canvas-surface-v2-view"
+import { WorkspaceCanvasParticlesSurface } from "./workspace-canvas-particles-surface"
 import {
   WORKSPACE_CANVAS_V2_VAULT_MODE,
   type WorkspaceCanvasV2CardId,
@@ -40,6 +40,7 @@ export function WorkspaceCanvasSurfaceV2({
   onTutorialRestart,
   onTutorialShortcutOpened,
   onFocusCard,
+  onParticlesChange,
   onPersistNodePosition,
   onConnectCards,
   onDisconnectConnection,
@@ -391,6 +392,8 @@ export function WorkspaceCanvasSurfaceV2({
     visibleNodeIds: ontologyInteractions.visibleNodeIds,
   })
   const viewProps = {
+    particleState: boardState.particles,
+    onParticlesChange,
     nodes: ontologyInteractions.nodes,
     edges: flowState.renderEdges,
     allowEditing,
@@ -442,5 +445,5 @@ export function WorkspaceCanvasSurfaceV2({
     onDisconnectToTarget: flowState.handleContextDisconnectToTarget,
     onDisconnectAll: flowState.handleContextDisconnectAll,
   }
-  return <WorkspaceCanvasSurfaceV2View {...viewProps} />
+  return <WorkspaceCanvasParticlesSurface key={seed.orgId} {...viewProps} />
 }

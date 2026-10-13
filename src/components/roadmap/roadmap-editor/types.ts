@@ -5,7 +5,6 @@ export type RoadmapEditorLayout = "default" | "centered-right"
 export type RoadmapEditorNavigationMode = "route" | "embedded"
 
 export type RoadmapEditorProps = {
-  sourceScope?: import("@/components/roadmap/core-document-source/use-core-document-source").CoreDocumentScope
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit?: boolean

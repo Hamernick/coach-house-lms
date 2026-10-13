@@ -10,11 +10,7 @@ type UseOrgProfileTabStateArgs = {
 }
 
 export function useOrgProfileTabState({ initialTab }: UseOrgProfileTabStateArgs) {
-  const [tab, setTab] = useState<ProfileTab>(() =>
-    initialTab && ORG_PROFILE_TABS.some((option) => option.value === initialTab)
-      ? initialTab
-      : "company"
-  )
+  const [tab, setTab] = useState<ProfileTab>(() => initialTab ?? "company")
 
   const handleTabChange = useCallback((value: string) => {
     if (!ORG_PROFILE_TABS.some((option) => option.value === value)) return

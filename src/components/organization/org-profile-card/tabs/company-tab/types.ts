@@ -21,4 +21,5 @@ export type CompanyEditProps = {
 export type CompanyViewProps = {
   company: OrgProfile
   addressLines: string[]
+  hasAnyBrandLink: boolean
 }

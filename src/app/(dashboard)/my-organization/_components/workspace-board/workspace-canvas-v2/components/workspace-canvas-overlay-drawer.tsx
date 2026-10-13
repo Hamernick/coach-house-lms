@@ -1,10 +1,11 @@
 "use client"
 
-import { useWorkspaceDrawerGuide, useWorkspaceDrawerGuideState } from "./use-workspace-drawer-guide"
+import { useWorkspaceParticles } from "@/features/workspace-particles/client"
 
 import {
   memo,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -34,13 +35,11 @@ import { Toggle } from "@/components/ui/toggle"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
-import { useWorkspaceDrawerCanvasSize } from "./use-workspace-drawer-canvas-height"
 import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-overlay-drawer-container"
 import {
   isWorkspaceDataDrawerCollapsedSnapPoint as isDrawerCollapsed,
   isWorkspaceDataDrawerFullscreenSnapPoint as isDrawerFullscreen,
   resolveWorkspaceDataDrawerSnapPoint,
-  resolveWorkspaceDataDrawerRequestSnapPoint,
   resolveWorkspaceDataDrawerViewportHeight,
   WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT,
   WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT,
@@ -95,18 +94,23 @@ export const WorkspaceCanvasOverlayDrawer = memo(
     peopleCanvasActions: WorkspacePeopleCanvasActions
   }) {
     const canvasContainer = useWorkspaceCanvasOverlayDrawerContainer()
-    const canvasSize = useWorkspaceDrawerCanvasSize(canvasContainer)
-    const guideState = useWorkspaceDrawerGuideState()
-    const restoredPreferencesScopeRef = useRef<string | null>(null)
-    const [preferencesReady, setPreferencesReady] = useState(false)
     const [open, setOpen] = useState(true)
     const [hasOpened, setHasOpened] = useState(true)
     const [activeSnapPoint, setActiveSnapPoint] = useState<
       number | string | null
-    >(() => guideState?.snapPoint ?? resolveWorkspaceDataDrawerRequestSnapPoint(request))
-    const [tab, setTab] = useState<WorkspaceCanvasDrawerTab>(
-      guideState?.tab ?? request?.tab ?? "organization"
+    >(
+      request
+        ? WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT
+        : WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT
     )
+    const [tab, setTab] = useState<WorkspaceCanvasDrawerTab>(
+      request?.tab ?? "accelerator"
+    )
+    const particleDrag = useWorkspaceParticles()?.draggingSource
+    useEffect(() => {
+      if (particleDrag)
+        setActiveSnapPoint(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)
+    }, [particleDrag])
     const handledRequestIdRef = useRef(0)
     const handledAcceleratorRequestIdRef = useRef(0)
     const [, startTabTransition] = useTransition()
@@ -147,14 +151,10 @@ export const WorkspaceCanvasOverlayDrawer = memo(
       [uiPreferencesScope]
     )
 
-    useLayoutEffect(() => {
-      setPreferencesReady(true)
-      const scopeKey = JSON.stringify([uiPreferencesScope.orgId, uiPreferencesScope.viewerId])
-      if (restoredPreferencesScopeRef.current === scopeKey) return
-      restoredPreferencesScopeRef.current = scopeKey
-      if (request || guideState) return
+    useEffect(() => {
       const storedPreferences =
         readWorkspaceBoardUiPreferences(uiPreferencesScope)
+      if (request) return
       setTab(storedPreferences.dataDrawerTab)
       const storedSnapPoint = resolveWorkspaceDataDrawerSnapPoint(
         storedPreferences.dataDrawerSnapPoint
@@ -163,7 +163,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
       setOpen(true)
       setHasOpened(true)
       setActiveSnapPoint(storedSnapPoint)
-    }, [request, uiPreferencesScope, guideState])
+    }, [request, uiPreferencesScope])
 
     useLayoutEffect(() => {
       if (!request || handledRequestIdRef.current === request.id) return
@@ -176,11 +176,11 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         dataDrawerTab: request.tab,
       })
       handleActiveSnapPointChange(
-        resolveWorkspaceDataDrawerRequestSnapPoint(request)
+        request.tab === "roadmap"
+          ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT
+          : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT
       )
     }, [handleActiveSnapPointChange, request, uiPreferencesScope])
-
-    useWorkspaceDrawerGuide({ state: guideState, setOpen, setHasOpened, setTab, setSnap: setActiveSnapPoint })
 
     const handleOpenChange = useCallback(
       (nextOpen: boolean) => {
@@ -267,13 +267,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         requestId
       )
     }, [])
-    const handleAddPeopleToCanvas = useCallback((personIds: string[]) => {
-      const added = peopleCanvasActions.add(personIds)
-      if (added > 0 && drawerFullscreen) {
-        handleActiveSnapPointChange(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)
-      }
-      return added
-    }, [drawerFullscreen, handleActiveSnapPointChange, peopleCanvasActions])
     const pendingAcceleratorRequest =
       request?.tab === "accelerator" &&
       request.id > handledAcceleratorRequestIdRef.current
@@ -281,11 +274,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         : null
 
     const { tabIndicator, tabsHeaderRef, tabsListRef } =
-      useWorkspaceDataDrawerTabIndicator({ tab, expanded: drawerExpanded })
-
-    // Mount Vaul with the restored snap and a measurable canvas, never the
-    // temporary collapsed/zero-height startup geometry.
-    if (!preferencesReady || !canvasSize || canvasSize.height <= 0 || canvasSize.width <= 0) return null
+      useWorkspaceDataDrawerTabIndicator({ tab })
 
     return (
       <Drawer
@@ -324,7 +313,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             onClick={handleDataShortcutClick}
             className={cn(
               "nodrag nopan text-foreground size-9 h-9 w-9 rounded-xl",
-              "hidden",
               drawerExpanded &&
                 "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm"
             )}
@@ -338,10 +326,6 @@ export const WorkspaceCanvasOverlayDrawer = memo(
         {drawerContentMounted ? (
           <DrawerContent
             data-workspace-canvas-overlay-drawer="true"
-            style={{
-              height: canvasSize.height,
-              width: canvasSize.width,
-            }}
             data-workspace-data-drawer-request-step={
               request?.acceleratorStepId ?? undefined
             }
@@ -357,9 +341,9 @@ export const WorkspaceCanvasOverlayDrawer = memo(
             }
             overlayClassName="pointer-events-none absolute inset-0 !z-10 bg-background/10 backdrop-blur-[1px]"
             className={cn(
-              "border-border/70 bg-background/98 absolute right-0 bottom-0 left-0 !z-20 h-full max-h-full w-full max-w-full min-h-0 min-w-0 box-border overflow-hidden p-0 shadow-[0_-24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl",
-              "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:h-full data-[vaul-drawer-direction=bottom]:max-h-full data-[vaul-drawer-direction=bottom]:rounded-t-[20px]",
-              drawerFullscreen && "!z-40 bg-background backdrop-blur-none data-[vaul-drawer-direction=bottom]:rounded-t-none data-[vaul-drawer-direction=bottom]:border-t-0"
+              "border-border/70 bg-background/98 absolute right-0 bottom-0 left-0 !z-20 h-full max-h-none w-full max-w-full min-w-0 overflow-hidden p-0 shadow-[0_-24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl",
+              "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:h-full data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:rounded-t-[20px]",
+              drawerFullscreen && "!z-40"
             )}
           >
             <div
@@ -409,7 +393,7 @@ export const WorkspaceCanvasOverlayDrawer = memo(
                 }
                 handleTabOpen={handleTabOpen}
                 handleTabChange={handleTabChange}
-                peopleCanvasActions={{ ...peopleCanvasActions, add: handleAddPeopleToCanvas }}
+                peopleCanvasActions={peopleCanvasActions}
                 organizationEditorData={organizationEditorData}
                 financeInput={financeInput}
                 pendingAcceleratorRequest={pendingAcceleratorRequest}

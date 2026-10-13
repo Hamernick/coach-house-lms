@@ -1,7 +1,14 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
-import { useCallback, useMemo, useState, type DragEvent } from "react"
+import { useWorkspaceParticles } from "@/features/workspace-particles/client"
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+} from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
   Background,
@@ -90,6 +97,7 @@ export function WorkspaceCanvasSurfaceV2View({
   onNodeClick,
   onNodeDoubleClick,
   onKeyDownCapture,
+  onNodeDragStart,
   onNodeDragStop,
   onSelectionDragStop,
   onMoveStart,
@@ -115,13 +123,16 @@ export function WorkspaceCanvasSurfaceV2View({
   onDisconnectToTarget,
   onDisconnectAll,
 }: WorkspaceCanvasSurfaceV2ViewProps) {
-  const guideParams = useSearchParams()
-  const guideStack = guideParams.get("guide") === "1" && ["identity", "identity-edit"].includes(guideParams.get("guideStep") ?? "")
-
   const [surfaceContainer, setSurfaceContainer] =
     useState<HTMLDivElement | null>(null)
   const [flowFrameContainer, setFlowFrameContainer] =
     useState<HTMLDivElement | null>(null)
+  const particles = useWorkspaceParticles()
+  const setParticleCanvas = particles?.setCanvas
+  useEffect(() => {
+    setParticleCanvas?.(flowFrameContainer)
+    return () => setParticleCanvas?.(null)
+  }, [setParticleCanvas, flowFrameContainer])
   const nodeTypes = useMemo(() => WORKSPACE_CANVAS_V2_NODE_TYPES, [])
   const edgeTypes = useMemo(() => WORKSPACE_CANVAS_V2_EDGE_TYPES, [])
   const nodesSelectable = !tutorialActive
@@ -162,7 +173,6 @@ export function WorkspaceCanvasSurfaceV2View({
       }
 
       onAddWorkspacePeopleToCanvas({
-        intent: "drop",
         personIds,
         clientX: event.clientX,
         clientY: event.clientY,
@@ -202,39 +212,41 @@ export function WorkspaceCanvasSurfaceV2View({
     <WorkspaceCanvasErrorBoundary>
       <div
         ref={setSurfaceContainer}
-        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#f5f5f5] dark:bg-zinc-800"
+        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#fcfcfc] dark:bg-zinc-800"
         data-layout-animating={layoutAnimating ? "true" : undefined}
       >
         <WorkspaceCanvasOverlayDrawerContainerProvider
           container={flowFrameContainer}
           onOpenDataDrawer={onOpenWorkspaceDataDrawer}
         >
-          <WorkspaceCardShortcutRail
-            items={shortcutItems}
-            dataAction={
-              <WorkspaceCanvasOverlayDrawer
-                people={workspaceDataDrawerPeople}
-                placedPersonIds={placedWorkspacePersonIds}
-                viewerId={workspaceDataDrawerViewerId}
-                organizationEditorData={workspaceDataDrawerOrganization}
-                financeInput={workspaceDataDrawerFinance}
-                documentsTab={workspaceDataDrawerDocuments}
-                acceleratorInput={workspaceAcceleratorDrawerInput}
-                acceleratorRoadmapSections={
-                  workspaceAcceleratorDrawerRoadmapSections
-                }
-                acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
-                acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
-                request={workspaceDataDrawerRequest}
-                canEdit={workspaceDataDrawerCanEdit}
-                uiPreferencesScope={uiPreferencesScope}
-                peopleCanvasActions={{
-                  add: handleAddWorkspacePeopleToCanvas,
-                  remove: onRemoveWorkspacePersonFromCanvas,
-                }}
-              />
-            }
-          />
+          {shortcutItems.length > 0 ? (
+            <WorkspaceCardShortcutRail
+              items={shortcutItems}
+              dataAction={
+                <WorkspaceCanvasOverlayDrawer
+                  people={workspaceDataDrawerPeople}
+                  placedPersonIds={placedWorkspacePersonIds}
+                  viewerId={workspaceDataDrawerViewerId}
+                  organizationEditorData={workspaceDataDrawerOrganization}
+                  financeInput={workspaceDataDrawerFinance}
+                  documentsTab={workspaceDataDrawerDocuments}
+                  acceleratorInput={workspaceAcceleratorDrawerInput}
+                  acceleratorRoadmapSections={
+                    workspaceAcceleratorDrawerRoadmapSections
+                  }
+                  acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
+                  acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
+                  request={workspaceDataDrawerRequest}
+                  canEdit={workspaceDataDrawerCanEdit}
+                  uiPreferencesScope={uiPreferencesScope}
+                  peopleCanvasActions={{
+                    add: handleAddWorkspacePeopleToCanvas,
+                    remove: onRemoveWorkspacePersonFromCanvas,
+                  }}
+                />
+              }
+            />
+          ) : null}
           <WorkspaceCanvasSurfaceV2ViewportControls
             tutorialCalendarButtonCallout={
               tutorialCalendarButtonCallout ?? null
@@ -270,6 +282,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     onNodeClick={onNodeClick}
                     onNodeDoubleClick={onNodeDoubleClick}
                     onKeyDownCapture={onKeyDownCapture}
+                    onNodeDragStart={onNodeDragStart}
                     onNodeDragStop={onNodeDragStop}
                     onSelectionDragStop={onSelectionDragStop}
                     onMoveStart={onMoveStart}
@@ -287,7 +300,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     panOnScroll
                     panOnScrollSpeed={0.8}
                     preventScrolling
-                    minZoom={guideStack ? 0.05 : 0.2}
+                    minZoom={0.2}
                     maxZoom={1.25}
                     onlyRenderVisibleElements
                     proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}

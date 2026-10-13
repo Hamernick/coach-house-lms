@@ -1,5 +1,7 @@
 "use client"
 
+import type { WorkspaceParticleState } from "@/features/workspace-particles"
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 
@@ -19,6 +21,7 @@ import {
 } from "./workspace-board-debug"
 import { useWorkspaceNodePositionPersistence } from "./workspace-board-canvas-node-position-persistence"
 import {
+  applyWorkspaceTutorialSnapshot,
   areWorkspaceOnboardingFlowStatesEqual,
 } from "./workspace-board-onboarding-flow"
 import { WorkspaceBoardCanvasBody } from "./workspace-board-canvas-body"
@@ -60,8 +63,12 @@ export function WorkspaceBoardCanvas({
     const reducedBoardState = reduceWorkspaceBoardVisibility(seed.boardState, {
       type: "hydrate_legacy_visibility",
     })
-    // The action guide uses real editors and leaves authored canvas positions intact.
-    const resolvedBoardState = reducedBoardState
+    const resolvedBoardState = reducedBoardState.onboardingFlow.active
+      ? applyWorkspaceTutorialSnapshot(
+          reducedBoardState,
+          reducedBoardState.onboardingFlow
+        )
+      : reducedBoardState
 
     return initialFocusCardId
       ? {
@@ -323,6 +330,14 @@ export function WorkspaceBoardCanvas({
     }))
   }, [allowEditing])
 
+  const handleParticlesChange = useCallback(
+    (particles: WorkspaceParticleState) => {
+      if (!allowEditing) return
+      setBoardState((previous) => ({ ...previous, particles }))
+    },
+    [allowEditing]
+  )
+
   const rightRailCurrentUser = useWorkspaceRightRailCurrentUser(seed)
 
   useWorkspaceJourneyAutoFocus({
@@ -372,6 +387,7 @@ export function WorkspaceBoardCanvas({
         onTutorialShortcutOpened={handleTutorialShortcutOpened}
         onFocusCard={handleFocusCard}
         onOnboardingFlowChange={handleOnboardingFlowChange}
+        onParticlesChange={handleParticlesChange}
         onPersistNodePosition={handlePersistNodePosition}
         onToggleCardVisibility={handleToggleCardVisibility}
         onConnectCards={handleConnectCards}

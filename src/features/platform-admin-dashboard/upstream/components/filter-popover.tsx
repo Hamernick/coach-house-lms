@@ -48,7 +48,6 @@ interface FilterCounts {
 }
 
 interface FilterPopoverProps {
-  entityType?: "project" | "task"
   initialChips?: FilterChip[]
   onApply: (chips: FilterChip[]) => void
   onClear: () => void
@@ -84,7 +83,6 @@ const DEFAULT_TAG_OPTIONS: FilterPopoverTagOption[] = [
 ]
 
 export function FilterPopover({
-  entityType = "project",
   initialChips,
   onApply,
   onClear,
@@ -118,8 +116,8 @@ export function FilterPopover({
     }
     for (const c of initialChips || []) {
       const k = c.key.toLowerCase()
-      if (k === "status") next.status.add(c.value.toLowerCase().replace("to do", "todo").replace("in progress", "in-progress"))
-      if (k === "priority") next.priority.add(c.value.toLowerCase().replace("no priority", "no-priority"))
+      if (k === "status") next.status.add(c.value.toLowerCase())
+      if (k === "priority") next.priority.add(c.value.toLowerCase())
       if (k === "member" || k === "pic" || k === "members") next.members.add(c.value)
       if (k === "tag" || k === "tags") next.tags.add(c.value.toLowerCase())
     }
@@ -133,12 +131,7 @@ export function FilterPopover({
     { id: "members", label: "Members", icon: User },
   ] as const
 
-  const statusOptions = entityType === "task" ? [
-    { id: "todo", label: "To do", color: "var(--muted-foreground)" },
-    { id: "in-progress", label: "In progress", color: "var(--chart-2)" },
-    { id: "waiting", label: "Waiting", color: "var(--chart-4)" },
-    { id: "done", label: "Done", color: "var(--chart-3)" },
-  ] : [
+  const statusOptions = [
     { id: "backlog", label: "Backlog", color: "var(--chart-2)" },
     { id: "planned", label: "Planned", color: "var(--chart-2)" },
     { id: "active", label: "Active", color: "var(--chart-3)" },
@@ -147,7 +140,6 @@ export function FilterPopover({
   ]
 
   const priorityOptions = [
-    ...(entityType === "task" ? [{ id: "no-priority", label: "No priority" }] : []),
     { id: "urgent", label: "Urgent" },
     { id: "high", label: "High" },
     { id: "medium", label: "Medium" },
@@ -155,17 +147,7 @@ export function FilterPopover({
   ]
 
   const memberOptions = memberOptionsProp ?? DEFAULT_MEMBER_OPTIONS
-  const tagOptions: FilterPopoverTagOption[] = tagOptionsProp ?? (entityType === "task"
-    ? Object.keys(counts?.tags ?? {}).map((tag) => ({ id: tag, label: tag, countKey: tag }))
-    : DEFAULT_TAG_OPTIONS)
-
-  const categoryTotal = (category: keyof FilterCounts) => {
-    const values = counts?.[category] ?? {}
-    const keys = category === "members"
-      ? new Set(memberOptions.map((option) => option.countKey ?? option.id))
-      : new Set(Object.keys(values))
-    return Array.from(keys).reduce((sum, key) => sum + (values[key] ?? 0), 0)
-  }
+  const tagOptions = tagOptionsProp ?? DEFAULT_TAG_OPTIONS
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -182,8 +164,8 @@ export function FilterPopover({
 
   const handleApply = () => {
     const chips: FilterChip[] = []
-    temp.status.forEach((v) => chips.push({ key: "Status", value: statusOptions.find((option) => option.id === v)?.label ?? capitalize(v) }))
-    temp.priority.forEach((v) => chips.push({ key: "Priority", value: priorityOptions.find((option) => option.id === v)?.label ?? capitalize(v) }))
+    temp.status.forEach((v) => chips.push({ key: "Status", value: capitalize(v) }))
+    temp.priority.forEach((v) => chips.push({ key: "Priority", value: capitalize(v) }))
     temp.members.forEach((v) => chips.push({ key: "Member", value: v }))
     temp.tags.forEach((v) => chips.push({ key: "Tag", value: v }))
     onApply(chips)
@@ -208,8 +190,8 @@ export function FilterPopover({
           Filter
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[min(45rem,calc(100vw-2rem))] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto p-0 rounded-xl">
-        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:grid-cols-[260px_minmax(0,1fr)]">
+      <PopoverContent align="start" className="w-[720px] p-0 rounded-xl">
+        <div className="grid grid-cols-[260px_minmax(0,1fr)]">
           <div className="p-3 border-r border-border/40">
             <div className="px-1 pb-2">
               <Input placeholder="Search..." value={query} onChange={(e) => setQuery(e.target.value)} className="h-8" />
@@ -228,7 +210,11 @@ export function FilterPopover({
                   <span className="flex-1 text-left">{cat.label}</span>
                   {counts && counts[cat.id as keyof FilterCounts] && (
                     <span className="text-xs text-muted-foreground">
-                      {categoryTotal(cat.id)}
+                      {/* Sum of counts for that category if provided */}
+                      {Object.values(counts[cat.id as keyof FilterCounts] as Record<string, number>).reduce(
+                        (a, b) => a + (typeof b === "number" ? b : 0),
+                        0,
+                      )}
                     </span>
                   )}
                 </button>
@@ -238,7 +224,7 @@ export function FilterPopover({
 
           <div className="p-3">
             {active === "priority" && (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2">
                 {priorityOptions.map((opt) => (
                   <label key={opt.id} className="flex items-center gap-2 rounded-lg border p-2 hover:bg-accent cursor-pointer">
                     <Checkbox
@@ -246,8 +232,8 @@ export function FilterPopover({
                       onCheckedChange={() => setTemp((t) => ({ ...t, priority: toggleSet(t.priority, opt.id) }))}
                     />
                     <span className="text-sm flex-1">{opt.label}</span>
-                    {counts?.priority && (
-                      <span className="text-xs text-muted-foreground">{counts.priority[opt.id] ?? 0}</span>
+                    {counts?.priority?.[opt.id] != null && (
+                      <span className="text-xs text-muted-foreground">{counts.priority[opt.id]}</span>
                     )}
                   </label>
                 ))}
@@ -255,7 +241,7 @@ export function FilterPopover({
             )}
 
             {active === "status" && (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2">
                 {statusOptions.map((opt) => (
                   <label key={opt.id} className="flex items-center gap-2 rounded-lg border p-2 hover:bg-accent cursor-pointer">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: opt.color }} />
@@ -264,8 +250,8 @@ export function FilterPopover({
                       onCheckedChange={() => setTemp((t) => ({ ...t, status: toggleSet(t.status, opt.id) }))}
                     />
                     <span className="text-sm flex-1">{opt.label}</span>
-                    {counts?.status && (
-                      <span className="text-xs text-muted-foreground">{counts.status[opt.id] ?? 0}</span>
+                    {counts?.status?.[opt.id] != null && (
+                      <span className="text-xs text-muted-foreground">{counts.status[opt.id]}</span>
                     )}
                   </label>
                 ))}
@@ -292,9 +278,9 @@ export function FilterPopover({
                       </Avatar>
                     ) : null}
                     <span className="text-sm flex-1">{m.label}</span>
-                    {counts?.members ? (
+                    {counts?.members?.[m.countKey ?? m.id] != null ? (
                       <span className="text-xs text-muted-foreground">
-                        {counts.members[m.countKey ?? m.id] ?? 0}
+                        {counts.members[m.countKey ?? m.id]}
                       </span>
                     ) : (
                       m.hint && <span className="text-xs text-muted-foreground">{m.hint}</span>
@@ -314,7 +300,7 @@ export function FilterPopover({
                     className="h-8"
                   />
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2">
                   {tagOptions
                     .filter((t) => t.label.toLowerCase().includes(tagSearch.toLowerCase()))
                     .map((t) => (
@@ -329,9 +315,9 @@ export function FilterPopover({
                           }
                         />
                         <span className="text-sm flex-1">{t.label}</span>
-                        {counts?.tags && (
+                        {counts?.tags?.[t.countKey ?? t.id] != null && (
                           <span className="text-xs text-muted-foreground">
-                            {counts.tags[t.countKey ?? t.id] ?? 0}
+                            {counts.tags[t.countKey ?? t.id]}
                           </span>
                         )}
                       </label>

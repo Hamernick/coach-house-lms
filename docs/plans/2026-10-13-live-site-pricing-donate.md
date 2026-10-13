@@ -85,3 +85,32 @@ local routing, not a live payment or production confirmation retest.
 ## PR294 automated review follow-up — 2026-10-13 18:30 UTC
 
 Explicit homepage collection query/fragment state now survives confirmation, including absolute and callback URLs. Bare provider Site URL fallback still recovers the selected signup plan. Seven regressions failed before the fix; all 47 focused signup/confirmation tests now pass. Appearance, hosted quality, code-owner review and production confirmation remain pending.
+
+## Production checkout follow-up — 2026-10-13 19:54 UTC
+
+PR294 merged as `c8f41085`; the intended coachhouse deployment is Ready at that
+source revision and serves coachhouse.app. Public pricing/Build links and Donate
+header/footer/new-tab behavior passed live checks. Earlier local-only statements
+above are historical; final PR294 quality failed on three Tools visual references
+and code-owner review remained required. External merge does not clear those gates.
+
+The user's real signup completed a USD 0 checkout but stalled on the activation
+page. Read-only provider and app queries confirm the matching Organization
+subscription is already active. Vercel request details show session_id still equal
+to `{CHECKOUT_SESSION_ID}` and both Stripe-mode lookups returning 404. The API
+checkout route encoded Stripe's replacement token through URLSearchParams.
+
+Repair lane: `fix/checkout-activation-20261013`, isolated checkout
+`coach-house-platform-checkout-activation-20261013`, base `c8f41085`.
+Only restore the literal session_id token in the serialized success URL; retain
+encoding of nested redirect/context values. Three regressions failed before the
+fix; all 21 checkout-route and activation-return tests pass after it, including
+persistence failure/retry, subscription hydration and non-active status handling.
+Changed-file lint, acceptance manifest and diff checks pass. No UI redesign,
+provider mutation, new purchase, account creation or preview branch.
+
+Next: current-head hosted quality/review, merge/deployment verification and live
+return retest. The existing subscription can be used without purchasing again.
+Appearance review and live Collect return verification remain outstanding.
+Stop after bounded-run closure or explicit preserved blockers; map work is next,
+not part of this run. Private account/session identifiers stay outside the repo.

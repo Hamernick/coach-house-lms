@@ -22,7 +22,6 @@ import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "@/lib/roadmap/public-or
 
 import { DEFAULT_PLACEHOLDER, ROADMAP_TOOLBAR_ID } from "../constants"
 import type { RoadmapDraft } from "../types"
-import { RoadmapEditorBreadcrumb } from "./roadmap-editor-breadcrumb"
 
 type RoadmapEditorShellProps = {
   sourceScope?: CoreDocumentScope
@@ -136,8 +135,7 @@ export function RoadmapEditorShell({
           />
         </RightRailSlot>
       ) : null}
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
-        <RoadmapEditorBreadcrumb title={headerTitle || activeSection.title} className={contentMaxWidth} />
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}

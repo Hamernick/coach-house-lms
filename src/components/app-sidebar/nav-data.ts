@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import DatabaseIcon from "lucide-react/dist/esm/icons/database"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
@@ -21,6 +22,7 @@ import {
   hasPlatformCapability,
   type PlatformAccessLevel,
 } from "@/features/platform-access"
+import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
 type MainNavItem = {
@@ -76,12 +78,13 @@ export function buildMainNav({
       ]
     : []
   const items: MainNavItem[] = [
-    ...workspaceHomeItem,
     ...(showMemberWorkspace
       ? [
+          ...workspaceHomeItem,
+          { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...(canAccessOrganizations ? [] : memberWorkspaceItems),
         ]
-      : []),
+      : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]
 
   if (canAccessOrganizations) {

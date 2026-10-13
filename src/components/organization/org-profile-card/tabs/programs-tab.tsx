@@ -23,7 +23,6 @@ import type { OrgProgram } from "../types"
 import { locationSummary } from "../utils"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { ProgramsCarousel } from "./programs-carousel"
-import { ProgramVisibilitySwitch } from "./program-visibility-switch"
 
 type ProgramsTabProps = {
   programs: OrgProgram[]
@@ -77,7 +76,7 @@ export function ProgramsTab({
 
   if (!hasPrograms) {
     return (
-      <div data-setup-guide-target="programs" className="grid gap-6 rounded-xl">
+      <div className="grid gap-6">
         {heading}
         {introduction}
         <Empty
@@ -95,43 +94,33 @@ export function ProgramsTab({
   }
 
   return (
-    <div data-setup-guide-target="programs" className="rounded-xl">
-      <ProgramsCarousel heading={heading} introduction={introduction}>
-        {programs.map((program) => (
-          <div key={program.id} className="mx-auto w-full max-w-[380px] space-y-1">
-            {canEdit ? (
-              <ProgramVisibilitySwitch
-                programId={program.id}
-                title={program.title ?? "Untitled activity"}
-                isPublic={Boolean(program.is_public)}
-              />
-            ) : null}
-            <ProgramCard
-              variant="medium"
-              title={program.title ?? "Untitled activity"}
-              org={companyName || undefined}
-              location={locationSummary(program) || undefined}
-              description={resolveProgramSummary(program) || undefined}
-              bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
-              imageUrl={resolveProgramProfileImageUrl(program) || undefined}
-              statusLabel={
-                program.status_label ||
-                (!editMode && !program.is_public ? "Private" : undefined)
-              }
-              chips={resolveProgramCardChips(program)}
-              goalCents={program.goal_cents || 0}
-              raisedCents={program.raised_cents || 0}
-              ctaLabel={canEdit ? "Edit" : editMode ? "Edit" : program.cta_label || "Open"}
-              ctaHref={canEdit || editMode ? undefined : program.cta_url || undefined}
-              onCtaClick={
-                editMode
-                  ? () => onProgramEdit(program)
-                  : canEdit ? () => onProgramEdit(program) : undefined
-              }
-            />
-          </div>
-        ))}
-      </ProgramsCarousel>
-    </div>
+    <ProgramsCarousel heading={heading} introduction={introduction}>
+      {programs.map((program) => (
+        <ProgramCard
+          key={program.id}
+          variant="medium"
+          title={program.title ?? "Untitled activity"}
+          org={companyName || undefined}
+          location={locationSummary(program) || undefined}
+          description={resolveProgramSummary(program) || undefined}
+          bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
+          imageUrl={resolveProgramProfileImageUrl(program) || undefined}
+          statusLabel={
+            program.status_label ||
+            (!editMode && !program.is_public ? "Private" : undefined)
+          }
+          chips={resolveProgramCardChips(program)}
+          goalCents={program.goal_cents || 0}
+          raisedCents={program.raised_cents || 0}
+          ctaLabel={canEdit ? "Edit" : editMode ? "Edit" : program.cta_label || "Open"}
+          ctaHref={canEdit || editMode ? undefined : program.cta_url || undefined}
+          onCtaClick={
+            editMode
+              ? () => onProgramEdit(program)
+              : canEdit ? () => onProgramEdit(program) : undefined
+          }
+        />
+      ))}
+    </ProgramsCarousel>
   )
 }

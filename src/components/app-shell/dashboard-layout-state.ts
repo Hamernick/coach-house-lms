@@ -225,14 +225,12 @@ const resolveDashboardLayoutStateCached = cache(
     })
     needsOnboarding = onboarding.required
     const onboardingDefaults = await buildSavedOnboardingFlowDefaults({
-      organizationId: orgId,
       supabase,
       needsOnboarding,
       userId: user.id,
       email,
       displayName,
       avatarUrl: avatar,
-      profileTitle: profileAudience.headline,
       userMetadata: userMeta,
       orgProfile,
       orgSlug,

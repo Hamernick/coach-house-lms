@@ -14,7 +14,7 @@ Review the PR's exact head and the command/evidence contract in README.md.
 Decision requested at handoff: approve this tooling scope/revision for release.
 Required GitHub code-owner approval is a separate gate. No approval is recorded yet.
 
-Validation: 18 Python tests covering state gates, concurrent claims, CLI ownership,
+Validation: 19 Python tests covering state gates, concurrent claims, CLI ownership,
 head-change invalidation and export/restore; live read-only GitHub protection/PR/deployment
 reconciliation, receipt restoration and normal repository pre-push checks. Graphify AST update completed (20,909 nodes); diff hygiene, staged secret scan
 and normal Node 22 pre-push checks pass. Hosted current-head quality remains required. Vercel credential receives HTTP 403; direct

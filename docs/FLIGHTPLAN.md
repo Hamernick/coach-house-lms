@@ -1,5 +1,9 @@
 # FLIGHTPLAN
 
+> Planning chat closed 2026-10-13. The task list is organized and privately backed up.
+> This dashboard is preserved; the current Desktop `SHIP.md` owns the continuation
+> handoff. See [closeout and recovery](flightplan/planning-closeout-20261013.md).
+
 The project planning and forecasting entry point. Reference word: **FLIGHTPLAN**.
 
 Canonical local file: `/Users/calebhamernick/Development/coach-house-platform-flightplan-20261012/docs/FLIGHTPLAN.md`.
@@ -107,8 +111,8 @@ See [recovery audit](flightplan/recovery.md).
 ```json
 {
   "version": 1,
-  "updated_at": "2026-10-13T01:02:14+00:00",
-  "next": "Receive the long task list; group and order workstreams.",
+  "updated_at": "2026-10-13T04:54:26.466870+00:00",
+  "next": "Read the current Desktop SHIP.md; reconcile separately owned PR #291. Planning chat is closed and remotely recoverable.",
   "forecast": "No delivery dates until scope, dependencies and estimates are recorded.",
   "projects": [
     {
@@ -122,10 +126,10 @@ See [recovery audit](flightplan/recovery.md).
       "localhost": "None: terminal-only",
       "backup": "Verified on GitHub: chore/flightplan-20261012; initial dashboard checkpoint 32c268af.",
       "release": "Internal planning tool; no application deployment",
-      "next": "Ingest the user task list; issue specific workstream prompts.",
+      "next": "Task intake is complete. Ten workstreams and private recovery are recorded in docs/flightplan/planning-closeout-20261013.md. Resume the current SHIP handoff, not dashboard intake.",
       "estimate": "Not estimated",
       "confidence": "High for dashboard; task scope pending",
-      "updated_at": "2026-10-13T01:02:14+00:00",
+      "updated_at": "2026-10-13T04:54:26.466870+00:00",
       "milestones": [
         {
           "title": "Agree dashboard design and isolated branch",
@@ -148,7 +152,7 @@ See [recovery audit](flightplan/recovery.md).
           "evidence": "Initial dashboard checkpoint 32c268af matched git ls-remote; subsequent completion record pushed on the same branch."
         }
       ],
-      "prompt": "Read AGENTS.md, its canonical continuation documents, and /Users/calebhamernick/Development/coach-house-platform-flightplan-20261012/docs/FLIGHTPLAN.md. Work only on the selected project. Preserve unrelated dirty files, checkouts and servers. Verify saved evidence before resuming; never restart completed work. Continue FP-001 in its existing assigned branch/worktree; do not create a duplicate lane. Run python3 docs/flightplan/dashboard.py --once. Reconcile project receipts and ask for the raw task list if it has not arrived. Preserve original requests, group into independently deliverable workstreams, order by dependency, identify shared-file conflicts and produce a specific kickoff prompt for each project. Record forecasts as ranges with assumptions, not invented dates."
+      "prompt": "Read AGENTS.md and docs/flightplan/planning-closeout-20261013.md, then the current /Users/calebhamernick/Desktop/Coach House Codex Workstreams/SHIP.md. The task list has already been received and organized. Reconcile the separately owned SHIP workstream and live PR evidence before continuing. Do not restart intake or revive the dashboard as a prerequisite."
     },
     {
       "id": "SAFE-001",

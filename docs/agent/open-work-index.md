@@ -25,8 +25,11 @@ Canonical worktree: `/Users/calebhamernick/Development/coach-house-platform-flig
 branch `chore/flightplan-20261012`. This is the planning/forecasting owner;
 implementation runs in separate assigned chats and worktrees. Worker receipts
 carry exact branch, localhost, evidence and recovery checkpoints back here.
-The user's long task list is pending. Do not reopen historical lanes from this
-planning setup. [Recovery ledger](../flightplan/recovery.md).
+The task list is now organized into ten Desktop packets with private GitHub recovery.
+This planning chat is closed; the dashboard is a preserved artifact, not the active
+shipping authority. Read the current Desktop `SHIP.md` and the separately owned
+SHIP PR #291 before continuing. [Closeout and recovery](../flightplan/planning-closeout-20261013.md).
+Do not reopen historical lanes from this planning setup.
 
 ## Open lanes
 

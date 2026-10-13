@@ -11,37 +11,25 @@ describe("workspace canvas connection contract", () => {
       canConnectWorkspaceCards({
         source: "organization-overview",
         target: "programs",
-      })
+      }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
         source: "brand-kit",
         target: "communications",
-      })
+      }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
         source: "accelerator",
         target: "calendar",
-      })
-    ).toBe(true)
-    expect(
-      canConnectWorkspaceCards({
-        source: "programs",
-        target: "fiscal-sponsorship",
-      })
-    ).toBe(true)
-    expect(
-      canConnectWorkspaceCards({
-        source: "organization-overview",
-        target: "accelerator",
-      })
+      }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
         source: "calendar",
         target: "brand-kit",
-      })
+      }),
     ).toBe(true)
   })
 
@@ -50,28 +38,28 @@ describe("workspace canvas connection contract", () => {
       validateWorkspaceConnection({
         source: "accelerator",
         target: "accelerator",
-      })
+      }),
     ).toEqual({ allowed: false, reason: "same-node" })
   })
 
-  it("allows linking into and out of roadmap", () => {
+  it("allows linking into and out of vault", () => {
     expect(
       canConnectWorkspaceCards({
         source: "communications",
-        target: "roadmap",
-      })
+        target: "vault",
+      }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
         source: "economic-engine",
-        target: "roadmap",
-      })
+        target: "vault",
+      }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
-        source: "roadmap",
+        source: "vault",
         target: "communications",
-      })
+      }),
     ).toBe(true)
   })
 })

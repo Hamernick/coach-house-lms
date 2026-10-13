@@ -1,11 +1,12 @@
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
-import { resolveWorkspaceCanvasTutorialStepCount } from "@/features/workspace-canvas-tutorial"
+import {
+  buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
+  resolveWorkspaceCanvasTutorialStepCount,
+} from "@/features/workspace-canvas-tutorial"
 import type { WorkspaceBoardState } from "../_components/workspace-board/workspace-board-types"
 import {
   applyWorkspaceOnboardingStageOverride,
-  buildRestartedWorkspaceTutorialBoardState,
-  buildCompletedWorkspaceTutorialBoardState,
   resolveWorkspaceOnboardingStageFromSearchParam,
 } from "../_components/workspace-board/workspace-board-onboarding-flow"
 import { createSupabaseServerClient } from "@/lib/supabase"
@@ -14,12 +15,19 @@ type WorkspaceSeedWithAcceleratorBoardState = {
   boardState: WorkspaceBoardState
 }
 
+function areOrderedCardIdsEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) return false
+  return left.every((value, index) => value === right[index])
+}
+
 function hasCompletedWorkspaceTutorial(boardState: WorkspaceBoardState) {
+  const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
   const finalStepIndex = resolveWorkspaceCanvasTutorialStepCount() - 1
 
   return (
     boardState.onboardingFlow.active === false &&
-    boardState.onboardingFlow.tutorialStepIndex >= finalStepIndex
+    boardState.onboardingFlow.tutorialStepIndex >= finalStepIndex &&
+    areOrderedCardIdsEqual(boardState.hiddenCardIds, completionHiddenCardIds)
   )
 }
 
@@ -81,7 +89,7 @@ export async function fetchWorkspacePrograms({
     .order("created_at", { ascending: false })
 
   if (!primaryResult.error) {
-    return (primaryResult.data ?? []) as unknown as OrgProgram[]
+    return (primaryResult.data ?? []) as OrgProgram[]
   }
 
   const legacyResult = await supabase
@@ -99,7 +107,7 @@ export async function fetchWorkspacePrograms({
     return []
   }
 
-  return ((legacyResult.data ?? []) as unknown as OrgProgram[]).map((program) => ({
+  return ((legacyResult.data ?? []) as OrgProgram[]).map((program) => ({
     ...program,
     wizard_snapshot: null,
   }))
@@ -133,20 +141,16 @@ export function resolveOrganizationProfileComplete(initialProfile: {
   description?: string | null
   tagline?: string | null
   formationStatus?: string | null
-  originStory?: string | null
   mission?: string | null
   vision?: string | null
   need?: string | null
-  theoryOfChange?: string | null
 }) {
   const storyFieldCount = [
     initialProfile.description,
     initialProfile.tagline,
-    initialProfile.originStory,
     initialProfile.mission,
     initialProfile.vision,
     initialProfile.need,
-    initialProfile.theoryOfChange,
   ].filter((value) => typeof value === "string" && value.trim().length > 0).length
 
   return (
@@ -218,27 +222,9 @@ export function applyWorkspaceTutorialActivationToSeed<
     workspaceOnboardingCompletedAt?: string | null
   },
 ) {
-  if (workspaceOnboardingCompletedAt) {
-    if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) {
-      return workspaceSeed
-    }
-
-    return {
-      ...workspaceSeed,
-      boardState: buildCompletedWorkspaceTutorialBoardState(
-        workspaceSeed.boardState,
-      ),
-    }
-  }
   if (initialOnboardingRequired || !workspaceOnboardingActive) return workspaceSeed
-  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) {
-    return {
-      ...workspaceSeed,
-      boardState: buildRestartedWorkspaceTutorialBoardState(
-        workspaceSeed.boardState,
-      ),
-    }
-  }
+  if (workspaceOnboardingCompletedAt) return workspaceSeed
+  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) return workspaceSeed
   if (workspaceSeed.boardState.onboardingFlow.active) return workspaceSeed
 
   return {

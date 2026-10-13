@@ -5,42 +5,31 @@ import { useEffect, useRef, useState } from "react"
 export function useAppShellRightRailState({
   hasRightRail,
   isMobile,
-  autoOpenOnDesktopWhenAvailable = false,
 }: {
   hasRightRail: boolean
   isMobile: boolean
-  autoOpenOnDesktopWhenAvailable?: boolean
 }) {
-  const [rightOpen, setRightOpen] = useState(false)
-  const initiallyAvailableRef = useRef(hasRightRail)
+  const [rightOpen, setRightOpen] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.innerWidth >= 768
+  })
   const rightRailPreferenceRef = useRef<"open" | "closed" | null>(null)
   const wasMobileRef = useRef(isMobile)
-
-  useEffect(() => {
-    if (!initiallyAvailableRef.current || window.innerWidth < 768) return
-    setRightOpen(true)
-  }, [])
 
   useEffect(() => {
     if (!hasRightRail) {
       setRightOpen(false)
       return
     }
-    if (
-      !isMobile &&
-      autoOpenOnDesktopWhenAvailable &&
-      rightRailPreferenceRef.current === null
-    ) {
-      setRightOpen(true)
-      return
-    }
+    // Avoid "late pop-open" when right-rail content mounts after page paint.
+    // If the user hasn't set a preference yet, keep the current state.
     if (!isMobile && rightRailPreferenceRef.current === "open") {
       setRightOpen(true)
     }
     if (!isMobile && rightRailPreferenceRef.current === "closed") {
       setRightOpen(false)
     }
-  }, [autoOpenOnDesktopWhenAvailable, hasRightRail, isMobile])
+  }, [hasRightRail, isMobile])
 
   useEffect(() => {
     if (isMobile && !wasMobileRef.current) {
@@ -49,10 +38,7 @@ export function useAppShellRightRailState({
     wasMobileRef.current = isMobile
   }, [isMobile])
 
-  const handleRightOpenChange = (
-    open: boolean,
-    source: "user" | "auto" = "user"
-  ) => {
+  const handleRightOpenChange = (open: boolean, source: "user" | "auto" = "user") => {
     if (source === "user") {
       rightRailPreferenceRef.current = open ? "open" : "closed"
     }
@@ -61,9 +47,7 @@ export function useAppShellRightRailState({
 
   return {
     rightOpen,
-    handleRightOpenChangeUser: (open: boolean) =>
-      handleRightOpenChange(open, "user"),
-    handleRightOpenChangeAuto: (open: boolean) =>
-      handleRightOpenChange(open, "auto"),
+    handleRightOpenChangeUser: (open: boolean) => handleRightOpenChange(open, "user"),
+    handleRightOpenChangeAuto: (open: boolean) => handleRightOpenChange(open, "auto"),
   }
 }

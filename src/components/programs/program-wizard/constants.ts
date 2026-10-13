@@ -2,16 +2,12 @@ import type { StepMeta } from "./types"
 
 export const STEPS: StepMeta[] = [
   {
-    title: "Choose activity type",
-    helper: "Pick the category that best matches the work you want to add.",
+    title: "Program name",
+    helper: "Give this program a clear name and one-sentence summary.",
   },
   {
-    title: "Activity name",
-    helper: "Give this work a clear name and one-sentence summary.",
-  },
-  {
-    title: "Focus + format",
-    helper: "Choose the public-benefit focus and how people experience it.",
+    title: "Type + format",
+    helper: "Pick the main way people experience it, then optional add-ons.",
   },
   {
     title: "Audience + outcomes",
@@ -30,8 +26,8 @@ export const STEPS: StepMeta[] = [
     helper: "Estimate cost and capacity as you type.",
   },
   {
-    title: "Review + save",
-    helper: "Review a concise activity brief for your team and funders.",
+    title: "Review + generate",
+    helper: "Generate a concise program brief for your team and funders.",
   },
 ]
 

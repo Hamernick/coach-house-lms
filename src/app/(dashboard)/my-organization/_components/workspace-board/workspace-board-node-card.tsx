@@ -1,136 +1,97 @@
 "use client"
 
-import {
-  memo,
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { memo, startTransition, useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
+import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import {
-  areWorkspaceAcceleratorRuntimeSnapshotsEqual,
-  buildWorkspaceAcceleratorFullscreenHref,
+  WorkspaceAcceleratorCardPanel,
   type WorkspaceAcceleratorCardInput,
   type WorkspaceAcceleratorCardRuntimeActions,
   type WorkspaceAcceleratorCardRuntimeSnapshot,
-  type WorkspaceAcceleratorCardStep,
 } from "@/features/workspace-accelerator-card"
+import { WorkspaceBrandKitPanel } from "@/features/workspace-brand-kit"
 import { Badge } from "@/components/ui/badge"
-import {
-  getWorkspaceAcceleratorPaywallPath,
-  getWorkspaceEditorPath,
-} from "@/lib/workspace/routes"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceCardErrorBoundary } from "./workspace-board-card-error-boundary"
-import { resolveWorkspaceBoardFrameContentClassName } from "./workspace-board-frame-content-class-name"
-import { WorkspaceBoardExecutionCardHeaderControls } from "./workspace-board-execution-card-header-controls"
+import { WorkspaceBoardCalendarCard } from "./workspace-board-calendar-card"
+import { WorkspaceBoardCardFrame } from "./workspace-board-card-frame"
+import { WorkspaceBoardCommunicationsCard } from "./workspace-board-communications-card"
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
+import { WorkspaceBoardOrganizationCardShell } from "./workspace-board-organization-card-shell"
+import { WorkspaceBoardProgramsCard } from "./workspace-board-programs-card"
 import {
-  renderOrganizationOverviewCard,
-  resolveAcceleratorHeaderDetails,
-  resolveAcceleratorHeaderMeta,
-  resolveOrganizationHeaderAction,
-  renderWorkspaceBoardResolvedCard,
-  useOrganizationMapCardAction,
-} from "./workspace-board-node-card-support"
-import type { WorkspaceBoardExecutionTab } from "./workspace-board-node-tool-card-execution"
+  WorkspaceBoardAtlasCard,
+  WorkspaceBoardDeckCard,
+  WorkspaceBoardVaultCard,
+} from "./workspace-board-node-tool-cards"
+import {
+  EconomicEngineCard,
+  OrganizationOverviewCard,
+} from "./workspace-board-node-static-cards"
 import { workspaceBoardCardPropsEqual } from "./workspace-board-node-card-compare"
 import type {
-  WorkspaceCardId,
   WorkspaceCardOverflowAction,
   WorkspaceCardSize,
 } from "./workspace-board-types"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
-import { resolveWorkspaceAcceleratorReadinessSummary } from "./workspace-board-accelerator-card-helpers"
-import {
-  buildWorkspaceBoardAcceleratorCardInput,
-  shouldWorkspaceBoardCardTrackEmbeddedAcceleratorRuntime,
-} from "./workspace-board-node-card-accelerator-runtime"
-import { useWorkspaceCanvasOverlayDrawerRequest } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-container"
 
-// eslint-disable-next-line max-lines-per-function
 export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
   data,
 }: {
   data: WorkspaceBoardNodeData
 }) {
   const router = useRouter()
-  const openWorkspaceDataDrawer = useWorkspaceCanvasOverlayDrawerRequest()
   const {
     cardId,
     size,
     seed,
-    organizationEditorData,
     canEdit,
     presentationMode,
     communications,
+    vaultViewMode,
     onSizeChange,
     onCommunicationsChange,
+    onVaultViewModeChange,
     onAcceleratorStateChange,
     onAcceleratorRuntimeChange,
     onAcceleratorRuntimeActionsChange,
-    acceleratorTutorialCallout = null,
-    acceleratorTutorialInteractionPolicy = null,
-    onAcceleratorTutorialActionComplete,
-    onWorkspaceOnboardingSubmit,
     acceleratorState,
     isJourneyTarget = false,
     isCanvasFullscreen = false,
     onToggleCanvasFullscreen,
+    organizationShortcutItems = [],
   } = data
   const cardMeta = WORKSPACE_CARD_META[cardId]
-  const shouldTrackEmbeddedAcceleratorRuntime =
-    shouldWorkspaceBoardCardTrackEmbeddedAcceleratorRuntime({
-      cardId,
-      presentationMode,
-      tutorialStepId: data.tutorialStepId,
-    })
   const hideHeaderSubtitle =
     cardId === "organization-overview" ||
-    cardId === "programs" ||
     cardId === "accelerator" ||
-    cardId === "roadmap" ||
     cardId === "calendar" ||
-    cardId === "communications" ||
-    cardId === "deck" ||
-    cardId === "fiscal-sponsorship"
+    cardId === "communications"
   const frameFullscreenToggle = onToggleCanvasFullscreen
     ? () => onToggleCanvasFullscreen(cardId)
     : undefined
-  const organizationEditorHref = getWorkspaceEditorPath({ tab: "company" })
-  const handleOrganizationEditorOpen = useCallback(() => {
-    openWorkspaceDataDrawer?.({
-      tab: "organization",
-      organizationTab: "company",
-      organizationEditMode: true,
-    })
-  }, [openWorkspaceDataDrawer])
-  const acceleratorPaywallHref = getWorkspaceAcceleratorPaywallPath()
+  const organizationEditorHref = "/workspace?view=editor&tab=company"
+const acceleratorPaywallHref =
+    "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
   const acceleratorCardHref = seed.hasAcceleratorAccess
     ? cardMeta.fullHref
     : acceleratorPaywallHref
+  const resolvedCardSize: WorkspaceCardSize = size
   const effectiveCardSize: WorkspaceCardSize =
-    cardId === "communications" && size === "sm" ? "md" : size
-  const acceleratorHostCardId: WorkspaceCardId =
-    cardId === "deck" ? "deck" : "accelerator"
+    cardId === "communications" && resolvedCardSize === "sm"
+      ? "md"
+      : resolvedCardSize
   const handleAcceleratorSizeChange = useCallback(
-    (nextSize: WorkspaceCardSize) =>
-      onSizeChange(
-        acceleratorHostCardId,
-        acceleratorHostCardId === "deck" && nextSize === "sm" ? "md" : nextSize
-      ),
-    [acceleratorHostCardId, onSizeChange]
+    (nextSize: WorkspaceCardSize) => onSizeChange("accelerator", nextSize),
+    [onSizeChange],
   )
   const handleAcceleratorProgressChange = useCallback(
-    (nextProgress: {
-      currentStepId: string | null
-      completedStepIds: string[]
-    }) => {
+    (nextProgress: { currentStepId: string | null; completedStepIds: string[] }) => {
       startTransition(() => {
         onAcceleratorStateChange({
           activeStepId: nextProgress.currentStepId,
@@ -138,60 +99,36 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
         })
       })
     },
-    [onAcceleratorStateChange]
+    [onAcceleratorStateChange],
   )
   const [acceleratorRuntimeSnapshot, setAcceleratorRuntimeSnapshot] =
     useState<WorkspaceAcceleratorCardRuntimeSnapshot | null>(null)
   const [acceleratorRuntimeActions, setAcceleratorRuntimeActions] =
     useState<WorkspaceAcceleratorCardRuntimeActions | null>(null)
-  const [executionActiveTab, setExecutionActiveTab] =
-    useState<WorkspaceBoardExecutionTab>("roadmap")
-  const [roadmapNavigatorCollapsed, setRoadmapNavigatorCollapsed] =
-    useState(false)
-  const lastForwardedAcceleratorRuntimeSnapshotRef =
-    useRef<WorkspaceAcceleratorCardRuntimeSnapshot | null>(null)
-  const [communicationsMenuActions, setCommunicationsMenuActions] = useState<
-    WorkspaceCardOverflowAction[]
-  >([])
+  const [communicationsMenuActions, setCommunicationsMenuActions] =
+    useState<WorkspaceCardOverflowAction[]>([])
   const [programsCreateOpen, setProgramsCreateOpen] = useState(false)
-  const comingSoonTitleBadge =
-    cardId === "economic-engine" || cardId === "communications" ? (
+  const fundraisingTitleBadge =
+    cardId === "economic-engine" ? (
       <Badge
         variant="outline"
-        className="border-border/70 bg-muted/70 text-foreground/80 dark:bg-muted/30 dark:text-foreground/75 rounded-full px-2 py-0 text-[10px] font-semibold"
+        className="rounded-full border-amber-300/70 bg-amber-100/70 px-2 py-0 text-[10px] font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
       >
         Coming soon
       </Badge>
     ) : undefined
+
   const handleAcceleratorRuntimeChange = useCallback(
     (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => {
-      if (
-        areWorkspaceAcceleratorRuntimeSnapshotsEqual(
-          lastForwardedAcceleratorRuntimeSnapshotRef.current,
-          snapshot
-        )
-      ) {
-        return
-      }
-      lastForwardedAcceleratorRuntimeSnapshotRef.current = snapshot
       setAcceleratorRuntimeSnapshot((previous) => {
         if (
           previous?.currentStep?.id === snapshot.currentStep?.id &&
-          previous?.currentModuleStepIndex ===
-            snapshot.currentModuleStepIndex &&
-          previous?.currentModuleStepTotal ===
-            snapshot.currentModuleStepTotal &&
-          previous?.currentModuleCompletedCount ===
-            snapshot.currentModuleCompletedCount &&
-          previous?.isCurrentModuleCompleted ===
-            snapshot.isCurrentModuleCompleted &&
-          previous?.isModuleViewerOpen === snapshot.isModuleViewerOpen &&
-          previous?.openModuleId === snapshot.openModuleId &&
-          JSON.stringify(previous?.lessonGroupOptions ?? []) ===
-            JSON.stringify(snapshot.lessonGroupOptions ?? []) &&
+          previous?.currentModuleStepIndex === snapshot.currentModuleStepIndex &&
+          previous?.currentModuleStepTotal === snapshot.currentModuleStepTotal &&
+          previous?.currentModuleCompletedCount === snapshot.currentModuleCompletedCount &&
+          previous?.isCurrentModuleCompleted === snapshot.isCurrentModuleCompleted &&
           previous?.currentIndex === snapshot.currentIndex &&
-          previous?.totalSteps === snapshot.totalSteps &&
-          previous?.filteredProgressPercent === snapshot.filteredProgressPercent
+          previous?.totalSteps === snapshot.totalSteps
         ) {
           return previous
         }
@@ -199,14 +136,14 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
       })
       onAcceleratorRuntimeChange?.(snapshot)
     },
-    [onAcceleratorRuntimeChange]
+    [onAcceleratorRuntimeChange],
   )
   const handleAcceleratorRuntimeActionsChange = useCallback(
     (actions: WorkspaceAcceleratorCardRuntimeActions) => {
       setAcceleratorRuntimeActions(() => actions)
       onAcceleratorRuntimeActionsChange?.(actions)
     },
-    [onAcceleratorRuntimeActionsChange]
+    [onAcceleratorRuntimeActionsChange],
   )
   const handleProgramsCreateOpenChange = useCallback(
     (open: boolean) => {
@@ -215,204 +152,232 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
         router.refresh()
       }
     },
-    [router]
+    [router],
   )
-  const handleAcceleratorRequestOpenStep = useCallback(
-    ({
-      step,
-      selectedLessonGroupKey,
-    }: {
-      step: WorkspaceAcceleratorCardStep
-      selectedLessonGroupKey: string | null
-    }) => {
-      if (!seed.hasAcceleratorAccess) {
-        router.push(acceleratorPaywallHref)
-        return true
-      }
-      if (openWorkspaceDataDrawer) {
-        openWorkspaceDataDrawer({
-          tab: "accelerator",
-          acceleratorStepId: step.id,
-          acceleratorModuleId: step.moduleId,
-          acceleratorLessonGroupKey: selectedLessonGroupKey,
-        })
-        return true
-      }
-      const href = buildWorkspaceAcceleratorFullscreenHref({
-        stepId: step.id,
-        moduleId: step.moduleId,
-        lessonGroupKey: selectedLessonGroupKey,
-      })
-      router.push(href, { scroll: false })
-      return true
-    },
-    [
-      acceleratorPaywallHref,
-      openWorkspaceDataDrawer,
-      router,
-      seed.hasAcceleratorAccess,
-    ]
-  )
-  const acceleratorFullscreenBaseHref = useMemo(
-    () => buildWorkspaceAcceleratorFullscreenHref({}),
-    []
-  )
-  useEffect(() => {
-    if (!seed.hasAcceleratorAccess) return
-    router.prefetch(acceleratorFullscreenBaseHref)
-  }, [acceleratorFullscreenBaseHref, router, seed.hasAcceleratorAccess])
-  const acceleratorReadinessSummary = useMemo(
-    () =>
-      resolveWorkspaceAcceleratorReadinessSummary({
-        acceleratorState,
-        programs: (organizationEditorData?.programs ?? []).map((program) => ({
-          goal_cents: program.goal_cents ?? null,
-        })),
-        seed,
-      }),
-    [acceleratorState, organizationEditorData, seed]
-  )
+
   const acceleratorCardInput = useMemo<WorkspaceAcceleratorCardInput>(
-    () =>
-      buildWorkspaceBoardAcceleratorCardInput({
-        acceleratorTimeline: seed.acceleratorTimeline,
-        size,
-        acceleratorReadinessSummary,
-        hasAcceleratorAccess: seed.hasAcceleratorAccess,
-        acceleratorPaywallHref,
-        shouldTrackEmbeddedAcceleratorRuntime,
-        orgId: seed.orgId,
-        viewerId: seed.viewerId,
-        handleAcceleratorSizeChange,
-        activeStepId: acceleratorState.activeStepId,
-        completedStepIds: acceleratorState.completedStepIds,
-        handleAcceleratorProgressChange,
-        onWorkspaceOnboardingSubmit,
-      }),
+    () => ({
+      steps: seed.acceleratorTimeline ?? [],
+      size: resolvedCardSize === "sm" ? "sm" : "md",
+      linkHrefOverride: seed.hasAcceleratorAccess ? null : acceleratorPaywallHref,
+      allowAutoResize: true,
+      storageKey: `${seed.orgId}:${seed.viewerId}`,
+      onSizeChange: handleAcceleratorSizeChange,
+      initialCurrentStepId: acceleratorState.activeStepId,
+      initialCompletedStepIds: acceleratorState.completedStepIds,
+      onProgressChange: handleAcceleratorProgressChange,
+    }),
     [
       acceleratorState.activeStepId,
       acceleratorState.completedStepIds,
       handleAcceleratorProgressChange,
       handleAcceleratorSizeChange,
-      size,
-      acceleratorReadinessSummary,
-      acceleratorPaywallHref,
+      resolvedCardSize,
       seed.acceleratorTimeline,
       seed.hasAcceleratorAccess,
       seed.orgId,
       seed.viewerId,
-      onWorkspaceOnboardingSubmit,
-      shouldTrackEmbeddedAcceleratorRuntime,
-    ]
+    ],
   )
-  const frameContentClassName = resolveWorkspaceBoardFrameContentClassName({
-    cardId,
-    acceleratorTutorialCallout,
-  })
-  const acceleratorHeaderMeta = resolveAcceleratorHeaderMeta({
-    acceleratorRuntimeActions,
-    acceleratorRuntimeSnapshot,
-    acceleratorTutorialCallout,
-    acceleratorTutorialInteractionPolicy,
-  })
-  const executionHeaderMeta =
-    cardId === "deck" ? (
-      <WorkspaceBoardExecutionCardHeaderControls
-        activeTab={executionActiveTab}
-        runtimeSnapshot={acceleratorRuntimeSnapshot}
-        onLessonGroupChange={acceleratorRuntimeActions?.selectLessonGroup}
-      />
-    ) : undefined
-  const acceleratorHeaderDetails = resolveAcceleratorHeaderDetails({
-    acceleratorRuntimeSnapshot,
-    acceleratorTutorialCallout,
-    acceleratorTutorialInteractionPolicy,
-  })
-  const { organizationMapButtonCallout, handleOpenMapCard } =
-    useOrganizationMapCardAction(data)
+
+  const acceleratorHeaderMeta = useMemo(() => {
+    if (cardId !== "accelerator" || !acceleratorRuntimeSnapshot) return null
+    return (
+      <div className="inline-flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-md"
+          disabled={!acceleratorRuntimeSnapshot.canGoPrevious}
+          onClick={() => acceleratorRuntimeActions?.goPrevious()}
+          aria-label="Previous accelerator step"
+        >
+          <ChevronLeftIcon className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-md"
+          disabled={!acceleratorRuntimeSnapshot.canGoNext}
+          onClick={() => acceleratorRuntimeActions?.goNext()}
+          aria-label="Next accelerator step"
+        >
+          <ChevronRightIcon className="h-3.5 w-3.5" aria-hidden />
+        </Button>
+      </div>
+    )
+  }, [acceleratorRuntimeActions, acceleratorRuntimeSnapshot, cardId])
+
+  const frameContentClassName =
+    cardId === "vault"
+      ? "min-h-0 flex-1 px-0 pt-0 pb-0"
+      : cardId === "accelerator" || cardId === "brand-kit" || cardId === "communications"
+        ? "pt-0.5"
+        : undefined
+
   return (
     <div
       className={cn(
         "relative min-h-0 w-full min-w-0 origin-center transition-[box-shadow,filter,opacity,transform] duration-200",
-        (cardId === "accelerator" || cardId === "deck") &&
-          acceleratorRuntimeSnapshot?.isModuleViewerOpen === true &&
-          "z-20",
         cardId === "accelerator" ||
-          cardId === "deck" ||
           cardId === "organization-overview" ||
           cardId === "programs" ||
-          cardId === "calendar" ||
-          cardId === "fiscal-sponsorship"
+          cardId === "calendar"
           ? "h-auto"
-          : "h-full"
+          : "h-full",
       )}
     >
       <WorkspaceCardErrorBoundary cardId={cardId}>
-        {cardId === "organization-overview"
-          ? renderOrganizationOverviewCard({
-              size: effectiveCardSize,
-              presentationMode,
-              canEdit,
-              contentClassName: frameContentClassName,
-              organizationEditorHref,
-              onOrganizationEditorOpen: openWorkspaceDataDrawer
-                ? handleOrganizationEditorOpen
-                : undefined,
-              headerAction: resolveOrganizationHeaderAction({
-                orgId: seed.orgId,
-                profile:
-                  organizationEditorData?.initialProfile ?? seed.initialProfile,
-                highlighted: organizationMapButtonCallout !== null,
-                instruction: organizationMapButtonCallout?.instruction ?? null,
-                onPress: handleOpenMapCard,
-              }),
-              isCanvasFullscreen,
-              onToggleCanvasFullscreen: frameFullscreenToggle,
-              seed,
-              organizationEditorData: data.organizationEditorData,
-            })
-          : renderWorkspaceBoardResolvedCard({
-              cardId,
-              cardMeta,
-              comingSoonTitleBadge,
-              acceleratorCardHref,
-              acceleratorCardInput,
-              acceleratorHeaderDetails,
-              acceleratorHeaderMeta,
-              acceleratorRuntimeActions,
-              acceleratorRuntimeSnapshot,
-              acceleratorTutorialCallout,
-              acceleratorTutorialInteractionPolicy,
-              canEdit,
-              communications,
-              communicationsMenuActions,
-              contentClassName: frameContentClassName,
-              data,
-              effectiveCardSize,
-              executionActiveTab,
-              executionHeaderMeta,
-              frameFullscreenToggle,
-              hideHeaderSubtitle,
-              isCanvasFullscreen,
-              onAcceleratorRuntimeActionsChange:
-                handleAcceleratorRuntimeActionsChange,
-              onAcceleratorRuntimeChange: handleAcceleratorRuntimeChange,
-              onAcceleratorTutorialActionComplete,
-              onCommunicationsMenuActionsChange: setCommunicationsMenuActions,
-              onExecutionTabChange: (nextValue) =>
-                setExecutionActiveTab(
-                  nextValue === "accelerator" ? "accelerator" : "roadmap"
-                ),
-              onProgramsCreateOpenChange: handleProgramsCreateOpenChange,
-              onRequestOpenAcceleratorStep: handleAcceleratorRequestOpenStep,
-              onRoadmapNavigatorCollapsedChange: setRoadmapNavigatorCollapsed,
-              onSizeChange,
-              presentationMode,
-              programsCreateOpen,
-              roadmapNavigatorCollapsed,
-              seed,
-              shouldTrackEmbeddedAcceleratorRuntime,
-            })}
+        {cardId === "organization-overview" ? (
+          <WorkspaceBoardOrganizationCardShell
+            title={cardMeta.title}
+            subtitle={cardMeta.subtitle}
+            headerMeta={acceleratorHeaderMeta}
+            size={effectiveCardSize}
+            presentationMode={presentationMode}
+            fullHref={cardMeta.fullHref}
+            canEdit={canEdit}
+            contentClassName={frameContentClassName}
+            editorHref={canEdit ? organizationEditorHref : null}
+            shortcutItems={organizationShortcutItems}
+            isCanvasFullscreen={isCanvasFullscreen}
+            onToggleCanvasFullscreen={frameFullscreenToggle}
+          >
+            <OrganizationOverviewCard
+              size={size}
+              seed={seed}
+              presentationMode={presentationMode}
+              organizationEditorData={data.organizationEditorData}
+            />
+          </WorkspaceBoardOrganizationCardShell>
+        ) : (
+          <WorkspaceBoardCardFrame
+            cardId={cardId}
+            title={cardMeta.title}
+            subtitle={cardMeta.subtitle}
+            titleBadge={fundraisingTitleBadge}
+            tone={cardId === "accelerator" ? "accelerator" : "default"}
+            titleIcon={
+              cardId === "accelerator" ? (
+                <WaypointsIcon
+                  className="h-4 w-4 text-fuchsia-500 dark:text-fuchsia-400"
+                  aria-hidden
+                />
+              ) : null
+            }
+            hideTitle={false}
+            hideSubtitle={hideHeaderSubtitle}
+            headerMeta={acceleratorHeaderMeta}
+            headerAction={
+              cardId === "programs" && canEdit ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 rounded-lg px-2.5 text-[11px]"
+                  onClick={() => handleProgramsCreateOpenChange(true)}
+                >
+                  Add
+                </Button>
+              ) : undefined
+            }
+            size={effectiveCardSize}
+            presentationMode={presentationMode}
+            onSizeChange={(nextSize) =>
+              onSizeChange(
+                cardId,
+                cardId === "communications" && nextSize === "sm" ? "md" : nextSize,
+              )
+            }
+            fullHref={cardId === "accelerator" ? acceleratorCardHref : cardMeta.fullHref}
+            canEdit={canEdit}
+            contentClassName={frameContentClassName}
+            menuActions={cardId === "communications" ? communicationsMenuActions : undefined}
+            editorHref={null}
+            isCanvasFullscreen={isCanvasFullscreen}
+            onToggleCanvasFullscreen={frameFullscreenToggle}
+            fullscreenControlMode={cardId === "vault" ? "inline" : "overflow"}
+          >
+            {cardId === "accelerator" ? (
+              <WorkspaceAcceleratorCardPanel
+                input={acceleratorCardInput}
+                onRuntimeChange={handleAcceleratorRuntimeChange}
+                onRuntimeActionsChange={handleAcceleratorRuntimeActionsChange}
+                onOpenStepNode={data.onOpenAcceleratorStepNode}
+              />
+            ) : null}
+            {cardId === "programs" ? (
+              <WorkspaceBoardProgramsCard
+                programs={data.organizationEditorData?.programs ?? []}
+                legacyProgramsValue={data.organizationEditorData?.initialProfile.programs}
+                canEdit={canEdit}
+                createOpen={programsCreateOpen}
+                onCreateOpenChange={handleProgramsCreateOpenChange}
+              />
+            ) : null}
+            {cardId === "brand-kit" ? (
+              <WorkspaceBrandKitPanel
+                input={{
+                  profile: seed.initialProfile,
+                  canEdit,
+                  presentationMode,
+                }}
+              />
+            ) : null}
+            {cardId === "economic-engine" ? (
+              <EconomicEngineCard
+                size={size}
+                seed={seed}
+                presentationMode={presentationMode}
+              />
+            ) : null}
+            {cardId === "calendar" ? (
+              <WorkspaceBoardCalendarCard
+                calendar={seed.calendar}
+                canEdit={canEdit}
+                formationStatus={seed.initialProfile.formationStatus ?? null}
+                cardSize={size}
+                isCanvasFullscreen={isCanvasFullscreen}
+                presentationMode={presentationMode}
+              />
+            ) : null}
+            {cardId === "communications" ? (
+              <WorkspaceBoardCommunicationsCard
+                canEdit={canEdit}
+                presentationMode={presentationMode}
+                cardSize={effectiveCardSize}
+                isCanvasFullscreen={isCanvasFullscreen}
+                communications={communications}
+                activityFeed={seed.activityFeed}
+                profile={seed.initialProfile}
+                onChange={onCommunicationsChange}
+                onMenuActionsChange={setCommunicationsMenuActions}
+              />
+            ) : null}
+            {cardId === "deck" ? (
+              <WorkspaceBoardDeckCard
+                size={size}
+                presentationMode={presentationMode}
+              />
+            ) : null}
+            {cardId === "vault" ? (
+              <WorkspaceBoardVaultCard
+                size={size}
+                canEdit={canEdit}
+                presentationMode={presentationMode}
+                mode={vaultViewMode}
+                onModeChange={onVaultViewModeChange}
+              />
+            ) : null}
+            {cardId === "atlas" ? (
+              <WorkspaceBoardAtlasCard
+                size={size}
+                presentationMode={presentationMode}
+              />
+            ) : null}
+          </WorkspaceBoardCardFrame>
+        )}
       </WorkspaceCardErrorBoundary>
     </div>
   )

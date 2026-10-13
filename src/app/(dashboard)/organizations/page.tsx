@@ -1,107 +1,37 @@
-import { defaultOrganizationCoachFilter, loadOrganizationCoachAssignmentData } from "@/features/organization-coach-assignments"
-import {
-  clearMemberWorkspaceStarterDataAction,
-  createPlatformAdminWorkstreamCategoryAction,
-  createMemberWorkspaceProjectAction,
-  deletePlatformAdminWorkstreamCategoryAction,
-  loadMemberWorkspaceProjectsPage,
-  MemberWorkspaceProjectsPage,
-  restorePlatformAdminWorkstreamDefaultsAction,
-  updatePlatformAdminProjectWorkstreamAction,
-  updatePlatformAdminWorkstreamCategoryAction,
-  updateMemberWorkspaceProjectAction,
-  updateMemberWorkspaceProjectScheduleAction,
-  updateMemberWorkspaceProjectStatusAction,
-} from "@/features/member-workspace"
-import { requirePlatformCapability } from "@/lib/admin/auth"
-import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
+import { redirect } from "next/navigation"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
+
+export const dynamic = "force-dynamic"
 
 export default async function OrganizationsPage() {
-  const staff = await requirePlatformCapability("organizations", {
-    loginRedirect: "/organizations",
-  })
-
+  const supabase = await createSupabaseServerClient()
   const {
-    projects,
-    storageMode,
-    canResetStarterData,
-    starterProjectCount,
-    canCreateProjects,
-    scope,
-    organizationOptions,
-    assigneeOptions,
-    workstreamCategories,
-  } = await loadMemberWorkspaceProjectsPage()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  const assignments = await loadOrganizationCoachAssignmentData({
-    organizationIds: organizationOptions.map((organization) => organization.orgId),
-  })
-  const { data: profile } = await staff.supabase.from("profiles")
-    .select("full_name, email, avatar_url").eq("id", staff.userId).maybeSingle()
-  const currentCoach = assignments.coachOptions.find((coach) => coach.id === staff.userId) ?? {
-    id: staff.userId, name: profile?.full_name ?? "You",
-    email: profile?.email ?? null, avatarUrl: profile?.avatar_url ?? null,
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  const coachScope = await loadOrganizationCoachActorScope({
-    accessLevel: staff.accessLevel,
-    userId: staff.userId,
-  })
-  const defaultCoachFilter =
-    coachScope.mode === "assigned" && coachScope.canAccessUnassigned
-      ? "all"
-      : defaultOrganizationCoachFilter(currentCoach)
-  const coachOptions = assignments.coachOptions.some((coach) => coach.id === staff.userId)
-    ? assignments.coachOptions : [...assignments.coachOptions, currentCoach]
-  const assignedProjects = projects.map((project) => ({
-    ...project,
-    organizationCoachAssignments: project.organizationId
-      ? assignments.assignmentsByOrganizationId.get(project.organizationId) ?? []
-      : [],
-  }))
+  if (!user) redirect("/login?redirect=/organizations")
 
   return (
-    <MemberWorkspaceProjectsPage
-      viewerUserId={staff.userId}
-      projects={assignedProjects}
-      showPlatformRevenue
-      defaultCoachFilter={defaultCoachFilter}
-      coachOptions={coachOptions}
-      storageMode={storageMode}
-      canResetStarterData={canResetStarterData}
-      starterProjectCount={starterProjectCount}
-      clearStarterDataAction={clearMemberWorkspaceStarterDataAction}
-      createProjectAction={
-        canCreateProjects ? createMemberWorkspaceProjectAction : undefined
-      }
-      updateProjectAction={
-        canCreateProjects ? updateMemberWorkspaceProjectAction : undefined
-      }
-      updateProjectScheduleAction={
-        canCreateProjects
-          ? updateMemberWorkspaceProjectScheduleAction
-          : undefined
-      }
-      updateProjectStatusAction={
-        canCreateProjects ? updateMemberWorkspaceProjectStatusAction : undefined
-      }
-      canCreateProjects={canCreateProjects}
-      scope={scope}
-      organizationOptions={organizationOptions}
-      assigneeOptions={assigneeOptions}
-      workstreamCategories={workstreamCategories}
-      createWorkstreamCategoryAction={
-        createPlatformAdminWorkstreamCategoryAction
-      }
-      updateWorkstreamCategoryAction={
-        updatePlatformAdminWorkstreamCategoryAction
-      }
-      deleteWorkstreamCategoryAction={
-        deletePlatformAdminWorkstreamCategoryAction
-      }
-      restoreWorkstreamDefaultsAction={
-        restorePlatformAdminWorkstreamDefaultsAction
-      }
-      updateProjectWorkstreamAction={updatePlatformAdminProjectWorkstreamAction}
-    />
+    <div className="flex flex-col gap-6">
+      <section>
+        <Card className="bg-card/60">
+          <CardHeader>
+            <CardTitle>Organizations</CardTitle>
+            <CardDescription>Organization profile rollups from your latest submissions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Coming soon.</p>
+          </CardContent>
+        </Card>
+      </section>
+    </div>
   )
 }

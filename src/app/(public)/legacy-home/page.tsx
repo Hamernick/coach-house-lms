@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import "@fontsource-variable/sora/wght.css"
 
 import { PublicHeader } from "@/components/public/public-header"
 import { SectionReveal } from "@/components/public/section-reveal"

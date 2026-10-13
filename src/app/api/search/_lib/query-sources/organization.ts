@@ -1,9 +1,5 @@
-import {
-  resolveOrganizationNarrativePlainText,
-  resolveRoadmapSections,
-} from "@/lib/roadmap"
+import { resolveRoadmapSections } from "@/lib/roadmap"
 import type { SearchResult } from "@/lib/search/types"
-import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 import {
   DOCUMENT_LABELS,
@@ -27,7 +23,7 @@ export async function attachOrganizationImages({
 
   for (const result of results) {
     if (result.image) continue
-    if (result.id === `org:${orgId}`) {
+    if (result.href === "/organization") {
       needsSelf = true
       continue
     }
@@ -38,41 +34,39 @@ export async function attachOrganizationImages({
     }
   }
 
-  const [selfLogoUrl, communityOrganizations] = await Promise.all([
-    (async () => {
-      if (!needsSelf) return undefined
-      const { data: orgRow } = await supabase
-        .from("organizations")
-        .select("profile")
-        .eq("user_id", orgId)
-        .maybeSingle<{ profile: Record<string, unknown> | null }>()
+  let selfLogoUrl: string | undefined
+  if (needsSelf) {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", orgId)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
-      const profile = orgRow?.profile ?? {}
-      return extractProfileValue(profile, "logoUrl") || undefined
-    })(),
-    (async () => {
-      if (slugs.size === 0) return []
-      const { data: orgRows } = await supabase
-        .from("organizations")
-        .select("public_slug, profile")
-        .in("public_slug", Array.from(slugs))
-        .returns<
-          Array<{
-            public_slug: string | null
-            profile: Record<string, unknown> | null
-          }>
-        >()
-      return orgRows ?? []
-    })(),
-  ])
+    const profile = orgRow?.profile ?? {}
+    const logoUrl = extractProfileValue(profile, "logoUrl")
+    selfLogoUrl = logoUrl || undefined
+  }
 
   const logoBySlug = new Map<string, string>()
-  for (const org of communityOrganizations) {
-    if (!org.public_slug) continue
-    const profile = org.profile ?? {}
-    const logoUrl = extractProfileValue(profile, "logoUrl")
-    if (logoUrl) {
-      logoBySlug.set(org.public_slug, logoUrl)
+  if (slugs.size > 0) {
+    const { data: orgRows } = await supabase
+      .from("organizations")
+      .select("public_slug, profile")
+      .in("public_slug", Array.from(slugs))
+      .returns<
+        Array<{
+          public_slug: string | null
+          profile: Record<string, unknown> | null
+        }>
+      >()
+
+    for (const org of orgRows ?? []) {
+      if (!org.public_slug) continue
+      const profile = org.profile ?? {}
+      const logoUrl = extractProfileValue(profile, "logoUrl")
+      if (logoUrl) {
+        logoBySlug.set(org.public_slug, logoUrl)
+      }
     }
   }
 
@@ -82,7 +76,7 @@ export async function attachOrganizationImages({
 
   return results.map((result) => {
     if (result.image) return result
-    if (result.id === `org:${orgId}` && selfLogoUrl) {
+    if (result.href === "/organization" && selfLogoUrl) {
       return { ...result, image: selfLogoUrl }
     }
     if (result.group === "Community") {
@@ -108,56 +102,48 @@ export async function addActiveOrganizationResults({
   tokens: string[]
   pushResult: (result: SearchResult) => void
 }) {
-  const [{ data: programs }, { data: userOrg }] = await Promise.all([
-    supabase
-      .from("programs")
-      .select("id, title, subtitle, status_label")
-      .eq("user_id", orgId)
-      .returns<
-        Array<{
-          id: string
-          title: string | null
-          subtitle: string | null
-          status_label: string | null
-        }>
-      >(),
-    supabase
-      .from("organizations")
-      .select("profile")
-      .eq("user_id", orgId)
-      .maybeSingle<{ profile: Record<string, unknown> | null }>(),
-  ])
+  const { data: programs } = await supabase
+    .from("programs")
+    .select("id, title, subtitle, status_label")
+    .eq("user_id", orgId)
+    .returns<
+      Array<{
+        id: string
+        title: string | null
+        subtitle: string | null
+        status_label: string | null
+      }>
+    >()
 
   for (const program of programs ?? []) {
     if (
       matchesQuery(
-        [
-          program.title ?? null,
-          program.subtitle ?? null,
-          program.status_label ?? null,
-        ],
-        tokens
+        [program.title ?? null, program.subtitle ?? null, program.status_label ?? null],
+        tokens,
       )
     ) {
       pushResult({
         id: `program:${program.id}`,
         label: program.title ?? "Untitled program",
         subtitle: program.subtitle ?? program.status_label ?? undefined,
-        href: getWorkspaceEditorPath({
-          tab: "programs",
-          programId: program.id,
-        }),
+        href: `/organization?tab=programs&programId=${program.id}`,
         group: "Programs",
       })
     }
   }
+
+  const { data: userOrg } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (!userOrg?.profile) return
 
   const profile = userOrg.profile ?? {}
   const name = extractProfileValue(profile, "name")
   const tagline = extractProfileValue(profile, "tagline")
-  const mission = resolveOrganizationNarrativePlainText(profile, "mission")
+  const mission = extractProfileValue(profile, "mission")
   const description = extractProfileValue(profile, "description")
 
   if (matchesQuery([name, tagline, mission, description], tokens)) {
@@ -165,16 +151,14 @@ export async function addActiveOrganizationResults({
       id: `org:${orgId}`,
       label: name || "My organization",
       subtitle: "Your organization",
-      href: getWorkspaceEditorPath({ tab: "company" }),
+      href: "/organization",
       group: "My organization",
     })
   }
 
   const roadmapSections = resolveRoadmapSections(profile)
   for (const section of roadmapSections) {
-    if (
-      matchesQuery([section.title, section.subtitle, section.content], tokens)
-    ) {
+    if (matchesQuery([section.title, section.subtitle, section.content], tokens)) {
       const sectionKey = section.slug || section.id
       pushResult({
         id: `roadmap:${orgId}:${sectionKey}`,

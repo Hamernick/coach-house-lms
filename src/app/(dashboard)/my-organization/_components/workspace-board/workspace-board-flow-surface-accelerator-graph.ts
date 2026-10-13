@@ -98,14 +98,6 @@ function areRuntimeSnapshotsEqual(
     left.currentModuleCompletedCount === right.currentModuleCompletedCount &&
     left.isCurrentModuleCompleted === right.isCurrentModuleCompleted &&
     left.isCurrentStepCompleted === right.isCurrentStepCompleted &&
-    left.selectedLessonGroupKey === right.selectedLessonGroupKey &&
-    left.selectedLessonGroupLabel === right.selectedLessonGroupLabel &&
-    JSON.stringify(left.lessonGroupOptions ?? []) ===
-      JSON.stringify(right.lessonGroupOptions ?? []) &&
-    left.firstVisibleChecklistStepId === right.firstVisibleChecklistStepId &&
-    Boolean(left.isModuleViewerOpen) === Boolean(right.isModuleViewerOpen) &&
-    (left.openModuleId ?? null) === (right.openModuleId ?? null) &&
-    left.readinessSummary?.score === right.readinessSummary?.score &&
     buildRuntimeStepSignature(left.currentStep) ===
       buildRuntimeStepSignature(right.currentStep)
   )
@@ -290,7 +282,6 @@ export function useWorkspaceBoardAcceleratorGraph({
       onboardingGuideNodeData,
       onboardingTargetWorkspaceNode,
       presentationMode,
-      visibleWorkspaceNodes,
     })
   }, [
     boardState.connections,
@@ -302,7 +293,6 @@ export function useWorkspaceBoardAcceleratorGraph({
     onboardingGuideNodeData,
     onboardingTargetWorkspaceNode,
     presentationMode,
-    visibleWorkspaceNodes,
   ])
 
   const composedNodes = useMemo<WorkspaceFlowNode[]>(() => {

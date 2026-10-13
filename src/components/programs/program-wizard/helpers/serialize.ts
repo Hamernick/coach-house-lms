@@ -6,11 +6,10 @@ import { monthToIsoStart, normalizeAddons } from "./conversions"
 import { computeFeasibility } from "./feasibility"
 
 export function serializePayload(
-  form: ProgramWizardFormState
+  form: ProgramWizardFormState,
 ): CreateProgramPayload {
   const budget = computeBudgetBreakdown(form)
   const formatAddons = normalizeAddons(form.coreFormat, form.formatAddons)
-  const locationUrl = form.locationUrl.trim()
   const locationType = form.locationMode === "online" ? "online" : "in_person"
   const location =
     form.locationDetails.trim() ||
@@ -45,7 +44,6 @@ export function serializePayload(
     subtitle: form.subtitle.trim(),
     bannerImageUrl: form.bannerImageUrl.trim(),
     imageUrl: form.imageUrl.trim(),
-    objectKind: form.objectKind,
     programType: form.programType,
     coreFormat: form.coreFormat,
     formatAddons,
@@ -68,7 +66,6 @@ export function serializePayload(
     frequency: form.frequency.trim(),
     locationMode: form.locationMode,
     locationDetails: form.locationDetails.trim(),
-    locationUrl,
     budgetRows: budget.rows,
     budgetUsd: budget.totalBudget,
     costStaffUsd: budget.costStaffUsd,
@@ -90,12 +87,7 @@ export function serializePayload(
     updatedAt: new Date().toISOString(),
   }
 
-  const features = [
-    form.objectKind,
-    form.programType,
-    form.coreFormat,
-    ...formatAddons,
-  ]
+  const features = [form.programType, form.coreFormat, ...formatAddons]
 
   return {
     title: form.title.trim(),
@@ -103,7 +95,7 @@ export function serializePayload(
     description: form.oneSentence.trim(),
     location,
     locationType,
-    locationUrl: locationUrl || null,
+    locationUrl: locationType === "online" ? null : null,
     imageUrl: form.imageUrl.trim() || null,
     duration: form.durationLabel.trim() || null,
     startDate: monthToIsoStart(form.startMonth),

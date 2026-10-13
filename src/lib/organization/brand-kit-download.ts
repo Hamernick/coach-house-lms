@@ -2,10 +2,7 @@ import { extname } from "node:path"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import {
-  buildBrandKitReadme,
-  resolveBrandManifest,
-} from "@/features/workspace-brand-kit"
+import { buildBrandKitReadme, resolveBrandManifest } from "@/features/workspace-brand-kit"
 import { requireServerSession } from "@/lib/auth"
 import { createZipArchive } from "@/lib/files/simple-zip"
 import type { ZipEntry } from "@/lib/files/simple-zip"
@@ -47,22 +44,13 @@ function hydrateBrandProfile({
     name: readProfileString(profile, "name") ?? "",
     tagline: readProfileString(profile, "tagline") ?? "",
     boilerplate: readProfileString(profile, "boilerplate") ?? "",
-    brandVoiceAudience: readProfileString(profile, "brandVoiceAudience") ?? "",
-    brandVoiceTone: readProfileString(profile, "brandVoiceTone") ?? "",
-    brandVoiceStyle: readProfileString(profile, "brandVoiceStyle") ?? "",
-    brandVoicePersonality:
-      readProfileString(profile, "brandVoicePersonality") ?? "",
-    brandVoiceGuidelines:
-      readProfileString(profile, "brandVoiceGuidelines") ?? "",
-    brandVoiceAvoid: readProfileString(profile, "brandVoiceAvoid") ?? "",
     logoUrl: readProfileString(profile, "logoUrl") ?? "",
     brandMarkUrl: readProfileString(profile, "brandMarkUrl") ?? "",
     headerUrl: readProfileString(profile, "headerUrl") ?? "",
     brandPrimary: readProfileString(profile, "brandPrimary") ?? "",
     brandColors: readProfileStringArray(profile, "brandColors"),
     brandThemePresetId: readProfileString(profile, "brandThemePresetId") ?? "",
-    brandAccentPresetId:
-      readProfileString(profile, "brandAccentPresetId") ?? "",
+    brandAccentPresetId: readProfileString(profile, "brandAccentPresetId") ?? "",
     brandTypographyPresetId:
       readProfileString(profile, "brandTypographyPresetId") ?? "",
     brandTypography: readTypographyConfig(profile) ?? null,
@@ -92,7 +80,7 @@ function normalizeAssetExtension(path: string) {
 async function readAsset(
   supabase: SupabaseClient<Database>,
   url: string | null | undefined,
-  targetBaseName: string
+  targetBaseName: string,
 ) {
   if (!url) return null
   const objectPath = extractPublicObjectPath(url, ORG_MEDIA_BUCKET)
@@ -118,11 +106,7 @@ async function buildBrandKitArchive({
 }) {
   const primaryLogo = await readAsset(supabase, profile.logoUrl, "logo-primary")
   const logoMark = await readAsset(supabase, profile.brandMarkUrl, "logo-mark")
-  const bannerImage = await readAsset(
-    supabase,
-    profile.headerUrl,
-    "brand-banner"
-  )
+  const bannerImage = await readAsset(supabase, profile.headerUrl, "brand-banner")
   const { manifest, preset } = resolveBrandManifest(profile)
   manifest.logoPrimaryFile = primaryLogo?.fileName ?? null
   manifest.logoMarkFile = logoMark?.fileName ?? null
@@ -160,7 +144,7 @@ async function buildBrandKitArchive({
     {
       name: "README.txt",
       data: summary,
-    }
+    },
   )
   const archive = createZipArchive(entries)
 
@@ -185,10 +169,7 @@ export async function buildAccountBrandKitDownload() {
     }>()
 
   if (error || !data) {
-    return {
-      error: error?.message ?? "Organization not found",
-      status: 404 as const,
-    }
+    return { error: error?.message ?? "Organization not found", status: 404 as const }
   }
 
   const profile = hydrateBrandProfile({
@@ -215,10 +196,7 @@ export async function buildPublicBrandKitDownload(slug: string) {
     }>()
 
   if (error || !data) {
-    return {
-      error: error?.message ?? "Organization not found",
-      status: 404 as const,
-    }
+    return { error: error?.message ?? "Organization not found", status: 404 as const }
   }
 
   const profile = hydrateBrandProfile({

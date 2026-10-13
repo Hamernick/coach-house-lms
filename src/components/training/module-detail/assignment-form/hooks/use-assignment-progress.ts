@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react"
 
-import { isAssignmentFieldAnswered } from "@/lib/modules/assignment-completion"
 import type { ModuleAssignmentField } from "../../../types"
 import type { AssignmentSection } from "../../assignment-sections"
 import type { AssignmentValues } from "../../utils"
@@ -22,7 +21,12 @@ export function useAssignmentProgress(
 ): UseAssignmentProgressResult {
   const fieldAnswered = useCallback(
     (field: ModuleAssignmentField) => {
-      return isAssignmentFieldAnswered(field, values)
+      const value = values[field.name]
+      if (value === null || value === undefined) return false
+      if (typeof value === "string") return value.trim().length > 0
+      if (Array.isArray(value)) return value.length > 0
+      if (typeof value === "number") return true
+      return Boolean(value)
     },
     [values],
   )

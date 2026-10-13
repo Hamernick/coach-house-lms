@@ -1,5 +1,3 @@
-import type { AcceleratorReadinessChecklistItem as AcceleratorMilestoneChecklistItem } from "@/lib/accelerator/readiness"
-
 export type AcceleratorReadinessChecklistItem = {
   label: string
   href: string
@@ -24,8 +22,6 @@ export type AcceleratorOrgSnapshotStripProps = {
   moduleGroupsTotal: number
   fundableCheckpoint?: number
   verifiedCheckpoint?: number
-  fundableMilestoneChecklist?: AcceleratorMilestoneChecklistItem[]
-  verifiedMilestoneChecklist?: AcceleratorMilestoneChecklistItem[]
   readinessStateLabel?: "Building" | "Fundable" | "Verified"
   readinessTargetLabel?: string | null
   readinessChecklist?: AcceleratorReadinessChecklistItem[]

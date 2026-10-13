@@ -1,33 +1,65 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { type ReactFlowInstance } from "reactflow"
+import {
+  type ReactFlowInstance,
+  useNodesState,
+} from "reactflow"
 import "reactflow/dist/style.css"
-import { useWorkspaceAcceleratorDrawer } from "./use-workspace-accelerator-drawer"
-import { useWorkspaceOntologyActionRequest } from "./use-workspace-ontology-action-request"
+
+import {
+  buildAcceleratorStepNodeData,
+} from "../../workspace-board-flow-surface-accelerator-graph-composition"
+
+import { resolveWorkspaceCanvasOrgNodePosition } from "../adapters/workspace-canvas-from-board-state"
+import { useWorkspaceCanvasCameraController } from "../runtime/workspace-canvas-camera-controller"
+import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
+import { useWorkspaceCanvasLifecycleLogs } from "../runtime/workspace-canvas-lifecycle-logs"
+import { useWorkspaceCanvasAcceleratorRuntime } from "./workspace-canvas-surface-v2-accelerator-runtime"
+import {
+  WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
+  WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
+  WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
+  WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
+  handleWorkspaceReactFlowError,
+} from "./workspace-canvas-surface-v2-config"
+import {
+  useWorkspaceCardReadinessMap,
+} from "./workspace-canvas-surface-v2-hooks"
+import {
+  useWorkspaceCanvasNodeDragStop,
+  useWorkspaceTutorialAwareShortcutItems,
+  useWorkspaceTutorialSceneFitRequest,
+} from "./workspace-canvas-surface-v2-controller-hooks"
+import { buildInitialWorkspaceCanvasNodes } from "./workspace-canvas-surface-v2-node-builders"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import { WorkspaceCanvasSurfaceV2View } from "./workspace-canvas-surface-v2-view"
 import {
+  WORKSPACE_CANVAS_V2_CARD_IDS,
   WORKSPACE_CANVAS_V2_VAULT_MODE,
+  type WorkspaceCanvasNode,
+  type WorkspaceCanvasNodeData,
   type WorkspaceCanvasV2CardId,
+  buildWorkspaceCanvasV2CardDataLookup,
+  isWorkspaceCanvasV2CardId,
+  reconcileWorkspaceCanvasV2Nodes,
 } from "./workspace-canvas-surface-v2-helpers"
-import * as Runtime from "./workspace-canvas-surface-v2-runtime"
-const WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED = false
-// eslint-disable-next-line max-lines-per-function
+import { resolveWorkspaceCanvasV2InitialPositionLookup } from "./workspace-canvas-surface-v2-positioning"
+import { useWorkspaceCanvasTutorialScene } from "./workspace-canvas-surface-v2-tutorial"
+import type {
+  WorkspaceBoardState,
+  WorkspaceCardId,
+} from "../../workspace-board-types"
+
 export function WorkspaceCanvasSurfaceV2({
   boardState,
   allowEditing,
-  workspaceDataDrawerCanEdit,
   presentationMode,
   seed,
   organizationEditorData,
-  financeInput,
   layoutFitRequestKey,
   acceleratorFocusRequestKey,
-  tutorialRestartRequestKey,
-  onInitialOnboardingSubmit,
   focusCardRequest,
-  tutorialCompletionExitRequest,
   journeyGuideState,
   onSizeChange,
   onCommunicationsChange,
@@ -37,7 +69,6 @@ export function WorkspaceCanvasSurfaceV2({
   onCloseAcceleratorStepNode,
   onTutorialPrevious,
   onTutorialNext,
-  onTutorialRestart,
   onTutorialShortcutOpened,
   onFocusCard,
   onPersistNodePosition,
@@ -45,201 +76,136 @@ export function WorkspaceCanvasSurfaceV2({
   onDisconnectConnection,
   onDisconnectAllConnections,
   onToggleCardVisibility,
-  onTutorialCompletionExitHandled,
 }: WorkspaceCanvasSurfaceV2Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const [isFlowReady, setIsFlowReady] = useState(false)
-  const [vaultViewMode, setVaultViewMode] = useState(
-    WORKSPACE_CANVAS_V2_VAULT_MODE
-  )
-  const {
-    request: ontologyActionRequest,
-    openAction: handleOpenOntologyAction,
-  } = useWorkspaceOntologyActionRequest(onFocusCard)
-  const acceleratorDrawer = useWorkspaceAcceleratorDrawer({
-    boardState,
-    seed,
-    organizationEditorData,
-    onAcceleratorStateChange,
-    onInitialOnboardingSubmit,
-  })
+  const [vaultViewMode, setVaultViewMode] = useState(WORKSPACE_CANVAS_V2_VAULT_MODE)
+  const [acceleratorStepNodePositionOverride, setAcceleratorStepNodePositionOverride] =
+    useState<{ x: number; y: number } | null>(null)
   const orgNodePositionFromBoard = useMemo(
-    () => Runtime.resolveWorkspaceCanvasOrgNodePosition(boardState.nodes),
-    [boardState.nodes]
+    () => resolveWorkspaceCanvasOrgNodePosition(boardState.nodes),
+    [boardState.nodes],
   )
-  const tutorialActiveFromBoard = boardState.onboardingFlow.active
-  const {
-    handleCanvasMoveEnd,
-    suppressInitialFit,
-    uiPreferencesScope,
-    viewportZoom,
-  } = Runtime.useWorkspaceCanvasViewportPreferences({
-    flowInstanceRef,
-    isFlowReady,
-    orgId: seed.orgId,
-    tutorialActive: tutorialActiveFromBoard,
-    viewerId: seed.viewerId,
-  })
-  const {
-    allowPeopleCanvasInteraction,
-    workspaceDataDrawerPeople,
-    workspacePersonById,
-    workspacePersonPlacements,
-    placedWorkspacePersonIds,
-    personRelationshipEdges,
-    workspacePersonFitRequest,
-    clearWorkspacePersonFitRequest,
-    handleRemoveWorkspacePersonPlacement,
-    handleWorkspacePersonDropToCanvas,
-    handleAddWorkspacePeopleToCanvas,
-    handleWorkspacePersonNodeDragStop,
-    handleWorkspacePersonNodesDragStop,
-  } = Runtime.useWorkspaceCanvasSurfacePeopleState({
-    allowEditing,
-    flowInstanceRef,
-    organizationEditorData,
-    presentationMode,
-    tutorialActive: tutorialActiveFromBoard,
-    uiPreferencesScope,
-    workspaceDataDrawerCanEdit,
-  })
-  const {
-    acceleratorWorkspaceNode,
-    acceleratorWorkspaceNodeId,
-    boardNodeLookup,
-    initialPositionLookupRef,
-  } = Runtime.useWorkspaceCanvasSurfaceNodeLookups({
-    boardNodes: boardState.nodes,
-    orgNodePositionFromBoard,
-  })
-  const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
-  const {
-    acceleratorRuntimeSnapshot,
-    acceleratorStepNodeData,
-    acceleratorTutorialCallout,
-    acceleratorTutorialInteractionPolicy,
-    handleAcceleratorRuntimeActionsChange,
-    handleAcceleratorRuntimeChange,
-    handleAcceleratorTutorialActionComplete,
-    handleHideStepNode,
-    handleOpenStepNode,
-    setAcceleratorStepNodePositionOverride,
-  } = Runtime.useWorkspaceCanvasSurfaceAcceleratorState({
-    boardState,
-    allowEditing,
-    presentationMode,
-    tutorialActive: tutorialActiveFromBoard,
-    acceleratorWorkspaceNode,
-    acceleratorStepNodeVisible,
-    onInitialOnboardingSubmit,
-    onOpenAcceleratorStepNode,
-    onCloseAcceleratorStepNode,
-    onTutorialNext,
-    onTutorialShortcutOpened,
-  })
+  const initialPositionLookupRef = useRef<
+    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
+  >(
+    resolveWorkspaceCanvasV2InitialPositionLookup(
+      boardState.nodes,
+      orgNodePositionFromBoard,
+    ),
+  )
   const {
     tutorialActive,
     tutorialSelectedCardId,
     tutorialNodeData,
     tutorialEdgeTargetId,
-    tutorialSceneCardPositionOverrides,
-    tutorialScenePrimaryCardId,
-    tutorialSceneGuideGap,
-    tutorialSceneBreakpoint,
-    tutorialSceneCameraViewport,
-    tutorialSceneNodeIds,
-    tutorialPresentationMaskLayout,
-    tutorialSceneSignature,
-    tutorialLayoutAnimating,
+    tutorialSceneFitPadding,
     emptyStateMessage,
     handleTutorialNodeDragStop,
-  } = Runtime.useWorkspaceCanvasTutorialScene({
+  } = useWorkspaceCanvasTutorialScene({
     boardState,
+    allowEditing,
     onPrevious: onTutorialPrevious,
     onNext: onTutorialNext,
-    acceleratorModuleViewerOpen:
-      acceleratorRuntimeSnapshot?.isModuleViewerOpen === true,
   })
-  const {
-    tutorialCardMeasuredHeights,
-    handleCardMeasuredHeightChange,
-    tutorialShellMeasuredHeight,
-    handleCurrentTutorialShellMeasuredHeightChange,
-  } = Runtime.useWorkspaceTutorialMeasurements({ tutorialSceneSignature })
-  const { tutorialCardPositionOverrides, setTutorialCardPositionOverrides } =
-    Runtime.useWorkspaceTutorialCardPositionOverrides({
-      tutorialActive,
-      tutorialSceneSignature,
-    })
-  const visibleCardIds = Runtime.useWorkspaceCanvasVisibleCardIds({
-    tutorialActive,
-    hiddenCardIds: boardState.hiddenCardIds,
-    tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
-    openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
-  })
-  const readinessMap = Runtime.useWorkspaceCardReadinessMap({
-    seed,
-    boardState,
-  })
-  const ontology = Runtime.useWorkspaceCanvasOntology({
-    boardState,
-    seed,
-    organizationEditorData,
-    visibleCardIds,
-    personPlacements: workspacePersonPlacements,
-    cardMeasuredHeights: tutorialCardMeasuredHeights,
-    enabled: WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED && !tutorialActiveFromBoard,
-    zoom: viewportZoom,
-    onFocusRoot: onFocusCard,
-    onOpenAction: handleOpenOntologyAction,
-    onOpenDataDrawer: acceleratorDrawer.onOpenWorkspaceDataDrawer,
-  })
-  const shortcutItems = Runtime.useWorkspaceTutorialAwareShortcutItems({
+  const boardNodeLookup = useMemo(
+    () => new Map(boardState.nodes.map((node) => [node.id, node])),
+    [boardState.nodes],
+  )
+  const visibleCardIds = useMemo<WorkspaceCanvasV2CardId[]>(
+    () =>
+      WORKSPACE_CANVAS_V2_CARD_IDS.filter(
+        (cardId) => !boardState.hiddenCardIds.includes(cardId),
+      ),
+    [boardState.hiddenCardIds],
+  )
+  const acceleratorCardVisible = visibleCardIds.includes("accelerator")
+  const visibleCardIdSet = useMemo(
+    () => new Set<WorkspaceCanvasV2CardId>(visibleCardIds),
+    [visibleCardIds],
+  )
+  const acceleratorWorkspaceNode = boardNodeLookup.get("accelerator") ?? null
+  const acceleratorWorkspaceNodeId = useMemo(
+    () =>
+      acceleratorWorkspaceNode && isWorkspaceCanvasV2CardId(acceleratorWorkspaceNode.id)
+        ? acceleratorWorkspaceNode.id
+        : null,
+    [acceleratorWorkspaceNode],
+  )
+  const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
+  const readinessMap = useWorkspaceCardReadinessMap({ seed, boardState })
+  const shortcutItems = useWorkspaceTutorialAwareShortcutItems({
     boardState,
     visibleCardIds,
     tutorialActive,
     tutorialSelectedCardId,
     focusCardRequest,
+    journeyGuideState,
     onToggleCardVisibility,
     onFocusCard,
     onTutorialShortcutOpened,
   })
-  const { tutorialCallout, handleTutorialActionComplete, handleOpenCard } =
-    Runtime.useWorkspaceTutorialActionHandlers({
-      tutorialActive,
-      tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
-      openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
-      hiddenCardIds: boardState.hiddenCardIds,
-      onTutorialNext,
-      onTutorialShortcutOpened,
-      onConnectCards,
-      onToggleCardVisibility,
-      onFocusCard,
-    })
   const {
-    showTutorialRestart,
-    tutorialCalendarButtonCallout,
-    onTutorialCalendarButtonComplete,
-    organizationMapButtonCallout,
-    onOrganizationMapButtonTutorialComplete,
-  } = Runtime.resolveWorkspaceCanvasTutorialSurfaceProps({
-    allowEditing,
-    isPlatformAdmin: seed.isPlatformAdmin,
-    presentationMode,
-    tutorialCallout,
-    onTutorialComplete: handleTutorialActionComplete,
+    acceleratorRuntimeSnapshot,
+    handleAcceleratorRuntimeChange,
+    handleAcceleratorRuntimeActionsChange,
+    handleOpenStepNode,
+    handleHideStepNode,
+    handlePreviousStep,
+    handleNextStep,
+    handleCompleteStep,
+  } = useWorkspaceCanvasAcceleratorRuntime({
+    activeStepId: boardState.accelerator.activeStepId,
+    onOpenAcceleratorStepNode,
+    onCloseAcceleratorStepNode,
   })
-  const cardDataLookup = Runtime.useWorkspaceCanvasSurfaceCardDataLookup({
-    boardState,
+  useEffect(() => {
+    if (!acceleratorCardVisible || !acceleratorStepNodeVisible) {
+      setAcceleratorStepNodePositionOverride(null)
+    }
+  }, [acceleratorCardVisible, acceleratorStepNodeVisible])
+  const acceleratorStepNodeData = useMemo<WorkspaceCanvasNode | null>(() => {
+    const node = buildAcceleratorStepNodeData({
+      acceleratorRuntimeSnapshot,
+      acceleratorStepNodePositionOverride,
+      acceleratorStepNodeVisible,
+      autoLayoutMode: boardState.autoLayoutMode,
+      allowEditing,
+      acceleratorWorkspaceNode,
+      isCanvasFullscreen: false,
+      presentationMode,
+      onPrevious: handlePreviousStep,
+      onNext: handleNextStep,
+      onComplete: handleCompleteStep,
+      onClose: handleHideStepNode,
+    })
+    return node as WorkspaceCanvasNode | null
+  }, [
+    acceleratorRuntimeSnapshot,
+    acceleratorStepNodePositionOverride,
+    acceleratorStepNodeVisible,
+    boardState.autoLayoutMode,
+    allowEditing,
+    acceleratorWorkspaceNode,
+    presentationMode,
+    handlePreviousStep,
+    handleNextStep,
+    handleCompleteStep,
+    handleHideStepNode,
+  ])
+  const cardDataLookup = useMemo(() => buildWorkspaceCanvasV2CardDataLookup({
     allowEditing,
     presentationMode,
+    acceleratorState: boardState.accelerator,
+    communications: boardState.communications,
+    tracker: boardState.tracker,
+    nodes: boardState.nodes,
     seed,
     organizationEditorData,
     onSizeChange,
     onCommunicationsChange,
     onTrackerChange,
     onAcceleratorStateChange,
-    onInitialOnboardingSubmit,
     vaultViewMode,
     onVaultViewModeChange: setVaultViewMode,
     acceleratorStepNodeVisible,
@@ -247,200 +213,161 @@ export function WorkspaceCanvasSurfaceV2({
     onHideAcceleratorStepNode: handleHideStepNode,
     onAcceleratorRuntimeChange: handleAcceleratorRuntimeChange,
     onAcceleratorRuntimeActionsChange: handleAcceleratorRuntimeActionsChange,
-    acceleratorRuntimeSnapshot,
-    acceleratorTutorialCallout,
-    acceleratorTutorialInteractionPolicy,
-    onAcceleratorTutorialActionComplete:
-      handleAcceleratorTutorialActionComplete,
     journeyGuideState,
     onFocusCard,
-    onOpenCard: handleOpenCard,
-    onCardMeasuredHeightChange: handleCardMeasuredHeightChange,
     organizationShortcutItems: shortcutItems,
-    organizationMapButtonCallout,
-    onOrganizationMapButtonTutorialComplete,
-    tutorialActive,
-    tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
-    ontologyRootControls: undefined,
-    ontologyActionRequest,
-  })
-  const {
-    tutorialNodeData: tutorialNodeWithPresentation,
-    tutorialSuppressedNodeIds,
-    tutorialDockTargets,
-    tutorialDraggableCardIds,
-    tutorialSceneNodeIds: resolvedTutorialSceneNodeIds,
-    tutorialSceneCameraViewport: resolvedTutorialSceneCameraViewport,
-  } = Runtime.useWorkspaceTutorialNodeState({
-    tutorialActive,
-    tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
-    tutorialSceneSignature,
-    openedStepIds: boardState.onboardingFlow.openedTutorialStepIds,
-    cardDataLookup,
-    tutorialNodeData,
-    tutorialBreakpoint: tutorialSceneBreakpoint,
-    tutorialSceneCardPositionOverrides,
-    tutorialScenePrimaryCardId,
-    tutorialSceneGuideGap,
-    tutorialSceneNodeIds,
-    tutorialSceneCameraViewport,
-    cardMeasuredHeights: tutorialCardMeasuredHeights,
-    tutorialShellMeasuredHeight,
-    tutorialPresentationMaskLayout,
-    acceleratorRuntimeSnapshot,
-    onTutorialShellMeasuredHeightChange:
-      handleCurrentTutorialShellMeasuredHeightChange,
-  })
-  const { resolvedTutorialCardPositionOverrides, setTutorialUndockedCardIds } =
-    Runtime.useWorkspaceTutorialDockingState({
-      tutorialActive,
-      tutorialSceneSignature,
-      tutorialCardPositionOverrides,
-      tutorialSceneCardPositionOverrides,
-      tutorialDockTargets,
-    })
-  const visibleCardIdSet = Runtime.useVisibleWorkspaceCanvasCardIdSet({
-    tutorialSuppressedNodeIds,
-    visibleCardIds,
-  })
-  const { onNodesChange, renderNodes, tutorialSceneFitRequest } =
-    Runtime.useWorkspaceCanvasRenderState({
-      visibleCardIds,
-      boardNodeLookup,
-      initialPositionLookupRef,
-      cardDataLookup,
-      allowEditing,
-      allowPeopleCanvasInteraction,
-      tutorialActive,
+  }), [
+    allowEditing,
+    boardState.accelerator,
+    boardState.communications,
+    boardState.nodes,
+    boardState.tracker,
+    acceleratorStepNodeVisible,
+    handleAcceleratorRuntimeActionsChange,
+    handleAcceleratorRuntimeChange,
+    handleHideStepNode,
+    handleOpenStepNode,
+    journeyGuideState,
+    onAcceleratorStateChange,
+    onCommunicationsChange,
+    onFocusCard,
+    onSizeChange,
+    onTrackerChange,
+    organizationEditorData,
+    presentationMode,
+    shortcutItems,
+    seed,
+    vaultViewMode,
+  ])
+
+  const initialNodes = useMemo<WorkspaceCanvasNode[]>(
+    () =>
+      buildInitialWorkspaceCanvasNodes({
+        visibleCardIds,
+        boardNodeLookup,
+        initialPositionLookupRef,
+        cardDataLookup,
+        allowEditing,
+        acceleratorStepNodeData,
+        tutorialNodeData,
+      }),
+    [
       acceleratorStepNodeData,
-      tutorialNodeData: tutorialNodeWithPresentation,
-      workspacePersonPlacements,
-      workspacePersonById,
-      onRemoveWorkspacePerson: handleRemoveWorkspacePersonPlacement,
-      tutorialSceneCardPositionOverrides: resolvedTutorialCardPositionOverrides,
-      tutorialDraggableCardIds,
-      orgNodePositionFromBoard,
-      tutorialSceneNodeIds: resolvedTutorialSceneNodeIds,
-      tutorialSceneSignature,
-      tutorialSceneCameraViewport: resolvedTutorialSceneCameraViewport,
-      tutorialSceneRequestSeed: tutorialRestartRequestKey,
-    })
-  Runtime.useWorkspaceCanvasPersonFitRequest({
+      allowEditing,
+      boardNodeLookup,
+      cardDataLookup,
+      tutorialNodeData,
+      visibleCardIds,
+    ],
+  )
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkspaceCanvasNodeData>(initialNodes)
+  const visibleNodeIds = useMemo(() => nodes.map((node) => node.id), [nodes])
+  const tutorialSceneFitRequest = useWorkspaceTutorialSceneFitRequest({
+    tutorialActive,
+    tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
+    visibleCardIds,
+    openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+    sceneFitPadding: tutorialSceneFitPadding,
+  })
+  const handleFlowInit = useCallback((instance: ReactFlowInstance) => {
+    flowInstanceRef.current = instance
+    setIsFlowReady(true)
+  }, [])
+  useWorkspaceCanvasCameraController({
     flowInstanceRef,
     isFlowReady,
-    renderNodes,
-    fitRequest: workspacePersonFitRequest,
-    onFitRequestHandled: clearWorkspacePersonFitRequest,
+    visibleNodeIds,
+    layoutFitRequestKey,
+    acceleratorFocusRequestKey,
+    focusCardRequest,
+    sceneFitRequest: tutorialSceneFitRequest,
+    layoutFitOptions: WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
+    sceneFitOptions: WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
+    acceleratorFocusOptions: WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
+    focusCardOptions: WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
   })
-  const handleNodeDragStop = Runtime.useWorkspaceCanvasNodeDragStop({
+  useEffect(() => {
+    setNodes((previous) =>
+      reconcileWorkspaceCanvasV2Nodes({
+        previous,
+        visibleCardIds,
+        boardNodeLookup,
+        cardDataLookup,
+        orgNodePositionFromBoard,
+        allowEditing,
+        acceleratorStepNodeData,
+        tutorialNodeData,
+      }),
+    )
+  }, [
     allowEditing,
+    boardNodeLookup,
+    cardDataLookup,
+    acceleratorStepNodeData,
+    orgNodePositionFromBoard,
+    setNodes,
     tutorialActive,
+    tutorialNodeData,
+    visibleCardIds,
+  ])
+  const {
+    edges,
+    edgeContextMenuState,
+    closeEdgeContextMenu,
+    handleConnect,
+    handleIsValidConnection,
+    handleEdgeDoubleClick,
+    handleEdgeContextMenu,
+    handleContextDisconnectEdge,
+    handleContextDisconnectFromSource,
+    handleContextDisconnectToTarget,
+    handleContextDisconnectAll,
+  } = useWorkspaceCanvasConnectionsController({
+    allowEditing,
+    connections: boardState.connections,
+    visibleCardIdSet,
+    presentationMode,
+    readinessMap,
+    acceleratorStepNodeVisible: Boolean(
+      acceleratorStepNodeData && acceleratorWorkspaceNodeId,
+    ),
+    autoLayoutMode: boardState.autoLayoutMode,
+    acceleratorWorkspaceNodeId,
+    tutorialEdgeTargetId,
+    onConnectCards,
+    onDisconnectConnection,
+    onDisconnectAllConnections,
+  })
+  useWorkspaceCanvasLifecycleLogs(nodes.length)
+  const handleNodeDragStop = useWorkspaceCanvasNodeDragStop({
+    allowEditing,
     boardNodeLookup,
     onPersistNodePosition,
     setAcceleratorStepNodePositionOverride,
-    setTutorialCardPositionOverrides,
-    setTutorialUndockedCardIds,
-    tutorialDockTargets,
     onTutorialNodeDragStop: handleTutorialNodeDragStop,
   })
-  const { handleCanvasNodeDragStop, handleCanvasSelectionDragStop } =
-    Runtime.useWorkspaceCanvasSurfaceDragHandlers({
-      handleNodeDragStop,
-      handleWorkspacePersonNodeDragStop,
-      handleWorkspacePersonNodesDragStop,
-    })
-  const ontologyInteractions = Runtime.useWorkspaceCanvasOntologyInteractions({
-    ontology,
-    tutorialActive,
-    renderNodes,
-    onNodesChange,
-    onNodeDragStop: handleCanvasNodeDragStop,
-    onSelectionDragStop: handleCanvasSelectionDragStop,
-    flowInstanceRef,
-    isFlowReady,
-  })
-  const flowState = Runtime.useWorkspaceCanvasSurfaceFlowState({
-    acceleratorFocusRequestKey,
-    acceleratorStepNodeActive: Boolean(
-      acceleratorStepNodeData && acceleratorWorkspaceNodeId
-    ),
-    acceleratorWorkspaceNodeId,
-    allowEditing,
-    autoLayoutMode: boardState.autoLayoutMode,
-    connections: boardState.connections,
-    flowInstanceRef,
-    focusCardRequest,
-    isFlowReady,
-    layoutFitRequestKey,
-    nodeRelationshipEdges: personRelationshipEdges,
-    ontologyEdges: WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED ? ontology.edges : [],
-    onConnectCards,
-    onDisconnectAllConnections,
-    onDisconnectConnection,
-    onTutorialCompletionExitHandled,
-    presentationMode,
-    readinessMap,
-    renderNodes: ontologyInteractions.nodes,
-    setIsFlowReady,
-    suppressInitialFit,
-    tutorialActive,
-    tutorialCompletionExitRequest,
-    tutorialEdgeTargetId,
-    tutorialSceneFitRequest,
-    visibleCardIdSet,
-    visibleNodeIds: ontologyInteractions.visibleNodeIds,
-  })
-  const viewProps = {
-    nodes: ontologyInteractions.nodes,
-    edges: flowState.renderEdges,
-    allowEditing,
-    peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction,
-    workspaceDataDrawerCanEdit,
-    nodesDraggable:
-      allowEditing || allowPeopleCanvasInteraction || tutorialActive,
-    tutorialActive,
-    layoutAnimating: tutorialLayoutAnimating || ontology.layoutAnimating,
-    presentationMode,
-    workspaceDataDrawerPeople,
-    placedWorkspacePersonIds,
-    workspaceDataDrawerViewerId: seed.viewerId,
-    workspaceDataDrawerOrganization: organizationEditorData,
-    workspaceDataDrawerFinance: financeInput,
-    workspaceDataDrawerDocuments: organizationEditorData.documentsTab,
-    ...acceleratorDrawer,
-    uiPreferencesScope,
-    edgeContextMenuState: flowState.edgeContextMenuState,
-    shortcutItems,
-    tutorialCalendarButtonCallout,
-    emptyStateMessage,
-    showTutorialRestart,
-    onNodesChange: ontologyInteractions.onNodesChange,
-    onNodeClick: ontologyInteractions.onNodeClick,
-    onNodeDoubleClick: flowState.handleNodeDoubleClick,
-    onKeyDownCapture: ontologyInteractions.onKeyDownCapture,
-    onNodeDragStop: ontologyInteractions.onNodeDragStop,
-    onSelectionDragStop: ontologyInteractions.onSelectionDragStop,
-    onMoveStart: ontologyInteractions.onMoveStart,
-    onMoveEnd: handleCanvasMoveEnd,
-    onConnect: flowState.handleConnect,
-    isValidConnection: flowState.handleIsValidConnection,
-    onEdgeDoubleClick: flowState.handleEdgeDoubleClick,
-    onEdgeContextMenu: flowState.handleEdgeContextMenu,
-    onError: Runtime.handleWorkspaceReactFlowError,
-    onInit: flowState.handleFlowInit,
-    onTutorialRestart,
-    onTutorialCalendarButtonComplete,
-    onRecenterView: flowState.handleRecenterView,
-    onZoomIn: flowState.handleZoomIn,
-    onZoomOut: flowState.handleZoomOut,
-    onWorkspacePersonDropToCanvas: handleWorkspacePersonDropToCanvas,
-    onAddWorkspacePeopleToCanvas: handleAddWorkspacePeopleToCanvas,
-    onRemoveWorkspacePersonFromCanvas: handleRemoveWorkspacePersonPlacement,
-    onCloseEdgeContextMenu: flowState.closeEdgeContextMenu,
-    onDisconnectEdge: flowState.handleContextDisconnectEdge,
-    onDisconnectFromSource: flowState.handleContextDisconnectFromSource,
-    onDisconnectToTarget: flowState.handleContextDisconnectToTarget,
-    onDisconnectAll: flowState.handleContextDisconnectAll,
-  }
-  return <WorkspaceCanvasSurfaceV2View {...viewProps} />
+  return (
+    <WorkspaceCanvasSurfaceV2View
+      nodes={nodes}
+      edges={edges}
+      allowEditing={allowEditing}
+      presentationMode={presentationMode}
+      edgeContextMenuState={edgeContextMenuState}
+      shortcutItems={shortcutItems}
+      emptyStateMessage={emptyStateMessage}
+      onNodesChange={onNodesChange}
+      onNodeDragStop={handleNodeDragStop}
+      onConnect={handleConnect}
+      isValidConnection={handleIsValidConnection}
+      onEdgeDoubleClick={handleEdgeDoubleClick}
+      onEdgeContextMenu={handleEdgeContextMenu}
+      onError={handleWorkspaceReactFlowError}
+      onInit={handleFlowInit}
+      onCloseEdgeContextMenu={closeEdgeContextMenu}
+      onDisconnectEdge={handleContextDisconnectEdge}
+      onDisconnectFromSource={handleContextDisconnectFromSource}
+      onDisconnectToTarget={handleContextDisconnectToTarget}
+      onDisconnectAll={handleContextDisconnectAll}
+    />
+  )
 }

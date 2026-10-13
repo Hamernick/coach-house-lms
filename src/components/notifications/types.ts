@@ -6,8 +6,6 @@ export type NotificationItem = {
   description: string
   time: string
   tone?: NotificationTone
-  unread: boolean
+  unread?: boolean
   href?: string | null
-  openLabel?: string
-  organizationAccessRequestId?: string | null
 }

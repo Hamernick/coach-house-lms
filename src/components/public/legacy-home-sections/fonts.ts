@@ -1,5 +1,22 @@
-export const legacyHomeHeadingFont = { className: "font-heading" } as const
+import { Inter, Sora, Space_Grotesk } from "next/font/google"
 
-export const legacyHomeInterFont = { className: "font-sans" } as const
+export const legacyHomeHeadingFont = Sora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-heading",
+})
 
-export const LEGACY_HOME_BODY_CLASSNAME = legacyHomeInterFont.className
+export const legacyHomeInterFont = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
+const body = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+})
+
+export const LEGACY_HOME_BODY_CLASSNAME = body.className

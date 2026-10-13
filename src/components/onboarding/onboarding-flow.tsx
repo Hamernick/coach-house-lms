@@ -1,22 +1,30 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react"
 import { useSearchParams } from "next/navigation"
-import { useOnboardingSubmission } from "./onboarding-dialog/hooks/use-onboarding-submission"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import { resolveOnboardingSteps } from "./onboarding-dialog/constants"
 import { OnboardingDialogContent } from "./onboarding-dialog/components"
-import { writeOnboardingDraftSnapshot } from "./onboarding-dialog/draft-writer"
-import type { SaveOnboardingDraftExtra } from "./onboarding-dialog/draft-writer"
-import { resolveOnboardingPricingPlanOverride } from "./onboarding-dialog/helpers"
+import { clearOnboardingDraft } from "./onboarding-dialog/draft"
+import {
+  type SaveOnboardingDraftExtra,
+  writeOnboardingDraftSnapshot,
+} from "./onboarding-dialog/draft-writer"
+import {
+  resolveOnboardingError,
+  resolveOnboardingPricingEntryStepId,
+  resolveOnboardingPricingPlanOverride,
+} from "./onboarding-dialog/helpers"
 import { useOnboardingAvatar } from "./onboarding-dialog/hooks/use-onboarding-avatar"
-import { useAutoSubmitPaidPricingReturn } from "./onboarding-dialog/hooks/use-auto-submit-paid-pricing-return"
 import { useOnboardingDefaults } from "./onboarding-dialog/hooks/use-onboarding-defaults"
 import { useOnboardingCarryForwardRefs } from "./onboarding-dialog/hooks/use-onboarding-carry-forward-refs"
 import { useOnboardingDraftState } from "./onboarding-dialog/hooks/use-onboarding-draft-state"
 import { useOnboardingFieldHandlers } from "./onboarding-dialog/hooks/use-onboarding-field-handlers"
 import {
+  buildInitialAccountValues,
+  clearResolvedAccountStepErrors,
   useOnboardingAccountStateSync,
   useOnboardingStateSnapshot,
   useOnboardingStepFocus,
@@ -24,39 +32,68 @@ import {
 import { useOnboardingProgress } from "./onboarding-dialog/hooks/use-onboarding-progress"
 import { useSlugAvailability } from "./onboarding-dialog/hooks/use-slug-availability"
 import {
-  buildAccountValuesFromDefaults,
-  useEffectiveOnboardingStepIds,
-  useOnboardingAccountSetupState,
-  useResolvedOnboardingSteps,
-} from "./onboarding-dialog/hooks/use-onboarding-flow-derived-state"
+  isOnboardingAccountStepReady,
+  syncOnboardingCarryForwardInputs,
+  validateOnboardingStep,
+} from "./onboarding-dialog/state-helpers"
 import type {
   FormationStatus,
   IntentFocus,
-  OnboardingFlowMode,
   OnboardingFlowDefaults,
-  OnboardingFlowVisibleStepId,
   RoleInterest,
 } from "./onboarding-dialog/types"
-import {
-  buildOnboardingFormHandlers,
-  buildOnboardingStepControls,
-  useApplyPricingEntryPoint,
-  useSyncOnboardingServerError,
-} from "./onboarding-flow-support"
 
 type OnboardingFlowProps = OnboardingFlowDefaults & {
   open?: boolean
   isInline: boolean
   onSubmit: (form: FormData) => Promise<void>
-  mode?: OnboardingFlowMode
-  visibleStepIds?: OnboardingFlowVisibleStepId[]
+}
+
+function useApplyPricingEntryPoint({
+  open,
+  searchParams,
+  setIntentFocus,
+  setStep,
+}: {
+  open: boolean
+  searchParams: ReturnType<typeof useSearchParams>
+  setIntentFocus: Dispatch<SetStateAction<IntentFocus | "">>
+  setStep: Dispatch<SetStateAction<number>>
+}) {
+  const pricingEntryAppliedRef = useRef(false)
+  useEffect(() => {
+    if (!open) return
+    if (pricingEntryAppliedRef.current) return
+    const entryStepId = resolveOnboardingPricingEntryStepId(searchParams)
+    if (!entryStepId) return
+    pricingEntryAppliedRef.current = true
+    setIntentFocus("build")
+    const pricingStepIndex = resolveOnboardingSteps("build").findIndex(
+      (candidate) => candidate.id === entryStepId,
+    )
+    setStep(pricingStepIndex >= 0 ? pricingStepIndex : 0)
+  }, [open, searchParams, setIntentFocus, setStep])
+}
+
+function useSyncOnboardingServerError({
+  open,
+  searchParams,
+  setServerError,
+}: {
+  open: boolean
+  searchParams: ReturnType<typeof useSearchParams>
+  setServerError: Dispatch<SetStateAction<string | null>>
+}) {
+  useEffect(() => {
+    if (!open) return
+    const msg = resolveOnboardingError(searchParams.get("error"))
+    setServerError(msg)
+  }, [open, searchParams, setServerError])
 }
 
 export function OnboardingFlow({
   open = true,
   isInline,
-  mode = "full",
-  draftScope: accountDraftScope,
   defaultEmail,
   defaultOrgName,
   defaultOrgSlug,
@@ -65,7 +102,6 @@ export function OnboardingFlow({
   defaultRoleInterest,
   defaultFirstName,
   defaultLastName,
-  defaultPersonHandle,
   defaultPhone,
   defaultPublicEmail,
   defaultTitle,
@@ -75,30 +111,7 @@ export function OnboardingFlow({
   defaultNewsletterOptIn,
   defaultBuilderPlanTier = "free",
   onSubmit,
-  visibleStepIds,
 }: OnboardingFlowProps) {
-  const draftScope = accountDraftScope ? `${accountDraftScope}:${mode}` : null
-  const effectiveVisibleStepIds = useEffectiveOnboardingStepIds(mode, visibleStepIds)
-  const intentFocusOverride: IntentFocus | null =
-    mode === "workspace_setup" || mode === "post_signup_access" ? "build" : null
-  const onboardingDefaults = useOnboardingDefaults({
-    defaultEmail,
-    defaultOrgName,
-    defaultOrgSlug,
-    defaultFormationStatus,
-    defaultIntentFocus,
-    defaultRoleInterest,
-    defaultFirstName,
-    defaultLastName,
-    defaultPersonHandle,
-    defaultPhone,
-    defaultPublicEmail,
-    defaultTitle,
-    defaultLinkedin,
-    defaultAvatarUrl,
-    defaultOptInUpdates,
-    defaultNewsletterOptIn,
-  })
   const {
     initialOrgName,
     initialOrgSlug,
@@ -107,7 +120,6 @@ export function OnboardingFlow({
     initialRoleInterest,
     initialFirstName,
     initialLastName,
-    initialPersonHandle,
     initialPhone,
     initialPublicEmail,
     initialTitle,
@@ -116,70 +128,66 @@ export function OnboardingFlow({
     initialOptInUpdates,
     initialNewsletterOptIn,
     resolveDraftFieldValue,
-  } = onboardingDefaults
+  } = useOnboardingDefaults({
+    defaultEmail,
+    defaultOrgName,
+    defaultOrgSlug,
+    defaultFormationStatus,
+    defaultIntentFocus,
+    defaultRoleInterest,
+    defaultFirstName,
+    defaultLastName,
+    defaultPhone,
+    defaultPublicEmail,
+    defaultTitle,
+    defaultLinkedin,
+    defaultAvatarUrl,
+    defaultOptInUpdates,
+    defaultNewsletterOptIn,
+  })
   const searchParams = useSearchParams()
-  const checkoutPlanOverride =
-    resolveOnboardingPricingPlanOverride(searchParams)
+  const checkoutPlanOverride = resolveOnboardingPricingPlanOverride(searchParams)
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
-  const [slugEdited, setSlugEdited] = useState(Boolean(initialOrgSlug))
+  const [slugEdited, setSlugEdited] = useState(false)
   const [orgNameValue, setOrgNameValue] = useState(initialOrgName)
   const [orgSlugInputValue, setOrgSlugInputValue] = useState(initialOrgSlug)
   const [slugValue, setSlugValue] = useState(initialOrgSlug)
-  const [formationStatus, setFormationStatus] = useState<FormationStatus | "">(
-    initialFormationStatus
-  )
-  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(
-    intentFocusOverride ?? initialIntentFocus
-  )
-  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(
-    initialRoleInterest
-  )
+  const [formationStatus, setFormationStatus] = useState<FormationStatus | "">(initialFormationStatus)
+  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(initialIntentFocus)
+  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(initialRoleInterest)
   const builderPlanTier: PricingPlanTier =
     checkoutPlanOverride ?? defaultBuilderPlanTier ?? "free"
   const [submitting, setSubmitting] = useState(false)
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null)
-  const {
-    accountValues,
-    setAccountValues,
-    setAccountStepReady,
-    accountStepReady,
-    personHandleStatus,
-    personHandleHint,
-  } = useOnboardingAccountSetupState({
-    open,
-    initialPersonHandle,
-    initialValues: buildAccountValuesFromDefaults(onboardingDefaults),
-  })
-  const latestOrganizationValuesRef = useRef({
-    orgName: initialOrgName,
-    orgSlug: initialOrgSlug,
-  })
+  const [accountStepReady, setAccountStepReady] = useState(() =>
+    isOnboardingAccountStepReady({ firstName: initialFirstName, lastName: initialLastName }),
+  )
+  const [accountValues, setAccountValues] = useState(() =>
+    buildInitialAccountValues({
+      firstName: initialFirstName, lastName: initialLastName, phone: initialPhone,
+      publicEmail: initialPublicEmail, title: initialTitle, linkedin: initialLinkedin,
+      optInUpdates: initialOptInUpdates, newsletterOptIn: initialNewsletterOptIn,
+    }),
+  )
+  const latestOrganizationValuesRef = useRef({ orgName: initialOrgName, orgSlug: initialOrgSlug })
   const latestAccountValuesRef = useRef(accountValues)
   const formRef = useRef<HTMLFormElement | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
-  const { steps, currentStep, stepProgress } = useResolvedOnboardingSteps({
-    intentFocus,
-    visibleStepIds: effectiveVisibleStepIds,
-    step,
-  })
+  const steps = React.useMemo(() => resolveOnboardingSteps(intentFocus), [intentFocus])
+  const currentStep = steps[Math.max(0, Math.min(step, steps.length - 1))]
   const { slugStatus, slugHint } = useSlugAvailability({ open, slugValue })
-  const { syncProgress } = useOnboardingProgress({
-    open,
-    formRef,
-    intentFocus,
-    formationStatus,
-    slugStatus,
-  })
+  const { syncProgress } = useOnboardingProgress({ open, formRef, intentFocus, formationStatus, slugStatus })
+  const stepProgress = React.useMemo(() => Math.round(((step + 1) / Math.max(steps.length, 1)) * 100), [step, steps.length])
   const saveDraft = (extra?: SaveOnboardingDraftExtra) => {
-    if (!draftScope) return
     writeOnboardingDraftSnapshot({
-      draftScope,
       formRef,
       step,
-      steps,
-      formationStatus, intentFocus, roleInterest, slugEdited,
+      formationStatus,
+      intentFocus,
+      roleInterest,
+      slugEdited,
       avatar: avatarPreview,
       extra,
     })
@@ -222,15 +230,12 @@ export function OnboardingFlow({
     formRef,
     saveDraft,
   })
+
   useOnboardingDraftState({
-    draftScope,
-    // Saved organization details take precedence when revisiting setup.
-    open: open && Boolean(draftScope),
+    open,
     step,
     formRef,
     resolveDraftFieldValue,
-    visibleStepIds: effectiveVisibleStepIds,
-    intentFocusOverride,
     setStep,
     setFormationStatus,
     setIntentFocus,
@@ -245,82 +250,125 @@ export function OnboardingFlow({
     syncProgress,
   })
   useSyncOnboardingServerError({ open, searchParams, setServerError })
-  useApplyPricingEntryPoint({
-    open,
-    searchParams,
-    mode,
-    setIntentFocus,
-    setStep,
-    visibleStepIds: effectiveVisibleStepIds,
-  })
-  useAutoSubmitPaidPricingReturn({
-    open,
-    submitting,
-    currentStepId: currentStep.id,
-    searchParams,
-    mode,
-    builderPlanTier,
-    formRef,
-  })
+  useApplyPricingEntryPoint({ open, searchParams, setIntentFocus, setStep })
+
   useEffect(() => {
     setAttemptedStep(null)
     setErrors({})
   }, [step])
+
   useEffect(() => {
     if (step <= steps.length - 1) return
     setStep(steps.length - 1)
   }, [step, steps.length])
+
   useOnboardingStepFocus({
     open,
     currentStepId: currentStep.id,
     formRef,
   })
+
   useOnboardingAccountStateSync({
     open,
     step,
     formRef,
     syncAccountStateFromForm,
   })
-  const { validateStep, next, prev } = buildOnboardingStepControls({
-    formRef,
-    step,
-    steps,
-    currentStepId: currentStep.id,
-    formationStatus,
-    intentFocus,
-    slugStatus,
-    slugHint,
-    personHandleStatus,
-    personHandleHint,
-    builderPlanTier,
-    syncOrganizationStateFromForm,
-    syncAccountStateFromForm,
-    saveDraft,
-    setServerError,
-    setErrors,
-    setAttemptedStep,
-    setStep,
-  })
-  const { handleFormChange, handleFormSubmit } = buildOnboardingFormHandlers({
-    step,
-    steps,
-    attemptedStep,
-    formRef,
-    syncOrganizationStateFromForm,
-    syncAccountStateFromForm,
-    saveDraft,
-    syncProgress,
-    setErrors,
-    setAttemptedStep,
-    validateStep,
-    next,
-    setSubmitting,
-    intentFocus,
-    roleInterest,
-    formationStatus,
-    organizationValuesRef: latestOrganizationValuesRef,
-    accountValuesRef: latestAccountValuesRef,
-  })
+
+  const validateStep = (idx: number) => {
+    if (!formRef.current) return false
+    setAttemptedStep(idx)
+    const form = new FormData(formRef.current)
+    const nextErrors = validateOnboardingStep({
+      stepIndex: idx,
+      form,
+      formationStatus,
+      intentFocus,
+      slugStatus,
+      slugHint,
+      builderPlanTier,
+    })
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  const next = () => {
+    setServerError(null)
+    syncOrganizationStateFromForm()
+    syncAccountStateFromForm()
+    if (!validateStep(step)) return
+    setErrors({})
+    setAttemptedStep(null)
+    setStep((prev) => {
+      const value = Math.min(prev + 1, steps.length - 1)
+      saveDraft({ step: value })
+      return value
+    })
+  }
+
+  const prev = () => {
+    setServerError(null)
+    setErrors({})
+    setAttemptedStep(null)
+    setStep((prev) => {
+      const value = Math.max(prev - 1, 0)
+      saveDraft({ step: value })
+      return value
+    })
+  }
+
+  const handleFormChange = () => {
+    syncOrganizationStateFromForm()
+    saveDraft()
+    syncProgress()
+    syncAccountStateFromForm()
+
+    if (steps[step]?.id === "account" && attemptedStep === step && formRef.current) {
+      const data = new FormData(formRef.current)
+      const firstName = String(data.get("firstName") ?? "").trim()
+      const lastName = String(data.get("lastName") ?? "").trim()
+
+      setErrors((previous) =>
+        clearResolvedAccountStepErrors({
+          previousErrors: previous,
+          firstName,
+          lastName,
+        }),
+      )
+
+      if (firstName && lastName) {
+        setAttemptedStep(null)
+      }
+    }
+  }
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (step !== steps.length - 1) {
+      event.preventDefault()
+      next()
+      return
+    }
+    syncOrganizationStateFromForm()
+    syncAccountStateFromForm()
+    syncOnboardingCarryForwardInputs({
+      form: formRef.current,
+      intentFocus,
+      roleInterest,
+      formationStatus,
+      organizationValues: latestOrganizationValuesRef.current,
+      accountValues: latestAccountValuesRef.current,
+    })
+    if (!validateStep(step)) {
+      event.preventDefault()
+      return
+    }
+
+    setSubmitting(true)
+    saveDraft({ step })
+    clearOnboardingDraft()
+  }
+
   const {
     handleFormationStatusSelect,
     handleIntentSelect,
@@ -339,7 +387,6 @@ export function OnboardingFlow({
     setSlugEdited,
     setSlugValue,
   })
-  const submitAction = useOnboardingSubmission({ onSubmit, draftScope, setSubmitting, setServerError })
 
   return (
     <OnboardingDialogContent
@@ -361,15 +408,12 @@ export function OnboardingFlow({
       orgNameValue={orgNameValue}
       orgSlugInputValue={orgSlugInputValue}
       slugValue={slugValue}
-      initialOrgName={orgNameValue}
-      initialOrgSlug={orgSlugInputValue}
+      initialOrgName={initialOrgName}
+      initialOrgSlug={initialOrgSlug}
       slugStatus={slugStatus}
       slugHint={slugHint}
-      personHandleStatus={personHandleStatus}
-      personHandleHint={personHandleHint}
       initialFirstName={initialFirstName}
       initialLastName={initialLastName}
-      initialPersonHandle={initialPersonHandle}
       initialPhone={initialPhone}
       initialPublicEmail={initialPublicEmail}
       initialTitle={initialTitle}
@@ -386,7 +430,6 @@ export function OnboardingFlow({
       zoom={zoom}
       onFormChange={handleFormChange}
       onFormSubmit={handleFormSubmit}
-      onboardingMode={mode}
       onPrev={prev}
       onNext={next}
       onSelectIntent={handleIntentSelect}
@@ -400,7 +443,7 @@ export function OnboardingFlow({
       onZoomChange={setZoom}
       onCropComplete={setCroppedArea}
       onApplyCrop={handleApplyCrop}
-      onSubmitAction={submitAction}
+      onSubmitAction={onSubmit}
     />
   )
 }

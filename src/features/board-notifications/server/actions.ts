@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto"
+
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { createNotification } from "@/lib/notifications"
@@ -55,17 +57,10 @@ function resolveCronSecret() {
 }
 
 function safeCompareSecret(input: string, expected: string) {
-  const encoder = new TextEncoder()
-  const left = encoder.encode(input)
-  const right = encoder.encode(expected)
+  const left = Buffer.from(input)
+  const right = Buffer.from(expected)
   if (left.length !== right.length) return false
-
-  let diff = 0
-  for (let index = 0; index < left.length; index += 1) {
-    diff |= left[index]! ^ right[index]!
-  }
-
-  return diff === 0
+  return timingSafeEqual(left, right)
 }
 
 function resolveRequestSecret(request: Request) {

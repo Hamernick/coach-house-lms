@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { cache } from "react"
 import { cookies } from "next/headers"
 
 import { env } from "@/lib/env"
@@ -19,7 +18,7 @@ function isReadOnlyCookiesError(error: unknown) {
   )
 }
 
-async function createSupabaseServerClientInternal(): Promise<
+export async function createSupabaseServerClient(): Promise<
   SupabaseClient<Database, "public">
 > {
   const cookieStore = (await cookies()) as unknown as NextCookieStore
@@ -50,5 +49,3 @@ async function createSupabaseServerClientInternal(): Promise<
     }
   )
 }
-
-export const createSupabaseServerClient = cache(createSupabaseServerClientInternal)

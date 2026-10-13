@@ -1,9 +1,4 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
-import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
-import {
-  resolveOrganizationNarrativeRevisions,
-  resolveOrganizationCoreDocuments,
-} from "@/lib/roadmap"
 import type {
   BrandTypographyConfig,
   BrandTypographyTracking,
@@ -52,13 +47,7 @@ export function parseMonthParam(value: string) {
   if (!match) return null
   const year = Number(match[1])
   const month = Number(match[2])
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    month < 1 ||
-    month > 12
-  )
-    return null
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return null
   const date = new Date(year, month - 1, 1)
   if (date.getFullYear() !== year || date.getMonth() !== month - 1) return null
   return date
@@ -70,7 +59,7 @@ function formatMonthParam(date: Date) {
 
 export function withMonthParam(
   params: MyOrganizationSearchParams | undefined,
-  monthDate: Date
+  monthDate: Date,
 ) {
   const query = new URLSearchParams()
   for (const [key, value] of Object.entries(params ?? {})) {
@@ -91,18 +80,14 @@ export function withMonthParam(
   return `/organization?${query.toString()}`
 }
 
-export function resolveFormationStepState(
-  status: ModuleCardStatus
-): FormationStepState {
+export function resolveFormationStepState(status: ModuleCardStatus): FormationStepState {
   if (status === "completed") return "completed"
   if (status === "in_progress") return "active"
   return "pending"
 }
 
 function isFormationStatus(value: unknown): value is FormationStatus {
-  return (
-    value === "pre_501c3" || value === "in_progress" || value === "approved"
-  )
+  return value === "pre_501c3" || value === "in_progress" || value === "approved"
 }
 
 function isTrackingValue(value: unknown): value is BrandTypographyTracking {
@@ -122,27 +107,15 @@ function readTypographyConfig(value: unknown): BrandTypographyConfig | null {
   const code = value["code"]
   if (!isRecord(headings) || !isRecord(body) || !isRecord(code)) return null
 
-  const headingsFamily =
-    typeof headings["family"] === "string" ? headings["family"] : ""
-  const headingsWeight =
-    typeof headings["weight"] === "string" ? headings["weight"] : ""
-  const headingsTracking = isTrackingValue(headings["tracking"])
-    ? headings["tracking"]
-    : "normal"
+  const headingsFamily = typeof headings["family"] === "string" ? headings["family"] : ""
+  const headingsWeight = typeof headings["weight"] === "string" ? headings["weight"] : ""
+  const headingsTracking = isTrackingValue(headings["tracking"]) ? headings["tracking"] : "normal"
   const bodyFamily = typeof body["family"] === "string" ? body["family"] : ""
   const bodyWeight = typeof body["weight"] === "string" ? body["weight"] : ""
-  const bodyTracking = isTrackingValue(body["tracking"])
-    ? body["tracking"]
-    : "normal"
+  const bodyTracking = isTrackingValue(body["tracking"]) ? body["tracking"] : "normal"
   const codeFamily = typeof code["family"] === "string" ? code["family"] : ""
 
-  if (
-    !headingsFamily ||
-    !headingsWeight ||
-    !bodyFamily ||
-    !bodyWeight ||
-    !codeFamily
-  ) {
+  if (!headingsFamily || !headingsWeight || !bodyFamily || !bodyWeight || !codeFamily) {
     return null
   }
 
@@ -174,14 +147,6 @@ export function buildInitialOrganizationProfile({
   const formationStatus: FormationStatus = isFormationStatus(formationStatusRaw)
     ? formationStatusRaw
     : "in_progress"
-  const normalizedLocation = normalizeOrganizationLocationFields({
-    street: profile["address_street"],
-    city: profile["address_city"],
-    state: profile["address_state"],
-    postal: profile["address_postal"],
-    country: profile["address_country"],
-  })
-  const coreDocuments = resolveOrganizationCoreDocuments(profile)
 
   return {
     name: String(profile["name"] ?? ""),
@@ -193,19 +158,16 @@ export function buildInitialOrganizationProfile({
     email: String(profile["email"] ?? ""),
     phone: String(profile["phone"] ?? ""),
     address: String(profile["address"] ?? ""),
-    addressStreet: normalizedLocation.street,
-    addressCity: normalizedLocation.city,
-    addressState: normalizedLocation.state,
-    addressPostal: normalizedLocation.postal,
-    addressCountry: normalizedLocation.country,
+    addressStreet: String(profile["address_street"] ?? ""),
+    addressCity: String(profile["address_city"] ?? ""),
+    addressState: String(profile["address_state"] ?? ""),
+    addressPostal: String(profile["address_postal"] ?? ""),
+    addressCountry: String(profile["address_country"] ?? ""),
     locationType:
-      profile["location_type"] === "online" ||
-      profile["locationType"] === "online"
+      profile["location_type"] === "online" || profile["locationType"] === "online"
         ? "online"
         : "in_person",
-    locationUrl: String(
-      profile["location_url"] ?? profile["locationUrl"] ?? ""
-    ),
+    locationUrl: String(profile["location_url"] ?? profile["locationUrl"] ?? ""),
     logoUrl: String(profile["logoUrl"] ?? ""),
     brandMarkUrl: String(profile["brandMarkUrl"] ?? ""),
     headerUrl: String(profile["headerUrl"] ?? ""),
@@ -218,21 +180,13 @@ export function buildInitialOrganizationProfile({
     tiktok: String(profile["tiktok"] ?? ""),
     newsletter: String(profile["newsletter"] ?? ""),
     github: String(profile["github"] ?? ""),
-    vision: coreDocuments.vision,
-    mission: coreDocuments.mission,
-    need: coreDocuments.need,
-    values: coreDocuments.values,
-    originStory: coreDocuments.originStory,
-    theoryOfChange: coreDocuments.theoryOfChange,
+    vision: String(profile["vision"] ?? ""),
+    mission: String(profile["mission"] ?? ""),
+    need: String(profile["need"] ?? ""),
+    values: String(profile["values"] ?? ""),
     programs: String(profile["programs"] ?? ""),
     reports: String(profile["reports"] ?? ""),
     boilerplate: String(profile["boilerplate"] ?? ""),
-    brandVoiceAudience: String(profile["brandVoiceAudience"] ?? ""),
-    brandVoiceTone: String(profile["brandVoiceTone"] ?? ""),
-    brandVoiceStyle: String(profile["brandVoiceStyle"] ?? ""),
-    brandVoicePersonality: String(profile["brandVoicePersonality"] ?? ""),
-    brandVoiceGuidelines: String(profile["brandVoiceGuidelines"] ?? ""),
-    brandVoiceAvoid: String(profile["brandVoiceAvoid"] ?? ""),
     brandPrimary: String(profile["brandPrimary"] ?? ""),
     brandColors: Array.isArray(profile["brandColors"])
       ? (profile["brandColors"] as unknown[]).map((color) => String(color))
@@ -243,6 +197,5 @@ export function buildInitialOrganizationProfile({
     brandTypography: readTypographyConfig(profile["brandTypography"]),
     publicSlug: String(organization?.public_slug ?? ""),
     isPublic: Boolean(organization?.is_public ?? false),
-    narrativeRevisions: resolveOrganizationNarrativeRevisions(profile),
   }
 }

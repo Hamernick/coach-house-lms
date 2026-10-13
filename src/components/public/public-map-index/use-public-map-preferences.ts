@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 
 import {
-  COLLECTED_RESOURCES_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
   RECENT_ORGANIZATIONS_STORAGE_KEY,
-  SAVED_GUIDES_STORAGE_KEY,
   SAVED_QUERIES_STORAGE_KEY,
   type PreferenceMode,
 } from "./constants"
@@ -18,7 +16,6 @@ import {
   stringArraysEqual,
   type PublicMapPreferences,
 } from "./helpers"
-import { normalizePublicMapResourceGuideIds } from "@/lib/public-map/resource-guide-ids"
 
 type PublicMapViewer = { id: string; email: string | null } | null
 
@@ -34,19 +31,11 @@ export function usePublicMapPreferences({
   initialViewer = null,
 }: UsePublicMapPreferencesOptions = {}) {
   const [favorites, setFavorites] = useState<string[]>([])
-  const [collectedResourceIds, setCollectedResourceIds] = useState<string[]>([])
   const [savedQueries, setSavedQueries] = useState<string[]>([])
-  const [savedGuideIds, setSavedGuideIds] = useState(
-    normalizePublicMapResourceGuideIds([])
-  )
-  const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>(
-    []
-  )
-  const [preferenceMode, setPreferenceMode] =
-    useState<PreferenceMode>("unknown")
-  const [preferencesSaveError, setPreferencesSaveError] = useState<
-    string | null
-  >(null)
+  const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>([])
+  const [preferenceMode, setPreferenceMode] = useState<PreferenceMode>("unknown")
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
+  const [preferencesSaveError, setPreferencesSaveError] = useState<string | null>(null)
   const [viewer, setViewer] = useState<PublicMapViewer>(initialViewer)
 
   const shouldSkipRemoteSyncRef = useRef(true)
@@ -55,22 +44,13 @@ export function usePublicMapPreferences({
   useEffect(() => {
     if (typeof window === "undefined") return
     const localFavorites = readStoredArray(FAVORITES_STORAGE_KEY, 120)
-    const localCollectedResourceIds = readStoredArray(
-      COLLECTED_RESOURCES_STORAGE_KEY,
-      120
-    )
     const localSavedQueries = readStoredArray(SAVED_QUERIES_STORAGE_KEY, 40)
-    const localSavedGuideIds = normalizePublicMapResourceGuideIds(
-      readStoredArray(SAVED_GUIDES_STORAGE_KEY, 40)
-    )
     const localRecentOrganizationIds = readStoredArray(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
-      40
+      40,
     )
     setFavorites(localFavorites)
-    setCollectedResourceIds(localCollectedResourceIds)
     setSavedQueries(localSavedQueries)
-    setSavedGuideIds(localSavedGuideIds)
     setRecentOrganizationIds(localRecentOrganizationIds)
     setPreferenceMode("guest")
     setViewer(initialViewer)
@@ -102,68 +82,32 @@ export function usePublicMapPreferences({
         }
 
         const payload = (await response.json().catch(() => ({}))) as unknown
-        const preferences =
-          isRecord(payload) && isRecord(payload.preferences)
-            ? payload.preferences
-            : {}
+        const preferences = isRecord(payload) && isRecord(payload.preferences) ? payload.preferences : {}
         const nextFavorites = normalizeStringArray(preferences.favorites, 120)
-        const nextCollectedResourceIds = normalizeStringArray(
-          preferences.collectedResourceIds,
-          120
-        )
-        const nextSavedQueries = normalizeStringArray(
-          preferences.savedQueries,
-          40
-        )
-        const nextSavedGuideIds = normalizePublicMapResourceGuideIds(
-          preferences.savedGuideIds
-        )
+        const nextSavedQueries = normalizeStringArray(preferences.savedQueries, 40)
         const nextRecentOrganizationIds = normalizeStringArray(
           preferences.recentOrganizationIds,
-          40
+          40,
         )
-        const mergedFavorites = mergeUniqueStrings(
-          nextFavorites,
-          localFavorites,
-          120
-        )
-        const mergedCollectedResourceIds = mergeUniqueStrings(
-          nextCollectedResourceIds,
-          localCollectedResourceIds,
-          120
-        )
-        const mergedSavedQueries = mergeUniqueStrings(
-          nextSavedQueries,
-          localSavedQueries,
-          40
-        )
-        const mergedSavedGuideIds = normalizePublicMapResourceGuideIds(
-          mergeUniqueStrings(nextSavedGuideIds, localSavedGuideIds, 40)
-        )
+        const mergedFavorites = mergeUniqueStrings(nextFavorites, localFavorites, 120)
+        const mergedSavedQueries = mergeUniqueStrings(nextSavedQueries, localSavedQueries, 40)
         const mergedRecentOrganizationIds = mergeUniqueStrings(
           nextRecentOrganizationIds,
           localRecentOrganizationIds,
-          40
+          40,
         )
         const shouldSyncMergedPreferences =
           !stringArraysEqual(mergedFavorites, nextFavorites) ||
-          !stringArraysEqual(
-            mergedCollectedResourceIds,
-            nextCollectedResourceIds
-          ) ||
           !stringArraysEqual(mergedSavedQueries, nextSavedQueries) ||
-          !stringArraysEqual(mergedSavedGuideIds, nextSavedGuideIds) ||
           !stringArraysEqual(
             mergedRecentOrganizationIds,
-            nextRecentOrganizationIds
+            nextRecentOrganizationIds,
           )
 
         if (!cancelled) {
           shouldSkipRemoteSyncRef.current = !shouldSyncMergedPreferences
           setFavorites(mergedFavorites)
-          setCollectedResourceIds(mergedCollectedResourceIds)
           setSavedQueries(mergedSavedQueries)
-          setSavedGuideIds(mergedSavedGuideIds)
           setRecentOrganizationIds(mergedRecentOrganizationIds)
           setPreferenceMode("authenticated")
           setPreferencesSaveError(null)
@@ -171,13 +115,15 @@ export function usePublicMapPreferences({
             isRecord(payload) && isRecord(payload.user)
               ? {
                   id:
-                    typeof payload.user.id === "string" ? payload.user.id : "",
+                    typeof payload.user.id === "string"
+                      ? payload.user.id
+                      : "",
                   email:
                     typeof payload.user.email === "string"
                       ? payload.user.email
                       : null,
                 }
-              : null
+              : null,
           )
         }
       } catch (error) {
@@ -195,41 +141,14 @@ export function usePublicMapPreferences({
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    if (preferenceMode === "unknown" || preferenceMode === "authenticated") {
-      return
-    }
-    window.localStorage.setItem(
-      FAVORITES_STORAGE_KEY,
-      JSON.stringify(favorites)
-    )
-    window.localStorage.setItem(
-      SAVED_QUERIES_STORAGE_KEY,
-      JSON.stringify(savedQueries)
-    )
-    window.localStorage.setItem(
-      SAVED_GUIDES_STORAGE_KEY,
-      JSON.stringify(savedGuideIds)
-    )
+    if (preferenceMode === "authenticated") return
+    window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites))
+    window.localStorage.setItem(SAVED_QUERIES_STORAGE_KEY, JSON.stringify(savedQueries))
     window.localStorage.setItem(
       RECENT_ORGANIZATIONS_STORAGE_KEY,
-      JSON.stringify(recentOrganizationIds)
+      JSON.stringify(recentOrganizationIds),
     )
-  }, [
-    favorites,
-    preferenceMode,
-    recentOrganizationIds,
-    savedGuideIds,
-    savedQueries,
-  ])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (preferenceMode === "unknown") return
-    window.localStorage.setItem(
-      COLLECTED_RESOURCES_STORAGE_KEY,
-      JSON.stringify(collectedResourceIds)
-    )
-  }, [collectedResourceIds, preferenceMode])
+  }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
 
   useEffect(() => {
     if (preferenceMode !== "authenticated") return
@@ -246,6 +165,7 @@ export function usePublicMapPreferences({
     saveTimerRef.current = setTimeout(() => {
       void (async () => {
         try {
+          setIsSavingPreferences(true)
           setPreferencesSaveError(null)
           const response = await fetch("/api/account/map-preferences", {
             method: "PATCH",
@@ -253,22 +173,20 @@ export function usePublicMapPreferences({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              collectedResourceIds,
               favorites,
-              savedGuideIds,
               savedQueries,
               recentOrganizationIds,
             } satisfies PublicMapPreferences),
           })
 
           if (!response.ok) {
-            throw new Error(
-              `Unable to save map preferences (${response.status})`
-            )
+            throw new Error(`Unable to save map preferences (${response.status})`)
           }
         } catch (error) {
           console.error("Map preferences save failed:", error)
           setPreferencesSaveError("Could not sync preferences.")
+        } finally {
+          setIsSavingPreferences(false)
         }
       })()
     }, 320)
@@ -278,27 +196,17 @@ export function usePublicMapPreferences({
         clearTimeout(saveTimerRef.current)
       }
     }
-  }, [
-    collectedResourceIds,
-    favorites,
-    preferenceMode,
-    recentOrganizationIds,
-    savedGuideIds,
-    savedQueries,
-  ])
+  }, [favorites, preferenceMode, recentOrganizationIds, savedQueries])
 
   return {
-    collectedResourceIds,
     favorites,
-    savedGuideIds,
     savedQueries,
     recentOrganizationIds,
     preferenceMode,
+    isSavingPreferences,
     preferencesSaveError,
     viewer,
     setFavorites,
-    setSavedGuideIds,
-    setCollectedResourceIds,
     setSavedQueries,
     setRecentOrganizationIds,
   }

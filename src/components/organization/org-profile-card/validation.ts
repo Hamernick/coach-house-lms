@@ -1,18 +1,16 @@
 import { z } from "zod"
 
-import {
-  ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH,
-  organizationProfileBrandTypographySchema,
-  organizationProfileBrandVoiceAttributeSchema,
-  organizationProfileBrandVoiceLongFormSchema,
-  organizationProfileHexColorInputSchema,
-  organizationProfileNarrativeSchema,
-  organizationProfileNameSchema,
-} from "@/lib/organization/profile-persistence-validation"
 import { isValidExternalUrl } from "@/lib/organization/urls"
 
-export const hexColor = organizationProfileHexColorInputSchema
-export { ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH }
+export const hexColor = z
+  .string()
+  .regex(/^#?[0-9a-fA-F]{6}$/i, "Must be a hex color like #0055FF")
+  .transform((value) => {
+    if (!value) return value
+    return value.startsWith("#") ? value : `#${value}`
+  })
+  .optional()
+  .or(z.literal(""))
 
 const urlInput = z
   .string()
@@ -22,18 +20,30 @@ const urlInput = z
   })
   .optional()
 
-const roadmapText = (label: string) =>
-  organizationProfileNarrativeSchema(label).optional().or(z.literal(""))
+const brandTypographyTrackingSchema = z.enum([
+  "tighter",
+  "tight",
+  "normal",
+  "wide",
+  "wider",
+])
 
-const brandVoiceAttribute = organizationProfileBrandVoiceAttributeSchema
-  .optional()
-  .or(z.literal(""))
-const brandVoiceLongForm = organizationProfileBrandVoiceLongFormSchema
-  .optional()
-  .or(z.literal(""))
+const brandTypographySlotSchema = z.object({
+  family: z.string().min(1).max(120),
+  weight: z.string().min(1).max(8),
+  tracking: brandTypographyTrackingSchema,
+})
+
+const brandTypographySchema = z.object({
+  headings: brandTypographySlotSchema,
+  body: brandTypographySlotSchema,
+  code: z.object({
+    family: z.string().min(1).max(120),
+  }),
+})
 
 export const organizationProfileSchema = z.object({
-  name: organizationProfileNameSchema,
+  name: z.string().min(1, "Name is required").max(120),
   tagline: z.string().max(160).optional().or(z.literal("")),
   description: z.string().max(5000).optional().or(z.literal("")),
   ein: z
@@ -57,7 +67,6 @@ export const organizationProfileSchema = z.object({
   brandMarkUrl: urlInput.or(z.literal("")),
   headerUrl: urlInput.or(z.literal("")),
   publicUrl: urlInput.or(z.literal("")),
-  donateUrl: urlInput.or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
   facebook: z.string().max(200).optional().or(z.literal("")),
   linkedin: z.string().max(200).optional().or(z.literal("")),
@@ -66,33 +75,22 @@ export const organizationProfileSchema = z.object({
   tiktok: z.string().max(200).optional().or(z.literal("")),
   newsletter: z.string().max(200).optional().or(z.literal("")),
   github: z.string().max(200).optional().or(z.literal("")),
-  vision: roadmapText("Vision"),
-  mission: roadmapText("Mission"),
-  need: roadmapText("Need"),
-  values: roadmapText("Values"),
-  originStory: roadmapText("Origin story"),
-  theoryOfChange: roadmapText("Theory of change"),
+  vision: z.string().max(5000).optional().or(z.literal("")),
+  mission: z.string().max(5000).optional().or(z.literal("")),
+  need: z.string().max(5000).optional().or(z.literal("")),
+  values: z.string().max(5000).optional().or(z.literal("")),
   programs: z.string().max(5000).optional().or(z.literal("")),
   reports: z.string().max(5000).optional().or(z.literal("")),
   boilerplate: z.string().max(5000).optional().or(z.literal("")),
-  brandVoiceAudience: brandVoiceAttribute,
-  brandVoiceTone: brandVoiceAttribute,
-  brandVoiceStyle: brandVoiceAttribute,
-  brandVoicePersonality: brandVoiceAttribute,
-  brandVoiceGuidelines: brandVoiceLongForm,
-  brandVoiceAvoid: brandVoiceLongForm,
   brandPrimary: hexColor,
   brandColors: z.array(hexColor).max(12).optional(),
   brandThemePresetId: z.string().max(60).optional().or(z.literal("")),
   brandAccentPresetId: z.string().max(60).optional().or(z.literal("")),
   brandTypographyPresetId: z.string().max(60).optional().or(z.literal("")),
-  brandTypography: organizationProfileBrandTypographySchema.nullish(),
+  brandTypography: brandTypographySchema.nullish(),
   publicSlug: z
     .string()
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/i,
-      "Use letters, numbers, and dashes only"
-    )
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, "Use letters, numbers, and dashes only")
     .max(60)
     .optional()
     .or(z.literal("")),

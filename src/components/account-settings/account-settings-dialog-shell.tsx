@@ -2,7 +2,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
 import {
   CommunicationsSection,
   DangerSection,
@@ -42,7 +41,6 @@ type AccountSettingsDialogShellProps = {
   about: string
   phone: string
   email: string
-  hasActiveSubscription: boolean
   avatarUrl: string | null
   isUploadingAvatar: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
@@ -87,7 +85,6 @@ export function AccountSettingsDialogShell({
   about,
   phone,
   email,
-  hasActiveSubscription,
   avatarUrl,
   isUploadingAvatar,
   errors,
@@ -159,20 +156,10 @@ export function AccountSettingsDialogShell({
                   variant="ghost"
                   size="sm"
                   className="h-auto px-1 text-sm text-primary disabled:opacity-50"
-                  onClick={
-                    mobilePage === "public-profile" ? requestClose : onSave
-                  }
-                  disabled={
-                    mobilePage === "public-profile"
-                      ? false
-                      : !isDirty || isSaving
-                  }
+                  onClick={onSave}
+                  disabled={!isDirty || isSaving}
                 >
-                  {mobilePage === "public-profile"
-                    ? "Done"
-                    : isSaving
-                      ? "Saving…"
-                      : "Save"}
+                  {isSaving ? "Saving…" : "Save"}
                 </Button>
               </div>
             )}
@@ -185,11 +172,6 @@ export function AccountSettingsDialogShell({
                   label="Profile"
                   active={tab === "profile"}
                   onClick={() => onTabChange("profile")}
-                />
-                <SideLink
-                  label="Public profile"
-                  active={tab === "public-profile"}
-                  onClick={() => onTabChange("public-profile")}
                 />
                 <SideLink
                   label="Communications"
@@ -236,15 +218,6 @@ export function AccountSettingsDialogShell({
                   />
                 )}
 
-                {tab === "public-profile" && (
-                  <PublicProfileSettings
-                    avatarUrl={avatarUrl}
-                    displayName={[firstName, lastName].filter(Boolean).join(" ")}
-                    headline={title}
-                    idPrefix="desktop-public-profile"
-                  />
-                )}
-
                 {tab === "communications" && (
                   <CommunicationsSection
                     marketingOptIn={marketingOptIn}
@@ -258,7 +231,6 @@ export function AccountSettingsDialogShell({
                   <SecuritySection
                     newPassword={newPassword}
                     confirmPassword={confirmPassword}
-                    email={email}
                     isUpdatingPassword={isUpdatingPassword}
                     onNewPasswordChange={onNewPasswordChange}
                     onConfirmPasswordChange={onConfirmPasswordChange}
@@ -267,10 +239,7 @@ export function AccountSettingsDialogShell({
                 )}
 
                 {tab === "danger" && (
-                  <DangerSection
-                    onDeleteAccount={onDeleteAccount}
-                    hasActiveSubscription={hasActiveSubscription}
-                  />
+                  <DangerSection onDeleteAccount={onDeleteAccount} />
                 )}
               </section>
             </div>
@@ -278,11 +247,10 @@ export function AccountSettingsDialogShell({
 
           <DesktopFooter
             justSaved={justSaved}
-            selfManaged={tab === "public-profile"}
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}
-            onDone={requestClose}
+            onDone={() => onOpenChange(false)}
           />
 
       <MobileMenu
@@ -304,7 +272,6 @@ export function AccountSettingsDialogShell({
             about={about}
             phone={phone}
             email={email}
-            hasActiveSubscription={hasActiveSubscription}
             errors={errors}
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}

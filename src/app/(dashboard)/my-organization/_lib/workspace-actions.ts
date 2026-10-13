@@ -1,11 +1,14 @@
 "use server"
 
-import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
-
 import { randomUUID } from "node:crypto"
-import { revalidatePath } from "next/cache"
 
-import { canEditOrganization } from "@/lib/organization/active-org"
+import {
+  canEditOrganization,
+  type OrganizationMemberRole,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
+import type { Json } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -16,72 +19,104 @@ import type {
   WorkspaceDurationUnit,
 } from "../_components/workspace-board/workspace-board-types"
 import {
-  buildWorkspaceBoardStateWithPersistedNodePosition,
-  mergeNewerPersistedWorkspaceNodeState,
-} from "./workspace-board-state-persistence"
-import { persistWorkspaceBoardState } from "./workspace-board-state-write"
-import type {
-  WorkspaceBoardActionResult,
-  WorkspaceCollaborationActionResult,
-  WorkspaceNodePositionActionInput,
-  WorkspaceRevokeActionResult,
-  WorkspaceTutorialActionResult,
-} from "./workspace-action-types"
-import {
   buildWorkspaceInviteExpiry,
   canInviteWorkspaceCollaborators,
   filterActiveWorkspaceInvites,
+  readWorkspaceCollaborationInvitesFromRows,
+  type WorkspaceCollaborationInviteRow,
 } from "./workspace-state"
-import { WORKSPACE_COLLABORATION_INVITE_NOTIFICATION_TYPE } from "./workspace-collaboration-invite-helpers"
-import {
-  loadWorkspaceInvites,
-  notifyWorkspaceInvitee,
-  resolveActor,
-  resolveProfileDisplayName,
-  resolveWorkspaceInviteTarget,
-  resolveWorkspaceOrganizationName,
-} from "./workspace-actions-support"
 
-function revalidateWorkspaceBoardRoutes() {
-  revalidatePath("/workspace")
-  revalidatePath("/my-organization")
-  revalidatePath("/organization/workspace")
+type WorkspaceBoardActionResult =
+  | { ok: true; boardState: WorkspaceBoardState }
+  | { error: string }
+
+type WorkspaceCollaborationActionResult =
+  | {
+      ok: true
+      invite: WorkspaceCollaborationInvite
+      invites: WorkspaceCollaborationInvite[]
+    }
+  | { error: string }
+
+type WorkspaceRevokeActionResult =
+  | {
+      ok: true
+      invites: WorkspaceCollaborationInvite[]
+    }
+  | { error: string }
+
+type WorkspaceTutorialActionResult = { ok: true } | { error: string }
+
+type ActorContext = {
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
+  user: { id: string }
+  activeOrg: {
+    orgId: string
+    role: OrganizationMemberRole
+  }
 }
 
-async function canEditWorkspaceLayout({
-  activeOrgRole,
-  supabase,
-  userId,
-}: {
-  activeOrgRole: Parameters<typeof canEditOrganization>[0]
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
-  userId: string
-}) {
-  if (canEditOrganization(activeOrgRole)) return true
+type ActorContextResult = ActorContext | { error: string }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle<{ role: string | null }>()
+async function resolveActor(): Promise<ActorContextResult> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  return profile?.role === "admin"
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    return { error: "Unable to load user." as const }
+  }
+  if (!user) {
+    return { error: "You must be signed in." as const }
+  }
+
+  const activeOrg = await resolveActiveOrganization(supabase, user.id)
+  return {
+    supabase,
+    user: { id: user.id },
+    activeOrg,
+  }
+}
+
+async function loadWorkspaceInvites(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  orgId: string,
+) {
+  const { data, error } = await supabase
+    .from("organization_workspace_invites")
+    .select(
+      "id, user_id, user_name, user_email, created_by, created_at, expires_at, revoked_at, duration_value, duration_unit",
+    )
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false })
+    .returns<WorkspaceCollaborationInviteRow[]>()
+
+  if (error) {
+    return { error: "Unable to load collaboration invites." as const }
+  }
+
+  return {
+    invites: readWorkspaceCollaborationInvitesFromRows(data),
+  }
 }
 
 export async function saveWorkspaceBoardStateAction(
-  input: WorkspaceBoardState
+  input: WorkspaceBoardState,
 ): Promise<WorkspaceBoardActionResult> {
   const actor = await resolveActor()
   if ("error" in actor) return { error: actor.error }
 
   const { supabase, activeOrg, user } = actor
-  const canEditLayout = await canEditWorkspaceLayout({
-    activeOrgRole: activeOrg.role,
-    supabase,
-    userId: user.id,
-  })
-  if (!canEditLayout) {
+  if (!canEditOrganization(activeOrg.role)) {
     return { error: "Only owner, admin, or staff can edit workspace layout." }
+  }
+
+  const boardState = normalizeWorkspaceBoardState(input)
+  const persistedBoardState: WorkspaceBoardState = {
+    ...boardState,
+    updatedAt: new Date().toISOString(),
   }
 
   let persistenceClient = supabase
@@ -98,7 +133,7 @@ export async function saveWorkspaceBoardStateAction(
         {
           user_id: activeOrg.orgId,
         },
-        { ignoreDuplicates: true, onConflict: "user_id" }
+        { onConflict: "user_id" },
       )
 
     if (organizationUpsertError) {
@@ -106,79 +141,32 @@ export async function saveWorkspaceBoardStateAction(
     }
   }
 
-  const incomingBoardState = normalizeWorkspaceBoardState(input)
-  const result = await persistWorkspaceBoardState({
-    buildState: (persisted) =>
-      mergeNewerPersistedWorkspaceNodeState({
-        incoming: incomingBoardState,
-        persisted,
-      }),
-    orgId: activeOrg.orgId,
-    supabase: persistenceClient,
-    userId: user.id,
-  })
-  if ("error" in result) return result
-
-  revalidateWorkspaceBoardRoutes()
-
-  return result
-}
-
-export async function saveWorkspaceNodePositionAction(
-  input: WorkspaceNodePositionActionInput
-): Promise<WorkspaceBoardActionResult> {
-  const actor = await resolveActor()
-  if ("error" in actor) return { error: actor.error }
-
-  const { supabase, activeOrg, user } = actor
-  const canEditLayout = await canEditWorkspaceLayout({
-    activeOrgRole: activeOrg.role,
-    supabase,
-    userId: user.id,
-  })
-  if (!canEditLayout) {
-    return { error: "Only owner, admin, or staff can edit workspace layout." }
+  const boardUpsertPayload = {
+    org_id: activeOrg.orgId,
+    state: persistedBoardState as Json,
+    updated_by: user.id,
   }
 
-  let persistenceClient = supabase
-  try {
-    persistenceClient = createSupabaseAdminClient()
-  } catch {
-    // Local/dev environments may omit service-role credentials.
+  let { error } = await persistenceClient
+    .from("organization_workspace_boards")
+    .upsert(boardUpsertPayload, { onConflict: "org_id" })
+
+  if (error?.code === "23503") {
+    const retryResult = await persistenceClient.from("organization_workspace_boards").upsert(
+      {
+        ...boardUpsertPayload,
+        updated_by: null,
+      },
+      { onConflict: "org_id" },
+    )
+    error = retryResult.error
   }
 
-  if (activeOrg.orgId === user.id) {
-    const { error: organizationUpsertError } = await persistenceClient
-      .from("organizations")
-      .upsert(
-        {
-          user_id: activeOrg.orgId,
-        },
-        { ignoreDuplicates: true, onConflict: "user_id" }
-      )
-
-    if (organizationUpsertError) {
-      return { error: "Unable to save workspace layout." }
-    }
+  if (error) {
+    return { error: "Unable to save workspace layout." }
   }
 
-  const result = await persistWorkspaceBoardState({
-    buildState: (persisted) =>
-      buildWorkspaceBoardStateWithPersistedNodePosition({
-        boardState: persisted ?? normalizeWorkspaceBoardState(input.boardState),
-        cardId: input.cardId,
-        x: Math.round(input.x),
-        y: Math.round(input.y),
-      }),
-    orgId: activeOrg.orgId,
-    supabase: persistenceClient,
-    userId: user.id,
-  })
-  if ("error" in result) return result
-
-  revalidateWorkspaceBoardRoutes()
-
-  return result
+  return { ok: true, boardState: persistedBoardState }
 }
 
 export async function completeWorkspaceCanvasTutorialAction(): Promise<WorkspaceTutorialActionResult> {
@@ -200,27 +188,6 @@ export async function completeWorkspaceCanvasTutorialAction(): Promise<Workspace
   return { ok: true }
 }
 
-export async function resetWorkspaceCanvasTutorialAction(): Promise<WorkspaceTutorialActionResult> {
-  const actor = await resolveActor()
-  if ("error" in actor) return { error: actor.error }
-
-  const { supabase } = actor
-  const { error } = await supabase.auth.updateUser({
-    data: {
-      workspace_onboarding_active: true,
-      workspace_onboarding_stage: 2,
-      workspace_onboarding_started_at: new Date().toISOString(),
-      workspace_onboarding_completed_at: null,
-    },
-  })
-
-  if (error) {
-    return { error: "Unable to restart the workspace tutorial." }
-  }
-
-  return { ok: true }
-}
-
 export async function createWorkspaceCollaborationInviteAction({
   userId,
   durationValue,
@@ -235,71 +202,57 @@ export async function createWorkspaceCollaborationInviteAction({
 
   const { supabase, user, activeOrg } = actor
   if (!canInviteWorkspaceCollaborators(activeOrg.role)) {
-    return {
-      error: "You do not have permission to invite workspace collaborators.",
-    }
+    return { error: "You do not have permission to invite workspace collaborators." }
   }
-
-  const paidAccess = await resolvePaidTeamAccessForOrgSubscription({ supabase, orgId: activeOrg.orgId })
-  if (paidAccess.error) return { error: paidAccess.error }
-  if (!paidAccess.hasPaidTeamAccess) return { error: "Upgrade to invite collaborators and manage team access." }
 
   const normalizedUserId = userId.trim()
   if (!normalizedUserId) {
-    return { error: "Choose someone to invite." }
+    return { error: "Choose a teammate to invite." }
   }
 
-  const invitedProfile = await resolveWorkspaceInviteTarget({
-    supabase,
-    targetId: normalizedUserId,
-  })
-
-  if (!invitedProfile?.id) {
-    return { error: "Invite target not found." }
-  }
-
-  const isOwnerInvite = invitedProfile.id === activeOrg.orgId
-  if (!isOwnerInvite && !invitedProfile.isPlatformAdmin) {
+  const isOwnerInvite = normalizedUserId === activeOrg.orgId
+  if (!isOwnerInvite) {
     const { data: memberRow } = await supabase
       .from("organization_memberships")
       .select("member_id")
       .eq("org_id", activeOrg.orgId)
-      .eq("member_id", invitedProfile.id)
+      .eq("member_id", normalizedUserId)
       .maybeSingle<{ member_id: string }>()
 
     if (!memberRow?.member_id) {
-      return {
-        error:
-          "Invite target must already be part of this organization or be a Coach House reviewer.",
-      }
+      return { error: "Invite target must already be part of this organization." }
     }
   }
 
   const invitesResult = await loadWorkspaceInvites(supabase, activeOrg.orgId)
   if ("error" in invitesResult) {
-    return {
-      error: invitesResult.error ?? "Unable to load collaboration invites.",
-    }
+    return { error: invitesResult.error ?? "Unable to load collaboration invites." }
   }
 
   const activeInvites = filterActiveWorkspaceInvites(invitesResult.invites)
-  const existingInvite = activeInvites.find(
-    (invite) => invite.userId === invitedProfile.id
-  )
+  const existingInvite = activeInvites.find((invite) => invite.userId === normalizedUserId)
   if (existingInvite) {
-    return {
-      ok: true,
-      invite: existingInvite,
-      invites: invitesResult.invites,
-      inviteWasAlreadyActive: true,
-    }
+    return { ok: true, invite: existingInvite, invites: invitesResult.invites }
+  }
+
+  const { data: invitedProfile, error: invitedProfileError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("id", normalizedUserId)
+    .maybeSingle<{ id: string; full_name: string | null }>()
+
+  if (invitedProfileError) {
+    return { error: "Unable to load invite target." }
+  }
+  if (!invitedProfile?.id) {
+    return { error: "Invite target not found." }
   }
 
   const invite: WorkspaceCollaborationInvite = {
     id: randomUUID(),
-    userId: invitedProfile.id,
-    userName: invitedProfile.fullName?.trim() || null,
-    userEmail: invitedProfile.email?.trim() || null,
+    userId: normalizedUserId,
+    userName: invitedProfile.full_name?.trim() || null,
+    userEmail: null,
     createdBy: user.id,
     createdAt: new Date().toISOString(),
     expiresAt: buildWorkspaceInviteExpiry({
@@ -311,76 +264,41 @@ export async function createWorkspaceCollaborationInviteAction({
     durationUnit,
   }
 
-  const { error: saveError } = await supabase
-    .from("organization_workspace_invites")
-    .insert({
-      id: invite.id,
-      org_id: activeOrg.orgId,
-      user_id: invite.userId,
-      user_name: invite.userName,
-      user_email: invite.userEmail,
-      created_by: invite.createdBy,
-      created_at: invite.createdAt,
-      expires_at: invite.expiresAt,
-      revoked_at: invite.revokedAt,
-      duration_value: invite.durationValue,
-      duration_unit: invite.durationUnit,
-    })
+  const { error: saveError } = await supabase.from("organization_workspace_invites").insert({
+    id: invite.id,
+    org_id: activeOrg.orgId,
+    user_id: invite.userId,
+    user_name: invite.userName,
+    user_email: invite.userEmail,
+    created_by: invite.createdBy,
+    created_at: invite.createdAt,
+    expires_at: invite.expiresAt,
+    revoked_at: invite.revokedAt,
+    duration_value: invite.durationValue,
+    duration_unit: invite.durationUnit,
+  })
 
   if (saveError) {
     return { error: "Unable to create collaboration invite." }
   }
 
-  const refreshedInvitesResult = await loadWorkspaceInvites(
-    supabase,
-    activeOrg.orgId
-  )
+  const refreshedInvitesResult = await loadWorkspaceInvites(supabase, activeOrg.orgId)
   if ("error" in refreshedInvitesResult) {
-    return {
-      error:
-        refreshedInvitesResult.error ?? "Unable to load collaboration invites.",
-    }
+    return { error: refreshedInvitesResult.error ?? "Unable to load collaboration invites." }
   }
 
-  const organizationName = await resolveWorkspaceOrganizationName({
-    client: supabase,
-    orgId: activeOrg.orgId,
-  })
-  const inviterName = await resolveProfileDisplayName({
-    client: supabase,
-    userId: user.id,
-  })
-  const notificationSent = await notifyWorkspaceInvitee({
-    supabase,
-    userId: invite.userId,
-    orgId: activeOrg.orgId,
-    organizationName,
-    inviterName,
-    actorId: user.id,
-    inviteeName: invite.userName,
-    inviteId: invite.id,
-    expiresAt: invite.expiresAt,
-  })
-
-  return {
-    ok: true,
-    invite,
-    invites: refreshedInvitesResult.invites,
-    notificationSent,
-  }
+  return { ok: true, invite, invites: refreshedInvitesResult.invites }
 }
 
 export async function revokeWorkspaceCollaborationInviteAction(
-  inviteId: string
+  inviteId: string,
 ): Promise<WorkspaceRevokeActionResult> {
   const actor = await resolveActor()
   if ("error" in actor) return { error: actor.error }
 
   const { supabase, activeOrg } = actor
   if (!canInviteWorkspaceCollaborators(activeOrg.role)) {
-    return {
-      error: "You do not have permission to manage collaboration invites.",
-    }
+    return { error: "You do not have permission to manage collaboration invites." }
   }
 
   const normalizedInviteId = inviteId.trim()
@@ -398,24 +316,9 @@ export async function revokeWorkspaceCollaborationInviteAction(
     return { error: "Unable to revoke invite." }
   }
 
-  let notificationClient = supabase
-  try {
-    notificationClient = createSupabaseAdminClient()
-  } catch {
-    // Local environments can omit service-role credentials.
-  }
-
-  await notificationClient
-    .from("notifications")
-    .update({ archived_at: new Date().toISOString() })
-    .eq("type", WORKSPACE_COLLABORATION_INVITE_NOTIFICATION_TYPE)
-    .contains("metadata", { inviteId: normalizedInviteId })
-
   const invitesResult = await loadWorkspaceInvites(supabase, activeOrg.orgId)
   if ("error" in invitesResult) {
-    return {
-      error: invitesResult.error ?? "Unable to load collaboration invites.",
-    }
+    return { error: invitesResult.error ?? "Unable to load collaboration invites." }
   }
 
   return { ok: true, invites: invitesResult.invites }

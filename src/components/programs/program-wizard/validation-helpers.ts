@@ -18,24 +18,16 @@ export function parseErrors(form: ProgramWizardFormState) {
     next.budgetUsd = "Add at least one budget line item."
   }
 
-  if (form.objectKind === "Web resource" && !form.locationUrl.trim()) {
-    next.locationUrl = "Add the resource URL."
-  }
-
   return next
 }
 
-export function requiredFieldsForStep(
-  step: number
-): Array<keyof ProgramWizardFormState> {
+export function requiredFieldsForStep(step: number): Array<keyof ProgramWizardFormState> {
   switch (step) {
     case 0:
-      return ["objectKind"]
-    case 1:
       return ["title", "oneSentence"]
-    case 2:
+    case 1:
       return ["programType", "coreFormat"]
-    case 3:
+    case 2:
       return [
         "servesWho",
         "participantReceive1",
@@ -43,11 +35,11 @@ export function requiredFieldsForStep(
         "participantReceive3",
         "successOutcome1",
       ]
-    case 4:
+    case 3:
       return ["pilotPeopleServed", "staffCount"]
-    case 5:
+    case 4:
       return ["startMonth", "durationLabel", "frequency", "locationMode"]
-    case 6:
+    case 5:
       return ["budgetUsd"]
     default:
       return []
@@ -55,33 +47,31 @@ export function requiredFieldsForStep(
 }
 
 const FIELD_STEP_MAP: Record<string, number> = {
-  objectKind: 0,
-  title: 1,
-  oneSentence: 1,
-  subtitle: 1,
-  bannerImageUrl: 1,
-  imageUrl: 1,
-  programType: 2,
-  coreFormat: 2,
-  formatAddons: 2,
-  servesWho: 3,
-  eligibilityRules: 3,
-  participantReceive1: 3,
-  participantReceive2: 3,
-  participantReceive3: 3,
-  successOutcome1: 3,
-  successOutcome2: 3,
-  successOutcome3: 3,
-  pilotPeopleServed: 4,
-  staffCount: 4,
-  volunteerCount: 4,
-  startMonth: 5,
-  durationLabel: 5,
-  frequency: 5,
-  locationMode: 5,
-  locationDetails: 5,
-  locationUrl: 5,
-  budgetUsd: 6,
+  title: 0,
+  oneSentence: 0,
+  subtitle: 0,
+  bannerImageUrl: 0,
+  imageUrl: 0,
+  programType: 1,
+  coreFormat: 1,
+  formatAddons: 1,
+  servesWho: 2,
+  eligibilityRules: 2,
+  participantReceive1: 2,
+  participantReceive2: 2,
+  participantReceive3: 2,
+  successOutcome1: 2,
+  successOutcome2: 2,
+  successOutcome3: 2,
+  pilotPeopleServed: 3,
+  staffCount: 3,
+  volunteerCount: 3,
+  startMonth: 4,
+  durationLabel: 4,
+  frequency: 4,
+  locationMode: 4,
+  locationDetails: 4,
+  budgetUsd: 5,
 }
 
 export function stepForField(field: string) {

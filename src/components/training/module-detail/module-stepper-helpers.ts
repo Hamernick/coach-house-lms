@@ -34,23 +34,17 @@ export function buildModuleStepperSteps({
   let assignmentIndex = 0
 
   if (embedUrl || videoUrl || fallbackUrl) {
-    list.push({ id: "video", label: "Class video", type: "video" })
+    list.push({ id: "video", label: "Lesson video", type: "video" })
   }
   if (lessonNotesContent) {
-    list.push({ id: "notes", label: "Class notes", type: "notes" })
+    list.push({ id: "notes", label: "Lesson notes", type: "notes" })
   }
-  const hasAssignmentOverview = tabSections.some(
-    (section) => section.id === "assignment-overview",
-  )
-  if (!hasAssignmentOverview && ((resources && resources.length > 0) || hasDeck)) {
+  if ((resources && resources.length > 0) || hasDeck) {
     list.push({ id: "resources", label: "Resources", type: "resources" })
   }
   if (assignmentFields.length > 0) {
     tabSections.forEach((section, index) => {
-      const hasVisibleInfo =
-        section.fields.length === 0 &&
-        Boolean(section.title?.trim() || section.description?.trim())
-      if (section.fields.length === 0 && !hasVisibleInfo) return
+      if (section.fields.length === 0) return
       const isRoadmap = section.fields.some((field) => Boolean(field.roadmapSectionId))
       assignmentIndex += 1
       list.push({

@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button"
 
-export function DangerSection({
-  onDeleteAccount,
-  hasActiveSubscription = false,
-}: {
-  onDeleteAccount: () => void
-  hasActiveSubscription?: boolean
-}) {
+export function DangerSection({ onDeleteAccount }: { onDeleteAccount: () => void }) {
   return (
     <div className="space-y-6">
       <header>
@@ -15,11 +9,6 @@ export function DangerSection({
       </header>
       <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
         <p className="text-sm">This action is permanent and cannot be undone.</p>
-        {hasActiveSubscription ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Deleting your account does not cancel Stripe billing. Cancel in the billing portal first, or continue after cancellation if your access remains active through the paid period.
-          </p>
-        ) : null}
         <div className="mt-3">
           <Button variant="destructive" onClick={onDeleteAccount}>Delete my account</Button>
         </div>
@@ -27,3 +16,4 @@ export function DangerSection({
     </div>
   )
 }
+

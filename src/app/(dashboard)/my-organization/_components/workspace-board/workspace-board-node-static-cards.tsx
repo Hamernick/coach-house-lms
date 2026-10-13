@@ -4,18 +4,12 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import ImageIcon from "lucide-react/dist/esm/icons/image"
 
-import { normalizeToList } from "@/components/organization/org-profile-card/utils"
-import { GridBackground } from "@/components/ui/grid-background"
-import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
-import { Progress } from "@/components/ui/progress"
 import {
-  FiscalSponsorshipWorkspaceCardSummary,
-  normalizeFiscalSponsorshipBudgetRows,
-  summarizeBudgetRows,
-  type FiscalSponsorshipApplicationPrefill,
-  type FiscalSponsorshipProgramOption,
-  type FiscalSponsorshipProjectWorkflowSummary,
-} from "@/features/fiscal-sponsorship"
+  normalizeToList,
+} from "@/components/organization/org-profile-card/utils"
+import { GridBackground } from "@/components/ui/grid-background"
+import { Progress } from "@/components/ui/progress"
+import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -23,8 +17,6 @@ import type {
   WorkspaceOrganizationEditorData,
   WorkspaceSeedData,
 } from "./workspace-board-types"
-
-const ORGANIZATION_OVERVIEW_PREVIEW_BANNER_ASPECT_RATIO = 3.7 / 1
 
 function compactUsd(cents: number) {
   const dollars = Math.max(0, cents) / 100
@@ -38,115 +30,6 @@ function compactUsd(cents: number) {
 
 function safeText(value: string | null | undefined) {
   return typeof value === "string" ? value : ""
-}
-
-function safeSnapshotText(snapshot: unknown, key: string) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return null
-  }
-
-  const value = (snapshot as Record<string, unknown>)[key]
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : null
-}
-
-function safeSnapshotNumber(snapshot: unknown, key: string) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return null
-  }
-
-  const value = (snapshot as Record<string, unknown>)[key]
-  const numericValue =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-        ? Number(value.replace(/[^\d.-]/g, ""))
-        : Number.NaN
-
-  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
-}
-
-function safeSnapshotTextList(snapshot: unknown, key: string) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return []
-  }
-
-  const value = (snapshot as Record<string, unknown>)[key]
-  if (!Array.isArray(value)) return []
-
-  return value
-    .map((entry) =>
-      typeof entry === "string" && entry.trim().length > 0 ? entry.trim() : null
-    )
-    .filter((entry): entry is string => Boolean(entry))
-}
-
-function getSnapshotBudgetRows(snapshot: unknown) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    return []
-  }
-
-  return normalizeFiscalSponsorshipBudgetRows(
-    (snapshot as Record<string, unknown>).budgetRows
-  )
-}
-
-function formatSnapshotBudgetRows(snapshot: unknown) {
-  return summarizeBudgetRows(getSnapshotBudgetRows(snapshot)) || null
-}
-
-export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
-  programs: WorkspaceOrganizationEditorData["programs"] | undefined
-): FiscalSponsorshipProgramOption[] {
-  return (programs ?? []).map((program) => {
-    const budgetUsd = safeSnapshotNumber(program.wizard_snapshot, "budgetUsd")
-    const successOutcomes = safeSnapshotTextList(
-      program.wizard_snapshot,
-      "successOutcomes"
-    )
-    const budgetRows = getSnapshotBudgetRows(program.wizard_snapshot)
-
-    return {
-      id: program.id,
-      title: program.title,
-      subtitle: program.subtitle,
-      description:
-        safeSnapshotText(program.wizard_snapshot, "oneSentence") ??
-        program.description,
-      bannerImageUrl: safeSnapshotText(
-        program.wizard_snapshot,
-        "bannerImageUrl"
-      ),
-      imageUrl: program.image_url,
-      location: program.location,
-      locationType: program.location_type,
-      locationUrl: program.location_url,
-      goalCents: program.goal_cents,
-      raisedCents: program.raised_cents,
-      estimatedBudgetCents: budgetUsd
-        ? Math.round(budgetUsd * 100)
-        : program.goal_cents,
-      budgetRows,
-      expenseSummary: formatSnapshotBudgetRows(program.wizard_snapshot),
-      prospectiveFundingSources: safeSnapshotText(
-        program.wizard_snapshot,
-        "fundingSource"
-      ),
-      publicBenefit:
-        successOutcomes.length > 0 ? successOutcomes.join("; ") : null,
-      startDate: program.start_date,
-      endDate: program.end_date,
-      addressCity: program.address_city,
-      addressState: program.address_state,
-      addressCountry: program.address_country,
-      objectKind: safeSnapshotText(program.wizard_snapshot, "objectKind"),
-      focusArea:
-        safeSnapshotText(program.wizard_snapshot, "programType") ??
-        program.features?.[0] ??
-        null,
-    }
-  })
 }
 
 function useImageLoaded(src: string) {
@@ -183,23 +66,18 @@ export function OrganizationOverviewCard({
 }) {
   const headerUrl = safeText(seed.initialProfile.headerUrl)
   const logoUrl = safeText(seed.initialProfile.logoUrl)
-  const displayTitle = seed.organizationTitle.trim() || "Title"
-  const displaySubtitle = seed.organizationSubtitle.trim() || "Subtitle"
   const headerImage = useImageLoaded(headerUrl)
   const logoImage = useImageLoaded(logoUrl)
   const displayProgramsCount = resolveOrganizationOverviewDisplayPrograms({
-    programsCount:
-      organizationEditorData?.programs.length ?? seed.programsCount,
+    programsCount: organizationEditorData?.programs.length ?? seed.programsCount,
     legacyProgramsValue: organizationEditorData?.initialProfile.programs,
   })
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 pb-0.5">
+    <div className="flex min-h-0 flex-col gap-2 pb-0.5">
       <div
-        className="bg-muted/30 ring-border/50 relative min-h-[124px] w-full overflow-hidden rounded-[18px] ring-1"
-        style={{
-          aspectRatio: ORGANIZATION_OVERVIEW_PREVIEW_BANNER_ASPECT_RATIO,
-        }}
+        className="bg-muted/30 ring-border/50 relative min-h-[96px] w-full overflow-hidden rounded-[16px] ring-1"
+        style={{ aspectRatio: ORG_BANNER_ASPECT_RATIO }}
       >
         {headerUrl ? (
           <>
@@ -211,7 +89,7 @@ export function OrganizationOverviewCard({
               sizes="(max-width: 768px) 92vw, (max-width: 1280px) 520px, 760px"
               className={cn(
                 "object-cover object-center transition-opacity duration-300",
-                headerImage.loaded ? "opacity-100" : "opacity-0"
+                headerImage.loaded ? "opacity-100" : "opacity-0",
               )}
               onLoad={() => headerImage.setLoaded(true)}
             />
@@ -219,17 +97,17 @@ export function OrganizationOverviewCard({
               aria-hidden
               className={cn(
                 "from-muted/70 via-muted/40 absolute inset-0 bg-gradient-to-br to-transparent transition-opacity duration-300",
-                headerImage.loaded ? "opacity-0" : "opacity-100"
+                headerImage.loaded ? "opacity-0" : "opacity-100",
               )}
             />
           </>
         ) : (
-          <GridBackground className="rounded-[18px]" />
+          <GridBackground className="rounded-[16px]" />
         )}
       </div>
 
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="bg-background ring-border/60 relative size-12 shrink-0 overflow-hidden rounded-[14px] ring-1">
+      <div className="flex min-w-0 items-start gap-2.5">
+        <div className="bg-background ring-border/60 relative h-11 w-11 shrink-0 overflow-hidden rounded-[12px] ring-1">
           {logoUrl ? (
             <>
               <Image
@@ -240,62 +118,54 @@ export function OrganizationOverviewCard({
                 sizes="44px"
                 className={cn(
                   "object-cover transition-opacity duration-300",
-                  logoImage.loaded ? "opacity-100" : "opacity-0"
+                  logoImage.loaded ? "opacity-100" : "opacity-0",
                 )}
                 onLoad={() => logoImage.setLoaded(true)}
               />
               <div
                 aria-hidden
                 className={cn(
-                  "bg-muted/55 absolute inset-0 transition-opacity duration-300",
-                  logoImage.loaded ? "opacity-0" : "opacity-100"
+                  "absolute inset-0 bg-muted/55 transition-opacity duration-300",
+                  logoImage.loaded ? "opacity-0" : "opacity-100",
                 )}
               />
             </>
           ) : (
             <div className="text-muted-foreground grid h-full w-full place-items-center">
-              <ImageIcon className="h-4.5 w-4.5" aria-hidden />
+              <ImageIcon className="h-4 w-4" aria-hidden />
             </div>
           )}
         </div>
         <div className="min-w-0 space-y-0.5">
-          <h3
-            className={cn(
-              "text-foreground line-clamp-2",
-              WORKSPACE_TEXT_STYLES.surfaceTitle
-            )}
-          >
-            {displayTitle}
+          <h3 className="text-foreground line-clamp-2 text-lg font-semibold leading-6">
+            {seed.organizationTitle}
           </h3>
-          <p
-            className={cn(
-              "line-clamp-1",
-              WORKSPACE_TEXT_STYLES.surfaceSubtitle
-            )}
-          >
-            {displaySubtitle}
-          </p>
+          {seed.organizationSubtitle ? (
+            <p className="text-muted-foreground line-clamp-1 text-sm">
+              {seed.organizationSubtitle}
+            </p>
+          ) : null}
         </div>
       </div>
 
-      <dl className="border-border/50 grid grid-cols-3 gap-3 border-t pt-3">
+      <dl className="border-border/50 grid grid-cols-3 gap-2 border-t pt-2.5">
         <div className="min-w-0">
-          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Objects</dt>
-          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
+          <dt className="text-muted-foreground text-[10px]">Programs</dt>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
             {displayProgramsCount}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>
+          <dt className="text-muted-foreground text-[10px]">
             {seed.peopleCount === 1 ? "Person" : "People"}
           </dt>
-          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
             {seed.peopleCount}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Raising</dt>
-          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
+          <dt className="text-muted-foreground text-[10px]">Raising</dt>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
             {compactUsd(seed.fundingGoalCents)}
           </dd>
         </div>
@@ -387,35 +257,5 @@ export function EconomicEngineCard({
       </div>
       <Progress value={progressPercent} className="h-1.5" />
     </div>
-  )
-}
-
-export function WorkspaceBoardFiscalSponsorshipCard({
-  actionRequest = null,
-  applicationPrefill,
-  fiscalSponsorshipProjectId,
-  fiscalSponsorshipWorkflowSummary,
-  organizationName,
-  programs,
-}: {
-  actionRequest?: {
-    id: number
-    phaseId: "application-intake" | "required-documents"
-  } | null
-  applicationPrefill?: FiscalSponsorshipApplicationPrefill | null
-  fiscalSponsorshipProjectId?: string | null
-  fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
-  organizationName?: string | null
-  programs?: WorkspaceOrganizationEditorData["programs"]
-}) {
-  return (
-    <FiscalSponsorshipWorkspaceCardSummary
-      actionRequest={actionRequest}
-      applicationPrefill={applicationPrefill}
-      fiscalSponsorshipProjectId={fiscalSponsorshipProjectId}
-      fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowSummary}
-      organizationName={organizationName}
-      programs={mapWorkspaceProgramsToFiscalSponsorshipPrograms(programs)}
-    />
   )
 }

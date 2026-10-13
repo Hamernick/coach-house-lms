@@ -1,8 +1,3 @@
-import {
-  isOrganizationPrimaryObjectKind,
-  resolveOrganizationPrimaryObjectKind,
-} from "@/lib/organization/primary-objects"
-
 type ProgramDisplayRecord = {
   description?: string | null
   subtitle?: string | null
@@ -56,11 +51,6 @@ export function resolveProgramProfileImageUrl(program: ProgramDisplayRecord) {
 }
 
 export function resolveProgramCardChips(program: ProgramDisplayRecord) {
-  const objectKind =
-    readSnapshotString(program.wizard_snapshot, "objectKind") ??
-    (Array.isArray(program.features)
-      ? program.features.find(isOrganizationPrimaryObjectKind)
-      : null)
   const duration =
     readSnapshotString(program.wizard_snapshot, "durationLabel") ??
     readDirectString(program.duration_label)
@@ -68,16 +58,12 @@ export function resolveProgramCardChips(program: ProgramDisplayRecord) {
   const coreFormat = readSnapshotString(program.wizard_snapshot, "coreFormat")
   const formatAddons = readSnapshotStringArray(
     program.wizard_snapshot,
-    "formatAddons"
+    "formatAddons",
   )
 
-  const wizardChips = [
-    objectKind ? resolveOrganizationPrimaryObjectKind(objectKind) : null,
-    duration,
-    programType,
-    coreFormat,
-    ...formatAddons,
-  ].filter((value): value is string => Boolean(value))
+  const wizardChips = [duration, programType, coreFormat, ...formatAddons].filter(
+    (value): value is string => Boolean(value),
+  )
   if (wizardChips.length > 0) return wizardChips
 
   const featureChips = Array.isArray(program.features)
@@ -86,7 +72,7 @@ export function resolveProgramCardChips(program: ProgramDisplayRecord) {
         .filter((value): value is string => Boolean(value))
     : []
 
-  return [duration, ...featureChips].filter((value): value is string =>
-    Boolean(value)
+  return [duration, ...featureChips].filter(
+    (value): value is string => Boolean(value),
   )
 }

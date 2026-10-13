@@ -1,61 +1,43 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
-import { useCallback, useMemo, useState, type DragEvent } from "react"
-import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import { useEffect, useRef } from "react"
 import {
   Background,
   BackgroundVariant,
   ReactFlow,
-  ReactFlowProvider,
-  SelectionMode,
+  type NodeDragHandler,
+  type ReactFlowInstance,
+  useNodesState,
 } from "reactflow"
 
-import {
-  useRegisterAppShellAccountMenuAction,
-  type AppShellAccountMenuAction,
-} from "@/components/app-shell/account-menu-actions-context"
-import { WorkspaceReactFlowErrorBootstrap } from "@/components/workspace/workspace-reactflow-error-bootstrap"
-import { WorkspaceCardShortcutRail } from "../shortcuts/workspace-card-shortcut-rail"
+import { WorkspaceCardShortcutsMobile } from "../shortcuts/workspace-card-shortcuts-mobile"
+import type { WorkspaceCardShortcutItemModel } from "../shortcuts/workspace-card-shortcut-model"
 import { WorkspaceCanvasErrorBoundary } from "../runtime/workspace-canvas-error-boundary"
-import {
-  WORKSPACE_CANVAS_V2_EDGE_TYPES,
-  WORKSPACE_CANVAS_V2_NODE_TYPES,
-} from "./workspace-canvas-node-types"
+import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
+import type {
+  WorkspaceCanvasNode,
+  WorkspaceCanvasNodeData,
+} from "./workspace-canvas-surface-v2-helpers"
+import { WORKSPACE_CANVAS_V2_NODE_TYPES } from "./workspace-canvas-node-types"
 import { WorkspaceCanvasEdgeContextMenu } from "./workspace-canvas-edge-context-menu"
-import { WorkspaceCanvasSurfaceV2ViewportControls } from "./workspace-canvas-surface-v2-viewport-controls-panel"
-import { useWorkspaceCanvasSurfaceGestureGuards } from "./workspace-canvas-surface-v2-gesture-effect"
-import { WorkspaceCanvasOverlayDrawerContainerProvider } from "./workspace-canvas-overlay-drawer-container"
-import { WorkspaceCanvasOverlayDrawer } from "./workspace-canvas-overlay-drawer"
-import { WorkspaceCanvasSurfaceV2MobileShortcutOverlay } from "./workspace-canvas-surface-v2-mobile-shortcut-overlay"
+import { WorkspaceCanvasSurfaceV2HelpOverlay } from "./workspace-canvas-surface-v2-help-overlay"
 import {
-  hasWorkspaceCanvasPersonDragPayload,
-  readWorkspaceCanvasPersonDragPayload,
-} from "./workspace-canvas-people-dnd"
-import type { WorkspaceCanvasSurfaceV2ViewProps } from "./workspace-canvas-surface-v2-view-types"
+  shouldPreventWorkspaceCanvasTouchZoom,
+  shouldPreventWorkspaceCanvasWheelZoom,
+} from "./workspace-canvas-surface-v2-gesture-guards"
 
 const WORKSPACE_CANVAS_V2_PRO_OPTIONS = Object.freeze({ hideAttribution: true })
+const WORKSPACE_CANVAS_V2_EDGE_TYPES = Object.freeze({})
 
-function useWorkspaceTutorialRestartAccountMenuAction({
-  showTutorialRestart,
-  onTutorialRestart,
+function WorkspaceCanvasSurfaceV2MobileShortcutOverlay({
+  items,
 }: {
-  showTutorialRestart: boolean
-  onTutorialRestart: () => void
+  items: WorkspaceCardShortcutItemModel[]
 }) {
-  return useMemo<AppShellAccountMenuAction | null>(
-    () =>
-      showTutorialRestart
-        ? {
-            id: "workspace-tutorial-restart",
-            label: "Restart guide",
-            icon: RotateCcwIcon,
-            onSelect: onTutorialRestart,
-            priority: 20,
-            visibility: "platform-admin",
-          }
-        : null,
-    [onTutorialRestart, showTutorialRestart]
+  return (
+    <div className="pointer-events-none absolute bottom-4 left-4 z-20 md:hidden">
+      <WorkspaceCardShortcutsMobile items={items} />
+    </div>
   )
 }
 
@@ -63,277 +45,160 @@ export function WorkspaceCanvasSurfaceV2View({
   nodes,
   edges,
   allowEditing,
-  peopleCanvasInteractionEnabled,
-  workspaceDataDrawerCanEdit,
-  nodesDraggable,
-  tutorialActive,
-  layoutAnimating,
   presentationMode,
-  workspaceDataDrawerPeople,
-  placedWorkspacePersonIds,
-  workspaceDataDrawerViewerId,
-  workspaceDataDrawerOrganization,
-  workspaceDataDrawerFinance,
-  workspaceDataDrawerDocuments,
-  workspaceAcceleratorDrawerInput,
-  workspaceAcceleratorDrawerRoadmapSections,
-  workspaceAcceleratorDrawerHasAccess,
-  workspaceAcceleratorDrawerPaywallHref,
-  workspaceDataDrawerRequest,
-  uiPreferencesScope,
   edgeContextMenuState,
   shortcutItems,
-  tutorialCalendarButtonCallout,
   emptyStateMessage,
-  showTutorialRestart,
   onNodesChange,
-  onNodeClick,
-  onNodeDoubleClick,
-  onKeyDownCapture,
   onNodeDragStop,
-  onSelectionDragStop,
-  onMoveStart,
-  onMoveEnd,
   onConnect,
   isValidConnection,
   onEdgeDoubleClick,
   onEdgeContextMenu,
   onError,
   onInit,
-  onTutorialRestart,
-  onTutorialCalendarButtonComplete,
-  onRecenterView,
-  onZoomIn,
-  onZoomOut,
-  onWorkspacePersonDropToCanvas,
-  onAddWorkspacePeopleToCanvas,
-  onRemoveWorkspacePersonFromCanvas,
-  onOpenWorkspaceDataDrawer,
   onCloseEdgeContextMenu,
   onDisconnectEdge,
   onDisconnectFromSource,
   onDisconnectToTarget,
   onDisconnectAll,
-}: WorkspaceCanvasSurfaceV2ViewProps) {
-  const guideParams = useSearchParams()
-  const guideStack = guideParams.get("guide") === "1" && ["identity", "identity-edit"].includes(guideParams.get("guideStep") ?? "")
+}: {
+  nodes: WorkspaceCanvasNode[]
+  edges: ReturnType<typeof useWorkspaceCanvasConnectionsController>["edges"]
+  allowEditing: boolean
+  presentationMode: boolean
+  edgeContextMenuState: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["edgeContextMenuState"]
+  shortcutItems: WorkspaceCardShortcutItemModel[]
+  emptyStateMessage?: string | null
+  onNodesChange: ReturnType<typeof useNodesState<WorkspaceCanvasNodeData>>[2]
+  onNodeDragStop: NodeDragHandler
+  onConnect: ReturnType<typeof useWorkspaceCanvasConnectionsController>["handleConnect"]
+  isValidConnection: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleIsValidConnection"]
+  onEdgeDoubleClick: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleEdgeDoubleClick"]
+  onEdgeContextMenu: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleEdgeContextMenu"]
+  onError: (errorCode: string, message: string) => void
+  onInit: (instance: ReactFlowInstance) => void
+  onCloseEdgeContextMenu: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["closeEdgeContextMenu"]
+  onDisconnectEdge: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectEdge"]
+  onDisconnectFromSource: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectFromSource"]
+  onDisconnectToTarget: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectToTarget"]
+  onDisconnectAll: ReturnType<
+    typeof useWorkspaceCanvasConnectionsController
+  >["handleContextDisconnectAll"]
+}) {
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
 
-  const [surfaceContainer, setSurfaceContainer] =
-    useState<HTMLDivElement | null>(null)
-  const [flowFrameContainer, setFlowFrameContainer] =
-    useState<HTMLDivElement | null>(null)
-  const nodeTypes = useMemo(() => WORKSPACE_CANVAS_V2_NODE_TYPES, [])
-  const edgeTypes = useMemo(() => WORKSPACE_CANVAS_V2_EDGE_TYPES, [])
-  const nodesSelectable = !tutorialActive
-  const selectNodesOnDrag =
-    !tutorialActive && (allowEditing || peopleCanvasInteractionEnabled)
-  const tutorialRestartAccountMenuAction =
-    useWorkspaceTutorialRestartAccountMenuAction({
-      showTutorialRestart,
-      onTutorialRestart,
-    })
-  const handleCanvasDragOver = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      if (!hasWorkspaceCanvasPersonDragPayload(event.dataTransfer)) return
-      if (!peopleCanvasInteractionEnabled) return
+  useEffect(() => {
+    const surface = surfaceRef.current
+    if (!surface) return
 
-      event.preventDefault()
-      event.dataTransfer.dropEffect = "copy"
-    },
-    [peopleCanvasInteractionEnabled]
-  )
-  const handleCanvasDrop = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      const personIds = readWorkspaceCanvasPersonDragPayload(event.dataTransfer)
-      if (personIds.length === 0) return
-
-      event.preventDefault()
-      event.stopPropagation()
-      if (personIds.length === 1) {
-        const personId = personIds[0]
-        if (!personId) return
-
-        onWorkspacePersonDropToCanvas({
-          personId,
-          clientX: event.clientX,
-          clientY: event.clientY,
-        })
-        return
+    const handleWheel = (event: WheelEvent) => {
+      if (shouldPreventWorkspaceCanvasWheelZoom(event.ctrlKey)) {
+        event.preventDefault()
       }
-
-      onAddWorkspacePeopleToCanvas({
-        intent: "drop",
-        personIds,
-        clientX: event.clientX,
-        clientY: event.clientY,
-      })
-    },
-    [onAddWorkspacePeopleToCanvas, onWorkspacePersonDropToCanvas]
-  )
-  const handleAddWorkspacePeopleToCanvas = useCallback(
-    (personIds: string[]) => {
-      if (
-        !peopleCanvasInteractionEnabled ||
-        !flowFrameContainer ||
-        personIds.length === 0
-      ) {
-        return 0
+    }
+    const handleTouchMove = (event: TouchEvent) => {
+      if (shouldPreventWorkspaceCanvasTouchZoom(event.touches.length)) {
+        event.preventDefault()
       }
+    }
+    const handleGestureEvent = (event: Event) => {
+      event.preventDefault()
+    }
+    const listenerOptions = { passive: false, capture: true } as const
 
-      const frameRect = flowFrameContainer.getBoundingClientRect()
-      return onAddWorkspacePeopleToCanvas({
-        personIds,
-        clientX: frameRect.left + frameRect.width / 2,
-        clientY: frameRect.top + frameRect.height / 2,
-      })
-    },
-    [
-      flowFrameContainer,
-      onAddWorkspacePeopleToCanvas,
-      peopleCanvasInteractionEnabled,
-    ]
-  )
+    surface.addEventListener("wheel", handleWheel, listenerOptions)
+    surface.addEventListener("touchmove", handleTouchMove, listenerOptions)
+    surface.addEventListener("gesturestart", handleGestureEvent, listenerOptions)
+    surface.addEventListener("gesturechange", handleGestureEvent, listenerOptions)
+    surface.addEventListener("gestureend", handleGestureEvent, listenerOptions)
 
-  useRegisterAppShellAccountMenuAction(tutorialRestartAccountMenuAction)
-
-  useWorkspaceCanvasSurfaceGestureGuards({ surfaceContainer })
+    return () => {
+      surface.removeEventListener("wheel", handleWheel, listenerOptions)
+      surface.removeEventListener("touchmove", handleTouchMove, listenerOptions)
+      surface.removeEventListener("gesturestart", handleGestureEvent, listenerOptions)
+      surface.removeEventListener("gesturechange", handleGestureEvent, listenerOptions)
+      surface.removeEventListener("gestureend", handleGestureEvent, listenerOptions)
+    }
+  }, [])
 
   return (
     <WorkspaceCanvasErrorBoundary>
       <div
-        ref={setSurfaceContainer}
-        className="workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0 flex-1 overflow-hidden bg-[#f5f5f5] dark:bg-zinc-800"
-        data-layout-animating={layoutAnimating ? "true" : undefined}
+        ref={surfaceRef}
+        className="workspace-layout-surface relative min-h-[min(820px,calc(100svh-9.5rem))] flex-1 overflow-hidden bg-zinc-100 dark:bg-zinc-800"
       >
-        <WorkspaceCanvasOverlayDrawerContainerProvider
-          container={flowFrameContainer}
-          onOpenDataDrawer={onOpenWorkspaceDataDrawer}
+        <WorkspaceCanvasSurfaceV2HelpOverlay />
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={WORKSPACE_CANVAS_V2_NODE_TYPES}
+          edgeTypes={WORKSPACE_CANVAS_V2_EDGE_TYPES}
+          nodesDraggable={allowEditing}
+          nodesConnectable={allowEditing}
+          elementsSelectable={false}
+          onNodesChange={onNodesChange}
+          onNodeDragStop={onNodeDragStop}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          onEdgeDoubleClick={onEdgeDoubleClick}
+          onEdgeContextMenu={onEdgeContextMenu}
+          zoomOnPinch
+          zoomOnScroll
+          zoomOnDoubleClick={false}
+          panOnDrag
+          preventScrolling
+          minZoom={0.2}
+          maxZoom={1.25}
+          proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
+          onError={onError}
+          onInit={onInit}
+          className="org-flow workspace-flow"
         >
-          <WorkspaceCardShortcutRail
-            items={shortcutItems}
-            dataAction={
-              <WorkspaceCanvasOverlayDrawer
-                people={workspaceDataDrawerPeople}
-                placedPersonIds={placedWorkspacePersonIds}
-                viewerId={workspaceDataDrawerViewerId}
-                organizationEditorData={workspaceDataDrawerOrganization}
-                financeInput={workspaceDataDrawerFinance}
-                documentsTab={workspaceDataDrawerDocuments}
-                acceleratorInput={workspaceAcceleratorDrawerInput}
-                acceleratorRoadmapSections={
-                  workspaceAcceleratorDrawerRoadmapSections
-                }
-                acceleratorHasAccess={workspaceAcceleratorDrawerHasAccess}
-                acceleratorPaywallHref={workspaceAcceleratorDrawerPaywallHref}
-                request={workspaceDataDrawerRequest}
-                canEdit={workspaceDataDrawerCanEdit}
-                uiPreferencesScope={uiPreferencesScope}
-                peopleCanvasActions={{
-                  add: handleAddWorkspacePeopleToCanvas,
-                  remove: onRemoveWorkspacePersonFromCanvas,
-                }}
-              />
-            }
+          <Background
+            id="workspace-v2-dot-grid"
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1.6}
+            color={presentationMode ? "rgba(148, 163, 184, 0.42)" : "rgba(148, 163, 184, 0.64)"}
           />
-          <WorkspaceCanvasSurfaceV2ViewportControls
-            tutorialCalendarButtonCallout={
-              tutorialCalendarButtonCallout ?? null
-            }
-            onTutorialCalendarButtonComplete={onTutorialCalendarButtonComplete}
-            onZoomOut={onZoomOut}
-            onZoomIn={onZoomIn}
-            onRecenterView={onRecenterView}
-          />
-          <div
-            ref={setFlowFrameContainer}
-            data-workspace-canvas-flow-frame="true"
-            className="absolute inset-0 max-w-full min-w-0 overflow-hidden"
-          >
-            <ReactFlowProvider>
-              <WorkspaceReactFlowErrorBootstrap onError={onError}>
-                {(handleReactFlowError) => (
-                  <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    nodesDraggable={nodesDraggable}
-                    nodesConnectable={allowEditing && !tutorialActive}
-                    nodeDragThreshold={4}
-                    elementsSelectable={nodesSelectable}
-                    selectionKeyCode="Shift"
-                    multiSelectionKeyCode={["Meta", "Control"]}
-                    selectionMode={SelectionMode.Partial}
-                    selectionOnDrag={false}
-                    selectNodesOnDrag={selectNodesOnDrag}
-                    onNodesChange={onNodesChange}
-                    onNodeClick={onNodeClick}
-                    onNodeDoubleClick={onNodeDoubleClick}
-                    onKeyDownCapture={onKeyDownCapture}
-                    onNodeDragStop={onNodeDragStop}
-                    onSelectionDragStop={onSelectionDragStop}
-                    onMoveStart={onMoveStart}
-                    onMoveEnd={onMoveEnd}
-                    onConnect={onConnect}
-                    isValidConnection={isValidConnection}
-                    onEdgeDoubleClick={onEdgeDoubleClick}
-                    onEdgeContextMenu={onEdgeContextMenu}
-                    onDragOver={handleCanvasDragOver}
-                    onDrop={handleCanvasDrop}
-                    zoomOnPinch
-                    zoomOnScroll
-                    zoomOnDoubleClick={false}
-                    panOnDrag
-                    panOnScroll
-                    panOnScrollSpeed={0.8}
-                    preventScrolling
-                    minZoom={guideStack ? 0.05 : 0.2}
-                    maxZoom={1.25}
-                    onlyRenderVisibleElements
-                    proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
-                    onError={handleReactFlowError}
-                    onInit={onInit}
-                    className="org-flow workspace-flow"
-                  >
-                    <Background
-                      id="workspace-v2-dot-grid"
-                      variant={BackgroundVariant.Dots}
-                      gap={20}
-                      size={1.6}
-                      color={
-                        presentationMode
-                          ? "rgba(148, 163, 184, 0.42)"
-                          : "rgba(148, 163, 184, 0.64)"
-                      }
-                    />
-                  </ReactFlow>
-                )}
-              </WorkspaceReactFlowErrorBootstrap>
-            </ReactFlowProvider>
+        </ReactFlow>
+        {nodes.length === 0 && emptyStateMessage ? (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center px-6">
+            <p className="rounded-md border border-border/70 bg-card/80 px-3 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
+              {emptyStateMessage}
+            </p>
           </div>
-          {nodes.length === 0 && emptyStateMessage ? (
-            <div className="pointer-events-none absolute inset-0 grid place-items-center px-6">
-              <p className="border-border/70 bg-card/80 text-muted-foreground rounded-md border px-3 py-2 text-center text-xs shadow-sm backdrop-blur-sm">
-                {emptyStateMessage}
-              </p>
-            </div>
-          ) : null}
-          {edgeContextMenuState ? (
-            <WorkspaceCanvasEdgeContextMenu
-              state={edgeContextMenuState}
-              onClose={onCloseEdgeContextMenu}
-              onDisconnectEdge={onDisconnectEdge}
-              onDisconnectFromSource={onDisconnectFromSource}
-              onDisconnectToTarget={onDisconnectToTarget}
-              onDisconnectAll={onDisconnectAll}
-            />
-          ) : null}
-          {shortcutItems.length > 0 ? (
-            <WorkspaceCanvasSurfaceV2MobileShortcutOverlay
-              items={shortcutItems}
-            />
-          ) : null}
-        </WorkspaceCanvasOverlayDrawerContainerProvider>
+        ) : null}
+        {edgeContextMenuState ? (
+          <WorkspaceCanvasEdgeContextMenu
+            state={edgeContextMenuState}
+            onClose={onCloseEdgeContextMenu}
+            onDisconnectEdge={onDisconnectEdge}
+            onDisconnectFromSource={onDisconnectFromSource}
+            onDisconnectToTarget={onDisconnectToTarget}
+            onDisconnectAll={onDisconnectAll}
+          />
+        ) : null}
+        {shortcutItems.length > 0 ? (
+          <WorkspaceCanvasSurfaceV2MobileShortcutOverlay items={shortcutItems} />
+        ) : null}
       </div>
     </WorkspaceCanvasErrorBoundary>
   )

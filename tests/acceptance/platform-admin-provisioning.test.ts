@@ -10,15 +10,14 @@ describe("platform admin provisioning manifest", () => {
           email: " A@Example.com ",
           fullName: " Admin User ",
           password: " TempPass!123 ",
-          accessLevel: "coach",
         },
-      ])
+      ]),
     ).toEqual([
       {
         email: "a@example.com",
         fullName: "Admin User",
         password: "TempPass!123",
-        accessLevel: "coach",
+        role: "admin",
       },
     ])
   })
@@ -28,26 +27,7 @@ describe("platform admin provisioning manifest", () => {
       normalizePlatformAdminManifest([
         { email: "a@example.com" },
         { email: "A@example.com" },
-      ])
+      ]),
     ).toThrow(/duplicate email/i)
-  })
-
-  it("defaults to developer and rejects unknown access levels", () => {
-    expect(
-      normalizePlatformAdminManifest([{ email: "developer@example.com" }])
-    ).toEqual([
-      {
-        email: "developer@example.com",
-        fullName: null,
-        password: null,
-        accessLevel: "developer",
-      },
-    ])
-
-    expect(() =>
-      normalizePlatformAdminManifest([
-        { email: "staff@example.com", accessLevel: "owner" },
-      ])
-    ).toThrow(/invalid accessLevel/i)
   })
 })

@@ -13,8 +13,6 @@ export const ROADMAP_TOC_GROUPS = [
   { id: "origin_story" },
   { id: "need" },
   { id: "mission_vision_values" },
-  { id: "vision" },
-  { id: "values" },
   { id: "theory_of_change" },
   { id: "program" },
   { id: "evaluation" },
@@ -27,6 +25,6 @@ export const ROADMAP_TOC_GROUPS = [
 ]
 
 export const ROADMAP_TOC_GROUP_PARENT_BY_CHILD = new Map<string, string>([
-  ...FUNDRAISING_CHILD_IDS.map((id) => [id, "fundraising"] as const),
-  ...BOARD_CHILD_IDS.map((id) => [id, "board_strategy"] as const),
+  ...(FUNDRAISING_CHILD_IDS.map((id) => [id, "fundraising"] as const)),
+  ...(BOARD_CHILD_IDS.map((id) => [id, "board_strategy"] as const)),
 ])

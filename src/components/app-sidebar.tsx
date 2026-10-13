@@ -1,19 +1,25 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo } from "react"
+import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
-import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import type { SidebarClass } from "@/lib/academy"
-import type { PlatformAccessLevel } from "@/features/platform-access"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
-import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
-import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
+import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar"
 
 export type AppSidebarProps = {
   user?: {
@@ -23,48 +29,36 @@ export type AppSidebarProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
-  platformAccessLevel?: PlatformAccessLevel | null
   isTester?: boolean
   showOrgAdmin?: boolean
   canAccessOrgAdmin?: boolean
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
   showAccelerator?: boolean
-  hasActiveSubscription?: boolean
-  hasBillingCancellationRisk?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
-  onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
-  showWorkspaceHome?: boolean
-  showMemberWorkspace?: boolean
 }
 
 export function AppSidebar({
   user,
   isAdmin = false,
-  platformAccessLevel = null,
   isTester = false,
   showOrgAdmin = false,
   canAccessOrgAdmin = true,
   classes,
   showAccelerator,
-  hasActiveSubscription = false,
-  hasBillingCancellationRisk = false,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs,
   formationStatus,
   onboardingLocked = false,
-  onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
-  showWorkspaceHome = true,
-  showMemberWorkspace,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -73,20 +67,17 @@ export function AppSidebar({
       email: user?.email ?? null,
       avatar: user?.avatar ?? null,
     }),
-    [user?.avatar, user?.email, user?.name, user?.title]
+    [user?.avatar, user?.email, user?.name, user?.title],
   )
 
   return (
-    <aside className="border-border/70 bg-sidebar hidden h-full w-72 shrink-0 border-r px-3 pt-0 pb-0 md:flex md:flex-col md:gap-6">
+    <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-0 pt-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
-        platformAccessLevel={platformAccessLevel}
         isTester={isTester}
         classes={classes}
         user={resolvedUser}
         showAccelerator={showAccelerator}
-        hasActiveSubscription={hasActiveSubscription}
-        hasBillingCancellationRisk={hasBillingCancellationRisk}
         showOrgAdmin={showOrgAdmin}
         canAccessOrgAdmin={canAccessOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
@@ -94,11 +85,8 @@ export function AppSidebar({
         ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
         formationStatus={formationStatus}
         onboardingLocked={onboardingLocked}
-        onboardingIntentFocus={onboardingIntentFocus}
         organizationName={organizationName}
         showCoachScheduling={showCoachScheduling}
-        showWorkspaceHome={showWorkspaceHome}
-        showMemberWorkspace={showMemberWorkspace}
       />
     </aside>
   )
@@ -106,7 +94,6 @@ export function AppSidebar({
 
 type SidebarBodyProps = {
   isAdmin: boolean
-  platformAccessLevel?: PlatformAccessLevel | null
   isTester: boolean
   classes?: SidebarClass[]
   user: {
@@ -116,8 +103,6 @@ type SidebarBodyProps = {
     avatar?: string | null
   }
   showAccelerator?: boolean
-  hasActiveSubscription?: boolean
-  hasBillingCancellationRisk?: boolean
   showClasses?: boolean
   classesBasePath?: string
   showOrgAdmin?: boolean
@@ -127,22 +112,16 @@ type SidebarBodyProps = {
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
-  onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
-  showWorkspaceHome?: boolean
-  showMemberWorkspace?: boolean
 }
 
 export function SidebarBody({
   isAdmin,
-  platformAccessLevel = null,
   isTester,
   classes,
   user,
   showAccelerator,
-  hasActiveSubscription = false,
-  hasBillingCancellationRisk = false,
   showClasses = false,
   classesBasePath,
   showOrgAdmin = false,
@@ -152,43 +131,36 @@ export function SidebarBody({
   ownedElectiveModuleSlugs = [],
   formationStatus = null,
   onboardingLocked = false,
-  onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
-  showWorkspaceHome = true,
-  showMemberWorkspace,
 }: SidebarBodyProps) {
-  const isCoach = platformAccessLevel === "coach"
-  const shouldShowAccelerator =
-    !onboardingLocked && Boolean(isAdmin || showAccelerator)
+  const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
-  const showMemberWorkspaceNav =
-    !onboardingLocked &&
-    onboardingIntentFocus !== "fund" &&
-    resolveMemberWorkspaceNavAccess({
-      isAdmin,
-      showMemberWorkspace,
-      hasActiveSubscription,
-    })
-  const hasMemberWorkspaceAccess = showMemberWorkspaceNav
-  const showAccountUpgradeCta =
-    !platformAccessLevel &&
-    hasUser &&
-    !hasActiveSubscription
-  const mainNavItems = buildMainNav({
-    isAdmin,
-    platformAccessLevel,
-    showOrgAdmin,
-    canAccessOrgAdmin,
-    showMemberWorkspace: showMemberWorkspaceNav,
-    hasMemberWorkspaceAccess,
-    showWorkspaceHome,
-  })
+  const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin, canAccessOrgAdmin })
 
   return (
     <>
       <SidebarContent className="gap-0">
-        {onboardingLocked ? null : (
+        {onboardingLocked ? (
+          <SidebarGroup className="pt-3 pb-1">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive
+                >
+                  <Link
+                    href="/workspace?onboarding_flow=1&source=onboarding"
+                    className="flex w-full min-w-0 items-center gap-2"
+                  >
+                    <ListChecksIcon className="size-4" />
+                    <span className="min-w-0 flex-1 truncate whitespace-nowrap">Welcome</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        ) : (
           <NavMain items={mainNavItems} className="py-0" />
         )}
         {shouldShowAccelerator && showClasses ? (
@@ -206,33 +178,16 @@ export function SidebarBody({
 
       <SidebarFooter className="mt-auto pb-[var(--shell-rail-padding,0.75rem)]">
         {onboardingLocked ? null : (
-          <div className="flex flex-col gap-4 pt-2">
-            {showCoachScheduling && !isCoach ? (
-              <>
-                <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
-                  <CoachSchedulingCard />
-                </div>
-                <div className="[@media(min-height:56rem)]:hidden group-data-[collapsible=icon]:!block">
-                  <CoachSchedulingSidebarItem />
-                </div>
-              </>
+          <div className="space-y-4 pt-2">
+            {showCoachScheduling ? (
+              <div className="group-data-[collapsible=icon]:hidden">
+                <CoachSchedulingCard />
+              </div>
             ) : null}
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>
         )}
-        {hasUser ? (
-          <NavUser
-            user={user}
-            isAdmin={isAdmin}
-            isTester={isTester}
-            showOrgAdmin={showOrgAdmin}
-            canAccessOrgAdmin={canAccessOrgAdmin}
-            showDivider={false}
-            showUpgrade={showAccountUpgradeCta && !onboardingLocked}
-            planLabel={hasActiveSubscription ? "Paid plan" : "Free"}
-            hasActiveSubscription={hasBillingCancellationRisk}
-          />
-        ) : null}
+        {hasUser ? <NavUser user={user} isAdmin={isAdmin} isTester={isTester} showDivider={false} /> : null}
       </SidebarFooter>
     </>
   )

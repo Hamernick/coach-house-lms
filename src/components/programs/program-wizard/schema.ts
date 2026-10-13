@@ -1,10 +1,8 @@
 "use client"
 
 import { z } from "zod"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { BudgetTableRow } from "@/lib/modules"
-import { ORGANIZATION_ACTIVITY_KINDS } from "@/lib/organization/primary-objects"
-
-export { ORGANIZATION_ACTIVITY_KINDS }
 
 export const PROGRAM_TYPES = [
   "Direct Services",
@@ -48,7 +46,6 @@ export const ProgramWizardSchema = z.object({
   subtitle: z.string().max(200).or(z.literal("")).default(""),
   bannerImageUrl: z.string().url().or(z.literal("")).default(""),
   imageUrl: z.string().url().or(z.literal("")).default(""),
-  objectKind: z.enum(ORGANIZATION_ACTIVITY_KINDS).default("Program"),
   programType: z.enum(PROGRAM_TYPES),
   coreFormat: z.enum(DELIVERY_FORMATS),
   formatAddons: z.array(z.string().min(1)).default([]),
@@ -68,10 +65,10 @@ export const ProgramWizardSchema = z.object({
       z.object({
         role: z.string().trim().min(1).max(120),
         hoursPerWeek: z.coerce.number().min(0).max(168),
-      })
+      }),
     )
     .default([]),
-  startMonth: z.string().regex(monthRegex, "Choose a start month."),
+  startMonth: z.string().regex(monthRegex),
   durationLabel: z.string().trim().min(1).max(120),
   frequency: z.string().trim().min(1).max(120),
   locationMode: z.enum(LOCATION_MODES),
@@ -84,25 +81,17 @@ export const ProgramWizardSchema = z.object({
   costOtherUsd: z.coerce.number().nonnegative().default(0),
   fundingSource: z.string().max(220).or(z.literal("")).default(""),
   statusLabel: z.string().max(60).or(z.literal("Draft")).default("Draft"),
-  ctaLabel: z
-    .string()
-    .max(40)
-    .or(z.literal("Learn more"))
-    .default("Learn more"),
-  ctaUrl: z.string().url("Enter a valid URL.").or(z.literal("")).default(""),
+  ctaLabel: z.string().max(40).or(z.literal("Learn more")).default("Learn more"),
+  ctaUrl: z.string().url().or(z.literal("")).default(""),
   goalUsd: z.coerce.number().nonnegative().default(0),
   raisedUsd: z.coerce.number().nonnegative().default(0),
   features: z.array(z.string().min(1)).default([]),
-  isPublic: z.boolean().default(false),
+  isPublic: z.boolean().default(publicSharingEnabled),
   // Legacy fields kept for backwards compatibility with existing wizard step modules.
   description: z.string().max(2000).or(z.literal("")).default(""),
   location: z.string().max(160).or(z.literal("")).default(""),
   locationType: z.enum(["in_person", "online"]).default("in_person"),
-  locationUrl: z
-    .string()
-    .url("Enter a valid URL.")
-    .or(z.literal(""))
-    .default(""),
+  locationUrl: z.string().url().or(z.literal("")).default(""),
   teamIds: z.array(z.string().min(1)).default([]),
   startDate: z.string().or(z.literal("")).default(""),
   endDate: z.string().or(z.literal("")).default(""),
@@ -133,7 +122,6 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   addressState: "",
   addressPostal: "",
   addressCountry: "",
-  objectKind: "Program",
   programType: "Direct Services",
   coreFormat: "Cohort",
   formatAddons: [],
@@ -167,5 +155,5 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   goalUsd: 0,
   raisedUsd: 0,
   features: [],
-  isPublic: false,
+  isPublic: publicSharingEnabled,
 }

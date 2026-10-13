@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { parseAsString, useQueryState } from "nuqs"
 
-import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import type {
   WorkspaceCardSize,
   WorkspaceVaultViewMode,
@@ -19,11 +18,6 @@ import {
   VaultModeToolbar,
   VaultSearchSurface,
 } from "./workspace-board-vault-surfaces"
-import { WorkspaceBoardVaultTutorialInteractionShield } from "./workspace-board-vault-tutorial-shield"
-
-export {
-  WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_MESSAGE,
-} from "./workspace-board-vault-tutorial-shield"
 
 type ResolveUrlIntent = "view" | "download"
 
@@ -32,27 +26,16 @@ async function readErrorMessage(response: Response, fallback: string) {
   return typeof payload?.error === "string" ? payload.error : fallback
 }
 
-export function shouldRenderWorkspaceBoardVaultCardDisplayOnly({
-  tutorialStepId,
-}: {
-  presentationMode: boolean
-  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
-}) {
-  return tutorialStepId === "roadmap"
-}
-
 export function WorkspaceBoardVaultCard({
   size,
   canEdit,
   presentationMode,
-  tutorialStepId = null,
   mode,
   onModeChange,
 }: {
   size: WorkspaceCardSize
   canEdit: boolean
   presentationMode: boolean
-  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
   mode: WorkspaceVaultViewMode
   onModeChange: (next: WorkspaceVaultViewMode) => void
 }) {
@@ -74,10 +57,6 @@ export function WorkspaceBoardVaultCard({
 
   const isCompactCard = size === "sm" && !presentationMode
   const isDropzoneDisabled = presentationMode || !canEdit
-  const tutorialDisplayOnly = shouldRenderWorkspaceBoardVaultCardDisplayOnly({
-    presentationMode,
-    tutorialStepId,
-  })
 
   const loadIndex = useCallback(async () => {
     setIndexBusy(true)
@@ -298,10 +277,7 @@ export function WorkspaceBoardVaultCard({
   }, [resolveItemUrl, selectedItem])
 
   return (
-    <div
-      className="relative flex h-full w-full flex-col overflow-hidden"
-      inert={tutorialDisplayOnly || undefined}
-    >
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <VaultModeToolbar
         mode={mode}
         isCompactCard={isCompactCard}
@@ -354,7 +330,6 @@ export function WorkspaceBoardVaultCard({
           />
         ) : null}
       </div>
-      {tutorialDisplayOnly ? <WorkspaceBoardVaultTutorialInteractionShield /> : null}
     </div>
   )
 }

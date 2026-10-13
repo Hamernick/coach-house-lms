@@ -7,15 +7,10 @@ export async function register() {
     return
   }
 
-  const hasOtelExporter =
-    Boolean(process.env.OTEL_EXPORTER_OTLP_ENDPOINT) ||
-    Boolean(process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)
-  const isVercelRuntime = process.env.VERCEL === "1"
-
-  if (!isVercelRuntime && !hasOtelExporter) {
+  if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
     logger.info("otelemetry.disabled", {
       service: SERVICE_NAME,
-      reason: "Vercel runtime or OTLP exporter not configured",
+      reason: "OTEL_EXPORTER_OTLP_ENDPOINT not configured",
     })
     return
   }

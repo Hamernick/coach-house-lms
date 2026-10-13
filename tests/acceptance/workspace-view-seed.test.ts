@@ -29,8 +29,6 @@ function createQueryChain<T>({
 
 function buildSupabaseStub({
   boardState,
-  boardError,
-  invitesError,
   communicationsError,
   channelsError,
   objectiveGroupsError,
@@ -40,8 +38,6 @@ function buildSupabaseStub({
   moduleProgressData,
 }: {
   boardState?: unknown
-  boardError?: unknown
-  invitesError?: unknown
   communicationsError?: unknown
   channelsError?: unknown
   objectiveGroupsError?: unknown
@@ -53,11 +49,11 @@ function buildSupabaseStub({
   const boardsQuery = createQueryChain({
     maybeSingleResult: Promise.resolve({
       data: { state: boardState ?? null },
-      error: boardError ?? null,
+      error: null,
     }),
   })
   const invitesQuery = createQueryChain({
-    result: Promise.resolve({ data: [], error: invitesError ?? null }),
+    result: Promise.resolve({ data: [], error: null }),
   })
   const communicationsQuery = createQueryChain({
     result: Promise.resolve({ data: communicationsData ?? null, error: communicationsError ?? null }),
@@ -106,54 +102,6 @@ function buildSupabaseStub({
 }
 
 describe("workspace view seed", () => {
-  it("falls back to the default board state and no invites when legacy workspace tables are missing", async () => {
-    const supabase = buildSupabaseStub({
-      boardError: {
-        code: "PGRST205",
-        message:
-          "Could not find the table 'public.organization_workspace_boards' in the schema cache",
-      },
-      invitesError: {
-        code: "42P01",
-        message: 'relation "organization_workspace_invites" does not exist',
-      },
-    })
-
-    const seed = await buildWorkspaceViewSeed({
-      supabase: supabase as never,
-      orgId: "org-1",
-      role: "owner",
-      canEdit: true,
-      hasAcceleratorAccess: false,
-      presentationMode: false,
-      viewer: {
-        id: "org-1",
-        email: "owner@example.com",
-        fullName: "Owner One",
-        avatarUrl: null,
-      },
-      organizationTitle: "Coach House",
-      organizationSubtitle: "Nonprofit support",
-      fundingGoalCents: 1_000_000,
-      raisedCents: 250_000,
-      programsCount: 2,
-      peopleCount: 4,
-      teammateCount: 4,
-      organizationProfileComplete: false,
-      workspaceDocumentCount: 0,
-      initialProfile: {},
-      roadmapSections: [],
-      formationSummary: {},
-      acceleratorTimeline: [],
-      calendar: {},
-    })
-
-    expect(seed.boardState).toBeDefined()
-    expect(seed.collaborationInvites).toEqual([])
-    expect(Array.isArray(seed.boardState.hiddenCardIds)).toBe(true)
-    expect(seed.viewerName).toBe("Owner One")
-  })
-
   it("gracefully falls back when workspace communications tables are missing from schema cache", async () => {
     const supabase = buildSupabaseStub({
       communicationsError: {
@@ -190,7 +138,6 @@ describe("workspace view seed", () => {
       organizationProfileComplete: false,
       workspaceDocumentCount: 0,
       initialProfile: {},
-      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [],
       calendar: {},
@@ -260,7 +207,6 @@ describe("workspace view seed", () => {
       organizationProfileComplete: true,
       workspaceDocumentCount: 3,
       initialProfile: {},
-      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [],
       calendar: {},
@@ -303,7 +249,7 @@ describe("workspace view seed", () => {
       ],
       moduleProgressData: [
         {
-          module_id: "11111111-1111-4111-8111-111111111111",
+          module_id: "module-1",
           status: "completed",
           completed_at: "2026-02-24T17:30:00.000Z",
           updated_at: "2026-02-24T17:30:00.000Z",
@@ -334,12 +280,11 @@ describe("workspace view seed", () => {
       organizationProfileComplete: true,
       workspaceDocumentCount: 3,
       initialProfile: {},
-      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [
         {
           id: "step-1",
-          moduleId: "11111111-1111-4111-8111-111111111111",
+          moduleId: "module-1",
           moduleTitle: "Launch your first campaign",
           stepKind: "video",
           stepTitle: "Video",

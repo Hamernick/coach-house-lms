@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import "@fontsource-variable/fraunces/wght.css"
+import { Fraunces } from "next/font/google"
 
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
@@ -15,10 +15,17 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
+const display = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  variable: "--font-display",
+})
+
 export const metadata: Metadata = {
   title: "Home",
   description: "Prototype home page inspired by Molly Studio.",
 }
+
 export const runtime = "edge"
 export const revalidate = 86400
 
@@ -41,7 +48,7 @@ const STUDIO_BLOCKS = [
   },
   {
     title: "Coaching rhythm built in",
-    body: "Weekly prompts plus coaching meetings keep your leadership team aligned and moving.",
+    body: "Weekly prompts plus coaching sessions keep your leadership team aligned and moving.",
     icon: CalendarCheck,
   },
 ]
@@ -88,7 +95,7 @@ export default function HomePage() {
               <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
               Prototype home experience
             </div>
-            <h1 className="font-display text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
+            <h1 className={cn(display.className, "text-balance text-5xl font-semibold tracking-tight sm:text-6xl")}>
               Build a nonprofit launch plan that looks as good as it reads.
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">
@@ -97,7 +104,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Button asChild size="lg" className="rounded-full px-6">
-                <Link href="/pricing">
+                <Link href="/?section=pricing">
                   View pricing <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
                 </Link>
               </Button>
@@ -125,7 +132,7 @@ export default function HomePage() {
                 Platform Board
                 <Badge variant="secondary" className="rounded-full">Draft</Badge>
               </div>
-              <p className="font-display mt-6 text-2xl font-semibold">
+              <p className={cn(display.className, "mt-6 text-2xl font-semibold")}>
                 Roadmap, programs, and funding signals in one view.
               </p>
               <div className="mt-6 grid gap-3">
@@ -158,7 +165,7 @@ export default function HomePage() {
         <section className="grid gap-10 lg:grid-cols-[0.6fr_1fr] lg:items-start">
           <div className="space-y-4">
             <p className="text-xs uppercase text-muted-foreground">Everything in one place</p>
-            <h2 className="font-display text-3xl font-semibold">
+            <h2 className={cn(display.className, "text-3xl font-semibold")}>
               A strategic home for every nonprofit decision.
             </h2>
             <p className="text-sm text-muted-foreground">
@@ -204,7 +211,7 @@ export default function HomePage() {
 
           <div className="rounded-3xl border border-border/60 bg-foreground p-6 text-background shadow-xl">
             <p className="text-xs uppercase text-background/70">Platform note</p>
-            <h2 className="font-display mt-4 text-3xl font-semibold">
+            <h2 className={cn(display.className, "mt-4 text-3xl font-semibold")}>
               Make it easy for funders to say yes.
             </h2>
             <p className="mt-4 text-sm text-background/80">
@@ -212,14 +219,14 @@ export default function HomePage() {
               when it matters most.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-6 rounded-full px-6">
-              <Link href="/pricing">Explore tiers</Link>
+              <Link href="/?section=pricing">Explore tiers</Link>
             </Button>
           </div>
         </section>
 
         <section className="rounded-3xl border border-border/60 bg-card/70 p-8 text-center">
           <p className="text-xs uppercase text-muted-foreground">Get started</p>
-          <h2 className="font-display mt-3 text-3xl font-semibold">Ready to build the first draft?</h2>
+          <h2 className={cn(display.className, "mt-3 text-3xl font-semibold")}>Ready to build the first draft?</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
             Start with the free platform tools, then upgrade when you want accelerator guidance or long-term community support.
           </p>
@@ -228,7 +235,7 @@ export default function HomePage() {
               <Link href="/sign-up">Start free</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-              <Link href="/pricing">View pricing</Link>
+              <Link href="/?section=pricing">View pricing</Link>
             </Button>
           </div>
         </section>

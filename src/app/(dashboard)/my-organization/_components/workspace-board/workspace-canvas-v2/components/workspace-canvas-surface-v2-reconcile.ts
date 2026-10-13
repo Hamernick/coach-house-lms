@@ -1,10 +1,15 @@
 "use client"
 
-import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import type { Node } from "reactflow"
+
+import type { WorkspaceCanvasTutorialNodeData } from "@/features/workspace-canvas-tutorial"
 
 import { resolveWorkspaceCardNodeStyle } from "../../workspace-board-layout"
 import { ACCELERATOR_STEP_NODE_ID } from "../../workspace-board-flow-surface-accelerator-graph-composition"
-import type { WorkspaceBoardNodeData } from "../../workspace-board-node"
+import type {
+  WorkspaceBoardAcceleratorStepNodeData,
+  WorkspaceBoardNodeData,
+} from "../../workspace-board-node"
 import { workspaceBoardCardPropsEqual } from "../../workspace-board-node-card-compare"
 import { workspaceNodeClassName } from "../../workspace-board-node-class-name"
 import type {
@@ -12,21 +17,23 @@ import type {
   WorkspaceCardId,
 } from "../../workspace-board-types"
 import { type WorkspaceCanvasV2CardId } from "../contracts/workspace-card-contract"
-import {
-  getWorkspaceCanvasPersonNodeId,
-  type WorkspaceCanvasPersonPlacement,
-} from "./workspace-canvas-person-node-model"
-import { reconcileWorkspacePersonNode } from "./workspace-canvas-surface-v2-reconcile-person"
-import type { WorkspaceCanvasNode } from "./workspace-canvas-surface-v2-helpers"
-import { resolveWorkspaceCanvasV2CardNodeZIndex } from "./workspace-canvas-surface-v2-node-z-index"
 import { resolveWorkspaceCanvasV2DefaultPosition } from "./workspace-canvas-surface-v2-positioning"
 import { WORKSPACE_CANVAS_TUTORIAL_NODE_ID } from "./workspace-canvas-surface-v2-tutorial-runtime"
 
+type WorkspaceCanvasNodeData =
+  | WorkspaceBoardNodeData
+  | WorkspaceBoardAcceleratorStepNodeData
+  | WorkspaceCanvasTutorialNodeData
+type WorkspaceCanvasNode = Node<WorkspaceCanvasNodeData>
+
 function isWorkspaceCardDataSemanticallyEqual(
   left: WorkspaceBoardNodeData,
-  right: WorkspaceBoardNodeData
+  right: WorkspaceBoardNodeData,
 ) {
-  return workspaceBoardCardPropsEqual({ data: left }, { data: right })
+  return workspaceBoardCardPropsEqual(
+    { data: left },
+    { data: right },
+  )
 }
 
 function buildWorkspaceCanvasV2CardNode({
@@ -34,25 +41,18 @@ function buildWorkspaceCanvasV2CardNode({
   position,
   data,
   allowEditing,
-  tutorialDraggable = false,
 }: {
   cardId: WorkspaceCardId
   position: { x: number; y: number }
   data: WorkspaceBoardNodeData
   allowEditing: boolean
-  tutorialDraggable?: boolean
 }): WorkspaceCanvasNode {
-  const zIndex = resolveWorkspaceCanvasV2CardNodeZIndex({
-    cardId,
-    tutorialDraggable,
-  })
   return {
     id: cardId,
     type: "workspace",
     position,
-    zIndex,
-    draggable: allowEditing || tutorialDraggable,
-    selectable: allowEditing || tutorialDraggable,
+    draggable: allowEditing,
+    selectable: false,
     dragHandle: ".workspace-card-drag-handle",
     className: workspaceNodeClassName(data.size, cardId),
     style: resolveWorkspaceCardNodeStyle(data.size, cardId),
@@ -67,8 +67,6 @@ function reconcileWorkspaceCardNode({
   orgNodePositionFromBoard,
   cardData,
   allowEditing,
-  tutorialDraggableCardIds,
-  tutorialCardPositionOverrides,
 }: {
   currentWorkspaceNode?: WorkspaceCanvasNode
   cardId: WorkspaceCanvasV2CardId
@@ -76,23 +74,14 @@ function reconcileWorkspaceCardNode({
   orgNodePositionFromBoard: { x: number; y: number }
   cardData: WorkspaceBoardNodeData
   allowEditing: boolean
-  tutorialDraggableCardIds: WorkspaceCanvasV2CardId[]
-  tutorialCardPositionOverrides: Partial<
-    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
-  > | null
 }) {
   const fallbackPosition =
     cardId === "organization-overview"
       ? orgNodePositionFromBoard
       : resolveWorkspaceCanvasV2DefaultPosition(cardId)
-  const nextPosition =
-    (currentWorkspaceNode?.dragging
-      ? currentWorkspaceNode.position
-      : undefined) ??
-    tutorialCardPositionOverrides?.[cardId] ??
-    (boardNode
-      ? { x: boardNode.x, y: boardNode.y }
-      : (currentWorkspaceNode?.position ?? fallbackPosition))
+  const nextPosition = boardNode
+    ? { x: boardNode.x, y: boardNode.y }
+    : currentWorkspaceNode?.position ?? fallbackPosition
 
   if (!currentWorkspaceNode) {
     return buildWorkspaceCanvasV2CardNode({
@@ -100,7 +89,6 @@ function reconcileWorkspaceCardNode({
       position: nextPosition,
       data: cardData,
       allowEditing,
-      tutorialDraggable: tutorialDraggableCardIds.includes(cardId),
     })
   }
 
@@ -114,38 +102,19 @@ function reconcileWorkspaceCardNode({
     currentWorkspaceNode.style?.minHeight === nodeStyle.minHeight
   const sameData = isWorkspaceCardDataSemanticallyEqual(
     currentWorkspaceNode.data as WorkspaceBoardNodeData,
-    cardData
+    cardData,
   )
-  const nextDraggable =
-    allowEditing || tutorialDraggableCardIds.includes(cardId)
-  const sameDraggable = currentWorkspaceNode.draggable === nextDraggable
-  const sameSelectable = currentWorkspaceNode.selectable === nextDraggable
-  const nextZIndex = resolveWorkspaceCanvasV2CardNodeZIndex({
-    cardId,
-    tutorialDraggable: tutorialDraggableCardIds.includes(cardId),
-  })
-  const sameZIndex = currentWorkspaceNode.zIndex === nextZIndex
+  const sameDraggable = currentWorkspaceNode.draggable === allowEditing
   const nextClassName = workspaceNodeClassName(cardData.size, cardId)
   const sameClassName = currentWorkspaceNode.className === nextClassName
-  if (
-    samePosition &&
-    sameWidth &&
-    sameHeight &&
-    sameData &&
-    sameDraggable &&
-    sameSelectable &&
-    sameClassName &&
-    sameZIndex
-  ) {
+  if (samePosition && sameWidth && sameHeight && sameData && sameDraggable && sameClassName) {
     return currentWorkspaceNode
   }
 
   return {
     ...currentWorkspaceNode,
     className: sameClassName ? currentWorkspaceNode.className : nextClassName,
-    zIndex: nextZIndex,
-    draggable: nextDraggable,
-    selectable: nextDraggable,
+    draggable: allowEditing,
     position: samePosition ? currentWorkspaceNode.position : nextPosition,
     style:
       sameWidth && sameHeight
@@ -174,10 +143,8 @@ function reconcileAcceleratorStepNode({
     const sameWidth =
       existingStepNode.style?.width === acceleratorStepNodeData.style?.width
     const sameHeight =
-      existingStepNode.style?.height ===
-        acceleratorStepNodeData.style?.height &&
-      existingStepNode.style?.minHeight ===
-        acceleratorStepNodeData.style?.minHeight
+      existingStepNode.style?.height === acceleratorStepNodeData.style?.height &&
+      existingStepNode.style?.minHeight === acceleratorStepNodeData.style?.minHeight
     const sameDraggable =
       existingStepNode.draggable === acceleratorStepNodeData.draggable
     const sameData = existingStepNode.data === acceleratorStepNodeData.data
@@ -210,10 +177,7 @@ function reconcileTutorialNode({
   existingTutorialNode?: WorkspaceCanvasNode
   tutorialNodeData: WorkspaceCanvasNode
 }) {
-  if (
-    existingTutorialNode &&
-    existingTutorialNode.type === "workspace-tutorial"
-  ) {
+  if (existingTutorialNode && existingTutorialNode.type === "workspace-tutorial") {
     const samePosition =
       existingTutorialNode.position.x === tutorialNodeData.position.x &&
       existingTutorialNode.position.y === tutorialNodeData.position.y
@@ -221,21 +185,11 @@ function reconcileTutorialNode({
       existingTutorialNode.style?.width === tutorialNodeData.style?.width
     const sameHeight =
       existingTutorialNode.style?.height === tutorialNodeData.style?.height &&
-      existingTutorialNode.style?.minHeight ===
-        tutorialNodeData.style?.minHeight
+      existingTutorialNode.style?.minHeight === tutorialNodeData.style?.minHeight
     const sameData = existingTutorialNode.data === tutorialNodeData.data
-    const sameDraggable =
-      existingTutorialNode.draggable === tutorialNodeData.draggable
-    const sameZIndex = existingTutorialNode.zIndex === tutorialNodeData.zIndex
+    const sameDraggable = existingTutorialNode.draggable === tutorialNodeData.draggable
 
-    if (
-      samePosition &&
-      sameWidth &&
-      sameHeight &&
-      sameData &&
-      sameDraggable &&
-      sameZIndex
-    ) {
+    if (samePosition && sameWidth && sameHeight && sameData && sameDraggable) {
       return existingTutorialNode
     }
 
@@ -244,9 +198,7 @@ function reconcileTutorialNode({
       ...tutorialNodeData,
       position: samePosition
         ? existingTutorialNode.position
-        : existingTutorialNode.dragging
-          ? existingTutorialNode.position
-          : tutorialNodeData.position,
+        : tutorialNodeData.position,
       style:
         sameWidth && sameHeight
           ? existingTutorialNode.style
@@ -265,14 +217,8 @@ export function reconcileWorkspaceCanvasV2Nodes({
   cardDataLookup,
   orgNodePositionFromBoard,
   allowEditing,
-  allowPeopleCanvasInteraction,
   acceleratorStepNodeData,
   tutorialNodeData,
-  workspacePersonPlacements,
-  workspacePersonById,
-  onRemoveWorkspacePerson,
-  tutorialDraggableCardIds,
-  tutorialCardPositionOverrides,
 }: {
   previous: WorkspaceCanvasNode[]
   visibleCardIds: WorkspaceCanvasV2CardId[]
@@ -280,21 +226,10 @@ export function reconcileWorkspaceCanvasV2Nodes({
   cardDataLookup: Record<WorkspaceCardId, WorkspaceBoardNodeData>
   orgNodePositionFromBoard: { x: number; y: number }
   allowEditing: boolean
-  allowPeopleCanvasInteraction: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
-  workspacePersonPlacements: WorkspaceCanvasPersonPlacement[]
-  workspacePersonById: ReadonlyMap<string, OrgPersonWithImage>
-  onRemoveWorkspacePerson: (personId: string) => void
-  tutorialDraggableCardIds: WorkspaceCanvasV2CardId[]
-  tutorialCardPositionOverrides: Partial<
-    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
-  > | null
 }): WorkspaceCanvasNode[] {
   const previousById = new Map(previous.map((node) => [node.id, node]))
-  const safeWorkspacePersonPlacements = Array.isArray(workspacePersonPlacements)
-    ? workspacePersonPlacements
-    : []
   const next: WorkspaceCanvasNode[] = visibleCardIds.map((cardId) =>
     reconcileWorkspaceCardNode({
       currentWorkspaceNode:
@@ -306,43 +241,24 @@ export function reconcileWorkspaceCanvasV2Nodes({
       orgNodePositionFromBoard,
       cardData: cardDataLookup[cardId],
       allowEditing,
-      tutorialDraggableCardIds,
-      tutorialCardPositionOverrides,
-    })
+    }),
   )
-
-  for (const placement of safeWorkspacePersonPlacements) {
-    const person = workspacePersonById.get(placement.personId)
-    if (!person) continue
-    const nodeId = getWorkspaceCanvasPersonNodeId(placement.personId)
-    next.push(
-      reconcileWorkspacePersonNode({
-        existingPersonNode: previousById.get(nodeId),
-        placement,
-        person,
-        allowPeopleCanvasInteraction,
-        onRemoveWorkspacePerson,
-      })
-    )
-  }
 
   if (acceleratorStepNodeData) {
     next.push(
       reconcileAcceleratorStepNode({
         existingStepNode: previousById.get(ACCELERATOR_STEP_NODE_ID),
         acceleratorStepNodeData,
-      })
+      }),
     )
   }
 
   if (tutorialNodeData) {
     next.push(
       reconcileTutorialNode({
-        existingTutorialNode: previousById.get(
-          WORKSPACE_CANVAS_TUTORIAL_NODE_ID
-        ),
+        existingTutorialNode: previousById.get(WORKSPACE_CANVAS_TUTORIAL_NODE_ID),
         tutorialNodeData,
-      })
+      }),
     )
   }
 

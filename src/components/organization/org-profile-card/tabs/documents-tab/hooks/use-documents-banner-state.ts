@@ -21,7 +21,17 @@ export function useDocumentsBannerState({ userId }: UseDocumentsBannerStateArgs)
     }
   }, [bannerStorageKey])
 
+  const handleDismissBanner = () => {
+    setIsBannerVisible(false)
+    try {
+      window.localStorage.setItem(bannerStorageKey, "1")
+    } catch {
+      // Ignore storage failures and still hide in-memory.
+    }
+  }
+
   return {
+    handleDismissBanner,
     isBannerVisible,
   }
 }

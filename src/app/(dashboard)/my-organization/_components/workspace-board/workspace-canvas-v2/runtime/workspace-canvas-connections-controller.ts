@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Connection, EdgeMouseHandler, IsValidConnection } from "reactflow"
 
 import { ACCELERATOR_STEP_EDGE_ID } from "../../workspace-board-flow-surface-accelerator-graph-composition"
-import type { WorkspaceCardEdgeGeometryLookup } from "../../workspace-board-connection-handles"
 import { WORKSPACE_CARD_META } from "../../workspace-board-copy"
 import type {
   WorkspaceAutoLayoutMode,
@@ -20,7 +19,6 @@ import {
   buildWorkspaceCanvasV2Edges,
   resolveWorkspaceCanvasConnectAttempt,
   resolveWorkspaceCanvasDisconnectActionSets,
-  shouldLogWorkspaceCanvasDroppedConnections,
 } from "./workspace-canvas-connections"
 import type { WorkspaceCardReadiness } from "./workspace-canvas-card-readiness"
 import {
@@ -29,12 +27,10 @@ import {
 } from "./workspace-canvas-logger"
 
 const WORKSPACE_CANVAS_V2_CARD_ID_SET = new Set<WorkspaceCanvasV2CardId>(
-  WORKSPACE_CANVAS_V2_CARD_IDS
+  WORKSPACE_CANVAS_V2_CARD_IDS,
 )
 
-function isWorkspaceCanvasV2CardId(
-  value: string
-): value is WorkspaceCanvasV2CardId {
+function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2CardId {
   return WORKSPACE_CANVAS_V2_CARD_ID_SET.has(value as WorkspaceCanvasV2CardId)
 }
 
@@ -60,7 +56,6 @@ export function useWorkspaceCanvasConnectionsController({
   autoLayoutMode,
   acceleratorWorkspaceNodeId,
   tutorialEdgeTargetId,
-  nodeGeometryLookup,
   onConnectCards,
   onDisconnectConnection,
   onDisconnectAllConnections,
@@ -74,14 +69,13 @@ export function useWorkspaceCanvasConnectionsController({
   autoLayoutMode: WorkspaceAutoLayoutMode
   acceleratorWorkspaceNodeId: WorkspaceCanvasV2CardId | null
   tutorialEdgeTargetId: WorkspaceCardId | null
-  nodeGeometryLookup: WorkspaceCardEdgeGeometryLookup
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
 }) {
   const [edgeContextMenuState, setEdgeContextMenuState] =
     useState<WorkspaceCanvasEdgeContextMenuState | null>(null)
-  const { edges, droppedConnectionIds, droppedConnections } = useMemo(
+  const { edges, droppedConnectionIds } = useMemo(
     () =>
       buildWorkspaceCanvasV2Edges({
         connections,
@@ -93,23 +87,21 @@ export function useWorkspaceCanvasConnectionsController({
         autoLayoutMode,
         acceleratorWorkspaceNodeId,
         tutorialEdgeTargetId,
-        nodeGeometryLookup,
       }),
     [
       acceleratorStepNodeVisible,
       autoLayoutMode,
       acceleratorWorkspaceNodeId,
       connections,
-      nodeGeometryLookup,
       presentationMode,
       readinessMap,
       tutorialEdgeTargetId,
       visibleCardIdSet,
-    ]
+    ],
   )
   const droppedConnectionIdsSignature = useMemo(
     () => droppedConnectionIds.join("|"),
-    [droppedConnectionIds]
+    [droppedConnectionIds],
   )
   const lastDroppedConnectionIdsSignatureRef = useRef("")
 
@@ -119,32 +111,18 @@ export function useWorkspaceCanvasConnectionsController({
       return
     }
 
-    if (!shouldLogWorkspaceCanvasDroppedConnections(droppedConnections)) {
-      lastDroppedConnectionIdsSignatureRef.current =
-        droppedConnectionIdsSignature
-      return
-    }
-
-    if (
-      lastDroppedConnectionIdsSignatureRef.current ===
-      droppedConnectionIdsSignature
-    )
-      return
+    if (lastDroppedConnectionIdsSignatureRef.current === droppedConnectionIdsSignature) return
     lastDroppedConnectionIdsSignatureRef.current = droppedConnectionIdsSignature
-    logWorkspaceCanvasWarning(
-      WORKSPACE_CANVAS_EVENTS.CONNECTION_DROPPED_INVALID,
-      {
-        droppedCount: droppedConnectionIds.length,
-        droppedConnectionIds,
-        droppedConnections,
-      }
-    )
-  }, [droppedConnectionIds, droppedConnectionIdsSignature, droppedConnections])
+    logWorkspaceCanvasWarning(WORKSPACE_CANVAS_EVENTS.CONNECTION_DROPPED_INVALID, {
+      droppedCount: droppedConnectionIds.length,
+      droppedConnectionIds,
+    })
+  }, [droppedConnectionIds, droppedConnectionIdsSignature])
 
   useEffect(() => {
     if (!edgeContextMenuState) return
     const edgeStillExists = connections.some(
-      (connection) => connection.id === edgeContextMenuState.edgeId
+      (connection) => connection.id === edgeContextMenuState.edgeId,
     )
     if (edgeStillExists) return
     setEdgeContextMenuState(null)
@@ -171,12 +149,12 @@ export function useWorkspaceCanvasConnectionsController({
         allowEditing,
         visibleCardIdSet,
       }),
-    [allowEditing, visibleCardIdSet]
+    [allowEditing, visibleCardIdSet],
   )
 
   const handleIsValidConnection = useCallback<IsValidConnection>(
     (connection) => resolveConnectionAttempt(connection).allowed,
-    [resolveConnectionAttempt]
+    [resolveConnectionAttempt],
   )
 
   const handleConnect = useCallback(
@@ -198,7 +176,7 @@ export function useWorkspaceCanvasConnectionsController({
         portType: result.matchedPortType,
       })
     },
-    [onConnectCards, resolveConnectionAttempt]
+    [onConnectCards, resolveConnectionAttempt],
   )
 
   const disconnectMany = useCallback(
@@ -208,14 +186,13 @@ export function useWorkspaceCanvasConnectionsController({
         onDisconnectConnection(connectionId)
       }
     },
-    [onDisconnectConnection]
+    [onDisconnectConnection],
   )
 
   const handleEdgeDoubleClick = useCallback<EdgeMouseHandler>(
     (_event, edge) => {
       if (!allowEditing) return
       if (edge.id === ACCELERATOR_STEP_EDGE_ID) return
-      if (edge.data?.role !== "workspace-card-connection") return
 
       onDisconnectConnection(edge.id)
       logWorkspaceCanvasEvent(WORKSPACE_CANVAS_EVENTS.CONNECTION_REMOVED, {
@@ -224,17 +201,14 @@ export function useWorkspaceCanvasConnectionsController({
         target: edge.target,
       })
     },
-    [allowEditing, onDisconnectConnection]
+    [allowEditing, onDisconnectConnection],
   )
 
   const handleEdgeContextMenu = useCallback<EdgeMouseHandler>(
     (event, edge) => {
       if (!allowEditing) return
       if (edge.id === ACCELERATOR_STEP_EDGE_ID) return
-      if (
-        !isWorkspaceCanvasV2CardId(edge.source) ||
-        !isWorkspaceCanvasV2CardId(edge.target)
-      ) {
+      if (!isWorkspaceCanvasV2CardId(edge.source) || !isWorkspaceCanvasV2CardId(edge.target)) {
         return
       }
       event.preventDefault()
@@ -247,14 +221,14 @@ export function useWorkspaceCanvasConnectionsController({
         sourceTitle: WORKSPACE_CARD_META[edge.source].title,
         targetTitle: WORKSPACE_CARD_META[edge.target].title,
         sourceConnectionCount: connections.filter(
-          (connection) => connection.source === edge.source
+          (connection) => connection.source === edge.source,
         ).length,
         targetConnectionCount: connections.filter(
-          (connection) => connection.target === edge.target
+          (connection) => connection.target === edge.target,
         ).length,
       })
     },
-    [allowEditing, connections]
+    [allowEditing, connections],
   )
 
   const handleContextDisconnectEdge = useCallback(() => {

@@ -2,26 +2,35 @@
 
 import { redirect } from "next/navigation"
 
-import { validatePublicHandle } from "@/features/public-profiles"
-import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { markOrganizationSetupModuleCompleted } from "@/lib/accelerator/organization-setup"
-import { writeOnboardingOrganizationProfile } from "@/lib/onboarding/organization-profile-write"
-import { normalizeOrganizationFormationStatus } from "@/lib/onboarding/requirements"
-import { organizationProfileNameSchema } from "@/lib/organization/profile-persistence-validation"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
+import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
-import { trackUserJourneyMilestone } from "@/lib/user-journey"
-import {
-  type ActiveOrganization,
-  canEditOrganization,
-  resolveActiveOrganization,
-} from "@/lib/organization/active-org"
-import { RESERVED_PUBLIC_ORGANIZATION_SLUGS } from "@/lib/organization/reserved-public-slugs"
 import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
 
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "login",
+  "signup",
+  "pricing",
+  "billing",
+  "class",
+  "dashboard",
+  "people",
+  "organization",
+  "my-organization",
+  "roadmap",
+  "_next",
+  "public",
+  "favicon",
+  "assets",
+])
+
 function buildOnboardingErrorRedirect({
+  intentFocus,
   error,
   slug,
 }: {
@@ -33,7 +42,11 @@ function buildOnboardingErrorRedirect({
   if (slug) {
     params.set("slug", slug)
   }
-  return `/onboarding?${params.toString()}`
+  if (intentFocus && intentFocus !== "build") {
+    params.set("member_onboarding", "1")
+    return `/find?${params.toString()}`
+  }
+  return `/organization?onboarding=1&${params.toString()}`
 }
 
 function slugify(input: string): string {
@@ -47,26 +60,6 @@ function slugify(input: string): string {
   return base.slice(0, 60).replace(/^-+|-+$/g, "")
 }
 
-function workspaceOnboardingMetadata({
-  preserveCompleted,
-  intentFocus,
-  accessSelectionOnly,
-  updatedAt,
-}: {
-  preserveCompleted: boolean
-  intentFocus: string | null
-  accessSelectionOnly: boolean
-  updatedAt: string
-}) {
-  if (preserveCompleted || intentFocus !== "build") return {}
-  return {
-    workspace_onboarding_stage: 2,
-    workspace_onboarding_active: !accessSelectionOnly,
-    workspace_onboarding_started_at: accessSelectionOnly ? null : updatedAt,
-    workspace_onboarding_completed_at: null,
-  }
-}
-
 export async function completeOnboardingAction(form: FormData) {
   const supabase = await createSupabaseServerClient()
   const {
@@ -76,7 +69,7 @@ export async function completeOnboardingAction(form: FormData) {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/onboarding")
+  if (!user) redirect("/login?redirect=/organization")
 
   const first = String(form.get("firstName") || "").trim()
   const last = String(form.get("lastName") || "").trim()
@@ -89,10 +82,7 @@ export async function completeOnboardingAction(form: FormData) {
   const intentFocusRaw = String(form.get("intentFocus") || "").trim()
   const roleInterestRaw = String(form.get("roleInterest") || "").trim()
   const intentFocus =
-    intentFocusRaw === "build" ||
-    intentFocusRaw === "find" ||
-    intentFocusRaw === "fund" ||
-    intentFocusRaw === "support"
+    intentFocusRaw === "build" || intentFocusRaw === "find" || intentFocusRaw === "fund" || intentFocusRaw === "support"
       ? intentFocusRaw
       : null
   const roleInterest =
@@ -102,25 +92,12 @@ export async function completeOnboardingAction(form: FormData) {
     roleInterestRaw === "board_member"
       ? roleInterestRaw
       : null
-  const onboardingModeRaw = String(form.get("onboardingMode") || "").trim()
-  const onboardingMode =
-    onboardingModeRaw === "post_signup_access" ||
-    onboardingModeRaw === "workspace_setup"
-      ? onboardingModeRaw
-      : "full"
-  const builderPlanTierRaw = String(form.get("builderPlanTier") || "").trim()
-  const builderPlanTier =
-    builderPlanTierRaw === "organization" ||
-    builderPlanTierRaw === "operations_support"
-      ? builderPlanTierRaw
-      : "free"
-  const profileSetup = onboardingMode === "post_signup_access" && intentFocus === "build" && form.get("onboardingVersion") === "workspace_profile"
-  const builderAccessSelectionOnly =
-    intentFocus === "build" && onboardingMode === "post_signup_access" && !profileSetup
-  const personHandleRaw = String(form.get("personHandle") || "").trim()
-  const personHandleValidation = validatePublicHandle(personHandleRaw)
 
-  const formationStatus = normalizeOrganizationFormationStatus(String(form.get("formationStatus") || "").trim())
+  const formationStatusRaw = String(form.get("formationStatus") || "").trim()
+  const formationStatus =
+    formationStatusRaw === "pre_501c3" || formationStatusRaw === "in_progress" || formationStatusRaw === "approved"
+      ? formationStatusRaw
+      : null
 
   const orgName = String(form.get("orgName") || "").trim()
   const orgSlugRaw = String(form.get("orgSlug") || "").trim()
@@ -131,129 +108,90 @@ export async function completeOnboardingAction(form: FormData) {
       buildOnboardingErrorRedirect({
         intentFocus,
         error: "missing_intent_focus",
-      })
+      }),
     )
   }
 
-  const requiresOrganizationSetup =
-    intentFocus === "build" &&
-    (onboardingMode !== "post_signup_access" ||
-      profileSetup || Boolean(orgName || orgSlugRaw || formationStatus))
-  let organizationTarget: ActiveOrganization = { orgId: user.id, role: "owner" }
-  if (requiresOrganizationSetup && onboardingMode === "workspace_setup") {
-    organizationTarget = await resolveActiveOrganization(supabase, user.id)
-    if (!canEditOrganization(organizationTarget.role)) {
+  if (intentFocus === "build") {
+    const { data: activeSubscription, error: activeSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("status, metadata")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing", "past_due", "incomplete"])
+      .not("stripe_subscription_id", "ilike", "stub_%")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>()
+
+    if (activeSubscriptionError) {
+      throw supabaseErrorToError(activeSubscriptionError, "Unable to load builder plan status.")
+    }
+    if (resolvePricingPlanTier(activeSubscription ?? null) === "free") {
       redirect(
         buildOnboardingErrorRedirect({
           intentFocus,
-          error: "organization_access_required",
-        })
+          error: "builder_plan_required",
+        }),
       )
     }
-  }
-  const targetOrgId = organizationTarget.orgId
 
-  if (intentFocus === "build") {
-    if (builderPlanTier !== "free" && !profileSetup) {
-      const entitlements = await fetchLearningEntitlements({
-        supabase,
-        userId: user.id,
-        forceStripeSync: onboardingMode === "post_signup_access",
-      })
-      if (!entitlements.hasActiveSubscription) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: "builder_plan_required",
-          })
-        )
-      }
+    if (!orgName) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "missing_org_name",
+        }),
+      )
+    }
+    if (!normalizedSlug) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "missing_org_slug",
+        }),
+      )
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "invalid_org_slug",
+          slug: normalizedSlug,
+        }),
+      )
+    }
+    if (RESERVED_SLUGS.has(normalizedSlug)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "reserved_org_slug",
+          slug: normalizedSlug,
+        }),
+      )
     }
 
-    if (requiresOrganizationSetup) {
-      if (!formationStatus && !profileSetup) {
-        redirect(buildOnboardingErrorRedirect({ intentFocus, error: "missing_formation_status" }))
-      }
-      if (!organizationProfileNameSchema.safeParse(orgName).success) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: orgName ? "invalid_org_name" : "missing_org_name",
-          })
-        )
-      }
-      if (!normalizedSlug) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: "missing_org_slug",
-          })
-        )
-      }
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: "invalid_org_slug",
-            slug: normalizedSlug,
-          })
-        )
-      }
-      if (RESERVED_PUBLIC_ORGANIZATION_SLUGS.has(normalizedSlug)) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: "reserved_org_slug",
-            slug: normalizedSlug,
-          })
-        )
-      }
+    const { count: slugCount, error: slugError } = await supabase
+      .from("organizations")
+      .select("user_id", { count: "exact", head: true })
+      .ilike("public_slug", normalizedSlug)
+      .neq("user_id", user.id)
 
-      const { count: slugCount, error: slugError } = await supabase
-        .from("organizations")
-        .select("user_id", { count: "exact", head: true })
-        .ilike("public_slug", normalizedSlug)
-        .neq("user_id", targetOrgId)
-
-      if (slugError)
-        throw supabaseErrorToError(
-          slugError,
-          "Unable to validate organization URL."
-        )
-      if ((slugCount ?? 0) > 0) {
-        redirect(
-          buildOnboardingErrorRedirect({
-            intentFocus,
-            error: "slug_taken",
-            slug: normalizedSlug,
-          })
-        )
-      }
+    if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
+    if ((slugCount ?? 0) > 0) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "slug_taken",
+          slug: normalizedSlug,
+        }),
+      )
     }
-  }
-
-  if (!builderAccessSelectionOnly && !personHandleValidation.valid) {
-    redirect(
-      buildOnboardingErrorRedirect({
-        intentFocus,
-        error:
-          personHandleValidation.code === "reserved"
-            ? "reserved_person_handle"
-            : personHandleRaw
-              ? "invalid_person_handle"
-              : "missing_person_handle",
-      })
-    )
   }
 
   let avatarUrl: string | null = null
   const avatar = form.get("avatar")
   if (avatar instanceof File && avatar.size > 0) {
-    avatarUrl = await uploadAvatarWithUser({
-      client: supabase,
-      userId: user.id,
-      file: avatar,
-    })
+    avatarUrl = await uploadAvatarWithUser({ client: supabase, userId: user.id, file: avatar })
   }
 
   const fullName = [first, last].filter(Boolean).join(" ").trim()
@@ -273,91 +211,88 @@ export async function completeOnboardingAction(form: FormData) {
       userId: user.id,
       message: profileUpsertError.message,
     })
-    throw supabaseErrorToError(
-      profileUpsertError,
-      "Unable to save your profile."
+    throw supabaseErrorToError(profileUpsertError, "Unable to save your profile.")
+  }
+
+  if (intentFocus === "build") {
+    const { data: existingOrg, error: existingOrgError } = await supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", user.id)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+    if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
+
+    const nextProfile = {
+      ...(existingOrg?.profile ?? {}),
+      name: orgName,
+      ...(formationStatus ? { formationStatus } : {}),
+      ...(linkedin.length > 0 ? { linkedin } : {}),
+      ...(
+        avatarUrl &&
+        (!existingOrg?.profile || typeof existingOrg.profile["logoUrl"] !== "string" || existingOrg.profile["logoUrl"].trim().length === 0)
+          ? { logoUrl: avatarUrl }
+          : {}
+      ),
+      onboarding_intent_focus: intentFocus,
+      ...(roleInterest ? { onboarding_role_interest: roleInterest } : {}),
+    }
+
+    const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
+      ? ((existingOrg?.profile ?? {})?.org_people as Array<Record<string, unknown>>)
+      : []
+    const nextOwnerPerson = {
+      id: user.id,
+      name: fullName || user.email || "You",
+      title: title.length > 0 ? title : null,
+      email: publicEmail.length > 0 ? publicEmail : null,
+      linkedin: linkedin.length > 0 ? linkedin : null,
+      category: "staff",
+      image: avatarUrl,
+      reportsToId: null,
+      pos: null,
+    }
+    const nextPeople = [
+      nextOwnerPerson,
+      ...existingPeopleRaw.filter((person) => {
+        if (!person || typeof person !== "object") return false
+        const id = typeof person.id === "string" ? person.id : null
+        if (id && id === user.id) return false
+        const personEmail = typeof person.email === "string" ? person.email.toLowerCase() : null
+        const ownerEmail = (nextOwnerPerson.email ?? "").toLowerCase()
+        if (personEmail && ownerEmail && personEmail === ownerEmail) return false
+        return true
+      }),
+    ]
+
+    const orgProfilePayload = { ...nextProfile, org_people: nextPeople } as Json
+
+    const { error: organizationUpsertError } = await supabase.from("organizations").upsert(
+      {
+        user_id: user.id,
+        public_slug: normalizedSlug,
+        profile: orgProfilePayload,
+      },
+      { onConflict: "user_id" },
     )
-  }
 
-  if (!builderAccessSelectionOnly && personHandleValidation.valid) {
-    const { data: handleClaimData, error: handleClaimError } =
-      await supabase.rpc("claim_person_public_handle", {
-        p_handle: personHandleValidation.handle,
-      })
-
-    if (handleClaimError) {
-      console.error("completeOnboardingAction: handle claim failed", {
-        userId: user.id,
-        message: handleClaimError.message,
-      })
-      throw supabaseErrorToError(
-        handleClaimError,
-        "Unable to save your username."
-      )
-    }
-
-    const handleClaim =
-      handleClaimData &&
-      typeof handleClaimData === "object" &&
-      !Array.isArray(handleClaimData)
-        ? (handleClaimData as Record<string, unknown>)
-        : null
-    if (handleClaim?.ok !== true) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error:
-            handleClaim?.code === "reserved"
-              ? "reserved_person_handle"
-              : handleClaim?.code === "invalid"
-                ? "invalid_person_handle"
-                : "person_handle_taken",
-        })
-      )
-    }
-  }
-
-  if (requiresOrganizationSetup) {
-    const organizationWrite = await writeOnboardingOrganizationProfile({
-      avatarUrl,
-      formationStatus,
-      fullName,
-      intentFocus,
-      linkedin,
-      normalizedSlug,
-      orgName,
-      publicEmail,
-      roleInterest,
-      supabase,
-      targetOrgId,
-      title,
-      user,
-    })
-
-    if ("error" in organizationWrite) {
+    if (organizationUpsertError) {
       console.error("completeOnboardingAction: organization upsert failed", {
         userId: user.id,
-        message: organizationWrite.error,
+        message: organizationUpsertError.message,
       })
       throw supabaseErrorToError(
-        { message: organizationWrite.error },
-        "Unable to save your organization."
+        organizationUpsertError,
+        "Unable to save your organization.",
       )
     }
   }
 
-  const onboardingUpdatedAt = new Date().toISOString()
-  const preserveCompletedWorkspaceOnboarding =
-    onboardingMode === "workspace_setup" &&
-    Boolean(user.user_metadata?.workspace_onboarding_completed_at)
-
-  // Workspace basics may be saved during access selection; account setup still follows.
+  // Update user metadata with onboarding + preference fields.
   const { error: updateUserError } = await supabase.auth.updateUser({
     data: {
-      onboarding_completed: !builderAccessSelectionOnly,
-      onboarding_completed_at: builderAccessSelectionOnly
-        ? null
-        : onboardingUpdatedAt,
+      onboarding_completed: true,
+      onboarding_completed_at: new Date().toISOString(),
       full_name: fullName || null,
       first_name: first || null,
       last_name: last || null,
@@ -367,12 +302,13 @@ export async function completeOnboardingAction(form: FormData) {
       ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       onboarding_intent_focus: intentFocus,
       onboarding_role_interest: roleInterest,
-      ...workspaceOnboardingMetadata({
-        preserveCompleted: preserveCompletedWorkspaceOnboarding,
-        intentFocus,
-        accessSelectionOnly: builderAccessSelectionOnly,
-        updatedAt: onboardingUpdatedAt,
-      }),
+      ...(intentFocus === "build"
+        ? {
+            workspace_onboarding_stage: 2,
+            workspace_onboarding_active: true,
+            workspace_onboarding_started_at: new Date().toISOString(),
+          }
+        : {}),
     },
   })
 
@@ -384,60 +320,9 @@ export async function completeOnboardingAction(form: FormData) {
     throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
   }
 
-  if (requiresOrganizationSetup && !builderAccessSelectionOnly && !profileSetup) {
-    await markOrganizationSetupModuleCompleted({
-      supabase,
-      userId: user.id,
-    })
-  }
-
   if (intentFocus === "build") {
-    await trackUserJourneyMilestone({
-      userId: user.id,
-      orgId: targetOrgId,
-      eventName: builderAccessSelectionOnly
-        ? "workspace_onboarding_started"
-        : "onboarding_completed",
-      journey: "builder_onboarding",
-      source: "onboarding_action",
-      surface: "onboarding",
-      planTier: builderPlanTier,
-      checkpoint: builderAccessSelectionOnly
-        ? "workspace_onboarding_started"
-        : "account_onboarding_completed",
-      metadata: {
-        intentFocus,
-        onboardingMode,
-        builderPlanTier,
-        hasOrganizationSetup: requiresOrganizationSetup,
-        formationStatus,
-        roleInterest,
-      },
-    })
-    if (builderAccessSelectionOnly) {
-      redirect("/workspace?source=onboarding_setup")
-    }
-    redirect(
-      preserveCompletedWorkspaceOnboarding
-        ? "/workspace?source=organization_setup"
-        : "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
-    )
+    redirect("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   }
 
-  await trackUserJourneyMilestone({
-    userId: user.id,
-    orgId: user.id,
-    eventName: "member_onboarding_completed",
-    journey: "member_onboarding",
-    source: "onboarding_action",
-    surface: "workspace_onboarding",
-    checkpoint: "member_onboarding_completed",
-    metadata: {
-      intentFocus,
-      onboardingMode,
-      roleInterest,
-    },
-  })
-
-  redirect("/workspace?member_onboarding=0&source=member_onboarding")
+  redirect("/find?member_onboarding=0&source=member_onboarding")
 }

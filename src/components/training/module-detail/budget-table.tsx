@@ -1,21 +1,9 @@
 "use client"
 
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react"
-import {
-  getCoreRowModel,
-  useReactTable,
-  type ColumnSizingState,
-} from "@tanstack/react-table"
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react"
+import { getCoreRowModel, useReactTable, type ColumnSizingState } from "@tanstack/react-table"
 
 import { BudgetTableGrid } from "@/components/training/module-detail/budget-table-grid"
-import { BudgetTableStackedRows } from "@/components/training/module-detail/budget-table-stacked-rows"
 import {
   BUDGET_TABLE_CELL_CLASSES,
   buildBudgetTableColumns,
@@ -36,63 +24,13 @@ type BudgetTableProps = {
   formatMoney: (value: number) => string
   onUpdateRow: (rowIndex: number, patch: Partial<BudgetTableRow>) => void
   onRowsChange: (rows: BudgetTableRow[]) => void
-  onCategoryInputMount?: (
-    rowIndex: number,
-    input: HTMLInputElement | null
-  ) => void
   frameClassName?: string
-  layout?: "grid" | "stacked"
   maxBodyHeightClassName?: string
-  readOnly?: boolean
 }
 
 export function BudgetTable({
+  rows,
   blankRow,
-  layout = "grid",
-  onRowsChange,
-  readOnly = false,
-  rows,
-  ...props
-}: BudgetTableProps) {
-  const removeRow = useCallback(
-    (rowIndex: number) => {
-      const nextRows = [...rows]
-      nextRows.splice(rowIndex, 1)
-      if (nextRows.length === 0) nextRows.push(blankRow)
-      onRowsChange(nextRows)
-    },
-    [blankRow, onRowsChange, rows]
-  )
-
-  if (layout === "stacked") {
-    return (
-      <BudgetTableStackedRows
-        rows={rows}
-        {...props}
-        readOnly={readOnly}
-        onRemoveRow={removeRow}
-      />
-    )
-  }
-
-  return (
-    <BudgetTableGridEditor
-      rows={rows}
-      blankRow={blankRow}
-      onRowsChange={onRowsChange}
-      onRemoveRow={removeRow}
-      readOnly={readOnly}
-      {...props}
-    />
-  )
-}
-
-type BudgetTableGridEditorProps = BudgetTableProps & {
-  onRemoveRow: (rowIndex: number) => void
-}
-
-function BudgetTableGridEditor({
-  rows,
   totals,
   subtotal,
   costTypeOptions,
@@ -101,59 +39,23 @@ function BudgetTableGridEditor({
   formatMoney,
   onUpdateRow,
   onRowsChange,
-  onRemoveRow,
-  onCategoryInputMount,
   frameClassName,
   maxBodyHeightClassName,
-  readOnly = false,
-}: BudgetTableGridEditorProps) {
+}: BudgetTableProps) {
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() =>
-    fitBudgetTableColumnSizes(BUDGET_TABLE_MIN_WIDTH)
+    fitBudgetTableColumnSizes(BUDGET_TABLE_MIN_WIDTH),
   )
   const [hasMeasuredWidth, setHasMeasuredWidth] = useState(false)
   const [userSized, setUserSized] = useState(false)
   const [draggingRow, setDraggingRow] = useState<number | null>(null)
   const tableFrameRef = useRef<HTMLDivElement | null>(null)
-  const totalsRef = useRef(totals)
-  const onUpdateRowRef = useRef(onUpdateRow)
-  const onRemoveRowRef = useRef(onRemoveRow)
-  const onCategoryInputMountRef = useRef(onCategoryInputMount)
-
-  useLayoutEffect(() => {
-    totalsRef.current = totals
-    onUpdateRowRef.current = onUpdateRow
-    onRemoveRowRef.current = onRemoveRow
-    onCategoryInputMountRef.current = onCategoryInputMount
-  }, [onCategoryInputMount, onRemoveRow, onUpdateRow, totals])
-
-  const getRowTotal = useCallback(
-    (rowIndex: number) => totalsRef.current[rowIndex] ?? 0,
-    []
-  )
-  const handleUpdateRow = useCallback(
-    (rowIndex: number, patch: Partial<BudgetTableRow>) => {
-      onUpdateRowRef.current(rowIndex, patch)
-    },
-    []
-  )
-  const handleRemoveRow = useCallback((rowIndex: number) => {
-    onRemoveRowRef.current(rowIndex)
-  }, [])
-  const handleCategoryInputMount = useCallback(
-    (rowIndex: number, input: HTMLInputElement | null) => {
-      onCategoryInputMountRef.current?.(rowIndex, input)
-    },
-    []
-  )
 
   useLayoutEffect(() => {
     if (userSized) return
     const node = tableFrameRef.current
     if (!node || typeof ResizeObserver === "undefined") return
     const update = () => {
-      const width = Math.round(
-        node.getBoundingClientRect().width || node.clientWidth
-      )
+      const width = Math.round(node.getBoundingClientRect().width || node.clientWidth)
       if (!width) return
       setColumnSizing(fitBudgetTableColumnSizes(width))
       setHasMeasuredWidth(true)
@@ -173,7 +75,17 @@ function BudgetTableGridEditor({
       nextRows.splice(toIndex, 0, moved)
       onRowsChange(nextRows)
     },
-    [onRowsChange, rows]
+    [onRowsChange, rows],
+  )
+
+  const removeRow = useCallback(
+    (rowIndex: number) => {
+      const nextRows = [...rows]
+      nextRows.splice(rowIndex, 1)
+      if (nextRows.length === 0) nextRows.push(blankRow)
+      onRowsChange(nextRows)
+    },
+    [blankRow, onRowsChange, rows],
   )
 
   const handleRowDragStart = useCallback(
@@ -182,7 +94,7 @@ function BudgetTableGridEditor({
       event.dataTransfer.effectAllowed = "move"
       event.dataTransfer.setData("text/plain", String(rowIndex))
     },
-    []
+    [],
   )
 
   const handleRowDrop = useCallback(
@@ -197,7 +109,7 @@ function BudgetTableGridEditor({
       moveRow(fromIndex, rowIndex)
       setDraggingRow(null)
     },
-    [moveRow]
+    [moveRow],
   )
 
   const handleRowDragEnd = useCallback(() => {
@@ -208,26 +120,22 @@ function BudgetTableGridEditor({
     return buildBudgetTableColumns({
       costTypeOptions,
       unitListId,
-      getRowTotal,
+      totals,
       formatMoney,
       rowsLength: rows.length,
-      onUpdateRow: handleUpdateRow,
-      onRemoveRow: handleRemoveRow,
-      onCategoryInputMount: handleCategoryInputMount,
+      onUpdateRow,
+      onRemoveRow: removeRow,
       onRowDragStart: handleRowDragStart,
-      readOnly,
     })
   }, [
     costTypeOptions,
     unitListId,
-    getRowTotal,
+    totals,
     formatMoney,
     rows.length,
-    handleUpdateRow,
-    handleRemoveRow,
-    handleCategoryInputMount,
+    onUpdateRow,
+    removeRow,
     handleRowDragStart,
-    readOnly,
   ])
 
   const table = useReactTable({
@@ -250,15 +158,15 @@ function BudgetTableGridEditor({
     <div
       ref={tableFrameRef}
       className={cn(
-        "border-border/60 bg-background dark:bg-input/30 min-w-0 overflow-hidden rounded-xl border",
-        frameClassName
+        "min-w-0 rounded-xl border border-border/60 bg-background dark:bg-input/30 overflow-hidden",
+        frameClassName,
       )}
     >
       <div
         className={cn(
           "nowheel w-full overflow-auto overscroll-contain",
           maxBodyHeightClassName ?? "max-h-[min(62vh,40rem)]",
-          !hasMeasuredWidth && "overflow-hidden"
+          !hasMeasuredWidth && "overflow-hidden",
         )}
       >
         <div className={cn(!hasMeasuredWidth && "invisible")}>

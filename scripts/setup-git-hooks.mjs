@@ -11,15 +11,13 @@ const PRE_PUSH_PATH = path.join(HOOKS_DIR, "pre-push")
 const PRE_PUSH_SCRIPT = `#!/usr/bin/env sh
 set -eu
 
-echo "[pre-push] Checking supply chain, file sizes, and changed-file lint..."
-PREPUSH_REMOTE="\${1:-origin}" pnpm check:prepush
+echo "[pre-push] Running structural quality subset..."
+pnpm check:prepush
 `
 
 function ensureGitRepository() {
   try {
-    execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
-      stdio: "ignore",
-    })
+    execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { stdio: "ignore" })
     return true
   } catch {
     return false
@@ -35,9 +33,7 @@ function ensurePrePushHook() {
 }
 
 function configureHooksPath() {
-  execFileSync("git", ["config", "core.hooksPath", ".githooks"], {
-    stdio: "inherit",
-  })
+  execFileSync("git", ["config", "core.hooksPath", ".githooks"], { stdio: "inherit" })
 }
 
 function main() {

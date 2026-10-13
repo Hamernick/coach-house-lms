@@ -3,27 +3,13 @@ import Link from "next/link"
 import { AcceleratorProgressRail } from "@/components/accelerator/accelerator-progress-rail"
 import { AcceleratorReadinessChecklist } from "@/components/accelerator/accelerator-org-snapshot-strip/readiness-checklist"
 import { AcceleratorOrgSnapshotHeaderCard } from "@/components/accelerator/accelerator-org-snapshot-strip/snapshot-header-card"
-import {
-  clampPercent,
-  formatFundingGoal,
-} from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
+import { clampPercent, formatFundingGoal } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
 import { type AcceleratorOrgSnapshotStripProps } from "@/components/accelerator/accelerator-org-snapshot-strip/types"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
 import { cn } from "@/lib/utils"
-import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
-
-const ORGANIZATION_COMPANY_EDITOR_PATH = getWorkspaceEditorPath({
-  tab: "company",
-})
-const ORGANIZATION_PROGRAMS_EDITOR_PATH = getWorkspaceEditorPath({
-  tab: "programs",
-})
-const ORGANIZATION_PEOPLE_EDITOR_PATH = getWorkspaceEditorPath({
-  tab: "people",
-})
 
 export function AcceleratorOrgSnapshotStrip({
   organizationTitle,
@@ -44,27 +30,19 @@ export function AcceleratorOrgSnapshotStrip({
   moduleGroupsTotal,
   fundableCheckpoint = ACCELERATOR_FUNDABLE_THRESHOLD,
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
-  fundableMilestoneChecklist = [],
-  verifiedMilestoneChecklist = [],
   readinessStateLabel = "Building",
   readinessTargetLabel = null,
   readinessChecklist = [],
-  editHref = ORGANIZATION_COMPANY_EDITOR_PATH,
+  editHref = "/organization?view=editor",
 }: AcceleratorOrgSnapshotStripProps) {
   const progress = clampPercent(progressPercent)
   const titleText = organizationTitle.trim()
   const subtitleText = organizationSubtitle?.trim() || null
   const descriptionText = organizationDescription?.trim() || null
   const lessonsSummaryText =
-    lessonsTotal > 0
-      ? `${lessonsComplete}/${lessonsTotal} classes complete.`
-      : "No classes assigned yet."
-  const lessonsSummaryValue =
-    lessonsTotal > 0 ? `${lessonsComplete} of ${lessonsTotal}` : "0 of 0"
-  const tracksSummaryValue =
-    moduleGroupsTotal > 0
-      ? `${moduleGroupsComplete} of ${moduleGroupsTotal}`
-      : "0 of 0"
+    lessonsTotal > 0 ? `${lessonsComplete}/${lessonsTotal} lessons complete.` : "No lessons assigned yet."
+  const lessonsSummaryValue = lessonsTotal > 0 ? `${lessonsComplete} of ${lessonsTotal}` : "0 of 0"
+  const tracksSummaryValue = moduleGroupsTotal > 0 ? `${moduleGroupsComplete} of ${moduleGroupsTotal}` : "0 of 0"
   const progressPillLabel = `${progress}%`
   const readinessStatePillClass =
     readinessStateLabel === "Verified"
@@ -87,13 +65,11 @@ export function AcceleratorOrgSnapshotStrip({
       <div className="flex min-w-0 flex-col gap-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground text-xs tracking-wide uppercase">
-              Progress
-            </span>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">Progress</span>
             <span
               className={cn(
-                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
-                readinessStatePillClass
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                readinessStatePillClass,
               )}
               title={`Readiness: ${readinessStateLabel}`}
             >
@@ -105,71 +81,40 @@ export function AcceleratorOrgSnapshotStrip({
               progressPercent={progress}
               fundableCheckpoint={fundableCheckpoint}
               verifiedCheckpoint={verifiedCheckpoint}
-              fundableChecklist={fundableMilestoneChecklist}
-              verifiedChecklist={verifiedMilestoneChecklist}
             />
 
-            <p className="text-muted-foreground text-[11px]">
-              {lessonsSummaryText}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{lessonsSummaryText}</p>
           </div>
         </div>
 
-        <AcceleratorReadinessChecklist
-          readinessTargetLabel={readinessTargetLabel}
-          readinessChecklist={readinessChecklist}
-        />
+        <AcceleratorReadinessChecklist readinessTargetLabel={readinessTargetLabel} readinessChecklist={readinessChecklist} />
 
         <div className="grid grid-cols-3 gap-3">
-          <Link
-            href={ORGANIZATION_PROGRAMS_EDITOR_PATH}
-            className="min-w-0 py-1"
-          >
-            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-              Funding goal
-            </p>
-            <p className="mt-1 text-sm font-semibold tabular-nums">
-              {formatFundingGoal(fundingGoalCents)}
-            </p>
+          <Link href="/organization?view=editor&tab=programs" className="min-w-0 py-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Funding goal</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">{formatFundingGoal(fundingGoalCents)}</p>
           </Link>
-          <Link
-            href={ORGANIZATION_PROGRAMS_EDITOR_PATH}
-            className="min-w-0 py-1"
-          >
-            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-              Programs
-            </p>
-            <p className="mt-1 text-sm font-semibold tabular-nums">
-              {programsCount}
-            </p>
+          <Link href="/organization?view=editor&tab=programs" className="min-w-0 py-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Programs</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">{programsCount}</p>
           </Link>
-          <Link href={ORGANIZATION_PEOPLE_EDITOR_PATH} className="min-w-0 py-1">
-            <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-              People
-            </p>
-            <p className="mt-1 text-sm font-semibold tabular-nums">
-              {peopleCount}
-            </p>
+          <Link href="/organization?view=editor&tab=people" className="min-w-0 py-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">People</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">{peopleCount}</p>
           </Link>
         </div>
 
-        <dl className="divide-border/50 border-border/60 bg-background/20 divide-y rounded-lg border text-sm">
+        <dl className="divide-y divide-border/50 rounded-lg border border-border/60 bg-background/20 text-sm">
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-            <dt className="text-muted-foreground text-[10px] tracking-wide uppercase">
-              Formation
-            </dt>
-            <dd className="text-right font-medium">{formationLabel}</dd>
+            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Formation</dt>
+            <dd className="font-medium text-right">{formationLabel}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-            <dt className="text-muted-foreground text-[10px] tracking-wide uppercase">
-              Classes completed
-            </dt>
+            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Lessons completed</dt>
             <dd className="font-medium tabular-nums">{lessonsSummaryValue}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-            <dt className="text-muted-foreground text-[10px] tracking-wide uppercase">
-              Tracks completed
-            </dt>
+            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Tracks completed</dt>
             <dd className="font-medium tabular-nums">{tracksSummaryValue}</dd>
           </div>
         </dl>

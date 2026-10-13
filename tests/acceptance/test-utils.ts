@@ -1,7 +1,5 @@
 import { vi } from "vitest"
 
-vi.mock("server-only", () => ({}))
-
 export class RedirectError extends Error {
   constructor(public destination: string) {
     super(`redirect:${destination}`)
@@ -13,10 +11,6 @@ export const redirectMock = vi.fn((destination: string) => {
 })
 
 export const revalidatePathMock = vi.fn()
-export const revalidateTagMock = vi.fn()
-export const unstableCacheMock = vi.fn(
-  <T extends (...args: never[]) => unknown>(fn: T) => fn
-)
 
 export const headersMock = vi.fn(async () => ({
   get: (name: string): string | undefined => {
@@ -33,8 +27,6 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
-  revalidateTag: revalidateTagMock,
-  unstable_cache: unstableCacheMock,
 }))
 
 vi.mock("next/headers", () => ({
@@ -45,8 +37,7 @@ export const createSupabaseServerClientMock = vi.fn()
 export const createSupabaseServerClientServerMock = vi.fn()
 
 vi.mock("@/lib/supabase", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
+  const actual = await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
   return {
     ...actual,
     createSupabaseServerClient: createSupabaseServerClientMock,
@@ -54,9 +45,7 @@ vi.mock("@/lib/supabase", async () => {
 })
 
 vi.mock("@/lib/supabase/server", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/supabase/server")>(
-    "@/lib/supabase/server"
-  )
+  const actual = await vi.importActual<typeof import("@/lib/supabase/server")>("@/lib/supabase/server")
   return {
     ...actual,
     createSupabaseServerClient: createSupabaseServerClientServerMock,
@@ -66,8 +55,7 @@ vi.mock("@/lib/supabase/server", async () => {
 export const requireAdminMock = vi.fn()
 
 vi.mock("@/lib/admin/auth", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/admin/auth")>("@/lib/admin/auth")
+  const actual = await vi.importActual<typeof import("@/lib/admin/auth")>("@/lib/admin/auth")
   return {
     ...actual,
     requireAdmin: requireAdminMock,
@@ -91,7 +79,6 @@ vi.mock("@/lib/logger", () => ({
 export const stripeConstructorMock = vi.fn()
 export const stripeCheckoutCreateMock = vi.fn()
 export const stripeCheckoutRetrieveMock = vi.fn()
-export const stripeSubscriptionRetrieveMock = vi.fn()
 export const stripeBillingPortalCreateMock = vi.fn()
 
 class StripeMock {
@@ -106,9 +93,6 @@ class StripeMock {
       create: stripeBillingPortalCreateMock,
     },
   }
-  subscriptions = {
-    retrieve: stripeSubscriptionRetrieveMock,
-  }
 
   constructor(...args: unknown[]) {
     stripeConstructorMock(...args)
@@ -122,8 +106,6 @@ vi.mock("stripe", () => ({
 export function resetTestMocks() {
   redirectMock.mockClear()
   revalidatePathMock.mockClear()
-  revalidateTagMock.mockClear()
-  unstableCacheMock.mockClear()
   headersMock.mockClear()
   createSupabaseServerClientMock.mockReset()
   createSupabaseServerClientServerMock.mockReset()
@@ -134,7 +116,6 @@ export function resetTestMocks() {
   stripeConstructorMock.mockClear()
   stripeCheckoutCreateMock.mockClear()
   stripeCheckoutRetrieveMock.mockClear()
-  stripeSubscriptionRetrieveMock.mockClear()
   stripeBillingPortalCreateMock.mockClear()
 }
 

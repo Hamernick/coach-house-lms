@@ -15,21 +15,18 @@ import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
-  type CarouselApi,
   CarouselContent,
   CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Empty } from "@/components/ui/empty"
-import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import {
   resolveProgramBannerImageUrl,
   resolveProgramCardChips,
   resolveProgramProfileImageUrl,
   resolveProgramSummary,
 } from "@/lib/programs/display"
-import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
-
-import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-container"
 
 function sortProgramsByNewest(programs: OrgProgram[]) {
   return [...programs].sort((left, right) => {
@@ -41,20 +38,14 @@ function sortProgramsByNewest(programs: OrgProgram[]) {
 
 export function buildWorkspaceProgramEditorHref(programId?: string | null) {
   if (!programId || programId.trim().length === 0) {
-    return getWorkspaceEditorPath({ tab: "programs" })
+    return "/workspace?view=editor&tab=programs"
   }
 
-  return getWorkspaceEditorPath({ tab: "programs", programId })
+  return `/workspace?view=editor&tab=programs&programId=${encodeURIComponent(programId)}`
 }
 
 export function isWorkspaceProgramRecord(program: Pick<OrgProgram, "id">) {
   return Boolean(program.id && !program.id.startsWith("legacy-program-"))
-}
-
-export function isWorkspaceProgramsPreviewOnlyStep(
-  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
-) {
-  return tutorialStepId === "programs"
 }
 
 export function resolveWorkspaceProgramsDisplayPrograms({
@@ -78,31 +69,24 @@ export function WorkspaceBoardProgramsCard({
   legacyProgramsValue,
   canEdit,
   createOpen,
-  onCarouselApiChange,
   onCreateOpenChange,
-  previewOnly = false,
 }: {
   programs: OrgProgram[]
   legacyProgramsValue?: string | null
   canEdit: boolean
   createOpen: boolean
-  onCarouselApiChange?: (api: CarouselApi) => void
   onCreateOpenChange: (open: boolean) => void
-  previewOnly?: boolean
 }) {
   const router = useRouter()
-  const canvasPortalContainer = useWorkspaceCanvasOverlayDrawerContainer()
   const [editOpen, setEditOpen] = useState(false)
-  const [selectedProgram, setSelectedProgram] = useState<OrgProgram | null>(
-    null
-  )
+  const [selectedProgram, setSelectedProgram] = useState<OrgProgram | null>(null)
   const sortedPrograms = useMemo(
     () =>
       resolveWorkspaceProgramsDisplayPrograms({
         programs,
         legacyProgramsValue,
       }),
-    [legacyProgramsValue, programs]
+    [legacyProgramsValue, programs],
   )
 
   const handleEditOpenChange = (open: boolean) => {
@@ -114,23 +98,11 @@ export function WorkspaceBoardProgramsCard({
   }
 
   const renderProgramCard = (program: OrgProgram) => {
-    const useOverlay =
-      canEdit && !previewOnly && isWorkspaceProgramRecord(program)
-    const ctaHref = previewOnly
-      ? undefined
-      : useOverlay
-        ? undefined
-        : buildWorkspaceProgramEditorHref(program.id)
-    const onCtaClick = useOverlay
-      ? () => {
-          setSelectedProgram(program)
-          setEditOpen(true)
-        }
-      : undefined
+    const useOverlay = canEdit && isWorkspaceProgramRecord(program)
 
     return (
       <ProgramCard
-        title={program.title?.trim() || "Untitled activity"}
+        title={program.title?.trim() || "Untitled program"}
         location={locationSummary(program) ?? undefined}
         description={resolveProgramSummary(program) ?? undefined}
         bannerImageUrl={resolveProgramBannerImageUrl(program) ?? undefined}
@@ -141,86 +113,95 @@ export function WorkspaceBoardProgramsCard({
         goalCents={program.goal_cents || 0}
         raisedCents={program.raised_cents || 0}
         ctaLabel="Open"
-        ctaHref={ctaHref}
+        ctaHref={useOverlay ? undefined : buildWorkspaceProgramEditorHref(program.id)}
         ctaTarget="_self"
-        onCtaClick={onCtaClick}
+        onCtaClick={
+          useOverlay
+            ? () => {
+                setSelectedProgram(program)
+                setEditOpen(true)
+              }
+            : undefined
+        }
         variant="medium"
-        className="border-border/60 bg-background/35 h-full min-h-0 max-w-none border shadow-none"
+        className="max-w-none border border-border/60 bg-background/35 shadow-none"
       />
     )
   }
 
   return (
     <>
-      <div className="flex min-h-0 flex-col gap-3 pb-0">
+      <div className="flex min-h-0 flex-col gap-3 pb-0.5">
         {sortedPrograms.length > 0 ? (
           sortedPrograms.length === 1 ? (
-            <div
-              key={
-                sortedPrograms[0]?.id ?? sortedPrograms[0]?.title ?? "program-0"
-              }
-            >
+            <div key={sortedPrograms[0]?.id ?? sortedPrograms[0]?.title ?? "program-0"}>
               {renderProgramCard(sortedPrograms[0]!)}
             </div>
           ) : (
             <Carousel
               className="w-full"
-              opts={{ align: "start", loop: false }}
-              setApi={onCarouselApiChange}
+              opts={{ align: "start", loop: sortedPrograms.length > 1 }}
             >
-              <CarouselContent className="ml-0 items-stretch">
+              <CarouselContent>
                 {sortedPrograms.map((program, index) => (
-                  <CarouselItem
-                    key={program.id ?? program.title ?? `program-${index}`}
-                    className="flex pl-0"
-                  >
+                  <CarouselItem key={program.id ?? program.title ?? `program-${index}`}>
                     {renderProgramCard(program)}
                   </CarouselItem>
                 ))}
               </CarouselContent>
+              <CarouselPrevious className="left-auto right-[3.25rem] top-3 h-8 w-8 translate-y-0 rounded-full border-border/70 bg-background/85 backdrop-blur-sm" />
+              <CarouselNext className="left-auto right-3 top-3 h-8 w-8 translate-y-0 rounded-full border-border/70 bg-background/85 backdrop-blur-sm" />
             </Carousel>
           )
         ) : (
           <Empty
             icon={<FolderPlusIcon className="h-5 w-5" aria-hidden />}
-            title="No activity to display"
-            description="Projects, programs, events, services, and grant requests you create will appear here."
+            title="No programs to display"
+            description="Programs you create will appear here."
             actions={
-              canEdit ? null : (
+              canEdit ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-3 text-xs"
+                  onClick={() => onCreateOpenChange(true)}
+                >
+                  Create program
+                </Button>
+              ) : (
                 <Button
                   asChild
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-lg px-3 text-xs shadow-none"
+                  className="h-8 rounded-lg px-3 text-xs"
                 >
                   <Link href={buildWorkspaceProgramEditorHref()}>
-                    Open activity
+                    Open programs
                   </Link>
                 </Button>
               )
             }
             size="sm"
             variant="subtle"
-            className="bg-background min-h-[148px] rounded-xl px-4 py-6 shadow-none"
+            className="min-h-[148px] rounded-xl px-4 py-6"
           />
         )}
       </div>
 
-      {canEdit && !previewOnly ? (
+      {canEdit ? (
         <ProgramWizardLazy
           mode="create"
           open={createOpen}
           onOpenChange={onCreateOpenChange}
-          portalContainer={canvasPortalContainer}
         />
       ) : null}
-      {selectedProgram && !previewOnly ? (
+      {selectedProgram ? (
         <ProgramWizardLazy
           mode="edit"
           program={selectedProgram}
           open={editOpen}
           onOpenChange={handleEditOpenChange}
-          portalContainer={canvasPortalContainer}
         />
       ) : null}
     </>

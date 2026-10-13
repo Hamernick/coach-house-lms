@@ -9,12 +9,7 @@ export const PAYWALL_QUERY_KEYS = [
   "checkout_error",
   "checkout_detail",
   "checkout_debug",
-  "paywall_preview",
-  "redirect",
-  "cancel",
 ] as const
-
-type SearchParamsLike = Pick<URLSearchParams, "toString">
 
 export type OverlayTier = {
   id: PricingPlanTier
@@ -35,46 +30,6 @@ export type OverlayTierDetails = {
   cta: string | null
 }
 
-export function getSafeInternalPaywallPath(raw: string | null | undefined) {
-  if (!raw) return null
-  const value = raw.trim()
-  if (!value.startsWith("/") || value.startsWith("//")) return null
-  if (/[\\\u0000-\u001f\u007f]/.test(value)) return null
-  return value
-}
-
-export function buildStripeCheckoutPath({
-  plan,
-  source,
-  redirectTarget,
-  cancelTarget,
-}: {
-  plan: Exclude<PricingPlanTier, "free">
-  source: string | null
-  redirectTarget?: string | null
-  cancelTarget?: string | null
-}) {
-  const params = new URLSearchParams({
-    plan,
-    source: source?.trim() || "billing",
-  })
-  const safeRedirect = getSafeInternalPaywallPath(redirectTarget)
-  const safeCancel = getSafeInternalPaywallPath(cancelTarget)
-  if (safeRedirect) params.set("redirect", safeRedirect)
-  if (safeCancel) params.set("cancel", safeCancel)
-  return `/api/stripe/checkout?${params.toString()}`
-}
-
-export function resolvePaywallOverlayDisplayPlanTier({
-  currentPlanTier,
-  preview = false,
-}: {
-  currentPlanTier: PricingPlanTier
-  preview?: boolean
-}) {
-  return preview ? "free" : currentPlanTier
-}
-
 export const OVERLAY_TIERS: OverlayTier[] = [
   {
     id: "free",
@@ -85,9 +40,9 @@ export const OVERLAY_TIERS: OverlayTier[] = [
     defaultBadge: "Included",
     features: [
       "1 Admin Seat (founder only)",
-      "Organization profile and programs",
-      "Connect your tools",
-      "Link files from your Google Drive",
+      "Guided 501(c)(3) formation",
+      "Strategic Roadmap (private)",
+      "Organizational Profile (private)",
     ],
   },
   {
@@ -104,7 +59,6 @@ export const OVERLAY_TIERS: OverlayTier[] = [
       "Everything in Individual",
       "Unlimited Admin & Staff Seats",
       "Asynchronous Accelerator Access",
-      "Coach House documents and roadmap editing",
       "Fiscal Sponsorship Opportunities",
     ],
   },
@@ -229,32 +183,4 @@ export function getPaywallReasonCopy({
     return "Electives are included with paid plans."
   }
   return "Pick the plan that fits your current stage. You can switch between paid tiers anytime."
-}
-
-export function shouldAutoDismissPaywallOverlay({
-  currentPlanTier,
-  paywallKind,
-  preview = false,
-}: {
-  currentPlanTier: PricingPlanTier
-  paywallKind: string | null
-  preview?: boolean
-}) {
-  if (preview) return false
-  return currentPlanTier !== "free" && Boolean(paywallKind)
-}
-
-export function buildDismissedPaywallHref({
-  pathname,
-  searchParams,
-}: {
-  pathname: string
-  searchParams: SearchParamsLike
-}) {
-  const next = new URLSearchParams(searchParams.toString())
-  for (const key of PAYWALL_QUERY_KEYS) {
-    next.delete(key)
-  }
-  const query = next.toString()
-  return query ? `${pathname}?${query}` : pathname
 }

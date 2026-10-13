@@ -7,10 +7,6 @@ import {
   ACCELERATOR_STEP_NODE_ID,
 } from "../../workspace-board-flow-surface-accelerator-graph-composition"
 import { resolveWorkspaceAcceleratorStepEdgeHandles } from "../../workspace-board-accelerator-step-layout"
-import {
-  type WorkspaceCardEdgeGeometryLookup,
-  resolveWorkspaceCardConnectionHandleIds,
-} from "../../workspace-board-connection-handles"
 import type {
   WorkspaceAutoLayoutMode,
   WorkspaceBoardState,
@@ -29,34 +25,13 @@ import type { WorkspaceCardReadiness } from "./workspace-canvas-card-readiness"
 import { resolveWorkspaceCanvasBranchStyle } from "./workspace-canvas-branch-style"
 
 const WORKSPACE_CANVAS_V2_CARD_ID_SET = new Set<WorkspaceCanvasV2CardId>(
-  WORKSPACE_CANVAS_V2_CARD_IDS
+  WORKSPACE_CANVAS_V2_CARD_IDS,
 )
-
-const WORKSPACE_CONNECTION_LABELS = {
-  "workspace-link": "connected to",
-  "organization-context": "informs",
-  "program-plan": "plans",
-  tasks: "requires",
-  "brand-assets": "uses",
-  "financial-model": "funds",
-  schedule: "schedules",
-  campaign: "publishes",
-} as const
 
 type WorkspaceConnectionValidationFailureReason = Extract<
   WorkspaceConnectionValidationResult,
   { allowed: false }
 >["reason"]
-
-export type WorkspaceCanvasDroppedConnectionReason =
-  | "unknown-node-id"
-  | "hidden-node-id"
-  | WorkspaceConnectionValidationFailureReason
-
-export type WorkspaceCanvasDroppedConnection = {
-  id: string
-  reason: WorkspaceCanvasDroppedConnectionReason
-}
 
 export type WorkspaceCanvasConnectAttemptResult =
   | {
@@ -84,9 +59,7 @@ export type WorkspaceCanvasDisconnectActionSets = {
   targetConnectionIds: string[]
 }
 
-function isWorkspaceCanvasV2CardId(
-  value: string
-): value is WorkspaceCanvasV2CardId {
+function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2CardId {
   return WORKSPACE_CANVAS_V2_CARD_ID_SET.has(value as WorkspaceCanvasV2CardId)
 }
 
@@ -159,7 +132,6 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode = "dagre-tree",
   acceleratorWorkspaceNodeId,
   tutorialEdgeTargetId,
-  nodeGeometryLookup = {},
 }: {
   connections: WorkspaceBoardState["connections"]
   visibleCardIdSet: ReadonlySet<WorkspaceCanvasV2CardId>
@@ -169,15 +141,12 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode?: WorkspaceAutoLayoutMode
   acceleratorWorkspaceNodeId: WorkspaceCanvasV2CardId | null
   tutorialEdgeTargetId: WorkspaceCardId | null
-  nodeGeometryLookup?: WorkspaceCardEdgeGeometryLookup
 }): {
   edges: Edge[]
   droppedConnectionIds: string[]
-  droppedConnections: WorkspaceCanvasDroppedConnection[]
 } {
   const edges: Edge[] = []
   const droppedConnectionIds: string[] = []
-  const droppedConnections: WorkspaceCanvasDroppedConnection[] = []
 
   for (const connection of connections) {
     if (
@@ -185,10 +154,6 @@ export function buildWorkspaceCanvasV2Edges({
       !isWorkspaceCanvasV2CardId(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
-      droppedConnections.push({
-        id: connection.id,
-        reason: "unknown-node-id",
-      })
       continue
     }
 
@@ -197,10 +162,6 @@ export function buildWorkspaceCanvasV2Edges({
       !visibleCardIdSet.has(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
-      droppedConnections.push({
-        id: connection.id,
-        reason: "hidden-node-id",
-      })
       continue
     }
 
@@ -210,25 +171,14 @@ export function buildWorkspaceCanvasV2Edges({
     })
     if (!validation.allowed) {
       droppedConnectionIds.push(connection.id)
-      droppedConnections.push({
-        id: connection.id,
-        reason: validation.reason,
-      })
       continue
     }
-
-    const handleIds = resolveWorkspaceCardConnectionHandleIds({
-      source: nodeGeometryLookup[connection.source],
-      target: nodeGeometryLookup[connection.target],
-    })
 
     edges.push({
       id: connection.id,
       source: connection.source,
       target: connection.target,
-      sourceHandle: handleIds?.sourceHandle,
-      targetHandle: handleIds?.targetHandle,
-      type: "workspace-ontology",
+      type: "smoothstep",
       animated: false,
       style: resolveWorkspaceCanvasBranchStyle({
         readiness: readinessMap[connection.target],
@@ -236,7 +186,6 @@ export function buildWorkspaceCanvasV2Edges({
       }),
       data: {
         role: "workspace-card-connection",
-        label: WORKSPACE_CONNECTION_LABELS[validation.matchedPortType],
         portType: validation.matchedPortType,
         readiness: readinessMap[connection.target].status,
       },
@@ -282,15 +231,7 @@ export function buildWorkspaceCanvasV2Edges({
     })
   }
 
-  return { edges, droppedConnectionIds, droppedConnections }
-}
-
-export function shouldLogWorkspaceCanvasDroppedConnections(
-  droppedConnections: WorkspaceCanvasDroppedConnection[]
-) {
-  return droppedConnections.some(
-    (connection) => connection.reason !== "hidden-node-id"
-  )
+  return { edges, droppedConnectionIds }
 }
 
 export function resolveWorkspaceCanvasDisconnectActionSets({

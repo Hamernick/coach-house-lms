@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 import density from "../documentation-density.module.css"
-import { brandIdentityOwner } from "./brand-identity-owner"
 
 export function BrandIdentitySection({
   id,
@@ -22,13 +21,7 @@ export function BrandIdentitySection({
   return (
     <section
       id={id}
-      className={cn("scroll-mt-24 pb-14 font-sans sm:pb-20", className)}
-      {...brandIdentityOwner(
-        "brand-identity-section",
-        "BrandIdentitySection",
-        id,
-        "section"
-      )}
+      className={cn("scroll-mt-24 border-b py-4", className)}
       aria-labelledby={`${id}-title`}
     >
       <div className={density.heading}>
@@ -49,7 +42,7 @@ export function BrandIdentitySection({
           </p>
         ) : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-2">{children}</div>
     </section>
   )
 }
@@ -66,7 +59,7 @@ export function BrandIdentitySubsection({
   className?: string
 }) {
   return (
-    <section className={cn("mt-10 first:mt-0 sm:mt-14", className)}>
+    <section className={cn("mt-4 first:mt-0", className)}>
       <div className={density.heading}>
         <h3 className="text-base font-semibold tracking-[-0.015em]">{title}</h3>
         {description ? (
@@ -75,7 +68,7 @@ export function BrandIdentitySubsection({
           </p>
         ) : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-2">{children}</div>
     </section>
   )
 }

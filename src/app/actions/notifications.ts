@@ -4,6 +4,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { Json } from "@/lib/supabase"
 import type { NotificationTone } from "@/lib/notifications"
+import {
+  buildPlatformSetupNotification,
+  hasSupabaseManagementApiToken,
+  isPlatformSetupNotificationId,
+} from "@/lib/supabase/management-api-config"
 
 export type { NotificationTone } from "@/lib/notifications"
 
@@ -110,15 +115,26 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
 
   if (inboxResult.error) return { error: "Unable to load notifications." }
 
+  const isAdmin = await isAdminUser(supabase, user.id)
+  const syntheticInbox =
+    isAdmin && !hasSupabaseManagementApiToken()
+      ? [buildPlatformSetupNotification()]
+      : []
+
   return {
     ok: true,
-    inbox: (inboxResult.data ?? []).map(normalizeNotificationRow),
+    inbox: [
+      ...syntheticInbox,
+      ...(inboxResult.data ?? []).map(normalizeNotificationRow),
+    ],
   }
 }
 
 export async function markNotificationReadAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -142,6 +158,8 @@ export async function markNotificationReadAction(
 export async function markNotificationUnreadAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -166,6 +184,8 @@ export async function markNotificationUnreadAction(
 export async function archiveNotificationAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -189,6 +209,8 @@ export async function archiveNotificationAction(
 export async function unarchiveNotificationAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -230,13 +252,7 @@ export async function archiveAllNotificationsAction(): Promise<NotificationActio
   return { ok: true }
 }
 
-export async function markAllNotificationsReadAction(
-  notificationIds: string[]
-): Promise<NotificationActionResult> {
-  if (!Array.isArray(notificationIds) || notificationIds.length > 50) {
-    return { error: "Invalid notification selection." }
-  }
-  if (notificationIds.length === 0) return { ok: true }
+export async function markAllNotificationsReadAction(): Promise<NotificationActionResult> {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -251,7 +267,6 @@ export async function markAllNotificationsReadAction(
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", user.id)
-    .in("id", notificationIds)
     .is("archived_at", null)
     .is("read_at", null)
 

@@ -1,16 +1,11 @@
-import { loadProfile, updateDocumentsProfile } from "./document-profile"
-import { requireOrganizationDocumentStorage } from "@/lib/organization/document-storage-access"
-import {
-  KIND_KEY_MAP,
-  type DocumentKey,
-  type DocumentMeta,
-} from "./document-kinds"
-import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import { validateOrganizationDocument } from "@/lib/organization/document-storage"
-import { canEditOrganization } from "@/lib/organization/active-org"
+import { MAX_BYTES, MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import { mutateOrganizationProfile } from "@/lib/organization/profile-mutation"
 import {
   notifyTrackedDocumentUpload,
@@ -23,6 +18,34 @@ import {
 } from "./document-file-tracking"
 
 const BUCKET = "org-documents"
+const ALLOWED = new Set(["application/pdf"])
+const KIND_KEY_MAP = {
+  "verification-letter": "verificationLetter",
+  "articles-of-incorporation": "articlesOfIncorporation",
+  bylaws: "bylaws",
+  "state-registration": "stateRegistration",
+  "good-standing-certificate": "goodStandingCertificate",
+  w9: "w9",
+  "tax-exempt-certificate": "taxExemptCertificate",
+  "uei-confirmation": "ueiConfirmation",
+  "sam-active-status": "samActiveStatus",
+  "grants-gov-registration": "grantsGovRegistration",
+  "gata-pre-qualification": "gataPreQualification",
+  "ein-confirmation-letter": "einConfirmationLetter",
+  "irs-990s": "irs990s",
+  "audited-financials": "auditedFinancials",
+} as const
+
+type DocumentKey = (typeof KIND_KEY_MAP)[keyof typeof KIND_KEY_MAP]
+
+type DocumentMeta = {
+  name: string
+  path: string
+  size: number
+  mime: string
+  updatedAt: string
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
@@ -32,9 +55,42 @@ function getDocumentKey(kind: string | null): DocumentKey | null {
   return KIND_KEY_MAP[kind as keyof typeof KIND_KEY_MAP] ?? null
 }
 
+async function loadProfile(
+  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
+  orgId: string
+) {
+  const { data: orgRow, error } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (orgRow?.profile ?? {}) as Record<string, unknown>
+}
+
+function updateDocumentsProfile(
+  profile: Record<string, unknown>,
+  key: DocumentKey,
+  nextDoc: DocumentMeta | null
+) {
+  const documents = isRecord(profile["documents"])
+    ? { ...profile["documents"] }
+    : {}
+  if (nextDoc) {
+    documents[key] = nextDoc
+  } else {
+    delete documents[key]
+  }
+  return { ...profile, documents }
+}
+
 export async function GET(request: NextRequest) {
   const response = NextResponse.next()
-  let supabase = createSupabaseRouteHandlerClient(request, response)
+  const supabase = createSupabaseRouteHandlerClient(request, response)
   const {
     data: { user },
     error,
@@ -57,15 +113,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const access = await resolveOrganizationDocumentAccess(
-      supabase,
-      user.id,
-      request.nextUrl.searchParams.get("organizationId")
-    )
-    if ("error" in access)
-      return NextResponse.json({ error: access.error }, { status: 403 })
-    supabase = access.supabase
-    const { orgId } = access
+    const { orgId } = await resolveActiveOrganization(supabase, user.id)
     const profile = await loadProfile(supabase, orgId)
     const documents = isRecord(profile["documents"])
       ? (profile["documents"] as Record<string, unknown>)
@@ -110,7 +158,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.next()
-  let supabase = createSupabaseRouteHandlerClient(request, response)
+  const supabase = createSupabaseRouteHandlerClient(request, response)
   const {
     data: { user },
     error,
@@ -136,27 +184,23 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 })
   }
-  const validationError = validateOrganizationDocument(file)
-  if (validationError) {
-    return NextResponse.json({ error: validationError }, { status: 400 })
+  if (!ALLOWED.has(file.type)) {
+    return NextResponse.json(
+      { error: "Only PDF files are supported." },
+      { status: 400 }
+    )
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json(
+      { error: `File too large. Max size is ${MAX_UPLOAD_MB} MB.` },
+      { status: 400 }
+    )
   }
 
   try {
-    const access = await resolveOrganizationDocumentAccess(
-      supabase,
-      user.id,
-      request.nextUrl.searchParams.get("organizationId")
-    )
-    if ("error" in access)
-      return NextResponse.json({ error: access.error }, { status: 403 })
-    supabase = access.supabase
-    const { orgId, role } = access
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const safeName = sanitizeTrackedDocumentFilename(file.name)
@@ -271,7 +315,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const response = NextResponse.next()
-  let supabase = createSupabaseRouteHandlerClient(request, response)
+  const supabase = createSupabaseRouteHandlerClient(request, response)
   const {
     data: { user },
     error,
@@ -302,21 +346,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const access = await resolveOrganizationDocumentAccess(
-      supabase,
-      user.id,
-      request.nextUrl.searchParams.get("organizationId")
-    )
-    if ("error" in access)
-      return NextResponse.json({ error: access.error }, { status: 403 })
-    supabase = access.supabase
-    const { orgId, role } = access
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const mutation = await mutateOrganizationProfile({
@@ -376,7 +408,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const response = NextResponse.next()
-  let supabase = createSupabaseRouteHandlerClient(request, response)
+  const supabase = createSupabaseRouteHandlerClient(request, response)
   const {
     data: { user },
     error,
@@ -398,21 +430,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const access = await resolveOrganizationDocumentAccess(
-      supabase,
-      user.id,
-      request.nextUrl.searchParams.get("organizationId")
-    )
-    if ("error" in access)
-      return NextResponse.json({ error: access.error }, { status: 403 })
-    supabase = access.supabase
-    const { orgId, role } = access
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const mutation = await mutateOrganizationProfile({

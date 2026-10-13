@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest"
-import { createPublicMapCategoryAliasMatcher } from "@/lib/public-map/resource-category-alias-matching"
 
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -71,7 +70,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -183,10 +181,6 @@ describe("public map resource map items", () => {
       "organizations",
       "international",
       "animals",
-      "arts",
-      "faith",
-      "recreation",
-      "philanthropy",
     ])
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")
@@ -389,27 +383,6 @@ describe("public map resource map items", () => {
         })
       )
     ).toEqual(expect.arrayContaining(["animals"]))
-  })
-
-  it.each([
-    ["FOOD & Water", "food and water", true],
-    ["Women's health-care", "womens health care", true],
-    ["Children’s\n dental care", "childrens dental", true],
-    ["Emergency: legal aid.", "legal aid", true],
-    ["Culturally competent collaboration", "pet", false],
-    ["", "food", false],
-    ["food", "---", false],
-  ])("preserves category word matching for %s / %s", (text, alias, matches) => {
-    expect(createPublicMapCategoryAliasMatcher(text)(alias)).toBe(matches)
-  })
-
-  it("keeps separately prepared organization text independent", () => {
-    const food = createPublicMapCategoryAliasMatcher("Food pantry")
-    const legal = createPublicMapCategoryAliasMatcher("Legal aid")
-    expect(food("food")).toBe(true)
-    expect(legal("food")).toBe(false)
-    expect(food("legal aid")).toBe(false)
-    expect(legal("legal aid")).toBe(true)
   })
 
   it("supports exact subcategory filters without widening to the parent", () => {
@@ -1049,20 +1022,54 @@ describe("public map resource map items", () => {
         primaryResourceCategory: primaryCategory,
       })
     }
-    expect(Array.from(guideById.keys())).not.toContain("gary-food-access")
+    expect(guideById.get("essentials")?.itemCount).toBe(21)
+    expect(guideById.has("gary-food-access")).toBe(false)
 
     const featuredGuides = filterPublicMapFeaturedResourceGuides(
       Array.from(guideById.values())
     )
     expect(featuredGuides.map((guide) => guide.id)).toEqual([
+      "essentials",
       "chicago-food-access",
       "chicago-housing-shelter",
       "chicago-health-care",
-      "cooling-heat-relief",
     ])
     expect(
-      featuredGuides.every((guide) => guide.imageUrl?.endsWith(".webp"))
+      featuredGuides
+        .filter((guide) => guide.id !== "essentials")
+        .every((guide) => guide.imageUrl?.endsWith(".webp"))
     ).toBe(true)
+    expect(guideById.get("essentials")).toMatchObject({
+      kicker: "Start here",
+      primaryResourceCategory: "community",
+      title: "Basics",
+      subtitle:
+        "Food, shelter, health care, transportation, documents, and digital access.",
+    })
+  })
+
+  it("builds transportation, document, and digital-access discovery guides", () => {
+    const resources = [
+      ["community_transportation", "transportation-access"],
+      ["legal_identification_documentation", "documents-and-id"],
+      ["finance_benefits_enrollment", "documents-and-id"],
+      ["community_internet_access", "digital-access"],
+      ["education_digital_literacy", "digital-access"],
+    ] as const
+    const guides = buildPublicMapResourceGuides(
+      resources.map(([category], index) =>
+        buildGuideResourceItem(`resource_map:lens-${index}`, {
+          title: `Resource ${index + 1}`,
+          resourceCategories: [category],
+          primaryResourceCategory: category,
+        })
+      )
+    )
+    const guideById = new Map(guides.map((guide) => [guide.id, guide]))
+
+    expect(guideById.get("transportation-access")?.itemCount).toBe(1)
+    expect(guideById.get("documents-and-id")?.itemCount).toBe(2)
+    expect(guideById.get("digital-access")?.itemCount).toBe(2)
   })
 
   it("retains saved guides when their current public item gate is unavailable", () => {

@@ -1,32 +1,32 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
+import { useMemo, type ReactNode } from "react"
+import {
+  IconCheck,
+  IconDots,
+  IconRestore,
+  IconTrash,
+  IconWorld,
+} from "@tabler/icons-react"
 
-import { useMemo, useRef, useState, type ReactNode } from "react"
-import dynamic from "next/dynamic"
-import { IconWorld } from "@tabler/icons-react"
-
-import { CoreDocumentChoices } from "@/components/roadmap/core-document-source/core-document-choices"
-import { CoreDocumentMenu } from "@/components/roadmap/core-document-source/core-document-menu"
-import type { useCoreDocumentSource } from "@/components/roadmap/core-document-source/use-core-document-source"
-import { Dialog, DialogContent,
-  DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
-import { DocumentsLibraryCard } from "./documents-library-card"
-import { ORGANIZATION_DOCUMENT_ACCEPT } from "@/lib/organization/document-storage"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+import { DocumentsLibraryTypeIcon } from "./documents-library-type-icon"
 import { DocumentsSelectionToolbar } from "./documents-selection-toolbar"
 import type { DriveLibraryDocument } from "../hooks/use-google-drive-library"
 import { useDocumentsLibrarySelection } from "../hooks/use-documents-library-selection"
 import type { OrganizationDocumentFile } from "../hooks/use-organization-document-files"
-import type {
-  DocumentDefinition,
-  DocumentIndexRow,
-  DocumentsPolicyEntry,
-} from "../types"
+import type { DocumentIndexRow, DocumentsPolicyEntry } from "../types"
 import {
   buildLibraryItems,
-  isEmptyDocumentSlot,
+  formatCardDate,
   type LibraryItem,
   type DocumentsLibraryTab,
   type DocumentsLibrarySource,
@@ -38,27 +38,12 @@ export type {
   DocumentsLibraryFileType,
 } from "./documents-library-items"
 
-const DocumentPreviewDialog = dynamic(
-  () =>
-    import("./document-preview-dialog").then(
-      (module) => module.DocumentPreviewDialog
-    ),
-  // Keep the library mounted while the optional viewer chunk loads.
-  { loading: () => null }
-)
-
 type DocumentsLibraryGridProps = {
-  hasStorageAccess: boolean
-  coreSource: ReturnType<typeof useCoreDocumentSource>
   viewMode?: "grid" | "list"
   renderRowActions?: (row: DocumentIndexRow) => ReactNode
   rows: DocumentIndexRow[]
   driveDocuments: DriveLibraryDocument[]
   uploadedFiles: OrganizationDocumentFile[]
-  searchQuery: string
-  uploadingFiles: boolean
-  uploadingCoreSectionId: string | null
-  onUploadCoreDocument: (sectionId: string, file: File) => Promise<void>
   tab: DocumentsLibraryTab
   source: DocumentsLibrarySource
   fileType: DocumentsLibraryFileType
@@ -67,8 +52,6 @@ type DocumentsLibraryGridProps = {
   editMode: boolean
   onEditPolicy: (policy: DocumentsPolicyEntry) => void
   onViewPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
-  onUpload: (definition: DocumentDefinition, file: File) => Promise<void>
-  uploadingKind: string | null
   onViewUpload: (
     definition: Extract<DocumentIndexRow, { source: "upload" }>["definition"]
   ) => Promise<void>
@@ -97,17 +80,11 @@ type DocumentsLibraryGridProps = {
 }
 
 export function DocumentsLibraryGrid({
-  coreSource,
-  hasStorageAccess,
   viewMode = "grid",
   renderRowActions,
   rows,
   driveDocuments,
   uploadedFiles,
-  searchQuery,
-  uploadingFiles,
-  uploadingCoreSectionId,
-  onUploadCoreDocument,
   tab,
   source,
   fileType,
@@ -117,8 +94,6 @@ export function DocumentsLibraryGrid({
   onEditPolicy,
   onViewPolicyDocument,
   onViewUpload,
-  onUpload,
-  uploadingKind,
   onViewUploadedFile,
   onDownloadUploadedFile,
   onDownloadUpload,
@@ -132,43 +107,33 @@ export function DocumentsLibraryGrid({
   onPermanentlyDeleteUploadedFile,
   onReset,
 }: DocumentsLibraryGridProps) {
-  const [coreChoice, setCoreChoice] = useState<LibraryItem | null>(null)
-  const uploadInputRef = useRef<HTMLInputElement>(null)
-  const uploadTargetRef = useRef<LibraryItem | null>(null)
-  const [previewItem, setPreviewItem] = useState<LibraryItem | null>(null)
-  const previewTriggerRef = useRef<HTMLButtonElement | null>(null)
   const items = useMemo(() => {
-    return buildLibraryItems(rows, driveDocuments, uploadedFiles, true).filter(
-      (item) => {
-        if (
-          !item.row &&
-          !item.name
-            .toLocaleLowerCase()
-            .includes(searchQuery.trim().toLocaleLowerCase())
-        )
-          return false
-        if (item.deleted !== showDeleted) return false
-        if (tab === "images" && item.fileType !== "image") return false
-        if (tab === "documents" && item.fileType === "image") return false
-        if (source !== "all" && item.source !== source) return false
-        if (fileType !== "all" && item.fileType !== fileType) return false
-        return true
-      }
-    )
+    return buildLibraryItems(
+      rows,
+      driveDocuments,
+      uploadedFiles,
+      viewMode === "list"
+    ).filter((item) => {
+      if (item.deleted !== showDeleted) return false
+      if (tab === "images" && item.fileType !== "image") return false
+      if (tab === "documents" && item.fileType === "image") return false
+      if (source !== "all" && item.source !== source) return false
+      if (fileType !== "all" && item.fileType !== fileType) return false
+      return true
+    })
   }, [
     driveDocuments,
     fileType,
     rows,
-    searchQuery,
     showDeleted,
     source,
     tab,
     uploadedFiles,
+    viewMode,
   ])
   const selection = useDocumentsLibrarySelection({
     items,
     canEdit,
-    canEditNative: hasStorageAccess,
     editMode,
     actions: {
       onDeleteUpload,
@@ -182,55 +147,7 @@ export function DocumentsLibraryGrid({
     },
   })
 
-  const canUpload =
-    hasStorageAccess &&
-    canEdit &&
-    editMode &&
-    !uploadingKind &&
-    !uploadingFiles &&
-    !selection.pending &&
-    selection.selectedIds.length === 0
-
-  function uploadToItem(item: LibraryItem, file: File) {
-    if (!canUpload || !isEmptyDocumentSlot(item)) return
-    if (item.row?.source === "upload") void onUpload(item.row.definition, file)
-    if (item.row?.source === "roadmap")
-      void onUploadCoreDocument(item.row.section.id, file)
-  }
-
-  function openItem(item: LibraryItem, trigger: HTMLButtonElement) {
-    if (item.coreDriveSource) {
-      window.open(
-        item.coreDriveSource.webViewLink,
-        "_blank",
-        "noopener,noreferrer"
-      )
-      return
-    }
-    if (item.row?.source === "roadmap" && isEmptyDocumentSlot(item)) {
-      setCoreChoice(item)
-      return
-    }
-    if (isEmptyDocumentSlot(item)) {
-      if (!canUpload || !uploadInputRef.current) return
-      uploadTargetRef.current = item
-      uploadInputRef.current.accept =
-        item.row?.source === "roadmap" ? "" : ORGANIZATION_DOCUMENT_ACCEPT
-      uploadInputRef.current.click()
-      return
-    }
-    if (item.row?.source === "roadmap" && item.hasContent && item.href) {
-      window.location.assign(item.href)
-      return
-    }
-    if (
-      item.previewPath &&
-      (item.fileType === "pdf" || item.fileType === "image")
-    ) {
-      previewTriggerRef.current = trigger
-      setPreviewItem(item)
-      return
-    }
+  function openItem(item: LibraryItem) {
     if (item.href) {
       window.open(item.href, "_blank", "noopener,noreferrer")
       return
@@ -247,7 +164,7 @@ export function DocumentsLibraryGrid({
     if (item.row.source === "policy") {
       if (item.row.policy.document?.path) {
         void onViewPolicyDocument(item.row.policy)
-      } else {
+      } else if (canEdit && editMode) {
         onEditPolicy(item.row.policy)
       }
     }
@@ -288,60 +205,6 @@ export function DocumentsLibraryGrid({
 
   return (
     <>
-      <Dialog
-        open={Boolean(coreChoice)}
-        onOpenChange={(open) => {
-          if (!open && !coreSource.pending) setCoreChoice(null)
-        }}
-      >
-        <DialogContent>
-          <DialogTitle className="sr-only">
-            Choose a source for {coreChoice?.name}
-          </DialogTitle>
-          <DialogDescription className="sr-only">Start a draft in Coach House or link a file from Google Drive.</DialogDescription>
-          {coreChoice?.row?.source === "roadmap" ? (
-            <CoreDocumentChoices
-              title={coreChoice.name}
-              canWrite={hasStorageAccess}
-              pending={coreSource.pending}
-              error={coreSource.error}
-              onWrite={() => {
-                window.location.assign(
-                  getDocumentEditorHref(coreChoice.row!.source === "roadmap" ? coreChoice.row!.section.slug : "", true)
-                )
-              }}
-              onDrive={() => {
-                if (coreChoice.row?.source === "roadmap") {
-                  const section = coreChoice.row.section
-                  setCoreChoice(null)
-                  void coreSource.change(section, "drive")
-                }
-              }}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
-      <input
-        ref={uploadInputRef}
-        type="file"
-        accept={ORGANIZATION_DOCUMENT_ACCEPT}
-        className="hidden"
-        aria-label="Upload to document slot"
-        disabled={!canUpload}
-        onChange={(event) => {
-          const file = event.currentTarget.files?.[0]
-          const target = uploadTargetRef.current
-          event.currentTarget.value = ""
-          if (file && target) uploadToItem(target, file)
-        }}
-      />
-      {previewItem ? (
-        <DocumentPreviewDialog
-          item={previewItem}
-          returnFocusRef={previewTriggerRef}
-          onClose={() => setPreviewItem(null)}
-        />
-      ) : null}
       {selection.selectedItems.length > 0 ? (
         <DocumentsSelectionToolbar
           count={selection.selectedItems.length}
@@ -356,75 +219,183 @@ export function DocumentsLibraryGrid({
         className={
           viewMode === "list"
             ? "grid gap-3"
-            : "grid grid-cols-2 gap-3 md:grid-cols-3"
+            : "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
         }
       >
         {items.map((item) => {
           const selected = selection.selectedIds.includes(item.id)
           return (
-            <DocumentsLibraryCard
+            <article
               key={item.id}
-              item={item}
-              actions={
-                item.row?.source === "roadmap" &&
-                canEdit &&
-                editMode &&
-                !selection.selectedIds.length ? (
-                  <CoreDocumentMenu
-                    title={item.name}
-                    canEditContent={hasStorageAccess || Boolean(item.coreDriveSource)}
-                    pending={coreSource.pending}
-                    className="absolute top-1 right-1 z-20 size-11 sm:size-8"
-                    onEdit={() => {
-                      window.open(
-                        item.coreDriveSource?.webViewLink ??
-                          getDocumentEditorHref(item.row?.source === "roadmap" ? item.row.section.slug : "", true),
-                        item.coreDriveSource ? "_blank" : "_self",
-                        "noopener,noreferrer"
-                      )
-                    }}
-                    onReplace={() => {
-                      if (item.row?.source === "roadmap")
-                        void coreSource.change(item.row.section, "drive")
-                    }}
-                    onRemove={() => {
-                      if (
-                        item.row?.source === "roadmap" &&
-                        window.confirm(
-                          `Remove ${item.name}'s content or link? Its title stays. No Google Drive file is deleted.`
-                        )
-                      ) {
-                        void coreSource.change(item.row.section, "remove")
-                      }
-                    }}
-                  />
-                ) : undefined
-              }
-              viewMode={viewMode}
-              selected={selected}
-              selecting={selection.selectedIds.length > 0}
-              pending={selection.pending}
-              uploading={
-                (item.row?.source === "upload" &&
-                  uploadingKind === item.row.definition.kind) ||
-                (item.row?.source === "roadmap" &&
-                  uploadingCoreSectionId === item.row.section.id)
-              }
-              canEdit={canEdit && (hasStorageAccess || Boolean(item.driveDocument) || item.row?.source === "roadmap")}
-              editMode={editMode}
-              onOpen={(trigger) => openItem(item, trigger)}
-              onDropFile={
-                canUpload && isEmptyDocumentSlot(item)
-                  ? (file) => uploadToItem(item, file)
-                  : undefined
-              }
-              onToggle={() => selection.toggle(item.id)}
-              renderRowActions={renderRowActions}
-              pendingUploadedFileIds={pendingUploadedFileIds}
-              onRestoreUploadedFile={onRestoreUploadedFile}
-              onTrashUploadedFile={onTrashUploadedFile}
-              onPermanentlyDeleteUploadedFile={onPermanentlyDeleteUploadedFile}
-            />
+              className={cn(
+                "group/card bg-muted/80 ring-border/60 relative flex aspect-[1/1.02] min-h-64 flex-col overflow-hidden rounded-[2rem] ring-1 transition-[background-color,box-shadow,transform] duration-200 motion-reduce:transition-none sm:min-h-0",
+                "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]",
+                viewMode === "list" &&
+                  "aspect-auto min-h-20 flex-row items-center gap-3 rounded-2xl px-4 pr-24 sm:min-h-20"
+              )}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                className={cn(
+                  "absolute inset-0 z-0 h-auto w-auto rounded-[2rem] border-2 border-transparent p-0 hover:bg-transparent focus-visible:ring-2",
+                  selected && "border-white",
+                  viewMode === "list" && "rounded-2xl"
+                )}
+                onClick={() =>
+                  selection.selectedIds.length > 0
+                    ? selection.toggle(item.id)
+                    : openItem(item)
+                }
+                aria-label={
+                  selection.selectedIds.length > 0
+                    ? `${selected ? "Deselect" : "Select"} ${item.name}`
+                    : `Open ${item.name}`
+                }
+                disabled={
+                  selection.pending ||
+                  (item.deleted && selection.selectedIds.length === 0) ||
+                  (item.row?.source === "upload" && !item.row.document?.path)
+                }
+              />
+              <h3
+                className={cn(
+                  "pointer-events-none relative z-10 line-clamp-2 px-5 pt-4 text-sm leading-5 font-medium break-words",
+                  viewMode === "list" && "min-w-0 flex-1 px-0 pt-0"
+                )}
+              >
+                {item.name}
+              </h3>
+              <div
+                className={cn(
+                  "text-foreground pointer-events-none relative z-10 flex flex-1 items-center justify-center",
+                  viewMode === "list" && "order-first flex-none [&_svg]:size-5"
+                )}
+              >
+                <DocumentsLibraryTypeIcon
+                  type={item.fileType}
+                  generated={item.source === "generated"}
+                />
+              </div>
+              <div
+                className={cn(
+                  "text-muted-foreground pointer-events-none relative z-10 flex min-h-12 items-center px-5 pb-1 text-xs",
+                  viewMode === "list" && "hidden min-h-0 px-0 pb-0 sm:flex"
+                )}
+              >
+                <span className="truncate tabular-nums">
+                  {item.deletedAt
+                    ? `Deleted ${formatCardDate(item.deletedAt)}`
+                    : formatCardDate(item.updatedAt)}
+                </span>
+              </div>
+              {viewMode === "list" &&
+              item.row &&
+              selection.selectedIds.length === 0 ? (
+                <div className="relative z-20 shrink-0">
+                  {renderRowActions?.(item.row)}
+                </div>
+              ) : null}
+              {item.uploadedFile && canEdit && editMode ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "absolute top-2 right-2 z-20 size-11 rounded-full bg-transparent opacity-100 hover:bg-black/5 focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100 dark:hover:bg-white/10",
+                        viewMode === "list" &&
+                          "top-1/2 right-12 -translate-y-1/2 sm:opacity-100"
+                      )}
+                      disabled={pendingUploadedFileIds.includes(
+                        item.uploadedFile.id
+                      )}
+                      aria-label={`Manage ${item.name}`}
+                    >
+                      <IconDots className="size-4" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 rounded-xl p-1.5 shadow-xl dark:border-white/10 dark:bg-[#303030]"
+                  >
+                    {item.deleted ? (
+                      <>
+                        <DropdownMenuItem
+                          className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
+                          onSelect={() =>
+                            void onRestoreUploadedFile(item.uploadedFile!)
+                          }
+                        >
+                          <IconRestore className="size-4" aria-hidden />
+                          Restore
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
+                          onSelect={() => {
+                            if (
+                              window.confirm(
+                                `Permanently delete ${item.name}? This cannot be undone.`
+                              )
+                            ) {
+                              void onPermanentlyDeleteUploadedFile(
+                                item.uploadedFile!
+                              )
+                            }
+                          }}
+                        >
+                          <IconTrash className="size-4" aria-hidden />
+                          Delete permanently
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem
+                        variant="destructive"
+                        className="min-h-11 rounded-lg text-base sm:min-h-9 sm:text-sm"
+                        onSelect={() =>
+                          void onTrashUploadedFile(item.uploadedFile!)
+                        }
+                      >
+                        <IconTrash className="size-4" aria-hidden />
+                        Move to Recently Deleted
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "absolute right-2 bottom-2 z-20 size-11 rounded-full bg-transparent p-0 opacity-100 transition-opacity hover:bg-transparent focus-visible:ring-2 sm:size-8 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100",
+                  selected && "opacity-100",
+                  viewMode === "list" &&
+                    "top-1/2 bottom-auto -translate-y-1/2 sm:opacity-100"
+                )}
+                disabled={
+                  selection.pending ||
+                  (item.row?.source === "upload" && !item.row.document?.path)
+                }
+                onClick={() => selection.toggle(item.id)}
+                aria-pressed={selected}
+                aria-label={`${selected ? "Deselect" : "Select"} ${item.name}`}
+              >
+                <span
+                  className={cn(
+                    "border-muted-foreground/45 flex size-7 items-center justify-center rounded-full border-2 transition-[background-color,border-color]",
+                    selected && "border-foreground bg-foreground"
+                  )}
+                  aria-hidden
+                >
+                  {selected ? (
+                    <IconCheck className="text-background size-3" />
+                  ) : null}
+                </span>
+              </Button>
+            </article>
           )
         })}
       </div>

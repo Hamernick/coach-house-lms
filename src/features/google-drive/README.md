@@ -1,9 +1,8 @@
 # Google Drive Feature
 
-Connection and Picker integration for Documents. User-selected Drive files use
-`drive.file`. The document-import flow can export a selected Google Doc or read a
-selected Word/Markdown file into an editable Coach House copy with a source link.
-It does not enumerate a user's Drive or write editor changes back to Google.
+Connection and Picker integration for Documents. V1 links user-selected
+Drive files through `drive.file`; it does not enumerate, copy, proxy, edit, or
+download file contents.
 
 ## Ownership
 
@@ -52,5 +51,3 @@ needing reconnection; it does not delete Google files or revoke the Google proje
 Google token revocation also affects Calendar and login grants in the same project, so
 feature-level switches must not call it. Users can remove all Coach House Google access
 from Google account permissions as a separate explicit action.
-
-See [Google's token revocation contract](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke).

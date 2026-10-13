@@ -12,7 +12,6 @@ export { ORGANIZATION_DOCUMENT_QUOTA_BYTES } from "@/lib/organization/document-s
 
 export type OrganizationDocumentFile = {
   id: string
-  coreSectionId?: string
   name: string
   mimeType: string
   sizeBytes: number
@@ -22,7 +21,6 @@ export type OrganizationDocumentFile = {
 }
 
 type FilesResponse = {
-  hasStorageAccess?: boolean
   files?: OrganizationDocumentFile[]
   quota?: {
     usedBytes: number
@@ -39,7 +37,6 @@ async function readResponseError(response: Response) {
 }
 
 export function useOrganizationDocumentFiles(refreshKey = "") {
-  const [hasStorageAccess, setHasStorageAccess] = useState(false)
   const [files, setFiles] = useState<OrganizationDocumentFile[]>([])
   const [usedBytes, setUsedBytes] = useState(0)
   const [limitBytes, setLimitBytes] = useState(
@@ -47,9 +44,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
   )
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [uploadingCoreSectionId, setUploadingCoreSectionId] = useState<
-    string | null
-  >(null)
   const [pendingFileIds, setPendingFileIds] = useState<string[]>([])
 
   const load = useCallback(async () => {
@@ -63,14 +57,12 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load uploaded files.")
       }
-      setHasStorageAccess(payload?.hasStorageAccess === true)
       setFiles(payload?.files ?? [])
       setUsedBytes(payload?.quota?.usedBytes ?? 0)
       setLimitBytes(
         payload?.quota?.limitBytes ?? ORGANIZATION_DOCUMENT_QUOTA_BYTES
       )
     } catch (error: unknown) {
-      setHasStorageAccess(false)
       toast.error(
         error instanceof Error
           ? error.message
@@ -86,12 +78,8 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
   }, [load, refreshKey])
 
   const uploadFiles = useCallback(
-    async (selectedFiles: File[], coreSectionId?: string) => {
+    async (selectedFiles: File[]) => {
       if (selectedFiles.length === 0 || uploading) return
-      if (coreSectionId && selectedFiles.length !== 1) {
-        toast.error("Drop one file into this document slot.")
-        return
-      }
 
       const invalidFile = selectedFiles.find(
         (file) => file.size === 0 || file.size > MAX_BYTES
@@ -117,7 +105,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
       }
 
       setUploading(true)
-      setUploadingCoreSectionId(coreSectionId ?? null)
       const toastId = toast.loading(
         selectedFiles.length === 1
           ? `Uploading ${selectedFiles[0]?.name ?? "file"}…`
@@ -129,7 +116,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
         for (const file of selectedFiles) {
           const form = new FormData()
           form.set("file", file)
-          if (coreSectionId) form.set("coreSectionId", coreSectionId)
           const response = await fetch(
             "/api/account/organization-document-files",
             { method: "POST", body: form }
@@ -157,7 +143,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
         })
       } finally {
         setUploading(false)
-        setUploadingCoreSectionId(null)
       }
     },
     [limitBytes, uploading, usedBytes]
@@ -314,7 +299,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
   )
 
   return {
-    hasStorageAccess,
     downloadFile,
     files,
     limitBytes,
@@ -326,7 +310,6 @@ export function useOrganizationDocumentFiles(refreshKey = "") {
     trashFile,
     uploadFiles,
     uploading,
-    uploadingCoreSectionId,
     usedBytes,
   }
 }

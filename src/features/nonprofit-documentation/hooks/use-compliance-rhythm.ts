@@ -23,13 +23,12 @@ const EXAMPLE_COMPLIANCE_RHYTHM: ComplianceRhythmDraft = {
 
 export function useComplianceRhythm() {
   const [draft, setDraft] = useState(DEFAULT_COMPLIANCE_RHYTHM)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      COMPLIANCE_RHYTHM_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeComplianceRhythm
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    COMPLIANCE_RHYTHM_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeComplianceRhythm
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof ComplianceRhythmDraft>(
@@ -46,9 +45,8 @@ export function useComplianceRhythm() {
   }, [])
 
   const reset = useCallback(() => {
-    authorizeResetAfterReadFailure()
     setDraft(DEFAULT_COMPLIANCE_RHYTHM)
-  }, [authorizeResetAfterReadFailure])
+  }, [])
 
   return {
     draft,

@@ -78,7 +78,13 @@ describe("documents results table column resizing", () => {
       "utf8"
     )
 
-    expect(documentsTabSource).toContain("DocumentsLibraryGrid")
+    expect(documentsTabSource).toContain("<DocumentsLibraryGrid")
+    expect(documentsTabSource).toContain("viewMode={viewMode}")
+    expect(documentsTabSource).toContain("renderRowActions={(row)")
+    expect(documentsTabSource).toContain(
+      '<div id="documents-index" className="mt-4" aria-live="polite">'
+    )
+
     expect(tableSource).toContain("<colgroup>")
     expect(tableSource).toContain("DOCUMENTS_RESULTS_TABLE_COLUMNS.map")
     expect(tableSource).toContain('<div className="hidden w-full md:block">')

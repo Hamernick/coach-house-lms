@@ -1,10 +1,7 @@
 "use client"
 
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
-import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import type {
@@ -15,7 +12,6 @@ import type {
 } from "../types"
 
 type StepFooterProps = {
-  compact?: boolean
   step: number
   totalSteps: number
   submitting: boolean
@@ -31,7 +27,6 @@ type StepFooterProps = {
 }
 
 export function StepFooter({
-  compact = false,
   step,
   totalSteps,
   submitting,
@@ -45,7 +40,6 @@ export function StepFooter({
   onPrev,
   onNext,
 }: StepFooterProps) {
-  const isProfileStep = currentStepId === "account" && onboardingMode === "post_signup_access"
   const isLastStep = step === totalSteps - 1
   const isPostSignupPricingStep =
     isLastStep &&
@@ -53,8 +47,8 @@ export function StepFooter({
     onboardingMode === "post_signup_access"
 
   return (
-    <div className={cn("border-border/70 bg-background/70 supports-[backdrop-filter]:bg-background/60 relative z-20 mt-auto shrink-0 border-t px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:px-6 md:py-3", compact && "pt-4 md:px-4 md:py-4")}>
-      <div className={cn("mx-auto flex w-full max-w-[640px] items-center justify-between gap-3", compact && "max-w-none")}>
+    <div className="border-border/70 bg-background/70 supports-[backdrop-filter]:bg-background/60 relative z-20 mt-auto shrink-0 border-t px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:px-6 md:py-4">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {step > 0 ? (
             <Button
@@ -62,7 +56,7 @@ export function StepFooter({
               variant="outline"
               onClick={onPrev}
               disabled={submitting}
-              className="h-auto min-h-11 rounded-full px-4 shadow-none whitespace-normal sm:min-h-9"
+              className="w-full sm:w-auto"
             >
               Back
             </Button>
@@ -75,12 +69,6 @@ export function StepFooter({
 
         <div className="flex min-w-0 items-center gap-2">
           <Button
-            {...getReactGrabOwnerProps({
-              ownerId: "onboarding:continue",
-              component: "StepFooter",
-              source: "src/components/onboarding/onboarding-dialog/components/step-footer.tsx",
-              slot: "continue",
-            })}
             type={isLastStep ? "submit" : "button"}
             onClick={
               isLastStep
@@ -95,19 +83,17 @@ export function StepFooter({
               (currentStepId === "intent" && !intentFocus) ||
               (currentStepId === "org" &&
                 (slugStatus !== "available" || !formationStatus)) ||
-              (currentStepId === "account" && !isProfileStep && !accountStepReady)
+              (currentStepId === "account" && !accountStepReady)
             }
-            aria-busy={submitting}
-            className="h-auto min-h-11 shrink-0 gap-1.5 rounded-full px-5 shadow-none whitespace-normal sm:min-h-9"
+            className="h-auto min-h-9 w-full gap-2 text-center whitespace-normal sm:w-auto"
           >
-            {submitting ? <LoaderCircleIcon className="size-4 motion-safe:animate-spin" aria-hidden /> : null}
             {isLastStep ? (
               <>
-                {isProfileStep ? "Continue" : isPostSignupPricingStep
+                {isPostSignupPricingStep
                   ? builderPlanTier === "free"
                     ? "Continue with Individual"
                     : "Enter workspace"
-                  : intentFocus === "build" ? "Open workspace" : "Continue"}
+                  : "Finish"}
                 <ArrowRightIcon className="h-4 w-4" aria-hidden />
               </>
             ) : (

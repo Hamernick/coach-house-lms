@@ -7,7 +7,7 @@ import type { DocumentActionOptions } from "./use-documents-library-selection"
 
 import type { OrgDocuments } from "../../../types"
 import { deleteOrgDocument, getOrgDocumentUrl, uploadOrgDocument } from "../api"
-import { validateOrganizationDocument } from "@/lib/organization/document-storage"
+import { validatePdf } from "../helpers"
 import type { DocumentDefinition } from "../types"
 
 type UseDocumentsUploadActionsArgs = {
@@ -25,7 +25,7 @@ export function useDocumentsUploadActions({
   const [downloadingKind, setDownloadingKind] = useState<string | null>(null)
 
   const handleUpload = async (definition: DocumentDefinition, file: File) => {
-    const validationError = validateOrganizationDocument(file)
+    const validationError = validatePdf(file)
     if (validationError) {
       toast.error(validationError)
       return

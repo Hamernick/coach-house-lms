@@ -9,10 +9,7 @@ import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
 
 import { Button } from "@/components/ui/button"
-import {
-  MAX_UPLOAD_MB,
-  ORGANIZATION_DOCUMENT_ACCEPT,
-} from "@/lib/organization/document-storage"
+import { MAX_UPLOAD_MB } from "@/lib/organization/document-storage"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,7 +79,7 @@ export function UploadRowActions({
           id={inputId}
           ref={inputRef}
           type="file"
-          accept={ORGANIZATION_DOCUMENT_ACCEPT}
+          accept="application/pdf"
           className="sr-only"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]
@@ -210,7 +207,7 @@ export function UploadRowActions({
             <TooltipContent side="top">
               {isUploading
                 ? "Uploading…"
-                : `Upload PDF or image (${MAX_UPLOAD_MB} MB max)`}
+                : `Upload PDF (${MAX_UPLOAD_MB} MB max)`}
             </TooltipContent>
           </Tooltip>
         )

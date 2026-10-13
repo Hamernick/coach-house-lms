@@ -1,6 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
-import { createElement } from "react"
-import { renderToStaticMarkup } from "react-dom/server"
+import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -8,14 +6,6 @@ import {
   WORKSPACE_TOOL_DEFINITIONS,
   workspaceToolMatchesQuery,
 } from "@/features/workspace-tools"
-import { GoogleCalendarPanel } from "@/features/google-calendar/components/google-calendar-panel"
-
-vi.mock("@/features/google-calendar/hooks/use-google-calendar-controller", () => ({
-  useGoogleCalendarController: () => ({
-    summary: { configured: true, connected: true, enabled: true, selectedCalendars: [{ id: "primary", name: "Calendar" }] },
-    pending: false, error: null, perform: vi.fn(), refresh: vi.fn(),
-  }),
-}))
 
 const ROOT = process.cwd()
 
@@ -24,15 +14,9 @@ function readSource(relativePath: string) {
 }
 
 describe("workspace-tools feature contract", () => {
-  it("keeps Calendar settings accessible when sync is already enabled", () => {
-    const markup = renderToStaticMarkup(createElement(GoogleCalendarPanel))
-    expect(markup).toContain('aria-label="Manage Google Calendar"')
-    expect(markup).toContain('aria-label="Google Calendar sync"')
-    expect(markup).toContain('aria-checked="true"')
-    expect(markup).toContain("Sync on")
-  })
-  it("keeps unreleased Stripe hidden while offering Calendar and Drive", () => {
+  it("offers the approved Stripe, Calendar, and Google Drive catalog", () => {
     expect(WORKSPACE_TOOL_DEFINITIONS.map((tool) => tool.id)).toEqual([
+      "stripe",
       "google-calendar",
       "google-drive",
     ])
@@ -40,7 +24,7 @@ describe("workspace-tools feature contract", () => {
       WORKSPACE_TOOL_DEFINITIONS.filter((tool) =>
         workspaceToolMatchesQuery(tool, "payments")
       ).map((tool) => tool.id)
-    ).toEqual([])
+    ).toEqual(["stripe"])
     expect(
       WORKSPACE_TOOL_DEFINITIONS.filter((tool) =>
         workspaceToolMatchesQuery(tool, "docs")

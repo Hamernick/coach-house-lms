@@ -5,6 +5,7 @@ import Link from "next/link"
 import NotebookPenIcon from "lucide-react/dist/esm/icons/notebook-pen"
 import FolderOpenIcon from "lucide-react/dist/esm/icons/folder-open"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
+import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import HomeIcon from "lucide-react/dist/esm/icons/home"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 
@@ -20,7 +21,9 @@ import { useModuleNotes } from "@/hooks/use-module-notes"
 import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
-type ToolKey = "notes" | "resources" | "coach"
+const SUPPORT_EMAIL = "joel@coachhousesolutions.org"
+
+type ToolKey = "notes" | "resources" | "coach" | "ai"
 
 type ModuleRightRailBreakAction =
   | {
@@ -56,13 +59,14 @@ export function ModuleRightRail({
 
   return (
     <div className="grid min-h-full grid-rows-[minmax(0,1fr)_auto] gap-3 md:gap-4">
-      <div className="min-h-0 overflow-y-auto p-1">
+      <div className="min-h-0 overflow-y-auto md:pr-1">
         <div className="space-y-3">
         {activeTool === "notes" ? <ModuleNotesPanel moduleId={moduleId} /> : null}
         {activeTool === "resources" ? (
           <ModuleResourcesPanel resources={normalizedResources} moduleId={moduleId} hasDeck={hasDeck} />
         ) : null}
         {activeTool === "coach" ? <ModuleCoachPanel /> : null}
+        {activeTool === "ai" ? <ModuleAiPanel /> : null}
         </div>
       </div>
       <ModuleToolTray
@@ -87,14 +91,14 @@ function ModuleNotesPanel({ moduleId }: { moduleId: string }) {
   const { value, setValue, saveNow, isSaving } = useModuleNotes(moduleId)
 
   return (
-    <Card className="rounded-none border-0 bg-transparent shadow-none">
-      <CardHeader className="px-0 pb-2 pt-0">
+    <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
+      <CardHeader className="px-4 pb-2 pt-4">
         <CardTitle className="text-base">Notes</CardTitle>
         {isSaving ? (
           <CardDescription className="text-xs text-muted-foreground">Saving…</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="px-0 pb-0 pt-0">
+      <CardContent className="px-4 pb-4 pt-0">
         <Textarea
           name={`module-notes-${moduleId}`}
           value={value}
@@ -103,7 +107,7 @@ function ModuleNotesPanel({ moduleId }: { moduleId: string }) {
             void saveNow()
           }}
           placeholder="Capture key ideas, quotes, or next steps…"
-          className="min-h-[180px] resize-none text-sm shadow-none"
+          className="min-h-[180px] resize-none text-sm"
           spellCheck
           autoComplete="off"
         />
@@ -122,14 +126,14 @@ function ModuleResourcesPanel({
   hasDeck: boolean
 }) {
   return (
-    <Card className="rounded-none border-0 bg-transparent shadow-none">
-      <CardHeader className="px-0 pb-2 pt-0">
+    <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
+      <CardHeader className="px-4 pb-2 pt-4">
         <CardTitle className="text-base">Resources</CardTitle>
         <CardDescription className="text-xs text-muted-foreground">
           References and links tied to this module.
         </CardDescription>
       </CardHeader>
-      <CardContent className="min-w-0 px-0 pb-0 pt-0">
+      <CardContent className="px-4 pb-4 pt-0">
         <ResourcesCard resources={resources} variant="stacked">
           <DeckResourceCard moduleId={moduleId} hasDeck={hasDeck} variant="stacked" />
         </ResourcesCard>
@@ -154,18 +158,18 @@ function ModuleCoachPanel() {
   }
 
   return (
-    <Card className="rounded-none border-0 bg-transparent shadow-none">
-      <CardHeader className="px-0 pb-2 pt-0">
+    <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
+      <CardHeader className="px-4 pb-2 pt-4">
         <CardTitle className="text-base">Coach Review</CardTitle>
         <CardDescription className="text-xs text-muted-foreground">
           Book time to review this module with a coach.
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-0 pb-0 pt-0 space-y-3">
+      <CardContent className="px-4 pb-4 pt-0 space-y-3">
         <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
           <CoachingAvatarGroup size="sm" />
         </div>
-        <Button type="button" size="sm" onClick={handleSchedule} disabled={pending} className="h-11 w-full shadow-none">
+        <Button type="button" size="sm" onClick={handleSchedule} disabled={pending} className="w-full">
           {pending ? "Opening…" : "Schedule a meeting"}
         </Button>
         {tier === "free" && typeof remaining === "number" && remaining > 0 ? (
@@ -191,6 +195,24 @@ function ModuleCoachPanel() {
   )
 }
 
+function ModuleAiPanel() {
+  return (
+    <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
+      <CardHeader className="px-4 pb-2 pt-4">
+        <CardTitle className="text-base">AI Coach</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
+          Draft answers, summarize notes, and refine your thinking.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 pt-0">
+        <Button asChild size="sm" variant="secondary" className="w-full">
+          <a href={`mailto:${SUPPORT_EMAIL}?subject=AI%20Coach%20Access`}>Request access</a>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 function ModuleToolTray({
   activeTool,
   onToolChange,
@@ -201,8 +223,8 @@ function ModuleToolTray({
   breakAction: ModuleRightRailBreakAction | null
 }) {
   return (
-    <div className="space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 backdrop-blur">
-      <div className="grid grid-cols-2 gap-2 [&>button:last-child]:col-span-2">
+    <div className="space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
+      <div className="grid grid-cols-2 gap-2">
         <ToolTrayButton
           icon={NotebookPenIcon}
           label="Notes"
@@ -220,6 +242,12 @@ function ModuleToolTray({
           label="Coach"
           isActive={activeTool === "coach"}
           onClick={() => onToolChange("coach")}
+        />
+        <ToolTrayButton
+          icon={SparklesIcon}
+          label="AI"
+          isActive={activeTool === "ai"}
+          onClick={() => onToolChange("ai")}
         />
       </div>
       {breakAction ? (

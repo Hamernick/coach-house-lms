@@ -29,7 +29,7 @@ export function DocumentsToolbar(props: DocumentsToolbarProps) {
           </h1>
         </div>
         <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto">
-          <div className="relative w-44 min-w-0">
+          <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
             <IconSearch
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
               aria-hidden
@@ -47,7 +47,6 @@ export function DocumentsToolbar(props: DocumentsToolbarProps) {
           </div>
           <DocumentsNewMenu
             canEdit={props.canEdit}
-            canUpload={props.canUpload}
             editMode={props.editMode}
             driveConnected={props.driveConnected}
             drivePending={props.drivePending}

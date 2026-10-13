@@ -36,7 +36,6 @@ export type MarketplaceResource = {
   stages: DocumentationStageId[]
   description: string
   headerDescription: string
-  artworkKind?: "logo"
   useWhen: string
   costModel: MarketplaceCostModel
   costNote: string
@@ -52,11 +51,6 @@ export type MarketplaceResource = {
   reviewByDate: string
   whyIncluded: string
   relatedGuide?: { title: string; href: string }
-  referralOffer?: {
-    label: string
-    href: string
-    description: string
-  }
 }
 
 export type MarketplaceFilters = {

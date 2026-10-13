@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   DocumentationStageId,
   PartnershipBriefAction,
@@ -305,8 +304,13 @@ export function buildPartnershipBriefActions(
   return actions
 }
 
+function protectSpreadsheetCell(value: string | number | boolean) {
+  const text = String(value)
+  return /^[=+\-@]/.test(text) ? `'${text}` : text
+}
+
 function csvCell(value: string | number | boolean) {
-  return documentationCsvCell(value)
+  return `"${protectSpreadsheetCell(value).replaceAll('"', '""')}"`
 }
 
 export function buildPartnershipBriefCsv(draft: PartnershipBriefDraft) {

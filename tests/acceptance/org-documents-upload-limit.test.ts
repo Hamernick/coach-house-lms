@@ -7,7 +7,7 @@ import {
 import { validatePdf } from "@/components/organization/org-profile-card/tabs/documents-tab/helpers"
 
 describe("organization document upload limit", () => {
-  it("allows PDF uploads up to 15 MB", () => {
+  it("allows PDF uploads up to the existing 15 MB bucket limit", () => {
     expect(MAX_UPLOAD_MB).toBe(15)
     expect(MAX_BYTES).toBe(15 * 1024 * 1024)
 

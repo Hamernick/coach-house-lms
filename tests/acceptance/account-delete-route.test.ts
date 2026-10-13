@@ -162,7 +162,6 @@ describe("account delete route", () => {
     expect(disconnectGoogleDriveMock).toHaveBeenCalledWith({
       admin,
       userId: "user-delete",
-      revoke: true,
     })
     expect(calls.organizationDelete).not.toHaveBeenCalled()
     expect(routeCalls.signOut).toHaveBeenCalledTimes(1)

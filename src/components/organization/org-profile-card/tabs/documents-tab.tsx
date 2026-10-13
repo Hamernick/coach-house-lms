@@ -1,11 +1,7 @@
 "use client"
 
-import { FeatureUpgradeNotice } from "@/components/paywall/feature-upgrade-notice"
-
 import { useMemo, useRef, useState } from "react"
 
-import { useCoreDocumentSource } from "@/components/roadmap/core-document-source/use-core-document-source"
-import type { DocumentsRoadmapSection } from "./documents-tab/types"
 import { DocumentsNotesPanel } from "../../documents-notes-right-rail"
 import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
 import {
@@ -33,17 +29,7 @@ export type {
   DocumentsRoadmapSection,
 } from "./documents-tab/types"
 
-export function DocumentsTab(props: DocumentsTabProps) {
-  return (
-    <ScopedDocumentsTab
-      key={`${props.userId}:${props.organizationId}`}
-      {...props}
-    />
-  )
-}
-
-function ScopedDocumentsTab({
-  organizationId,
+export function DocumentsTab({
   userId,
   documents,
   policyEntries,
@@ -56,21 +42,6 @@ function ScopedDocumentsTab({
   initialFocusKey,
   notes,
 }: DocumentsTabProps) {
-  const [coreOverrides, setCoreOverrides] = useState<
-    Record<string, DocumentsRoadmapSection>
-  >({})
-  const coreSource = useCoreDocumentSource(
-    { userId, organizationId },
-    (section) => {
-      setCoreOverrides((current) => ({ ...current, [section.id]: section }))
-    }
-  )
-  const currentSections = roadmapSections.map((section) =>
-    coreOverrides[section.id] &&
-    (coreOverrides[section.id].lastUpdated ?? "") >= (section.lastUpdated ?? "")
-      ? coreOverrides[section.id]
-      : section
-  )
   const documentsRootRef = useRef<HTMLElement>(null)
   const controller = useDocumentsTabController({
     userId,
@@ -78,7 +49,7 @@ function ScopedDocumentsTab({
     policyEntries,
     policyProgramOptions,
     policyPeopleOptions,
-    roadmapSections: currentSections,
+    roadmapSections,
   })
   const [libraryTab, setLibraryTab] = useState<DocumentsLibraryTab>("all")
   const [viewMode, setViewMode] = useState<DocumentsViewMode>("grid")
@@ -100,6 +71,13 @@ function ScopedDocumentsTab({
       document.name.toLocaleLowerCase().includes(query)
     )
   }, [controller.searchQuery, googleDrive.documents])
+  const visibleUploadedFiles = useMemo(() => {
+    const query = controller.searchQuery.trim().toLocaleLowerCase()
+    if (!query) return documentFiles.files
+    return documentFiles.files.filter((file) =>
+      file.name.toLocaleLowerCase().includes(query)
+    )
+  }, [controller.searchQuery, documentFiles.files])
 
   useOrganizationDeepLinkFocus({
     focusKey: initialFocusKey,
@@ -120,7 +98,12 @@ function ScopedDocumentsTab({
       className="pb-6"
       aria-labelledby="documents-title"
     >
-      <DocumentsBanner canEdit={canEdit} uploading={documentFiles.uploading}>
+      <DocumentsBanner
+        canEdit={canEdit}
+        editMode={editMode}
+        uploading={documentFiles.uploading}
+        onFilesDropped={documentFiles.uploadFiles}
+      >
         <DocumentsToolbar
           searchQuery={controller.searchQuery}
           tab={libraryTab}
@@ -130,7 +113,6 @@ function ScopedDocumentsTab({
           showDeleted={showDeleted}
           canEdit={canEdit}
           editMode={editMode}
-          canUpload={documentFiles.hasStorageAccess}
           driveConnected={googleDrive.connected}
           drivePending={googleDrive.pending}
           onSearchQueryChange={controller.setSearchQuery}
@@ -144,23 +126,19 @@ function ScopedDocumentsTab({
           onGoogleDrive={() => void googleDrive.connectOrPick()}
         />
 
-        {documentFiles.hasStorageAccess ? (
-          <DocumentsStorageUsage usedBytes={documentFiles.usedBytes} limitBytes={documentFiles.limitBytes} loading={documentFiles.loading} />
-        ) : !documentFiles.loading ? (
-          <FeatureUpgradeNotice title="Your files, connected">
-            Connect Google Drive to use your own files on Free. Upgrade to create, edit, and store documents in Coach House. Existing documents remain readable.
-          </FeatureUpgradeNotice>
-        ) : null}
+        <DocumentsStorageUsage
+          usedBytes={documentFiles.usedBytes}
+          limitBytes={documentFiles.limitBytes}
+          loading={documentFiles.loading}
+        />
 
         <div id="documents-index" className="mt-4" aria-live="polite">
           <DocumentsLibraryGrid
-            coreSource={coreSource}
-            hasStorageAccess={documentFiles.hasStorageAccess}
             viewMode={viewMode}
             renderRowActions={(row) => (
               <DocumentRowActions
                 row={row}
-                canEdit={canEdit && documentFiles.hasStorageAccess}
+                canEdit={canEdit}
                 editMode={editMode}
                 publicSlug={publicSlug}
                 uploadingKind={controller.uploadingKind}
@@ -184,13 +162,7 @@ function ScopedDocumentsTab({
             )}
             rows={controller.filteredRows}
             driveDocuments={visibleDriveDocuments}
-            uploadedFiles={documentFiles.files}
-            searchQuery={controller.searchQuery}
-            uploadingFiles={documentFiles.uploading}
-            uploadingCoreSectionId={documentFiles.uploadingCoreSectionId}
-            onUploadCoreDocument={async (sectionId, file) => {
-              await documentFiles.uploadFiles([file], sectionId)
-            }}
+            uploadedFiles={visibleUploadedFiles}
             tab={libraryTab}
             source={librarySource}
             fileType={libraryFileType}
@@ -200,8 +172,6 @@ function ScopedDocumentsTab({
             onEditPolicy={controller.openEditPolicyDialog}
             onViewPolicyDocument={controller.viewPolicyDocument}
             onViewUpload={controller.handleView}
-            onUpload={controller.handleUpload}
-            uploadingKind={controller.uploadingKind}
             onViewUploadedFile={documentFiles.openFile}
             onDownloadUploadedFile={documentFiles.downloadFile}
             onDownloadUpload={controller.handleDownload}
@@ -223,7 +193,6 @@ function ScopedDocumentsTab({
       </DocumentsBanner>
 
       <PolicyEditorDialog
-        readOnly={!canEdit || !documentFiles.hasStorageAccess}
         open={controller.policyDialogOpen}
         onOpenChange={controller.handlePolicyDialogOpenChange}
         draft={controller.policyDraft}

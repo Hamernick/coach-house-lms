@@ -1,11 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import Link from "next/link"
-import dynamic from "next/dynamic"
 
-import MenuIcon from "lucide-react/dist/esm/icons/menu"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 
+import { AppShellCalendarAction } from "@/components/app-shell/components/app-shell-calendar-action"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -16,13 +15,9 @@ import { cn } from "@/lib/utils"
 import { RIGHT_RAIL_ID } from "../constants"
 import { useRightRailPresence } from "../right-rail"
 
-const AppShellCalendarAction = dynamic(
-  () => import("./app-shell-calendar-action").then((mod) => mod.AppShellCalendarAction),
-  { ssr: false, loading: () => <span aria-hidden className="block size-9" /> }
-)
-
 type AppShellHeaderProps = {
   breadcrumbs?: ReactNode
+  headerSearch?: ReactNode
   hasUser: boolean
   isAdmin: boolean
   onboardingLocked: boolean
@@ -32,6 +27,7 @@ type AppShellHeaderProps = {
 
 export function AppShellHeader({
   breadcrumbs,
+  headerSearch,
   hasUser,
   isAdmin,
   onboardingLocked,
@@ -39,17 +35,7 @@ export function AppShellHeader({
   onRightOpenChange,
 }: AppShellHeaderProps) {
   const hasRightRail = useRightRailPresence()
-  const { isMobile, openMobile, toggleSidebar } = useSidebar()
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const wasMobileMenuOpen = useRef(false)
-  useEffect(() => {
-    if (isMobile && wasMobileMenuOpen.current && !openMobile) {
-      const frame = requestAnimationFrame(() => menuButtonRef.current?.focus())
-      wasMobileMenuOpen.current = false
-      return () => cancelAnimationFrame(frame)
-    }
-    wasMobileMenuOpen.current = openMobile
-  }, [isMobile, openMobile])
+  const { isMobile } = useSidebar()
   const hasBreadcrumbs = Boolean(breadcrumbs)
   const isCompactMobileHeader = isMobile && onboardingLocked
   const showHeaderToggles = !isMobile
@@ -60,31 +46,23 @@ export function AppShellHeader({
     <header className="text-muted-foreground flex shrink-0 flex-col bg-[var(--shell-bg)] text-sm">
       <div
         className={cn(
-          "flex min-h-16 min-w-0 items-center py-2 pr-1 pl-[var(--shell-content-pad)] md:h-14 md:min-h-14 md:py-0 md:pr-[var(--shell-content-pad)]",
+          "flex min-h-14 min-w-0 items-center py-2 pr-[var(--shell-content-pad)] pl-[var(--shell-content-pad)] md:py-0",
           isCompactMobileHeader && "min-h-12 py-1.5"
         )}
       >
         <div
           className={cn(
-            "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+            "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
+            headerSearch && "grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto]"
           )}
         >
           <div className="flex min-w-0 items-center gap-2">
-            <Button
-              ref={menuButtonRef}
-              variant="ghost"
-              size="icon"
-              className="size-11 shrink-0 touch-manipulation md:hidden"
-              aria-label="Menu"
-              aria-expanded={openMobile}
-              onClick={toggleSidebar}
-            >
-              <MenuIcon />
-            </Button>
-            <SidebarTrigger
-              className="hidden size-8 rounded-md border-0 bg-transparent text-sidebar-foreground/80 shadow-none ring-sidebar-ring transition-colors duration-200 ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground/70 focus-visible:ring-2 focus-visible:ring-inset active:bg-sidebar-accent active:text-sidebar-accent-foreground motion-reduce:transition-none md:inline-flex dark:hover:bg-sidebar-accent"
-              aria-label="Toggle sidebar"
-            />
+            {showHeaderToggles ? (
+              <SidebarTrigger
+                className={toggleButtonClass}
+                aria-label="Toggle sidebar"
+              />
+            ) : null}
             {showHeaderToggles && hasBreadcrumbs ? (
               <Separator orientation="vertical" className="bg-border h-4" />
             ) : null}
@@ -97,33 +75,35 @@ export function AppShellHeader({
               </div>
             ) : null}
           </div>
-          <div
-            id="site-header-actions-center"
-            className="hidden min-w-0 items-center overflow-hidden md:flex md:justify-end lg:justify-center"
-          />
+          {!headerSearch ? (
+            <div
+              id="site-header-actions-center"
+              className="hidden min-w-0 items-center overflow-hidden md:flex md:justify-end lg:justify-center"
+            />
+          ) : null}
           <div
             className={cn(
-              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
+              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap",
+              headerSearch && "flex-nowrap"
             )}
           >
+            {hasUser ? headerSearch : null}
             <div
               id="site-header-actions-right"
-              className="flex flex-wrap items-center gap-1 empty:hidden md:flex-nowrap"
+              className="flex flex-wrap items-center gap-2 md:flex-nowrap"
             />
-            <div id="site-header-actions-search" className="flex items-center empty:hidden" />
-            {hasUser && !isMobile && !onboardingLocked ? (
+            {hasUser && !isCompactMobileHeader ? (
               <AppShellCalendarAction />
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
-            <div className="hidden items-center md:flex">
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
+            {!hasUser ? headerSearch : null}
             {!hasUser ? (
               <Button
                 variant="outline"
                 size="sm"
                 asChild
-                className="border-[color:var(--shell-border)] bg-transparent max-md:min-h-11 max-md:min-w-11 touch-manipulation"
+                className="border-[color:var(--shell-border)] bg-transparent"
               >
                 <Link href="/login">Sign in</Link>
               </Button>

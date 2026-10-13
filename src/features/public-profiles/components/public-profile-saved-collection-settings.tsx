@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { toast } from "sonner"
 
 import {
@@ -166,11 +167,11 @@ export function PublicProfileSavedCollectionSettings() {
         <div className="space-y-1">
           <h3
             id="public-saved-collections-heading"
-            className="text-sm font-medium"
+            className="text-lg font-medium tracking-tight"
           >
-            Public saved collections
+            Saved collections
           </h3>
-          <p className="text-muted-foreground max-w-xl text-sm leading-6">
+          <p className="text-muted-foreground max-w-xl text-sm leading-6 text-pretty">
             Group resources already saved in Find. Only collections you mark
             public appear on your profile; personal map preferences stay
             private.
@@ -180,6 +181,7 @@ export function PublicProfileSavedCollectionSettings() {
           type="button"
           size="sm"
           variant="outline"
+          className="h-11 sm:h-8"
           disabled={
             loading || availableItems.length === 0 || collections.length >= 12
           }
@@ -204,24 +206,36 @@ export function PublicProfileSavedCollectionSettings() {
             type="button"
             size="sm"
             variant="outline"
+            className="h-11 sm:h-8"
             onClick={loadCollections}
           >
             Try again
           </Button>
         </div>
       ) : availableItems.length === 0 ? (
-        <p className="text-muted-foreground rounded-xl border border-dashed p-4 text-sm leading-6">
-          Save an organization or resource in Find before creating a public
-          collection.
-        </p>
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed p-4">
+          <p className="text-muted-foreground text-sm leading-6">
+            Save an organization or resource in Find before creating a public
+            collection.
+          </p>
+          <Button
+            asChild
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-11 sm:h-8"
+          >
+            <Link href="/find">Browse Find</Link>
+          </Button>
+        </div>
       ) : (
         <div className="space-y-2">
           {collections.map((collection) => (
             <div
               key={collection.id}
-              className="flex min-h-16 items-center gap-3 rounded-xl border p-3"
+              className="flex min-h-16 flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center"
             >
-              <div className="min-w-0 flex-1">
+              <div className="w-full min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
                   {collection.name}
                 </p>
@@ -230,48 +244,55 @@ export function PublicProfileSavedCollectionSettings() {
                   {collection.items.length === 1 ? "item" : "items"}
                 </p>
               </div>
-              <Badge variant={collection.isPublic ? "default" : "secondary"}>
-                {collection.isPublic ? "Public" : "Private"}
-              </Badge>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => editCollection(collection)}
-              >
-                Edit
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    disabled={deletingId === collection.id}
-                  >
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Delete {collection.name}?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes the collection from your account and public
-                      profile. Your original Find saves remain.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => void deleteCollection(collection.id)}
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <Badge
+                  variant={collection.isPublic ? "default" : "secondary"}
+                  className="mr-auto"
+                >
+                  {collection.isPublic ? "Public" : "Private"}
+                </Badge>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-11 sm:h-8"
+                  onClick={() => editCollection(collection)}
+                >
+                  Edit
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-11 sm:h-8"
+                      disabled={deletingId === collection.id}
                     >
-                      Delete collection
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete {collection.name}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes the collection from your account and public
+                        profile. Your original Find saves remain.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => void deleteCollection(collection.id)}
+                      >
+                        Delete collection
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           ))}
           {collections.length === 0 ? (

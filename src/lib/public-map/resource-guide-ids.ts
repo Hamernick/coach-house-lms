@@ -1,4 +1,8 @@
 export const PUBLIC_MAP_RESOURCE_GUIDE_IDS = [
+  "essentials",
+  "transportation-access",
+  "documents-and-id",
+  "digital-access",
   "chicago-food-access",
   "chicago-housing-shelter",
   "chicago-legal-help",
@@ -31,10 +35,10 @@ const PUBLIC_MAP_RESOURCE_GUIDE_ID_SET = new Set<string>(
 )
 
 export const PUBLIC_MAP_FEATURED_RESOURCE_GUIDE_IDS = [
+  "essentials",
   "chicago-food-access",
   "chicago-housing-shelter",
   "chicago-health-care",
-  "cooling-heat-relief",
 ] as const satisfies readonly PublicMapResourceGuideId[]
 
 export function isPublicMapResourceGuideId(

@@ -3,8 +3,6 @@ import { NextRequest } from "next/server"
 
 const mocks = vi.hoisted(() => ({
   client: vi.fn(),
-  storageAccess: vi.fn(),
-  requireStorage: vi.fn(),
   organization: vi.fn(),
   notification: vi.fn(),
 }))
@@ -15,10 +13,6 @@ vi.mock("@/lib/organization/active-org", () => ({
   resolveActiveOrganization: mocks.organization,
   canEditOrganization: (role: string) =>
     ["owner", "admin", "staff"].includes(role),
-}))
-vi.mock("@/lib/organization/document-storage-access", () => ({
-  resolveOrganizationDocumentStorageAccess: mocks.storageAccess,
-  requireOrganizationDocumentStorage: mocks.requireStorage,
 }))
 vi.mock("@/lib/notifications", () => ({
   createNotification: mocks.notification,
@@ -45,32 +39,30 @@ const row = {
 
 function setup(
   options: {
-    storagePath?: string
     authenticated?: boolean
     deletedAt?: string | null
     insertError?: string
     storageError?: string
   } = {}
 ) {
-  const current = {
-    ...row,
-    storage_path: options.storagePath ?? row.storage_path,
-    deleted_at: options.deletedAt ?? null,
-  }
+  const current = { ...row, deleted_at: options.deletedAt ?? null }
   const upload = vi.fn().mockResolvedValue({ error: null })
-  const remove = vi.fn().mockResolvedValue({
-    error: options.storageError ? { message: options.storageError } : null,
-  })
-  const signed = vi.fn().mockResolvedValue({
-    data: { signedUrl: "https://storage.example/file" },
-    error: null,
-  })
+  const remove = vi
+    .fn()
+    .mockResolvedValue({
+      error: options.storageError ? { message: options.storageError } : null,
+    })
+  const signed = vi
+    .fn()
+    .mockResolvedValue({
+      data: { signedUrl: "https://storage.example/file" },
+      error: null,
+    })
   const eq = vi.fn()
   const deletion = vi.fn()
   const update = vi.fn()
   const from = vi.fn(() => {
     let action = "select"
-    let expired = false
     const result = () => ({
       data: current,
       error:
@@ -85,20 +77,13 @@ function setup(
         return query
       }),
       is: vi.fn(() => query),
-      lt: vi.fn(() => {
-        expired = true
-        return query
-      }),
+      lt: vi.fn(() => query),
       limit: vi.fn(() => query),
       order: vi.fn(() => query),
-      returns: vi.fn(async () => ({
-        data: expired ? [] : [current],
-        error: null,
-      })),
+      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
       maybeSingle: vi.fn(async () => result()),
       single: vi.fn(async () => result()),
-      insert: vi.fn((values: Partial<typeof current>) => {
-        Object.assign(current, values)
+      insert: vi.fn(() => {
         action = "insert"
         return query
       }),
@@ -118,12 +103,14 @@ function setup(
   })
   mocks.client.mockReturnValue({
     auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: {
-          user: options.authenticated === false ? null : { id: "user-1" },
-        },
-        error: null,
-      }),
+      getUser: vi
+        .fn()
+        .mockResolvedValue({
+          data: {
+            user: options.authenticated === false ? null : { id: "user-1" },
+          },
+          error: null,
+        }),
     },
     from,
     storage: {
@@ -133,13 +120,9 @@ function setup(
   return { upload, remove, signed, eq, deletion, update }
 }
 
-function uploadRequest(
-  file = new File(["bin"], "archive.bin"),
-  coreSectionId?: string
-) {
+function uploadRequest(file = new File(["bin"], "archive.bin")) {
   const form = new FormData()
   form.set("file", file)
-  if (coreSectionId !== undefined) form.set("coreSectionId", coreSectionId)
   const request = new NextRequest(
     "http://localhost/api/account/organization-document-files",
     { method: "POST" }
@@ -159,41 +142,10 @@ function actionRequest(method: string, action?: string) {
 }
 
 describe("organization document file routes", () => {
-  it("does not sign a file path belonging to another organization", async () => {
-    const { signed } = setup({ storagePath: "other-org/library/private.pdf" })
-    const result = await GET(
-      new NextRequest(
-        "http://localhost/api/account/organization-document-files?id=file-1"
-      )
-    )
-    expect(result.status).toBe(404)
-    expect(signed).not.toHaveBeenCalled()
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.storageAccess.mockResolvedValue({ hasStorageAccess: true })
-    mocks.requireStorage.mockResolvedValue({ ok: true })
     mocks.organization.mockResolvedValue({ orgId: "org-1", role: "admin" })
     mocks.notification.mockResolvedValue({ id: "notification" })
-  })
-
-  it("keeps free documents readable while rejecting every native write", async () => {
-    const calls = setup()
-    mocks.storageAccess.mockResolvedValue({ hasStorageAccess: false })
-    mocks.requireStorage.mockResolvedValue({ error: "Upgrade required" })
-    const listing = await GET(new NextRequest("http://localhost/api/account/organization-document-files"))
-    expect(listing.status).toBe(200)
-    expect(await listing.json()).toMatchObject({ hasStorageAccess: false, quota: { limitBytes: 0 } })
-    const download = await GET(new NextRequest("http://localhost/api/account/organization-document-files?id=file-1"))
-    expect(download.status).toBe(200)
-    expect(calls.signed).toHaveBeenCalledOnce()
-    expect((await POST(uploadRequest())).status).toBe(403)
-    expect((await PATCH(actionRequest("PATCH", "trash"))).status).toBe(403)
-    expect((await DELETE(actionRequest("DELETE"))).status).toBe(403)
-    expect(calls.upload).not.toHaveBeenCalled()
-    expect(calls.update).not.toHaveBeenCalled()
-    expect(calls.remove).not.toHaveBeenCalled()
   })
 
   it("requires authentication before uploading", async () => {
@@ -217,55 +169,6 @@ describe("organization document file routes", () => {
       expect.any(Buffer),
       { contentType: "application/octet-stream" }
     )
-  })
-  it("keeps a core upload attached through listing, trash, and restore", async () => {
-    const calls = setup()
-    const uploaded = await POST(uploadRequest(undefined, "budget"))
-    expect(uploaded.status).toBe(200)
-    expect((await uploaded.json()).file.coreSectionId).toBe("budget")
-    expect(calls.upload).toHaveBeenCalledWith(
-      expect.stringMatching(/^org-1\/library\/core\/budget\//),
-      expect.any(Buffer),
-      { contentType: "application/octet-stream" }
-    )
-    const listed = await GET(
-      new NextRequest(
-        "http://localhost/api/account/organization-document-files"
-      )
-    )
-    expect((await listed.json()).files[0].coreSectionId).toBe("budget")
-    for (const action of ["trash", "restore"]) {
-      const response = await PATCH(actionRequest("PATCH", action))
-      expect(response.status).toBe(200)
-      expect((await response.json()).file.coreSectionId).toBe("budget")
-    }
-    expect(calls.eq).toHaveBeenCalledWith("org_id", "org-1")
-  })
-  it.each(["unknown", "../budget", "budget/../../other", " budget", ""])(
-    "rejects invalid core section %s",
-    async (sectionId) => {
-      const calls = setup()
-      expect((await POST(uploadRequest(undefined, sectionId))).status).toBe(400)
-      expect(calls.upload).not.toHaveBeenCalled()
-    }
-  )
-  it("enforces permissions and shared quota for core uploads", async () => {
-    let calls = setup()
-    mocks.organization.mockResolvedValue({ orgId: "org-1", role: "board" })
-    expect(
-      (await POST(uploadRequest(undefined, "board_strategy"))).status
-    ).toBe(403)
-    expect(calls.upload).not.toHaveBeenCalled()
-    mocks.organization.mockResolvedValue({ orgId: "org-1", role: "admin" })
-    calls = setup({
-      insertError: "Organization document storage quota exceeded.",
-    })
-    expect(
-      (await POST(uploadRequest(undefined, "board_strategy"))).status
-    ).toBe(413)
-    expect(calls.remove).toHaveBeenCalledWith([
-      expect.stringMatching(/^org-1\/library\/core\/board_strategy\//),
-    ])
   })
   it("preserves the existing per-file cap", async () => {
     const calls = setup()

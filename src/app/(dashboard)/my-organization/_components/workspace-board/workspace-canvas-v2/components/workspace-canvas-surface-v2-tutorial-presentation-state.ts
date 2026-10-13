@@ -54,7 +54,7 @@ export type WorkspaceTutorialPresentationSurfaceSpec = {
   frameHeight: number
 }
 
-export const WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH = 352
+export const WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH = 416
 export const WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT = 672
 
 export type WorkspaceTutorialPresentationLayoutSpec = {

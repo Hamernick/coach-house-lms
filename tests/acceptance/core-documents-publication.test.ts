@@ -288,7 +288,7 @@ describe("Core Documents publication", () => {
       "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
     )
     const action = readSource("src/actions/roadmap.ts")
-    const publicMapQuery = readSource("src/lib/public-map/organization-projection.ts")
+    const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
 
     expect(panel).toContain(
       '<SelectItem value="not_started">Not started</SelectItem>'
@@ -300,13 +300,19 @@ describe("Core Documents publication", () => {
     expect(panel).toContain(
       'status === "in_progress" ? "bg-amber-500" : "bg-border"'
     )
+    expect(panel).toContain(
+      "flex-col gap-6 sm:flex-row sm:items-center sm:gap-3"
+    )
+    expect(panel).toContain(
+      'headerVariant === "calendar" ? "pt-6" : "pt-2 sm:pt-4"'
+    )
     expect(editor).toContain("expectedLastUpdated: activeSection.lastUpdated")
     expect(editor).toContain("content: draft.content")
     expect(editorShell).toContain(
       "status={controlsPublicProfile ? activeSection.status : status}"
     )
     expect(action).toContain('revalidateTag("public-map-organizations", "max")')
-    expect(action).toContain('revalidatePath("/map")')
+    expect(action).toContain('revalidatePath("/")')
     expect(publicMapQuery).toContain(
       "resolvePublicOrganizationProfileNarratives(profile)"
     )

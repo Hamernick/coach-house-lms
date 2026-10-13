@@ -6,8 +6,19 @@ import {
   DocumentationSurface,
 } from "./documentation-surface"
 import { MarketplaceDirectory } from "./marketplace/marketplace-directory"
+import {
+  MarketplacePeople,
+  type MarketplacePeopleData,
+} from "./marketplace/marketplace-people"
+import { MarketplaceViews } from "./marketplace/marketplace-views"
 
-export function MarketplacePage() {
+export function MarketplacePage({
+  view = "resources",
+  peopleDirectory,
+}: {
+  view?: "resources" | "people"
+  peopleDirectory: MarketplacePeopleData
+}) {
   const pageUrl = "https://coachhouse.app/documentation/marketplace"
   return (
     <DocumentationSurface>
@@ -17,7 +28,7 @@ export function MarketplacePage() {
           "@type": "CollectionPage",
           name: "Nonprofit Marketplace",
           description:
-            "Nonprofit tools, offers, and resource banks, with practical guides to getting started.",
+            "Nonprofit tools, offers, resource banks, and people, with practical guides to getting started.",
           url: pageUrl,
           dateModified: "2026-09-04",
           breadcrumb: {
@@ -51,17 +62,20 @@ export function MarketplacePage() {
       />
       <main
         id="documentation-content"
-        className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+        className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8"
       >
-        <header className={cn(density.heading, "mb-8")}>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Marketplace
-          </h1>
-          <p className="text-muted-foreground max-w-2xl text-base sm:text-lg">
-            Compare tools, offers, and resource banks for your nonprofit.
+        <header className={cn(density.heading, "mb-2")}>
+          <h1 className="text-2xl font-semibold tracking-tight">Marketplace</h1>
+          <p className="text-muted-foreground max-w-2xl text-sm">
+            Useful tools, nonprofit offers, and people to help you put your
+            plans to work.
           </p>
         </header>
-        <MarketplaceDirectory />
+        <MarketplaceViews
+          view={view}
+          resources={<MarketplaceDirectory />}
+          people={<MarketplacePeople directory={peopleDirectory} />}
+        />
         <footer
           id="method"
           className="text-muted-foreground mt-6 scroll-mt-24 border-t pt-4 text-xs leading-5"

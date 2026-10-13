@@ -1,4 +1,3 @@
-import { defaultOrganizationCoachFilter, loadOrganizationCoachAssignmentData } from "@/features/organization-coach-assignments"
 import {
   clearMemberWorkspaceStarterDataAction,
   createPlatformAdminWorkstreamCategoryAction,
@@ -14,10 +13,9 @@ import {
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
-import { loadOrganizationCoachActorScope } from "@/lib/admin/organization-coach-scope"
 
 export default async function OrganizationsPage() {
-  const staff = await requirePlatformCapability("organizations", {
+  await requirePlatformCapability("organizations", {
     loginRedirect: "/organizations",
   })
 
@@ -33,39 +31,9 @@ export default async function OrganizationsPage() {
     workstreamCategories,
   } = await loadMemberWorkspaceProjectsPage()
 
-  const assignments = await loadOrganizationCoachAssignmentData({
-    organizationIds: organizationOptions.map((organization) => organization.orgId),
-  })
-  const { data: profile } = await staff.supabase.from("profiles")
-    .select("full_name, email, avatar_url").eq("id", staff.userId).maybeSingle()
-  const currentCoach = assignments.coachOptions.find((coach) => coach.id === staff.userId) ?? {
-    id: staff.userId, name: profile?.full_name ?? "You",
-    email: profile?.email ?? null, avatarUrl: profile?.avatar_url ?? null,
-  }
-  const coachScope = await loadOrganizationCoachActorScope({
-    accessLevel: staff.accessLevel,
-    userId: staff.userId,
-  })
-  const defaultCoachFilter =
-    coachScope.mode === "assigned" && coachScope.canAccessUnassigned
-      ? "all"
-      : defaultOrganizationCoachFilter(currentCoach)
-  const coachOptions = assignments.coachOptions.some((coach) => coach.id === staff.userId)
-    ? assignments.coachOptions : [...assignments.coachOptions, currentCoach]
-  const assignedProjects = projects.map((project) => ({
-    ...project,
-    organizationCoachAssignments: project.organizationId
-      ? assignments.assignmentsByOrganizationId.get(project.organizationId) ?? []
-      : [],
-  }))
-
   return (
     <MemberWorkspaceProjectsPage
-      viewerUserId={staff.userId}
-      projects={assignedProjects}
-      showPlatformRevenue
-      defaultCoachFilter={defaultCoachFilter}
-      coachOptions={coachOptions}
+      projects={projects}
       storageMode={storageMode}
       canResetStarterData={canResetStarterData}
       starterProjectCount={starterProjectCount}

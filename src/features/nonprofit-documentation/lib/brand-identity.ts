@@ -26,7 +26,6 @@ export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
     "Create a consistent identity that helps people recognize, understand, and trust the organization.",
   audience:
     "Community members, volunteers, donors, partners, and public agencies.",
-  actionables: ["Donate", "Volunteer", "Apply"],
   logoGuidance:
     "Keep the logo clear, legible, and unchanged. Leave open space around it and use the strongest available contrast.",
   colors: [
@@ -59,8 +58,8 @@ export const DEFAULT_BRAND_IDENTITY_DRAFT: BrandIdentityDraft = {
       proportion: 10,
     },
   ],
-  headingFont: "System Sans",
-  bodyFont: "System Sans",
+  headingFont: "Georgia",
+  bodyFont: "Arial",
   baseSize: 16,
   typeRatio: 1.25,
   campaignHeadline: "Local action. Lasting change.",
@@ -169,80 +168,51 @@ export function normalizeProportions(colors: BrandIdentityColor[]) {
 }
 
 export function sanitizeBrandDraft(value: unknown): BrandIdentityDraft {
-  const isRecord = (item: unknown): item is Record<string, unknown> =>
-    Boolean(item && typeof item === "object" && !Array.isArray(item))
-  const candidate = isRecord(value) ? value : {}
-  const savedColors = Array.isArray(candidate.colors)
-    ? candidate.colors.filter(isRecord)
-    : []
-  const colors = DEFAULT_BRAND_IDENTITY_DRAFT.colors.map((fallback) => {
-    const saved = savedColors.find((color) => color.id === fallback.id)
-    const savedName = typeof saved?.name === "string" ? saved.name : null
-    const savedValue = typeof saved?.value === "string" ? saved.value : null
-    const savedProportion =
-      typeof saved?.proportion === "number" && Number.isFinite(saved.proportion)
-        ? saved.proportion
-        : fallback.proportion
-
-    return {
-      id: fallback.id,
-      role: fallback.role,
-      name:
-        savedName === null
-          ? fallback.name
-          : LEGACY_DEFAULT_COLOR_NAMES[fallback.id].includes(savedName)
+  if (!value || typeof value !== "object") return DEFAULT_BRAND_IDENTITY_DRAFT
+  const candidate = value as Partial<BrandIdentityDraft>
+  const colors = Array.isArray(candidate.colors)
+    ? DEFAULT_BRAND_IDENTITY_DRAFT.colors.map((fallback) => {
+        const saved = candidate.colors?.find(
+          (color) => color.id === fallback.id
+        )
+        return {
+          ...fallback,
+          ...(saved ?? {}),
+          role: fallback.role,
+          name: LEGACY_DEFAULT_COLOR_NAMES[fallback.id].includes(
+            saved?.name ?? ""
+          )
             ? ""
-            : savedName,
-      value: normalizeHex(savedValue ?? fallback.value, fallback.value),
-      proportion: Math.max(0, savedProportion),
-    }
-  })
-  const stringField = <Key extends keyof BrandIdentityDraft>(key: Key) => {
-    const saved = candidate[key]
-    return typeof saved === "string" ? saved : DEFAULT_BRAND_IDENTITY_DRAFT[key]
-  }
-  const finiteNumber = <Key extends "baseSize" | "typeRatio">(key: Key) => {
-    const saved = candidate[key]
-    return typeof saved === "number" && Number.isFinite(saved)
-      ? saved
-      : DEFAULT_BRAND_IDENTITY_DRAFT[key]
-  }
-  const baseSize = finiteNumber("baseSize")
-  const typeRatio = finiteNumber("typeRatio")
-  const actionables = [0, 1, 2].map((index) => {
-    const saved = Array.isArray(candidate.actionables)
-      ? candidate.actionables[index]
-      : undefined
-    return typeof saved === "string"
-      ? saved
-      : DEFAULT_BRAND_IDENTITY_DRAFT.actionables[index]
-  }) as BrandIdentityDraft["actionables"]
+            : (saved?.name ?? fallback.name),
+          value: normalizeHex(saved?.value ?? fallback.value, fallback.value),
+          proportion: Math.max(
+            0,
+            Number(saved?.proportion ?? fallback.proportion)
+          ),
+        }
+      })
+    : DEFAULT_BRAND_IDENTITY_DRAFT.colors
 
   return {
+    ...DEFAULT_BRAND_IDENTITY_DRAFT,
+    ...candidate,
     version: 1,
-    organizationName: stringField("organizationName"),
-    tagline: stringField("tagline"),
-    introduction: stringField("introduction"),
-    purpose: stringField("purpose"),
-    audience: stringField("audience"),
-    actionables,
-    logoGuidance: stringField("logoGuidance"),
     colors,
-    campaignHeadline: stringField("campaignHeadline"),
-    campaignBody: stringField("campaignBody"),
-    updatedAt: stringField("updatedAt"),
     headingFont: BRAND_FONT_OPTIONS.some(
       (option) => option.value === candidate.headingFont
     )
-      ? (candidate.headingFont as string)
+      ? candidate.headingFont!
       : DEFAULT_BRAND_IDENTITY_DRAFT.headingFont,
     bodyFont: BRAND_FONT_OPTIONS.some(
       (option) => option.value === candidate.bodyFont
     )
-      ? (candidate.bodyFont as string)
+      ? candidate.bodyFont!
       : DEFAULT_BRAND_IDENTITY_DRAFT.bodyFont,
-    baseSize: Math.min(20, Math.max(14, baseSize)),
-    typeRatio: Math.min(1.5, Math.max(1.125, typeRatio)),
+    baseSize: Math.min(20, Math.max(14, Number(candidate.baseSize ?? 16))),
+    typeRatio: Math.min(
+      1.5,
+      Math.max(1.125, Number(candidate.typeRatio ?? 1.25))
+    ),
   }
 }
 

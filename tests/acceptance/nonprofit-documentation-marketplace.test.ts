@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest"
 import { buildAdGrantsCampaignTemplate } from "@/features/nonprofit-documentation/lib/ad-grants-campaign-template"
 import { DEFAULT_CAMPAIGN_PLAN } from "@/features/nonprofit-documentation/lib/campaign-plan"
+import { MARKETPLACE_COACHES } from "@/features/nonprofit-documentation/lib/marketplace-coaches"
 import { MARKETPLACE_RESOURCE_ADDITIONS } from "@/features/nonprofit-documentation/lib/marketplace-resource-additions"
 import { MARKETPLACE_RESOURCE_GUIDES } from "@/features/nonprofit-documentation/lib/marketplace-resource-guides"
 import { sanitizeMarketplaceShortlist } from "@/features/nonprofit-documentation/lib/marketplace-directory"
 
 describe("Marketplace workflows", () => {
   it("gives every newly researched resource a concrete workflow and primary sources", () => {
-    expect(MARKETPLACE_RESOURCE_ADDITIONS).toHaveLength(20)
+    expect(MARKETPLACE_RESOURCE_ADDITIONS).toHaveLength(9)
     for (const resource of MARKETPLACE_RESOURCE_ADDITIONS) {
       const guide = MARKETPLACE_RESOURCE_GUIDES[resource.id]
       expect(guide.steps.length).toBeGreaterThanOrEqual(3)
@@ -19,6 +20,22 @@ describe("Marketplace workflows", () => {
         )
       ).toBe(true)
     }
+  })
+
+  it("keeps the coach roster separate from booking capacity and public membership", () => {
+    expect(MARKETPLACE_COACHES.map((coach) => coach.name)).toEqual([
+      "Joel Hamernick",
+      "Paula Hamernick",
+      "Franklin Ballenger",
+    ])
+    expect(
+      MARKETPLACE_COACHES.filter((coach) => coach.href === "/coaching").map(
+        (coach) => coach.action
+      )
+    ).toEqual(["Book Joel & Paula", "Book Joel & Paula"])
+    expect(
+      MARKETPLACE_COACHES.find((coach) => coach.id === "franklin")?.href
+    ).toBe("https://www.coachhousesolutions.org/contact")
   })
 
   it("recovers saved references to the consolidated TechSoup listing", () => {

@@ -50,7 +50,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -108,13 +107,16 @@ describe("public map organization list react grab", () => {
       'data-public-map-organization-list-section="rounded-scroll"'
     )
     expect(markup).toContain(
-      "divide-border/60 bg-background/85 rounded-2xl"
+      "bg-background/85 border-input w-full min-w-0 rounded-2xl border"
     )
-    expect(markup).not.toContain("scroll-fade-effect-y")
-    expect(markup).not.toContain('data-scroll-fade-managed="true"')
+    expect(markup).toContain("scroll-fade-effect-y")
     expect(markup).toContain("overflow-y-auto")
     expect(markup).toContain("overscroll-contain")
+    expect(markup).toContain('data-orientation="vertical"')
     expect(markup).toContain("pb-[env(safe-area-inset-bottom)]")
+    expect(markup).toContain(
+      'style="--mask-height:1.5rem;--scroll-buffer:1rem"'
+    )
     expect(markup).not.toContain(
       "pb-[max(env(safe-area-inset-bottom),0.75rem)]"
     )
@@ -217,10 +219,10 @@ describe("public map organization list react grab", () => {
     expect(markup).not.toContain("Add Atlas Collective to favorites")
     expect(markup).toContain('data-react-grab-surface-slot="body"')
     expect(markup).toContain(
-      "group relative z-10 flex h-auto min-h-16 w-full min-w-0 justify-start"
+      "group relative z-10 flex min-h-28 w-full min-w-0 justify-start"
     )
-    expect(markup).toContain("px-3 py-2")
-    expect(roomyMarkup).toContain("px-3 py-2")
+    expect(markup).toContain("p-2.5")
+    expect(roomyMarkup).toContain("p-3")
     expect(markup).toContain('data-react-grab-surface-slot="identity-row"')
     expect(markup).toContain('data-react-grab-surface-slot="avatar"')
     expect(markup).toContain('data-react-grab-surface-slot="title"')
@@ -234,13 +236,14 @@ describe("public map organization list react grab", () => {
     expect(markup).toContain('data-react-grab-surface-slot="meta-row"')
     expect(markup).not.toContain('data-react-grab-surface-slot="view-button"')
     expect(markup).toContain('data-public-map-result-trigger="true"')
-    expect(markup).toContain("min-h-18")
+    expect(markup).toContain("min-h-28")
     expect(markup).toContain(
-      "text-foreground truncate text-base leading-snug font-semibold"
+      "text-foreground line-clamp-2 text-base leading-snug font-semibold text-pretty"
     )
     expect(markup).toContain(
-      "text-muted-foreground mt-0.5 flex max-w-full items-center"
+      "text-muted-foreground flex max-w-full items-center"
     )
+    expect(markup).toContain("mt-1.5")
     expect(markup).toContain("flex-wrap items-center gap-x-1.5 gap-y-0.5")
     expect(markup).toContain("min-w-0 text-pretty break-words")
     expect(markup).not.toContain("max-w-[55%]")

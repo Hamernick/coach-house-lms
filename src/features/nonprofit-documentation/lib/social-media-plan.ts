@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   DocumentationStageId,
   SocialMediaChannelId,
@@ -452,7 +451,9 @@ export function buildSocialMediaReviewPrompt(draft: SocialMediaPlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  return documentationCsvCell(value)
+  let text = String(value)
+  if (/^[=+\-@]/.test(text)) text = `'${text}`
+  return `"${text.replaceAll('"', '""')}"`
 }
 
 export function buildSocialMediaCsv(draft: SocialMediaPlanDraft) {

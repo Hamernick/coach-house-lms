@@ -31,22 +31,46 @@ describe("organization document files", () => {
     expect(migration).toContain("jsonb_each")
   })
 
-  it("accepts general files and provides signed downloads", () => {
+  it("accepts arbitrary multi-file selection and drag-and-drop", () => {
     const route = readSource(
       "src/app/api/account/organization-document-files/route.ts"
     )
+    const menu = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-new-menu.tsx"
+    )
+    const banner = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-banner.tsx"
+    )
+    const storageUsage = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-storage-usage.tsx"
+    )
+
     expect(route).toContain("@/lib/organization/document-storage")
     expect(route).toContain('file.type || "application/octet-stream"')
     expect(route).not.toContain("Only PDF files are supported")
     expect(route).toContain("{ download: data.name || true }")
-
+    expect(menu).toContain("multiple")
+    expect(menu).not.toContain('accept="application/pdf"')
+    expect(banner).toContain("onDragEnter")
+    expect(banner).toContain("onDragOver")
+    expect(banner).toContain("onDrop")
+    expect(banner).toContain("Drop files to upload")
+    expect(storageUsage).toContain('usedBytes === 0 ? "0"')
+    expect(storageUsage).not.toContain('usedBytes === 0 ? "0 B"')
   })
 
   it("keeps deleted files for 30 days with restore and permanent-delete actions", () => {
     const route = readSource(
       "src/app/api/account/organization-document-files/route.ts"
     )
-    expect(readSource("src/app/api/account/organization-document-files/file-cleanup.ts")).toContain("const RETENTION_DAYS = 30")
+    const hook = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/hooks/use-organization-document-files.ts"
+    )
+    const grid = readSource(
+      "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-library-grid.tsx"
+    )
+
+    expect(route).toContain("const RETENTION_DAYS = 30")
     expect(route).toContain('payload?.action === "trash"')
     expect(route).toContain('payload?.action === "restore"')
     expect(route).toContain("Move the file to Recently Deleted first.")
@@ -54,6 +78,12 @@ describe("organization document files", () => {
     expect(route.indexOf(".remove([current.storage_path])")).toBeLessThan(
       route.lastIndexOf('.from("organization_document_files")')
     )
-
+    expect(hook).toContain('label: "Undo"')
+    expect(hook).not.toContain(
+      "setUsedBytes((current) => current - file.sizeBytes)"
+    )
+    expect(grid).toContain("Deleted files remain here for 30 days")
+    expect(grid).toContain("Delete permanently")
+    expect(grid).toContain("window.confirm")
   })
 })

@@ -94,22 +94,13 @@ export default async function MyOrganizationDocumentsPage({
 
   return (
     <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
-        <p className="text-muted-foreground text-sm">
-          {canAccessRoadmapDocuments
-            ? "Keep roadmap sections and organization files organized in one secure filing system."
-            : "Keep organization files organized in one secure filing system."}
-        </p>
-      </div>
       <DocumentsTab
-        notes={moduleNotes}
         userId={user.id}
-        organizationId={orgId}
         {...documentsTabData}
         editMode={canEdit}
         canEdit={canEdit}
         initialFocusKey={initialFocusKey}
+        notes={moduleNotes}
       />
     </div>
   )

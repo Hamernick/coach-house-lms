@@ -5,6 +5,9 @@ export const signUpSchema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(8, "Confirm your password"),
+    acceptedLegal: z.boolean().refine((value) => value, {
+      message: "Accept the Terms of Service and Privacy Policy to continue",
+    }),
   })
   .refine((values) => values.password === values.confirmPassword, {
     path: ["confirmPassword"],

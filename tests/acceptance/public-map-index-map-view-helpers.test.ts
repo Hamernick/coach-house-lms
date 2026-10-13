@@ -137,6 +137,15 @@ describe("resolvePublicMapCameraPadding", () => {
     })
   })
 
+  it("adds the active drawer height to bottom camera padding", () => {
+    expect(resolvePublicMapCameraPadding(0, 549)).toEqual({
+      top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      right: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      bottom: 549 + PUBLIC_MAP_CAMERA_EDGE_PADDING,
+      left: PUBLIC_MAP_CAMERA_EDGE_PADDING,
+    })
+  })
+
   it("falls back to symmetric edge padding with no sidebar inset", () => {
     expect(resolvePublicMapCameraPadding(0)).toEqual({
       top: PUBLIC_MAP_CAMERA_EDGE_PADDING,
@@ -154,7 +163,7 @@ describe("buildMapHref", () => {
         slug: "alpha-org",
         searchParams: new URLSearchParams("auth_action=save"),
       })
-    ).toBe("/resources?auth_action=save&organization=alpha-org")
+    ).toBe("/?auth_action=save&organization=alpha-org")
   })
 })
 
@@ -180,7 +189,6 @@ describe("buildPublicMapOrganizationFeatureCollection", () => {
       brandMarkUrl: null,
       headerUrl: null,
       website: null,
-    donateUrl: null,
       email: null,
       phone: null,
       twitter: null,

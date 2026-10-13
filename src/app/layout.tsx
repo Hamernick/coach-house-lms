@@ -7,9 +7,11 @@ import "./globals.css"
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
 import { AppProviders } from "@/components/providers/app-providers"
 import { AppTelemetry } from "@/components/providers/app-telemetry"
+import { getPublicSiteOrigin } from "@/lib/public-site-origin"
 import { getLocale } from "@/lib/locale.server"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getPublicSiteOrigin()),
   title: {
     default: "Coach House",
     template: "%s · Coach House",

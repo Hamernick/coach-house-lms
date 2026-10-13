@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/resources",
+        source: "/",
         headers: [
           {
             key: "Permissions-Policy",
@@ -31,18 +31,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/map",
-        destination: "/resources",
-        permanent: true,
-      },
-      {
         source: "/find",
-        destination: "/resources",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/find/:slug",
-        destination: "/resources?organization=:slug",
+        destination: "/?organization=:slug",
         permanent: true,
       },
     ]

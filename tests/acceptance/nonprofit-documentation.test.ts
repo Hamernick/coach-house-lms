@@ -147,8 +147,7 @@ describe("nonprofit documentation feature", () => {
   it("gives every article a distinct authored image without a shared fallback", () => {
     const pages = DOCUMENTATION_SEARCH_DOCUMENTS.filter(
       ({ href }) =>
-        // Intake is a working form, not an illustrated article.
-        ![DOCUMENTATION_PATH, `${DOCUMENTATION_PATH}/marketplace`, `${DOCUMENTATION_PATH}/fiscal-sponsorship`].includes(
+        ![DOCUMENTATION_PATH, `${DOCUMENTATION_PATH}/marketplace`].includes(
           href
         )
     ).map(({ href }) => href.slice(DOCUMENTATION_PATH.length + 1))
@@ -179,7 +178,6 @@ describe("nonprofit documentation feature", () => {
     expect(DOCUMENTATION_NAVIGATION.map((section) => section.title)).toEqual([
       "Get started",
       "Best practices",
-      "Fund your project",
       "Tools",
       "Resources",
     ])
@@ -199,7 +197,7 @@ describe("nonprofit documentation feature", () => {
         "Marketplace",
       ])
     )
-    expect(items.find((item) => item.title === "Map")?.href).toBe("/resources")
+    expect(items.find((item) => item.title === "Map")?.href).toBe("/")
     expect(items.find((item) => item.title === "Quickstart")?.href).toBe(
       "/documentation/quickstart"
     )
@@ -2024,19 +2022,19 @@ describe("nonprofit documentation feature", () => {
     ).toHaveLength(8)
   })
 
-  it("uses only the public shell without resolving account state", () => {
+  it("uses the shared public and authenticated canvas shells", () => {
     const layout = readSource("src/app/(public)/documentation/layout.tsx")
     const shell = readSource(
       "src/features/nonprofit-documentation/components/documentation-shell.tsx"
     )
 
-    expect(layout).not.toContain("resolveDashboardLayoutState")
-    expect(layout).not.toContain("readAppSidebarDefaultOpen")
-    expect(layout).toContain("<DocumentationShell>{children}</DocumentationShell>")
+    expect(layout).toContain("resolveDashboardLayoutState")
+    expect(layout).toContain("readAppSidebarDefaultOpen")
+    expect(layout).toContain("shellState.userPresent ? shellState : null")
     expect(shell).toContain("HomeCanvasFindShell")
-    expect(shell).not.toContain("<AppShell")
-    expect(shell).toContain("<DocumentationRail />")
-    expect(shell).toContain("<DocumentationSearchForm />")
+    expect(shell).toContain("<AppShell")
+    expect(shell).toContain("<DocumentationRail contextual />")
+    expect(shell).toContain("{headerSearch}")
   })
 
   it("keeps route files composition-only and exposes crawlable metadata", () => {

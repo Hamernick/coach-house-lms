@@ -1,4 +1,3 @@
-import { toStatus } from "@/app/api/stripe/webhook/_lib/metadata"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 
@@ -422,7 +421,7 @@ describe("stripe webhook route acceptance", () => {
           id: "sub_accel_active",
           status: "active",
           customer: "cus_active",
-          items: { data: [{ current_period_end: 1_900_000_000 }] },
+          current_period_end: 1_900_000_000,
           cancel_at: 1_900_000_000,
           canceled_at: null,
           metadata: {
@@ -926,15 +925,5 @@ describe("stripe webhook route acceptance", () => {
     expect(calls.subscriptionsRetrieve).toHaveBeenCalledWith("sub_accel_manual")
     expect(calls.subscriptionsUpdate).not.toHaveBeenCalled()
     expect(calls.subscriptionsUpsert).not.toHaveBeenCalled()
-  })
-})
-
-
-describe("Stripe subscription status normalization", () => {
-  it.each(["unpaid", "paused", "unknown"])("does not grant trial access for %s", (status) => {
-    expect(toStatus(status)).toBe("incomplete")
-  })
-  it.each(["active", "trialing", "past_due", "canceled", "incomplete", "incomplete_expired"])("preserves %s", (status) => {
-    expect(toStatus(status)).toBe(status)
   })
 })

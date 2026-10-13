@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 import {
   AppShellNavigation,
@@ -70,13 +70,12 @@ function useReleaseInteractionLocksOnRouteChange(
 }
 
 function useOnboardingRedirectTarget(onboardingRedirectTarget: string | null) {
-  const router = useRouter()
   useEffect(() => {
     if (!onboardingRedirectTarget) return
     const currentTarget = `${window.location.pathname}${window.location.search}`
     if (currentTarget === onboardingRedirectTarget) return
-    router.replace(onboardingRedirectTarget)
-  }, [onboardingRedirectTarget, router])
+    window.location.replace(onboardingRedirectTarget)
+  }, [onboardingRedirectTarget])
 }
 
 function useAppShellNavUser(user: AppShellProps["user"]) {
@@ -115,7 +114,7 @@ export function AppShellInner({
   onboardingIntentFocus = null,
   context,
   contentPresentation = "default",
-  defaultSidebarOpen = true,
+  defaultSidebarOpen = false,
   resizableRightRail = false,
   formationStatus,
   brandHref: brandHrefOverride,
@@ -232,7 +231,9 @@ export function AppShellInner({
         ? "/accelerator"
         : derivedContext === "public"
           ? FIND_PATH
-          : "/workspace"
+          : canShowMemberWorkspace
+            ? "/workspace"
+            : FIND_PATH
       : "/")
   useReleaseInteractionLocksOnRouteChange(pathname, searchParamsKey)
   useOnboardingRedirectTarget(onboardingRedirectTarget)

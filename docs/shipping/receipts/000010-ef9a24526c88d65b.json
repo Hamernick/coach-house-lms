@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "revision": 10,
+  "updated_at": "2026-10-13T04:50:07.360117+00:00",
+  "active": {
+    "slice": "SHIP-000",
+    "claim": {
+      "owner": "ship-bootstrap-20261013",
+      "pid": 97510,
+      "started": "Tue Oct 13 00:48:53 2026",
+      "host": "Calebs-MacBook-Pro-2.local",
+      "at": "2026-10-13T04:50:05.127137+00:00"
+    },
+    "base": "fabee958969e538a07c9a478c72574a3eda7d79b",
+    "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-20261013",
+    "branch": "chore/ship-harness-20261013",
+    "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+    "evidence": {
+      "tests": {
+        "status": "passed",
+        "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+        "reference": "19 Python unittest cases; 3 continuation contract tests; normal Node 22 pre-push checks; staged gitleaks; diff hygiene"
+      },
+      "ui": {
+        "na_reason": "Tooling-only; no UI changes"
+      },
+      "review_packet": "docs/shipping/review.md",
+      "changed_files": [
+        "AGENTS.md",
+        "docs/RUNLOG.md",
+        "docs/SHIP.md",
+        "docs/agent/open-work-index.md",
+        "docs/agent/workflow-quality.md",
+        "docs/runlog/2026-10.md",
+        "docs/shipping/.gitignore",
+        "docs/shipping/README.md",
+        "docs/shipping/gates.py",
+        "docs/shipping/intake.json",
+        "docs/shipping/providers.py",
+        "docs/shipping/queue.json",
+        "docs/shipping/receipts/bootstrap-connectivity.json",
+        "docs/shipping/reconciliation.md",
+        "docs/shipping/review.md",
+        "docs/shipping/ship.py",
+        "docs/shipping/store.py",
+        "docs/shipping/test_ship.py"
+      ],
+      "recovery": {
+        "verified_sha": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+        "reference": "git ls-remote origin refs/heads/chore/ship-harness-20261013 matched"
+      },
+      "deployment": {
+        "na_reason": "Tooling-only runner/docs; no deployed application artifact"
+      },
+      "production": {
+        "na_reason": "Tooling-only runner/docs; no runtime application behavior changed"
+      },
+      "providers": "No provider or migration changes; Vercel access 403",
+      "rollback": "Revert tooling PR; shared state and recovery receipts retained",
+      "next_action": "Approve exact PR head; wait for current-head quality and code-owner review. No earlier revision approval carries forward.",
+      "owner_evidence": "Previous controller PID 93452 exited intentionally; ps found no process. New operator controller owns the same task lane.",
+      "github": {
+        "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+        "quality": "pending",
+        "review": "REVIEW_REQUIRED",
+        "protection_satisfied": false,
+        "reference": "https://github.com/Hamernick/CoachHouse/pull/291",
+        "observed_at": "2026-10-13T04:50:07.005777+00:00",
+        "merge_state": "BLOCKED",
+        "required_checks": [
+          {
+            "context": "quality",
+            "app_id": 15368
+          }
+        ]
+      },
+      "deployment_observations": [],
+      "provider_status": "unknown until intended project/domain/source SHA is checked at provider"
+    },
+    "checkpoint_at": "2026-10-13T04:50:07.358303+00:00"
+  },
+  "receipts": [
+    {
+      "file": "receipt-000001-64b72db9acc98106.json",
+      "sha256": "64b72db9acc981061747c7d978077448f3986a655e2e2b0d82a5e48d0c09a8a4"
+    },
+    {
+      "file": "receipt-000002-cc204b69a7dc8587.json",
+      "sha256": "cc204b69a7dc8587ba6d3f498974ec3eea87d9f832e5255210c0994266c033a6"
+    },
+    {
+      "file": "receipt-000003-70fd8e250e7c80ee.json",
+      "sha256": "70fd8e250e7c80eed1f76882a35f06a2a6f31e5bcf75c077b1e3065f34935907"
+    },
+    {
+      "file": "receipt-000004-b3c2c8c7ae264d97.json",
+      "sha256": "b3c2c8c7ae264d979c772eb06d1c8fdc83230b27457046467e61a0c526aad4c3"
+    },
+    {
+      "file": "receipt-000005-c671d5ff54bd265c.json",
+      "sha256": "c671d5ff54bd265c8ed46b3f6ce8a1d505e53b2237675b2cb80005af4ec91eea"
+    },
+    {
+      "file": "receipt-000006-7a531b433cb9c16c.json",
+      "sha256": "7a531b433cb9c16c39fcfc02a19060b2ebda031279f8ae8c4a29e6c2a3663ad2"
+    },
+    {
+      "file": "receipt-000007-fb63f0a27a2153e8.json",
+      "sha256": "fb63f0a27a2153e8395425b756cae85189aeedde6772c10473c5cba06300733b"
+    },
+    {
+      "file": "receipt-000008-4c8709d6c89e4853.json",
+      "sha256": "4c8709d6c89e48535737810ad9567bb2366cce6de3ff146cbb73cada3b60e28b"
+    },
+    {
+      "file": "receipt-000009-ec930109264b2eb0.json",
+      "sha256": "ec930109264b2eb094ca062ecf546abd1bb4955977fa90229dd1d4de77714892"
+    },
+    {
+      "file": "receipt-000010-86dd61e7ff6c9d22.json",
+      "sha256": "86dd61e7ff6c9d22bf59fd2e4d1e4c8c09360d12d15b11c6d921918bc15f892b"
+    }
+  ],
+  "sources": [
+    {
+      "id": "coverage.csv",
+      "sha256": "cd9d5e2f9284f239abb62c3c84d5a0727739c8bf924a8d17fd433687665378b5",
+      "private_location": "Desktop/Coach House Codex Workstreams/coverage.csv"
+    },
+    {
+      "id": "original-verbatim.txt",
+      "sha256": "ec84c7f291074212b485c9266efb39172f436e5dcb30c1f0b781708f7a079f5d",
+      "private_location": "Desktop/Coach House Codex Workstreams/original-verbatim.txt"
+    },
+    {
+      "id": "sources/handoff-2026-10-12.md",
+      "sha256": "c829e6ccbd13fb8a3abf78a7fb1e115ba58c6df57877e8493b24750bd8883602",
+      "private_location": "Desktop/Coach House Codex Workstreams/sources/handoff-2026-10-12.md"
+    },
+    {
+      "id": "SHIP.md",
+      "sha256": "95d022ae9d5ed7318cad67f54fb21fa12669d6716cdf500bccab99ec42636fef",
+      "private_location": "Desktop/Coach House Codex Workstreams/SHIP.md"
+    }
+  ],
+  "queue": [
+    {
+      "id": "SHIP-000",
+      "workstream": "00",
+      "source_ids": [
+        "SHIP.md:Phase-0"
+      ],
+      "scope": "Shared SHIP runner, sanitized queue, evidence gates and startup discovery",
+      "exclusions": [
+        "Application changes",
+        "Provider mutations",
+        "Website publication",
+        "Dashboard service"
+      ],
+      "acceptance": [
+        "Exclusive claim and atomic stale-write rejection",
+        "Restart and interrupted-write recovery",
+        "Fail-closed review, quality, deployment and closeout gates",
+        "Read-only provider reconciliation",
+        "Reviewable remotely recoverable PR"
+      ],
+      "dependencies": [],
+      "kind": "tooling",
+      "status": "awaiting_review",
+      "next_action": "Approve exact PR head; wait for current-head quality and code-owner review. No earlier revision approval carries forward."
+    },
+    {
+      "id": "AUDIT-001",
+      "workstream": "09",
+      "source_ids": [
+        "handoff:1.1",
+        "handoff:1.2",
+        "handoff:1.6"
+      ],
+      "scope": "Read-only verification of community, publication/sitemap and fiscal disclosure findings",
+      "exclusions": [
+        "Website implementation",
+        "Publishing",
+        "Payments or legal policy changes"
+      ],
+      "acceptance": [
+        "Reproduce or dismiss each finding against current source and production",
+        "Map findings to existing owners",
+        "Present smallest proposed fix and required decisions"
+      ],
+      "dependencies": [
+        "SHIP-000"
+      ],
+      "kind": "application",
+      "status": "queued",
+      "next_action": "After SHIP-000 closes, verify findings without website edits"
+    }
+  ],
+  "intake_manifest": "docs/shipping/intake.json",
+  "intake_count": 176
+}

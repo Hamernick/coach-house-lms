@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-13T04:50:05.127554+00:00",
+  "operation": "resume",
+  "owner": "ship-bootstrap-20261013",
+  "previous_revision": 7,
+  "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+  "evidence": {
+    "tests": {
+      "status": "passed",
+      "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+      "reference": "19 Python unittest cases; 3 continuation contract tests; normal Node 22 pre-push checks; staged gitleaks; diff hygiene"
+    },
+    "ui": {
+      "na_reason": "Tooling-only; no UI changes"
+    },
+    "review_packet": "docs/shipping/review.md",
+    "changed_files": [
+      "AGENTS.md",
+      "docs/RUNLOG.md",
+      "docs/SHIP.md",
+      "docs/agent/open-work-index.md",
+      "docs/agent/workflow-quality.md",
+      "docs/runlog/2026-10.md",
+      "docs/shipping/.gitignore",
+      "docs/shipping/README.md",
+      "docs/shipping/gates.py",
+      "docs/shipping/intake.json",
+      "docs/shipping/providers.py",
+      "docs/shipping/queue.json",
+      "docs/shipping/receipts/bootstrap-connectivity.json",
+      "docs/shipping/reconciliation.md",
+      "docs/shipping/review.md",
+      "docs/shipping/ship.py",
+      "docs/shipping/store.py",
+      "docs/shipping/test_ship.py"
+    ],
+    "recovery": {
+      "verified_sha": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+      "reference": "git ls-remote origin refs/heads/chore/ship-harness-20261013 matched"
+    },
+    "deployment": {
+      "na_reason": "Tooling-only runner/docs; no deployed application artifact"
+    },
+    "production": {
+      "na_reason": "Tooling-only runner/docs; no runtime application behavior changed"
+    },
+    "providers": "No provider or migration changes; Vercel access 403",
+    "rollback": "Revert tooling PR; shared state and recovery receipts retained",
+    "next_action": "Approve exact PR head; wait for current-head quality and code-owner review. No earlier revision approval carries forward.",
+    "owner_evidence": "Previous controller PID 93452 exited intentionally; ps found no process. New operator controller owns the same task lane."
+  },
+  "remote": null
+}

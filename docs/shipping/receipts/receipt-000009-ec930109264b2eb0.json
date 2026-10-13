@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-13T04:50:05.257949+00:00",
+  "operation": "checkpoint",
+  "owner": "ship-bootstrap-20261013",
+  "previous_revision": 8,
+  "head": "348ce948b58ea1499dd692f4b9a71414afeeb88b",
+  "evidence": {},
+  "remote": null
+}

@@ -1,0 +1,176 @@
+{
+  "at": "2026-10-13T17:49:43.686903+00:00",
+  "operation": "resume",
+  "owner": "ship-pricing-buttons-20261013",
+  "previous_revision": 22,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Prior owner PID 43211 is stopped per stored process identity check.",
+    "next_action": "Review PR294/local pricing Donate and confirmation fallback at 3ba27bad; obtain appearance review, affected Ubuntu references, current-head quality/code-owner and exact-revision release approval. No preview providers. Preserve original blocked SHIP000 history.",
+    "live_site_candidate": {
+      "pr": 294,
+      "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+      "head": "3ba27bad8e84e31a9193bbbb94b8e4eb9ad57c53",
+      "branch": "fix/live-site-pricing-donate-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+      "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+      "status": "draft, local regression checks pass; no production fix or successful live signup journey claimed",
+      "validation": "Latest 40 tests across six focused files; two added browser cases click all six pricing cards; three prior Donate/menu cases remain applicable. Seven generic CTA hrefs inspected and one generic signup journey per public route verified. Anonymous/signed-in selection, generic/free/both paid human confirmation and encoded return parameters covered. Lint/manifest/pre-push/secret scan pass.",
+      "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+      "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+      "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+      "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+      "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at3ba27bad",
+      "release": "CI/review/approval/deployment/live confirmation and payment verification pending",
+      "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed."
+    },
+    "global_todo_tracker": {
+      "updated_at": "2026-10-13T17:49:43.627609+00:00",
+      "original_requirement_count": 176,
+      "additional_requirements": [
+        {
+          "id": "U20261013-01",
+          "packet": "03",
+          "scope": "Free-account upgrade banner size, vertical spacing and max width",
+          "status": "pending"
+        }
+      ],
+      "recorded_requirement_count": 177,
+      "master": "Desktop/Coach House Codex Workstreams/WORKSTREAMS.md",
+      "view": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md",
+      "items": [
+        {
+          "id": "LIVE-01",
+          "priority": 1,
+          "task": "Repair pricing-link destinations",
+          "source_ids": [
+            "O037-04"
+          ],
+          "packet": "09",
+          "stages": [
+            1
+          ],
+          "status": "in_progress",
+          "evidence": "PR294 at3ba27bad: all public plan/signup CTA routing checked; shared confirmation fix covered for all plans. Real production confirmation/payment retest pending."
+        },
+        {
+          "id": "LIVE-02",
+          "priority": 2,
+          "task": "Homepage Donate: third centered header link plus footer, external target, no hover menu",
+          "source_ids": [
+            "O029-01"
+          ],
+          "packet": "09",
+          "stages": [
+            4
+          ],
+          "status": "awaiting_review",
+          "evidence": "PR294: requested header/footer links and popup/no-hover behavior validated locally; appearance review pending."
+        },
+        {
+          "id": "LIVE-03",
+          "priority": 3,
+          "task": "Missing map markers and duplicate places",
+          "source_ids": [
+            "O036-01"
+          ],
+          "packet": "05",
+          "stages": [
+            3
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-04",
+          "priority": 4,
+          "task": "Free-account upgrade banner size, vertical spacing and max width",
+          "source_ids": [
+            "U20261013-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-05",
+          "priority": 5,
+          "task": "Production Google Calendar connection",
+          "source_ids": [
+            "O065-01",
+            "O071-01"
+          ],
+          "packet": "04",
+          "stages": [
+            5
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-06",
+          "priority": 6,
+          "task": "Remove formation-class verification prerequisite",
+          "source_ids": [
+            "O043-01"
+          ],
+          "packet": "05",
+          "stages": [
+            1
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-07",
+          "priority": 7,
+          "task": "Public fiscal application/flow, internal project management, new-application email to fs@coachhousesolutions.org",
+          "source_ids": [
+            "O010-01",
+            "O011-01",
+            "O012-01",
+            "O023-01",
+            "O024-01",
+            "O025-01"
+          ],
+          "packet": "03",
+          "stages": [
+            3,
+            5,
+            6
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-08",
+          "priority": 8,
+          "task": "Correct mistaken coaching grant using supplied roster",
+          "source_ids": [
+            "O005-01",
+            "O006-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "production_verified",
+          "evidence": "Verified 2026-10-13T17:10:09.500Z: 13 matched accounts at10; 17 unmatched roster emails; 56 unused broad grants reversed, four retained, nine issued. Historical legitimate balances preserved."
+        }
+      ],
+      "next_scope": {
+        "packet": "09",
+        "stages": [
+          1,
+          2,
+          4
+        ],
+        "items": [
+          "LIVE-01",
+          "LIVE-02"
+        ],
+        "boundary": "Prepare narrow pricing/navigation and Donate changes; current-head CI, appearance/code-owner review and release approval remain separate.",
+        "stage_mapping": "Stage1 navigation, stage2 local review, stage4 narrowly scoped Donate addition; no broader presentation redesign"
+      }
+    }
+  },
+  "remote": null
+}

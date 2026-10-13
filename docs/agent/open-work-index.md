@@ -25,26 +25,28 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 ## SHIP orchestration
 
 LIVE-03 full published-data audit and map follow-up is active in [PR299](https://github.com/Hamernick/CoachHouse/pull/299).
-[Audit and repair boundary](../plans/2026-10-13-resource-map-audit.md): all 877published resources,
-877 underlying location rows and 21 public organizations audited;875 real service records become871places.
+[Audit and repair boundary](../plans/2026-10-13-resource-map-audit.md): all 877 published resources,
+877 underlying location rows and 21 public organizations audited; 875 real service records become 871 places.
 Shared pins open a choice list first; all viewport pages load beyond 500; confirmed aliases preserve IDs/schedules.
 Branch `fix/public-resource-test-records-20261013` in the map checkout, base e49a31bd, localhost3115.
 Four verified public contact-coordinate corrections are prepared as guarded SQL, not applied.
 Current-head CI/code-owner review, deliberate data step, deployment and user map check remain open.
 No Supabase preview, production mutation or agent visual sweep. PR297 merged per user; do not recheck.
 
-LIVE-04 compact banners are prepared separately in [PR298](https://github.com/Hamernick/CoachHouse/pull/298),
+LIVE-04 compact banners landed on current main as `32e5199e` through [PR298](https://github.com/Hamernick/CoachHouse/pull/298),
 branch `fix/upgrade-banner-layout-20261013`, worktree `coach-house-platform-upgrade-banners-20261013`,
 localhost:3116/visual-regression/upgrade-banners. User appearance review and
-current-head CI/review remain open. Preserve that lane and localhost:3119.
+deployment/appearance confirmation remain unverified here. Preserve that lane and localhost:3119.
 
-Prior PR296 externally merged as `89c409bc`; intended coachhouse production is
-Ready at that SHA and assigned coachhouse.app, including PR295 checkout/menu fixes.
-Static/acceptance/RLS/build passed; visual/aggregate quality failed and review
-remained REVIEW_REQUIRED. User username workaround passed; new validation,
-checkout-return/menu production retests and historical Tools/Donate/Collect
-appearance/flow checks remain unverified. Preserve those gates and localhost:3119.
-[Prior scope](../plans/2026-10-13-live-site-pricing-donate.md).
+PR297 merged per Caleb; do not spend time rechecking his merge confirmation.
+He is checking the map himself. [Map repair evidence](../plans/2026-10-13-live-map-markers.md):
+57 focused tests, lint/prepush and Graphify passed. Preserve the separate visual,
+quality/review and production-verification gaps; merge is not proof of those.
+Preserve map worktree/localhost:3115 and pricing localhost:3119. No Supabase previews.
+
+Prior PR296 is on intended coachhouse production at89c409bc, including PR295.
+Historical failed visual/quality, missing review and unverified signup/menu/Collect
+flows remain recorded in the October log and [prior plan](../plans/2026-10-13-live-site-pricing-donate.md).
 
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as

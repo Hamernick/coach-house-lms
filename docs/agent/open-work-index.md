@@ -24,26 +24,23 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-LIVE-03 map repair is the active implementation preparation, explicitly authorized
-by Caleb after the onboarding repair. Original packet05 B036 stage3/scoped stage6;
-`/resources` is the public surface and `/map` remains a legacy redirect.
-Branch `fix/live-map-markers-20261013`, worktree
-`coach-house-platform-live-map-20261013`, base `89c409bc`, preview localhost:3115.
-[Scope, evidence and stop boundary](../plans/2026-10-13-live-map-markers.md).
-[PR297](https://github.com/Hamernick/CoachHouse/pull/297) is Ready for review, not merge-ready.
-57 focused tests and changed-file checks pass, including the antimeridian review regression. Confirmed same-place duplicates
-are consolidated while preserving services and old links; marker bounds now
-respect globe projection. The local map canvas remains blank, so visible marker
-verification, appearance review, hosted quality and code-owner review remain open.
-No publication, geocoding, provider mutation or Supabase preview setup.
+LIVE-04 upgrade-banner layout is the active bounded implementation, packet03
+U20261013-01/scoped stage2. Branch `fix/upgrade-banner-layout-20261013`, worktree
+`coach-house-platform-upgrade-banners-20261013`, base `e49a31bd`, localhost:3116.
+[Scope and user review](../plans/2026-10-13-upgrade-banner-layout.md). One shared
+component covers Documents, Roadmap, Accelerator and invitations. Appearance
+review belongs to Caleb; avoid repeated browser journeys/screenshots. Hosted
+current-head quality/code-owner review and release remain required.
 
-Prior PR296 externally merged as `89c409bc`; intended coachhouse production is
-Ready at that SHA and assigned coachhouse.app, including PR295 checkout/menu fixes.
-Static/acceptance/RLS/build passed; visual/aggregate quality failed and review
-remained REVIEW_REQUIRED. User username workaround passed; new validation,
-checkout-return/menu production retests and historical Tools/Donate/Collect
-appearance/flow checks remain unverified. Preserve those gates and localhost:3119.
-[Prior scope](../plans/2026-10-13-live-site-pricing-donate.md).
+PR297 merged per Caleb; do not spend time rechecking his merge confirmation.
+He is checking the map himself. [Map repair evidence](../plans/2026-10-13-live-map-markers.md):
+57 focused tests, lint/prepush and Graphify passed. Preserve the separate visual,
+quality/review and production-verification gaps; merge is not proof of those.
+Preserve map worktree/localhost:3115 and pricing localhost:3119. No Supabase previews.
+
+Prior PR296 is on intended coachhouse production at89c409bc, including PR295.
+Historical failed visual/quality, missing review and unverified signup/menu/Collect
+flows remain recorded in the October log and [prior plan](../plans/2026-10-13-live-site-pricing-donate.md).
 
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as

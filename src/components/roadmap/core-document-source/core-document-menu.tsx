@@ -24,7 +24,6 @@ const owner = {
   source: "src/components/roadmap/core-document-source/core-document-menu.tsx",
 }
 export function CoreDocumentMenu({
-  canEditContent = true,
   title,
   pending,
   onEdit,
@@ -32,7 +31,6 @@ export function CoreDocumentMenu({
   onRemove,
   className,
 }: {
-  canEditContent?: boolean
   title: string
   pending: boolean
   onEdit: () => void
@@ -63,7 +61,7 @@ export function CoreDocumentMenu({
         align="end"
       >
         <DropdownMenuGroup>
-          <DropdownMenuItem className="min-h-11 sm:min-h-9" onSelect={onEdit} disabled={!canEditContent}>
+          <DropdownMenuItem className="min-h-11 sm:min-h-9" onSelect={onEdit}>
             <PencilIcon aria-hidden="true" />
             Edit
           </DropdownMenuItem>
@@ -79,7 +77,6 @@ export function CoreDocumentMenu({
             className="min-h-11 sm:min-h-9"
             variant="destructive"
             onSelect={onRemove}
-            disabled={!canEditContent}
           >
             <TrashIcon aria-hidden="true" />
             Remove

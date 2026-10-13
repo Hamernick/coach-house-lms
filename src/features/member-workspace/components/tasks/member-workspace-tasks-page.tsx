@@ -1,10 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
-import { useVisibleRefresh } from "@/hooks/use-visible-refresh"
 import { useRouter } from "next/navigation"
-import { matchesPersonalTaskRelation, type PersonalTaskRelation } from "@/lib/task-tracker"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { format } from "date-fns"
 import { Plus } from "@phosphor-icons/react/dist/ssr"
 import {
@@ -32,8 +29,7 @@ import {
   filterTasksByChips,
 } from "@/features/platform-admin-dashboard"
 import { toProjectGroup } from "../../lib/task-view-model"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
-import { upsertPersonalTask } from "../../lib/saved-task"
+import { toast } from "@/lib/toast"
 import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspacePersonOption,
@@ -62,22 +58,8 @@ function updateTaskGroups(
   }))
 }
 
-function TaskRelationshipSelect({ value, onChange }: { value: PersonalTaskRelation; onChange: (value: PersonalTaskRelation) => void }) {
-  return (
-          <Select value={value} onValueChange={(value) => onChange(value as PersonalTaskRelation)}>
-            <SelectTrigger className="h-8 w-44" aria-label="Task relationship"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="owned">Assigned to me</SelectItem>
-              <SelectItem value="proposed">Proposed to me</SelectItem>
-              <SelectItem value="collaborating">Collaborating</SelectItem>
-            </SelectContent>
-          </Select>
-  )
-}
-
 export function MemberWorkspaceTasksPage({
   initialTaskGroups,
-  viewerUserId,
   storageMode: _storageMode,
   starterTaskCount: _starterTaskCount,
   hasAnyOrgTasks,
@@ -92,7 +74,6 @@ export function MemberWorkspaceTasksPage({
   projectOptions,
   scope,
 }: {
-  viewerUserId: string
   initialTaskGroups: MemberWorkspaceTaskGroup[]
   storageMode: MemberWorkspaceStorageMode
   starterTaskCount: number
@@ -123,14 +104,12 @@ export function MemberWorkspaceTasksPage({
   const [groups, setGroups] = useState(initialTaskGroups)
   useEffect(() => setGroups(initialTaskGroups), [initialTaskGroups])
   const [filters, setFilters] = useState<FilterChip[]>([])
-  const [relation, setRelation] = useState<PersonalTaskRelation>("owned")
   const [isTaskCreateOpen, setIsTaskCreateOpen] = useState(false)
   const [createContext, setCreateContext] = useState<CreateTaskContext | undefined>(undefined)
   const [editingTask, setEditingTask] = useState<ProjectTask | undefined>(undefined)
-  const [mutationPending, startMutationTransition] = useTransition()
-  useVisibleRefresh(router.refresh, !isTaskCreateOpen && !mutationPending)
+  const [, startMutationTransition] = useTransition()
 
-  const adaptedGroups = useMemo(() => groups.map(group => ({ ...group, tasks: group.tasks.filter(task => matchesPersonalTaskRelation(task, viewerUserId, relation)) })).filter(group => group.tasks.length).map(toProjectGroup), [groups, viewerUserId, relation])
+  const adaptedGroups = useMemo(() => groups.map(toProjectGroup), [groups])
   const allTasks = useMemo(
     () => adaptedGroups.flatMap((group) => group.tasks),
     [adaptedGroups],
@@ -241,8 +220,8 @@ export function MemberWorkspaceTasksPage({
   const handleTaskSubmit = async (value: TaskQuickCreateSubmitValue) => {
     const tagLabel = value.tagLabel?.trim() || TAG_OPTIONS.find((option) => option.id === value.tagId)?.label
     const startDate =
-      value.startDate ? format(value.startDate, "yyyy-MM-dd") : ""
-    const endDate = value.targetDate ? format(value.targetDate, "yyyy-MM-dd") : ""
+      format(value.startDate ?? new Date(), "yyyy-MM-dd")
+    const endDate = value.targetDate ? format(value.targetDate, "yyyy-MM-dd") : startDate
     const input: MemberWorkspaceCreateTaskInput = {
       projectId: value.projectId,
       title: value.title,
@@ -267,13 +246,12 @@ export function MemberWorkspaceTasksPage({
       return result
     }
 
-    setGroups(current => upsertPersonalTask(current, result.taskId, input, projectOptions.find(project => project.id === input.projectId)?.label ?? "Project", assigneeOptions, viewerUserId))
     router.refresh()
     return result
   }
 
   const handleToggleTask = (taskId: string) => {
-    if (mutationPending || !canManageTasks || !updateTaskStatusAction) {
+    if (!canManageTasks || !updateTaskStatusAction) {
       return
     }
 
@@ -293,17 +271,16 @@ export function MemberWorkspaceTasksPage({
       })),
     )
     startMutationTransition(async () => {
-      const result = await withSaveFeedback(() => updateTaskStatusAction(taskId, nextStatus), { pending: "Saving task…", success: nextStatus === "done" ? "Task completed" : "Task reopened" })
+      const result = await updateTaskStatusAction(taskId, nextStatus)
       if ("error" in result) {
+        toast.error(result.error)
         setGroups(previousGroups)
-        return
       }
-      router.refresh()
     })
   }
 
   const canReorderTasks =
-    !mutationPending && canManageTasks && Boolean(updateTaskOrderAction) && filters.length === 0
+    canManageTasks && Boolean(updateTaskOrderAction) && filters.length === 0
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (!canReorderTasks || !updateTaskOrderAction) {
@@ -342,12 +319,13 @@ export function MemberWorkspaceTasksPage({
 
     setGroups(nextGroups)
     startMutationTransition(async () => {
-      const result = await withSaveFeedback(() => updateTaskOrderAction(
+      const result = await updateTaskOrderAction(
         group.projectId,
         reorderedTasks.map((task) => task.id),
-      ), { pending: "Saving task order…", success: "Task order saved" })
+      )
 
       if ("error" in result) {
+        toast.error(result.error)
         setGroups(previousGroups)
         return
       }
@@ -357,7 +335,7 @@ export function MemberWorkspaceTasksPage({
   }
 
   const canOpenTaskCreate =
-    !mutationPending && canManageTasks && Boolean(createTaskAction) && projectOptions.length > 0
+    canManageTasks && Boolean(createTaskAction) && projectOptions.length > 0
 
   const header = (
     <header className="flex flex-col border-b border-border/40">
@@ -387,9 +365,7 @@ export function MemberWorkspaceTasksPage({
 
       <div className="flex items-center justify-between px-4 pb-3 pt-3">
         <div className="flex items-center gap-2">
-          <TaskRelationshipSelect value={relation} onChange={setRelation} />
           <FilterPopover
-            entityType="task"
             initialChips={filters}
             onApply={setFilters}
             onClear={() => setFilters([])}
@@ -418,7 +394,7 @@ export function MemberWorkspaceTasksPage({
           {filters.length > 0
             ? "No tasks match the current filters."
             : hasAnyOrgTasks
-              ? relation === "owned" ? "No tasks assigned to you yet." : "No tasks in this view."
+              ? "No tasks assigned to you yet."
               : canOpenTaskCreate
                 ? scope === "platform-admin"
                   ? "No tasks available yet."

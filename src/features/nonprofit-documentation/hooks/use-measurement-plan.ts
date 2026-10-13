@@ -47,13 +47,12 @@ const EXAMPLE_MEASUREMENT_PLAN: MeasurementPlanDraft = {
 
 export function useMeasurementPlan() {
   const [draft, setDraft] = useState(DEFAULT_MEASUREMENT_PLAN)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      MEASUREMENT_PLAN_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeMeasurementPlan
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    MEASUREMENT_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeMeasurementPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof MeasurementPlanDraft>(
@@ -64,10 +63,7 @@ export function useMeasurementPlan() {
   )
 
   const loadExample = useCallback(() => setDraft(EXAMPLE_MEASUREMENT_PLAN), [])
-  const reset = useCallback(() => {
-    authorizeResetAfterReadFailure()
-    setDraft(DEFAULT_MEASUREMENT_PLAN)
-  }, [authorizeResetAfterReadFailure])
+  const reset = useCallback(() => setDraft(DEFAULT_MEASUREMENT_PLAN), [])
 
   return { draft, storageReady, storageStatus, updateDraft, loadExample, reset }
 }

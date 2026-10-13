@@ -6,8 +6,19 @@ import {
   DocumentationSurface,
 } from "./documentation-surface"
 import { MarketplaceDirectory } from "./marketplace/marketplace-directory"
+import {
+  MarketplacePeople,
+  type MarketplacePeopleData,
+} from "./marketplace/marketplace-people"
+import { MarketplaceViews } from "./marketplace/marketplace-views"
 
-export function MarketplacePage() {
+export function MarketplacePage({
+  view = "resources",
+  peopleDirectory,
+}: {
+  view?: "resources" | "people"
+  peopleDirectory: MarketplacePeopleData
+}) {
   const pageUrl = "https://coachhouse.app/documentation/marketplace"
   return (
     <DocumentationSurface>
@@ -17,7 +28,7 @@ export function MarketplacePage() {
           "@type": "CollectionPage",
           name: "Nonprofit Marketplace",
           description:
-            "Nonprofit tools, offers, and resource banks, with practical guides to getting started.",
+            "Nonprofit tools, offers, resource banks, and people, with practical guides to getting started.",
           url: pageUrl,
           dateModified: "2026-09-04",
           breadcrumb: {
@@ -58,10 +69,14 @@ export function MarketplacePage() {
             Marketplace
           </h1>
           <p className="text-muted-foreground max-w-2xl text-base sm:text-lg">
-            Compare tools, offers, and resource banks for your nonprofit.
+            Tools, offers, and people for your nonprofit.
           </p>
         </header>
-        <MarketplaceDirectory />
+        <MarketplaceViews
+          view={view}
+          resources={<MarketplaceDirectory />}
+          people={<MarketplacePeople directory={peopleDirectory} />}
+        />
         <footer
           id="method"
           className="text-muted-foreground mt-6 scroll-mt-24 border-t pt-4 text-xs leading-5"

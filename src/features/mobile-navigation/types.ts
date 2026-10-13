@@ -1,4 +1,4 @@
-import type { ComponentType, RefObject } from "react"
+import type { ComponentType, ReactNode } from "react"
 
 export type MobileNavigationItem = {
   id: string
@@ -9,5 +9,5 @@ export type MobileNavigationItem = {
   active?: boolean
   expanded?: boolean
   controls?: string
-  buttonRef?: RefObject<HTMLButtonElement | null>
+  render?: (props: { className: string; labelClassName: string }) => ReactNode
 }

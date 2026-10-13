@@ -1,10 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { projectDirectoryFilters } from "./member-workspace-project-status"
-import { useProjectDirectorySavedState } from "./use-project-saved-state"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { restoreDirectoryQuery, saveDirectoryQuery } from "../../lib/directory-preferences"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import type {
   MemberWorkspaceCreateProjectFormInput,
@@ -58,9 +55,7 @@ import {
 } from "./member-workspace-project-view-options"
 
 type MemberWorkspaceProjectsPageProps = {
-  deleteProjectAction?: (projectId: string) => Promise<{ ok: true; id: string } | { error: string }>
   directory?: "organizations" | "projects"
-  viewerUserId?: string
   projects: PlatformAdminDashboardLabProject[]
   storageMode: MemberWorkspaceStorageMode
   canResetStarterData: boolean
@@ -127,32 +122,12 @@ function getView(
     : viewType
 }
 
-function parseDirectoryState(
-  query: string,
-  directory: "organizations" | "projects",
-  coachOptions: OrganizationCoachOption[],
-  defaultCoachFilter: OrganizationCoachFilterValue
-) {
-  const params = new URLSearchParams(query)
-  if (directory === "projects" && !params.has("view")) params.set("view", "board")
-  return {
-    filters: directory === "projects" ? projectDirectoryFilters(paramsToChips(params)) : paramsToChips(params),
-    coachFilter: directory === "projects" ? "all" : normalizeOrganizationCoachFilter({
-      coachOptions,
-      value: params.get("coach") ?? defaultCoachFilter,
-    }),
-    viewOptions: paramsToViewOptions(params),
-    visibility: directory === "projects" ? "visible" : normalizeOrganizationKanbanVisibilityMode(params.get("visibility")),
-  }
-}
-
 export function MemberWorkspaceProjectsPage(
   props: MemberWorkspaceProjectsPageProps
 ) {
   const {
     directory = "organizations",
-    viewerUserId,
-    projects: serverProjects,
+    projects,
     canResetStarterData,
     clearStarterDataAction,
     createProjectAction,
@@ -186,7 +161,6 @@ export function MemberWorkspaceProjectsPage(
     restoreWorkstreamDefaultsAction,
     updateProjectWorkstreamAction,
   } = props
-  const { projects, onSaved } = useProjectDirectorySavedState(serverProjects, organizationOptions)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -211,22 +185,26 @@ export function MemberWorkspaceProjectsPage(
 
   useEffect(() => {
     const currentParams = searchParams.toString()
-    const currentStateKey = `${viewerUserId}|${directory}|${defaultCoachFilter}|${currentParams}|${coachOptions
+    const currentStateKey = `${currentParams}|${coachOptions
       .map((coach) => coach.id)
       .join(",")}`
     if (prevParamsRef.current === currentStateKey) return
 
     prevParamsRef.current = currentStateKey
-    const restoredQuery = restoreDirectoryQuery({ directory, viewerUserId }, currentParams)
-    const state = parseDirectoryState(restoredQuery, directory, coachOptions, defaultCoachFilter)
-    setFilters(state.filters)
-    setCoachFilter(state.coachFilter)
-    setViewOptions(state.viewOptions)
-    setKanbanVisibilityMode(state.visibility)
-    if (restoredQuery !== currentParams) {
-      router.replace(`${pathname}?${restoredQuery}`, { scroll: false })
-    }
-  }, [coachOptions, defaultCoachFilter, directory, pathname, router, searchParams, viewerUserId])
+    const params = new URLSearchParams(currentParams)
+    setFilters(paramsToChips(params))
+    setCoachFilter(
+      normalizeOrganizationCoachFilter({
+        coachOptions,
+        value: params.get("coach") ?? defaultCoachFilter,
+      })
+    )
+    if (directory === "projects" && !params.has("view")) params.set("view", "board")
+    setViewOptions(paramsToViewOptions(params))
+    setKanbanVisibilityMode(
+      normalizeOrganizationKanbanVisibilityMode(params.get("visibility"))
+    )
+  }, [coachOptions, defaultCoachFilter, directory, searchParams])
 
   const replaceSearchState = ({
     nextFilters = filters,
@@ -246,7 +224,6 @@ export function MemberWorkspaceProjectsPage(
     applyViewOptionsToParams(params, nextViewOptions)
     if (directory === "projects") params.set("view", nextViewOptions.viewType)
     const nextQuery = params.toString()
-    saveDirectoryQuery({ directory, viewerUserId }, nextQuery, nextCoachFilter)
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
       scroll: false,
     })
@@ -324,21 +301,21 @@ export function MemberWorkspaceProjectsPage(
   const filteredProjects = useMemo(
     () =>
       filterMemberWorkspaceProjects({
-        directory, filters,
+        filters,
         projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [directory, filters, kanbanVisibleProjects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
 
   const counts = useMemo(
     () =>
       computeMemberWorkspaceProjectFilterCounts({
-        directory, filters,
+        filters,
         projects: kanbanVisibleProjects,
         viewOptions,
       }),
-    [directory, filters, kanbanVisibleProjects, viewOptions]
+    [filters, kanbanVisibleProjects, viewOptions]
   )
   const hasActiveFilters =
     filters.length > 0 ||
@@ -498,7 +475,6 @@ export function MemberWorkspaceProjectsPage(
       </div>
 
       <ProjectWizardOverlay
-        onSaved={onSaved}
         open={isProjectWizardOpen}
         onOpenChange={(open) => { setIsProjectWizardOpen(open); if (!open) setEditingProject(null) }}
         initialProject={editingProject}
@@ -506,7 +482,6 @@ export function MemberWorkspaceProjectsPage(
         assigneeOptions={assigneeOptions}
         createProjectAction={createProjectAction}
         updateProjectAction={updateProjectAction}
-        deleteProjectAction={props.deleteProjectAction}
       />
     </>
   )
@@ -514,8 +489,6 @@ export function MemberWorkspaceProjectsPage(
 
 
 function ProjectWizardOverlay(props: {
-  onSaved: (id: string, input: MemberWorkspaceCreateProjectFormInput, taskCount?: number) => void
-  deleteProjectAction?: MemberWorkspaceProjectsPageProps["deleteProjectAction"]
   open: boolean
   onOpenChange: (open: boolean) => void
   initialProject: PlatformAdminDashboardLabProject | null

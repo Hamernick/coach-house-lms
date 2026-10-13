@@ -1,7 +1,5 @@
 "use client"
 
-import { FeatureUpgradeNotice } from "@/components/paywall/feature-upgrade-notice"
-
 import { useMemo, useRef, useState } from "react"
 
 import { useCoreDocumentSource } from "@/components/roadmap/core-document-source/use-core-document-source"
@@ -130,7 +128,6 @@ function ScopedDocumentsTab({
           showDeleted={showDeleted}
           canEdit={canEdit}
           editMode={editMode}
-          canUpload={documentFiles.hasStorageAccess}
           driveConnected={googleDrive.connected}
           drivePending={googleDrive.pending}
           onSearchQueryChange={controller.setSearchQuery}
@@ -144,23 +141,20 @@ function ScopedDocumentsTab({
           onGoogleDrive={() => void googleDrive.connectOrPick()}
         />
 
-        {documentFiles.hasStorageAccess ? (
-          <DocumentsStorageUsage usedBytes={documentFiles.usedBytes} limitBytes={documentFiles.limitBytes} loading={documentFiles.loading} />
-        ) : !documentFiles.loading ? (
-          <FeatureUpgradeNotice title="Your files, connected">
-            Connect Google Drive to use your own files on Free. Upgrade to create, edit, and store documents in Coach House. Existing documents remain readable.
-          </FeatureUpgradeNotice>
-        ) : null}
+        <DocumentsStorageUsage
+          usedBytes={documentFiles.usedBytes}
+          limitBytes={documentFiles.limitBytes}
+          loading={documentFiles.loading}
+        />
 
         <div id="documents-index" className="mt-4" aria-live="polite">
           <DocumentsLibraryGrid
             coreSource={coreSource}
-            hasStorageAccess={documentFiles.hasStorageAccess}
             viewMode={viewMode}
             renderRowActions={(row) => (
               <DocumentRowActions
                 row={row}
-                canEdit={canEdit && documentFiles.hasStorageAccess}
+                canEdit={canEdit}
                 editMode={editMode}
                 publicSlug={publicSlug}
                 uploadingKind={controller.uploadingKind}
@@ -223,7 +217,6 @@ function ScopedDocumentsTab({
       </DocumentsBanner>
 
       <PolicyEditorDialog
-        readOnly={!canEdit || !documentFiles.hasStorageAccess}
         open={controller.policyDialogOpen}
         onOpenChange={controller.handlePolicyDialogOpenChange}
         draft={controller.policyDraft}

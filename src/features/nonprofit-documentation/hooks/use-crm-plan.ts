@@ -110,13 +110,12 @@ const EXAMPLE_CRM_PLAN: CrmPlanDraft = {
 
 export function useCrmPlan() {
   const [draft, setDraft] = useState(DEFAULT_CRM_PLAN)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      CRM_PLAN_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeCrmPlan
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    CRM_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeCrmPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof CrmPlanDraft>(key: Key, value: CrmPlanDraft[Key]) =>
@@ -175,9 +174,6 @@ export function useCrmPlan() {
     addField,
     removeField,
     loadExample: useCallback(() => setDraft(EXAMPLE_CRM_PLAN), []),
-    reset: useCallback(() => {
-      authorizeResetAfterReadFailure()
-      setDraft(DEFAULT_CRM_PLAN)
-    }, [authorizeResetAfterReadFailure]),
+    reset: useCallback(() => setDraft(DEFAULT_CRM_PLAN), []),
   }
 }

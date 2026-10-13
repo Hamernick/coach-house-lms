@@ -1,4 +1,3 @@
 "use client"
 
-export { AppShellVisualFixture } from "./components/app-shell-visual-fixture"
-export { MobileNavigationPanel } from "./components"
+export { MobileMapNavigationProvider, useMobileMapNavigation } from "./components/mobile-map-navigation-context"

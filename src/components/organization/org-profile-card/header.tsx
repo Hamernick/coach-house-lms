@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useState, type ReactNode } from "react"
+import { useEffect, useId, useState } from "react"
 import ImageIcon from "lucide-react/dist/esm/icons/image"
 import { toast } from "@/lib/toast"
 
@@ -26,6 +26,7 @@ import {
 } from "./banner-image-utils"
 import { OrgProfileBannerCropDialog } from "./org-profile-banner-crop-dialog"
 import {
+  OrgProfileHeaderActions,
   OrgProfileHeaderBannerControls,
   OrgProfileHeaderLogoControls,
 } from "./header-controls"
@@ -37,11 +38,14 @@ type OrgProfileHeaderProps = {
   headerUrl: string
   editMode: boolean
   isSaving: boolean
+  isDirty: boolean
   canEdit: boolean
-  links?: ReactNode
-  donationAction?: ReactNode
+  publicLink?: string | null
   onLogoChange: (url: string | null) => Promise<void>
   onHeaderChange: (url: string | null) => Promise<void>
+  onEnterEdit: () => void
+  onCancelEdit: () => void
+  onSave: () => void
 }
 
 const headerSquares: Array<[number, number]> = [
@@ -66,11 +70,14 @@ export function OrgProfileHeader({
   headerUrl,
   editMode,
   isSaving,
+  isDirty,
   canEdit,
-  links,
-  donationAction,
+  publicLink,
   onLogoChange,
   onHeaderChange,
+  onEnterEdit,
+  onCancelEdit,
+  onSave,
 }: OrgProfileHeaderProps) {
   const logoInputId = useId()
   const headerInputId = useId()
@@ -256,7 +263,7 @@ export function OrgProfileHeader({
   return (
     <>
       <div
-        className="border-border/60 bg-background relative w-full overflow-hidden border-b"
+        className="border-border/60 bg-background relative w-full overflow-hidden rounded-t-[22px] border"
         style={{ aspectRatio: ORG_BANNER_ASPECT_RATIO }}
       >
         {headerUrl ? (
@@ -303,7 +310,7 @@ export function OrgProfileHeader({
               ORGANIZATION_FOCUS_TARGET_CLASSNAME
             )}
           >
-            <div className="border-border bg-background relative h-24 w-24 overflow-hidden rounded-xl border">
+            <div className="border-border bg-background relative h-24 w-24 overflow-hidden rounded-xl border shadow-sm">
               {logoUrl ? (
                 <Image
                   src={logoUrl}
@@ -331,17 +338,25 @@ export function OrgProfileHeader({
           </div>
         </div>
 
-        <div className={cn("mt-12", editMode && canEdit && "mt-24")}>
+        <div className={cn("mt-14", editMode && canEdit && "mt-24")}>
           <h2 className="text-2xl font-semibold tracking-tight">
             {name || "Organization"}
           </h2>
           <p className="text-muted-foreground max-w-md text-sm">
             {tagline || "—"}
           </p>
-          {links}
         </div>
 
-        {donationAction ? <div className="absolute top-6 right-6">{donationAction}</div> : null}
+        <OrgProfileHeaderActions
+          publicLink={publicLink}
+          editMode={editMode}
+          canEdit={canEdit}
+          isSaving={isSaving}
+          isDirty={isDirty}
+          onEnterEdit={onEnterEdit}
+          onCancelEdit={onCancelEdit}
+          onSave={onSave}
+        />
       </div>
 
       <OrgProfileBannerCropDialog

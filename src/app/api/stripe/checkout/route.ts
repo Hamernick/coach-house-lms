@@ -62,7 +62,7 @@ function getSafeInternalRedirect(raw: string | null) {
   if (!raw) return null
   const value = raw.trim()
   if (!value.startsWith("/")) return null
-  if (value.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(value)) return null
+  if (value.startsWith("//")) return null
   return value
 }
 
@@ -149,10 +149,11 @@ function buildErrorRedirect({
     request,
     target: returnTarget ?? "/organization",
   })
-  destination.searchParams.set("paywall", "organization")
-  destination.searchParams.set("plan", planTier)
-  if (returnTarget) destination.searchParams.set("redirect", returnTarget)
-  else destination.searchParams.set("source", source)
+  if (!returnTarget) {
+    destination.searchParams.set("paywall", "organization")
+    destination.searchParams.set("plan", planTier)
+    destination.searchParams.set("source", source)
+  }
   destination.searchParams.set("checkout_error", code)
   if (detail) {
     destination.searchParams.set("checkout_detail", detail)
@@ -260,13 +261,12 @@ export async function GET(request: NextRequest) {
   }
 
   const userId = user.id
-  let orgId: string
+  let orgId = userId
   try {
     const resolved = await resolveActiveOrganization(supabase, userId)
     orgId = resolved.orgId
   } catch {
-    return buildErrorRedirect({ request, supabaseResponse, returnTarget: cancelTarget ?? redirectTarget,
-      planTier, source, code: "checkout_failed", detail: "organization_unavailable", debugToken })
+    orgId = userId
   }
 
   try {

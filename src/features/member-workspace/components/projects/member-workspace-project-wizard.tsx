@@ -1,7 +1,5 @@
 "use client"
 
-import { defaultProjectOrganizationId, NO_PROJECT_ORGANIZATION } from "../../lib/project-organization"
-
 import { loadSharedProjectOptions, manageSharedProjectOption } from "../../project-workflow-actions"
 import type { ProjectOptionSettings } from "../../lib/project-option-settings"
 
@@ -22,15 +20,9 @@ import type {
   MemberWorkspacePersonOption,
   MemberWorkspaceProjectOrganizationOption,
 } from "../../types"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
-import { projectDateToLocalCalendar, projectDateToValue } from "@/lib/project-date"
-import { ProjectFiscalSponsorshipOption } from "./project-fiscal-sponsorship-option"
-import { ProjectRecurrenceSelect } from "./project-recurrence-select"
-import { ProjectWizardDeleteAction } from "./project-wizard-delete-action"
+import { toast } from "@/lib/toast"
 
 type MemberWorkspaceProjectWizardProps = {
-  onSaved?: (id: string, input: MemberWorkspaceCreateProjectFormInput, taskCount?: number) => void
-  deleteProjectAction?: (projectId: string) => Promise<{ ok: true; id: string } | { error: string }>
   createProjectAction?: (
     input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
@@ -55,13 +47,22 @@ const PROJECT_STATUS_OPTIONS = [
   { id: "backlog", label: "Backlog", dotClass: "bg-zinc-500" },
   { id: "planned", label: "Planned", dotClass: "bg-blue-600" },
   { id: "active", label: "Active", dotClass: "bg-teal-600" },
-  { id: "on-hold", label: "On hold", dotClass: "bg-amber-500" },
   { id: "completed", label: "Completed", dotClass: "bg-emerald-600" },
   { id: "cancelled", label: "Cancelled", dotClass: "bg-zinc-500" },
 ]
 
+function todayDateValue() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function defaultEndDateValue(startDate: string) {
+  const date = new Date(`${startDate}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + 28)
+  return date.toISOString().slice(0, 10)
+}
+
 function toDateValue(date?: Date) {
-  return date ? projectDateToValue(date) : undefined
+  return date ? date.toISOString().slice(0, 10) : undefined
 }
 
 function mapProjectStatusToQuickStatus(
@@ -85,7 +86,6 @@ function mapQuickStatusToProjectStatus(
     case "backlog":
     case "planned":
     case "active":
-    case "on-hold":
     case "completed":
     case "cancelled":
       return statusId
@@ -107,17 +107,16 @@ function mapQuickCreateToInput({
   value: StepQuickCreateValue
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
 }): MemberWorkspaceCreateProjectFormInput {
-  const startDate = toDateValue(value.startDate) ?? null
+  const startDate = toDateValue(value.startDate) ?? todayDateValue()
   const endDate =
-    toDateValue(value.targetDate) ?? null
+    toDateValue(value.targetDate) ?? defaultEndDateValue(startDate)
   const selectedOrganization =
     organizationOptions.find(
       (organization) => organization.orgId === value.clientId
-    )
+    ) ?? organizationOptions[0]
 
   return {
-    recurrence: value.recurrence,
-    orgId: selectedOrganization?.orgId ?? null,
+    orgId: selectedOrganization?.orgId,
     name: value.title,
     description: value.description,
     status: mapQuickStatusToProjectStatus(value.statusId),
@@ -171,10 +170,13 @@ function mapQuickCreateToMemberLabels({
         member.trim().toLowerCase() === assigneeId?.trim().toLowerCase()
     )
 
-  const primaryMember = typeof selectedAssignee === "string"
+  if (!selectedAssignee) {
+    return ""
+  }
+
+  return typeof selectedAssignee === "string"
     ? selectedAssignee
-    : selectedAssignee?.name
-  return [...new Set([primaryMember, ...(initialProject?.members.slice(1) ?? [])].filter(Boolean))].join(",")
+    : selectedAssignee.name
 }
 
 function buildQuickCreateInitialValue({
@@ -186,7 +188,7 @@ function buildQuickCreateInitialValue({
   assigneeOptions: MemberWorkspacePersonOption[]
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
 }): Partial<StepQuickCreateValue> | undefined {
-  if (!initialProject) return { clientId: defaultProjectOrganizationId(organizationOptions) ?? NO_PROJECT_ORGANIZATION }
+  if (!initialProject) return undefined
 
   const firstMember = initialProject.members[0]?.trim().toLowerCase()
   const matchingAssigneeId =
@@ -195,15 +197,14 @@ function buildQuickCreateInitialValue({
     )?.id ?? initialProject.members[0]
 
   return {
-    recurrence: initialProject.recurrence ?? "none",
     title: initialProject.name,
     description: initialProject.description,
-    assigneeId: matchingAssigneeId ?? "__unassigned_project_owner__",
-    startDate: initialProject.startDate ? projectDateToLocalCalendar(initialProject.startDate) : undefined,
+    assigneeId: matchingAssigneeId,
+    startDate: initialProject.startDate,
     statusId: mapProjectStatusToQuickStatus(initialProject.status),
-    targetDate: initialProject.endDate ? projectDateToLocalCalendar(initialProject.endDate) : undefined,
+    targetDate: initialProject.endDate,
     priorityId: initialProject.priority,
-    clientId: initialProject.organizationUnassigned ? NO_PROJECT_ORGANIZATION : initialProject.organizationId,
+    clientId: initialProject.organizationId ?? organizationOptions[0]?.orgId,
     sprintTypeId:
       initialProject.typeLabel === "Design Sprint"
         ? "design"
@@ -227,8 +228,6 @@ function buildQuickCreateInitialValue({
 }
 
 export function MemberWorkspaceProjectWizard({
-  onSaved,
-  deleteProjectAction,
   createProjectAction,
   initialProject,
   onOpenChange,
@@ -256,8 +255,6 @@ export function MemberWorkspaceProjectWizard({
       .finally(() => { if (active) { setOptionsLoading(false); setLoadedOptionsFor(initialProject?.id ?? "new"); } });
     return () => { active = false; };
   }, [open, initialProject?.id]);
-  const [fiscalSponsorshipEnabled, setFiscalSponsorshipEnabled] = useState(false)
-  useEffect(() => { if (open) setFiscalSponsorshipEnabled(false) }, [open])
   const [renderOpen, setRenderOpen] = useState(open)
   const [isPending, startTransition] = useTransition()
 
@@ -267,27 +264,23 @@ export function MemberWorkspaceProjectWizard({
 
   const clientOptions = useMemo<Client[]>(
     () =>
-      [...(initialProject?.projectKind === "organization_admin" ? [] : [{ id: NO_PROJECT_ORGANIZATION, name: "No organization", status: "active" as const }]), ...organizationOptions.map((organization) => ({
+      organizationOptions.map((organization) => ({
         id: organization.orgId,
         name: organization.name,
-        status: "active" as const,
-      }))],
-    [initialProject?.projectKind, organizationOptions]
+        status: "active",
+      })),
+    [organizationOptions]
   )
 
-  const quickCreateUsers = useMemo(() => {
-    const users = assigneeOptions.map((person) => ({
-      id: person.id, name: person.name, avatar: person.avatarUrl ?? undefined,
-    }))
-    const originalOwner = initialProject?.members[0]
-    if (initialProject && !originalOwner) {
-      users.unshift({ id: "__unassigned_project_owner__", name: "Unassigned", avatar: undefined })
-    } else if (originalOwner && !users.some(user => user.name.trim().toLowerCase() === originalOwner.trim().toLowerCase())) {
-      // Existing labels are preserved without inventing a linked platform account.
-      users.unshift({ id: originalOwner, name: originalOwner, avatar: undefined })
-    }
-    return users
-  }, [assigneeOptions, initialProject])
+  const quickCreateUsers = useMemo(
+    () =>
+      assigneeOptions.map((person) => ({
+        id: person.id,
+        name: person.name,
+        avatar: person.avatarUrl ?? undefined,
+      })),
+    [assigneeOptions]
+  )
 
   const quickCreateInitialValue = useMemo(
     () =>
@@ -313,15 +306,25 @@ export function MemberWorkspaceProjectWizard({
 
   const submitProjectInput = (input: MemberWorkspaceCreateProjectFormInput) => {
     startTransition(async () => {
-      const label = directoryHref === "/projects" ? "Project" : "Organization"
-      const result = await withSaveFeedback(
-        async () => initialProject
-          ? updateProjectAction?.(initialProject.id, input)
-          : createProjectAction?.({ ...input, fiscalSponsorshipEnabled }),
-        { pending: initialProject ? "Saving changes…" : `Creating ${label.toLowerCase()}…`, success: `${label} ${initialProject ? "updated" : "created"}` },
+      const result = initialProject
+        ? await updateProjectAction?.(initialProject.id, input)
+        : await createProjectAction?.(input)
+
+      if (!result) {
+        toast.error("Project actions are unavailable.")
+        return
+      }
+
+      if ("error" in result) {
+        toast.error(result.error)
+        return
+      }
+
+      toast.success(
+        directoryHref === "/projects"
+          ? initialProject ? "Project updated" : "Project created"
+          : initialProject ? "Organization updated" : "Organization created"
       )
-      if ("error" in result) return
-      onSaved?.(result.id, initialProject ? input : { ...input, fiscalSponsorshipEnabled })
       closeWizard()
       router.refresh()
 
@@ -343,17 +346,8 @@ export function MemberWorkspaceProjectWizard({
 
   return (
     <ProjectWizard
-      quickCreateRecurrenceControl={directoryHref === "/projects" ? (value, onChange) => (
-        <div className="flex flex-col gap-4">
-          <ProjectRecurrenceSelect value={value} onChange={onChange} disabled={isPending} />
-          {!initialProject ? <ProjectFiscalSponsorshipOption checked={fiscalSponsorshipEnabled} onChange={setFiscalSponsorshipEnabled} disabled={isPending} /> : null}
-        </div>
-      ) : undefined}
-      quickCreateFooterAction={initialProject && initialProject.projectKind !== "organization_admin" && deleteProjectAction ? (
-        <ProjectWizardDeleteAction projectId={initialProject.id} projectName={initialProject.name} disabled={isPending} deleteProjectAction={deleteProjectAction} onDeleted={() => { closeWizard(); router.refresh(); }} />
-      ) : undefined}
-      renderGuidedSetup={() => <GuidedProjectSetup organizations={organizationOptions} onSaved={onSaved} onClose={closeWizard} directoryHref={directoryHref} />}
-      onClose={() => { if (!isPending) closeWizard() }}
+      renderGuidedSetup={() => <GuidedProjectSetup organizations={organizationOptions} onClose={closeWizard} directoryHref={directoryHref} />}
+      onClose={closeWizard}
       mode={initialProject ? "edit" : "create"}
       skipModeStep={Boolean(initialProject)}
       quickCreateInitialValue={resolvedInitialValue}

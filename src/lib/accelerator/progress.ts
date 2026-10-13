@@ -150,16 +150,14 @@ function buildAcceleratorProgressTotals({
 
   for (const moduleId of moduleIds) {
     const progressStatus = progressStatusByModuleId.get(moduleId)
-    if (progressStatus === "completed") {
-      completedModules += 1
+    if (progressStatus && progressStatus !== "not_started") {
+      if (progressStatus === "completed") completedModules += 1
+      if (progressStatus === "in_progress") inProgressModules += 1
       continue
     }
 
     const submission = submissionByModuleId.get(moduleId)
-    if (!submission) {
-      if (progressStatus === "in_progress") inProgressModules += 1
-      continue
-    }
+    if (!submission) continue
 
     const assignment = assignmentByModuleId.get(moduleId)
     const completed = assignment
@@ -566,16 +564,13 @@ export async function fetchAcceleratorProgressSummary({
 
   for (const moduleId of moduleIds) {
     const progressStatus = progressStatusByModuleId.get(moduleId)
-    if (progressStatus === "completed") {
+    if (progressStatus && progressStatus !== "not_started") {
       progressMap.set(moduleId, progressStatus)
       continue
     }
 
     const submission = submissionByModuleId.get(moduleId)
-    if (!submission) {
-      if (progressStatus) progressMap.set(moduleId, progressStatus)
-      continue
-    }
+    if (!submission) continue
 
     const assignment = assignmentByModuleId.get(moduleId)
     const completed = assignment

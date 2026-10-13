@@ -113,7 +113,6 @@ export function resolveWorkspaceAcceleratorDrawerRequest(
 
   return {
     tab: "accelerator",
-    focusKey: destination.searchParams.get("focus"),
     acceleratorStepId: destination.searchParams.get("step"),
     acceleratorModuleId: destination.searchParams.get("module"),
     acceleratorLessonGroupKey: destination.searchParams.get("group"),
@@ -202,10 +201,8 @@ const WORKSPACE_DATA_DRAWER_EMPTY_TAB_INDICATOR: WorkspaceDataDrawerTabIndicator
 
 export function useWorkspaceDataDrawerTabIndicator({
   tab,
-  expanded,
 }: {
   tab: WorkspaceCanvasDrawerTab
-  expanded: boolean
 }) {
   const tabsHeaderRef = useRef<HTMLDivElement | null>(null)
   const tabsListRef = useRef<HTMLDivElement | null>(null)
@@ -227,14 +224,11 @@ export function useWorkspaceDataDrawerTabIndicator({
     }
 
     const headerRect = tabsHeader.getBoundingClientRect()
-    const listRect = tabsListRef.current!.getBoundingClientRect()
     const activeTriggerRect = activeTabTrigger.getBoundingClientRect()
-    const left = Math.max(activeTriggerRect.left, listRect.left)
-    const right = Math.min(activeTriggerRect.right, listRect.right)
     const nextIndicator = {
-      left: left - headerRect.left,
-      width: Math.max(0, right - left),
-      visible: right > left,
+      left: activeTriggerRect.left - headerRect.left,
+      width: activeTriggerRect.width,
+      visible: true,
     }
 
     setTabIndicator((current) => {
@@ -254,38 +248,25 @@ export function useWorkspaceDataDrawerTabIndicator({
   }, [])
 
   useEffect(() => {
-    const tabsList = tabsListRef.current
-    const revealActiveTab = () => {
-      const active = tabsList?.querySelector<HTMLElement>('[data-state="active"]')
-      if (tabsList && active) {
-        const listRect = tabsList.getBoundingClientRect()
-        const activeRect = active.getBoundingClientRect()
-        if (activeRect.left < listRect.left) tabsList.scrollLeft -= listRect.left - activeRect.left
-        else if (activeRect.right > listRect.right) tabsList.scrollLeft += activeRect.right - listRect.right
-      }
-      updateTabIndicator()
-    }
-    revealActiveTab()
+    updateTabIndicator()
 
-    const animationFrame = window.requestAnimationFrame(revealActiveTab)
+    const animationFrame = window.requestAnimationFrame(updateTabIndicator)
     const resizeObserver =
       typeof ResizeObserver === "undefined"
         ? null
-        : new ResizeObserver(revealActiveTab)
+        : new ResizeObserver(updateTabIndicator)
 
     if (tabsHeaderRef.current) resizeObserver?.observe(tabsHeaderRef.current)
     if (tabsListRef.current) resizeObserver?.observe(tabsListRef.current)
 
-    tabsList?.addEventListener("scroll", updateTabIndicator, { passive: true })
-    window.addEventListener("resize", revealActiveTab)
+    window.addEventListener("resize", updateTabIndicator)
 
     return () => {
       window.cancelAnimationFrame(animationFrame)
       resizeObserver?.disconnect()
-      tabsList?.removeEventListener("scroll", updateTabIndicator)
-      window.removeEventListener("resize", revealActiveTab)
+      window.removeEventListener("resize", updateTabIndicator)
     }
-  }, [tab, expanded, updateTabIndicator])
+  }, [tab, updateTabIndicator])
 
   return {
     tabIndicator,

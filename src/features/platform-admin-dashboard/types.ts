@@ -11,7 +11,6 @@ export type PlatformAdminDashboardLabStatus =
   | "backlog"
   | "planned"
   | "active"
-  | "on-hold"
   | "cancelled"
   | "completed"
 
@@ -28,7 +27,6 @@ export type PlatformAdminDashboardLabPriority =
   | "low"
 
 export type PlatformAdminDashboardLabTaskStatus =
-  | "waiting"
   | "todo"
   | "in-progress"
   | "done"
@@ -56,11 +54,8 @@ export type PlatformAdminDashboardLabOrganizationCoachAssignment = {
 }
 
 export type PlatformAdminDashboardLabProject = {
-  fiscalSponsorshipEnabled?: boolean
-  recurrence?: "none" | "monthly"
   id: string
   organizationId?: string
-  organizationUnassigned?: boolean
   projectKind?: "standard" | "organization_admin"
   workstreamCategoryId?: string
   fiscalSponsorshipStatus?: PlatformAdminDashboardLabFiscalSponsorshipStatus
@@ -68,15 +63,14 @@ export type PlatformAdminDashboardLabProject = {
   description?: string
   taskCount: number
   progress: number
-  startDate: Date | null
-  endDate: Date | null
+  startDate: Date
+  endDate: Date
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
   tags: string[]
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
-  organizationImageUrl?: string | null
   organizationCoachAssignments?: PlatformAdminDashboardLabOrganizationCoachAssignment[]
   client?: string
   typeLabel?: string

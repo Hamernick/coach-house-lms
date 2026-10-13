@@ -108,14 +108,6 @@ export function GoogleCalendarPanel({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpen(true)}
-              aria-label="Manage Google Calendar"
-            >
-              Manage
-            </Button>
             <Badge variant="secondary" aria-live="polite">
               {status}
             </Badge>

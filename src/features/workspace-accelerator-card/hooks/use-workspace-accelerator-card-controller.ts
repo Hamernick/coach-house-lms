@@ -205,25 +205,23 @@ export function useWorkspaceAcceleratorCardController(
       const nextIndex = stepIdToIndex.get(stepId)
       if (typeof nextIndex !== "number" || nextIndex === currentIndex) return
       pendingUserProgressChangeRef.current = true
-      // Commit the selection with the caller's viewer-open update. Deferring it
-      // mounts the previous lesson (including organization setup) first.
-      setCurrentIndex((previous) =>
-        previous === nextIndex ? previous : nextIndex
+      startTransition(() =>
+        setCurrentIndex((previous) =>
+          previous === nextIndex ? previous : nextIndex
+        )
       )
     },
     [currentIndex, stepIdToIndex]
   )
 
-  const markCurrentStepComplete = useCallback((wholeModule = false) => {
-    if (!currentStep || (!wholeModule && completedStepIds.includes(currentStep.id))) return
+  const markCurrentStepComplete = useCallback(() => {
+    if (!currentStep || completedStepIds.includes(currentStep.id)) return
     pendingUserProgressChangeRef.current = true
     setCompletedStepIds((previous) => {
-      const ids = wholeModule
-        ? steps.filter((step) => step.moduleId === currentStep.moduleId).map((step) => step.id)
-        : [currentStep.id]
-      return Array.from(new Set([...previous, ...ids]))
+      if (previous.includes(currentStep.id)) return previous
+      return [...previous, currentStep.id]
     })
-  }, [completedStepIds, currentStep, steps])
+  }, [completedStepIds, currentStep])
 
   useEffect(() => {
     if (!allowAutoResize || !onSizeChange || !currentStep) return

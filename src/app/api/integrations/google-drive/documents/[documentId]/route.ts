@@ -15,13 +15,13 @@ export async function DELETE(
 ) {
   const requestId = googleDriveRequestId()
   try {
-    const { user, organization } = await requireGoogleDriveContext(
+    const { organization } = await requireGoogleDriveContext(
       request,
       new NextResponse(),
       true
     )
     const { documentId } = await params
-    await detachGoogleDriveDocument(documentId, organization.orgId, user.id)
+    await detachGoogleDriveDocument(documentId, organization.orgId)
     return googleDriveJson({ ok: true }, 200, requestId, "documents_detach")
   } catch (error) {
     return googleDriveFailure(error, requestId, "documents_detach")

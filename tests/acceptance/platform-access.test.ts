@@ -24,11 +24,11 @@ describe("platform access", () => {
     expect(hasPlatformCapability("developer", "prototypes")).toBe(true)
   })
 
-  it("grants coaches dashboard work access but not platform administration", () => {
+  it("limits coaches to Workspace, Find, and Organizations", () => {
     expect(hasPlatformCapability("coach", "workspace")).toBe(true)
     expect(hasPlatformCapability("coach", "find")).toBe(true)
     expect(hasPlatformCapability("coach", "organizations")).toBe(true)
-    expect(hasPlatformCapability("coach", "tasks")).toBe(true)
+    expect(hasPlatformCapability("coach", "tasks")).toBe(false)
     expect(hasPlatformCapability("coach", "email")).toBe(false)
     expect(hasPlatformCapability("coach", "platform")).toBe(false)
     expect(hasPlatformCapability("coach", "platform-lab")).toBe(false)
@@ -44,10 +44,7 @@ describe("platform access", () => {
     expect(isCoachRestrictedPath("/workspace")).toBe(false)
     expect(isCoachRestrictedPath("/find/example")).toBe(false)
     expect(isCoachRestrictedPath("/organizations/project-id")).toBe(false)
-    expect(isCoachRestrictedPath("/tasks")).toBe(false)
-    expect(isCoachRestrictedPath("/projects/example")).toBe(false)
-    expect(isCoachRestrictedPath("/admin/dashboard")).toBe(false)
-    expect(isCoachRestrictedPath("/admin/dashboard-other")).toBe(true)
+    expect(isCoachRestrictedPath("/tasks")).toBe(true)
     expect(isCoachRestrictedPath("/email")).toBe(true)
     expect(isCoachRestrictedPath("/admin/platform")).toBe(true)
     expect(isCoachRestrictedPath("/internal/platform-lab")).toBe(true)

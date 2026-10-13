@@ -27,7 +27,6 @@ import {
 } from "@/lib/workspace/routes"
 
 import { resolveRoadmapBasePath } from "../paths"
-import { withEditorReturnTo } from "@/lib/workspace/editor-navigation"
 import { deriveRoadmapEditorSectionUi } from "../ui-state"
 import {
   createDraft,
@@ -45,7 +44,6 @@ import type {
 } from "./use-roadmap-editor-state-types"
 
 export function useRoadmapEditorState({
-  sourceScope,
   sections: initialSections,
   publicSlug,
   canEdit = true,
@@ -55,11 +53,8 @@ export function useRoadmapEditorState({
   onRegisterDiscard,
 }: UseRoadmapEditorStateArgs): UseRoadmapEditorStateResult {
   const storageKey = useMemo(
-    () =>
-      sourceScope
-        ? `roadmap-draft:${sourceScope.userId}:${sourceScope.organizationId}`
-        : `roadmap-draft:${publicSlug ?? "private"}`,
-    [publicSlug, sourceScope]
+    () => `roadmap-draft:${publicSlug ?? "private"}`,
+    [publicSlug]
   )
   const initialActiveId = useMemo(() => {
     if (!initialSectionId) return ""
@@ -206,8 +201,6 @@ export function useRoadmapEditorState({
       startTransition(async () => {
         try {
           const result = await saveRoadmapSectionAction({
-            expectedOrganizationId: sourceScope?.organizationId,
-            expectedUserId: sourceScope?.userId,
             sectionId: section.id,
             expectedLastUpdated: section.lastUpdated,
             title: draft.title,
@@ -245,7 +238,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [canEdit, isPending, savingId, sourceScope]
+    [canEdit, isPending, savingId]
   )
 
   const flushActiveSectionDraft = useCallback(() => {
@@ -269,9 +262,8 @@ export function useRoadmapEditorState({
       setActiveId(next.id)
       if (navigationMode === "embedded") return
       if (typeof window === "undefined") return
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo")
-      const nextHref = returnTo ? withEditorReturnTo(getSectionHref(next.slug), returnTo) : getSectionHref(next.slug)
-      if (`${window.location.pathname}${window.location.search}` === nextHref) return
+      const nextHref = getSectionHref(next.slug)
+      if (window.location.pathname === nextHref) return
       window.history.replaceState(window.history.state, "", nextHref)
     },
     [flushActiveSectionDraft, getSectionHref, navigationMode]
@@ -354,8 +346,6 @@ export function useRoadmapEditorState({
       startTransition(async () => {
         try {
           const result = await saveRoadmapSectionAction({
-            expectedOrganizationId: sourceScope?.organizationId,
-            expectedUserId: sourceScope?.userId,
             sectionId: activeSection.id,
             expectedLastUpdated: activeSection.lastUpdated,
             status: nextStatus,
@@ -397,7 +387,7 @@ export function useRoadmapEditorState({
         }
       })
     },
-    [activeSection, canEdit, isPending, savingId, sourceScope]
+    [activeSection, canEdit, isPending, savingId]
   )
 
   return {

@@ -1,4 +1,3 @@
-import { normalizeCoreDocumentDriveSource } from "./core-document-source"
 import { SECTION_DEFINITIONS } from "./definitions"
 import {
   MY_ORGANIZATION_PATH,
@@ -46,8 +45,6 @@ const STORED_SECTION_KEYS = new Set([
   "subtitle",
   "slug",
   "content",
-  "driveSource",
-  "documentSource",
   "publishedContent",
   "publicProfileStatusControlled",
   "budgetRows",
@@ -207,12 +204,6 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
-    driveSource: normalizeCoreDocumentDriveSource(stored?.driveSource),
-    documentSource:
-      stored?.documentSource === "editor" ||
-      stored?.documentSource === "google_drive"
-        ? stored.documentSource
-        : undefined,
     publishedContent,
     publicProfileStatusControlled,
     budgetRows,
@@ -300,10 +291,6 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
-    driveSource: section.driveSource ?? null,
-    ...(section.documentSource
-      ? { documentSource: section.documentSource }
-      : {}),
     ...(section.publishedContent !== undefined
       ? { publishedContent: section.publishedContent }
       : {}),

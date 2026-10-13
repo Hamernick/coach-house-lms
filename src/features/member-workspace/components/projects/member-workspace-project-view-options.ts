@@ -67,9 +67,6 @@ export function paramsToChips(
     })
   }
 
-  const search = params.get("search")?.trim()
-  if (search) chips.push({ key: "Search", value: search })
-
   add("Status", params.get("status"))
   add("Fiscal Sponsorship", params.get("fiscal-sponsorship"))
   add("Priority", params.get("priority"))

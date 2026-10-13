@@ -1,15 +1,4 @@
-"use client"
-
-import { useState, type ComponentType, type RefObject } from "react"
-import { useSearchParams } from "next/navigation"
-import { hasMeaningfulRoadmapBudgetRows } from "@/lib/roadmap/budget"
-import { stripHtml } from "@/lib/markdown/convert"
-import { CoreDocumentChoices } from "@/components/roadmap/core-document-source/core-document-choices"
-import { GoogleDriveMark } from "@/components/roadmap/core-document-source/google-drive-mark"
-import {
-  useCoreDocumentSource,
-  type CoreDocumentScope,
-} from "@/components/roadmap/core-document-source/use-core-document-source"
+import type { ComponentType, RefObject } from "react"
 
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { RoadmapRightRailSection } from "@/components/roadmap/roadmap-right-rail-section"
@@ -22,10 +11,8 @@ import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "@/lib/roadmap/public-or
 
 import { DEFAULT_PLACEHOLDER, ROADMAP_TOOLBAR_ID } from "../constants"
 import type { RoadmapDraft } from "../types"
-import { RoadmapEditorBreadcrumb } from "./roadmap-editor-breadcrumb"
 
 type RoadmapEditorShellProps = {
-  sourceScope?: CoreDocumentScope
   sections: RoadmapSection[]
   activeSection: RoadmapSection
   drafts: Record<string, RoadmapDraft>
@@ -56,7 +43,6 @@ type RoadmapEditorShellProps = {
 }
 
 export function RoadmapEditorShell({
-  sourceScope,
   sections,
   activeSection,
   drafts,
@@ -85,40 +71,6 @@ export function RoadmapEditorShell({
   savingId,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
-  const searchParams = useSearchParams()
-  const [writingId, setWritingId] = useState<string | null>(null)
-  const [sourceOverride, setSourceOverride] = useState<RoadmapSection | null>(
-    null
-  )
-  const source = useCoreDocumentSource(sourceScope, setSourceOverride)
-  const sourceSection =
-    sourceOverride?.id === activeSection.id &&
-    (sourceOverride.lastUpdated ?? "") >= (activeSection.lastUpdated ?? "")
-      ? sourceOverride
-      : activeSection
-  const linked = sourceSection.driveSource
-  const hasContent = Boolean(
-    stripHtml(activeDraft.content).trim() ||
-    /<(img|table|iframe)\b/i.test(activeDraft.content) ||
-    hasMeaningfulRoadmapBudgetRows(activeDraft.budgetRows ?? [])
-  )
-  const showSourceChoice =
-    canEdit &&
-    sourceScope &&
-    !linked &&
-    !hasContent &&
-    writingId !== activeSection.id &&
-    searchParams.get("write") !== "1"
-  function chooseDrive() {
-    if (
-      isDirty &&
-      !window.confirm(
-        "You have unsaved changes. Link a Google Drive document instead? Your saved editor draft will be kept."
-      )
-    )
-      return
-    void source.change(sourceSection, "drive")
-  }
   const controlsPublicProfile = PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(
     activeSection.id
   )
@@ -136,8 +88,7 @@ export function RoadmapEditorShell({
           />
         </RightRailSlot>
       ) : null}
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
-        <RoadmapEditorBreadcrumb title={headerTitle || activeSection.title} className={contentMaxWidth} />
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}
@@ -161,48 +112,6 @@ export function RoadmapEditorShell({
           body={
             isCalendarSection ? (
               <RoadmapCalendar />
-            ) : linked ? (
-              <div className="bg-card mx-auto w-full max-w-lg space-y-4 rounded-xl border p-6">
-                <h2 className="text-lg font-semibold">{activeSection.title}</h2>
-                <p className="text-muted-foreground text-sm">
-                  Linked to {linked.name}. Edit this document in Google Drive.
-                </p>
-                <Button asChild variant="outline" className="min-h-11">
-                  <a
-                    href={linked.webViewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <GoogleDriveMark />
-                    Open in Google Drive
-                  </a>
-                </Button>
-                {canEdit && sourceScope ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="min-h-11"
-                    onClick={chooseDrive}
-                    disabled={source.pending}
-                  >
-                    <GoogleDriveMark />
-                    Replace with Google Drive
-                  </Button>
-                ) : null}
-                {source.error ? (
-                  <p role="alert" className="text-destructive text-sm">
-                    {source.error}
-                  </p>
-                ) : null}
-              </div>
-            ) : showSourceChoice ? (
-              <CoreDocumentChoices
-                title={activeSection.title}
-                pending={source.pending}
-                error={source.error}
-                onWrite={() => setWritingId(activeSection.id)}
-                onDrive={chooseDrive}
-              />
             ) : isBudgetSection ? (
               <RoadmapBudgetTableEditor
                 rows={activeDraft.budgetRows}
@@ -218,22 +127,6 @@ export function RoadmapEditorShell({
             isCalendarSection || isBudgetSection
               ? undefined
               : {
-                  toolbarActions:
-                    canEdit && sourceScope ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="min-h-11 sm:min-h-8"
-                        onClick={chooseDrive}
-                        disabled={source.pending}
-                      >
-                        <GoogleDriveMark />
-                        {source.pending
-                          ? "Connecting…"
-                          : "Choose from Google Drive"}
-                      </Button>
-                    ) : undefined,
                   value: activeDraft.content,
                   onChange: (value) => onDraftChange({ content: value }),
                   readOnly: !canEdit,

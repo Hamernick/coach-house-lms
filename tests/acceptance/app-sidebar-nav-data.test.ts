@@ -1,22 +1,24 @@
 import { describe, expect, it } from "vitest"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 
 describe("app sidebar nav data", () => {
-  it("groups internal platform navigation only for true platform admins", () => {
-    const adminNav = buildMainNav({
-      isAdmin: true,
-      showOrgAdmin: true,
-      canAccessOrgAdmin: true,
-    })
-
-    expect(adminNav.map((item) => item.title)).toContain("Admin Dashboard")
+  it("shows the internal platform item only for true platform admins", () => {
     expect(
-      adminNav
-        .find((item) => item.title === "Admin Dashboard")
-        ?.children?.map((item) => item.title)
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+      }).map((item) => item.title)
     ).toContain("Platform")
-    expect(adminNav.map((item) => item.title)).not.toContain("User Journeys")
+    expect(
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+      }).map((item) => item.title)
+    ).not.toContain("User Journeys")
 
     expect(
       buildMainNav({
@@ -24,7 +26,7 @@ describe("app sidebar nav data", () => {
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
       }).map((item) => item.title)
-    ).not.toContain("Admin Dashboard")
+    ).not.toContain("Platform")
     expect(
       buildMainNav({
         isAdmin: false,
@@ -35,28 +37,22 @@ describe("app sidebar nav data", () => {
   })
 
   it("shows Platform Lab only when explicitly enabled for platform admins", () => {
-    const enabledNav = buildMainNav({
-      isAdmin: true,
-      showOrgAdmin: true,
-      canAccessOrgAdmin: true,
-      showPlatformLab: true,
-    })
-    const disabledNav = buildMainNav({
-      isAdmin: true,
-      showOrgAdmin: true,
-      canAccessOrgAdmin: true,
-      showPlatformLab: false,
-    })
+    expect(
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+        showPlatformLab: true,
+      }).map((item) => item.title)
+    ).toContain("Platform Lab")
 
     expect(
-      enabledNav
-        .find((item) => item.title === "Admin Dashboard")
-        ?.children?.map((item) => item.title)
-    ).toContain("Platform Lab")
-    expect(
-      disabledNav
-        .find((item) => item.title === "Admin Dashboard")
-        ?.children?.map((item) => item.title)
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+        showPlatformLab: false,
+      }).map((item) => item.title)
     ).not.toContain("Platform Lab")
   })
 
@@ -69,8 +65,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find"])
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -88,7 +85,7 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.find((item) => item.title === "Admin Dashboard")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Admin")).toBeUndefined()
   })
 
   it("includes member workspace routes alongside platform routes for platform admins", () => {
@@ -103,24 +100,18 @@ describe("app sidebar nav data", () => {
 
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
-      "Admin Dashboard",
-    ])
-    const adminItems = nav.find((item) => item.title === "Admin Dashboard")?.children
-    expect(adminItems?.map((item) => item.title)).toEqual([
+      "Find",
       "Organizations",
-      "Projects",
       "Tasks",
       "Email",
       "Platform",
       "Platform Lab",
       "Prototypes",
     ])
-    expect(
-      adminItems?.find((item) => item.title === "Organizations")?.href
-    ).toBe("/organizations")
-    expect(
-      adminItems?.find((item) => item.title === "Prototypes")?.tree
-    ).toEqual(
+    expect(nav.find((item) => item.title === "Organizations")?.href).toBe(
+      "/organizations"
+    )
+    expect(nav.find((item) => item.title === "Prototypes")?.tree).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "user-journeys",
@@ -130,7 +121,7 @@ describe("app sidebar nav data", () => {
     )
   })
 
-  it("shows coaches a linked Admin dashboard with work navigation", () => {
+  it("shows coaches only Workspace, Find, and Organizations", () => {
     const nav = buildMainNav({
       isAdmin: false,
       platformAccessLevel: "coach",
@@ -140,14 +131,14 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Admin Dashboard"])
-    const admin = nav.find((item) => item.title === "Admin Dashboard")
-    expect(admin?.href).toBe("/admin/dashboard")
-    expect(admin?.children?.map((item) => item.title)).toEqual(["Organizations", "Projects", "Tasks"])
-
+    expect(nav.map((item) => item.title)).toEqual([
+      "Workspace",
+      "Find",
+      "Organizations",
+    ])
   })
 
-  it("shows Workspace for free accounts without exposing paid or admin tools", () => {
+  it("shows Find only for free self-only member accounts", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
@@ -156,9 +147,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
-    expect(nav.find((item) => item.title === "Workspace")?.href).toBe("/workspace")
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
+    expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -176,7 +167,9 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.find((item) => item.title === "Find")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
+    expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -193,23 +186,19 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.map((item) => item.title)).toEqual(["Workspace"])
-    expect(nav.find((item) => item.title === "Admin Dashboard")).toBeUndefined()
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
+    expect(nav.find((item) => item.title === "Admin")).toBeUndefined()
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("links Documentation internally and keeps Community hidden", () => {
+  it("does not duplicate Find in the sidebar resource nav", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
-      "Documentation",
+      "Knowledge base",
+      "Community",
     ])
     expect(
       RESOURCE_NAV.find((item) => item.name === "Find organizations")
     ).toBeUndefined()
-    const documentation = RESOURCE_NAV.find(
-      (item) => item.name === "Documentation"
-    )
-    expect(documentation).toMatchObject({ url: "/documentation" })
-    expect(documentation).not.toHaveProperty("external")
     expect(RESOURCE_NAV.find((item) => item.url === "/find")).toBeUndefined()
   })
 })

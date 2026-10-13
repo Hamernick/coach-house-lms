@@ -111,8 +111,7 @@ export async function revokeGoogleDriveToken(token: string) {
 }
 
 export async function getGoogleDriveFile(accessToken: string, fileId: string) {
-  const fields =
-    "id,name,mimeType,modifiedTime,webViewLink,thumbnailLink,driveId,trashed"
+  const fields = "id,name,mimeType,modifiedTime,webViewLink,driveId,trashed"
   const response = await googleRequest(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?supportsAllDrives=true&fields=${fields}`,
     { headers: { authorization: `Bearer ${accessToken}` } },
@@ -120,21 +119,6 @@ export async function getGoogleDriveFile(accessToken: string, fileId: string) {
   )
   const file = (await response.json()) as Record<string, unknown>
   const webViewLink = normalizeGoogleDriveWebViewLink(file.webViewLink)
-  let thumbnailLink: string | null = null
-  if (typeof file.thumbnailLink === "string") {
-    try {
-      const url = new URL(file.thumbnailLink)
-      if (
-        url.protocol === "https:" &&
-        (url.hostname === "googleusercontent.com" ||
-          url.hostname.endsWith(".googleusercontent.com"))
-      ) {
-        thumbnailLink = url.toString()
-      }
-    } catch {
-      thumbnailLink = null
-    }
-  }
   if (
     file.id !== fileId ||
     typeof file.name !== "string" || file.name.length < 1 || file.name.length > 1024 ||
@@ -148,7 +132,6 @@ export async function getGoogleDriveFile(accessToken: string, fileId: string) {
     name: file.name,
     mimeType: file.mimeType,
     webViewLink,
-    thumbnailLink,
     driveId: typeof file.driveId === "string" ? file.driveId : null,
     modifiedAt: typeof file.modifiedTime === "string" ? file.modifiedTime : null,
     status: file.trashed === true ? "trashed" : "available",

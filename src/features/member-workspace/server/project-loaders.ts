@@ -1,8 +1,3 @@
-// Recording fixtures only; staff demo and unfinished real organizations remain visible.
-const DIRECTORY_FIXTURE_ORGANIZATION_IDS = new Set([
-  "886455ec-a664-4f13-83f1-471ddd1f5ffd", // Southside Community Table recording fixture
-])
-
 import {
   loadAdminOrganizationSummaries,
   mapAdminOrganizationSummaryToProject,
@@ -51,7 +46,8 @@ async function loadAdminStandardOrganizationProjects({
     .eq("project_kind", "standard")
     .neq("created_source", "system")
     .neq("created_source", "starter_seed")
-    .order("created_at", { ascending: false })
+    .order("start_date", { ascending: true })
+    .order("created_at", { ascending: true })
     .returns<OrganizationProjectRecord[]>()
 
   if (error) {
@@ -67,47 +63,41 @@ async function loadAdminStandardOrganizationProjects({
   return data ?? []
 }
 
-export async function loadMemberWorkspaceProjectsPage({ directory = "organizations" }: { directory?: "organizations" | "projects" } = {}) {
+export async function loadMemberWorkspaceProjectsPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
   if (actorCanAccessOrganizations(actor)) {
     const organizations = filterOrganizationsForActor(
       actor,
-      (await loadAdminOrganizationSummaries({
+      await loadAdminOrganizationSummaries({
         supabase: actor.supabase,
-      })).filter((organization) => !DIRECTORY_FIXTURE_ORGANIZATION_IDS.has(organization.orgId))
+      })
     )
     const orgIds = organizations.map((organization) => organization.orgId)
     const organizationOptions = organizations.map((organization) => ({
       orgId: organization.orgId,
       name: organization.name,
     }))
-    const [assigneeOptions, canonicalProjects, standardProjects, guestResult] =
+    const [assigneeOptions, canonicalProjects, standardProjects] =
       await Promise.all([
         loadMemberWorkspacePersonOptionsForOrganizations({
-          orgIds: [],
+          orgIds,
           supabase: actor.supabase,
           includePlatformAdmins: true,
         }),
-        directory === "projects" ? Promise.resolve([] as OrganizationProjectRecord[]) : ensureCanonicalAdminProjects({
+        ensureCanonicalAdminProjects({
           organizations,
           supabase: actor.supabase,
         }),
-        directory === "organizations" ? Promise.resolve([] as OrganizationProjectRecord[]) : loadAdminStandardOrganizationProjects({
+        loadAdminStandardOrganizationProjects({
           orgIds,
           supabase: actor.supabase,
         }),
-        directory === "projects"
-          ? actor.supabase.rpc("list_fiscal_guest_projects", { p_user_id: actor.userId })
-          : Promise.resolve({ data: [], error: null }),
       ])
-
-    if (guestResult.error) throw toMemberWorkspaceDataError(guestResult.error, "Unable to load assigned fiscal projects.")
-    const guestProjects = (guestResult.data ?? []) as unknown as OrganizationProjectRecord[]
 
     if (!canonicalProjects || !standardProjects) {
       return {
-        projects: directory === "projects" ? [] : organizations.map(mapAdminOrganizationSummaryToProject),
+        projects: organizations.map(mapAdminOrganizationSummaryToProject),
         storageMode: "custom" as const,
         starterProjectCount: 0,
         hasUserProjects: organizations.length > 0,
@@ -132,27 +122,21 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
       ])
     )
 
-    const organizationNames = new Map(organizationOptions.map((org) => [org.orgId, org.name]))
     const projects = [
       ...canonicalProjects.map((project) => {
         const viewModel = mapOrganizationProjectToViewModel(project)
         const organization = organizationByProjectId.get(project.id)
         if (!organization) return viewModel
-        const organizationView = mapAdminOrganizationSummaryToProject(organization)
 
         return {
           ...viewModel,
-          organizationImageUrl: organizationView.organizationImageUrl,
-          client: organizationView.client,
-          durationLabel: organizationView.durationLabel,
           progress: organization.setupProgress,
           primaryPersonName: organization.ownerName,
           primaryPersonAvatarUrl: organization.ownerAvatarUrl,
           taskSummaryLabel: "Tasks",
         }
       }),
-      ...standardProjects.map(mapOrganizationProjectToViewModel).map((project) => ({ ...project, client: project.organizationUnassigned ? undefined : organizationNames.get(project.organizationId ?? "") ?? undefined })),
-      ...guestProjects.map(mapOrganizationProjectToViewModel),
+      ...standardProjects.map(mapOrganizationProjectToViewModel),
     ]
     const workstreamConfiguration =
       await loadPlatformAdminWorkstreamConfiguration({
@@ -166,9 +150,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
         workstreamConfiguration?.categoryIdByProjectId.get(project.id)
       const statusCategory = workstreamCategories.find(
         (category) => category.defaultKey === project.status
-      ) ?? (project.status === "active" ? workstreamCategories.find(
-        (category) => category.defaultKey === "planned"
-      ) : undefined)
+      )
 
       return {
         ...project,
@@ -182,7 +164,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
       storageMode: "custom" as const,
       starterProjectCount: 0,
       hasUserProjects:
-        organizationsWithProjectIds.length > 0 || standardProjects.length > 0 || guestProjects.length > 0,
+        organizationsWithProjectIds.length > 0 || standardProjects.length > 0,
       canResetStarterData: false,
       canCreateProjects: true,
       scope: "platform-admin" as const,
@@ -227,7 +209,8 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
     .eq("org_id", actor.activeOrg.orgId)
     .eq("project_kind", "standard")
     .neq("created_source", "system")
-    .order("created_at", { ascending: false })
+    .order("start_date", { ascending: true })
+    .order("created_at", { ascending: true })
     .returns<OrganizationProjectRecord[]>()
 
   if (error) {

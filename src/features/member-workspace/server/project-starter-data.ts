@@ -1,4 +1,3 @@
-import { projectFiscalSponsorshipEnabled } from "../lib/project-fiscal-sponsorship"
 import type { Database } from "@/lib/supabase"
 import {
   type PlatformAdminDashboardLabProject,
@@ -12,8 +11,8 @@ export type OrganizationProjectRecord =
 type OrganizationProjectInsert =
   Database["public"]["Tables"]["organization_projects"]["Insert"]
 
-function toIsoDate(date: Date | null) {
-  return date?.toISOString().slice(0, 10) ?? null
+function toIsoDate(date: Date) {
+  return date.toISOString().slice(0, 10)
 }
 
 export function buildStarterOrganizationProjects({
@@ -46,8 +45,8 @@ export function buildStarterOrganizationProjects({
   }))
 }
 
-function parseDateOnly(input: string | null) {
-  return input ? new Date(`${input}T00:00:00.000Z`) : null
+function parseDateOnly(input: string) {
+  return new Date(`${input}T00:00:00.000Z`)
 }
 
 export function mapOrganizationProjectToViewModel(
@@ -55,10 +54,7 @@ export function mapOrganizationProjectToViewModel(
 ): PlatformAdminDashboardLabProject {
   return {
     id: project.id,
-    fiscalSponsorshipEnabled: projectFiscalSponsorshipEnabled(project.option_settings, project.guided_setup),
-    recurrence: project.recurrence ?? "none",
     organizationId: project.org_id,
-    organizationUnassigned: project.organization_unassigned ?? false,
     projectKind:
       project.project_kind === "organization_admin"
         ? "organization_admin"
@@ -73,7 +69,7 @@ export function mapOrganizationProjectToViewModel(
     priority: project.priority as PlatformAdminDashboardLabProject["priority"],
     tags: project.tags ?? [],
     members: project.member_labels ?? [],
-    client: project.organization_unassigned ? undefined : project.client_name ?? undefined,
+    client: project.client_name ?? undefined,
     typeLabel: project.type_label ?? undefined,
     durationLabel: project.duration_label ?? undefined,
     tasks: [],

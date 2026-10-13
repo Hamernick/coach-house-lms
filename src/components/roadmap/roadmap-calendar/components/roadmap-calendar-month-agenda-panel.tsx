@@ -42,7 +42,6 @@ type RoadmapCalendarMonthAgendaPanelProps = {
   personalEvents?: CalendarEvent[]
   googleCalendarControls?: ReactNode
   compactHeaderControls?: boolean
-  today?: Date
   month: Date
   selectedDate: Date | undefined
   events: RoadmapCalendarEvent[]
@@ -71,7 +70,6 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
     compactHeaderControls = false,
     personalEvents = [],
     googleCalendarControls,
-    today,
     month,
     selectedDate,
     events,
@@ -102,12 +100,12 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
         )
       : []
     const totalDayEvents = dayEvents.length + personalDayEvents.length
-    const showTodayButton = !isSameCalendarMonth(month, today ?? new Date())
+    const showTodayButton = !isSameCalendarMonth(month, new Date())
 
     return (
       <section
         className={cn(
-          "border-border/60 bg-muted/45 flex max-h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full flex-col overflow-hidden rounded-[30px] border p-2.5",
+          "border-border/60 bg-muted/45 mx-auto flex max-h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-[30px] border p-2.5",
           className
         )}
       >
@@ -173,7 +171,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
         </div>
 
         <div
-          className="bg-background flex min-h-0 flex-col rounded-[24px] px-3 py-3"
+          className="bg-background flex min-h-0 w-full flex-col rounded-[24px] px-3 py-3"
           {...getReactGrabOwnerProps({
             ownerId: "roadmap-calendar-month-agenda:month-grid",
             component: "RoadmapCalendarMonthAgendaPanel",
@@ -187,7 +185,6 @@ export const RoadmapCalendarMonthAgendaPanel = memo(
             mode="single"
             selected={selectedDate}
             month={month}
-            today={today}
             onMonthChange={onMonthChange}
             onSelect={(date) => onSelectDate(date ?? undefined)}
             modifiers={{

@@ -6,7 +6,6 @@ import type { RoadmapDraft, RoadmapEditorProps } from "../types"
 
 export type UseRoadmapEditorStateArgs = Pick<
   RoadmapEditorProps,
-  | "sourceScope"
   | "sections"
   | "publicSlug"
   | "canEdit"

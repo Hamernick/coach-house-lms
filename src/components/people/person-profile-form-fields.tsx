@@ -19,11 +19,18 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
-import { PersonRolePicker } from "@/features/people-roles/client"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { type OrgPerson } from "@/actions/people"
 import { ManagerSelect } from "@/components/people/manager-select"
 import {
   PERSON_CATEGORY_META,
+  PERSON_CATEGORY_OPTIONS,
 } from "@/lib/people/categories"
 import {
   getPersonSocialLinkError,
@@ -42,8 +49,6 @@ type PersonProfileFormFieldsProps = {
   email: string
   socialLinks: PersonSocialLinks
   extendedSocialLinksEnabled?: boolean
-  customRole: string | null
-  onCustomRoleChange: (value: string | null) => void
   category: OrgPerson["category"]
   image: string | null
   reportsToId: string | null
@@ -79,8 +84,6 @@ export function PersonProfileFormFields({
   socialLinks,
   extendedSocialLinksEnabled = false,
   category,
-  customRole,
-  onCustomRoleChange,
   image,
   reportsToId,
   onNameChange,
@@ -186,8 +189,26 @@ export function PersonProfileFormFields({
           <Field orientation="responsive">
             <FieldLabel>Relationship</FieldLabel>
             <FieldControl>
-              <PersonRolePicker value={{ category, customRole }} disabled={readOnly} className="w-full"
-                onChange={(role) => { onCategoryChange(role.category); onCustomRoleChange(role.customRole ?? null) }} />
+              <Select
+                value={category}
+                disabled={readOnly}
+                onValueChange={(value) => {
+                  const nextCategory = value as OrgPerson["category"]
+                  onCategoryChange(nextCategory)
+                  if (!canAssignManager(nextCategory)) onReportsToChange(null)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select relationship" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERSON_CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FieldDescription className="mt-2">
                 This controls where they appear across People and lists.
               </FieldDescription>
@@ -199,7 +220,7 @@ export function PersonProfileFormFields({
                     className={`inline-block size-2 rounded-full ${categoryMeta.dotClass}`}
                     aria-hidden
                   />
-                  {customRole || categoryMeta.label}
+                  {categoryMeta.label}
                 </span>
               </div>
             </FieldControl>

@@ -143,6 +143,7 @@ export function buildWorkspacePeopleDrawerColumns({
       cell: ({ row }) => (
         <WorkspacePeopleDrawerPersonCell
           person={row.original}
+          placed={placedPersonIds.has(row.original.id)}
           contentMode={contentMode}
           rowHeight={rowHeight}
           onOpenPerson={onEditPerson}
@@ -260,7 +261,6 @@ export function buildWorkspacePeopleDrawerColumns({
       <WorkspacePeopleDrawerCanvasCell
         person={row.original}
         placed={placedPersonIds.has(row.original.id)}
-        onAddToCanvas={onAddPeopleToCanvas}
       />
     ),
   })

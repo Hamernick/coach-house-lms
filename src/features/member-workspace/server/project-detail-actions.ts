@@ -1,7 +1,5 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
-
 import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
@@ -79,7 +77,6 @@ async function resolveProjectForDetailMutation({
 > {
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
 
   const { data: project, error } = await actor.supabase
     .from("organization_projects")

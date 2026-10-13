@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-13T13:43:25.168249+00:00",
+  "operation": "resume",
+  "owner": "ship-startup-audit-20261013",
+  "previous_revision": 16,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Previous handoff controller PID3250 was intentionally exited; resume checks recorded host/PID/start. This process owns only this checkpoint and exits at handoff.",
+    "next_action": "Use mandatory original-packet startup; review PR292 at its current head and docs/shipping/audit-001-preflight.md. Preserve SHIP000 original head and blocked release gates. Website implementation and release remain separate.",
+    "plan_linkage_followup": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+      "head": "90f52ac3bd37c46093eba8ca245d86006432faab",
+      "branch": "chore/ship-plan-links-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+      "tests": "3 continuation checks passed for startup changes; prior38 runner checks applicable, runner unchanged",
+      "recovery": "origin/chore/ship-plan-links-20261013 verified",
+      "status": "current-head hosted CI/review pending; previous head visual3 failures,150 passes"
+    },
+    "audit_preflight": {
+      "reference": "docs/shipping/audit-001-preflight.md",
+      "observed_at": "2026-10-13T13:38:43Z",
+      "status": "read-only preparation; no application writes or new release claim"
+    },
+    "root_startup_mirror": "Only exact original-plan startup rule added to root AGENTS.md; unrelated dirty files preserved"
+  },
+  "remote": null
+}

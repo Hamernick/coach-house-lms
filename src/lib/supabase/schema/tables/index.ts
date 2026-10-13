@@ -1,6 +1,3 @@
-import type { CoachingCreditGrantsTable } from "./coaching_credit_grants"
-import type { OrganizationDocumentFilesTable } from "./organization_document_files"
-import type { GoogleCalendarConnectionsTable, GoogleCalendarOauthIntentsTable } from "./google_calendar_connections"
 import type { OrganizationsTable } from "./organizations"
 import type { PublicHandleReservationsTable } from "./public_handle_reservations"
 import type { PublicHandlesTable } from "./public_handles"
@@ -126,6 +123,7 @@ import type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances
 import type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
 import type { GoogleDriveConnectionsTable } from "./google_drive_connections"
 import type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
+import type { OrganizationDocumentFilesTable } from "./organization_document_files"
 
 export type { OrganizationsTable } from "./organizations"
 export type { PublicHandleReservationsTable } from "./public_handle_reservations"
@@ -252,6 +250,7 @@ export type { PlatformLegalAcceptancesTable } from "./platform_legal_acceptances
 export type { GoogleDriveOauthIntentsTable } from "./google_drive_oauth_intents"
 export type { GoogleDriveConnectionsTable } from "./google_drive_connections"
 export type { OrganizationExternalDocumentsTable } from "./organization_external_documents"
+export type { OrganizationDocumentFilesTable } from "./organization_document_files"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -358,8 +357,6 @@ export type PublicTables = {
   user_activation_checkpoints: UserActivationCheckpointsTable
   coaching_coaches: CoachingCoachesTable
   coaching_bookings: CoachingBookingsTable
-  coaching_credit_grants: CoachingCreditGrantsTable
-  coaching_accelerator_credit_receipts: { Row: { user_id: string; created_at: string }; Insert: { user_id: string; created_at?: string }; Update: { user_id?: string; created_at?: string }; Relationships: [] }
   coaching_credit_ledger: CoachingCreditLedgerTable
   fiscal_sponsorship_applications: FiscalSponsorshipApplicationsTable
   fiscal_sponsorship_documents: FiscalSponsorshipDocumentsTable
@@ -379,11 +376,7 @@ export type PublicTables = {
   platform_email_link_clicks: PlatformEmailLinkClicksTable
   platform_legal_acceptances: PlatformLegalAcceptancesTable
   google_drive_oauth_intents: GoogleDriveOauthIntentsTable
-  organization_document_files: OrganizationDocumentFilesTable
-  google_calendar_oauth_intents: GoogleCalendarOauthIntentsTable
-  google_calendar_connections: GoogleCalendarConnectionsTable
   google_drive_connections: GoogleDriveConnectionsTable
   organization_external_documents: OrganizationExternalDocumentsTable
+  organization_document_files: OrganizationDocumentFilesTable
 }
-
-export type { OrganizationDocumentFilesTable } from "./organization_document_files"

@@ -1,6 +1,7 @@
 export { DocumentationHome } from "./documentation-home"
 export { DocumentationRail } from "./documentation-rail"
 export { DocumentationShell } from "./documentation-shell"
+export type { DocumentationShellState } from "./documentation-shell"
 export { MissionArticlePage } from "./mission-article"
 export { ComplianceArticlePage } from "./compliance-article"
 export { FundraisingArticlePage } from "./fundraising-article"

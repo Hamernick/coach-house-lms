@@ -10,11 +10,7 @@ describe("documents banner", () => {
   it("owns the persistent documents library surface", () => {
     const props: React.ComponentProps<typeof DocumentsBanner> = {
       canEdit: true,
-      children: React.createElement(
-        "h1",
-        { id: "documents-title" },
-        "Documents"
-      ),
+      children: React.createElement("h1", { id: "documents-title" }, "Documents"),
     }
     const markup = renderToStaticMarkup(
       React.createElement(DocumentsBanner, props)

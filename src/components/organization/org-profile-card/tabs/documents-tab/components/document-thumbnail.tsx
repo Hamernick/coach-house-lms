@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { IconCloudUpload } from "@tabler/icons-react"
-import { GoogleDriveMark } from "@/components/roadmap/core-document-source/google-drive-mark"
 import { cn } from "@/lib/utils"
 import { useDocumentPreviewUrl } from "../hooks/use-document-preview-url"
 import { DocumentsLibraryTypeIcon } from "./documents-library-type-icon"
@@ -22,17 +21,13 @@ export function DocumentThumbnail({
   const rootRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
-  const drivePreview = Boolean(item.driveDocument)
-  const supported =
-    drivePreview || item.fileType === "image" || item.fileType === "pdf"
+  const supported = item.fileType === "image" || item.fileType === "pdf"
   const preview = useDocumentPreviewUrl(
     item.previewPath,
     item.previewVersion,
-    visible && supported && !drivePreview
+    visible && supported
   )
-  const previewUrl =
-    drivePreview && visible ? (item.previewPath ?? null) : preview.url
-  const onError = useCallback(() => setFailedUrl(previewUrl), [previewUrl])
+  const onError = useCallback(() => setFailedUrl(preview.url), [preview.url])
 
   useEffect(() => {
     const root = rootRef.current
@@ -55,39 +50,33 @@ export function DocumentThumbnail({
       ref={rootRef}
       className={cn(
         "flex size-full min-h-0 items-center justify-center overflow-hidden p-2",
-        item.contentPreview && "items-start justify-start px-3 py-2",
         compact && "size-9 p-0"
       )}
     >
-      {item.coreDriveSource ? (
-        <div className="text-muted-foreground flex flex-col items-center gap-2 px-2 text-center text-sm">
-          <GoogleDriveMark />
-          <span className="line-clamp-2">{item.coreDriveSource.name}</span>
-        </div>
-      ) : item.contentPreview ? (
+      {item.contentPreview ? (
         <div
-          className="text-muted-foreground line-clamp-7 w-full text-left text-xs leading-relaxed break-words whitespace-pre-line"
+          className="text-muted-foreground line-clamp-6 w-full text-left text-xs leading-relaxed whitespace-pre-line"
           aria-label={`${item.name} text preview`}
         >
           {item.contentPreview}
         </div>
-      ) : previewUrl && previewUrl !== failedUrl ? (
-        drivePreview || item.fileType === "image" ? (
-          // Authenticated document previews bypass the public image optimizer.
+      ) : preview.url && preview.url !== failedUrl ? (
+        item.fileType === "image" ? (
+          // Private signed files bypass the public image optimizer.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={previewUrl}
+            src={preview.url}
             alt={`${item.name} preview`}
             width={320}
             height={320}
             loading="lazy"
-            className="size-full rounded-md object-contain"
+            className="size-full object-contain"
             onError={onError}
           />
         ) : (
           <DocumentPdfThumbnail
-            key={previewUrl}
-            url={previewUrl}
+            key={preview.url}
+            url={preview.url}
             name={item.name}
             onError={onError}
           />

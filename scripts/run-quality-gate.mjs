@@ -41,6 +41,19 @@ export const QUALITY_GATE_PROFILES = Object.freeze({
     "check:npm-supply-chain",
     "check:large-files",
     "lint:push",
+    "check:structure",
+    "check:routes",
+    "check:features",
+    "check:thresholds",
+    "check:boundaries",
+    "check:deprecated-imports",
+    "check:workspace-storage",
+    "check:interaction-locks",
+    "check:react-grab",
+    "check:workspace-surfaces",
+    "check:raw-buttons",
+    "test:snapshots",
+    "test:acceptance",
   ]),
   static: Object.freeze([...STATIC_STAGES]),
   acceptance: Object.freeze(["test:acceptance"]),
@@ -138,6 +151,9 @@ export function executePnpmScript(script) {
   })
 }
 
+/**
+ * @param {{ artifactDirectory?: string, executeStage?: (script: string) => Promise<number>, profileName?: string }} [options]
+ */
 export async function runQualityGate({
   artifactDirectory = process.env.QUALITY_GATE_ARTIFACT_DIR?.trim() ||
     DEFAULT_ARTIFACT_DIRECTORY,

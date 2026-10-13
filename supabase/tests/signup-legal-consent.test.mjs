@@ -132,13 +132,9 @@ try {
   runSql("supabase/tests/signup-legal-consent.assertions.sql")
   runSql("supabase/migrations/20260827131000_accept_google_auth_legal_consent.sql")
   runSql("supabase/tests/signup-legal-consent-current.assertions.sql")
-  runSql("supabase/migrations/20260909150000_accept_calendar_privacy_consent.sql")
-  runSql("supabase/tests/signup-legal-consent-calendar.assertions.sql")
-  runSql("supabase/migrations/20260910120000_accept_drive_privacy_consent.sql")
-  runSql("supabase/tests/signup-legal-consent-drive.assertions.sql")
 
   console.log(
-    "[signup-consent] Consent enforcement, Drive/Calendar versions, prior-version compatibility and trusted provisioning pass in isolated PostgreSQL."
+    "[signup-consent] Pre-fix bypass reproduced; consent enforcement and trusted provisioning pass; current-version RLS fixtures pass without app metadata."
   )
 } finally {
   if (started) {

@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   DocumentationStageId,
   NetworkingEngagementId,
@@ -498,7 +497,9 @@ export function buildNetworkingReviewPrompt(draft: NetworkingPlanDraft) {
 }
 
 function csvCell(value: string | number) {
-  return documentationCsvCell(value)
+  let text = String(value)
+  if (/^[=+\-@]/.test(text)) text = `'${text}`
+  return `"${text.replaceAll('"', '""')}"`
 }
 
 export function buildNetworkingCsv(draft: NetworkingPlanDraft) {

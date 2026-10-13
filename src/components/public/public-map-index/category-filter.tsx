@@ -1,15 +1,12 @@
 "use client"
 
-import {
-  PublicMapMoreCategories,
-  PUBLIC_MAP_MORE_CATEGORY_KEYS,
-} from "./more-categories"
 import type { CSSProperties } from "react"
 
 import { Button } from "@/components/ui/button"
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
+  PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER,
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
   PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
   PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
@@ -36,6 +33,10 @@ export const PUBLIC_MAP_GROUP_FILTER_ORDER = [
   ...PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
 ] satisfies PublicMapGroupFilterKey[]
 
+const PUBLIC_MAP_GROUP_FILTER_COUNT_ORDER = [
+  "all",
+  ...PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER,
+] satisfies PublicMapGroupFilterKey[]
 
 function resolvePublicMapGroupFilterLabel(key: PublicMapGroupFilterKey) {
   return key === "all" ? "All" : PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[key]
@@ -59,18 +60,40 @@ export function resolvePublicMapGroupFilterParam(
   return isPublicMapGroupFilterKey(value) ? value : "all"
 }
 
-export { buildPublicMapGroupFilterCounts } from "@/lib/public-map/resource-map-counts"
+export function buildPublicMapGroupFilterCounts(
+  items: Array<{ resourceCategories?: readonly PublicMapResourceCategoryKey[] }>
+): PublicMapGroupFilterCounts {
+  const counts = Object.fromEntries(
+    PUBLIC_MAP_GROUP_FILTER_COUNT_ORDER.map((key) => [key, 0])
+  ) as PublicMapGroupFilterCounts
+
+  counts.all = items.length
+  for (const item of items) {
+    const matchedCategories = new Set<PublicMapResourceCategoryKey>()
+    const categories =
+      item.resourceCategories && item.resourceCategories.length > 0
+        ? item.resourceCategories
+        : (["community"] as const)
+    for (const category of categories) {
+      matchedCategories.add(category)
+      matchedCategories.add(resolvePublicMapResourceTopLevelCategory(category))
+    }
+    for (const category of matchedCategories) {
+      counts[category] += 1
+    }
+  }
+
+  return counts
+}
 
 export function PublicMapCategoryFilter({
   activeGroup,
   counts,
-  countsAreComplete = false,
   compact = false,
   onActiveGroupChange,
 }: {
   activeGroup: PublicMapGroupFilterKey
   counts: PublicMapGroupFilterCounts
-  countsAreComplete?: boolean
   compact?: boolean
   onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
 }) {
@@ -90,9 +113,8 @@ export function PublicMapCategoryFilter({
       }
       aria-label="Filter resources by category"
     >
-      {PUBLIC_MAP_GROUP_FILTER_ORDER.filter(
-        (key) => !PUBLIC_MAP_MORE_CATEGORY_KEYS.includes(key)
-      ).map((key) => {
+      {PUBLIC_MAP_GROUP_FILTER_ORDER.map((key) => {
+        const count = counts[key]
         const selected =
           activeGroup === key ||
           (activeGroup !== "all" &&
@@ -100,6 +122,7 @@ export function PublicMapCategoryFilter({
             resolvePublicMapResourceTopLevelCategory(activeGroup) === key)
         const label = resolvePublicMapGroupFilterLabel(key)
         const accent = resolvePublicMapGroupFilterAccent(key)
+        const disabled = key !== "all" && count === 0
 
         return (
           <Button
@@ -117,10 +140,10 @@ export function PublicMapCategoryFilter({
             variant="ghost"
             size="sm"
             aria-pressed={selected}
-            disabled={countsAreComplete && key !== "all" && counts[key] === 0}
+            disabled={disabled}
             className={cn(
               PUBLIC_MAP_FILTER_PILL_CLASSNAME,
-              "group h-11 shrink-0 gap-1.5 sm:h-7",
+              "group shrink-0 gap-1.5",
               "text-muted-foreground transition-[background-color,border-color,color,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
               "focus-visible:!bg-input/50 focus-visible:ring-ring/45 focus-visible:ring-2 focus-visible:outline-none",
               "disabled:pointer-events-none disabled:opacity-35 motion-reduce:transition-none",
@@ -156,18 +179,18 @@ export function PublicMapCategoryFilter({
               )}
             </span>
             <span key="label">{label}</span>
-            {countsAreComplete ? (
-              <span className="tabular-nums">
-                {counts[key].toLocaleString()}
-              </span>
-            ) : null}
+            <span
+              key="count"
+              className={cn(
+                "tabular-nums",
+                selected ? "text-foreground" : "text-muted-foreground/72"
+              )}
+            >
+              {count.toLocaleString()}
+            </span>
           </Button>
         )
       })}
-      <PublicMapMoreCategories
-        activeGroup={activeGroup}
-        onActiveGroupChange={onActiveGroupChange}
-      />
     </ScrollFadeEffect>
   )
 }

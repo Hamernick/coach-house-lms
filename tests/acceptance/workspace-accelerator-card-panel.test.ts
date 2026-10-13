@@ -1,5 +1,4 @@
 import React from "react"
-import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -7,6 +6,7 @@ import {
   resolveWorkspaceAcceleratorModuleStepNavigation,
   resolveWorkspaceAcceleratorPlaceholderVideoUrl,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-module-navigation"
+import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
 import { WorkspaceAcceleratorCardPanel } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
 import { isWorkspaceAcceleratorOpenStepRequestFulfilled } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-runtime"
@@ -20,7 +20,6 @@ import {
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/workspace",
   useRouter: () => ({
     push: () => undefined,
   }),
@@ -64,7 +63,7 @@ describe("workspace accelerator tutorial panel state", () => {
   })
 
   it("keeps module viewer arrow navigation inside the current module", () => {
-    const moduleSteps: WorkspaceAcceleratorCardStep[] = [
+    const moduleSteps = [
       {
         id: "need:video",
         moduleId: "need",
@@ -105,7 +104,7 @@ describe("workspace accelerator tutorial panel state", () => {
         hasAssignment: true,
         hasDeck: false,
       },
-    ]
+    ] satisfies WorkspaceAcceleratorCardStep[]
 
     expect(
       resolveWorkspaceAcceleratorModuleStepNavigation({
@@ -133,7 +132,7 @@ describe("workspace accelerator tutorial panel state", () => {
   })
 
   it("keeps arrow navigation inside the current module before Need video shortcuts", () => {
-    const needVideo: WorkspaceAcceleratorCardStep = {
+    const needVideo = {
       id: "what-is-the-need:video",
       moduleId: "module-need",
       moduleSlug: "what-is-the-need",
@@ -153,8 +152,8 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    }
-    const needAssignment: WorkspaceAcceleratorCardStep = {
+    } satisfies WorkspaceAcceleratorCardStep
+    const needAssignment = {
       ...needVideo,
       id: "what-is-the-need:assignment",
       stepKind: "assignment",
@@ -163,8 +162,8 @@ describe("workspace accelerator tutorial panel state", () => {
       durationMinutes: null,
       status: "not_started",
       stepSequenceIndex: 2,
-    }
-    const aiNeedVideo: WorkspaceAcceleratorCardStep = {
+    } satisfies WorkspaceAcceleratorCardStep
+    const aiNeedVideo = {
       id: "ai-the-need:video",
       moduleId: "module-ai-need",
       moduleSlug: "ai-the-need",
@@ -184,8 +183,8 @@ describe("workspace accelerator tutorial panel state", () => {
       resources: [],
       hasAssignment: true,
       hasDeck: false,
-    }
-    const aiNeedAssignment: WorkspaceAcceleratorCardStep = {
+    } satisfies WorkspaceAcceleratorCardStep
+    const aiNeedAssignment = {
       ...aiNeedVideo,
       id: "ai-the-need:assignment",
       stepKind: "assignment",
@@ -193,7 +192,7 @@ describe("workspace accelerator tutorial panel state", () => {
       videoUrl: null,
       durationMinutes: null,
       stepSequenceIndex: 2,
-    }
+    } satisfies WorkspaceAcceleratorCardStep
     const steps = [needVideo, needAssignment, aiNeedVideo, aiNeedAssignment]
 
     expect(
@@ -529,32 +528,6 @@ describe("workspace accelerator tutorial panel state", () => {
       'data-slot="workspace-accelerator-progress-percent"'
     )
     expect(markup).not.toContain(">Accelerator</p>")
-  })
-
-  it("shows locked overview progress and lessons without mounting a requested lesson viewer", () => {
-    const markup = renderToStaticMarkup(React.createElement(RightRailProvider, null,
-      React.createElement(WorkspaceAcceleratorCardPanel, {
-        overviewOnly: true,
-        workspaceOverviewNotice: React.createElement("p", null, "Upgrade to access"),
-        presentationMode: "workspace-drawer",
-        initialModuleViewerOpen: true,
-        initialOpenModuleId: "naming",
-        openStepRequest: { id: 1, stepId: "naming:video", moduleId: "naming" },
-        input: {
-          size: "lg", allowAutoResize: false,
-          steps: [{ id: "naming:video", moduleId: "naming", moduleTitle: "Naming your NFP",
-            stepKind: "video", stepTitle: "Naming your NFP", stepDescription: null,
-            href: "/accelerator/class/formation/module/1", status: "not_started",
-            stepSequenceIndex: 1, stepSequenceTotal: 1, moduleSequenceIndex: 1, moduleSequenceTotal: 1,
-            groupTitle: "Formation", videoUrl: "https://example.com/paid-video.mp4",
-            durationMinutes: 5, resources: [], hasAssignment: false, hasDeck: false }],
-        },
-      })))
-    expect(markup).toContain("Naming your NFP")
-    expect(markup).toContain('data-workspace-accelerator-drawer-header-controls="true"')
-    expect(markup).toContain('inert=""')
-    expect(markup).toContain("Upgrade to access")
-    expect(markup).not.toContain("paid-video.mp4")
   })
 
   it("keeps the fullscreen accelerator panel on a full-height flex column for immersive onboarding routes", () => {

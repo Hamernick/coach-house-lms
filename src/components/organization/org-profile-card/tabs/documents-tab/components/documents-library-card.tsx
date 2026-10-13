@@ -1,7 +1,5 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
-
 import Link from "next/link"
 import { useId, type ReactNode } from "react"
 import {
@@ -30,7 +28,6 @@ import {
 } from "./documents-library-items"
 
 type DocumentsLibraryCardProps = {
-  actions?: ReactNode
   item: LibraryItem
   viewMode: "grid" | "list"
   selected: boolean
@@ -52,7 +49,6 @@ type DocumentsLibraryCardProps = {
 }
 
 export function DocumentsLibraryCard({
-  actions,
   item,
   viewMode,
   selected,
@@ -84,14 +80,13 @@ export function DocumentsLibraryCard({
       aria-busy={uploading || undefined}
       className={cn(
         "group/card bg-muted/80 ring-border/60 relative flex aspect-square flex-col overflow-hidden rounded-xl ring-1 transition-[background-color,box-shadow,transform] duration-200 motion-reduce:transition-none sm:min-h-0",
-        "hover:bg-muted focus-within-visible:ring-ring/50 focus-within-visible:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]",
+        "hover:bg-muted focus-within:ring-ring/50 focus-within:ring-2 hover:shadow-lg hover:shadow-black/5 dark:bg-[#303030] dark:hover:bg-[#363636]",
         missingUpload &&
           "hover:bg-muted/40 dark:hover:bg-muted/40 bg-transparent ring-0 hover:shadow-none dark:bg-transparent",
         viewMode === "list" &&
           "aspect-auto min-h-20 flex-row items-center gap-3 rounded-2xl px-4 pr-24 sm:min-h-20"
       )}
     >
-      {actions}
       <Button
         type="button"
         variant="ghost"
@@ -114,9 +109,7 @@ export function DocumentsLibraryCard({
             : uploading
               ? `Uploading ${item.name}…`
               : missingUpload
-                ? item.row?.source === "roadmap"
-                  ? `Start ${item.name}`
-                  : `Upload ${item.name}`
+                ? `Upload ${item.name}`
                 : `Open ${item.name}`
         }
         aria-describedby={missingUpload ? dropDescriptionId : undefined}
@@ -130,20 +123,15 @@ export function DocumentsLibraryCard({
       <h3
         aria-label={item.name}
         className={cn(
-          "pointer-events-none relative z-10 line-clamp-2 px-3 pt-3 pr-11 text-sm leading-5 font-medium break-words",
+          "pointer-events-none relative z-10 line-clamp-2 px-3 pt-3 text-sm leading-5 font-medium break-words",
           viewMode === "list" && "min-w-0 flex-1 px-0 pt-0"
         )}
       >
         {item.row?.source === "roadmap" ? (
           <Link
-            href={
-              item.coreDriveSource?.webViewLink ??
-              getDocumentEditorHref(item.row.section.slug)
-            }
-            target={item.coreDriveSource ? "_blank" : undefined}
-            rel={item.coreDriveSource ? "noopener noreferrer" : undefined}
+            href={`/roadmap/${item.row.section.slug}`}
             className="pointer-events-auto relative z-20 hover:underline"
-            aria-label={`Open ${item.name}${item.coreDriveSource ? " in Google Drive" : " editor"}`}
+            aria-label={`Open ${item.name} editor`}
           >
             {item.name}
           </Link>
@@ -186,9 +174,7 @@ export function DocumentsLibraryCard({
               : canEdit && editMode
                 ? drop.dragging
                   ? "Drop file here"
-                  : item.row?.source === "roadmap"
-                    ? "Start writing or choose from Drive"
-                    : "Drop file or click to upload"
+                  : "Drop file or click to upload"
                 : "Not uploaded"
             : null}
         </div>
@@ -198,7 +184,7 @@ export function DocumentsLibraryCard({
           {renderRowActions?.(item.row)}
         </div>
       ) : null}
-      {!actions && item.uploadedFile && canEdit && editMode ? (
+      {item.uploadedFile && canEdit && editMode ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

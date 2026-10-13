@@ -21,6 +21,7 @@ export const RESERVED_PUBLIC_HANDLES = new Set([
   "dashboard",
   "db-viewer",
   "documents",
+  "documentation",
   "email",
   "favicon",
   "find",

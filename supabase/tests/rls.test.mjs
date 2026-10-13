@@ -42,17 +42,6 @@ if (!url || !anonKey || !serviceRole) {
   process.exit(0)
 }
 
-// This suite creates users, subscriptions and projects. Loading an app's local
-// credentials must not silently populate its shared database with test records.
-const hostname = new URL(url).hostname
-const isLocalDatabase = ["localhost", "127.0.0.1", "[::1]", "supabase_kong"].includes(hostname)
-if (!isLocalDatabase && process.env.SUPABASE_RLS_TEST_PROJECT_REF !== hostname.split(".")[0]) {
-  console.log(
-    "[supabase] Skipping destructive remote RLS tests. Use a local database or explicitly set SUPABASE_RLS_TEST_PROJECT_REF to an isolated test project's ref."
-  )
-  process.exit(0)
-}
-
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
@@ -83,11 +72,11 @@ const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 const signupLegalConsent = {
-  version: "2026-09-10.1",
+  version: "2026-08-27.1",
   termsSha256:
-    "8757308d709eac552572d79642b0374f6c41ee7c5277b50b961ce9948577e03c",
+    "51bde17c17824786259ae9fe35f5b0740c7638c4705795d3de2805d1d0d80220",
   privacySha256:
-    "dd58c9175fd80b067658f07e503883f4f983c357413092e1533df8aeeccc0135",
+    "4110a62f34947f3950dc75b7e6ffab87f60d9abfe48b44625c8150da5e845e62",
   acceptedAt: new Date().toISOString(),
 }
 

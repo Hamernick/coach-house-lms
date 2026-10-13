@@ -1,6 +1,5 @@
 export { requireGoogleDriveContext } from "./server/context"
 export {
-  getSelectedGoogleDriveFile,
   importGoogleDriveFile,
   attachGoogleDriveDocuments,
   completeGoogleDriveConnection,
@@ -8,7 +7,6 @@ export {
   detachGoogleDriveDocument,
   disconnectGoogleDrive,
   getGoogleDriveConnection,
-  getGoogleDriveDocumentThumbnail,
   listGoogleDriveDocuments,
   startGoogleDriveConnection,
 } from "./server/service"

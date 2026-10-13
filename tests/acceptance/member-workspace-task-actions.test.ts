@@ -466,7 +466,6 @@ describe("member workspace task actions", () => {
         startDate: "2026-04-09",
         endDate: "2026-04-10",
         assigneeUserId: "platform-admin-2",
-        tagLabel: "  Grant review  ",
       })
     ).resolves.toEqual({ ok: true, taskId: "task-admin-created" })
 
@@ -477,7 +476,6 @@ describe("member workspace task actions", () => {
         p_assignee_id: "platform-admin-2",
         p_project_id: "project-organization",
         p_title: "Review grant timeline",
-        p_tag_label: "Grant review",
       })
     )
   })
@@ -717,7 +715,6 @@ describe("member workspace task actions", () => {
       updateMemberWorkspaceTaskAction("task-1", {
         projectId: "project-2",
         title: "Updated by Coach House",
-        tagLabel: "  Community outreach  ",
         status: "in-progress",
         startDate: "2026-04-09",
         endDate: "2026-04-12",
@@ -731,7 +728,6 @@ describe("member workspace task actions", () => {
         p_project_id: "project-2",
         p_task_id: "task-1",
         p_title: "Updated by Coach House",
-        p_tag_label: "Community outreach",
       })
     )
   })
@@ -772,27 +768,5 @@ describe("member workspace task actions", () => {
       p_ordered_task_ids: ["task-2", "task-1"],
       p_project_id: "project-2",
     })
-  })
-})
-
-describe("task assignment access", () => {
-  it.each([true, false])("allows status updates only for the explicitly assigned task outside coach scope (assigned=%s)", async (assigned) => {
-    const task = { id: "task-1", org_id: "outside-org", project_id: "project-1", status: "todo" }
-    const query = (data: unknown) => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data, error: null }) })
-    const supabase = { from: vi.fn((table: string) => {
-      if (table === "organization_tasks") return query(task)
-      if (table === "organization_projects") return query({ id: task.project_id, org_id: task.org_id, project_kind: "standard", created_source: "user", task_count: 1 })
-      if (table === "organization_task_assignees") return query(assigned ? { task_id: task.id } : null)
-      throw new Error(table)
-    }) }
-    const updateQuery = { update: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve) }
-    createSupabaseAdminClientMock.mockReset().mockReturnValue({ from: () => updateQuery })
-    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase, userId: "coach-1", isAdmin: false, canAccessOrganizations: true, isPlatformStaff: true, canEdit: false, organizationCoachScope: { mode: "assigned", organizationIds: new Set() } })
-    const result = await updateMemberWorkspaceTaskStatusAction(task.id, "done")
-    if (assigned) expect(result).toMatchObject({ ok: true, taskId: task.id, status: "done" })
-    else {
-      expect(result).toHaveProperty("error")
-      expect(updateQuery.update).not.toHaveBeenCalled()
-    }
   })
 })

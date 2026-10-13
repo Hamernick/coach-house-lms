@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-13T20:47:26.191932+00:00",
+  "operation": "resume",
+  "owner": "ship-map-repair-20261013",
+  "previous_revision": 31,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-profile-save-20261013",
+        "pid": 66861,
+        "started": "Tue Oct 13 16:13:44 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T20:13:44.951882+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T20:47:25.952862+00:00"
+    },
+    "profile_save_repair": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/296",
+      "head": "f6d9a17d6eb9a99719dd5b76197524388b708a5e",
+      "branch": "fix/onboarding-profile-save-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+      "base": "368709ce032e630ec7fa966ed856f14c9d90a76f",
+      "source": "LIVE01; packet03 onboarding. User confirmed personal username and workspace address were identical.",
+      "diagnosis": "Read-only production logs and exact-account checks: name/avatar/person handle saved, organization absent. Shared public handle collision misclassified as People concurrency error.",
+      "fix": "Validate matching handles before writes; return recoverable error for public slug collisions; preserve primary-key concurrency retry.",
+      "validation": "49 focused tests passed including five regressions that failed before fix; changed-file lint, boundaries, normal prepush and Graphify update passed. Remote head verified.",
+      "production_retest": "User reports changing username worked. Workaround confirmed; validation fix not deployed.",
+      "release": "PR296 externally merged as89c409bcede47421be909cdd85c2936120b2ae30; provider confirms coachhouse Production Ready HruY5bkCQ9FYce2f1hpJ7TAr6KFt assigned coachhouse.app. Static/acceptance/RLS/build passed; visual/quality failed and review remains REVIEW_REQUIRED. User workaround passed; new validation live retest not asserted."
+    },
+    "map_repair": {
+      "source": "User explicitly continued to next work on /resources; packet05 B036 stage3 and scoped stage6; LIVE03. /map remains legacy redirect.",
+      "branch": "fix/live-map-markers-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+      "base": "89c409bcede47421be909cdd85c2936120b2ae30",
+      "status": "Implementation locally validated; not yet committed or released",
+      "scope": "Projection-aware marker query bounds; conservative same-place grouping with service detail and saved/deep-link preservation. Published877entries become875places. No acquisition, public data mutation, geocoding or provider preview.",
+      "checks": "53 focused tests passed; lint, structure, feature, threshold and import boundary checks passed. Full tsc fails on unchanged generated route/test files; no errors in changed source. Localhost3115 owns only this worktree.",
+      "boundary": "Prior release gates preserved; not silently closed. Explicit user direction authorizes map implementation preparation."
+    },
+    "next_action": "Finish LIVE03 local browser/user review and prepare small map PR; require current-head quality and review before release. Preserve prior appearance/Collect and historical release-gate blockers."
+  },
+  "remote": null
+}

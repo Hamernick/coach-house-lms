@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-13T20:57:52.139256+00:00",
+  "operation": "resume",
+  "owner": "ship-map-repair-20261013",
+  "previous_revision": 32,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-map-repair-20261013",
+        "pid": 76823,
+        "started": "Tue Oct 13 16:47:25 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T20:47:26.190875+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T20:57:51.304605+00:00"
+    },
+    "map_repair": {
+      "source": "User explicitly continued to next work on /resources; packet05 B036 stage3 and scoped stage6; LIVE03. /map remains legacy redirect.",
+      "branch": "fix/live-map-markers-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+      "base": "89c409bcede47421be909cdd85c2936120b2ae30",
+      "status": "Ready for review; not merge-ready",
+      "scope": "Projection-aware marker query bounds; conservative same-place grouping with service detail and saved/deep-link preservation. Published877entries become875places. No acquisition, public data mutation, geocoding or provider preview.",
+      "checks": "53 focused tests, lint, structure, features, thresholds, boundaries, normal prepush and Graphify passed. Remote head verified. Full tsc fails in unrelated generated/test files; no changed-source diagnostics.",
+      "boundary": "Prior release gates preserved; not silently closed. Explicit user direction authorizes map implementation preparation.",
+      "head": "f3818775667ee0580b162ecc3705578303e53a01",
+      "remote_sha": "f3818775667ee0580b162ecc3705578303e53a01",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/297",
+      "browser": "Local /resources Legler listing consolidated; both service schedules and normalized contact verified. Canvas remains blank, so visible marker verification and appearance remain open. Raw browser network diagnostics were denied and not retried. User normal-UI rendering check requested.",
+      "release": "Current-head CI pending; code-owner review required. No merge, deployment, provider/data mutation or Supabase preview.",
+      "plan": "Original packet05 B036 stage3/scoped stage6; repo docs/plans/2026-10-13-live-map-markers.md; localhost3115; Desktop/Coach House Map Review"
+    },
+    "next_action": "Resolve LIVE03 blank map/marker visual check using permitted normal UI/source investigation; address PR297 current-head CI/review; keep appearance/release/live verification open and prior release blockers preserved."
+  },
+  "remote": null
+}

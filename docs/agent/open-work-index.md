@@ -37,7 +37,9 @@ active with a USD 0 checkout. Production requests retained the unsubstituted
 `fix/checkout-activation-20261013`, checkout
 `coach-house-platform-checkout-activation-20261013`, based on `c8f41085`.
 Preserve the literal Stripe token while encoding the other return parameters;
-21 focused checkout/activation tests and changed-file lint pass. Hosted quality,
+21 focused checkout/activation tests and changed-file lint pass. The same PR295
+also fixes user-reported long email overflow in the account menu; three existing
+menu tests and desktop/mobile containment checks pass. Hosted quality,
 code-owner review, merge/deployment and production retest remain required.
 [Scope and continuation](../plans/2026-10-13-live-site-pricing-donate.md).
 

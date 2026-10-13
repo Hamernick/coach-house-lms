@@ -114,3 +114,13 @@ return retest. The existing subscription can be used without purchasing again.
 Appearance review and live Collect return verification remain outstanding.
 Stop after bounded-run closure or explicit preserved blockers; map work is next,
 not part of this run. Private account/session identifiers stay outside the repo.
+
+## Account-menu overflow follow-up
+
+The user reported long email overflow in the onboarding profile menu. PR295 also
+constrains the existing identity flex column so name/email truncation fits inside
+the 240px menu. Actual-component browser reproduction and desktop/390px checks
+confirm containment; three existing menu tests and lint pass. The full text stays
+in the DOM. [Local review screenshot](../reviews/2026-10-13-account-menu-long-email.jpg)
+uses a synthetic email. No menu actions, account data or provider configuration
+changed. User appearance review, current-head CI/review and deployment remain open.

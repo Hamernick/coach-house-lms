@@ -37,7 +37,6 @@ export function ProfileField({
 
   return (
     <div
-      data-slot="organization-profile-field"
       {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
       className={cn(
         "grid min-w-0 content-start gap-1 self-start",
@@ -132,7 +131,6 @@ export function FormRow({
 
   return (
     <div
-      data-slot="organization-profile-section"
       {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
       className={cn(rowClass, focusKey && ORGANIZATION_FOCUS_TARGET_CLASSNAME)}
     >

@@ -1,4 +1,3 @@
-import { requireOrganizationDocumentStorage } from "@/lib/organization/document-storage-access"
 import { NextResponse, type NextRequest } from "next/server"
 
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
@@ -129,11 +128,6 @@ async function requireOrgEditor(request: NextRequest) {
   if (!canEditOrganization(role)) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
   }
-  const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in storageAccess) {
-    return { error: NextResponse.json({ error: storageAccess.error }, { status: 403 }) }
-  }
-
   return { supabase, orgId, userId: user.id }
 }
 

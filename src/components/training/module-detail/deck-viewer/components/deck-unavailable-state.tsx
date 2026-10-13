@@ -1,7 +1,6 @@
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
 type DeckUnavailableStateProps = {
   isFrame: boolean
@@ -44,7 +43,7 @@ export function DeckUnavailableState({
   }
 
   return (
-    <div className={cn("w-full rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm", className)}>
+    <div className="w-full rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm">
       <div className="flex flex-col gap-3">
         <div className="aspect-[16/9] w-full overflow-hidden rounded-xl border border-border/40 bg-muted/50" />
         <div className="space-y-2">

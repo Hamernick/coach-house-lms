@@ -1,5 +1,4 @@
 import Stripe from "stripe"
-import { getSubscriptionPeriodEndIso } from "@/lib/billing/subscription-period"
 import type { Database } from "@/lib/supabase"
 
 export type WebhookEventPayload = {
@@ -53,11 +52,14 @@ export function toStatus(
   if (allowed.includes(value as Database["public"]["Enums"]["subscription_status"])) {
     return value as Database["public"]["Enums"]["subscription_status"]
   }
-  return "incomplete"
+  return "trialing"
 }
 
 export function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
-  return getSubscriptionPeriodEndIso(subscription)
+  const periodUnix = (
+    subscription as Stripe.Subscription & { current_period_end?: number }
+  ).current_period_end ?? null
+  return periodUnix ? new Date(periodUnix * 1000).toISOString() : null
 }
 
 function getStripeTimestampIso(value: number | null | undefined) {

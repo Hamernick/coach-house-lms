@@ -1,11 +1,11 @@
 import { useEffect, useRef, type ReactNode } from "react"
 import Link from "next/link"
-import dynamic from "next/dynamic"
 
 import MenuIcon from "lucide-react/dist/esm/icons/menu"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 
+import { AppShellCalendarAction } from "@/components/app-shell/components/app-shell-calendar-action"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -15,11 +15,6 @@ import { cn } from "@/lib/utils"
 
 import { RIGHT_RAIL_ID } from "../constants"
 import { useRightRailPresence } from "../right-rail"
-
-const AppShellCalendarAction = dynamic(
-  () => import("./app-shell-calendar-action").then((mod) => mod.AppShellCalendarAction),
-  { ssr: false, loading: () => <span aria-hidden className="block size-9" /> }
-)
 
 type AppShellHeaderProps = {
   breadcrumbs?: ReactNode
@@ -60,7 +55,7 @@ export function AppShellHeader({
     <header className="text-muted-foreground flex shrink-0 flex-col bg-[var(--shell-bg)] text-sm">
       <div
         className={cn(
-          "flex min-h-16 min-w-0 items-center py-2 pr-1 pl-[var(--shell-content-pad)] md:h-14 md:min-h-14 md:py-0 md:pr-[var(--shell-content-pad)]",
+          "flex min-h-16 min-w-0 items-center py-2 pr-1 pl-[var(--shell-content-pad)] md:min-h-14 md:py-0 md:pr-[var(--shell-content-pad)]",
           isCompactMobileHeader && "min-h-12 py-1.5"
         )}
       >
@@ -82,7 +77,7 @@ export function AppShellHeader({
               <MenuIcon />
             </Button>
             <SidebarTrigger
-              className="hidden size-8 rounded-md border-0 bg-transparent text-sidebar-foreground/80 shadow-none ring-sidebar-ring transition-colors duration-200 ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground/70 focus-visible:ring-2 focus-visible:ring-inset active:bg-sidebar-accent active:text-sidebar-accent-foreground motion-reduce:transition-none md:inline-flex dark:hover:bg-sidebar-accent"
+              className={cn(toggleButtonClass, "hidden md:inline-flex")}
               aria-label="Toggle sidebar"
             />
             {showHeaderToggles && hasBreadcrumbs ? (
@@ -103,19 +98,18 @@ export function AppShellHeader({
           />
           <div
             className={cn(
-              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
+              "flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 md:flex-nowrap md:gap-2 [&_button]:max-md:min-h-11 [&_button]:max-md:min-w-11"
             )}
           >
             <div
               id="site-header-actions-right"
-              className="flex flex-wrap items-center gap-1 empty:hidden md:flex-nowrap"
+              className="flex flex-wrap items-center gap-2 md:flex-nowrap"
             />
-            <div id="site-header-actions-search" className="flex items-center empty:hidden" />
-            {hasUser && !isMobile && !onboardingLocked ? (
+            {hasUser && !isCompactMobileHeader ? (
               <AppShellCalendarAction />
             ) : null}
             {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
-            <div className="hidden items-center md:flex">
+            <div className="hidden md:block">
               <ThemeToggle />
             </div>
             {!hasUser ? (

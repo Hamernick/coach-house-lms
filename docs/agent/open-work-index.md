@@ -31,6 +31,8 @@ Shared closure is blocked; preserve its original reviewed head and evidence.
 The requested original-plan linkage is prepared separately in
 `chore/ship-plan-links-20261013`, worktree `coach-house-platform-ship-plans-20261013`.
 It links the ten existing packets and 59 stages, without starting another product slice.
+Read-only [AUDIT-001 preparation](../shipping/audit-001-preflight.md) records current
+public findings and corrections to the old outside audit; website implementation remains separate.
 Use the canonical shared record before selecting any new release slice. Source
 packets are private references; existing closed lanes remain closed.
 

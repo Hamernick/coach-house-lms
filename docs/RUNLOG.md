@@ -17,7 +17,7 @@ Canonical index for implementation history and session continuation.
 1. Read `AGENTS.md`.
 2. Read this index and the latest dated entries in the current log.
 3. Read `docs/agent/open-work-index.md`.
-4. Read [SHIP](SHIP.md), inspect the canonical shared record, refresh relevant remote refs and resolve any active claim. Never pull/reset another checkout.
+4. Read `/Users/calebhamernick/Desktop/Coach House Codex Workstreams/WORKSTREAMS.md` and the relevant numbered packet in full, including decisions/checkpoints. Read [SHIP](SHIP.md), inspect the canonical shared record, refresh relevant remote refs and resolve any active claim. Never pull/reset another checkout.
 5. Complete the [worktree checkpoint](agent/workflow-quality.md#new-chat-worktree-checkpoint) before selecting a work lane or changing files. Honor an already chosen branch strategy.
 6. Append the session summary to the current monthly log, not this index.
 

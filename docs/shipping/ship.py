@@ -7,9 +7,10 @@ import os
 from pathlib import Path
 import sys
 
-from gates import gate, require, validate_queue
+from gates import effective_stage, gate, require, validate_queue
+from recovery import load_receipts, read_snapshot, snapshot_name
 from providers import reconcile
-from store import atomic, canonical, dead, digest, identity, run, utc
+from store import atomic, canonical, dead, digest, identity, receipt_path, run, utc
 
 HERE = Path(__file__).resolve().parent
 
@@ -21,9 +22,11 @@ def local():
 
 def snapshot(state, directory):
     directory.mkdir(parents=True, exist_ok=True)
-    name = f'{state["revision"]:06d}-{digest(state)[:16]}.json'
+    name = snapshot_name(state)
     path = directory / name
-    if not path.exists():
+    if path.exists():
+        require(read_snapshot(path) == state, 'Existing snapshot differs from current state')
+    else:
         atomic(path, state)
     return str(path)
 
@@ -44,33 +47,28 @@ def main():
     args = parser.parse_args()
     store = canonical()
     if args.operation == 'init':
-        seed = json.loads((args.receipt or HERE / 'queue.json').read_text())
-        if args.receipt:
-            require(not store.path.exists(), 'Restore never overwrites existing shared state')
-            for item in seed['receipts']:
-                data = json.loads((args.receipt.parent / item['file']).read_text())
-                require(digest(data) == item['sha256'], 'Restore receipt hash mismatch')
-                atomic(store.directory / item['file'], data)
+        seed = read_snapshot(args.receipt) if args.receipt else json.loads((HERE / 'queue.json').read_text())
         validate_queue(seed)
-        store.initialize(seed)
+        receipts = load_receipts(seed, args.receipt.parent) if args.receipt else []
+        store.initialize(seed, receipts)
     elif args.operation in ('inspect', 'status'):
         state = store.read()
         print(json.dumps(dict(canonical=str(store.path), **state), indent=2))
         return
     elif args.operation == 'export':
         state = store.read()
-        for item in state['receipts']:
-            data = json.loads((store.directory / item['file']).read_text())
-            require(digest(data) == item['sha256'], 'Receipt hash mismatch')
-            atomic(HERE / 'receipts' / item['file'], data)
+        payloads = load_receipts(state, store.directory)
+        directory = HERE / 'receipts'
+        directory.mkdir(parents=True, exist_ok=True)
+        destinations = [(receipt_path(directory, name), data) for name, data in payloads]
+        for path, data in destinations:
+            atomic(path, data)
         print(snapshot(state, HERE / 'receipts'))
         return
     elif args.operation == 'validate':
         state = store.read()
         validate_queue(state)
-        for receipt in state['receipts']:
-            data = json.loads((store.directory / receipt['file']).read_text())
-            require(digest(data) == receipt['sha256'], 'Receipt hash mismatch')
+        load_receipts(state, store.directory)
         print('Valid queue, ownership and receipt hashes; not release approval')
         return
     else:
@@ -118,7 +116,7 @@ def main():
                     require(not dead(active['claim']), 'Owner stopped; use resume with process evidence')
                 if current['head'] != active['head']:
                     require(args.operation in ('checkpoint', 'resume'), 'Checkpoint changed head before proceeding')
-                    require(row['status'] not in ('merged', 'deployed', 'production_verified'), 'Do not change released revision')
+                    require(effective_stage(row) not in ('merged', 'deployed', 'production_verified', 'closed'), 'Do not change released revision')
                     active['head'] = current['head']
                     active['evidence'] = {}
                     row['status'] = 'in_progress'
@@ -157,7 +155,7 @@ def main():
                          previous_revision=state['revision'], head=current['head'], evidence=receipt,
                          remote=remote)
             file = f'receipt-{state["revision"] + 1:06d}-{digest(entry)[:16]}.json'
-            atomic(store.directory / file, entry)
+            atomic(receipt_path(store.directory, file), entry)
             state['receipts'].append(dict(file=file, sha256=digest(entry)))
         result = store.update(args.revision, args.head, change)
         print(json.dumps(dict(revision=result['revision'], active=result.get('active')), indent=2))

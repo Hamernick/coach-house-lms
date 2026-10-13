@@ -39,7 +39,8 @@ identity. Never unlink `write.lock`: kernel locks release on process exit.
 New claims require a clean isolated branch containing freshly fetched main.
 After committing new code, checkpoint with the previous recorded head: tests,
 approval and GitHub evidence are invalidated and status returns to in progress.
-Record fresh tests for the new head. This intentionally also invalidates approval
+Record fresh tests for the new head. Once merged, deployed or production-verified,
+the recorded head stays immutable even if the slice later becomes blocked. This intentionally also invalidates approval
 on documentation commits; finish reviewable changes before requesting approval.
 
 ## Evidence and transitions
@@ -100,8 +101,12 @@ python3 docs/shipping/ship.py init --receipt docs/shipping/receipts/NNNNNN-HASH.
 python3 docs/shipping/ship.py validate
 ```
 
-Restore refuses to overwrite existing canonical state and checks every receipt
-hash. Old-host owner and worktree identity still need reconciliation; do not
+Restore refuses to overwrite existing canonical state. It verifies the snapshot
+filename against its revision and full-state digest, then validates every child
+receipt before writing. Receipt names must be generated basenames directly in
+the source/destination directory; absolute paths, parent paths and symlinks are
+rejected for restore, export and validation. Checksums detect corruption, not
+malicious authors who can recompute them. Old-host owner and worktree identity still need reconciliation; do not
 silently rewrite them. Cross-machine relocation is deliberately a manual recovery
 boundary, not automatic takeover. Orphaned `.pending-*` files after a hard crash
 are non-authoritative; the prior state or fully replaced state remains readable.

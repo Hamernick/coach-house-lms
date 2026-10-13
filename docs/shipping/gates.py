@@ -13,12 +13,19 @@ def passed(item, head):
             and item.get('head') == head and bool(item.get('reference')))
 
 
+def effective_stage(row):
+    stage = row.get('resume_state') if row['status'] == 'blocked' else row['status']
+    require(stage in STATES, 'Blocked state requires a valid prior release stage')
+    return stage
+
+
 def validate_queue(state):
     rows = state['queue']
     ids = [row['id'] for row in rows]
     require(len(ids) == len(set(ids)), 'Duplicate slice IDs')
     for row in rows:
         require(row['status'] in STATES + ['blocked'], 'Unknown state')
+        effective_stage(row)
         require(all(row.get(k) for k in ('scope', 'acceptance', 'source_ids', 'next_action')),
                 'Missing scope/acceptance/source/next action')
         require(all(dep in ids and dep != row['id'] for dep in row['dependencies']), 'Invalid dependency')
@@ -48,7 +55,7 @@ def gate(row, active, target, evidence):
     if target == 'blocked':
         require(evidence.get('blocker') and evidence.get('next_action'), 'Explain blocker and next action')
         return
-    previous = row.get('resume_state', 'in_progress') if previous == 'blocked' else previous
+    previous = effective_stage(row)
     require(target == previous or (previous in STATES and STATES.index(target) == STATES.index(previous) + 1),
             'Cannot skip release stages')
     rank = STATES.index(target)

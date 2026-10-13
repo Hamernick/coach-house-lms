@@ -104,7 +104,6 @@ export type PublicPersonProfileView = PublicProfileIdentity & {
 
 export type PublicOrganizationProfileView = PublicProfileIdentity & {
   kind: "organization"
-  organization?: PublicMapOrganization
   organizationId: string
   donateUrl: string | null
   findUrl: string
@@ -115,4 +114,3 @@ export type PublicOrganizationProfileView = PublicProfileIdentity & {
 export type PublicProfileView =
   | PublicPersonProfileView
   | PublicOrganizationProfileView
-import type { PublicMapOrganization } from "@/lib/queries/public-map-index"

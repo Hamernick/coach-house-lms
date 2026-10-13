@@ -27,7 +27,6 @@ export type WorkspaceBoardUiPreferences = {
   canvasViewportLayoutVersion: number
   dataDrawerSnapPoint: number | string | null
   dataDrawerTab: WorkspaceDataDrawerTabPreference
-  acceleratorIntroductionDismissed: boolean
   teamAccessCollapsed: boolean
   workspacePersonPlacements: WorkspaceCanvasPersonPlacementPreference[]
 }
@@ -53,8 +52,7 @@ const DEFAULT_WORKSPACE_BOARD_UI_PREFERENCES: WorkspaceBoardUiPreferences = {
   canvasViewport: null,
   canvasViewportLayoutVersion: 0,
   dataDrawerSnapPoint: null,
-  dataDrawerTab: "organization",
-  acceleratorIntroductionDismissed: false,
+  dataDrawerTab: "accelerator",
   teamAccessCollapsed: false,
   workspacePersonPlacements: [],
 }
@@ -184,7 +182,7 @@ export function normalizeWorkspaceDataDrawerSnapPointPreference(
 export function normalizeWorkspaceDataDrawerTabPreference(
   value: unknown
 ): WorkspaceDataDrawerTabPreference {
-  return normalizeWorkspaceDrawerTab(value) ?? "organization"
+  return normalizeWorkspaceDrawerTab(value) ?? "accelerator"
 }
 
 export function normalizeWorkspaceBoardUiPreferences(
@@ -208,7 +206,6 @@ export function normalizeWorkspaceBoardUiPreferences(
     dataDrawerTab: normalizeWorkspaceDataDrawerTabPreference(
       value.dataDrawerTab
     ),
-    acceleratorIntroductionDismissed: value.acceleratorIntroductionDismissed === true,
     teamAccessCollapsed: value.teamAccessCollapsed === true,
     workspacePersonPlacements:
       normalizeWorkspaceCanvasPersonPlacementsPreference(

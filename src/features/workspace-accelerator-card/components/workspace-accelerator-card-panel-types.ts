@@ -13,8 +13,6 @@ import type {
 } from "../types"
 
 export type WorkspaceAcceleratorCardPanelProps = {
-  overviewOnly?: boolean
-  workspaceOverviewNotice?: ReactNode
   input: WorkspaceAcceleratorCardInput
   roadmapSections?: RoadmapSection[]
   roadmapBasePath?: string

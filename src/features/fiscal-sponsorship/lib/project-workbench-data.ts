@@ -168,14 +168,14 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
     {
       id: "budget-funding",
       label: "Budget and funding",
-      description: "Anticipated fundraising amount, timeframe, and funding sources",
+      description: "Estimated budget, expense categories, and funding sources",
       complete: false,
     },
     {
       id: "eligibility-attestations",
       label: "Eligibility attestations",
       description:
-        "Operating locations, lobbying, and explanations for review",
+        "U.S. operations, lobbying, investor-return funds, and concerns",
       complete: false,
     },
   ]

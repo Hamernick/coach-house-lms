@@ -33,13 +33,16 @@ describe("app shell header layout", () => {
     expect(rightRailSource).toContain('"pointer-events-none w-0"')
   })
 
-  it("keeps optional rail resizing scoped to desktop", () => {
+  it("keeps resizing scoped to the desktop find rail", () => {
     const appShellSource = readSource(
       "src/components/app-shell/app-shell-inner.tsx"
     )
     const appShellTypesSource = readSource("src/components/app-shell/types.ts")
     const rightRailStateSource = readSource(
       "src/components/app-shell/use-app-shell-right-rail-state.ts"
+    )
+    const authenticatedFindShellSource = readSource(
+      "src/features/find-map/components/authenticated-find-shell.tsx"
     )
     const rightRailSource = readSource(
       "src/components/app-shell/components/shell-right-rail.tsx"
@@ -67,6 +70,7 @@ describe("app shell header layout", () => {
     )
     expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(appShellTypesSource).toContain("resizableRightRail?: boolean")
+    expect(authenticatedFindShellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain('id="app-shell-right-rail-layout"')
     expect(appShellSource).toContain('id="app-shell-main-content-panel"')
     expect(appShellSource).toContain('id="app-shell-right-rail-panel"')

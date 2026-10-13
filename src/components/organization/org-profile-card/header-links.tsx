@@ -2,6 +2,7 @@
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { cn } from "@/lib/utils"
@@ -75,7 +76,17 @@ export function OrgProfileHeaderLinks({ company }: { company: OrgProfile }) {
                   <span className="inline-flex max-w-full items-center justify-center gap-1.5">
                     <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-white text-neutral-700">
                       {text ? (
-                        <Icon className="size-4" aria-hidden="true" />
+                        <Avatar key={href} className="size-4 rounded-[2px]" aria-hidden="true">
+                          <AvatarImage
+                            src={new URL("/favicon.ico", href).href}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                            className="object-contain"
+                          />
+                          <AvatarFallback className="rounded-[2px] bg-transparent">
+                            <Icon className="size-4" />
+                          </AvatarFallback>
+                        </Avatar>
                       ) : <OrganizationSocialBrandIcon platform={key} />}
                     </span>
                     {text ? <span className="truncate">{textLabel}</span> : null}

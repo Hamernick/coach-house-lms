@@ -39,7 +39,6 @@ export function getSafeInternalPaywallPath(raw: string | null | undefined) {
   if (!raw) return null
   const value = raw.trim()
   if (!value.startsWith("/") || value.startsWith("//")) return null
-  if (/[\\\u0000-\u001f\u007f]/.test(value)) return null
   return value
 }
 
@@ -85,9 +84,9 @@ export const OVERLAY_TIERS: OverlayTier[] = [
     defaultBadge: "Included",
     features: [
       "1 Admin Seat (founder only)",
-      "Organization profile and programs",
-      "Connect your tools",
-      "Link files from your Google Drive",
+      "Guided 501(c)(3) formation",
+      "Strategic Roadmap (private)",
+      "Organizational Profile (private)",
     ],
   },
   {
@@ -104,7 +103,6 @@ export const OVERLAY_TIERS: OverlayTier[] = [
       "Everything in Individual",
       "Unlimited Admin & Staff Seats",
       "Asynchronous Accelerator Access",
-      "Coach House documents and roadmap editing",
       "Fiscal Sponsorship Opportunities",
     ],
   },

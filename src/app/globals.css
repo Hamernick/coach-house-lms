@@ -78,7 +78,6 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --focus-ring: oklch(0.556 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -117,7 +116,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --focus-ring: oklch(0.708 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -156,7 +154,6 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
-    --focus-ring: oklch(0.708 0 0);
     --chart-1: oklch(0.488 0.243 264.376);
     --chart-2: oklch(0.696 0.17 162.48);
     --chart-3: oklch(0.769 0.188 70.08);
@@ -171,57 +168,6 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
-}
-
-/* Text inputs match native :focus-visible even after a click. Keep our
-   indicators keyboard-driven, with native fallback before hydration and
-   unconditional focus visibility in forced-colors mode. */
-@custom-variant focus-visible {
-  &:focus-visible {
-    &:where(html:not([data-focus-modality="pointer"]) *) {
-      @slot;
-    }
-    @media (forced-colors: active) {
-      @slot;
-    }
-  }
-}
-
-/* Composite controls follow the same policy as their focused child. */
-@custom-variant focus-within-visible {
-  &:has(:focus-visible) {
-    &:where(html:not([data-focus-modality="pointer"]) *) {
-      @slot;
-    }
-    @media (forced-colors: active) {
-      @slot;
-    }
-  }
-}
-
-@utility focus-ring {
-  &:focus-visible:where(html:not([data-focus-modality="pointer"]) *) {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: var(--focus-ring-offset, 2px);
-  }
-
-  @media (forced-colors: active) {
-    &:focus-visible {
-      outline: 2px solid Highlight;
-      outline-offset: var(--focus-ring-offset, 2px);
-    }
-  }
-}
-
-/* Match the home shell surround when browser overscroll exposes the document. */
-html.light:has([data-public-home-scroll]),
-html.light body:has([data-public-home-scroll]) {
-  background-color: var(--muted);
-}
-
-html:has([data-public-home-landing]),
-html body:has([data-public-home-landing]) {
-  background-color: var(--background);
 }
 
 @layer base {
@@ -525,13 +471,6 @@ html body:has([data-public-home-landing]) {
 
 .workspace-flow .react-flow__pane {
   touch-action: none;
-}
-
-/* React Flow's explicit pointer-events must not bypass a modal menu's
-   outside-click lock and activate nodes behind the nonmodal drawer. */
-body[style*="pointer-events: none"] .workspace-flow,
-body[style*="pointer-events: none"] .workspace-flow * {
-  pointer-events: none !important;
 }
 
 .workspace-flow .react-flow__node {
@@ -1075,16 +1014,4 @@ body[style*="pointer-events: none"] .workspace-flow * {
 
 .scroll-fade-effect-x[data-scroll-fade-end="visible"] {
   --right-mask-width: var(--mask-width) !important;
-}
-
-/* The public front page uses borders and glass, without decorative elevation.
-   Scope through the route marker so body-portaled menus/dialogs follow it too.
-   Reset only shadow layers; retain focus rings, outlines and blur filters. */
-html:has([data-public-home-flat-surfaces]) body,
-html:has([data-public-home-flat-surfaces]) body *,
-html:has([data-public-home-flat-surfaces]) body *::before,
-html:has([data-public-home-flat-surfaces]) body *::after {
-  --tw-shadow: 0 0 #0000 !important;
-  --tw-inset-shadow: 0 0 #0000 !important;
-  --tw-drop-shadow: drop-shadow(0 0 0 transparent) !important;
 }

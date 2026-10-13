@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-13T18:32:39.708091+00:00",
+  "operation": "resume",
+  "owner": "ship-review-fixes-20261013",
+  "previous_revision": 24,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-readiness-triage-20261013",
+        "pid": 48559,
+        "started": "Tue Oct 13 14:19:02 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T18:19:02.615759+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T18:32:39.626674+00:00"
+    },
+    "next_action": "Review corrected PR292/294 heads and fresh required CI. Tools/Donate appearance review and code-owner review remain pending; preserve original SHIP000 released head and no provider previews.",
+    "plan_linkage_followup": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+      "head": "6d4e6303779dabe7d98ddeb30aa753e8f1c7eec3",
+      "branch": "chore/ship-plan-links-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+      "tests": "3 continuation checks passed for startup changes; prior38 runner checks applicable, runner unchanged",
+      "recovery": "origin/chore/ship-plan-links-20261013 verified",
+      "status": "Ready for review; latest bot findings fixed; fresh quality and review pending",
+      "validation": "42 Python runner tests and 3 continuation tests pass; bind unclaimed restored queues and portable original-plan roots covered"
+    },
+    "live_site_candidate": {
+      "pr": 294,
+      "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+      "head": "b0934a451c11e49b1c3bea00f1c22238bdfc8d1a",
+      "branch": "fix/live-site-pricing-donate-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+      "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+      "status": "Ready for review; reviewed collection redirect finding fixed; fresh hosted quality and code-owner review pending",
+      "validation": "47 focused signup/confirmation tests pass plus ESLint and normal pre-push; seven new collection regressions reproduced before fix. Prior Donate/menu/browser evidence remains applicable.",
+      "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+      "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+      "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+      "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+      "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at b0934a451c11e49b1c3bea00f1c22238bdfc8d1a",
+      "release": "CI/review/approval/deployment/live confirmation and payment verification pending",
+      "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed."
+    },
+    "readiness_triage": {
+      "at": "2026-10-13T18:32:39.626674+00:00",
+      "pr292": {
+        "head": "6d4e6303779dabe7d98ddeb30aa753e8f1c7eec3",
+        "draft": false,
+        "ci": "Fresh final-head checks pending; previous-head results are historical",
+        "review": "REVIEW_REQUIRED",
+        "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed"
+      },
+      "pr293": {
+        "head": "d82d3f150f6d4280b8c0aee8639ee670f53d93a9",
+        "draft": false,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "failed": [
+          "visual",
+          "quality"
+        ],
+        "details": "Three Tools baseline mismatches; Find detail case flaky."
+      },
+      "pr294": {
+        "head": "b0934a451c11e49b1c3bea00f1c22238bdfc8d1a",
+        "draft": false,
+        "ci": "Fresh final-head checks pending; previous-head results are historical",
+        "review": "REVIEW_REQUIRED",
+        "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed"
+      },
+      "boundary": "Ready-for-review is not merge approval. No bypass, reference replacement, deployment, provider or preview changes."
+    }
+  },
+  "remote": null
+}

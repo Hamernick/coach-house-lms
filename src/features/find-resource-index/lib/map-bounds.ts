@@ -11,10 +11,22 @@ export function resourceMapScreenBounds(
     [screen.left, screen.top], [screen.right, screen.top],
     [screen.right, screen.bottom], [screen.left, screen.bottom],
   ].map(([x, y]) => unproject([x - canvas.left, y - canvas.top]))
+  const longitudes = corners.map((point) => point.lng)
+  const rawWest = Math.min(...longitudes), rawEast = Math.max(...longitudes)
+  const center = unproject([
+    (screen.left + screen.right) / 2 - canvas.left,
+    (screen.top + screen.bottom) / 2 - canvas.top,
+  ]).lng
+  // Unwrap around the visible center: 179/-179 becomes a 2-degree interval.
+  // The center disambiguates genuinely wide views; corner endpoints alone cannot.
+  // Preserve explicit whole-world coverage before modulo would collapse it.
+  const unwrapped = rawEast - rawWest >= 360 ? longitudes : longitudes.map(
+    (lng) => center + ((lng - center + 180) % 360 + 360) % 360 - 180
+  )
   return [
-    Math.min(...corners.map((point) => point.lng)),
+    Math.min(...unwrapped),
     Math.min(...corners.map((point) => point.lat)),
-    Math.max(...corners.map((point) => point.lng)),
+    Math.max(...unwrapped),
     Math.max(...corners.map((point) => point.lat)),
   ] as const
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { resourceMapScreenBounds, serializeResourceMapBounds, resolveResourceMapQueryBounds } from "@/features/find-resource-index/lib/map-bounds"
-import { parseFindResourceCatalogQuery, resourceIndexItemInBounds } from "@/features/find-resource-index/lib/catalog-query"
+import { buildFindResourceCatalog, queryFindResourceCatalog, parseFindResourceCatalogQuery, resourceIndexItemInBounds } from "@/features/find-resource-index/lib/catalog-query"
 import type { FindResourceIndexItem } from "@/features/find-resource-index/types"
 
 describe("resource map viewport queries", () => {
@@ -12,6 +12,44 @@ describe("resource map viewport queries", () => {
     for (const point of [[0, 0], [200, 0], [200, 200], [0, 200]] as [number, number][]) {
       const { lng, lat } = project(point)
       expect(resourceIndexItemInBounds({ latitude: lat, longitude: lng } as FindResourceIndexItem, bounds)).toBe(true)
+    }
+  })
+  it.each([-180, 180])("keeps wrapped corners near longitude %s inside a narrow date-line query", (center) => {
+    const screen = { left: 100, top: 200, right: 300, bottom: 400 }
+    const edges = resourceMapScreenBounds(screen, screen, ([x, y]) => ({
+      lng: ((center - 1 + x / 100 + 180) % 360 + 360) % 360 - 180,
+      lat: 10 - y / 10,
+    }))
+    const serialized = serializeResourceMapBounds(edges)!
+    expect(serialized).toBe("179.000,-10.000,-179.000,10.000")
+    const bounds = parseFindResourceCatalogQuery(new URLSearchParams({ mode: "map", bounds: serialized }))!.bounds!
+    for (const longitude of [179.5, -179.5, 180, -180]) {
+      expect(resourceIndexItemInBounds({ latitude: 0, longitude } as FindResourceIndexItem, bounds)).toBe(true)
+    }
+    expect(resourceIndexItemInBounds({ latitude: 0, longitude: 0 } as FindResourceIndexItem, bounds)).toBe(false)
+  })
+  it("does not let 500 off-screen places crowd out visible date-line markers", () => {
+    const screen = { left: 0, top: 0, right: 200, bottom: 200 }
+    const edges = resourceMapScreenBounds(screen, screen, ([x, y]) => ({ lng: (179 + x / 100 + 180) % 360 - 180, lat: 10 - y / 10 }))
+    const item = (id: string, longitude: number): FindResourceIndexItem => ({
+      id, longitude, latitude: 0, itemType: "external_resource", title: id, subtitle: null,
+      city: null, state: null, country: null, resourceCategories: ["food"], primaryResourceCategory: "food",
+      verificationStatus: "external_data", visibility: "published",
+    })
+    const catalog = buildFindResourceCatalog([
+      ...Array.from({ length: 500 }, (_, i) => item(`offscreen-${i}`, 0)),
+      item("visible-east", 179.5), item("visible-west", -179.5),
+    ], "test")
+    const query = parseFindResourceCatalogQuery(new URLSearchParams({ mode: "map", limit: "500", bounds: serializeResourceMapBounds(edges)! }))!
+    const response = queryFindResourceCatalog(catalog, query)
+    expect(response.resourceItems.map((entry) => entry.id).sort()).toEqual(["visible-east", "visible-west"])
+    expect(response.page.hasMore).toBe(false)
+  })
+  it("retains genuinely wide and whole-world viewports", () => {
+    const screen = { left: 0, top: 0, right: 200, bottom: 200 }
+    for (const [west, east] of [[-170, 170], [-200, 200]]) {
+      const edges = resourceMapScreenBounds(screen, screen, ([x, y]) => ({ lng: west + (east - west) * x / 200, lat: 10 - y / 10 }))
+      expect(serializeResourceMapBounds(edges)).toBe(`${Math.max(-180, west).toFixed(3)},-10.000,${Math.min(180, east).toFixed(3)},10.000`)
     }
   })
   it("uses projection-aware bounds for the globe rather than excluding visible northern places", () => {

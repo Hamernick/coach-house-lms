@@ -15,13 +15,19 @@ Branch `fix/live-map-markers-20261013`, base `89c409bcede47421be909cdd85c2936120
 
 ## Evidence and remaining gates
 
-53 focused tests pass across map bounds, grouping, detail behavior and existing index/public-query coverage. Changed-file lint, structure, features, thresholds, boundaries and diff checks pass. Graphify AST update completed. Full `tsc --noEmit` still fails in unchanged generated route/test files; no diagnostics reference changed source or the new tests. No full local quality run was performed.
+57 focused tests pass across map bounds, grouping, detail behavior and existing index/public-query coverage. Changed-file lint, structure, features, thresholds, boundaries and diff checks pass. Graphify AST update completed. Full `tsc --noEmit` still fails in unchanged generated route/test files; no diagnostics reference changed source or the new tests. No full local quality run was performed.
 
 The local map canvas remains blank blue during normal UI review, so visible marker rendering is **not verified** and LIVE-03 is not complete. Raw browser network diagnostics were denied and were not retried. Continue with permitted normal UI/source investigation; do not infer a provider cause. Screenshot evidence is on Desktop/Coach House Map Review. Service rows use existing layout; no baseline update or appearance approval is asserted. Current-head hosted quality, code-owner review, merge, deployment and live marker verification remain required.
 
 ## Previous release reconciliation
 
 PR296 externally merged as base89c409bc. The intended coachhouse Production deployment HruY5bkCQ9FYce2f1hpJ7TAr6KFt is Ready and assigned coachhouse.app. Static/acceptance/RLS/build passed; visual/aggregate quality failed and review remained REVIEW_REQUIRED. This also contains PR295. User's username workaround passed, but fresh validation/checkout-return/menu production checks are not asserted. Historical appearance/Collect/SHIP gates remain open. This map implementation preparation is the next explicitly authorized bounded run; it does not rewrite those releases.
+
+## Antimeridian review correction
+
+Review of23896c39 correctly identified reversed longitude coverage when Mercator corners wrap from179 to-179. Three regressions reproduced the failure, including500off-screen places excluding both visible date-line markers. Unwrap corners around the visible screen center, then serialize the wrapped interval. Using the center also distinguishes a narrow date-line crossing from a genuinely wide340-degree viewport; explicit whole-world coverage is retained. Four added cases cover both sides of the date line, the500-marker limit, wide views and whole-world bounds. All57focused tests and changed-file lint pass. No appearance/provider changes in this correction.
+
+Prior headf3818775 passed static/acceptance/RLS/build but failed visual/aggregate quality and remained REVIEW_REQUIRED. Fresh current-head CI/review is still required after the correction. The pre-existing local blank-map verification gap remains open.
 
 ## Review and backup
 

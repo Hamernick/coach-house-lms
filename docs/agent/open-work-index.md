@@ -31,7 +31,7 @@ Branch `fix/live-map-markers-20261013`, worktree
 `coach-house-platform-live-map-20261013`, base `89c409bc`, preview localhost:3115.
 [Scope, evidence and stop boundary](../plans/2026-10-13-live-map-markers.md).
 [PR297](https://github.com/Hamernick/CoachHouse/pull/297) is Ready for review, not merge-ready.
-53 focused tests and changed-file checks pass. Confirmed same-place duplicates
+57 focused tests and changed-file checks pass, including the antimeridian review regression. Confirmed same-place duplicates
 are consolidated while preserving services and old links; marker bounds now
 respect globe projection. The local map canvas remains blank, so visible marker
 verification, appearance review, hosted quality and code-owner review remain open.

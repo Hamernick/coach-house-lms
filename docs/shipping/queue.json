@@ -50,7 +50,21 @@
       "dependencies": [],
       "kind": "tooling",
       "status": "queued",
-      "next_action": "Build and validate runner, then present exact revision for human review"
+      "next_action": "Build and validate runner, then present exact revision for human review",
+      "plan_refs": [
+        {
+          "workstream": "00",
+          "stages": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ]
     },
     {
       "id": "AUDIT-001",
@@ -76,9 +90,30 @@
       ],
       "kind": "application",
       "status": "queued",
-      "next_action": "After SHIP-000 closes, verify findings without website edits"
+      "next_action": "After SHIP-000 closes, verify findings without website edits",
+      "plan_refs": [
+        {
+          "workstream": "09",
+          "stages": [
+            1
+          ]
+        },
+        {
+          "workstream": "05",
+          "stages": [
+            1
+          ]
+        },
+        {
+          "workstream": "03",
+          "stages": [
+            3
+          ]
+        }
+      ]
     }
   ],
   "intake_manifest": "docs/shipping/intake.json",
-  "intake_count": 176
+  "intake_count": 176,
+  "planning_manifest": "docs/shipping/plans.json"
 }

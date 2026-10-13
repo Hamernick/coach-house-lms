@@ -41,7 +41,9 @@ class ReviewRegressionTests(unittest.TestCase):
     def test_blocked_prerelease_can_change_head(self):
         self.claim()
         state = self.store.read(); state['queue'][0].update(status='blocked', resume_state='approved')
-        state['active']['evidence'] = evidence(); atomic(self.store.path, state)
+        state['active']['evidence'] = evidence()
+        del state['active']['evidence']['merge']  # This fixture has not actually merged.
+        atomic(self.store.path, state)
         with patch('ship.local', return_value=dict(worktree='/fixture', branch='chore/fixture', head='new')):
             self.call('checkpoint', '--owner', 'chat', '--revision', '1', '--head', 'head')
         updated = self.store.read()

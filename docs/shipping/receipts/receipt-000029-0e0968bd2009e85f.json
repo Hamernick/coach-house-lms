@@ -1,0 +1,293 @@
+{
+  "at": "2026-10-13T19:54:16.014579+00:00",
+  "operation": "resume",
+  "owner": "ship-checkout-pr295-20261013",
+  "previous_revision": 28,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-checkout-repair-20261013",
+        "pid": 59285,
+        "started": "Tue Oct 13 15:51:09 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T19:51:09.784776+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T19:54:15.782070+00:00"
+    },
+    "next_action": "Review PR295 at23a12be5; require current-head quality/code-owner review, then gated deployment and live checkout return verification. Preserve appearance/Collect blockers; no map work in this run.",
+    "checkout_activation_repair": {
+      "status": "PR295 ready for review; CI and code-owner review pending",
+      "source": "User production test failed at Finishing your upgrade; packet03 stages2/4/6, LIVE01",
+      "branch": "fix/checkout-activation-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+      "base": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+      "evidence": "Read-only exact-account Stripe checkout complete, USD0, subscription active; matching app subscription active. Stored success URL contains encoded CHECKOUT_SESSION_ID; production logs show repeated checkout_session_not_found_in_available_stripe_modes. No new purchase or provider mutation.",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/295",
+      "head": "23a12be5f54e141c2adeaf93bb66043000419138",
+      "validation": "Three tests failed before fix; all21 checkout-route/activation-return tests, changed-file lint, acceptance manifest and pre-push pass; remote head verified. Vercel request parameters directly confirm literal placeholder; Stripe returns404.",
+      "release_boundary": "Not deployed; no gate bypass. Existing malformed URLs remain malformed; existing active subscription needs no repeat purchase."
+    },
+    "global_todo_tracker": {
+      "updated_at": "2026-10-13T19:54:15.781376+00:00",
+      "original_requirement_count": 176,
+      "additional_requirements": [
+        {
+          "id": "U20261013-01",
+          "packet": "03",
+          "scope": "Free-account upgrade banner size, vertical spacing and max width",
+          "status": "pending"
+        }
+      ],
+      "recorded_requirement_count": 177,
+      "master": "Desktop/Coach House Codex Workstreams/WORKSTREAMS.md",
+      "view": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md",
+      "items": [
+        {
+          "id": "LIVE-01",
+          "priority": 1,
+          "task": "Repair pricing-link destinations",
+          "source_ids": [
+            "O037-04"
+          ],
+          "packet": "09",
+          "stages": [
+            1
+          ],
+          "status": "in_progress",
+          "evidence": "PR294 deployed; user production checkout return failed. PR295 fixes literal Stripe replacement token;21 focused tests pass; CI/review/deployment/retest pending."
+        },
+        {
+          "id": "LIVE-02",
+          "priority": 2,
+          "task": "Homepage Donate: third centered header link plus footer, external target, no hover menu",
+          "source_ids": [
+            "O029-01"
+          ],
+          "packet": "09",
+          "stages": [
+            4
+          ],
+          "status": "awaiting_review",
+          "evidence": "PR294 deployed oncoachhouse.app atc8f41085; header/footer/new-tab/directMonkeypod destination verified; appearance approval pending."
+        },
+        {
+          "id": "LIVE-03",
+          "priority": 3,
+          "task": "Missing map markers and duplicate places",
+          "source_ids": [
+            "O036-01"
+          ],
+          "packet": "05",
+          "stages": [
+            3
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-04",
+          "priority": 4,
+          "task": "Free-account upgrade banner size, vertical spacing and max width",
+          "source_ids": [
+            "U20261013-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-05",
+          "priority": 5,
+          "task": "Production Google Calendar connection",
+          "source_ids": [
+            "O065-01",
+            "O071-01"
+          ],
+          "packet": "04",
+          "stages": [
+            5
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-06",
+          "priority": 6,
+          "task": "Remove formation-class verification prerequisite",
+          "source_ids": [
+            "O043-01"
+          ],
+          "packet": "05",
+          "stages": [
+            1
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-07",
+          "priority": 7,
+          "task": "Public fiscal application/flow, internal project management, new-application email to fs@coachhousesolutions.org",
+          "source_ids": [
+            "O010-01",
+            "O011-01",
+            "O012-01",
+            "O023-01",
+            "O024-01",
+            "O025-01"
+          ],
+          "packet": "03",
+          "stages": [
+            3,
+            5,
+            6
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "LIVE-08",
+          "priority": 8,
+          "task": "Correct mistaken coaching grant using supplied roster",
+          "source_ids": [
+            "O005-01",
+            "O006-01"
+          ],
+          "packet": "03",
+          "stages": [
+            2
+          ],
+          "status": "production_verified",
+          "evidence": "Verified 2026-10-13T17:10:09.500Z: 13 matched accounts at10; 17 unmatched roster emails; 56 unused broad grants reversed, four retained, nine issued. Historical legitimate balances preserved."
+        }
+      ],
+      "next_scope": {
+        "packet": "09",
+        "stages": [
+          1,
+          2,
+          4
+        ],
+        "items": [
+          "LIVE-01",
+          "LIVE-02"
+        ],
+        "boundary": "Prepare narrow pricing/navigation and Donate changes; current-head CI, appearance/code-owner review and release approval remain separate.",
+        "stage_mapping": "Stage1 navigation, stage2 local review, stage4 narrowly scoped Donate addition; no broader presentation redesign"
+      }
+    },
+    "production_closeout": {
+      "at": "2026-10-13T19:44:23.222786+00:00",
+      "scope": "LIVE01 pricing/signup; LIVE02 Donate; related SHIP/public-indexing fixes. Map and other priorities excluded until separate run.",
+      "deployment": {
+        "id": "dpl_FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+        "project": "coachhouse",
+        "environment": "Production",
+        "status": "Ready",
+        "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "domain": "coachhouse.app",
+        "reference": "https://vercel.com/calebs-projects-58ab1538/coachhouse/FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+        "method": "Read-only Vercel dashboard; source SHA, Ready, Production and assigned domain observed"
+      },
+      "public_checks": {
+        "at": "2026-10-13T19:43:20.004075+00:00",
+        "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "method": "Unauthenticated HTTPS GET; no forms submitted",
+        "results": [
+          {
+            "route": "/pricing",
+            "status": 200,
+            "all_three_plan_links": true
+          },
+          {
+            "route": "/build",
+            "status": 200,
+            "all_three_plan_links": true
+          },
+          {
+            "plan": "free",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/onboarding?source=signup&plan=free"
+          },
+          {
+            "plan": "organization",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/api/stripe/checkout?plan=organization&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+          },
+          {
+            "plan": "operations_support",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/api/stripe/checkout?plan=operations_support&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+          }
+        ]
+      },
+      "browser_checks": [
+        "Production homepage and pricing show third direct Donate plus footer with exact supplied destination, target blank, noopener noreferrer and no popup menu",
+        "Header Donate click opened correct Monkeypod Invest in Community Leadership page in separate tab; no donation submitted",
+        "Build dropdown Documentation targets /documentation and Pricing targets /pricing",
+        "Existing authenticated account clicking Organization returned to /workspace; not new-user signup evidence"
+      ],
+      "pr294_ci": {
+        "run": 38449114098,
+        "head": "bc2ea8b7c67552dc4217ec3e22c1e6b0054449f0",
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build",
+          "references"
+        ],
+        "visual": {
+          "passed": 152,
+          "flaky": 1,
+          "failed": 3,
+          "failures": [
+            "workspace-tools-drive-error.png",
+            "workspace-tools-drive-connected.png",
+            "workspace-tools-drive-mobile.png"
+          ],
+          "flaky_case": "Find detail at390px passed on retry"
+        },
+        "quality": "failure",
+        "review": "REVIEW_REQUIRED"
+      },
+      "pr292_ci": {
+        "run": 38447992278,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "visual": {
+          "passed": 150,
+          "failed": 3,
+          "failures": "Same three Tools snapshots"
+        },
+        "quality": "failure",
+        "review": "REVIEW_REQUIRED"
+      },
+      "secondary_project": "coach-house-platform status failed; not the verified coachhouse production target",
+      "remaining": [
+        "User production checkout return failed; locally validated repair PR295 requires CI/review/deployment/retest",
+        "Actual live Collect save/confirmation return remains unverified",
+        "Tools/Donate appearance approval pending; no baseline changed",
+        "Historical failed quality/missing code-owner review preserved; no release closure"
+      ],
+      "stop_boundary": "Save verified evidence and preserve concrete remaining review/manual-check blockers; do not begin map work in this run",
+      "coupon_read_only_check": {
+        "code": "earlyaccess",
+        "discount_usd": 20,
+        "duration": "forever",
+        "product": "Organization only",
+        "organization_monthly_usd": 20,
+        "operations_support_eligible": false,
+        "scope": "Live coupon/price configuration checked, not attachment to user subscription; no Stripe mutation"
+      }
+    }
+  },
+  "remote": null
+}

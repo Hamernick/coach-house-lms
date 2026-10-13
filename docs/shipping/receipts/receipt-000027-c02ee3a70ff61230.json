@@ -1,0 +1,167 @@
+{
+  "at": "2026-10-13T19:44:23.298425+00:00",
+  "operation": "resume",
+  "owner": "ship-production-closeout-20261013",
+  "previous_revision": 26,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-review-main-20261013",
+        "pid": 54488,
+        "started": "Tue Oct 13 14:36:07 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T18:36:08.891599+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T19:44:23.222786+00:00"
+    },
+    "next_action": "Await user live signup confirmation result and explicit Tools/Donate appearance review; preserve public production evidence and failed historical CI/review; do not claim full closeout or start map work.",
+    "plan_linkage_followup": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+      "head": "9ba3eb33082bab25a9ea3959258faba4ab742f47",
+      "branch": "chore/ship-plan-links-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+      "tests": "3 continuation checks passed for startup changes; prior38 runner checks applicable, runner unchanged",
+      "recovery": "origin/chore/ship-plan-links-20261013 verified",
+      "status": "Merged externally as abca9b09; static/acceptance/RLS/build passed, three Tools references and quality failed; GitHub REVIEW_REQUIRED remains observed",
+      "validation": "42 Python runner tests and 3 continuation tests pass; bind unclaimed restored queues and portable original-plan roots covered",
+      "merge_sha": "abca9b0957009729a7c1058ac6343aadbb0c710c",
+      "merged_at": "2026-10-13T18:43:02Z"
+    },
+    "live_site_candidate": {
+      "pr": 294,
+      "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+      "head": "bc2ea8b7c67552dc4217ec3e22c1e6b0054449f0",
+      "branch": "fix/live-site-pricing-donate-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+      "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+      "status": "Merged c8f41085; intended production deployment verified Ready and coachhouse.app assigned; public pricing and Donate checks pass; live email confirmation and Collect return not yet verified",
+      "validation": "47 focused signup/confirmation tests pass plus ESLint and normal pre-push; seven new collection regressions reproduced before fix. Prior Donate/menu/browser evidence remains applicable.",
+      "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+      "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+      "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+      "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+      "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at 43eff6171244552b81accadee67c352439dfb3ea",
+      "release": "Deployed; incomplete production flow verification and unresolved visual-quality/review gates. Not closed.",
+      "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed.",
+      "merge": {
+        "sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "at": "2026-10-13T18:43:58Z"
+      }
+    },
+    "production_closeout": {
+      "at": "2026-10-13T19:44:23.222786+00:00",
+      "scope": "LIVE01 pricing/signup; LIVE02 Donate; related SHIP/public-indexing fixes. Map and other priorities excluded until separate run.",
+      "deployment": {
+        "id": "dpl_FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+        "project": "coachhouse",
+        "environment": "Production",
+        "status": "Ready",
+        "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "domain": "coachhouse.app",
+        "reference": "https://vercel.com/calebs-projects-58ab1538/coachhouse/FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+        "method": "Read-only Vercel dashboard; source SHA, Ready, Production and assigned domain observed"
+      },
+      "public_checks": {
+        "at": "2026-10-13T19:43:20.004075+00:00",
+        "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "method": "Unauthenticated HTTPS GET; no forms submitted",
+        "results": [
+          {
+            "route": "/pricing",
+            "status": 200,
+            "all_three_plan_links": true
+          },
+          {
+            "route": "/build",
+            "status": 200,
+            "all_three_plan_links": true
+          },
+          {
+            "plan": "free",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/onboarding?source=signup&plan=free"
+          },
+          {
+            "plan": "organization",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/api/stripe/checkout?plan=organization&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+          },
+          {
+            "plan": "operations_support",
+            "status": 200,
+            "anonymous_signup_form": true,
+            "sign_in_return": "/api/stripe/checkout?plan=operations_support&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+          }
+        ]
+      },
+      "browser_checks": [
+        "Production homepage and pricing show third direct Donate plus footer with exact supplied destination, target blank, noopener noreferrer and no popup menu",
+        "Header Donate click opened correct Monkeypod Invest in Community Leadership page in separate tab; no donation submitted",
+        "Build dropdown Documentation targets /documentation and Pricing targets /pricing",
+        "Existing authenticated account clicking Organization returned to /workspace; not new-user signup evidence"
+      ],
+      "pr294_ci": {
+        "run": 38449114098,
+        "head": "bc2ea8b7c67552dc4217ec3e22c1e6b0054449f0",
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build",
+          "references"
+        ],
+        "visual": {
+          "passed": 152,
+          "flaky": 1,
+          "failed": 3,
+          "failures": [
+            "workspace-tools-drive-error.png",
+            "workspace-tools-drive-connected.png",
+            "workspace-tools-drive-mobile.png"
+          ],
+          "flaky_case": "Find detail at390px passed on retry"
+        },
+        "quality": "failure",
+        "review": "REVIEW_REQUIRED"
+      },
+      "pr292_ci": {
+        "run": 38447992278,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "visual": {
+          "passed": 150,
+          "failed": 3,
+          "failures": "Same three Tools snapshots"
+        },
+        "quality": "failure",
+        "review": "REVIEW_REQUIRED"
+      },
+      "secondary_project": "coach-house-platform status failed; not the verified coachhouse production target",
+      "remaining": [
+        "User said not yet and will retry live confirmation; no success asserted",
+        "Actual live Collect save/confirmation return remains unverified",
+        "Tools and Donate appearance review not explicitly received; no visual baseline changed",
+        "Required review and historical quality failures remain recorded; no gate bypass or closure manufactured"
+      ],
+      "stop_boundary": "Save verified evidence and preserve concrete remaining review/manual-check blockers; do not begin map work in this run",
+      "coupon_read_only_check": {
+        "code": "earlyaccess",
+        "discount_usd": 20,
+        "duration": "forever",
+        "product": "Organization only",
+        "organization_monthly_usd": 20,
+        "operations_support_eligible": false,
+        "scope": "Live coupon/price configuration checked, not attachment to user subscription; no Stripe mutation"
+      }
+    }
+  },
+  "remote": null
+}

@@ -1,7 +1,5 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
-
 import { useMemo, useRef, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { IconWorld } from "@tabler/icons-react"
@@ -48,7 +46,6 @@ const DocumentPreviewDialog = dynamic(
 )
 
 type DocumentsLibraryGridProps = {
-  hasStorageAccess: boolean
   coreSource: ReturnType<typeof useCoreDocumentSource>
   viewMode?: "grid" | "list"
   renderRowActions?: (row: DocumentIndexRow) => ReactNode
@@ -98,7 +95,6 @@ type DocumentsLibraryGridProps = {
 
 export function DocumentsLibraryGrid({
   coreSource,
-  hasStorageAccess,
   viewMode = "grid",
   renderRowActions,
   rows,
@@ -168,7 +164,6 @@ export function DocumentsLibraryGrid({
   const selection = useDocumentsLibrarySelection({
     items,
     canEdit,
-    canEditNative: hasStorageAccess,
     editMode,
     actions: {
       onDeleteUpload,
@@ -183,7 +178,6 @@ export function DocumentsLibraryGrid({
   })
 
   const canUpload =
-    hasStorageAccess &&
     canEdit &&
     editMode &&
     !uploadingKind &&
@@ -247,7 +241,7 @@ export function DocumentsLibraryGrid({
     if (item.row.source === "policy") {
       if (item.row.policy.document?.path) {
         void onViewPolicyDocument(item.row.policy)
-      } else {
+      } else if (canEdit && editMode) {
         onEditPolicy(item.row.policy)
       }
     }
@@ -302,12 +296,11 @@ export function DocumentsLibraryGrid({
           {coreChoice?.row?.source === "roadmap" ? (
             <CoreDocumentChoices
               title={coreChoice.name}
-              canWrite={hasStorageAccess}
               pending={coreSource.pending}
               error={coreSource.error}
               onWrite={() => {
                 window.location.assign(
-                  getDocumentEditorHref(coreChoice.row!.source === "roadmap" ? coreChoice.row!.section.slug : "", true)
+                  `/roadmap/${coreChoice.row!.source === "roadmap" ? coreChoice.row!.section.slug : ""}?write=1`
                 )
               }}
               onDrive={() => {
@@ -372,13 +365,12 @@ export function DocumentsLibraryGrid({
                 !selection.selectedIds.length ? (
                   <CoreDocumentMenu
                     title={item.name}
-                    canEditContent={hasStorageAccess || Boolean(item.coreDriveSource)}
                     pending={coreSource.pending}
                     className="absolute top-1 right-1 z-20 size-11 sm:size-8"
                     onEdit={() => {
                       window.open(
                         item.coreDriveSource?.webViewLink ??
-                          getDocumentEditorHref(item.row?.source === "roadmap" ? item.row.section.slug : "", true),
+                          `/roadmap/${item.row?.source === "roadmap" ? item.row.section.slug : ""}?write=1`,
                         item.coreDriveSource ? "_blank" : "_self",
                         "noopener,noreferrer"
                       )
@@ -410,7 +402,7 @@ export function DocumentsLibraryGrid({
                 (item.row?.source === "roadmap" &&
                   uploadingCoreSectionId === item.row.section.id)
               }
-              canEdit={canEdit && (hasStorageAccess || Boolean(item.driveDocument) || item.row?.source === "roadmap")}
+              canEdit={canEdit}
               editMode={editMode}
               onOpen={(trigger) => openItem(item, trigger)}
               onDropFile={

@@ -1,5 +1,9 @@
 # New-organization onboarding and guided canvas setup
 
+**Closed by Caleb on October 12, 2026.** Remaining follow-ups are tracked in his separate to-do list; its location was not supplied. PR [#288](https://github.com/Hamernick/CoachHouse/pull/288) merged as `73dd8d15`; the canonical `coachhouse` Vercel deployment reports success. Migration `20261012163000` was applied and verified. This closes this workstream, not every verification gap: final PR visual/quality checks failed, the secondary Vercel project failed, and authenticated signup/payment/unlock verification remains unconfirmed. Do not resume historical tasks below without a new request. The connected planner remains abandoned.
+
+The remainder of this document is historical evidence, not an active task queue.
+
 Date: October 10, 2026. Status: implemented locally with user-directed corrections; end-to-end authenticated verification and release remain open.
 
 Parent: [Canvas onboarding and roadmap master plan](2026-10-09-canvas-onboarding-roadmap-plan.md).

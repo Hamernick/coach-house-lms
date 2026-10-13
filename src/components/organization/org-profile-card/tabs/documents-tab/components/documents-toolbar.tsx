@@ -18,7 +18,7 @@ const TABS: Array<{ value: DocumentsLibraryTab; label: string }> = [
 
 export function DocumentsToolbar(props: DocumentsToolbarProps) {
   return (
-    <header className="space-y-5">
+    <header className="mb-6 space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h1

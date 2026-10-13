@@ -11,3 +11,9 @@ Local user review: http://localhost:3116/visual-regression/upgrade-banners. Uses
 ## Checks and stop boundary
 
 Changed-file ESLint, route-entry contract and diff checks pass. Styling-only change: no new implementation-mirroring tests, automated screenshots or baseline replacement. User reviews appearance; existing hosted CI/review remain required before release. Graphify refresh started. Stop at this bounded banner PR and user review; Calendar is next after this slice. Prior map production/rendering verification belongs to the user and is not asserted complete from their merge confirmation.
+
+## Documents follow-up — October 13
+
+User production review reports that Documents still has too much copy and touches the toolbar. Continue in the same clean banner checkout on `fix/documents-upgrade-notice-20261013`, based on main `32e5199e` (PR298). Replace the long paragraph with “Use Google Drive for free. Upgrade to create and edit documents.” Reserve 24px below the Documents toolbar with an explicit bottom margin; neighboring notice margins collapse to the larger gap. Shared banner sizing and other notices remain unchanged. The paid storage row also respects this toolbar separation.
+
+Actual Documents route: http://localhost:3116/organization/documents. Copy preview: http://localhost:3116/visual-regression/upgrade-banners. User owns appearance review; no screenshots or visual baseline updates before approval. Check changed-file lint and existing Documents toolbar/library tests. Stop at this small follow-up PR and required CI/review; preserve PR299 map work and its unapplied coordinate repair.

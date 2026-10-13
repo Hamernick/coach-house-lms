@@ -24,13 +24,14 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-LIVE-04 upgrade-banner layout is the active bounded implementation, packet03
-U20261013-01/scoped stage2. Branch `fix/upgrade-banner-layout-20261013`, worktree
-`coach-house-platform-upgrade-banners-20261013`, base `e49a31bd`, localhost:3116.
-[Scope and user review](../plans/2026-10-13-upgrade-banner-layout.md). One shared
-component covers Documents, Roadmap, Accelerator and invitations. Appearance
-review belongs to Caleb; avoid repeated browser journeys/screenshots. Hosted
-current-head quality/code-owner review and release remain required.
+LIVE-04 Documents follow-up: production user review found verbose copy and
+toolbar crowding after the shared banner change (PR298, main32e5199e). Continue
+`fix/documents-upgrade-notice-20261013` in the existing banner checkout on
+localhost:3116. Shorter Documents copy and explicit24px toolbar separation;
+[scope and user review](../plans/2026-10-13-upgrade-banner-layout.md).
+User owns appearance checks; hosted current-head quality/code-owner review and
+deployment remain required. Preserve separate PR299 map audit work and its
+unapplied coordinate corrections; no provider changes or Supabase previews.
 
 PR297 merged per Caleb; do not spend time rechecking his merge confirmation.
 He is checking the map himself. [Map repair evidence](../plans/2026-10-13-live-map-markers.md):

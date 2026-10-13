@@ -10,7 +10,7 @@ export type MemberWorkspaceProjectTimelineBarItem = {
   name: string
   startDate: Date
   endDate: Date
-  status?: "todo" | "in-progress" | "waiting" | "done"
+  status?: "todo" | "in-progress" | "done"
   progress?: number
 }
 

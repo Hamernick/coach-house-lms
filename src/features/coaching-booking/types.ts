@@ -10,8 +10,6 @@ export type CoachingBookingStatus =
   | "confirmed"
   | "canceled"
   | "rescheduled"
-  | "completed"
-  | "no_show"
 
 export type CoachingPriceTier = "included" | "discounted" | "full"
 
@@ -91,7 +89,6 @@ export type CoachingBookingInput = {
 export type CoachingManageBookingInput = {
   bookingId: string
   reason?: string
-  requestId?: string
 }
 
 export type CoachingActionResult<T> =

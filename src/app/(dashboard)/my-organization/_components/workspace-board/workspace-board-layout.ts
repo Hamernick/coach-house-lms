@@ -14,7 +14,6 @@ import {
   type WorkspaceNodeState,
 } from "./workspace-board-types"
 import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
-import { arrangeInitialWorkspaceNodes } from "./workspace-board-initial-layout"
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
 import { DEFAULT_HIDDEN_CARD_IDS } from "./workspace-board-layout-config"
 import {
@@ -121,11 +120,11 @@ export function buildDefaultBoardState(
     version: 1,
     preset,
     autoLayoutMode,
-    nodes: arrangeInitialWorkspaceNodes(buildAutoLayoutNodesForMode({
+    nodes: buildAutoLayoutNodesForMode({
       mode: autoLayoutMode,
       hiddenCardIds,
       connections,
-    })),
+    }),
     connections,
     communications: buildDefaultWorkspaceCommunicationsState(),
     tracker: buildDefaultWorkspaceTrackerState(),

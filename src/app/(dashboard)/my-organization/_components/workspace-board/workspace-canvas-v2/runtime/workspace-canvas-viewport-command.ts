@@ -1,5 +1,3 @@
-import { setupGuideStackViewport } from "@/features/workspace-canvas-tutorial"
-
 import {
   getRectOfNodes,
   getViewportForBounds,
@@ -114,11 +112,8 @@ export function resolveWorkspaceCanvasDrawerAwareFocusViewportSize({
   }
 }
 
-export function resolveWorkspaceCanvasFocusViewportSize() {
+function resolveWorkspaceCanvasFocusViewportSize() {
   if (typeof document === "undefined") return null
-  // The final guide stop collapses the drawer; frame the destination canvas,
-  // not an intermediate height during that closing animation.
-  if (document.querySelector('[data-setup-guide-stage="next"]')) return null
 
   const frame = document.querySelector<HTMLElement>(
     '[data-workspace-canvas-flow-frame="true"]'
@@ -313,19 +308,6 @@ export function executeWorkspaceCanvasViewportCommand({
         ? resolveWorkspaceCanvasFocusViewportSize()
         : focusViewportSize
     const focusedBounds = getRectOfNodes(focusedNodes)
-
-    // Tour focus reserves screen space for both surfaces, rather than magnifying
-    // the node alone and leaving the guide to overlap it afterward.
-    const guide = typeof document === "undefined" ? null : document.querySelector<HTMLElement>('[data-setup-guide-stage="identity"], [data-setup-guide-stage="identity-edit"]')
-    const frame = guide ? document.querySelector<HTMLElement>('[data-workspace-canvas-flow-frame="true"]')?.getBoundingClientRect() : null
-    const drawer = guide ? document.querySelector<HTMLElement>('[data-workspace-canvas-overlay-drawer="true"]')?.getBoundingClientRect() : null
-    if (guide && frame && focusedBounds.width > 0 && focusedBounds.height > 0) {
-      const availableHeight = drawer && drawer.top > frame.top ? Math.min(frame.height, drawer.top - frame.top) : frame.height
-      void flowInstance.setViewport(setupGuideStackViewport(focusedBounds, { width: frame.width, height: availableHeight }, guide?.querySelector("aside")?.offsetHeight), {
-        duration: resolveWorkspaceCanvasCameraDuration(focusCardOptions.duration),
-      })
-      return { executed: true, kind: command.kind, nodeCount: focusedNodes.length }
-    }
 
     if (
       drawerAwareViewportSize &&

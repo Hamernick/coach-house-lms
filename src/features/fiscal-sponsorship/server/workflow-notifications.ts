@@ -1,7 +1,5 @@
 import "server-only"
 
-import { loadGuestNotificationRecipients } from "./guest-notification-recipients"
-
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { sendResendEmail } from "@/lib/email/resend"
@@ -208,38 +206,28 @@ async function notifyFiscalReviewers(payload: FiscalNotificationPayload) {
   const supabase = getFiscalNotificationClient()
   if (!supabase) return
 
-  const guestRecipients = await loadGuestNotificationRecipients(supabase, payload.application.project_id, payload.actorId)
-  const recipientIds = guestRecipients ?? await loadFiscalReviewerRecipientIds({
+  const recipientIds = await loadFiscalReviewerRecipientIds({
     excludeUserId: payload.actorId,
     orgId: payload.application.org_id,
     supabase,
   })
   if (recipientIds.length === 0) return
 
-  await createFiscalNotifications({
-    payload: guestRecipients === null ? payload : { ...payload, href: `/projects/${payload.application.project_id}` },
-    recipientIds,
-    supabase,
-  })
+  await createFiscalNotifications({ payload, recipientIds, supabase })
 }
 
 async function notifyOrganizationEditors(payload: FiscalNotificationPayload) {
   const supabase = getFiscalNotificationClient()
   if (!supabase) return
 
-  const guestRecipients = await loadGuestNotificationRecipients(supabase, payload.application.project_id, payload.actorId)
-  const recipientIds = guestRecipients ?? await loadOrganizationEditorRecipientIds({
+  const recipientIds = await loadOrganizationEditorRecipientIds({
     excludeUserId: payload.actorId,
     orgId: payload.application.org_id,
     supabase,
   })
   if (recipientIds.length === 0) return
 
-  await createFiscalNotifications({
-    payload: guestRecipients === null ? payload : { ...payload, href: `/projects/${payload.application.project_id}` },
-    recipientIds,
-    supabase,
-  })
+  await createFiscalNotifications({ payload, recipientIds, supabase })
 }
 
 function reviewDecisionNotificationCopy({

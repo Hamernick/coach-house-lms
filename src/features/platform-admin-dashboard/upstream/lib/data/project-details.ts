@@ -1,4 +1,3 @@
-import type { TaskTrackerDetails } from "@/lib/task-tracker"
 import type { Project as ProjectListItem } from "@/features/platform-admin-dashboard/upstream/lib/data/projects"
 import { projects } from "@/features/platform-admin-dashboard/upstream/lib/data/projects"
 import { getAvatarUrl } from "@/features/platform-admin-dashboard/upstream/lib/assets/avatars"
@@ -40,13 +39,12 @@ export type TimelineTask = {
   name: string
   startDate: Date
   endDate: Date
-  status: "planned" | "in-progress" | "waiting" | "done"
+  status: "planned" | "in-progress" | "done"
 }
 
-export type WorkstreamTaskStatus = "todo" | "in-progress" | "waiting" | "done"
+export type WorkstreamTaskStatus = "todo" | "in-progress" | "done"
 
 export type WorkstreamTask = {
-  tracker?: TaskTrackerDetails
   id: string
   name: string
   status: WorkstreamTaskStatus
@@ -85,7 +83,7 @@ export type TimeSummary = {
   schedule?: { startDate: string; endDate: string } | null
   scheduleAvailable?: boolean
   estimateLabel: string
-  dueDate: Date | null
+  dueDate: Date
   daysRemainingLabel: string
   progressPercent: number
 }
@@ -93,7 +91,7 @@ export type TimeSummary = {
 export type BacklogSummary = {
   picLabel?: string
   supportLabel?: string
-  statusLabel: "Active" | "Backlog" | "Planned" | "On hold" | "Completed" | "Cancelled"
+  statusLabel: "Active" | "Backlog" | "Planned" | "Completed" | "Cancelled"
   groupLabel: string
   priorityLabel: string
   labelBadge: string

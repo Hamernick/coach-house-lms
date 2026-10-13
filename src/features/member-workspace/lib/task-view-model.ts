@@ -12,10 +12,9 @@ import type {
 export function toProjectTask(task: MemberWorkspaceTaskItem): ProjectTask {
   return {
     id: task.id,
-    tracker: task.tracker,
     name: task.title,
     status: task.status,
-    dueLabel: task.endDate ? format(parseISO(task.endDate), "dd/MM/yyyy") : undefined,
+    dueLabel: format(parseISO(task.endDate), "dd/MM/yyyy"),
     assignee: task.assignee
       ? {
           id: task.assignee.id,
@@ -23,8 +22,7 @@ export function toProjectTask(task: MemberWorkspaceTaskItem): ProjectTask {
           avatarUrl: task.assignee.avatarUrl ?? undefined,
         }
       : undefined,
-    startDate: task.startDate ? parseISO(task.startDate) : undefined,
-    endDate: task.endDate ? parseISO(task.endDate) : undefined,
+    startDate: parseISO(task.startDate),
     priority: task.priority,
     tag: task.tagLabel ?? undefined,
     description: task.description,
@@ -51,8 +49,8 @@ export function toProjectGroup(
     name: group.projectName,
     taskCount: total,
     progress,
-    startDate: group.projectStartDate ? parseISO(group.projectStartDate) : null,
-    endDate: group.projectEndDate ? parseISO(group.projectEndDate) : null,
+    startDate: parseISO(group.projectStartDate),
+    endDate: parseISO(group.projectEndDate),
     status: group.projectStatus,
     priority: group.projectPriority,
     tags: group.projectTags,
@@ -60,15 +58,17 @@ export function toProjectGroup(
     client: group.projectClient ?? undefined,
     typeLabel: group.projectTypeLabel ?? undefined,
     durationLabel: group.projectDurationLabel ?? undefined,
-    tasks: tasks.filter((task) => task.startDate && task.endDate).map((task) => ({
+    tasks: tasks.map((task) => ({
       id: task.id,
-    tracker: task.tracker,
       name: task.name,
       type: group.tasks.find((item) => item.id === task.id)?.taskType ?? "task",
       assignee: task.assignee?.name ?? "",
       status: task.status,
-      startDate: task.startDate!,
-      endDate: task.endDate!,
+      startDate: task.startDate ?? new Date(),
+      endDate: parseISO(
+        group.tasks.find((item) => item.id === task.id)?.endDate ??
+          group.projectEndDate
+      ),
     })),
   }
 

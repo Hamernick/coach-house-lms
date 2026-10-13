@@ -100,7 +100,7 @@ export const WorkspacePeopleSegmentPersonPicker = memo(
             <div
               ref={anchorRef}
               className={cn(
-                "border-input focus-within-visible:border-ring focus-within-visible:ring-ring/50 h-8 w-full min-w-0 rounded-xl border bg-transparent shadow-xs outline-none focus-within-visible:ring-[3px] [&_[data-slot=command-input-wrapper]]:h-full [&_[data-slot=command-input]]:h-full [&_[data-slot=command-input]]:py-0 [&_[data-slot=command-input-wrapper]]:border-0",
+                "border-input focus-within:border-ring focus-within:ring-ring/50 w-full min-w-0 rounded-md border bg-transparent shadow-xs outline-none focus-within:ring-[3px] [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:border-0",
                 allPeopleAdded && "opacity-50"
               )}
             >
@@ -124,7 +124,7 @@ export const WorkspacePeopleSegmentPersonPicker = memo(
                 }
                 aria-label={`Search people to add to ${segmentLabel}`}
                 aria-expanded={open}
-                className="h-10 text-sm"
+                className="h-10 text-base md:text-sm"
               />
             </div>
           </PopoverAnchor>

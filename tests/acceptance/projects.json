@@ -293,6 +293,7 @@
       "tests/acceptance/find-resource-index.test.ts",
       "tests/acceptance/find-resource-map-bounds.test.ts",
       "tests/acceptance/find-resource-place-detail.test.ts",
+    "tests/acceptance/resource-map-test-fixture-visibility.test.ts",
       "tests/acceptance/find-resource-place-groups.test.ts",
       "tests/acceptance/fiscal-sponsorship-application-actions.test.ts",
       "tests/acceptance/fiscal-sponsorship-application-draft.test.ts",

@@ -77,6 +77,7 @@ def main():
         require(args.revision is not None and args.head and args.owner, 'Supply --revision --head --owner')
         current = local()
         receipt = json.loads(args.receipt.read_text()) if args.receipt else {}
+        require(args.operation != 'reconcile' or args.pr, 'Reconcile requires --pr')
         protected = args.to in ('pr_ready', 'merged', 'deployed', 'production_verified') or args.operation == 'closeout'
         require(not protected or args.pr, 'Protected transitions require fresh --pr reconciliation')
         remote = reconcile(args.pr) if args.pr else None

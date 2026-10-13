@@ -20,8 +20,10 @@ and resolve the old claim before doing work; never operate two clones concurrent
 See [operator commands and recovery](shipping/README.md),
 [reconciliation](shipping/reconciliation.md), and [review packet](shipping/review.md).
 `shipping/queue.json` is a seed, not another live queue. Immutable exported receipts
-are recovery snapshots. Latest active receipt is on `chore/ship-harness-20261013`
-until merge; locate it in `docs/shipping/receipts/` on that remote branch.
+are recovery snapshots. Latest active receipt is on `chore/ship-receipts-20261013`
+until closure; locate it in `docs/shipping/receipts/` on that remote recovery branch.
+The implementation PR uses `chore/ship-harness-20261013`; the receipt branch
+is a derived recovery archive, never a second live state or implementation lane.
 
 Refresh remote refs at startup, reconcile any active claim, and resume its exact
 next action. Never pull/reset an unrelated checkout. Closed work remains closed.

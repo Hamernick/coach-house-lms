@@ -78,8 +78,12 @@ selecting a slice; reconcile existing releases before turning intake into work.
 Do not change source checkbox states merely because a test passed.
 
 `export` copies immutable state and its hash-linked receipt payloads to
-`docs/shipping/receipts/`. Commit, run normal pre-push checks, push the task branch,
-and verify `git ls-remote` matches the local head. Record that remote SHA in the
+`docs/shipping/receipts/`. Commit snapshots on the dedicated `chore/ship-receipts-20261013` recovery
+branch, run normal pre-push checks, push that branch,
+and verify `git ls-remote` matches its snapshot commit. Keep the implementation
+branch unchanged so receipt archival cannot invalidate exact-head approval.
+An ephemeral clean worktree may be used to export/archive; it does not claim
+or implement another release slice. Retire only that clean pushed archive checkout. Record that remote SHA in the
 next checkpoint. A snapshot's own containing commit is established by Git history;
 never put a guessed self-referential commit SHA into the file. State after that
 export is local-only until another export/push. Ignored private state needs its

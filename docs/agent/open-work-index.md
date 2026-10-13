@@ -47,6 +47,14 @@ Preserve the original pricing checkout/server on localhost:3119 and unrelated
 servers. No Supabase/provider preview setup. Finish this bounded pricing/Donate,
 SHIP and indexing run, or preserve explicit blockers; do not start map work here.
 
+Latest signup blocker: user profile-save POST returned500 after the photo/name
+saved. PR295 externally merged as368709ce; profile-address repair continues in
+`fix/onboarding-profile-save-20261013` in the existing
+`coach-house-platform-checkout-activation-20261013` checkout. Reject matching
+personal/workspace addresses and handle namespace collisions as form errors;
+49 focused tests/lint pass, including retained concurrent-write protections.
+Current-head quality/review and production retry remain required. No provider writes.
+
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as
 `ce1436a2` on October 13; quality failed and code-owner review remains missing.

@@ -124,3 +124,19 @@ confirm containment; three existing menu tests and lint pass. The full text stay
 in the DOM. [Local review screenshot](../reviews/2026-10-13-account-menu-long-email.jpg)
 uses a synthetic email. No menu actions, account data or provider configuration
 changed. User appearance review, current-head CI/review and deployment remain open.
+
+## Profile-save 500 follow-up
+
+PR295 merged as `368709ce`; this new issue continues in
+`fix/onboarding-profile-save-20261013`, using the existing isolated
+`coach-house-platform-checkout-activation-20261013` checkout from that main.
+The user's profile name/photo saved, but organization creation repeatedly hit a
+unique conflict. Shared person/organization address collisions were being retried
+as concurrent People edits. The fix rejects a username matching its pending
+workspace URL and turns known address conflicts into recoverable form errors.
+Primary-key race retries and revision checks remain intact. Five regressions
+reproduced the defect; 49 focused tests and lint pass. Exact submitted organization
+slug was not captured; do not claim the user's unseen fields were confirmed.
+
+Next: follow-up PR, hosted quality/code-owner review and production retest.
+No account/provider mutation or new checkout; user can retain current entries.

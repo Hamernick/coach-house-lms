@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-13T04:40:54.666564+00:00",
+  "operation": "claim",
+  "owner": "ship-bootstrap-20261013",
+  "previous_revision": 0,
+  "head": "b1765df4d7391eb5b527c6d79afbad7fd2aae0de",
+  "evidence": {},
+  "remote": null
+}

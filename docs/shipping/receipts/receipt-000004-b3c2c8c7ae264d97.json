@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-13T04:43:15.072976+00:00",
+  "operation": "reconcile",
+  "owner": "ship-bootstrap-20261013",
+  "previous_revision": 3,
+  "head": "9e0fc848bdf90a1b4e7e44bd72c072696a8c6a6d",
+  "evidence": {},
+  "remote": {
+    "github": {
+      "head": "9e0fc848bdf90a1b4e7e44bd72c072696a8c6a6d",
+      "quality": "pending",
+      "review": "REVIEW_REQUIRED",
+      "protection_satisfied": false,
+      "reference": "https://github.com/Hamernick/CoachHouse/pull/291",
+      "observed_at": "2026-10-13T04:43:14.655466+00:00",
+      "merge_state": "BLOCKED",
+      "required_checks": [
+        {
+          "context": "quality",
+          "app_id": 15368
+        }
+      ]
+    },
+    "deployment_observations": [],
+    "provider_status": "unknown until intended project/domain/source SHA is checked at provider"
+  }
+}

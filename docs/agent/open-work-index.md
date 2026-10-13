@@ -18,6 +18,16 @@ AppShell/mobile is closed for implementation: Caleb confirmed PR [#254](https://
 
 Personal coaching credits and the bundled Resources/Documentation fixes are closed. Caleb confirmed review complete on 2026-10-01. PR #263 merged at `59b89421cb11181e09cb8454480953920efd2554`; canonical production is Ready on that revision (deployment `dpl_3y2sDsGpuJbxSmzYG7jJTojc34BE`). All three coaching migrations are applied; both existing Accelerator participants have ten available credits, with original history preserved. Cloud Run revision `coach-house-calendar-broker-00009-hud` serves live traffic. One Supabase cron job, `coaching-calendar-reconcile`, runs every minute. Live authenticated reconciliation and coach-calendar deletion/refund passed, including duplicate-refund prevention and restoration of the verification account's original balance. Temporary booking/webhook pause, review database and eleven branch-specific Preview overrides were removed; the unrelated Calendar preview remains. See [release record](../plans/2026-09-30-coaching-credits.md). Do not list coaching credits as an open lane or repeat completed review, activation, canary or cleanup gates without a reported issue. PR #264 records this closeout only; its documentation merge does not reopen the product lane.
 
+## FLIGHTPLAN orchestration
+
+Reference word: **FLIGHTPLAN**. Read [the dashboard and plan](../FLIGHTPLAN.md).
+Canonical worktree: `/Users/calebhamernick/Development/coach-house-platform-flightplan-20261012`,
+branch `chore/flightplan-20261012`. This is the planning/forecasting owner;
+implementation runs in separate assigned chats and worktrees. Worker receipts
+carry exact branch, localhost, evidence and recovery checkpoints back here.
+The user's long task list is pending. Do not reopen historical lanes from this
+planning setup. [Recovery ledger](../flightplan/recovery.md).
+
 ## Open lanes
 
 Vercel CPU optimization: `fix/vercel-cpu-optimization-20261011` in

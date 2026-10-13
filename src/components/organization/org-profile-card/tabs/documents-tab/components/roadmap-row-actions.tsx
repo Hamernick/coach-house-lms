@@ -1,7 +1,5 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
-
 import Link from "next/link"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import Route from "lucide-react/dist/esm/icons/route"
@@ -39,7 +37,7 @@ export function RoadmapRowActions({
         className={mobileButtonClassName}
         asChild
       >
-        <Link href={getDocumentEditorHref(row.section.slug)}>
+        <Link href={`/roadmap/${row.section.slug}`}>
           <Route data-icon="inline-start" aria-hidden />
           Open
         </Link>

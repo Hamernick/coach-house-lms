@@ -22,11 +22,13 @@ export function hasRequiredOrganizationSetup(
   return Boolean(
     typeof profile?.name === "string" &&
     profile.name.trim() &&
-    publicSlug?.trim()
+    publicSlug?.trim() &&
+    normalizeOrganizationFormationStatus(profile?.formationStatus)
   )
 }
 
-// Formation status is collected later. Completion still requires saved name and URL.
+// Access selection and organization setup are separate steps. Legacy completion
+// metadata alone does not establish that organization setup was saved.
 export function resolveOnboardingRequirements({
   userId,
   organizationId,

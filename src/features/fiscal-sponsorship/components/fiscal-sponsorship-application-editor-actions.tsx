@@ -8,10 +8,8 @@ export function FiscalSponsorshipApplicationEditorActions({
   isSaving,
   isSubmitting,
   onClose,
-  saveBlocked = false,
   onSubmitForReview,
 }: {
-  saveBlocked?: boolean
   canEdit: boolean
   isBusy: boolean
   isSaving: boolean
@@ -22,7 +20,6 @@ export function FiscalSponsorshipApplicationEditorActions({
   return (
     <>
       <Button
-        className="shadow-none"
         type="button"
         variant="outline"
         onClick={onClose}
@@ -33,10 +30,9 @@ export function FiscalSponsorshipApplicationEditorActions({
       {canEdit ? (
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
           <Button
-            className="shadow-none"
             type="submit"
             variant="outline"
-            disabled={isBusy || saveBlocked}
+            disabled={isBusy}
             aria-busy={isSaving}
           >
             {isSaving ? (
@@ -49,9 +45,8 @@ export function FiscalSponsorshipApplicationEditorActions({
             {isSaving ? "Saving…" : "Save draft"}
           </Button>
           <Button
-            className="shadow-none"
             type="button"
-            disabled={isBusy || saveBlocked}
+            disabled={isBusy}
             aria-busy={isSubmitting}
             onClick={onSubmitForReview}
           >

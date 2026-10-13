@@ -30,7 +30,6 @@ export function OnboardingWorkspaceCard({
       )}
     >
       <OnboardingFlow
-        key={defaults.draftScope ?? defaults.defaultEmail ?? "onboarding"}
         {...defaults}
         open
         isInline

@@ -7,6 +7,14 @@ export {
   validatePublicHandle,
 } from "./lib"
 export { PublicProfilePage } from "./components"
+export { MarketplacePeople } from "./components/marketplace-people"
+export type { MarketplacePeopleData } from "./components/marketplace-people"
+export { MarketplacePersonPage } from "./components/marketplace-person-page"
+export {
+  decodeMarketplacePersonHandle,
+  marketplacePeoplePageHref,
+  marketplacePersonHref,
+} from "./lib/marketplace-people"
 export type {
   PublicHandleResult,
   PublicOrganizationProfilePerson,
@@ -22,3 +30,11 @@ export type {
   PublicProfileSavedItem,
   PublicProfileView,
 } from "./types"
+export {
+  projectPublicPeople,
+  projectPublicPerson,
+} from "./lib/public-directory"
+export type {
+  PublicPersonDirectoryEntry,
+  PublicPersonDirectoryProfile,
+} from "./lib/public-directory"

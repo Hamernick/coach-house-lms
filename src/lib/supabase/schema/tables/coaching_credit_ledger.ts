@@ -1,10 +1,7 @@
 export type CoachingCreditLedgerTable = {
   Row: {
-    grant_id: string | null
-    actor_id: string | null
-    operation_key: string | null
     id: string
-    org_id: string | null
+    org_id: string
     user_id: string
     booking_id: string | null
     source: string
@@ -16,11 +13,8 @@ export type CoachingCreditLedgerTable = {
     created_at: string
   }
   Insert: {
-    grant_id?: string | null
-    actor_id?: string | null
-    operation_key?: string | null
     id?: string
-    org_id: string | null
+    org_id: string
     user_id: string
     booking_id?: string | null
     source: string
@@ -32,9 +26,6 @@ export type CoachingCreditLedgerTable = {
     created_at?: string
   }
   Update: {
-    grant_id?: string | null
-    actor_id?: string | null
-    operation_key?: string | null
     id?: string
     org_id?: string
     user_id?: string

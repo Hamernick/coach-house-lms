@@ -12,17 +12,12 @@ import { cn } from "@/lib/utils"
 
 export function LegacyHomeHeroSection() {
   return (
-    <div
-      className={cn(
-        legacyHomeInterFont.className,
-        "mx-auto w-full max-w-3xl space-y-6 text-left lg:max-w-4xl"
-      )}
-    >
-      <div className="border-border/60 bg-card/70 text-muted-foreground animate-fade-in inline-flex items-center justify-start gap-2 rounded-full border px-4 py-2 text-xs shadow-sm">
+    <div className={cn(legacyHomeInterFont.className, "mx-auto w-full max-w-3xl space-y-6 text-left lg:max-w-4xl")}>
+      <div className="inline-flex items-center justify-start gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm animate-fade-in">
         <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
         The Coach House Platform
       </div>
-      <h1 className="animate-soft-pop text-3xl leading-tight font-normal tracking-tight text-balance text-[#525252] sm:text-4xl lg:text-5xl dark:text-[#A1A1A1]">
+      <h1 className="text-balance text-3xl font-normal leading-tight tracking-tight text-[#525252] sm:text-4xl lg:text-5xl animate-soft-pop dark:text-[#A1A1A1]">
         Build, Find, & Fund{" "}
         <FlipWords
           words={HERO_FLIP_WORDS}
@@ -33,22 +28,16 @@ export function LegacyHomeHeroSection() {
           with <span className="font-semibold">Coach House.</span>
         </span>
       </h1>
-      <p className="text-muted-foreground animate-fade-up max-w-xl text-base">
-        The platform built for NFP founders, operators, & grassroots
-        organizations — from formation to funding.
+      <p className="max-w-xl text-base text-muted-foreground animate-fade-up">
+        The platform built for NFP founders, operators, & grassroots organizations — from formation to funding.
       </p>
       <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
         <Button asChild size="lg" className="rounded-full px-6">
-          <Link href="/pricing">
+          <Link href="/?section=pricing">
             View pricing <ArrowUpRight className="h-4 w-4" aria-hidden />
           </Link>
         </Button>
-        <Button
-          asChild
-          size="lg"
-          variant="outline"
-          className="rounded-full px-6"
-        >
+        <Button asChild size="lg" variant="outline" className="rounded-full px-6">
           <Link href="/sign-up">Start free</Link>
         </Button>
       </div>

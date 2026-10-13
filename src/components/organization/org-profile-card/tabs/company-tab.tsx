@@ -51,6 +51,32 @@ export function CompanyTab({
     ],
   )
 
+  const hasAnyBrandLink = useMemo(
+    () =>
+      [
+        company.publicUrl,
+        company.newsletter,
+        company.twitter,
+        company.facebook,
+        company.linkedin,
+        company.instagram,
+        company.youtube,
+        company.tiktok,
+        company.github,
+      ].some((value) => typeof value === "string" && value.trim().length > 0),
+    [
+      company.publicUrl,
+      company.newsletter,
+      company.twitter,
+      company.facebook,
+      company.linkedin,
+      company.instagram,
+      company.youtube,
+      company.tiktok,
+      company.github,
+    ],
+  )
+
   if (editMode) {
     const editProps: CompanyEditProps = {
       company,
@@ -69,6 +95,7 @@ export function CompanyTab({
   const viewProps: CompanyViewProps = {
     company,
     addressLines,
+    hasAnyBrandLink,
   }
 
   return <ViewModeSections {...viewProps} />

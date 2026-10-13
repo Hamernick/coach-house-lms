@@ -3,8 +3,6 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
-import { resolvePublicMapScreenPadding } from "./screen-camera"
-import { FIND_ORGANIZATION_QUERY_KEY, FIND_PATH } from "@/lib/find/routes"
 import {
   buildPublicMapOrganizationFeatureCollection,
   type PublicMapFeatureCollection,
@@ -82,7 +80,7 @@ export function resolveInitialPublicMapOrganization({
   if (!targetSlug) return null
   return (
     organizations.find(
-      (organization) => normalizeSlug(organization.publicSlug || organization.id) === targetSlug
+      (organization) => normalizeSlug(organization.publicSlug) === targetSlug
     ) ?? null
   )
 }
@@ -99,12 +97,9 @@ export function buildMapHref({
   searchParams: URLSearchParams
 }) {
   const nextParams = new URLSearchParams(searchParams)
-  nextParams.delete(FIND_ORGANIZATION_QUERY_KEY)
-  if (slug) {
-    nextParams.set(FIND_ORGANIZATION_QUERY_KEY, slug)
-  }
   const query = nextParams.toString()
-  return query.length > 0 ? `${FIND_PATH}?${query}` : FIND_PATH
+  const pathname = slug ? `/find/${slug}` : "/find"
+  return query.length > 0 ? `${pathname}?${query}` : pathname
 }
 
 export function removeAuthParams(searchParams: URLSearchParams) {
@@ -179,7 +174,7 @@ export function fitMapToOrganizations({
   }
 
   map.fitBounds(bounds, {
-    padding: resolvePublicMapScreenPadding(map.getContainer?.()) ?? ORGANIZATION_PADDING,
+    padding: ORGANIZATION_PADDING,
     maxZoom: 7,
     duration,
   })

@@ -6,7 +6,6 @@ import {
   OrganizationDetailActivitiesSection,
   OrganizationDetailBrandKitSection,
   OrganizationDetailOriginSection,
-  OrganizationDetailStoryContent,
 } from "@/components/public/public-map-index/organization-detail-sections"
 import { PublicMapOrganizationDetail } from "@/components/public/public-map-index/organization-detail"
 import { OrganizationDetailResourceLinksSection } from "@/components/public/public-map-index/organization-detail-resource-links-section"
@@ -39,7 +38,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -145,64 +143,6 @@ describe("public map detail section chrome", () => {
     expect(markup).toContain("Logo mark")
     expect(markup).toContain("https://example.org/mark.png")
   })
-
-  it("keeps website and socials in the identity without a separate socials card", () => {
-    const website = "https://example.org/a-long-public-organization-address"
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          website,
-          instagram: "https://instagram.com/atlas",
-          linkedin: "https://linkedin.com/company/atlas",
-        }),
-      })
-    )
-
-    expect(markup).toContain(`href="${website}"`)
-    expect(markup).toContain(`title="${website}"`)
-    expect(markup).toContain("example.org/a-long-public-organization-address")
-    expect(markup).toContain('aria-label="Open Instagram"')
-    expect(markup).toMatch(/aria-label="Open LinkedIn"[^>]*><svg[^>]*>.*?<path d=/)
-    expect(markup).not.toContain("/brand/linkedin-in.png")
-    expect(markup.indexOf('aria-label="Open Instagram"')).toBeLessThan(
-      markup.indexOf(">About</h3>")
-    )
-    expect(markup).not.toContain(">Socials</h3>")
-    expect(markup).not.toContain(">Donate</span>")
-  })
-
-  it("uses one icon size and label gap for every profile action", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          website: "https://example.org",
-          donateUrl: "https://example.org/donate",
-          email: "hello@example.org",
-          phone: "+1 312 555 0100",
-          brandKitAvailable: true,
-        }),
-      })
-    )
-
-    expect(
-      markup.match(/data-public-map-organization-action-content="true"/g)
-    ).toHaveLength(3)
-    expect(
-      markup.match(/data-public-map-organization-action-icon="true"/g)
-    ).toHaveLength(3)
-    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(3)
-    expect(markup).toContain('href="https://example.org/donate"')
-    expect(markup).toContain(">Donate</span>")
-    expect(markup).not.toContain(">Website</span>")
-    expect(markup).toContain(
-      "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
-    )
-    expect(markup).toContain(
-      "inline-flex size-5 shrink-0 items-center justify-center"
-    )
-    expect(markup).not.toContain("gap-0.5 text-center")
-    expect(markup).not.toContain("h-4.5 w-4.5")
-  })
 })
 
 describe("OrganizationDetailOriginSection", () => {
@@ -212,45 +152,17 @@ describe("OrganizationDetailOriginSection", () => {
         storyFields: [
           {
             label: "Origin story",
-            value:
-              '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> after repeated service gaps.</p><img src="https://example.org/story.png" alt="Founding team">',
+            value: "Started after repeated service gaps.",
           },
         ],
+        expandedStoryFields: {},
+        onToggleField: () => {},
       })
     )
 
     expect(markup).toContain(">Organization story<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
-    expect(markup).toContain("pt-1 pb-[3px]")
-  })
-
-  it("preserves sanitized rich layout and images after expansion", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(OrganizationDetailStoryContent, {
-        value:
-          '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> together.</p><img src="https://example.org/story.png" alt="Founding team">',
-      })
-    )
-
-    expect(markup).toContain('<h2 style="text-align:center">')
-    expect(markup).toContain("<strong>Started</strong>")
-    expect(markup).toContain('alt="Founding team"')
-    expect(markup).toContain("[&amp;_img]:my-4")
-    expect(markup).toContain("[&amp;_img]:rounded-lg")
-    expect(markup).toContain("[&amp;_img]:overflow-hidden")
-    expect(markup).not.toContain("prose-img:")
-  })
-
-  it("renders nothing when no public story fields have content", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(OrganizationDetailOriginSection, {
-        storyFields: [],
-      })
-    )
-
-    expect(markup).toBe("")
-    expect(markup).not.toContain("Not provided yet.")
   })
 })
 
@@ -321,22 +233,6 @@ describe("OrganizationDetailActivitiesSection", () => {
     expect(markup).toContain("Ongoing")
     expect(markup).toContain("Online")
     expect(markup).toContain("https://hub.example.org")
-
-    const profile = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          activityLinks: [{
-            id: "program-1", title: "Youth Resource Hub", subtitle: null,
-            description: "Public activity", activityKind: "Program", chips: [],
-            ctaLabel: null, ctaUrl: null, durationLabel: null,
-            locationUrl: null, locationType: null,
-          }],
-        }),
-      })
-    )
-    expect(profile.indexOf(">Activity<")).toBeGreaterThan(profile.indexOf(">About<"))
-    expect(profile.indexOf(">Activity<")).toBeLessThan(profile.indexOf(">Contact<"))
-    expect(profile.match(/Youth Resource Hub/g)).toHaveLength(1)
   })
 
   it("renders the full activity list from activity metadata, not the visual preview cap", () => {

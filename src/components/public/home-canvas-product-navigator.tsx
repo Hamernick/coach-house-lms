@@ -1,7 +1,5 @@
 "use client"
 
-import { FIND_PATH } from "@/lib/find/routes"
-
 import Link from "next/link"
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import type { MouseEvent } from "react"
@@ -41,15 +39,15 @@ export function HomeCanvasProductNavigator({
     >
       <Button
         asChild
-        variant={null}
+        variant="ghost"
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white",
+          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
           activeSection === "hero" && "bg-white text-black"
         )}
       >
         <Link
-          href={FIND_PATH}
+          href="/find"
           prefetch
           aria-current={activeSection === "hero" ? "true" : undefined}
           aria-busy={isFindRoutePending || undefined}
@@ -70,10 +68,10 @@ export function HomeCanvasProductNavigator({
       </Button>
       <Button
         type="button"
-        variant={null}
+        variant="ghost"
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white",
+          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
           activeSection === "platform" && "bg-white text-black"
         )}
         aria-pressed={activeSection === "platform"}
@@ -83,10 +81,10 @@ export function HomeCanvasProductNavigator({
       </Button>
       <Button
         type="button"
-        variant={null}
+        variant="ghost"
         size="sm"
         className={cn(
-          "h-9 rounded-full px-3 text-white",
+          "h-9 rounded-full px-3 text-white hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black",
           activeSection === "accelerator" && "bg-white text-black"
         )}
         aria-pressed={activeSection === "accelerator"}

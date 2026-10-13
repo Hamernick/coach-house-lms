@@ -1,4 +1,3 @@
-import { normalizeCoreDocumentDriveSource } from "./core-document-source"
 import { SECTION_DEFINITIONS } from "./definitions"
 import {
   MY_ORGANIZATION_PATH,
@@ -46,10 +45,6 @@ const STORED_SECTION_KEYS = new Set([
   "subtitle",
   "slug",
   "content",
-  "driveSource",
-  "documentSource",
-  "publishedContent",
-  "publicProfileStatusControlled",
   "budgetRows",
   "imageUrl",
   "lastUpdated",
@@ -143,12 +138,6 @@ export function buildRoadmapSection(
   const subtitleIsTemplate =
     effectiveStoredSubtitle.length === 0 && templateSubtitle.length > 0
   const content = typeof stored?.content === "string" ? stored.content : ""
-  const publishedContent =
-    typeof stored?.publishedContent === "string"
-      ? stored.publishedContent
-      : undefined
-  const publicProfileStatusControlled =
-    stored?.publicProfileStatusControlled === true ? true : undefined
   const budgetRows = normalizeRoadmapBudgetRows(stored?.budgetRows)
   const imageUrlRaw = normalizeText(stored?.imageUrl)
   const imageUrl = imageUrlRaw.length > 0 ? imageUrlRaw : undefined
@@ -207,14 +196,6 @@ export function buildRoadmapSection(
     prompt,
     placeholder,
     content,
-    driveSource: normalizeCoreDocumentDriveSource(stored?.driveSource),
-    documentSource:
-      stored?.documentSource === "editor" ||
-      stored?.documentSource === "google_drive"
-        ? stored.documentSource
-        : undefined,
-    publishedContent,
-    publicProfileStatusControlled,
     budgetRows,
     storageExtras,
     imageUrl,
@@ -300,16 +281,6 @@ export function serializeRoadmapSections(sections: RoadmapSection[]) {
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
-    driveSource: section.driveSource ?? null,
-    ...(section.documentSource
-      ? { documentSource: section.documentSource }
-      : {}),
-    ...(section.publishedContent !== undefined
-      ? { publishedContent: section.publishedContent }
-      : {}),
-    ...(section.publicProfileStatusControlled
-      ? { publicProfileStatusControlled: true }
-      : {}),
     ...(section.id === "budget" || (section.budgetRows?.length ?? 0) > 0
       ? { budgetRows: section.budgetRows ?? [] }
       : {}),

@@ -11,8 +11,6 @@ import {
 import { resolveRoadmapSections } from "./sections"
 import type { RoadmapSection, RoadmapSectionStatus } from "./types"
 import type { BudgetTableRow } from "@/lib/modules"
-import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "./public-organization-profile-sections"
-import { resolveLegacyPublicProfileSectionContent } from "./public-profile-publication-state"
 
 export function updateRoadmapSection(
   profile: Record<string, unknown> | null | undefined,
@@ -20,7 +18,6 @@ export function updateRoadmapSection(
   updates: {
     title?: string
     subtitle?: string
-    driveSource?: RoadmapSection["driveSource"]
     content?: string
     budgetRows?: BudgetTableRow[]
     imageUrl?: string | null
@@ -85,25 +82,6 @@ export function updateRoadmapSection(
         : current.isPublic
     const nextLayout = updates.layout ?? current.layout
     const nextStatus = updates.status ?? current.status ?? "not_started"
-    let nextPublishedContent = current.publishedContent
-    let nextPublicProfileStatusControlled =
-      current.publicProfileStatusControlled
-    if (
-      (updates.status !== undefined || updates.content !== undefined) &&
-      PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(current.id)
-    ) {
-      nextPublicProfileStatusControlled = true
-      if (nextStatus === "complete" || nextStatus === "not_started") {
-        nextPublishedContent = undefined
-      } else if (!current.publicProfileStatusControlled) {
-        nextPublishedContent = resolveLegacyPublicProfileSectionContent(
-          nextProfile,
-          current
-        )
-      } else if (current.status === "complete") {
-        nextPublishedContent = current.content
-      }
-    }
     const nextCtaLabel =
       typeof updates.ctaLabel === "string" ? updates.ctaLabel : current.ctaLabel
     const nextCtaUrl =
@@ -118,18 +96,6 @@ export function updateRoadmapSection(
       title: nextTitle,
       subtitle: nextSubtitle,
       content: nextContent,
-      driveSource:
-        updates.driveSource === undefined
-          ? current.driveSource
-          : updates.driveSource,
-      documentSource:
-        updates.driveSource === undefined
-          ? current.documentSource
-          : updates.driveSource
-            ? "google_drive"
-            : "editor",
-      publishedContent: nextPublishedContent,
-      publicProfileStatusControlled: nextPublicProfileStatusControlled,
       budgetRows: nextBudgetRows,
       imageUrl: nextImageUrl,
       isPublic: nextIsPublic,
@@ -174,9 +140,6 @@ export function updateRoadmapSection(
         : nextContent.trim().length > 0
           ? "in_progress"
           : "not_started"
-    const controlsPublicProfile =
-      (updates.status !== undefined || updates.content !== undefined) &&
-      PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(targetId)
     const nextCtaLabel =
       typeof updates.ctaLabel === "string" ? updates.ctaLabel : undefined
     const nextCtaUrl =
@@ -191,8 +154,6 @@ export function updateRoadmapSection(
           subtitle: nextSubtitle,
           slug: nextSlug,
           content: nextContent,
-          driveSource: updates.driveSource,
-          publicProfileStatusControlled: controlsPublicProfile || undefined,
           budgetRows: nextBudgetRows,
           imageUrl: nextImageUrl,
           isPublic: nextIsPublic,

@@ -1,5 +1,4 @@
 import { expect, test, type Page } from "@playwright/test"
-import { mockPublicResourceDirectory } from "./fixtures/public-resource-directory"
 
 async function stabilizeForScreenshot(page: Page) {
   await page.addStyleTag({
@@ -55,7 +54,7 @@ async function waitForHomeCanvasHydration(page: Page) {
 }
 
 test("map-first public home", async ({ page }) => {
-  await page.goto("/home-canvas")
+  await page.goto("/")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await stabilizeForScreenshot(page)
 
@@ -73,7 +72,7 @@ test("map-first public home", async ({ page }) => {
 })
 
 test("public home keeps the app shell", async ({ page }) => {
-  await page.goto("/home-canvas")
+  await page.goto("/")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await stabilizeForScreenshot(page)
 
@@ -86,7 +85,7 @@ test("public home keeps the app shell", async ({ page }) => {
 })
 
 test("public home canvas product navigator", async ({ page }) => {
-  await page.goto("/home-canvas")
+  await page.goto("/")
   await page.waitForSelector("[data-public-home-product-navigator]", {
     state: "visible",
   })
@@ -110,7 +109,7 @@ test("public home canvas product navigator", async ({ page }) => {
 test("public home mobile hero", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/home-canvas")
+  await page.goto("/")
   await page.waitForSelector("[data-public-home-hero]", { state: "visible" })
   await page.waitForLoadState("networkidle")
   await stabilizeForScreenshot(page)
@@ -137,7 +136,7 @@ test("public home short mobile hero clears the product navigator", async ({
 }) => {
   await page.setViewportSize({ width: 320, height: 568 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/home-canvas")
+  await page.goto("/")
   await stabilizeForScreenshot(page)
 
   const panel = page.locator('[data-home-canvas-panel="hero"]')
@@ -171,7 +170,7 @@ test("public home short mobile hero clears the product navigator", async ({
 test("public home landscape hero remains reachable", async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/home-canvas")
+  await page.goto("/")
 
   const panel = page.locator('[data-home-canvas-panel="hero"]')
   await expect(panel).toBeVisible()
@@ -196,11 +195,10 @@ test("public home landscape hero remains reachable", async ({ page }) => {
 })
 
 test("pricing is embedded in Build", async ({ page }) => {
-  await page.goto("/home-canvas?section=platform")
+  await page.goto("/?section=platform")
   await page.waitForSelector("[data-public-home-build-pricing]", {
     state: "attached",
   })
-  await waitForHomeCanvasHydration(page)
   await stabilizeForScreenshot(page)
 
   const pricing = page.locator("[data-public-home-build-pricing]")
@@ -218,7 +216,7 @@ test("pricing is embedded in Build", async ({ page }) => {
 test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/home-canvas?section=platform")
+  await page.goto("/?section=platform")
   await stabilizeForScreenshot(page)
 
   const preview = page.locator("[data-public-home-workspace-preview]")
@@ -241,9 +239,7 @@ test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
 
 test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
   test.setTimeout(60_000)
-  await page.goto("/home-canvas?section=accelerator", {
-    waitUntil: "domcontentloaded",
-  })
+  await page.goto("/?section=accelerator", { waitUntil: "domcontentloaded" })
   await page.waitForSelector(
     '[data-fiscal-sponsorship-surface="workspace-card"]',
     { state: "visible" }
@@ -265,7 +261,7 @@ test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
 test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 })
   await page.emulateMedia({ reducedMotion: "reduce" })
-  await page.goto("/home-canvas?section=accelerator")
+  await page.goto("/?section=accelerator")
   const fiscalCard = page.locator(
     '[data-fiscal-sponsorship-surface="workspace-card"]'
   )
@@ -291,39 +287,68 @@ test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
   ).toBeVisible()
 })
 
-// Resources replaced the old permanent drawer and Find/Guides/My Map tabs.
-// Keep responsive/search coverage against the shipped map + floating dock flow.
-for (const width of [390, 768, 1024, 1440]) {
-  test(`public Resources keeps its map and search dock reachable at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 844 })
-    await mockPublicResourceDirectory(page)
-    await page.goto("/resources?react-grab=0")
-    const map = page.locator("[data-public-map-card]")
-    const dock = page.getByRole("navigation", { name: "Resource search and collection" })
-    await expect(map).toBeVisible()
-    await expect(dock).toBeVisible()
-    await expect(dock.getByRole("searchbox", { name: "Find organizations and resources" })).toBeVisible()
-    await expect(page.getByRole("heading", { name: "Find Nearby" })).toBeVisible()
-    await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(0)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-    const mapBox = await map.boundingBox()
-    const dockBox = await dock.boundingBox()
-    expect(mapBox!.y).toBeGreaterThanOrEqual(0)
-    expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(845)
-    expect(mapBox!.width).toBeLessThanOrEqual(width)
+test("public Find uses the shared tabs in its permanent drawer", async ({
+  page,
+}) => {
+  test.setTimeout(60_000)
+  await page.goto("/find")
+
+  const drawer = page.getByRole("dialog", { name: "Resource map panel" })
+  await expect(drawer).toBeVisible({ timeout: 45_000 })
+  const tabList = drawer.locator("[data-public-map-tab-list]")
+  await expect(tabList).toBeVisible()
+  await expect(tabList.getByRole("tab")).toHaveCount(3)
+  await expect(tabList.getByRole("tab", { name: "Find" })).toHaveAttribute(
+    "data-state",
+    "active"
+  )
+  await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
+  await expect(tabList.getByRole("tab", { name: "My Map" })).toBeVisible()
+  await expect(
+    drawer.getByRole("searchbox", {
+      name: "Find organizations and resources",
+    })
+  ).toBeVisible()
+  await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
+})
+
+test("public Find keeps its mobile drawer controls visible when collapsed", async ({
+  page,
+}) => {
+  test.setTimeout(60_000)
+  await page.setViewportSize({ width: 320, height: 700 })
+  await page.goto("/find")
+
+  const drawer = page.locator('[data-slot="drawer-content"]')
+  await expect(drawer).toBeVisible({ timeout: 30_000 })
+  const tabList = drawer.locator("[data-public-map-tab-list]")
+  await expect(tabList.getByRole("tab")).toHaveCount(3)
+  await expect(tabList.getByRole("tab", { name: "Find" })).toBeVisible()
+  await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
+  await expect(tabList.getByRole("tab", { name: "My Map" })).toBeVisible()
+  await expect(
+    drawer.getByRole("searchbox", {
+      name: "Find organizations and resources",
+    })
+  ).toBeVisible()
+  await expect(drawer.getByLabel("Filter resources by category")).toBeVisible()
+  await expect(
+    page.locator('header button[aria-label="Open Find, Guides, and Saved"]')
+  ).toHaveCount(0)
+})
+
+for (const width of [768, 1024]) {
+  test(`public Find keeps one directory drawer at ${width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000)
+    await page.setViewportSize({ width, height: 800 })
+    await page.goto("/find")
+
+    await expect(page.locator("[data-public-map-tab-list]")).toBeVisible()
+    await expect(page.locator('[data-slot="drawer-content"]')).toHaveCount(1)
+    await expect(
+      page.locator('[data-public-map-tabbed-rail-placement="home-canvas"]')
+    ).toHaveCount(0)
   })
 }
-
-test("public Resources searches and clears from its floating dock", async ({ page }) => {
-  await mockPublicResourceDirectory(page)
-  await page.goto("/resources?react-grab=0")
-  const search = page.getByRole("searchbox", { name: "Find organizations and resources" })
-  await expect(search).toBeVisible()
-  await search.fill("food")
-  await expect(search).toHaveValue("food")
-  await expect(page.locator("[data-public-map-search-results-status]")).toBeVisible()
-  await search.press("Escape")
-  await expect(search).toHaveValue("")
-  await search.press("Escape")
-  await expect(page.getByRole("heading", { name: "Find Nearby" })).toBeVisible()
-})

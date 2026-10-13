@@ -1,16 +1,16 @@
 "use client"
 
-import { mergeResourceGuideSummaries } from "@/features/find-resource-index"
-import type { FindResourceCatalogResponse } from "@/features/find-resource-index"
-
-import { useCallback, useMemo, type Dispatch, type SetStateAction } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react"
 
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ShareButton } from "@/components/shared/share-button"
-import Image from "next/image"
-import BookmarkIcon from "lucide-react/dist/esm/icons/bookmark"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import {
   buildPublicMapItems,
@@ -18,80 +18,69 @@ import {
   type PublicMapItem,
 } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import {
-  isPublicMapResourceGuideId,
-  type PublicMapResourceGuideId,
-} from "@/lib/public-map/resource-guide-ids"
-import { cn } from "@/lib/utils"
 
+import type { PublicMapGroupFilterKey } from "./category-filter"
 import type { SidebarMode } from "./constants"
 import {
   buildPublicMapResourceGuides,
-  buildPublicMapResourceGuideHref,
-  buildPublicMapSavedResourceGuides,
-  filterPublicMapFeaturedResourceGuides,
   type PublicMapResourceGuide,
 } from "./resource-guide-model"
 
 export {
-  buildPublicMapResourceGuideHref,
   buildPublicMapResourceGuides,
-  buildPublicMapSavedResourceGuides,
-  filterPublicMapFeaturedResourceGuides,
   type PublicMapResourceGuide,
 } from "./resource-guide-model"
 
 export type PublicMapResourceGuideSearchContext = {
   title: string
   description?: string | null
-  guideId: PublicMapResourceGuideId
   items: PublicMapItem[]
   onClear: () => void
 }
 
 export function usePublicMapResourceGuideState({
-  activeGuideId,
+  activeGroup,
+  deferredQuery,
   filteredMapItems,
-  organizations,
+  filteredOrganizations,
   includeSeedResources,
   resourceItems,
-  guideSummaries,
   setSameLocationSelection,
   setSelectedListItemId,
   setSelectedOrgId,
   setSidebarMode,
-  setActiveGuideId,
 }: {
-  activeGuideId: PublicMapResourceGuideId | null
+  activeGroup: PublicMapGroupFilterKey
+  deferredQuery: string
   filteredMapItems: PublicMapItem[]
-  organizations: PublicMapOrganization[]
+  filteredOrganizations: PublicMapOrganization[]
   includeSeedResources: boolean
   resourceItems: ExternalResourceMapItem[]
-  guideSummaries?: FindResourceCatalogResponse["guides"]
   setSameLocationSelection: (
     selection: PublicMapSameLocationSelection | null
   ) => void
   setSelectedListItemId: (itemId: string | null) => void
   setSelectedOrgId: (organizationId: string | null) => void
   setSidebarMode: (mode: SidebarMode) => void
-  setActiveGuideId: (guideId: PublicMapResourceGuideId | null) => void
 }) {
+  const [activeGuideId, setActiveGuideId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setActiveGuideId(null)
+  }, [activeGroup, deferredQuery])
+
   const guideSourceMapItems = useMemo(
     () =>
       buildPublicMapItems({
-        organizations,
+        organizations: filteredOrganizations,
         includeSeedItems: includeSeedResources,
         resourceItems,
       }),
-    [includeSeedResources, organizations, resourceItems]
+    [filteredOrganizations, includeSeedResources, resourceItems]
   )
   const resourceGuides = useMemo(
-    () => mergeResourceGuideSummaries(
-      buildPublicMapResourceGuides(guideSourceMapItems),
-      buildPublicMapResourceGuides(buildPublicMapItems({ organizations })),
-      guideSummaries
-    ),
-    [guideSourceMapItems, organizations, guideSummaries]
+    () => buildPublicMapResourceGuides(guideSourceMapItems),
+    [guideSourceMapItems]
   )
   const activeGuide = useMemo<PublicMapResourceGuide | null>(
     () => resourceGuides.find((guide) => guide.id === activeGuideId) ?? null,
@@ -109,7 +98,6 @@ export function usePublicMapResourceGuideState({
           ? {
               title: activeGuide.title,
               description: `${activeGuide.itemCount.toLocaleString()} places from the current resource map data.`,
-              guideId: activeGuide.id,
               items: activeGuide.items,
               onClear: clearActiveGuide,
             }
@@ -118,12 +106,11 @@ export function usePublicMapResourceGuideState({
     )
   const handleGuideSelect = useCallback(
     (guideId: string) => {
-      const guide = resourceGuides.find((candidate) => candidate.id === guideId)
-      if (!guide) return
+      if (!resourceGuides.some((guide) => guide.id === guideId)) return
       setSameLocationSelection(null)
       setSelectedOrgId(null)
       setSelectedListItemId(null)
-      setActiveGuideId(guide.id)
+      setActiveGuideId(guideId)
       setSidebarMode("search")
     },
     [
@@ -138,7 +125,6 @@ export function usePublicMapResourceGuideState({
 
   return {
     activeGuideSearchContext,
-    activeGuide,
     clearActiveGuide,
     handleGuideSelect,
     resourceGuides,
@@ -146,62 +132,18 @@ export function usePublicMapResourceGuideState({
   }
 }
 
-export function usePublicMapSavedGuideState({
-  resourceGuides,
-  savedGuideIds,
-  setSavedGuideIds,
-}: {
-  resourceGuides: PublicMapResourceGuide[]
-  savedGuideIds: PublicMapResourceGuideId[]
-  setSavedGuideIds: Dispatch<SetStateAction<PublicMapResourceGuideId[]>>
-}) {
-  const featuredGuides = useMemo(
-    () => filterPublicMapFeaturedResourceGuides(resourceGuides),
-    [resourceGuides]
-  )
-  const savedGuides = useMemo(
-    () =>
-      buildPublicMapSavedResourceGuides({
-        guides: resourceGuides,
-        savedGuideIds,
-      }),
-    [resourceGuides, savedGuideIds]
-  )
-  const toggleSavedGuide = useCallback(
-    (guideId: PublicMapResourceGuideId) => {
-      if (!isPublicMapResourceGuideId(guideId)) return
-      setSavedGuideIds((current) =>
-        current.includes(guideId)
-          ? current.filter((id) => id !== guideId)
-          : [...current, guideId].slice(0, 40)
-      )
-    },
-    [setSavedGuideIds]
-  )
-
-  return { featuredGuides, savedGuides, toggleSavedGuide }
-}
-
 const PUBLIC_MAP_RESOURCE_GUIDE_CARD_CLASSNAME =
-  "group relative aspect-[0.82] min-w-0 overflow-hidden rounded-xl border border-input bg-input/55 text-foreground shadow-sm backdrop-blur-md dark:border-input dark:bg-input/55"
+  "group relative aspect-[0.82] h-auto min-w-0 items-stretch justify-start overflow-hidden rounded-xl border border-input bg-input/55 p-0 text-left whitespace-normal text-foreground shadow-sm backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-input hover:bg-input/70 hover:text-foreground hover:shadow-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none dark:border-input dark:bg-input/55 dark:hover:bg-input/70"
 
-function PublicMapResourceGuidesHeader({
-  guideCount,
-  subtitle = "Current resources grouped by place and service",
-  title = "Guides",
-}: {
-  guideCount: number
-  subtitle?: string
-  title?: string
-}) {
+function PublicMapResourceGuidesHeader({ guideCount }: { guideCount: number }) {
   return (
     <div className="flex min-w-0 items-end justify-between gap-3 px-0.5">
       <div className="min-w-0">
-        <h2 className="text-foreground text-base leading-none font-semibold">
-          {title}
-        </h2>
+        <p className="text-foreground text-base leading-none font-semibold">
+          Guides
+        </p>
         <p className="text-muted-foreground mt-1 text-sm text-pretty">
-          {subtitle}
+          Current resources grouped by place and service
         </p>
       </div>
       <p className="text-muted-foreground shrink-0 text-xs tabular-nums">
@@ -211,132 +153,13 @@ function PublicMapResourceGuidesHeader({
   )
 }
 
-export function PublicMapResourceGuideActions({
-  guideId,
-  guideTitle,
-  onToggleSavedGuide,
-  saved,
-}: {
-  guideId: PublicMapResourceGuideId
-  guideTitle: string
-  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
-  saved: boolean
-}) {
-  return (
-    <div className="flex items-center gap-1.5">
-      {onToggleSavedGuide ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="bg-background/90 size-11 touch-manipulation rounded-full backdrop-blur-md sm:size-9"
-          aria-label={
-            saved
-              ? `Remove ${guideTitle} from My Map`
-              : `Save ${guideTitle} to My Map`
-          }
-          aria-pressed={saved}
-          onClick={() => onToggleSavedGuide(guideId)}
-        >
-          <BookmarkIcon
-            className={cn("size-4", saved && "fill-current")}
-            aria-hidden
-          />
-        </Button>
-      ) : null}
-      <ShareButton
-        url={buildPublicMapResourceGuideHref(guideId)}
-        title={guideTitle}
-        label={`Share ${guideTitle}`}
-        iconOnly
-        className="bg-background/90 size-11 touch-manipulation rounded-full backdrop-blur-md sm:size-9"
-      />
-    </div>
-  )
-}
-
-function PublicMapResourceGuideCard({
-  guide,
-  onGuideSelect,
-  onToggleSavedGuide,
-  priority,
-  saved,
-}: {
-  guide: PublicMapResourceGuide
-  onGuideSelect: (guideId: string) => void
-  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
-  priority: boolean
-  saved: boolean
-}) {
-  const available = guide.available !== false
-
-  return (
-    <article
-      className={PUBLIC_MAP_RESOURCE_GUIDE_CARD_CLASSNAME}
-      data-public-map-resource-guide-card={guide.id}
-    >
-      {guide.imageUrl ? (
-        <Image
-          src={guide.imageUrl}
-          alt=""
-          fill
-          priority={priority}
-          sizes="(max-width: 767px) 13rem, 18rem"
-          className="object-cover"
-        />
-      ) : null}
-      <span className="bg-background/60 absolute inset-0" aria-hidden />
-      <Button
-        type="button"
-        variant="ghost"
-        className="text-foreground hover:bg-input/15 hover:text-foreground focus-visible:ring-ring/50 absolute inset-0 z-10 h-full w-full items-stretch justify-start rounded-xl p-0 text-left whitespace-normal focus-visible:ring-[3px] focus-visible:outline-none disabled:pointer-events-none"
-        disabled={!available}
-        aria-label={
-          available ? `Open ${guide.title}` : `${guide.title} unavailable`
-        }
-        onClick={() => onGuideSelect(guide.id)}
-      >
-        <span className="flex h-full min-w-0 flex-col justify-end p-4 pr-14">
-          <span className="min-w-0">
-            <span className="text-muted-foreground block text-xs leading-none font-semibold">
-              {guide.kicker}
-            </span>
-            <span className="text-foreground mt-2 line-clamp-3 block text-xl leading-tight font-bold text-pretty">
-              {guide.title}
-            </span>
-            <span className="text-muted-foreground mt-1.5 block text-sm leading-tight font-medium">
-              {available
-                ? `${guide.itemCount.toLocaleString()} places`
-                : "Unavailable right now"}
-            </span>
-          </span>
-        </span>
-      </Button>
-      <div className="absolute top-3 right-3 z-20">
-        <PublicMapResourceGuideActions
-          guideId={guide.id}
-          guideTitle={guide.title}
-          onToggleSavedGuide={onToggleSavedGuide}
-          saved={saved}
-        />
-      </div>
-    </article>
-  )
-}
-
 export function PublicMapResourceGuides({
   guides,
   onGuideSelect,
-  onToggleSavedGuide,
-  presentation = "grid",
-  savedGuideIds = [],
   showHeader = true,
 }: {
   guides: PublicMapResourceGuide[]
   onGuideSelect: (guideId: string) => void
-  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
-  presentation?: "featured" | "grid"
-  savedGuideIds?: PublicMapResourceGuideId[]
   showHeader?: boolean
 }) {
   if (guides.length === 0) return null
@@ -348,43 +171,51 @@ export function PublicMapResourceGuides({
       aria-label="Resource guides"
     >
       {showHeader ? (
-        <PublicMapResourceGuidesHeader
-          guideCount={guides.length}
-          title={presentation === "featured" ? "Guides We Love" : "Guides"}
-          subtitle={
-            presentation === "featured"
-              ? "Useful collections from current public resources"
-              : undefined
-          }
-        />
+        <PublicMapResourceGuidesHeader guideCount={guides.length} />
       ) : null}
       <div
         data-public-map-resource-guides-grid="true"
-        data-lenis-prevent-horizontal=""
-        data-presentation={presentation}
-        className={cn(
-          "min-w-0 items-stretch gap-3",
-          presentation === "featured"
-            ? "scrollbar-none flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain pb-1"
-            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
-        )}
+        className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-stretch gap-3"
       >
-        {guides.map((guide, index) => (
-          <div
+        {guides.map((guide) => (
+          <Button
             key={guide.id}
-            className={cn(
-              "min-w-0",
-              presentation === "featured" && "w-52 shrink-0 snap-start"
-            )}
+            type="button"
+            variant="ghost"
+            className={PUBLIC_MAP_RESOURCE_GUIDE_CARD_CLASSNAME}
+            onClick={() => onGuideSelect(guide.id)}
           >
-            <PublicMapResourceGuideCard
-              guide={guide}
-              onGuideSelect={onGuideSelect}
-              onToggleSavedGuide={onToggleSavedGuide}
-              priority={presentation === "featured" && index === 0}
-              saved={savedGuideIds.includes(guide.id)}
-            />
-          </div>
+            {guide.imageUrl ? (
+              <>
+                <span
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={
+                    {
+                      backgroundImage: `url(${guide.imageUrl})`,
+                    } satisfies CSSProperties
+                  }
+                  aria-hidden
+                />
+                <span
+                  className="bg-background/60 absolute inset-0"
+                  aria-hidden
+                />
+              </>
+            ) : null}
+            <span className="relative flex h-full min-w-0 flex-col justify-end p-4">
+              <span className="min-w-0">
+                <span className="text-muted-foreground block text-xs leading-none font-semibold tracking-normal">
+                  {guide.kicker}
+                </span>
+                <span className="text-foreground mt-2 line-clamp-3 block text-xl leading-tight font-bold text-pretty">
+                  {guide.title}
+                </span>
+                <span className="text-muted-foreground mt-1.5 block text-sm leading-tight font-medium">
+                  {guide.itemCount.toLocaleString()} places
+                </span>
+              </span>
+            </span>
+          </Button>
         ))}
       </div>
     </section>
@@ -394,18 +225,14 @@ export function PublicMapResourceGuides({
 export function PublicMapGuidesRail({
   guides,
   onGuideSelect,
-  onToggleSavedGuide,
-  savedGuideIds = [],
 }: {
   guides: PublicMapResourceGuide[]
   onGuideSelect: (guideId: string) => void
-  onToggleSavedGuide?: (guideId: PublicMapResourceGuideId) => void
-  savedGuideIds?: PublicMapResourceGuideId[]
 }) {
   return (
     <div
       data-public-map-member-rail-section="guides-panel"
-      className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-3 overflow-hidden px-3"
+      className="flex h-full min-h-0 flex-col gap-3 overflow-hidden px-3"
     >
       <div
         data-public-map-member-rail-section="guides-header"
@@ -423,8 +250,6 @@ export function PublicMapGuidesRail({
           <PublicMapResourceGuides
             guides={guides}
             onGuideSelect={onGuideSelect}
-            onToggleSavedGuide={onToggleSavedGuide}
-            savedGuideIds={savedGuideIds}
             showHeader={false}
           />
         ) : (

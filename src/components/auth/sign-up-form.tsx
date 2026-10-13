@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,19 +25,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { FIND_PATH } from "@/lib/find/routes"
 import {
   createSignupLegalConsent,
-  LegalConsentNotice,
+  LegalConsentField,
 } from "@/features/legal-consent"
 
-const GoogleAuthPanel = dynamic(
-  () =>
-    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
-  { ssr: false }
-)
-
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
-const DEFAULT_MEMBER_REDIRECT = "/onboarding?source=signup"
+const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
 const authInlineLinkClassName =
   "rounded-sm underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 
@@ -49,8 +43,6 @@ type SignUpFormProps = {
   loginHref?: string
   signUpMetadata?: Record<string, unknown>
   defaultIntentFocus?: IntentFocus
-  onAuthenticated?: () => void
-  onSignIn?: () => void
   lockedIntentFocus?: IntentFocus | null
 }
 
@@ -122,8 +114,6 @@ export function SignUpForm({
   signUpMetadata,
   defaultIntentFocus = "build",
   lockedIntentFocus = null,
-  onAuthenticated,
-  onSignIn,
 }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
@@ -156,11 +146,12 @@ export function SignUpForm({
       email: "",
       password: "",
       confirmPassword: "",
+      acceptedLegal: false,
     },
   })
 
   useEffect(() => {
-    if (status !== "success" || onAuthenticated) return
+    if (status !== "success") return
 
     setCountdown(20)
     const intervalId = window.setInterval(() => {
@@ -175,7 +166,7 @@ export function SignUpForm({
       window.clearInterval(intervalId)
       window.clearTimeout(timeoutId)
     }
-  }, [resolvedLoginHref, router, status, onAuthenticated])
+  }, [resolvedLoginHref, router, status])
 
   async function onSubmit(values: SignUpValues) {
     setStatus("idle")
@@ -183,57 +174,44 @@ export function SignUpForm({
     setCountdown(20)
 
     startTransition(async () => {
-      try {
-        const legalConsent = createSignupLegalConsent()
-        const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
+      const legalConsent = createSignupLegalConsent()
+      const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
 
-        const { data, error } = await supabase.auth.signUp({
-          email: values.email,
-          password: values.password,
-          options: {
-            emailRedirectTo,
-            data: {
-              ...(signUpMetadata ?? {}),
-              account_intent: resolveLegacyAccountIntent(activeIntentFocus),
-              onboarding_intent_focus: activeIntentFocus,
-              legal_consent: legalConsent,
-            },
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          emailRedirectTo,
+          data: {
+            ...(signUpMetadata ?? {}),
+            account_intent: resolveLegacyAccountIntent(activeIntentFocus),
+            onboarding_intent_focus: activeIntentFocus,
+            legal_consent: legalConsent,
           },
-        })
+        },
+      })
 
-        if (error) {
-          setStatus("error")
-          setMessage(resolveSignUpErrorMessage(error.message))
-          return
-        }
-
-        if (isExistingAccountResponse(data.user)) {
-          setStatus("error")
-          setMessage(
-            "An account with this email already exists. Sign in instead."
-          )
-          return
-        }
-
-        if (data.session && onAuthenticated) { onAuthenticated(); return }
-        clearOnboardingDraft()
-        setStatus("success")
-        setMessage(
-          "Check your inbox for your verification link from Coach House."
-        )
-        form.reset()
-      } catch {
+      if (error) {
         setStatus("error")
-        setMessage("Unable to create an account. Please try again.")
+        setMessage(resolveSignUpErrorMessage(error.message))
+        return
       }
-    })
-  }
 
-  if (status === "success" && onAuthenticated) {
-    return <div className="space-y-4">
-      <p role="status" className="text-sm leading-relaxed">Check your inbox to confirm your email. We’ll keep this resource ready to collect when you return.</p>
-      {onSignIn ? <Button type="button" variant="outline" className="min-h-11 w-full" onClick={onSignIn}>Already confirmed? Sign in</Button> : null}
-    </div>
+      if (isExistingAccountResponse(data.user)) {
+        setStatus("error")
+        setMessage(
+          "An account with this email already exists. Sign in instead."
+        )
+        return
+      }
+
+      clearOnboardingDraft()
+      setStatus("success")
+      setMessage(
+        "Check your inbox for your verification link from Coach House."
+      )
+      form.reset()
+    })
   }
 
   return (
@@ -284,15 +262,25 @@ export function SignUpForm({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="acceptedLegal"
+            render={({ field, fieldState }) => (
+              <LegalConsentField
+                checked={field.value}
+                disabled={isPending}
+                onCheckedChange={field.onChange}
+                error={fieldState.error?.message}
+              />
+            )}
+          />
           {status !== "idle" ? (
             <p
               className={`text-sm ${status === "success" ? "text-emerald-600" : "text-destructive"}`}
               role={status === "error" ? "alert" : "status"}
             >
               {message}
-              {onSignIn ? (
-                <Button type="button" variant="link" className="h-auto px-1 py-0" onClick={onSignIn}>Sign in</Button>
-              ) : status === "success" ? (
+              {status === "success" ? (
                 <>
                   {" "}
                   Redirecting to sign in in {countdown}s.{" "}
@@ -326,22 +314,11 @@ export function SignUpForm({
           </Button>
         </form>
       </Form>
-      <GoogleAuthPanel
-        mode="signup"
-        onSuccess={onAuthenticated}
-        redirectOnSuccess={!onAuthenticated}
-        redirectTo={resolvedRedirectTo}
-        disabled={isPending}
-        accountIntent={resolveLegacyAccountIntent(activeIntentFocus)}
-        intentFocus={activeIntentFocus}
-        signUpMetadata={signUpMetadata}
-      />
-      <LegalConsentNotice />
       <div className="text-muted-foreground text-center text-sm">
         Already have an account?{" "}
-        {onSignIn ? <Button type="button" variant="link" className="h-auto p-0" onClick={onSignIn}>Sign in</Button> : <Link href={resolvedLoginHref} className={authInlineLinkClassName}>
+        <Link href={resolvedLoginHref} className={authInlineLinkClassName}>
           Sign in
-        </Link>}
+        </Link>
       </div>
     </div>
   )

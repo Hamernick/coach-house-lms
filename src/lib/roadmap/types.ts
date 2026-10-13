@@ -25,19 +25,8 @@ export type RoadmapHomeworkLink = {
   moduleIdx: number
 }
 
-export type CoreDocumentDriveSource = {
-  provider: "google_drive"
-  fileId: string
-  name: string
-  webViewLink: string
-}
-
 export type RoadmapSection = RoadmapSectionDefinition & {
   content: string
-  driveSource?: CoreDocumentDriveSource | null
-  documentSource?: "editor" | "google_drive"
-  publishedContent?: string
-  publicProfileStatusControlled?: boolean
   budgetRows?: BudgetTableRow[]
   storageExtras?: Record<string, unknown>
   imageUrl?: string
@@ -60,8 +49,6 @@ export type StoredSection = {
   subtitle?: unknown
   slug?: unknown
   content?: unknown
-  publishedContent?: unknown
-  publicProfileStatusControlled?: unknown
   budgetRows?: unknown
   imageUrl?: unknown
   lastUpdated?: unknown

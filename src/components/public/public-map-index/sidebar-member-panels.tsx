@@ -11,14 +11,11 @@ import type { PublicMapSidebarProps } from "./sidebar-contract"
 import { PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME } from "./sidebar-theme"
 
 export function PublicMapRailPanel({
-  collectedCount,
   directoryHeaderEnd,
   directoryHeaderStart,
   directoryRail,
   directoryMode,
   guides,
-  savedGuideIds,
-  savedGuides,
   savedOrganizations,
   savedResources,
   unresolvedCollectedResourceCount,
@@ -26,20 +23,16 @@ export function PublicMapRailPanel({
   resourceItemsLoadError,
   onRetryResourceItems,
   onGuideSelect,
-  onToggleSavedGuide,
   onSelectOrganization,
   onSelectResource,
   onToggleFavorite,
   onToggleCollectedResource,
 }: {
-  collectedCount: number
   directoryHeaderEnd?: ReactNode
   directoryHeaderStart?: ReactNode
   directoryRail: ReactNode
   directoryMode: "search" | "details"
   guides: NonNullable<PublicMapSidebarProps["guides"]>
-  savedGuideIds: NonNullable<PublicMapSidebarProps["savedGuideIds"]>
-  savedGuides: NonNullable<PublicMapSidebarProps["savedGuides"]>
   savedOrganizations: NonNullable<PublicMapSidebarProps["savedOrganizations"]>
   savedResources: NonNullable<PublicMapSidebarProps["savedResources"]>
   unresolvedCollectedResourceCount: number
@@ -49,7 +42,6 @@ export function PublicMapRailPanel({
   resourceItemsLoadError: string | null
   onRetryResourceItems: NonNullable<PublicMapSidebarProps["retryResourceItems"]>
   onGuideSelect: PublicMapSidebarProps["onGuideSelect"]
-  onToggleSavedGuide: PublicMapSidebarProps["onToggleSavedGuide"]
   onSelectOrganization: PublicMapSidebarProps["onSelectOrganization"]
   onSelectResource: PublicMapSidebarProps["onSelectItem"]
   onToggleFavorite: PublicMapSidebarProps["toggleFavorite"]
@@ -76,14 +68,11 @@ export function PublicMapRailPanel({
           className="text-sidebar-foreground h-full w-full overflow-hidden bg-transparent"
         >
           <PublicMapMemberRail
-            collectedCount={collectedCount}
             directoryHeaderEnd={directoryHeaderEnd}
             directoryHeaderStart={directoryHeaderStart}
             directoryRail={directoryRail}
             directoryMode={directoryMode}
             guides={guides}
-            savedGuideIds={savedGuideIds}
-            savedGuides={savedGuides}
             savedOrganizations={savedOrganizations}
             savedResources={savedResources}
             unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
@@ -91,7 +80,6 @@ export function PublicMapRailPanel({
             resourceItemsLoadError={resourceItemsLoadError}
             onRetryResourceItems={onRetryResourceItems}
             onGuideSelect={onGuideSelect}
-            onToggleSavedGuide={onToggleSavedGuide}
             onSelectOrganization={onSelectOrganization}
             onSelectResource={onSelectResource}
             onToggleFavorite={onToggleFavorite}

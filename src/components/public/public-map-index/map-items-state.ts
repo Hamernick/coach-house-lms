@@ -14,11 +14,13 @@ import {
   type ExternalResourceMapItem,
   type PublicMapItem,
 } from "@/lib/public-map/resource-map-items"
-import type { PublicMapResourceCategoryKey } from "@/lib/public-map/resource-categories"
-import { rankPublicMapListItems } from "./resource-search"
-export { rankPublicMapListItems, publicMapListItemMatchesQuery, warmPublicMapListItemSearchCache } from "./resource-search"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
+  type PublicMapResourceCategoryKey,
+  type PublicMapResourceTopLevelCategoryKey,
+} from "@/lib/public-map/resource-categories"
 
-type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
+type PublicMapGroupFilterKey = PublicMapResourceTopLevelCategoryKey | "all"
 
 export type PublicMapListItem = PublicMapItem
 
@@ -28,10 +30,82 @@ export function buildPublicMapSelectableItemMap(items: PublicMapItem[]) {
   )
 }
 
-export function usePublicMapSelectableItemMap(items: PublicMapItem[], additionalItems?: PublicMapItem[]) {
-  return useMemo(() => buildPublicMapSelectableItemMap(additionalItems ? [...items, ...additionalItems] : items), [items, additionalItems])
+export function usePublicMapSelectableItemMap(items: PublicMapItem[]) {
+  return useMemo(() => buildPublicMapSelectableItemMap(items), [items])
 }
 
+function normalizePublicMapListSearchText(value: string | null | undefined) {
+  return typeof value === "string" ? value.trim().toLowerCase() : ""
+}
+
+function buildPublicMapResourceCategorySearchText(
+  categories: PublicMapResourceCategoryKey[] | null | undefined
+) {
+  return (categories ?? [])
+    .map((category) => PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category])
+    .join(" ")
+}
+
+function normalizePublicMapListEnumSearchText(
+  value: string | null | undefined
+) {
+  return normalizePublicMapListSearchText(value?.replaceAll("_", " "))
+}
+
+const publicMapListItemSearchTextCache = new WeakMap<
+  ExternalResourceMapItem,
+  string
+>()
+
+function buildPublicMapExternalResourceSearchText(
+  item: ExternalResourceMapItem
+) {
+  const cached = publicMapListItemSearchTextCache.get(item)
+  if (cached !== undefined) return cached
+
+  const searchText = [
+    item.title,
+    item.subtitle,
+    item.description,
+    item.address,
+    item.city,
+    item.state,
+    item.country,
+    item.sourceLabel,
+    normalizePublicMapListEnumSearchText(item.verificationStatus),
+    normalizePublicMapListEnumSearchText(item.visibility),
+    buildPublicMapResourceCategorySearchText(item.resourceCategories),
+  ]
+    .map(normalizePublicMapListSearchText)
+    .join("\n")
+
+  publicMapListItemSearchTextCache.set(item, searchText)
+  return searchText
+}
+
+export function warmPublicMapListItemSearchCache(
+  items: ExternalResourceMapItem[]
+) {
+  for (const item of items) {
+    buildPublicMapExternalResourceSearchText(item)
+  }
+}
+
+export function publicMapListItemMatchesQuery({
+  item,
+  query,
+}: {
+  item: PublicMapListItem
+  query: string
+}) {
+  const normalizedQuery = normalizePublicMapListSearchText(query)
+  if (!normalizedQuery) return true
+  if (item.itemType === "platform_organization") return true
+
+  return buildPublicMapExternalResourceSearchText(item).includes(
+    normalizedQuery
+  )
+}
 
 export function buildPublicMapListItems({
   items,
@@ -40,7 +114,7 @@ export function buildPublicMapListItems({
   items: PublicMapItem[]
   query: string
 }): PublicMapListItem[] {
-  return rankPublicMapListItems({ items, query })
+  return items.filter((item) => publicMapListItemMatchesQuery({ item, query }))
 }
 
 export function usePublicMapListItems({

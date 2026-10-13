@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react"
 
-import { hydrateFindResourceIndexItem } from "@/features/find-resource-index"
-
 import type { FindResourceIndexItem } from "@/features/find-resource-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import { warmPublicMapListItemSearchCache } from "./map-items-state"
@@ -17,26 +15,16 @@ export const PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR =
 export type PublicMapResourceItemsLoadStatus = "loading" | "ready" | "error"
 
 type ResourceItemsLoad = {
-  listeners: Set<
-    (items: ExternalResourceMapItem[], totalCount: number | null) => void
-  >
+  listeners: Set<(items: ExternalResourceMapItem[]) => void>
   promise: Promise<ExternalResourceMapItem[]>
 }
 
 const resourceItemsLoadByEndpoint = new Map<string, ResourceItemsLoad>()
 const RESOURCE_ITEMS_PROGRESS_BATCH_SIZE = 1_000
-const RESOURCE_ITEMS_MAX_PAGE_COUNT = 200
 
 type FindResourceIndexPage = {
   hasMore?: unknown
   nextCursor?: unknown
-  totalCount?: unknown
-}
-
-function resolveFindResourceIndexTotalCount(value: unknown) {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0
-    ? value
-    : null
 }
 
 function isFindResourceIndexItem(
@@ -51,6 +39,37 @@ function isFindResourceIndexItem(
   )
 }
 
+function hydrateFindResourceIndexItem(
+  item: FindResourceIndexItem
+): ExternalResourceMapItem {
+  const address = [item.city, item.state, item.country]
+    .filter(Boolean)
+    .join(", ")
+
+  return {
+    ...item,
+    description: null,
+    address: address || null,
+    addressStreet: null,
+    orgCategory: null,
+    sourceLabel: null,
+    sourceUrl: null,
+    lastVerifiedAt: null,
+    availability: item.availability
+      ? {
+          ...item.availability,
+          nextOpenAt: null,
+          nextCloseAt: null,
+          timezone: null,
+          label: null,
+          notes: null,
+          appointmentRequired: false,
+          sourceStatus: null,
+          temporaryClosedUntil: null,
+        }
+      : undefined,
+  }
+}
 
 function normalizeLoadedResourceItem(value: unknown) {
   return isFindResourceIndexItem(value)
@@ -87,10 +106,7 @@ export function clearPublicMapResourceItemsCache(endpoint?: string) {
 
 export function loadPublicMapResourceItems(
   endpoint: string,
-  onProgress?: (
-    items: ExternalResourceMapItem[],
-    totalCount: number | null
-  ) => void
+  onProgress?: (items: ExternalResourceMapItem[]) => void
 ) {
   const cached = resourceItemsLoadByEndpoint.get(endpoint)
   if (cached) {
@@ -98,24 +114,15 @@ export function loadPublicMapResourceItems(
     return cached.promise
   }
 
-  const listeners = new Set<
-    (items: ExternalResourceMapItem[], totalCount: number | null) => void
-  >()
+  const listeners = new Set<(items: ExternalResourceMapItem[]) => void>()
   if (onProgress) listeners.add(onProgress)
 
   const promise = (async () => {
     const resourceItems: ExternalResourceMapItem[] = []
     let pageEndpoint: string | null = endpoint
     let pageCount = 0
-    let totalCount: number | null = null
-    const requestedPageEndpoints = new Set<string>()
 
     while (pageEndpoint) {
-      if (requestedPageEndpoints.has(pageEndpoint)) {
-        throw new Error("Resource map items repeated a page cursor")
-      }
-      requestedPageEndpoints.add(pageEndpoint)
-
       const response = await fetch(pageEndpoint, {
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -133,9 +140,6 @@ export function loadPublicMapResourceItems(
           ...payload.resourceItems.map(normalizeLoadedResourceItem)
         )
       }
-      totalCount ??= resolveFindResourceIndexTotalCount(
-        payload.page?.totalCount
-      )
 
       const nextCursor = payload.page?.nextCursor
       pageEndpoint =
@@ -143,7 +147,7 @@ export function loadPublicMapResourceItems(
           ? appendResourceCursor(endpoint, nextCursor)
           : null
       pageCount += 1
-      if (pageEndpoint && pageCount >= RESOURCE_ITEMS_MAX_PAGE_COUNT) {
+      if (pageCount > 100) {
         throw new Error("Resource map items exceeded the page limit")
       }
 
@@ -152,9 +156,7 @@ export function loadPublicMapResourceItems(
         pageEndpoint === null ||
         resourceItems.length % RESOURCE_ITEMS_PROGRESS_BATCH_SIZE === 0
       if (shouldPublishProgress) {
-        for (const listener of listeners) {
-          listener([...resourceItems], totalCount)
-        }
+        for (const listener of listeners) listener([...resourceItems])
       }
     }
 
@@ -181,9 +183,6 @@ export function usePublicMapResourceItems({
   resourceItemsEndpoint?: string
 }) {
   const [resourceItems, setResourceItems] = useState(initialResourceItems)
-  const [totalResourceCount, setTotalResourceCount] = useState<number | null>(
-    resourceItemsEndpoint ? null : initialResourceItems.length
-  )
   const [status, setStatus] = useState<PublicMapResourceItemsLoadStatus>(
     resourceItemsEndpoint ? "loading" : "ready"
   )
@@ -193,7 +192,6 @@ export function usePublicMapResourceItems({
   useEffect(() => {
     if (resourceItemsEndpoint) return
     setResourceItems(initialResourceItems)
-    setTotalResourceCount(initialResourceItems.length)
     setStatus("ready")
     setError(null)
   }, [initialResourceItems, resourceItemsEndpoint])
@@ -203,29 +201,18 @@ export function usePublicMapResourceItems({
 
     const endpoint = resourceItemsEndpoint
     let cancelled = false
-    let requestPending = false
 
-    async function loadResourceItems(background = false) {
-      if (requestPending) return
-      requestPending = true
-      let loadedTotalCount: number | null = null
-      if (!background) {
-        setStatus("loading")
-        setError(null)
-      }
+    async function loadResourceItems() {
+      setStatus("loading")
+      setError(null)
       try {
-        const payload = await loadPublicMapResourceItems(
-          endpoint,
-          (items, totalCount) => {
-            loadedTotalCount = totalCount ?? items.length
-            if (!cancelled && !background) {
-              setResourceItems((currentItems) =>
-                mergeProgressiveResourceItems(currentItems, items)
-              )
-              setTotalResourceCount(totalCount ?? items.length)
-            }
+        const payload = await loadPublicMapResourceItems(endpoint, (items) => {
+          if (!cancelled) {
+            setResourceItems((currentItems) =>
+              mergeProgressiveResourceItems(currentItems, items)
+            )
           }
-        )
+        })
         if (cancelled) return
         setResourceItems((currentItems) => {
           const alreadyPublished =
@@ -233,24 +220,18 @@ export function usePublicMapResourceItems({
             currentItems.every((item, index) => item === payload[index])
           return alreadyPublished ? currentItems : payload
         })
-        setTotalResourceCount(loadedTotalCount ?? payload.length)
         setStatus("ready")
-        setError(null)
       } catch (error) {
         if (cancelled) return
-        if (!background) {
-          setStatus("error")
-          setError(
-            navigator.onLine === false
-              ? PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
-              : PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR
-          )
-        }
+        setStatus("error")
+        setError(
+          navigator.onLine === false
+            ? PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
+            : PUBLIC_MAP_RESOURCE_ITEMS_UNAVAILABLE_ERROR
+        )
         console.warn("[public-map] resource items unavailable", {
           message: error instanceof Error ? error.message : String(error),
         })
-      } finally {
-        requestPending = false
       }
     }
 
@@ -262,7 +243,7 @@ export function usePublicMapResourceItems({
         setError(PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR)
         return
       }
-      void loadResourceItems(true)
+      void loadResourceItems()
     }
     const markResourceItemsOffline = () => {
       setStatus("error")
@@ -276,14 +257,21 @@ export function usePublicMapResourceItems({
       refreshVisibleResourceItems,
       PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS
     )
+    window.addEventListener("focus", refreshVisibleResourceItems)
     window.addEventListener("offline", markResourceItemsOffline)
     window.addEventListener("online", refreshResourceItemsOnline)
+    document.addEventListener("visibilitychange", refreshVisibleResourceItems)
 
     return () => {
       cancelled = true
       window.clearInterval(refreshInterval)
+      window.removeEventListener("focus", refreshVisibleResourceItems)
       window.removeEventListener("offline", markResourceItemsOffline)
       window.removeEventListener("online", refreshResourceItemsOnline)
+      document.removeEventListener(
+        "visibilitychange",
+        refreshVisibleResourceItems
+      )
     }
   }, [loadRequestId, resourceItemsEndpoint])
 
@@ -293,5 +281,5 @@ export function usePublicMapResourceItems({
     setLoadRequestId((current) => current + 1)
   }, [resourceItemsEndpoint])
 
-  return { error, resourceItems, retry, status, totalResourceCount }
+  return { error, resourceItems, retry, status }
 }

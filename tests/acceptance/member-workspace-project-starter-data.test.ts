@@ -34,9 +34,6 @@ describe("member workspace project starter data", () => {
     const mapped = mapOrganizationProjectToViewModel({
       id: "project-1",
       org_id: "org-1",
-      canonical_org_id: null,
-      project_kind: "standard",
-      description: null,
       name: "Project",
       status: "active",
       priority: "high",
@@ -70,8 +67,8 @@ describe("member workspace project starter data", () => {
       members: ["Joel"],
       taskCount: 6,
     })
-    expect(mapped.startDate?.toISOString()).toBe("2024-01-10T00:00:00.000Z")
-    expect(mapped.endDate?.toISOString()).toBe("2024-01-20T00:00:00.000Z")
+    expect(mapped.startDate.toISOString()).toBe("2024-01-10T00:00:00.000Z")
+    expect(mapped.endDate.toISOString()).toBe("2024-01-20T00:00:00.000Z")
   })
 
   it("summarizes starter/custom storage mode", () => {

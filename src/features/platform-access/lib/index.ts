@@ -14,7 +14,7 @@ const CAPABILITIES_BY_LEVEL: Record<
     "platform-lab",
     "prototypes",
   ]),
-  coach: new Set(["workspace", "find", "organizations", "tasks"]),
+  coach: new Set(["workspace", "find", "organizations"]),
 }
 
 const COACH_RESTRICTED_ROUTE_PREFIXES = [
@@ -38,9 +38,6 @@ const COACH_RESTRICTED_ROUTE_PREFIXES = [
 ] as const
 
 const COACH_ALLOWED_ROUTE_PREFIXES = [
-  "/admin/dashboard",
-  "/projects",
-  "/tasks",
   "/find",
   "/my-organization",
   "/organizations",

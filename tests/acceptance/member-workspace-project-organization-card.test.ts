@@ -41,7 +41,7 @@ describe("member workspace organization card", () => {
   it("falls back to the public Find profile when no external site is configured", () => {
     expect(
       resolveMemberWorkspaceOrganizationHref(buildOrganizationSummary())
-    ).toBe("/community-builders")
+    ).toBe("/find/community-builders")
   })
 
   it("normalizes bare external website domains before opening them", () => {

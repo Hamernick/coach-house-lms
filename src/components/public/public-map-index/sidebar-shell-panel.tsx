@@ -17,10 +17,8 @@ import type { PublicMapOrganizationCurationAction } from "./organization-detail-
 import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import {
   PublicMapRailDetailPanel,
-  PublicMapResourceRailDetailPanel,
-} from "./sidebar-detail-panels"
-import {
   PublicMapRailSearchPanel,
+  PublicMapResourceRailDetailPanel,
   type PublicMapSidebarSearchContext,
 } from "./sidebar-panels"
 import { PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME } from "./sidebar-theme"

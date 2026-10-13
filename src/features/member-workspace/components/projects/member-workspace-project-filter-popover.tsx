@@ -13,8 +13,6 @@ import {
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { OrganizationCoachOption } from "@/features/organization-coach-assignments"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import {
   Popover,
@@ -27,8 +25,6 @@ import type { MemberWorkspaceProjectFilterChip as FilterChip } from "./member-wo
 import {
   MEMBER_WORKSPACE_FISCAL_SPONSORSHIP_STATUS_OPTIONS,
   MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS,
-  MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS,
-  normalizeProjectStatusFilter,
   normalizeMemberWorkspaceOrganizationStatusFilterValue,
 } from "./member-workspace-project-status"
 
@@ -41,37 +37,11 @@ type FilterTemp = {
 }
 
 type MemberWorkspaceProjectFilterPopoverProps = {
-  directory?: "organizations" | "projects"
-  coachOptions?: OrganizationCoachOption[]
-  coachFilter?: string
-  onCoachFilterChange?: (value: string) => void
   projects: PlatformAdminDashboardLabProject[]
   initialChips?: FilterChip[]
   onApply: (chips: FilterChip[]) => void
   onClear: () => void
   counts?: FilterCounts
-}
-
-function CoachFilter({ coachOptions = [], coachFilter = "all", onCoachFilterChange }: Pick<MemberWorkspaceProjectFilterPopoverProps, "coachOptions" | "coachFilter" | "onCoachFilterChange">) {
-  return (
-    <>
-        {onCoachFilterChange && coachOptions.length ? (
-          <div className="border-border/40 flex items-center gap-3 border-b px-4 py-3">
-            <span className="text-muted-foreground text-sm">Coach</span>
-            <Select value={coachFilter} onValueChange={onCoachFilterChange}>
-              <SelectTrigger className="h-11 w-full min-w-0 sm:h-8 sm:w-56" aria-label="Filter organizations by coach">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All organizations</SelectItem>
-                <SelectItem value="unassigned">Unassigned organizations</SelectItem>
-                {coachOptions.map((coach) => <SelectItem key={coach.id} value={coach.id}>{coach.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
-    </>
-  )
 }
 
 const FILTER_CATEGORIES = [
@@ -101,17 +71,12 @@ function capitalize(value: string) {
 }
 
 export function MemberWorkspaceProjectFilterPopover({
-  directory = "organizations",
   projects,
-  coachOptions = [],
-  coachFilter = "all",
-  onCoachFilterChange,
   initialChips,
   onApply,
   onClear,
   counts,
 }: MemberWorkspaceProjectFilterPopoverProps) {
-  const statusOptions = directory === "projects" ? MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS : MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [tagSearch, setTagSearch] = useState("")
@@ -167,7 +132,9 @@ export function MemberWorkspaceProjectFilterPopover({
     for (const chip of initialChips ?? []) {
       const key = chip.key.toLowerCase()
       if (key === "status") {
-        const status = (directory === "projects" ? normalizeProjectStatusFilter : normalizeMemberWorkspaceOrganizationStatusFilterValue)(chip.value)
+        const status = normalizeMemberWorkspaceOrganizationStatusFilterValue(
+          chip.value
+        )
         if (status) next.status.add(status)
       }
       if (key === "fiscal sponsorship") {
@@ -183,20 +150,18 @@ export function MemberWorkspaceProjectFilterPopover({
     }
 
     setTemp(next)
-  }, [directory, initialChips, open])
+  }, [initialChips, open])
 
   const filteredCategories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
-    return FILTER_CATEGORIES
-      .filter(category => directory !== "projects" || category.id !== "fiscalSponsorship")
-      .map(category => category.id === "status" && directory === "projects" ? { ...category, label: "Project status" } : category)
-      .filter(category => category.label.toLowerCase().includes(normalizedQuery))
-  }, [directory, query])
+    if (!normalizedQuery) return FILTER_CATEGORIES
+    return FILTER_CATEGORIES.filter((category) =>
+      category.label.toLowerCase().includes(normalizedQuery)
+    )
+  }, [query])
 
   const handleApply = () => {
-    const chips: FilterChip[] = (initialChips ?? []).filter(
-      (chip) => chip.key.toLowerCase() === "search"
-    )
+    const chips: FilterChip[] = []
     temp.status.forEach((value) =>
       chips.push({ key: "Status", value: capitalize(value) })
     )
@@ -232,7 +197,7 @@ export function MemberWorkspaceProjectFilterPopover({
         <Button
           variant="outline"
           size="sm"
-          className="border-border/60 h-11 gap-2 sm:h-8 rounded-lg bg-transparent px-3"
+          className="border-border/60 h-8 gap-2 rounded-lg bg-transparent px-3"
         >
           <Funnel className="h-4 w-4" />
           Filter
@@ -242,13 +207,11 @@ export function MemberWorkspaceProjectFilterPopover({
         align="start"
         className="w-[calc(100vw-2rem)] max-w-[720px] rounded-xl p-0"
       >
-        {directory === "organizations" ? <CoachFilter coachOptions={coachOptions} coachFilter={coachFilter} onCoachFilterChange={onCoachFilterChange} /> : null}
         <div className="grid grid-cols-1 sm:grid-cols-[260px_minmax(0,1fr)]">
           <div className="border-border/40 border-r p-3">
             <div className="px-1 pb-2">
               <Input
-                aria-label="Search filter categories"
-                placeholder="Search filters…"
+                placeholder="Search…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className="h-8"
@@ -313,7 +276,7 @@ export function MemberWorkspaceProjectFilterPopover({
 
             {active === "status" ? (
               <div className="grid grid-cols-2 gap-2">
-                {statusOptions.map((option) => (
+                {MEMBER_WORKSPACE_ORGANIZATION_STATUS_OPTIONS.map((option) => (
                   <label
                     key={option.value}
                     className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border p-2"

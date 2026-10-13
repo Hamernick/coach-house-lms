@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import {
   MAP_STYLE,
@@ -13,41 +13,12 @@ import {
 } from "@/components/public/public-map-index/constants"
 
 const ROOT = process.cwd()
-const PUBLIC_FIND_ROUTE =
-  "src/features/find-map/components/public-find-route.tsx"
 
 function readRoute(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
 describe("public find routes", () => {
-  it("owns discovery at /resources and keeps the marketing home separate with legacy redirects", () => {
-    const rootRoute = readRoute("src/app/(public)/page.tsx")
-    const resourcesRoute = readRoute("src/app/(public)/resources/page.tsx")
-    const mapRoute = readRoute("src/app/(public)/map/page.tsx")
-    const landing = readRoute("src/features/build-collect-navigation/components/public-home-landing.tsx")
-    const nextConfig = readRoute("next.config.ts")
-
-    expect(rootRoute).toContain("<PublicHomeLanding")
-    expect(rootRoute).not.toContain("PublicHomeResourceExplorer")
-    expect(rootRoute).toContain("resolvePublicAuthCallbackHref")
-    expect(landing).toContain("<PublicHomeLandingHeader")
-    expect(readRoute("src/features/build-collect-navigation/components/public-home-landing-header.tsx")).toContain("<BuildCollectPublicHeader")
-    expect(landing).toContain('<main aria-label="Home"')
-    expect(landing).toContain("<PublicMapFooter showClaim={false}")
-    expect(landing).not.toContain("PublicFindRoute")
-    expect(resourcesRoute).toContain("<PublicHomeResourceExplorer")
-    expect(resourcesRoute).toContain('canonical: "/resources"')
-    expect(mapRoute).toContain("permanentRedirect(buildFindHref(params))")
-    expect(nextConfig).toContain('source: "/map"')
-    expect(nextConfig).toContain('source: "/find"')
-    expect(nextConfig).toContain('destination: "/resources"')
-    expect(nextConfig).toContain('destination: "/resources?organization=:slug"')
-    expect(nextConfig.match(/permanent: true/g)).toHaveLength(3)
-    expect(readRoute("src/app/sitemap.ts")).toContain("${origin}/resources")
-    expect(readRoute("src/lib/organization/reserved-public-slugs.ts")).toContain('"resources"')
-  })
-
   it("uses the Mapbox Standard day and night basemap with streets", () => {
     expect(PUBLIC_MAP_STANDARD_STYLE).toBe("mapbox://styles/mapbox/standard")
     expect(MAP_STYLE).toBe(PUBLIC_MAP_STANDARD_STYLE)
@@ -94,13 +65,7 @@ describe("public find routes", () => {
     expect(runtimeSource).toContain("applyPublicMapSpaceFog(map)")
     expect(runtimeSource).toContain("applyPublicMapGlobePresentation(map)")
     expect(runtimeSource).not.toContain("setStyle(")
-    expect(runtimeSource).toContain("publicMapViewOptions(themeRef.current)")
-    const optionsSource = readRoute("src/components/public/public-map-index/map-view-options.ts")
-    const previewSource = readRoute("src/components/public/public-map-index/public-map-preview.tsx")
-    expect(optionsSource).toContain("resolvePublicMapBasemapConfig(theme)")
-    expect(optionsSource).toContain('projection: "globe"')
-    expect(previewSource).toContain("publicMapViewOptions(theme)")
-    expect(previewSource).not.toContain("openfreemap")
+    expect(runtimeSource).toContain("resolvePublicMapBasemapConfig")
     expect(runtimeSource).toContain("themeRef.current = theme")
     expect(runtimeSource).toContain(
       "applyPublicMapBasemapConfig(map, themeRef.current)"
@@ -108,7 +73,10 @@ describe("public find routes", () => {
   })
 
   it("does not render the workspace onboarding card on the map", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
 
     for (const routeFile of routeFiles) {
       const source = readRoute(routeFile)
@@ -117,30 +85,127 @@ describe("public find routes", () => {
     }
   })
 
-  it("starts resource discovery with the measured 200-item page size", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
+  it("wires onboarding-locked free/member users into the map-native intro", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const publicMapSource = readRoute(
+      "src/components/public/public-map-index.tsx"
+    )
+    const previewControlsSource = readRoute(
+      "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
+    )
+    const overlaySource = readRoute(
+      "src/components/public/public-map-index/member-onboarding-overlay.tsx"
+    )
+    const mapSurfaceSource = readRoute(
+      "src/components/public/public-map-index/map-surface.tsx"
+    )
 
     for (const routeFile of routeFiles) {
-      expect(readRoute(routeFile)).toContain(
-        '"/api/public/resource-map/index?limit=200"'
-      )
+      const source = readRoute(routeFile)
+      expect(source).toContain("completeMemberMapOnboardingAction")
+      expect(source).toContain("memberOnboarding={")
+      expect(source).toContain("memberMapOnboarding.hasOrganizationSwitcher")
     }
+
+    expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
+    expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
+    expect(mapSurfaceSource).toContain('data-public-map-overlay-layer=""')
+    expect(mapSurfaceSource).toContain(
+      'className="pointer-events-none absolute inset-0"'
+    )
+    expect(mapSurfaceSource.match(/{mapOverlay}/g)).toHaveLength(1)
+    expect(previewControlsSource).toContain("PublicMapMemberOnboardingOverlay")
+    expect(previewControlsSource).toContain("left-1/2 z-30 -translate-x-1/2")
+    expect(overlaySource).toContain("absolute inset-0 z-50")
+    expect(overlaySource).not.toContain("OnboardingWorkspaceCard")
+    expect(overlaySource).toContain("Welcome to Find")
+    expect(overlaySource).toContain("Search resources")
+    expect(overlaySource).toContain("Search by organization")
+    expect(overlaySource).toContain("Save locations")
+    expect(overlaySource).toContain("Notifications")
+  })
+
+  it("lets platform admins preview the map intro from authenticated find", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const publicMapSource = readRoute(
+      "src/components/public/public-map-index.tsx"
+    )
+    const previewControlsSource = readRoute(
+      "src/components/public/public-map-index/member-onboarding-preview-controls.tsx"
+    )
+    const previewSource = readRoute(
+      "src/components/public/public-map-index/member-onboarding-preview.ts"
+    )
+
+    for (const routeFile of routeFiles) {
+      const source = readRoute(routeFile)
+      expect(source).toContain("adminOnboardingPreview={")
+      expect(source).toContain("shellState.isAdmin")
+      expect(source).toContain("canToggle: true")
+      expect(source).toContain("memberMapOnboarding.hasOrganizationSwitcher")
+    }
+
+    expect(publicMapSource).toContain("usePublicMapMemberOnboardingMapOverlay")
+    expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
+    expect(previewControlsSource).toContain(
+      "PublicMapMemberOnboardingPreviewToggle"
+    )
+    expect(previewControlsSource).toContain("Welcome")
+    expect(previewControlsSource).toContain("[html.light_&]:!text-zinc-950")
+    expect(previewControlsSource).toContain("Hide welcome")
+    expect(previewControlsSource).toContain(
+      "onDismiss={() => handleToggleAdminOnboardingPreview(false)}"
+    )
+    expect(previewSource).toContain(
+      'PUBLIC_MAP_MEMBER_ONBOARDING_PREVIEW_SOURCE = "admin_preview"'
+    )
+    expect(previewSource).toContain(
+      'PUBLIC_MAP_MEMBER_ONBOARDING_QUERY_KEY = "member_onboarding"'
+    )
+  })
+
+  it("renders authenticated users inside the app shell without moving find under workspace", () => {
+    const source = readRoute("src/app/(public)/find/page.tsx")
+    expect(source).toContain("AuthenticatedFindShell")
+    expect(source).toContain('presentationMode="app-shell"')
+    expect(source).not.toContain("/workspace/find")
   })
 
   it("never mixes synthetic resource seeds into live find routes", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
 
     for (const routeFile of routeFiles) {
       expect(readRoute(routeFile)).not.toContain("includeSeedResources")
     }
   })
 
-  it("preserves public organization detail wiring for signed-out visitors", () => {
-    const source = readRoute(PUBLIC_FIND_ROUTE)
-    expect(source).toContain("initialPublicSlug={initialPublicSlug}")
-    expect(source).toContain("<HomeCanvasFindShell>")
-    expect(source).toContain("if (shellState?.userPresent && shellState.isAdmin)")
-    expect(source).toContain('redirect("/workspace")')
+  it("preserves selected organization detail wiring on slug routes", () => {
+    const source = readRoute("src/app/(public)/find/[slug]/page.tsx")
+    const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")
+    const publicBranchIndex = source.indexOf("<HomeCanvasFindShell")
+    const firstInitialSlugIndex = source.indexOf(
+      "initialPublicSlug={matched.publicSlug}"
+    )
+    const secondInitialSlugIndex = source.indexOf(
+      "initialPublicSlug={matched.publicSlug}",
+      firstInitialSlugIndex + 1
+    )
+
+    expect(authenticatedBranchIndex).toBeGreaterThan(-1)
+    expect(publicBranchIndex).toBeGreaterThan(-1)
+    expect(source).toContain("organizationDetail")
+    expect(firstInitialSlugIndex).toBeGreaterThan(authenticatedBranchIndex)
+    expect(firstInitialSlugIndex).toBeLessThan(publicBranchIndex)
+    expect(secondInitialSlugIndex).toBeGreaterThan(publicBranchIndex)
   })
 
   it("clears selected organization state when returning from detail to search", () => {
@@ -153,10 +218,9 @@ describe("public find routes", () => {
     const mapSurfaceSource = readRoute(
       "src/components/public/public-map-index/map-surface.tsx"
     )
-    const sidebarSource = [
-      readRoute("src/components/public/public-map-index/sidebar.tsx"),
-      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
-    ].join("\n")
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
     expect(publicMapSelectionSource).toContain(
       "const handleBackToSearch = useCallback"
     )
@@ -166,8 +230,40 @@ describe("public find routes", () => {
     expect(sidebarSource).toContain("onBack={onBackToSearch}")
   })
 
-  it("keeps the public map full bleed", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
+  it("restores the saved sidebar preference in authenticated find", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const shellSource = readRoute(
+      "src/features/find-map/components/authenticated-find-shell.tsx"
+    )
+    const appShellInnerSource = readRoute(
+      "src/components/app-shell/app-shell-inner.tsx"
+    )
+    const appShellTypesSource = readRoute("src/components/app-shell/types.ts")
+
+    for (const routeFile of routeFiles) {
+      const source = readRoute(routeFile)
+      expect(source).toContain("readAppSidebarDefaultOpen")
+      expect(source).toContain("defaultSidebarOpen")
+      expect(source).toContain("defaultSidebarOpen={defaultSidebarOpen}")
+    }
+
+    expect(appShellInnerSource).toContain("defaultSidebarOpen = false")
+    expect(appShellTypesSource).toContain("defaultSidebarOpen?: boolean")
+    expect(appShellInnerSource).toContain("defaultOpen={defaultSidebarOpen}")
+    expect(shellSource).toContain('contentPresentation="full-bleed"')
+  })
+
+  it("lets authenticated find use the full app-shell canvas instead of a bordered map frame", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const shellSource = readRoute(
+      "src/features/find-map/components/authenticated-find-shell.tsx"
+    )
     const mapSurfaceSource = readRoute(
       "src/components/public/public-map-index/map-surface.tsx"
     )
@@ -177,10 +273,9 @@ describe("public find routes", () => {
     const publicMapChromeSource = readRoute(
       "src/components/public/public-map-index/public-map-index-chrome.tsx"
     )
-    const sidebarSource = [
-      readRoute("src/components/public/public-map-index/sidebar.tsx"),
-      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
-    ].join("\n")
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
     const mapViewHelpersSource = readRoute(
       "src/components/public/public-map-index/map-view-helpers.ts"
     )
@@ -197,6 +292,7 @@ describe("public find routes", () => {
       expect(source).not.toContain("rounded-lg border border-border/70")
     }
 
+    expect(shellSource).toContain('contentPresentation="full-bleed"')
     expect(mapSurfaceSource).toContain("h-full min-h-0 w-full min-w-0 flex-1")
     expect(publicMapSource).not.toContain("resolvePublicMapPresentationFlags")
     expect(publicMapChromeSource).not.toContain("PublicMapDirectoryRail")
@@ -204,6 +300,7 @@ describe("public find routes", () => {
     expect(mapViewHelpersSource).toContain('return "drawer"')
     expect(sidebarSource).toContain("dismissible={false}")
     expect(sidebarSource).toContain("<PublicMapMemberRail")
+    expect(shellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain(
       "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
@@ -219,9 +316,19 @@ describe("public find routes", () => {
     expect(appShellSource).toContain(
       "md:[--shell-right-rail-width:min(22rem,36vw)]"
     )
+    expect(shellSource).toContain(
+      "showWorkspaceHome={state.showMemberWorkspace}"
+    )
+    expect(shellSource).toContain(
+      "showMemberWorkspace={state.showMemberWorkspace}"
+    )
+    expect(shellSource).toContain("sidebarHeaderContent={")
+    expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
+    expect(shellSource).toContain("state.memberWorkspaceHeader")
     expect(appShellSource).toContain("isMobile")
+    expect(shellMainContentSource).toContain('? "rounded-none border-0"')
     expect(shellMainContentSource).toContain(
-      "rounded-none border-0 md:rounded-[28px] md:border md:border-[color:var(--shell-border)]"
+      ': "rounded-[28px] border border-[color:var(--shell-border)]"'
     )
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })
@@ -233,10 +340,9 @@ describe("public find routes", () => {
     const memberRailSource = readRoute(
       "src/components/public/public-map-index/member-rail.tsx"
     )
-    const sidebarSource = [
-      readRoute("src/components/public/public-map-index/sidebar.tsx"),
-      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
-    ].join("\n")
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
     const sidebarThemeSource = readRoute(
       "src/components/public/public-map-index/sidebar-theme.ts"
     )
@@ -293,13 +399,11 @@ describe("public find routes", () => {
     expect(memberRailSource).toContain('data-public-map-tabbed-rail=""')
     expect(memberRailSource).toContain('data-public-map-tab-list=""')
     expect(memberRailSource).toContain(
-      "const hasGuides = showGuidesTab && Boolean(onGuideSelect)"
+      "const hasGuides = Boolean(onGuideSelect)"
     )
-    const tabTriggers = readRoute("src/components/public/public-map-index/member-tab-triggers.tsx")
-    expect(memberRailSource).toContain("<PublicMapMemberTabTriggers")
-    expect(tabTriggers).toContain(">Find</span>")
-    expect(tabTriggers).toContain(">Guides</span>")
-    expect(tabTriggers).toContain("<PublicMapCollectedTabLabel")
+    expect(memberRailSource).toContain(">Find</span>")
+    expect(memberRailSource).toContain(">Guides</span>")
+    expect(memberRailSource).toContain(">My Map</span>")
   })
 
   it("wires category filtering through the search rail and map markers", () => {
@@ -311,9 +415,6 @@ describe("public find routes", () => {
     )
     const categoryFilterSource = readRoute(
       "src/components/public/public-map-index/category-filter.tsx"
-    )
-    const sidebarThemeSource = readRoute(
-      "src/components/public/public-map-index/sidebar-theme.ts"
     )
     const resourceCategoryIconSource = readRoute(
       "src/components/public/public-map-index/resource-category-icon.tsx"
@@ -351,13 +452,11 @@ describe("public find routes", () => {
     expect(filterUrlHookSource).toContain("initialFilterState.activeGroup")
     expect(filterStateSource).toContain("buildPublicMapGroupFilterCounts")
     expect(filterStateSource).toContain("buildPublicMapItems")
+    expect(publicMapSource).toContain("organizations: mapFilteredOrganizations")
     expect(publicMapSource).toContain(
-      "organizations: filterState.filteredOrganizations"
+      "filteredOrganizations={filteredOrganizations}"
     )
-    expect(publicMapSource).toContain(
-      "filteredOrganizations={filterState.filteredOrganizations}"
-    )
-    expect(searchCardSource).toContain("onActiveGroupChange")
+    expect(searchCardSource).toContain("PublicMapCategoryFilter")
     expect(categoryFilterSource).toContain(
       'aria-label="Filter resources by category"'
     )
@@ -369,10 +468,9 @@ describe("public find routes", () => {
     )
     expect(categoryFilterSource).toContain("aria-pressed={selected}")
     expect(categoryFilterSource).toContain("resolvePublicMapGroupFilterParam")
-    expect(categoryFilterSource).toContain("PUBLIC_MAP_FILTER_PILL_CLASSNAME")
-    expect(sidebarThemeSource).toContain("border-input bg-input/30")
-    expect(sidebarThemeSource).toContain("rounded-full border px-2.5")
-    expect(sidebarThemeSource).toContain("backdrop-blur")
+    expect(categoryFilterSource).toContain("border-input bg-input/30")
+    expect(categoryFilterSource).toContain("rounded-full border px-2.5")
+    expect(categoryFilterSource).toContain("backdrop-blur")
     expect(categoryFilterSource).not.toContain("shadow-sm backdrop-blur")
     expect(categoryFilterSource).toContain("!bg-input/50 text-foreground")
     expect(categoryFilterSource).toContain('selected ? "text-foreground"')
@@ -405,15 +503,14 @@ describe("public find routes", () => {
   })
 
   it("expands search into a responsive, stateful drawer experience", () => {
-    const sidebarSource = [
-      readRoute("src/components/public/public-map-index/sidebar.tsx"),
-      readRoute("src/components/public/public-map-index/sidebar-drawer.tsx"),
-    ].join("\n")
+    const sidebarSource = readRoute(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
     const searchCardSource = readRoute(
       "src/components/public/public-map-index/search-card.tsx"
     )
-    const searchResultsStatusSource = readRoute(
-      "src/components/public/public-map-index/search-results-status.tsx"
+    const sidebarPanelsSource = readRoute(
+      "src/components/public/public-map-index/sidebar-panels.tsx"
     )
     const organizationListSource = readRoute(
       "src/components/public/public-map-index/organization-list.tsx"
@@ -421,31 +518,28 @@ describe("public find routes", () => {
     const resourceItemsSource = readRoute(
       "src/components/public/public-map-index/use-resource-map-items.ts"
     )
-    const drawerSearchHandlersSource = readRoute(
-      "src/components/public/public-map-index/use-public-map-drawer-search-handlers.ts"
-    )
 
     expect(sidebarSource).toContain("handleDrawerSearchEngage")
     expect(sidebarSource).toContain(
       "data-public-map-drawer-snap-index={activeSnapIndex}"
     )
-    expect(drawerSearchHandlersSource).toContain(
+    expect(sidebarSource).toContain(
       "setActiveSnapIndex((current) => (current === 0 ? 1 : current))"
     )
-    expect(searchCardSource).toContain('aria-label={canCancel ? "Cancel search" : "Clear search"}')
+    expect(searchCardSource).toContain('aria-label="Clear search"')
     expect(searchCardSource).toContain("onFocus={onSearchEngage}")
     expect(searchCardSource).toContain("aria-busy={searchPending}")
-    expect(searchResultsStatusSource).toContain(
+    expect(sidebarPanelsSource).toContain(
       'data-public-map-search-results-status="true"'
     )
-    expect(searchResultsStatusSource).toContain("Loading resources…")
+    expect(sidebarPanelsSource).toContain("Loading resources…")
     expect(organizationListSource).toContain(
       'data-public-map-search-loading="true"'
     )
     expect(organizationListSource).toContain(
       'data-public-map-search-empty="true"'
     )
-    expect(organizationListSource).toContain("No listings match")
+    expect(organizationListSource).toContain("No matches for")
     expect(resourceItemsSource).toContain("resourceItemsLoadByEndpoint")
     expect(resourceItemsSource).toContain(
       "warmPublicMapListItemSearchCache(resourceItems)"
@@ -478,7 +572,7 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain(
       "preferNationalFallback: includeSeedResources && !initialPublicSlug"
     )
-    expect(publicMapSource).toContain("filteredItems={activeSearchContext?.items ?? filterState.filteredItems}")
+    expect(publicMapSource).toContain("filteredItems={directoryListItems}")
     expect(publicMapSource).toContain("selectedItemId={selectedListItemId}")
     expect(publicMapSource).toContain(
       "selectedResourceItem={selectedResourceItem}"
@@ -502,9 +596,6 @@ describe("public find routes", () => {
     const markerSource = readRoute(
       "src/components/public/public-map-index/use-public-map-markers.ts"
     )
-    const markerArtworkSource = readRoute(
-      "src/components/public/public-map-index/sync-public-map-marker-artwork.ts"
-    )
 
     expect(markerSource).toContain("const resolvedMapItems = mapItems ?? []")
     expect(markerSource).toContain(
@@ -515,14 +606,16 @@ describe("public find routes", () => {
       "buildPublicMapPointFeatures(organizationsRef.current, {"
     )
     expect(markerSource).toContain("features: pointFeatures")
-    expect(markerSource).toContain("syncPublicMapMarkerArtwork")
-    expect(markerArtworkSource).toContain("setPublicMapMarkerSourceData")
+    expect(markerSource).toContain("setPublicMapMarkerSourceData")
     expect(markerSource).not.toContain("createPublicMapClusterClient")
     expect(markerSource).not.toContain("getClusters")
   })
 
   it("does not render the member profile card in public or authenticated find rails", () => {
-    const routeFiles = [PUBLIC_FIND_ROUTE]
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
     const publicMapSource = readRoute(
       "src/components/public/public-map-index.tsx"
     )
@@ -546,71 +639,9 @@ describe("public find routes", () => {
       "src/features/find-map/server/viewer-state.ts"
     )
 
-    expect(viewerStateSource).toContain('from "@/server/auth/server-user"')
-    expect(viewerStateSource).toContain("getServerUser(supabase)")
-    expect(readRoute("src/server/auth/server-user.ts")).toContain(
-      "supabase.auth.getUser()"
-    )
+    expect(viewerStateSource).toContain("supabase.auth.getUser()")
     expect(viewerStateSource).not.toContain('.from("profiles")')
     expect(viewerStateSource).not.toContain("buildOnboardingFlowDefaults")
     expect(viewerStateSource).not.toContain("memberProfile")
-  })
-})
-
-const entryMocks = vi.hoisted(() => ({
-  viewer: vi.fn(),
-  dashboard: vi.fn(),
-  organizations: vi.fn(),
-}))
-vi.mock("@/components/app-shell/dashboard-layout-state", () => ({ resolveDashboardLayoutState: entryMocks.dashboard }))
-vi.mock("@/components/app-shell/sidebar-state-server", () => ({ readAppSidebarDefaultOpen: async () => true }))
-vi.mock("@/features/find-map/components/authenticated-find-shell", () => ({ AuthenticatedFindShell: () => null }))
-vi.mock("@/actions/public-map-organization-curation", () => ({ updatePublicMapOrganizationCurationAction: vi.fn() }))
-vi.mock("@/features/resource-map-admin", () => ({ updateResourceMapCanonicalStateAction: vi.fn() }))
-vi.mock("@/features/find-map/viewer-state", () => ({ fetchPublicMapViewerState: entryMocks.viewer }))
-vi.mock("@/lib/queries/public-map-index", () => ({ fetchPublicMapOrganizations: entryMocks.organizations }))
-vi.mock("next/navigation", () => ({ redirect: (href: string) => { throw new Error(`redirect:${href}`) } }))
-vi.mock("@/components/public/home-canvas-find-shell", () => ({ HomeCanvasFindShell: () => null }))
-vi.mock("@/components/public/public-map-index", () => ({ PublicMapIndex: () => null }))
-vi.mock("@/features/find-map/components/find-render-diagnostic", () => ({ FindRenderDiagnostic: () => null }))
-
-describe("signed-in root entry", () => {
-  beforeEach(() => {
-    entryMocks.dashboard.mockReset().mockResolvedValue({ userPresent: true, isAdmin: false })
-    entryMocks.viewer.mockReset().mockResolvedValue({ viewer: null })
-    entryMocks.organizations.mockReset().mockResolvedValue([])
-  })
-
-  it.each([{}, { member_onboarding: "1", source: "signup" }, { q: "table", org: "example" }])("redirects signed-in reloads before fetching map data: %j", async (params) => {
-    entryMocks.viewer.mockResolvedValue({ viewer: { id: "free-user", email: "test@example.com" } })
-    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
-    await expect(PublicFindRoute({ searchParams: Promise.resolve(params) })).rejects.toThrow("redirect:/workspace")
-    expect(entryMocks.organizations).not.toHaveBeenCalled()
-  })
-
-  it("retains the existing curation surface for platform admins", async () => {
-    entryMocks.viewer.mockResolvedValue({ viewer: { id: "admin-user" } })
-    entryMocks.dashboard.mockResolvedValue({ userPresent: true, isAdmin: true, memberMapOnboarding: { hasOrganizationSwitcher: true } })
-    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
-    const result = await PublicFindRoute()
-    const shell = result.props.children
-    const map = shell.props.children
-    expect(map.props.canManageResourceMap).toBe(true)
-    expect(map.props.organizationCurationAction).toBeTypeOf("function")
-    expect(map.props.resourceMapCurationAction).toBeTypeOf("function")
-    expect(entryMocks.organizations).toHaveBeenCalledOnce()
-  })
-
-  it("keeps the map available to signed-out visitors", async () => {
-    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
-    await expect(PublicFindRoute()).resolves.toBeDefined()
-    expect(entryMocks.organizations).toHaveBeenCalledOnce()
-  })
-
-  it("processes email confirmation callbacks before workspace routing", async () => {
-    const { PublicFindRoute } = await import("@/features/find-map/components/public-find-route")
-    await expect(PublicFindRoute({ searchParams: Promise.resolve({ code: "confirmation-code" }) })).rejects.toThrow("redirect:/auth/callback?code=confirmation-code")
-    expect(entryMocks.viewer).not.toHaveBeenCalled()
-    expect(entryMocks.organizations).not.toHaveBeenCalled()
   })
 })

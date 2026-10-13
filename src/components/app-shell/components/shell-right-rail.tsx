@@ -47,23 +47,15 @@ export function ShellRightRail({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          id={RIGHT_RAIL_ID}
-          className="w-full max-w-full gap-0 border-0 p-0 sm:max-w-sm [&>button]:size-11"
-          onCloseAutoFocus={(event) => {
-            // Restore focus after the modal focus trap releases, not on render.
-            event.preventDefault()
-            document
-              .querySelector<HTMLButtonElement>(`button[aria-controls="${RIGHT_RAIL_ID}"]`)
-              ?.focus()
-          }}
+          className="w-[var(--shell-right-rail-width)] border-0 p-0"
         >
-          <SheetHeader className="shrink-0 border-b px-4 py-5 pr-16">
+          <SheetHeader className="sr-only">
             <SheetTitle>Details</SheetTitle>
-            <SheetDescription className="sr-only">
+            <SheetDescription>
               Contextual details for the current workspace view.
             </SheetDescription>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div className="h-full overflow-y-auto px-[var(--shell-right-rail-pad,var(--shell-rail-padding))] py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             {content}
           </div>
         </SheetContent>

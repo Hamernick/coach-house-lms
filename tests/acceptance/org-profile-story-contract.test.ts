@@ -1,12 +1,15 @@
-import { createElement, type ImgHTMLAttributes, type PropsWithChildren } from "react"
+import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import { buildInitialOrganizationProfile } from "@/app/(dashboard)/my-organization/_lib/helpers"
-import { resolveOrganizationProfileComplete as resolvePageProfileComplete } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
-import { resolveOrganizationProfileComplete as resolveWorkspaceSeedProfileComplete } from "@/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers"
+import {
+  resolveOrganizationProfileComplete as resolvePageProfileComplete,
+} from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
+import {
+  resolveOrganizationProfileComplete as resolveWorkspaceSeedProfileComplete,
+} from "@/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers"
 import { OrgProfilePublicAboutSection } from "@/components/organization/org-profile-card/public-card-sections"
-import { OrgProfileHeaderLinks } from "@/components/organization/org-profile-card/header-links"
 import { StorySection } from "@/components/organization/org-profile-card/tabs/company-tab/edit-sections/story"
 import { StoryPreview } from "@/components/organization/org-profile-card/tabs/company-tab/display-sections"
 import {
@@ -15,29 +18,7 @@ import {
 } from "@/components/organization/org-profile-card/validation"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 
-// Expose image destinations without relying on Radix's client-only load timing.
-vi.mock("@/components/ui/avatar", () => ({
-  Avatar: ({ children }: PropsWithChildren) => createElement("span", null, children),
-  AvatarFallback: ({ children }: PropsWithChildren) => createElement("span", null, children),
-  AvatarImage: (props: ImgHTMLAttributes<HTMLImageElement>) => createElement("img", props),
-}))
-
 describe("organization profile story contract", () => {
-  it.each(["https://profile-controlled.example", "http://127.0.0.1:8080", "http://[::1]", "http://192.168.1.1"])(
-    "does not automatically load profile-controlled image origins: %s",
-    (url) => {
-      const company = buildInitialOrganizationProfile({
-        profile: { name: "Atlas Org", publicUrl: url, newsletter: `${url}/subscribe` },
-        organization: { ein: null, public_slug: "atlas-org", is_public: true },
-      })
-      const markup = renderToStaticMarkup(createElement(OrgProfileHeaderLinks, { company }))
-      expect(markup).toContain('aria-label="Website"')
-      expect(markup).toContain('aria-label="Newsletter"')
-      expect(markup).toContain('target="_blank"')
-      expect(markup).not.toMatch(/<(?:img|image|iframe)\b|\bsrc=/)
-    }
-  )
-
   it("hydrates the added story fields from both camelCase and snake_case profile keys", () => {
     const legacyProfile = buildInitialOrganizationProfile({
       profile: {
@@ -65,12 +46,10 @@ describe("organization profile story contract", () => {
       },
     })
 
-    expect(legacyProfile.originStory).toBe("<p>Legacy origin story</p>")
-    expect(legacyProfile.theoryOfChange).toBe("<p>Legacy theory of change</p>")
-    expect(currentProfile.originStory).toBe("<p>Current origin story</p>")
-    expect(currentProfile.theoryOfChange).toBe(
-      "<p>Current theory of change</p>"
-    )
+    expect(legacyProfile.originStory).toBe("Legacy origin story")
+    expect(legacyProfile.theoryOfChange).toBe("Legacy theory of change")
+    expect(currentProfile.originStory).toBe("Current origin story")
+    expect(currentProfile.theoryOfChange).toBe("Current theory of change")
   })
 
   it("sanitizes and renders the added story fields in the internal and public profile views", () => {
@@ -79,12 +58,8 @@ describe("organization profile story contract", () => {
       theoryOfChange: "<strong>Pair coaching with shared tools.</strong>",
     })
 
-    expect(cleaned.nextProfile.originStory).toBe(
-      "Started in a church basement."
-    )
-    expect(cleaned.nextProfile.theoryOfChange).toBe(
-      "Pair coaching with shared tools."
-    )
+    expect(cleaned.nextProfile.originStory).toBe("Started in a church basement.")
+    expect(cleaned.nextProfile.theoryOfChange).toBe("Pair coaching with shared tools.")
 
     const company = {
       name: "Atlas Org",
@@ -138,7 +113,8 @@ describe("organization profile story contract", () => {
       createElement(StoryPreview, {
         company,
         addressLines: [],
-      })
+        hasAnyBrandLink: false,
+      }),
     )
     const publicMarkup = renderToStaticMarkup(
       createElement(OrgProfilePublicAboutSection, {
@@ -149,7 +125,7 @@ describe("organization profile story contract", () => {
         vision: company.vision ?? "",
         values: company.values ?? "",
         theoryOfChange: company.theoryOfChange ?? "",
-      })
+      }),
     )
 
     expect(previewMarkup).toContain("Origin story")
@@ -181,7 +157,7 @@ describe("organization profile story contract", () => {
     expect(resolveWorkspaceSeedProfileComplete(profile)).toBe(true)
   })
 
-  it("shows rich story fields and inline validation errors in edit mode", () => {
+  it("shows story field limits and inline errors in edit mode", () => {
     const company = {
       name: "Atlas Org",
       description: "",
@@ -242,11 +218,14 @@ describe("organization profile story contract", () => {
         onAutoSave: async () => undefined,
         setSlugStatus: () => undefined,
         slugStatus: null,
-      })
+      }),
     )
 
     expect(markup).toContain("Origin story")
+    expect(markup).toContain("maxLength=\"20000\"")
+    expect(markup).toContain(`${company.originStory.length.toLocaleString()} / 20,000`)
     expect(markup).toContain("Origin story must be 20,000 characters or less.")
+    expect(markup).toContain("aria-invalid=\"true\"")
   })
 
   it("allows longer roadmap story fields while keeping a clear maximum", () => {
@@ -272,7 +251,7 @@ describe("organization profile story contract", () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.originStory?.[0]).toBe(
-        "Origin story must be 20,000 characters or less."
+        "Origin story must be 20,000 characters or less.",
       )
     }
   })

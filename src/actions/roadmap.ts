@@ -1,13 +1,6 @@
 "use server"
 
-import { revalidatePath, revalidateTag } from "next/cache"
-
-import { requireOrganizationDocumentStorage, resolveOrganizationDocumentStorageAccess, DOCUMENT_STORAGE_UPGRADE_MESSAGE } from "@/lib/organization/document-storage-access"
-
-import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
-
-import { getSelectedGoogleDriveFile } from "@/features/google-drive"
-import { normalizeCoreDocumentDriveSource } from "@/lib/roadmap/core-document-source"
+import { revalidatePath } from "next/cache"
 
 import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -15,7 +8,6 @@ import type { Json } from "@/lib/supabase"
 import type { BudgetTableRow } from "@/lib/modules"
 import {
   ROADMAP_SECTION_LIMIT,
-  PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS,
   getOrganizationNarrativeKeyForSectionId,
   getRoadmapWorkspaceRevalidationPaths,
   normalizeOrganizationNarrativeHtml,
@@ -37,10 +29,6 @@ import {
 import { createNotification } from "@/lib/notifications"
 
 type SaveInput = {
-  driveFileId?: string | null
-  targetOrganizationId?: string
-  expectedOrganizationId?: string
-  expectedUserId?: string
   sectionId?: string
   expectedLastUpdated?: string | null
   title?: string
@@ -55,13 +43,7 @@ type SaveInput = {
   ctaUrl?: string
 }
 
-type SaveResult =
-  | { section: RoadmapSection }
-  | {
-      error: string
-      code?: "conflict" | "scope_changed"
-      currentSection?: RoadmapSection
-    }
+type SaveResult = { section: RoadmapSection } | { error: string }
 type DeleteResult = { ok: true } | { error: string }
 
 function revalidateRoadmapWorkspacePaths({
@@ -82,20 +64,7 @@ function revalidateRoadmapWorkspacePaths({
   }
 }
 
-function revalidatePublicOrganizationProfile(sectionId: string | null) {
-  if (!sectionId || !PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS.has(sectionId)) {
-    return
-  }
-  revalidateTag("public-map-organizations", "max")
-  revalidatePath("/map")
-  revalidatePath("/resources")
-}
-
 export async function saveRoadmapSectionAction({
-  driveFileId,
-  targetOrganizationId,
-  expectedOrganizationId,
-  expectedUserId,
   sectionId,
   expectedLastUpdated,
   title,
@@ -110,7 +79,7 @@ export async function saveRoadmapSectionAction({
   ctaUrl,
 }: SaveInput): Promise<SaveResult> {
   const allowPublicSharing = publicSharingEnabled
-  let supabase = await createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { user },
     error: userError,
@@ -124,33 +93,8 @@ export async function saveRoadmapSectionAction({
     return { error: "Unauthorized" }
   }
 
-  const access = targetOrganizationId
-    ? await resolveOrganizationDocumentAccess(
-        supabase,
-        user.id,
-        targetOrganizationId
-      )
-    : { ...(await resolveActiveOrganization(supabase, user.id)), supabase }
-  if ("error" in access) return { error: access.error ?? "Forbidden" }
-  supabase = access.supabase
-  const { orgId, role } = access
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-  const driveOnly = driveFileId !== undefined && Boolean(sectionId) &&
-    [title, subtitle, content, budgetRows, imageUrl, isPublic, layout, status, ctaLabel, ctaUrl].every((value) => value === undefined)
-  if (!documentAccess.hasStorageAccess && !driveOnly) return { error: DOCUMENT_STORAGE_UPGRADE_MESSAGE }
-
-  if (
-    (expectedOrganizationId && orgId !== expectedOrganizationId) ||
-    (expectedUserId && user.id !== expectedUserId)
-  ) {
-    return {
-      error:
-        "Your account or organization changed. Reopen this document before saving.",
-      code: "scope_changed",
-    }
-  }
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
@@ -181,47 +125,13 @@ export async function saveRoadmapSectionAction({
     previousSection.lastUpdated !== expectedLastUpdated
   ) {
     return {
-      error:
-        "This roadmap section was updated elsewhere. Reload before saving.",
-      code: "conflict",
-      currentSection: previousSection,
+      error: "This roadmap section was updated elsewhere. Reload before saving.",
     }
   }
 
   if (!previousSection && existingSections.length >= ROADMAP_SECTION_LIMIT) {
     return {
       error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.`,
-    }
-  }
-  let driveSource: RoadmapSection["driveSource"] | undefined
-  if (driveFileId !== undefined) {
-    if (
-      !previousSection ||
-      !expectedOrganizationId ||
-      !expectedUserId ||
-      expectedLastUpdated === undefined
-    ) {
-      return { error: "Reopen this document before changing its source." }
-    }
-    if (driveFileId === null) {
-      driveSource = null
-    } else {
-      try {
-        const file = await getSelectedGoogleDriveFile(user.id, driveFileId)
-        driveSource = normalizeCoreDocumentDriveSource({
-          provider: "google_drive",
-          fileId: file.id,
-          name: file.name,
-          webViewLink: file.webViewLink,
-        })
-        if (!driveSource)
-          return { error: "Choose a valid Google Drive document." }
-      } catch {
-        return {
-          error:
-            "Unable to access this Google Drive file. Reconnect in Tools and try again.",
-        }
-      }
     }
   }
   const isNewSection = !previousSection
@@ -234,13 +144,12 @@ export async function saveRoadmapSectionAction({
         : sanitizeHtml(content)
       : content
   const sectionUpdates = {
-    driveSource,
-    title: driveFileId !== undefined ? previousSection?.title : title,
+    title,
     subtitle,
     content: sanitizedContent,
     budgetRows,
     imageUrl,
-    isPublic: driveSource ? false : allowPublicSharing ? isPublic : false,
+    isPublic: allowPublicSharing ? isPublic : false,
     layout,
     status,
     ctaLabel,
@@ -273,7 +182,6 @@ export async function saveRoadmapSectionAction({
     if (!updatedRow) {
       return {
         error: "This organization was updated elsewhere. Reload before saving.",
-        code: "conflict",
       }
     }
   } else {
@@ -292,7 +200,6 @@ export async function saveRoadmapSectionAction({
     publicSlug: orgRow?.public_slug,
     sectionSlug: section.slug,
   })
-  revalidatePublicOrganizationProfile(section.id)
 
   if (isNewSection) {
     const notifyResult = await createNotification(supabase, {
@@ -334,9 +241,6 @@ export async function deleteRoadmapSectionAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
@@ -403,7 +307,6 @@ export async function deleteRoadmapSectionAction(
     publicSlug: orgRow?.public_slug,
     sectionSlug: previousSection?.slug,
   })
-  revalidatePublicOrganizationProfile(previousSection?.id ?? null)
 
   return { ok: true }
 }
@@ -433,9 +336,6 @@ export async function setRoadmapPublicAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
@@ -500,9 +400,6 @@ export async function setRoadmapHeroImageAction(
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-  if ("error" in documentAccess) return { error: documentAccess.error }
-
 
   const nextHero =
     typeof heroUrl === "string" && heroUrl.trim().length > 0

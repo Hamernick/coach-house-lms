@@ -1,5 +1,5 @@
 import React from "react"
-import { renderToStaticMarkup, renderToReadableStream } from "react-dom/server"
+import { renderToStaticMarkup } from "react-dom/server"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -20,32 +20,6 @@ afterEach(() => {
 })
 
 describe("app sidebar react grab", () => {
-  it("opens grouped navigation as a menu button when the desktop rail is collapsed", async () => {
-    const stream = await renderToReadableStream(
-      React.createElement(
-        SidebarProvider,
-        { defaultOpen: false },
-        React.createElement(NavMain, {
-          items: [{
-            title: "Admin Dashboard",
-            href: "/admin/dashboard",
-            icon: ClipboardListIcon,
-            children: [{ title: "Tasks", href: "/tasks" }],
-          }],
-        })
-      )
-    )
-    await stream.allReady
-    const markup = await new Response(stream).text()
-
-    expect(markup).toContain('aria-label="Admin Dashboard menu"')
-    expect(markup).toContain('aria-haspopup="menu"')
-    expect(markup).toContain('data-active="true"')
-    expect(markup).toContain('data-react-grab-owner-id="app-sidebar:main:admin-dashboard"')
-    expect(markup).not.toContain('href="/admin/dashboard"')
-    expect(markup).not.toContain('aria-label="Collapse Admin Dashboard"')
-  })
-
   it("tags main nav items with semantic ownership metadata and sidebar class assembly", () => {
     vi.stubGlobal("window", { __REACT_GRAB_SURFACES__: {} })
 
@@ -55,22 +29,18 @@ describe("app sidebar react grab", () => {
         null,
         React.createElement(NavMain, {
           items: [{ title: "Tasks", href: "/tasks", icon: ClipboardListIcon }],
-        })
-      )
+        }),
+      ),
     )
 
     expect(markup).toContain('data-react-grab-anchor="AppSidebarMainNavItem"')
+    expect(markup).toContain('data-react-grab-owner-id="app-sidebar:main:tasks"')
+    expect(markup).toContain('data-react-grab-owner-source="src/components/nav-main.tsx"')
     expect(markup).toContain(
-      'data-react-grab-owner-id="app-sidebar:main:tasks"'
-    )
-    expect(markup).toContain(
-      'data-react-grab-owner-source="src/components/nav-main.tsx"'
-    )
-    expect(markup).toContain(
-      'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"'
+      'data-react-grab-canonical-owner-source="src/components/nav-main.tsx"',
     )
 
-    expect(window.__REACT_GRAB_SURFACES__?.["app-sidebar:main:tasks"]).toEqual(
+    expect(window.__REACT_GRAB_SURFACES__["app-sidebar:main:tasks"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           component: "AppSidebarMainNavItem",
@@ -80,7 +50,7 @@ describe("app sidebar react grab", () => {
           classAssemblyFile: "src/components/ui/sidebar/layout.tsx",
           primitiveImport: "@/components/ui/sidebar",
         }),
-      ])
+      ]),
     )
   })
 
@@ -99,23 +69,15 @@ describe("app sidebar react grab", () => {
               icon: MessageCircleIcon,
             },
           ],
-        })
-      )
+        }),
+      ),
     )
 
-    expect(markup).toContain(
-      'data-react-grab-anchor="AppSidebarResourceNavItem"'
-    )
-    expect(markup).toContain(
-      'data-react-grab-owner-id="app-sidebar:resources:community"'
-    )
-    expect(markup).toContain(
-      'data-react-grab-owner-source="src/components/nav-documents.tsx"'
-    )
+    expect(markup).toContain('data-react-grab-anchor="AppSidebarResourceNavItem"')
+    expect(markup).toContain('data-react-grab-owner-id="app-sidebar:resources:community"')
+    expect(markup).toContain('data-react-grab-owner-source="src/components/nav-documents.tsx"')
 
-    expect(
-      window.__REACT_GRAB_SURFACES__?.["app-sidebar:resources:community"]
-    ).toEqual(
+    expect(window.__REACT_GRAB_SURFACES__["app-sidebar:resources:community"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           component: "AppSidebarResourceNavItem",
@@ -125,38 +87,7 @@ describe("app sidebar react grab", () => {
           classAssemblyFile: "src/components/ui/sidebar/layout.tsx",
           primitiveImport: "@/components/ui/sidebar",
         }),
-      ])
-    )
-  })
-
-  it("renders active admin destinations inside the Admin accordion", async () => {
-    const stream = await renderToReadableStream(
-      React.createElement(
-        SidebarProvider,
-        null,
-        React.createElement(NavMain, {
-          items: [
-            { title: "Find", href: "/" },
-            {
-              title: "Admin",
-              children: [
-                { title: "Organizations", href: "/organizations" },
-                { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
-              ],
-            },
-          ],
-        })
-      )
-    )
-
-    await stream.allReady
-    const markup = await new Response(stream).text()
-
-    expect(markup.indexOf(">Find<")).toBeLessThan(markup.indexOf(">Admin<"))
-    expect(markup).toContain('aria-label="Collapse Admin"')
-    expect(markup).toContain('href="/tasks"')
-    expect(markup).toContain(
-      'data-react-grab-owner-id="app-sidebar:main:tasks"'
+      ]),
     )
   })
 
@@ -176,8 +107,8 @@ describe("app sidebar react grab", () => {
           },
           onboardingLocked: true,
           onboardingIntentFocus: "build",
-        })
-      )
+        }),
+      ),
     )
 
     expect(markup).not.toContain(">Welcome<")
@@ -185,7 +116,7 @@ describe("app sidebar react grab", () => {
     expect(markup).not.toContain("app-sidebar:onboarding:welcome")
   })
 
-  it("shows the gift upgrade button above the profile for free users", () => {
+  it("renders an upgrade CTA above resources for signed-in free users", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -201,16 +132,19 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: false,
           showMemberWorkspace: false,
-        })
-      )
+        }),
+      ),
     )
 
-    expect(markup).toContain(">Resources<")
-    expect(markup).toContain('aria-label="Upgrade"')
-    expect(markup).toContain("lucide-gift")
-    expect(markup.indexOf('aria-label="Upgrade"')).toBeLessThan(markup.indexOf('data-tour="account-menu"'))
-    expect(markup).not.toContain("source=sidebar_upgrade")
+    const upgradeIndex = markup.indexOf("Upgrade account")
+    const resourcesIndex = markup.indexOf(">Resources<")
 
+    expect(upgradeIndex).toBeGreaterThan(-1)
+    expect(resourcesIndex).toBeGreaterThan(-1)
+    expect(upgradeIndex).toBeLessThan(resourcesIndex)
+    expect(markup).toContain(
+      "/find?paywall=organization&amp;plan=organization&amp;source=sidebar_upgrade&amp;redirect=%2Fworkspace&amp;cancel=%2Ffind&amp;paywall_preview=1",
+    )
   })
 
   it("does not render the free upgrade CTA for paid workspace users", () => {
@@ -229,15 +163,15 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: true,
           showMemberWorkspace: true,
-        })
-      )
+        }),
+      ),
     )
 
-    expect(markup).not.toContain('aria-label="Upgrade"')
+    expect(markup).not.toContain("Upgrade account")
     expect(markup).not.toContain("source=sidebar_upgrade")
   })
 
-  it("hides the free upgrade button for paid admins", () => {
+  it("renders the upgrade CTA for platform admins so they can test checkout placement", () => {
     const markup = renderToStaticMarkup(
       React.createElement(
         SidebarProvider,
@@ -253,11 +187,11 @@ describe("app sidebar react grab", () => {
           },
           hasActiveSubscription: true,
           showMemberWorkspace: true,
-        })
-      )
+        }),
+      ),
     )
 
-    expect(markup).not.toContain('aria-label="Upgrade"')
-    expect(markup).not.toContain("source=sidebar_upgrade")
+    expect(markup).toContain("Upgrade account")
+    expect(markup).toContain("source=sidebar_upgrade")
   })
 })

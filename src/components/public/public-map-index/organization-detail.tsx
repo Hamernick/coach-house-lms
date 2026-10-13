@@ -11,6 +11,7 @@ import {
   buildContactRows,
   buildInitials,
   buildResourceLinks,
+  buildSocialLinks,
   buildStoryFields,
   formatAddressLines,
   formatLocation,
@@ -34,21 +35,23 @@ import {
   OrganizationDetailAboutSection,
   OrganizationDetailActionLinks,
   OrganizationDetailIdentitySection,
+  OrganizationDetailSocialsSection,
 } from "./organization-detail-shell-sections"
 import { PUBLIC_MAP_DETAIL_PROFILE_CLASSNAME } from "./sidebar-theme"
 
 type PublicMapOrganizationDetailProps = {
   organization: PublicMapOrganization
   compact?: boolean
-  standalone?: boolean
 }
 
 export function PublicMapOrganizationDetail({
   organization,
   compact = false,
-  standalone = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
+  const [expandedStoryFields, setExpandedStoryFields] = useState<
+    Record<string, boolean>
+  >({})
 
   const profileImageSrc =
     normalizeImageSrc(organization.logoUrl) ??
@@ -58,6 +61,7 @@ export function PublicMapOrganizationDetail({
   )
   const profileInitials = buildInitials(organization.name)
   const location = formatLocation(organization)
+  const socials = buildSocialLinks(organization)
   const storyFields = buildStoryFields(organization)
   const contactRows = buildContactRows(organization)
   const addressLines = formatAddressLines(organization)
@@ -87,7 +91,6 @@ export function PublicMapOrganizationDetail({
       )}
     >
       <OrganizationDetailIdentitySection
-        headingLevel={standalone ? "h1" : "h2"}
         organization={organization}
         profileImageSrc={profileImageSrc}
         profileInitials={profileInitials}
@@ -97,17 +100,13 @@ export function PublicMapOrganizationDetail({
       <OrganizationDetailActionLinks actionLinks={actionLinks} />
 
       <OrganizationDetailAboutSection
-        isOnlineOnly={organization.isOnlineOnly}
-        primaryGroup={organization.primaryGroup}
         aboutCopy={aboutCopy}
         aboutExpanded={aboutExpanded}
         aboutNeedsToggle={aboutNeedsToggle}
         onToggle={() => setAboutExpanded((previous) => !previous)}
       />
 
-      <OrganizationDetailActivitiesSection activities={activities} />
-
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 [&>section]:min-w-0 [&>section:only-child]:col-span-2">
+      <div className="grid grid-cols-2 gap-4 [&>section]:min-w-0 [&>section:only-child]:col-span-2">
         <OrganizationDetailFormationSection formationStatus={formationStatus} />
         <OrganizationDetailBrandKitSection
           organization={organization}
@@ -115,8 +114,18 @@ export function PublicMapOrganizationDetail({
         />
       </div>
 
+      <OrganizationDetailSocialsSection socials={socials} />
 
-      <OrganizationDetailOriginSection storyFields={storyFields} />
+      <OrganizationDetailOriginSection
+        storyFields={storyFields}
+        expandedStoryFields={expandedStoryFields}
+        onToggleField={(fieldLabel) =>
+          setExpandedStoryFields((previous) => ({
+            ...previous,
+            [fieldLabel]: !previous[fieldLabel],
+          }))
+        }
+      />
 
       <OrganizationDetailContactSection contactRows={contactRows} />
 
@@ -127,6 +136,8 @@ export function PublicMapOrganizationDetail({
       />
 
       <OrganizationDetailResourceLinksSection resources={resources} />
+
+      <OrganizationDetailActivitiesSection activities={activities} />
     </div>
   )
 }

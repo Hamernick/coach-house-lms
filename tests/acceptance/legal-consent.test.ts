@@ -27,12 +27,21 @@ function contentHash(document: typeof TERMS_DOCUMENT) {
 }
 
 describe("legal consent", () => {
-  it("allows signup without a separate acceptance checkbox", () => {
+  it("requires explicit acceptance during signup", () => {
+    const rejected = signUpSchema.safeParse({
+      email: "member@example.test",
+      password: "password123",
+      confirmPassword: "password123",
+      acceptedLegal: false,
+    })
+    expect(rejected.success).toBe(false)
+
     expect(
       signUpSchema.safeParse({
         email: "member@example.test",
         password: "password123",
         confirmPassword: "password123",
+        acceptedLegal: true,
       }).success
     ).toBe(true)
   })
@@ -69,8 +78,6 @@ describe("legal consent", () => {
       "financial",
       "location",
       "retention",
-      "Google Drive",
-      "Google Calendar",
     ]) {
       expect(privacyText).toContain(disclosure)
     }
@@ -111,14 +118,7 @@ describe("legal consent", () => {
     expect(legalDocumentPage).not.toContain("radial-gradient")
     expect(legalDocumentPage).not.toContain("PublicHeader")
     expect(legalDocumentPage).not.toContain("PublicThemeToggle")
-    expect(signUpForm).toContain("<LegalConsentNotice />")
-    expect(signUpForm.indexOf("<LegalConsentNotice />")).toBeGreaterThan(
-      signUpForm.indexOf("<GoogleAuthPanel")
-    )
-    expect(signUpForm).toContain("legal_consent: legalConsent")
-    expect(signUpForm).not.toContain("acceptedLegal")
-    expect(consentPanel).toContain("By joining, you agree to our")
-    expect(consentPanel).not.toContain("Checkbox")
+    expect(signUpForm).toContain("LegalConsentField")
     expect(consentPanel).toContain('href="/terms"')
     expect(consentPanel).toContain('href="/privacy"')
   })
@@ -126,10 +126,6 @@ describe("legal consent", () => {
   it("stores immutable user-linked acceptance with own-row read access", () => {
     const migration = readFileSync(
       "supabase/migrations/20260811160000_add_signup_legal_acceptances.sql",
-      "utf8"
-    )
-    const currentConsentMigration = readFileSync(
-      "supabase/migrations/20260910120000_accept_drive_privacy_consent.sql",
       "utf8"
     )
     expect(migration).toContain("references auth.users(id) on delete cascade")
@@ -142,20 +138,14 @@ describe("legal consent", () => {
     )
     expect(migration).toContain("using ((select auth.uid()) = user_id)")
     expect(migration).toContain("after insert on auth.users")
-    expect(currentConsentMigration).toContain(
+    expect(migration).toContain(
       `consent ->> 'version' = '${TERMS_DOCUMENT.version}'`
     )
-    expect(currentConsentMigration).toContain(
+    expect(migration).toContain(
       `consent ->> 'termsSha256' = '${TERMS_DOCUMENT.sha256}'`
     )
-    expect(currentConsentMigration).toContain(
+    expect(migration).toContain(
       `consent ->> 'privacySha256' = '${PRIVACY_DOCUMENT.sha256}'`
-    )
-    expect(currentConsentMigration).toContain(
-      "consent ->> 'version' = '2026-08-12.1'"
-    )
-    expect(currentConsentMigration).toContain(
-      "consent ->> 'version' = '2026-09-09.1'"
     )
 
     const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
@@ -178,7 +168,7 @@ describe("legal consent", () => {
 
   it("rejects public signup without current server-validated consent", () => {
     const migration = readFileSync(
-      "supabase/migrations/20260910120000_accept_drive_privacy_consent.sql",
+      "supabase/migrations/20260814090000_enforce_signup_legal_consent.sql",
       "utf8"
     )
     expect(migration).toContain(
@@ -190,22 +180,5 @@ describe("legal consent", () => {
       "new.raw_user_meta_data ->> 'legal_consent_exempt'"
     )
     expect(migration).toContain("coalesce(new.created_at, now())")
-  })
-
-  it("provisions every live RLS fixture with current consent, not an exemption", () => {
-    const rlsSuite = readFileSync("supabase/tests/rls.test.mjs", "utf8")
-    const registrations = [
-      ...rlsSuite.matchAll(/auth\.admin\.createUser\(\{([\s\S]*?)\n  \}\)/g),
-    ]
-
-    expect(registrations).toHaveLength(8)
-    for (const [, payload] of registrations) {
-      expect(payload).toContain("user_metadata: { legal_consent: signupLegalConsent }")
-      expect(payload).not.toContain("app_metadata")
-    }
-    expect(rlsSuite).toContain(`version: "${TERMS_DOCUMENT.version}"`)
-    expect(rlsSuite).toContain(TERMS_DOCUMENT.sha256)
-    expect(rlsSuite).toContain(PRIVACY_DOCUMENT.sha256)
-    expect(rlsSuite).not.toContain("legal_consent_exempt")
   })
 })

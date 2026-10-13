@@ -20,7 +20,7 @@ vi.mock("@/components/public/pricing-surface", () => ({
   PricingSurface: () => createElement("div", null, "Pricing"),
 }))
 
-describe("public home-canvas login section", () => {
+describe("public home login section", () => {
   beforeEach(() => {
     resetTestMocks()
   })
@@ -35,8 +35,7 @@ describe("public home-canvas login section", () => {
       },
     })
 
-    const { default: LandingPage } =
-      await import("@/app/(public)/home-canvas/page")
+    const { default: LandingPage } = await import("@/app/(public)/page")
     const destination = await captureRedirect(() =>
       LandingPage({
         searchParams: Promise.resolve({ section: "login" }),
@@ -47,22 +46,19 @@ describe("public home-canvas login section", () => {
   })
 
   it("renders the established home canvas by default", async () => {
-    const { default: LandingPage } =
-      await import("@/app/(public)/home-canvas/page")
+    const { default: LandingPage } = await import("@/app/(public)/page")
     const result = await LandingPage({ searchParams: Promise.resolve({}) })
 
     expect(result.props.initialSection).toBeUndefined()
   })
 
-  it("redirects old canvas pricing links while preserving campaign and plan parameters", async () => {
-    const { default: LandingPage } =
-      await import("@/app/(public)/home-canvas/page")
-    const destination = await captureRedirect(() => LandingPage({
-      searchParams: Promise.resolve({ section: "pricing", embed: "1", source: "campaign", plan: "organization" }),
-    }))
+  it("keeps pricing in the existing canvas surface", async () => {
+    const { default: LandingPage } = await import("@/app/(public)/page")
+    const result = await LandingPage({
+      searchParams: Promise.resolve({ section: "pricing" }),
+    })
 
-    expect(destination).toBe("/pricing?source=campaign&plan=organization")
-    expect(createSupabaseServerClientServerMock).not.toHaveBeenCalled()
+    expect(result.props.initialSection).toBe("pricing")
   })
 
   it("still renders the home login section for signed-out visitors", async () => {
@@ -75,8 +71,7 @@ describe("public home-canvas login section", () => {
       },
     })
 
-    const { default: LandingPage } =
-      await import("@/app/(public)/home-canvas/page")
+    const { default: LandingPage } = await import("@/app/(public)/page")
     const result = await LandingPage({
       searchParams: Promise.resolve({ section: "login" }),
     })

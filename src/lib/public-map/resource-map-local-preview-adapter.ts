@@ -512,13 +512,6 @@ export function buildExternalResourceMapItemFromLocalPreviewRecord(
   return {
     id,
     itemType: "external_resource",
-    resourceOrganizationId:
-      readFirstString(
-        fields["organizationId"],
-        fields["organization_id"],
-        record["organizationId"],
-        record["organization_id"]
-      ) ?? null,
     title: displayTitle,
     subtitle,
     description,

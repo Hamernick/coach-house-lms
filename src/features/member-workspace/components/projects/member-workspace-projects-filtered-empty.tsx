@@ -6,18 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 
 export function MemberWorkspaceProjectsFilteredEmpty({
-  directory = "organizations",
   onClear,
 }: {
-  directory?: "organizations" | "projects"
   onClear: () => void
 }) {
   return (
     <div className="p-4">
       <Empty
         icon={<FunnelX className="size-6" aria-hidden />}
-        title={`No matching ${directory}`}
-        description={`No ${directory} match the active filters.`}
+        title="No matching organizations"
+        description="No organizations match the active coach and project filters."
         variant="subtle"
         actions={
           <Button type="button" variant="outline" onClick={onClear}>

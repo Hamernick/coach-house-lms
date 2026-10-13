@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,12 +25,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/auth/password-input"
 
-const GoogleAuthPanel = dynamic(
-  () =>
-    import("@/features/google-auth").then((module) => module.GoogleAuthPanel),
-  { ssr: false }
-)
-
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -43,8 +36,6 @@ type LoginFormProps = {
   redirectTo?: string
   initialError?: string | null
   signUpHref?: string
-  onAuthenticated?: () => void
-  onSignUp?: () => void
 }
 
 type ExistingAuthSession = { access_token?: string | null } | null | undefined
@@ -99,8 +90,6 @@ export function LoginForm({
   redirectTo,
   initialError,
   signUpHref,
-  onAuthenticated,
-  onSignUp,
 }: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
@@ -155,7 +144,6 @@ export function LoginForm({
         })
         if (!redirectPath) return
 
-        if (onAuthenticated) { onAuthenticated(); return }
         router.replace(redirectPath)
         router.refresh()
       })
@@ -166,7 +154,7 @@ export function LoginForm({
     return () => {
       cancelled = true
     }
-  }, [resolvedRedirectTo, router, supabase, onAuthenticated])
+  }, [resolvedRedirectTo, router, supabase])
 
   async function onSubmit(values: LoginFormValues) {
     if (isSigningIn) return
@@ -187,7 +175,6 @@ export function LoginForm({
       }
 
       form.reset()
-      if (onAuthenticated) { onAuthenticated(); return }
       router.replace(resolvedRedirectTo)
       router.refresh()
     } catch {
@@ -268,11 +255,10 @@ export function LoginForm({
           </Button>
         </form>
       </Form>
-      <GoogleAuthPanel mode="login" redirectTo={resolvedRedirectTo} onSuccess={onAuthenticated} redirectOnSuccess={!onAuthenticated} />
       <div className="text-muted-foreground flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm">
-        {onSignUp ? <Button type="button" variant="link" className="h-auto p-0" onClick={onSignUp}>Need an account? Sign up</Button> : <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
+        <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
           Need an account? Sign up
-        </Link>}
+        </Link>
         <Link
           href={resolvedForgotPasswordHref}
           className={authFooterLinkClassName}

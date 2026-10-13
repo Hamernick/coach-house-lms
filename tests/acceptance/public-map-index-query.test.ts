@@ -209,10 +209,8 @@ describe("fetchPublicMapOrganizations", () => {
       city: "Brooklyn",
       state: "NY",
       country: "United States",
-      originStory:
-        "<p>Atlas began after local caregivers lost support access.</p>",
-      theoryOfChange:
-        "<p>Pair trained neighbors with recurring care circles.</p>",
+      originStory: "Atlas began after local caregivers lost support access.",
+      theoryOfChange: "Pair trained neighbors with recurring care circles.",
       programPreview: {
         activityKind: "Event",
         ctaLabel: "Join",
@@ -236,9 +234,8 @@ describe("fetchPublicMapOrganizations", () => {
       longitude: null,
       isOnlineOnly: true,
       locationUrl: "https://beacon.org/visit",
-      originStory: "<p>Beacon launched from a mutual aid pilot.</p>",
-      theoryOfChange:
-        "<p>Shared onboarding and referrals improve continuity.</p>",
+      originStory: "Beacon launched from a mutual aid pilot.",
+      theoryOfChange: "Shared onboarding and referrals improve continuity.",
       programPreview: {
         activityKind: "Web resource",
         ctaLabel: "Open",

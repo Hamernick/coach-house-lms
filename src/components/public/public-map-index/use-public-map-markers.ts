@@ -8,8 +8,13 @@ import {
   buildPublicMapItemDataVersion,
   buildPublicMapItemPointFeatures,
   buildPublicMapPointFeatures,
+  type PublicMapFeatureCollection,
 } from "@/lib/public-map/public-map-geojson"
-import { registerPublicMapPinStyleImageMissingHandler } from "@/lib/public-map/public-map-pin-marker-images"
+import {
+  ensurePublicMapPinFallbackMarkerImages,
+  ensurePublicMapPinMarkerImages,
+  registerPublicMapPinStyleImageMissingHandler,
+} from "@/lib/public-map/public-map-pin-marker-images"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-same-location"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 import type { PublicMapItem } from "@/lib/public-map/resource-map-items"
@@ -19,7 +24,11 @@ import {
   resolvePublicMapMarkerRelevanceTier,
 } from "@/lib/public-map/public-map-marker-relevance"
 
-import { syncPublicMapMarkerSelection } from "./map-marker-layer-contracts"
+import {
+  ensurePublicMapMarkerLayers,
+  setPublicMapMarkerSourceData,
+  syncPublicMapMarkerSelection,
+} from "./map-marker-layer-contracts"
 import {
   PUBLIC_MAP_MARKER_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
@@ -30,7 +39,6 @@ import {
   bindPublicMapMarkerPointerCursor,
   resolvePublicMapMarkerClickAction,
 } from "./public-map-marker-runtime"
-import { syncPublicMapMarkerArtwork } from "./sync-public-map-marker-artwork"
 
 const PUBLIC_MAP_INTERACTIVE_MARKER_LAYER_IDS = [
   PUBLIC_MAP_MARKER_LAYER_ID,
@@ -77,7 +85,6 @@ function installPublicMapDebugProbe(map: mapboxgl.Map) {
 
 export function usePublicMapMarkers({
   activeSameLocationGroupKey,
-  boostCoolingCenters = false,
   favorites,
   mapItems,
   mapLoadedRef,
@@ -91,7 +98,6 @@ export function usePublicMapMarkers({
   userCoordinates,
 }: {
   activeSameLocationGroupKey: string | null
-  boostCoolingCenters?: boolean
   favorites: string[]
   mapItems?: PublicMapItem[]
   mapLoadedRef: RefObject<boolean>
@@ -113,7 +119,6 @@ export function usePublicMapMarkers({
   const selectedOrganizationIdRef = useRef(selectedOrganizationId)
   const favoritesRef = useRef(favorites)
   const userCoordinatesRef = useRef(userCoordinates)
-  const boostCoolingCentersRef = useRef(boostCoolingCenters)
   const shouldUseMapItems = resolvedMapItems.length > 0
   const sourceDataVersion = shouldUseMapItems
     ? buildPublicMapItemDataVersion(resolvedMapItems, { markerTheme })
@@ -124,7 +129,6 @@ export function usePublicMapMarkers({
     userCoordinates
       ? `${userCoordinates.longitude.toFixed(5)}:${userCoordinates.latitude.toFixed(5)}`
       : "no-user-location",
-    boostCoolingCenters ? "heat-active" : "heat-inactive",
   ].join("|relevance:")
 
   organizationsRef.current = organizations
@@ -135,7 +139,6 @@ export function usePublicMapMarkers({
   selectedOrganizationIdRef.current = selectedOrganizationId
   favoritesRef.current = favorites
   userCoordinatesRef.current = userCoordinates
-  boostCoolingCentersRef.current = boostCoolingCenters
 
   useEffect(() => {
     const map = mapRef.current
@@ -161,24 +164,42 @@ export function usePublicMapMarkers({
             markerTheme,
           })
     const pointFeatures = buildPublicMapMarkerRelevance({
-      boostCoolingCenters: boostCoolingCentersRef.current,
       favoriteOrganizationIds: new Set(favoritesRef.current),
       features: rawPointFeatures,
       userCoordinates: userCoordinatesRef.current,
     })
+    const sourceData = {
+      type: "FeatureCollection",
+      features: pointFeatures,
+    } satisfies PublicMapFeatureCollection
+
     const syncMarkers = () => {
       const maxRelevanceTier = resolvePublicMapMarkerRelevanceTier(
         map.getZoom()
       )
-      const { profileImageLoads } = syncPublicMapMarkerArtwork({
-        activeSameLocationGroupKey: activeSameLocationGroupKeyRef.current,
-        features: pointFeatures,
+      ensurePublicMapPinFallbackMarkerImages({ map, theme: markerTheme })
+      const profileImageLoads = ensurePublicMapPinMarkerImages({
         map,
-        maxRelevanceTier,
-        selectedOrganizationId: selectedOrganizationIdRef.current,
+        features: pointFeatures,
         theme: markerTheme,
       })
       void Promise.all(profileImageLoads)
+      if (
+        !ensurePublicMapMarkerLayers({
+          map,
+          maxRelevanceTier,
+          theme: markerTheme,
+        })
+      )
+        return
+      const updated = setPublicMapMarkerSourceData({ map, sourceData })
+      if (!updated) return
+      syncPublicMapMarkerSelection({
+        activeSameLocationGroupKey: activeSameLocationGroupKeyRef.current,
+        map,
+        maxRelevanceTier,
+        selectedOrganizationId: selectedOrganizationIdRef.current,
+      })
     }
 
     const syncMarkerRelevance = () => {

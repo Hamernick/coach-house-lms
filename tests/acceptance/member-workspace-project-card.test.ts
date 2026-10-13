@@ -3,14 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
-import { resolveOrganizationCardImage } from "@/features/member-workspace/lib/organization-card-image"
 import { MemberWorkspaceProjectCard } from "@/features/member-workspace/components/projects/member-workspace-project-card"
 
 const projectCardSource =
   "src/features/member-workspace/components/projects/member-workspace-project-card.tsx"
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/organizations",
   useRouter: () => ({
     push: () => undefined,
   }),
@@ -33,7 +31,7 @@ const organizationProject: PlatformAdminDashboardLabProject = {
   members: ["Paula Founder", "Chris Ops"],
   primaryPersonName: "Paula Founder",
   primaryPersonAvatarUrl: null,
-  client: "Private",
+  client: "/community-builders",
   typeLabel: "Approved nonprofit",
   durationLabel: "3 members",
   taskSummaryLabel: "Setup items",
@@ -69,23 +67,6 @@ const organizationProject: PlatformAdminDashboardLabProject = {
 }
 
 describe("MemberWorkspaceProjectCard", () => {
-  it("preserves stored due dates across timezones", () => {
-    const previous = process.env.TZ
-    try {
-      for (const zone of ["America/New_York", "Pacific/Honolulu", "Asia/Tokyo"]) {
-        process.env.TZ = zone
-        const markup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectCard, {
-          project: { ...organizationProject, endDate: new Date("2026-04-30T00:00:00.000Z") },
-          variant: "board",
-        }))
-        expect(markup).toContain("Apr 30")
-        expect(markup).not.toContain("Apr 29")
-      }
-    } finally {
-      if (previous === undefined) delete process.env.TZ
-      else process.env.TZ = previous
-    }
-  })
   it("renders organization-aware metadata for platform admin cards", () => {
     const markup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectCard, {
@@ -94,12 +75,11 @@ describe("MemberWorkspaceProjectCard", () => {
     )
 
     expect(markup).toContain("Community Builders")
-    expect(markup).not.toContain("Created by")
+    expect(markup).toContain("Created by Paula Founder")
     expect(markup).toContain("Approved nonprofit")
     expect(markup).toContain("Fiscal sponsorship")
     expect(markup).toContain("Eligible")
-    expect(markup).toContain("Private")
-    expect(markup).toContain("bg-destructive")
+    expect(markup).toContain("/community-builders")
     expect(markup).toContain("62%")
     expect(markup).toContain("2 / 3 Setup items")
     expect(markup).toContain(">PF<")
@@ -198,21 +178,5 @@ describe("MemberWorkspaceProjectCard", () => {
     expect(boardMarkup).toContain(
       'data-react-grab-surface-slot="header-priority"'
     )
-  })
-})
-
-
-describe("organization card image identity", () => {
-  const personalPhoto = "https://example.com/person.jpg"
-  const organizationLogo = "https://example.com/organization.png"
-  it("does not turn an owner photo into a logo when the organization has none", () => {
-    expect(resolveOrganizationCardImage({ profile: {}, ownerAvatarUrl: personalPhoto, members: [] })).toBeNull()
-  })
-  it("rejects a legacy logo copied from the owner or an organization person", () => {
-    expect(resolveOrganizationCardImage({ profile: { logoUrl: personalPhoto }, ownerAvatarUrl: personalPhoto, members: [] })).toBeNull()
-    expect(resolveOrganizationCardImage({ profile: { logoUrl: personalPhoto, org_people: [{ image: personalPhoto }] }, ownerAvatarUrl: "https://example.com/new-photo.jpg", members: [] })).toBeNull()
-  })
-  it("keeps a distinct organization image", () => {
-    expect(resolveOrganizationCardImage({ profile: { logoUrl: organizationLogo }, ownerAvatarUrl: personalPhoto, members: [] })).toBe(organizationLogo)
   })
 })

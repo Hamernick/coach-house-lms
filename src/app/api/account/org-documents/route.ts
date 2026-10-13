@@ -1,3 +1,4 @@
+import { requireOrganizationDocumentStorage } from "@/lib/organization/document-storage-access"
 import {
   KIND_KEY_MAP,
   type DocumentKey,
@@ -185,6 +186,10 @@ export async function POST(request: NextRequest) {
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
+    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
+    if ("error" in storageAccess) {
+      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
+    }
 
     const safeName = sanitizeTrackedDocumentFilename(file.name)
     const objectName = `${orgId}/${key}/${Date.now()}-${safeName}`
@@ -341,6 +346,10 @@ export async function PATCH(request: NextRequest) {
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
+    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
+    if ("error" in storageAccess) {
+      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
+    }
 
     const mutation = await mutateOrganizationProfile({
       supabase,
@@ -432,6 +441,10 @@ export async function DELETE(request: NextRequest) {
     const { orgId, role } = access
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
+    if ("error" in storageAccess) {
+      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const mutation = await mutateOrganizationProfile({

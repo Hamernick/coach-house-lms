@@ -33,11 +33,9 @@ const TIERS: PricingTier[] = [
     features: [
       "1 Admin Seat (founder only)",
       "Organization Profile",
-      "Guided 501(c)(3) formation",
-      "Strategic Roadmap",
-      { label: "Organizational Profile", badge: "Private" },
+      "Connect your tools",
+      "Link files from your Google Drive",
       "Discord + WhatsApp Community access",
-      "Secure & Centralized Document Storage",
     ],
   },
   {
@@ -57,6 +55,8 @@ const TIERS: PricingTier[] = [
       "8 Admin, Staff, and Board Seats",
       { label: "Organizational Profile", badge: "Public" },
       "Accelerator Access",
+      "Strategic roadmap editing",
+      "Coach House document storage",
       "Electives & additional learning",
       "Fiscal Sponsorship Opportunities",
       "Quantitative Fundability Readiness Tracker",
@@ -106,13 +106,13 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     rows: [
       {
         label: "Guided 501(c)(3) formation",
-        tier1: "included",
+        tier1: "not-included",
         tier2: "included",
         tier3: "included",
       },
       {
         label: "Strategic roadmap",
-        tier1: "included",
+        tier1: "not-included",
         tier2: "included",
         tier3: "included",
       },
@@ -132,13 +132,13 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       {
         label: "Organizational profile",
         labelBadge: "Public",
-        tier1: "not-included",
+        tier1: "included",
         tier2: "included",
         tier3: "included",
       },
       {
         label: "Secure & centralized document storage",
-        tier1: "included",
+        tier1: "not-included",
         tier2: "included",
         tier3: "included",
       },

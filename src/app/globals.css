@@ -490,6 +490,13 @@
   touch-action: none;
 }
 
+/* React Flow's explicit pointer-events must not bypass a modal menu's
+   outside-click lock and activate nodes behind the nonmodal drawer. */
+body[style*="pointer-events: none"] .workspace-flow,
+body[style*="pointer-events: none"] .workspace-flow * {
+  pointer-events: none !important;
+}
+
 .workspace-flow .react-flow__node {
   contain: layout style;
   overflow: visible;

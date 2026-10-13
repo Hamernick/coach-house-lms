@@ -56,7 +56,7 @@ export function AppShellVisualFixture({
     <AppShell
       sidebarTree={[]}
       isAdmin={false}
-      user={null}
+      user={scenario === "member-navigation" ? { name: "Fixture member", email: "member@example.org" } : null}
       contentPresentation={fullBleed ? "full-bleed" : "default"}
       breadcrumbs={<span>Workspace</span>}
     >

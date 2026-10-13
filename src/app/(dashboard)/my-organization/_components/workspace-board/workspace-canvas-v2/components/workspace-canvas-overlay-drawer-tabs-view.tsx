@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type CSSProperties, type RefObject } from "react"
+import { useEffect, useState, type CSSProperties, type RefObject } from "react"
 
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
@@ -39,6 +39,7 @@ function WorkspaceDrawerTabTrigger({
   return (
     <TabsTrigger
       value={value}
+      data-setup-guide-tab={value}
       onClick={onOpen}
       className="h-11 min-w-0 flex-none gap-2 px-3 py-2 md:h-7 md:px-2 md:py-1 text-left after:hidden"
     >
@@ -96,13 +97,22 @@ export function WorkspaceDrawerTabs({
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   viewerId: string
 }) {
+  const [hasExpanded, setHasExpanded] = useState(false)
+  const showSelectedTab = !drawerCollapsed || hasExpanded
+  useEffect(() => {
+    if (!drawerCollapsed) setHasExpanded(true)
+  }, [drawerCollapsed])
+
   const [drawerContainer, setDrawerContainer] =
     useState<HTMLDivElement | null>(null)
 
   return (
     <Tabs
-      value={tab}
-      onValueChange={handleTabChange}
+      value={showSelectedTab ? tab : ""}
+      onValueChange={(value) => {
+        handleTabChange(value)
+        handleTabOpen()
+      }}
       className={cn(
         "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-0",
         drawerCollapsed ? "overflow-visible" : "overflow-hidden"
@@ -144,7 +154,7 @@ export function WorkspaceDrawerTabs({
           data-workspace-data-drawer-tab-indicator="true"
           className={cn(
             "bg-foreground absolute bottom-[-1px] left-0 z-10 h-0.5 rounded-full transition-[transform,width,opacity] duration-200 ease-out motion-reduce:transition-none",
-            tabIndicator.visible ? "opacity-100" : "opacity-0"
+            showSelectedTab && tabIndicator.visible ? "opacity-100" : "opacity-0"
           )}
           style={
             {
@@ -190,6 +200,14 @@ export function WorkspaceDrawerTabs({
           {tab === "accelerator" ? (
             <WorkspaceCanvasOverlayAcceleratorPanel
               input={acceleratorInput}
+              uiPreferencesScope={uiPreferencesScope}
+              organizationLaunch={{
+                ...organizationEditorData.initialProfile,
+                ...organizationEditorData.organizationLocation,
+                programCount: organizationEditorData.programs.length,
+                programs: organizationEditorData.programs.map(({ id, title, description }) => ({ id, title, description })),
+                canEdit: organizationEditorData.canEdit,
+              }}
               drawerContainer={drawerContainer}
               roadmapSections={acceleratorRoadmapSections}
               hasAccess={acceleratorHasAccess}
@@ -218,7 +236,7 @@ export function WorkspaceDrawerTabs({
         </TabsContent>
         <TabsContent
           value="people"
-          className="mx-auto flex min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
+          className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
         >
           <WorkspacePeopleDrawerPanel
             people={people}

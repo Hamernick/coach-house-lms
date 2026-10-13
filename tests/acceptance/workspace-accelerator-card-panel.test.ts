@@ -19,6 +19,7 @@ import {
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/workspace",
   useRouter: () => ({
     push: () => undefined,
   }),
@@ -527,6 +528,32 @@ describe("workspace accelerator tutorial panel state", () => {
       'data-slot="workspace-accelerator-progress-percent"'
     )
     expect(markup).not.toContain(">Accelerator</p>")
+  })
+
+  it("shows locked overview progress and lessons without mounting a requested lesson viewer", () => {
+    const markup = renderToStaticMarkup(React.createElement(RightRailProvider, null,
+      React.createElement(WorkspaceAcceleratorCardPanel, {
+        overviewOnly: true,
+        workspaceOverviewNotice: React.createElement("p", null, "Upgrade to access"),
+        presentationMode: "workspace-drawer",
+        initialModuleViewerOpen: true,
+        initialOpenModuleId: "naming",
+        openStepRequest: { id: 1, stepId: "naming:video", moduleId: "naming" },
+        input: {
+          size: "lg", allowAutoResize: false,
+          steps: [{ id: "naming:video", moduleId: "naming", moduleTitle: "Naming your NFP",
+            stepKind: "video", stepTitle: "Naming your NFP", stepDescription: null,
+            href: "/accelerator/class/formation/module/1", status: "not_started",
+            stepSequenceIndex: 1, stepSequenceTotal: 1, moduleSequenceIndex: 1, moduleSequenceTotal: 1,
+            groupTitle: "Formation", videoUrl: "https://example.com/paid-video.mp4",
+            durationMinutes: 5, resources: [], hasAssignment: false, hasDeck: false }],
+        },
+      })))
+    expect(markup).toContain("Naming your NFP")
+    expect(markup).toContain('data-workspace-accelerator-drawer-header-controls="true"')
+    expect(markup).toContain('inert=""')
+    expect(markup).toContain("Upgrade to access")
+    expect(markup).not.toContain("paid-video.mp4")
   })
 
   it("keeps the fullscreen accelerator panel on a full-height flex column for immersive onboarding routes", () => {

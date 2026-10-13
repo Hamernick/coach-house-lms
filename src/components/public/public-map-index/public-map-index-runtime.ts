@@ -8,9 +8,8 @@ import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
 import {
   applyPublicMapBasemapConfig,
   applyPublicMapSpaceFog,
-  resolvePublicMapBasemapConfig,
-  resolvePublicMapStyleForTheme,
 } from "./constants"
+import { publicMapViewOptions } from "./map-view-options"
 import { organizationHasMapLocation, type PublicMapBounds } from "./helpers"
 import { observePublicMapContainer, resolveMapBounds } from "./layout-sync"
 import {
@@ -259,13 +258,7 @@ export function useInitializePublicMap({
 
         const map = new mapboxgl.Map({
           container: containerRef.current,
-          style: resolvePublicMapStyleForTheme(themeRef.current),
-          config: {
-            basemap: resolvePublicMapBasemapConfig(themeRef.current),
-          },
-          center: FALLBACK_CENTER,
-          zoom: FALLBACK_ZOOM,
-          projection: "globe",
+          ...publicMapViewOptions(themeRef.current),
           cooperativeGestures: false,
           attributionControl: false,
         })

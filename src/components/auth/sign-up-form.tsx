@@ -26,7 +26,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { FIND_PATH } from "@/lib/find/routes"
 import {
   createSignupLegalConsent,
   LegalConsentField,
@@ -40,7 +39,7 @@ const GoogleAuthPanel = dynamic(
 )
 
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
-const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
+const DEFAULT_MEMBER_REDIRECT = "/onboarding?source=signup"
 const authInlineLinkClassName =
   "rounded-sm underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 

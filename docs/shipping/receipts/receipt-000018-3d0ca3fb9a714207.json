@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-13T14:17:50.520284+00:00",
+  "operation": "resume",
+  "owner": "ship-public-indexing-20261013",
+  "previous_revision": 17,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Prior checkpoint owner process has exited; host/PID/start validated by runner before takeover. This checkpoint owner also exits after saving.",
+    "next_action": "Review prepared public indexing PR293 and plan linkage PR292; await Tools appearance review and fee-scope decision. Preserve blocked SHIP000 head and release gates; no second release claim.",
+    "public_indexing_candidate": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/293",
+      "head": "d6e41ff4ff39bbc74a357b0a3dff259562d67498",
+      "branch": "fix/public-indexing-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-public-indexing-20261013",
+      "authorization": "User directed continued implementation through original saved list; no merge/release approval inferred",
+      "source": "packet09 stage1, packet05 stage1, outside audit1.1 and1.5",
+      "validation": "10 focused tests, changed-file ESLint, manifest, pre-push and rendered canonical/noindex/sitemap checks pass",
+      "status": "Draft; hosted CI running, code-owner review required; separate prepared candidate, not active release claim",
+      "server": "Own port3119 server stopped after checks",
+      "recovery": "origin/fix/public-indexing-20261013 pushed at recorded head"
+    },
+    "pending_decisions": {
+      "tools": "User requested Desktop copies; gallery and all9 current/previous/diff PNGs saved. No appearance approval or baseline update.",
+      "fiscal": "Awaiting fee-base clarification: August approved grant allocations vs October incoming donations."
+    }
+  },
+  "remote": null
+}

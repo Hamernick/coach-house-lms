@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-13T17:12:02.812406+00:00",
+  "operation": "resume",
+  "owner": "ship-live-priorities-20261013",
+  "previous_revision": 18,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Previous checkpoint process has exited; runner verifies host/PID/start. This checkpoint process exits after saving.",
+    "next_action": "Follow Desktop LIVE-SITE-PRIORITIES-2026-10-13.md: pricing links and Donate first, then map, upgrade banners, Calendar, verification and fiscal flow. Roster credit correction is complete; do not repeat. Preserve separate PRs and blocked original release gates.",
+    "priority_override": {
+      "source": "User explicitly prioritized currently live website issues across packets; Desktop master index and packet03 point to dated override",
+      "priorities": [
+        "Pricing link destinations",
+        "Homepage Donate header/footer",
+        "Map markers and duplicates",
+        "Free-account upgrade banner sizing/spacing",
+        "Production Google Calendar connection",
+        "Remove formation prerequisite for verification",
+        "Complete public fiscal sponsorship/internal projects/new-application email delivery",
+        "Roster credit correction \u2014 complete"
+      ],
+      "path": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md"
+    },
+    "roster_credit_correction": {
+      "authorization": "User directed reversal of mistaken broad grants and ten credits only for existing accounts on supplied roster",
+      "verified_at": "2026-10-13T17:10:09.500Z",
+      "matched": 13,
+      "unmatched_roster_emails": 17,
+      "reversed_unused_grants": 56,
+      "retained_grants": 4,
+      "new_grants": 9,
+      "verification": "Rollback-only rehearsal passed, guarded atomic commit applied, independent account RPC and before/after ledger verification passed; all13 matched accounts have10; original records unchanged",
+      "private_evidence": "~/.local/share/coach-house/credit-roster-20261013/",
+      "desktop_report": "Desktop/Coach House Roster Credit Review/READ-ME.md",
+      "boundary": "No code/schema/deployment, emails, invitations or new accounts; historical paid/earned credits preserved. Data correction does not close SHIP000."
+    }
+  },
+  "remote": null
+}

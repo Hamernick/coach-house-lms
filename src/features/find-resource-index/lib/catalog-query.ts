@@ -72,22 +72,27 @@ export type FindResourceCatalog = ReturnType<typeof buildFindResourceCatalog>
 export function queryFindResourceCatalog(catalog: FindResourceCatalog, options: FindResourceCatalogQuery) {
   const indexById = new Map(catalog.items.map((item) => [item.id, item]))
   const requestedIds = options.ids ? new Set(options.ids) : null
-  const matched = rankPublicMapListItems({ items: requestedIds ? catalog.resources.filter((item) => requestedIds.has(item.id)) : catalog.resources, query: options.query })
+  const matched = rankPublicMapListItems({ items: requestedIds ? catalog.resources.filter((item) => (requestedIds.has(item.id) || indexById.get(item.id)?.relatedResourceIds?.some((id) => requestedIds.has(id)))) : catalog.resources, query: options.query })
   const guide = PUBLIC_MAP_RESOURCE_GUIDE_DEFINITIONS.find((entry) => entry.id === options.guide)
   const category = options.category === "all" || !isPublicMapResourceCategoryKey(options.category) ? "all" : options.category
   const filtered = matched.filter((item) => guide ? guide.matches(item) : publicMapItemMatchesGroupFilter({ item, activeGroup: category }))
     .map((item) => indexById.get(item.id)!)
     .filter((item) => !options.bounds || resourceIndexItemInBounds(item, options.bounds))
-  const cursorIndex = options.cursor ? filtered.findIndex((item) => item.id === options.cursor) : -1
+  // Saved/deep-linked aliases still resolve after place consolidation.
+  const aliased = requestedIds ? filtered.flatMap((item) =>
+    [item.id, ...(item.relatedResourceIds ?? []).filter((id) => id !== item.id)]
+      .filter((id) => requestedIds.has(id)).map((id) => ({ ...item, id }))
+  ) : filtered
+  const cursorIndex = options.cursor ? aliased.findIndex((item) => item.id === options.cursor) : -1
   // A removed cursor must not restart page one and duplicate the list.
-  const start = options.cursor && cursorIndex < 0 ? filtered.length : cursorIndex + 1
-  const items = options.mode === "metadata" ? [] : filtered.slice(start, start + options.limit)
-  const hasMore = options.mode !== "metadata" && start + items.length < filtered.length
+  const start = options.cursor && cursorIndex < 0 ? aliased.length : cursorIndex + 1
+  const items = options.mode === "metadata" ? [] : aliased.slice(start, start + options.limit)
+  const hasMore = options.mode !== "metadata" && start + items.length < aliased.length
   return {
     version: 3 as const,
     revision: catalog.revision,
     resourceItems: items,
-    page: { hasMore, limit: options.limit, nextCursor: hasMore ? items.at(-1)!.id : null, totalCount: filtered.length },
+    page: { hasMore, limit: options.limit, nextCursor: hasMore ? items.at(-1)!.id : null, totalCount: aliased.length },
     counts: options.query ? buildPublicMapGroupFilterCounts(matched) : catalog.counts,
     discoveryCounts: catalog.counts,
     guides: catalog.guides,

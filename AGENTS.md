@@ -5,6 +5,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 ## Non-Negotiables
 
 - Source of truth: this file + linked `docs/agent/**` documents.
+- Original workstream plans: use the restored directory supplied through `--plans-root`, or default to `~/Desktop/Coach House Codex Workstreams` (resolved under the current user's home; see `docs/shipping/plans.json`). Before selecting or implementing work, read that directory's `WORKSTREAMS.md`, then the relevant numbered `.md` packet in full (original requests, stages, decisions and checkpoint). Read its `SHIP.md` for current runner/claim location, including when this checkout predates SHIP. Missing files in the selected root are a blocker: recover the originals; never substitute a reconstructed plan or infer unfinished work from checkboxes.
 - Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, then `docs/agent/open-work-index.md`, following the [Agent protocol](docs/RUNLOG.md#agent-protocol) before the worktree checkpoint and lane selection. `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - SHIP: read [docs/SHIP.md](docs/SHIP.md), inspect the shared record and resolve any active claim before selecting work.
 - New-chat branch checkpoint: before writing files in the first turn of every chat, follow the mandatory worktree report and branch-choice protocol in `docs/agent/workflow-quality.md` unless the user's prompt already chose the branch strategy.

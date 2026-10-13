@@ -5,6 +5,48 @@ model provider, dashboard or scheduled process. Adapted from FLIGHTPLAN's stable
 IDs, per-checkpoint receipts, separate release evidence and preservation rules;
 its existing recovery ledger stays intact on `chore/flightplan-20261012`.
 
+## Original planning files
+
+The existing Desktop packets are authoritative execution inputs. `plans.json`
+links all ten packets and their 59 numbered stages; `intake.json` maps each of
+176 requirement IDs to its exact original packet. These are references, not a
+replacement plan or an assertion that the requirements are unfinished.
+
+Before selecting or implementing a slice, read its full original prompt:
+
+```sh
+python3 docs/shipping/ship.py plans
+python3 docs/shipping/ship.py prompt --workstream 04 --stage 1
+python3 docs/shipping/ship.py prompt --slice AUDIT-001
+```
+
+The prompt prints the original index, audit boundaries and selected packet(s) in
+full, including requests, decisions and continuation checkpoints. Keep this output
+private. Selected stages narrow work; the slice's scope/exclusions and later user
+decisions still control authorization. Audit references never authorize website edits.
+
+Every new slice supplies `plan_refs`, for example
+`[{"workstream":"04","stages":[1]}]`. Include each source requirement's primary
+packet; add other packets/stages for genuine shared scope. `claim` rejects missing
+files, invalid stages and mismatched requirement mappings, then records filenames,
+sections, stage/line numbers and SHA256 hashes without copying private text.
+Checkpoints reject source drift at the same code head. The tool establishes source
+identity, not proof that an operator understood the prompt; reading remains mandatory.
+
+Originals default to `~/Desktop/Coach House Codex Workstreams`. `--plans-root`
+can locate a restored private folder; it never relocates shared release state.
+The private recovery snapshot is identified in `plans.json`. Apple Notes links
+continue to open the same originals; there is no automatic Notes synchronization.
+
+Existing queues are never overwritten from the seed. An operator can attach
+references to a **queued** legacy slice with `bind-plan --slice ID --owner CHAT_ID
+--revision REV --head HEAD --receipt FILE`; the receipt contains only `plan_refs`.
+Without an active claim, use the current working HEAD. With an active claim, only
+its running owner in the recorded worktree/branch may bind, at the recorded HEAD.
+This validates the original files while preserving active/released evidence and
+queue status. Active/released slices cannot be rebound retroactively. Historical
+snapshots remain readable; all future claims require the original plan references.
+
 ## Commands
 
 Run `python3 docs/shipping/ship.py --help`. After the active slice closes, use
@@ -40,7 +82,8 @@ New claims require a clean isolated branch containing freshly fetched main.
 After committing new code, checkpoint with the previous recorded head: tests,
 approval and GitHub evidence are invalidated and status returns to in progress.
 Record fresh tests for the new head. Once merged, deployed or production-verified,
-the recorded head stays immutable even if the slice later becomes blocked. This intentionally also invalidates approval
+the recorded head stays immutable even if the slice later becomes blocked. A fetched
+external merge also freezes the head before normal release gates have passed. This intentionally also invalidates approval
 on documentation commits; finish reviewable changes before requesting approval.
 
 ## Evidence and transitions

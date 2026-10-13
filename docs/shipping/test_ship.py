@@ -142,7 +142,7 @@ class CommandTests(unittest.TestCase):
         self.here = self.directory / 'tracked'; self.here.mkdir()
         (self.here / 'receipts').mkdir()
         self.owner = identity('chat', os.getpid())
-        self.patches = [patch('ship.canonical', return_value=self.store), patch('ship.HERE', self.here),
+        self.patches = [patch('ship.canonical', return_value=self.store), patch('ship.HERE', self.here), patch('ship.bind_plan', return_value={'fixture': True}),
             patch('ship.local', return_value=dict(worktree='/fixture', branch='chore/fixture', head='head')),
             patch('ship.run', side_effect=lambda *args: '' if args[1] == 'status' else 'head')]
         for item in self.patches: item.start(); self.addCleanup(item.stop)

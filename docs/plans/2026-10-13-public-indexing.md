@@ -44,6 +44,7 @@ publication flags, entitlements, fiscal policy or provider settings are mutated.
 
 Branch `fix/public-indexing-20261013`, worktree
 `/Users/calebhamernick/Development/coach-house-platform-public-indexing-20261013`,
-base `ce1436a2`. Verified rendered responses with the locked dependencies on port 3119.
+base `ce1436a2`. Draft [PR #293](https://github.com/Hamernick/CoachHouse/pull/293).
+Verified rendered responses with the locked dependencies on port 3119; the task server was stopped afterward.
 SHIP-000's original release record remains preserved/blocked; this is an isolated
 implementation candidate, not a fabricated closure or a second active release claim.

@@ -11,6 +11,12 @@ import { extractIrsEoServiceFieldEvidence } from "../../../../scripts/resource-m
 import { normalizeAcquisitionUrl } from "../../../../scripts/resource-map/lib/web-acquisition-policy.mjs"
 import { createDeadlineTransport, deadlineResolver } from "./crawl-network.mjs"
 import { retainedFollowups } from "./crawl-links.mjs"
+import { findCachedPage, plannedCachedPage } from "./crawl-cache.mjs"
+import {
+  structuredPolicy,
+  createStructuredCollector,
+  applyStructuredEvidence,
+} from "./structured-evidence.mjs"
 import { pageRejection, quarantinePage } from "./verification.mjs"
 import { assertLease, addEvidence } from "./queue.mjs"
 import { event, hash, stable, transaction, utc } from "./store.mjs"
@@ -88,11 +94,12 @@ export function planCrawl(db, claims, { followLinks = false } = {}) {
     maxNetworkRequests: claims.length * 6,
     maxRetainedBytes: claims.length * 1_000_000,
   })
-  const cached = full.requests.filter((r) =>
-    db
-      .prepare("SELECT cache_key FROM pages WHERE cache_key=? AND expires_at>?")
-      .get(hash(r.url), Date.now())
-  )
+  const cached = full.requests.flatMap((r) => {
+    const page = findCachedPage(db, r)
+    return page
+      ? [{ ...r, cacheKey: page.cache_key, cacheBodyHash: hash(page.body) }]
+      : []
+  })
   const cachedUrls = new Set(cached.map((r) => r.url))
   const selectedUrls = new Set(full.requests.map((r) => r.url))
   const fetch = buildSharedProviderFetchPlan(
@@ -111,6 +118,7 @@ export function planCrawl(db, claims, { followLinks = false } = {}) {
   )
   const body = {
     version: 2,
+    structuredMetadata: structuredPolicy(claims),
     parent,
     fetch,
     cached,
@@ -122,7 +130,13 @@ export function planCrawl(db, claims, { followLinks = false } = {}) {
   }
   return { ...body, hash: hash(body) }
 }
-function retainPage(db, receipt, consumers, followups = []) {
+function retainPage(
+  db,
+  receipt,
+  consumers,
+  followups = [],
+  requestUrl = receipt.sourceUrl
+) {
   const text = receipt.evidence?.textExcerpt ?? ""
   if (receipt.status !== "fetched" || !text) return
   for (const { ein } of consumers) {
@@ -153,11 +167,7 @@ function retainPage(db, receipt, consumers, followups = []) {
       license: "unknown",
     }
     // Contact/program pages are evidence, never replacement homepage URLs.
-    if (
-      !followups.some(
-        (link) => link.ein === ein && link.url === receipt.sourceUrl
-      )
-    )
+    if (!followups.some((link) => link.ein === ein && link.url === requestUrl))
       addEvidence(
         db,
         ein,
@@ -207,6 +217,7 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
   validateIrsEoOwnedExecutionContract(bundle.fetch, bundle.parent)
   for (const c of bundle.claims) assertLease(db, c.ein, c.token)
   const allowed = new Set(bundle.claims.map((c) => c.ein))
+  const metadata = createStructuredCollector(db, bundle)
   for (const r of [...bundle.fetch.requests, ...bundle.cached])
     for (const c of r.consumers)
       if (!allowed.has(c.ein)) throw new Error("Crawl consumer outside claims")
@@ -223,6 +234,8 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
         "Follow-up parent evidence changed; regenerate crawl plan"
       )
   }
+  // Check pinned cache evidence before any network work, including redirects.
+  for (const request of bundle.cached) plannedCachedPage(db, request)
   // One local network executor at a time. Hold the lock through all network work.
   // SIGKILL leaves a lease; a later run may reclaim after the bounded deadline.
   const lockId = hash({ expected, now: utc(), pid: process.pid })
@@ -294,7 +307,9 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
       },
       transport: async (request) => {
         renew()
-        return transport(request)
+        const response = await transport(request)
+        metadata.capture(request, response)
+        return response
       },
       parentPlan: bundle.parent,
       existingReceipts: receipts,
@@ -323,6 +338,7 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
               stable(receipt)
             )
             retainPage(db, receipt, receipt.consumers, bundle.followups)
+            metadata.retain(receipt)
           }
         })
       },
@@ -330,16 +346,20 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
     transaction(db, () => {
       for (const c of bundle.claims) assertLease(db, c.ein, c.token)
       for (const r of bundle.cached) {
-        const page = db
-          .prepare("SELECT body FROM pages WHERE cache_key=? AND expires_at>?")
-          .get(hash(r.url), Date.now())
-        if (!page)
-          throw new Error("Planned cache expired; regenerate crawl plan")
-        retainPage(db, JSON.parse(page.body), r.consumers, bundle.followups)
+        const page = plannedCachedPage(db, r)
+        retainPage(
+          db,
+          JSON.parse(page.body),
+          r.consumers,
+          bundle.followups,
+          r.url
+        )
+        applyStructuredEvidence(db, JSON.parse(page.body), r.consumers)
       }
       const report = {
         ...result.manifest.counts,
         cacheHits: bundle.cached.length,
+        structuredRetainedBytes: metadata.retainedBytes,
       }
       db.prepare(
         "INSERT INTO runs VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body"
@@ -349,6 +369,7 @@ export async function crawl(db, bundle, confirmation, overrides = {}) {
     return {
       ...result.manifest.counts,
       cacheHits: bundle.cached.length,
+      structuredRetainedBytes: metadata.retainedBytes,
       publicationBlocked: true,
     }
   } finally {

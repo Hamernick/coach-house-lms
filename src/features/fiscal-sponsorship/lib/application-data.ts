@@ -83,7 +83,7 @@ Projects should not present legal, financial, or compliance risks that cannot be
     title: "Legal Structure And U.S. Requirements",
     markdown: `The applicant must identify the legal entity and U.S. tax identification number associated with the sponsored project for tax reporting.
 
-Coach House can review projects operating as:
+Coach House can review U.S.-based projects operating as:
 
 - Individual / sole proprietor
 - Informal group with an EIN
@@ -91,7 +91,7 @@ Coach House can review projects operating as:
 - Corporation
 - Partnership
 
-Activities outside the United States and lobbying require an explanation for individual review; neither automatically prevents an application. The project must have a valid U.S. mailing address, working email address, internet access, and the ability to submit required information in writing.`,
+Coach House does not currently sponsor projects or organizations based outside the United States. The project must have a valid U.S. mailing address, working email address, internet access, and the ability to submit required information in writing.`,
   },
   {
     id: "fs-agreement-template",
@@ -206,6 +206,7 @@ export const FISCAL_SPONSORSHIP_MISSING_APPLICATION_SECTIONS = [
       "Date range for temporary or one-time work",
       "Issue or focus area",
       "Project location if different from mailing address",
+      "Short public description for a sponsored-project profile",
     ],
   },
   {
@@ -214,8 +215,8 @@ export const FISCAL_SPONSORSHIP_MISSING_APPLICATION_SECTIONS = [
     description:
       "Convert planning assumptions into the agreement and grant request templates.",
     fields: [
-      "Anticipated fundraising amount (USD)",
-      "Monthly, Annually, or Total",
+      "Estimated budget",
+      "Brief explanation of anticipated expense categories",
       "Prospective sources of funding",
       "Preliminary fundraising materials that mention Coach House",
     ],
@@ -234,9 +235,10 @@ export const FISCAL_SPONSORSHIP_MISSING_APPLICATION_SECTIONS = [
     id: "risk-attestations",
     title: "Eligibility attestations",
     description:
-      "Identify activities that need explanation and individual review.",
+      "Screen out projects that do not fit the current sponsorship policy.",
     fields: [
       "Plans to operate outside the United States",
+      "Plans to solicit or receive investor-return funds",
       "Plans to engage in lobbying activities",
       "Known legal, compliance, or financial concerns",
       "Explanation for any concern marked yes",

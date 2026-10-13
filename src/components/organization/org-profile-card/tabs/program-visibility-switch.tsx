@@ -28,7 +28,7 @@ export function ProgramVisibilitySwitch({
   useEffect(() => setChecked(isPublic), [isPublic])
 
   function handleChange(next: boolean) {
-    if (saving.current || (next && !publicSharingEnabled)) return
+    if (saving.current || !publicSharingEnabled) return
     saving.current = true
     const previous = checked
     setChecked(next)
@@ -54,10 +54,10 @@ export function ProgramVisibilitySwitch({
       <Switch
         id={id}
         checked={checked}
-        disabled={pending || (!publicSharingEnabled && !checked)}
+        disabled={pending || !publicSharingEnabled}
         onCheckedChange={handleChange}
         aria-label={`Show ${title} on public profile`}
-        title={!publicSharingEnabled && !checked ? "Public sharing is not enabled" : undefined}
+        title={!publicSharingEnabled ? "Public sharing is not enabled" : undefined}
         className="relative after:absolute after:-inset-y-3 after:-inset-x-1.5"
         {...getReactGrabOwnerProps({
           ownerId: `program-visibility:${programId}`,

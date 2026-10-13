@@ -4,6 +4,12 @@ One release at a time. Read this after the current runlog and open-work index,
 before choosing work. Phase 0 merged externally with unresolved release gates; this is an operator-run tool,
 not a background service. Never treat a queued source reference as unfinished work.
 
+Original plans: `/Users/calebhamernick/Desktop/Coach House Codex Workstreams/`.
+Read `WORKSTREAMS.md`, then the relevant numbered packet in full, including original
+requests, decisions and continuation checkpoints. These are the files linked from
+Apple Notes. If missing, restore the private backup identified in `shipping/plans.json`;
+do not reconstruct or replace the plans.
+
 Read the original packet and numbered stage before work: `ship.py plans` lists
 them; `ship.py prompt --workstream ID --stage N` prints the full private originals.
 See [original planning files](shipping/README.md#original-planning-files).

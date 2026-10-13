@@ -1,20 +1,8 @@
 import type { Metadata } from "next"
 
+import { getPublicSiteOrigin } from "@/lib/public-site-origin"
+
 import type { PublicProfileView } from "@/features/public-profiles"
-
-function publicOrigin() {
-  const configured =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "http://localhost:3000"
-
-  try {
-    return new URL(configured).origin
-  } catch {
-    return "http://localhost:3000"
-  }
-}
 
 export function buildPublicProfileMetadata(
   profile: PublicProfileView | null,
@@ -31,7 +19,7 @@ export function buildPublicProfileMetadata(
     profile.description ??
     profile.headline ??
     `View @${profile.handle} on Coach House.`
-  const canonical = `${publicOrigin()}/${encodeURIComponent(profile.handle)}`
+  const canonical = `${getPublicSiteOrigin()}/${encodeURIComponent(profile.handle)}`
   const images = profile.avatarUrl
     ? [{ url: profile.avatarUrl, alt: `${profile.displayName} profile image` }]
     : undefined

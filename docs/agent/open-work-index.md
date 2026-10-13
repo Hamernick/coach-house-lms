@@ -35,7 +35,8 @@ packets are private references; existing closed lanes remain closed.
 [Original-packet implementation](../plans/2026-10-13-public-indexing.md):
 `fix/public-indexing-20261013` in `coach-house-platform-public-indexing-20261013`,
 base `ce1436a2`. Community sitemap/robots now follow existing public access;
-focused tests and changed-file checks pass. Preserve the unrelated blocked SHIP
+root canonical URLs use a shared absolute site origin. Ten focused tests, changed-file
+checks and local rendered metadata verification pass. Preserve the unrelated blocked SHIP
 release record; this candidate still requires hosted quality and review.
 
 ## Open lanes

@@ -1,6 +1,7 @@
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { resolveRoadmapSections } from "@/lib/roadmap"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 import { buildInitialOrganizationProfile } from "./helpers"
 
@@ -15,7 +16,7 @@ export async function loadMyOrganizationProfileContext({
   orgId: string
   supabase: MyOrganizationSupabase
 }) {
-  const { data: orgRow } = await supabase
+  const { data: orgRow, error } = await supabase
     .from("organizations")
     .select("ein, profile, public_slug, is_public")
     .eq("user_id", orgId)
@@ -26,6 +27,7 @@ export async function loadMyOrganizationProfileContext({
       is_public: boolean | null
     }>()
 
+  if (error) throw supabaseErrorToError(error, "Unable to load organization setup.")
   const profile = cleanupOrgProfileHtml(orgRow?.profile ?? {}).nextProfile
 
   const initialProfile = buildInitialOrganizationProfile({

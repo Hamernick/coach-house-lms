@@ -71,6 +71,7 @@ export function CreateNoteModal({
     return (
         <QuickCreateModalLayout
             open={open}
+            title="Create note"
             onClose={handleClose}
             isDescriptionExpanded={isExpanded}
             onSubmitShortcut={handleCreate}

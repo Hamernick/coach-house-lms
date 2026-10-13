@@ -87,7 +87,7 @@ export default async function OnboardingPage({
       <OnboardingWorkspaceCard
         {...state.onboardingDefaults}
         defaultBuilderPlanTier={pricingReturnPlanTierOverride ?? state.currentPlanTier}
-        mode="post_signup_access"
+        mode={state.onboardingMode ?? "post_signup_access"}
         onSubmit={completeOnboardingAction}
       />
     </div>

@@ -365,6 +365,7 @@ export function TaskQuickCreateModal({
   return (
     <QuickCreateModalLayout
       open={open}
+      title={editingTask ? 'Edit task' : 'Create task'}
       onClose={() => { if (!isSubmitting) onClose() }}
       isDescriptionExpanded={isDescriptionExpanded}
       onSubmitShortcut={handleSubmit}

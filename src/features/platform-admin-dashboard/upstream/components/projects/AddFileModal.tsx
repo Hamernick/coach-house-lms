@@ -106,6 +106,7 @@ export function AddFileModal({
         <>
             <QuickCreateModalLayout
                 open={open}
+                title="Add file"
                 onClose={handleClose}
                 isDescriptionExpanded={isExpanded}
                 onSubmitShortcut={handleCreateAsset}

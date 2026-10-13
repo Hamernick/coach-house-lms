@@ -1,6 +1,7 @@
 import type { ProfileTab } from "@/components/organization/org-profile-card/types"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { normalizeWorkspaceDrawerTab } from "@/lib/workspace/routes"
+import { resolveOnboardingRequirements } from "@/lib/onboarding/requirements"
 
 type MyOrganizationRequestContext = NonNullable<
   Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
@@ -79,14 +80,18 @@ export function getOnboarding({
   activeOrg,
   profileAudience,
   user,
-}: MyOrganizationRequestContext) {
+}: MyOrganizationRequestContext, organization: { profile: Record<string, unknown>; publicSlug: string | null }) {
   const userMeta =
     (user.user_metadata as Record<string, unknown> | null) ?? null
   return {
     userMeta,
-    needsInitialOnboarding:
-      !profileAudience.isAdmin &&
-      !Boolean(userMeta?.onboarding_completed) &&
-      activeOrg.orgId === user.id,
+    needsInitialOnboarding: resolveOnboardingRequirements({
+      userId: user.id,
+      organizationId: activeOrg.orgId,
+      isPlatformStaff: profileAudience.isAdmin || profileAudience.isPlatformStaff,
+      userMetadata: userMeta,
+      organizationProfile: organization.profile,
+      publicSlug: organization.publicSlug,
+    }).required,
   }
 }

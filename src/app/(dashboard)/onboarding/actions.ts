@@ -6,6 +6,8 @@ import { validatePublicHandle } from "@/features/public-profiles"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { markOrganizationSetupModuleCompleted } from "@/lib/accelerator/organization-setup"
 import { writeOnboardingOrganizationProfile } from "@/lib/onboarding/organization-profile-write"
+import { normalizeOrganizationFormationStatus } from "@/lib/onboarding/requirements"
+import { organizationProfileNameSchema } from "@/lib/organization/profile-persistence-validation"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -103,13 +105,7 @@ export async function completeOnboardingAction(form: FormData) {
   const personHandleRaw = String(form.get("personHandle") || "").trim()
   const personHandleValidation = validatePublicHandle(personHandleRaw)
 
-  const formationStatusRaw = String(form.get("formationStatus") || "").trim()
-  const formationStatus =
-    formationStatusRaw === "pre_501c3" ||
-    formationStatusRaw === "in_progress" ||
-    formationStatusRaw === "approved"
-      ? formationStatusRaw
-      : null
+  const formationStatus = normalizeOrganizationFormationStatus(String(form.get("formationStatus") || "").trim())
 
   const orgName = String(form.get("orgName") || "").trim()
   const orgSlugRaw = String(form.get("orgSlug") || "").trim()
@@ -158,11 +154,14 @@ export async function completeOnboardingAction(form: FormData) {
     }
 
     if (requiresOrganizationSetup) {
-      if (!orgName) {
+      if (!formationStatus) {
+        redirect(buildOnboardingErrorRedirect({ intentFocus, error: "missing_formation_status" }))
+      }
+      if (!organizationProfileNameSchema.safeParse(orgName).success) {
         redirect(
           buildOnboardingErrorRedirect({
             intentFocus,
-            error: "missing_org_name",
+            error: orgName ? "invalid_org_name" : "missing_org_name",
           })
         )
       }

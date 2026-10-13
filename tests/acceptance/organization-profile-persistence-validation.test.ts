@@ -92,6 +92,47 @@ describe("organization profile persistence validation", () => {
     authMocks.canEditOrganization.mockReset()
   })
 
+  it("rejects a whitespace-only name before any profile write", async () => {
+    const from = vi.fn()
+    authMocks.requireServerSession.mockResolvedValue({
+      supabase: { from },
+      session: { user: { id: "owner-1" } },
+    })
+    authMocks.resolveActiveOrganization.mockResolvedValue({
+      orgId: "owner-1",
+      role: "owner",
+    })
+    authMocks.canEditOrganization.mockReturnValue(true)
+    expect(await updateOrganizationProfileAction({ name: "   " })).toEqual({
+      error: "Name is required",
+      field: "name",
+    })
+    expect(from).not.toHaveBeenCalled()
+  })
+
+  it("adds organization identity through the existing Workspace action without losing saved work", async () => {
+    const preserved = {
+      mission: "Saved mission",
+      vision: "Saved vision",
+      values: "Saved values",
+      documents: { bylaws: { path: "sample/bylaws.pdf" } },
+      org_people: [{ id: "teammate", name: "Existing teammate" }],
+      futureProfileKey: { retained: true },
+    }
+    const save = prepareOrganizationSave(preserved)
+    expect(
+      await updateOrganizationProfileAction({
+        name: `  ${"R".repeat(120)}  `,
+        formationStatus: "approved",
+      })
+    ).toMatchObject({ ok: true })
+    expect(save.getUpdatedProfile()).toMatchObject({
+      ...preserved,
+      name: "R".repeat(120),
+      formationStatus: "approved",
+    })
+  })
+
   it("accepts the complete Brand Kit and MVV persistence contract", () => {
     const result = organizationProfilePersistencePatchSchema.safeParse({
       mission: "Equip community leaders.",

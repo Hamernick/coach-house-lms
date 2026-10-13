@@ -65,7 +65,16 @@ export default async function MyOrganizationPage({
   const { supabase, user, profileAudience, activeOrg } = requestContext
   const { orgId, role } = activeOrg
   const isAdmin = profileAudience.isAdmin
-  const { userMeta, needsInitialOnboarding } = getOnboarding(requestContext)
+  const { orgRow, profile, initialProfile, roadmapSections } =
+    await measureServerStep(
+      "workspace.content.load_profile_context",
+      () => loadMyOrganizationProfileContext({ supabase, orgId }),
+      { thresholdMs: 750 }
+    )
+  const { userMeta, needsInitialOnboarding } = getOnboarding(requestContext, {
+    profile,
+    publicSlug: orgRow?.public_slug ?? null,
+  })
   const canEdit = isAdmin || canEditOrganization(role)
   const { initialDrawerData } = resolveInitialWorkspaceDrawerData({
     acceleratorGroupParam: searchState.acceleratorGroupParam,
@@ -88,12 +97,6 @@ export default async function MyOrganizationPage({
   const presentationMode =
     searchState.modeParam === "present" ||
     searchState.modeParam === "presentation"
-  const { orgRow, profile, initialProfile, roadmapSections } =
-    await measureServerStep(
-      "workspace.content.load_profile_context",
-      () => loadMyOrganizationProfileContext({ supabase, orgId }),
-      { thresholdMs: 750 }
-    )
   const nowIso = new Date().toISOString()
   const [
     programsResult,
@@ -175,7 +178,8 @@ export default async function MyOrganizationPage({
   )
   const { peopleNormalized, peopleSegments, peopleTags } =
     buildWorkspacePeopleData({ profile, ...organizationPeopleTaxonomy })
-  const onboardingDefaults = buildWorkspaceOnboardingDefaults({
+  const onboardingDefaults = await buildWorkspaceOnboardingDefaults({
+    needsOnboarding: needsInitialOnboarding,
     orgSlug: orgRow?.public_slug ?? null,
     builderPlanTier: currentPlanTier,
     orgProfile: profile,

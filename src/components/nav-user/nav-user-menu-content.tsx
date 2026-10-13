@@ -6,7 +6,6 @@ import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import IdCardIcon from "lucide-react/dist/esm/icons/id-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import { UpgradeButton } from "./upgrade-button"
 import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
 import type { AppShellAccountMenuAction } from "@/components/app-shell/account-menu-actions-context"
@@ -15,8 +14,6 @@ import { Button } from "@/components/ui/button"
 import type { AccountSettingsTabKey } from "@/components/account-settings/types"
 
 type NavUserMenuContentProps = {
-  showUpgrade?: boolean
-  planLabel?: string
   open: boolean
   menuRef: RefObject<HTMLDivElement | null>
   menuStyle: CSSProperties | null
@@ -31,15 +28,12 @@ type NavUserMenuContentProps = {
   canAccessOrgAdmin: boolean
   accountMenuActions?: AppShellAccountMenuAction[]
   signOutPending: boolean
-  onOpenUpgrade: () => void
   onCloseMenu: () => void
   onOpenSettings: (tab?: AccountSettingsTabKey) => void
   onSignOut: () => void
 }
 
 export function NavUserMenuContent({
-  showUpgrade = false,
-  planLabel,
   open,
   menuRef,
   menuStyle,
@@ -52,7 +46,6 @@ export function NavUserMenuContent({
   canAccessOrgAdmin,
   accountMenuActions = [],
   signOutPending,
-  onOpenUpgrade,
   onCloseMenu,
   onOpenSettings,
   onSignOut,
@@ -82,14 +75,11 @@ export function NavUserMenuContent({
             {displayName}
           </span>
           <span className="text-muted-foreground truncate text-xs">
-            {planLabel ?? displayEmail}
+            {displayEmail}
           </span>
         </div>
       </div>
       <div className="bg-border/60 my-2 h-px" />
-      {showUpgrade ? (
-        <UpgradeButton className="mb-1" onClick={() => { onCloseMenu(); onOpenUpgrade() }} />
-      ) : null}
       <Button
         type="button"
         variant="ghost"

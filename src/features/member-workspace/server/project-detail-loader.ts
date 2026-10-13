@@ -1,4 +1,3 @@
-import { loadGuidedProjectMembers } from "./guided-project-members"
 import type { User } from "@/features/platform-admin-dashboard"
 import type { Database } from "@/lib/supabase"
 import type {
@@ -20,9 +19,9 @@ import { buildMemberWorkspaceProjectDetails } from "./project-detail-view-model"
 import { ensureStarterProjectsForOrg } from "./project-persistence"
 import { organizationProjectSelectFields } from "./project-select"
 import { loadProjectOverviewDocument } from "./project-overview-documents"
-import { loadOrganizationProjectActivityResult } from "./project-activity"
+import { loadOrganizationProjectActivity } from "./project-activity"
 import { type OrganizationProjectRecord } from "./project-starter-data"
-import { loadMemberWorkspaceCurrentUser, loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
+import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { ensureStarterTasksForOrg } from "./task-persistence"
 import { loadTaskAssigneeMap } from "./task-assignees"
 import {
@@ -45,7 +44,6 @@ type OrganizationTaskDetailRecord = Pick<
   | "project_id"
   | "title"
   | "description"
-  | "tracker_metadata"
   | "task_type"
   | "status"
   | "start_date"
@@ -102,7 +100,6 @@ function isNonEmptyString(value: string | null | undefined): value is string {
 }
 
 export type MemberWorkspaceProjectDetailLoadResult =
-  | { state: "fiscal-intake"; projectId: string }
   | { state: "schema-unavailable" }
   | { state: "not-found" }
   | {
@@ -138,7 +135,7 @@ async function loadProjectTaskRows({
   const { data: taskRows, error: taskError } = await supabase
     .from("organization_tasks")
     .select(
-      "id, project_id, tracker_metadata, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order"
+      "id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order"
     )
     .eq("org_id", orgId)
     .eq("project_id", projectId)
@@ -365,6 +362,38 @@ async function loadProjectAssetRows({
   })
 }
 
+async function loadCurrentUser({
+  supabase,
+  userId,
+}: {
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
+  userId: string
+}): Promise<User> {
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, email")
+    .eq("id", userId)
+    .maybeSingle<ProfileLiteRow>()
+
+  if (profileError) {
+    throw toMemberWorkspaceDataError(
+      profileError,
+      "Unable to load your profile."
+    )
+  }
+
+  return {
+    id: userId,
+    name:
+      toTrimmedString(profile?.full_name) ||
+      toTrimmedString(profile?.email) ||
+      "You",
+    avatarUrl: toTrimmedString(profile?.avatar_url) || undefined,
+  }
+}
+
 async function buildReadyProjectDetailResult({
   actor,
   organizationSummary,
@@ -385,15 +414,13 @@ async function buildReadyProjectDetailResult({
     assets,
     overviewDocument,
     activity,
-    scheduleResult,
-    projectMembers,
   ] = await Promise.all([
     loadMemberWorkspacePersonOptionsForOrganizations({
       orgIds: [project.org_id],
       supabase: actor.supabase,
       includePlatformAdmins: actor.isAdmin,
     }),
-    loadMemberWorkspaceCurrentUser({
+    loadCurrentUser({
       supabase: actor.supabase,
       userId: actor.userId,
     }),
@@ -422,17 +449,11 @@ async function buildReadyProjectDetailResult({
       projectId: project.id,
       supabase: actor.supabase,
     }),
-    loadOrganizationProjectActivityResult({
+    loadOrganizationProjectActivity({
       orgId: project.org_id,
       projectId: project.id,
       supabase: actor.supabase,
     }),
-    // Isolated query keeps older schemas readable before the migration is applied.
-    actor.supabase.from("organization_projects")
-      .select("schedule_confirmed")
-      .eq("id", project.id).eq("org_id", project.org_id)
-      .maybeSingle<{ schedule_confirmed: boolean }>(),
-    loadGuidedProjectMembers({ projectId: project.id, organizationId: project.org_id, supabase: actor.supabase }),
   ])
 
   return {
@@ -448,12 +469,8 @@ async function buildReadyProjectDetailResult({
       quickLinks,
       assets,
       assigneeOptions,
-      projectMembers,
       overviewDocument,
-      activity: activity.items,
-      activityState: activity.state,
-      scheduleAvailable: (!scheduleResult.error && Boolean(scheduleResult.data)) || (project.created_source === "user" && !project.starter_seed_key),
-      scheduleConfirmed: scheduleResult.data?.schedule_confirmed === true,
+      activity,
     }),
   }
 }
@@ -498,12 +515,6 @@ async function loadPlatformAdminProjectDetailPage({
   }
 
   if (projectRow) {
-    const guestScope = await actor.supabase.rpc("fiscal_guest_project_reviewer_access", {
-      p_project_id: projectRow.id, p_user_id: actor.userId,
-    })
-    if (guestScope.error) return { state: "schema-unavailable" }
-    if (guestScope.data === false) return { state: "not-found" }
-    if (guestScope.data === true) return { state: "fiscal-intake", projectId: projectRow.id }
     if (!actorCanAccessOrganization(actor, projectRow.org_id)) {
       return { state: "not-found" }
     }

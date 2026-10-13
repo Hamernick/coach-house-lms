@@ -1,7 +1,5 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { Database } from "@/lib/supabase/types"
@@ -35,8 +33,5 @@ export async function markModuleCompleteAction(moduleId: string): Promise<Result
     return { error: "Unable to update progress." }
   }
 
-  revalidatePath("/workspace", "layout")
-  revalidatePath("/accelerator", "layout")
-  revalidatePath("/my-organization")
   return { ok: true }
 }

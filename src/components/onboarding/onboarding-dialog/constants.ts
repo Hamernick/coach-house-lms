@@ -17,53 +17,53 @@ export const FORMATION_OPTIONS: Array<{
 export const BUILDER_STEPS: Step[] = [
   {
     id: "intent",
-    title: "What would you like to do?",
+    title: "Choose your onboarding path",
     description:
-      "Build your organization or connect with nonprofits doing work you care about.",
+      "Choose the path that matches how you want to use Coach House.",
   },
   {
     id: "pricing",
-    title: "Choose your starting point",
+    title: "Unlock the builder workspace",
     description:
-      "Start free with Individual, or choose a plan with team access and guided Accelerator lessons.",
+      "Start with Individual for free or choose a paid plan for team access and the accelerator.",
   },
   {
     id: "org",
-    title: "Name your organization",
+    title: "Create your organization",
     description:
-      "Add your organization’s name, link, and formation status. You can update these later.",
+      "This is your nonprofit’s workspace. You can change this later.",
   },
   {
     id: "account",
     title: "Set up your account",
-    description: "Add your name and choose a username. Everything else is optional.",
+    description: "A few details so we can personalize your workspace.",
   },
   {
     id: "community",
-    title: "Connect with the community",
+    title: "Join our communities",
     description:
-      "Ask questions and meet other nonprofit builders. Join now or continue without joining.",
+      "Optional: hop into Discord or WhatsApp now so you can ask questions as you set things up.",
   },
 ]
 
 export const MEMBER_STEPS: Step[] = [
   {
     id: "intent",
-    title: "What would you like to do?",
+    title: "Choose your onboarding path",
     description:
-      "Build your organization or connect with nonprofits doing work you care about.",
+      "Choose the path that matches how you want to use Coach House.",
   },
   {
     id: "account",
     title: "Set up your account",
     description:
-      "Add your name and choose a username. Everything else is optional.",
+      "A few details so we can personalize your internal member view.",
   },
   {
     id: "community",
-    title: "Connect with the community",
+    title: "Join our communities",
     description:
-      "Meet people working with nonprofits. Join now or continue without joining.",
+      "Optional: hop into Discord or WhatsApp now so you can ask questions as you get started.",
   },
 ]
 
@@ -103,14 +103,14 @@ export const INTENT_OPTIONS: IntentOption[] = [
   {
     value: "fund",
     label: "Fund nonprofits",
-    description: "Connect with nonprofits you want to support.",
+    description: "Support organizations and track funded outcomes.",
     available: true,
     icon: CircleDollarSignIcon,
   },
   {
     value: "support",
     label: "Support teams",
-    description: "Connect with nonprofit teams and share your expertise.",
+    description: "Help operators and teams execute mission-critical work.",
     available: true,
     icon: UsersIcon,
   },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { CalendarBlank, CaretDown, User } from "@phosphor-icons/react/dist/ssr"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,9 +19,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { formatProjectDate, projectDateToLocalCalendar, projectDateToValue } from "@/lib/project-date"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -35,7 +33,7 @@ import type { MemberWorkspacePersonOption } from "../../types"
 
 export const headerChipIconClassName = "h-3.5 w-3.5 shrink-0 opacity-80"
 
-export const headerChipClassName =
+const headerChipClassName =
   "h-7 min-w-0 max-w-[18rem] rounded-full border-transparent bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-800 shadow-none dark:bg-zinc-600/20 dark:text-zinc-50"
 
 function findOptionLabel(
@@ -115,7 +113,6 @@ export function SelectChip({
   triggerClassName,
   value,
   onChange,
-  onBeginEdit,
 }: {
   id: string
   label: string
@@ -124,16 +121,15 @@ export function SelectChip({
   triggerClassName?: string
   value: string
   onChange: (value: string) => void
-  onBeginEdit?: () => void
 }) {
   return (
-    <Select value={value} onValueChange={onChange} onOpenChange={(open) => { if (open) onBeginEdit?.() }}>
+    <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         id={id}
         aria-label={label}
         className={cn(
           headerChipClassName,
-          "data-[size=default]:h-7 data-[size=sm]:h-7 w-fit gap-2 border-none pr-2.5 leading-none [&>svg]:ml-0.5 [&>svg]:h-3.5 [&>svg]:w-3.5",
+          "w-fit gap-2 border-none pr-2.5 leading-none [&>svg]:ml-0.5 [&>svg]:h-3.5 [&>svg]:w-3.5",
           triggerClassName
         )}
       >
@@ -155,32 +151,34 @@ export function SelectChip({
   )
 }
 
-export function DateChip({ id, label, value, onChange, onBeginEdit }: {
+export function DateChip({
+  id,
+  label,
+  value,
+  onChange,
+}: {
   id: string
   label: string
   value: string
   onChange: (value: string) => void
-  onBeginEdit?: () => void
 }) {
-  const [open, setOpen] = useState(false)
-  const date = value ? projectDateToLocalCalendar(new Date(`${value}T00:00:00.000Z`)) : undefined
   return (
-    <Popover open={open} onOpenChange={(next) => { if (next) onBeginEdit?.(); setOpen(next) }}>
-      <PopoverTrigger asChild>
-        <Button id={id} type="button" variant="secondary" size="sm" aria-label={label}
-          className={cn(headerChipClassName, "w-fit gap-1.5 leading-none")}>
-          <CalendarBlank className={headerChipIconClassName} aria-hidden />
-          <span className="text-muted-foreground">{label}</span>
-          <span>{date ? formatProjectDate(date) : "Set date"}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" aria-label={`${label} date picker`}>
-        <Calendar mode="single" selected={date} defaultMonth={date} autoFocus
-          onSelect={(next) => { onChange(next ? projectDateToValue(next) : ""); setOpen(false) }} />
-        {date ? <Button type="button" variant="ghost" size="sm" className="m-2"
-          onClick={() => { onChange(""); setOpen(false) }}>Clear date</Button> : null}
-      </PopoverContent>
-    </Popover>
+    <label
+      className={cn(
+        headerChipClassName,
+        "inline-flex w-fit items-center gap-1.5 border leading-none"
+      )}
+    >
+      <CalendarBlank className={headerChipIconClassName} aria-hidden />
+      <span className="text-muted-foreground">{label}</span>
+      <Input
+        id={id}
+        type="date"
+        value={value}
+        className="h-auto w-[8.5rem] border-0 bg-transparent px-0 py-0 text-base shadow-none focus-visible:ring-0 sm:text-xs"
+        onChange={(event) => onChange(event.currentTarget.value)}
+      />
+    </label>
   )
 }
 
@@ -189,13 +187,11 @@ export function MembersAssignmentMenu({
   id,
   value,
   onChange,
-  onBeginEdit,
 }: {
   assigneeOptions: MemberWorkspacePersonOption[]
   id: string
   value: string
   onChange: (value: string) => void
-  onBeginEdit?: () => void
 }) {
   const selectedNames = parseHeaderChipList(value)
   const selectedNameSet = new Set(selectedNames.map(normalizeMemberName))
@@ -220,7 +216,7 @@ export function MembersAssignmentMenu({
   }
 
   return (
-    <DropdownMenu onOpenChange={(open) => { if (open) onBeginEdit?.() }}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           id={id}

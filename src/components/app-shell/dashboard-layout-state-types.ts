@@ -39,7 +39,6 @@ export type DashboardLayoutState = {
     open: boolean
   }
   onboardingLocked: boolean
-  onboardingMode: "post_signup_access" | "workspace_setup"
   onboardingIntentFocus: "build" | "find" | "fund" | "support" | null
   formationStatus: string | null
   memberWorkspaceHeader: MemberWorkspaceHeaderState | null
@@ -82,7 +81,6 @@ export const EMPTY_STATE: DashboardLayoutState = {
     open: false,
   },
   onboardingLocked: false,
-  onboardingMode: "post_signup_access",
   onboardingIntentFocus: null,
   formationStatus: null,
   memberWorkspaceHeader: null,

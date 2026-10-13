@@ -54,6 +54,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Workspace canvas node shell anatomy and React Flow boundary: `docs/agent/workspace-node-frame-contract.md`
 - React Grab pasted-component ownership workflow: `docs/agent/react-grab-execution-contract.md`
 - Public resource source verification, AI enrichment, review, and publication gates: `docs/agent/resource-map-enrichment.md`
+- Durable nonprofit enrichment and cross-chat continuation: `docs/agent/nonprofit-enrichment-runbook.md`
 - Local Graphify build, scope, query, and update workflow: `docs/agent/graphify.md`
 
 ## Existing Supporting Docs

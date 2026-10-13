@@ -29,6 +29,7 @@
     "test:acceptance:manifest:update": "node scripts/sync-acceptance-projects.mjs --write",
     "test": "pnpm test:snapshots && pnpm test:rls",
     "test:rls": "pnpm test:rls:project-recurrence && pnpm test:rls:signup-consent && pnpm test:rls:fiscal && pnpm test:rls:finance && pnpm test:rls:page-health && pnpm test:rls:claims && pnpm test:rls:public-profiles && pnpm test:rls:google-drive && pnpm test:rls:document-files && pnpm test:rls:document-activity && pnpm test:rls:nonprofit-directory && node supabase/tests/rls.test.mjs",
+    "test:rls:nonprofit-directory": "node --test supabase/tests/nonprofit-directory.test.mjs",
     "test:rls:project-recurrence": "node supabase/tests/recurring-projects.test.mjs",
     "test:rls:signup-consent": "node supabase/tests/signup-legal-consent.test.mjs",
     "test:rls:fiscal": "node supabase/tests/fiscal-final-schema-rls.test.mjs",
@@ -101,7 +102,19 @@
     "import:curriculum": "node scripts/import-curriculum.mjs",
     "test:rls:document-files": "node supabase/tests/organization-document-files-rls.test.mjs",
     "test:rls:document-activity": "node supabase/tests/organization-document-activity.test.mjs",
-    "test:rls:nonprofit-directory": "node supabase/tests/nonprofit-directory.test.mjs"
+    "resource-map:eo-import": "node scripts/resource-map/import-irs-eo-candidates.mjs",
+    "resource-map:eo-run": "node scripts/resource-map/run-irs-eo-enrichment.mjs",
+    "resource-map:eo-resolve-websites": "node scripts/resource-map/resolve-irs-eo-websites.mjs",
+    "resource-map:eo-collect-service-evidence": "node scripts/resource-map/collect-irs-eo-service-evidence.mjs",
+    "resource-map:eo-build-private-drafts": "node scripts/resource-map/build-irs-eo-private-drafts.mjs",
+    "resource-map:eo-plan-benchmark": "node scripts/resource-map/plan-irs-eo-benchmark.mjs",
+    "resource-map:eo-plan-work": "node scripts/resource-map/plan-irs-eo-work-packages.mjs",
+    "resource-map:eo-work-lease": "node scripts/resource-map/manage-irs-eo-work-lease.mjs",
+    "resource-map:eo-plan-search": "node scripts/resource-map/plan-irs-eo-search-discovery.mjs",
+    "resource-map:eo-run-search-adapter": "node scripts/resource-map/run-irs-eo-search-adapter.mjs",
+    "resource-map:eo-plan-owned-discovery": "node scripts/resource-map/plan-irs-eo-owned-discovery.mjs",
+    "resource-map:eo-run-owned-crawler": "node scripts/resource-map/run-irs-eo-owned-crawler.mjs",
+    "resource-map:enrich-organizations": "node src/features/nonprofit-enrichment/server/cli.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",
@@ -116,7 +129,6 @@
     "@fontsource-variable/sora": "^5.3.0",
     "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@hookform/resolvers": "^5.2.2",
-    "@lucasmarkes/hairline": "0.3.0",
     "@maily-to/core": "^0.3.7",
     "@monaco-editor/react": "^4.7.0",
     "@ncdai/react-wheel-picker": "^1.2.2",
@@ -200,7 +212,6 @@
     "gsap": "^3.14.2",
     "iconoir-react": "^7.11.1",
     "input-otp": "^1.4.2",
-    "lenis": "1.3.26",
     "lucide-react": "^0.544.0",
     "mapbox-gl": "^3.15.0",
     "mathjs": "^15.2.0",
@@ -233,7 +244,6 @@
     "stripe": "^18.5.0",
     "supercluster": "^8.0.1",
     "tailwind-merge": "^3.3.1",
-    "three": "0.174.0",
     "vaul": "^1.1.2",
     "zod": "^4.1.8"
   },
@@ -248,7 +258,6 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
     "@types/supercluster": "^7.1.3",
-    "@types/three": "0.174.0",
     "baseline-browser-mapping": "^2.9.18",
     "eslint": "^9",
     "eslint-config-next": "^16.2.6",
@@ -275,9 +284,6 @@
       "protocol-buffers-schema@3.6.0": "3.6.1",
       "qs": "^6.14.2",
       "vite@7.3.1": "7.3.2"
-    },
-    "patchedDependencies": {
-      "@radix-ui/react-navigation-menu@1.2.14": "src/lib/vendor-patches/@radix-ui__react-navigation-menu@1.2.14.patch"
     }
   },
   "engines": {

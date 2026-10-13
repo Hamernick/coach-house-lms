@@ -2,7 +2,7 @@
 
 October 7 category addendum: [National category-filter integration plan](2026-10-07-national-nonprofit-category-filters.md). Follow its versioned mapping, sidecar backfill, filter/search/count contract and release sequence; it supplements this plan without resetting ingestion/publication.
 
-Status: proposed implementation, October 6, 2026. This specifies the next build; commands marked proposed do not exist yet. No national publication or production migration has occurred in this planning session.
+Status update, October 7, 2026: national identities published (1,957,327); four retained filing archive runs completed; category serving deployed and national category backfill running (first 100,000 verified). See the stable continuation for current status and remaining work. The specification below originated October 6; its starting counts and proposed commands are historical, not instructions to restart completed stages.
 
 **Resume first:** [Stable continuation and implementation checklist](nonprofit-enrichment-continuation.md). Read its current-plan pointer and live ledger before executing this dated specification.
 
@@ -16,7 +16,7 @@ Extend the existing `feat/map-data-scale-20261003` lane. Permanent progress stay
 
 Last recorded research checkpoint, October 6 at 02:07 UTC: 10,001 identities; 1,049 organizations with candidate enrichment; ten verified website/phone pairs; 76 partial passes; no publication eligibility audit. These are dated local counts, not a current production census. Refresh them before execution. Ten contact pairs is not the number we are allowed to publish.
 
-Treat 1.8M as scale, not an exact denominator. Recount the frozen IRS snapshots and report valid distinct EINs, duplicates, excluded rows and source dates. Previously counted files contained 1,957,340 distinct EINs; that is historical evidence only.
+Treat 1.8M as scale, not an exact denominator. The frozen import is complete: 1,957,340 distinct EINs. Preserve its completed source manifests; do not recount/reimport unchanged snapshots. Reconcile changed sources only.
 
 ## 2. Existing parts to reuse, and the specific gaps
 

@@ -1,6 +1,6 @@
 # National nonprofit category filters
 
-Status: private mapping implemented and full corpus classified October 7, 2026. Public schema, backfill and filter release remain in progress.
+Status: PR #273 merged; production schema and category search active. First 5,000 categorized identities verified October 7; detached national backfill running. Read `CATEGORY-PUBLICATION.json` for current progress, PID and exact plans. Historic checkpoints below remain evidence, not current instructions.
 
 This supplements the [national plan](2026-10-06-national-nonprofit-implementation-plan.md). Resume through [the stable continuation entry point](nonprofit-enrichment-continuation.md); do not restart identity imports, publication or filing enrichment. Existing background operators continue independently.
 
@@ -96,14 +96,14 @@ Done when: deployed category browsing works against published national data, cou
 
 ## Continuation checklist
 
-- [ ] Versioned mapping, taxonomy navigation proposal and coverage report.
-- [ ] Additive category storage, safe write RPC and receipt-based backfill.
-- [ ] Indexed category search, bound cursors and honest facet counts.
-- [ ] Existing filter UI connected, including category-only browsing.
+- [x] Versioned mapping, taxonomy navigation proposal and coverage report.
+- [x] Additive category storage, safe write RPC and receipt-based backfill.
+- [x] Indexed category search, bound cursors and honest facet counts.
+- [x] Existing filter UI connected, including category-only browsing.
 - [ ] Incremental mission/program/provider classification.
 - [ ] Focused validation, protected release, staged backfill and live verification.
 
-Next implementation action: step 1. Existing data workers keep running. Before starting, read `ACTIVE-PUBLICATION.json` and `FILING-ENRICHMENT.json` under the permanent state directory; inspect live PIDs and completed receipts. This plan adds a category work package to the national effort and does not reset its progress. Update this checklist in place, the stable continuation entry point and the monthly runlog as steps complete.
+Current next action: supervise/resume the saved category rollout, then step 5 classification refinement alongside filing-field publication. The four retained filing runs have completed. Before starting, read `ACTIVE-PUBLICATION.json` and `FILING-ENRICHMENT.json` under the permanent state directory; inspect live PIDs and completed receipts. This plan adds a category work package to the national effort and does not reset its progress. Update this checklist in place, the stable continuation entry point and the monthly runlog as steps complete.
 
 ## Step 1 execution checkpoint — October 7, 06:39 UTC
 
@@ -123,3 +123,9 @@ Next implementation action: step 1. Existing data workers keep running. Before s
 - National disposable PostgreSQL benchmark: 1,957,340 identities, 1,337,767 mapped organizations, 1,352,930 topic assignments. Ten concurrent readers; nine category query families p95 65.4–459.1 ms, all below the local 500 ms target. Category/index storage 518,774,784 bytes with identity-shaped records. No hosted-network, enriched-row or concurrent-writer performance claim. `<state>/category-national-benchmark-20261007.{json,log}`.
 - Validation: five mapping tests; three publication-plan/replay tests; 92 targeted search/UI/taxonomy acceptance tests; disposable PostgreSQL access/write/rollback/visibility tests. Browser category-only Food→Faith→Arts navigation sends the correct filter; desktop/mobile no React errors or horizontal document overflow. Browser directory responses deliberately empty to test controls before schema deployment. No visual baselines changed.
 - Next: finish release checks/review, deploy additive migrations before category client, publish one 250-record chunk, verify anonymous matches/absence from service leaves, then advance saved chunks and subsequent EIN plans. Pending identities require a new retry plan, not a false completed status. Category publication and evidence-based service refinement remain unfinished.
+
+## Production rollout — October 7, 2026
+
+All three migrations now applied to `vswzhuwjtgzrkxknrmxu`; two new migration receipts saved in permanent state. The first 250-row chunk and subsequent 4,750 rows match canonical category sets and index assignments. Anonymous category searches, exact-EIN/state matching and broad-topic exclusion from service leaves pass. National rollout uses `<state>/category-rollout-20261007.mjs --all` with one detached worker and per-chunk health/readback checks. Inspect `CATEGORY-PUBLICATION.json` and the PID before any resume; retain original plan and receipts. Do not regenerate mappings or republish national identities. Unknown national facet totals remain intentionally omitted. Step 6 remains in progress until the full eligible backfill and final live census are complete.
+
+Latest verified checkpoint: first two 50K plans completed with 100,000 inserted/read back, no pending/held rows. Live Food UI and identity expansion passed, as did seven category pagination/bound-cursor tests. Remaining national rollout continues; permanent status files supersede this dated number.

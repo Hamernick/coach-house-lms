@@ -23,8 +23,8 @@ export function AppShellSidebarHeader({
 }) {
   const { setOpenMobile } = useSidebar()
   return (
-    <SidebarHeader className="shrink-0 group-data-[collapsible=icon]:px-2 md:min-h-14">
-      <div className="flex min-w-0 items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center">
+    <SidebarHeader>
+      <div className="flex min-w-0 items-center justify-between gap-2">
         {children ?? <SidebarBrand href={brandHref} />}
         <Button
           type="button"

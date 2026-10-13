@@ -33,4 +33,4 @@ Service-only `rollback_nonprofit_directory_chunk(batch,chunk,target)` restores p
 
 ## Current boundaries
 
-The first release covers registry identities and available audited fields. Full-corpus versioned imports, alias/taxonomy expansion, spatial pins, richer source adapters, automatic refresh scheduling and national-size performance validation remain separate work. Local PostgreSQL test results do not establish production latency or national capacity. Check the [release continuation](../plans/2026-10-06-nonprofit-directory-release.md) and current monthly log for actual release/data progress.
+The first release covers registry identities and available audited fields. Full-corpus versioned imports, alias/taxonomy expansion, spatial pins, richer source adapters, automatic refresh scheduling and national-size performance validation remain separate work. Local PostgreSQL test results do not establish production latency or national capacity. Check the [stable continuation checklist](../plans/nonprofit-enrichment-continuation.md) and current monthly log for actual release/data progress.

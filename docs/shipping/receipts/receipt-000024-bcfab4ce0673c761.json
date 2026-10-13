@@ -1,0 +1,81 @@
+{
+  "at": "2026-10-13T18:19:02.615910+00:00",
+  "operation": "resume",
+  "owner": "ship-readiness-triage-20261013",
+  "previous_revision": 23,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Prior PID 45278 stopped per process identity check.",
+    "next_action": "All three PRs292/293/294 are Ready for review, not merge-ready. Await required user appearance review for Tools and Donate before baseline updates; finish visual/quality and code-owner gates. Preserve original blocked SHIP000 evidence.",
+    "live_site_candidate": {
+      "pr": 294,
+      "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+      "head": "3ba27bad8e84e31a9193bbbb94b8e4eb9ad57c53",
+      "branch": "fix/live-site-pricing-donate-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+      "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+      "status": "Ready for review, no longer draft; local checks pass; hosted visual still running and code-owner review required. Not merge-ready.",
+      "validation": "Latest 40 tests across six focused files; two added browser cases click all six pricing cards; three prior Donate/menu cases remain applicable. Seven generic CTA hrefs inspected and one generic signup journey per public route verified. Anonymous/signed-in selection, generic/free/both paid human confirmation and encoded return parameters covered. Lint/manifest/pre-push/secret scan pass.",
+      "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+      "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+      "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+      "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+      "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at3ba27bad",
+      "release": "CI/review/approval/deployment/live confirmation and payment verification pending",
+      "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed."
+    },
+    "pending_decisions": {
+      "tools": "Appearance approval requested for Desktop Tools screenshot gallery; user has not accepted references. No baseline changed.",
+      "fiscal": "Awaiting fee-base clarification: August approved grant allocations vs October incoming donations.",
+      "donate": "Appearance approval requested for Desktop Pricing Donate gallery; no response yet. Ubuntu reference artifacts downloaded for review; no baseline changed."
+    },
+    "readiness_triage": {
+      "at": "2026-10-13T18:19:02.554465+00:00",
+      "pr292": {
+        "head": "90f52ac3bd37c46093eba8ca245d86006432faab",
+        "draft": false,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "failed": [
+          "visual",
+          "quality"
+        ],
+        "details": "Three Tools baseline mismatches plus touch cancellation failure; Find detail case flaky. Mobile touch focused local rerun passes with existing guarded fixture header. No speculative code change."
+      },
+      "pr293": {
+        "head": "d82d3f150f6d4280b8c0aee8639ee670f53d93a9",
+        "draft": false,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "failed": [
+          "visual",
+          "quality"
+        ],
+        "details": "Three Tools baseline mismatches; Find detail case flaky."
+      },
+      "pr294": {
+        "head": "3ba27bad8e84e31a9193bbbb94b8e4eb9ad57c53",
+        "draft": false,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build",
+          "references"
+        ],
+        "visual": "in_progress",
+        "review": "REVIEW_REQUIRED"
+      },
+      "boundary": "Ready-for-review is not merge approval. No bypass, reference replacement, deployment, provider or preview changes."
+    }
+  },
+  "remote": null
+}

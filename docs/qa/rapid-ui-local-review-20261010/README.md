@@ -1,5 +1,9 @@
 # Rapid UI consolidated local review
 
+**Closed by Caleb on October 12, 2026.** Remaining follow-ups are tracked in his separate to-do list; its location was not supplied. PR [#288](https://github.com/Hamernick/CoachHouse/pull/288) merged as `73dd8d15`; the canonical `coachhouse` Vercel deployment reports success. Migration `20261012163000` was applied and verified. This closes this workstream, not every verification gap: final PR visual/quality checks failed, the secondary Vercel project failed, and authenticated signup/payment/unlock verification remains unconfirmed. Do not resume historical tasks below without a new request. The connected planner remains abandoned.
+
+The remainder of this document is historical evidence, not an active task queue.
+
 Review target: the internal rapid-UI worktree on localhost:3001. This is a local product-review checklist, not a deployment receipt. User review follows implementation and focused automated verification; production changes and worktree retirement are separate.
 
 ## Latest onboarding correction

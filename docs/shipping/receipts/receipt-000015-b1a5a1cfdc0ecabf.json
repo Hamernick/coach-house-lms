@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-13T05:12:50.708640+00:00",
+  "operation": "bind-plan",
+  "owner": "ship-plan-links-20261013",
+  "previous_revision": 14,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "plan_refs": [
+      {
+        "workstream": "09",
+        "stages": [
+          1
+        ]
+      },
+      {
+        "workstream": "05",
+        "stages": [
+          1
+        ]
+      },
+      {
+        "workstream": "03",
+        "stages": [
+          3
+        ]
+      }
+    ]
+  },
+  "remote": null
+}

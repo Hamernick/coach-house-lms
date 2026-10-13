@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-13T05:13:44.080115+00:00",
+  "operation": "checkpoint",
+  "owner": "ship-plan-links-20261013",
+  "previous_revision": 15,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "plan_linkage_followup": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+      "head": "9e931dd86795bca92d27bc5f041dcb194ddecbf9",
+      "branch": "chore/ship-plan-links-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+      "tests": "38 runner tests and 3 continuation tests pass; 10 original packets/59 stages and 176 coverage.csv filename mappings verified",
+      "recovery": "origin/chore/ship-plan-links-20261013 verified by ls-remote",
+      "status": "draft; CI and review pending"
+    },
+    "next_action": "Review plan-linkage follow-up PR #292; preserve merged SHIP-000 head and resolve missing release evidence before closing or starting AUDIT-001."
+  },
+  "remote": null
+}

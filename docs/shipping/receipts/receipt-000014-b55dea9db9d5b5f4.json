@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-13T05:11:29.521859+00:00",
+  "operation": "resume",
+  "owner": "ship-plan-links-20261013",
+  "previous_revision": 13,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": "Prior handoff owner PID 226 stopped; runner verifies process identity before takeover.",
+    "blocker": "PR #291 externally merged at ce1436a2; current-head quality failed and code-owner review is missing. No exact-head human approval is recorded.",
+    "next_action": "Preserve SHIP-000 revision 066ee9e4 and reconcile external merge gates. Plan-linking follow-up is prepared separately in chore/ship-plan-links-20261013; no subsequent product slice may start."
+  },
+  "remote": {
+    "github": {
+      "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+      "quality": "failure",
+      "review": "REVIEW_REQUIRED",
+      "protection_satisfied": false,
+      "reference": "https://github.com/Hamernick/CoachHouse/pull/291",
+      "observed_at": "2026-10-13T05:11:27.946365+00:00",
+      "merge_state": "UNKNOWN",
+      "required_checks": [
+        {
+          "context": "quality",
+          "app_id": 15368
+        }
+      ]
+    },
+    "merge": {
+      "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+      "at": "2026-10-13T05:00:38Z",
+      "default_branch_contains": true
+    },
+    "deployment_observations": [
+      {
+        "id": 7030525152,
+        "environment": "Production \u2013 coachhouse",
+        "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+        "statuses": [
+          {
+            "state": "success",
+            "environment_url": "https://coachhouse-di31gtmxa-calebs-projects-58ab1538.vercel.app",
+            "log_url": "https://coachhouse-di31gtmxa-calebs-projects-58ab1538.vercel.app",
+            "created_at": "2026-10-13T05:03:55Z"
+          }
+        ]
+      },
+      {
+        "id": 7030491018,
+        "environment": "github-pages",
+        "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+        "statuses": [
+          {
+            "state": "success",
+            "environment_url": "https://hamernick.github.io/CoachHouse/",
+            "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+            "created_at": "2026-10-13T05:01:39Z"
+          },
+          {
+            "state": "in_progress",
+            "environment_url": "",
+            "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+            "created_at": "2026-10-13T05:01:23Z"
+          },
+          {
+            "state": "queued",
+            "environment_url": "",
+            "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+            "created_at": "2026-10-13T05:01:21Z"
+          }
+        ]
+      }
+    ],
+    "provider_status": "unknown until intended project/domain/source SHA is checked at provider"
+  }
+}

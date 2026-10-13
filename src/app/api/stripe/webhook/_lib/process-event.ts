@@ -4,8 +4,6 @@ import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import {
   extractOrganizationUserIdFromMetadata,
   extractUserIdFromMetadata,
-  getCancelAtIso,
-  getCanceledAtIso,
   getCurrentPeriodEndIso,
   toStatus,
 } from "./metadata"
@@ -20,7 +18,6 @@ import {
   shouldRollToOrganizationPlan,
   WEBHOOK_BILLING_CONSTANTS,
 } from "./subscription-lifecycle"
-import { processCoachingCheckoutSession } from "../../../../../features/coaching-booking/server/stripe"
 
 export async function processStripeWebhookEvent({
   event,
@@ -33,18 +30,11 @@ export async function processStripeWebhookEvent({
   stripeMode: "live" | "test"
   organizationPriceId: string | null
 }) {
-  if (event.type === "checkout.session.async_payment_succeeded") {
-    if (await processCoachingCheckoutSession(event.data.object as Stripe.Checkout.Session)) return
-  }
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
-    const coachingHandled = await processCoachingCheckoutSession(session)
-    if (coachingHandled) return
-
     const subscriptionId =
       typeof session.subscription === "string" ? session.subscription : undefined
     const userId = session.client_reference_id ?? undefined
-    const sessionMetadata = session.metadata ?? {}
 
     if (session.mode === "payment" && session.metadata?.kind === "accelerator") {
       const resolvedUserId =
@@ -109,41 +99,40 @@ export async function processStripeWebhookEvent({
       }
     }
 
-    if (subscriptionId) {
+    if (subscriptionId && userId) {
       const subscriptionOwnerId =
-        extractOrganizationUserIdFromMetadata(sessionMetadata) ??
-        extractUserIdFromMetadata(sessionMetadata) ??
-        userId
+        extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ?? userId
+      await upsertSubscription({
+        userId: subscriptionOwnerId,
+        customerId: typeof session.customer === "string" ? session.customer : null,
+        subscriptionId,
+        status: toStatus(session.status ?? "trialing"),
+        metadata:
+          session.metadata && Object.keys(session.metadata).length > 0
+            ? ({
+                ...session.metadata,
+                stripe_mode: session.metadata?.stripe_mode ?? stripeMode,
+              } as Record<string, string>)
+            : { planName: session.metadata?.planName ?? null, stripe_mode: stripeMode },
+      })
+    } else if (subscriptionId && session.metadata) {
+      const subscriptionOwnerId =
+        extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ??
+        extractUserIdFromMetadata(session.metadata)
       if (subscriptionOwnerId) {
-        const subscription =
-          await stripeClient.subscriptions.retrieve(subscriptionId)
-        const subscriptionMetadata =
-          subscription.metadata && Object.keys(subscription.metadata).length > 0
-            ? (subscription.metadata as Record<string, string>)
-            : (sessionMetadata as Record<string, string>)
-        const customerId =
-          typeof subscription.customer === "string"
-            ? subscription.customer
-            : typeof session.customer === "string"
-              ? session.customer
-              : null
-
         await upsertSubscription({
           userId: subscriptionOwnerId,
-          customerId,
+          customerId: typeof session.customer === "string" ? session.customer : null,
           subscriptionId,
-          status: toStatus(subscription.status),
-          currentPeriodEnd: getCurrentPeriodEndIso(subscription),
-          cancelAt: getCancelAtIso(subscription),
-          canceledAt: getCanceledAtIso(subscription),
+          status: toStatus(session.status ?? "trialing"),
           metadata:
-            Object.keys(subscriptionMetadata).length > 0
+            session.metadata && Object.keys(session.metadata).length > 0
               ? ({
-                  ...subscriptionMetadata,
-                  stripe_mode: subscriptionMetadata.stripe_mode ?? stripeMode,
+                  ...session.metadata,
+                  stripe_mode: session.metadata?.stripe_mode ?? stripeMode,
                 } as Record<string, string>)
               : {
-                  planName: sessionMetadata.planName ?? null,
+                  planName: session.metadata?.planName ?? null,
                   stripe_mode: stripeMode,
                 },
         })
@@ -173,8 +162,6 @@ export async function processStripeWebhookEvent({
         subscriptionId: subscription.id,
         status: toStatus(subscription.status),
         currentPeriodEnd: getCurrentPeriodEndIso(subscription),
-        cancelAt: getCancelAtIso(subscription),
-        canceledAt: getCanceledAtIso(subscription),
         metadata: {
           ...(subscription.metadata as Record<string, string>),
           stripe_mode:

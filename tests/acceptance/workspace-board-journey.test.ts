@@ -34,7 +34,6 @@ function buildSeed(
       boilerplate: null,
       ...(overrides?.initialProfile ?? {}),
     },
-    roadmapSections: overrides?.roadmapSections ?? [],
     calendar: {
       nextEvent: null,
       upcomingEvents: [],
@@ -74,10 +73,10 @@ describe("workspace board journey", () => {
     })
 
     expect(guide.stage).toBe("materials")
-    expect(guide.targetCardId).toBe("roadmap")
+    expect(guide.targetCardId).toBe("vault")
     expect(guide.primaryAction).toMatchObject({
       kind: "focus-card",
-      cardId: "roadmap",
+      cardId: "vault",
     })
   })
 

@@ -5,14 +5,12 @@ import type {
   DocumentIndexRow,
   DocumentsPolicyEntry,
 } from "../types"
-import type { DocumentRowActionPresentation } from "./document-row-action-styles"
 import { PolicyRowActions } from "./policy-row-actions"
 import { RoadmapRowActions } from "./roadmap-row-actions"
 import { UploadRowActions } from "./upload-row-actions"
 
 type DocumentRowActionsProps = {
   row: DocumentIndexRow
-  presentation?: DocumentRowActionPresentation
   canEdit: boolean
   editMode: boolean
   publicSlug?: string | null
@@ -35,7 +33,6 @@ type DocumentRowActionsProps = {
 
 export function DocumentRowActions({
   row,
-  presentation = "table",
   canEdit,
   editMode,
   publicSlug,
@@ -70,7 +67,6 @@ export function DocumentRowActions({
         onDelete={onDeleteUpload}
         onView={onViewUpload}
         onDownload={onDownloadUpload}
-        presentation={presentation}
       />
     )
   }
@@ -88,16 +84,9 @@ export function DocumentRowActions({
         onDelete={onDeletePolicy}
         onViewDocument={onViewPolicyDocument}
         onDownloadDocument={onDownloadPolicyDocument}
-        presentation={presentation}
       />
     )
   }
 
-  return (
-    <RoadmapRowActions
-      row={row}
-      publicSlug={publicSlug}
-      presentation={presentation}
-    />
-  )
+  return <RoadmapRowActions row={row} publicSlug={publicSlug} />
 }

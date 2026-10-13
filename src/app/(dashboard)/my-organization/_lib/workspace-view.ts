@@ -1,7 +1,6 @@
 import type { createSupabaseServerClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
-import type { RoadmapSection } from "@/lib/roadmap"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 
@@ -25,20 +24,14 @@ import {
 import {
   isMissingModuleProgressTableError,
   isMissingRoadmapCalendarInternalEventsTableError,
-  isUuidLike,
-  isMissingWorkspaceBoardsTableError,
   isMissingWorkspaceCommunicationChannelsTableError,
   isMissingWorkspaceCommunicationsTableError,
-  isMissingWorkspaceInvitesTableError,
   isMissingWorkspaceObjectiveAssigneesTableError,
   isMissingWorkspaceObjectiveGroupsTableError,
   isMissingWorkspaceObjectivesTableError,
   mapObjectiveRowsToTrackerState,
+  normalizeMembershipRole,
 } from "./workspace-view-helpers"
-import {
-  loadWorkspaceViewMemberSeed,
-  type WorkspaceViewMembershipRow,
-} from "./workspace-view-members"
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
@@ -51,7 +44,6 @@ type BuildWorkspaceViewSeedInput<
   orgId: string
   role: OrganizationMemberRole
   canEdit: boolean
-  isPlatformAdmin?: boolean
   hasAcceleratorAccess: boolean
   presentationMode: boolean
   viewer: {
@@ -70,7 +62,6 @@ type BuildWorkspaceViewSeedInput<
   organizationProfileComplete: boolean
   workspaceDocumentCount: number
   initialProfile: TInitialProfile
-  roadmapSections: RoadmapSection[]
   formationSummary: TFormationSummary
   acceleratorTimeline: WorkspaceAcceleratorCardStep[]
   calendar: TCalendarView
@@ -88,7 +79,7 @@ export async function buildWorkspaceViewSeed<
   supabase,
   orgId,
   role,
-  canEdit, isPlatformAdmin = false,
+  canEdit,
   hasAcceleratorAccess,
   presentationMode,
   viewer,
@@ -102,7 +93,6 @@ export async function buildWorkspaceViewSeed<
   organizationProfileComplete,
   workspaceDocumentCount,
   initialProfile,
-  roadmapSections,
   formationSummary,
   acceleratorTimeline,
   calendar,
@@ -113,7 +103,7 @@ export async function buildWorkspaceViewSeed<
     new Set(
       acceleratorTimeline
         .map((step) => step.moduleId)
-        .filter((moduleId) => isUuidLike(moduleId)),
+        .filter((moduleId) => typeof moduleId === "string" && moduleId.trim().length > 0),
     ),
   )
   const [
@@ -157,7 +147,7 @@ export async function buildWorkspaceViewSeed<
       .from("organization_memberships")
       .select("member_id, role, member_email")
       .eq("org_id", orgId)
-      .returns<WorkspaceViewMembershipRow[]>(),
+      .returns<Array<{ member_id: string; role: string | null; member_email: string | null }>>(),
     supabase
       .from("roadmap_calendar_internal_events")
       .select("id, title, description, event_type, starts_at, status")
@@ -206,16 +196,10 @@ export async function buildWorkspaceViewSeed<
       .returns<Array<{ objective_id: string; user_id: string }>>(),
   ])
 
-  if (
-    boardResult.error &&
-    !isMissingWorkspaceBoardsTableError(boardResult.error)
-  ) {
+  if (boardResult.error) {
     throw supabaseErrorToError(boardResult.error, "Unable to load workspace board state.")
   }
-  if (
-    workspaceInvitesResult.error &&
-    !isMissingWorkspaceInvitesTableError(workspaceInvitesResult.error)
-  ) {
+  if (workspaceInvitesResult.error) {
     throw supabaseErrorToError(workspaceInvitesResult.error, "Unable to load workspace collaboration invites.")
   }
   if (
@@ -343,20 +327,67 @@ export async function buildWorkspaceViewSeed<
     boardState.tracker = mappedTrackerState
   }
 
-  const memberSeed = await loadWorkspaceViewMemberSeed({
-    supabase,
-    orgId,
-    viewer,
-    memberships: membershipsResult.data ?? [],
-    collaborationInvites,
-  })
+  const membershipRows = membershipsResult.data ?? []
+  const memberIds = Array.from(
+    new Set([orgId, ...membershipRows.map((membership) => membership.member_id)]),
+  )
+
+  const profilesResult =
+    memberIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", memberIds)
+          .returns<Array<{ id: string; full_name: string | null; avatar_url: string | null }>>()
+      : { data: [] as Array<{ id: string; full_name: string | null; avatar_url: string | null }> }
+
+  const nameById = new Map<string, string>()
+  const avatarById = new Map<string, string | null>()
+  for (const member of profilesResult.data ?? []) {
+    if (member.full_name && member.full_name.trim().length > 0) {
+      nameById.set(member.id, member.full_name.trim())
+    }
+    avatarById.set(member.id, member.avatar_url && member.avatar_url.trim().length > 0 ? member.avatar_url : null)
+  }
+
+  const emailById = new Map<string, string | null>()
+  for (const membership of membershipRows) {
+    if (membership.member_email) {
+      emailById.set(membership.member_id, membership.member_email)
+    }
+  }
+
+  const roleById = new Map<string, OrganizationMemberRole>([[orgId, "owner"]])
+  for (const membership of membershipRows) {
+    roleById.set(membership.member_id, normalizeMembershipRole(membership.role))
+  }
+
+  const members = memberIds.map((memberId) => ({
+    userId: memberId,
+    name: nameById.get(memberId) ?? null,
+    email: emailById.get(memberId) ?? null,
+    avatarUrl: avatarById.get(memberId) ?? null,
+    role: roleById.get(memberId) ?? "member",
+    isOwner: memberId === orgId,
+  }))
+
+  const viewerName =
+    nameById.get(viewer.id) ??
+    (viewer.fullName && viewer.fullName.trim().length > 0 ? viewer.fullName.trim() : viewer.email ?? "Teammate")
+
+  const viewerAvatarUrl = viewer.avatarUrl && viewer.avatarUrl.trim().length > 0 ? viewer.avatarUrl.trim() : null
+
+  const enrichedInvites = collaborationInvites.slice(0, 24).map((invite) => ({
+    ...invite,
+    userName: invite.userName ?? nameById.get(invite.userId) ?? null,
+    userEmail: invite.userEmail ?? emailById.get(invite.userId) ?? null,
+  }))
 
   return {
     orgId,
     viewerId: viewer.id,
-    viewerName: memberSeed.viewerName,
-    viewerAvatarUrl: memberSeed.viewerAvatarUrl,
-    isPlatformAdmin,
+    viewerName,
+    viewerAvatarUrl,
     presentationMode,
     role,
     canEdit,
@@ -372,21 +403,21 @@ export async function buildWorkspaceViewSeed<
       organizationProfileComplete,
       teammateCount,
       workspaceDocumentCount,
-      acceleratorStarted: acceleratorTimeline.some(
-        (step) => step.status !== "not_started",
-      ),
-      acceleratorCompletedStepCount: acceleratorTimeline.filter(
-        (step) => step.status === "completed",
-      ).length,
+      acceleratorStarted: Array.isArray(acceleratorTimeline)
+        ? acceleratorTimeline.some((step) => step.status !== "not_started")
+        : false,
+      acceleratorCompletedStepCount: Array.isArray(acceleratorTimeline)
+        ? acceleratorTimeline.filter((step) => step.status === "completed")
+            .length
+        : 0,
     },
     initialProfile,
-    roadmapSections,
     formationSummary,
     acceleratorTimeline,
     activityFeed,
     calendar,
-    collaborationInvites: memberSeed.collaborationInvites,
-    members: memberSeed.members,
+    collaborationInvites: enrichedInvites,
+    members,
     boardState,
     initialOnboarding: initialOnboarding ?? {
       required: false,

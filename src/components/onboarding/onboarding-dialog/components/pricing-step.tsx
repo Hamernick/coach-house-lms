@@ -14,13 +14,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { cn } from "@/lib/utils"
 
@@ -30,13 +24,9 @@ type PricingStepProps = {
   errors: Record<string, string>
   currentPlanTier: PricingPlanTier
   checkoutReturnTo: string
-  onboardingMode: "full" | "post_signup_access" | "workspace_setup"
-  submitting: boolean
 }
 
-const BUILDER_TIER_IDS = new Set(["formation", "organization", "operations"])
-const pricingStepButtonClassName =
-  "h-auto min-h-9 w-full whitespace-normal rounded-xl text-center"
+const BUILDER_TIER_IDS = new Set(["organization", "operations"])
 
 function splitTierEyebrow(eyebrow: string) {
   const match = eyebrow.match(/^(.*?)(\s*\(.*\))$/)
@@ -53,12 +43,6 @@ function splitTierEyebrow(eyebrow: string) {
   }
 }
 
-function resolveTierPlanTier(tierId: string): PricingPlanTier {
-  if (tierId === "operations") return "operations_support"
-  if (tierId === "organization") return "organization"
-  return "free"
-}
-
 function buildCheckoutHref({
   tierId,
   checkoutReturnTo,
@@ -72,10 +56,7 @@ function buildCheckoutHref({
     redirect: checkoutReturnTo,
     cancel: checkoutReturnTo,
   })
-  params.set(
-    "plan",
-    tierId === "operations" ? "operations_support" : "organization"
-  )
+  params.set("plan", tierId === "operations" ? "operations_support" : "organization")
   return `/api/stripe/checkout?${params.toString()}`
 }
 
@@ -85,32 +66,24 @@ export function PricingStep({
   errors,
   currentPlanTier,
   checkoutReturnTo,
-  onboardingMode,
-  submitting,
 }: PricingStepProps) {
   const searchParams = useSearchParams()
-  const builderTiers = PLATFORM_TIERS.filter((tier) =>
-    BUILDER_TIER_IDS.has(tier.id)
-  )
+  const builderTiers = PLATFORM_TIERS.filter((tier) => BUILDER_TIER_IDS.has(tier.id))
   const checkoutErrorCode = searchParams.get("checkout_error")
   const checkoutErrorDetail = searchParams.get("checkout_detail")
   const checkoutErrorDebug = searchParams.get("checkout_debug")
   const checkoutErrorMessage = getCheckoutErrorMessage(checkoutErrorCode)
-  const showPostSignupContinue = onboardingMode === "post_signup_access"
 
   return (
-    <div
-      className="space-y-4 py-4 sm:space-y-5 sm:py-5"
-      data-onboarding-step-id="pricing"
-    >
-      <div className="border-border/70 bg-muted/25 rounded-2xl border p-3.5 sm:p-4">
-        <p className="text-foreground text-sm font-medium">
+    <div className="space-y-5 py-5" data-onboarding-step-id="pricing">
+      <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+        <p className="text-sm font-medium text-foreground">
           Want to build your own organization?
         </p>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          Start with Individual for free, or choose a paid plan when you want
-          team access and the accelerator. You can go back and choose a free
-          member journey if you only want the internal map experience.
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Choose a builder plan to unlock organization creation, workspace setup,
+          teammate access, and the accelerator. You can go back and choose a
+          free member journey if you only want the internal map experience.
         </p>
       </div>
 
@@ -128,46 +101,36 @@ export function PricingStep({
         </Alert>
       ) : null}
 
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {builderTiers.map((tier) => {
           const eyebrow = splitTierEyebrow(tier.eyebrow)
-          const tierPlanTier = resolveTierPlanTier(tier.id)
-          const isCurrentTier = tierPlanTier === currentPlanTier
-          const isFreeTier = tierPlanTier === "free"
-          const checkoutHref = isFreeTier
-            ? null
-            : buildCheckoutHref({
-                tierId:
-                  tier.id === "operations" ? "operations" : "organization",
-                checkoutReturnTo,
-              })
+          const isCurrentTier =
+            (tier.id === "organization" && currentPlanTier === "organization") ||
+            (tier.id === "operations" && currentPlanTier === "operations_support")
+          const checkoutHref = buildCheckoutHref({
+            tierId: tier.id === "operations" ? "operations" : "organization",
+            checkoutReturnTo,
+          })
 
           return (
             <Card
               key={tier.id}
-              role="group"
-              aria-current={isCurrentTier ? "true" : undefined}
-              aria-label={`${tier.title} plan`}
               className={cn(
-                "border-border/70 rounded-[22px] border shadow-none sm:rounded-[26px]",
-                tier.featured && "border-primary/35 ring-primary/10 ring-1",
-                isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]"
+                "rounded-[26px] border border-border/70 shadow-none",
+                tier.featured && "border-primary/35 ring-1 ring-primary/10",
+                isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]",
               )}
             >
-              <CardHeader className="space-y-3 sm:space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+              <CardHeader className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <span className="block">{eyebrow.primary}</span>
                       {eyebrow.secondary ? (
-                        <span className="mt-0.5 block">
-                          {eyebrow.secondary}
-                        </span>
+                        <span className="mt-0.5 block">{eyebrow.secondary}</span>
                       ) : null}
                     </p>
-                    <CardTitle className="mt-2 text-xl sm:text-2xl">
-                      {tier.title}
-                    </CardTitle>
+                    <CardTitle className="mt-2 text-2xl">{tier.title}</CardTitle>
                   </div>
                   {isCurrentTier ? (
                     <Badge className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
@@ -181,72 +144,36 @@ export function PricingStep({
                 </div>
 
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                    {tier.priceLine}
-                  </span>
+                  <span className="text-4xl font-semibold tracking-tight">{tier.priceLine}</span>
                   {tier.priceNote ? (
-                    <span className="text-muted-foreground pb-1 text-sm">
-                      {tier.priceNote}
-                    </span>
+                    <span className="pb-1 text-sm text-muted-foreground">{tier.priceNote}</span>
                   ) : null}
                 </div>
 
-                <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+                <CardDescription className="text-sm leading-relaxed text-muted-foreground">
                   {tier.subtitle}
                 </CardDescription>
 
                 {isCurrentTier ? (
-                  isFreeTier || showPostSignupContinue ? (
-                    <Button
-                      type="submit"
-                      className={pricingStepButtonClassName}
-                      disabled={submitting}
-                    >
-                      {isFreeTier
-                        ? "Continue with Individual"
-                        : "Continue to workspace"}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      className={pricingStepButtonClassName}
-                      disabled
-                    >
-                      {isFreeTier
-                        ? "Individual selected"
-                        : "Builder access active"}
-                    </Button>
-                  )
-                ) : isFreeTier ? (
-                  <Button
-                    type="button"
-                    className={pricingStepButtonClassName}
-                    disabled
-                  >
-                    Included with every account
+                  <Button type="button" className="w-full rounded-xl" disabled>
+                    Builder access active
                   </Button>
                 ) : (
                   <Button
                     type="button"
-                    className={pricingStepButtonClassName}
-                    onClick={() => {
-                      if (!checkoutHref) return
-                      window.location.assign(checkoutHref)
-                    }}
+                    className="w-full rounded-xl"
+                    onClick={() => window.location.assign(checkoutHref)}
                   >
                     {tier.ctaLabel}
                   </Button>
                 )}
               </CardHeader>
 
-              <CardContent className="space-y-3 sm:space-y-4">
-                <div className="bg-border/70 h-px" aria-hidden />
+              <CardContent className="space-y-4">
+                <div className="h-px bg-border/70" aria-hidden />
                 <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem
-                    value={`${tier.id}-includes`}
-                    className="border-b-0"
-                  >
-                    <AccordionTrigger className="text-foreground py-2 text-sm font-semibold hover:no-underline">
+                  <AccordionItem value={`${tier.id}-includes`} className="border-b-0">
+                    <AccordionTrigger className="py-2 text-sm font-semibold text-foreground hover:no-underline">
                       <span>{tier.featureHeading}</span>
                     </AccordionTrigger>
                     <AccordionContent className="pb-0">
@@ -266,9 +193,7 @@ export function PricingStep({
       </div>
 
       {attemptedStep === step && errors.builderPlanTier ? (
-        <p className="text-destructive text-xs" role="alert">
-          {errors.builderPlanTier}
-        </p>
+        <p className="text-xs text-destructive">{errors.builderPlanTier}</p>
       ) : null}
     </div>
   )

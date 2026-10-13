@@ -2,23 +2,12 @@ import {
   normalizeWorkspaceAcceleratorResources,
   type WorkspaceAcceleratorTimelineModuleSeed,
 } from "@/features/workspace-accelerator-card"
-import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 import type {
   ModuleCard,
   ModuleGroup,
 } from "@/lib/accelerator/progress"
 import { getClassModulesForUser, type ModuleRecord } from "@/lib/modules"
 import type { createSupabaseServerClient } from "@/lib/supabase"
-import {
-  isOrganizationSetupTimelineModule,
-  mergeWorkspaceAcceleratorResources,
-  resolveWorkspaceAcceleratorSupplementalResources,
-} from "./my-organization-accelerator-timeline-helpers"
-
-export {
-  isOrganizationSetupTimelineModule,
-  resolveWorkspaceAcceleratorSupplementalResources,
-} from "./my-organization-accelerator-timeline-helpers"
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
@@ -79,19 +68,11 @@ async function loadModuleContextById({
     })
   )
 
-  const moduleContextById = new Map<
-    string,
-    {
-      classPublished: boolean
-      classTitle: string
-      module: ModuleRecord
-    }
-  >()
+  const moduleContextById = new Map<string, { classTitle: string; module: ModuleRecord }>()
   for (const classContext of classContexts) {
     if (!classContext.context) continue
     for (const moduleRecord of classContext.context.modules) {
       moduleContextById.set(moduleRecord.id, {
-        classPublished: classContext.context.classPublished,
         classTitle: classContext.context.classTitle,
         module: moduleRecord,
       })
@@ -172,38 +153,25 @@ async function loadTimelineModuleRows({
 
 function buildModuleSeed({
   roadmapModule,
-  groupMetaById,
+  groupTitleById,
   contentByModuleId,
   moduleMetaById,
   modulesWithAssignments,
   moduleContextById,
-  onboardingDefaults,
 }: {
   roadmapModule: ModuleCard
-  groupMetaById: Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >
+  groupTitleById: Map<string, string>
   contentByModuleId: Map<string, { videoUrl: string | null; resources: unknown }>
   moduleMetaById: Map<
     string,
     { videoUrl: string | null; durationMinutes: number | null; hasDeck: boolean }
   >
   modulesWithAssignments: Set<string>
-  moduleContextById: Map<
-    string,
-    {
-      classPublished: boolean
-      classTitle: string
-      module: ModuleRecord
-    }
-  >
-  onboardingDefaults?: OnboardingFlowDefaults | null
+  moduleContextById: Map<string, { classTitle: string; module: ModuleRecord }>
 }): WorkspaceAcceleratorTimelineModuleSeed {
   const content = contentByModuleId.get(roadmapModule.id)
   const meta = moduleMetaById.get(roadmapModule.id)
   const moduleContextEntry = moduleContextById.get(roadmapModule.id)
-  const groupMeta = groupMetaById.get(roadmapModule.id)
   const moduleRecord = moduleContextEntry?.module
   const resourcesFromModuleRecord = (moduleRecord?.resources ?? []).map(
     (resource, index) => ({
@@ -213,41 +181,28 @@ function buildModuleSeed({
       kind: resource.provider,
     })
   )
-  const resources = mergeWorkspaceAcceleratorResources(
-    normalizeWorkspaceAcceleratorResources(
-      resourcesFromModuleRecord.length > 0
-        ? resourcesFromModuleRecord
-        : content?.resources ?? [],
-    ),
-    resolveWorkspaceAcceleratorSupplementalResources({
-      slug: roadmapModule.slug ?? moduleRecord?.slug ?? null,
-      title: roadmapModule.title ?? moduleRecord?.title ?? null,
-    }),
+  const resources = normalizeWorkspaceAcceleratorResources(
+    resourcesFromModuleRecord.length > 0
+      ? resourcesFromModuleRecord
+      : content?.resources ?? []
   )
   const videoUrl = moduleRecord?.videoUrl ?? content?.videoUrl ?? meta?.videoUrl ?? null
-  const isOrganizationSetupModule = isOrganizationSetupTimelineModule({
-    roadmapModule,
-    moduleRecord,
-  })
-  const moduleContext = isOrganizationSetupModule
-    ? {
-        classTitle: moduleContextEntry?.classTitle ?? groupMeta?.title ?? "Formation",
-        lessonNotesContent: moduleRecord?.contentMd ?? null,
-        moduleResources: moduleRecord?.resources ?? [],
-        assignmentFields: moduleRecord?.assignment?.fields ?? [],
-        assignmentSubmission: moduleRecord?.assignmentSubmission ?? null,
-        completeOnSubmit: Boolean(moduleRecord?.assignment?.completeOnSubmit),
-        workspaceOnboarding: {
-          view: "organization-setup" as const,
-              defaults: onboardingDefaults
-                ? {
-                    ...onboardingDefaults,
-                    defaultIntentFocus: "build" as const,
-                  }
-                : null,
-        },
-      }
-    : moduleRecord
+
+  return {
+    id: roadmapModule.id,
+    title: roadmapModule.title,
+    description: roadmapModule.description ?? null,
+    href: roadmapModule.href,
+    status: roadmapModule.status,
+    groupTitle: groupTitleById.get(roadmapModule.id) ?? "Accelerator",
+    videoUrl,
+    durationMinutes: moduleRecord?.durationMinutes ?? meta?.durationMinutes ?? null,
+    resources,
+    hasAssignment:
+      modulesWithAssignments.has(roadmapModule.id) ||
+      Boolean((moduleRecord?.assignment?.fields.length ?? 0) > 0),
+    hasDeck: Boolean(meta?.hasDeck ?? moduleRecord?.hasDeck),
+    moduleContext: moduleRecord
       ? {
           classTitle: moduleContextEntry?.classTitle ?? "Accelerator",
           lessonNotesContent: moduleRecord.contentMd ?? null,
@@ -256,51 +211,19 @@ function buildModuleSeed({
           assignmentSubmission: moduleRecord.assignmentSubmission ?? null,
           completeOnSubmit: Boolean(moduleRecord.assignment?.completeOnSubmit),
         }
-      : null
-
-  return {
-    id: roadmapModule.id,
-    published:
-      groupMeta?.published ??
-      (moduleContextEntry
-        ? moduleContextEntry.classPublished &&
-          moduleContextEntry.module.published
-        : true),
-    slug: roadmapModule.slug,
-    title: isOrganizationSetupModule ? "Organization setup" : roadmapModule.title,
-    description: roadmapModule.description ?? null,
-    href: roadmapModule.href,
-    status: roadmapModule.status,
-    groupTitle: groupMeta?.title ?? "Accelerator",
-    groupOrder: groupMeta?.order ?? null,
-    videoUrl,
-    durationMinutes: moduleRecord?.durationMinutes ?? meta?.durationMinutes ?? null,
-    resources,
-    hasAssignment:
-      modulesWithAssignments.has(roadmapModule.id) ||
-      Boolean((moduleRecord?.assignment?.fields.length ?? 0) > 0),
-    hasDeck: Boolean(meta?.hasDeck ?? moduleRecord?.hasDeck),
-    moduleContext,
+      : null,
   }
 }
 
-export function buildModuleGroupMetaById(
+export function buildModuleGroupTitleById(
   groups: ModuleGroup[]
-): Map<string, { title: string; order: number; published: boolean }> {
-  const lookup = new Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >()
-  groups.forEach((group, groupIndex) => {
+): Map<string, string> {
+  const lookup = new Map<string, string>()
+  for (const group of groups) {
     for (const groupModule of group.modules) {
-      lookup.set(groupModule.id, {
-        title: group.title,
-        order: groupIndex,
-        published:
-          group.published !== false && groupModule.published !== false,
-      })
+      lookup.set(groupModule.id, group.title)
     }
-  })
+  }
   return lookup
 }
 
@@ -308,17 +231,12 @@ export async function buildAcceleratorTimelineModules({
   supabase,
   userId,
   sortedRoadmapModules,
-  groupMetaById,
-  onboardingDefaults = null,
+  groupTitleById,
 }: {
   supabase: SupabaseServerClient
   userId: string
   sortedRoadmapModules: ModuleCard[]
-  groupMetaById: Map<
-    string,
-    { title: string; order: number; published: boolean }
-  >
-  onboardingDefaults?: OnboardingFlowDefaults | null
+  groupTitleById: Map<string, string>
 }) {
   const timelineModuleIds = sortedRoadmapModules.map((roadmapModule) => roadmapModule.id)
   const timelineClassSlugs = Array.from(
@@ -329,15 +247,15 @@ export async function buildAcceleratorTimelineModules({
     )
   )
 
-  const [moduleContextById, { contentRows, assignmentRows, moduleRows }] =
-    await Promise.all([
-      loadModuleContextById({
-        supabase,
-        userId,
-        classSlugs: timelineClassSlugs,
-      }),
-      loadTimelineModuleRows({ supabase, moduleIds: timelineModuleIds }),
-    ])
+  const moduleContextById = await loadModuleContextById({
+    supabase,
+    userId,
+    classSlugs: timelineClassSlugs,
+  })
+  const { contentRows, assignmentRows, moduleRows } = await loadTimelineModuleRows({
+    supabase,
+    moduleIds: timelineModuleIds,
+  })
 
   const contentByModuleId = new Map<string, { videoUrl: string | null; resources: unknown }>()
   for (const row of contentRows) {
@@ -360,17 +278,14 @@ export async function buildAcceleratorTimelineModules({
   }
   const modulesWithAssignments = new Set(assignmentRows.map((row) => row.module_id))
 
-  const roadmapModuleSeeds = sortedRoadmapModules.map((roadmapModule) =>
+  return sortedRoadmapModules.map((roadmapModule) =>
     buildModuleSeed({
       roadmapModule,
-      groupMetaById,
+      groupTitleById,
       contentByModuleId,
       moduleMetaById,
       modulesWithAssignments,
       moduleContextById,
-      onboardingDefaults,
-    }),
+    })
   )
-
-  return roadmapModuleSeeds
 }

@@ -1,6 +1,6 @@
 import { useEffect, type MutableRefObject } from "react"
 
-import { loadActiveOrganizationNameAction } from "@/actions/account-settings"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { useSupabaseClient } from "@/hooks/use-supabase-client"
 
 type ProfileIdentityRow = {
@@ -95,8 +95,7 @@ export function useAccountSettingsProfileLoader({
         setPhone(String(meta.phone))
       }
 
-      initialPhoneRef.current =
-        typeof meta.phone === "string" ? String(meta.phone) : ""
+      initialPhoneRef.current = typeof meta.phone === "string" ? String(meta.phone) : ""
       initialMarketingRef.current =
         typeof meta.marketing_opt_in === "boolean"
           ? (meta.marketing_opt_in as boolean)
@@ -107,6 +106,8 @@ export function useAccountSettingsProfileLoader({
           : defaultNewsletterOptIn
 
       if (data?.user?.id) {
+        const { orgId: activeOrgId } = await resolveActiveOrganization(supabase, data.user.id)
+
         const { data: profileRow } = await supabase
           .from("profiles")
           .select("full_name, avatar_url, headline, company, contact, about")
@@ -114,17 +115,10 @@ export function useAccountSettingsProfileLoader({
           .maybeSingle<ProfileIdentityRow>()
         setAvatarUrl(profileRow?.avatar_url ?? null)
 
-        const profileFullName =
-          typeof profileRow?.full_name === "string"
-            ? profileRow.full_name.trim()
-            : ""
+        const profileFullName = typeof profileRow?.full_name === "string" ? profileRow.full_name.trim() : ""
         const defaultFullName = (defaultName ?? "").trim()
-        const metadataFullName =
-          typeof meta.full_name === "string"
-            ? String(meta.full_name).trim()
-            : ""
-        const resolvedFullName =
-          profileFullName || defaultFullName || metadataFullName
+        const metadataFullName = typeof meta.full_name === "string" ? String(meta.full_name).trim() : ""
+        const resolvedFullName = profileFullName || defaultFullName || metadataFullName
         const { first, last } = splitName(resolvedFullName)
         setFirstName(first)
         setLastName(last)
@@ -143,9 +137,13 @@ export function useAccountSettingsProfileLoader({
         initialContactRef.current = contact
         initialAboutRef.current = about
 
-        const activeOrganizationName =
-          await loadActiveOrganizationNameAction().catch(() => null)
-        setOrgName(activeOrganizationName ?? "")
+        const { data: orgRow } = await supabase
+          .from("organizations")
+          .select("profile")
+          .eq("user_id", activeOrgId)
+          .maybeSingle<{ profile: Record<string, unknown> | null }>()
+        const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+        setOrgName(String(profile.name ?? ""))
       }
     }
 

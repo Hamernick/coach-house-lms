@@ -1,5 +1,4 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-import type { OrganizationNarrativeRevisions } from "@/lib/roadmap"
 
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
 
@@ -45,7 +44,6 @@ export type OrgProfile = {
   brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
-  donateUrl?: string | null
   twitter?: string | null
   facebook?: string | null
   linkedin?: string | null
@@ -58,17 +56,9 @@ export type OrgProfile = {
   mission?: string | null
   need?: string | null
   values?: string | null
-  originStory?: string | null
-  theoryOfChange?: string | null
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
-  brandVoiceAudience?: string | null
-  brandVoiceTone?: string | null
-  brandVoiceStyle?: string | null
-  brandVoicePersonality?: string | null
-  brandVoiceGuidelines?: string | null
-  brandVoiceAvoid?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
   brandThemePresetId?: string | null
@@ -77,7 +67,6 @@ export type OrgProfile = {
   brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
-  narrativeRevisions?: OrganizationNarrativeRevisions
 }
 
 export type OrgDocument = {
@@ -150,7 +139,5 @@ export interface OrgProfileCardProps {
   canEdit?: boolean
   initialTab?: ProfileTab
   initialProgramId?: string | null
-  initialProgramStep?: number | null
-  initialFocus?: string | null
-  initialEditMode?: boolean
+  onClose?: () => void
 }

@@ -34,11 +34,7 @@ const HIDDEN_UTILITY_POSITIONS = Object.freeze({
   programs: { x: WORKSPACE_CANVAS_START_X + 1080, y: TIMELINE_START_Y },
   "brand-kit": { x: WORKSPACE_CANVAS_START_X, y: TIMELINE_START_Y + 472 },
   deck: { x: WORKSPACE_CANVAS_START_X + 360, y: TIMELINE_START_Y + 472 },
-  atlas: { x: WORKSPACE_CANVAS_START_X + 48, y: TIMELINE_START_Y + 540 },
-  "fiscal-sponsorship": {
-    x: WORKSPACE_CANVAS_START_X + 1608,
-    y: TIMELINE_START_Y + 676,
-  },
+  atlas: { x: WORKSPACE_CANVAS_START_X + 720, y: TIMELINE_START_Y + 472 },
 } satisfies Partial<Record<WorkspaceCardId, WorkspaceNodePosition>>)
 
 function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
@@ -48,11 +44,10 @@ function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
 }
 
 const WORKSPACE_TRUNK_CARD_IDS = [
-  "accelerator",
-  "roadmap",
   "organization-overview",
   "programs",
-  "deck",
+  "vault",
+  "accelerator",
 ] as const satisfies readonly WorkspaceCardId[]
 
 const WORKSPACE_LEAF_CARD_IDS = [
@@ -75,16 +70,14 @@ function resolveNodeSizeLookup(nodes?: WorkspaceNodeState[]) {
 
 function resolveNodeSize(
   cardId: WorkspaceCardId,
-  sizeLookup: WorkspaceCardSizeLookup
+  sizeLookup: WorkspaceCardSizeLookup,
 ) {
   return sizeLookup.get(cardId) ?? DEFAULT_CARD_SIZES[cardId]
 }
 
 function resolveVisibleCardSet(hiddenCardIds?: WorkspaceCardId[]) {
   return new Set(
-    WORKSPACE_CARD_IDS.filter(
-      (cardId) => !(hiddenCardIds ?? []).includes(cardId)
-    )
+    WORKSPACE_CARD_IDS.filter((cardId) => !(hiddenCardIds ?? []).includes(cardId)),
   )
 }
 
@@ -99,12 +92,10 @@ function resolveFallbackPosition({
   if (existing) {
     return { x: existing.x, y: existing.y }
   }
-  return (
-    resolveHiddenUtilityPosition(cardId) ?? {
-      x: WORKSPACE_CANVAS_START_X,
-      y: DAGRE_START_Y,
-    }
-  )
+  return resolveHiddenUtilityPosition(cardId) ?? {
+    x: WORKSPACE_CANVAS_START_X,
+    y: DAGRE_START_Y,
+  }
 }
 
 function buildDagreTreeLayout({
@@ -142,10 +133,7 @@ function buildDagreTreeLayout({
   }
 
   for (const connection of connections ?? WORKSPACE_EDGE_SPECS) {
-    if (
-      !visibleCardSet.has(connection.source) ||
-      !visibleCardSet.has(connection.target)
-    ) {
+    if (!visibleCardSet.has(connection.source) || !visibleCardSet.has(connection.target)) {
       continue
     }
     graph.setEdge(connection.source, connection.target)
@@ -195,10 +183,10 @@ function buildTimelineLayout({
   const positions = {} as Record<WorkspaceCardId, WorkspaceNodePosition>
   const visibleCardSet = resolveVisibleCardSet(hiddenCardIds)
   const visibleTrunkCards = WORKSPACE_TRUNK_CARD_IDS.filter((cardId) =>
-    visibleCardSet.has(cardId)
+    visibleCardSet.has(cardId),
   )
   const visibleLeafCards = WORKSPACE_LEAF_CARD_IDS.filter((cardId) =>
-    visibleCardSet.has(cardId)
+    visibleCardSet.has(cardId),
   )
 
   let cursorX = WORKSPACE_CANVAS_START_X
@@ -215,14 +203,16 @@ function buildTimelineLayout({
   }
 
   if (visibleLeafCards.length > 0) {
-    const leafAnchorId = lastTrunkCardId
+    const leafAnchorId = visibleCardSet.has("accelerator")
+      ? "accelerator"
+      : lastTrunkCardId
     const anchorPosition = positions[leafAnchorId]
     const anchorDimensions = resolveCardDimensions(
       resolveNodeSize(leafAnchorId, sizeLookup),
-      leafAnchorId
+      leafAnchorId,
     )
     const leafColumnX = roundToSnap(
-      anchorPosition.x + anchorDimensions.width + TIMELINE_LEAF_GAP_X
+      anchorPosition.x + anchorDimensions.width + TIMELINE_LEAF_GAP_X,
     )
     let currentLeafY = TIMELINE_START_Y
 
@@ -234,59 +224,6 @@ function buildTimelineLayout({
         y: roundToSnap(currentLeafY),
       }
       currentLeafY += dimensions.height + TIMELINE_LEAF_GAP_Y
-    }
-  }
-
-  if (visibleCardSet.has("atlas")) {
-    const anchorId = visibleCardSet.has("organization-overview")
-      ? "organization-overview"
-      : (visibleTrunkCards[0] ?? "organization-overview")
-    const anchorPosition =
-      positions[anchorId] ??
-      resolveFallbackPosition({ cardId: anchorId, existingNodes })
-    const anchorDimensions = resolveCardDimensions(
-      resolveNodeSize(anchorId, sizeLookup),
-      anchorId
-    )
-    positions.atlas = {
-      x: roundToSnap(anchorPosition.x + 24),
-      y: roundToSnap(
-        anchorPosition.y + anchorDimensions.height + TIMELINE_LEAF_GAP_Y
-      ),
-    }
-  }
-
-  if (visibleCardSet.has("fiscal-sponsorship")) {
-    const anchorId = visibleCardSet.has("programs")
-      ? "programs"
-      : (visibleTrunkCards[0] ?? "programs")
-    const anchorPosition =
-      positions[anchorId] ??
-      resolveFallbackPosition({ cardId: anchorId, existingNodes })
-    const anchorDimensions = resolveCardDimensions(
-      resolveNodeSize(anchorId, sizeLookup),
-      anchorId
-    )
-    const fiscalDimensions = resolveCardDimensions(
-      resolveNodeSize("fiscal-sponsorship", sizeLookup),
-      "fiscal-sponsorship"
-    )
-    const atlasOffset =
-      visibleCardSet.has("atlas") && positions.atlas
-        ? resolveCardDimensions(resolveNodeSize("atlas", sizeLookup), "atlas")
-            .height + TIMELINE_LEAF_GAP_Y
-        : 0
-
-    positions["fiscal-sponsorship"] = {
-      x: roundToSnap(
-        anchorPosition.x + (anchorDimensions.width - fiscalDimensions.width) / 2
-      ),
-      y: roundToSnap(
-        anchorPosition.y +
-          anchorDimensions.height +
-          TIMELINE_LEAF_GAP_Y +
-          atlasOffset
-      ),
     }
   }
 
@@ -335,7 +272,6 @@ export function buildAutoLayoutNodesForMode({
       x: position.x,
       y: position.y,
       size: resolveNodeSize(id, sizeLookup),
-      positionMode: "managed",
     }
   })
 }

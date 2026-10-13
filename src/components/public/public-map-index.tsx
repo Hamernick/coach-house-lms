@@ -1,426 +1,445 @@
 "use client"
 
-import { useResourceDirectory } from "@/features/find-resource-index/client"
-import { useResourcePresentation } from "@/features/find-resource-index/client"
-
-import { useCallback, useDeferredValue, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import { usePublicMapNavigation } from "./public-map-index/use-public-map-profile-navigation"
-import { useTheme } from "next-themes"
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
+
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import type { PublicMapBounds } from "./public-map-index/helpers"
+import { MAP_STYLE, RECENT_ORGANIZATIONS_LIMIT } from "./public-map-index/constants"
+import { filterPublicMapOrganizations, organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
+  observePublicMapContainer,
+  resolveMapBounds,
   useSyncPublicMapAuthFavorite,
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
+import type { PublicMapMemberProfile } from "./public-map-index/member-profile-card"
 import {
+  createOrganizationMarkerElement,
+  updateOrganizationMarkerElement,
+  ORGANIZATION_MARKER_OFFSET_Y,
+} from "./public-map-index/map-markers"
+import {
+  buildMapHref,
+  createMarkerMap,
+  FALLBACK_CENTER,
+  FALLBACK_ZOOM,
+  fitMapToOrganizations,
+  focusOrganizationOnMap,
+  normalizeSlug,
+  removeAuthParams,
   resolveBounds,
-  resolvePublicMapboxToken,
+  resolveMarkerOrganizations,
 } from "./public-map-index/map-view-helpers"
-import {
-  type PublicMapMapboxApi,
-  useInitializePublicMap,
-  useResolveInitialPublicMapViewport,
-  resolvePublicMapSelectedOrganization,
-  useSyncSidebarCameraPadding,
-} from "./public-map-index/public-map-index-runtime"
-import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
-import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
+import {
+  PublicMapBoardAlert,
+  PublicMapJoinedOrganization,
+} from "./public-map-index/member-rail"
+import { PublicMapRightRail } from "./public-map-index/right-rail"
+import {
+  buildLocationFeedback,
+  type UserLocationStatus,
+} from "./public-map-index/user-location"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
-import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
-import { usePublicMapFilterUrlState } from "./public-map-index/use-filter-url-state"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
-import { usePublicMapSelectableItemMap } from "./public-map-index/map-items-state"
-import { usePublicMapSameLocationSearchContext } from "./public-map-index/same-location-state"
-import {
-  usePublicMapOrganizationById,
-  usePublicMapOrganizationFilterState,
-} from "./public-map-index/public-map-index-filter-state"
-import {
-  usePublicMapResourceGuideState,
-  usePublicMapSavedGuideState,
-} from "./public-map-index/resource-guides"
-import type { PublicMapIndexProps } from "./public-map-index/public-map-index-types"
-import {
-  useSyncPublicMapSelectedListItem,
-} from "./public-map-index/public-map-index-selection"
-import {
-  EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
-} from "./public-map-index/use-resource-map-items"
-import { usePublicMapResourceItemDetail } from "./public-map-index/use-resource-item-detail"
-import { usePublicMapLocationWeather } from "./public-map-index/use-public-map-location-weather"
-import { resolvePublicMapDirectoryCount, resolveDirectoryFormationCounts } from "./public-map-index/directory-status-pill"
-import {
-  useFocusPublicMapCameraTarget,
-  useInitialSidebarMode,
-  useInitialPublicMapSelection,
-  usePublicMapOnboardingState,
-  usePublicMapSavedItems,
-  useSelectedPublicMapResource,
-  usePublicMapStartupEnabled,
-} from "./public-map-index/public-map-index-state"
 
-function usePublicMapRetryState() {
-  const [mapError, setMapError] = useState<string | null>(null)
-  const [retryVersion, setRetryVersion] = useState(0)
-  const retryMap = useCallback(() => {
-    setMapError(null)
-    setRetryVersion((current) => current + 1)
-  }, [])
+type MapboxApi = typeof import("mapbox-gl")["default"]
 
-  return { mapError, retryMap, retryVersion, setMapError }
+type PublicMapIndexProps = {
+  organizations: PublicMapOrganization[]
+  mapboxToken?: string
+  initialPublicSlug?: string
+  viewer?: { id: string; email: string | null } | null
+  joinedOrganizations?: PublicMapJoinedOrganization[]
+  boardAlerts?: PublicMapBoardAlert[]
+  memberProfile?: PublicMapMemberProfile | null
 }
 
 export function PublicMapIndex({
-  embedded = false,
   organizations,
   mapboxToken,
   initialPublicSlug,
-  initialResource,
   viewer: initialViewer = null,
-  includeSeedResources = false,
-  resourceItems: initialResourceItems = EMPTY_PUBLIC_MAP_RESOURCE_ITEMS,
-  resourceItemsEndpoint,
-  canManageResourceMap = false,
-  organizationCurationAction,
-  resourceMapCurationAction,
-  memberOnboarding = undefined,
-  adminOnboardingPreview = undefined,
+  joinedOrganizations = [],
+  boardAlerts = [],
+  memberProfile = null,
 }: PublicMapIndexProps) {
   const router = useRouter()
-  const mapTheme = normalizePublicMapTheme(useTheme().resolvedTheme)
+  const searchParams = useSearchParams()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const mapboxRef = useRef<PublicMapMapboxApi | null>(null)
-  const mapStartRef = useRef<(() => void) | null>(null)
+  const mapboxRef = useRef<MapboxApi | null>(null)
+  const markersRef = useRef<Array<{ id: string; marker: mapboxgl.Marker }>>([])
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
-  const [mapReady, setMapReady] = useState(false)
-  const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
-  const token = resolvePublicMapboxToken(mapboxToken)
+  const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
   const tokenAvailable = Boolean(token)
-  const { mapError, retryMap, retryVersion, setMapError } =
-    usePublicMapRetryState()
-  const [sidebarMode, setSidebarMode] = useInitialSidebarMode(initialPublicSlug ?? initialResource?.id)
-  const mapStartupEnabled = usePublicMapStartupEnabled(embedded && sidebarMode === "details")
-  const {
-    initialOrganization,
-    selectedOrgId,
-    setSelectedOrgId,
-    selectedListItemId,
-    setSelectedListItemId,
-    cameraTarget,
-    setCameraTarget,
-  } = useInitialPublicMapSelection(organizations, initialPublicSlug, initialResource?.id)
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [query, setQuery] = useState("")
+  const [appliedBounds, setAppliedBounds] = useState<PublicMapBounds | null>(null)
+  const [sidebarMode, setSidebarMode] = useState<"search" | "details" | "hidden">(
+    initialPublicSlug ? "details" : "search",
+  )
+  const initialOrganization =
+    organizations.find(
+      (organization) =>
+        normalizeSlug(organization.publicSlug) === normalizeSlug(initialPublicSlug),
+    ) ?? null
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
+    initialOrganization?.id ?? organizations[0]?.id ?? null,
+  )
+  const [cameraTargetOrgId, setCameraTargetOrgId] = useState<string | null>(
+    initialOrganization?.id ?? null,
+  )
+  const [userLocationStatus, setUserLocationStatus] =
+    useState<UserLocationStatus>("idle")
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
-  const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
-  const [initialViewportResolved, setInitialViewportResolved] = useState(false)
-  const [mapLoadVersion, setMapLoadVersion] = useState(0)
-  const [sameLocationSelection, setSameLocationSelection] =
-    useState<PublicMapSameLocationSelection | null>(null)
-  const clearMapTransientSelection = useCallback(() => {
-    setSameLocationSelection(null)
-    setSelectedListItemId(null)
-    setSelectedOrgId(null)
-    setSidebarMode("search")
-  }, [setSelectedListItemId, setSelectedOrgId, setSidebarMode])
+  const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const {
-    activeGroup,
-    activeGuideId,
-    flushFilterHistory,
-    handleActiveGroupChange,
-    handleGuideChange,
-    handleQueryChange,
-    query,
-    searchParams,
-  } = usePublicMapFilterUrlState({ embedded, onFilterChange: clearMapTransientSelection })
-  const deferredQuery = useDeferredValue(query)
-  const {
-    collectedResourceIds,
     favorites,
-    savedGuideIds,
+    recentOrganizationIds,
+    isSavingPreferences,
     preferencesSaveError,
     viewer,
     setFavorites,
-    setSavedGuideIds,
-    setCollectedResourceIds,
     setRecentOrganizationIds,
   } = usePublicMapPreferences({ initialViewer })
-  const directory = useResourceDirectory({
-    endpoint: resourceItemsEndpoint, initialResourceItems, query, category: activeGroup,
-    guide: activeGuideId, mapRef, mapLoadVersion,
-    retainedIds: [...collectedResourceIds, ...(selectedListItemId?.startsWith("resource_map:") || (selectedListItemId?.startsWith("local_resource_map:") || selectedListItemId?.startsWith("nonprofit:")) ? [selectedListItemId] : [])],
-  })
-  const { resourceItems, error: resourceItemsLoadError, retry: retryResourceItems, status: resourceItemsLoadStatus, totalResourceCount } = directory
-  const remotePresentation = useResourcePresentation({ organizations, mapItems: directory.mapItems, query: deferredQuery, category: activeGroup, guide: activeGuideId, metadata: directory.metadata })
-  const memberOnboardingState = usePublicMapOnboardingState(
-    Boolean(viewer ?? initialViewer),
-    memberOnboarding,
-    adminOnboardingPreview
+
+  const effectiveViewer = viewer ?? initialViewer
+  const isAuthenticated = Boolean(effectiveViewer)
+  const locationFeedback = buildLocationFeedback(userLocationStatus)
+  const organizationById = useMemo(
+    () => new Map(organizations.map((organization) => [organization.id, organization] as const)),
+    [organizations],
   )
-  const organizationById = usePublicMapOrganizationById(organizations)
-  const filterState = usePublicMapOrganizationFilterState({
-    activeGroup,
-    deferredQuery,
-    favorites,
-    includeSeedResources,
-    organizations,
-    resourceItems: directory.directoryItems,
-  })
-  const {
-    activeGuideSearchContext,
-    clearActiveGuide,
-    handleGuideSelect,
-    resourceGuides,
-    visibleMapItems: localVisibleMapItems,
-  } = usePublicMapResourceGuideState({
-    activeGuideId,
-    filteredMapItems: filterState.filteredItems,
-    organizations,
-    includeSeedResources,
-    resourceItems: directory.directoryItems,
-    guideSummaries: directory.enabled ? directory.metadata?.guides : undefined,
-    setSameLocationSelection,
-    setSelectedListItemId,
-    setSelectedOrgId,
-    setSidebarMode,
-    setActiveGuideId: handleGuideChange,
-  })
-  const { featuredGuides, savedGuides, toggleSavedGuide } =
-    usePublicMapSavedGuideState({
-      resourceGuides,
-      savedGuideIds,
-      setSavedGuideIds,
-    })
-  const visibleMapItems = directory.enabled ? remotePresentation.mapItems : localVisibleMapItems
-  const selectableMapItemById = usePublicMapSelectableItemMap(visibleMapItems, directory.enabled ? resourceItems : undefined)
-  const selectedOrganization = resolvePublicMapSelectedOrganization({
-    organizationById,
-    selectedOrgId,
-  })
-  const selectedResourceIndexItem = useSelectedPublicMapResource(
-    selectableMapItemById,
-    selectedListItemId
+
+  const filteredOrganizations = useMemo(
+    () =>
+      filterPublicMapOrganizations({
+        organizations,
+        query,
+        appliedBounds,
+        favorites,
+        activeGroup: "all",
+      }),
+    [appliedBounds, favorites, organizations, query],
   )
-  const selectedResourceItem = usePublicMapResourceItemDetail(
-    selectedResourceIndexItem,
-    resourceItemsEndpoint?.startsWith("/api/public/resource-map/index") ?? false
+
+  const selectedOrganization =
+    (selectedOrgId ? organizationById.get(selectedOrgId) ?? null : null) ??
+    filteredOrganizations[0] ??
+    null
+
+  const savedOrganizations = useMemo(
+    () =>
+      favorites
+        .map((organizationId) => organizationById.get(organizationId) ?? null)
+        .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
+    [favorites, organizationById],
   )
-  const {
-    savedOrganizations,
-    savedResources,
-    toggleCollectedResource,
-    unresolvedCollectedResourceCount,
-  } = usePublicMapSavedItems({
-    collectedResourceIds,
-    favorites,
-    organizationById,
-    resourceItems,
-    retainMissingResources: directory.enabled || resourceItemsLoadStatus !== "ready",
-    setCollectedResourceIds,
-  })
+
+  const recentOrganizations = useMemo(
+    () =>
+      recentOrganizationIds
+        .map((organizationId) => organizationById.get(organizationId) ?? null)
+        .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
+    [organizationById, recentOrganizationIds],
+  )
+
   const authAction = searchParams.get("auth_action")
   const authOrganizationId = searchParams.get("auth_org")
-  const handleSameLocationSelectionChange = useCallback(
-    (selection: PublicMapSameLocationSelection | null) => {
-      if (selection) {
-        clearActiveGuide()
-      }
-      setSameLocationSelection(selection)
-    },
-    [clearActiveGuide]
-  )
-  const sameLocationSearchContext = usePublicMapSameLocationSearchContext({
-    itemBySelectableId: selectableMapItemById,
-    sameLocationSelection,
-    setSameLocationSelection: handleSameLocationSelectionChange,
-  })
-  const activeSearchContext =
-    sameLocationSearchContext ?? activeGuideSearchContext
-  const setAppliedBounds = useCallback((bounds: PublicMapBounds | null) => {
-    appliedBoundsRef.current = bounds
-  }, [])
-  const handleViewportChange = useCallback((map: mapboxgl.Map) => {
-    appliedBoundsRef.current = resolveBounds(map)
-  }, [])
-  const handleSetCameraTargetOrgId = useCallback((organizationId: string) => {
-    setCameraTarget((current) => ({
-      organizationId,
-      requestId: (current?.requestId ?? 0) + 1,
-    }))
-  }, [setCameraTarget])
+
   useSyncPublicMapLayout({
     containerRef,
     mapRef,
     mapLoadedRef,
-    onViewportChange: handleViewportChange,
+    onViewportChange: (map) => setAppliedBounds(resolveBounds(map)),
     sidebarMode,
   })
   useSyncPublicMapAuthFavorite({
     authAction,
     authOrganizationId,
     initialPublicSlug,
-    isAuthenticated: Boolean(viewer ?? initialViewer),
+    isAuthenticated,
     router,
     searchParams,
     setFavorites,
   })
+
   const { authRedirectTo, handleSelectOrganization, toggleFavorite } =
     usePublicMapActions({
       organizationById,
+      isAuthenticated,
       searchParams,
       initialPublicSlug,
       selectedOrganization,
-      pendingAuthOrgId: null,
+      pendingAuthOrgId,
       setSelectedOrgId,
       setSidebarMode,
-      setCameraTargetOrgId: handleSetCameraTargetOrgId,
+      setCameraTargetOrgId,
       setRecentOrganizationIds,
+      setPendingAuthOrgId,
+      setAuthSheetOpen,
       setFavorites,
     })
-  const {
-    handleBackToSearch,
-    handleOpenDetails,
-    handleRailSelectOrganization,
-    handleOpenSameLocationGroup,
-    handleSelectListItem,
-    handleSelectMapMarker,
-  } = usePublicMapNavigation({
-    beforeProfileNavigation: flushFilterHistory,
-    embedded,
-    organizationById,
-    handleSelectOrganization,
-    mapRef,
-    selectableMapItemById,
-    setSameLocationSelection,
-    onSameLocationSelectionChange: handleSameLocationSelectionChange,
-    setSelectedListItemId,
-    setSelectedOrgId,
-    setSidebarMode,
-  })
-  useSyncPublicMapSelectedListItem({
-    organizationById,
-    selectableMapItemById,
-    selectedListItemId,
-    selectedOrgId,
-    setSelectedListItemId,
-    setSelectedOrgId,
-  })
-  useInitializePublicMap({
-    enabled: mapStartupEnabled,
-    setMapReady,
-    token,
-    tokenAvailable,
-    containerRef,
-    mapRef,
-    mapboxRef,
-    mapStartRef,
-    mapLoadedRef,
-    hasResolvedInitialViewportRef,
-    setInitialViewportResolved,
-    setMapLoadVersion,
-    setMapError,
-    setAppliedBounds,
-    retryVersion,
-    theme: mapTheme,
-  })
-  const { locationControl, setWeather, weather } = usePublicMapLocationWeather({
-    activeSameLocationGroupKey: sameLocationSelection?.key ?? null,
-    favorites,
-    mapRef,
-    mapLoadedRef,
-    mapItems: visibleMapItems,
-    mapLoadVersion,
-    mapStartRef,
-    markerTheme: mapTheme,
-    onOpenSameLocationGroup: handleOpenSameLocationGroup,
-    onSelectOrganization: handleSelectMapMarker,
-    organizations: filterState.filteredOrganizations,
-    selectedOrganizationId:
-      selectedListItemId ?? selectedOrganization?.id ?? null,
-    suppressAutomaticEntrance:
-      Boolean(initialPublicSlug) || includeSeedResources,
-    welcomeOpen: memberOnboardingState.isOpen,
-  })
-  useResolveInitialPublicMapViewport({
-    mapRef,
-    mapLoadedRef,
-    hasResolvedInitialViewportRef,
-    initialOrganization,
-    preferNationalFallback: includeSeedResources && !initialPublicSlug,
-    setInitialViewportResolved,
-  })
-  useSyncSidebarCameraPadding({
-    mapRef,
-    mapLoadedRef,
-    initialViewportResolved,
-    sidebarInsetLeft,
-  })
-  useFocusPublicMapCameraTarget(mapRef, cameraTarget, organizationById)
-  const mapSurface = (
-    <PublicMapSurface
-      mapReady={mapReady}
-      embedded={embedded}
-      containerRef={containerRef}
-      sidebarMode={sidebarMode}
-      directoryFormationCounts={resolveDirectoryFormationCounts(organizations)}
-      directoryCountEstimated={directory.countEstimated}
-      directoryCount={resolvePublicMapDirectoryCount(
-        organizations.length, totalResourceCount
-      )}
-      filteredItems={activeSearchContext?.items ?? filterState.filteredItems}
-      filteredOrganizations={filterState.filteredOrganizations}
-      selectedItemId={selectedListItemId}
-      selectedOrganization={selectedOrganization}
-      selectedResourceItem={selectedResourceItem}
-      canManageResourceMap={canManageResourceMap}
-      organizationCurationAction={organizationCurationAction}
-      resourceMapCurationAction={resourceMapCurationAction}
-      favorites={favorites}
-      collectedResourceIds={collectedResourceIds}
-      guides={resourceGuides}
-      featuredGuides={featuredGuides}
-      savedGuideIds={savedGuideIds}
-      savedGuides={savedGuides}
-      savedOrganizations={savedOrganizations}
-      savedResources={savedResources}
-      unresolvedCollectedResourceCount={unresolvedCollectedResourceCount}
-      query={query}
-      activeGroup={activeGroup}
-      discoveryGroupCounts={directory.enabled ? remotePresentation.discoveryCounts : filterState.discoveryGroupCounts}
-      groupCounts={directory.enabled ? remotePresentation.groupCounts : filterState.groupCounts}
-      resourceItemsLoadStatus={resourceItemsLoadStatus}
-      resourceItemsLoadError={resourceItemsLoadError}
-      searchPending={directory.pending || deferredQuery !== query}
-      searchContext={activeSearchContext}
-      tokenAvailable={tokenAvailable}
-      mapError={mapError}
-      locationControl={locationControl}
-      weather={weather?.snapshot ?? null}
-      onWeatherChange={setWeather}
-      preferencesSaveError={preferencesSaveError}
-      authSheetOpen={authSheetOpen}
-      authRedirectTo={authRedirectTo}
-      onQueryChange={handleQueryChange}
-      onActiveGroupChange={handleActiveGroupChange}
-      onRetryResourceItems={retryResourceItems}
-      onRetryMap={retryMap}
-      onToggleFavorite={toggleFavorite}
-      onToggleCollectedResource={toggleCollectedResource}
-      onGuideSelect={handleGuideSelect}
-      onToggleSavedGuide={toggleSavedGuide}
-      onSelectOrganization={handleRailSelectOrganization}
-      onSelectItem={handleSelectListItem}
-      onOpenOrgDetails={handleOpenDetails}
-      onBackToSearch={handleBackToSearch}
-      onSidebarModeChange={setSidebarMode}
-      onAuthSheetOpenChange={setAuthSheetOpen}
-      onSidebarInsetChange={setSidebarInsetLeft}
-      mapOverlay={<>{memberOnboardingState.overlay}{directory.viewportLimited ? <p className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-background/90 px-3 py-1 text-xs">Zoom in to see more places</p> : null}</>}
-    />
+
+  useEffect(() => {
+    if (!selectedOrganization && filteredOrganizations.length > 0) {
+      setSelectedOrgId(filteredOrganizations[0]!.id)
+      return
+    }
+
+    if (selectedOrgId && !organizationById.has(selectedOrgId) && filteredOrganizations.length > 0) {
+      setSelectedOrgId(filteredOrganizations[0]!.id)
+    }
+  }, [filteredOrganizations, organizationById, selectedOrgId, selectedOrganization])
+
+  useEffect(() => {
+    if (!tokenAvailable) return
+    if (!containerRef.current) return
+    if (mapRef.current) return
+
+    let cancelled = false
+    let stopObservingMapContainer = () => {}
+
+    async function initializeMap() {
+      try {
+        const mapboxModule = await import("mapbox-gl")
+        const mapboxgl = (mapboxModule.default ?? mapboxModule) as MapboxApi
+        if (!mapboxgl?.Map) {
+          throw new Error("Mapbox failed to initialize.")
+        }
+
+        mapboxgl.accessToken = token
+        mapboxRef.current = mapboxgl
+        if (!containerRef.current || cancelled) return
+
+        const map = new mapboxgl.Map({
+          container: containerRef.current,
+          style: MAP_STYLE,
+          center: FALLBACK_CENTER,
+          zoom: FALLBACK_ZOOM,
+          projection: "globe",
+          cooperativeGestures: true,
+        })
+
+        map.dragRotate.disable()
+        map.boxZoom.disable()
+        if (typeof map.touchZoomRotate.disableRotation === "function") map.touchZoomRotate.disableRotation()
+
+        map.on("error", (event) => {
+          if (!event?.error) return
+          console.error("Public map error:", event.error)
+          setMapError("Mapbox couldn't load the map. Check your token and domain restrictions.")
+        })
+
+        map.on("style.load", () => map.setFog({}))
+
+        map.on("load", () => {
+          mapLoadedRef.current = true
+          requestAnimationFrame(() => {
+            if (mapRef.current !== map) return
+            map.resize()
+            setAppliedBounds(resolveMapBounds(map))
+          })
+          setAppliedBounds(resolveMapBounds(map))
+        })
+
+        map.on("moveend", () => {
+          setAppliedBounds(resolveMapBounds(map))
+        })
+
+        mapRef.current = map
+
+        stopObservingMapContainer = observePublicMapContainer({
+          containerRef,
+          map,
+          mapRef,
+          mapLoadedRef,
+          onViewportChange: (activeMap) => {
+            setAppliedBounds(resolveMapBounds(activeMap))
+          },
+        })
+      } catch (error) {
+        console.error("Public map init error:", error)
+        setMapError("Mapbox couldn't start. Check your token and domain restrictions.")
+      }
+    }
+
+    void initializeMap()
+
+    return () => {
+      cancelled = true
+      markersRef.current.forEach(({ marker }) => marker.remove())
+      markersRef.current = []
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+      stopObservingMapContainer()
+      mapLoadedRef.current = false
+      hasResolvedInitialViewportRef.current = false
+    }
+  }, [token, tokenAvailable])
+
+  useEffect(() => {
+    const map = mapRef.current
+    const mapboxgl = mapboxRef.current
+    if (!map || !mapboxgl || !mapLoadedRef.current) return
+
+    markersRef.current.forEach(({ marker }) => marker.remove())
+    markersRef.current = []
+
+    const markerOrganizations = resolveMarkerOrganizations(organizations)
+    markersRef.current = markerOrganizations.map((organization) => {
+      const element = createOrganizationMarkerElement({
+        organization,
+        selected: organization.id === selectedOrganization?.id,
+        onSelect: () => {
+          setSelectedOrgId(organization.id)
+          setCameraTargetOrgId(organization.id)
+          setSidebarMode("details")
+          setRecentOrganizationIds((current) => {
+            const next = [organization.id, ...current.filter((entry) => entry !== organization.id)]
+            return next.slice(0, RECENT_ORGANIZATIONS_LIMIT)
+          })
+        },
+      })
+
+      const marker = new mapboxgl.Marker({
+        element,
+        anchor: "bottom",
+        offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
+      })
+        .setLngLat([organization.longitude, organization.latitude])
+        .addTo(map)
+
+      return { id: organization.id, marker }
+    })
+  }, [organizations, selectedOrganization?.id, setRecentOrganizationIds])
+
+  useEffect(() => {
+    const markerMap = createMarkerMap(markersRef.current)
+    organizations.forEach((organization) => {
+      const marker = markerMap.get(organization.id)
+      if (!marker) return
+      updateOrganizationMarkerElement({
+        element: marker.getElement(),
+        organization,
+        selected: organization.id === selectedOrganization?.id,
+      })
+    })
+  }, [organizations, selectedOrganization?.id])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoadedRef.current || hasResolvedInitialViewportRef.current) return
+
+    if (initialOrganization && organizationHasMapLocation(initialOrganization)) {
+      focusOrganizationOnMap({ map, organization: initialOrganization })
+      setUserLocationStatus("idle")
+      hasResolvedInitialViewportRef.current = true
+      return
+    }
+
+    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
+      fitMapToOrganizations({
+        map,
+        mapboxgl: mapboxRef.current!,
+        organizations,
+      })
+      setUserLocationStatus("unavailable")
+      hasResolvedInitialViewportRef.current = true
+      return
+    }
+
+    setUserLocationStatus("requesting")
+    window.navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const activeMap = mapRef.current
+        if (!activeMap) return
+        activeMap.flyTo({
+          center: [position.coords.longitude, position.coords.latitude],
+          zoom: 9.25,
+          duration: 900,
+          essential: true,
+        })
+        setUserLocationStatus("centered")
+        hasResolvedInitialViewportRef.current = true
+      },
+      (error) => {
+        const activeMap = mapRef.current
+        if (!activeMap || !mapboxRef.current) return
+        fitMapToOrganizations({
+          map: activeMap,
+          mapboxgl: mapboxRef.current,
+          organizations,
+        })
+        setUserLocationStatus(error.code === 1 ? "denied" : "error")
+        hasResolvedInitialViewportRef.current = true
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 60_000,
+      },
+    )
+  }, [initialOrganization, organizations])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !cameraTargetOrgId) return
+    const organization = organizationById.get(cameraTargetOrgId)
+    if (!organization || !organizationHasMapLocation(organization)) return
+    focusOrganizationOnMap({ map, organization })
+  }, [cameraTargetOrgId, organizationById])
+
+  return (
+    <>
+      <PublicMapRightRail
+        isAuthenticated={isAuthenticated}
+        memberProfile={memberProfile}
+        savedOrganizations={savedOrganizations}
+        favorites={favorites}
+        recentOrganizations={recentOrganizations}
+        joinedOrganizations={joinedOrganizations}
+        boardAlerts={boardAlerts}
+        onSelectOrganization={(organizationId) =>
+          handleSelectOrganization({
+            organizationId,
+            openDetails: true,
+          })
+        }
+        onToggleFavorite={toggleFavorite}
+      />
+
+      <PublicMapSurface
+        containerRef={containerRef}
+        sidebarMode={sidebarMode}
+        filteredOrganizations={filteredOrganizations}
+        selectedOrganization={selectedOrganization}
+        favorites={favorites}
+        query={query}
+        tokenAvailable={tokenAvailable}
+        mapError={mapError}
+        locationFeedback={locationFeedback}
+        preferencesSaveError={preferencesSaveError}
+        isSavingPreferences={isSavingPreferences}
+        authSheetOpen={authSheetOpen}
+        authRedirectTo={authRedirectTo}
+        onQueryChange={setQuery}
+        onToggleFavorite={toggleFavorite}
+        onSelectOrg={(organizationId) =>
+          handleSelectOrganization({
+            organizationId,
+            shouldFocusMap: true,
+          })
+        }
+        onSidebarModeChange={setSidebarMode}
+        onAuthSheetOpenChange={setAuthSheetOpen}
+      />
+    </>
   )
-  return <PublicMapIndexChrome viewer={initialViewer} mapSurface={mapSurface} pagination={sameLocationSearchContext ? null : directory.pagination ? { ...directory.pagination, totalCount: directory.includesNonprofits ? undefined : remotePresentation.resultCount } : null} />
 }

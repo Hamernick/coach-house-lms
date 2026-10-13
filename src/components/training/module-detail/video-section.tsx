@@ -12,7 +12,6 @@ interface VideoSectionProps {
   videoUrl: string | null
   fallbackUrl: string | null
   variant?: "card" | "frame"
-  onEnded?: () => void
   className?: string
 }
 
@@ -22,7 +21,6 @@ export function VideoSection({
   fallbackUrl,
   variant = "card",
   className,
-  onEnded,
 }: VideoSectionProps) {
   const isFrame = variant === "frame"
   const mediaClass = isFrame ? "h-full" : "aspect-video"
@@ -31,7 +29,7 @@ export function VideoSection({
     <div className={`relative w-full bg-black ${mediaClass}`}>
       <iframe
         src={embedUrl}
-        title="Class video"
+        title="Lesson video"
         className="absolute inset-0 h-full w-full"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
@@ -43,7 +41,6 @@ export function VideoSection({
         src={videoUrl}
         className="absolute inset-0 h-full w-full"
         controls
-        onEnded={onEnded}
         playsInline
         preload="metadata"
       />
@@ -74,7 +71,7 @@ export function VideoSection({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-6 py-3">
         <div className="flex items-center gap-2 text-base font-semibold">
           <VideoIcon className="h-4 w-4" />
-          <span>Class video</span>
+          <span>Lesson Video</span>
         </div>
       </div>
       <CardContent className="overflow-hidden rounded-b-2xl p-0">{content}</CardContent>

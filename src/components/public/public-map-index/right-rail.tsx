@@ -1,46 +1,49 @@
 "use client"
 
-import type { ReactNode } from "react"
-
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
-import type { PublicMapDirectoryRailMode } from "./directory-rail"
-import { PublicMapMemberRail } from "./member-rail"
-import type { PublicMapResourceGuide } from "./resource-guides"
+import { PublicMapMemberProfileCard, type PublicMapMemberProfile } from "./member-profile-card"
+import {
+  PublicMapBoardAlert,
+  PublicMapJoinedOrganization,
+  PublicMapMemberRail,
+} from "./member-rail"
 import { PublicMapSavedRail } from "./saved-rail"
 
 export function PublicMapRightRail({
   isAuthenticated,
-  directoryRail = null,
-  directoryMode = null,
-  guides = [],
+  memberProfile,
   savedOrganizations,
   favorites,
-  onGuideSelect,
+  recentOrganizations,
+  joinedOrganizations,
+  boardAlerts,
   onSelectOrganization,
   onToggleFavorite,
 }: {
   isAuthenticated: boolean
-  directoryRail?: ReactNode
-  directoryMode?: PublicMapDirectoryRailMode | null
-  guides?: PublicMapResourceGuide[]
+  memberProfile: PublicMapMemberProfile | null
   savedOrganizations: PublicMapOrganization[]
   favorites: string[]
-  onGuideSelect?: (guideId: string) => void
+  recentOrganizations: PublicMapOrganization[]
+  joinedOrganizations: PublicMapJoinedOrganization[]
+  boardAlerts: PublicMapBoardAlert[]
   onSelectOrganization: (organizationId: string) => void
   onToggleFavorite: (organizationId: string) => void
 }) {
   return (
     <RightRailSlot priority={5}>
-      <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-hidden">
+      <div className="flex min-h-full flex-col gap-4">
+        {isAuthenticated && memberProfile ? (
+          <PublicMapMemberProfileCard profile={memberProfile} />
+        ) : null}
         {isAuthenticated ? (
           <PublicMapMemberRail
-            directoryRail={directoryRail}
-            directoryMode={directoryMode}
-            guides={guides}
             savedOrganizations={savedOrganizations}
-            onGuideSelect={onGuideSelect}
+            recentOrganizations={recentOrganizations}
+            joinedOrganizations={joinedOrganizations}
+            boardAlerts={boardAlerts}
             onSelectOrganization={onSelectOrganization}
             onToggleFavorite={onToggleFavorite}
           />

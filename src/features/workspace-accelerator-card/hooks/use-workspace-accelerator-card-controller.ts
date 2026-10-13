@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import {
   normalizeWorkspaceAcceleratorCardInput,
@@ -20,9 +13,7 @@ function areOrderedStringListsEqual(left: string[], right: string[]) {
   return left.every((value, index) => value === right[index])
 }
 
-export function useWorkspaceAcceleratorCardController(
-  input: WorkspaceAcceleratorCardInput
-) {
+export function useWorkspaceAcceleratorCardController(input: WorkspaceAcceleratorCardInput) {
   const normalized = normalizeWorkspaceAcceleratorCardInput(input)
   const {
     steps,
@@ -39,9 +30,7 @@ export function useWorkspaceAcceleratorCardController(
   const stepIdsSignature = useMemo(() => stepIds.join("|"), [stepIds])
   const initialCurrentIndexFromInput = useMemo(() => {
     if (!initialCurrentStepId) return 0
-    const nextIndex = stepIds.findIndex(
-      (stepId) => stepId === initialCurrentStepId
-    )
+    const nextIndex = stepIds.findIndex((stepId) => stepId === initialCurrentStepId)
     if (nextIndex < 0) return 0
     return nextIndex
   }, [initialCurrentStepId, stepIds])
@@ -55,11 +44,10 @@ export function useWorkspaceAcceleratorCardController(
 
   const [currentIndex, setCurrentIndex] = useState(initialCurrentIndexFromInput)
   const [completedStepIds, setCompletedStepIds] = useState<string[]>(
-    initialCompletedStepIdsFromInput
+    initialCompletedStepIdsFromInput,
   )
   const lastAutoResizeTargetRef = useRef<string | null>(null)
   const lastProgressSignatureRef = useRef<string | null>(null)
-  const pendingUserProgressChangeRef = useRef(false)
   const hydratedStorageKeyRef = useRef<string | null>(null)
   const lastInitialCurrentStepSyncKeyRef = useRef<string | null>(null)
   const lastInitialCompletedSyncKeyRef = useRef<string | null>(null)
@@ -77,8 +65,7 @@ export function useWorkspaceAcceleratorCardController(
     if (initialCompletedStepIdsFromInput.length === 0) return ""
     return initialCompletedStepIdsFromInput.join("|")
   }, [initialCompletedStepIdsFromInput])
-  const hasInitialCompletedFromInput =
-    initialCompletedStepIdsFromInput.length > 0
+  const hasInitialCompletedFromInput = initialCompletedStepIdsFromInput.length > 0
 
   useEffect(() => {
     if (!storageKey) {
@@ -92,35 +79,26 @@ export function useWorkspaceAcceleratorCardController(
     }
     hydratedStorageKeyRef.current = storageKey
 
-    const raw = window.localStorage.getItem(
-      `workspace-accelerator-card:${storageKey}`
-    )
+    const raw = window.localStorage.getItem(`workspace-accelerator-card:${storageKey}`)
     if (!raw) return
     const nextIndex = Number.parseInt(raw, 10)
     if (!Number.isFinite(nextIndex) || nextIndex < 0) return
     startTransition(() => {
-      setCurrentIndex((previous) =>
-        previous === nextIndex ? previous : nextIndex
-      )
+      setCurrentIndex((previous) => (previous === nextIndex ? previous : nextIndex))
     })
 
-    const rawCompleted = window.localStorage.getItem(
-      `workspace-accelerator-card-complete:${storageKey}`
-    )
+    const rawCompleted = window.localStorage.getItem(`workspace-accelerator-card-complete:${storageKey}`)
     if (!rawCompleted) return
     try {
       const parsed = JSON.parse(rawCompleted)
       if (!Array.isArray(parsed)) return
-      const nextCompleted = parsed.filter(
-        (value): value is string =>
-          typeof value === "string" && value.trim().length > 0
-      )
+      const nextCompleted = parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       if (nextCompleted.length === 0) return
       startTransition(() => {
         setCompletedStepIds((previous) =>
           areOrderedStringListsEqual(previous, nextCompleted)
             ? previous
-            : nextCompleted
+            : nextCompleted,
         )
       })
     } catch {
@@ -135,9 +113,7 @@ export function useWorkspaceAcceleratorCardController(
     lastInitialCurrentStepSyncKeyRef.current = syncKey
     const nextIndex = stepIdToIndex.get(initialCurrentStepId)
     if (typeof nextIndex !== "number") return
-    setCurrentIndex((previous) =>
-      previous === nextIndex ? previous : nextIndex
-    )
+    setCurrentIndex((previous) => (previous === nextIndex ? previous : nextIndex))
   }, [initialCurrentStepId, stepIdToIndex, stepIds.length, stepIdsSignature])
 
   useEffect(() => {
@@ -151,7 +127,7 @@ export function useWorkspaceAcceleratorCardController(
     }
 
     const nextCompleted = initialCompletedStepIdsFromInput.filter((stepId) =>
-      validStepIds.has(stepId)
+      validStepIds.has(stepId),
     )
     setCompletedStepIds((previous) => {
       if (areOrderedStringListsEqual(previous, nextCompleted)) {
@@ -159,12 +135,7 @@ export function useWorkspaceAcceleratorCardController(
       }
       return nextCompleted
     })
-  }, [
-    initialCompletedStepIdsFromInput,
-    initialCompletedStepIdsSignature,
-    stepIdsSignature,
-    validStepIds,
-  ])
+  }, [initialCompletedStepIdsFromInput, initialCompletedStepIdsSignature, stepIdsSignature, validStepIds])
 
   useEffect(() => {
     if (stepIds.length === 0) {
@@ -186,51 +157,37 @@ export function useWorkspaceAcceleratorCardController(
 
   const goPrevious = useCallback(() => {
     if (!canGoPrevious) return
-    pendingUserProgressChangeRef.current = true
-    startTransition(() =>
-      setCurrentIndex((previous) => Math.max(0, previous - 1))
-    )
+    startTransition(() => setCurrentIndex((previous) => Math.max(0, previous - 1)))
   }, [canGoPrevious])
 
   const goNext = useCallback(() => {
     if (!canGoNext) return
-    pendingUserProgressChangeRef.current = true
-    startTransition(() =>
-      setCurrentIndex((previous) => Math.min(steps.length - 1, previous + 1))
-    )
+    startTransition(() => setCurrentIndex((previous) => Math.min(steps.length - 1, previous + 1)))
   }, [canGoNext, steps.length])
 
   const goToStep = useCallback(
     (stepId: string) => {
       const nextIndex = stepIdToIndex.get(stepId)
-      if (typeof nextIndex !== "number" || nextIndex === currentIndex) return
-      pendingUserProgressChangeRef.current = true
-      // Commit the selection with the caller's viewer-open update. Deferring it
-      // mounts the previous lesson (including organization setup) first.
-      setCurrentIndex((previous) =>
-        previous === nextIndex ? previous : nextIndex
+      if (typeof nextIndex !== "number") return
+      startTransition(() =>
+        setCurrentIndex((previous) => (previous === nextIndex ? previous : nextIndex)),
       )
     },
-    [currentIndex, stepIdToIndex]
+    [stepIdToIndex],
   )
 
-  const markCurrentStepComplete = useCallback((wholeModule = false) => {
-    if (!currentStep || (!wholeModule && completedStepIds.includes(currentStep.id))) return
-    pendingUserProgressChangeRef.current = true
+  const markCurrentStepComplete = useCallback(() => {
+    if (!currentStep) return
     setCompletedStepIds((previous) => {
-      const ids = wholeModule
-        ? steps.filter((step) => step.moduleId === currentStep.moduleId).map((step) => step.id)
-        : [currentStep.id]
-      return Array.from(new Set([...previous, ...ids]))
+      if (previous.includes(currentStep.id)) return previous
+      return [...previous, currentStep.id]
     })
-  }, [completedStepIds, currentStep, steps])
+  }, [currentStep])
 
   useEffect(() => {
     if (!allowAutoResize || !onSizeChange || !currentStep) return
-    if (size === "lg") return
     const targetSize = resolveWorkspaceAcceleratorCardTargetSize(currentStep)
-    if (lastAutoResizeTargetRef.current === targetSize && targetSize !== size)
-      return
+    if (lastAutoResizeTargetRef.current === targetSize && targetSize !== size) return
     lastAutoResizeTargetRef.current = targetSize
     if (targetSize !== size) {
       onSizeChange(targetSize)
@@ -239,23 +196,18 @@ export function useWorkspaceAcceleratorCardController(
 
   useEffect(() => {
     if (!storageKey || steps.length === 0) return
-    window.localStorage.setItem(
-      `workspace-accelerator-card:${storageKey}`,
-      String(currentIndex)
-    )
+    window.localStorage.setItem(`workspace-accelerator-card:${storageKey}`, String(currentIndex))
   }, [currentIndex, steps.length, storageKey])
 
   useEffect(() => {
     if (!storageKey) return
     if (completedStepIds.length === 0) {
-      window.localStorage.removeItem(
-        `workspace-accelerator-card-complete:${storageKey}`
-      )
+      window.localStorage.removeItem(`workspace-accelerator-card-complete:${storageKey}`)
       return
     }
     window.localStorage.setItem(
       `workspace-accelerator-card-complete:${storageKey}`,
-      JSON.stringify(completedStepIds)
+      JSON.stringify(completedStepIds),
     )
   }, [completedStepIds, storageKey])
 
@@ -269,14 +221,10 @@ export function useWorkspaceAcceleratorCardController(
     return currentModuleSteps.findIndex((step) => step.id === currentStep.id)
   }, [currentModuleSteps, currentStep])
 
-  const isCurrentStepCompleted = Boolean(
-    currentStep && completedStepIds.includes(currentStep.id)
-  )
+  const isCurrentStepCompleted = Boolean(currentStep && completedStepIds.includes(currentStep.id))
   const currentModuleCompletedCount = useMemo(() => {
     if (!currentStep || currentModuleSteps.length === 0) return 0
-    return currentModuleSteps.filter((step) =>
-      completedStepIds.includes(step.id)
-    ).length
+    return currentModuleSteps.filter((step) => completedStepIds.includes(step.id)).length
   }, [completedStepIds, currentModuleSteps, currentStep])
   const isCurrentModuleCompleted =
     currentModuleSteps.length > 0 &&
@@ -288,14 +236,12 @@ export function useWorkspaceAcceleratorCardController(
         currentStepId: currentStep?.id ?? null,
         completedStepIds,
       }),
-    [completedStepIds, currentStep?.id]
+    [completedStepIds, currentStep?.id],
   )
 
   useEffect(() => {
     if (lastProgressSignatureRef.current === progressSignature) return
     lastProgressSignatureRef.current = progressSignature
-    if (!pendingUserProgressChangeRef.current) return
-    pendingUserProgressChangeRef.current = false
     onProgressChange?.({
       currentStepId: currentStep?.id ?? null,
       completedStepIds,

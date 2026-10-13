@@ -2,14 +2,11 @@ import { CommunicationsPreferencesFields } from "@/components/account-settings/s
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { GoogleAccountConnection } from "@/features/google-auth"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
 import type { AccountSettingsErrorKey, AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
 import { ProfileFields } from "./profile-fields"
 
 export const TAB_LABELS: Record<AccountSettingsTabKey, string> = {
   profile: "Profile",
-  "public-profile": "Public profile",
   communications: "Communications",
   security: "Security",
   danger: "Danger zone",
@@ -20,9 +17,8 @@ export const MOBILE_LINKS: Array<{
   description?: string
 }> = [
   { key: "profile", description: "Personal details, photo" },
-  { key: "public-profile", description: "Username, visibility, collections" },
   { key: "communications", description: "Emails & notifications" },
-  { key: "security", description: "Sign-in methods, password" },
+  { key: "security", description: "Password" },
   { key: "danger", description: "Delete account" },
 ]
 
@@ -89,7 +85,6 @@ export function MobileSubpage({
   about,
   phone,
   email,
-  hasActiveSubscription,
   errors,
   marketingOptIn,
   newsletterOptIn,
@@ -121,7 +116,6 @@ export function MobileSubpage({
   about: string
   phone: string
   email: string
-  hasActiveSubscription: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
   marketingOptIn: boolean
   newsletterOptIn: boolean
@@ -174,15 +168,6 @@ export function MobileSubpage({
         </div>
       )}
 
-      {tab === "public-profile" && (
-        <PublicProfileSettings
-          avatarUrl={avatarUrl}
-          displayName={[firstName, lastName].filter(Boolean).join(" ")}
-          headline={title}
-          idPrefix="mobile-public-profile"
-        />
-      )}
-
       {tab === "communications" && (
         <div className="space-y-6">
           <header>
@@ -203,9 +188,7 @@ export function MobileSubpage({
           <header>
             <h3 className="text-sm font-semibold text-muted-foreground">Security</h3>
           </header>
-          <GoogleAccountConnection email={email} viewport="mobile" />
           <div className="grid max-w-xl gap-4">
-            <h4 className="font-medium">Password</h4>
             <div className="grid gap-2">
               <Label htmlFor="m-newPassword">New password</Label>
               <Input
@@ -237,11 +220,6 @@ export function MobileSubpage({
           </header>
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
             <p className="text-sm">This action is permanent and cannot be undone.</p>
-            {hasActiveSubscription ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Deleting your account does not cancel Stripe billing. Cancel in the billing portal first, or continue after cancellation if your access remains active through the paid period.
-              </p>
-            ) : null}
             <div className="mt-3">
               <Button variant="destructive" onClick={onDeleteAccount}>
                 Delete my account

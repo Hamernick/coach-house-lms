@@ -4,16 +4,13 @@ import type {
   WorkspaceCanvasTutorialStepId,
   WorkspaceCanvasTutorialStep,
 } from "../types"
-import { WORKSPACE_REST_VISIBLE_CARD_IDS } from "@/lib/workspace-card-policy"
-import { WORKSPACE_MAP_FEATURE_ENABLED } from "@/lib/workspace-map-feature"
 
-const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
+export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
   {
     id: "welcome",
-    sceneId: "overview",
     title: "Welcome to Workspace",
     message:
-      "This canvas connects your organization, people, finances, documents, programs, roadmap, and accelerator in one place.",
+      "This canvas keeps your organization, documents, programs, accelerator, calendar, fundraising, and communications in one place.",
     targetCardId: null,
     targetLabel: "Workspace",
     revealedCardIds: [],
@@ -21,135 +18,99 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   },
   {
     id: "organization",
-    sceneId: "overview",
     title: "Build your Organization",
     message:
-      "Update your public and private organization details, and connect it to the roadmap, programs, calendar, and team activity that shape the rest of the workspace.",
+      "Update your public and private organization details, connect data to your organization like programs, core documents, fundraising efforts, teams, and communications.",
     targetCardId: "organization-overview",
     targetLabel: "Organization",
     revealedCardIds: ["organization-overview"],
     continueMode: "next",
   },
   {
-    id: "map-button",
-    sceneId: "overview",
-    title: "Map",
-    message:
-      "The Organization card includes the Map entry point, so you can review public-map readiness without leaving the workspace.",
-    targetCardId: "organization-overview",
-    targetLabel: "Map button",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "next",
-  },
-  {
-    id: "map-card",
-    sceneId: "map",
-    title: "Map",
-    message:
-      "This card connects your organization to place. It shows what still needs to be completed before you can confidently go live on the map.",
-    targetCardId: "atlas",
-    targetLabel: "Map card",
-    revealedCardIds: ["organization-overview", "atlas"],
-    continueMode: "next",
-  },
-  {
     id: "tool-buttons",
-    sceneId: "overview",
-    title: "Workspace drawer",
+    title: "Tools",
     message:
-      "Use the drawer to move between Organization, Finance, People, Documents, and Accelerator. On desktop its controls live in the left rail; on smaller screens they move into the drawer.",
+      "Buttons on the left side of your Organization card will open different tools to help you plan and build your org.",
     targetCardId: null,
-    targetLabel: "Tool controls",
+    targetLabel: "Tools",
     revealedCardIds: ["organization-overview"],
     continueMode: "next",
     highlightShortcutButtons: true,
   },
   {
     id: "accelerator",
-    sceneId: "accelerator",
-    title: "The Accelerator",
+    title: "Accelerator",
     message:
-      "The Accelerator guides you through nine strategic lessons with short videos and homework, from foundations and programs into evaluation, budgeting, communications, and fundraising for each program and your organization.",
+      "The accelerator is a series of guides to help you move fast and get to whats important. It's a series of lessons built from 30+ years building sustainable nfp's, having raised $25m+.",
     targetCardId: "accelerator",
     targetLabel: "Accelerator",
-    revealedCardIds: ["accelerator"],
-    continueMode: "next",
-  },
-  {
-    id: "accelerator-picker",
-    sceneId: "accelerator",
-    title: "Classes",
-    message:
-      "Switch between class tracks here to see the right lessons, progress, and next steps for each part of the Accelerator.",
-    targetCardId: "accelerator",
-    targetLabel: "Class tracks",
-    revealedCardIds: ["accelerator"],
-    continueMode: "next",
-    calloutTarget: "accelerator-picker",
-    calloutInstruction:
-      "Class tracks update the lesson list and focus on a different part of the Accelerator.",
-  },
-  {
-    id: "accelerator-first-module",
-    sceneId: "accelerator",
-    title: "Lessons",
-    message:
-      "The lesson list shows the real class sequence, progress, and next recommended work so users can understand what to do next without leaving the guide.",
-    targetCardId: "accelerator",
-    targetLabel: "First lesson",
-    revealedCardIds: ["accelerator"],
-    continueMode: "next",
-  },
-  {
-    id: "accelerator-close-module",
-    sceneId: "accelerator-module",
-    title: "Lesson preview",
-    message:
-      "This is what an accelerator lesson looks like inside the workspace. Select Continue when you're ready to move on.",
-    targetCardId: "accelerator",
-    targetLabel: "Lesson preview",
-    revealedCardIds: ["accelerator"],
-    continueMode: "next",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Accelerator tool and continue.",
   },
   {
     id: "calendar",
-    sceneId: "calendar",
     title: "Calendar",
     message:
       "Add recurring board meetings, annual meetings, deadlines, and operating rhythm here. This is where reminders, accountability, and the shared tempo of the organization start to take shape.",
     targetCardId: "calendar",
     targetLabel: "Calendar",
-    revealedCardIds: ["calendar"],
-    continueMode: "next",
-    calloutTarget: "calendar-viewport-button",
-    calloutInstruction:
-      "The calendar lives in the header here, so it is always available from the workspace.",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Calendar tool and continue.",
   },
   {
     id: "programs",
-    sceneId: "programs",
     title: "Programs turn strategy into fundable work",
     message:
       "Build program briefs, budgets, and fundraising targets here. Program details feed the rest of the system so plans, asks, and updates stay aligned.",
     targetCardId: "programs",
     targetLabel: "Programs",
-    revealedCardIds: ["programs"],
-    continueMode: "next",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Programs tool and continue.",
   },
   {
-    id: "roadmap",
-    sceneId: "roadmap",
-    title: "Roadmap",
+    id: "documents",
+    title: "Documents",
     message:
-      "Use the roadmap to keep fundraising, board strategy, and execution priorities sequenced in one operating view.",
-    targetCardId: "roadmap",
-    targetLabel: "Roadmap",
-    revealedCardIds: ["roadmap"],
-    continueMode: "next",
+      "Keep policies, decks, budgets, and source files in one place so the rest of the workspace stays grounded in real materials.",
+    targetCardId: "vault",
+    targetLabel: "Documents",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Documents tool and continue.",
+  },
+  {
+    id: "fundraising",
+    title: "Fundraising",
+    message:
+      "Connect funding goals to the programs and progress you are actually building so your asks stay tied to the work.",
+    targetCardId: "economic-engine",
+    targetLabel: "Fundraising",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Fundraising tool and continue.",
+  },
+  {
+    id: "communications",
+    title: "Communications",
+    message:
+      "Turn milestones into updates, shape your public story, and keep supporters aligned with the work in motion.",
+    targetCardId: "communications",
+    targetLabel: "Communications",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "shortcut",
+    calloutTarget: "shortcut-button",
+    calloutInstruction: "Click to open the Communications tool and continue.",
   },
   {
     id: "collaboration",
-    sceneId: "overview",
     title: "Team Access",
     message:
       "Invite teammates and board members so this becomes a shared working space, not a board only one person updates.",
@@ -159,16 +120,19 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     continueMode: "next",
     calloutTarget: "team-access",
     calloutInstruction:
-      "Team Access is where members are invited and workspace permissions are managed.",
+      "Use Team Access to invite members and manage who can work in this workspace.",
+  },
+  {
+    id: "finish",
+    title: "Next Steps",
+    message:
+      "Start with Organization and Documents, then move into Programs and the Accelerator to keep each part of the work connected.",
+    targetCardId: "organization-overview",
+    targetLabel: "Organization",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "next",
   },
 ]
-
-export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] =
-  WORKSPACE_MAP_FEATURE_ENABLED
-    ? WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS
-    : WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS.filter(
-        (step) => step.id !== "map-button" && step.id !== "map-card"
-      )
 
 export function resolveWorkspaceCanvasTutorialStepCount() {
   return WORKSPACE_CANVAS_TUTORIAL_STEPS.length
@@ -188,41 +152,21 @@ export function resolveWorkspaceCanvasTutorialStep(stepIndex: number) {
   )
 }
 
-export function resolveWorkspaceCanvasTutorialProgressPercent(
-  stepIndex: number,
-  stepCount: number
-) {
-  const safeStepCount = Math.max(Math.trunc(stepCount), 1)
-  const currentStep = Math.min(
-    Math.max(Math.trunc(stepIndex) + 1, 1),
-    safeStepCount
-  )
-
-  return Math.round((currentStep / safeStepCount) * 100)
-}
-
 export const WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS = [
   "organization-overview",
-  ...(WORKSPACE_MAP_FEATURE_ENABLED
-    ? (["atlas"] as const satisfies readonly WorkspaceCanvasTutorialCardId[])
-    : []),
   "accelerator",
   "calendar",
   "programs",
-  "roadmap",
+  "vault",
   "economic-engine",
   "communications",
 ] as const satisfies readonly WorkspaceCanvasTutorialCardId[]
 
-function resolveTutorialStepIdSet(
-  stepIds: WorkspaceCanvasTutorialStepId[] = []
-) {
+function resolveTutorialStepIdSet(stepIds: WorkspaceCanvasTutorialStepId[] = []) {
   return new Set<WorkspaceCanvasTutorialStepId>(stepIds)
 }
 
-function resolveWorkspaceCanvasTutorialStepOrder(
-  stepId: WorkspaceCanvasTutorialStepId
-) {
+function resolveWorkspaceCanvasTutorialStepOrder(stepId: WorkspaceCanvasTutorialStepId) {
   return WORKSPACE_CANVAS_TUTORIAL_STEPS.findIndex((step) => step.id === stepId)
 }
 
@@ -230,15 +174,9 @@ function isTutorialShortcutStep(step: WorkspaceCanvasTutorialStep) {
   return step.continueMode === "shortcut" && step.targetCardId !== null
 }
 
-export function isWorkspaceCanvasTutorialGatedStep(
-  step: WorkspaceCanvasTutorialStep
-) {
-  return step.continueMode === "shortcut" || step.continueMode === "action"
-}
-
 export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
   stepIndex: number,
-  stepIds: WorkspaceCanvasTutorialStepId[] = []
+  stepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const clampedStepIndex = clampWorkspaceCanvasTutorialStepIndex(stepIndex)
   return stepIds.filter((stepId) => {
@@ -249,17 +187,17 @@ export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
 
 export function isWorkspaceCanvasTutorialStepOpened(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   return resolveTutorialStepIdSet(
-    resolveWorkspaceCanvasTutorialTrimmedStepIds(stepIndex, openedStepIds)
+    resolveWorkspaceCanvasTutorialTrimmedStepIds(stepIndex, openedStepIds),
   ).has(step.id)
 }
 
 export function isWorkspaceCanvasTutorialStepAcknowledged(
   stepIndex: number,
-  acknowledgedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  acknowledgedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   return resolveTutorialStepIdSet(acknowledgedStepIds).has(step.id)
@@ -267,60 +205,59 @@ export function isWorkspaceCanvasTutorialStepAcknowledged(
 
 export function resolveWorkspaceCanvasTutorialContinueMode(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  if (isWorkspaceCanvasTutorialGatedStep(step)) {
+  if (step.continueMode === "shortcut") {
     return isWorkspaceCanvasTutorialStepOpened(stepIndex, openedStepIds)
       ? "next"
-      : step.continueMode
+      : "shortcut"
   }
   return step.continueMode ?? "next"
 }
 
-export function shouldWorkspaceCanvasTutorialBlockPanelNext(
-  _continueMode: "next" | "shortcut" | "action" | undefined
-) {
-  return false
-}
-
 export function resolveWorkspaceCanvasTutorialVisibleCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const clampedStepIndex = clampWorkspaceCanvasTutorialStepIndex(stepIndex)
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  const openedCurrentStep = isWorkspaceCanvasTutorialStepOpened(
-    clampedStepIndex,
-    openedStepIds
+  const visibleCardIds = new Set<WorkspaceCanvasTutorialCardId>(step.revealedCardIds)
+  const openedStepIdSet = resolveTutorialStepIdSet(
+    resolveWorkspaceCanvasTutorialTrimmedStepIds(clampedStepIndex, openedStepIds),
   )
-  if (isTutorialShortcutStep(step) && openedCurrentStep && step.targetCardId) {
-    return [step.targetCardId]
+
+  for (let index = 0; index <= clampedStepIndex; index += 1) {
+    const tutorialStep = WORKSPACE_CANVAS_TUTORIAL_STEPS[index]
+    if (!tutorialStep || !isTutorialShortcutStep(tutorialStep)) {
+      continue
+    }
+    if (!openedStepIdSet.has(tutorialStep.id)) {
+      continue
+    }
+    const { targetCardId } = tutorialStep
+    if (!targetCardId) {
+      continue
+    }
+    visibleCardIds.add(targetCardId)
   }
 
-  return [...step.revealedCardIds]
+  return Array.from(visibleCardIds)
 }
 
 export function resolveWorkspaceCanvasTutorialActiveVisibleCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   return resolveWorkspaceCanvasTutorialVisibleCardIds(stepIndex, openedStepIds)
 }
 
 export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
-  const callout = resolveWorkspaceCanvasTutorialCallout(
-    stepIndex,
-    openedStepIds
-  )
-  if (
-    !callout ||
-    (callout.kind !== "shortcut-button" &&
-      (callout.kind !== "calendar-viewport-button" || !callout.requiresAction))
-  ) {
+  const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
+  if (!callout || callout.kind !== "shortcut-button") {
     return null
   }
   return callout.cardId
@@ -328,12 +265,9 @@ export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
 
 export function resolveWorkspaceCanvasTutorialSelectedCardId(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
-  if (
-    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
-    "shortcut"
-  ) {
+  if (resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) === "shortcut") {
     return null
   }
 
@@ -342,7 +276,7 @@ export function resolveWorkspaceCanvasTutorialSelectedCardId(
 
 export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
 
@@ -352,7 +286,7 @@ export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
 
   const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
     stepIndex,
-    openedStepIds
+    openedStepIds,
   )
 
   if (continueMode === "shortcut") {
@@ -375,17 +309,10 @@ export function resolveWorkspaceCanvasTutorialSceneFocusCardIds(
 
 export function resolveWorkspaceCanvasTutorialShortcutInstruction(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
-  const callout = resolveWorkspaceCanvasTutorialCallout(
-    stepIndex,
-    openedStepIds
-  )
-  if (
-    !callout ||
-    (callout.kind !== "shortcut-button" &&
-      (callout.kind !== "calendar-viewport-button" || !callout.requiresAction))
-  ) {
+  const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
+  if (!callout || callout.kind !== "shortcut-button") {
     return null
   }
   return callout.instruction
@@ -393,7 +320,7 @@ export function resolveWorkspaceCanvasTutorialShortcutInstruction(
 
 export function resolveWorkspaceCanvasTutorialCallout(
   stepIndex: number,
-  openedStepIds: WorkspaceCanvasTutorialStepId[] = []
+  openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ): WorkspaceCanvasTutorialCallout | null {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
   const label = step.targetLabel ?? step.title
@@ -412,25 +339,9 @@ export function resolveWorkspaceCanvasTutorialCallout(
   }
 
   if (
-    step.calloutTarget === "organization-map-button" &&
-    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
-      "action"
-  ) {
-    return {
-      kind: "organization-map-button",
-      label,
-      instruction,
-    }
-  }
-
-  const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
-    stepIndex,
-    openedStepIds
-  )
-
-  if (
     step.calloutTarget === "shortcut-button" &&
-    continueMode === "shortcut" &&
+    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
+      "shortcut" &&
     step.targetCardId
   ) {
     return {
@@ -441,48 +352,11 @@ export function resolveWorkspaceCanvasTutorialCallout(
     }
   }
 
-  if (
-    step.calloutTarget === "calendar-viewport-button" &&
-    step.targetCardId === "calendar"
-  ) {
-    return {
-      kind: "calendar-viewport-button",
-      cardId: "calendar",
-      label,
-      instruction,
-      requiresAction: continueMode === "shortcut",
-    }
-  }
-
-  if (
-    step.calloutTarget === "accelerator-first-module" &&
-    continueMode === "action"
-  ) {
-    return {
-      kind: "accelerator-first-module",
-      label,
-      instruction,
-    }
-  }
-
-  if (
-    step.calloutTarget === "accelerator-picker" ||
-    step.calloutTarget === "accelerator-progress" ||
-    (step.calloutTarget === "accelerator-close-module" &&
-      continueMode === "action")
-  ) {
-    return {
-      kind: step.calloutTarget,
-      label,
-      instruction,
-    }
-  }
-
   return null
 }
 
 export function resolveWorkspaceCanvasTutorialHighlightShortcutButtons(
-  stepIndex: number
+  stepIndex: number,
 ) {
   return (
     resolveWorkspaceCanvasTutorialStep(stepIndex).highlightShortcutButtons ??
@@ -503,19 +377,20 @@ export const isWorkspaceCanvasTutorialStepCompleted =
 
 export function buildWorkspaceCanvasTutorialCompletionHiddenCardIds() {
   const visibleOnRest: WorkspaceCanvasTutorialCardId[] = [
-    ...WORKSPACE_REST_VISIBLE_CARD_IDS,
+    "organization-overview",
+    "accelerator",
   ]
   const allCards: WorkspaceCanvasTutorialCardId[] = [
     "organization-overview",
     "programs",
-    "roadmap",
+    "vault",
     "accelerator",
     "brand-kit",
     "economic-engine",
     "calendar",
     "communications",
+    "deck",
     "atlas",
-    "fiscal-sponsorship",
   ]
 
   return allCards.filter((cardId) => !visibleOnRest.includes(cardId))

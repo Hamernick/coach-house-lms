@@ -1,329 +1,197 @@
 "use client"
 
-import { useResourceDirectoryPagination } from "@/features/find-resource-index/client"
+import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
+import GlobeIcon from "lucide-react/dist/esm/icons/globe"
+import HeartIcon from "lucide-react/dist/esm/icons/heart"
+import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
-import { memo, type ReactNode } from "react"
-
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Empty } from "@/components/ui/empty"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  buildPlatformOrganizationMapItem,
-  resolvePublicMapItemSelectableId,
-  type PublicMapItem,
-} from "@/lib/public-map/resource-map-items"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import { cn } from "@/lib/utils"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { PublicMapPlatformOrganizationListCard } from "./organization-list-platform-card"
-import { PublicMapResourceListCard } from "./organization-list-resource-card"
-import { PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME } from "./organization-list-card-shared"
-import {
-  PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
-  PUBLIC_MAP_LIST_PAGE_SIZE,
-  PublicMapOrganizationListPaginationFooter,
-  usePublicMapOrganizationListPagination,
-} from "./organization-list-pagination"
-import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
-import { useOrganizationFeedViewport } from "./organization-feed-viewport"
-import { PublicMapClaimPrompt } from "./footer"
-import type { PublicMapGroupFilterKey } from "./category-filter"
-import {
-  PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR,
-  type PublicMapResourceItemsLoadStatus,
-} from "./use-resource-map-items"
 
-function buildPublicMapListItems({
-  items,
-  organizations,
-}: {
-  items?: PublicMapItem[]
-  organizations: PublicMapOrganization[]
-}) {
-  return items ?? organizations.map(buildPlatformOrganizationMapItem)
+function formatLocation(org: PublicMapOrganization) {
+  return [org.city, org.state, org.country]
+    .filter((entry) => Boolean(entry && entry.trim().length > 0))
+    .join(", ")
 }
 
-function PublicMapOrganizationListSkeleton() {
-  return (
-    <div
-      data-public-map-search-loading="true"
-      className="@container/results flex min-w-0 flex-col gap-3"
-      role="status"
-      aria-live="polite"
-    >
-      <p className="text-muted-foreground px-1 text-xs">Loading resources…</p>
-      <div className="grid w-full min-w-0 grid-cols-1 gap-3 @min-[38rem]/results:grid-cols-2">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div
-            key={index}
-            className={cn(
-              "border-border/50 flex flex-col justify-center rounded-2xl border p-4",
-              PUBLIC_MAP_LIST_CARD_HEIGHT_CLASSNAME
-            )}
-            aria-hidden="true"
-          >
-            <div className="flex items-center gap-4">
-              <Skeleton className="size-12 shrink-0 animate-none rounded-xl" />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <Skeleton className="h-4 w-3/5 animate-none" />
-                <Skeleton className="h-3 w-2/5 animate-none" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+function buildInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "O"
+  if (parts.length === 1) return parts[0]!.slice(0, 1).toUpperCase()
+  return `${parts[0]!.slice(0, 1)}${parts[1]!.slice(0, 1)}`.toUpperCase()
 }
 
-function PublicMapOrganizationListComponent({
-  items,
+function buildProgramPreviewCards(org: PublicMapOrganization) {
+  return org.programs
+    .filter((program) => Boolean(program.imageUrl && program.imageUrl.trim().length > 0))
+    .slice(0, 3)
+}
+
+export function PublicMapOrganizationList({
   organizations,
-  selectedItemId,
   selectedOrgId,
+  favorites,
   query,
-  constrainedLayout = false,
-  incrementalLoading = false,
-  scrollable = false,
-  bounded = false,
-  paged = false,
-  remotePagination = false,
-  leadingContent,
-  initialVisibleCount = PUBLIC_MAP_LIST_INITIAL_PAGE_SIZE,
-  pageSize = PUBLIC_MAP_LIST_PAGE_SIZE,
-  activeGroup = "all",
-  loadStatus = "ready",
-  loadError = null,
-  onClearCategory,
-  onClearQuery,
-  onRetryLoad,
-  onSelectItem,
   onSelectOrg,
+  onToggleFavorite,
   onOpenDetails,
 }: {
-  items?: PublicMapItem[]
   organizations: PublicMapOrganization[]
-  selectedItemId?: string | null
   selectedOrgId: string | null
+  favorites: string[]
   query?: string
-  constrainedLayout?: boolean
-  incrementalLoading?: boolean
-  scrollable?: boolean
-  bounded?: boolean
-  paged?: boolean
-  remotePagination?: boolean
-  leadingContent?: ReactNode
-  initialVisibleCount?: number
-  pageSize?: number
-  activeGroup?: PublicMapGroupFilterKey
-  loadStatus?: PublicMapResourceItemsLoadStatus
-  loadError?: string | null
-  onClearCategory?: () => void
-  onClearQuery?: () => void
-  onRetryLoad?: () => void
-  onSelectItem?: (id: string) => void
   onSelectOrg: (id: string) => void
+  onToggleFavorite: (id: string) => void
   onOpenDetails?: (id: string) => void
 }) {
-  const remoteContext = useResourceDirectoryPagination()
-  const remote = remotePagination ? remoteContext : null
-  const listItems = buildPublicMapListItems({ items, organizations })
-  const resolvedSelectedItemId = selectedItemId ?? selectedOrgId
-  const {
-    hasMoreOrganizations,
-    loadMoreSentinelRef,
-    loadNextPage,
-    nextPageCount,
-    paginationEnabled,
-    visibleItems,
-  } = usePublicMapOrganizationListPagination({
-    remote,
-    getItemId: resolvePublicMapItemSelectableId,
-    items: listItems,
-    selectedItemId: bounded ? null : resolvedSelectedItemId,
-    query,
-    incrementalLoading,
-    autoLoadMore: paged || !bounded,
-    autoLoadRemote: paged,
-    initialVisibleCount: paged ? 6 : initialVisibleCount,
-    pageSize,
-  })
-  const feed = useOrganizationFeedViewport(paged, `${remote?.key ?? ""}|${query ?? ""}|${activeGroup}`, listItems.length === 0)
-
-  if (listItems.length === 0 && loadStatus === "loading") {
+  if (organizations.length === 0) {
+    const hasSearchQuery = Boolean(query?.trim().length)
     return (
-      <>
-        {leadingContent}
-        <PublicMapOrganizationListSkeleton />
-      </>
-    )
-  }
-
-  if (listItems.length === 0) {
-    const normalizedQuery = query?.trim() ?? ""
-    const hasSearchQuery = normalizedQuery.length > 0
-    const hasCategoryFilter = activeGroup !== "all"
-    const loadFailed = loadStatus === "error"
-    const loadOffline = loadError === PUBLIC_MAP_RESOURCE_ITEMS_OFFLINE_ERROR
-    const title = loadOffline
-      ? "You’re offline"
-      : loadFailed
-        ? "Resource directory unavailable"
-        : hasSearchQuery
-          ? `No listings match “${normalizedQuery}”`
-          : hasCategoryFilter
-            ? "No resources in this category"
-            : "No resources available"
-    const description = loadOffline
-      ? "Connect to the internet, then try loading the directory again."
-      : loadFailed
-        ? (loadError ?? "The resource directory could not load.")
-        : hasSearchQuery
-          ? "Try a shorter term or clear the search to browse every resource."
-          : hasCategoryFilter
-            ? "Show all categories or choose another category."
-            : "Try loading the directory again."
-    const action = loadFailed
-      ? onRetryLoad
-        ? { label: "Try again", onClick: onRetryLoad }
-        : null
-      : hasSearchQuery
-        ? onClearQuery
-          ? { label: "Clear search", onClick: onClearQuery }
-          : null
-        : hasCategoryFilter
-          ? onClearCategory
-            ? { label: "Show all", onClick: onClearCategory }
-            : null
-          : onRetryLoad
-            ? { label: "Try again", onClick: onRetryLoad }
-            : null
-
-    const emptyState = (
-      <Empty
-        data-public-map-search-empty="true"
-        variant="subtle"
-        size="sm"
-        className={cn("h-auto min-h-48", PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME)}
-        title={<span className="text-balance">{title}</span>}
-        description={<span className="text-pretty">{description}</span>}
-        actions={
-          action ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={action.onClick}
-            >
-              {action.label}
-            </Button>
-          ) : null
-        }
-      />
-    )
-
-    if (paged) return <>{emptyState}<PublicMapClaimPrompt /></>
-    if (!leadingContent) return emptyState
-
-    return (
-      <div className="flex w-full min-w-0 flex-col gap-2">
-        <div className="divide-border/60 bg-background/85 divide-y overflow-hidden rounded-2xl backdrop-blur-xl">
-          {leadingContent}
-        </div>
-        {emptyState}
+      <div className="rounded-xl border border-border/70 bg-background/80 px-3 py-5 text-center">
+        <p className="text-sm font-medium text-foreground">No organizations yet</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {hasSearchQuery
+            ? "No organizations matched your search."
+            : "Public organizations will appear here once they are published. Map markers appear when an address is available."}
+        </p>
       </div>
     )
   }
 
   return (
-    <div
-      ref={feed.ref}
-      data-public-map-paged-results={paged ? "" : undefined}
-      style={paged ? { height: feed.height } : undefined}
-      data-public-map-organization-list-section="list-stack"
-      aria-busy={loadStatus === "loading"}
-      className={cn(
-        "mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-2 @container/results",
-        scrollable && "min-h-0 flex-1"
-      )}
-    >
-      <div
-        data-lenis-prevent={bounded || paged ? "" : undefined}
-        data-public-map-result-feed={paged ? "" : undefined}
-        data-public-map-organization-list-section="rounded-scroll"
-        data-public-map-organization-list-scroll={
-          scrollable || paged ? "true" : undefined
-        }
-        className={cn(
-          "w-full min-w-0",
-          !paged && "divide-border/60 bg-background/85 rounded-2xl backdrop-blur-xl",
-          scrollable || paged
-            ? "min-h-0 flex-1 [scroll-padding-bottom:max(env(safe-area-inset-bottom),0.75rem)] overflow-x-hidden overflow-y-auto overscroll-contain pr-1 pb-[env(safe-area-inset-bottom)] [-webkit-overflow-scrolling:touch]"
-            : "overflow-hidden",
-          bounded && "max-h-full flex-[0_1_auto]",
-          paged && "min-h-0 flex-1 pr-0 pb-0 [overflow-anchor:none] [scrollbar-width:thin]"
-        )}
-      >
-        <div data-public-map-feed-content={paged ? "" : undefined} className={paged ? "min-w-0" : "contents"}>
-        {paged ? null : leadingContent}
-        <div
-          data-public-map-organization-list-section="card-grid"
-          className={cn(
-            "grid w-full min-w-0 shrink-0 grid-cols-1 items-stretch @min-[38rem]/results:grid-cols-2 [&>article:only-child]:col-span-full",
-            paged
-              ? "gap-2 [&>article]:rounded-xl [&>article]:bg-white dark:[&>article]:bg-card"
-              : "divide-border/60 divide-y @min-[38rem]/results:gap-x-3 @min-[38rem]/results:gap-y-2 @min-[38rem]/results:divide-y-0"
-          )}
-        >
-          {visibleItems.map((item) => {
-            const selectableItemId = resolvePublicMapItemSelectableId(item)
-            const selected = resolvedSelectedItemId === selectableItemId
+    <div className="space-y-2.5">
+      {organizations.map((org) => {
+        const selected = selectedOrgId === org.id
+        const location = formatLocation(org)
+        const isFavorite = favorites.includes(org.id)
+        const previewPrograms = buildProgramPreviewCards(org)
+        const fallbackInitials = buildInitials(org.name)
 
-            if (item.itemType === "external_resource") {
-              return (
-                <PublicMapResourceListCard
-                  key={item.id}
-                  item={item}
-                  selected={selected}
-                  query={query}
-                  constrainedLayout={paged || constrainedLayout}
-                  onSelectItem={onSelectItem}
-                />
-              )
-            }
+        return (
+          <article
+            key={org.id}
+            className={cn(
+              "group relative overflow-hidden rounded-2xl border bg-background/85 p-3 transition-colors",
+              selected
+                ? "bg-card"
+                : "hover:bg-background",
+            )}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border-0 bg-transparent p-0 text-transparent shadow-none transition-colors hover:bg-muted/10 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onMouseEnter={() => onSelectOrg(org.id)}
+              onFocus={() => onSelectOrg(org.id)}
+              onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
+              aria-label={`Open details for ${org.name}`}
+            />
 
-            return (
-              <PublicMapPlatformOrganizationListCard
-                key={item.id}
-                item={item}
-                selected={selected}
-                query={query}
-                constrainedLayout={paged || constrainedLayout}
-                onSelectOrg={onSelectOrg}
-                onOpenDetails={onOpenDetails}
-              />
-            )
-          })}
-        </div>
-        <PublicMapOrganizationListPaginationFooter
-          compact={paged}
-          hasMoreOrganizations={hasMoreOrganizations}
-          loadMoreSentinelRef={loadMoreSentinelRef}
-          loadNextPage={loadNextPage}
-          nextPageCount={nextPageCount}
-          organizationCount={remote ? remote.totalCount : listItems.length}
-          loading={remote?.loading}
-          error={remote?.error}
-          paginationEnabled={paginationEnabled}
-          visibleCount={visibleItems.length}
-        />
-        {paged ? <PublicMapClaimPrompt /> : null}
-        </div>
-      </div>
+            <div className="relative z-10 flex items-start justify-between gap-2">
+              <div className="pointer-events-none min-w-0 flex flex-1 items-start gap-3">
+                <Avatar className="mt-0.5 size-10 rounded-xl border border-border/60">
+                  <AvatarImage src={org.logoUrl ?? org.headerUrl ?? undefined} alt={org.name} className="object-cover" />
+                  <AvatarFallback className="rounded-xl bg-muted/45 text-[11px] font-semibold text-foreground">
+                    {fallbackInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold text-foreground">{org.name}</span>
+                  {org.tagline ? (
+                    <span className="mt-0.5 block line-clamp-3 min-w-0 break-words text-xs leading-relaxed text-muted-foreground">
+                      {org.tagline}
+                    </span>
+                  ) : null}
+                  {location ? (
+                    <span className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPinIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">{location}</span>
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "relative z-20",
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
+                  isFavorite
+                    ? "border-primary/45 bg-primary/10 text-primary"
+                    : "border-border/70 bg-background/80 text-muted-foreground hover:bg-muted",
+                )}
+                onClick={() => onToggleFavorite(org.id)}
+                aria-label={isFavorite ? `Remove ${org.name} from favorites` : `Add ${org.name} to favorites`}
+              >
+                <HeartIcon className={cn("h-4 w-4", isFavorite && "fill-current")} aria-hidden />
+              </Button>
+            </div>
+
+            {org.programPreview?.title ? (
+              <div className="pointer-events-none relative z-10 mt-2 rounded-xl border border-border/70 bg-card/80 px-2.5 py-2">
+                <p className="line-clamp-1 text-xs font-medium text-foreground">{org.programPreview.title}</p>
+                {org.programPreview.subtitle ? (
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground">{org.programPreview.subtitle}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {previewPrograms.length > 0 ? (
+              <div className="pointer-events-none relative z-10 mt-2 grid grid-cols-3 gap-1.5">
+                {previewPrograms.map((program) => (
+                  <div
+                    key={`${org.id}:program:${program.id}`}
+                    className="overflow-hidden rounded-lg border border-border/70 bg-muted/25"
+                  >
+                    <div className="relative h-20 bg-muted/30">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={program.imageUrl ?? ""}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="px-2 py-1.5">
+                      <p className="line-clamp-1 text-[11px] font-medium text-foreground">{program.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="relative z-10 mt-3 flex items-end justify-between gap-2">
+              <div className="pointer-events-none flex min-w-0 flex-wrap items-center gap-1.5">
+                <Badge variant="outline" className="rounded-md border-border/70 bg-background/80 text-[10px] text-foreground">
+                  {PUBLIC_MAP_GROUP_LABELS[org.primaryGroup]}
+                </Badge>
+                {org.isOnlineOnly ? (
+                  <Badge variant="outline" className="rounded-md border-primary/45 bg-primary/10 text-[10px] text-primary">
+                    <GlobeIcon className="mr-1 h-3 w-3" aria-hidden />
+                    Web resource
+                  </Badge>
+                ) : null}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="relative z-20 h-7 rounded-md border border-border/70 bg-background/80 px-2.5 text-[11px] text-foreground hover:bg-muted"
+                onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
+              >
+                Details
+                <ArrowRightIcon className="ml-1 h-3.5 w-3.5" aria-hidden />
+              </Button>
+            </div>
+          </article>
+        )
+      })}
     </div>
   )
 }
-
-export const PublicMapOrganizationList = memo(
-  PublicMapOrganizationListComponent
-)

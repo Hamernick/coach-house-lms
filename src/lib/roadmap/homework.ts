@@ -1,10 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import {
-  parseAssignmentCompletionMode,
-  parseAssignmentFields,
-  shouldTreatAssignmentSubmissionAsComplete,
-} from "@/lib/modules"
 import type { Database } from "@/lib/supabase"
 import type { RoadmapHomeworkLink, RoadmapHomeworkStatus } from "@/lib/roadmap"
 
@@ -39,37 +34,13 @@ const ROADMAP_HOMEWORK_TARGETS: Record<
   mission_vision_values: [
     {
       classSlug: "mission-vision-values",
-      moduleSlug: "mission",
-      label: "Mission statement",
-    },
-    {
-      classSlug: "mission-vision-values",
-      moduleIdx: 1,
-      label: "Mission statement",
-    },
-  ],
-  vision: [
-    {
-      classSlug: "mission-vision-values",
-      moduleSlug: "vision",
-      label: "Vision statement",
-    },
-    {
-      classSlug: "mission-vision-values",
-      moduleIdx: 2,
-      label: "Vision statement",
-    },
-  ],
-  values: [
-    {
-      classSlug: "mission-vision-values",
       moduleSlug: "values",
-      label: "Core values",
+      label: "Mission, vision, values summary",
     },
     {
       classSlug: "mission-vision-values",
       moduleIdx: 3,
-      label: "Core values",
+      label: "Mission, vision, values summary",
     },
   ],
   theory_of_change: [
@@ -306,15 +277,15 @@ export async function resolveRoadmapHomework(
       .returns<Array<{ module_id: string; status: string }>>(),
     supabase
       .from("assignment_submissions")
-      .select("module_id, answers, status")
+      .select("module_id, status")
       .eq("user_id", userId)
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; answers: unknown; status: string | null }>>(),
+      .returns<Array<{ module_id: string; status: string | null }>>(),
     supabase
       .from("module_assignments")
-      .select("module_id, schema, complete_on_submit")
+      .select("module_id, complete_on_submit")
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; schema: unknown; complete_on_submit: boolean | null }>>(),
+      .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
   ])
 
   const progressMap = new Map<string, string>()
@@ -322,52 +293,22 @@ export async function resolveRoadmapHomework(
     progressMap.set(row.module_id, row.status)
   }
 
-  const submissionMap = new Map<string, { answers: Record<string, unknown>; status: string }>()
+  const submissionMap = new Map<string, string>()
   for (const row of submissionResult.data ?? []) {
-    if (!row.status) continue
-    submissionMap.set(row.module_id, {
-      answers:
-        row.answers &&
-        typeof row.answers === "object" &&
-        !Array.isArray(row.answers)
-          ? (row.answers as Record<string, unknown>)
-          : {},
-      status: row.status,
-    })
+    if (row.status) submissionMap.set(row.module_id, row.status)
   }
 
-  const assignmentMap = new Map<
-    string,
-    {
-      completeOnSubmit: boolean
-      completionMode: ReturnType<typeof parseAssignmentCompletionMode>
-      fields: ReturnType<typeof parseAssignmentFields>
-    }
-  >()
-  for (const row of assignmentResult.data ?? []) {
-    assignmentMap.set(row.module_id, {
-      completeOnSubmit: Boolean(row.complete_on_submit),
-      completionMode: parseAssignmentCompletionMode(row.schema),
-      fields: parseAssignmentFields(row.schema),
-    })
-  }
+  const completeOnSubmit = new Set(
+    (assignmentResult.data ?? [])
+      .filter((row) => row.complete_on_submit)
+      .map((row) => row.module_id),
+  )
 
   const statusForModule = (moduleId: string): RoadmapHomeworkStatus => {
     const progress = progressMap.get(moduleId)
     if (progress === "completed") return "complete"
     const submission = submissionMap.get(moduleId)
-    const assignment = assignmentMap.get(moduleId)
-    if (
-      submission &&
-      assignment &&
-      shouldTreatAssignmentSubmissionAsComplete({
-        completeOnSubmit: assignment.completeOnSubmit,
-        completionMode: assignment.completionMode,
-        fields: assignment.fields,
-        answers: submission.answers,
-        status: submission.status,
-      })
-    ) {
+    if (completeOnSubmit.has(moduleId) && submission && submission !== "revise") {
       return "complete"
     }
     if (submission || progress) return "in_progress"

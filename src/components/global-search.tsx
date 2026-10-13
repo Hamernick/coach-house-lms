@@ -3,17 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { SidebarClass } from "@/lib/academy"
 import type { SearchResult } from "@/lib/search/types"
 import { GlobalSearchCommandDialog } from "@/components/global-search/global-search-command-dialog"
 import {
-  buildBaseSearchItems,
+  SEARCH_MIN_WIDTH,
   formatClassTitle,
   groupSearchResults,
-  resolveGlobalSearchResultHref,
 } from "@/components/global-search/global-search-helpers"
-import { platformLabEnabled } from "@/lib/feature-flags"
-import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
 import { GlobalSearchTriggers } from "@/components/global-search/global-search-triggers"
 
 type GlobalSearchProps = {
@@ -22,7 +20,6 @@ type GlobalSearchProps = {
   context?: "platform" | "accelerator"
   classes?: SidebarClass[]
   showAccelerator?: boolean
-  showMemberWorkspace?: boolean
 }
 
 export function GlobalSearch({
@@ -31,16 +28,45 @@ export function GlobalSearch({
   context = "platform",
   classes = [],
   showAccelerator = false,
-  showMemberWorkspace = false,
 }: GlobalSearchProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [remoteItems, setRemoteItems] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [compact, setCompact] = useState(false)
   const enableAccelerator = Boolean(isAdmin || showAccelerator)
-  const showPlatformLab = isAdmin && platformLabEnabled
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const node = document.getElementById("site-header-actions-center")
+    if (!node) return
+
+    const update = () => {
+      const width = node.getBoundingClientRect().width
+      const next = width < SEARCH_MIN_WIDTH
+      setCompact((prev) => (prev === next ? prev : next))
+    }
+
+    update()
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(update)
+      observer.observe(node)
+    } else {
+      window.addEventListener("resize", update)
+    }
+
+    return () => {
+      observer?.disconnect()
+      if (!observer) {
+        window.removeEventListener("resize", update)
+      }
+    }
+  }, [])
 
   const logEvent = useCallback(
     (payload: {
@@ -64,32 +90,54 @@ export function GlobalSearch({
         body: JSON.stringify(body),
       })
     },
-    [context]
+    [context],
   )
 
   const baseItems = useMemo<SearchResult[]>(() => {
-    return buildBaseSearchItems({
-      enableAccelerator,
-      showOrgAdmin,
-      showMemberWorkspace,
-      showPlatformLab,
-    })
-  }, [enableAccelerator, showMemberWorkspace, showOrgAdmin, showPlatformLab])
+    const showOrgAdminLink = showOrgAdmin
+    return [
+      ...(enableAccelerator
+        ? [
+            {
+              id: "page-accelerator",
+              label: "Accelerator",
+              href: "/accelerator",
+              group: "Pages",
+              keywords: ["classes", "modules"],
+            } satisfies SearchResult,
+          ]
+        : []),
+      { id: "page-organization", label: "Organization", href: "/workspace", group: "Pages", keywords: ["profile"] },
+      { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
+      { id: "page-programs", label: "Programs", href: "/workspace?view=editor&tab=programs", group: "Pages" },
+      { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
+      { id: "page-supporters", label: "Supporters", href: "/workspace?view=editor&tab=supporters", group: "Pages" },
+      { id: "page-documents", label: "Documents", href: "/workspace/documents", group: "Pages" },
+      { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
+      { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
+      { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
+      ...(showOrgAdminLink
+        ? [
+            {
+              id: "page-admin",
+              label: "Admin",
+              href: "/admin",
+              group: "Pages",
+              keywords: ["access", "invites", "roles"],
+            } satisfies SearchResult,
+          ]
+        : []),
+    ]
+  }, [enableAccelerator, showOrgAdmin])
 
   const acceleratorItems = useMemo<SearchResult[]>(
     () =>
       context === "accelerator" && enableAccelerator
         ? [
-            {
-              id: "accelerator-overview",
-              label: "Accelerator overview",
-              href: getWorkspaceDrawerPath({ tab: "accelerator" }),
-              group: "Accelerator",
-              keywords: ["overview"],
-            },
+            { id: "accelerator-overview", label: "Accelerator overview", href: "/accelerator#overview", group: "Accelerator", keywords: ["overview"] },
           ]
         : [],
-    [context, enableAccelerator]
+    [context, enableAccelerator],
   )
 
   const acceleratorClasses = useMemo<SearchResult[]>(() => {
@@ -98,61 +146,37 @@ export function GlobalSearch({
       .filter((klass) => (isAdmin ? true : klass.published))
       .flatMap((klass) => {
         const classTitle = formatClassTitle(klass.title)
-        const visibleModules = klass.modules.filter((module) =>
-          isAdmin ? true : module.published
-        )
-        const firstModuleId = visibleModules[0]?.id ?? null
+        const firstModuleIndex = klass.modules[0]?.index ?? 1
         const classItem: SearchResult = {
           id: `class-${klass.id}`,
           label: classTitle,
           subtitle: "Class",
-          href: getWorkspaceDrawerPath({
-            tab: "accelerator",
-            moduleId: firstModuleId,
-          }),
+          href: `/accelerator/class/${klass.slug}/module/${firstModuleIndex}`,
           group: "Classes",
           keywords: [klass.slug, klass.title],
         }
-        const moduleItems = visibleModules.map((module) => ({
-          id: `module-${module.id}`,
-          label: module.title,
-          subtitle: classTitle,
-          href: getWorkspaceDrawerPath({
-            tab: "accelerator",
-            moduleId: module.id,
-          }),
-          group: "Modules",
-          keywords: [classTitle, module.title, `${module.index}`],
-        }))
+        const moduleItems = klass.modules
+          .filter((module) => (isAdmin ? true : module.published))
+          .map((module) => ({
+            id: `module-${module.id}`,
+            label: module.title,
+            subtitle: classTitle,
+            href: `/accelerator/class/${klass.slug}/module/${module.index}`,
+            group: "Modules",
+            keywords: [classTitle, module.title, `${module.index}`],
+          }))
         return [classItem, ...moduleItems]
       })
   }, [classes, enableAccelerator, isAdmin])
 
   const items = useMemo(() => {
     const merged = new Map<string, SearchResult>()
-    for (const item of [
-      ...acceleratorItems,
-      ...acceleratorClasses,
-      ...baseItems,
-      ...remoteItems,
-    ]) {
+    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...remoteItems]) {
       merged.set(item.id, item)
     }
     const values = Array.from(merged.values())
-    const entitledValues = enableAccelerator
-      ? values
-      : values.filter((item) => !item.href.startsWith("/accelerator"))
-    return entitledValues.map((item) => ({
-      ...item,
-      href: resolveGlobalSearchResultHref(item),
-    }))
-  }, [
-    acceleratorClasses,
-    acceleratorItems,
-    baseItems,
-    enableAccelerator,
-    remoteItems,
-  ])
+    return enableAccelerator ? values : values.filter((item) => !item.href.startsWith("/accelerator"))
+  }, [acceleratorClasses, acceleratorItems, baseItems, enableAccelerator, remoteItems])
 
   const grouped = useMemo(() => groupSearchResults(items), [items])
 
@@ -182,18 +206,13 @@ export function GlobalSearch({
     setError(null)
     const timeout = window.setTimeout(async () => {
       try {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(trimmed)}&context=${context}`,
-          {
-            signal: controller.signal,
-          }
-        )
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&context=${context}`, {
+          signal: controller.signal,
+        })
         if (!response.ok) {
           throw new Error("Search unavailable.")
         }
-        const payload = (await response.json().catch(() => ({}))) as {
-          results?: SearchResult[]
-        }
+        const payload = (await response.json().catch(() => ({}))) as { results?: SearchResult[] }
         setRemoteItems(Array.isArray(payload.results) ? payload.results : [])
       } catch (err) {
         if ((err as Error).name === "AbortError") return
@@ -223,9 +242,16 @@ export function GlobalSearch({
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
+  const showCompact = isMobile || compact
+  const showCenterCompact = showCompact && !isMobile
+
   return (
     <>
-      <GlobalSearchTriggers onOpen={() => setOpen(true)} />
+      <GlobalSearchTriggers
+        showCompact={showCompact}
+        showCenterCompact={showCenterCompact}
+        onOpen={() => setOpen(true)}
+      />
 
       <GlobalSearchCommandDialog
         open={open}

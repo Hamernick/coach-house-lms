@@ -24,13 +24,10 @@ export type ProgramRecord = {
 }
 
 export type ProgramWizardProps = {
-  organizationId?: string
   mode?: "create" | "edit"
   program?: (Partial<ProgramRecord> & { id: string }) | null
-  initialStep?: number | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  portalContainer?: HTMLElement | null
   triggerLabel?: ReactNode
 }
 
@@ -42,5 +39,5 @@ export type StepMeta = {
 export type ProgramWizardFieldErrors = Record<string, string>
 
 export type ProgramWizardUpdate = (
-  patch: Partial<ProgramWizardFormState>
+  patch: Partial<ProgramWizardFormState>,
 ) => void

@@ -1,28 +1,23 @@
 #!/usr/bin/env node
 import fs from "node:fs"
 import path from "node:path"
-import { performanceRouteBudgets } from "./performance-route-budgets.mjs"
+
+const budgets = [
+  // Dashboard home route currently lives at /(dashboard)/community/page.
+  { routeKey: "/(dashboard)/community/page", label: "/dashboard", maxFirstLoadKB: 900 },
+  // Transitional ceiling while admin shell/client islands are actively slimming down.
+  { routeKey: "/(admin)/admin/page", label: "/admin", maxFirstLoadKB: 1000 },
+]
 
 const buildDir = ".next"
 const results = []
 const failures = []
 
-const routeBundleStatsPath = path.join(process.cwd(), ".next/diagnostics/route-bundle-stats.json")
 const manifestPath = path.join(process.cwd(), ".next/app-build-manifest.json")
 const buildManifestPath = path.join(process.cwd(), ".next/build-manifest.json")
 const appPathsManifestPath = path.join(process.cwd(), ".next/server/app-paths-manifest.json")
 
-let getFirstLoadBytesForUrl
 let getFilesForRoute
-
-if (fs.existsSync(routeBundleStatsPath)) {
-  const routeStats = JSON.parse(fs.readFileSync(routeBundleStatsPath, "utf8"))
-  const routeStatsByUrl = new Map(
-    routeStats.map((record) => [record.route, record.firstLoadUncompressedJsBytes]),
-  )
-
-  getFirstLoadBytesForUrl = (urlLabel) => routeStatsByUrl.get(urlLabel)
-}
 
 if (fs.existsSync(manifestPath)) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"))
@@ -107,47 +102,37 @@ if (fs.existsSync(manifestPath)) {
   process.exit(1)
 }
 
-for (const { routeKey, urlLabel, shell, maxFirstLoadKB } of performanceRouteBudgets) {
+for (const { routeKey, label, maxFirstLoadKB } of budgets) {
+  const { files, error } = getFilesForRoute(routeKey)
+  if (error) {
+    failures.push(error)
+    continue
+  }
+
   let totalBytes = 0
-  const routeStatsBytes = getFirstLoadBytesForUrl?.(urlLabel)
+  const missing = []
 
-  if (typeof routeStatsBytes === "number") {
-    totalBytes = routeStatsBytes
-  } else {
-    const { files, error } = getFilesForRoute(routeKey)
-    if (error) {
-      failures.push(error)
-      continue
+  for (const file of files) {
+    const filePath = path.join(buildDir, file)
+    try {
+      const stats = fs.statSync(filePath)
+      totalBytes += stats.size
+    } catch {
+      missing.push(file)
     }
+  }
 
-    const missing = []
-
-    for (const file of files) {
-      const filePath = path.join(buildDir, file)
-      try {
-        const stats = fs.statSync(filePath)
-        totalBytes += stats.size
-      } catch {
-        missing.push(file)
-      }
-    }
-
-    if (missing.length > 0) {
-      failures.push(`Missing build assets for ${urlLabel} [${routeKey}]: ${missing.join(", ")}`)
-      continue
-    }
+  if (missing.length > 0) {
+    failures.push(`Missing build assets for ${label}: ${missing.join(", ")}`)
+    continue
   }
 
   const totalKB = totalBytes / 1024
   const rounded = Number(totalKB.toFixed(1))
-  results.push(
-    `${urlLabel} (${shell} shell, route key ${routeKey}): ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`,
-  )
+  results.push(`${label}: ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`)
 
   if (totalKB > maxFirstLoadKB) {
-    failures.push(
-      `${urlLabel} first-load bundle is ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB) [route key ${routeKey}]`,
-    )
+    failures.push(`${label} first-load bundle is ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`)
   }
 }
 

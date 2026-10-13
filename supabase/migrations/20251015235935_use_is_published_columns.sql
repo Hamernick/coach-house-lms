@@ -8,29 +8,8 @@ alter table if exists public.modules
   add column if not exists is_published boolean not null default false;
 
 -- Backfill from legacy columns if present
-do $$
-begin
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'classes'
-      and column_name = 'published'
-  ) then
-    execute 'update public.classes set is_published = coalesce(published, false)';
-  end if;
-
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'modules'
-      and column_name = 'published'
-  ) then
-    execute 'update public.modules set is_published = coalesce(published, false)';
-  end if;
-end
-$$;
+update public.classes set is_published = coalesce(published, false);
+update public.modules set is_published = coalesce(published, false);
 
 -- Normalise defaults
 alter table public.classes alter column is_published set default false;

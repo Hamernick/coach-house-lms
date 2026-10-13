@@ -2,12 +2,6 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-import {
-  deleteOwnedOrganizationForAccountDeletion,
-  isLikelyForeignKeyDeleteError,
-  reassignSharedWorkspaceAuthorReferences,
-} from "@/lib/account-deletion/server"
-import { disconnectGoogleDrive } from "@/features/google-drive"
 
 export async function DELETE(request: NextRequest) {
   const response = new NextResponse(null, { status: 204 })
@@ -24,46 +18,14 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const admin = createSupabaseAdminClient()
-  await disconnectGoogleDrive({ admin, userId: user.id, revoke: true }).catch(() => undefined)
-  try {
-    await reassignSharedWorkspaceAuthorReferences(admin, user.id)
-  } catch (cleanupError) {
-    return NextResponse.json(
-      {
-        error:
-          cleanupError instanceof Error
-            ? cleanupError.message
-            : "Unable to prepare account data for deletion.",
-      },
-      { status: 500 }
-    )
-  }
+  // Clear the active browser session cookie/token first.
+  await supabase.auth.signOut()
 
-  let { error: delError } = await admin.auth.admin.deleteUser(user.id)
-  if (delError && isLikelyForeignKeyDeleteError(delError)) {
-    try {
-      await deleteOwnedOrganizationForAccountDeletion(admin, user.id)
-    } catch (cleanupError) {
-      return NextResponse.json(
-        {
-          error:
-            cleanupError instanceof Error
-              ? cleanupError.message
-              : "Unable to prepare account data for deletion.",
-        },
-        { status: 500 }
-      )
-    }
-    const retryDeleteResult = await admin.auth.admin.deleteUser(user.id)
-    delError = retryDeleteResult.error
-  }
+  const admin = createSupabaseAdminClient()
+  const { error: delError } = await admin.auth.admin.deleteUser(user.id)
   if (delError) {
     return NextResponse.json({ error: delError.message }, { status: 500 })
   }
-
-  // Clear the active browser session cookie/token after deletion succeeds.
-  await supabase.auth.signOut()
 
   return response
 }

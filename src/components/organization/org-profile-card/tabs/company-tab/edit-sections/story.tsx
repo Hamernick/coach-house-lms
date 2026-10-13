@@ -1,162 +1,50 @@
 "use client"
 
-import { RichTextEditor } from "@/components/rich-text-editor"
+import { Textarea } from "@/components/ui/textarea"
 
-import {
-  FormRow,
-  ProfileField,
-} from "@/components/organization/org-profile-card/shared"
+import { FormRow, ProfileField } from "@/components/organization/org-profile-card/shared"
 import type { CompanyEditProps } from "../types"
 
-const STORY_FIELDS = [
-  {
-    name: "originStory",
-    label: "Origin story",
-    placeholder:
-      "We started after seeing students and families navigate fragmented support alone.",
-  },
-  {
-    name: "need",
-    label: "Our need",
-    placeholder:
-      "Students in our district lack access to labs, internships, and career exposure.",
-  },
-] as const
-
-const THEORY_FIELD = {
-  name: "theoryOfChange",
-  label: "Theory of change",
-  placeholder:
-    "When students, mentors, and core supports are connected early, confidence and long-term opportunity grow.",
-} as const
-
-const NARRATIVE_FIELDS = [
-  {
-    name: "mission",
-    label: "Mission",
-    placeholder:
-      "We equip middle school students with hands-on programs and mentors in technology careers.",
-  },
-  {
-    name: "vision",
-    label: "Vision",
-    placeholder:
-      "A city where every student has access to high-quality STEM learning.",
-  },
-  {
-    name: "values",
-    label: "Values",
-    placeholder: "Equity, curiosity, community",
-  },
-] as const
-
-function StoryCoreDocumentField({
-  company,
-  errors,
-  field,
-  onUpdate,
-  onDirty,
-}: Pick<CompanyEditProps, "company" | "errors" | "onUpdate" | "onDirty"> & {
-  field: (typeof STORY_FIELDS)[number] | typeof THEORY_FIELD
-}) {
-  const value = company[field.name] ?? ""
-  const error = errors[field.name] ?? ""
-
+export function StorySection({ company, onInputChange }: CompanyEditProps) {
   return (
-    <ProfileField label={field.label} focusKey={field.name}>
-      <RichTextEditor
-        value={value}
-        onChange={(nextValue) => {
-          onUpdate({ [field.name]: nextValue })
-          onDirty()
-        }}
-        ariaLabel={field.label}
-        placeholder={field.placeholder}
-        mode="compact"
-        minHeight={160}
-        maxHeight={360}
-        stableScrollbars
-        preserveImages
-        editorClassName="min-h-[160px]"
-      />
-      {error ? <p className="text-destructive text-xs">{error}</p> : null}
-    </ProfileField>
-  )
-}
-
-function StoryNarrativeField({
-  company,
-  errors,
-  field,
-  onUpdate,
-  onDirty,
-}: Pick<CompanyEditProps, "company" | "errors" | "onUpdate" | "onDirty"> & {
-  field: (typeof NARRATIVE_FIELDS)[number]
-}) {
-  const value = company[field.name] ?? ""
-  const error = errors[field.name] ?? ""
-
-  return (
-    <ProfileField label={field.label} focusKey={field.name}>
-      <RichTextEditor
-        value={value}
-        onChange={(nextValue) => {
-          onUpdate({ [field.name]: nextValue })
-          onDirty()
-        }}
-        ariaLabel={field.label}
-        placeholder={field.placeholder}
-        mode="compact"
-        minHeight={160}
-        maxHeight={360}
-        stableScrollbars
-        preserveImages
-        editorClassName="min-h-[160px]"
-      />
-      {error ? <p className="text-destructive text-xs">{error}</p> : null}
-    </ProfileField>
-  )
-}
-
-export function StorySection({
-  company,
-  errors,
-  onUpdate,
-  onDirty,
-}: CompanyEditProps) {
-  return (
-    <FormRow
-      title="About us"
-      description="What you do, why it matters, and how change happens."
-    >
+    <FormRow title="About us" description="What you do and why it matters.">
       <div className="grid gap-4 md:grid-cols-2">
-        {STORY_FIELDS.map((field) => (
-          <StoryCoreDocumentField
-            key={field.name}
-            company={company}
-            errors={errors}
-            field={field}
-            onUpdate={onUpdate}
-            onDirty={onDirty}
+        <ProfileField label="Vision">
+          <Textarea
+            name="vision"
+            value={company.vision ?? ""}
+            onChange={onInputChange}
+            rows={4}
+            placeholder="A city where every student has access to high-quality STEM learning."
           />
-        ))}
-        {NARRATIVE_FIELDS.map((field) => (
-          <StoryNarrativeField
-            key={field.name}
-            company={company}
-            errors={errors}
-            field={field}
-            onUpdate={onUpdate}
-            onDirty={onDirty}
+        </ProfileField>
+        <ProfileField label="Mission">
+          <Textarea
+            name="mission"
+            value={company.mission ?? ""}
+            onChange={onInputChange}
+            rows={4}
+            placeholder="We equip middle school students with hands-on programs and mentors in technology careers."
           />
-        ))}
-        <StoryCoreDocumentField
-          company={company}
-          errors={errors}
-          field={THEORY_FIELD}
-          onUpdate={onUpdate}
-          onDirty={onDirty}
-        />
+        </ProfileField>
+        <ProfileField label="Our need">
+          <Textarea
+            name="need"
+            value={company.need ?? ""}
+            onChange={onInputChange}
+            rows={4}
+            placeholder="Students in our district lack access to labs, internships, and career exposure."
+          />
+        </ProfileField>
+        <ProfileField label="Values">
+          <Textarea
+            name="values"
+            value={company.values ?? ""}
+            onChange={onInputChange}
+            rows={4}
+            placeholder="Equity, curiosity, community"
+          />
+        </ProfileField>
       </div>
     </FormRow>
   )

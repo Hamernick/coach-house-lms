@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildWorkspaceCanvasV2CardNode,
-  resolveWorkspaceCanvasAcceleratorCardSize,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers"
 import type { WorkspaceBoardNodeData } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node"
 
@@ -16,7 +15,7 @@ describe("workspace canvas v2 card node builder", () => {
     })
 
     expect(node.className).toContain("h-auto")
-    expect(node.style?.width).toBe(520)
+    expect(node.style?.width).toBe(400)
     expect(node.style?.minHeight).toBeUndefined()
     expect(node.style?.height).toBeUndefined()
   })
@@ -30,7 +29,7 @@ describe("workspace canvas v2 card node builder", () => {
     })
 
     expect(node.className).toContain("h-auto")
-    expect(node.style?.width).toBe(552)
+    expect(node.style?.width).toBe(528)
     expect(node.style?.minHeight).toBeUndefined()
     expect(node.style?.height).toBeUndefined()
   })
@@ -49,7 +48,7 @@ describe("workspace canvas v2 card node builder", () => {
     expect(node.style?.height).toBeUndefined()
   })
 
-  it("builds the communications card node with intrinsic height on the canvas", () => {
+  it("keeps fixed-height canvas nodes for the remaining fixed cards", () => {
     const node = buildWorkspaceCanvasV2CardNode({
       cardId: "communications",
       position: { x: 0, y: 0 },
@@ -57,10 +56,10 @@ describe("workspace canvas v2 card node builder", () => {
       allowEditing: true,
     })
 
-    expect(node.className).toContain("h-auto")
+    expect(node.className).toContain("h-full")
     expect(node.style?.width).toBe(560)
-    expect(node.style?.minHeight).toBeUndefined()
-    expect(node.style?.height).toBeUndefined()
+    expect(node.style?.minHeight).toBe(620)
+    expect(node.style?.height).toBe(620)
   })
 
   it("builds the calendar card node with intrinsic height on the canvas", () => {
@@ -75,54 +74,5 @@ describe("workspace canvas v2 card node builder", () => {
     expect(node.style?.width).toBe(320)
     expect(node.style?.minHeight).toBeUndefined()
     expect(node.style?.height).toBeUndefined()
-  })
-
-  it("builds the execution card node with intrinsic height on the canvas", () => {
-    const node = buildWorkspaceCanvasV2CardNode({
-      cardId: "deck",
-      position: { x: 0, y: 0 },
-      data: { size: "md" } as WorkspaceBoardNodeData,
-      allowEditing: true,
-    })
-
-    expect(node.className).toContain("h-auto")
-    expect(node.style?.width).toBe(552)
-    expect(node.style?.minHeight).toBeUndefined()
-    expect(node.style?.height).toBeUndefined()
-  })
-
-  it("builds the fiscal sponsorship card node with intrinsic height on the canvas", () => {
-    const node = buildWorkspaceCanvasV2CardNode({
-      cardId: "fiscal-sponsorship",
-      position: { x: 0, y: 0 },
-      data: { size: "sm" } as WorkspaceBoardNodeData,
-      allowEditing: true,
-    })
-
-    expect(node.className).toContain("h-auto")
-    expect(node.style?.width).toBe(440)
-    expect(node.style?.minHeight).toBeUndefined()
-    expect(node.style?.height).toBeUndefined()
-    expect(node.zIndex).toBe(10)
-  })
-
-  it("promotes the accelerator canvas card to lg while the module viewer is open", () => {
-    expect(
-      resolveWorkspaceCanvasAcceleratorCardSize({
-        nodes: [{ id: "accelerator", x: 0, y: 0, size: "sm" }],
-        acceleratorRuntimeSnapshot: {
-          isModuleViewerOpen: true,
-        } as never,
-      })
-    ).toBe("lg")
-  })
-
-  it("collapses a stale lg accelerator node back to the compact canvas size when no module is open", () => {
-    expect(
-      resolveWorkspaceCanvasAcceleratorCardSize({
-        nodes: [{ id: "accelerator", x: 0, y: 0, size: "lg" }],
-        acceleratorRuntimeSnapshot: null,
-      })
-    ).toBe("sm")
   })
 })

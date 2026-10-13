@@ -1,24 +1,22 @@
 import { isRedirectError } from "next/dist/client/components/redirect-error"
 import { redirect } from "next/navigation"
-import type Stripe from "stripe"
+import Stripe from "stripe"
 
 import { requireServerSession } from "@/lib/auth"
+import { resolvePaidPlanTierFromMetadata } from "@/lib/billing/plan-tier"
 import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
-import { persistCheckoutSubscription } from "./_lib/subscription-persistence"
 import { maybeStartOrganizationTrialFromAccelerator } from "./_lib/success-helpers"
 import {
-  trackSuccessfulSubscriptionCheckout,
-} from "./_lib/telemetry"
-import {
+  appendInternalRedirectParams,
   appendSuccessfulPricingReturn,
+  canTreatCheckoutAsSuccessfulSubscriptionReturn,
   getSafeRedirect,
-  resolveCheckoutSubscription,
+  resolveSuccessfulCheckoutPlanTier,
 } from "./_lib/onboarding-return"
 import type { Database } from "@/lib/supabase"
-import { CheckoutActivationStatus } from "./_components/checkout-activation-status"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -32,7 +30,11 @@ function isNextRedirectError(error: unknown) {
   return false
 }
 
-export default async function PricingSuccessPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function PricingSuccessPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
   const redirectTarget = getSafeRedirect(params?.redirect)
@@ -53,7 +55,6 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
   }
 
   if (sessionId) {
-    let paymentRequired = false
     try {
       let checkout: Stripe.Checkout.Session | null = null
       let checkoutStripeConfig = stripeConfigs[0]
@@ -142,52 +143,110 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
       }
 
       if (checkout.mode === "subscription") {
-        const subscription = await resolveCheckoutSubscription({
-          checkout,
-          stripeClient: checkoutStripeConfig.client,
-        })
+        const subscription = checkout.subscription as Stripe.Subscription | null
         if (subscription) {
-          const {
+          type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
+
+          const allowed: SubscriptionStatus[] = [
+            "trialing",
+            "active",
+            "past_due",
+            "canceled",
+            "incomplete",
+            "incomplete_expired",
+          ]
+          const status = allowed.includes(subscription.status as SubscriptionStatus)
+            ? (subscription.status as SubscriptionStatus)
+            : "trialing"
+
+          const currentPeriodEndUnix =
+            (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+          const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
+
+          const metadataSource =
+            subscription.metadata && Object.keys(subscription.metadata).length > 0
+              ? subscription.metadata
+              : checkout.metadata ?? null
+          const metadataWithMode: Record<string, string> | null = metadataSource
+            ? {
+                ...(metadataSource as Record<string, string>),
+                stripe_mode:
+                  typeof (metadataSource as Record<string, string>).stripe_mode === "string"
+                    ? (metadataSource as Record<string, string>).stripe_mode
+                    : checkoutStripeConfig.mode,
+              }
+            : null
+          const subscriptionOwnerId =
+            typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
+              ? metadataWithMode.org_user_id
+              : userId
+          const resolvedPlanTier =
+            resolvePaidPlanTierFromMetadata(metadataWithMode) ?? "organization"
+          const planName =
+            typeof metadataWithMode?.planName === "string" ? metadataWithMode.planName : null
+          const kind = typeof metadataWithMode?.kind === "string" ? metadataWithMode.kind : null
+
+          const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
+            user_id: subscriptionOwnerId,
+            stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
+            stripe_subscription_id: subscription.id,
             status,
-            subscriptionOwnerId,
-            resolvedPlanTier,
-            kind,
-          } = await persistCheckoutSubscription({
-            checkout,
-            subscription,
-            stripeMode: checkoutStripeConfig.mode,
-            userId,
-            redirectTarget,
-          })
+            current_period_end: currentPeriodEnd,
+            metadata:
+              metadataWithMode && Object.keys(metadataWithMode).length > 0
+                ? metadataWithMode
+                : planName
+                  ? { planName, stripe_mode: checkoutStripeConfig.mode }
+                  : null,
+          }
 
-          const isSuccessfulSubscriptionState =
-            status === "trialing" || status === "active"
-
-          if (isSuccessfulSubscriptionState) {
-            await trackSuccessfulSubscriptionCheckout({
-              userId,
-              orgId: subscriptionOwnerId,
-              checkout,
+          try {
+            const admin = createSupabaseAdminClient()
+            await admin
+              .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+              .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+          } catch (error) {
+            console.error("Unable to persist subscription after checkout", {
+              sessionId: checkout.id,
               subscriptionId: subscription.id,
-              subscriptionStatus: status,
-              planTier: resolvedPlanTier,
-              stripeMode: checkoutStripeConfig.mode,
-              kind,
+              subscriptionOwnerId,
               redirectTarget,
+              error,
             })
           }
 
-          if (!isSuccessfulSubscriptionState) {
-            paymentRequired = true
-          } else {
-            if (kind === "accelerator") {
-              redirect(`/organization?purchase=accelerator${welcomeQuery}`)
-            }
-            if (redirectTarget) {
+          const isSuccessfulSubscriptionState =
+            status === "trialing" || status === "active" || status === "past_due"
+
+          if (kind === "accelerator") {
+            redirect(`/organization?purchase=accelerator${welcomeQuery}`)
+          }
+
+          if (redirectTarget) {
+            if (isSuccessfulSubscriptionState) {
               redirect(appendSuccessfulPricingReturn(redirectTarget, resolvedPlanTier))
             }
+            redirect(
+              appendInternalRedirectParams(redirectTarget, {
+                checkout_error: "checkout_failed",
+                subscription: status,
+              }),
+            )
+          }
+
+          if (isSuccessfulSubscriptionState) {
             redirect(`/organization?subscription=${status}${welcomeQuery}`)
           }
+          redirect(`/organization?checkout_error=checkout_failed&subscription=${status}`)
+        }
+
+        if (redirectTarget && canTreatCheckoutAsSuccessfulSubscriptionReturn(checkout)) {
+          redirect(
+            appendSuccessfulPricingReturn(
+              redirectTarget,
+              resolveSuccessfulCheckoutPlanTier(checkout),
+            ),
+          )
         }
       }
     } catch (error) {
@@ -196,12 +255,11 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
       }
       console.warn("Unable to read Stripe checkout session", error)
     }
-    return <CheckoutActivationStatus returnHref={redirectTarget ?? "/workspace"} paymentRequired={paymentRequired} />
   }
 
   if (redirectTarget) {
     redirect(redirectTarget)
   }
 
-  redirect("/workspace")
+  redirect("/organization?checkout=success")
 }

@@ -51,19 +51,12 @@ export type FeedRotateResult = { ok: true; token: string } | { error: string }
 
 export async function resolveCalendarAccess(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string
+  userId: string,
 ) {
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle<{ role: string | null }>()
-  const isPlatformAdmin = profileRow?.role === "admin"
-  let canManageCalendar =
-    isPlatformAdmin || role === "owner" || role === "admin"
+  let canManageCalendar = role === "owner" || role === "admin"
 
-  if (!isPlatformAdmin && role === "staff") {
+  if (role === "staff") {
     const { data: settingsRow } = await supabase
       .from("organization_access_settings")
       .select("staff_can_manage_calendar")
@@ -81,9 +74,7 @@ export function createFeedToken() {
   const bytes = new Uint8Array(16)
   if (globalThis.crypto?.getRandomValues) {
     globalThis.crypto.getRandomValues(bytes)
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-      ""
-    )
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
   }
   return `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
 }
@@ -104,7 +95,7 @@ type CalendarInputResult =
     }
 
 export function normalizeCalendarInput(
-  input: RoadmapCalendarEventInput
+  input: RoadmapCalendarEventInput,
 ): CalendarInputResult {
   const title = input.title?.trim()
   if (!title) return { ok: false, error: "Event title is required." }
@@ -207,8 +198,8 @@ export async function notifyCalendarChange({
           eventId: event.id,
           calendarType,
         },
-      })
-    )
+      }),
+    ),
   )
 
   if (calendarType !== "internal" || event.eventType !== "board_meeting") {
@@ -267,7 +258,6 @@ export async function ensureFeedToken({
     .select("token")
     .maybeSingle<{ token: string }>()
 
-  if (error || !data)
-    return { error: error?.message ?? "Unable to create feed token." }
+  if (error || !data) return { error: error?.message ?? "Unable to create feed token." }
   return { token: data.token }
 }

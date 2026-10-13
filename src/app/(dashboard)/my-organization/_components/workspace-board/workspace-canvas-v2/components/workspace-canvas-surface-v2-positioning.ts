@@ -50,18 +50,6 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("economic-engine")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS["economic-engine"],
-    roadmap: byId.has("roadmap")
-      ? {
-          x: byId.get("roadmap")!.x,
-          y: byId.get("roadmap")!.y,
-        }
-      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.roadmap,
-    deck: byId.has("deck")
-      ? {
-          x: byId.get("deck")!.x,
-          y: byId.get("deck")!.y,
-        }
-      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.deck,
     calendar: byId.has("calendar")
       ? {
           x: byId.get("calendar")!.x,
@@ -74,17 +62,11 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("communications")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.communications,
-    atlas: byId.has("atlas")
+    vault: byId.has("vault")
       ? {
-          x: byId.get("atlas")!.x,
-          y: byId.get("atlas")!.y,
+          x: byId.get("vault")!.x,
+          y: byId.get("vault")!.y,
         }
-      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.atlas,
-    "fiscal-sponsorship": byId.has("fiscal-sponsorship")
-      ? {
-          x: byId.get("fiscal-sponsorship")!.x,
-          y: byId.get("fiscal-sponsorship")!.y,
-        }
-      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS["fiscal-sponsorship"],
+      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.vault,
   } satisfies Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
 }

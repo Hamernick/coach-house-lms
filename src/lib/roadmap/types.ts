@@ -1,5 +1,3 @@
-import type { BudgetTableRow } from "@/lib/modules"
-
 export type RoadmapSectionDefinition = {
   id: string
   title: string
@@ -25,21 +23,8 @@ export type RoadmapHomeworkLink = {
   moduleIdx: number
 }
 
-export type CoreDocumentDriveSource = {
-  provider: "google_drive"
-  fileId: string
-  name: string
-  webViewLink: string
-}
-
 export type RoadmapSection = RoadmapSectionDefinition & {
   content: string
-  driveSource?: CoreDocumentDriveSource | null
-  documentSource?: "editor" | "google_drive"
-  publishedContent?: string
-  publicProfileStatusControlled?: boolean
-  budgetRows?: BudgetTableRow[]
-  storageExtras?: Record<string, unknown>
   imageUrl?: string
   lastUpdated: string | null
   isPublic: boolean
@@ -60,9 +45,6 @@ export type StoredSection = {
   subtitle?: unknown
   slug?: unknown
   content?: unknown
-  publishedContent?: unknown
-  publicProfileStatusControlled?: unknown
-  budgetRows?: unknown
   imageUrl?: unknown
   lastUpdated?: unknown
   isPublic?: unknown
@@ -70,7 +52,6 @@ export type StoredSection = {
   status?: unknown
   ctaLabel?: unknown
   ctaUrl?: unknown
-  [key: string]: unknown
 }
 
 export type StoredRoadmap = {

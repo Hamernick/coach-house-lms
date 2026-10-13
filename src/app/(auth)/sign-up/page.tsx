@@ -5,11 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { redirect as redirectTo } from "next/navigation"
-import {
-  buildPostSignupBuilderRedirect,
-  resolveSignupBuilderPlanTier,
-  resolveSignupIntentFocus,
-} from "@/lib/onboarding/signup-plan"
+import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -24,61 +20,22 @@ function getSafeRedirect(value: unknown) {
   return value
 }
 
-function buildCanonicalSignUpHref(searchParams: SearchParams) {
-  const nextParams = new URLSearchParams()
-
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (key === "plan" && value === "individual") continue
-
-    if (typeof value === "string") {
-      nextParams.set(key, value)
-      continue
-    }
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        nextParams.append(key, item)
-      }
-    }
+function getSafeIntent(value: unknown): IntentFocus | undefined {
+  if (
+    value === "build" ||
+    value === "find" ||
+    value === "fund" ||
+    value === "support"
+  ) {
+    return value
   }
-
-  const query = nextParams.toString()
-  return query ? `/sign-up?${query}` : "/sign-up"
+  return undefined
 }
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const resolved = searchParams ? await searchParams : {}
-  if (resolved.plan === "individual") {
-    redirectTo(buildCanonicalSignUpHref(resolved))
-  }
-
   const redirect = getSafeRedirect(resolved.redirect)
-  const explicitIntent = resolveSignupIntentFocus(resolved.intent)
-  const plan = typeof resolved.plan === "string" ? resolved.plan : undefined
-  const tier = typeof resolved.tier === "string" ? resolved.tier : undefined
-  const addon = typeof resolved.addon === "string" ? resolved.addon : undefined
-  const selectedBuilderPlanTier =
-    resolveSignupBuilderPlanTier(plan) ??
-    resolveSignupBuilderPlanTier(tier) ??
-    null
-  const selectedAddon = addon === "accelerator" ? "accelerator" : null
-  const defaultIntentFocus = explicitIntent ?? "build"
-
-  const fallbackParams = new URLSearchParams()
-  if (selectedBuilderPlanTier) fallbackParams.set("plan", selectedBuilderPlanTier)
-  if (selectedAddon) fallbackParams.set("addon", selectedAddon)
-
-  const fallbackQuery = fallbackParams.toString()
-  const builderRedirectTarget =
-    redirect ??
-    buildPostSignupBuilderRedirect({
-      planTier: selectedBuilderPlanTier,
-      source: "signup",
-    })
-  const memberRedirectTarget =
-    redirect ??
-    (fallbackQuery
-      ? `/onboarding?source=signup&${fallbackQuery}`
-      : `/onboarding?source=signup`)
+  const explicitIntent = getSafeIntent(resolved.intent)
 
   const supabase = await createSupabaseServerClient()
   const {
@@ -89,31 +46,43 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
     throw supabaseErrorToError(error, "Unable to load user.")
   }
   if (user) {
-    const destination =
-      defaultIntentFocus === "build"
-        ? builderRedirectTarget
-        : memberRedirectTarget
+    const destination = redirect ?? "/find?member_onboarding=1&source=signup"
     redirectTo(destination)
   }
+
+  const plan = typeof resolved.plan === "string" ? resolved.plan : undefined
+  const tier = typeof resolved.tier === "string" ? resolved.tier : undefined
+  const addon = typeof resolved.addon === "string" ? resolved.addon : undefined
+  const selectedPlan = plan === "organization" ? "organization" : plan === "individual" ? "individual" : null
+  const selectedAddon = addon === "accelerator" ? "accelerator" : null
+  const defaultIntentFocus =
+    explicitIntent ??
+    (selectedPlan === "organization" || tier === "operations" || selectedAddon === "accelerator"
+      ? "build"
+      : "find")
+
+  const fallbackParams = new URLSearchParams()
+  if (selectedPlan) fallbackParams.set("plan", selectedPlan)
+  if (selectedAddon) fallbackParams.set("addon", selectedAddon)
+
+  const fallbackQuery = fallbackParams.toString()
+  const builderRedirectTarget = redirect ?? "/workspace?onboarding_flow=1&source=signup"
+  const memberRedirectTarget =
+    redirect ??
+    (fallbackQuery ? `/find?member_onboarding=1&source=signup&${fallbackQuery}` : "/find?member_onboarding=1&source=signup")
   const loginHref = `/login`
 
   return (
-    <AuthScreenShell showBrand>
+    <AuthScreenShell>
       <AuthCard
         title="Create your account"
-        description="After email verification, Coach House will continue to your next step."
+        description="Choose whether you are building, finding, funding, or supporting nonprofit work."
       >
         <SignUpForm
           loginHref={loginHref}
           defaultIntentFocus={defaultIntentFocus}
-          lockedIntentFocus={selectedBuilderPlanTier ? "build" : null}
           builderRedirectTo={builderRedirectTarget}
           memberRedirectTo={memberRedirectTarget}
-          signUpMetadata={
-            selectedBuilderPlanTier
-              ? { onboarding_selected_builder_plan_tier: selectedBuilderPlanTier }
-              : undefined
-          }
         />
       </AuthCard>
     </AuthScreenShell>

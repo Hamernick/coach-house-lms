@@ -1,17 +1,11 @@
 import type { FormationStatus } from "@/components/organization/org-profile-card/types"
 import { isCoreFormationModule } from "@/lib/accelerator/module-order"
-import {
-  applyOrganizationSetupAcceleratorProgressOverride,
-  hasSavedOrganizationSetup,
-} from "@/lib/accelerator/organization-setup"
 import type {
   AcceleratorProgressSummary,
   ModuleCardStatus,
 } from "@/lib/accelerator/progress"
 
-function buildAcceleratorProgressTotals(
-  groups: AcceleratorProgressSummary["groups"]
-) {
+function buildAcceleratorProgressTotals(groups: AcceleratorProgressSummary["groups"]) {
   let totalModules = 0
   let completedModules = 0
   let inProgressModules = 0
@@ -51,7 +45,7 @@ function resolveFormationOverrideStatus({
 
 export function applyFormationStatusAcceleratorProgressOverrides(
   summary: AcceleratorProgressSummary,
-  formationStatus: FormationStatus | null | undefined
+  formationStatus: FormationStatus | null | undefined,
 ): AcceleratorProgressSummary {
   const groups = summary.groups.map((group) => {
     let groupChanged = false
@@ -84,24 +78,4 @@ export function applyFormationStatusAcceleratorProgressOverrides(
     groups,
     ...buildAcceleratorProgressTotals(groups),
   }
-}
-
-export function applyOrganizationAcceleratorProgressOverrides(
-  summary: AcceleratorProgressSummary,
-  organization: {
-    name?: string | null
-    formationStatus?: FormationStatus | null
-  },
-  publicSlug: string | null | undefined
-) {
-  return applyFormationStatusAcceleratorProgressOverrides(
-    applyOrganizationSetupAcceleratorProgressOverride(
-      summary,
-      hasSavedOrganizationSetup({
-        organizationName: organization.name,
-        publicSlug,
-      })
-    ),
-    organization.formationStatus
-  )
 }

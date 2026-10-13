@@ -15,7 +15,6 @@ export type UseOrgProfileEditorStateArgs = {
   canEdit: boolean
   initialTab: OrgProfileCardProps["initialTab"]
   initialProgramId: OrgProfileCardProps["initialProgramId"]
-  initialEditMode: OrgProfileCardProps["initialEditMode"]
 }
 
 export type UseOrgProfileEditorStateResult = {
@@ -36,9 +35,7 @@ export type UseOrgProfileEditorStateResult = {
   setConfirmDiscardOpen: (next: boolean) => void
   currentTabLabel: string
   publicLink: string | null
-  handleInputChange: (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void
+  handleInputChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   handleCompanyUpdate: (updates: Partial<OrgProfile>) => void
   markDirty: () => void
   persistProfileUpdates: (updates: Partial<OrgProfile>) => Promise<void>

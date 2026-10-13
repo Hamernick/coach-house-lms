@@ -25,34 +25,16 @@ type RpcRow = {
   rank: number | null
 }
 
-function createDeferred<T>() {
-  let resolve!: (value: T) => void
-  const promise = new Promise<T>((resolvePromise) => {
-    resolve = resolvePromise
-  })
-  return { promise, resolve }
-}
-
 function buildSupabaseStub({
   rpcData,
   rpcError,
   isAdmin = false,
   hasAcceleratorPurchase = false,
-  membershipResult,
-  acceleratorPurchaseResult,
 }: {
   rpcData?: RpcRow[]
   rpcError?: unknown
   isAdmin?: boolean
   hasAcceleratorPurchase?: boolean
-  membershipResult?: Promise<{
-    data: Array<{ org_id: string; role: string; created_at: string }>
-    error: null
-  }>
-  acceleratorPurchaseResult?: Promise<{
-    data: { id: string } | null
-    error: null
-  }>
 } = {}) {
   const returns = vi.fn().mockResolvedValue({ data: [], error: null })
   const insert = vi.fn().mockResolvedValue({ error: null })
@@ -75,25 +57,12 @@ function buildSupabaseStub({
         return { data: { role: config.isAdmin ? "admin" : null }, error: null }
       }
       if (table === "accelerator_purchases") {
-        if (acceleratorPurchaseResult) {
-          return acceleratorPurchaseResult
-        }
-        return {
-          data: config.hasAcceleratorPurchase ? { id: "purchase-1" } : null,
-          error: null,
-        }
+        return { data: config.hasAcceleratorPurchase ? { id: "purchase-1" } : null, error: null }
       }
       return { data: null, error: null }
     })
 
-    return {
-      ...chain,
-      returns:
-        table === "organization_memberships" && membershipResult
-          ? vi.fn(() => membershipResult)
-          : returns,
-      maybeSingle,
-    }
+    return { ...chain, maybeSingle }
   })
 
   const rpcReturns = vi.fn().mockResolvedValue({
@@ -103,9 +72,7 @@ function buildSupabaseStub({
 
   const rpc = vi.fn(() => ({ returns: rpcReturns }))
   const auth = {
-    getUser: vi
-      .fn()
-      .mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }),
+    getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }),
   }
 
   return { supabaseStub: { auth, rpc, from }, rpcReturns }
@@ -147,19 +114,13 @@ describe("search route", () => {
       },
     ]
 
-    const { supabaseStub, rpcReturns } = buildSupabaseStub({
-      rpcData,
-      hasAcceleratorPurchase: true,
-    })
+    const { supabaseStub, rpcReturns } = buildSupabaseStub({ rpcData, hasAcceleratorPurchase: true })
     createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
 
     const res = await GET(new Request("http://localhost/api/search?q=theory"))
     const json = await res.json()
 
-    expect(supabaseStub.rpc).toHaveBeenCalledWith(
-      "search_global",
-      expect.objectContaining({ p_query: "theory" })
-    )
+    expect(supabaseStub.rpc).toHaveBeenCalledWith("search_global", expect.objectContaining({ p_query: "theory" }))
     expect(rpcReturns).toHaveBeenCalledTimes(1)
     expect(json.results).toEqual([
       {
@@ -199,10 +160,7 @@ describe("search route", () => {
       },
     ]
 
-    const { supabaseStub } = buildSupabaseStub({
-      rpcData,
-      hasAcceleratorPurchase: false,
-    })
+    const { supabaseStub } = buildSupabaseStub({ rpcData, hasAcceleratorPurchase: false })
     createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
 
     const res = await GET(new Request("http://localhost/api/search?q=theory"))
@@ -244,62 +202,10 @@ describe("search route", () => {
       },
     ])
 
-    const res = await GET(
-      new Request("http://localhost/api/search?q=strategic")
-    )
+    const res = await GET(new Request("http://localhost/api/search?q=strategic"))
     const json = await res.json()
 
     expect(fetchSidebarTreeMock).toHaveBeenCalled()
-    expect(json.results.map((item: { id: string }) => item.id)).toEqual([
-      "class-class-1",
-      "module-module-1",
-    ])
-  })
-
-  it("loads organization and admin context concurrently", async () => {
-    const membership = createDeferred<{
-      data: Array<{ org_id: string; role: string; created_at: string }>
-      error: null
-    }>()
-    const { supabaseStub } = buildSupabaseStub({
-      membershipResult: membership.promise,
-    })
-    createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
-
-    const responsePromise = GET(
-      new Request("http://localhost/api/search?q=workspace")
-    )
-
-    await vi.waitFor(() => {
-      expect(supabaseStub.from).toHaveBeenCalledWith("profiles")
-    })
-
-    membership.resolve({ data: [], error: null })
-    await responsePromise
-  })
-
-  it("starts ranked search while entitlements are loading", async () => {
-    const acceleratorPurchase = createDeferred<{
-      data: { id: string } | null
-      error: null
-    }>()
-    const { supabaseStub } = buildSupabaseStub({
-      acceleratorPurchaseResult: acceleratorPurchase.promise,
-    })
-    createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
-
-    const responsePromise = GET(
-      new Request("http://localhost/api/search?q=workspace")
-    )
-
-    await vi.waitFor(() => {
-      expect(supabaseStub.rpc).toHaveBeenCalledWith(
-        "search_global",
-        expect.objectContaining({ p_query: "workspace" })
-      )
-    })
-
-    acceleratorPurchase.resolve({ data: null, error: null })
-    await responsePromise
+    expect(json.results.map((item: { id: string }) => item.id)).toEqual(["class-class-1", "module-module-1"])
   })
 })

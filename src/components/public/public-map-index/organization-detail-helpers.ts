@@ -1,22 +1,16 @@
 "use client"
 
 import type { ComponentType } from "react"
+import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import FacebookIcon from "lucide-react/dist/esm/icons/facebook"
-import HeartIcon from "lucide-react/dist/esm/icons/heart"
+import GlobeIcon from "lucide-react/dist/esm/icons/globe"
 import InstagramIcon from "lucide-react/dist/esm/icons/instagram"
 import LinkedinIcon from "lucide-react/dist/esm/icons/linkedin"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
 import PhoneIcon from "lucide-react/dist/esm/icons/phone"
 import TwitterIcon from "lucide-react/dist/esm/icons/twitter"
 
-import {
-  formatFullOrganizationLocation,
-  normalizeOrganizationLocationFields,
-} from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { buildPublicMapResourceLinks } from "@/lib/public-map/resource-links"
-import type { PublicMapOrganizationResourceLink } from "@/lib/public-map/resource-links"
-import { stripHtml } from "@/lib/markdown/convert"
 
 export type PublicMapSocialKey = keyof Pick<
   PublicMapOrganization,
@@ -70,15 +64,13 @@ const SOCIAL_FIELDS: Array<{
   { label: "Instagram", key: "instagram" },
 ]
 
-export const SOCIAL_ICON_MAP: Record<
-  PublicMapSocialKey,
-  OrganizationDetailIcon
-> = {
-  twitter: TwitterIcon,
-  facebook: FacebookIcon,
-  linkedin: LinkedinIcon,
-  instagram: InstagramIcon,
-}
+export const SOCIAL_ICON_MAP: Record<PublicMapSocialKey, OrganizationDetailIcon> =
+  {
+    twitter: TwitterIcon,
+    facebook: FacebookIcon,
+    linkedin: LinkedinIcon,
+    instagram: InstagramIcon,
+  }
 
 export function normalizeHref(value: string | null | undefined) {
   if (!value) return null
@@ -124,28 +116,21 @@ export function truncateAtWordBoundary(value: string, maxLength: number) {
 }
 
 export function formatLocation(organization: PublicMapOrganization) {
-  return formatFullOrganizationLocation({
-    city: organization.city,
-    state: organization.state,
-    country: organization.country,
-  })
+  return [organization.city, organization.state, organization.country]
+    .filter((entry) => Boolean(entry && entry.trim().length > 0))
+    .join(", ")
 }
 
 export function formatAddressLines(organization: PublicMapOrganization) {
-  const normalizedLocation = normalizeOrganizationLocationFields({
-    street: organization.addressStreet,
-    city: organization.city,
-    state: organization.state,
-    postal: organization.addressPostal,
-    country: organization.country,
-  })
-  const street = normalizeText(normalizedLocation.street)
+  const street = normalizeText(organization.addressStreet)
   const locality = [
-    normalizedLocation.city,
-    normalizedLocation.state,
-    normalizedLocation.postal,
-  ].filter((entry) => entry.length > 0)
-  const country = normalizeText(normalizedLocation.country)
+    organization.city,
+    organization.state,
+    organization.addressPostal,
+  ]
+    .map((entry) => normalizeText(entry))
+    .filter((entry) => entry.length > 0)
+  const country = normalizeText(organization.country)
   const fallback = normalizeText(organization.address)
 
   const lines: string[] = []
@@ -184,9 +169,7 @@ export function resolveAboutText(organization: PublicMapOrganization) {
   )
 }
 
-export function resolveBrandKitDownloadHref(
-  organization: PublicMapOrganization
-) {
+export function resolveBrandKitDownloadHref(organization: PublicMapOrganization) {
   if (!organization.brandKitAvailable || !organization.publicSlug) return null
   return `/api/public/organizations/${organization.publicSlug}/brand-kit`
 }
@@ -198,8 +181,10 @@ export function buildSocialLinks(
     key: field.key,
     label: field.label,
     href: normalizeHref(organization[field.key]),
-  })).filter((entry): entry is OrganizationDetailSocialLink =>
-    Boolean(entry.href)
+  })).filter(
+    (
+      entry
+    ): entry is OrganizationDetailSocialLink => Boolean(entry.href)
   )
 }
 
@@ -207,25 +192,11 @@ export function buildStoryFields(
   organization: PublicMapOrganization
 ): OrganizationDetailStoryField[] {
   return [
-    { label: "Origin story", value: normalizeText(organization.originStory) },
-    {
-      label: "Need",
-      value: normalizeText(organization.needStatement),
-    },
-    { label: "Mission", value: normalizeText(organization.mission) },
     { label: "Vision", value: normalizeText(organization.vision) },
+    { label: "Mission", value: normalizeText(organization.mission) },
     { label: "Values", value: normalizeText(organization.values) },
-    {
-      label: "Theory of change",
-      value: normalizeText(organization.theoryOfChange),
-    },
-  ].filter((field) => hasRenderableNarrativeContent(field.value))
-}
-
-export function hasRenderableNarrativeContent(value: string) {
-  const trimmed = value.trim()
-  if (!trimmed) return false
-  return stripHtml(trimmed).trim().length > 0 || /<img\b/i.test(trimmed)
+    { label: "Need statement", value: normalizeText(organization.needStatement) },
+  ]
 }
 
 export function buildContactRows(
@@ -238,20 +209,25 @@ export function buildContactRows(
   ].filter((entry) => entry.value.length > 0)
 }
 
-export function buildResourceLinks(
-  organization: PublicMapOrganization
-): PublicMapOrganizationResourceLink[] {
-  return buildPublicMapResourceLinks(organization)
-}
-
 export function buildActionLinks(
   organization: PublicMapOrganization
 ): OrganizationDetailActionLink[] {
-  const donateHref = normalizeHref(organization.donateUrl)
+  const website = normalizeHref(organization.website)
   const email = normalizeText(organization.email)
   const phone = normalizeText(organization.phone)
+  const brandKitHref = resolveBrandKitDownloadHref(organization)
 
   const actions: Array<OrganizationDetailActionLink | null> = [
+    website
+      ? {
+          key: "website",
+          kind: "link",
+          label: "Website",
+          href: website,
+          external: true,
+          icon: GlobeIcon,
+        }
+      : null,
     email
       ? {
           key: "email",
@@ -271,19 +247,19 @@ export function buildActionLinks(
           icon: PhoneIcon,
         }
       : null,
-    donateHref
+    brandKitHref
       ? {
-          key: "donate",
+          key: "brand-kit",
           kind: "link",
-          label: "Donate",
-          href: donateHref,
+          label: "Brand kit",
+          href: brandKitHref,
           external: true,
-          icon: HeartIcon,
+          icon: DownloadIcon,
         }
       : null,
   ]
 
   return actions.filter(
-    (action): action is OrganizationDetailActionLink => action !== null
+    (action): action is OrganizationDetailActionLink => action !== null,
   )
 }

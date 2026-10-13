@@ -1,4 +1,3 @@
-import { RichTextPasteMenu } from "./rich-text-paste-menu"
 import type { Editor } from "@tiptap/react"
 import type { ComponentType, ReactNode } from "react"
 import AlignCenter from "lucide-react/dist/esm/icons/align-center"
@@ -18,10 +17,7 @@ import Minus from "lucide-react/dist/esm/icons/minus"
 import Pilcrow from "lucide-react/dist/esm/icons/pilcrow"
 import Quote from "lucide-react/dist/esm/icons/quote"
 import Redo2 from "lucide-react/dist/esm/icons/redo-2"
-import Rows3 from "lucide-react/dist/esm/icons/rows-3"
-import Table2 from "lucide-react/dist/esm/icons/table-2"
 import TypeIcon from "lucide-react/dist/esm/icons/type"
-import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import UnderlineIcon from "lucide-react/dist/esm/icons/underline"
 import Undo2 from "lucide-react/dist/esm/icons/undo-2"
 
@@ -157,8 +153,6 @@ export function RichTextToolbar({
         toolbarClassName,
       )}
     >
-      <RichTextPasteMenu editor={editor} />
-      {toolbarActions ? <div className="flex items-center gap-1">{toolbarActions}</div> : null}
       <DropdownMenu>
         <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
         <DropdownMenuContent align="start" className="w-44">
@@ -262,61 +256,6 @@ export function RichTextToolbar({
       {!compact ? (
         <>
           <DropdownMenu>
-            <ToolbarMenuTrigger icon={Table2} label="Table" valueLabel="Table" />
-            <DropdownMenuContent align="start" className="w-52">
-              <DropdownMenuItem
-                onSelect={() =>
-                  editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-                }
-                className="cursor-pointer"
-              >
-                <Table2 className="h-4 w-4" />
-                Insert table
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!editor.isActive("table")}
-                onSelect={() => editor.chain().focus().addColumnAfter().run()}
-                className="cursor-pointer"
-              >
-                <Table2 className="h-4 w-4" />
-                Add column
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!editor.isActive("table")}
-                onSelect={() => editor.chain().focus().addRowAfter().run()}
-                className="cursor-pointer"
-              >
-                <Rows3 className="h-4 w-4" />
-                Add row
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!editor.isActive("table")}
-                onSelect={() => editor.chain().focus().deleteColumn().run()}
-                className="cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete column
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!editor.isActive("table")}
-                onSelect={() => editor.chain().focus().deleteRow().run()}
-                className="cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete row
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!editor.isActive("table")}
-                onSelect={() => editor.chain().focus().deleteTable().run()}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete table
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ToolbarDivider />
-          <DropdownMenu>
             <ToolbarMenuTrigger icon={AlignLeft} label="Align" valueLabel="Align" />
             <DropdownMenuContent align="start" className="w-40">
               <DropdownMenuRadioGroup
@@ -358,6 +297,7 @@ export function RichTextToolbar({
         </>
       ) : null}
       <ToolbarSpacer />
+      {toolbarActions ? <div className="flex items-center gap-1">{toolbarActions}</div> : null}
       <ToolbarButton
         icon={Undo2}
         label="Undo"

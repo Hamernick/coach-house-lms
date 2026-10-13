@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -56,7 +55,7 @@ type UpdatePasswordFormProps = {
 }
 
 export function UpdatePasswordForm({
-  redirectTo = DEFAULT_POST_AUTH_REDIRECT,
+  redirectTo = "/organization",
   initialStatus = "checking",
   recoveryError = null,
   retryHref = "/forgot-password",

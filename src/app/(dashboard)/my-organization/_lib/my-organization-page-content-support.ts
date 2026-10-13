@@ -85,7 +85,6 @@ export async function buildWorkspaceOnboardingDefaults({
 }) {
   const { profileAudience, user } = requestContext
   return buildSavedOnboardingFlowDefaults({
-    organizationId: requestContext.activeOrg.orgId,
     supabase: requestContext.supabase,
     needsOnboarding: needsOnboarding || Boolean(orgProfile.name),
     userId: user.id,
@@ -100,7 +99,6 @@ export async function buildWorkspaceOnboardingDefaults({
       (typeof user.user_metadata?.avatar_url === "string"
         ? user.user_metadata.avatar_url
         : null),
-    profileTitle: profileAudience.headline,
     userMetadata: userMeta,
     orgProfile,
     orgSlug,

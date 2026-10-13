@@ -58,12 +58,10 @@ export type SelectionActions = {
 export function useDocumentsLibrarySelection({
   items,
   canEdit,
-  canEditNative = true,
   editMode,
   actions,
 }: {
   items: SelectableLibraryItem[]
-  canEditNative?: boolean
   canEdit: boolean
   editMode: boolean
   actions: SelectionActions
@@ -88,7 +86,6 @@ export function useDocumentsLibrarySelection({
     canEdit &&
     editMode &&
     selectedItems.length > 0 &&
-    selectedItems.every((item) => canEditNative || Boolean(item.driveDocument)) &&
     selectedItems.every(
       (item) =>
         Boolean(item.uploadedFile) ||

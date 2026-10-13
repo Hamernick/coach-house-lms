@@ -47,7 +47,6 @@ export function DocumentsToolbar(props: DocumentsToolbarProps) {
           </div>
           <DocumentsNewMenu
             canEdit={props.canEdit}
-            canUpload={props.canUpload}
             editMode={props.editMode}
             driveConnected={props.driveConnected}
             drivePending={props.drivePending}

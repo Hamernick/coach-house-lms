@@ -104,7 +104,6 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
   readinessSummary,
   roadmapSections = [],
   roadmapBasePath,
-  roadmapReturnTo,
   selectedLessonGroupKey,
   showMilestoneTooltips = true,
   showPicker = true,
@@ -118,7 +117,6 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
   readinessSummary: WorkspaceAcceleratorCardInput["readinessSummary"]
   roadmapSections?: RoadmapSection[]
   roadmapBasePath?: string
-  roadmapReturnTo?: string
   selectedLessonGroupKey: string
   showMilestoneTooltips?: boolean
   showPicker?: boolean
@@ -142,7 +140,7 @@ export function WorkspaceAcceleratorDrawerHeaderControls({
       />
       {showPicker ? (
         <div className="flex min-w-0 max-w-full items-center justify-end gap-2 sm:max-w-[70%] sm:self-end">
-          <RoadmapNavigatorDropdown sections={roadmapSections} basePath={roadmapBasePath} returnTo={roadmapReturnTo} />
+          <RoadmapNavigatorDropdown sections={roadmapSections} basePath={roadmapBasePath} />
           <WorkspaceAcceleratorCardInlinePicker
             lessonGroupOptions={lessonGroupOptions}
             selectedLessonGroupKey={selectedLessonGroupKey}

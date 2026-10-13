@@ -10,6 +10,7 @@ import {
   getSafeEmailOtpType,
   resolvePostAuthConfirmationRedirect,
   resolveAuthConfirmationDestination,
+  resolveConfirmedSignupDestination,
 } from "@/lib/supabase/auth-confirmation"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -53,7 +54,7 @@ async function confirmEmailAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type,
   })
@@ -67,7 +68,12 @@ async function confirmEmailAction(formData: FormData) {
     )
   }
 
-  redirect(resolvePostAuthConfirmationRedirect(destination, requestOrigin))
+  const confirmedDestination = resolveConfirmedSignupDestination({
+    destination,
+    type,
+    userMetadata: data.user?.user_metadata,
+  })
+  redirect(resolvePostAuthConfirmationRedirect(confirmedDestination, requestOrigin))
 }
 
 export default async function ConfirmEmailPage({

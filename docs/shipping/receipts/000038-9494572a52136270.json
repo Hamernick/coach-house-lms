@@ -1,0 +1,889 @@
+{
+  "schema": 1,
+  "revision": 38,
+  "updated_at": "2026-10-13T22:03:16.519438+00:00",
+  "active": {
+    "slice": "SHIP-000",
+    "claim": {
+      "owner": "ship-map-audit-20261013",
+      "pid": 744,
+      "started": "Tue Oct 13 18:03:16 2026",
+      "host": "Calebs-MacBook-Pro-2.local",
+      "at": "2026-10-13T22:03:16.515517+00:00"
+    },
+    "base": "fabee958969e538a07c9a478c72574a3eda7d79b",
+    "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-20261013",
+    "branch": "chore/ship-harness-20261013",
+    "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+    "evidence": {
+      "tests": {
+        "status": "passed",
+        "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+        "reference": "27 Python unittest cases, including 8 automated-review regression tests; normal Node 22 pre-push checks; staged gitleaks; diff hygiene"
+      },
+      "ui": {
+        "na_reason": "Tooling-only; no UI changes"
+      },
+      "review_packet": "docs/shipping/review.md",
+      "changed_files": [
+        "AGENTS.md",
+        "docs/RUNLOG.md",
+        "docs/SHIP.md",
+        "docs/agent/open-work-index.md",
+        "docs/agent/workflow-quality.md",
+        "docs/runlog/2026-10.md",
+        "docs/shipping/.gitignore",
+        "docs/shipping/README.md",
+        "docs/shipping/gates.py",
+        "docs/shipping/intake.json",
+        "docs/shipping/providers.py",
+        "docs/shipping/queue.json",
+        "docs/shipping/receipts/bootstrap-connectivity.json",
+        "docs/shipping/reconciliation.md",
+        "docs/shipping/review.md",
+        "docs/shipping/ship.py",
+        "docs/shipping/store.py",
+        "docs/shipping/test_ship.py"
+      ],
+      "recovery": {
+        "verified_sha": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+        "reference": "git ls-remote origin refs/heads/chore/ship-harness-20261013 matched"
+      },
+      "deployment": {
+        "na_reason": "Tooling-only runner/docs; no deployed application artifact"
+      },
+      "production": {
+        "na_reason": "Tooling-only runner/docs; no runtime application behavior changed"
+      },
+      "providers": "No provider or migration changes; Vercel access 403",
+      "rollback": "Revert tooling PR; shared state and recovery receipts retained",
+      "next_action": "Review PR299 at 3d732257f85032d9d8c3b646a0022bc27726dd03 and pass current-head quality/code-owner gates; review/apply four exact coordinate corrections deliberately; deploy and let user check markers/choices. Preserve original released SHIP000 head/evidence and prior unresolved gates. No Supabase previews, roster redo or browser sweep.",
+      "owner_evidence": {
+        "previous": {
+          "owner": "ship-map-audit-20261013",
+          "pid": 98032,
+          "started": "Tue Oct 13 17:59:19 2026",
+          "host": "Calebs-MacBook-Pro-2.local",
+          "at": "2026-10-13T21:59:21.462887+00:00"
+        },
+        "verified_stopped": true,
+        "at": "2026-10-13T22:03:16.302144+00:00"
+      },
+      "review_findings": {
+        "4254822559": "Effective pre-block release stage guards head changes in checkpoint/resume",
+        "4254822567": "Shared safe-basename and direct-child path checks for restore/export/validate; symlinks rejected",
+        "4254822575": "Snapshot filename/revision/full-state digest checked before any restore writes"
+      },
+      "github": {
+        "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+        "quality": "failure",
+        "review": "REVIEW_REQUIRED",
+        "protection_satisfied": false,
+        "reference": "https://github.com/Hamernick/CoachHouse/pull/291",
+        "observed_at": "2026-10-13T05:11:27.946365+00:00",
+        "merge_state": "UNKNOWN",
+        "required_checks": [
+          {
+            "context": "quality",
+            "app_id": 15368
+          }
+        ]
+      },
+      "deployment_observations": [
+        {
+          "id": 7030525152,
+          "environment": "Production \u2013 coachhouse",
+          "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+          "statuses": [
+            {
+              "state": "success",
+              "environment_url": "https://coachhouse-di31gtmxa-calebs-projects-58ab1538.vercel.app",
+              "log_url": "https://coachhouse-di31gtmxa-calebs-projects-58ab1538.vercel.app",
+              "created_at": "2026-10-13T05:03:55Z"
+            }
+          ]
+        },
+        {
+          "id": 7030491018,
+          "environment": "github-pages",
+          "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+          "statuses": [
+            {
+              "state": "success",
+              "environment_url": "https://hamernick.github.io/CoachHouse/",
+              "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+              "created_at": "2026-10-13T05:01:39Z"
+            },
+            {
+              "state": "in_progress",
+              "environment_url": "",
+              "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+              "created_at": "2026-10-13T05:01:23Z"
+            },
+            {
+              "state": "queued",
+              "environment_url": "",
+              "log_url": "https://github.com/Hamernick/CoachHouse/actions/runs/38349238837/job/115137767693",
+              "created_at": "2026-10-13T05:01:21Z"
+            }
+          ]
+        }
+      ],
+      "provider_status": "unknown until intended project/domain/source SHA is checked at provider",
+      "merge": {
+        "sha": "ce1436a2ec8971b8275702ccb3574152f3bbb500",
+        "at": "2026-10-13T05:00:38Z",
+        "default_branch_contains": true
+      },
+      "blocker": "PR #291 externally merged at ce1436a2; current-head quality failed and code-owner review is missing. No exact-head human approval is recorded.",
+      "plan_linkage_followup": {
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+        "head": "9ba3eb33082bab25a9ea3959258faba4ab742f47",
+        "branch": "chore/ship-plan-links-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+        "tests": "3 continuation checks passed for startup changes; prior38 runner checks applicable, runner unchanged",
+        "recovery": "origin/chore/ship-plan-links-20261013 verified",
+        "status": "Merged externally as abca9b09; static/acceptance/RLS/build passed, three Tools references and quality failed; GitHub REVIEW_REQUIRED remains observed",
+        "validation": "42 Python runner tests and 3 continuation tests pass; bind unclaimed restored queues and portable original-plan roots covered",
+        "merge_sha": "abca9b0957009729a7c1058ac6343aadbb0c710c",
+        "merged_at": "2026-10-13T18:43:02Z"
+      },
+      "audit_preflight": {
+        "reference": "docs/shipping/audit-001-preflight.md",
+        "observed_at": "2026-10-13T13:38:43Z",
+        "status": "read-only preparation; no application writes or new release claim"
+      },
+      "root_startup_mirror": "Only exact original-plan startup rule added to root AGENTS.md; unrelated dirty files preserved",
+      "public_indexing_candidate": {
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/293",
+        "head": "d6e41ff4ff39bbc74a357b0a3dff259562d67498",
+        "branch": "fix/public-indexing-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-public-indexing-20261013",
+        "authorization": "User directed continued implementation through original saved list; no merge/release approval inferred",
+        "source": "packet09 stage1, packet05 stage1, outside audit1.1 and1.5",
+        "validation": "10 focused tests, changed-file ESLint, manifest, pre-push and rendered canonical/noindex/sitemap checks pass",
+        "status": "Draft; hosted CI running, code-owner review required; separate prepared candidate, not active release claim",
+        "server": "Own port3119 server stopped after checks",
+        "recovery": "origin/fix/public-indexing-20261013 pushed at recorded head"
+      },
+      "pending_decisions": {
+        "tools": "Appearance approval requested for Desktop Tools screenshot gallery; user has not accepted references. No baseline changed.",
+        "fiscal": "Awaiting fee-base clarification: August approved grant allocations vs October incoming donations.",
+        "donate": "Appearance approval requested for Desktop Pricing Donate gallery; no response yet. Ubuntu reference artifacts downloaded for review; no baseline changed."
+      },
+      "priority_override": {
+        "source": "User explicitly prioritized currently live website issues across packets; Desktop master index and packet03 point to dated override",
+        "priorities": [
+          "Pricing link destinations",
+          "Homepage Donate header/footer",
+          "Map markers and duplicates",
+          "Free-account upgrade banner sizing/spacing",
+          "Production Google Calendar connection",
+          "Remove formation prerequisite for verification",
+          "Complete public fiscal sponsorship/internal projects/new-application email delivery",
+          "Roster credit correction \u2014 complete"
+        ],
+        "path": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md"
+      },
+      "roster_credit_correction": {
+        "authorization": "User directed reversal of mistaken broad grants and ten credits only for existing accounts on supplied roster",
+        "verified_at": "2026-10-13T17:10:09.500Z",
+        "matched": 13,
+        "unmatched_roster_emails": 17,
+        "reversed_unused_grants": 56,
+        "retained_grants": 4,
+        "new_grants": 9,
+        "verification": "Rollback-only rehearsal passed, guarded atomic commit applied, independent account RPC and before/after ledger verification passed; all13 matched accounts have10; original records unchanged",
+        "private_evidence": "~/.local/share/coach-house/credit-roster-20261013/",
+        "desktop_report": "Desktop/Coach House Roster Credit Review/READ-ME.md",
+        "boundary": "No code/schema/deployment, emails, invitations or new accounts; historical paid/earned credits preserved. Data correction does not close SHIP000."
+      },
+      "global_todo_tracker": {
+        "updated_at": "2026-10-13T19:54:15.781376+00:00",
+        "original_requirement_count": 176,
+        "additional_requirements": [
+          {
+            "id": "U20261013-01",
+            "packet": "03",
+            "scope": "Free-account upgrade banner size, vertical spacing and max width",
+            "status": "pending"
+          }
+        ],
+        "recorded_requirement_count": 177,
+        "master": "Desktop/Coach House Codex Workstreams/WORKSTREAMS.md",
+        "view": "Desktop/Coach House Codex Workstreams/LIVE-SITE-PRIORITIES-2026-10-13.md",
+        "items": [
+          {
+            "id": "LIVE-01",
+            "priority": 1,
+            "task": "Repair pricing-link destinations",
+            "source_ids": [
+              "O037-04"
+            ],
+            "packet": "09",
+            "stages": [
+              1
+            ],
+            "status": "in_progress",
+            "evidence": "PR294 deployed; user production checkout return failed. PR295 fixes literal Stripe replacement token;21 focused tests pass; CI/review/deployment/retest pending."
+          },
+          {
+            "id": "LIVE-02",
+            "priority": 2,
+            "task": "Homepage Donate: third centered header link plus footer, external target, no hover menu",
+            "source_ids": [
+              "O029-01"
+            ],
+            "packet": "09",
+            "stages": [
+              4
+            ],
+            "status": "awaiting_review",
+            "evidence": "PR294 deployed oncoachhouse.app atc8f41085; header/footer/new-tab/directMonkeypod destination verified; appearance approval pending."
+          },
+          {
+            "id": "LIVE-03",
+            "priority": 3,
+            "task": "Missing map markers and duplicate places",
+            "source_ids": [
+              "O036-01"
+            ],
+            "packet": "05",
+            "stages": [
+              3
+            ],
+            "status": "pending"
+          },
+          {
+            "id": "LIVE-04",
+            "priority": 4,
+            "task": "Free-account upgrade banner size, vertical spacing and max width",
+            "source_ids": [
+              "U20261013-01"
+            ],
+            "packet": "03",
+            "stages": [
+              2
+            ],
+            "status": "pending"
+          },
+          {
+            "id": "LIVE-05",
+            "priority": 5,
+            "task": "Production Google Calendar connection",
+            "source_ids": [
+              "O065-01",
+              "O071-01"
+            ],
+            "packet": "04",
+            "stages": [
+              5
+            ],
+            "status": "pending"
+          },
+          {
+            "id": "LIVE-06",
+            "priority": 6,
+            "task": "Remove formation-class verification prerequisite",
+            "source_ids": [
+              "O043-01"
+            ],
+            "packet": "05",
+            "stages": [
+              1
+            ],
+            "status": "pending"
+          },
+          {
+            "id": "LIVE-07",
+            "priority": 7,
+            "task": "Public fiscal application/flow, internal project management, new-application email to fs@coachhousesolutions.org",
+            "source_ids": [
+              "O010-01",
+              "O011-01",
+              "O012-01",
+              "O023-01",
+              "O024-01",
+              "O025-01"
+            ],
+            "packet": "03",
+            "stages": [
+              3,
+              5,
+              6
+            ],
+            "status": "pending"
+          },
+          {
+            "id": "LIVE-08",
+            "priority": 8,
+            "task": "Correct mistaken coaching grant using supplied roster",
+            "source_ids": [
+              "O005-01",
+              "O006-01"
+            ],
+            "packet": "03",
+            "stages": [
+              2
+            ],
+            "status": "production_verified",
+            "evidence": "Verified 2026-10-13T17:10:09.500Z: 13 matched accounts at10; 17 unmatched roster emails; 56 unused broad grants reversed, four retained, nine issued. Historical legitimate balances preserved."
+          }
+        ],
+        "next_scope": {
+          "packet": "09",
+          "stages": [
+            1,
+            2,
+            4
+          ],
+          "items": [
+            "LIVE-01",
+            "LIVE-02"
+          ],
+          "boundary": "Prepare narrow pricing/navigation and Donate changes; current-head CI, appearance/code-owner review and release approval remain separate.",
+          "stage_mapping": "Stage1 navigation, stage2 local review, stage4 narrowly scoped Donate addition; no broader presentation redesign"
+        }
+      },
+      "public_indexing_candidate_status": "PR293 externally merged d3913f23 at 2026-10-13T18:23:54Z; historical failed quality and missing review preserved; production unverified",
+      "live_site_candidate": {
+        "pr": 294,
+        "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+        "head": "bc2ea8b7c67552dc4217ec3e22c1e6b0054449f0",
+        "branch": "fix/live-site-pricing-donate-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+        "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+        "status": "Merged c8f41085; intended production deployment verified Ready and coachhouse.app assigned; public pricing and Donate checks pass; live email confirmation and Collect return not yet verified",
+        "validation": "47 focused signup/confirmation tests pass plus ESLint and normal pre-push; seven new collection regressions reproduced before fix. Prior Donate/menu/browser evidence remains applicable.",
+        "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+        "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+        "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+        "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+        "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at 43eff6171244552b81accadee67c352439dfb3ea",
+        "release": "Deployed; incomplete production flow verification and unresolved visual-quality/review gates. Not closed.",
+        "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed.",
+        "merge": {
+          "sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+          "at": "2026-10-13T18:43:58Z"
+        }
+      },
+      "readiness_triage": {
+        "at": "2026-10-13T18:36:08.737621+00:00",
+        "pr292": {
+          "head": "9ba3eb33082bab25a9ea3959258faba4ab742f47",
+          "draft": false,
+          "ci": "Fresh final-head checks pending; previous-head results are historical",
+          "review": "REVIEW_REQUIRED",
+          "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed",
+          "main_reconciliation": "Merged d3913f23; only appended runlog entries conflicted; both histories retained"
+        },
+        "pr293": {
+          "head": "d82d3f150f6d4280b8c0aee8639ee670f53d93a9",
+          "draft": false,
+          "passed": [
+            "static",
+            "acceptance",
+            "rls",
+            "build"
+          ],
+          "failed": [
+            "visual",
+            "quality"
+          ],
+          "details": "Three Tools baseline mismatches; Find detail case flaky.",
+          "state": "MERGED",
+          "merge_sha": "d3913f2379a9366a0a89e9d0bddccb5e9d7385dd",
+          "merged_at": "2026-10-13T18:23:54Z",
+          "release_evidence": "External merge observed; historical failed quality and missing review not rewritten; production not independently verified"
+        },
+        "pr294": {
+          "head": "43eff6171244552b81accadee67c352439dfb3ea",
+          "draft": false,
+          "ci": "Fresh final-head checks pending; previous-head results are historical",
+          "review": "REVIEW_REQUIRED",
+          "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed",
+          "main_reconciliation": "Merged d3913f23; only appended runlog entries conflicted; both histories retained"
+        },
+        "boundary": "Ready-for-review is not merge approval. No bypass, reference replacement, deployment, provider or preview changes."
+      },
+      "production_closeout": {
+        "at": "2026-10-13T19:44:23.222786+00:00",
+        "scope": "LIVE01 pricing/signup; LIVE02 Donate; related SHIP/public-indexing fixes. Map and other priorities excluded until separate run.",
+        "deployment": {
+          "id": "dpl_FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+          "project": "coachhouse",
+          "environment": "Production",
+          "status": "Ready",
+          "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+          "domain": "coachhouse.app",
+          "reference": "https://vercel.com/calebs-projects-58ab1538/coachhouse/FVTcAjKsTmG4RQbiY5Hm9sRNt9RP",
+          "method": "Read-only Vercel dashboard; source SHA, Ready, Production and assigned domain observed"
+        },
+        "public_checks": {
+          "at": "2026-10-13T19:43:20.004075+00:00",
+          "source_sha": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+          "method": "Unauthenticated HTTPS GET; no forms submitted",
+          "results": [
+            {
+              "route": "/pricing",
+              "status": 200,
+              "all_three_plan_links": true
+            },
+            {
+              "route": "/build",
+              "status": 200,
+              "all_three_plan_links": true
+            },
+            {
+              "plan": "free",
+              "status": 200,
+              "anonymous_signup_form": true,
+              "sign_in_return": "/onboarding?source=signup&plan=free"
+            },
+            {
+              "plan": "organization",
+              "status": 200,
+              "anonymous_signup_form": true,
+              "sign_in_return": "/api/stripe/checkout?plan=organization&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+            },
+            {
+              "plan": "operations_support",
+              "status": 200,
+              "anonymous_signup_form": true,
+              "sign_in_return": "/api/stripe/checkout?plan=operations_support&source=signup&redirect=%2Fonboarding%3Fsource%3Donboarding_pricing&cancel=%2Fonboarding%3Fsource%3Donboarding_pricing&context=onboarding_builder"
+            }
+          ]
+        },
+        "browser_checks": [
+          "Production homepage and pricing show third direct Donate plus footer with exact supplied destination, target blank, noopener noreferrer and no popup menu",
+          "Header Donate click opened correct Monkeypod Invest in Community Leadership page in separate tab; no donation submitted",
+          "Build dropdown Documentation targets /documentation and Pricing targets /pricing",
+          "Existing authenticated account clicking Organization returned to /workspace; not new-user signup evidence"
+        ],
+        "pr294_ci": {
+          "run": 38449114098,
+          "head": "bc2ea8b7c67552dc4217ec3e22c1e6b0054449f0",
+          "passed": [
+            "static",
+            "acceptance",
+            "rls",
+            "build",
+            "references"
+          ],
+          "visual": {
+            "passed": 152,
+            "flaky": 1,
+            "failed": 3,
+            "failures": [
+              "workspace-tools-drive-error.png",
+              "workspace-tools-drive-connected.png",
+              "workspace-tools-drive-mobile.png"
+            ],
+            "flaky_case": "Find detail at390px passed on retry"
+          },
+          "quality": "failure",
+          "review": "REVIEW_REQUIRED"
+        },
+        "pr292_ci": {
+          "run": 38447992278,
+          "passed": [
+            "static",
+            "acceptance",
+            "rls",
+            "build"
+          ],
+          "visual": {
+            "passed": 150,
+            "failed": 3,
+            "failures": "Same three Tools snapshots"
+          },
+          "quality": "failure",
+          "review": "REVIEW_REQUIRED"
+        },
+        "secondary_project": "coach-house-platform status failed; not the verified coachhouse production target",
+        "remaining": [
+          "User production checkout return failed; locally validated repair PR295 requires CI/review/deployment/retest",
+          "Actual live Collect save/confirmation return remains unverified",
+          "Tools/Donate appearance approval pending; no baseline changed",
+          "Historical failed quality/missing code-owner review preserved; no release closure"
+        ],
+        "stop_boundary": "Save verified evidence and preserve concrete remaining review/manual-check blockers; do not begin map work in this run",
+        "coupon_read_only_check": {
+          "code": "earlyaccess",
+          "discount_usd": 20,
+          "duration": "forever",
+          "product": "Organization only",
+          "organization_monthly_usd": 20,
+          "operations_support_eligible": false,
+          "scope": "Live coupon/price configuration checked, not attachment to user subscription; no Stripe mutation"
+        }
+      },
+      "checkout_activation_repair": {
+        "status": "Externally merged; production deployment and retest not yet verified",
+        "source": "User production test failed at Finishing your upgrade; packet03 stages2/4/6, LIVE01",
+        "branch": "fix/checkout-activation-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+        "base": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+        "evidence": "Read-only exact-account Stripe checkout complete, USD0, subscription active; matching app subscription active. Stored success URL contains encoded CHECKOUT_SESSION_ID; production logs show repeated checkout_session_not_found_in_available_stripe_modes. No new purchase or provider mutation.",
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/295",
+        "head": "0dc4712858f8ecca52e8ba81df1480e2196726e9",
+        "validation": "Three tests failed before fix; all21 checkout-route/activation-return tests, changed-file lint, acceptance manifest and pre-push pass; remote head verified. Vercel request parameters directly confirm literal placeholder; Stripe returns404.",
+        "release_boundary": "External merge is not evidence of passed quality/review gates or production verification; preserve prior observations. Worktree now carries separate PR296 branch.",
+        "menu_fix": "Shared identity flex column now min-w-0/flex-1; actual browser reproduction overflow corrected on desktop and390px; full DOM text retained. Three existing menu tests/lint/pre-push passed. Synthetic screenshot in docs/reviews/2026-10-13-account-menu-long-email.jpg and Desktop/Coach House Account Menu Review. Temporary fixture removed; own3120 server stopped. Appearance review pending.",
+        "merge_observation": {
+          "sha": "368709ce032e630ec7fa966ed856f14c9d90a76f",
+          "at": "2026-10-13T20:05:13Z"
+        }
+      },
+      "profile_save_repair": {
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/296",
+        "head": "f6d9a17d6eb9a99719dd5b76197524388b708a5e",
+        "branch": "fix/onboarding-profile-save-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+        "base": "368709ce032e630ec7fa966ed856f14c9d90a76f",
+        "source": "LIVE01; packet03 onboarding. User confirmed personal username and workspace address were identical.",
+        "diagnosis": "Read-only production logs and exact-account checks: name/avatar/person handle saved, organization absent. Shared public handle collision misclassified as People concurrency error.",
+        "fix": "Validate matching handles before writes; return recoverable error for public slug collisions; preserve primary-key concurrency retry.",
+        "validation": "49 focused tests passed including five regressions that failed before fix; changed-file lint, boundaries, normal prepush and Graphify update passed. Remote head verified.",
+        "production_retest": "User reports changing username worked. Workaround confirmed; validation fix not deployed.",
+        "release": "PR296 externally merged as89c409bcede47421be909cdd85c2936120b2ae30; provider confirms coachhouse Production Ready HruY5bkCQ9FYce2f1hpJ7TAr6KFt assigned coachhouse.app. Static/acceptance/RLS/build passed; visual/quality failed and review remains REVIEW_REQUIRED. User workaround passed; new validation live retest not asserted."
+      },
+      "map_repair": {
+        "source": "User explicitly continued to next work on /resources; packet05 B036 stage3 and scoped stage6; LIVE03. /map remains legacy redirect.",
+        "branch": "fix/live-map-markers-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+        "base": "89c409bcede47421be909cdd85c2936120b2ae30",
+        "status": "Ready for review; not merge-ready",
+        "scope": "Projection-aware marker query bounds; conservative same-place grouping with service detail and saved/deep-link preservation. Published877entries become875places. No acquisition, public data mutation, geocoding or provider preview.",
+        "checks": "57 focused tests, lint, prepush and Graphify update passed.",
+        "boundary": "Prior release gates preserved; not silently closed. Explicit user direction authorizes map implementation preparation.",
+        "head": "64977505c89f1268d79a6630765bd60a06c46af6",
+        "remote_sha": "64977505c89f1268d79a6630765bd60a06c46af6",
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/297",
+        "browser": "Local /resources Legler listing consolidated; both service schedules and normalized contact verified. Canvas remains blank, so visible marker verification and appearance remain open. Raw browser network diagnostics were denied and not retried. User normal-UI rendering check requested.",
+        "release": "User confirmed PR297 merged. Accepted without querying merge status per explicit request. User owns production/map/appearance check; no production verification inferred. Historical failed gates remain preserved.",
+        "plan": "Original packet05 B036 stage3/scoped stage6; repo docs/plans/2026-10-13-live-map-markers.md; localhost3115; Desktop/Coach House Map Review",
+        "review_fix": "Unwrap Mercator corner longitudes around the visible screen center; preserve narrow antimeridian intervals, genuinely wide views and explicit whole-world coverage."
+      },
+      "upgrade_banner_repair": {
+        "source": "Packet03 later intake U20261013-01, scoped stage2; LIVE04. User owns visual checks, no agent browser sweep.",
+        "branch": "fix/upgrade-banner-layout-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-upgrade-banners-20261013",
+        "base": "e49a31bd3544094a18e11905e13192fac2ee93c6",
+        "head": "5a6341664b8c7e18da70899983f128a11e894d29",
+        "remote_verified": true,
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/298",
+        "scope": "Shared compact banner: maximum768px,16px gaps/insets, responsive horizontal CTA,44px target in narrow containers. Existing copy/entitlements/focus/paywall unchanged.",
+        "checks": "Changed-file ESLint, route-entry, diff and normal prepush pass. Local review route returned200; no visual checks/screenshots/baseline updates. Graphify update running.",
+        "preview": "http://localhost:3116/visual-regression/upgrade-banners",
+        "listener": {
+          "pid": 86942,
+          "cwd_verified": true
+        },
+        "release": "User appearance review, current-head CI/code-owner review and release remain open. No provider/data writes or Supabase previews."
+      },
+      "resource_fixture_followup": {
+        "source": "User supplied two duplicate RLS Resource Service links; LIVE03 packet05 B036 stage3/scoped stage6.",
+        "branch": "fix/public-resource-test-records-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+        "base": "e49a31bd3544094a18e11905e13192fac2ee93c6",
+        "head": "43b84630d85c99417621c5f1b75c3193095cedad",
+        "remote_verified": true,
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/299",
+        "diagnosis": "Both public responses match resource-map RLS fixture: exact test name/organization, public approved test description, example.org/service source and fake phone. These are synthetic entries without street addresses, not legitimate places to consolidate.",
+        "scope": "Shared public visibility excludes complete fixture signature; partial matches remain; cached index/detail keys advance. No database deletion/provider mutation. Existing remote RLS execution guard preserved.",
+        "checks": "Four regressions failed before correction;64 focused tests, ESLint/diff and normal prepush pass. Graphify refresh started. No browser sweep, screenshots or live-removal assertion.",
+        "release": "Current-head CI/code-owner review and deployment remain required; user owns visible checks. PR298 banners separate."
+      },
+      "resource_map_full_audit": {
+        "branch": "fix/public-resource-test-records-20261013",
+        "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-map-20261013",
+        "head": "3d732257f85032d9d8c3b646a0022bc27726dd03",
+        "remote_verified": true,
+        "base_reconciled": "32e5199eac6a9ea63694f1c58db8c5db53a2f41e",
+        "pr": "https://github.com/Hamernick/CoachHouse/pull/299",
+        "source": "User expanded packet05 B036/LIVE03 to all map data, duplicate identity and choice-first shared markers.",
+        "audit": {
+          "published_resources": 877,
+          "underlying_locations": 877,
+          "public_organizations": 21,
+          "fixture_exclusions": 2,
+          "confirmed_duplicate_pairs": 4,
+          "external_places": 871,
+          "coordinate_eligible_listings": 869,
+          "marker_features": 826,
+          "shared_markers": 33,
+          "nonprofit_count_estimate": 1975871,
+          "nonprofit_boundary": "Schema/count audit only; no public coordinates, no per-row service verification."
+        },
+        "tests": "133 distinct focused tests across targeted runs (128 + five marker tests; chooser rerun); complete snapshot audit; lint/structure/features/thresholds/boundaries/manifest/diff; normal prepush passed",
+        "data_step": "Four exact coordinate corrections prepared as docs/shipping/data-repairs/2026-10-13-resource-coordinates.sql; not applied.",
+        "artifacts": "Desktop/Coach House Map Audit; docs/plans/2026-10-13-resource-map-audit.md",
+        "graphify": "Initial update completed; final current-code refresh running in /tmp/coach-house-map-audit-graphify-final.log",
+        "production": "No data mutation or deployment; no visual claim.",
+        "ci_followup": "At prior head static/RLS/build passed; acceptance had3444passes and one obsolete assertion requiring first-resource detail. That assertion was scoped to single-resource markers; seven marker/chooser tests now pass. Final-head CI rerunning.",
+        "gates_open": [
+          "current-head quality",
+          "code-owner review",
+          "deliberate coordinate repair",
+          "deployment",
+          "user map check"
+        ],
+        "main_reconciliation": "PR298 present on fetched main32e5199e; only open-index/runlog merge conflicts, both histories retained. Banner deployment/appearance not inferred."
+      }
+    },
+    "checkpoint_at": "2026-10-13T22:03:16.516147+00:00"
+  },
+  "receipts": [
+    {
+      "file": "receipt-000001-64b72db9acc98106.json",
+      "sha256": "64b72db9acc981061747c7d978077448f3986a655e2e2b0d82a5e48d0c09a8a4"
+    },
+    {
+      "file": "receipt-000002-cc204b69a7dc8587.json",
+      "sha256": "cc204b69a7dc8587ba6d3f498974ec3eea87d9f832e5255210c0994266c033a6"
+    },
+    {
+      "file": "receipt-000003-70fd8e250e7c80ee.json",
+      "sha256": "70fd8e250e7c80eed1f76882a35f06a2a6f31e5bcf75c077b1e3065f34935907"
+    },
+    {
+      "file": "receipt-000004-b3c2c8c7ae264d97.json",
+      "sha256": "b3c2c8c7ae264d979c772eb06d1c8fdc83230b27457046467e61a0c526aad4c3"
+    },
+    {
+      "file": "receipt-000005-c671d5ff54bd265c.json",
+      "sha256": "c671d5ff54bd265c8ed46b3f6ce8a1d505e53b2237675b2cb80005af4ec91eea"
+    },
+    {
+      "file": "receipt-000006-7a531b433cb9c16c.json",
+      "sha256": "7a531b433cb9c16c39fcfc02a19060b2ebda031279f8ae8c4a29e6c2a3663ad2"
+    },
+    {
+      "file": "receipt-000007-fb63f0a27a2153e8.json",
+      "sha256": "fb63f0a27a2153e8395425b756cae85189aeedde6772c10473c5cba06300733b"
+    },
+    {
+      "file": "receipt-000008-4c8709d6c89e4853.json",
+      "sha256": "4c8709d6c89e48535737810ad9567bb2366cce6de3ff146cbb73cada3b60e28b"
+    },
+    {
+      "file": "receipt-000009-ec930109264b2eb0.json",
+      "sha256": "ec930109264b2eb094ca062ecf546abd1bb4955977fa90229dd1d4de77714892"
+    },
+    {
+      "file": "receipt-000010-86dd61e7ff6c9d22.json",
+      "sha256": "86dd61e7ff6c9d22bf59fd2e4d1e4c8c09360d12d15b11c6d921918bc15f892b"
+    },
+    {
+      "file": "receipt-000011-b06f6361532ea1da.json",
+      "sha256": "b06f6361532ea1da0dadac93d00715a876fab29f75a9441ecc90da920be0edf2"
+    },
+    {
+      "file": "receipt-000012-cd77cb84f75d4f5c.json",
+      "sha256": "cd77cb84f75d4f5c313812600384af4791f9bc824f4b84c50c3c4ac85a9c0920"
+    },
+    {
+      "file": "receipt-000013-b08e708102feb6b1.json",
+      "sha256": "b08e708102feb6b1cde5ab097afa27f6c083e1804e16dd49b4066a1931dd8ded"
+    },
+    {
+      "file": "receipt-000014-b55dea9db9d5b5f4.json",
+      "sha256": "b55dea9db9d5b5f40af4a38d5a6eebf65f4f25d9128d92d587233318bd24ff87"
+    },
+    {
+      "file": "receipt-000015-b1a5a1cfdc0ecabf.json",
+      "sha256": "b1a5a1cfdc0ecabf9e25568acd207e65e1058918ab734edaa40f76595e943502"
+    },
+    {
+      "file": "receipt-000016-45143911f3503eb9.json",
+      "sha256": "45143911f3503eb9e4cff4954cbb601e4d39751b8ea0652f75fdac563f45a18c"
+    },
+    {
+      "file": "receipt-000017-c9b21cb56446d470.json",
+      "sha256": "c9b21cb56446d470dbb53c59453f9669ddecdb72fb3ea541f1ea08909f25bd11"
+    },
+    {
+      "file": "receipt-000018-3d0ca3fb9a714207.json",
+      "sha256": "3d0ca3fb9a71420781a2f38998d307e79925bdd4528168059e1f4dd2877e1641"
+    },
+    {
+      "file": "receipt-000019-bc6ff936b43877a8.json",
+      "sha256": "bc6ff936b43877a826f4804313909bf75189df3148efbd20b3bfdce9f460b16d"
+    },
+    {
+      "file": "receipt-000020-2b98af209beb3d78.json",
+      "sha256": "2b98af209beb3d7845bf5105c7bc06e3fe0a1d3e4134a0a13e554143ce7d59f8"
+    },
+    {
+      "file": "receipt-000021-4d2e1adf06dbeff1.json",
+      "sha256": "4d2e1adf06dbeff13f27e7110782cf9d57e4ae5ccb89aaeb9a5594a3dbda60c3"
+    },
+    {
+      "file": "receipt-000022-bcb36f1c163a2e62.json",
+      "sha256": "bcb36f1c163a2e62eb502c4519b9fe1ad2389a27cdb5497380f4dc8d2e226c88"
+    },
+    {
+      "file": "receipt-000023-b61fb2dff5e11cff.json",
+      "sha256": "b61fb2dff5e11cff0cfe63a00bbb2cca88b16bd1ea84eb188e790911bfc8c9db"
+    },
+    {
+      "file": "receipt-000024-bcfab4ce0673c761.json",
+      "sha256": "bcfab4ce0673c76158da9bce5e3e45edb9e8b3d7b316b05f8fac09edd812a5e6"
+    },
+    {
+      "file": "receipt-000025-6e5f45552c720f90.json",
+      "sha256": "6e5f45552c720f90c7f5e4d3070feec83ce113724dc8672272438a5a2638c46f"
+    },
+    {
+      "file": "receipt-000026-9260ec2bb387796d.json",
+      "sha256": "9260ec2bb387796d243964c1d78faeb3da8aba02a41edd4973aab28f26c327fb"
+    },
+    {
+      "file": "receipt-000027-c02ee3a70ff61230.json",
+      "sha256": "c02ee3a70ff61230f4c1f15080d64617a5ae8fe36dc20aa2c8b9ef851fe68566"
+    },
+    {
+      "file": "receipt-000028-c82663a9aeeb18d1.json",
+      "sha256": "c82663a9aeeb18d15bee7d1095399d488f77ce8f3ba495e3f2a99171b2549906"
+    },
+    {
+      "file": "receipt-000029-0e0968bd2009e85f.json",
+      "sha256": "0e0968bd2009e85f06c74bcdc5fe255ed7ffce1b215c5b4267b24730c03109f7"
+    },
+    {
+      "file": "receipt-000030-e657df07535ced90.json",
+      "sha256": "e657df07535ced90b7602ac3e7d85c49258ecf0b6e0ec66c5ba940fa58e1d648"
+    },
+    {
+      "file": "receipt-000031-1f47b9ef6bad81f4.json",
+      "sha256": "1f47b9ef6bad81f4a133aedb640c4292a59b54ec4e8b7cc702f9705b503f0e4e"
+    },
+    {
+      "file": "receipt-000032-3826c597064feb9c.json",
+      "sha256": "3826c597064feb9ca344f477c7c10d8b9e42c08099ebc36c6523069648d1386c"
+    },
+    {
+      "file": "receipt-000033-7634e7c7cdb4687e.json",
+      "sha256": "7634e7c7cdb4687eb46595f651024abe5b9f26c8b49da9de7ec41bfed3d608d1"
+    },
+    {
+      "file": "receipt-000034-55537b8cab01a580.json",
+      "sha256": "55537b8cab01a580c9ceadc6bfb2a82d06a405176f7bf23f60e21f74460e5d96"
+    },
+    {
+      "file": "receipt-000035-79fdf31595cdaa53.json",
+      "sha256": "79fdf31595cdaa53db8c56c241eac6714da60e2114d23328d75260382af3ae7b"
+    },
+    {
+      "file": "receipt-000036-8b4bf0f8103aec35.json",
+      "sha256": "8b4bf0f8103aec35b1656de2450784d5a3f6c9ed2caaec2f34dd7678f0ade1b3"
+    },
+    {
+      "file": "receipt-000037-dd92ba347324d296.json",
+      "sha256": "dd92ba347324d2969ab4ecb0b0af6de1403302738394e5ef318904c5835eb00a"
+    },
+    {
+      "file": "receipt-000038-0501382bb735ca59.json",
+      "sha256": "0501382bb735ca592aec45268be6c5c043dce155b5944a82f83c5ca5c351b60e"
+    }
+  ],
+  "sources": [
+    {
+      "id": "coverage.csv",
+      "sha256": "cd9d5e2f9284f239abb62c3c84d5a0727739c8bf924a8d17fd433687665378b5",
+      "private_location": "Desktop/Coach House Codex Workstreams/coverage.csv"
+    },
+    {
+      "id": "original-verbatim.txt",
+      "sha256": "ec84c7f291074212b485c9266efb39172f436e5dcb30c1f0b781708f7a079f5d",
+      "private_location": "Desktop/Coach House Codex Workstreams/original-verbatim.txt"
+    },
+    {
+      "id": "sources/handoff-2026-10-12.md",
+      "sha256": "c829e6ccbd13fb8a3abf78a7fb1e115ba58c6df57877e8493b24750bd8883602",
+      "private_location": "Desktop/Coach House Codex Workstreams/sources/handoff-2026-10-12.md"
+    },
+    {
+      "id": "SHIP.md",
+      "sha256": "95d022ae9d5ed7318cad67f54fb21fa12669d6716cdf500bccab99ec42636fef",
+      "private_location": "Desktop/Coach House Codex Workstreams/SHIP.md"
+    }
+  ],
+  "queue": [
+    {
+      "id": "SHIP-000",
+      "workstream": "00",
+      "source_ids": [
+        "SHIP.md:Phase-0"
+      ],
+      "scope": "Shared SHIP runner, sanitized queue, evidence gates and startup discovery",
+      "exclusions": [
+        "Application changes",
+        "Provider mutations",
+        "Website publication",
+        "Dashboard service"
+      ],
+      "acceptance": [
+        "Exclusive claim and atomic stale-write rejection",
+        "Restart and interrupted-write recovery",
+        "Fail-closed review, quality, deployment and closeout gates",
+        "Read-only provider reconciliation",
+        "Reviewable remotely recoverable PR"
+      ],
+      "dependencies": [],
+      "kind": "tooling",
+      "status": "blocked",
+      "next_action": "Review PR299 at 3d732257f85032d9d8c3b646a0022bc27726dd03 and pass current-head quality/code-owner gates; review/apply four exact coordinate corrections deliberately; deploy and let user check markers/choices. Preserve original released SHIP000 head/evidence and prior unresolved gates. No Supabase previews, roster redo or browser sweep.",
+      "resume_state": "awaiting_review"
+    },
+    {
+      "id": "AUDIT-001",
+      "workstream": "09",
+      "source_ids": [
+        "handoff:1.1",
+        "handoff:1.2",
+        "handoff:1.6"
+      ],
+      "scope": "Read-only verification of community, publication/sitemap and fiscal disclosure findings",
+      "exclusions": [
+        "Website implementation",
+        "Publishing",
+        "Payments or legal policy changes"
+      ],
+      "acceptance": [
+        "Reproduce or dismiss each finding against current source and production",
+        "Map findings to existing owners",
+        "Present smallest proposed fix and required decisions"
+      ],
+      "dependencies": [
+        "SHIP-000"
+      ],
+      "kind": "application",
+      "status": "queued",
+      "next_action": "After SHIP-000 closes, verify findings without website edits",
+      "plan_refs": [
+        {
+          "workstream": "09",
+          "stages": [
+            1
+          ]
+        },
+        {
+          "workstream": "05",
+          "stages": [
+            1
+          ]
+        },
+        {
+          "workstream": "03",
+          "stages": [
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "intake_manifest": "docs/shipping/intake.json",
+  "intake_count": 176
+}

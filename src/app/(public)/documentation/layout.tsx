@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
+import { resolveDashboardLayoutState } from "@/components/app-shell/dashboard-layout-state"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import { DocumentationShell } from "@/features/nonprofit-documentation"
 
 export const metadata: Metadata = {
@@ -20,6 +22,22 @@ export const metadata: Metadata = {
   },
 }
 
-export default function DocumentationLayout({ children }: { children: ReactNode }) {
-  return <DocumentationShell>{children}</DocumentationShell>
+export default async function DocumentationLayout({
+  children,
+}: {
+  children: ReactNode
+}) {
+  const [shellState, defaultSidebarOpen] = await Promise.all([
+    resolveDashboardLayoutState(),
+    readAppSidebarDefaultOpen(),
+  ])
+
+  return (
+    <DocumentationShell
+      state={shellState.userPresent ? shellState : null}
+      defaultSidebarOpen={defaultSidebarOpen}
+    >
+      {children}
+    </DocumentationShell>
+  )
 }

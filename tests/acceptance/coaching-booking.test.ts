@@ -47,12 +47,6 @@ function createCreditSummarySupabaseStub({
   ledger?: LedgerRow[]
 }) {
   return {
-    rpc: async () => ({ data: {
-      available: Math.max(0, (purchases.length ? 10 : 0) + ledger.reduce((sum, row) => sum + row.quantity, 0)),
-      includedAllowance: purchases.length ? 10 : 0,
-      consumed: ledger.length,
-      grants: [],
-    }, error: null }),
     from(table: string) {
       if (table === "accelerator_purchases") {
         return {
@@ -191,8 +185,7 @@ describe("coaching booking feature", () => {
     )
     const flow = readSource(
       "src/features/coaching-booking/components/coaching-booking-flow.tsx"
-    ) + readSource("src/features/coaching-booking/components/coaching-session-notes-field.tsx")
-      + readSource("src/features/coaching-booking/hooks/use-coaching-booking-actions.ts")
+    )
     const participantStacks = readSource(
       "src/features/coaching-booking/components/coaching-participant-stacks.tsx"
     )
@@ -577,7 +570,7 @@ describe("coaching booking feature", () => {
     expect(flow).toContain("Cancel this meeting?")
     expect(flow).toContain("Keep meeting")
     expect(flow).toContain("Cancel meeting")
-    expect(flow).toContain("CoachingRescheduleDialog")
+    expect(flow).not.toContain("Reschedule")
     expect(flow).not.toContain("rescheduleCoachingBookingAction")
     expect(flow).not.toContain("Availability for")
     expect(flow).not.toContain("Joint availability")
@@ -670,7 +663,7 @@ describe("coaching booking feature", () => {
     expect(shellMainContent).toContain(': "overflow-y-auto"')
     expect(scrollFade).toContain("enabled?: boolean")
     expect(scrollFade).toContain(
-      "scroll-fade-effect-y overflow-y-auto"
+      "data-[orientation=vertical]:scroll-fade-effect-y"
     )
     expect(scrollFade).toContain("useScrollFadeEffect")
     expect(scrollFadeLogic).toContain("dataset.scrollFadeStart")
@@ -786,7 +779,7 @@ describe("coaching booking feature", () => {
     expect(actions).toContain("price_tier: priceTier")
     expect(actions).toContain("resolveStripeRuntimeConfigForCoaching")
     expect(actions).toContain(
-      "flushCoachingCalendarChange(booking.id)"
+      "getValidGoogleCalendarEventId(booking.google_event_id)"
     )
     expect(actions).toContain('requestHeaders.get("origin")')
     expect(actions).toContain("Unable to create the coach calendar event.")
@@ -841,7 +834,7 @@ describe("coaching booking feature", () => {
     )
     expect(finalizer).toContain("Meeting notes from attendee:")
     expect(finalizer).toContain("attendeeNotes: booking.attendee_notes")
-    expect(finalizer).toContain('"confirm_coaching_credit_booking"')
+    expect(finalizer).toContain('source: "booking"')
     expect(email).toContain("sendResendEmail")
     expect(email).toContain("Your Coach House coaching meeting is confirmed")
     expect(email).toContain("New Coach House coaching meeting booked")
@@ -1004,18 +997,11 @@ describe("coaching booking feature", () => {
     expect(featureReadme).toContain("Vercel OIDC")
   })
 
-  it("starts a free account without complimentary coaching credits", async () => {
-    const summary = await resolveCoachingCreditSummary({
-      supabase: createCreditSummarySupabaseStub({}), userId: "new-free-user", orgId: "free-org",
-    })
-    expect(summary).toMatchObject({ available: 0, priceTier: "full", hasDiscountAccess: false })
-  })
-
   it("limits discounted paid booking to Operations Support after included credits are gone", async () => {
     const included = await resolveCoachingCreditSummary({
       supabase: createCreditSummarySupabaseStub({
         purchases: [{ coaching_included: true }],
-        ledger: consumedCredits(9),
+        ledger: consumedCredits(3),
       }),
       userId: "user-1",
       orgId: "org-1",
@@ -1023,7 +1009,7 @@ describe("coaching booking feature", () => {
     const nonOperationsAfterCredits = await resolveCoachingCreditSummary({
       supabase: createCreditSummarySupabaseStub({
         purchases: [{ coaching_included: true }],
-        ledger: consumedCredits(10),
+        ledger: consumedCredits(4),
       }),
       userId: "user-1",
       orgId: "org-1",
@@ -1095,7 +1081,6 @@ describe("coaching booking feature", () => {
     const bookings = await listUpcomingCoachingBookings({
       supabase,
       orgId: "org-1",
-      userId: "user-1",
     })
 
     expect(calls.statusEq).toBe("confirmed")

@@ -24,19 +24,28 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-Live-site pricing/Donate preparation: `fix/live-site-pricing-donate-20261013`,
-checkout `coach-house-platform-live-site-20261013`, localhost:3119. Original
-Desktop packet 09 stages 1, 2 and Donate-only stage 4; LIVE-01/LIVE-02. Header/footer
-Donate and full-page Pricing/Documentation navigation are locally validated
-(35 acceptance tests, three browser behavior tests). User appearance review,
-affected Ubuntu visual references and current-head release gates remain open.
-No Supabase/provider preview setup. [Scope and continuation](../plans/2026-10-13-live-site-pricing-donate.md).
-Preserve the unrelated port 3000 server and existing SHIP blocked history.
-User signup test exposed production email confirmation falling back home when
-localhost:3119 is rejected by the provider redirect allowlist. Local fix restores
-the selected plan after successful OTP verification; 25 auth regression tests
-pass. Production confirmation still uses unpatched deployed code; live retest
-and exact-revision release gates remain outstanding. No provider config changed.
+Live-site pricing/Donate production follow-up: PR #294 merged as `c8f41085`;
+`coachhouse` production is Ready at that revision and serves coachhouse.app.
+Public pricing links, Build navigation and Donate destination/new-tab behavior
+passed live checks. Tools/Donate appearance review remains pending; historical
+quality failures and missing review are preserved, not retroactively approved.
+
+The user’s real production signup reached checkout but stalled at “Finishing
+your upgrade.” Read-only Stripe/app checks confirm the test subscription is
+active with a USD 0 checkout. Production requests retained the unsubstituted
+`{CHECKOUT_SESSION_ID}` token and Stripe returned 404. Repair is isolated in
+`fix/checkout-activation-20261013`, checkout
+`coach-house-platform-checkout-activation-20261013`, based on `c8f41085`.
+Preserve the literal Stripe token while encoding the other return parameters;
+21 focused checkout/activation tests and changed-file lint pass. The same PR295
+also fixes user-reported long email overflow in the account menu; three existing
+menu tests and desktop/mobile containment checks pass. Hosted quality,
+code-owner review, merge/deployment and production retest remain required.
+[Scope and continuation](../plans/2026-10-13-live-site-pricing-donate.md).
+
+Preserve the original pricing checkout/server on localhost:3119 and unrelated
+servers. No Supabase/provider preview setup. Finish this bounded pricing/Donate,
+SHIP and indexing run, or preserve explicit blockers; do not start map work here.
 
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as

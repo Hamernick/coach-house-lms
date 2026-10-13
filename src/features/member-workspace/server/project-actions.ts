@@ -1,9 +1,5 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
-
-import { mergeProjectOptions } from "../lib/project-fiscal-sponsorship"
-
 import { resolveProjectCreateOrgId } from "./project-organization"
 
 import { parseScheduleDay } from "../lib/project-schedule"
@@ -115,7 +111,7 @@ export async function createMemberWorkspaceProjectAction(
     type_label: normalized.value.typeLabel,
     duration_label: normalized.value.durationLabel,
     tags: normalized.value.tags,
-    ...(normalized.value.optionSettings || input.fiscalSponsorshipEnabled ? { option_settings: mergeProjectOptions(undefined, normalized.value.optionSettings, input.fiscalSponsorshipEnabled) } : {}),
+    ...(normalized.value.optionSettings ? { option_settings: normalized.value.optionSettings } : {}),
     member_labels: normalized.value.memberLabels,
     task_count: 0,
     created_source: "user",
@@ -147,7 +143,6 @@ export async function updateMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -163,9 +158,9 @@ export async function updateMemberWorkspaceProjectAction(
   const { data: existingProject, error: existingProjectError } =
     await actor.supabase
       .from("organization_projects")
-      .select("id, org_id, updated_at, recurrence, option_settings")
+      .select("id, org_id, updated_at, recurrence")
       .eq("id", projectId)
-      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string; option_settings?: import("@/lib/supabase").Json }>()
+      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string }>()
 
   if (existingProjectError || !existingProject) {
     if (
@@ -208,7 +203,7 @@ export async function updateMemberWorkspaceProjectAction(
     type_label: normalized.value.typeLabel,
     duration_label: normalized.value.durationLabel,
     tags: normalized.value.tags,
-    ...(normalized.value.optionSettings || input.fiscalSponsorshipEnabled ? { option_settings: mergeProjectOptions(existingProject.option_settings, normalized.value.optionSettings, input.fiscalSponsorshipEnabled) } : {}),
+    ...(normalized.value.optionSettings ? { option_settings: normalized.value.optionSettings } : {}),
     member_labels: normalized.value.memberLabels,
     updated_by: actor.userId,
   }
@@ -241,7 +236,6 @@ export async function updateMemberWorkspaceProjectStatusAction(
   status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"]
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -299,7 +293,6 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   endDate: string
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -375,7 +368,6 @@ export async function deleteMemberWorkspaceProjectAction(
   projectId: string
 ): Promise<MemberWorkspaceDeleteProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })

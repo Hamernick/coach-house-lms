@@ -1,5 +1,4 @@
 import { EditableOptionPicker, type EditableOption } from "../EditableOptionPicker";
-import { PROJECT_WORKSTREAM_OPTIONS } from "../../../lib/project-workstreams";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils";
 import { formatProjectDate } from "@/lib/project-date";
@@ -108,6 +107,13 @@ const SPRINT_TYPES: StepQuickCreateOption[] = [
   { id: "design", label: "Design Sprint" },
   { id: "dev", label: "Dev Sprint" },
   { id: "planning", label: "Planning" },
+];
+
+const WORKSTREAMS: StepQuickCreateOption[] = [
+  { id: "frontend", label: "Frontend" },
+  { id: "backend", label: "Backend" },
+  { id: "design", label: "Design" },
+  { id: "qa", label: "QA" },
 ];
 
 const TAGS: StepQuickCreateTagOption[] = [
@@ -288,7 +294,7 @@ export function StepQuickCreate({
   statuses = STATUSES,
   priorities = PRIORITIES,
   sprintTypes = SPRINT_TYPES,
-  workstreams = PROJECT_WORKSTREAM_OPTIONS,
+  workstreams = WORKSTREAMS,
   tags = TAGS,
   clients: clientOptions = EMPTY_ORGANIZATIONS,
 }: StepQuickCreateProps) {

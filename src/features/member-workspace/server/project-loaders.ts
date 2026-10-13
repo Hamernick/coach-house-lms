@@ -1,5 +1,6 @@
-// Recording fixtures only; staff demo and unfinished real organizations remain visible.
+// Explicit demo accounts only; tester-owned and unfinished real organizations remain visible.
 const DIRECTORY_FIXTURE_ORGANIZATION_IDS = new Set([
+  "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c", // testing123
   "886455ec-a664-4f13-83f1-471ddd1f5ffd", // Southside Community Table recording fixture
 ])
 
@@ -82,7 +83,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
       orgId: organization.orgId,
       name: organization.name,
     }))
-    const [assigneeOptions, canonicalProjects, standardProjects, guestResult] =
+    const [assigneeOptions, canonicalProjects, standardProjects] =
       await Promise.all([
         loadMemberWorkspacePersonOptionsForOrganizations({
           orgIds: [],
@@ -97,13 +98,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
           orgIds,
           supabase: actor.supabase,
         }),
-        directory === "projects"
-          ? actor.supabase.rpc("list_fiscal_guest_projects", { p_user_id: actor.userId })
-          : Promise.resolve({ data: [], error: null }),
       ])
-
-    if (guestResult.error) throw toMemberWorkspaceDataError(guestResult.error, "Unable to load assigned fiscal projects.")
-    const guestProjects = (guestResult.data ?? []) as unknown as OrganizationProjectRecord[]
 
     if (!canonicalProjects || !standardProjects) {
       return {
@@ -138,13 +133,9 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
         const viewModel = mapOrganizationProjectToViewModel(project)
         const organization = organizationByProjectId.get(project.id)
         if (!organization) return viewModel
-        const organizationView = mapAdminOrganizationSummaryToProject(organization)
 
         return {
           ...viewModel,
-          organizationImageUrl: organizationView.organizationImageUrl,
-          client: organizationView.client,
-          durationLabel: organizationView.durationLabel,
           progress: organization.setupProgress,
           primaryPersonName: organization.ownerName,
           primaryPersonAvatarUrl: organization.ownerAvatarUrl,
@@ -152,7 +143,6 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
         }
       }),
       ...standardProjects.map(mapOrganizationProjectToViewModel).map((project) => ({ ...project, client: project.organizationUnassigned ? undefined : organizationNames.get(project.organizationId ?? "") ?? undefined })),
-      ...guestProjects.map(mapOrganizationProjectToViewModel),
     ]
     const workstreamConfiguration =
       await loadPlatformAdminWorkstreamConfiguration({
@@ -182,7 +172,7 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
       storageMode: "custom" as const,
       starterProjectCount: 0,
       hasUserProjects:
-        organizationsWithProjectIds.length > 0 || standardProjects.length > 0 || guestProjects.length > 0,
+        organizationsWithProjectIds.length > 0 || standardProjects.length > 0,
       canResetStarterData: false,
       canCreateProjects: true,
       scope: "platform-admin" as const,

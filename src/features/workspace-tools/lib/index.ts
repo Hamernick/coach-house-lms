@@ -2,6 +2,12 @@ import type { WorkspaceToolDefinition, WorkspaceToolsInput } from "../types"
 
 export const WORKSPACE_TOOL_DEFINITIONS: readonly WorkspaceToolDefinition[] = [
   {
+    id: "stripe",
+    name: "Stripe",
+    description: "Sync Stripe transactions into Finance.",
+    searchTerms: ["payments", "finance", "transactions"],
+  },
+  {
     id: "google-calendar",
     name: "Google Calendar",
     description: "Your schedule alongside board events.",

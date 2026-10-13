@@ -31,8 +31,9 @@ describe("workspace-tools feature contract", () => {
     expect(markup).toContain('aria-checked="true"')
     expect(markup).toContain("Sync on")
   })
-  it("keeps unreleased Stripe hidden while offering Calendar and Drive", () => {
+  it("offers the approved Stripe, Calendar, and Google Drive catalog", () => {
     expect(WORKSPACE_TOOL_DEFINITIONS.map((tool) => tool.id)).toEqual([
+      "stripe",
       "google-calendar",
       "google-drive",
     ])
@@ -40,7 +41,7 @@ describe("workspace-tools feature contract", () => {
       WORKSPACE_TOOL_DEFINITIONS.filter((tool) =>
         workspaceToolMatchesQuery(tool, "payments")
       ).map((tool) => tool.id)
-    ).toEqual([])
+    ).toEqual(["stripe"])
     expect(
       WORKSPACE_TOOL_DEFINITIONS.filter((tool) =>
         workspaceToolMatchesQuery(tool, "docs")

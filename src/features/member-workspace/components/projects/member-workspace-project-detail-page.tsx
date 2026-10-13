@@ -1,6 +1,5 @@
 "use client"
 
-import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import type { CoachingAvatar } from "@/components/coaching/coaching-avatar-group"
 
 import {
@@ -54,12 +53,9 @@ import { useProjectAssetActions } from "./member-workspace-project-asset-actions
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
 
 type MemberWorkspaceProjectDetailPageProps = {
-  organizationPrograms?: OrgProgram[]
-  coachControl?: ReactNode
   assignedCoaches?: CoachingAvatar[] | null
   assignedCoachNames?: string[] | null
   adminBilling?: ReactNode
-  coachingCredits?: ReactNode
   project: ProjectDetails
   assigneeOptions: MemberWorkspacePersonOption[]
   currentUser: User
@@ -195,10 +191,7 @@ function useMemberWorkspaceProjectDelete({
 }
 
 export function MemberWorkspaceProjectDetailPage({
-  organizationPrograms,
   adminBilling,
-  coachingCredits,
-  coachControl,
   assignedCoachNames,
   assignedCoaches,
   project: serverProject,
@@ -274,6 +267,20 @@ export function MemberWorkspaceProjectDetailPage({
       ),
     [projectDraft, initialProjectDraft]
   )
+
+  const copyLink = useCallback(async () => {
+    if (!navigator.clipboard) {
+      toast.error("Clipboard not available")
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success("Link copied")
+    } catch {
+      toast.error("Failed to copy link")
+    }
+  }, [])
 
   const handleNavigateFiscalUpdate = useCallback((href: string) => {
     if (!href.startsWith("#")) return
@@ -404,6 +411,7 @@ export function MemberWorkspaceProjectDetailPage({
           deleteProjectOpen={deleteProjectOpen}
           showMeta={showMeta}
           onCancelProjectEditing={handleCancelProjectEditing}
+          onCopyLink={copyLink}
           onDeleteProject={handleDeleteProject}
           onDeleteProjectOpenChange={setDeleteProjectOpen}
           onSaveProject={handleSaveProject}
@@ -425,10 +433,9 @@ export function MemberWorkspaceProjectDetailPage({
               >
                 <div className="space-y-6 pt-4 pb-8">
                   <MemberWorkspaceProjectDetailHeader
-                    coachControl={coachControl}
                     assignedCoachNames={assignedCoachNames}
                     assignedCoaches={assignedCoaches}
-                    project={project} organizationSummary={directoryHref === "/organizations" ? organizationSummary : undefined}
+                    project={project}
                     assigneeOptions={assigneeOptions}
                     canEditProject={
                       canEditProjectDetails && Boolean(updateProjectAction)
@@ -440,11 +447,9 @@ export function MemberWorkspaceProjectDetailPage({
                   />
 
                   <MemberWorkspaceProjectDetailTabs
-                    showOrganizationPrograms={directoryHref === "/organizations"}
-                    organizationPrograms={organizationPrograms} activeTab={activeTab}
+                    activeTab={activeTab}
                     assigneeOptions={assigneeOptions}
                     canConnectFiscalDocuments={canEditProjectDetails}
-                    canAddProjectTabs={canEditProjectDetails}
                     connectFiscalSponsorshipDocumentAssetAction={
                       connectFiscalSponsorshipDocumentAssetAction
                     }
@@ -517,12 +522,7 @@ export function MemberWorkspaceProjectDetailPage({
                     >
                       <MemberWorkspaceProjectRightMetaPanel
                         updateScheduleAction={canEditProjectDetails ? updateScheduleAction : undefined}
-                        adminBilling={adminBilling || (directoryHref === "/organizations" && coachingCredits) ? (
-                          <div className="space-y-4">
-                            {directoryHref === "/organizations" ? coachingCredits : null}
-                            {adminBilling}
-                          </div>
-                        ) : null}
+                        adminBilling={adminBilling}
                         project={project}
                         organizationSummary={organizationSummary}
                         fiscalSponsorshipWorkflowSummary={

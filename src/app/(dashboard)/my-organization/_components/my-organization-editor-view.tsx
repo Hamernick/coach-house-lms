@@ -23,7 +23,6 @@ type MyOrganizationEditorViewProps = {
   initialEditMode?: boolean
   canEdit: boolean
   embedded?: boolean
-  scrollMode?: "self" | "parent"
 }
 
 export function MyOrganizationEditorView({
@@ -37,7 +36,6 @@ export function MyOrganizationEditorView({
   initialEditMode = false,
   canEdit,
   embedded = false,
-  scrollMode = "self",
 }: MyOrganizationEditorViewProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null)
   const [hasScrollableOverflow, setHasScrollableOverflow] = useState(false)
@@ -51,7 +49,6 @@ export function MyOrganizationEditorView({
   }, [])
 
   useEffect(() => {
-    if (scrollMode === "parent") return
     const viewport = scrollViewportRef.current
     if (!viewport) return
 
@@ -84,24 +81,7 @@ export function MyOrganizationEditorView({
       resizeObserver?.disconnect()
       mutationObserver?.disconnect()
     }
-  }, [scrollMode, updateScrollableOverflow])
-
-  const profileCard = (
-    <OrgProfileCard
-      initial={initialProfile}
-      people={people}
-      programs={programs}
-      initialTab={initialTab}
-      initialProgramId={initialProgramId}
-      initialProgramStep={initialProgramStep}
-      initialFocus={initialFocus}
-      initialEditMode={initialEditMode}
-      canEdit={canEdit}
-    />
-  )
-
-  // The drawer tab owns scrolling across its full width, including the gutters.
-  if (scrollMode === "parent") return profileCard
+  }, [updateScrollableOverflow])
 
   return (
     <div
@@ -119,7 +99,17 @@ export function MyOrganizationEditorView({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
           style={{ scrollbarGutter: "stable" }}
         >
-          {profileCard}
+          <OrgProfileCard
+            initial={initialProfile}
+            people={people}
+            programs={programs}
+            initialTab={initialTab}
+            initialProgramId={initialProgramId}
+            initialProgramStep={initialProgramStep}
+            initialFocus={initialFocus}
+            initialEditMode={initialEditMode}
+            canEdit={canEdit}
+          />
         </ScrollFadeEffect>
       </section>
     </div>

@@ -20,6 +20,7 @@ export type FindResourceIndexItem = {
   subtitle: string | null
   latitude: number | null
   longitude: number | null
+  addressStreet?: string | null
   city: string | null
   state: string | null
   country: string | null

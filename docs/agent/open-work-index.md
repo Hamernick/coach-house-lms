@@ -24,13 +24,14 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-LIVE-03 reported production follow-up is active: two RLS Resource Service entries
-are leaked synthetic test fixtures. [Diagnosis and bounded fix](../plans/2026-10-13-resource-test-records.md).
-Branch `fix/public-resource-test-records-20261013` reuses the map checkout,
-base `e49a31bd`; 64 focused tests pass after four reproduced failures. The shared
-public visibility boundary excludes the complete known fixture signature and
-cached detail/index keys advance. CI/review/deployment remain open; no live data
-mutation or agent visual sweep. PR297 merged per user; do not recheck that report.
+LIVE-03 full published-data audit and map follow-up is active in [PR299](https://github.com/Hamernick/CoachHouse/pull/299).
+[Audit and repair boundary](../plans/2026-10-13-resource-map-audit.md): all 877published resources,
+877 underlying location rows and 21 public organizations audited;875 real service records become871places.
+Shared pins open a choice list first; all viewport pages load beyond 500; confirmed aliases preserve IDs/schedules.
+Branch `fix/public-resource-test-records-20261013` in the map checkout, base e49a31bd, localhost3115.
+Four verified public contact-coordinate corrections are prepared as guarded SQL, not applied.
+Current-head CI/code-owner review, deliberate data step, deployment and user map check remain open.
+No Supabase preview, production mutation or agent visual sweep. PR297 merged per user; do not recheck.
 
 LIVE-04 compact banners are prepared separately in [PR298](https://github.com/Hamernick/CoachHouse/pull/298),
 branch `fix/upgrade-banner-layout-20261013`, worktree `coach-house-platform-upgrade-banners-20261013`,

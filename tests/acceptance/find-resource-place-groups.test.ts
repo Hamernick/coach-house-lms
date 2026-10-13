@@ -59,3 +59,22 @@ describe("published resource place identity", () => {
     expect(second.page.hasMore).toBe(false)
   })
 })
+
+
+describe("audited provider name aliases", () => {
+  it("consolidates the confirmed Portage spelling variant and keeps both saved IDs", () => {
+    const a = { ...library, id: "resource_map:887e6a14-2367-4c97-bda6-10509e5b3f93", title: "Iglesia Evangelical De Cristo", addressStreet: "5929 Stone Ave.", city: "Portage", state: "IN", latitude: 41.5633351, longitude: -87.1858411 }
+    const b = { ...a, id: "resource_map:8903177f-5f18-48a7-9f5f-6e58b392e190", title: "Iglesia Evangelica De Cristo", addressStreet: "5929 Stone Avenue, Portage, IN 46368", latitude: 41.56478, longitude: -87.18675 }
+    expect(groupResourcePlaces([a, b])).toHaveLength(1)
+    expect(groupResourcePlaces([a, { ...b, title: "Another ministry" }])).toHaveLength(2)
+    expect(groupResourcePlaces([a, { ...b, addressStreet: "6001 Stone Avenue" }])).toHaveLength(2)
+    expect(groupResourcePlaces([a, { ...b, latitude: 42 }])).toHaveLength(2)
+  })
+  it("consolidates Evening Star aliases while preserving different service hours", () => {
+    const a = { ...library, id: "resource_map:758a9108-48e4-4031-81d8-f695f7700097", title: "Operation Blessing Evening Star", services: [{id:"sat",title:"Pantry",hoursLabel:"Saturday 9–11"}] }
+    const b = { ...a, id: "resource_map:7c60815a-b24f-41d7-8d4d-410ee500cef6", title: "Evening Star MBC", services: [{id:"thu",title:"Pantry",hoursLabel:"Thursday 12–2"}] }
+    const groups = groupResourcePlaces([a, b])
+    expect(groups).toHaveLength(1)
+    expect(mergeResourcePlace(groups[0]).services?.map(s=>s.hoursLabel)).toEqual(["Saturday 9–11", "Thursday 12–2"])
+  })
+})

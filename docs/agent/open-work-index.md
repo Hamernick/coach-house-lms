@@ -25,8 +25,12 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 ## SHIP orchestration
 
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
-worktree `coach-house-platform-ship-20261013`. Phase 0 locally implemented;
-human approval, current-head quality, code-owner review and merge remain open.
+worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as
+`ce1436a2` on October 13; quality failed and code-owner review remains missing.
+Shared closure is blocked; preserve its original reviewed head and evidence.
+The requested original-plan linkage is prepared separately in
+`chore/ship-plan-links-20261013`, worktree `coach-house-platform-ship-plans-20261013`.
+It links the ten existing packets and 59 stages, without starting another product slice.
 Use the canonical shared record before selecting any new release slice. Source
 packets are private references; existing closed lanes remain closed.
 

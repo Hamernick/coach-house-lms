@@ -1,8 +1,12 @@
 # SHIP
 
 One release at a time. Read this after the current runlog and open-work index,
-before choosing work. Phase 0 is awaiting review; this is an operator-run tool,
+before choosing work. Phase 0 merged externally with unresolved release gates; this is an operator-run tool,
 not a background service. Never treat a queued source reference as unfinished work.
+
+Read the original packet and numbered stage before work: `ship.py plans` lists
+them; `ship.py prompt --workstream ID --stage N` prints the full private originals.
+See [original planning files](shipping/README.md#original-planning-files).
 
 ```sh
 python3 docs/shipping/ship.py status

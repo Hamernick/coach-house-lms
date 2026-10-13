@@ -5,7 +5,7 @@ Captured: 20261013T005640Z. Source baseline: `b1be59a71e702e096dd2641c39a2d44380
 105 prior registrations: 65 new recovery branches / 74 file-state commits; 40 clean states already in origin history.
 Nine dirty checkouts / 874 changed or untracked paths captured. Six missing-path states need new snapshots; six already have remote history.
 All existing directories retained; missing directories are recorded, not pruned.
-Upload verification: pending.
+Remote verification passed at 2026-10-13T01:00:46.590367+00:00: all 65 new branch hashes match; all 40 existing states remain reachable from live remote tips. Root snapshot restored from a fresh GitHub clone; tree hash, clean status and git fsck passed.
 
 | Source branch | Checkout | Local changes | Recovery ref | Snapshot commit | Retention |
 | --- | --- | ---: | --- | --- | --- |

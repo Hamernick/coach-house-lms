@@ -36,7 +36,7 @@ servers on 3000 (frontpage) and 3008 (Particles) are preserved.
 
 Detailed private capture and scan records:
 `~/.local/share/coach-house/flightplan/CURRENT-RECOVERY` points to the JSON manifest.
-The public ledger will record every checkout's source and verified recovery ref.
+The [public ledger](recovery-ledger.md) records every checkout's source and verified recovery ref.
 
 ## Retention
 
@@ -65,4 +65,18 @@ assigned preview port after checking its owner.
 
 ## Verification
 
-Capture, scanning, remote upload and restore verification are in progress.
+- Verified 2026-10-13T01:00:46.590367+00:00: 65 new recovery branches match exact GitHub hashes;
+  40 clean states remain reachable from live remote tips.
+- Nine dirty checkouts / 874 changed or untracked paths captured. Working files
+  are preserved in addition to committed states; no original worktree was switched.
+- 793 new outgoing blobs / 14.98 MB scanned with zero findings. Mixed local
+  history was intentionally excluded, including historical scan findings.
+- Fresh GitHub clone of root recovery snapshot `b69cc0a9c8340159f249c06d8159f62fd12ed2d3`:
+  tree `0194eb73e528732011e1398939556cf4335bc444`, clean checkout, git fsck passed, and the previously
+  untracked Calendar plan restored successfully.
+- All original checkouts retained. Twelve missing-directory registrations remain
+  documented; their surviving Git state is recoverable, while historical uncommitted
+  files from already-missing directories remain unknown.
+- Complete restoration mapping: [105-entry ledger](recovery-ledger.md).
+- FLIGHTPLAN is separately pushed on `chore/flightplan-20261012`.
+- Backup snapshots are not release candidates and do not establish application QA.

@@ -107,25 +107,25 @@ See [recovery audit](flightplan/recovery.md).
 ```json
 {
   "version": 1,
-  "updated_at": "2026-10-13T00:58:54+00:00",
-  "next": "Preserve local code on GitHub; receive the task list.",
+  "updated_at": "2026-10-13T01:02:14+00:00",
+  "next": "Receive the long task list; group and order workstreams.",
   "forecast": "No delivery dates until scope, dependencies and estimates are recorded.",
   "projects": [
     {
       "id": "FP-001",
       "title": "Project dashboard and chat handoffs",
       "outcome": "One Markdown authority, terminal dashboard, and reproducible workstream kickoff prompts.",
-      "status": "active",
+      "status": "complete",
       "depends_on": [],
       "branch": "chore/flightplan-20261012",
       "worktree": "/Users/calebhamernick/Development/coach-house-platform-flightplan-20261012",
       "localhost": "None: terminal-only",
-      "backup": "Local; remote verification pending",
+      "backup": "Verified on GitHub: chore/flightplan-20261012; initial dashboard checkpoint 32c268af.",
       "release": "Internal planning tool; no application deployment",
-      "next": "Validate TUI, preserve remotely, then ingest the user task list.",
+      "next": "Ingest the user task list; issue specific workstream prompts.",
       "estimate": "Not estimated",
       "confidence": "High for dashboard; task scope pending",
-      "updated_at": "2026-10-13T00:58:54+00:00",
+      "updated_at": "2026-10-13T01:02:14+00:00",
       "milestones": [
         {
           "title": "Agree dashboard design and isolated branch",
@@ -144,8 +144,8 @@ See [recovery audit](flightplan/recovery.md).
         },
         {
           "title": "Verify remote recovery copy",
-          "done": false,
-          "evidence": ""
+          "done": true,
+          "evidence": "Initial dashboard checkpoint 32c268af matched git ls-remote; subsequent completion record pushed on the same branch."
         }
       ],
       "prompt": "Read AGENTS.md, its canonical continuation documents, and /Users/calebhamernick/Development/coach-house-platform-flightplan-20261012/docs/FLIGHTPLAN.md. Work only on the selected project. Preserve unrelated dirty files, checkouts and servers. Verify saved evidence before resuming; never restart completed work. Continue FP-001 in its existing assigned branch/worktree; do not create a duplicate lane. Run python3 docs/flightplan/dashboard.py --once. Reconcile project receipts and ask for the raw task list if it has not arrived. Preserve original requests, group into independently deliverable workstreams, order by dependency, identify shared-file conflicts and produce a specific kickoff prompt for each project. Record forecasts as ranges with assumptions, not invented dates."
@@ -154,17 +154,17 @@ See [recovery audit](flightplan/recovery.md).
       "id": "SAFE-001",
       "title": "Recoverable worktree backups",
       "outcome": "Recent local code and plans are preserved on verified GitHub recovery branches without disturbing active worktrees.",
-      "status": "active",
+      "status": "complete",
       "depends_on": [],
       "branch": "Audit only; source branches unchanged",
       "worktree": "All registered Coach House worktrees",
       "localhost": "Existing 3000 and 3008 servers preserved",
-      "backup": "Local code audit complete; GitHub recovery snapshots in progress. Private files already cloud-backed per user.",
+      "backup": "65 recovery branches verified; 40 existing states verified remotely reachable. Root restore passed.",
       "release": "Backup is not release approval",
-      "next": "Secret-scan and push recovery snapshots; verify remote hashes and restore.",
+      "next": "Retain all checkouts; checkpoint subsequent edits and import new work into FLIGHTPLAN.",
       "estimate": "Pending scan and snapshot verification",
-      "confidence": "Inventory verified at snapshot time; later edits need recheck",
-      "updated_at": "2026-10-13T00:53:28+00:00",
+      "confidence": "Verified at cutoff; later edits need a new checkpoint.",
+      "updated_at": "2026-10-13T01:02:14+00:00",
       "milestones": [
         {
           "title": "Inventory local changes and remote reachability",
@@ -173,23 +173,23 @@ See [recovery audit](flightplan/recovery.md).
         },
         {
           "title": "Capture recent local code and plans without changing source worktrees",
-          "done": false,
-          "evidence": ""
+          "done": true,
+          "evidence": "65 recovery branches / 74 complete file-state commits; nine dirty checkouts / 874 changed or untracked paths captured."
         },
         {
           "title": "Scan outgoing content and preserve on GitHub recovery branches",
-          "done": false,
-          "evidence": ""
+          "done": true,
+          "evidence": "793 new blobs scanned: zero findings. Atomic GitHub push completed; no mixed local history replay."
         },
         {
           "title": "Verify remote hashes and an independent restore",
-          "done": false,
-          "evidence": ""
+          "done": true,
+          "evidence": "All 65 remote hashes matched; 40 existing states remain reachable. Fresh root clone: clean, matching tree, git fsck passed."
         },
         {
           "title": "Record recovery references and retention decisions",
-          "done": false,
-          "evidence": ""
+          "done": true,
+          "evidence": "docs/flightplan/recovery-ledger.md covers all 105 prior registrations; retain every original checkout; missing-directory limitations recorded."
         }
       ],
       "prompt": "Read AGENTS.md, its canonical continuation documents, and /Users/calebhamernick/Development/coach-house-platform-flightplan-20261012/docs/FLIGHTPLAN.md. Work only on the selected project. Preserve unrelated dirty files, checkouts and servers. Verify saved evidence before resuming; never restart completed work. Continue SAFE-001 using docs/flightplan/recovery.md. The user clarified private files already have cloud backups; scope is local code/plans not pushed to GitHub. Recheck live worktree changes and remote reachability. Preserve changes on clearly labeled recovery branches after secret scanning; never push mixed history wholesale. Leave active source indexes, branches and servers unchanged. Record exact remote hashes and restore verification. Retain checkouts until cleanup is explicitly authorized; do not merge, deploy, reset, clean or prune."

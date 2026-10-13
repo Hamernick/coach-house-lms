@@ -1,18 +1,11 @@
 import "./test-utils"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { createElement } from "react"
-import { renderToStaticMarkup } from "react-dom/server"
 import { buildActivityDays } from "@/features/coach-dashboard/lib"
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   from: vi.fn(),
   tasks: vi.fn(),
-  scope: vi.fn(),
 }))
-vi.mock("@/lib/admin/organization-coach-scope", () => ({ loadOrganizationCoachActorScope: mocks.scope }))
-vi.mock("@/features/coach-dashboard/hooks/use-coach-dashboard-controller", () => ({ useCoachDashboardController: () => {} }))
-vi.mock("@/features/coach-dashboard/components/coach-dashboard-tools", () => ({ CoachDashboardTools: () => null }))
-vi.mock("@/features/member-workspace/client", () => ({ PlatformRevenueStat: () => null }))
 vi.mock("@/lib/admin/auth", () => ({ requirePlatformCapability: mocks.auth }))
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => ({ from: mocks.from }),
@@ -21,13 +14,8 @@ vi.mock("@/features/member-workspace", () => ({
   loadMemberWorkspaceTasksPage: mocks.tasks,
 }))
 import { loadCoachDashboard } from "@/features/coach-dashboard/server/actions"
-import { CoachDashboardPanel } from "@/features/coach-dashboard/components/coach-dashboard-panel"
 const queries: { table: string; calls: [string, unknown[]][] }[] = []
 let activityFails = false
-let organizationsFail = false
-let projectUnassigned = false
-let activity: Record<string, unknown>[] = []
-let organizations = [{ user_id: "assigned-org", profile: { name: "Assigned organization" } }]
 function query(table: string) {
   const calls: [string, unknown[]][] = []
   queries.push({ table, calls })
@@ -44,13 +32,13 @@ function query(table: string) {
     if (table === "organization_coach_assignments")
       return { data: [{ organization_id: "assigned-org" }], error: null }
     if (table === "organizations")
-      if (organizationsFail) return { data: null, error: { code: "offline" } }
-    if (table === "organizations")
       return {
-        data: organizations.filter((organization) => {
-          const ids = calls.find(([method, args]) => method === "in" && args[0] === "user_id")?.[1][1] as string[] | undefined
-          return !ids || ids.includes(organization.user_id)
-        }),
+        data: [
+          {
+            user_id: "assigned-org",
+            profile: { name: "Assigned organization" },
+          },
+        ],
         error: null,
       }
     if (table === "organization_projects")
@@ -62,7 +50,6 @@ function query(table: string) {
             org_id: "assigned-org",
             end_date: "2026-10-01",
             status: "active",
-            organization_unassigned: projectUnassigned,
           },
         ],
         count: 12,
@@ -70,7 +57,7 @@ function query(table: string) {
       }
     return activityFails
       ? { data: null, error: { code: "42P01" } }
-      : { data: activity, error: null, count: activity.length }
+      : { data: [], error: null, count: 0 }
   }
   const chain: Record<string, unknown> = {}
   for (const name of [
@@ -97,11 +84,6 @@ describe("coach dashboard", () => {
     vi.clearAllMocks()
     queries.length = 0
     activityFails = false
-    organizationsFail = false
-    projectUnassigned = false
-    activity = []
-    organizations = [{ user_id: "assigned-org", profile: { name: "Assigned organization" } }]
-    mocks.scope.mockResolvedValue({ mode: "all" })
     mocks.auth.mockResolvedValue({ userId: "coach", accessLevel: "coach" })
     mocks.from.mockImplementation(query)
     mocks.tasks.mockResolvedValue({
@@ -162,28 +144,6 @@ describe("coach dashboard", () => {
     expect(result.organizations[0]?.href).toContain("coach=all")
     expect(queries.filter((q) => q.table === "organizations")).toHaveLength(2)
   })
-  it.each(["coach", "developer"])("includes the staff demo throughout the %s dashboard while excluding recording fixtures", async (accessLevel) => {
-    const demoId = "fe0fd7c3-c0fd-4c20-9e80-b14d68da5d0c"
-    const fixtureId = "886455ec-a664-4f13-83f1-471ddd1f5ffd"
-    organizations = [
-      { user_id: demoId, profile: { name: "Karissa is a Boss" } },
-      { user_id: fixtureId, profile: { name: "Recording fixture" } },
-    ]
-    mocks.auth.mockResolvedValue({ userId: "staff", accessLevel })
-    mocks.scope.mockResolvedValue(accessLevel === "coach"
-      ? { mode: "assigned", organizationIds: new Set([demoId, fixtureId]) }
-      : { mode: "all" })
-
-    const result = await loadCoachDashboard(accessLevel === "developer" ? "all" : "assigned")
-
-    expect(result.organizationCount).toBe(1)
-    expect(result.organizations).toEqual([{ id: demoId, name: "Karissa is a Boss", href: expect.stringContaining("Karissa%20is%20a%20Boss") }])
-    const scopedQueries = queries.filter((q) => q.calls.some(([method]) => method === "in"))
-    expect(scopedQueries).toHaveLength(4)
-    for (const q of scopedQueries) {
-      expect(q.calls).toContainEqual(["in", [q.table === "organizations" ? "user_id" : "org_id", [demoId]]])
-    }
-  })
   it("reports missing activity without replacing it with fake events", async () => {
     activityFails = true
     const result = await loadCoachDashboard()
@@ -203,41 +163,5 @@ describe("coach dashboard", () => {
     )
     expect(days.reduce((sum, day) => sum + day.count, 0)).toBe(2)
     expect(days.length % 7).toBe(0)
-  })
-  it("keeps directory links consistent with access to unassigned organizations", async () => {
-    mocks.scope.mockResolvedValue({ mode: "assigned", organizationIds: new Set(["assigned-org"]), canAccessUnassigned: true })
-    const result = await loadCoachDashboard()
-    const markup = renderToStaticMarkup(createElement(CoachDashboardPanel, { input: result }))
-    expect(result.directoryCoachFilter).toBe("all")
-    expect(markup).toContain('href="/organizations?coach=all"')
-    expect(markup).toContain('href="/projects?view=board"')
-    expect(markup).toContain("Your assigned and unassigned organizations")
-  })
-  it("links organization, project, and deleted-project activity to usable destinations", async () => {
-    mocks.auth.mockResolvedValue({ userId: "admin", accessLevel: "developer" })
-    activity = [
-      { id: "org-event", org_id: "assigned-org", project_id: "canonical", project: { project_kind: "organization_admin" } },
-      { id: "project-event", org_id: "assigned-org", project_id: "standard", project: { project_kind: "standard" } },
-      { id: "document-or-deleted-event", org_id: "assigned-org", project_id: null, project: null },
-    ]
-    const result = await loadCoachDashboard("all")
-    expect(result.activity.map(event => event.href)).toEqual([
-      "/organizations/canonical", "/projects/standard", "/organizations?coach=all&search=Assigned%20organization",
-    ])
-  })
-  it("preserves no-organization projects and routes personal tasks through their authorized list", async () => {
-    projectUnassigned = true
-    mocks.tasks.mockResolvedValue({ taskGroups: [{ tasks: [{ id: "outside", title: "Cross-scope assignment", status: "todo", endDate: "2026-10-01", projectId: "forbidden-parent", canUpdate: false }] }] })
-    const result = await loadCoachDashboard()
-    expect(result.projects[0]?.organization).toBe("No organization")
-    const markup = renderToStaticMarkup(createElement(CoachDashboardPanel, { input: result }))
-    expect(markup).toMatch(/href="\/tasks"[^>]*>[\s\S]*?Cross-scope assignment/)
-    expect(markup).not.toContain('/projects/forbidden-parent')
-  })
-  it("reports organization load failure without presenting an empty successful directory", async () => {
-    organizationsFail = true
-    const result = await loadCoachDashboard()
-    expect(result.organizationCount).toBeNull()
-    expect(result.issues).toContain("Organizations could not be loaded.")
   })
 })

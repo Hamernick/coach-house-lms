@@ -1,7 +1,6 @@
 import type { ProfileTab } from "@/components/organization/org-profile-card/types"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { normalizeWorkspaceDrawerTab } from "@/lib/workspace/routes"
-import { resolveOnboardingRequirements } from "@/lib/onboarding/requirements"
 
 type MyOrganizationRequestContext = NonNullable<
   Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
@@ -62,7 +61,7 @@ export function resolveInitialWorkspaceDrawerData({
       initialRoadmapSectionSlug:
         requestedDrawerTab === "roadmap" ? roadmapSectionParam : null,
       initialFocus:
-        organizationEditorRequested || requestedDrawerTab === "documents" || requestedDrawerTab === "accelerator"
+        organizationEditorRequested || requestedDrawerTab === "documents"
           ? focusParam || null
           : null,
       initialEditMode: viewParam === "editor",
@@ -80,18 +79,14 @@ export function getOnboarding({
   activeOrg,
   profileAudience,
   user,
-}: MyOrganizationRequestContext, organization: { profile: Record<string, unknown>; publicSlug: string | null }) {
+}: MyOrganizationRequestContext) {
   const userMeta =
     (user.user_metadata as Record<string, unknown> | null) ?? null
   return {
     userMeta,
-    needsInitialOnboarding: resolveOnboardingRequirements({
-      userId: user.id,
-      organizationId: activeOrg.orgId,
-      isPlatformStaff: profileAudience.isAdmin || profileAudience.isPlatformStaff,
-      userMetadata: userMeta,
-      organizationProfile: organization.profile,
-      publicSlug: organization.publicSlug,
-    }).required,
+    needsInitialOnboarding:
+      !profileAudience.isAdmin &&
+      !Boolean(userMeta?.onboarding_completed) &&
+      activeOrg.orgId === user.id,
   }
 }

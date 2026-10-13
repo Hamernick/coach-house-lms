@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Paperclip, Tag, X } from "@phosphor-icons/react/dist/ssr"
+import { Paperclip, Microphone, UploadSimple, Tag, X } from "@phosphor-icons/react/dist/ssr"
 
 import type { User } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import { Button } from "@/features/platform-admin-dashboard/upstream/components/ui/button"
@@ -18,8 +18,6 @@ type CreateNoteModalProps = {
     initialTitle?: string
     initialContent?: string
     submitLabel?: string
-    error?: string | null
-    isEditing?: boolean
     onCreateNote: (title: string, content: string) => void
     onRequestUpload: (input: {
         content: string
@@ -36,8 +34,6 @@ export function CreateNoteModal({
     initialTitle,
     initialContent,
     submitLabel,
-    isEditing = false,
-    error,
     onCreateNote,
     onRequestUpload,
 }: CreateNoteModalProps) {
@@ -58,8 +54,10 @@ export function CreateNoteModal({
     }
 
     const handleCreate = () => {
-        if (!title.trim()) return
-        onCreateNote(title.trim(), description ?? "")
+        onCreateNote(title, description ?? "")
+        setTitle("")
+        setDescription(undefined)
+        onOpenChange(false)
     }
 
     const handleUploadClick = (kind: NoteUploadKind) => {
@@ -73,7 +71,6 @@ export function CreateNoteModal({
     return (
         <QuickCreateModalLayout
             open={open}
-            title={isEditing ? "Edit note" : "Create note"}
             onClose={handleClose}
             isDescriptionExpanded={isExpanded}
             onSubmitShortcut={handleCreate}
@@ -97,7 +94,6 @@ export function CreateNoteModal({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Close note editor"
                     className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
                     onClick={handleClose}
                 >
@@ -132,12 +128,11 @@ export function CreateNoteModal({
                 </div>
             </div>
 
-            {error ? <p role="alert" className="text-sm text-destructive">{error} Your draft is preserved. Try saving again.</p> : null}
-
             {/* Footer */}
             <div className="flex items-center justify-between mt-auto w-full pt-4 shrink-0">
                 <div className="flex items-center gap-2">
                     {canUploadAttachments ? (
+                        <>
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -148,12 +143,33 @@ export function CreateNoteModal({
                             >
                                 <Paperclip className="h-4 w-4" />
                             </Button>
-
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Upload audio for note"
+                                className="h-11 w-11 touch-manipulation text-muted-foreground sm:h-8 sm:w-8"
+                                onClick={() => handleUploadClick("audio")}
+                            >
+                                <Microphone className="h-4 w-4" />
+                            </Button>
+                        </>
                     ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button size="sm" disabled={!title.trim()} onClick={handleCreate}>
+                    {canUploadAttachments ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUploadClick("audio")}
+                        >
+                            <UploadSimple className="h-4 w-4" />
+                            Upload audio file
+                        </Button>
+                    ) : null}
+                    <Button size="sm" onClick={handleCreate}>
                         {submitLabel ?? "Create Note"}
                     </Button>
                 </div>

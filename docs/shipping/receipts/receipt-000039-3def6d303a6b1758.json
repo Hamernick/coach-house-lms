@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-13T22:10:01.633312+00:00",
+  "operation": "resume",
+  "owner": "ship-documents-notice-20261013",
+  "previous_revision": 38,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-map-audit-20261013",
+        "pid": 744,
+        "started": "Tue Oct 13 18:03:16 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T22:03:16.515517+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T22:10:01.471305+00:00"
+    },
+    "documents_banner_followup": {
+      "head": "527557a1d8638e19c565f4fec6664229b84b0204",
+      "branch": "fix/documents-upgrade-notice-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-upgrade-banners-20261013",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/300",
+      "remote_verified": true,
+      "source": "User production screenshot; packet03 U20261013-01 LIVE04",
+      "changes": "11-word Documents copy; explicit24px toolbar separation. Other notices unchanged.",
+      "checks": "Four existing tests, changed-file lint, diff, normal prepush pass. Copy preview HTTP200.",
+      "review": "User appearance review and current-head quality/code-owner required; not deployed.",
+      "graphify": "Refresh running in /tmp/coach-house-documents-notice-graphify.log",
+      "preserved": "PR299 map audit, unapplied coordinate repair, original SHIP000 head/release history; no provider or Supabase preview changes"
+    },
+    "next_action": "Review PR300 Documents notice at527557a1 and required CI/code-owner gates; user checks localhost3116/organization/documents. Preserve PR299 map follow-up and unapplied data repair. No release inferred."
+  },
+  "remote": null
+}

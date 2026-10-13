@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { useOnboardingSubmission } from "./onboarding-dialog/hooks/use-onboarding-submission"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { OnboardingDialogContent } from "./onboarding-dialog/components"
@@ -56,7 +55,6 @@ export function OnboardingFlow({
   open = true,
   isInline,
   mode = "full",
-  draftScope: accountDraftScope,
   defaultEmail,
   defaultOrgName,
   defaultOrgSlug,
@@ -77,10 +75,12 @@ export function OnboardingFlow({
   onSubmit,
   visibleStepIds,
 }: OnboardingFlowProps) {
-  const draftScope = accountDraftScope ? `${accountDraftScope}:${mode}` : null
-  const effectiveVisibleStepIds = useEffectiveOnboardingStepIds(mode, visibleStepIds)
+  const effectiveVisibleStepIds = useEffectiveOnboardingStepIds(
+    mode,
+    visibleStepIds
+  )
   const intentFocusOverride: IntentFocus | null =
-    mode === "workspace_setup" || mode === "post_signup_access" ? "build" : null
+    mode === "workspace_setup" ? "build" : null
   const onboardingDefaults = useOnboardingDefaults({
     defaultEmail,
     defaultOrgName,
@@ -172,18 +172,17 @@ export function OnboardingFlow({
     formationStatus,
     slugStatus,
   })
-  const saveDraft = (extra?: SaveOnboardingDraftExtra) => {
-    if (!draftScope) return
+  const saveDraft = (extra?: SaveOnboardingDraftExtra) =>
     writeOnboardingDraftSnapshot({
-      draftScope,
       formRef,
       step,
-      steps,
-      formationStatus, intentFocus, roleInterest, slugEdited,
+      formationStatus,
+      intentFocus,
+      roleInterest,
+      slugEdited,
       avatar: avatarPreview,
       extra,
     })
-  }
   const { syncAccountStateFromForm, syncOrganizationStateFromForm } =
     useOnboardingStateSnapshot({
       formRef,
@@ -223,9 +222,8 @@ export function OnboardingFlow({
     saveDraft,
   })
   useOnboardingDraftState({
-    draftScope,
     // Saved organization details take precedence when revisiting setup.
-    open: open && Boolean(draftScope),
+    open: open && !(mode === "workspace_setup" && initialOrgName && initialOrgSlug),
     step,
     formRef,
     resolveDraftFieldValue,
@@ -339,8 +337,6 @@ export function OnboardingFlow({
     setSlugEdited,
     setSlugValue,
   })
-  const submitAction = useOnboardingSubmission({ onSubmit, draftScope, setSubmitting, setServerError })
-
   return (
     <OnboardingDialogContent
       formRef={formRef}
@@ -400,7 +396,7 @@ export function OnboardingFlow({
       onZoomChange={setZoom}
       onCropComplete={setCroppedArea}
       onApplyCrop={handleApplyCrop}
-      onSubmitAction={submitAction}
+      onSubmitAction={onSubmit}
     />
   )
 }

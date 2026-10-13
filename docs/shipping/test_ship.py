@@ -187,6 +187,21 @@ class CommandTests(unittest.TestCase):
         with patch('ship.local', return_value=dict(worktree='/other', branch='chore/fixture', head='head')):
             with self.assertRaises(ValueError): self.call('checkpoint', '--owner', 'chat', '--revision', '1', '--head', 'head')
 
+    def test_reconcile_persists_new_failure_as_blocked(self):
+        self.claim()
+        state = self.store.read()
+        state['queue'][0]['status'] = 'pr_ready'
+        state['active']['evidence'] = evidence()
+        atomic(self.store.path, state)
+        fresh = {'github': dict(evidence()['github'], quality='failure')}
+        with patch('ship.reconcile', return_value=fresh):
+            self.call('reconcile', '--owner', 'chat', '--revision', '1', '--head', 'head', '--pr', '1')
+        updated = self.store.read()
+        self.assertEqual(updated['queue'][0]['status'], 'blocked')
+        self.assertEqual(updated['queue'][0]['resume_state'], 'pr_ready')
+        self.assertEqual(updated['active']['evidence']['github']['quality'], 'failure')
+        self.call('validate')
+
     def test_protected_transition_requires_live_reconciliation(self):
         self.claim()
         with self.assertRaisesRegex(ValueError, 'fresh'):

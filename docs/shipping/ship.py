@@ -134,6 +134,14 @@ def main():
                 require(not any(k in receipt for k in ('github', 'merge')), 'GitHub evidence comes only from reconcile')
                 active['evidence'].update(receipt)
                 target = 'closed' if args.operation == 'closeout' else args.to
+                if remote is not None and row['status'] in ('pr_ready', 'merged', 'deployed', 'production_verified'):
+                    try:
+                        gate(row, active, row['status'], active['evidence'])
+                    except ValueError as error:
+                        active['evidence']['blocker'] = f'Fresh evidence invalidated release gate: {error}'
+                        active['evidence']['next_action'] = 'Resolve the failed gate and reconcile before advancing'
+                        row['next_action'] = active['evidence']['next_action']
+                        target = 'blocked'
                 if target:
                     gate(row, active, target, active['evidence'])
                     if target == 'blocked' and row['status'] != 'blocked':

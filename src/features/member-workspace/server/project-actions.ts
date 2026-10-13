@@ -1,11 +1,5 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
-
-import { mergeProjectOptions } from "../lib/project-fiscal-sponsorship"
-
-import { resolveProjectCreateOrgId } from "./project-organization"
-
 import { parseScheduleDay } from "../lib/project-schedule"
 
 import { revalidatePath } from "next/cache"
@@ -80,6 +74,48 @@ function ensureProjectMutationAllowed(
   return null
 }
 
+async function resolveProjectCreateOrgId({
+  actor,
+  input,
+}: {
+  actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>
+  input: MemberWorkspaceCreateProjectFormInput
+}): Promise<{ ok: true; orgId: string } | { error: string }> {
+  if (actorCanAccessOrganizations(actor)) {
+    const orgId = input.orgId?.trim()
+    if (!orgId) {
+      return { error: "Choose an organization for the project." }
+    }
+    if (!actorCanAccessOrganization(actor, orgId)) {
+      return { error: "You do not have access to that organization." }
+    }
+
+    const { data, error } = await actor.supabase
+      .from("organizations")
+      .select("user_id")
+      .eq("user_id", orgId)
+      .maybeSingle<{ user_id: string }>()
+
+    if (error || !data) {
+      return { error: "Choose a valid organization for the project." }
+    }
+
+    return { ok: true, orgId }
+  }
+
+  if (!actor.canEdit) {
+    return { error: "Only organization editors can create projects." }
+  }
+
+  const requestedOrgId = input.orgId?.trim()
+  if (requestedOrgId && requestedOrgId !== actor.activeOrg.orgId) {
+    return {
+      error: "You can only create projects for the active organization.",
+    }
+  }
+
+  return { ok: true, orgId: actor.activeOrg.orgId }
+}
 
 export async function createMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput
@@ -101,9 +137,7 @@ export async function createMemberWorkspaceProjectAction(
 
   const payload = {
     org_id: targetOrg.orgId,
-    organization_unassigned: input.orgId === null,
     project_kind: "standard",
-    ...(normalized.value.recurrence === undefined ? {} : { recurrence: normalized.value.recurrence }),
     name: normalized.value.name,
     description: normalized.value.description,
     status: normalized.value.status,
@@ -111,11 +145,11 @@ export async function createMemberWorkspaceProjectAction(
     progress: 0,
     start_date: normalized.value.startDate,
     end_date: normalized.value.endDate,
-    client_name: input.orgId === null ? null : normalized.value.clientName,
+    client_name: normalized.value.clientName,
     type_label: normalized.value.typeLabel,
     duration_label: normalized.value.durationLabel,
     tags: normalized.value.tags,
-    ...(normalized.value.optionSettings || input.fiscalSponsorshipEnabled ? { option_settings: mergeProjectOptions(undefined, normalized.value.optionSettings, input.fiscalSponsorshipEnabled) } : {}),
+    ...(normalized.value.optionSettings ? { option_settings: normalized.value.optionSettings } : {}),
     member_labels: normalized.value.memberLabels,
     task_count: 0,
     created_source: "user",
@@ -137,7 +171,6 @@ export async function createMemberWorkspaceProjectAction(
   if ("error" in transition) return transition
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   return { ok: true, id: transition.projectId }
 }
@@ -147,7 +180,6 @@ export async function updateMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -163,9 +195,9 @@ export async function updateMemberWorkspaceProjectAction(
   const { data: existingProject, error: existingProjectError } =
     await actor.supabase
       .from("organization_projects")
-      .select("id, org_id, updated_at, recurrence, option_settings")
+      .select("id, org_id, updated_at")
       .eq("id", projectId)
-      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string; option_settings?: import("@/lib/supabase").Json }>()
+      .maybeSingle<{ id: string; org_id: string; updated_at: string }>()
 
   if (existingProjectError || !existingProject) {
     if (
@@ -186,29 +218,18 @@ export async function updateMemberWorkspaceProjectAction(
     }
   }
 
-  if (input.orgId && input.orgId !== existingProject.org_id) {
-    return { error: "Changing a project's owning organization is not supported. You can remove its organization assignment." }
-  }
-
-  if ((input.recurrence ?? existingProject.recurrence) === "monthly" &&
-      (!normalized.value.startDate || !normalized.value.endDate)) {
-    return { error: "Monthly projects require a start date and an end date." }
-  }
-
   const payload = {
-    ...(input.orgId === undefined ? {} : { organization_unassigned: input.orgId === null }),
-    ...(normalized.value.recurrence === undefined ? {} : { recurrence: normalized.value.recurrence }),
     name: normalized.value.name,
     description: normalized.value.description,
     status: normalized.value.status,
     priority: normalized.value.priority,
     start_date: normalized.value.startDate,
     end_date: normalized.value.endDate,
-    client_name: input.orgId === null ? null : normalized.value.clientName,
+    client_name: normalized.value.clientName,
     type_label: normalized.value.typeLabel,
     duration_label: normalized.value.durationLabel,
     tags: normalized.value.tags,
-    ...(normalized.value.optionSettings || input.fiscalSponsorshipEnabled ? { option_settings: mergeProjectOptions(existingProject.option_settings, normalized.value.optionSettings, input.fiscalSponsorshipEnabled) } : {}),
+    ...(normalized.value.optionSettings ? { option_settings: normalized.value.optionSettings } : {}),
     member_labels: normalized.value.memberLabels,
     updated_by: actor.userId,
   }
@@ -229,7 +250,6 @@ export async function updateMemberWorkspaceProjectAction(
   if ("error" in transition) return transition
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath(`/organizations/${projectId}`)
   revalidatePath(`/projects/${projectId}`)
@@ -241,7 +261,6 @@ export async function updateMemberWorkspaceProjectStatusAction(
   status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"]
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -286,7 +305,6 @@ export async function updateMemberWorkspaceProjectStatusAction(
   if ("error" in transition) return transition
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath(`/organizations/${projectId}`)
   revalidatePath(`/projects/${projectId}`)
@@ -299,7 +317,6 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   endDate: string
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -312,23 +329,23 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     return { error: "Choose a project." }
   }
 
-  const normalizedStartDate = startDate.trim() || null
-  const normalizedEndDate = endDate.trim() || null
-  const startDay = normalizedStartDate ? parseScheduleDay(normalizedStartDate) : null
-  const endDay = normalizedEndDate ? parseScheduleDay(normalizedEndDate) : null
-  if ((normalizedStartDate && startDay === null) || (normalizedEndDate && endDay === null)) {
+  const normalizedStartDate = startDate.trim()
+  const normalizedEndDate = endDate.trim()
+  const startDay = parseScheduleDay(normalizedStartDate)
+  const endDay = parseScheduleDay(normalizedEndDate)
+  if (startDay === null || endDay === null) {
     return { error: "Enter valid project dates." }
   }
-  if (endDay !== null && startDay !== null && endDay < startDay) {
+  if (endDay < startDay) {
     return { error: "End date must be on or after the start date." }
   }
 
   const { data: existingProject, error: existingProjectError } =
     await actor.supabase
       .from("organization_projects")
-      .select("id, org_id, updated_at, recurrence")
+      .select("id, org_id, updated_at")
       .eq("id", normalizedProjectId)
-      .maybeSingle<{ id: string; org_id: string; updated_at: string; recurrence: string }>()
+      .maybeSingle<{ id: string; org_id: string; updated_at: string }>()
 
   if (existingProjectError || !existingProject) {
     if (
@@ -349,10 +366,6 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     }
   }
 
-  if (existingProject.recurrence === "monthly" && (!normalizedStartDate || !normalizedEndDate)) {
-    return { error: "Monthly projects require a start date and an end date." }
-  }
-
   const transition = await transitionOrganizationProjectSchedule({
     actorId: actor.userId,
     endDate: normalizedEndDate,
@@ -364,7 +377,6 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   if ("error" in transition) return transition
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath(`/organizations/${normalizedProjectId}`)
   revalidatePath(`/projects/${normalizedProjectId}`)
@@ -375,7 +387,6 @@ export async function deleteMemberWorkspaceProjectAction(
   projectId: string
 ): Promise<MemberWorkspaceDeleteProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -385,7 +396,7 @@ export async function deleteMemberWorkspaceProjectAction(
 
   const normalizedProjectId = projectId.trim()
   if (!normalizedProjectId) {
-    return { error: "Choose a project to delete." }
+    return { error: "Choose an organization to delete." }
   }
 
   const { data: existingProject, error: existingProjectError } =
@@ -411,7 +422,7 @@ export async function deleteMemberWorkspaceProjectAction(
           "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
-    return { error: "Unable to find that project." }
+    return { error: "Unable to find that organization." }
   }
 
   if (!actorCanAccessOrganization(actor, existingProject.org_id)) {
@@ -441,7 +452,6 @@ export async function deleteMemberWorkspaceProjectAction(
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath(`/organizations/${normalizedProjectId}`)
   revalidatePath(`/projects/${normalizedProjectId}`)
@@ -550,7 +560,6 @@ export async function resetMemberWorkspaceStarterProjectsAction(): Promise<Membe
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath("/tasks")
   return { ok: true }
@@ -608,7 +617,6 @@ export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWor
   }
 
   revalidatePath("/organizations")
-  revalidatePath("/admin/dashboard")
   revalidatePath("/projects")
   revalidatePath("/tasks")
   return { ok: true }

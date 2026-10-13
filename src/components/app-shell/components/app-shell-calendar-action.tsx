@@ -9,16 +9,13 @@ import {
 } from "react"
 import dynamic from "next/dynamic"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
-import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { useAppShellCalendarActionRegistration } from "@/components/app-shell/calendar-action-context"
 import type { RoadmapCalendarView } from "@/components/roadmap/roadmap-calendar/types"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -58,9 +55,7 @@ const WorkspaceTutorialCallout = dynamic<
   { loading: () => null, ssr: false }
 )
 
-export function AppShellCalendarAction({
-  placement = "header",
-}: { placement?: "header" | "sidebar" } = {}) {
+export function AppShellCalendarAction() {
   const isMobile = useIsMobile()
   const { tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete } =
     useAppShellCalendarActionRegistration()
@@ -91,7 +86,7 @@ export function AppShellCalendarAction({
     <Button
       type="button"
       variant="ghost"
-      size={placement === "sidebar" ? "default" : "icon"}
+      size="icon"
       aria-label={calendarOpen ? "Hide calendar" : "Show calendar"}
       aria-expanded={calendarOpen}
       aria-controls={calendarRegionId}
@@ -99,7 +94,6 @@ export function AppShellCalendarAction({
       onClick={handleCalendarTriggerClick}
       className={cn(
         "relative",
-        placement === "sidebar" && "min-h-11 w-full justify-start gap-2 px-2",
         calendarOpen &&
           "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground shadow-sm",
         tutorialCalendarButtonActive &&
@@ -107,7 +101,6 @@ export function AppShellCalendarAction({
       )}
     >
       <CalendarDaysIcon className="h-4 w-4" aria-hidden />
-      {placement === "sidebar" ? <span>Calendar</span> : null}
     </Button>
   )
 
@@ -145,7 +138,7 @@ export function AppShellCalendarAction({
         onOpenChange={handleCalendarOpenChange}
         handleOnly
       >
-        <div className={cn("relative inline-flex", placement === "sidebar" && "w-full")}>
+        <div className="relative inline-flex">
           {tutorialCallout}
           <DrawerTrigger asChild>{calendarTrigger}</DrawerTrigger>
         </div>
@@ -158,20 +151,6 @@ export function AppShellCalendarAction({
             )}
           >
             <DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>
-            <DrawerDescription className="sr-only">
-              Browse dates and scheduled events.
-            </DrawerDescription>
-            <DrawerClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute top-0 right-2 z-10 size-11 rounded-full"
-                aria-label="Close calendar"
-              >
-                <XIcon aria-hidden />
-              </Button>
-            </DrawerClose>
             <div
               id={calendarRegionId}
               role="region"

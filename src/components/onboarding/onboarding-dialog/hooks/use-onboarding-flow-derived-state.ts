@@ -18,7 +18,6 @@ import type {
 } from "../types"
 import { useOnboardingDefaults } from "./use-onboarding-defaults"
 import { buildInitialAccountValues } from "./use-onboarding-flow-state-sync"
-import { resolveOnboardingStepProgress } from "../step-position"
 
 export function useEffectiveOnboardingStepIds(
   mode: OnboardingFlowMode,
@@ -62,7 +61,7 @@ export function useResolvedOnboardingSteps({
   return {
     steps,
     currentStep: steps[Math.max(0, Math.min(step, steps.length - 1))],
-    stepProgress: resolveOnboardingStepProgress(step, steps.length),
+    stepProgress: Math.round(((step + 1) / Math.max(steps.length, 1)) * 100),
   }
 }
 

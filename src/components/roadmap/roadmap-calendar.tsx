@@ -42,6 +42,7 @@ import {
   RoadmapCalendarMonthAgendaPanel,
 } from "@/components/roadmap/roadmap-calendar/components"
 import { ROADMAP_CALENDAR_EVENT_TYPE_ORDER } from "@/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-style"
+import { useRoadmapCalendarDemoSeeds } from "@/components/roadmap/roadmap-calendar/use-roadmap-calendar-demo-seeds"
 
 type RoadmapCalendarProps = {
   compactHeaderControls?: boolean
@@ -192,6 +193,15 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
     if (!timeZone || typeof window === "undefined") return
     window.localStorage.setItem("roadmap-calendar-timezone", timeZone)
   }, [timeZone])
+
+  useRoadmapCalendarDemoSeeds({
+    calendarType,
+    canManageCalendar,
+    eventsLength: events.length,
+    isLoading,
+    setEvents,
+    startTransition,
+  })
 
   const handleOpenCreate = useCallback(
     (preset?: {

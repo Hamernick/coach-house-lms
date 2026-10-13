@@ -76,7 +76,7 @@ describe("project timeline calendar", () => {
 
     expect(detailTabsSource).toContain("activity={project.activity}")
     expect(detailTabsSource).toContain(
-      "programs={showOrganizationPrograms ? organizationSummary.programs : undefined}"
+      "programs={organizationSummary.programs}"
     )
     expect(detailTabsSource).toContain(
       "() => onCreateTask({ projectId: project.id })"

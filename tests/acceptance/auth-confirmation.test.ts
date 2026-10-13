@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { captureRedirect, createSupabaseServerClientServerMock, headersMock } from "./test-utils"
 
 import { buildSupabaseAuthEmailPreviews } from "@/features/organization-access"
+import { homeCollectionReturnHref } from "@/features/build-collect-navigation/lib/home-resource-preview"
 import { buildPostSignupBuilderRedirect } from "@/lib/onboarding/signup-plan"
 import {
   buildLoginUrlWithAuthConfirmationError,
@@ -14,6 +15,37 @@ import {
 } from "@/lib/supabase/auth-confirmation"
 
 describe("auth confirmation", () => {
+  it.each(["relative", "absolute", "callback"])("preserves the homepage collection through %s human confirmation", async (format) => {
+    const returnHref = homeCollectionReturnHref({ id: "resource-1", kind: "resource", query: "food help", createdAt: 1 }, "food help")
+    const next = format === "relative" ? returnHref : format === "absolute"
+      ? `https://coachhouse.app${returnHref}`
+      : `https://coachhouse.app/auth/callback?redirect=${encodeURIComponent(returnHref)}`
+    const expected = format === "relative" ? returnHref : `https://coachhouse.app${returnHref}`
+    headersMock.mockResolvedValue({ get: (name: string) => name === "host" ? "coachhouse.app" : undefined })
+    createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp: vi.fn().mockResolvedValue({
+      data: { user: { user_metadata: { onboarding_intent_focus: "build", onboarding_selected_builder_plan_tier: "organization" } } }, error: null,
+    }) } })
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const page = await ConfirmEmailPage({ searchParams: Promise.resolve({ token_hash: "test-token", type: "email", next }) })
+    const form = page.props.children.props.children
+    const formData = new FormData()
+    for (const input of form.props.children.filter((child: { type: string }) => child.type === "input")) {
+      formData.set(input.props.name, input.props.value)
+    }
+    expect(await captureRedirect(() => form.props.action(formData))).toBe(expected)
+  })
+
+  it.each(["/?homeSearch=food", "/#home-resource-preview", "https://coachhouse.app/?homeSearch=food", "https://coachhouse.app/#home-resource-preview"])("preserves explicit root state in %s", (destination) => {
+    const safe = resolveAuthConfirmationDestination(destination)
+    expect(safe).toBe(destination)
+    expect(resolveConfirmedSignupDestination({ destination: safe, type: "signup" })).toBe(destination)
+    if (destination.startsWith("https:")) {
+      const login = new URL(resolvePostAuthConfirmationRedirect(destination, "https://legacy-confirm-host.example"))
+      const original = new URL(destination)
+      expect(login.searchParams.get("redirect")).toBe(`${original.pathname}${original.search}${original.hash}`)
+    }
+  })
+
   it.each(["free", "organization", "operations_support"] as const)("preserves every %s checkout/onboarding parameter through the email link", (planTier) => {
     const destination = buildPostSignupBuilderRedirect({ planTier, source: "signup" })
     const callback = `https://coachhouse.app/auth/callback?redirect=${encodeURIComponent(destination)}`

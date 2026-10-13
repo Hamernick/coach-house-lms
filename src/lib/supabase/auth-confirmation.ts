@@ -38,7 +38,8 @@ export function resolveConfirmedSignupDestination({
   if (userMetadata?.onboarding_completed === true) return destination
 
   const destinationUrl = new URL(destination, "https://coachhouse.app")
-  if (destinationUrl.pathname !== "/" && destination !== DEFAULT_POST_AUTH_REDIRECT) {
+  const isBareSiteUrl = destinationUrl.pathname === "/" && !destinationUrl.search && !destinationUrl.hash
+  if (!isBareSiteUrl && destination !== DEFAULT_POST_AUTH_REDIRECT) {
     return destination
   }
 
@@ -70,7 +71,7 @@ function getAllowedDestinationOrigins(requestOrigin?: string | null) {
 
 function buildAbsoluteDestination(origin: string, path: string) {
   const destination = new URL(path, origin)
-  return `${destination.origin}${destination.pathname}${destination.search}`
+  return `${destination.origin}${destination.pathname}${destination.search}${destination.hash}`
 }
 
 function resolveAllowedAbsoluteDestination(
@@ -84,7 +85,7 @@ function resolveAllowedAbsoluteDestination(
     }
 
     const resolvedPath = unwrapAuthCallbackRedirect(
-      `${destinationUrl.pathname}${destinationUrl.search}`,
+      `${destinationUrl.pathname}${destinationUrl.search}${destinationUrl.hash}`,
     )
     if (!resolvedPath) return null
 
@@ -152,7 +153,7 @@ export function resolvePostAuthConfirmationRedirect(
     }
 
     const redirectPath =
-      getSafeRedirectPath(`${destinationUrl.pathname}${destinationUrl.search}`) ??
+      getSafeRedirectPath(`${destinationUrl.pathname}${destinationUrl.search}${destinationUrl.hash}`) ??
       fallbackDestination()
     const loginUrl = new URL("/login", destinationUrl.origin)
     loginUrl.searchParams.set("redirect", redirectPath)

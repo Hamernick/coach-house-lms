@@ -81,3 +81,7 @@ destinations, and actual confirmation form actions for generic/free/both paid
 signups. The six-file focused suite passes 40 tests; two added browser tests
 cover all six cards. Existing Donate/menu checks remain applicable. This verifies
 local routing, not a live payment or production confirmation retest.
+
+## PR294 automated review follow-up — 2026-10-13 18:30 UTC
+
+Explicit homepage collection query/fragment state now survives confirmation, including absolute and callback URLs. Bare provider Site URL fallback still recovers the selected signup plan. Seven regressions failed before the fix; all 47 focused signup/confirmation tests now pass. Appearance, hosted quality, code-owner review and production confirmation remain pending.

@@ -24,18 +24,18 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-LIVE-03 map repair is the active implementation preparation, explicitly authorized
-by Caleb after the onboarding repair. Original packet05 B036 stage3/scoped stage6;
-`/resources` is the public surface and `/map` remains a legacy redirect.
-Branch `fix/live-map-markers-20261013`, worktree
-`coach-house-platform-live-map-20261013`, base `89c409bc`, preview localhost:3115.
-[Scope, evidence and stop boundary](../plans/2026-10-13-live-map-markers.md).
-[PR297](https://github.com/Hamernick/CoachHouse/pull/297) is Ready for review, not merge-ready.
-57 focused tests and changed-file checks pass, including the antimeridian review regression. Confirmed same-place duplicates
-are consolidated while preserving services and old links; marker bounds now
-respect globe projection. The local map canvas remains blank, so visible marker
-verification, appearance review, hosted quality and code-owner review remain open.
-No publication, geocoding, provider mutation or Supabase preview setup.
+LIVE-03 reported production follow-up is active: two RLS Resource Service entries
+are leaked synthetic test fixtures. [Diagnosis and bounded fix](../plans/2026-10-13-resource-test-records.md).
+Branch `fix/public-resource-test-records-20261013` reuses the map checkout,
+base `e49a31bd`; 64 focused tests pass after four reproduced failures. The shared
+public visibility boundary excludes the complete known fixture signature and
+cached detail/index keys advance. CI/review/deployment remain open; no live data
+mutation or agent visual sweep. PR297 merged per user; do not recheck that report.
+
+LIVE-04 compact banners are prepared separately in [PR298](https://github.com/Hamernick/CoachHouse/pull/298),
+branch `fix/upgrade-banner-layout-20261013`, worktree `coach-house-platform-upgrade-banners-20261013`,
+localhost:3116/visual-regression/upgrade-banners. User appearance review and
+current-head CI/review remain open. Preserve that lane and localhost:3119.
 
 Prior PR296 externally merged as `89c409bc`; intended coachhouse production is
 Ready at that SHA and assigned coachhouse.app, including PR295 checkout/menu fixes.

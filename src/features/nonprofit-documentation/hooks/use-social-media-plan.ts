@@ -63,13 +63,12 @@ const EXAMPLE_SOCIAL_MEDIA_PLAN: SocialMediaPlanDraft = {
 
 export function useSocialMediaPlan() {
   const [draft, setDraft] = useState(DEFAULT_SOCIAL_MEDIA_PLAN)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      SOCIAL_MEDIA_PLAN_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeSocialMediaPlan
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    SOCIAL_MEDIA_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeSocialMediaPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof SocialMediaPlanDraft>(
@@ -96,9 +95,6 @@ export function useSocialMediaPlan() {
     updateDraft,
     updateChannelCadence,
     loadExample: useCallback(() => setDraft(EXAMPLE_SOCIAL_MEDIA_PLAN), []),
-    reset: useCallback(() => {
-      authorizeResetAfterReadFailure()
-      setDraft(DEFAULT_SOCIAL_MEDIA_PLAN)
-    }, [authorizeResetAfterReadFailure]),
+    reset: useCallback(() => setDraft(DEFAULT_SOCIAL_MEDIA_PLAN), []),
   }
 }

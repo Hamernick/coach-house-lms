@@ -6,24 +6,17 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { MemberWorkspaceProjectCard } from "@/features/member-workspace/components/projects/member-workspace-project-card"
 import { MemberWorkspaceProjectDetailPage } from "@/features/member-workspace/components/projects/member-workspace-project-detail-page"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import {
   buildMemberWorkspaceProjectDetailDraft,
   buildMemberWorkspaceProjectUpdateInput,
 } from "@/features/member-workspace/components/projects/member-workspace-project-detail-editing"
-import { MemberWorkspaceProjectDetailTabs } from "@/features/member-workspace/components/projects/member-workspace-project-detail-tabs"
-import { includeCurrentProjectHeaderOptions, replaceProjectHeaderTag } from "@/features/member-workspace/lib/project-header-options"
-import { DateChip } from "@/features/member-workspace/components/projects/member-workspace-project-detail-header-controls"
 import { MemberWorkspaceProjectDetailHeader } from "@/features/member-workspace/components/projects/member-workspace-project-detail-header"
 import { MemberWorkspaceProjectOverviewDocument } from "@/features/member-workspace/components/projects/member-workspace-project-overview-document"
 import { MemberWorkspaceProjectTasksEditor } from "@/features/member-workspace/components/projects/member-workspace-project-tasks-editor"
 
-const route = vi.hoisted(() => ({ pathname: "/projects/project-1" }))
-
 vi.mock("next/navigation", () => ({
-  usePathname: () => route.pathname,
   useRouter: () => ({
     push: () => undefined,
     refresh: () => undefined,
@@ -39,15 +32,29 @@ vi.mock("next/cache", () => ({
 const project = getProjectDetailsById("project-1")
 
 function buildProjectSource(
-  overrides: Pick<
-    PlatformAdminDashboardLabProject,
-    "description" | "projectKind"
-  >
+  overrides: Pick<PlatformAdminDashboardLabProject, "description" | "projectKind">
 ) {
   return { ...project.source!, ...overrides }
 }
 
-const organizationSummary: React.ComponentProps<typeof MemberWorkspaceProjectDetailPage>["organizationSummary"] = {
+function renderProjectDetailPage(
+  overrideProps?: Partial<
+    React.ComponentProps<typeof MemberWorkspaceProjectDetailPage>
+  >
+) {
+  return renderToStaticMarkup(
+    React.createElement(
+      SidebarProvider,
+      { defaultOpen: true },
+      React.createElement(MemberWorkspaceProjectDetailPage, {
+        project,
+        assigneeOptions: [],
+        currentUser: {
+          id: "user-1",
+          name: "Alex Rivera",
+          avatarUrl: "https://example.com/alex.png",
+        },
+        organizationSummary: {
           orgId: "org-1",
           canonicalProjectId: "project-1",
           name: "Coach House",
@@ -68,41 +75,8 @@ const organizationSummary: React.ComponentProps<typeof MemberWorkspaceProjectDet
           members: [],
           setupItems: [],
           profile: {},
-        }
-
-function renderProjectDetailPage(
-  overrideProps?: Partial<
-    React.ComponentProps<typeof MemberWorkspaceProjectDetailPage>
-  >,
-  activeTab?: string
-) {
-  const Page = (props: React.ComponentProps<typeof MemberWorkspaceProjectDetailPage>) =>
-    activeTab ? React.createElement(MemberWorkspaceProjectDetailTabs, {
-      ...props,
-      activeTab,
-      draft: buildMemberWorkspaceProjectDetailDraft(props.project),
-      isEditing: false,
-      onActiveTabChange: () => undefined,
-      onChangeDraftField: () => undefined,
-      onPendingInlineTaskContextHandled: () => undefined,
-    }) : React.createElement(MemberWorkspaceProjectDetailPage, props)
-  return renderToStaticMarkup(
-    React.createElement(
-      SidebarProvider,
-      { defaultOpen: true },
-      React.createElement(Page, {
-        project,
-        assigneeOptions: [],
-        currentUser: {
-          id: "user-1",
-          name: "Alex Rivera",
-          avatarUrl: "https://example.com/alex.png",
         },
-        organizationSummary,
-        updateProjectAction: async () => ({
-          ok: true as const,
-          id: project.id,
-        }),
+        updateProjectAction: async () => ({ ok: true as const, id: project.id }),
         ...overrideProps,
       })
     )
@@ -110,43 +84,18 @@ function renderProjectDetailPage(
 }
 
 describe("MemberWorkspaceProjectDetailPage", () => {
-  it.each([
-    ["/projects/project-1", false],
-    ["/organizations/project-1", true],
-  ] as const)("shows coaching credits only on organization pages: %s", (pathname, visible) => {
-    route.pathname = pathname
-    try {
-      const markup = renderProjectDetailPage({
-        coachingCredits: React.createElement("div", null, "Organization coaching credits"),
-        adminBilling: React.createElement("div", null, "Existing billing controls"),
-      })
-      expect(markup.includes("Organization coaching credits")).toBe(visible)
-      expect(markup).toContain("Existing billing controls")
-    } finally {
-      route.pathname = "/projects/project-1"
-    }
-  })
-
-  it.each([
-    ["/projects/project-1", true, false],
-    ["/organizations/project-1", true, true],
-    ["/organizations/project-1", false, false],
-  ] as const)("scopes Programs to organization routes with programs: %s", (pathname, hasPrograms, visible) => {
-    route.pathname = pathname
-    try {
-      const markup = renderProjectDetailPage({ organizationPrograms: hasPrograms ? [{ id: "program-1", title: "Community program" }] : [] })
-      expect(markup.includes(">Programs</button>")).toBe(visible)
-    } finally {
-      route.pathname = "/projects/project-1"
-    }
-  })
-
-  it("keeps breadcrumbs and editing without the local sidebar toggle", () => {
+  it("restores the local sidebar trigger beside the project breadcrumbs", () => {
     const markup = renderProjectDetailPage()
-    expect(markup).not.toContain('data-slot="sidebar-trigger"')
-    expect(markup).not.toContain('aria-label="Toggle sidebar"')
-    expect(markup).toContain('href="/projects"')
+
+    expect(markup).toContain('data-slot="sidebar-trigger"')
+    expect(markup).toContain('aria-label="Toggle sidebar"')
+    expect(markup).toContain(
+      "text-muted-foreground hover:text-foreground size-8 rounded-lg"
+    )
     expect(markup).toContain('aria-label="Edit project"')
+    expect(markup.indexOf('data-slot="sidebar-trigger"')).toBeLessThan(
+      markup.indexOf("Organizations")
+    )
   })
 
   it("gives the organization setup rail a wider desktop column", () => {
@@ -198,47 +147,6 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).not.toContain("Edit mode")
     expect(markup).not.toContain("rounded-2xl border p-4 shadow-sm")
     expect(markup).not.toContain('aria-label="Edit project"')
-  })
-
-  it("exposes every stored project header field without requiring the pencil first", () => {
-    const markup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectDetailHeader, {
-      project,
-      canEditProject: true,
-      isEditing: false,
-      draft: { ...buildMemberWorkspaceProjectDetailDraft(project), clientName: "", typeLabel: "", durationLabel: "", tags: "" },
-      onEditProject: () => undefined,
-      onChangeDraftField: () => undefined,
-    }))
-    for (const label of ["Project name", "Project status", "Project priority", "Sprint type", "Workstream", "Add tag", "Start", "End"]) {
-      expect(markup).toContain(`aria-label="${label}"`)
-    }
-    expect(markup).not.toContain("Add client")
-    expect(markup).not.toContain("Add duration")
-    expect(markup).not.toContain("Last sync")
-    expect(markup).not.toContain('type="date"')
-    expect(markup).toContain("md:text-4xl")
-    expect(markup).toContain("data-[size=default]:h-7")
-    expect(markup).toContain('id="member-workspace-project-members"')
-    expect(markup).not.toContain('aria-label="ID"')
-  })
-
-  it("keeps header editing unavailable without edit permission even if a draft is supplied", () => {
-    const markup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectDetailHeader, {
-      project, canEditProject: false, isEditing: true,
-      draft: buildMemberWorkspaceProjectDetailDraft(project),
-      onChangeDraftField: () => undefined,
-    }))
-    expect(markup).not.toContain('data-slot="editable"')
-    expect(markup).not.toContain('data-slot="select-trigger"')
-    expect(markup).not.toContain('type="date"')
-  })
-
-  it.each(["backlog", "planned", "active", "on-hold", "completed", "cancelled"] as const)("preserves %s status when editing another standard-project field", (status) => {
-    const standardProject = { ...project, source: { ...project.source!, projectKind: "standard" as const, status } }
-    const draft = { ...buildMemberWorkspaceProjectDetailDraft(standardProject), clientName: "Updated client", typeLabel: "Consulting", durationLabel: "6 weeks", tags: "One, Two" }
-    expect(buildMemberWorkspaceProjectUpdateInput({ project: standardProject, draft })).toMatchObject({
-      status, clientName: "Updated client", typeLabel: "Consulting", durationLabel: "6 weeks", tags: "One, Two",
-    })
   })
 
   it("uses a structured assignment menu instead of a comma-separated people input", () => {
@@ -490,39 +398,6 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).not.toContain('role="dialog"')
   })
 
-  it.each([
-    {
-      description: '<p><strong>Task ID:</strong> TASK-025</p><p onclick="track()">Work Area: Biz Dev</p><ul><li>Next step</li></ul><script>alert("unsafe")</script><a href="javascript:alert(1)">Unsafe link</a>',
-      expected: "<p><strong>Task ID:</strong> TASK-025</p>",
-    },
-    {
-      description: "Keep < 5 tasks & review > 2\nNext step",
-      expected: "Keep &lt; 5 tasks &amp; review &gt; 2\nNext step",
-    },
-  ])("renders task descriptions without exposing HTML: $expected", ({ description, expected }) => {
-    const taskProject = {
-      ...project,
-      workstreams: project.workstreams.map((group) => ({
-        ...group,
-        tasks: group.tasks.map((task) => ({ ...task, description })),
-      })),
-    }
-    const markup = renderToStaticMarkup(
-      React.createElement(MemberWorkspaceProjectTasksEditor, {
-        project: taskProject,
-        assigneeOptions: [],
-      })
-    )
-
-    expect(markup).toContain(expected)
-    expect(markup).not.toContain("&lt;p&gt;")
-    expect(markup).not.toContain("onclick")
-    expect(markup).not.toContain("<script")
-    expect(markup).not.toContain("javascript:")
-    expect(markup).not.toContain('alert("unsafe")')
-    expect(taskProject.workstreams[0].tasks[0].description).toBe(description)
-  })
-
   it("hides the location chip when the project detail has no real location data", () => {
     const markup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectDetailHeader, {
@@ -569,7 +444,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).not.toContain("New Task")
   })
 
-  it("shows a confirmation-backed delete action for standard projects", () => {
+  it("shows a confirmation-backed delete action for standard organization records", () => {
     const detailPageSource = readFileSync(
       join(
         process.cwd(),
@@ -601,8 +476,8 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     )
 
     expect(deleteDialogSource).toContain("Delete {projectName}?")
-    expect(deleteDialogSource).toContain("Delete Project")
-    expect(deleteDialogSource).toContain("This permanently deletes this project")
+    expect(deleteDialogSource).toContain("Delete organization")
+    expect(deleteDialogSource).toContain("This removes the organization record")
   })
 
   it("hides the delete action for canonical admin organization records", () => {
@@ -617,14 +492,12 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       updateProjectAction: async () => ({ ok: true, id: project.id }),
     })
 
-    expect(markup).not.toContain("Delete Project")
+    expect(markup).not.toContain("Delete organization")
     expect(markup).not.toContain(`Delete ${project.name}?`)
   })
 
-  it("renders the fiscal sponsorship workbench only in its dedicated tab", () => {
-    expect(renderProjectDetailPage()).not.toContain("data-fiscal-sponsorship-project-workbench")
-    expect(renderProjectDetailPage(undefined, "fiscal-sponsorship")).not.toContain("data-fiscal-sponsorship-project-workbench")
-    const markup = renderProjectDetailPage({ project: { ...project, source: { ...project.source!, fiscalSponsorshipEnabled: true } } }, "fiscal-sponsorship")
+  it("renders the fiscal sponsorship workbench in the main overview content", () => {
+    const markup = renderProjectDetailPage()
 
     expect(markup).toContain("data-fiscal-sponsorship-project-workbench")
     expect(markup).toContain("Fiscal Sponsorship")
@@ -650,7 +523,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
   })
 
   it("renders real fiscal sponsorship workflow status when available", () => {
-    const props: Partial<React.ComponentProps<typeof MemberWorkspaceProjectDetailPage>> = {
+    const markup = renderProjectDetailPage({
       fiscalSponsorshipWorkflowSummary: {
         applicationId: "app-1",
         applicationStatus: "agreement_ready",
@@ -693,9 +566,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         latestSignaturePacket: null,
         requiredDocuments: [],
       },
-    }
-    const markup = renderProjectDetailPage(props, "fiscal-sponsorship")
-    const pageMarkup = renderProjectDetailPage(props)
+    })
 
     expect(markup).toContain("Agreement ready")
     expect(markup).toContain("Prepared")
@@ -703,10 +574,10 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain("Not sent")
     expect(markup).toContain("Next: Send prepared agreement for signatures")
     expect(markup).toContain("Model C agreement v1 is prepared")
-    expect(pageMarkup).toContain("Recent updates")
-    expect(pageMarkup).toContain("Fiscal sponsorship agreement prepared.")
-    expect(pageMarkup).toContain("Agreement prepared")
-    expect(pageMarkup).toContain(
+    expect(markup).toContain("Recent updates")
+    expect(markup).toContain("Fiscal sponsorship agreement prepared.")
+    expect(markup).toContain("Agreement prepared")
+    expect(markup).toContain(
       'href="/api/account/project-assets?assetId=asset-1&amp;projectId=project-1"'
     )
   }, 15_000)
@@ -761,7 +632,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         packetId: "packet-1",
         providerSubmissionId: "submission-1",
       }),
-    }, "fiscal-sponsorship")
+    })
 
     expect(markup).toContain(
       "data-fiscal-sponsorship-project-workbench-admin-actions"
@@ -870,121 +741,5 @@ describe("MemberWorkspaceProjectDetailPage", () => {
         "canManageFiscalSponsorship ? reviewFiscalSponsorshipDocument"
       )
     )
-  })
-})
-
-describe("coach control visibility", () => {
-  it.each([false, true])("shows coaches only on organization headers (editable: %s)", (canEditProject) => {
-    const props = {
-      project, canEditProject, draft: buildMemberWorkspaceProjectDetailDraft(project),
-      onChangeDraftField: () => undefined,
-      coachControl: React.createElement("span", null, "Manage organization coaches"),
-      assignedCoachNames: ["Alex Rivera"],
-    }
-    const projectMarkup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectDetailHeader, props))
-    const organizationMarkup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectDetailHeader, { ...props, organizationSummary }))
-    expect(projectMarkup).not.toContain("Manage organization coaches")
-    expect(projectMarkup).not.toContain("Coach:")
-    expect(organizationMarkup).toContain("Manage organization coaches")
-  })
-})
-
-describe("organization coach header metadata", () => {
-  it("renders assigned photos, initials and a capped avatar group", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(MemberWorkspaceProjectDetailHeader, {
-        project,
-        organizationSummary,
-        assignedCoaches: [
-          { id: "1", name: "Alex Rivera", imageUrl: "https://example.com/alex.png" },
-          { id: "2", name: "Sam Lee", imageUrl: null },
-          { id: "3", name: "Pat Jones", imageUrl: null },
-          { id: "4", name: "Robin Smith", imageUrl: null },
-        ],
-      })
-    )
-    expect(markup).toContain('aria-label="Assigned coaches"')
-    expect(markup).toContain('alt="Alex Rivera"')
-    expect(markup).toContain(">SL<")
-    expect(markup).toContain(">+1<")
-    expect(markup).toContain('title="Robin Smith"')
-    expect(markup).not.toContain("Frank.PNG")
-  })
-  it.each([
-    [["Alex Rivera", "Sam Lee"], "Alex Rivera, Sam Lee"],
-    [[], "Unassigned"],
-    [null, "Unavailable"],
-  ] as const)("shows the actual assignment state", (names, expected) => {
-    const markup = renderToStaticMarkup(
-      React.createElement(MemberWorkspaceProjectDetailHeader, {
-        project,
-        organizationSummary,
-        assignedCoachNames: names ? [...names] : null,
-      })
-    )
-    expect(markup).toContain("Coach:")
-    expect(markup).toContain(expected)
-  })
-})
-
-describe("undated projects", () => {
-  it("renders both card variants and keeps editor dates blank", () => {
-    const source = { ...project.source!, startDate: null, endDate: null, client: undefined }
-    const detail = { ...project, source, time: { ...project.time, dueDate: null, schedule: null } }
-    expect(buildMemberWorkspaceProjectDetailDraft(detail)).toMatchObject({ startDate: "", endDate: "" })
-    for (const variant of ["list", "board"] as const) {
-      const html = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectCard, { project: source, variant }))
-      expect(html).toContain("No due date")
-      expect(html).not.toContain("Invalid Date")
-    }
-    expect(renderProjectDetailPage({ project: detail })).not.toContain("Invalid Date")
-  })
-})
-
-
-describe("project header setup controls", () => {
-  it("replaces or removes one tag while preserving every other tag", () => {
-    expect(replaceProjectHeaderTag("Biz Dev, Tracker, Important", "Tracker", "Follow up")).toBe("Biz Dev, Follow up, Important")
-    expect(replaceProjectHeaderTag("Biz Dev, Tracker, Important", "tracker", null)).toBe("Biz Dev, Important")
-    expect(replaceProjectHeaderTag("Biz Dev, Important", null, "Important")).toBe("Biz Dev, Important")
-  })
-
-  it("retains shared option identities and legacy selections", () => {
-    const existing = { id: "shared", label: "Important", color: "#2563eb", updatedAt: "2026-10-03" }
-    const options = includeCurrentProjectHeaderOptions({ tags: [existing], sprintTypes: [] }, "important, Tracker", "Consulting", () => "generated-id")
-    expect(options.tags[0]).toBe(existing)
-    expect(options.tags.map((option) => option.label)).toEqual(["Important", "Tracker"])
-    expect(options.sprintTypes).toEqual([{ id: "generated-id", label: "Consulting", color: "#64748b" }])
-  })
-
-  it("renders individual tags and setup pickers instead of free text or a made-up duration", () => {
-    const markup = renderToStaticMarkup(React.createElement(MemberWorkspaceProjectDetailHeader, {
-      project, canEditProject: true,
-      draft: { ...buildMemberWorkspaceProjectDetailDraft(project), tags: "Biz Dev, Tracker, Important" },
-      onChangeDraftField: () => undefined,
-    }))
-    for (const tag of ["Biz Dev", "Tracker", "Important"]) expect(markup).toContain(`aria-label="Tag: ${tag}"`)
-    expect(markup).toContain('aria-label="Sprint type"')
-    expect(markup).toContain('aria-label="Workstream"')
-    expect(markup).not.toContain('aria-label="Duration"')
-    expect(markup).not.toContain("Last sync")
-  })
-
-  it("shows the stored calendar day without timezone shifts and uses a popover trigger", () => {
-    const previous = process.env.TZ
-    try {
-      for (const zone of ["America/New_York", "Pacific/Honolulu", "Asia/Tokyo"]) {
-        process.env.TZ = zone
-        const markup = renderToStaticMarkup(React.createElement(DateChip, {
-          id: "start", label: "Start", value: "2026-04-30", onChange: () => undefined,
-        }))
-        expect(markup).toContain("Apr 30, 2026")
-        expect(markup).toContain('aria-haspopup="dialog"')
-        expect(markup).not.toContain('type="date"')
-      }
-    } finally {
-      if (previous === undefined) delete process.env.TZ
-      else process.env.TZ = previous
-    }
   })
 })

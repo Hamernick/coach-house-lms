@@ -12,11 +12,10 @@ export type DocumentationNavItem = {
   href?: string
   status: DocumentationNavStatus
   external?: boolean
-  isNew?: boolean
 }
 
 export type DocumentationNavSection = {
-  id: "fund-your-project" | "get-started" | "best-practices" | "tools" | "resources"
+  id: "get-started" | "best-practices" | "tools" | "resources"
   title: string
   items: DocumentationNavItem[]
 }
@@ -628,7 +627,6 @@ export type BrandIdentityDraft = {
   introduction: string
   purpose: string
   audience: string
-  actionables: [string, string, string]
   logoGuidance: string
   colors: BrandIdentityColor[]
   headingFont: string
@@ -644,7 +642,6 @@ export type BrandAssetId =
   | "primary-logo"
   | "brand-mark"
   | "application-image"
-  | "application-vertical-image"
   | `illustration-${1 | 2 | 3 | 4 | 5 | 6}`
 
 export type StoredBrandAsset = {

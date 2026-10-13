@@ -1,4 +1,3 @@
-import { documentationCsvCell } from "./csv-cell"
 import type {
   CrmFieldCategoryId,
   CrmFieldDraft,
@@ -489,7 +488,9 @@ export function buildCrmActions(draft: CrmPlanDraft): CrmPlanAction[] {
 }
 
 function csvCell(value: string | number | boolean) {
-  return documentationCsvCell(value)
+  let text = String(value)
+  if (/^[=+\-@]/.test(text)) text = `'${text}`
+  return `"${text.replace(/"/g, '""')}"`
 }
 
 export function buildCrmCsv(draft: CrmPlanDraft) {

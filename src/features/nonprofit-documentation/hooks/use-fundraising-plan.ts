@@ -31,13 +31,12 @@ const EXAMPLE_FUNDRAISING_PLAN: FundraisingPlanDraft = {
 
 export function useFundraisingPlan() {
   const [draft, setDraft] = useState(DEFAULT_FUNDRAISING_PLAN)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      FUNDRAISING_PLAN_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeFundraisingPlan
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    FUNDRAISING_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeFundraisingPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof FundraisingPlanDraft>(
@@ -63,10 +62,7 @@ export function useFundraisingPlan() {
   )
 
   const loadExample = useCallback(() => setDraft(EXAMPLE_FUNDRAISING_PLAN), [])
-  const reset = useCallback(() => {
-    authorizeResetAfterReadFailure()
-    setDraft(DEFAULT_FUNDRAISING_PLAN)
-  }, [authorizeResetAfterReadFailure])
+  const reset = useCallback(() => setDraft(DEFAULT_FUNDRAISING_PLAN), [])
 
   return {
     draft,

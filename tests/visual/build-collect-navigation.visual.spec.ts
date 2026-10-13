@@ -1,22 +1,85 @@
 import { expect, test } from "@playwright/test"
 
+test("Documentation menus stay centered and reachable above the canvas", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 768]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/documentation")
+    await page.waitForLoadState("networkidle")
+    const header = page.locator("[data-build-collect-public-header]")
+    const navigation = header.locator('[data-slot="navigation-menu-list"]')
+    const headerBounds = (await header.boundingBox())!
+    const navigationBounds = (await navigation.boundingBox())!
+    expect(
+      Math.abs(
+        navigationBounds.x +
+          navigationBounds.width / 2 -
+          (headerBounds.x + headerBounds.width / 2)
+      )
+    ).toBeLessThan(1)
+
+    for (const name of ["Collect", "Build"]) {
+      const trigger = header.getByRole("button", { name, exact: true })
+      await trigger.hover()
+      const menu = header.locator(
+        '[data-slot="navigation-menu-content"][data-state="open"]'
+      )
+      await expect(menu).toBeVisible()
+      const links = menu.getByRole("link")
+      await links.first().hover()
+      await expect(menu).toBeVisible()
+      for (const link of await links.all()) await link.click({ trial: true })
+      const menuBounds = (await menu.boundingBox())!
+      expect(
+        Math.abs(
+          menuBounds.x +
+            menuBounds.width / 2 -
+            (navigationBounds.x + navigationBounds.width / 2)
+        )
+      ).toBeLessThan(1)
+      await page.keyboard.press("Escape")
+      await expect(menu).toBeHidden()
+      await trigger.focus()
+      await trigger.press("Space")
+      await expect(menu).toBeVisible()
+      await page.keyboard.press("Escape")
+      await expect(menu).toBeHidden()
+      await page.mouse.move(20, 400)
+    }
+  }
+  await page.goto("/documentation")
+  await page.waitForLoadState("networkidle")
+  const header = page.locator("[data-build-collect-public-header]")
+  await header.getByRole("button", { name: "Collect", exact: true }).focus()
+  await page.keyboard.press("Space")
+  await expect(
+    header.locator('[data-slot="navigation-menu-content"][data-state="open"]')
+  ).toBeVisible()
+  await page.keyboard.press("ArrowDown")
+  const explore = header.getByRole("link", { name: /^Explore resources/ })
+  await expect(explore).toBeFocused()
+  await explore.press("Enter")
+  await expect(page).toHaveURL(/\/$/)
+})
+
 test("public Build landing and hover navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
+  await page.waitForLoadState("networkidle")
 
   await expect(
     page.getByRole("heading", {
-      name: "Workspace for nonprofits.",
+      name: "Build the organization your community needs.",
     })
   ).toBeVisible()
 
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
-  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
-  const menu = page.locator('[data-slot="navigation-menu-content"][data-state="open"]')
-  await expect(menu.getByRole("link", { name: /Workspace/ })).toBeVisible()
-  await expect(menu.getByRole("link", { name: /Accelerator/ })).toBeVisible()
-  await expect(menu.getByRole("link", { name: /Pricing/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Pricing/ })).toBeVisible()
+
   await page.mouse.move(20, 300)
   await expect(buildMenu).toHaveAttribute("data-state", "closed")
 
@@ -28,118 +91,20 @@ test("public Build landing and hover navigation", async ({ page }) => {
   })
 })
 
-test("public navigation menu layers above Documentation content", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto("/documentation?react-grab=0")
-
-  const buildMenu = page.getByRole("button", { name: "Build", exact: true })
-  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
-  await buildMenu.hover()
-  const menuLayer = page.locator(
-    '[data-slot="navigation-menu-content"][data-state="open"]'
-  )
-  await expect(menuLayer.getByRole("link", { name: /Workspace/ })).toBeVisible()
-
-  const menuBox = await menuLayer.boundingBox()
-  const frameBox = await page
-    .locator("[data-public-find-content-frame]")
-    .boundingBox()
-  expect(menuBox).not.toBeNull()
-  expect(frameBox).not.toBeNull()
-  const overlapLeft = Math.max(menuBox!.x, frameBox!.x)
-  const overlapRight = Math.min(
-    menuBox!.x + menuBox!.width,
-    frameBox!.x + frameBox!.width
-  )
-  const overlapTop = Math.max(menuBox!.y, frameBox!.y)
-  const overlapBottom = Math.min(
-    menuBox!.y + menuBox!.height,
-    frameBox!.y + frameBox!.height
-  )
-  expect(overlapRight).toBeGreaterThan(overlapLeft)
-  expect(overlapBottom).toBeGreaterThan(overlapTop)
-
-  const menuIsTopLayer = await page.evaluate(
-    ({ x, y }) => {
-      const menu = document.querySelector(
-        '[data-slot="navigation-menu-content"][data-state="open"]'
-      )
-      const hitTarget = document.elementFromPoint(x, y)
-      return Boolean(menu && hitTarget && menu.contains(hitTarget))
-    },
-    {
-      x: (overlapLeft + overlapRight) / 2,
-      y: (overlapTop + overlapBottom) / 2,
-    }
-  )
-  expect(menuIsTopLayer).toBe(true)
-})
-
-test("public navigation menu opens and closes with the keyboard", async ({
-  page,
-}) => {
+test("public header search submits to the Collect root", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
-  const trigger = page
-    .locator('[data-slot="navigation-menu-trigger"]')
-    .filter({ hasText: "Build" })
-  await trigger.focus()
-  await page.keyboard.press("Enter")
-  await expect(trigger).toHaveAttribute("data-state", "open")
+
+  const search = page.getByRole("searchbox", {
+    name: "Search organizations and resources",
+  })
+  await search.fill("food")
+  await search.press("Enter")
+
+  await expect(page).toHaveURL(/\?q=food/)
   await expect(
-    page.locator(
-      '[data-slot="navigation-menu-content"][data-state="open"] a[href="/build#workspace"]'
-    )
-  ).toBeVisible()
-  await page.keyboard.press("Escape")
-  await expect(trigger).toHaveAttribute("data-state", "closed")
-  await expect(trigger).toBeFocused()
-})
-
-for (const route of ["/", "/documentation"] as const) {
-  for (const menuName of ["Collect", "Build"] as const) {
-    test(`${menuName} menu stays open and navigates from ${route}`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width: 1440, height: 900 })
-      await page.goto(`${route}?react-grab=0`)
-      const trigger = page
-        .locator('[data-slot="navigation-menu-trigger"]')
-        .filter({ hasText: menuName })
-      await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
-      await trigger.hover()
-      const link = page.locator(
-        menuName === "Collect"
-          ? 'a[href="/login?redirect=%2Fresources"]'
-          : 'a[href="/build#pricing"]'
-      )
-      await expect(link).toBeVisible()
-      await link.hover()
-      await expect(trigger).toHaveAttribute("data-state", "open")
-      await link.click()
-      await expect(page).toHaveURL(
-        menuName === "Collect"
-          ? /\/login\?redirect=%2Fresources$/
-          : /\/build#pricing$/
-      )
-      if (menuName === "Build") {
-        await expect(
-          page.getByRole("region", {
-            name: "Choose how you build.",
-          })
-        ).toBeVisible()
-      }
-    })
-  }
-}
-
-test("public Build header stays minimal", async ({ page }) => {
-  await page.goto("/build?react-grab=0")
-  await expect(page.getByRole("heading", { name: "Workspace for nonprofits." })).toBeVisible()
-  await expect(page.getByPlaceholder("Start searching")).toHaveCount(0)
-  await expect(page.getByRole("link", { name: "See plans", exact: true })).toHaveAttribute("href", "/build#pricing")
+    page.getByRole("searchbox", { name: "Find organizations and resources" })
+  ).toHaveValue("food")
 })
 
 test("public Build landing stays within a mobile viewport", async ({
@@ -148,13 +113,10 @@ test("public Build landing stays within a mobile viewport", async ({
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/build?react-grab=0")
 
-  await expect(page.getByRole("button", { name: "Collect", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Collect" })).toBeVisible()
   await expect(
-    page.getByRole("button", { name: "Build", exact: true })
-  ).toHaveAttribute("data-active", "true")
-  await page.addStyleTag({
-    content: "nextjs-portal { visibility: hidden !important; }",
-  })
+    page.getByRole("link", { name: "Build", exact: true })
+  ).toHaveAttribute("aria-current", "page")
   expect(
     await page.evaluate(
       () =>

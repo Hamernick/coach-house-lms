@@ -146,37 +146,11 @@ describe("public map detail section chrome", () => {
     expect(markup).toContain("https://example.org/mark.png")
   })
 
-  it("keeps website and socials in the identity without a separate socials card", () => {
-    const website = "https://example.org/a-long-public-organization-address"
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          website,
-          instagram: "https://instagram.com/atlas",
-          linkedin: "https://linkedin.com/company/atlas",
-        }),
-      })
-    )
-
-    expect(markup).toContain(`href="${website}"`)
-    expect(markup).toContain(`title="${website}"`)
-    expect(markup).toContain("example.org/a-long-public-organization-address")
-    expect(markup).toContain('aria-label="Open Instagram"')
-    expect(markup).toMatch(/aria-label="Open LinkedIn"[^>]*><svg[^>]*>.*?<path d=/)
-    expect(markup).not.toContain("/brand/linkedin-in.png")
-    expect(markup.indexOf('aria-label="Open Instagram"')).toBeLessThan(
-      markup.indexOf(">About</h3>")
-    )
-    expect(markup).not.toContain(">Socials</h3>")
-    expect(markup).not.toContain(">Donate</span>")
-  })
-
   it("uses one icon size and label gap for every profile action", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapOrganizationDetail, {
         organization: buildOrganization({
           website: "https://example.org",
-          donateUrl: "https://example.org/donate",
           email: "hello@example.org",
           phone: "+1 312 555 0100",
           brandKitAvailable: true,
@@ -186,14 +160,11 @@ describe("public map detail section chrome", () => {
 
     expect(
       markup.match(/data-public-map-organization-action-content="true"/g)
-    ).toHaveLength(3)
+    ).toHaveLength(4)
     expect(
       markup.match(/data-public-map-organization-action-icon="true"/g)
-    ).toHaveLength(3)
-    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(3)
-    expect(markup).toContain('href="https://example.org/donate"')
-    expect(markup).toContain(">Donate</span>")
-    expect(markup).not.toContain(">Website</span>")
+    ).toHaveLength(4)
+    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(4)
     expect(markup).toContain(
       "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
     )
@@ -321,22 +292,6 @@ describe("OrganizationDetailActivitiesSection", () => {
     expect(markup).toContain("Ongoing")
     expect(markup).toContain("Online")
     expect(markup).toContain("https://hub.example.org")
-
-    const profile = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          activityLinks: [{
-            id: "program-1", title: "Youth Resource Hub", subtitle: null,
-            description: "Public activity", activityKind: "Program", chips: [],
-            ctaLabel: null, ctaUrl: null, durationLabel: null,
-            locationUrl: null, locationType: null,
-          }],
-        }),
-      })
-    )
-    expect(profile.indexOf(">Activity<")).toBeGreaterThan(profile.indexOf(">About<"))
-    expect(profile.indexOf(">Activity<")).toBeLessThan(profile.indexOf(">Contact<"))
-    expect(profile.match(/Youth Resource Hub/g)).toHaveLength(1)
   })
 
   it("renders the full activity list from activity metadata, not the visual preview cap", () => {

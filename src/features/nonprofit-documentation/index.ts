@@ -1,5 +1,3 @@
-export { DocumentationSurface } from "./components/documentation-surface"
-export { DocumentationPageHeader } from "./components/documentation-page-header"
 export {
   DocumentationHome,
   DocumentationRail,
@@ -26,9 +24,7 @@ export {
   DocumentationSearchPage,
   DocumentationVisualFixture,
 } from "./components"
-export {
-  documentationSitemapEntries,
-} from "./lib/sitemap"
+export type { DocumentationShellState } from "./components"
 export {
   DOCUMENTATION_NAVIGATION,
   DOCUMENTATION_PATH,

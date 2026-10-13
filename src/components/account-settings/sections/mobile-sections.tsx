@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleAccountConnection } from "@/features/google-auth"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
-import type { AccountSettingsErrorKey, AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
-import { ProfileFields } from "./profile-fields"
+import type {
+  AccountSettingsErrorKey,
+  AccountSettingsMobilePage,
+  AccountSettingsTabKey,
+} from "../types"
+import { ProfileSection } from "./profile-section"
 
 export const TAB_LABELS: Record<AccountSettingsTabKey, string> = {
   profile: "Profile",
-  "public-profile": "Public profile",
   communications: "Communications",
   security: "Security",
   danger: "Danger zone",
@@ -19,8 +21,7 @@ export const MOBILE_LINKS: Array<{
   key: AccountSettingsTabKey
   description?: string
 }> = [
-  { key: "profile", description: "Personal details, photo" },
-  { key: "public-profile", description: "Username, visibility, collections" },
+  { key: "profile", description: "Details, public page, collections" },
   { key: "communications", description: "Emails & notifications" },
   { key: "security", description: "Sign-in methods, password" },
   { key: "danger", description: "Delete account" },
@@ -39,17 +40,17 @@ export function MobileMenu({
 }) {
   return (
     <div className="min-h-0 grow overflow-y-auto p-2 md:hidden" hidden={hidden}>
-      <div className="px-2 pt-2 text-xs font-semibold text-muted-foreground">
+      <div className="text-muted-foreground px-2 pt-2 text-xs font-semibold">
         Account
       </div>
-      <div className="mt-2 rounded-xl border bg-card/60">
+      <div className="bg-card/60 mt-2 rounded-xl border">
         {MOBILE_LINKS.map((link, index) => (
           <Button
             key={link.key}
             type="button"
             variant="ghost"
             className={
-              "h-auto w-full justify-between gap-4 whitespace-normal rounded-none px-4 py-3 text-left text-sm " +
+              "h-auto w-full justify-between gap-4 rounded-none px-4 py-3 text-left text-sm whitespace-normal " +
               (index < MOBILE_LINKS.length - 1 ? "border-b" : "")
             }
             onClick={() => {
@@ -58,14 +59,20 @@ export function MobileMenu({
             }}
           >
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{TAB_LABELS[link.key]}</span>
+              <span className="text-sm font-medium">
+                {TAB_LABELS[link.key]}
+              </span>
               {link.description ? (
-                <span className="text-xs text-muted-foreground">{link.description}</span>
+                <span className="text-muted-foreground text-xs">
+                  {link.description}
+                </span>
               ) : null}
             </div>
             <span
               className={
-                activeTab === link.key ? "text-xs uppercase tracking-wide text-primary" : "text-xs uppercase tracking-wide text-muted-foreground"
+                activeTab === link.key
+                  ? "text-primary text-xs tracking-wide uppercase"
+                  : "text-muted-foreground text-xs tracking-wide uppercase"
               }
             >
               Manage
@@ -143,50 +150,41 @@ export function MobileSubpage({
   onDeleteAccount: () => void
 }) {
   return (
-    <div className="min-h-0 grow overflow-y-auto p-4 md:hidden" hidden={mobilePage === "menu"}>
+    <div
+      className="min-h-0 grow overflow-y-auto p-4 md:hidden"
+      hidden={mobilePage === "menu"}
+    >
       {tab === "profile" && (
-        <div className="flex flex-col gap-6">
-          <header>
-            <h3 className="text-sm font-semibold text-muted-foreground">Profile</h3>
-          </header>
-          <ProfileFields
-            avatarUrl={avatarUrl}
-            firstName={firstName}
-            lastName={lastName}
-            title={title}
-            company={company}
-            contact={contact}
-            about={about}
-            phone={phone}
-            email={email}
-            errors={errors}
-            isUploadingAvatar={isUploadingAvatar}
-            idPrefix="mobile-profile"
-            onAvatarFileSelected={onAvatarFileSelected}
-            onFirstNameChange={onFirstNameChange}
-            onLastNameChange={onLastNameChange}
-            onTitleChange={onTitleChange}
-            onCompanyChange={onCompanyChange}
-            onContactChange={onContactChange}
-            onAboutChange={onAboutChange}
-            onPhoneChange={onPhoneChange}
-          />
-        </div>
-      )}
-
-      {tab === "public-profile" && (
-        <PublicProfileSettings
+        <ProfileSection
           avatarUrl={avatarUrl}
-          displayName={[firstName, lastName].filter(Boolean).join(" ")}
-          headline={title}
-          idPrefix="mobile-public-profile"
+          firstName={firstName}
+          lastName={lastName}
+          title={title}
+          company={company}
+          contact={contact}
+          about={about}
+          phone={phone}
+          email={email}
+          errors={errors}
+          isUploadingAvatar={isUploadingAvatar}
+          idPrefix="mobile-profile"
+          onAvatarFileSelected={onAvatarFileSelected}
+          onFirstNameChange={onFirstNameChange}
+          onLastNameChange={onLastNameChange}
+          onTitleChange={onTitleChange}
+          onCompanyChange={onCompanyChange}
+          onContactChange={onContactChange}
+          onAboutChange={onAboutChange}
+          onPhoneChange={onPhoneChange}
         />
       )}
 
       {tab === "communications" && (
         <div className="space-y-6">
           <header>
-            <h3 className="text-sm font-semibold text-muted-foreground">Communications</h3>
+            <h3 className="text-muted-foreground text-sm font-semibold">
+              Communications
+            </h3>
           </header>
           <CommunicationsPreferencesFields
             idPrefix="mobile-communications"
@@ -201,7 +199,9 @@ export function MobileSubpage({
       {tab === "security" && (
         <div className="space-y-6">
           <header>
-            <h3 className="text-sm font-semibold text-muted-foreground">Security</h3>
+            <h3 className="text-muted-foreground text-sm font-semibold">
+              Security
+            </h3>
           </header>
           <GoogleAccountConnection email={email} viewport="mobile" />
           <div className="grid max-w-xl gap-4">
@@ -213,7 +213,9 @@ export function MobileSubpage({
                 type="password"
                 autoComplete="new-password"
                 value={newPassword}
-                onChange={(event) => onNewPasswordChange(event.currentTarget.value)}
+                onChange={(event) =>
+                  onNewPasswordChange(event.currentTarget.value)
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -223,7 +225,9 @@ export function MobileSubpage({
                 type="password"
                 autoComplete="new-password"
                 value={confirmPassword}
-                onChange={(event) => onConfirmPasswordChange(event.currentTarget.value)}
+                onChange={(event) =>
+                  onConfirmPasswordChange(event.currentTarget.value)
+                }
               />
             </div>
           </div>
@@ -233,13 +237,19 @@ export function MobileSubpage({
       {tab === "danger" && (
         <div className="space-y-6">
           <header>
-            <h3 className="text-sm font-semibold text-destructive">Danger zone</h3>
+            <h3 className="text-destructive text-sm font-semibold">
+              Danger zone
+            </h3>
           </header>
-          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
-            <p className="text-sm">This action is permanent and cannot be undone.</p>
+          <div className="border-destructive/30 bg-destructive/5 rounded-md border p-4">
+            <p className="text-sm">
+              This action is permanent and cannot be undone.
+            </p>
             {hasActiveSubscription ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Deleting your account does not cancel Stripe billing. Cancel in the billing portal first, or continue after cancellation if your access remains active through the paid period.
+              <p className="text-muted-foreground mt-2 text-sm">
+                Deleting your account does not cancel Stripe billing. Cancel in
+                the billing portal first, or continue after cancellation if your
+                access remains active through the paid period.
               </p>
             ) : null}
             <div className="mt-3">

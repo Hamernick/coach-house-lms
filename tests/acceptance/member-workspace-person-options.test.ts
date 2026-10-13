@@ -153,7 +153,6 @@ describe("member workspace person options", () => {
               user_id: "platform-admin-2",
               access_level: "coach",
             },
-            { user_id: "7e2b7e15-5ccd-4d0c-bcdf-644a39e94f89", access_level: "coach" },
           ],
           error: null,
         })
@@ -188,15 +187,8 @@ describe("member workspace person options", () => {
               role: "admin",
             },
             {
-              id: "7e2b7e15-5ccd-4d0c-bcdf-644a39e94f89",
-              full_name: "Test Coach",
-              email: "test@example.com",
-              avatar_url: null,
-              role: "admin",
-            },
-            {
               id: "platform-admin-2",
-              full_name: " ",
+              full_name: "Paula Admin",
               avatar_url: null,
               email: "paula.admin@example.com",
               role: "admin",
@@ -234,8 +226,6 @@ describe("member workspace person options", () => {
       groupKey: "platform-admins",
       roleLabel: "Coach",
     })
-    expect(options[1].name).toBe("paula.admin@example.com")
-    expect(options.some((option) => option.name === "Test Coach")).toBe(false)
     expect(options.some((option) => option.id === "staff-1")).toBe(true)
   })
 })

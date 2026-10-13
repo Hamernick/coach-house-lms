@@ -8,7 +8,6 @@ export {
 } from "./lib"
 export { GoogleDriveError } from "./types"
 export {
-  getSelectedGoogleDriveFile,
   importGoogleDriveFile,
   attachGoogleDriveDocuments,
   completeGoogleDriveConnection,
@@ -16,7 +15,6 @@ export {
   detachGoogleDriveDocument,
   disconnectGoogleDrive,
   getGoogleDriveConnection,
-  getGoogleDriveDocumentThumbnail,
   listGoogleDriveDocuments,
   requireGoogleDriveContext,
   startGoogleDriveConnection,

@@ -1,4 +1,6 @@
+import type { RoadmapSaveIssue } from "./use-roadmap-editor-save"
 import type { RefObject } from "react"
+import type { saveRoadmapSectionAction } from "@/actions/roadmap"
 
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
@@ -6,15 +8,15 @@ import type { RoadmapDraft, RoadmapEditorProps } from "../types"
 
 export type UseRoadmapEditorStateArgs = Pick<
   RoadmapEditorProps,
-  | "sourceScope"
   | "sections"
   | "publicSlug"
+  | "draftScope"
   | "canEdit"
   | "navigationMode"
   | "initialSectionId"
   | "onDirtyChange"
   | "onRegisterDiscard"
->
+> & { saveSection?: typeof saveRoadmapSectionAction }
 
 export type UseRoadmapEditorStateResult = {
   activeSection: RoadmapSection | undefined
@@ -39,5 +41,9 @@ export type UseRoadmapEditorStateResult = {
   handleSave: () => void
   isDirty: boolean
   savingId: string | null
+  saveIssue?: RoadmapSaveIssue
+  offline: boolean
+  storageFailed: boolean
+  resolveConflict: (section: RoadmapSection, keepDraft: boolean) => void
   handleStatusChange: (nextStatus: RoadmapSectionStatus) => void
 }

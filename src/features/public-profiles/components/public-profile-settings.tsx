@@ -1,5 +1,7 @@
 "use client"
 
+import type { ReactNode } from "react"
+
 import { Separator } from "@/components/ui/separator"
 
 import { PublicProfileAffiliationSettings } from "./public-profile-affiliation-settings"
@@ -11,6 +13,9 @@ type PublicProfileSettingsProps = {
   displayName: string
   headline: string
   idPrefix: string
+  isUploadingAvatar: boolean
+  onAvatarFileSelected: (file?: File | null) => void
+  profileDetails: ReactNode
 }
 
 export function PublicProfileSettings({
@@ -18,29 +23,25 @@ export function PublicProfileSettings({
   displayName,
   headline,
   idPrefix,
+  isUploadingAvatar,
+  onAvatarFileSelected,
+  profileDetails,
 }: PublicProfileSettingsProps) {
   return (
-    <div className="flex max-w-2xl flex-col gap-8">
-      <header className="space-y-1">
-        <h3 className="text-lg font-semibold">Public profile</h3>
-        <p className="text-muted-foreground text-sm leading-6">
-          Claim your Coach House address, choose what to share, and publish
-          when you are ready.
-        </p>
-      </header>
-
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       <PublicProfileIdentitySettings
         avatarUrl={avatarUrl}
         displayName={displayName}
         headline={headline}
         idPrefix={`${idPrefix}-identity`}
+        isUploadingAvatar={isUploadingAvatar}
+        onAvatarFileSelected={onAvatarFileSelected}
+        profileDetails={profileDetails}
       />
 
       <Separator />
 
-      <PublicProfileAffiliationSettings
-        idPrefix={`${idPrefix}-affiliations`}
-      />
+      <PublicProfileAffiliationSettings idPrefix={`${idPrefix}-affiliations`} />
 
       <Separator />
 

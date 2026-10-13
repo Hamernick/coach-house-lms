@@ -7,18 +7,27 @@ function loadModule() {
     return Promise.resolve(loadedModule)
   }
   if (!modulePromise) {
-    modulePromise = import("sonner").then((mod) => {
-      loadedModule = mod
-      return mod
-    })
+    modulePromise = import("sonner")
+      .then((mod) => {
+        loadedModule = mod
+        return mod
+      })
+      .catch((error) => {
+        modulePromise = null
+        throw error
+      })
   }
   return modulePromise
 }
 
 function withToast(callback: (toastImpl: any) => void) {
-  void loadModule().then((mod) => {
-    callback(mod.toast)
-  })
+  void loadModule()
+    .then((mod) => {
+      callback(mod.toast)
+    })
+    .catch(() => {
+      // Notifications are optional when their lazy chunk is unavailable offline.
+    })
 }
 
 function ensureOptions(options?: Record<string, unknown>) {
@@ -81,12 +90,14 @@ toast.dismiss = (id?: string) => {
   withToast((toastImpl) => toastImpl.dismiss(id))
 }
 
-toast.promise = <T,>(
+toast.promise = <T>(
   promise: Promise<T>,
   handlers: Record<string, unknown>,
-  options?: Record<string, unknown>,
+  options?: Record<string, unknown>
 ) => {
-  withToast((toastImpl) => toastImpl.promise(promise, handlers as never, options as never))
+  withToast((toastImpl) =>
+    toastImpl.promise(promise, handlers as never, options as never)
+  )
   return promise
 }
 

@@ -1,5 +1,5 @@
-export { ProfileSection } from "./desktop/profile"
-export type { ProfileSectionProps } from "./desktop/profile"
+export { ProfileSection } from "./profile-section"
+export type { ProfileSectionProps } from "./profile-section"
 export { CommunicationsSection } from "./desktop/communications"
 export { SecuritySection } from "./desktop/security"
 export { DangerSection } from "./desktop/danger"

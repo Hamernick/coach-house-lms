@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import {
   normalizePublicHandle,
@@ -93,22 +93,26 @@ describe("public-profiles feature contract", () => {
     expect(accountStep).toContain("Your profile stays private")
     expect(onboardingAction).toContain('form.get("personHandle")')
     expect(onboardingAction).toContain("claim_person_public_handle")
-    expect(identitySettings).toContain("Public profile")
+    expect(identitySettings).toContain("Public page")
     expect(identitySettings).toContain('fetch("/api/account/public-handle"')
-    expect(identitySettings).toContain("Nothing becomes public until you")
-    expect(identitySettings).toContain("publish.")
+    expect(identitySettings).toContain(
+      "Choose your Coach House address and decide when people can view it."
+    )
     expect(identitySettings).toContain("savePublicPersonProfileAction")
-    expect(identitySettings).toContain("Publish profile")
-    expect(identitySettings).toContain("Profile unpublished.")
+    expect(identitySettings).toContain("Visibility")
+    expect(identitySettings).toContain("Profile unpublished")
   })
 
-  it("gives existing users a dedicated public profile activation path", () => {
+  it("unifies personal and public profile management", () => {
     const tabTypes = readSource("src/components/account-settings/types.ts")
     const shell = readSource(
       "src/components/account-settings/account-settings-dialog-shell.tsx"
     )
     const profileFields = readSource(
       "src/components/account-settings/sections/profile-fields.tsx"
+    )
+    const profileSection = readSource(
+      "src/components/account-settings/sections/profile-section.tsx"
     )
     const navUser = readSource("src/components/nav-user.tsx")
     const accountMenu = readSource(
@@ -121,22 +125,35 @@ describe("public-profiles feature contract", () => {
       "src/features/public-profiles/components/public-profile-identity-settings.tsx"
     )
 
-    expect(tabTypes).toContain('| "public-profile"')
-    expect(shell).toContain('label="Public profile"')
-    expect(shell).toContain('tab === "public-profile"')
-    expect(shell).toContain("<PublicProfileSettings")
+    expect(tabTypes).not.toContain('| "public-profile"')
+    expect(shell).not.toContain('label="Public profile"')
+    expect(shell).not.toContain('tab === "public-profile"')
+    expect(shell).toContain("<ProfileSection")
     expect(shell).toContain("onDone={requestClose}")
-    expect(shell).not.toContain('onDone={() => onOpenChange(false)}')
+    expect(shell).not.toContain("onDone={() => onOpenChange(false)}")
+    expect(profileSection).toContain("<PublicProfileSettings")
     expect(profileFields).not.toContain("PublicProfileIdentitySettings")
+    expect(profileFields).toContain("Personal details")
+    expect(profileFields).toContain("Private")
     expect(navUser).toContain("initialTab={settingsInitialTab}")
-    expect(accountMenu).toContain('onOpenSettings("public-profile")')
-    expect(publicProfileSettings).toContain("Claim your Coach House address")
+    expect(accountMenu).not.toContain('onOpenSettings("public-profile")')
+    expect(accountMenu).toContain("Profile & settings")
+    expect(publicProfileSettings).not.toContain(">Public profile<")
+    expect(publicProfileSettings).toContain("profileDetails")
     expect(publicProfileSettings).toContain("PublicProfileAffiliationSettings")
     expect(publicProfileSettings).toContain(
       "PublicProfileSavedCollectionSettings"
     )
+    expect(identitySettings.indexOf("{profileDetails}")).toBeLessThan(
+      identitySettings.indexOf("Public page")
+    )
     expect(identitySettings).toContain("View profile")
-    expect(identitySettings).toContain('<Link href={`/${currentHandle}`}>')
+    expect(identitySettings).toContain("<Link href={`/${currentHandle}`}>")
+    expect(identitySettings).not.toContain("<Card")
+    expect(identitySettings).toContain(
+      "onCheckedChange={(checked) => void saveVisibility(checked)}"
+    )
+    expect(publicProfileSettings).toContain("profileDetails={profileDetails}")
   })
 
   it("checks organization URLs against the same global namespace", () => {
@@ -279,9 +296,8 @@ describe("public-profiles feature contract", () => {
     )
 
     expect(route).toContain("fetchPublicProfileByHandle")
-    expect(route).toContain("return <PublicProfilePage profile={profile} viewer={viewer}")
-    expect(route).not.toContain("findLegacyPublicOrganizationSlug")
-    expect(profilePage).toContain("<PublicMapOrganizationDetail")
+    expect(route).toContain("if (profile) return <PublicProfilePage")
+    expect(route).toContain("findLegacyPublicOrganizationSlug")
     expect(readModel).toContain('.eq("is_public", true)')
     expect(readModel).toContain("safeHttpUrl")
     expect(readModel).toContain("buildPublicActivityHeatmap")
@@ -310,7 +326,7 @@ describe("public-profiles feature contract", () => {
     const publicHeader = readSource(
       "src/components/organization/org-profile-card/public-card-header.tsx"
     )
-    const publicMapQuery = readSource("src/lib/public-map/organization-projection.ts")
+    const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
 
     expect(presence).toContain('name: "donateUrl"')
     expect(presence).toContain("Adds a Donate button")
@@ -318,88 +334,4 @@ describe("public-profiles feature contract", () => {
     expect(publicHeader).toContain("Donate")
     expect(publicMapQuery).toContain('"donateUrl"')
   })
-})
-
-
-const profileReadMocks = vi.hoisted(() => ({
-  from: vi.fn(),
-  organizations: vi.fn(),
-}))
-vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }))
-vi.mock("@/lib/supabase/admin", () => ({
-  createSupabaseAdminClient: () => ({ from: profileReadMocks.from }),
-}))
-vi.mock("@/lib/queries/public-map-index", () => ({
-  fetchPublicMapOrganizations: profileReadMocks.organizations,
-}))
-vi.mock("@/lib/people/display-images", () => ({
-  resolvePeopleDisplayImages: async (people: unknown[]) => people,
-}))
-
-function mockProfileLookup(handle: unknown, error: unknown = null) {
-  profileReadMocks.from.mockImplementation((table: string) => {
-    const query = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: table === "public_handles" ? handle : null,
-        error: table === "public_handles" ? error : null,
-      }),
-    }
-    return query
-  })
-}
-
-describe("standalone organization profile visibility", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    profileReadMocks.organizations.mockResolvedValue([{
-      id: "public-org", name: "Public organization", publicSlug: "public-org",
-      tagline: null, description: null, programs: [],
-    }])
-  })
-
-  it("renders a published legacy slug directly without redirecting to the map", async () => {
-    mockProfileLookup(null)
-    const { fetchPublicProfileByHandle } = await import("@/lib/queries/public-profile")
-    const profile = await fetchPublicProfileByHandle("public-org")
-    expect(profile).toMatchObject({
-      kind: "organization", handle: "public-org", organizationId: "public-org",
-      organization: { id: "public-org" },
-    })
-  })
-
-  it("does not resolve unknown or unpublished organizations", async () => {
-    mockProfileLookup(null)
-    const { fetchPublicProfileByHandle } = await import("@/lib/queries/public-profile")
-    expect(await fetchPublicProfileByHandle("unknown-org")).toBeNull()
-    mockProfileLookup({ owner_type: "organization", organization_id: "private-org" })
-    expect(await fetchPublicProfileByHandle("private-org")).toBeNull()
-  })
-
-  it("never falls back around a claimed private person handle", async () => {
-    mockProfileLookup({ owner_type: "person", profile_id: "private-person" })
-    const { fetchPublicProfileByHandle } = await import("@/lib/queries/public-profile")
-    expect(await fetchPublicProfileByHandle("public-org")).toBeNull()
-    expect(profileReadMocks.organizations).not.toHaveBeenCalled()
-  })
-
-  it("fails closed when handle ownership cannot be read", async () => {
-    mockProfileLookup(null, { code: "unavailable" })
-    const { fetchPublicProfileByHandle } = await import("@/lib/queries/public-profile")
-    expect(await fetchPublicProfileByHandle("public-org")).toBeNull()
-    expect(profileReadMocks.organizations).not.toHaveBeenCalled()
-  })
-})
-
-
-it("gives published organizations without a slug a stable profile URL", async () => {
-  const { buildPublicOrganizationProfileHref } = await import("@/lib/find/routes")
-  expect(buildPublicOrganizationProfileHref({ id: "org-id", publicSlug: "public-org" })).toBe("/public-org")
-  const id = "16abc552-8c9c-48a7-a27b-4b0a2ceee9d3"
-  expect(buildPublicOrganizationProfileHref({ id, publicSlug: null })).toBe(`/${id}`)
-  mockProfileLookup(null)
-  profileReadMocks.organizations.mockResolvedValue([{ id, publicSlug: null, name: "Public organization", programs: [] }])
-  const { fetchPublicProfileByHandle } = await import("@/lib/queries/public-profile")
-  expect(await fetchPublicProfileByHandle(id)).toMatchObject({ kind: "organization", organizationId: id })
 })

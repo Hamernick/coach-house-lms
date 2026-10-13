@@ -359,6 +359,7 @@ describe("workspace tutorial presentation", () => {
         WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT +
         WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET * 2,
     })
+    expect(WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH).toBe(416)
     expect(presentationSource).toContain("WorkspaceTutorialCalendarPresentation")
     expect(presentationSource).toContain(
       '"./workspace-canvas-surface-v2-tutorial-calendar-presentation"',
@@ -383,11 +384,12 @@ describe("workspace tutorial presentation", () => {
       'className="mx-auto flex w-full justify-center"',
     )
     expect(calendarPresentationSource).toContain(
-      'className="bg-background/95 w-[22rem] overflow-hidden rounded-[24px] border-0 p-0 shadow-none backdrop-blur-xl"',
+      'className="bg-background/95 w-[26rem] overflow-hidden rounded-[24px] border-0 p-0 shadow-none backdrop-blur-xl"',
     )
     expect(calendarPresentationSource).toContain(
       "<RoadmapCalendarMonthAgendaPanel",
     )
+    expect(calendarPresentationSource).toContain("compactHeaderControls")
     expect(calendarPresentationSource).toContain(
       'className="rounded-[24px]"',
     )

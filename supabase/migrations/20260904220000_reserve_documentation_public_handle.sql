@@ -7,6 +7,7 @@ begin
   end if;
 end;
 $$;
+
 insert into public.public_handle_reservations (handle, reason)
 values ('documentation', 'Public documentation route')
 on conflict (handle) do nothing;

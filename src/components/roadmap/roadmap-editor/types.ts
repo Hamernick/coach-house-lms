@@ -4,8 +4,10 @@ import type { BudgetTableRow } from "@/lib/modules"
 export type RoadmapEditorLayout = "default" | "centered-right"
 export type RoadmapEditorNavigationMode = "route" | "embedded"
 
+export type RoadmapDraftScope = { userId: string; organizationId: string }
+
 export type RoadmapEditorProps = {
-  sourceScope?: import("@/components/roadmap/core-document-source/use-core-document-source").CoreDocumentScope
+  draftScope?: RoadmapDraftScope
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit?: boolean
@@ -39,6 +41,7 @@ export type RoadmapDraftStorage = {
   drafts: Record<
     string,
     {
+      lastUpdated: string | null
       title?: string
       subtitle?: string
       content?: string

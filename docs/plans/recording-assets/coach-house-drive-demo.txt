@@ -1,0 +1,11 @@
+Coach House OAuth demonstration
+
+This file contains invented information for the Google Drive recording.
+
+Demo project: Community workshop
+Demo task: Prepare the workshop agenda
+Demo status: Ready for review
+
+No customer records, personal information, credentials, or confidential material
+are included. Connect this file through the existing Google file picker to show
+selected-file access in Coach House.

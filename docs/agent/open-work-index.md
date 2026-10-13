@@ -24,36 +24,26 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-Live-site pricing/Donate production follow-up: PR #294 merged as `c8f41085`;
-`coachhouse` production is Ready at that revision and serves coachhouse.app.
-Public pricing links, Build navigation and Donate destination/new-tab behavior
-passed live checks. Tools/Donate appearance review remains pending; historical
-quality failures and missing review are preserved, not retroactively approved.
+LIVE-03 map repair is the active implementation preparation, explicitly authorized
+by Caleb after the onboarding repair. Original packet05 B036 stage3/scoped stage6;
+`/resources` is the public surface and `/map` remains a legacy redirect.
+Branch `fix/live-map-markers-20261013`, worktree
+`coach-house-platform-live-map-20261013`, base `89c409bc`, preview localhost:3115.
+[Scope, evidence and stop boundary](../plans/2026-10-13-live-map-markers.md).
+[PR297](https://github.com/Hamernick/CoachHouse/pull/297) is Ready for review, not merge-ready.
+57 focused tests and changed-file checks pass, including the antimeridian review regression. Confirmed same-place duplicates
+are consolidated while preserving services and old links; marker bounds now
+respect globe projection. The local map canvas remains blank, so visible marker
+verification, appearance review, hosted quality and code-owner review remain open.
+No publication, geocoding, provider mutation or Supabase preview setup.
 
-The user’s real production signup reached checkout but stalled at “Finishing
-your upgrade.” Read-only Stripe/app checks confirm the test subscription is
-active with a USD 0 checkout. Production requests retained the unsubstituted
-`{CHECKOUT_SESSION_ID}` token and Stripe returned 404. Repair is isolated in
-`fix/checkout-activation-20261013`, checkout
-`coach-house-platform-checkout-activation-20261013`, based on `c8f41085`.
-Preserve the literal Stripe token while encoding the other return parameters;
-21 focused checkout/activation tests and changed-file lint pass. The same PR295
-also fixes user-reported long email overflow in the account menu; three existing
-menu tests and desktop/mobile containment checks pass. Hosted quality,
-code-owner review, merge/deployment and production retest remain required.
-[Scope and continuation](../plans/2026-10-13-live-site-pricing-donate.md).
-
-Preserve the original pricing checkout/server on localhost:3119 and unrelated
-servers. No Supabase/provider preview setup. Finish this bounded pricing/Donate,
-SHIP and indexing run, or preserve explicit blockers; do not start map work here.
-
-Latest signup blocker: user profile-save POST returned500 after the photo/name
-saved. PR295 externally merged as368709ce; profile-address repair continues in
-`fix/onboarding-profile-save-20261013` in the existing
-`coach-house-platform-checkout-activation-20261013` checkout. Reject matching
-personal/workspace addresses and handle namespace collisions as form errors;
-49 focused tests/lint pass, including retained concurrent-write protections.
-Current-head quality/review and production retry remain required. No provider writes.
+Prior PR296 externally merged as `89c409bc`; intended coachhouse production is
+Ready at that SHA and assigned coachhouse.app, including PR295 checkout/menu fixes.
+Static/acceptance/RLS/build passed; visual/aggregate quality failed and review
+remained REVIEW_REQUIRED. User username workaround passed; new validation,
+checkout-return/menu production retests and historical Tools/Donate/Collect
+appearance/flow checks remain unverified. Preserve those gates and localhost:3119.
+[Prior scope](../plans/2026-10-13-live-site-pricing-donate.md).
 
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. PR #291 externally merged as

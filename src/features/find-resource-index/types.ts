@@ -14,6 +14,7 @@ export type FindResourceIndexAvailability = {
 
 export type FindResourceIndexItem = {
   id: string
+  relatedResourceIds?: string[]
   itemType: "external_resource"
   title: string
   subtitle: string | null

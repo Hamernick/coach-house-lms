@@ -6,15 +6,11 @@ import type { ReactNode } from "react"
 export function WorkspaceAcceleratorStepViewerTransition({
   children,
   open,
-  immediate = false,
 }: {
   children: ReactNode
   open: boolean
-  immediate?: boolean
 }) {
   const prefersReducedMotion = useReducedMotion()
-
-  if (immediate) return open ? children : null
 
   return (
     <AnimatePresence initial={false} mode="popLayout">

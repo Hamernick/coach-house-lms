@@ -59,7 +59,6 @@ export function CreatePersonDialog({
   const [category, setCategory] = React.useState<OrgPerson["category"]>(
     initial?.category ?? "staff"
   )
-  const [customRole, setCustomRole] = React.useState<string | null>(initial?.customRole ?? null)
   const [image, setImage] = React.useState<string | null>(
     initial?.image ?? null
   )
@@ -69,7 +68,10 @@ export function CreatePersonDialog({
   const isEditing = Boolean(initial?.id)
   const primaryLabel = isEditing ? "Save changes" : "Add person"
   const submittingLabel = isEditing ? "Saving…" : "Adding…"
-  const socialLinkError = findPersonSocialLinkError(socialLinks)
+  const submittedSocialLinks = extendedSocialLinksEnabled
+    ? socialLinks
+    : { linkedin: socialLinks.linkedin }
+  const socialLinkError = findPersonSocialLinkError(submittedSocialLinks)
   const canSubmit =
     !readOnly &&
     Boolean(name.trim()) &&
@@ -91,7 +93,6 @@ export function CreatePersonDialog({
     setEmail(initial?.email ?? "")
     setSocialLinks(readPersonSocialLinks(initial))
     setCategory(initial?.category ?? "staff")
-    setCustomRole(initial?.customRole ?? null)
     setImage(initial?.image ?? null)
     setReportsToId(initial?.reportsToId ?? null)
   }, [initial])
@@ -123,11 +124,8 @@ export function CreatePersonDialog({
         name: name.trim(),
         title: title.trim(),
         email: email.trim(),
-        ...(extendedSocialLinksEnabled
-          ? socialLinks
-          : { linkedin: socialLinks.linkedin }),
+        ...submittedSocialLinks,
         category,
-        customRole,
         image,
         reportsToId: reportsToId || null,
       })
@@ -188,10 +186,7 @@ export function CreatePersonDialog({
               title={title}
               email={email}
               socialLinks={socialLinks}
-              extendedSocialLinksEnabled={extendedSocialLinksEnabled}
               category={category}
-              customRole={customRole}
-              onCustomRoleChange={setCustomRole}
               image={image}
               reportsToId={reportsToId}
               onNameChange={setName}
@@ -210,6 +205,7 @@ export function CreatePersonDialog({
               onImageChange={setImage}
               onReportsToChange={setReportsToId}
               readOnly={readOnly}
+              extendedSocialLinksEnabled={extendedSocialLinksEnabled}
             />
           </div>
 

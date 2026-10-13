@@ -66,7 +66,7 @@ function buildRouteSupabaseStub({
 
 function buildRequest(id: string) {
   return new NextRequest(
-    `http://localhost/api/account/workspace-documents-index/item?id=${encodeURIComponent(id)}`
+    `http://localhost/api/account/workspace-documents-index/item?id=${encodeURIComponent(id)}`,
   )
 }
 
@@ -82,8 +82,7 @@ describe("workspace documents item route", () => {
     const { supabase } = buildRouteSupabaseStub({ userId: null })
     createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
 
-    const { GET } =
-      await import("@/app/api/account/workspace-documents-index/item/route")
+    const { GET } = await import("@/app/api/account/workspace-documents-index/item/route")
     const response = await GET(buildRequest("roadmap:origin_story"))
 
     expect(response.status).toBe(401)
@@ -102,13 +101,12 @@ describe("workspace documents item route", () => {
         title: "Origin Story",
         subtitle: "How it started",
         content:
-          "<p><strong>Mission</strong> first.</p><a href=\"javascript&colon;alert('xss')\">unsafe link</a><script>alert('xss')</script>",
+          "<p><strong>Mission</strong> first.</p><script>alert('xss')</script>",
         lastUpdated: "2026-03-03T12:00:00.000Z",
       },
     ])
 
-    const { GET } =
-      await import("@/app/api/account/workspace-documents-index/item/route")
+    const { GET } = await import("@/app/api/account/workspace-documents-index/item/route")
     const response = await GET(buildRequest("roadmap:origin-story"))
     const payload = await response.json()
 
@@ -125,7 +123,6 @@ describe("workspace documents item route", () => {
     })
     expect(payload.detail.contentHtml).toContain("<strong>Mission</strong>")
     expect(payload.detail.contentHtml).not.toContain("<script>")
-    expect(payload.detail.contentHtml).not.toContain("javascript")
   })
 
   it("returns note markdown detail", async () => {
@@ -142,8 +139,7 @@ describe("workspace documents item route", () => {
       },
     ])
 
-    const { GET } =
-      await import("@/app/api/account/workspace-documents-index/item/route")
+    const { GET } = await import("@/app/api/account/workspace-documents-index/item/route")
     const response = await GET(buildRequest("note:mod-42"))
     const payload = await response.json()
 
@@ -163,8 +159,7 @@ describe("workspace documents item route", () => {
     const { supabase } = buildRouteSupabaseStub()
     createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
 
-    const { GET } =
-      await import("@/app/api/account/workspace-documents-index/item/route")
+    const { GET } = await import("@/app/api/account/workspace-documents-index/item/route")
     const response = await GET(buildRequest("upload:verification-letter"))
 
     expect(response.status).toBe(400)

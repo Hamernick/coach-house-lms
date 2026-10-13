@@ -33,14 +33,6 @@ function stubLocalStorage() {
 }
 
 describe("workspace board UI preferences", () => {
-  it("starts a fresh organization with Organization and no expanded drawer preference", () => {
-    stubLocalStorage()
-    const preferences = readWorkspaceBoardUiPreferences({ orgId: "new-org", viewerId: "new-user" })
-    expect(preferences.dataDrawerTab).toBe("organization")
-    expect(preferences.dataDrawerSnapPoint).toBeNull()
-    expect(normalizeWorkspaceDataDrawerTabPreference(undefined)).toBe("organization")
-  })
-
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -52,19 +44,6 @@ describe("workspace board UI preferences", () => {
         viewerId: "user@example.com",
       })
     ).toBe("coachhouse:workspace-board-ui:v1:org%201:user%40example.com")
-  })
-
-  it("keeps introduction dismissal scoped, reversible, and independent of canvas preferences", () => {
-    stubLocalStorage()
-    const scope = { orgId: "org-1", viewerId: "viewer-1" }
-    patchWorkspaceBoardUiPreferences(scope, { canvasViewport: { x: 12, y: 18, zoom: 1 } })
-    patchWorkspaceBoardUiPreferences(scope, { acceleratorIntroductionDismissed: true })
-    expect(readWorkspaceBoardUiPreferences(scope).acceleratorIntroductionDismissed).toBe(true)
-    expect(readWorkspaceBoardUiPreferences(scope).canvasViewport).toEqual({ x: 12, y: 18, zoom: 1 })
-    expect(readWorkspaceBoardUiPreferences({ ...scope, orgId: "org-2" }).acceleratorIntroductionDismissed).toBe(false)
-    expect(readWorkspaceBoardUiPreferences({ ...scope, viewerId: "viewer-2" }).acceleratorIntroductionDismissed).toBe(false)
-    patchWorkspaceBoardUiPreferences(scope, { acceleratorIntroductionDismissed: false })
-    expect(readWorkspaceBoardUiPreferences(scope).acceleratorIntroductionDismissed).toBe(false)
   })
 
   it("normalizes the saved React Flow viewport before storage", () => {
@@ -118,7 +97,6 @@ describe("workspace board UI preferences", () => {
       storage.get(buildWorkspaceBoardUiPreferencesStorageKey(scope))
     ).toBeTruthy()
     expect(readWorkspaceBoardUiPreferences(scope)).toEqual({
-      acceleratorIntroductionDismissed: false,
       canvasViewport: { x: 10, y: 20, zoom: 0.75 },
       canvasViewportLayoutVersion: 2,
       dataDrawerSnapPoint: 0.48,
@@ -128,7 +106,7 @@ describe("workspace board UI preferences", () => {
     })
   })
 
-  it("defaults invalid drawer tabs to Organization", () => {
+  it("defaults invalid drawer tabs to Accelerator", () => {
     expect(normalizeWorkspaceDataDrawerTabPreference("organization")).toBe(
       "organization"
     )
@@ -141,7 +119,7 @@ describe("workspace board UI preferences", () => {
       "documents"
     )
     expect(normalizeWorkspaceDataDrawerTabPreference("unknown")).toBe(
-      "organization"
+      "accelerator"
     )
   })
 
@@ -156,6 +134,9 @@ describe("workspace board UI preferences", () => {
   it("wires viewport and drawer state through the shared preference contract", () => {
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
+    )
+    const bootstrapSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-canvas-surface-v2-bootstrap.ts"
     )
     const viewportPreferencesSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-viewport-preferences.ts"
@@ -173,14 +154,18 @@ describe("workspace board UI preferences", () => {
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
 
-    expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
-    expect(surfaceSource).toContain("suppressInitialFit")
-    expect(surfaceSource).toContain("onMoveEnd: handleCanvasMoveEnd")
+    expect(bootstrapSource).toContain("useWorkspaceCanvasViewportPreferences")
+    expect(surfaceSource).toContain(
+      "suppressInitialFit: viewport.suppressInitialFit"
+    )
+    expect(surfaceSource).toContain("onMoveEnd: viewport.handleCanvasMoveEnd")
     expect(viewportPreferencesSource).toContain(
       "setViewportZoom(viewport.zoom)"
     )
     expect(viewportPreferencesSource).toContain("viewportZoom,")
-    expect(surfaceSource).toContain("uiPreferencesScope,")
+    expect(surfaceSource).toContain(
+      "uiPreferencesScope: viewport.uiPreferencesScope"
+    )
     expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
       "readWorkspaceBoardUiPreferences"
@@ -201,8 +186,8 @@ describe("workspace board UI preferences", () => {
     expect(drawerSource).toContain("dataDrawerSnapPoint: storedSnapPoint")
     expect(drawerSource).toContain("dataDrawerTab: nextTab")
     expect(drawerSource).toContain(
-      "if (request || guideState) return"
+      "readWorkspaceBoardUiPreferences(uiPreferencesScope)\n      if (request) return"
     )
-    expect(drawerSource).toContain("}, [request, uiPreferencesScope, guideState])")
+    expect(drawerSource).toContain("}, [request, uiPreferencesScope])")
   })
 })

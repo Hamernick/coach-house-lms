@@ -30,16 +30,6 @@ export function normalizeProjectOverviewDocumentHtml(
   return sanitizeHtml(value?.trim() ?? "").trim()
 }
 
-export function buildProjectOverviewDocumentContent(
-  value: string | null | undefined
-) {
-  const documentHtml = normalizeProjectOverviewDocumentHtml(value)
-  return {
-    documentHtml,
-    documentText: toDocumentText(documentHtml),
-  }
-}
-
 export async function loadProjectOverviewDocument({
   orgId,
   projectId,
@@ -80,7 +70,8 @@ export async function upsertProjectOverviewDocument({
   projectId: string
   supabase: MemberWorkspaceProjectOverviewDocumentClient
 }) {
-  const normalized = buildProjectOverviewDocumentContent(documentHtml)
+  const normalizedDocumentHtml =
+    normalizeProjectOverviewDocumentHtml(documentHtml)
 
   const { data: existingDocument, error: existingDocumentError } =
     await supabase
@@ -98,8 +89,8 @@ export async function upsertProjectOverviewDocument({
     const { error } = await supabase
       .from("organization_project_overview_documents")
       .update({
-        document_html: normalized.documentHtml,
-        document_text: normalized.documentText,
+        document_html: normalizedDocumentHtml,
+        document_text: toDocumentText(normalizedDocumentHtml),
         updated_by: actorId,
       })
       .eq("id", existingDocument.id)
@@ -112,8 +103,8 @@ export async function upsertProjectOverviewDocument({
     .insert({
       org_id: orgId,
       project_id: projectId,
-      document_html: normalized.documentHtml,
-      document_text: normalized.documentText,
+      document_html: normalizedDocumentHtml,
+      document_text: toDocumentText(normalizedDocumentHtml),
       created_by: actorId,
       updated_by: actorId,
     })

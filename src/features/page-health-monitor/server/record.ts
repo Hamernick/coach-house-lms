@@ -11,10 +11,7 @@ type RecordPageHealthEventInput = {
 
 type PageHealthRecordResult =
   | { ok: true; id: string | null }
-  | {
-      ok: false
-      reason: "unavailable" | "rate_limited" | "insert_failed"
-    }
+  | { ok: false; reason: "unavailable" | "insert_failed" }
 
 function isPageHealthSchemaUnavailableError(error: unknown) {
   const maybeError = error as {
@@ -26,32 +23,10 @@ function isPageHealthSchemaUnavailableError(error: unknown) {
     `${maybeError?.message ?? ""} ${maybeError?.details ?? ""}`.toLowerCase()
 
   return (
-    maybeError?.code === "PGRST202" ||
     maybeError?.code === "PGRST205" ||
     (message.includes("schema cache") &&
-      (message.includes("app_page_health_events") ||
-        message.includes("record_page_health_event")))
+      message.includes("app_page_health_events"))
   )
-}
-
-function readPageHealthRecordResult(data: unknown): PageHealthRecordResult {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    return { ok: false, reason: "insert_failed" }
-  }
-
-  const result = data as { id?: unknown; status?: unknown }
-  if (result.status === "rate_limited") {
-    return { ok: false, reason: "rate_limited" }
-  }
-
-  if (result.status !== "recorded") {
-    return { ok: false, reason: "insert_failed" }
-  }
-
-  return {
-    ok: true,
-    id: typeof result.id === "string" ? result.id : null,
-  }
 }
 
 export async function recordPageHealthEvent({
@@ -67,11 +42,26 @@ export async function recordPageHealthEvent({
   }
 
   const normalized = normalizePageHealthEventInput(input)
-  const { data, error } = await client.rpc("record_page_health_event", {
-    p_event: normalized,
-    p_org_id: orgId ?? null,
-    p_user_id: userId ?? null,
-  })
+  const { data, error } = await client
+    .from("app_page_health_events")
+    .insert({
+      user_id: userId ?? null,
+      org_id: orgId ?? null,
+      event_type: normalized.eventType,
+      severity: normalized.severity,
+      source: normalized.source,
+      route_path: normalized.routePath,
+      target_href: normalized.targetHref,
+      duration_ms: normalized.durationMs,
+      threshold_ms: normalized.thresholdMs,
+      error_name: normalized.errorName,
+      error_message: normalized.errorMessage,
+      error_digest: normalized.errorDigest,
+      stack_hash: normalized.stackHash,
+      metadata: normalized.metadata,
+    })
+    .select("id")
+    .single<{ id: string }>()
 
   if (error) {
     return isPageHealthSchemaUnavailableError(error)
@@ -79,5 +69,5 @@ export async function recordPageHealthEvent({
       : { ok: false, reason: "insert_failed" }
   }
 
-  return readPageHealthRecordResult(data)
+  return { ok: true, id: data?.id ?? null }
 }

@@ -36,21 +36,15 @@ type BudgetTableProps = {
   formatMoney: (value: number) => string
   onUpdateRow: (rowIndex: number, patch: Partial<BudgetTableRow>) => void
   onRowsChange: (rows: BudgetTableRow[]) => void
-  onCategoryInputMount?: (
-    rowIndex: number,
-    input: HTMLInputElement | null
-  ) => void
   frameClassName?: string
   layout?: "grid" | "stacked"
   maxBodyHeightClassName?: string
-  readOnly?: boolean
 }
 
 export function BudgetTable({
   blankRow,
   layout = "grid",
   onRowsChange,
-  readOnly = false,
   rows,
   ...props
 }: BudgetTableProps) {
@@ -66,12 +60,7 @@ export function BudgetTable({
 
   if (layout === "stacked") {
     return (
-      <BudgetTableStackedRows
-        rows={rows}
-        {...props}
-        readOnly={readOnly}
-        onRemoveRow={removeRow}
-      />
+      <BudgetTableStackedRows rows={rows} {...props} onRemoveRow={removeRow} />
     )
   }
 
@@ -81,7 +70,6 @@ export function BudgetTable({
       blankRow={blankRow}
       onRowsChange={onRowsChange}
       onRemoveRow={removeRow}
-      readOnly={readOnly}
       {...props}
     />
   )
@@ -102,10 +90,8 @@ function BudgetTableGridEditor({
   onUpdateRow,
   onRowsChange,
   onRemoveRow,
-  onCategoryInputMount,
   frameClassName,
   maxBodyHeightClassName,
-  readOnly = false,
 }: BudgetTableGridEditorProps) {
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() =>
     fitBudgetTableColumnSizes(BUDGET_TABLE_MIN_WIDTH)
@@ -114,37 +100,6 @@ function BudgetTableGridEditor({
   const [userSized, setUserSized] = useState(false)
   const [draggingRow, setDraggingRow] = useState<number | null>(null)
   const tableFrameRef = useRef<HTMLDivElement | null>(null)
-  const totalsRef = useRef(totals)
-  const onUpdateRowRef = useRef(onUpdateRow)
-  const onRemoveRowRef = useRef(onRemoveRow)
-  const onCategoryInputMountRef = useRef(onCategoryInputMount)
-
-  useLayoutEffect(() => {
-    totalsRef.current = totals
-    onUpdateRowRef.current = onUpdateRow
-    onRemoveRowRef.current = onRemoveRow
-    onCategoryInputMountRef.current = onCategoryInputMount
-  }, [onCategoryInputMount, onRemoveRow, onUpdateRow, totals])
-
-  const getRowTotal = useCallback(
-    (rowIndex: number) => totalsRef.current[rowIndex] ?? 0,
-    []
-  )
-  const handleUpdateRow = useCallback(
-    (rowIndex: number, patch: Partial<BudgetTableRow>) => {
-      onUpdateRowRef.current(rowIndex, patch)
-    },
-    []
-  )
-  const handleRemoveRow = useCallback((rowIndex: number) => {
-    onRemoveRowRef.current(rowIndex)
-  }, [])
-  const handleCategoryInputMount = useCallback(
-    (rowIndex: number, input: HTMLInputElement | null) => {
-      onCategoryInputMountRef.current?.(rowIndex, input)
-    },
-    []
-  )
 
   useLayoutEffect(() => {
     if (userSized) return
@@ -208,26 +163,22 @@ function BudgetTableGridEditor({
     return buildBudgetTableColumns({
       costTypeOptions,
       unitListId,
-      getRowTotal,
+      totals,
       formatMoney,
       rowsLength: rows.length,
-      onUpdateRow: handleUpdateRow,
-      onRemoveRow: handleRemoveRow,
-      onCategoryInputMount: handleCategoryInputMount,
+      onUpdateRow,
+      onRemoveRow,
       onRowDragStart: handleRowDragStart,
-      readOnly,
     })
   }, [
     costTypeOptions,
     unitListId,
-    getRowTotal,
+    totals,
     formatMoney,
     rows.length,
-    handleUpdateRow,
-    handleRemoveRow,
-    handleCategoryInputMount,
+    onUpdateRow,
+    onRemoveRow,
     handleRowDragStart,
-    readOnly,
   ])
 
   const table = useReactTable({

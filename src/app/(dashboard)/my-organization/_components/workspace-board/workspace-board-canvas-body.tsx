@@ -1,11 +1,9 @@
 "use client"
 
 import {
-  WorkspaceSetupGuide,
+  clampWorkspaceCanvasTutorialStepIndex,
+  resolveWorkspaceCanvasTutorialCallout,
 } from "@/features/workspace-canvas-tutorial"
-import { useMemo } from "react"
-import { useRouter } from "next/navigation"
-import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 import type {
   WorkspaceCanvasCardFocusRequest,
   WorkspaceCanvasTutorialCompletionExitRequest,
@@ -13,6 +11,7 @@ import type {
 
 import { WorkspaceBoardFlowSurface } from "./workspace-board-flow-surface"
 import { WorkspaceBoardInitialOnboardingSurface } from "./workspace-board-initial-onboarding-surface"
+import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
 import { WorkspaceBoardTeamAccessHeaderAction } from "./workspace-board-team-access-header-action"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
 import type {
@@ -44,7 +43,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest,
   journeyGuideState,
   organizationEditorData,
-  financeInput,
+  workspaceFoundationEnabled,
   onInitialOnboardingSubmit,
   onInvitesChange,
   onSizeChange,
@@ -55,7 +54,7 @@ export function WorkspaceBoardCanvasBody({
   onCloseAcceleratorStepNode,
   onTutorialPrevious,
   onTutorialNext,
-  onTutorialRestart: _onTutorialRestart,
+  onTutorialRestart,
   onTutorialShortcutOpened,
   onFocusCard,
   onOnboardingFlowChange,
@@ -86,7 +85,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
-  financeInput: WorkspaceFinanceInput
+  workspaceFoundationEnabled: boolean
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
@@ -115,11 +114,16 @@ export function WorkspaceBoardCanvasBody({
   ) => void
   onTutorialCompletionExitHandled: () => void
 }) {
-  const router = useRouter()
-  const canvasState = useMemo(() => ({
-    ...boardState,
-    onboardingFlow: { ...boardState.onboardingFlow, active: false },
-  }), [boardState])
+  const tutorialActive = boardState.onboardingFlow.active
+  const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
+    boardState.onboardingFlow.tutorialStepIndex
+  )
+  const tutorialCallout = tutorialActive
+    ? resolveWorkspaceCanvasTutorialCallout(
+        tutorialStepIndex,
+        boardState.onboardingFlow.openedTutorialStepIds
+      )
+    : null
   const workspaceDataDrawerCanEdit =
     !seed.presentationMode && (seed.canEdit || seed.isPlatformAdmin === true)
 
@@ -140,25 +144,24 @@ export function WorkspaceBoardCanvasBody({
         invites={invites}
         realtimeState={cursorConnectionState}
         currentUser={rightRailCurrentUser}
-        tutorialCallout={null}
+        tutorialCallout={
+          tutorialCallout?.kind === "team-access"
+            ? {
+                title: tutorialCallout.label,
+                instruction: tutorialCallout.instruction,
+              }
+            : null
+        }
         onInvitesChange={onInvitesChange}
       />
+      <WorkspaceBoardRightRail roadmapSections={seed.roadmapSections} />
 
-      <div data-workspace-guide-canvas="true" className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
-        {!seed.presentationMode ? <WorkspaceSetupGuide
-          key={`${seed.viewerId}:${seed.orgId}`}
-          scope={`${seed.viewerId}:${seed.orgId}`}
-          onFocusCard={onFocusCard}
-          initialActive={boardState.onboardingFlow.active}
-          restartKey={tutorialRestartRequestKey}
-          evidence={{ ...organizationEditorData.initialProfile, programCount: organizationEditorData.programs.length, canEdit: workspaceDataDrawerCanEdit, hasAcceleratorAccess: seed.hasAcceleratorAccess }}
-          onClose={() => onOnboardingFlowChange({ ...boardState.onboardingFlow, active: false, updatedAt: new Date().toISOString() })}
-        /> : null}
+      <div className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden">
         <WorkspaceBoardFlowSurface
           seed={seed}
           organizationEditorData={organizationEditorData}
-          financeInput={financeInput}
-          boardState={canvasState}
+          workspaceFoundationEnabled={workspaceFoundationEnabled}
+          boardState={boardState}
           allowEditing={allowEditing}
           workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}
           presentationMode={seed.presentationMode}
@@ -178,7 +181,7 @@ export function WorkspaceBoardCanvasBody({
           onCloseAcceleratorStepNode={onCloseAcceleratorStepNode}
           onTutorialPrevious={onTutorialPrevious}
           onTutorialNext={onTutorialNext}
-          onTutorialRestart={() => router.push("/workspace?guide=1", { scroll: false })}
+          onTutorialRestart={onTutorialRestart}
           onTutorialShortcutOpened={onTutorialShortcutOpened}
           onFocusCard={onFocusCard}
           onOnboardingFlowChange={onOnboardingFlowChange}

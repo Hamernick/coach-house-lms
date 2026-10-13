@@ -6,11 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { resetTestMocks } from "./test-utils"
 
-const {
-  createSupabaseAdminClientMock,
-  resolveMemberWorkspaceActorContextMock,
-} = vi.hoisted(() => ({
-  createSupabaseAdminClientMock: vi.fn(),
+const { resolveMemberWorkspaceActorContextMock } = vi.hoisted(() => ({
   resolveMemberWorkspaceActorContextMock: vi.fn(),
 }))
 
@@ -20,10 +16,6 @@ vi.mock(
     resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
   })
 )
-
-vi.mock("@/lib/supabase/admin", () => ({
-  createSupabaseAdminClient: createSupabaseAdminClientMock,
-}))
 
 import {
   createMemberWorkspaceProjectAction,
@@ -35,11 +27,10 @@ import { MEMBER_WORKSPACE_UPGRADE_MESSAGE } from "@/features/member-workspace/se
 describe("member workspace project actions", () => {
   beforeEach(() => {
     resetTestMocks()
-    createSupabaseAdminClientMock.mockReset()
     resolveMemberWorkspaceActorContextMock.mockReset()
   })
 
-  it.each([false, true])("creates a project with fiscal sponsorship opt-in %s", async (fiscalSponsorshipEnabled) => {
+  it("allows platform admins to create organization projects for a chosen organization", async () => {
     const organizationQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -48,17 +39,21 @@ describe("member workspace project actions", () => {
         error: null,
       }),
     }
+    const insertProjectQuery = {
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { id: "project-new" },
+        error: null,
+      }),
+    }
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === "organizations") return organizationQuery
+        if (table === "organization_projects") return insertProjectQuery
         throw new Error(`Unexpected table: ${table}`)
       }),
     }
-    const rpc = vi.fn().mockResolvedValue({
-      data: { ok: true, projectId: "project-new" },
-      error: null,
-    })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       supabase,
@@ -72,7 +67,6 @@ describe("member workspace project actions", () => {
       createMemberWorkspaceProjectAction({
         orgId: "org-1",
         name: "Internal admin project",
-        fiscalSponsorshipEnabled,
         status: "planned",
         priority: "medium",
         startDate: "2026-04-09",
@@ -81,27 +75,14 @@ describe("member workspace project actions", () => {
     ).resolves.toEqual({ ok: true, id: "project-new" })
 
     expect(organizationQuery.maybeSingle).toHaveBeenCalled()
-    expect(rpc).toHaveBeenCalledWith(
-      fiscalSponsorshipEnabled ? "create_organization_project_with_options" : "create_organization_project_transition",
+    expect(insertProjectQuery.insert).toHaveBeenCalledWith(
       expect.objectContaining({
-        p_actor_id: "platform-admin-1",
-        p_org_id: "org-1",
-        p_project: expect.objectContaining({
-          name: "Internal admin project",
-          project_kind: "standard",
-          ...(fiscalSponsorshipEnabled ? { option_settings: { tags: [], sprintTypes: [], fiscalSponsorshipEnabled: true } } : {}),
-        }),
+        org_id: "org-1",
+        project_kind: "standard",
+        name: "Internal admin project",
+        created_by: "platform-admin-1",
       })
     )
-  })
-
-  it("creates projects with no displayed organization and no dates without removing ownership", async () => {
-    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "coach-house" }, error: null }) }
-    const rpc = vi.fn().mockResolvedValue({ data: { ok: true, projectId: "new-project" }, error: null })
-    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase: { from: () => query }, userId: "admin-1", isAdmin: true, canEdit: true, hasMemberWorkspaceAccess: true })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
-    expect(await createMemberWorkspaceProjectAction({ name: "Internal project", status: "planned", priority: "medium", orgId: null })).toEqual({ ok: true, id: "new-project" })
-    expect(rpc).toHaveBeenCalledWith("create_organization_project_transition", expect.objectContaining({ p_org_id: "coach-house", p_project: expect.objectContaining({ organization_unassigned: true, start_date: null, end_date: null, client_name: null }) }))
   })
 
   it("allows platform admins to update existing organization projects", async () => {
@@ -109,31 +90,46 @@ describe("member workspace project actions", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          id: "project-1",
-          org_id: "org-2",
-          updated_at: "2026-08-06T00:20:00.000Z",
-        },
+        data: { id: "project-1", org_id: "org-2" },
         error: null,
       }),
     }
+    const updateProjectQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    }
+    const existingOverviewDocumentQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: "overview-doc-1" },
+        error: null,
+      }),
+    }
+    const updateOverviewDocumentQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    }
+    let projectQueryCount = 0
+    let overviewDocumentQueryCount = 0
     const supabase = {
       from: vi.fn((table: string) => {
+        if (table === "organization_project_overview_documents") {
+          overviewDocumentQueryCount += 1
+          return overviewDocumentQueryCount === 1
+            ? existingOverviewDocumentQuery
+            : updateOverviewDocumentQuery
+        }
+
         if (table !== "organization_projects") {
           throw new Error(`Unexpected table: ${table}`)
         }
-        return existingProjectQuery
+        projectQueryCount += 1
+        return projectQueryCount === 1
+          ? existingProjectQuery
+          : updateProjectQuery
       }),
     }
-    const rpc = vi.fn().mockResolvedValue({
-      data: {
-        ok: true,
-        projectId: "project-1",
-        updatedAt: "2026-08-06T00:21:00.000Z",
-      },
-      error: null,
-    })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       supabase,
@@ -157,23 +153,27 @@ describe("member workspace project actions", () => {
     ).resolves.toEqual({ ok: true, id: "project-1" })
 
     expect(existingProjectQuery.maybeSingle).toHaveBeenCalled()
-    expect(rpc).toHaveBeenCalledWith(
-      "update_organization_project_transition",
+    expect(updateProjectQuery.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        p_actor_id: "platform-admin-1",
-        p_expected_org_id: "org-2",
-        p_expected_updated_at: "2026-08-06T00:20:00.000Z",
-        p_overview_document_html:
-          "<h2>Saved overview</h2><p><strong>Rich</strong> text stays here.</p>",
-        p_overview_document_text:
-          "## Saved overview\n\n**Rich** text stays here.",
-        p_project: expect.objectContaining({
-          description: "Rich text stays here.",
-          name: "Updated org project",
-          priority: "high",
-          status: "active",
-        }),
+        name: "Updated org project",
+        description: "Rich text stays here.",
+        status: "active",
+        priority: "high",
+        updated_by: "platform-admin-1",
       })
+    )
+    expect(existingOverviewDocumentQuery.maybeSingle).toHaveBeenCalled()
+    expect(updateOverviewDocumentQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        document_html:
+          "<h2>Saved overview</h2><p><strong>Rich</strong> text stays here.</p>",
+        document_text: "## Saved overview\n\n**Rich** text stays here.",
+        updated_by: "platform-admin-1",
+      })
+    )
+    expect(updateOverviewDocumentQuery.eq).toHaveBeenCalledWith(
+      "id",
+      "overview-doc-1"
     )
   })
 
@@ -215,10 +215,13 @@ describe("member workspace project actions", () => {
           org_id: "org-2",
           project_kind: "standard",
           canonical_org_id: null,
-          updated_at: "2026-08-06T00:31:00.000Z",
         },
         error: null,
       }),
+    }
+    const deleteProjectQuery = {
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
     }
     const supabase = {
       from: vi.fn((table: string) => {
@@ -226,14 +229,11 @@ describe("member workspace project actions", () => {
           throw new Error(`Unexpected table: ${table}`)
         }
 
-        return existingProjectQuery
+        return supabase.from.mock.calls.length === 1
+          ? existingProjectQuery
+          : deleteProjectQuery
       }),
     }
-    const rpc = vi.fn().mockResolvedValue({
-      data: { ok: true, projectId: "project-1" },
-      error: null,
-    })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       supabase,
@@ -248,12 +248,12 @@ describe("member workspace project actions", () => {
     ).resolves.toEqual({ ok: true, id: "project-1" })
 
     expect(existingProjectQuery.maybeSingle).toHaveBeenCalled()
-    expect(rpc).toHaveBeenCalledWith("delete_organization_project_transition", {
-      p_actor_id: "platform-admin-1",
-      p_expected_org_id: "org-2",
-      p_expected_updated_at: "2026-08-06T00:31:00.000Z",
-      p_project_id: "project-1",
-    })
+    expect(deleteProjectQuery.delete).toHaveBeenCalled()
+    expect(deleteProjectQuery.eq).toHaveBeenCalledWith("id", "project-1")
+    expect(deleteProjectQuery.eq).toHaveBeenCalledWith(
+      "project_kind",
+      "standard"
+    )
   })
 
   it("rejects deletion of canonical admin organization rows", async () => {
@@ -366,9 +366,7 @@ describe("member workspace project actions", () => {
       "utf8"
     )
 
-    expect(projectActionsSource).toContain(
-      "transitionOrganizationProjectUpdate"
-    )
+    expect(projectActionsSource).toContain("upsertProjectOverviewDocument")
     expect(projectActionsSource).toContain("hasOverviewDocumentHtml")
     expect(overviewDocumentsSource).toContain(
       'from("organization_project_overview_documents")'
@@ -386,43 +384,3 @@ describe("member workspace project actions", () => {
     )
   })
 })
-
-
-describe("project option atomic save routing", () => {
-  it("routes metadata through the atomic create wrapper", async () => {
-    const { transitionOrganizationProjectCreation } = await import("@/features/member-workspace/server/project-transition-support")
-    const rpc = vi.fn().mockResolvedValue({ data: { ok: true, projectId: "new-project" }, error: null })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
-    const project = { name: "Project", option_settings: { tags: [], sprintTypes: [] } }
-    await expect(transitionOrganizationProjectCreation({ actorId: "actor", orgId: "org", project, hasOverviewDocument: false, overviewDocumentHtml: null, overviewDocumentText: null })).resolves.toEqual({ ok: true, projectId: "new-project" })
-    expect(rpc).toHaveBeenCalledWith("create_organization_project_with_options", expect.objectContaining({ p_project: project }))
-  })
-  it("reports missing metadata migration without silently dropping colors", async () => {
-    const { transitionOrganizationProjectUpdate } = await import("@/features/member-workspace/server/project-transition-support")
-    const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: "PGRST202" } })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
-    const result = await transitionOrganizationProjectUpdate({ actorId: "actor", expectedOrgId: "org", expectedUpdatedAt: "stamp", projectId: "project", project: { option_settings: { tags: [], sprintTypes: [] } }, hasOverviewDocument: false, overviewDocumentHtml: null, overviewDocumentText: null })
-    expect(rpc).toHaveBeenCalledWith("update_organization_project_with_options", expect.anything())
-    expect(result).toEqual({ error: expect.stringContaining("migrations") })
-  })
-})
-
-describe("coach project deletion scope", () => {
-  it.each([true, false])("enforces assigned organization access (assigned=%s)", async (assigned) => {
-    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: "project-1", org_id: "org-1", project_kind: "standard", canonical_org_id: null, updated_at: "2026-09-28T00:00:00Z" }, error: null }) }
-    const rpc = vi.fn().mockResolvedValue({ data: { ok: true, projectId: "project-1" }, error: null })
-    createSupabaseAdminClientMock.mockReturnValue({ rpc })
-    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase: { from: () => query }, userId: "coach-1", isAdmin: false, canAccessOrganizations: true, canEdit: true, hasMemberWorkspaceAccess: true, organizationCoachScope: { mode: "assigned", organizationIds: new Set(assigned ? ["org-1"] : []), canAccessUnassigned: true } })
-    const result = await deleteMemberWorkspaceProjectAction("project-1")
-    if (assigned) {
-      expect(result).toEqual({ ok: true, id: "project-1" })
-      expect(rpc).toHaveBeenCalledTimes(1)
-    } else {
-      expect(result).toEqual({ error: "You do not have access to that organization's projects." })
-      expect(rpc).not.toHaveBeenCalled()
-    }
-  })
-})
-
-// These fixtures represent ordinary projects; guest scope has a separate denial suite.
-vi.mock("@/lib/workspace/ordinary-project-access", () => ({ isOrdinaryWorkspaceProject: async () => true }))

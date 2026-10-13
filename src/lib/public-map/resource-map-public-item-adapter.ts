@@ -15,9 +15,13 @@ import type {
   PublicMapResourceLinkType,
   PublicMapVerificationStatus,
 } from "./resource-map-items"
+import {
+  formatPublicMapResourceLinkDomain,
+  normalizePublicMapResourceLinkHref,
+} from "./resource-links"
 import { shouldShowPublicMapResourceLink } from "./resource-link-visibility"
 
-type ResourceMapPublicItemRow = Partial<ResourceMapPublicItemsView["Row"]>
+type ResourceMapPublicItemRow = ResourceMapPublicItemsView["Row"]
 
 const PUBLIC_MAP_RESOURCE_CATEGORY_KEYS = new Set<string>(
   PUBLIC_MAP_RESOURCE_ALL_CATEGORY_ORDER
@@ -92,8 +96,8 @@ function isResourceCategoryKey(
 function normalizeResourceCategories(
   row: ResourceMapPublicItemRow
 ): PublicMapResourceCategoryKey[] {
-  const categories = (row.resource_categories ?? [])
-    .flatMap((value) => {
+  const categories = row.resource_categories
+    .flatMap((value): PublicMapResourceCategoryKey[] => {
       const category = resolvePublicMapResourceCategoryInputKey(value)
       return category && isResourceCategoryKey(category) ? [category] : []
     })
@@ -146,7 +150,7 @@ function normalizeContactType(value: unknown): PublicMapResourceContactType {
 }
 
 function normalizeVerificationStatus(
-  value: string | undefined
+  value: string
 ): PublicMapVerificationStatus {
   return value === "verified_platform" ||
     value === "external_data" ||
@@ -218,6 +222,68 @@ function normalizePublicResourceLinks(value: unknown): PublicMapResourceLink[] {
     .filter(shouldShowPublicMapResourceLink)
 }
 
+function buildPublicResourceLinkFallback({
+  id,
+  isPrimary = false,
+  label,
+  type,
+  value,
+}: {
+  id: string
+  isPrimary?: boolean
+  label: string
+  type: PublicMapResourceLinkType
+  value: unknown
+}): PublicMapResourceLink | null {
+  const url = normalizePublicMapResourceLinkHref(readStringOrNull(value))
+  if (!url) return null
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null
+    const link = {
+      id,
+      label,
+      url,
+      type,
+      domain: formatPublicMapResourceLinkDomain(url),
+      isPrimary,
+    }
+    return shouldShowPublicMapResourceLink(link) ? link : null
+  } catch {
+    return null
+  }
+}
+
+function buildPublicResourceLinks(
+  row: ResourceMapPublicItemRow
+): PublicMapResourceLink[] {
+  const explicitLinks = normalizePublicResourceLinks(row.public_links)
+  const fallbackLinks = [
+    buildPublicResourceLinkFallback({
+      id: `${row.organization_id}:website`,
+      isPrimary: true,
+      label: "Website",
+      type: "website",
+      value: row.website_url,
+    }),
+    buildPublicResourceLinkFallback({
+      id: `${row.organization_id}:donate`,
+      label: "Donate",
+      type: "donate",
+      value: row.donate_url,
+    }),
+  ].filter((link): link is PublicMapResourceLink => link !== null)
+
+  return [
+    ...fallbackLinks.filter(
+      (fallback) =>
+        !explicitLinks.some((explicit) => explicit.url === fallback.url)
+    ),
+    ...explicitLinks,
+  ]
+}
+
 function normalizePublicResourceContacts(
   value: unknown
 ): PublicMapResourceContact[] {
@@ -229,13 +295,16 @@ function normalizePublicResourceContacts(
     const id = readString(record["id"])
     const contactValue = readString(record["value"])
     if (!id || !contactValue) return []
+    const type = normalizeContactType(record["type"])
 
     return [
       {
         id,
-        label: readStringOrNull(record["label"]),
+        label:
+          readStringOrNull(record["label"]) ??
+          (type === "email" ? "Email" : type === "phone" ? "Phone" : "Contact"),
         value: contactValue,
-        type: normalizeContactType(record["type"]),
+        type,
         url: readStringOrNull(record["url"]),
         isPrimary: record["isPrimary"] === true,
       },
@@ -253,8 +322,8 @@ export function buildExternalResourceMapItemFromPublicRow(
   const resourceCategories = normalizeResourceCategories(row)
   const primaryResourceCategory = resourceCategories[0] ?? "community"
   const { address, addressStreet } = buildResourceAddress(row)
-  const deliveryModes = normalizeDeliveryModes(row.delivery_modes ?? [])
-  const links = normalizePublicResourceLinks(row.public_links)
+  const deliveryModes = normalizeDeliveryModes(row.delivery_modes)
+  const links = buildPublicResourceLinks(row)
   const contacts = normalizePublicResourceContacts(row.public_contacts)
   const serviceArea = readStringArray(row.coverage_area)
   const languages = readStringArray(row.languages)
@@ -268,14 +337,13 @@ export function buildExternalResourceMapItemFromPublicRow(
     temporaryClosedUntil: row.temporary_closed_until,
   })
   const ageRange = buildResourceAgeRange({
-    maximumAge: row.maximum_age ?? null,
-    minimumAge: row.minimum_age ?? null,
+    maximumAge: row.maximum_age,
+    minimumAge: row.minimum_age,
   })
 
   return {
     id: `resource_map:${itemId}`,
     itemType: "external_resource",
-    resourceOrganizationId: readStringOrNull(row.organization_id),
     title,
     subtitle: resolvePublicResourceSubtitle({
       subtitle:
@@ -286,8 +354,8 @@ export function buildExternalResourceMapItemFromPublicRow(
     description:
       readStringOrNull(row.description) ??
       readStringOrNull(row.organization_description),
-    latitude: row.latitude ?? null,
-    longitude: row.longitude ?? null,
+    latitude: row.latitude,
+    longitude: row.longitude,
     address,
     addressStreet,
     city: readStringOrNull(row.city),
@@ -301,7 +369,7 @@ export function buildExternalResourceMapItemFromPublicRow(
       readStringOrNull(row.source_label) ??
       readStringOrNull(row.source_attribution),
     sourceUrl: readStringOrNull(row.source_url),
-    lastVerifiedAt: row.last_verified_at ?? null,
+    lastVerifiedAt: row.last_verified_at,
     visibility: "published",
     markerImageUrl:
       readStringOrNull(row.logo_url) ?? readStringOrNull(row.favicon_url),
@@ -319,7 +387,7 @@ export function buildExternalResourceMapItemFromPublicRow(
     contacts,
     services: [
       {
-        id: row.service_id ?? itemId,
+        id: row.service_id,
         title,
         description: readStringOrNull(row.description),
         whoItHelps: readStringOrNull(row.who_it_helps),

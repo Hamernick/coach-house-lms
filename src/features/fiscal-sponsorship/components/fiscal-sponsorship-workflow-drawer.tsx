@@ -111,7 +111,6 @@ export function FiscalSponsorshipWorkflowDrawer({
           <TabsContent value="docs" className="mt-0 flex flex-col gap-4">
             <FiscalSponsorshipRequiredDocumentsUploadPanel
               applicationReady={Boolean(data.workflowSummary?.applicationId)}
-              canCompleteW9={data.workflowSummary?.canCompleteW9 ?? false}
               documents={data.workflowSummary?.requiredDocuments ?? []}
               legalEntityType={data.workflowSummary?.legalEntityType ?? null}
               projectId={data.projectId}

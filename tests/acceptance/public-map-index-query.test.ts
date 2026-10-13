@@ -16,6 +16,7 @@ import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 
 function buildSupabaseAdminStub({
   organizations,
+  organizationError = null,
   programs,
 }: {
   organizations: Array<{
@@ -25,6 +26,7 @@ function buildSupabaseAdminStub({
     location_lng: number | null
     public_slug: string | null
   }>
+  organizationError?: { code: string; message: string } | null
   programs: Array<{
     id: string
     user_id: string
@@ -43,9 +45,10 @@ function buildSupabaseAdminStub({
     wizard_snapshot: Record<string, unknown> | null
   }>
 }) {
-  const organizationsReturns = vi
-    .fn()
-    .mockResolvedValue({ data: organizations, error: null })
+  const organizationsReturns = vi.fn().mockResolvedValue({
+    data: organizationError ? null : organizations,
+    error: organizationError,
+  })
   const programsReturns = vi
     .fn()
     .mockResolvedValue({ data: programs, error: null })
@@ -92,6 +95,32 @@ describe("fetchPublicMapOrganizations", () => {
 
     await expect(fetchPublicMapOrganizations()).resolves.toEqual([])
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
+  })
+
+  it("rejects transient organization query failures instead of returning an empty directory", async () => {
+    const { supabase } = buildSupabaseAdminStub({
+      organizations: [],
+      organizationError: {
+        code: "08006",
+        message: "temporary connection failure",
+      },
+      programs: [],
+    })
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    createSupabaseAdminClientMock.mockReturnValue(supabase)
+
+    await expect(fetchPublicMapOrganizations()).rejects.toThrow(
+      "Unable to load public map organizations."
+    )
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[public-map] organization query failed",
+      {
+        code: "08006",
+        message: "temporary connection failure",
+      }
+    )
+    errorSpy.mockRestore()
   })
 
   it("returns published orgs even when coordinates are missing", async () => {
@@ -209,10 +238,8 @@ describe("fetchPublicMapOrganizations", () => {
       city: "Brooklyn",
       state: "NY",
       country: "United States",
-      originStory:
-        "<p>Atlas began after local caregivers lost support access.</p>",
-      theoryOfChange:
-        "<p>Pair trained neighbors with recurring care circles.</p>",
+      originStory: "Atlas began after local caregivers lost support access.",
+      theoryOfChange: "Pair trained neighbors with recurring care circles.",
       programPreview: {
         activityKind: "Event",
         ctaLabel: "Join",
@@ -236,9 +263,8 @@ describe("fetchPublicMapOrganizations", () => {
       longitude: null,
       isOnlineOnly: true,
       locationUrl: "https://beacon.org/visit",
-      originStory: "<p>Beacon launched from a mutual aid pilot.</p>",
-      theoryOfChange:
-        "<p>Shared onboarding and referrals improve continuity.</p>",
+      originStory: "Beacon launched from a mutual aid pilot.",
+      theoryOfChange: "Shared onboarding and referrals improve continuity.",
       programPreview: {
         activityKind: "Web resource",
         ctaLabel: "Open",

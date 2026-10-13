@@ -168,14 +168,14 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
     {
       id: "budget-funding",
       label: "Budget and funding",
-      description: "Anticipated fundraising amount, timeframe, and funding sources",
+      description: "Estimated budget, expense categories, and funding sources",
       complete: false,
     },
     {
       id: "eligibility-attestations",
       label: "Eligibility attestations",
       description:
-        "Operating locations, lobbying, and explanations for review",
+        "U.S. operations, lobbying, investor-return funds, and concerns",
       complete: false,
     },
   ]
@@ -257,11 +257,6 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
           {
             id: "applicant-signature",
             title: "Applicant signature",
-            actionLabel: "Sign",
-            complete: Boolean(
-              signaturePacketStatus &&
-              ["applicant_signed", "completed"].includes(signaturePacketStatus)
-            ),
             description:
               signaturePacket.applicantSignerEmail ??
               "Applicant signs securely in Coach House",
@@ -275,17 +270,10 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
                 {
                   id: "coach-signature",
                   title: "Coach House countersignature",
-                  actionLabel: coachCanSign ? "Countersign" : "Preview",
-                  complete: Boolean(
-                    signaturePacketStatus &&
-                    ["coach_signed", "completed"].includes(
-                      signaturePacketStatus
-                    )
-                  ),
                   description:
                     signaturePacket.coachSignerEmail ??
                     "Available after the applicant signs",
-                  href: signaturePacket.coachSigningHref,
+                  href: coachCanSign ? signaturePacket.coachSigningHref : null,
                   statusLabel: resolveCoachSigningStatus(signaturePacketStatus),
                 },
               ]
@@ -338,7 +326,6 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
       hasCloseoutReport,
       hasGrantRequestSupport,
       hasReportSupport,
-      hasAcceptedCompletedW9: hasAcceptedW9,
       hasAcceptedW9,
       signaturePacketStatus,
     }),

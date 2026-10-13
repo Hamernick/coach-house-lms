@@ -206,7 +206,7 @@ describe("workspace ontology input", () => {
     ).toMatchObject({
       status: "missing",
       relationshipLabel: "Next step",
-      href: "/workspace?drawer=documents",
+      href: "/organization/documents",
     })
     expect(
       allNodes.find((node) => node.id === "ontology:organization:field:mission")

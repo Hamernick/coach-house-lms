@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
@@ -36,8 +37,8 @@ import {
   submitFiscalSponsorshipApplication,
 } from "../actions"
 import type { FiscalSponsorshipProjectWorkbenchData } from "../types"
-import { parseFundraisingAmount } from "../lib/fundraising-goal"
 import { FiscalSponsorshipApplicationEditorActions } from "./fiscal-sponsorship-application-editor-actions"
+import { FiscalSponsorshipApplicationReviewNote } from "./fiscal-sponsorship-application-review-note"
 import { FiscalSponsorshipApplicationEditorFields } from "./fiscal-sponsorship-application-editor-fields"
 
 type FiscalSponsorshipApplicationDrawerProps = {
@@ -50,7 +51,6 @@ type FiscalSponsorshipApplicationDrawerProps = {
 type FiscalSponsorshipApplicationEditorProps =
   FiscalSponsorshipApplicationDrawerProps & {
     surface: "drawer" | "inline"
-    containedScroll?: boolean
   }
 
 function DiscardApplicationChangesDialog({
@@ -91,7 +91,6 @@ export function FiscalSponsorshipApplicationEditor({
   onOpenChange,
   onSaved,
   surface,
-  containedScroll = true,
 }: FiscalSponsorshipApplicationEditorProps) {
   const formId = React.useId()
   const loadedApplicationKeyRef = React.useRef<string | null>(null)
@@ -105,13 +104,12 @@ export function FiscalSponsorshipApplicationEditor({
   const [discardDialogOpen, setDiscardDialogOpen] = React.useState(false)
   const [loadError, setLoadError] = React.useState<string | null>(null)
   const [saveError, setSaveError] = React.useState<string | null>(null)
-  const [revision, setRevision] = React.useState<string | null>(null)
-  const [loadingDraft, setLoadingDraft] = React.useState(true)
+  const [loadingDraft, setLoadingDraft] = React.useState(false)
   const [isSaving, startSaveTransition] = React.useTransition()
   const [isSubmitting, startSubmitTransition] = React.useTransition()
   const isBusy = isSaving || isSubmitting
-  const saveBlocked = isBusy || loadingDraft || Boolean(loadError)
   const applicationReady = Boolean(data.workflowSummary?.applicationId)
+  const canEditApplication = data.workflowSummary?.canEditApplication ?? true
   const sourceActivityTitle =
     data.applicationPrefill?.sourceActivityTitle ??
     data.applicationPrefill?.projectName ??
@@ -135,7 +133,6 @@ export function FiscalSponsorshipApplicationEditor({
     setLoadingDraft(true)
     setLoadError(null)
     setSaveError(null)
-    setRevision(null)
     const nextDraft = buildFiscalSponsorshipApplicationDraft({ data })
     setDraft(nextDraft)
     setBaselineDraft(nextDraft)
@@ -155,16 +152,11 @@ export function FiscalSponsorshipApplicationEditor({
           data,
         })
         loadedApplicationKeyRef.current = applicationKey
-        setRevision(result.application?.updatedAt ?? null)
         setDraft(loadedDraft)
         setBaselineDraft(loadedDraft)
         setLoadingDraft(false)
       }
-    ).catch(() => {
-      if (cancelled) return
-      setLoadError("Your saved draft could not load. Close and reopen the application to retry.")
-      setLoadingDraft(false)
-    })
+    )
 
     return () => {
       cancelled = true
@@ -209,102 +201,90 @@ export function FiscalSponsorshipApplicationEditor({
       field: Key,
       value: FiscalSponsorshipApplicationDraft[Key]
     ) => {
+      if (!canEditApplication) return
       setDraft((currentDraft) => ({
         ...currentDraft,
         [field]: value,
       }))
     },
-    []
+    [canEditApplication]
   )
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (saveBlocked) return
-    if (draft.fundraisingGoalDollars.trim() && parseFundraisingAmount(draft.fundraisingGoalDollars) === null) {
-      setSaveError("Enter a fundraising amount greater than zero, with no more than two decimal places.")
-      return
-    }
+    if (isBusy || !canEditApplication) return
 
     setSaveError(null)
     startSaveTransition(async () => {
       const toastId = toast.loading("Saving fiscal application…")
-      try {
-        const result = await saveFiscalSponsorshipApplicationDraft({
-          ...buildFiscalSponsorshipApplicationInput({ data, draft }),
-          expectedUpdatedAt: revision,
-        })
+      const result = await saveFiscalSponsorshipApplicationDraft(
+        buildFiscalSponsorshipApplicationInput({ data, draft })
+      )
 
-        if ("error" in result) {
-          setSaveError(result.error)
-          toast.error(result.error, { id: toastId })
-          return
-        }
-
-        toast.success("Fiscal application saved", { id: toastId })
-        setRevision(result.updatedAt)
-        setBaselineDraft(draft)
-        onOpenChange(false)
-        onSaved?.()
-      } catch {
-        const message = "We couldn’t confirm the save. Reopen your application before retrying; your changes are still shown here."
-        setSaveError(message)
-        toast.error(message, { id: toastId })
+      if ("error" in result) {
+        setSaveError(result.error)
+        toast.error(result.error, { id: toastId })
+        return
       }
+
+      toast.success("Fiscal application saved", { id: toastId })
+      setBaselineDraft(draft)
+      onOpenChange(false)
+      onSaved?.()
     })
   }
 
   function handleSubmitForReview() {
-    if (saveBlocked) return
-    if (parseFundraisingAmount(draft.fundraisingGoalDollars) === null) {
-      setSaveError("Enter a fundraising amount greater than zero, with no more than two decimal places.")
-      return
-    }
+    if (isBusy || !canEditApplication) return
 
     setSaveError(null)
     startSubmitTransition(async () => {
       const toastId = toast.loading("Submitting fiscal application…")
-      try {
-        const input = buildFiscalSponsorshipApplicationInput({ data, draft })
-        const saved = await saveFiscalSponsorshipApplicationDraft({
-          ...input,
-          expectedUpdatedAt: revision,
-          status: "draft",
-        })
+      const input = buildFiscalSponsorshipApplicationInput({ data, draft })
+      const saved = await saveFiscalSponsorshipApplicationDraft({
+        ...input,
+        status: "draft",
+      })
 
-        if ("error" in saved) {
-          setSaveError(saved.error)
-          toast.error(saved.error, { id: toastId })
-          return
-        }
-
-        // Saving succeeded even if review validation fails. Keep the new revision
-        // so fixing a missing field does not produce a false stale-draft conflict.
-        setRevision(saved.updatedAt)
-        setBaselineDraft(draft)
-        const submitted = await submitFiscalSponsorshipApplication(data.projectId)
-        if ("error" in submitted) {
-          setSaveError(submitted.error)
-          toast.error(submitted.error, { id: toastId })
-          return
-        }
-
-        toast.success("Fiscal application submitted for Coach House review", {
-          id: toastId,
-        })
-        setRevision(saved.updatedAt)
-        setBaselineDraft(draft)
-        onOpenChange(false)
-        onSaved?.()
-      } catch {
-        const message = "We couldn’t confirm submission. Reopen your application to check its status before retrying."
-        setSaveError(message)
-        toast.error(message, { id: toastId })
+      if ("error" in saved) {
+        setSaveError(saved.error)
+        toast.error(saved.error, { id: toastId })
+        return
       }
+
+      const submitted = await submitFiscalSponsorshipApplication(data.projectId)
+      if ("error" in submitted) {
+        setSaveError(submitted.error)
+        toast.error(submitted.error, { id: toastId })
+        return
+      }
+
+      toast.success("Fiscal application submitted for Coach House review", {
+        id: toastId,
+      })
+      setBaselineDraft(draft)
+      onOpenChange(false)
+      onSaved?.()
     })
   }
 
   const editorContent = (
     <div className="flex flex-col gap-4">
+      <FiscalSponsorshipApplicationReviewNote
+        notes={data.workflowSummary?.reviewNotes}
+        status={data.workflowSummary?.applicationStatus}
+      />
+      {!canEditApplication ? (
+        <Alert>
+          <AlertTitle>Application is read-only</AlertTitle>
+          <AlertDescription>
+            {data.workflowSummary?.applicationStatus === "submitted" ||
+            data.workflowSummary?.applicationStatus === "in_review"
+              ? "Coach House is reviewing this application. Editing reopens only if more information is requested."
+              : "Only an organization editor or assigned Coach House reviewer can update this application."}
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {loadingDraft ? (
         <Alert>
           <Loader2Icon
@@ -355,22 +335,26 @@ export function FiscalSponsorshipApplicationEditor({
         </div>
       ) : null}
 
-      <fieldset disabled={saveBlocked}>
-        <FiscalSponsorshipApplicationEditorFields
-          applicationReady={applicationReady}
-          draft={draft}
-          formId={formId}
-          projectId={data.projectId}
-          sourceActivityTitle={sourceActivityTitle}
-          onFieldChange={handleFieldChange}
-        />
-      </fieldset>
+      <FiscalSponsorshipApplicationEditorFields
+        applicationReady={applicationReady}
+        draft={draft}
+        formId={formId}
+        projectId={data.projectId}
+        sourceActivityTitle={sourceActivityTitle}
+        onFieldChange={handleFieldChange}
+      />
     </div>
   )
-  const editorActions = <FiscalSponsorshipApplicationEditorActions
-    isBusy={isBusy} isSaving={isSaving} isSubmitting={isSubmitting}
-    canEdit saveBlocked={saveBlocked} onClose={requestClose} onSubmitForReview={handleSubmitForReview}
-  />
+  const editorActions = (
+    <FiscalSponsorshipApplicationEditorActions
+      canEdit={canEditApplication}
+      isBusy={isBusy}
+      isSaving={isSaving}
+      isSubmitting={isSubmitting}
+      onClose={requestClose}
+      onSubmitForReview={handleSubmitForReview}
+    />
+  )
   const discardDialog = (
     <DiscardApplicationChangesDialog
       open={discardDialogOpen}
@@ -401,7 +385,7 @@ export function FiscalSponsorshipApplicationEditor({
             </p>
           </header>
           <form id={formId} onSubmit={handleSubmit}>
-            <div className={containedScroll ? "max-h-[48rem] overflow-y-auto overscroll-contain px-4 py-4" : "px-4 py-4"}>
+            <div className="max-h-[48rem] overflow-y-auto overscroll-contain px-4 py-4">
               {editorContent}
             </div>
             <div className="border-border/60 bg-background/85 flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

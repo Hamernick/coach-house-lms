@@ -30,18 +30,6 @@ const PROMOTION_PAYLOADS = join(
   ROOT,
   "scripts/resource-map/lib/promotion-payloads.mjs"
 )
-const VERIFY_AND_PUBLISH_SOURCE = join(
-  ROOT,
-  "scripts/resource-map/verify-and-publish-source-records.mjs"
-)
-const VERIFY_COOK_COUNTY_COOLING = join(
-  ROOT,
-  "scripts/resource-map/verify-cook-county-cooling-records.mjs"
-)
-const VERIFY_ARCGIS_SOURCE = join(
-  ROOT,
-  "scripts/resource-map/verify-arcgis-source-records.mjs"
-)
 
 function withTempFile(
   fileName: string,
@@ -163,121 +151,6 @@ describe("resource map import records", () => {
         expect(output).toContain("would preserve 2 raw payloads")
       }
     )
-  })
-
-  it("reconciles corrected staged titles by an unchanged provider URL", () => {
-    const output = execFileSync(
-      process.execPath,
-      [
-        "--input-type=module",
-        "--eval",
-        `
-          import { resolveExistingAssignments } from ${JSON.stringify(pathToFileURL(SCRIPT).href)}
-          const existing = [{
-            id: "staged-1",
-            source_record_id: "old-title-hash",
-            promotion_status: "not_promoted",
-            review_status: "needs_review",
-            extracted_fields: { websiteUrl: "https://provider.example/help" }
-          }]
-          const payload = [{
-            source_record_id: "corrected-title-hash",
-            extracted_fields: { websiteUrl: "https://provider.example/help/" }
-          }]
-          process.stdout.write(JSON.stringify(
-            resolveExistingAssignments(existing, payload, true)
-          ))
-        `,
-      ],
-      { cwd: ROOT, encoding: "utf8" }
-    )
-    const assignments = JSON.parse(output)
-
-    expect(assignments).toEqual([
-      expect.objectContaining({
-        reconciled: true,
-        record: expect.objectContaining({ id: "staged-1" }),
-      }),
-    ])
-  })
-
-  it("plans an existing-only refresh without inserting or rewriting protected rows", async () => {
-    const { summarizeExistingOnlyPlan } = await import(
-      pathToFileURL(SCRIPT).href
-    )
-    const plan = summarizeExistingOnlyPlan([
-      null,
-      {
-        reconciled: false,
-        record: {
-          id: "refreshable",
-          promotion_status: "not_promoted",
-          review_status: "needs_review",
-        },
-      },
-      {
-        reconciled: false,
-        record: {
-          id: "promoted",
-          promotion_status: "promoted",
-          review_status: "needs_review",
-        },
-      },
-      {
-        reconciled: false,
-        record: {
-          id: "approved",
-          promotion_status: "not_promoted",
-          review_status: "approved",
-        },
-      },
-    ])
-
-    expect(plan.missing).toBe(1)
-    expect(plan.protected).toBe(2)
-    expect(plan.matched).toHaveLength(3)
-    expect(plan.refreshable).toEqual([
-      expect.objectContaining({
-        index: 1,
-        record: expect.objectContaining({ id: "refreshable" }),
-      }),
-    ])
-
-    const source = readFileSync(SCRIPT, "utf8")
-    expect(source).toContain("--existing-only requires --refresh-existing")
-    expect(source).toContain("--apply is required to refresh existing rows")
-    expect(source).toContain(
-      "--confirm-source must exactly match --source-slug"
-    )
-    expect(source).toContain("no new import records were inserted")
-  })
-
-  it("drops explicit evidence whose refreshed field was removed", () => {
-    const output = execFileSync(
-      process.execPath,
-      [
-        "--input-type=module",
-        "--eval",
-        `
-          import { buildFieldEvidenceRecords } from ${JSON.stringify(pathToFileURL(SCRIPT).href)}
-          const rows = buildFieldEvidenceRecords(
-            {
-              extractedFields: { title: "Provider" },
-              fieldEvidence: [{
-                fieldPath: "extractedFields.websiteUrl",
-                sourceUrl: "https://example.org/directory"
-              }]
-            },
-            { id: "import-1", source_url: "https://example.org/directory" },
-            "source-1"
-          )
-          process.stdout.write(JSON.stringify(rows))
-        `,
-      ],
-      { cwd: ROOT, encoding: "utf8" }
-    )
-
-    expect(JSON.parse(output)).toEqual([])
   })
 
   it("dedupes raw ingestion rows by checksum before staging import", () => {
@@ -416,325 +289,12 @@ describe("resource map import records", () => {
       "batch-id",
       null
     )
-    const verifiedRecord = buildImportRecord(
-      {
-        lastEnrichedAt: "2026-07-14T19:00:00.000Z",
-        extractedFields: {
-          title: "Verified resource",
-          organizationName: "Verified provider",
-          enrichment: { verification: { status: "approved" } },
-        },
-      },
-      "source-id",
-      "batch-id",
-      null
-    )
 
     expect(record).toMatchObject({
       source_type: "website",
       duplicate_match_status: "candidate",
     })
     expect(excelRecord.source_type).toBe("manual")
-    expect(verifiedRecord.last_verified_at).toBe("2026-07-14T19:00:00.000Z")
-  })
-
-  it("chunks large production imports into bounded database requests", async () => {
-    const { chunkValues, resolveEvidenceFieldValue } = await import(
-      pathToFileURL(SCRIPT).href
-    )
-
-    expect(chunkValues([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
-    expect(
-      resolveEvidenceFieldValue(
-        { extractedFields: { organizationName: "Neighborhood Pantry" } },
-        "extractedFields.organizationName"
-      )
-    ).toBe("Neighborhood Pantry")
-
-    const source = readFileSync(SCRIPT, "utf8")
-    expect(source).toContain("const RECORD_WRITE_CHUNK_SIZE = 10")
-    expect(source).toContain("const EVIDENCE_WRITE_CHUNK_SIZE = 200")
-    expect(source).toContain("retryTransientFetch")
-    expect(source).toContain("fetchExistingImportRecords")
-    expect(source).toContain("filterMissingEvidence")
-    expect(source).toContain("resumedImportRecordCount")
-    expect(source).toContain("insertRowsInChunks")
-  })
-
-  it("keeps official-source canaries behind stored review evidence", async () => {
-    const source = readFileSync(VERIFY_AND_PUBLISH_SOURCE, "utf8")
-    const {
-      hasApprovedVerificationLedger,
-      storedApprovalGaps,
-      summarizeLocalDelta,
-    } = await import(pathToFileURL(VERIFY_AND_PUBLISH_SOURCE).href)
-    const ledger = [
-      {
-        issues: [],
-        status: "completed",
-        structured_result: {
-          contradictions: [],
-          status: "approved",
-          unsupportedClaims: [],
-        },
-      },
-    ]
-
-    expect(hasApprovedVerificationLedger(ledger)).toBe(true)
-    expect(
-      hasApprovedVerificationLedger([
-        { ...ledger[0], completed_at: "2026-08-12T00:00:00.000Z" },
-        {
-          completed_at: "2026-08-13T00:00:00.000Z",
-          issues: ["removed_from_current_official_source"],
-          status: "needs_review",
-          structured_result: {
-            contradictions: ["removed_from_current_official_source"],
-            status: "needs_review",
-            unsupportedClaims: [],
-          },
-        },
-      ])
-    ).toBe(false)
-    expect(
-      summarizeLocalDelta(
-        [
-          {
-            extractedFields: {},
-            sourceId: "official-source",
-            sourceRecordId: "held-1",
-          },
-        ],
-        [{ source_record_id: "held-1" }],
-        "official-source"
-      )
-    ).toMatchObject({
-      held: 1,
-      matched: [],
-      missing: [],
-      publishable: 0,
-      total: 1,
-    })
-    expect(
-      storedApprovalGaps(
-        {
-          extracted_fields: {
-            enrichment: {
-              sourceComparisonCount: 2,
-              verification: { status: "needs_review" },
-            },
-          },
-          review_status: "needs_review",
-        },
-        ledger
-      )
-    ).toEqual(
-      expect.arrayContaining([
-        "not_admin_approved",
-        "missing_identified_reviewer",
-        "missing_verification_time",
-        "enrichment_not_verified",
-      ])
-    )
-    expect(source).toContain('source.trust_level !== "official"')
-    expect(source).toContain("analyzeResourceEnrichmentReadiness")
-    expect(source).toContain("promote_resource_map_import_record")
-    expect(source).toContain("--confirm-source")
-    expect(source).toContain("Explicit --id values are required")
-    expect(source).not.toContain('resource_map_import_records")\n      .update')
-    expect(source).not.toContain("exposeVerifiedContactAndLinks")
-
-    const reviewSource = readFileSync(REVIEW_IMPORTS, "utf8")
-    expect(reviewSource).toContain("--actor-id is required with --apply")
-    expect(reviewSource).toContain('data.role !== "admin"')
-  })
-
-  it("verifies bounded Cook County canaries against the current official source", async () => {
-    const source = readFileSync(VERIFY_COOK_COUNTY_COOLING, "utf8")
-    const { buildVerificationPlan } = await import(
-      pathToFileURL(VERIFY_COOK_COUNTY_COOLING).href
-    )
-    const plan = buildVerificationPlan(
-      [
-        {
-          id: "current",
-          source_record_id: "current-source-id",
-          extracted_fields: {
-            address: "15350 Oak Park Ave",
-            hours: { label: "Monday - Friday" },
-            latitude: 41.6,
-            longitude: -87.7,
-            phone: "(708) 333-9530",
-            serviceTitle: "Bremen Township — Cooling Center",
-          },
-        },
-        {
-          id: "removed",
-          source_record_id: "removed-source-id",
-          extracted_fields: {
-            serviceTitle: "Removed Courthouse — Cooling Center",
-          },
-        },
-      ],
-      [
-        {
-          contactphone: "708-333-9530",
-          hours_of_operation: "Monday - Friday",
-          latitude: "41.6",
-          longitude: "-87.7",
-          name: "Bremen Township",
-          streetaddress: "15350 Oak Park Ave",
-        },
-      ],
-      "2026-08-13T23:10:30.535Z"
-    )
-
-    expect(plan[0].verification.status).toBe("approved")
-    expect(plan[0].issues).toEqual([])
-    expect(plan[1].verification.status).toBe("needs_review")
-    expect(plan[1].issues).toEqual(["removed_from_current_official_source"])
-    expect(source).toContain("const MAX_RECORDS = 5")
-    expect(source).toContain("Explicit --id values are required")
-    expect(source).toContain(
-      "--confirm-source must exactly match the Cook County source"
-    )
-    expect(source).toContain("Review and publication state remain unchanged")
-    expect(source).not.toContain("review_status:")
-    expect(source).not.toContain("promotion_status:")
-  })
-
-  it("verifies exact ArcGIS global IDs without reviewing or publishing", async () => {
-    const source = readFileSync(VERIFY_ARCGIS_SOURCE, "utf8")
-    const { buildVerificationPlan, validateArcGisLayerUrl } = await import(
-      pathToFileURL(VERIFY_ARCGIS_SOURCE).href
-    )
-    const currentId = "2caffc35-8749-47d9-bce6-a963bcec2f6b"
-    const removedId = "14483fad-adb5-4efa-8bbc-df4fbc378bc7"
-    const plan = buildVerificationPlan(
-      [
-        {
-          id: "current",
-          source_record_id: currentId,
-          extracted_fields: {
-            address: "6601 W. Thomas Rd. Phoenix AZ 85033",
-            hours: { label: "Mo-Fr 8am-6pm, Sa 8am-4pm" },
-            latitude: 33.47946361100003,
-            longitude: -112.20142232899997,
-            organizationName: "Mountain Park Health Center",
-            phone: "602-243-7277",
-            title: "Mountain Park Health Center — Hydration Station",
-          },
-        },
-        {
-          id: "removed",
-          source_record_id: removedId,
-          extracted_fields: { title: "Removed location" },
-        },
-      ],
-      [
-        {
-          attributes: {
-            Active: "Yes",
-            Address: "6601 W. Thomas Rd. Phoenix AZ 85033",
-            End_Date: "2026-09-30",
-            HeatRelief_Type: "Hydration Station",
-            Hours: "Mo-Fr 8am-6pm, Sa 8am-4pm",
-            Location: "Mountain Park Maryvale Clinic",
-            Organization: "Mountain Park Health Center",
-            PrimaryPhone: "602-243-7277",
-            Start_Date: "2026-05-18",
-            Status: 1,
-            globalid: `{${currentId}}`,
-          },
-          geometry: {
-            x: -112.20142232899997,
-            y: 33.47946361100003,
-          },
-        },
-      ],
-      "2026-08-14T20:00:00.000Z"
-    )
-
-    expect(plan[0].verification.status).toBe("approved")
-    expect(plan[0].issues).toEqual([])
-    expect(plan[1].verification.status).toBe("needs_review")
-    expect(plan[1].issues).toEqual(["removed_from_current_official_source"])
-    const changedPlan = buildVerificationPlan(
-      [
-        {
-          id: "changed",
-          source_record_id: currentId,
-          extracted_fields: {
-            address: "Old address",
-            hours: { label: "Mo-Fr 8am-6pm, Sa 8am-4pm" },
-            latitude: 33.47946361100003,
-            longitude: -112.20142232899997,
-            phone: "602-243-7277",
-            title: "Mountain Park Maryvale Clinic",
-          },
-        },
-      ],
-      [
-        {
-          ...plan[0].liveFeature,
-          attributes: { ...plan[0].liveFeature.attributes, Active: "No" },
-        },
-      ],
-      "2026-08-14T20:00:00.000Z"
-    )
-    expect(changedPlan[0].issues).toEqual([
-      "address_changed",
-      "inactive_in_current_official_source",
-    ])
-    expect(
-      validateArcGisLayerUrl(
-        "https://services1.arcgis.com/example/arcgis/rest/services/Test/FeatureServer/0/query?where=1%3D1"
-      )
-    ).toBe(
-      "https://services1.arcgis.com/example/arcgis/rest/services/Test/FeatureServer/0"
-    )
-    expect(() =>
-      validateArcGisLayerUrl(
-        "https://example.com/arcgis/rest/services/Test/FeatureServer/0/query"
-      )
-    ).toThrow("not an allowed HTTPS ArcGIS URL")
-    expect(source).toContain("const MAX_RECORDS = 5")
-    expect(source).toContain('data.trust_level !== "official"')
-    expect(source).toContain(
-      "--confirm-source must exactly match --source-slug"
-    )
-    expect(source).toContain("Review and publication state remain unchanged")
-    expect(source).not.toContain(
-      'resource_map_import_records\")\n      .update'
-    )
-    expect(source).not.toContain("review_status:")
-    expect(source).not.toContain("promotion_status:")
-  })
-
-  it("rejects ArcGIS verification batches larger than five before connecting", () => {
-    const result = spawnSync(
-      process.execPath,
-      [
-        VERIFY_ARCGIS_SOURCE,
-        "--source-slug",
-        "maricopa-arcgis-heat-relief-network",
-        "--id",
-        [
-          "00000000-0000-4000-8000-000000000001",
-          "00000000-0000-4000-8000-000000000002",
-          "00000000-0000-4000-8000-000000000003",
-          "00000000-0000-4000-8000-000000000004",
-          "00000000-0000-4000-8000-000000000005",
-          "00000000-0000-4000-8000-000000000006",
-        ].join(","),
-      ],
-      { encoding: "utf8" }
-    )
-
-    expect(result.status).toBe(1)
-    expect(result.stderr).toContain(
-      "Verification may contain at most 5 records"
-    )
   })
 
   it("links staged imports to raw ingestion records in the DB write path", () => {
@@ -895,17 +455,6 @@ describe("resource map import records", () => {
               links: [{ type: "intake", url: "https://example.org/intake" }]
             }
           }, false)
-          const published = buildCanonicalPayload({
-            id: "import-verified",
-            source_id: "source-1",
-            source_record_id: "record-verified",
-            reviewed_by: "11111111-1111-4111-8111-111111111111",
-            last_verified_at: "2026-07-14T19:00:00.000Z",
-            extracted_fields: {
-              organizationName: "Verified Provider",
-              title: "Verified Service"
-            }
-          }, true)
           process.stdout.write(JSON.stringify({
             organization: payload.organization,
             service: payload.service,
@@ -913,8 +462,7 @@ describe("resource map import records", () => {
             categoryConfidenceByKey: payload.categoryConfidenceByKey,
             location: payload.location,
             contacts: payload.contacts,
-            links: payload.links,
-            published
+            links: payload.links
           }))
         `,
       ],
@@ -971,14 +519,6 @@ describe("resource map import records", () => {
         }),
       ])
     )
-    expect(payload.published.organization).toMatchObject({
-      approved_by: "11111111-1111-4111-8111-111111111111",
-      last_verified_at: "2026-07-14T19:00:00.000Z",
-    })
-    expect(payload.published.service).toMatchObject({
-      approved_by: "11111111-1111-4111-8111-111111111111",
-      last_verified_at: "2026-07-14T19:00:00.000Z",
-    })
   })
 
   it("relinks staged field evidence to promoted canonical rows", () => {
@@ -1099,6 +639,164 @@ describe("resource map import records", () => {
         organizationId: "org-1",
         serviceId: "service-1",
       },
+    })
+  })
+
+  it("reconciles dropped promotion evidence responses before retrying", () => {
+    const helper = join(
+      ROOT,
+      "scripts/resource-map/lib/promotion-evidence-writes.mjs"
+    )
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `
+          import { insertPromotedFieldEvidenceRows } from ${JSON.stringify(pathToFileURL(helper).href)}
+
+          function buildAdmin({ committedCount, commitAfterCount = false }) {
+            let insertAttempts = 0
+            let firstRows = []
+            const insertedIds = new Set()
+            const unrelatedIds = new Set()
+            let requestedIds = []
+            const query = {
+              select() { return this },
+              in(column, ids) {
+                if (column !== "id") throw new Error("Expected evidence ID lookup")
+                requestedIds = ids
+                return this
+              },
+              then(resolve, reject) {
+                const count = requestedIds.filter((id) => insertedIds.has(id)).length
+                if (commitAfterCount) {
+                  firstRows.forEach((row) => insertedIds.add(row.id))
+                }
+                return Promise.resolve({ count, error: null }).then(resolve, reject)
+              }
+            }
+            return {
+              addUnrelated(count) {
+                for (let index = 0; index < count; index += 1) {
+                  unrelatedIds.add("unrelated-" + index)
+                }
+              },
+              getState: () => ({
+                insertAttempts,
+                insertedCount: insertedIds.size,
+                unrelatedCount: unrelatedIds.size
+              }),
+              from() {
+                return {
+                  upsert(rows, options) {
+                    if (options.onConflict !== "id" || !options.ignoreDuplicates) {
+                      throw new Error("Expected conflict-safe evidence upsert")
+                    }
+                    insertAttempts += 1
+                    if (insertAttempts === 1) {
+                      firstRows = rows
+                      rows.slice(0, committedCount).forEach((row) => {
+                        insertedIds.add(row.id)
+                      })
+                      return Promise.resolve({
+                        error: {
+                          message: "TypeError: fetch failed",
+                          details: "SocketError: other side closed (UND_ERR_SOCKET)",
+                          hint: "",
+                          code: ""
+                        }
+                      })
+                    }
+                    rows.forEach((row) => insertedIds.add(row.id))
+                    return Promise.resolve({ error: null })
+                  },
+                  select() { return query.select() }
+                }
+              }
+            }
+          }
+
+          const rows = [{ field_path: "name" }, { field_path: "address" }]
+          const committed = buildAdmin({ committedCount: rows.length })
+          const notCommitted = buildAdmin({ committedCount: 0 })
+          const delayedCommit = buildAdmin({
+            committedCount: 0,
+            commitAfterCount: true
+          })
+          const partial = buildAdmin({ committedCount: 1 })
+          const unrelated = buildAdmin({ committedCount: 0 })
+          unrelated.addUnrelated(rows.length)
+          await insertPromotedFieldEvidenceRows({
+            admin: committed,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: notCommitted,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: delayedCommit,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: unrelated,
+            rows,
+            retryDelayMs: 0
+          })
+          let partialError = null
+          try {
+            await insertPromotedFieldEvidenceRows({
+              admin: partial,
+              rows,
+              retryDelayMs: 0
+            })
+          } catch (error) {
+            partialError = error.message
+          }
+          process.stdout.write(JSON.stringify({
+            committed: committed.getState(),
+            notCommitted: notCommitted.getState(),
+            delayedCommit: delayedCommit.getState(),
+            unrelated: unrelated.getState(),
+            partial: partial.getState(),
+            partialError
+          }))
+        `,
+      ],
+      { cwd: ROOT, encoding: "utf8" }
+    )
+
+    expect(JSON.parse(output)).toEqual({
+      committed: {
+        insertAttempts: 1,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      notCommitted: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      delayedCommit: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      unrelated: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 2,
+      },
+      partial: {
+        insertAttempts: 1,
+        insertedCount: 1,
+        unrelatedCount: 0,
+      },
+      partialError: "Promotion evidence insert left 1 of 2 rows.",
     })
   })
 

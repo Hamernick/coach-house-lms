@@ -6,6 +6,7 @@ import { env } from "@/lib/env"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { isCoachRestrictedPath } from "@/features/platform-access"
 import type { Database } from "@/lib/supabase/types"
+import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
 const PROTECTED_PREFIXES = [
   "/class",
@@ -25,33 +26,18 @@ const PROTECTED_PREFIXES = [
   "/onboarding",
 ]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
+const VISUAL_REGRESSION_PREFIX = "/visual-regression"
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next()
   const pathname = request.nextUrl.pathname
-  // Public documentation has no account-specific content; mutations still verify auth.
-  if ((request.method === "GET" || request.method === "HEAD") &&
-      (pathname === "/documentation" || pathname.startsWith("/documentation/"))) {
-    return response
-  }
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  )
-  const isAuthRoute = AUTH_ROUTES.has(pathname)
-  const isCoachRestricted = isCoachRestrictedPath(pathname)
-
-  // With no cookies there is no browser session to refresh. Limit the fast
-  // path to public page reads; guarded routes, APIs and mutations stay verified.
   if (
-    (request.method === "GET" || request.method === "HEAD") &&
-    !pathname.startsWith("/api/") &&
-    !isProtected &&
-    !isAuthRoute &&
-    !isCoachRestricted &&
-    request.cookies.getAll().length === 0
+    pathname.startsWith(VISUAL_REGRESSION_PREFIX) &&
+    !canAccessVisualRegressionRoute(request.headers)
   ) {
-    return response
+    return new NextResponse("Not Found", { status: 404 })
   }
+
+  const response = NextResponse.next()
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -74,6 +60,10 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  )
+  const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)
@@ -91,7 +81,7 @@ export async function proxy(request: NextRequest) {
     return redirectResponse
   }
 
-  if (user && isCoachRestricted) {
+  if (user && isCoachRestrictedPath(pathname)) {
     const { data: platformStaff } = await supabase
       .from("platform_staff_members")
       .select("access_level")
@@ -119,7 +109,5 @@ function copyCookies(source: NextResponse, destination: NextResponse) {
 }
 
 export const config = {
-  // This machine-only route verifies its own bearer secret. It does not need
-  // browser session refresh; keep all other page/API session behavior intact.
-  matcher: ["/((?!_next|.*\\..*|api/auth|api/internal/cron/coaching-calendar/?$).*)"],
+  matcher: ["/((?!_next|.*\\..*|api/auth).*)"],
 }

@@ -1,10 +1,7 @@
 import type { Feature, FeatureCollection, Point } from "geojson"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import {
-  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
-  type PublicMapResourceCategoryKey,
-} from "@/lib/public-map/resource-categories"
+import { type PublicMapResourceCategoryKey } from "@/lib/public-map/resource-categories"
 import {
   resolvePublicMapItemMarkerColor,
   resolvePublicMapItemSelectableId,
@@ -16,7 +13,7 @@ import {
   type PublicMapMarkerStyleKey,
 } from "@/lib/public-map/public-map-marker-styles"
 import type { PublicMapTheme } from "@/lib/public-map/public-map-theme"
-import { PUBLIC_MAP_GROUP_ACCENTS, PUBLIC_MAP_GROUP_LABELS } from "./groups"
+import { PUBLIC_MAP_GROUP_ACCENTS } from "./groups"
 
 import {
   buildSameLocationGroups,
@@ -24,20 +21,18 @@ import {
 } from "./public-map-same-location"
 
 export const PUBLIC_MAP_MARKER_IMAGE_FALLBACK_KEY =
-  "public-map-marker-fallback-glass-v3"
+  "public-map-marker-fallback-glass-v2"
 export const PUBLIC_MAP_MARKER_IMAGE_SELECTED_FALLBACK_KEY =
-  "public-map-marker-fallback-selected-glass-v3"
+  "public-map-marker-fallback-selected-glass-v2"
 export const PUBLIC_MAP_ORGANIZATION_ID_SEPARATOR = "|"
 export const PUBLIC_MAP_MARKER_SPRITE_VERSION =
-  "pin-v12-shopping-basket-community-fridges"
-const PUBLIC_MAP_MAX_LATITUDE = 85.051129
+  "filled-glass-v20-accessible-cooling-pill-marker"
 
 export type PublicMapPointProperties = {
   itemId: string
   itemType: PublicMapItem["itemType"] | "platform_organization"
   organizationId: string
   organizationIds: string
-  designation: string
   name: string
   primaryGroup: PublicMapOrganization["primaryGroup"]
   primaryResourceCategory: PublicMapResourceCategoryKey
@@ -46,12 +41,6 @@ export type PublicMapPointProperties = {
   markerImageUrl: string | null
   markerStyleKey: PublicMapMarkerStyleKey
   verificationStatus: PublicMapItem["verificationStatus"] | "verified_platform"
-  weatherEligible?: boolean
-  isSaved?: boolean
-  markerRelevanceTier?: 0 | 1 | 2 | 3
-  markerSortKey?: number
-  markerOverviewOffset?: [number, number]
-  markerOverviewOffsetIndex?: number
   sameLocationKey: string
   sameLocationCount: number
   sameLocationLabel: string | null
@@ -133,24 +122,15 @@ function buildPublicMapItemMarkerImageIdentity(
   const markerStyleKey = resolvePublicMapMarkerStyleKey({
     resourceCategory: item.primaryResourceCategory,
   })
-  if (item.itemType === "external_resource") {
-    return [
-      `marker:${PUBLIC_MAP_MARKER_SPRITE_VERSION}`,
-      `theme:${theme}`,
-      `style:${markerStyleKey}`,
-      `category:${item.primaryResourceCategory}`,
-      `color:${resolvePublicMapItemMarkerColor(item)}`,
-    ].join("|")
-  }
-
   return [
     `marker:${PUBLIC_MAP_MARKER_SPRITE_VERSION}`,
     `theme:${theme}`,
     `style:${markerStyleKey}`,
     item.markerImageUrl ?? "fallback",
-    item.orgCategory ?? "community",
+    item.orgCategory ?? "external",
     item.primaryResourceCategory,
     item.verificationStatus,
+    item.title.trim(),
   ].join("|")
 }
 
@@ -173,14 +153,7 @@ function organizationHasMapLocation<
 } {
   return (
     typeof organization.latitude === "number" &&
-    Number.isFinite(organization.latitude) &&
-    organization.latitude >= -PUBLIC_MAP_MAX_LATITUDE &&
-    organization.latitude <= PUBLIC_MAP_MAX_LATITUDE &&
-    typeof organization.longitude === "number" &&
-    Number.isFinite(organization.longitude) &&
-    organization.longitude >= -180 &&
-    organization.longitude <= 180 &&
-    !(organization.latitude === 0 && organization.longitude === 0)
+    typeof organization.longitude === "number"
   )
 }
 
@@ -258,7 +231,6 @@ export function buildPublicMapPointFeatures(
           organizationIds: organizationIds.join(
             PUBLIC_MAP_ORGANIZATION_ID_SEPARATOR
           ),
-          designation: PUBLIC_MAP_GROUP_LABELS[leadOrganization.primaryGroup],
           name: leadOrganization.name,
           primaryGroup: leadOrganization.primaryGroup,
           primaryResourceCategory: "community",
@@ -274,9 +246,6 @@ export function buildPublicMapPointFeatures(
           markerImageUrl: resolvePublicMapMarkerImageUrl(leadOrganization),
           markerStyleKey: PUBLIC_MAP_STANDARD_MARKER_STYLE_KEY,
           verificationStatus: "verified_platform",
-          isSaved: false,
-          markerRelevanceTier: 3,
-          markerSortKey: 0,
           sameLocationKey: group.key,
           sameLocationCount: organizationIds.length,
           sameLocationLabel: group.locationLabel,
@@ -290,7 +259,7 @@ function mapItemHasMapLocation(item: PublicMapItem): item is PublicMapItem & {
   latitude: number
   longitude: number
 } {
-  return organizationHasMapLocation(item)
+  return typeof item.latitude === "number" && typeof item.longitude === "number"
 }
 
 function toSameLocationCapableMapItem(item: PublicMapItem) {
@@ -306,12 +275,6 @@ function toSameLocationCapableMapItem(item: PublicMapItem) {
     state: item.state,
     country: item.country,
   } satisfies PublicMapSameLocationCapableOrganization
-}
-
-export function resolvePublicMapItemMarkerDesignation(item: PublicMapItem) {
-  return item.itemType === "platform_organization"
-    ? PUBLIC_MAP_GROUP_LABELS[item.organization.primaryGroup]
-    : PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory]
 }
 
 export function buildPublicMapItemPointFeatures(
@@ -353,29 +316,20 @@ export function buildPublicMapItemPointFeatures(
           organizationIds: selectableIds.join(
             PUBLIC_MAP_ORGANIZATION_ID_SEPARATOR
           ),
-          designation: resolvePublicMapItemMarkerDesignation(leadItem),
           name: leadItem.title,
           primaryGroup: leadItem.orgCategory ?? "community",
           primaryResourceCategory: leadItem.primaryResourceCategory,
           markerAccentColor,
           markerImageKey: resolvePublicMapMarkerImageKey(
-            leadItem.itemType === "external_resource"
-              ? "shared-resource"
-              : leadItem.id,
+            leadItem.id,
             [
               buildPublicMapItemMarkerImageIdentity(leadItem, markerTheme),
-              `count:${selectableIds.length}`,
+              `members:${selectableIds.join(",")}`,
             ].join("|")
           ),
-          markerImageUrl: leadItem.markerImageUrl ?? null,
+          markerImageUrl: leadItem.markerImageUrl,
           markerStyleKey,
           verificationStatus: leadItem.verificationStatus,
-          weatherEligible: group.organizations.some(
-            (item) => itemById.get(item.id)?.weatherEligible === true
-          ),
-          isSaved: false,
-          markerRelevanceTier: 3,
-          markerSortKey: 0,
           sameLocationKey: group.key,
           sameLocationCount: selectableIds.length,
           sameLocationLabel: group.locationLabel,

@@ -6,10 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
-import type { Database, Json } from "@/lib/supabase"
+import type { Database } from "@/lib/supabase"
 import { normalizeFiscalSponsorshipInput } from "../lib"
-import { hasFundraisingGoal } from "../lib/fundraising-goal"
-import { canReadGuestFiscalProject } from "../lib/authorization"
 import {
   getBudgetTotal,
   readBudgetRowsFromMetadata,
@@ -25,7 +23,6 @@ import type {
   LoadFiscalSponsorshipApplicationResult,
   SaveFiscalSponsorshipApplicationResult,
 } from "../types"
-import { saveFiscalApplicationDraftTransition } from "./application-draft-transition-support"
 
 type FiscalApplicationRow =
   Database["public"]["Tables"]["fiscal_sponsorship_applications"]["Row"]
@@ -42,6 +39,69 @@ type FiscalProjectRow = {
 type ResolveFiscalProjectResult =
   | { ok: true; project: FiscalProjectRow }
   | { ok: false; error: string }
+
+async function syncFiscalBudgetToSourceProgram({
+  metadata,
+  orgId,
+  supabase,
+}: {
+  metadata: unknown
+  orgId: string
+  supabase: FiscalApplicationMutationClient
+}) {
+  const sourceActivityId = readBudgetSourceActivityIdFromMetadata(metadata)
+  const hasBudgetRows =
+    metadata &&
+    typeof metadata === "object" &&
+    !Array.isArray(metadata) &&
+    Array.isArray((metadata as Record<string, unknown>).budgetRows)
+  const budgetRows = readBudgetRowsFromMetadata(metadata)
+  if (!sourceActivityId || !hasBudgetRows) return null
+
+  const { data: program, error: programError } = await supabase
+    .from("programs")
+    .select("wizard_snapshot, raised_cents")
+    .eq("id", sourceActivityId)
+    .eq("user_id", orgId)
+    .maybeSingle<{
+      raised_cents: number | null
+      wizard_snapshot: Record<string, unknown> | null
+    }>()
+
+  if (programError || !program) {
+    return "Unable to find the selected activity budget."
+  }
+
+  const totalBudget = getBudgetTotal(budgetRows)
+  const raisedUsd =
+    typeof program.raised_cents === "number" &&
+    Number.isFinite(program.raised_cents)
+      ? program.raised_cents / 100
+      : 0
+  const fundraisingTarget = Math.max(0, totalBudget - raisedUsd)
+  const wizardSnapshot =
+    program.wizard_snapshot &&
+    typeof program.wizard_snapshot === "object" &&
+    !Array.isArray(program.wizard_snapshot)
+      ? program.wizard_snapshot
+      : {}
+  const { error: updateError } = await supabase
+    .from("programs")
+    .update({
+      goal_cents: Math.round(fundraisingTarget * 100),
+      wizard_snapshot: {
+        ...wizardSnapshot,
+        budgetRows,
+        budgetUsd: totalBudget,
+        goalUsd: fundraisingTarget,
+        updatedAt: new Date().toISOString(),
+      },
+    })
+    .eq("id", sourceActivityId)
+    .eq("user_id", orgId)
+
+  return updateError ? "Unable to update the selected activity budget." : null
+}
 
 function isMissingFiscalApplicationTableError(error: unknown) {
   if (!error || typeof error !== "object") return false
@@ -242,9 +302,6 @@ export async function loadFiscalSponsorshipApplicationDraft(
     supabase,
   })
   if (!projectResult.ok) return { error: projectResult.error }
-  if (!(await canReadGuestFiscalProject({
-    projectId: projectResult.project.id, userId: context.user.id, supabase,
-  }))) return { error: "Unable to find that organization project." }
 
   if (
     !canAccessFiscalProject({
@@ -299,9 +356,6 @@ export async function saveFiscalSponsorshipApplicationDraft(
     supabase,
   })
   if (!projectResult.ok) return { error: projectResult.error }
-  if (!(await canReadGuestFiscalProject({
-    projectId: projectResult.project.id, userId: context.user.id, supabase,
-  }))) return { error: "Unable to find that organization project." }
 
   if (
     !canEditFiscalProject({
@@ -320,35 +374,59 @@ export async function saveFiscalSponsorshipApplicationDraft(
     projectId: projectResult.project.id,
     userId: user.id,
   })
-  const expectedUpdatedAt = input.expectedUpdatedAt?.trim() || null
-  if (expectedUpdatedAt && Number.isNaN(Date.parse(expectedUpdatedAt))) {
-    return { error: "Refresh this application before saving again." }
-  }
-  const metadata = normalized.value.metadata
-  const hasBudgetRows = Boolean(
-    !hasFundraisingGoal(metadata) &&
-    metadata &&
-    typeof metadata === "object" &&
-    !Array.isArray(metadata) &&
-    Array.isArray((metadata as Record<string, unknown>).budgetRows)
-  )
-  const budgetRows = readBudgetRowsFromMetadata(metadata)
-  const result = await saveFiscalApplicationDraftTransition({
-    actorId: user.id,
-    allowLocked: isPlatformStaff,
-    budgetRows: JSON.parse(JSON.stringify(budgetRows)) as Json,
-    budgetTotalCents: Math.round(getBudgetTotal(budgetRows) * 100),
-    expectedUpdatedAt,
-    hasBudgetRows,
-    payload: JSON.parse(JSON.stringify(payload)) as Json,
-    projectId: projectResult.project.id,
-    sourceActivityId: readBudgetSourceActivityIdFromMetadata(metadata),
-  })
+  const { data: existingApplication, error: existingError } = await supabase
+    .from("fiscal_sponsorship_applications")
+    .select("id, status")
+    .eq("org_id", projectResult.project.org_id)
+    .eq("project_id", projectResult.project.id)
+    .maybeSingle<{ id: string; status: FiscalSponsorshipApplicationStatus }>()
 
-  if ("error" in result) return result
+  if (existingError) {
+    return { error: "Unable to verify the fiscal sponsorship application." }
+  }
+  if (
+    existingApplication &&
+    !isPlatformStaff &&
+    existingApplication.status !== "draft" &&
+    existingApplication.status !== "needs_info"
+  ) {
+    return {
+      error:
+        "This application is locked while Coach House reviews or processes it.",
+    }
+  }
+
+  const budgetSyncError = await syncFiscalBudgetToSourceProgram({
+    metadata: normalized.value.metadata,
+    orgId: projectResult.project.org_id,
+    supabase,
+  })
+  if (budgetSyncError) return { error: budgetSyncError }
+
+  const { created_by: _createdBy, status: _status, ...draftUpdate } = payload
+  const mutation = existingApplication
+    ? supabase
+        .from("fiscal_sponsorship_applications")
+        .update(draftUpdate)
+        .eq("id", existingApplication.id)
+    : supabase.from("fiscal_sponsorship_applications").insert({
+        ...payload,
+        status: "draft",
+      })
+  const { data, error } = await mutation.select("id").single<{ id: string }>()
+
+  if (error) {
+    if (isMissingFiscalApplicationTableError(error)) {
+      return {
+        error:
+          "Fiscal sponsorship applications are not available until the latest database migrations are applied.",
+      }
+    }
+    return { error: "Unable to save fiscal sponsorship application." }
+  }
 
   revalidateFiscalApplicationRoutes(projectResult.project.id)
-  return result
+  return { ok: true, applicationId: data.id }
 }
 
 export async function saveFiscalSponsorship(

@@ -6,13 +6,10 @@ import {
   OrganizationDetailActivitiesSection,
   OrganizationDetailBrandKitSection,
   OrganizationDetailOriginSection,
-  OrganizationDetailStoryContent,
 } from "@/components/public/public-map-index/organization-detail-sections"
 import { PublicMapOrganizationDetail } from "@/components/public/public-map-index/organization-detail"
 import { OrganizationDetailResourceLinksSection } from "@/components/public/public-map-index/organization-detail-resource-links-section"
 import {
-  PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME,
-  PUBLIC_MAP_DETAIL_SECTION_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
 } from "@/components/public/public-map-index/sidebar-theme"
@@ -39,7 +36,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -75,41 +71,18 @@ function buildOrganization(
 }
 
 describe("public map detail section chrome", () => {
-  it("matches detail header controls to the drawer glass surface", () => {
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
-      "!bg-input/35"
-    )
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
-      "hover:!bg-input/50"
-    )
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
-      "border-input"
-    )
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).toContain(
-      "backdrop-blur-xl"
-    )
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).not.toContain(
-      "bg-zinc"
-    )
-    expect(PUBLIC_MAP_DETAIL_CHROME_BUTTON_SURFACE_CLASSNAME).not.toContain(
-      "bg-white"
-    )
-  })
-
-  it("keeps detail content on solid blurred section surfaces", () => {
+  it("does not apply a drop shadow to detail section surfaces", () => {
     expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).toContain(
-      "rounded-2xl border border-border/75 bg-background/90"
+      "rounded-xl border border-border/70 bg-background/75"
     )
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).toContain("backdrop-blur-md")
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME).not.toContain("shadow")
     expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).toContain(
-      "rounded-xl border border-border/75 bg-background/95"
+      "rounded-xl border border-border/70 bg-background/85"
     )
-    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).toContain(
-      "backdrop-blur-sm"
-    )
+    expect(PUBLIC_MAP_SIDEBAR_SECTION_ALT_CLASSNAME).not.toContain("shadow")
   })
 
-  it("renders brand kit content on the shared profile section surface", () => {
+  it("renders brand kit content without the visible parent container chrome", () => {
     const organization = buildOrganization({
       brandKitAvailable: true,
       logoUrl: "https://example.org/logo.png",
@@ -127,130 +100,42 @@ describe("public map detail section chrome", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapOrganizationDetail, {
         organization,
+        favorites: [],
+        onBack: () => {},
+        onToggleFavorite: () => {},
       })
     )
 
-    expect(sectionMarkup).toContain(
-      `<section class="relative ${PUBLIC_MAP_DETAIL_SECTION_CLASSNAME}">`
+    expect(sectionMarkup).toContain('<section class="p-2.5">')
+    expect(sectionMarkup).not.toContain(
+      `p-2.5 ${PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME}`
     )
-    expect(markup).toContain(
-      '<h3 class="text-base font-semibold">Brand kit</h3>'
-    )
-    expect(markup).toContain(
-      'data-public-map-resource-category-icon="community"'
-    )
-    expect(markup).toContain('aria-label="Download brand kit"')
-    expect(markup).not.toContain(">Download<")
+    expect(markup).toContain('<p class="text-sm font-medium">Brand kit</p>')
+    expect(markup).toContain(">Download<")
     expect(markup).toContain("Primary logo")
     expect(markup).toContain("Logo mark")
     expect(markup).toContain("https://example.org/mark.png")
   })
-
-  it("keeps website and socials in the identity without a separate socials card", () => {
-    const website = "https://example.org/a-long-public-organization-address"
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          website,
-          instagram: "https://instagram.com/atlas",
-          linkedin: "https://linkedin.com/company/atlas",
-        }),
-      })
-    )
-
-    expect(markup).toContain(`href="${website}"`)
-    expect(markup).toContain(`title="${website}"`)
-    expect(markup).toContain("example.org/a-long-public-organization-address")
-    expect(markup).toContain('aria-label="Open Instagram"')
-    expect(markup).toMatch(/aria-label="Open LinkedIn"[^>]*><svg[^>]*>.*?<path d=/)
-    expect(markup).not.toContain("/brand/linkedin-in.png")
-    expect(markup.indexOf('aria-label="Open Instagram"')).toBeLessThan(
-      markup.indexOf(">About</h3>")
-    )
-    expect(markup).not.toContain(">Socials</h3>")
-    expect(markup).not.toContain(">Donate</span>")
-  })
-
-  it("uses one icon size and label gap for every profile action", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          website: "https://example.org",
-          donateUrl: "https://example.org/donate",
-          email: "hello@example.org",
-          phone: "+1 312 555 0100",
-          brandKitAvailable: true,
-        }),
-      })
-    )
-
-    expect(
-      markup.match(/data-public-map-organization-action-content="true"/g)
-    ).toHaveLength(3)
-    expect(
-      markup.match(/data-public-map-organization-action-icon="true"/g)
-    ).toHaveLength(3)
-    expect(markup.match(/h-16 min-h-16/g)).toHaveLength(3)
-    expect(markup).toContain('href="https://example.org/donate"')
-    expect(markup).toContain(">Donate</span>")
-    expect(markup).not.toContain(">Website</span>")
-    expect(markup).toContain(
-      "flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
-    )
-    expect(markup).toContain(
-      "inline-flex size-5 shrink-0 items-center justify-center"
-    )
-    expect(markup).not.toContain("gap-0.5 text-center")
-    expect(markup).not.toContain("h-4.5 w-4.5")
-  })
 })
 
 describe("OrganizationDetailOriginSection", () => {
-  it('renders the section title as "Organization story"', () => {
+  it('renders the section title as "About"', () => {
     const markup = renderToStaticMarkup(
       React.createElement(OrganizationDetailOriginSection, {
         storyFields: [
           {
             label: "Origin story",
-            value:
-              '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> after repeated service gaps.</p><img src="https://example.org/story.png" alt="Founding team">',
+            value: "Started after repeated service gaps.",
           },
         ],
+        expandedStoryFields: {},
+        onToggleField: () => {},
       })
     )
 
-    expect(markup).toContain(">Organization story<")
+    expect(markup).toContain(">About<")
     expect(markup).not.toContain(">Origin<")
     expect(markup).toContain("Origin story")
-    expect(markup).toContain("pt-1 pb-[3px]")
-  })
-
-  it("preserves sanitized rich layout and images after expansion", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(OrganizationDetailStoryContent, {
-        value:
-          '<h2 style="text-align:center">Our beginning</h2><p><strong>Started</strong> together.</p><img src="https://example.org/story.png" alt="Founding team">',
-      })
-    )
-
-    expect(markup).toContain('<h2 style="text-align:center">')
-    expect(markup).toContain("<strong>Started</strong>")
-    expect(markup).toContain('alt="Founding team"')
-    expect(markup).toContain("[&amp;_img]:my-4")
-    expect(markup).toContain("[&amp;_img]:rounded-lg")
-    expect(markup).toContain("[&amp;_img]:overflow-hidden")
-    expect(markup).not.toContain("prose-img:")
-  })
-
-  it("renders nothing when no public story fields have content", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(OrganizationDetailOriginSection, {
-        storyFields: [],
-      })
-    )
-
-    expect(markup).toBe("")
-    expect(markup).not.toContain("Not provided yet.")
   })
 })
 
@@ -321,22 +206,6 @@ describe("OrganizationDetailActivitiesSection", () => {
     expect(markup).toContain("Ongoing")
     expect(markup).toContain("Online")
     expect(markup).toContain("https://hub.example.org")
-
-    const profile = renderToStaticMarkup(
-      React.createElement(PublicMapOrganizationDetail, {
-        organization: buildOrganization({
-          activityLinks: [{
-            id: "program-1", title: "Youth Resource Hub", subtitle: null,
-            description: "Public activity", activityKind: "Program", chips: [],
-            ctaLabel: null, ctaUrl: null, durationLabel: null,
-            locationUrl: null, locationType: null,
-          }],
-        }),
-      })
-    )
-    expect(profile.indexOf(">Activity<")).toBeGreaterThan(profile.indexOf(">About<"))
-    expect(profile.indexOf(">Activity<")).toBeLessThan(profile.indexOf(">Contact<"))
-    expect(profile.match(/Youth Resource Hub/g)).toHaveLength(1)
   })
 
   it("renders the full activity list from activity metadata, not the visual preview cap", () => {

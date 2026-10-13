@@ -7,7 +7,6 @@ import {
   organizationProfileBrandVoiceLongFormSchema,
   organizationProfileHexColorInputSchema,
   organizationProfileNarrativeSchema,
-  organizationProfileNameSchema,
 } from "@/lib/organization/profile-persistence-validation"
 import { isValidExternalUrl } from "@/lib/organization/urls"
 
@@ -33,7 +32,7 @@ const brandVoiceLongForm = organizationProfileBrandVoiceLongFormSchema
   .or(z.literal(""))
 
 export const organizationProfileSchema = z.object({
-  name: organizationProfileNameSchema,
+  name: z.string().min(1, "Name is required").max(120),
   tagline: z.string().max(160).optional().or(z.literal("")),
   description: z.string().max(5000).optional().or(z.literal("")),
   ein: z
@@ -57,7 +56,6 @@ export const organizationProfileSchema = z.object({
   brandMarkUrl: urlInput.or(z.literal("")),
   headerUrl: urlInput.or(z.literal("")),
   publicUrl: urlInput.or(z.literal("")),
-  donateUrl: urlInput.or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
   facebook: z.string().max(200).optional().or(z.literal("")),
   linkedin: z.string().max(200).optional().or(z.literal("")),

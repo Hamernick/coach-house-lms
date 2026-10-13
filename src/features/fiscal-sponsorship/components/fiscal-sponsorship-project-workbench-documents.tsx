@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import Link from "next/link"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import FileCheck2Icon from "lucide-react/dist/esm/icons/file-check-2"
@@ -44,19 +43,6 @@ function WorkbenchActionButton({
     )
   }
 
-  if (href.startsWith("/fiscal-sponsorship/")) {
-    return (
-      <Button
-        asChild
-        variant="ghost"
-        size="sm"
-        className="h-8 rounded-full px-3"
-      >
-        <Link href={href}>{children}</Link>
-      </Button>
-    )
-  }
-
   return (
     <Button asChild variant="ghost" size="sm" className="h-8 rounded-full px-3">
       <a href={href} target="_blank" rel="noreferrer">
@@ -75,7 +61,7 @@ function WorkbenchDocumentRow({
 
   return (
     <div className="flex min-w-0 flex-col gap-2 py-2 sm:flex-row sm:items-start sm:gap-2.5">
-      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+      <div className="flex min-w-0 items-start gap-2.5">
         <FileCheck2Icon
           className={cn(
             "mt-1 size-4 shrink-0",
@@ -88,7 +74,7 @@ function WorkbenchDocumentRow({
             <p className="text-foreground truncate text-xs font-medium">
               {action.title}
             </p>
-            <Badge className="h-6 rounded-full border-transparent bg-amber-500/12 px-2 py-0.5 text-[11px] leading-none text-amber-700">
+            <Badge className="bg-secondary text-secondary-foreground h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none">
               {action.statusLabel}
             </Badge>
           </div>
@@ -97,7 +83,7 @@ function WorkbenchDocumentRow({
           </p>
         </div>
       </div>
-      <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
         <WorkbenchActionButton href={action.viewHref} disabled={!available}>
           <ExternalLinkIcon data-icon="inline-start" aria-hidden />
           View
@@ -120,7 +106,7 @@ function WorkbenchSigningRow({
 
   return (
     <div className="flex min-w-0 flex-col gap-2 py-2 sm:flex-row sm:items-start sm:gap-2.5">
-      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+      <div className="flex min-w-0 items-start gap-2.5">
         <FileSignatureIcon
           className={cn(
             "mt-1 size-4 shrink-0",
@@ -133,7 +119,7 @@ function WorkbenchSigningRow({
             <p className="text-foreground truncate text-xs font-medium">
               {action.title}
             </p>
-            <Badge className="h-6 rounded-full border-transparent bg-amber-500/12 px-2 py-0.5 text-[11px] leading-none text-amber-700">
+            <Badge className="bg-primary/10 text-primary h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none">
               {action.statusLabel}
             </Badge>
           </div>
@@ -142,10 +128,10 @@ function WorkbenchSigningRow({
           </p>
         </div>
       </div>
-      <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:justify-end">
         <WorkbenchActionButton href={action.href} disabled={!available}>
           <ExternalLinkIcon data-icon="inline-start" aria-hidden />
-          {action.actionLabel}
+          Sign
         </WorkbenchActionButton>
       </div>
     </div>
@@ -158,7 +144,6 @@ export function FiscalSponsorshipProjectWorkbenchDocuments({
 }: FiscalSponsorshipProjectWorkbenchDocumentsProps) {
   return (
     <section
-      id="fiscal-sponsorship-documents"
       data-fiscal-sponsorship-project-workbench-documents=""
       className="min-w-0"
     >

@@ -88,7 +88,6 @@ export type FiscalSponsorshipInput = {
 
 export type FiscalSponsorshipApplicationInput = {
   projectId: string
-  expectedUpdatedAt?: string | null
   status?: FiscalSponsorshipApplicationStatus | string | null
   applicantFullName?: string | null
   applicantFirstName?: string | null
@@ -206,7 +205,7 @@ export type NormalizeFiscalSponsorshipApplicationResult =
   | { ok: false; error: string }
 
 export type SaveFiscalSponsorshipApplicationResult =
-  | { ok: true; applicationId: string; updatedAt: string }
+  | { ok: true; applicationId: string }
   | { error: string }
 
 export type FiscalSponsorshipApplicationRecord =
@@ -531,11 +530,12 @@ export type FiscalSponsorshipProjectWorkflowEvent = {
 export type FiscalSponsorshipProjectWorkflowSummary = {
   applicationId: string | null
   applicationStatus: FiscalSponsorshipApplicationStatus | null
+  canEditApplication?: boolean
   canCompleteW9?: boolean
   legalEntityType: FiscalSponsorshipLegalEntityType | null
   submittedAt: string | null
   reviewedAt: string | null
-  reviewNotes: string | null
+  reviewNotes?: string | null
   events: FiscalSponsorshipProjectWorkflowEvent[]
   latestAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null
   latestExecutedAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null
@@ -559,8 +559,6 @@ export type FiscalSponsorshipProjectWorkbenchSigningAction = {
   description: string
   href: string | null
   statusLabel: string
-  actionLabel: string
-  complete: boolean
 }
 
 export type FiscalSponsorshipProjectAssetOption = {

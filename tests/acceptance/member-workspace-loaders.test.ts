@@ -26,10 +26,6 @@ const { ensureStarterTasksForOrgMock } = vi.hoisted(() => ({
   ensureStarterTasksForOrgMock: vi.fn(),
 }))
 
-const { loadFiscalSponsorshipProjectListStatusesMock } = vi.hoisted(() => ({
-  loadFiscalSponsorshipProjectListStatusesMock: vi.fn(),
-}))
-
 vi.mock(
   "@/features/member-workspace/server/member-workspace-actor-context",
   () => ({
@@ -135,14 +131,6 @@ vi.mock("@/features/member-workspace/server/task-persistence", () => ({
   ensureStarterTasksForOrg: ensureStarterTasksForOrgMock,
 }))
 
-vi.mock(
-  "@/features/member-workspace/server/fiscal-sponsorship-project-list-status",
-  () => ({
-    loadFiscalSponsorshipProjectListStatuses:
-      loadFiscalSponsorshipProjectListStatusesMock,
-  })
-)
-
 import { loadMemberWorkspaceProjectsPage } from "@/features/member-workspace/server/project-loaders"
 import { loadMemberWorkspaceTasksPage } from "@/features/member-workspace/server/task-loaders"
 
@@ -241,10 +229,7 @@ function createTasksMissingTableSupabase() {
       if (table === "organization_projects") {
         return projectOptionsQuery
       }
-      if (table === "organizations") {
-            return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: [{ user_id: "org-1", profile: { name: "Test Organization" } }], error: null }) }
-          }
-          if (table === "organization_tasks") {
+      if (table === "organization_tasks") {
         return taskCountQuery
       }
       if (table === "organization_task_assignees") {
@@ -266,8 +251,6 @@ describe("member workspace loaders", () => {
     loadMemberWorkspacePersonOptionsForOrganizationsMock.mockResolvedValue([])
     ensureStarterTasksForOrgMock.mockReset()
     ensureStarterTasksForOrgMock.mockResolvedValue(undefined)
-    loadFiscalSponsorshipProjectListStatusesMock.mockReset()
-    loadFiscalSponsorshipProjectListStatusesMock.mockResolvedValue(new Map())
   })
 
   it("returns an empty projects state when member workspace project tables are missing", async () => {
@@ -296,7 +279,7 @@ describe("member workspace loaders", () => {
     })
   })
 
-  it("returns only organization cards in the default platform-admin directory", async () => {
+  it("returns a global admin projects state for platform admins", async () => {
     loadAdminOrganizationSummariesMock.mockResolvedValue([
       {
         orgId: "org-1",
@@ -414,7 +397,6 @@ describe("member workspace loaders", () => {
         }),
       ],
     })
-    expect(standardProjectsQuery.select).not.toHaveBeenCalled()
   })
 
   it("returns manageable platform-admin task views for real projects", async () => {
@@ -423,7 +405,7 @@ describe("member workspace loaders", () => {
       select: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
-          data: [{ id: "project-standard", org_id: "org-1" }],
+          data: [{ org_id: "org-1" }],
           error: null,
         })
       ),
@@ -449,7 +431,6 @@ describe("member workspace loaders", () => {
       ),
     }
     const adminTaskRowsQuery = {
-      or: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
@@ -457,7 +438,6 @@ describe("member workspace loaders", () => {
           data: [
             {
               id: "task-standard",
-              created_by: "platform-admin-1",
               org_id: "org-1",
               project_id: "project-standard",
               title: "Prepare launch",
@@ -508,7 +488,6 @@ describe("member workspace loaders", () => {
       ),
     }
     const taskAssigneesQuery = {
-      eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
       returns: vi.fn(() => Promise.resolve({ data: [], error: null })),
@@ -522,9 +501,6 @@ describe("member workspace loaders", () => {
             return organizationProjectsCalls === 1
               ? orgRowsQuery
               : adminProjectOptionsQuery
-          }
-          if (table === "organizations") {
-            return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: [{ user_id: "org-1", profile: { name: "Test Organization" } }], error: null }) }
           }
           if (table === "organization_tasks") {
             return adminTaskRowsQuery
@@ -562,25 +538,6 @@ describe("member workspace loaders", () => {
       "standard",
       "organization_admin",
     ])
-  })
-
-  it("includes explicitly assigned tasks outside a coach's organization list without including other tasks", async () => {
-    const task = { id: "assigned-task", org_id: "outside-org", project_id: "project-1", title: "Assigned to coach", task_type: "task", status: "todo", start_date: "2026-09-28", end_date: "2026-09-29", priority: "medium", created_source: "user", created_by: "admin-1", organization_projects: { id: "project-1", name: "Outside project" } }
-    const assignment = { task_id: task.id, user_id: "coach-1" }
-    const makeQuery = (rows: unknown[]) => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), neq: vi.fn().mockReturnThis(), or: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: rows, error: null }) })
-    const supabase = { from: vi.fn((table: string) => {
-      if (table === "organization_projects") return makeQuery([{ id: "project-1", org_id: "outside-org", name: "Outside project", project_kind: "standard", created_source: "user" }])
-      if (table === "organization_tasks") return makeQuery([task, { ...task, id: "unrelated-task" }])
-      if (table === "organization_task_assignees") return makeQuery([assignment])
-      if (table === "organizations") return makeQuery([{ user_id: "outside-org", profile: { name: "Outside organization" } }])
-      if (table === "profiles") return makeQuery([{ id: "coach-1", full_name: "Assigned Coach", email: null, avatar_url: null }])
-      throw new Error(`Unexpected table ${table}`)
-    }) }
-    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase, userId: "coach-1", currentUser: { id: "coach-1", name: "Assigned Coach" }, isAdmin: false, canAccessOrganizations: true, canEdit: false, organizationCoachScope: { mode: "assigned", organizationIds: new Set() } })
-    const result = await loadMemberWorkspaceTasksPage()
-    expect(result.taskGroups.flatMap((group) => group.tasks).map((item) => item.id)).toEqual(["assigned-task"])
-    expect(result.taskGroups[0].tasks[0]).toMatchObject({ canUpdate: false, assignee: { id: "coach-1" } })
-    expect(result.projectOptions).toEqual([])
   })
 
   it("returns an empty tasks state when member workspace task tables are missing", async () => {
@@ -638,7 +595,6 @@ describe("member workspace loaders", () => {
     }
 
     const assigneesQuery = {
-      in: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
@@ -654,9 +610,6 @@ describe("member workspace loaders", () => {
         from: vi.fn((table: string) => {
           if (table === "organization_projects") {
             return projectOptionsQuery
-          }
-          if (table === "organizations") {
-            return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: [{ user_id: "org-1", profile: { name: "Test Organization" } }], error: null }) }
           }
           if (table === "organization_tasks") {
             return organizationTasksQuery
@@ -742,7 +695,6 @@ describe("member workspace loaders", () => {
     }
 
     const assigneesQuery = {
-      in: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
@@ -837,9 +789,6 @@ describe("member workspace loaders", () => {
         from: vi.fn((table: string) => {
           if (table === "organization_projects") {
             return projectOptionsQuery
-          }
-          if (table === "organizations") {
-            return { select: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: [{ user_id: "org-1", profile: { name: "Test Organization" } }], error: null }) }
           }
           if (table === "organization_tasks") {
             return organizationTasksQuery

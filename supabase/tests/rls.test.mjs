@@ -42,17 +42,6 @@ if (!url || !anonKey || !serviceRole) {
   process.exit(0)
 }
 
-// This suite creates users, subscriptions and projects. Loading an app's local
-// credentials must not silently populate its shared database with test records.
-const hostname = new URL(url).hostname
-const isLocalDatabase = ["localhost", "127.0.0.1", "[::1]", "supabase_kong"].includes(hostname)
-if (!isLocalDatabase && process.env.SUPABASE_RLS_TEST_PROJECT_REF !== hostname.split(".")[0]) {
-  console.log(
-    "[supabase] Skipping destructive remote RLS tests. Use a local database or explicitly set SUPABASE_RLS_TEST_PROJECT_REF to an isolated test project's ref."
-  )
-  process.exit(0)
-}
-
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
@@ -82,14 +71,6 @@ const orgAdminEmail = `org-admin-${suffix}@example.com`
 const coachEmail = `coach-${suffix}@example.com`
 const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
-const signupLegalConsent = {
-  version: "2026-09-10.1",
-  termsSha256:
-    "8757308d709eac552572d79642b0374f6c41ee7c5277b50b961ce9948577e03c",
-  privacySha256:
-    "dd58c9175fd80b067658f07e503883f4f983c357413092e1533df8aeeccc0135",
-  acceptedAt: new Date().toISOString(),
-}
 
 async function ensureProfile(id, role, fullName) {
   const { error } = await adminClient.from("profiles").upsert(
@@ -104,8 +85,6 @@ async function ensureProfile(id, role, fullName) {
 }
 
 async function createUsers() {
-  // All synthetic users include consent at insertion time; do not depend on
-  // exemption metadata being available when the signup trigger executes.
   const {
     data: { user: member },
     error: memberError,
@@ -113,7 +92,6 @@ async function createUsers() {
     email: memberEmail,
     password,
     email_confirm: true,
-    user_metadata: { legal_consent: signupLegalConsent },
   })
   if (memberError) throw memberError
 
@@ -121,7 +99,6 @@ async function createUsers() {
     data: { user: admin },
     error: adminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: adminEmail,
     password,
     email_confirm: true,
@@ -132,7 +109,6 @@ async function createUsers() {
     data: { user: owner },
     error: ownerError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: ownerEmail,
     password,
     email_confirm: true,
@@ -143,7 +119,6 @@ async function createUsers() {
     data: { user: staff },
     error: staffError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: staffEmail,
     password,
     email_confirm: true,
@@ -154,7 +129,6 @@ async function createUsers() {
     data: { user: board },
     error: boardError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: boardEmail,
     password,
     email_confirm: true,
@@ -165,7 +139,6 @@ async function createUsers() {
     data: { user: orgAdmin },
     error: orgAdminError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: orgAdminEmail,
     password,
     email_confirm: true,
@@ -176,7 +149,6 @@ async function createUsers() {
     data: { user: coach },
     error: coachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: coachEmail,
     password,
     email_confirm: true,
@@ -187,7 +159,6 @@ async function createUsers() {
     data: { user: secondCoach },
     error: secondCoachError,
   } = await adminClient.auth.admin.createUser({
-    user_metadata: { legal_consent: signupLegalConsent },
     email: secondCoachEmail,
     password,
     email_confirm: true,
@@ -327,81 +298,6 @@ async function run() {
   })
 
   const results = []
-
-  if (await tableExists("platform_legal_acceptances")) {
-    const { data: ownAcceptance, error: ownAcceptanceError } =
-      await memberClient
-        .from("platform_legal_acceptances")
-        .select(
-          "id,user_id,document_version,terms_sha256,privacy_sha256,accepted_at,source"
-        )
-        .eq("user_id", member.id)
-        .eq("document_version", signupLegalConsent.version)
-        .maybeSingle()
-    results.push({
-      name: "signup trigger records the current immutable legal acceptance",
-      passed:
-        !ownAcceptanceError &&
-        ownAcceptance?.user_id === member.id &&
-        ownAcceptance?.document_version === signupLegalConsent.version &&
-        ownAcceptance?.terms_sha256 === signupLegalConsent.termsSha256 &&
-        ownAcceptance?.privacy_sha256 === signupLegalConsent.privacySha256 &&
-        ownAcceptance?.source === "signup" &&
-        typeof ownAcceptance?.accepted_at === "string" &&
-        new Date(ownAcceptance?.accepted_at).toISOString() ===
-          new Date(member.created_at).toISOString(),
-    })
-
-    const { data: otherAcceptance, error: otherAcceptanceError } =
-      await adminSessionClient
-        .from("platform_legal_acceptances")
-        .select("id")
-        .eq("user_id", member.id)
-        .maybeSingle()
-    results.push({
-      name: "authenticated users cannot read another legal acceptance",
-      passed: !otherAcceptanceError && !otherAcceptance,
-    })
-
-    const { data: anonAcceptance, error: anonAcceptanceError } =
-      await anonClient
-        .from("platform_legal_acceptances")
-        .select("id")
-        .eq("user_id", member.id)
-    results.push({
-      name: "anonymous users cannot read legal acceptances",
-      passed:
-        !!anonAcceptanceError ||
-        (Array.isArray(anonAcceptance) && anonAcceptance.length === 0),
-    })
-
-    const acceptanceId = ownAcceptance?.id ?? -1
-    const { error: acceptanceInsertError } = await memberClient
-      .from("platform_legal_acceptances")
-      .insert({
-        user_id: member.id,
-        document_version: "rls-write-probe",
-        terms_sha256: "a".repeat(64),
-        privacy_sha256: "b".repeat(64),
-        accepted_at: new Date().toISOString(),
-        source: "signup",
-      })
-    const { error: acceptanceUpdateError } = await memberClient
-      .from("platform_legal_acceptances")
-      .update({ accepted_at: new Date().toISOString() })
-      .eq("id", acceptanceId)
-    const { error: acceptanceDeleteError } = await memberClient
-      .from("platform_legal_acceptances")
-      .delete()
-      .eq("id", acceptanceId)
-    results.push({
-      name: "authenticated users cannot mutate immutable legal acceptances",
-      passed:
-        !!acceptanceInsertError &&
-        !!acceptanceUpdateError &&
-        !!acceptanceDeleteError,
-    })
-  }
 
   if (await tableExists("platform_staff_members")) {
     const [
@@ -977,80 +873,6 @@ async function run() {
   }
 
   // Programs write access for members
-  if (
-    orgAccessReady &&
-    (await tableExists("google_drive_connections")) &&
-    (await tableExists("organization_external_documents"))
-  ) {
-    const documentId = randomUUID()
-    const { error: seedError } = await adminClient
-      .from("organization_external_documents")
-      .insert({
-        id: documentId,
-        org_id: member.id,
-        provider_file_id: `drive-file-${suffix}`,
-        name: "Drive document",
-        mime_type: "application/vnd.google-apps.document",
-        web_view_link: "https://docs.google.com/document/d/test",
-        status: "available",
-        attached_by: member.id,
-      })
-    results.push({
-      name: "service role can create Google Drive document metadata",
-      passed: !seedError,
-    })
-
-    for (const [label, client] of [
-      ["owner", memberClient],
-      ["staff", staffClient],
-      ["board", boardClient],
-    ]) {
-      const { data, error } = await client
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-        .maybeSingle()
-      results.push({
-        name: `${label} can read organization Google Drive metadata`,
-        passed: !!data && !error,
-      })
-    }
-
-    const { data: unrelatedRead, error: unrelatedReadError } =
-      await adminSessionClient
-        .from("organization_external_documents")
-        .select("id")
-        .eq("id", documentId)
-    results.push({
-      name: "unrelated authenticated user cannot read Google Drive metadata",
-      passed:
-        !!unrelatedReadError ||
-        (Array.isArray(unrelatedRead) && unrelatedRead.length === 0),
-    })
-
-    const { error: ownerWriteError } = await memberClient
-      .from("organization_external_documents")
-      .update({ name: "Forbidden rename" })
-      .eq("id", documentId)
-    results.push({
-      name: "authenticated users cannot write Google Drive metadata directly",
-      passed: !!ownerWriteError,
-    })
-
-    const { error: credentialReadError } = await memberClient
-      .from("google_drive_connections")
-      .select("id")
-    results.push({
-      name: "authenticated users cannot read Google Drive credentials",
-      passed: !!credentialReadError,
-    })
-
-    await adminClient
-      .from("organization_external_documents")
-      .delete()
-      .eq("id", documentId)
-  }
-
   if (orgAccessReady) {
     const { data: createdProgram, error: staffProgramError } = await staffClient
       .from("programs")
@@ -1090,7 +912,6 @@ async function run() {
   let memberWorkspaceProjectAssetsTableAvailable = false
   let fiscalSponsorshipApplicationsTableAvailable = false
   let fiscalSponsorshipRequiredDocumentsTableAvailable = false
-  let fiscalSponsorshipNativeSigningTablesAvailable = false
   let memberWorkspaceStarterStateTableAvailable = false
   let memberWorkspaceTasksTableAvailable = false
   let memberWorkspaceTaskAssigneesTableAvailable = false
@@ -1405,17 +1226,6 @@ async function run() {
       name: "fiscal sponsorship required document metadata available",
       passed: fiscalSponsorshipRequiredDocumentsTableAvailable,
     })
-
-    const { error: fiscalNativeSigningProbeError } = await memberClient
-      .from("fiscal_sponsorship_signing_drafts")
-      .select("id, revision")
-      .limit(1)
-    fiscalSponsorshipNativeSigningTablesAvailable =
-      !fiscalNativeSigningProbeError
-    results.push({
-      name: "native fiscal sponsorship signing tables available",
-      passed: fiscalSponsorshipNativeSigningTablesAvailable,
-    })
   }
 
   if (orgAccessReady && memberWorkspaceProjectsTableAvailable) {
@@ -1448,69 +1258,44 @@ async function run() {
     memberWorkspaceTaskAssigneesTableAvailable &&
     memberWorkspaceProjectId
   ) {
-    const { data: deniedStaffTask, error: deniedStaffTaskError } =
-      await staffClient
-        .from("organization_tasks")
-        .insert({
-          org_id: member.id,
-          project_id: memberWorkspaceProjectId,
-          title: "Direct staff task",
-          task_type: "task",
-          status: "todo",
-          start_date: "2026-01-10",
-          end_date: "2026-01-12",
-          created_source: "user",
-          created_by: staff.id,
-          updated_by: staff.id,
-        })
-        .select("id")
-    results.push({
-      name: "staff cannot bypass atomic organization task creation",
-      passed:
-        !!deniedStaffTaskError ||
-        (Array.isArray(deniedStaffTask) && deniedStaffTask.length === 0),
-    })
+    const taskId = randomUUID()
 
-    const { data: staffTaskTransition, error: staffTaskTransitionError } =
-      await adminClient.rpc("create_organization_task_transition", {
-        p_actor_id: staff.id,
-        p_assignee_id: board.id,
-        p_description: null,
-        p_end_date: "2026-01-12",
-        p_priority: "high",
-        p_project_id: memberWorkspaceProjectId,
-        p_start_date: "2026-01-10",
-        p_status: "todo",
-        p_tag_label: null,
-        p_task_type: "task",
-        p_title: "Staff task",
-        p_workstream_name: null,
+    const { data: staffTask, error: staffTaskError } = await staffClient
+      .from("organization_tasks")
+      .insert({
+        id: taskId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Staff task",
+        task_type: "task",
+        status: "todo",
+        start_date: "2026-01-10",
+        end_date: "2026-01-12",
+        created_source: "user",
+        created_by: staff.id,
+        updated_by: staff.id,
       })
-    const taskId = staffTaskTransition?.taskId ?? randomUUID()
+      .select("id")
+      .maybeSingle()
     results.push({
-      name: "service role creates organization tasks atomically",
-      passed:
-        !staffTaskTransitionError &&
-        staffTaskTransition?.ok === true &&
-        typeof staffTaskTransition.taskId === "string",
+      name: "staff can insert organization tasks",
+      passed: !!staffTask && !staffTaskError,
     })
 
-    const { data: deniedStaffAssignment, error: deniedStaffAssignmentError } =
+    const { data: staffAssignment, error: staffAssignmentError } =
       await staffClient
         .from("organization_task_assignees")
         .insert({
           org_id: member.id,
           task_id: taskId,
-          user_id: owner.id,
+          user_id: board.id,
           created_by: staff.id,
         })
         .select("id")
+        .maybeSingle()
     results.push({
-      name: "staff cannot bypass atomic task assignment creation",
-      passed:
-        !!deniedStaffAssignmentError ||
-        (Array.isArray(deniedStaffAssignment) &&
-          deniedStaffAssignment.length === 0),
+      name: "staff can insert organization task assignees",
+      passed: !!staffAssignment && !staffAssignmentError,
     })
 
     const { data: boardReadsTask, error: boardReadsTaskError } =
@@ -1585,88 +1370,41 @@ async function run() {
       passed: !!adminReadsTask && !adminReadsTaskError,
     })
 
-    const { data: deniedAdminTask, error: deniedAdminTaskError } =
-      await adminSessionClient
-        .from("organization_tasks")
-        .insert({
-          org_id: member.id,
-          project_id: memberWorkspaceProjectId,
-          title: "Direct admin task",
-          task_type: "task",
-          status: "todo",
-          start_date: "2026-01-14",
-          end_date: "2026-01-16",
-          created_source: "user",
-          created_by: admin.id,
-          updated_by: admin.id,
-        })
-        .select("id")
-    results.push({
-      name: "platform admin cannot bypass atomic organization task creation",
-      passed:
-        !!deniedAdminTaskError ||
-        (Array.isArray(deniedAdminTask) && deniedAdminTask.length === 0),
-    })
-
-    const { data: adminTaskTransition, error: adminTaskTransitionError } =
-      await adminClient.rpc("create_organization_task_transition", {
-        p_actor_id: admin.id,
-        p_assignee_id: null,
-        p_description: null,
-        p_end_date: "2026-01-16",
-        p_priority: "high",
-        p_project_id: memberWorkspaceProjectId,
-        p_start_date: "2026-01-14",
-        p_status: "todo",
-        p_tag_label: null,
-        p_task_type: "task",
-        p_title: "Coach follow-up",
-        p_workstream_name: null,
+    const adminTaskId = randomUUID()
+    const { data: adminTask, error: adminTaskError } = await adminSessionClient
+      .from("organization_tasks")
+      .insert({
+        id: adminTaskId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Coach follow-up",
+        task_type: "task",
+        status: "todo",
+        start_date: "2026-01-14",
+        end_date: "2026-01-16",
+        created_source: "user",
+        created_by: admin.id,
+        updated_by: admin.id,
       })
-    const adminTaskId = adminTaskTransition?.taskId ?? randomUUID()
+      .select("id")
+      .maybeSingle()
     results.push({
-      name: "service role creates platform-admin tasks atomically",
-      passed:
-        !adminTaskTransitionError &&
-        adminTaskTransition?.ok === true &&
-        typeof adminTaskTransition.taskId === "string",
+      name: "platform admin can create organization tasks",
+      passed: !!adminTask && !adminTaskError,
     })
 
-    const { data: deniedAdminTaskUpdate, error: deniedAdminTaskUpdateError } =
+    const { data: adminUpdatedTask, error: adminUpdatedTaskError } =
       await adminSessionClient
         .from("organization_tasks")
         .update({ status: "done", updated_by: admin.id })
         .eq("id", adminTaskId)
         .select("id")
     results.push({
-      name: "platform admin cannot bypass atomic organization task updates",
+      name: "platform admin can complete organization tasks",
       passed:
-        !!deniedAdminTaskUpdateError ||
-        (Array.isArray(deniedAdminTaskUpdate) &&
-          deniedAdminTaskUpdate.length === 0),
-    })
-
-    const { data: adminTaskUpdate, error: adminTaskUpdateError } =
-      await adminClient.rpc("update_organization_task_transition", {
-        p_actor_id: admin.id,
-        p_assignee_id: null,
-        p_description: null,
-        p_end_date: "2026-01-16",
-        p_expected_org_id: member.id,
-        p_expected_project_id: memberWorkspaceProjectId,
-        p_priority: "high",
-        p_project_id: memberWorkspaceProjectId,
-        p_start_date: "2026-01-14",
-        p_status: "done",
-        p_tag_label: null,
-        p_task_id: adminTaskId,
-        p_task_type: "task",
-        p_title: "Coach follow-up",
-        p_workstream_name: null,
-      })
-    results.push({
-      name: "service role completes organization tasks atomically",
-      passed: !adminTaskUpdateError && adminTaskUpdate?.ok === true,
+        !adminUpdatedTaskError &&
+        Array.isArray(adminUpdatedTask) &&
+        adminUpdatedTask.length === 1,
     })
 
     if (organizationProjectActivityTableAvailable) {
@@ -2131,70 +1869,38 @@ async function run() {
         version,
       })
 
-      const { data: fiscalDocuments, error: fiscalDocumentsError } =
-        await adminClient
-          .from("fiscal_sponsorship_documents")
-          .insert([
-            buildRequiredFiscalDocument({
-              actorId: owner.id,
-              documentKey: "tax_id_confirmation",
-              version: 1,
-            }),
-            buildRequiredFiscalDocument({
-              actorId: staff.id,
-              documentKey: "governing_documents",
-              version: 2,
-            }),
-          ])
-          .select("id, document_key")
-      const taxDocument = fiscalDocuments?.find(
-        (document) => document.document_key === "tax_id_confirmation"
-      )
-      results.push({
-        name: "service role creates authoritative fiscal documents",
-        passed:
-          !fiscalDocumentsError &&
-          Array.isArray(fiscalDocuments) &&
-          fiscalDocuments.length === 2 &&
-          !!taxDocument,
-      })
-
-      const { data: deniedOwnerFiscalDocument, error: deniedOwnerFiscalError } =
+      const { data: ownerFiscalDocument, error: ownerFiscalDocumentError } =
         await ownerClient
           .from("fiscal_sponsorship_documents")
           .insert(
             buildRequiredFiscalDocument({
               actorId: owner.id,
-              documentKey: "budget_support",
-              version: 91,
+              documentKey: "tax_id_confirmation",
+              version: 1,
             })
           )
           .select("id")
+          .maybeSingle()
       results.push({
-        name: "owner cannot bypass authoritative fiscal document transition",
-        passed:
-          deniedOwnerFiscalError?.code === "42501" &&
-          (!Array.isArray(deniedOwnerFiscalDocument) ||
-            deniedOwnerFiscalDocument.length === 0),
+        name: "owner can insert fiscal sponsorship required documents",
+        passed: !!ownerFiscalDocument && !ownerFiscalDocumentError,
       })
 
-      const { data: deniedStaffFiscalDocument, error: deniedStaffFiscalError } =
+      const { data: staffFiscalDocument, error: staffFiscalDocumentError } =
         await staffClient
           .from("fiscal_sponsorship_documents")
           .insert(
             buildRequiredFiscalDocument({
               actorId: staff.id,
-              documentKey: "fundraising_materials",
-              version: 92,
+              documentKey: "governing_documents",
+              version: 2,
             })
           )
           .select("id")
+          .maybeSingle()
       results.push({
-        name: "staff cannot bypass authoritative fiscal document transition",
-        passed:
-          deniedStaffFiscalError?.code === "42501" &&
-          (!Array.isArray(deniedStaffFiscalDocument) ||
-            deniedStaffFiscalDocument.length === 0),
+        name: "staff can insert fiscal sponsorship required documents",
+        passed: !!staffFiscalDocument && !staffFiscalDocumentError,
       })
 
       const {
@@ -2211,14 +1917,14 @@ async function run() {
         )
         .select("id")
       results.push({
-        name: "board cannot bypass authoritative fiscal document transition",
+        name: "board cannot insert fiscal sponsorship required documents",
         passed:
-          deniedBoardFiscalDocumentError?.code === "42501" &&
-          (!Array.isArray(deniedBoardFiscalDocument) ||
+          !!deniedBoardFiscalDocumentError ||
+          (Array.isArray(deniedBoardFiscalDocument) &&
             deniedBoardFiscalDocument.length === 0),
       })
 
-      const { data: deniedAdminFiscalDocument, error: deniedAdminFiscalError } =
+      const { data: adminFiscalDocument, error: adminFiscalDocumentError } =
         await adminSessionClient
           .from("fiscal_sponsorship_documents")
           .insert(
@@ -2231,199 +1937,9 @@ async function run() {
           .select("id")
           .maybeSingle()
       results.push({
-        name: "platform admin cannot bypass authoritative fiscal document transition",
-        passed:
-          deniedAdminFiscalError?.code === "42501" &&
-          (!Array.isArray(deniedAdminFiscalDocument) ||
-            deniedAdminFiscalDocument.length === 0),
+        name: "platform admin can insert fiscal sponsorship required documents",
+        passed: !!adminFiscalDocument && !adminFiscalDocumentError,
       })
-
-      const { error: fiscalCoachResetError } = await adminSessionClient.rpc(
-        "set_organization_coach_assignments",
-        {
-          p_organization_id: member.id,
-          p_coach_user_ids: [secondCoach.id],
-        }
-      )
-      results.push({
-        name: "fiscal coach visibility starts from an unassigned fixture",
-        passed: !fiscalCoachResetError,
-      })
-
-      const fiscalReadMatrix = [
-        ["owner", ownerClient, 2],
-        ["staff", staffClient, 2],
-        ["board", boardClient, 1],
-        ["platform admin", adminSessionClient, 2],
-        ["unassigned coach", coachClient, 0],
-      ]
-
-      for (const [label, client, expectedCount] of fiscalReadMatrix) {
-        const { data, error } = await client
-          .from("fiscal_sponsorship_documents")
-          .select("id, document_key")
-          .eq("application_id", fiscalApplicationId)
-        results.push({
-          name: `${label} has scoped fiscal document visibility`,
-          passed:
-            !error && Array.isArray(data) && data.length === expectedCount,
-        })
-      }
-
-      if (await tableExists("organization_coach_assignments")) {
-        const { error: coachAssignmentError } = await adminClient
-          .from("organization_coach_assignments")
-          .insert({
-            assigned_by: admin.id,
-            coach_user_id: coach.id,
-            organization_id: member.id,
-          })
-        const { data: assignedCoachDocuments, error: assignedCoachError } =
-          await coachClient
-            .from("fiscal_sponsorship_documents")
-            .select("id")
-            .eq("application_id", fiscalApplicationId)
-        results.push({
-          name: "assigned coach has scoped fiscal document visibility",
-          passed:
-            !coachAssignmentError &&
-            !assignedCoachError &&
-            assignedCoachDocuments?.length === 2,
-        })
-        await adminClient
-          .from("organization_coach_assignments")
-          .delete()
-          .eq("organization_id", member.id)
-          .eq("coach_user_id", coach.id)
-      }
-
-      if (fiscalSponsorshipNativeSigningTablesAvailable && taxDocument?.id) {
-        const packetId = randomUUID()
-        const { error: packetSeedError } = await adminClient
-          .from("fiscal_sponsorship_signature_packets")
-          .insert({
-            id: packetId,
-            applicant_signer_email: memberEmail,
-            applicant_signer_id: member.id,
-            applicant_signer_name: "Test Member",
-            application_id: fiscalApplicationId,
-            document_id: taxDocument.id,
-            org_id: member.id,
-            project_id: memberWorkspaceProjectId,
-            provider: "native",
-            status: "sent",
-          })
-        results.push({
-          name: "native fiscal signature packet fixture created",
-          passed: !packetSeedError,
-        })
-
-        const { error: draftSeedError } = await adminClient
-          .from("fiscal_sponsorship_signing_drafts")
-          .insert({
-            application_id: fiscalApplicationId,
-            field_values: { projectId: `CH-${suffix}` },
-            org_id: member.id,
-            packet_id: packetId,
-            project_id: memberWorkspaceProjectId,
-            signer_id: member.id,
-            signer_role: "applicant",
-          })
-        results.push({
-          name: "native fiscal signing draft fixture created",
-          passed: !draftSeedError,
-        })
-
-        const { data: applicantDraft, error: applicantDraftError } =
-          await memberClient
-            .from("fiscal_sponsorship_signing_drafts")
-            .select("id")
-            .eq("packet_id", packetId)
-            .maybeSingle()
-        results.push({
-          name: "assigned applicant can read native fiscal signing draft",
-          passed: !!applicantDraft && !applicantDraftError,
-        })
-
-        const { data: deniedStaffDraft, error: deniedStaffDraftError } =
-          await staffClient
-            .from("fiscal_sponsorship_signing_drafts")
-            .select("id")
-            .eq("packet_id", packetId)
-            .maybeSingle()
-        results.push({
-          name: "unassigned staff cannot read native fiscal signing draft",
-          passed: !deniedStaffDraft && !deniedStaffDraftError,
-        })
-
-        const { data: deniedCoachDraft, error: deniedCoachDraftError } =
-          await staffClient
-            .from("fiscal_sponsorship_signing_drafts")
-            .insert({
-              application_id: fiscalApplicationId,
-              org_id: member.id,
-              packet_id: packetId,
-              project_id: memberWorkspaceProjectId,
-              signer_id: staff.id,
-              signer_role: "coach_house",
-            })
-            .select("id")
-        results.push({
-          name: "non-admin cannot create a native countersign draft",
-          passed:
-            !!deniedCoachDraftError ||
-            (Array.isArray(deniedCoachDraft) && deniedCoachDraft.length === 0),
-        })
-
-        const { data: deniedSignature, error: deniedSignatureError } =
-          await memberClient
-            .from("fiscal_sponsorship_signatures")
-            .insert({
-              application_id: fiscalApplicationId,
-              consent_sha256: "a".repeat(64),
-              consent_text: "RLS test",
-              consent_version: "test",
-              org_id: member.id,
-              packet_id: packetId,
-              project_id: memberWorkspaceProjectId,
-              signature_method: "typed",
-              signature_sha256: "b".repeat(64),
-              signature_value: "Test Member",
-              signed_at: new Date().toISOString(),
-              signed_document_sha256: "c".repeat(64),
-              signer_id: member.id,
-              signer_name: "Test Member",
-              signer_role: "applicant",
-              signer_title: "Authorized Representative",
-            })
-            .select("id")
-        results.push({
-          name: "applicant cannot directly insert native signature evidence",
-          passed:
-            !!deniedSignatureError ||
-            (Array.isArray(deniedSignature) && deniedSignature.length === 0),
-        })
-
-        const { data: adminDraft, error: adminDraftError } =
-          await adminSessionClient
-            .from("fiscal_sponsorship_signing_drafts")
-            .select("id")
-            .eq("packet_id", packetId)
-            .maybeSingle()
-        results.push({
-          name: "platform admin can read native fiscal signing draft",
-          passed: !!adminDraft && !adminDraftError,
-        })
-
-        await adminClient
-          .from("fiscal_sponsorship_signing_drafts")
-          .delete()
-          .eq("packet_id", packetId)
-        await adminClient
-          .from("fiscal_sponsorship_signature_packets")
-          .delete()
-          .eq("id", packetId)
-      }
     }
   }
 
@@ -3346,9 +2862,11 @@ async function run() {
   }
 
   if (await tableExists("app_page_health_events")) {
-    const { error: directInsertError } = await adminClient
+    const pageHealthEventId = randomUUID()
+    const { error: insertError } = await adminClient
       .from("app_page_health_events")
       .insert({
+        id: pageHealthEventId,
         event_type: "route_error",
         route_path: "/workspace",
         severity: "critical",
@@ -3356,41 +2874,11 @@ async function run() {
         user_id: member.id,
       })
     results.push({
-      name: "service role cannot bypass bounded page health recorder",
-      passed:
-        directInsertError?.code === "42501" ||
-        /permission denied/i.test(directInsertError?.message ?? ""),
+      name: "service role can insert page health events",
+      passed: !insertError,
     })
 
-    const { data: recordResult, error: recordError } = await adminClient.rpc(
-      "record_page_health_event",
-      {
-        p_event: {
-          eventType: "route_error",
-          routePath: "/workspace",
-          severity: "critical",
-          source: "client",
-        },
-        p_org_id: null,
-        p_user_id: member.id,
-      }
-    )
-    const pageHealthEventId =
-      recordResult &&
-      typeof recordResult === "object" &&
-      !Array.isArray(recordResult) &&
-      typeof recordResult.id === "string"
-        ? recordResult.id
-        : null
-    results.push({
-      name: "service role can record a bounded page health event",
-      passed:
-        !recordError &&
-        recordResult?.status === "recorded" &&
-        !!pageHealthEventId,
-    })
-
-    if (pageHealthEventId) {
+    if (!insertError) {
       const { data: memberRows, error: memberReadError } = await memberClient
         .from("app_page_health_events")
         .select("id")
@@ -3438,12 +2926,10 @@ async function run() {
       passed: !!memberInsertError,
     })
 
-    if (pageHealthEventId) {
-      await adminClient
-        .from("app_page_health_events")
-        .delete()
-        .eq("id", pageHealthEventId)
-    }
+    await adminClient
+      .from("app_page_health_events")
+      .delete()
+      .eq("id", pageHealthEventId)
   }
 
   await runResourceMapRlsTests({

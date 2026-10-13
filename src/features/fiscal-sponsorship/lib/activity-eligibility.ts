@@ -89,7 +89,25 @@ function hasPositiveAmount(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) && value > 0
 }
 
-function hasOperatingLocation({
+function normalizeCountry(value: string | null | undefined) {
+  const normalized = cleanText(value)?.toLowerCase()
+  if (!normalized) return null
+
+  return normalized.replaceAll(".", "").replace(/\s+/g, " ")
+}
+
+function isUnitedStates(value: string | null | undefined) {
+  const normalized = normalizeCountry(value)
+  return (
+    normalized === "us" ||
+    normalized === "usa" ||
+    normalized === "u s" ||
+    normalized === "united states" ||
+    normalized === "united states of america"
+  )
+}
+
+function hasUnitedStatesSignal({
   activity,
   organization,
   prefill,
@@ -102,8 +120,8 @@ function hasOperatingLocation({
   prefill: FiscalSponsorshipApplicationPrefill | null | undefined
 }) {
   if (
-    hasText(activity?.addressCountry) ||
-    hasText(organization?.addressCountry)
+    isUnitedStates(activity?.addressCountry) ||
+    isUnitedStates(organization?.addressCountry)
   ) {
     return true
   }
@@ -195,8 +213,8 @@ export function analyzeFiscalSponsorshipActivityEligibility({
     },
     {
       id: "us-operations",
-      label: "Operating location",
-      met: hasOperatingLocation({ activity, organization, prefill }),
+      label: "U.S. operations",
+      met: hasUnitedStatesSignal({ activity, organization, prefill }),
       detail: "location check",
     },
     {

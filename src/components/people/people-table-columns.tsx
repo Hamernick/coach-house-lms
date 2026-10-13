@@ -46,6 +46,7 @@ type BuildPeopleTableColumnsArgs = {
   people: PersonRow[]
   onEditPerson: (person: PersonRow) => void
   onManagerChange: (person: PersonRow, reportsToId: string | null) => void
+  onRefreshLinkedInPhoto: (person: PersonRow) => Promise<void>
   onDeletePerson: (person: PersonRow) => Promise<void>
 }
 
@@ -54,6 +55,7 @@ export function buildPeopleTableColumns({
   people,
   onEditPerson,
   onManagerChange,
+  onRefreshLinkedInPhoto,
   onDeletePerson,
 }: BuildPeopleTableColumnsArgs): ColumnDef<PersonRow>[] {
   const cols: ColumnDef<PersonRow>[] = []
@@ -262,6 +264,11 @@ export function buildPeopleTableColumns({
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onClick={() => onEditPerson(person)}>
                 Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => void onRefreshLinkedInPhoto(person)}
+              >
+                Refresh LinkedIn photo
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

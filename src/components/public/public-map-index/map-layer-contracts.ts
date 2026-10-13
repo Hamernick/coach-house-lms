@@ -15,19 +15,23 @@ import {
 } from "@/lib/public-map/public-map-layer-api"
 
 import {
+  PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  PUBLIC_MAP_POINT_LABEL_LAYER_ID,
   PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
   PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
 } from "./map-view-helpers"
 import {
   addMapLayerSafely,
   getMapLayerSafely,
+  isMapStyleAccessError,
   setMapFilterSafely,
   setMapLayoutPropertySafely,
   setMapPaintPropertySafely,
@@ -44,9 +48,29 @@ import {
   ensurePublicMapSelectedPointLabelLayer,
   refreshPublicMapLabelLayerContracts,
 } from "./map-label-layer-contracts"
-import { assertPublicMapLayerContractWithRepair } from "./map-layer-contract-assertion"
 
 const PUBLIC_MAP_CLUSTER_ICON_SIZE = 1
+const REQUIRED_PUBLIC_MAP_LAYER_IDS = [
+  PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+  PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
+  PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+  PUBLIC_MAP_POINT_LABEL_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
+] as const
+const PUBLIC_MAP_HIDDEN_BADGE_LAYOUT = {
+  "text-field": "",
+  "text-size": 1,
+  "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+  "text-offset": [0, 0],
+  "text-allow-overlap": true,
+  "text-ignore-placement": true,
+}
+const PUBLIC_MAP_HIDDEN_BADGE_PAINT = {
+  "text-color": "rgba(15, 23, 42, 0)",
+  "text-halo-color": "rgba(255, 255, 255, 0)",
+  "text-halo-width": 0,
+  "text-opacity": 0,
+}
 
 export function ensureClusterLayers(
   map: mapboxgl.Map,
@@ -125,20 +149,8 @@ export function ensurePointLayers(
       type: "symbol",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       filter: resolveSameLocationBadgeFilter(),
-      layout: {
-        "text-field": "",
-        "text-size": 1,
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-offset": [0, 0],
-        "text-allow-overlap": true,
-        "text-ignore-placement": true,
-      },
-      paint: {
-        "text-color": "rgba(15, 23, 42, 0)",
-        "text-halo-color": "rgba(255, 255, 255, 0)",
-        "text-halo-width": 0,
-        "text-opacity": 0,
-      },
+      layout: PUBLIC_MAP_HIDDEN_BADGE_LAYOUT,
+      paint: PUBLIC_MAP_HIDDEN_BADGE_PAINT,
     })
   }
 }
@@ -216,20 +228,8 @@ export function ensureSelectedLayers(
       type: "symbol",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       filter: resolveSelectedSameLocationBadgeFilter(selectedFilter),
-      layout: {
-        "text-field": "",
-        "text-size": 1,
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-offset": [0, 0],
-        "text-allow-overlap": true,
-        "text-ignore-placement": true,
-      },
-      paint: {
-        "text-color": "rgba(15, 23, 42, 0)",
-        "text-halo-color": "rgba(255, 255, 255, 0)",
-        "text-halo-width": 0,
-        "text-opacity": 0,
-      },
+      layout: PUBLIC_MAP_HIDDEN_BADGE_LAYOUT,
+      paint: PUBLIC_MAP_HIDDEN_BADGE_PAINT,
     })
   }
 
@@ -425,12 +425,25 @@ export function refreshLayerContracts(
 }
 
 export function assertPublicMapLayerContract(map: mapboxgl.Map) {
-  return assertPublicMapLayerContractWithRepair({
-    map,
-    repair: () => {
-      ensureClusterLayers(map)
-      ensurePointLayers(map)
-      ensureSelectedLayers(map)
-    },
+  const missingLayerIds = REQUIRED_PUBLIC_MAP_LAYER_IDS.filter((layerId) => {
+    const layer = getMapLayerSafely(map, layerId)
+    return isMapStyleAccessError(layer) || !layer
+  })
+
+  if (missingLayerIds.length === 0) return true
+
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[public-map] required marker layers missing after ensure", {
+      missingLayerIds,
+    })
+  }
+
+  ensureClusterLayers(map)
+  ensurePointLayers(map)
+  ensureSelectedLayers(map)
+
+  return REQUIRED_PUBLIC_MAP_LAYER_IDS.every((layerId) => {
+    const layer = getMapLayerSafely(map, layerId)
+    return !isMapStyleAccessError(layer) && Boolean(layer)
   })
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import reactGrabPackage from "react-grab/package.json"
 
 import {
   createReactGrabClipboardTransformer,
@@ -14,7 +13,8 @@ import {
 const REACT_GRAB_RUNTIME_ID = "react-grab-runtime"
 const REACT_GRAB_OPENCODE_ID = "react-grab-opencode"
 const REACT_GRAB_PLUGIN_NAME = "coachhouse-semantic-targeting"
-const REACT_GRAB_RUNTIME_SRC = buildReactGrabRuntimeSrc()
+const REACT_GRAB_RUNTIME_SRC =
+  "https://unpkg.com/react-grab@0.1.34/dist/index.global.js"
 const REACT_GRAB_OPENCODE_SRC =
   "https://unpkg.com/@react-grab/opencode@0.1.29/dist/client.global.js"
 
@@ -28,10 +28,6 @@ export {
   createReactGrabClipboardTransformer,
   createReactGrabSemanticSelectionHandler,
   resolveReactGrabSemanticTarget,
-}
-
-export function buildReactGrabRuntimeSrc(version = reactGrabPackage.version) {
-  return `https://unpkg.com/react-grab@${version}/dist/index.global.js`
 }
 
 function registerReactGrabSemanticPlugin({

@@ -51,38 +51,6 @@ describe("workspace board layout", () => {
     )
   })
 
-  it("starts Organization and Activity together without overlapping visible cards", () => {
-    const state = buildDefaultBoardState()
-    const organization = findNode(state.nodes, "organization-overview")
-    const activity = findNode(state.nodes, "programs")
-    const accelerator = findNode(state.nodes, "accelerator")
-    const roadmap = findNode(state.nodes, "roadmap")
-    expect(activity.y).toBe(organization.y)
-    expect(activity.x).toBeGreaterThan(organization.x)
-    expect(accelerator.x).toBe(organization.x)
-    expect(roadmap.x).toBe(activity.x)
-    expect(accelerator.y).toBe(roadmap.y)
-    expect(accelerator.y).toBeGreaterThan(activity.y)
-    const visible = state.nodes.filter((node) => !state.hiddenCardIds.includes(node.id))
-    for (const [index, node] of visible.entries()) {
-      const size = resolveCardDimensions(node.size, node.id)
-      for (const other of visible.slice(index + 1)) {
-        const otherSize = resolveCardDimensions(other.size, other.id)
-        expect(
-          node.x + size.width <= other.x || other.x + otherSize.width <= node.x ||
-          node.y + size.height <= other.y || other.y + otherSize.height <= node.y
-        ).toBe(true)
-      }
-    }
-    expect(normalizeWorkspaceBoardState(state).nodes).toEqual(state.nodes)
-  })
-
-  it("retains an existing organization's moved cards when loading the board", () => {
-    const state = buildDefaultBoardState()
-    state.nodes = state.nodes.map((node) => ({ ...node, x: node.x + 1600, y: node.y - 800, positionMode: "manual" }))
-    expect(normalizeWorkspaceBoardState(state).nodes).toEqual(state.nodes)
-  })
-
   it("clamps communications cards away from small sizing during normalization", () => {
     const normalized = normalizeWorkspaceBoardState({
       nodes: [
@@ -101,12 +69,9 @@ describe("workspace board layout", () => {
     expect(communications?.size).toBe("md")
   })
 
-  it("infers managed and manual ownership for legacy node positions", async () => {
+  it("infers managed and manual ownership for legacy node positions", () => {
     const defaults = buildDefaultBoardState()
-    const timelineNodes = await applyAutoLayout(defaults.nodes, "timeline", {
-      hiddenCardIds: defaults.hiddenCardIds,
-    })
-    const legacyNodes = timelineNodes.map((node) => {
+    const legacyNodes = defaults.nodes.map((node) => {
       const { positionMode: _positionMode, ...legacyNode } = node
       return node.id === "programs"
         ? { ...legacyNode, x: legacyNode.x + 120 }
@@ -228,35 +193,35 @@ describe("workspace board layout", () => {
   })
 
   it("round-trips future card layout state without exposing unknown cards to the current canvas", () => {
-    const futureFinanceNode = {
-      id: "finance",
+    const futureCardNode = {
+      id: "future-card",
       x: 820,
       y: 640,
       size: "lg",
       positionMode: "manual",
       futureMetadata: { view: "overview" },
     }
-    const futureFinanceConnection = {
-      id: "edge-organization-to-finance",
+    const futureCardConnection = {
+      id: "edge-organization-to-future-card",
       source: "organization-overview",
-      target: "finance",
+      target: "future-card",
       futureMetadata: { emphasis: "primary" },
     }
     const normalized = normalizeWorkspaceBoardState({
-      nodes: [futureFinanceNode],
-      connections: [futureFinanceConnection],
-      hiddenCardIds: ["finance"],
+      nodes: [futureCardNode],
+      connections: [futureCardConnection],
+      hiddenCardIds: ["future-card"],
     })
 
-    expect(normalized.nodes.map((node) => node.id)).not.toContain("finance")
+    expect(normalized.nodes.map((node) => node.id)).not.toContain("future-card")
     expect(
       normalized.connections.map((connection) => connection.target)
-    ).not.toContain("finance")
-    expect(normalized.hiddenCardIds).not.toContain("finance")
+    ).not.toContain("future-card")
+    expect(normalized.hiddenCardIds).not.toContain("future-card")
     expect(normalized.forwardCompatibility).toEqual({
-      nodes: [futureFinanceNode],
-      connections: [futureFinanceConnection],
-      hiddenCardIds: ["finance"],
+      nodes: [futureCardNode],
+      connections: [futureCardConnection],
+      hiddenCardIds: ["future-card"],
     })
 
     expect(

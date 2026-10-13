@@ -77,8 +77,8 @@ describe("resolvePublicMapSidebarWidth", () => {
 })
 
 describe("resolvePublicMapPanelPresentation", () => {
-  it("uses the drawer presentation on wide surfaces", () => {
-    expect(resolvePublicMapPanelPresentation(700)).toBe("drawer")
+  it("uses the rail presentation when the rail can stay comfortably wide", () => {
+    expect(resolvePublicMapPanelPresentation(700)).toBe("rail")
   })
 
   it("switches to the drawer presentation once the rail would become cramped", () => {
@@ -111,7 +111,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
     })
   })
 
-  it("keeps drawer presentation pending its portal on wider surfaces", () => {
+  it("keeps rail presentation ready immediately on wider surfaces", () => {
     expect(
       resolvePublicMapSurfacePanelState({
         surfaceWidth: 720,
@@ -120,9 +120,9 @@ describe("resolvePublicMapSurfacePanelState", () => {
         portalContainerReady: false,
       })
     ).toEqual({
-      panelPresentation: "drawer",
-      panelReady: false,
-      sidebarWidth: 0,
+      panelPresentation: "rail",
+      panelReady: true,
+      sidebarWidth: 374,
     })
   })
 })
@@ -154,7 +154,7 @@ describe("buildMapHref", () => {
         slug: "alpha-org",
         searchParams: new URLSearchParams("auth_action=save"),
       })
-    ).toBe("/resources?auth_action=save&organization=alpha-org")
+    ).toBe("/find/alpha-org?auth_action=save")
   })
 })
 
@@ -180,7 +180,6 @@ describe("buildPublicMapOrganizationFeatureCollection", () => {
       brandMarkUrl: null,
       headerUrl: null,
       website: null,
-    donateUrl: null,
       email: null,
       phone: null,
       twitter: null,

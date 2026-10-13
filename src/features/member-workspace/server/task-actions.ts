@@ -13,17 +13,13 @@ import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-con
 import {
   VALID_TASK_PRIORITIES,
   VALID_TASK_STATUSES,
+  adjustProjectTaskCount,
   formatTaskType,
+  replaceTaskAssignee,
   resolveAssignableUserId,
   resolveTaskTargetProject,
   toDateOnly,
 } from "./task-action-helpers"
-import {
-  createMemberWorkspaceTaskTransition,
-  deleteMemberWorkspaceTaskTransition,
-  reorderMemberWorkspaceTasksTransition,
-  updateMemberWorkspaceTaskTransition,
-} from "./task-transition-support"
 
 export type MemberWorkspaceUpdateTaskStatusResult =
   | { ok: true; taskId: string; status: MemberWorkspaceTaskStatus }
@@ -76,12 +72,12 @@ export async function createMemberWorkspaceTaskAction(
     return { error: "Choose a valid task priority." }
   }
 
-  const startDate = input.startDate ? toDateOnly(input.startDate) : null
-  const endDate = input.endDate ? toDateOnly(input.endDate) : null
-  if ((startDate && Number.isNaN(startDate.getTime())) || (endDate && Number.isNaN(endDate.getTime()))) {
+  const startDate = toDateOnly(input.startDate)
+  const endDate = toDateOnly(input.endDate)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
     return { error: "Enter valid task dates." }
   }
-  if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
+  if (endDate.getTime() < startDate.getTime()) {
     return { error: "Target date must be on or after the start date." }
   }
 
@@ -103,30 +99,67 @@ export async function createMemberWorkspaceTaskAction(
     return assigneeResult
   }
 
-  const result = await createMemberWorkspaceTaskTransition({
-    actorId: actor.userId,
-    assigneeId: assigneeResult.userId,
-    description: input.description?.trim() || null,
-    endDate: input.endDate,
-    priority,
-    projectId: project.id,
-    startDate: input.startDate,
-    status: input.status,
-    tagLabel: input.tagLabel?.trim() || null,
-    taskType: formatTaskType(input.tagLabel),
-    title,
-    workstreamName: input.workstreamName?.trim() || null,
-  })
-  if ("error" in result) return result
+  const admin = createSupabaseAdminClient()
+  const sortOrder = Math.max(project.task_count ?? 0, 0)
 
-  revalidatePath("/admin/dashboard")
-  revalidatePath("/projects")
+  const { data: task, error: insertError } = await admin
+    .from("organization_tasks")
+    .insert({
+      org_id: project.org_id,
+      project_id: project.id,
+      title,
+      description: input.description?.trim() ? input.description.trim() : null,
+      task_type: formatTaskType(input.tagLabel),
+      status: input.status,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      priority,
+      tag_label: input.tagLabel?.trim() ? input.tagLabel.trim() : null,
+      workstream_name: input.workstreamName?.trim()
+        ? input.workstreamName.trim()
+        : null,
+      sort_order: sortOrder,
+      created_source: "user",
+      created_by: actor.userId,
+      updated_by: actor.userId,
+    })
+    .select("id")
+    .single<{ id: string }>()
+
+  if (insertError || !task) {
+    return { error: "Unable to create task." }
+  }
+
+  const assigneeWriteResult = await replaceTaskAssignee({
+    admin,
+    actorUserId: actor.userId,
+    orgId: project.org_id,
+    taskId: task.id,
+    userId: assigneeResult.userId,
+  })
+  if ("error" in assigneeWriteResult) {
+    await admin
+      .from("organization_tasks")
+      .delete()
+      .eq("id", task.id)
+      .eq("org_id", project.org_id)
+    return { error: assigneeWriteResult.error }
+  }
+
+  await admin
+    .from("organization_projects")
+    .update({
+      task_count: sortOrder + 1,
+      updated_by: actor.userId,
+    })
+    .eq("id", project.id)
+    .eq("org_id", project.org_id)
+
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${project.id}`)
-  revalidatePath(`/projects/${project.id}`)
 
-  return result
+  return { ok: true, taskId: task.id }
 }
 
 export async function updateMemberWorkspaceTaskAction(
@@ -163,12 +196,12 @@ export async function updateMemberWorkspaceTaskAction(
     return { error: "Choose a valid task priority." }
   }
 
-  const startDate = input.startDate ? toDateOnly(input.startDate) : null
-  const endDate = input.endDate ? toDateOnly(input.endDate) : null
-  if ((startDate && Number.isNaN(startDate.getTime())) || (endDate && Number.isNaN(endDate.getTime()))) {
+  const startDate = toDateOnly(input.startDate)
+  const endDate = toDateOnly(input.endDate)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
     return { error: "Enter valid task dates." }
   }
-  if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
+  if (endDate.getTime() < startDate.getTime()) {
     return { error: "Target date must be on or after the start date." }
   }
 
@@ -220,37 +253,68 @@ export async function updateMemberWorkspaceTaskAction(
     return assigneeResult
   }
 
-  const result = await updateMemberWorkspaceTaskTransition({
-    actorId: actor.userId,
-    assigneeId: assigneeResult.userId,
-    description: input.description?.trim() || null,
-    endDate: input.endDate,
-    expectedOrgId: existingTask.org_id,
-    expectedProjectId: existingTask.project_id,
-    priority,
-    projectId: project.id,
-    startDate: input.startDate,
-    status: input.status,
-    tagLabel: input.tagLabel?.trim() || null,
-    taskId: normalizedTaskId,
-    taskType: formatTaskType(input.tagLabel),
-    title,
-    workstreamName: input.workstreamName?.trim() || null,
-  })
-  if ("error" in result) return result
+  const admin = createSupabaseAdminClient()
+  const { error: updateError } = await admin
+    .from("organization_tasks")
+    .update({
+      org_id: project.org_id,
+      project_id: project.id,
+      title,
+      description: input.description?.trim() ? input.description.trim() : null,
+      task_type: formatTaskType(input.tagLabel),
+      status: input.status,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      priority,
+      tag_label: input.tagLabel?.trim() ? input.tagLabel.trim() : null,
+      workstream_name: input.workstreamName?.trim()
+        ? input.workstreamName.trim()
+        : null,
+      updated_by: actor.userId,
+    })
+    .eq("id", normalizedTaskId)
+    .eq("org_id", existingTask.org_id)
 
-  revalidatePath("/admin/dashboard")
-  revalidatePath("/projects")
+  if (updateError) {
+    return { error: "Unable to update task." }
+  }
+
+  const assigneeWriteResult = await replaceTaskAssignee({
+    admin,
+    actorUserId: actor.userId,
+    orgId: project.org_id,
+    taskId: normalizedTaskId,
+    userId: assigneeResult.userId,
+  })
+  if ("error" in assigneeWriteResult) {
+    return { error: assigneeWriteResult.error }
+  }
+
+  if (existingTask.project_id !== project.id) {
+    await Promise.all([
+      adjustProjectTaskCount({
+        admin,
+        projectId: existingTask.project_id,
+        delta: -1,
+        updatedBy: actor.userId,
+      }),
+      adjustProjectTaskCount({
+        admin,
+        projectId: project.id,
+        delta: 1,
+        updatedBy: actor.userId,
+      }),
+    ])
+  }
+
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${existingTask.project_id}`)
-  revalidatePath(`/projects/${existingTask.project_id}`)
   if (existingTask.project_id !== project.id) {
     revalidatePath(`/organizations/${project.id}`)
-    revalidatePath(`/projects/${project.id}`)
   }
 
-  return { ok: true, taskId: result.taskId }
+  return { ok: true, taskId: normalizedTaskId }
 }
 
 export async function updateMemberWorkspaceTaskStatusAction(
@@ -321,7 +385,6 @@ export async function updateMemberWorkspaceTaskStatusAction(
   const projectResult = await resolveTaskTargetProject({
     actor,
     projectId: task.project_id,
-    assignedTaskId: task.id,
   })
   if ("error" in projectResult) {
     return projectResult
@@ -345,12 +408,9 @@ export async function updateMemberWorkspaceTaskStatusAction(
     return { error: "Unable to update task status." }
   }
 
-  revalidatePath("/admin/dashboard")
-  revalidatePath("/projects")
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${task.project_id}`)
-  revalidatePath(`/projects/${task.project_id}`)
 
   return { ok: true, taskId: normalizedTaskId, status: nextStatus }
 }
@@ -389,21 +449,50 @@ export async function updateMemberWorkspaceTaskOrderAction(
   }
 
   const { project } = projectResult
-  const result = await reorderMemberWorkspaceTasksTransition({
-    actorId: actor.userId,
-    expectedOrgId: project.org_id,
-    orderedTaskIds: normalizedTaskIds,
-    projectId: project.id,
-  })
-  if ("error" in result) return result
+  const admin = createSupabaseAdminClient()
 
-  revalidatePath("/admin/dashboard")
-  revalidatePath("/projects")
+  const { data: taskRows, error: taskRowsError } = await admin
+    .from("organization_tasks")
+    .select("id")
+    .eq("org_id", project.org_id)
+    .eq("project_id", project.id)
+    .order("sort_order", { ascending: true })
+    .returns<Array<{ id: string }>>()
+
+  if (taskRowsError) {
+    return { error: "Unable to load tasks for reordering." }
+  }
+
+  const currentTaskIds = (taskRows ?? []).map((task) => task.id)
+
+  if (
+    currentTaskIds.length !== normalizedTaskIds.length ||
+    currentTaskIds.some((taskId) => !normalizedTaskIds.includes(taskId))
+  ) {
+    return { error: "Task order is out of date. Refresh and try again." }
+  }
+
+  const updates = normalizedTaskIds.map((taskId, index) =>
+    admin
+      .from("organization_tasks")
+      .update({
+        sort_order: index,
+        updated_by: actor.userId,
+      })
+      .eq("id", taskId)
+      .eq("org_id", project.org_id)
+      .eq("project_id", project.id)
+  )
+
+  const results = await Promise.all(updates)
+  if (results.some((result) => result.error)) {
+    return { error: "Unable to save task order." }
+  }
+
   revalidatePath("/tasks")
   revalidatePath(`/organizations/${project.id}`)
-  revalidatePath(`/projects/${project.id}`)
 
-  return result
+  return { ok: true, projectId: project.id }
 }
 
 export async function deleteMemberWorkspaceTaskAction(
@@ -451,20 +540,37 @@ export async function deleteMemberWorkspaceTaskAction(
     return projectResult
   }
 
-  const result = await deleteMemberWorkspaceTaskTransition({
-    actorId: actor.userId,
-    expectedOrgId: task.org_id,
-    expectedProjectId: task.project_id,
-    taskId: normalizedTaskId,
-  })
-  if ("error" in result) return result
+  const admin = createSupabaseAdminClient()
 
-  revalidatePath("/admin/dashboard")
-  revalidatePath("/projects")
+  const { error: assigneeDeleteError } = await admin
+    .from("organization_task_assignees")
+    .delete()
+    .eq("task_id", normalizedTaskId)
+
+  if (assigneeDeleteError) {
+    return { error: "Unable to delete task assignees." }
+  }
+
+  const { error: taskDeleteError } = await admin
+    .from("organization_tasks")
+    .delete()
+    .eq("id", normalizedTaskId)
+    .eq("org_id", task.org_id)
+
+  if (taskDeleteError) {
+    return { error: "Unable to delete task." }
+  }
+
+  await adjustProjectTaskCount({
+    admin,
+    projectId: task.project_id,
+    delta: -1,
+    updatedBy: actor.userId,
+  })
+
   revalidatePath("/tasks")
   revalidatePath("/organizations")
   revalidatePath(`/organizations/${task.project_id}`)
-  revalidatePath(`/projects/${task.project_id}`)
 
-  return result
+  return { ok: true, taskId: normalizedTaskId, projectId: task.project_id }
 }

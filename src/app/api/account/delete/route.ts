@@ -7,7 +7,6 @@ import {
   isLikelyForeignKeyDeleteError,
   reassignSharedWorkspaceAuthorReferences,
 } from "@/lib/account-deletion/server"
-import { disconnectGoogleDrive } from "@/features/google-drive"
 
 export async function DELETE(request: NextRequest) {
   const response = new NextResponse(null, { status: 204 })
@@ -25,7 +24,6 @@ export async function DELETE(request: NextRequest) {
   }
 
   const admin = createSupabaseAdminClient()
-  await disconnectGoogleDrive({ admin, userId: user.id, revoke: true }).catch(() => undefined)
   try {
     await reassignSharedWorkspaceAuthorReferences(admin, user.id)
   } catch (cleanupError) {
@@ -36,7 +34,7 @@ export async function DELETE(request: NextRequest) {
             ? cleanupError.message
             : "Unable to prepare account data for deletion.",
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 
@@ -52,7 +50,7 @@ export async function DELETE(request: NextRequest) {
               ? cleanupError.message
               : "Unable to prepare account data for deletion.",
         },
-        { status: 500 }
+        { status: 500 },
       )
     }
     const retryDeleteResult = await admin.auth.admin.deleteUser(user.id)

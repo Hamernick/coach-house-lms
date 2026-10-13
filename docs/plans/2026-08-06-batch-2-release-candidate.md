@@ -70,11 +70,12 @@ Status: Preview PR #119 open; connected disposable preview proof passed
   migration source, now lists every migration, and passes the connected RLS
   suite. The badge must not be represented as green.
 
-## Rollout gate
+## Private rollout gate
 
 - Default off: `WORKSPACE_FOUNDATION_ROLLOUT_ENABLED` must equal `1`.
-- When enabled, the workspace foundation is available to every authenticated
-  organization member.
+- Selective access additionally requires a matching UUID in
+  `WORKSPACE_FOUNDATION_ROLLOUT_ORG_IDS` or
+  `WORKSPACE_FOUNDATION_ROLLOUT_USER_IDS`.
 - Compatibility reads/writes remain unconditional. Finance remains inactive.
 
 ## Rollback plan

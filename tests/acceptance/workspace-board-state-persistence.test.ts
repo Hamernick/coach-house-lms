@@ -272,44 +272,51 @@ describe("workspace board state persistence", () => {
     expect(merged.ontology).toEqual(persisted.ontology)
   })
 
-  it("preserves future layout records across concurrent whole-board saves", () => {
+  it("preserves opaque future layout records across concurrent whole-board saves", () => {
     const defaults = buildDefaultBoardState()
     const incoming = normalizeWorkspaceBoardState({
       ...defaults,
       updatedAt: "2026-08-05T18:20:00.000Z",
-      nodes: [...defaults.nodes, { id: "finance", x: 640, y: 720, size: "md" }],
+      nodes: [
+        ...defaults.nodes,
+        { id: "future-card", x: 640, y: 720, size: "md" },
+      ],
       connections: [
         ...defaults.connections,
         {
-          id: "edge-organization-to-finance",
+          id: "edge-organization-to-future-card",
           source: "organization-overview",
-          target: "finance",
+          target: "future-card",
         },
       ],
-      hiddenCardIds: [...defaults.hiddenCardIds, "finance"],
+      hiddenCardIds: [...defaults.hiddenCardIds, "future-card"],
     })
     const persisted = normalizeWorkspaceBoardState({
       ...defaults,
       updatedAt: "2026-08-05T18:21:00.000Z",
       nodes: [
         ...defaults.nodes,
-        { id: "finance", x: 920, y: 760, size: "lg" },
+        { id: "future-card", x: 920, y: 760, size: "lg" },
         { id: "future-reporting", x: 1120, y: 760, size: "md" },
       ],
       connections: [
         ...defaults.connections,
         {
-          id: "edge-organization-to-finance",
+          id: "edge-organization-to-future-card",
           source: "organization-overview",
-          target: "finance",
+          target: "future-card",
         },
         {
-          id: "edge-finance-to-reporting",
-          source: "finance",
+          id: "edge-future-card-to-reporting",
+          source: "future-card",
           target: "future-reporting",
         },
       ],
-      hiddenCardIds: [...defaults.hiddenCardIds, "finance", "future-reporting"],
+      hiddenCardIds: [
+        ...defaults.hiddenCardIds,
+        "future-card",
+        "future-reporting",
+      ],
     })
 
     const merged = mergeNewerPersistedWorkspaceNodeState({
@@ -319,26 +326,26 @@ describe("workspace board state persistence", () => {
 
     expect(merged.forwardCompatibility).toEqual({
       nodes: [
-        { id: "finance", x: 920, y: 760, size: "lg" },
+        { id: "future-card", x: 920, y: 760, size: "lg" },
         { id: "future-reporting", x: 1120, y: 760, size: "md" },
       ],
       connections: [
         {
-          id: "edge-organization-to-finance",
+          id: "edge-organization-to-future-card",
           source: "organization-overview",
-          target: "finance",
+          target: "future-card",
         },
         {
-          id: "edge-finance-to-reporting",
-          source: "finance",
+          id: "edge-future-card-to-reporting",
+          source: "future-card",
           target: "future-reporting",
         },
       ],
-      hiddenCardIds: ["finance", "future-reporting"],
+      hiddenCardIds: ["future-card", "future-reporting"],
     })
   })
 
-  it("reconciles server-preserved positions and future layout state into the client after save", () => {
+  it("reconciles server-preserved positions and opaque future layout state into the client after save", () => {
     const defaults = buildDefaultBoardState()
     const current = {
       ...defaults,
@@ -361,9 +368,9 @@ describe("workspace board state persistence", () => {
           : node
       ),
       forwardCompatibility: {
-        nodes: [{ id: "finance", x: 960, y: 720, size: "md" }],
+        nodes: [{ id: "future-card", x: 960, y: 720, size: "md" }],
         connections: [],
-        hiddenCardIds: ["finance"],
+        hiddenCardIds: ["future-card"],
       },
     }
 

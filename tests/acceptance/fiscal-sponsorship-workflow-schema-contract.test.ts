@@ -64,14 +64,8 @@ describe("fiscal sponsorship workflow schema contract", () => {
     const actions = readSource(
       "src/features/fiscal-sponsorship/server/workflow-actions.ts"
     )
-    const documentTransitions = readSource(
-      "supabase/migrations/20260805231500_atomic_fiscal_document_transitions.sql"
-    )
     const agreementActions = readSource(
       "src/features/fiscal-sponsorship/server/workflow-agreement-actions.ts"
-    )
-    const agreementSendTransition = readSource(
-      "supabase/migrations/20260806002000_atomic_form_b_signature_packet_sends.sql"
     )
     const actionFacade = readSource(
       "src/features/fiscal-sponsorship/actions.ts"
@@ -142,30 +136,22 @@ describe("fiscal sponsorship workflow schema contract", () => {
     expect(actions).toContain("reviewFiscalSponsorshipApplication")
     expect(actions).toContain("connectFiscalSponsorshipDocumentAsset")
     expect(actions).toContain("reviewFiscalSponsorshipDocument")
-    expect(documentTransitions).toContain("document_connected")
-    expect(documentTransitions).toContain("document_reviewed")
+    expect(actions).toContain("document_connected")
+    expect(actions).toContain("document_reviewed")
     expect(actions).toContain("getRequiredReviewNoteError")
     expect(actions).toContain(
       "Add a review note before marking this ${subject}"
     )
     expect(actions).toContain('subject: "application"')
     expect(actions).toContain('subject: "document"')
-    expect(actions).toContain("transitionFiscalDocumentConnection")
-    expect(actions).toContain("transitionFiscalDocumentReview")
-    expect(documentTransitions).toContain(
-      "connect_fiscal_sponsorship_document_transition"
-    )
-    expect(documentTransitions).toContain(
-      "review_fiscal_sponsorship_document_transition"
-    )
+    expect(actions).toContain("review_notes: reviewNotes")
     expect(actions).toContain("canManageFiscalSponsorshipForOrganization")
     expect(agreementActions).toContain("generateFiscalSponsorshipAgreement")
     expect(agreementActions).toContain(
       "sendFiscalSponsorshipAgreementForSignature"
     )
     expect(agreementActions).toContain("buildFiscalSponsorshipFormBPdf")
-    expect(agreementActions).toContain("transitionFiscalFormBSend")
-    expect(agreementSendTransition).toContain("'native'")
+    expect(agreementActions).toContain('provider: "native"')
     expect(agreementActions).not.toContain(
       "createFiscalSponsorshipDocuSealSubmission"
     )

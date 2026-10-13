@@ -4,14 +4,12 @@ export {
   OrganizationCoachAssignmentOperationsBar,
 } from "./components"
 export {
-  defaultOrganizationCoachFilter,
   applyOrganizationCoachFilterToParams,
   canAccessOrganizationInCoachScope,
   computeOrganizationCoachAssignmentCoverage,
   filterByOrganizationCoachScope,
   filterProjectsByOrganizationCoach,
   getOrganizationCoachInitials,
-  getOrganizationCoachAssignmentsSignature,
   normalizeOrganizationCoachFilter,
   ORGANIZATION_COACH_FILTER_ALL,
   ORGANIZATION_COACH_FILTER_UNASSIGNED,

@@ -1,17 +1,16 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Fragment, useMemo, useRef } from "react"
-import { format, parseISO } from "date-fns"
+import { useMemo, useRef } from "react"
+import { format } from "date-fns"
 import {
   CalendarBlank,
   Flag,
   Folder,
-  HandHeart,
   PencilSimpleLine,
   User,
 } from "@phosphor-icons/react/dist/ssr"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,11 +18,6 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { MemberWorkspaceProjectPriorityBadge } from "./member-workspace-project-priority"
 import { MemberWorkspaceProjectProgress } from "./member-workspace-project-progress"
-import {
-  getMemberWorkspaceFiscalSponsorshipStatusLabel,
-  getMemberWorkspaceOrganizationStatusLabel,
-  resolveMemberWorkspaceOrganizationStatus,
-} from "./member-workspace-project-status"
 import {
   buildMemberWorkspaceProjectCardReactGrabOwnerId,
   getMemberWorkspaceProjectCardReactGrabOwnerProps,
@@ -39,66 +33,43 @@ type MemberWorkspaceProjectCardProps = {
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
 }
 
-function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]): { label: string; dot: string; pill: string } {
-  switch (resolveMemberWorkspaceOrganizationStatus(status)) {
+function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]) {
+  switch (status) {
     case "active":
       return {
-        label: getMemberWorkspaceOrganizationStatusLabel(status),
+        label: "Active",
         dot: "bg-teal-600 dark:bg-teal-400",
         pill: "text-teal-700 border-teal-200 bg-teal-50 dark:text-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10",
       }
-    case "onboarding":
+    case "planned":
       return {
-        label: getMemberWorkspaceOrganizationStatusLabel(status),
+        label: "Planned",
+        dot: "bg-zinc-900 dark:bg-zinc-200",
+        pill: "text-zinc-900 border-zinc-200 bg-zinc-50 dark:text-zinc-50 dark:border-zinc-600/60 dark:bg-zinc-600/20",
+      }
+    case "backlog":
+      return {
+        label: "Backlog",
         dot: "bg-orange-600 dark:bg-orange-400",
         pill: "text-orange-700 border-orange-200 bg-orange-50 dark:text-orange-100 dark:border-orange-500/40 dark:bg-orange-500/10",
       }
-    case "archived":
+    case "completed":
       return {
-        label: getMemberWorkspaceOrganizationStatusLabel(status),
-        dot: "bg-zinc-500 dark:bg-zinc-300",
-        pill: "text-zinc-700 border-zinc-200 bg-zinc-50 dark:text-zinc-100 dark:border-zinc-600/60 dark:bg-zinc-600/20",
+        label: "Completed",
+        dot: "bg-blue-600 dark:bg-blue-400",
+        pill: "text-blue-700 border-blue-200 bg-blue-50 dark:text-blue-100 dark:border-blue-500/40 dark:bg-blue-500/10",
+      }
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        dot: "bg-rose-600 dark:bg-rose-400",
+        pill: "text-rose-700 border-rose-200 bg-rose-50 dark:text-rose-100 dark:border-rose-500/40 dark:bg-rose-500/10",
       }
     default:
       return {
         label: status,
         dot: "bg-zinc-400 dark:bg-zinc-300",
         pill: "text-zinc-700 border-zinc-200 bg-zinc-50 dark:text-zinc-100 dark:border-zinc-600/60 dark:bg-zinc-600/20",
-      }
-  }
-}
-
-function getFiscalSponsorshipStatusConfig(
-  status: NonNullable<
-    PlatformAdminDashboardLabProject["fiscalSponsorshipStatus"]
-  >
-) {
-  const label = getMemberWorkspaceFiscalSponsorshipStatusLabel(status)
-
-  switch (status) {
-    case "active":
-      return {
-        label,
-        dot: "bg-emerald-600 dark:bg-emerald-400",
-        pill: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100",
-      }
-    case "in_progress":
-      return {
-        label,
-        dot: "bg-amber-600 dark:bg-amber-400",
-        pill: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100",
-      }
-    case "eligible":
-      return {
-        label,
-        dot: "bg-blue-600 dark:bg-blue-400",
-        pill: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-100",
-      }
-    default:
-      return {
-        label,
-        dot: "bg-zinc-400 dark:bg-zinc-300",
-        pill: "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600/60 dark:bg-zinc-600/20 dark:text-zinc-100",
       }
   }
 }
@@ -111,14 +82,7 @@ export function MemberWorkspaceProjectCard({
   visibleProperties = ["title", "status", "assignee", "dueDate"],
 }: MemberWorkspaceProjectCardProps) {
   const router = useRouter()
-  const directoryHref = (usePathname() ?? "").startsWith("/projects") ? "/projects" : "/organizations"
   const status = getStatusConfig(project.status)
-  if (directoryHref === "/projects") {
-    status.label = ({ backlog: "Backlog", planned: "Planned", active: "Active", "on-hold": "On hold", completed: "Completed", cancelled: "Cancelled" } as const)[project.status]
-  }
-  const fiscalSponsorshipStatus = project.fiscalSponsorshipStatus
-    ? getFiscalSponsorshipStatusConfig(project.fiscalSponsorshipStatus)
-    : null
   const primaryPersonName =
     project.primaryPersonName ?? project.members[0] ?? null
   const primaryPersonAvatarUrl = project.primaryPersonAvatarUrl ?? null
@@ -137,22 +101,14 @@ export function MemberWorkspaceProjectCard({
 
   const secondaryLine = (() => {
     if (project.projectKind === "organization_admin") {
-      const visibility = project.client === "Public" || project.client === "Private"
-        ? (
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span aria-hidden className={cn("inline-block size-1.5 rounded-full", project.client === "Public" ? "bg-emerald-500" : "bg-destructive")} />
-            {project.client}
-          </span>
-        ) : project.client
       const summary = [
+        primaryPersonName ? `Created by ${primaryPersonName}` : null,
         project.typeLabel,
-        visibility,
+        project.client,
         project.durationLabel,
       ].filter(Boolean)
       if (summary.length > 0) {
-        return summary.map((item, index) => (
-          <Fragment key={index}>{index > 0 ? " • " : null}{item}</Fragment>
-        ))
+        return summary.join(" • ")
       }
     }
 
@@ -201,12 +157,12 @@ export function MemberWorkspaceProjectCard({
           draggingRef.current = false
           return
         }
-        router.push(`${directoryHref}/${project.id}`)
+        router.push(`/organizations/${project.id}`)
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault()
-          router.push(`${directoryHref}/${project.id}`)
+          router.push(`/organizations/${project.id}`)
         }
       }}
       onMouseDown={(event) => {
@@ -226,15 +182,12 @@ export function MemberWorkspaceProjectCard({
         if (!isBoard) return
         startPosRef.current = null
       }}
-      className={cn(
-        "border-border bg-background focus-visible:ring-ring/50 flex h-full cursor-pointer flex-col min-w-0 rounded-2xl border transition-shadow hover:shadow-lg/5 focus-visible:ring-2 focus-visible:outline-none",
-        isBoard && "h-auto"
-      )}
+      className="border-border bg-background focus-visible:ring-ring/50 flex h-full cursor-pointer flex-col rounded-2xl border transition-shadow hover:shadow-lg/5 focus-visible:ring-2 focus-visible:outline-none"
     >
-      <div {...reactGrabSurface("body")} className={cn("flex flex-1 flex-col p-4", isBoard && "flex-none pt-2 pb-4")}>
+      <div {...reactGrabSurface("body")} className="flex flex-1 flex-col p-4">
         <div
           {...reactGrabSurface("header-row")}
-          className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+          className="flex items-center justify-between"
         >
           {isBoard ? (
             showDueDate ? (
@@ -243,21 +196,14 @@ export function MemberWorkspaceProjectCard({
                 className="text-muted-foreground flex items-center gap-1.5 text-xs"
               >
                 <Flag className="h-4 w-4" />
-                <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d") : "No due date"}</span>
+                <span>{format(project.endDate, "MMM d")}</span>
               </div>
             ) : (
               <div className="h-4" />
             )
           ) : (
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              {project.projectKind === "organization_admin" && project.organizationImageUrl ? (
-                <Avatar className="size-6 rounded-md border border-gray-200 bg-white">
-                  <AvatarImage src={project.organizationImageUrl} alt={`${project.name} profile`} className="rounded-md object-contain p-0.5" />
-                  <AvatarFallback className="rounded-md bg-transparent">
-                    <Folder className="size-5" />
-                  </AvatarFallback>
-                </Avatar>
-              ) : <Folder className="h-5 w-5" />}
+              <Folder className="h-5 w-5" />
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -300,7 +246,7 @@ export function MemberWorkspaceProjectCard({
                     variant="ghost"
                     size="icon"
                     aria-label={`Edit ${project.name}`}
-                    className="size-11 rounded-lg sm:size-8"
+                    className="h-8 w-8 rounded-lg"
                     onClick={() => onEditProject(project)}
                   >
                     <PencilSimpleLine />
@@ -311,10 +257,10 @@ export function MemberWorkspaceProjectCard({
           </div>
         </div>
 
-        <div {...reactGrabSurface("title-block", "content")} className={cn("mt-3", isBoard && "mt-1")}>
+        <div {...reactGrabSurface("title-block", "content")} className="mt-3">
           <p
             {...reactGrabSurface("title", "content")}
-            className="text-foreground break-words text-[15px] leading-6 font-semibold"
+            className="text-foreground text-[15px] leading-6 font-semibold"
           >
             {project.name}
           </p>
@@ -329,35 +275,9 @@ export function MemberWorkspaceProjectCard({
               {secondaryLine}
             </p>
           ) : null}
-          {fiscalSponsorshipStatus ? (
-            <div
-              {...reactGrabSurface("fiscal-sponsorship-status", "indicator")}
-              className={cn("mt-3 flex min-w-0 items-center justify-between gap-3", isBoard && "mt-2")}
-            >
-              <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
-                <HandHeart className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">Fiscal sponsorship</span>
-              </span>
-              <span
-                className={cn(
-                  "flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
-                  fiscalSponsorshipStatus.pill
-                )}
-              >
-                <span
-                  className={cn(
-                    "inline-block size-1.5 rounded-full",
-                    fiscalSponsorshipStatus.dot
-                  )}
-                  aria-hidden
-                />
-                {fiscalSponsorshipStatus.label}
-              </span>
-            </div>
-          ) : null}
         </div>
 
-        <div {...reactGrabSurface("footer")} className={cn("mt-auto pt-4", isBoard && "mt-0 pt-2")}>
+        <div {...reactGrabSurface("footer")} className="mt-auto pt-4">
           {!isBoard ? (
             <div
               {...reactGrabSurface("date-priority-row", "content")}
@@ -369,7 +289,7 @@ export function MemberWorkspaceProjectCard({
                   className="flex items-center gap-2"
                 >
                   <CalendarBlank className="h-4 w-4" />
-                  <span>{project.endDate ? format(parseISO(project.endDate.toISOString().slice(0, 10)), "MMM d, yyyy") : "No due date"}</span>
+                  <span>{format(project.endDate, "MMM d, yyyy")}</span>
                 </div>
               ) : (
                 <div />
@@ -390,7 +310,7 @@ export function MemberWorkspaceProjectCard({
 
           <div
             {...reactGrabSurface("progress-row", "content")}
-            className={cn("mt-3 flex items-center justify-between", isBoard && "mt-2")}
+            className="mt-3 flex items-center justify-between"
           >
             <MemberWorkspaceProjectProgress
               project={project}

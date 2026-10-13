@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down"
+import { useRouter } from "next/navigation"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -75,10 +76,7 @@ function OrganizationList({
       <CommandInput placeholder="Search organizations" />
       <CommandList className="max-h-[18rem]">
         <CommandEmpty>No organizations found.</CommandEmpty>
-        <CommandGroup
-          heading="Organizations"
-          className="[&_[cmdk-group-items]]:space-y-1"
-        >
+        <CommandGroup heading="Organizations">
           {organizations.map((organization) => {
             const isActive = organization.orgId === activeOrganization.orgId
             return (
@@ -139,6 +137,7 @@ export function MemberWorkspaceOrgSwitcher({
   organizations,
   setActiveOrganizationAction,
 }: MemberWorkspaceOrgSwitcherProps) {
+  const router = useRouter()
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -164,7 +163,7 @@ export function MemberWorkspaceOrgSwitcher({
       }
 
       setOpen(false)
-      window.location.reload()
+      router.refresh()
     })
   }
 
@@ -173,18 +172,18 @@ export function MemberWorkspaceOrgSwitcher({
       type="button"
       variant="ghost"
       aria-label="Switch organization"
-      className="h-auto w-full justify-between gap-2 rounded-xl border border-transparent bg-transparent px-1 py-2 text-left md:py-px has-[>svg]:px-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0 group-data-[collapsible=icon]:has-[>svg]:px-0"
+      className="h-auto w-full justify-between rounded-xl border border-transparent bg-transparent px-2 py-2 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"
       disabled={isPending}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-2 group-data-[collapsible=icon]:min-w-auto group-data-[collapsible=icon]:gap-0">
-        <Avatar className="size-9 rounded-xl border border-transparent md:self-start group-data-[collapsible=icon]:size-10">
+      <div className="flex min-w-0 items-center gap-3 group-data-[collapsible=icon]:min-w-auto group-data-[collapsible=icon]:gap-0">
+        <Avatar className="size-9 rounded-xl border border-transparent group-data-[collapsible=icon]:size-10">
           <AvatarImage alt={activeOrganization.name} src={activeOrganization.imageUrl ?? undefined} />
           <AvatarFallback className="rounded-xl text-[11px] font-semibold">
             {getOrganizationInitials(activeOrganization.name)}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-          <p className="line-clamp-2 whitespace-normal break-words text-sm font-semibold text-foreground" title={activeOrganization.name}>
+        <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+          <p className="truncate text-sm font-semibold text-foreground">
             {activeOrganization.name}
           </p>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>

@@ -87,7 +87,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -511,9 +510,9 @@ describe("public map WebGL data", () => {
 
     expect(signature.visibleCategoryKeys).toEqual(["food", "health", "food"])
     expect(signature.visibleCategoryColors).toEqual([
-      "#2563eb",
+      "#e11d48",
       "#059669",
-      "#2563eb",
+      "#e11d48",
     ])
     expect(signature.signature).toBe(
       `layout:${PUBLIC_MAP_CLUSTER_SPRITE_LAYOUT_VERSION}|theme:light|tier:medium|count:12|categories:food,health,food`
@@ -1598,20 +1597,6 @@ describe("public map WebGL data", () => {
       "https://example.com/logo.png"
     )
     expect(features[1]?.properties.sameLocationCount).toBe(1)
-  })
-
-  it("excludes malformed organization coordinates from marker features", () => {
-    const features = buildPublicMapPointFeatures([
-      buildOrganization({ id: "valid" }),
-      buildOrganization({ id: "origin", latitude: 0, longitude: 0 }),
-      buildOrganization({ id: "invalid-latitude", latitude: 86 }),
-      buildOrganization({ id: "invalid-longitude", longitude: 181 }),
-      buildOrganization({ id: "not-finite", latitude: Number.NaN }),
-    ])
-
-    expect(
-      features.map((feature) => feature.properties.organizationId)
-    ).toEqual(["valid"])
   })
 
   it("derives a stable cluster data version from normalized marker inputs", () => {

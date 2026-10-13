@@ -3,8 +3,6 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
-import { resolvePublicMapScreenPadding } from "./screen-camera"
-import { FIND_ORGANIZATION_QUERY_KEY, FIND_PATH } from "@/lib/find/routes"
 import {
   buildPublicMapOrganizationFeatureCollection,
   type PublicMapFeatureCollection,
@@ -13,7 +11,7 @@ import {
 type MapboxApi = (typeof import("mapbox-gl"))["default"]
 
 export const FALLBACK_CENTER: [number, number] = [-96.5, 38.4]
-export const FALLBACK_ZOOM = 1.5
+export const FALLBACK_ZOOM = 3.15
 export const CHICAGO_FALLBACK_CENTER: [number, number] = [-87.6298, 41.8781]
 export const CHICAGO_FALLBACK_ZOOM = 4.85
 export const ORGANIZATION_PADDING = 120
@@ -49,15 +47,6 @@ export const PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID =
   "public-map-organizations-selected-core"
 export const PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID =
   "public-map-organizations-selected-badge"
-export const PUBLIC_MAP_MARKER_LAYER_ID = "public-map-organizations-marker"
-export const PUBLIC_MAP_SAVED_MARKER_LAYER_ID =
-  "public-map-organizations-saved-marker"
-export const PUBLIC_MAP_MARKER_LABEL_LAYER_ID =
-  "public-map-organizations-marker-label"
-export const PUBLIC_MAP_SELECTED_MARKER_LAYER_ID =
-  "public-map-organizations-selected-marker"
-export const PUBLIC_MAP_SELECTED_MARKER_LABEL_LAYER_ID =
-  "public-map-organizations-selected-marker-label"
 export const PUBLIC_MAP_CLUSTER_RADIUS = 50
 export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 14
 export const PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM = 15.1
@@ -82,7 +71,7 @@ export function resolveInitialPublicMapOrganization({
   if (!targetSlug) return null
   return (
     organizations.find(
-      (organization) => normalizeSlug(organization.publicSlug || organization.id) === targetSlug
+      (organization) => normalizeSlug(organization.publicSlug) === targetSlug
     ) ?? null
   )
 }
@@ -99,12 +88,9 @@ export function buildMapHref({
   searchParams: URLSearchParams
 }) {
   const nextParams = new URLSearchParams(searchParams)
-  nextParams.delete(FIND_ORGANIZATION_QUERY_KEY)
-  if (slug) {
-    nextParams.set(FIND_ORGANIZATION_QUERY_KEY, slug)
-  }
   const query = nextParams.toString()
-  return query.length > 0 ? `${FIND_PATH}?${query}` : FIND_PATH
+  const pathname = slug ? `/find/${slug}` : "/find"
+  return query.length > 0 ? `${pathname}?${query}` : pathname
 }
 
 export function removeAuthParams(searchParams: URLSearchParams) {
@@ -179,7 +165,7 @@ export function fitMapToOrganizations({
   }
 
   map.fitBounds(bounds, {
-    padding: resolvePublicMapScreenPadding(map.getContainer?.()) ?? ORGANIZATION_PADDING,
+    padding: ORGANIZATION_PADDING,
     maxZoom: 7,
     duration,
   })
@@ -222,9 +208,18 @@ export function resolvePublicMapSidebarWidth({
 }
 
 export function resolvePublicMapPanelPresentation(
-  _surfaceWidth: number
+  surfaceWidth: number
 ): PublicMapPanelPresentation {
-  return "drawer"
+  if (!Number.isFinite(surfaceWidth) || surfaceWidth <= 0) {
+    return "rail"
+  }
+
+  const railWidth = resolvePublicMapSidebarWidth({
+    surfaceWidth,
+    sidebarMode: "search",
+  })
+
+  return railWidth < PUBLIC_MAP_COMFORTABLE_RAIL_WIDTH ? "drawer" : "rail"
 }
 
 export function focusChicagoFallback({

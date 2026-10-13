@@ -9,10 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  normalizePublicHandle,
-  type PublicHandleAvailabilityStatus,
-} from "@/features/public-profiles/client"
 
 type AccountStepProps = {
   step: number
@@ -23,9 +19,6 @@ type AccountStepProps = {
   submitting: boolean
   initialFirstName: string
   initialLastName: string
-  initialPersonHandle: string
-  personHandleStatus: PublicHandleAvailabilityStatus
-  personHandleHint: string | null
   initialPhone: string
   initialPublicEmail: string
   initialTitle: string
@@ -44,9 +37,6 @@ export function AccountStep({
   submitting,
   initialFirstName,
   initialLastName,
-  initialPersonHandle,
-  personHandleStatus,
-  personHandleHint,
   initialPhone,
   initialPublicEmail,
   initialTitle,
@@ -58,28 +48,15 @@ export function AccountStep({
   const avatarHintId = "onboarding-avatar-hint"
   const firstNameErrorId = "onboarding-first-name-error"
   const lastNameErrorId = "onboarding-last-name-error"
-  const personHandleErrorId = "onboarding-person-handle-error"
-  const personHandleHintId = "onboarding-person-handle-hint"
-  const personHandleStatusId = "onboarding-person-handle-status"
   const phoneHintId = "onboarding-phone-hint"
   const publicEmailHintId = "onboarding-public-email-hint"
   const showFirstNameError = attemptedStep === step && Boolean(errors.firstName)
   const showLastNameError = attemptedStep === step && Boolean(errors.lastName)
-  const showPersonHandleError =
-    attemptedStep === step && Boolean(errors.personHandle)
-  const personHandleDescription = [
-    showPersonHandleError ? personHandleErrorId : personHandleHintId,
-    personHandleStatus === "available" || personHandleStatus === "checking"
-      ? personHandleStatusId
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" ")
 
   return (
     <div className="space-y-5 py-5" data-onboarding-step-id="account">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative size-16 shrink-0">
+      <div className="border-border/70 bg-background/60 flex min-h-[10.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 py-6">
+        <div className="relative size-16">
           <div className="border-border bg-card h-full w-full overflow-hidden rounded-full border">
             {avatarPreview ? (
               <Image
@@ -111,8 +88,7 @@ export function AccountStep({
           </Button>
         </div>
         <div id={avatarHintId} className="text-muted-foreground text-xs">
-          <p className="text-foreground text-sm font-medium">Profile photo</p>
-          <p className="mt-1">Optional. You can add one later.</p>
+          Upload a profile picture (optional)
         </div>
         {avatarPreview ? (
           <Button
@@ -135,8 +111,6 @@ export function AccountStep({
           <Input
             id="firstName"
             name="firstName"
-            autoComplete="given-name"
-            className="h-11"
             data-onboarding-primary-focus="true"
             defaultValue={initialFirstName}
             aria-invalid={attemptedStep === step && Boolean(errors.firstName)}
@@ -157,8 +131,6 @@ export function AccountStep({
           <Input
             id="lastName"
             name="lastName"
-            autoComplete="family-name"
-            className="h-11"
             defaultValue={initialLastName}
             aria-invalid={attemptedStep === step && Boolean(errors.lastName)}
             aria-describedby={showLastNameError ? lastNameErrorId : undefined}
@@ -176,74 +148,10 @@ export function AccountStep({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="personHandle">Username</Label>
-        <div className="border-border/70 bg-background flex min-w-0 flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5">
-          <span className="text-muted-foreground shrink-0 text-sm">
-            coachhouse.app/
-          </span>
-          <Input
-            id="personHandle"
-            name="personHandle"
-            autoCapitalize="none"
-            autoComplete="username"
-            inputMode="text"
-            spellCheck={false}
-            placeholder="your-name…"
-            defaultValue={initialPersonHandle}
-            className="h-9 min-w-[8rem] flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:text-sm"
-            aria-invalid={showPersonHandleError}
-            aria-describedby={personHandleDescription}
-            onChange={(event) => {
-              event.currentTarget.value = normalizePublicHandle(
-                event.currentTarget.value
-              )
-            }}
-          />
-          {personHandleStatus === "available" ? (
-            <span
-              id={personHandleStatusId}
-              className="text-xs font-medium text-emerald-700 dark:text-emerald-300"
-              role="status"
-            >
-              Available
-            </span>
-          ) : personHandleStatus === "checking" ? (
-            <span
-              id={personHandleStatusId}
-              className="text-muted-foreground text-xs"
-              role="status"
-            >
-              Checking…
-            </span>
-          ) : null}
-        </div>
-        {showPersonHandleError ? (
-          <p
-            id={personHandleErrorId}
-            className="text-destructive text-xs"
-            role="alert"
-          >
-            {errors.personHandle}
-          </p>
-        ) : (
-          <p id={personHandleHintId} className="text-muted-foreground text-xs">
-            {personHandleHint ??
-              "Claims your profile URL. Your profile stays private until you publish it."}
-          </p>
-        )}
-      </div>
-
-      <div className="border-border/70 border-t pt-5">
-        <h3 className="text-sm font-medium">More about you <span className="text-muted-foreground font-normal">(optional)</span></h3>
-        <p className="text-muted-foreground mt-1 text-xs">You can add these details later in your account settings.</p>
-      </div>
-      <div className="grid gap-2">
         <Label htmlFor="phone">Phone (optional)</Label>
         <Input
           id="phone"
           name="phone"
-          autoComplete="tel"
-          className="h-11"
           type="tel"
           placeholder="(555) 555-5555"
           defaultValue={initialPhone}
@@ -266,8 +174,6 @@ export function AccountStep({
           <Input
             id="publicEmail"
             name="publicEmail"
-            autoComplete="email"
-            className="h-11"
             type="email"
             placeholder="contact@yourorg.org"
             defaultValue={initialPublicEmail}
@@ -282,8 +188,6 @@ export function AccountStep({
           <Input
             id="title"
             name="title"
-            autoComplete="organization-title"
-            className="h-11"
             placeholder="Founder, Executive Director, etc."
             defaultValue={initialTitle}
           />
@@ -296,9 +200,6 @@ export function AccountStep({
         <Input
           id="linkedin"
           name="linkedin"
-          autoCapitalize="none"
-          spellCheck={false}
-          className="h-11"
           placeholder="https://linkedin.com/in/…"
           defaultValue={initialLinkedin}
         />

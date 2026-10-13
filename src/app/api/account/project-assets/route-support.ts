@@ -1,4 +1,3 @@
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
 import { buildProjectAssetOpenPath } from "@/features/member-workspace"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
@@ -8,8 +7,6 @@ export type ProjectAssetsRouteClient = ReturnType<
   typeof createSupabaseRouteHandlerClient
 >
 export type ProjectAssetsDataClient = SupabaseClient<Database>
-
-export const PROJECT_ASSET_BUCKET = "project-assets"
 
 export type ProjectRow = Pick<
   Database["public"]["Tables"]["organization_projects"]["Row"],
@@ -29,34 +26,6 @@ export type AssetRow = Pick<
   | "mime"
   | "size_bytes"
 >
-
-export async function cleanupProjectAssetCreation({
-  assetIds,
-  storagePaths,
-  supabase,
-}: {
-  assetIds: string[]
-  storagePaths: string[]
-  supabase: ProjectAssetsRouteClient
-}) {
-  if (storagePaths.length) {
-    try {
-      await supabase.storage.from(PROJECT_ASSET_BUCKET).remove(storagePaths)
-    } catch {
-      // Continue the best-effort rollback.
-    }
-  }
-  if (assetIds.length) {
-    try {
-      await supabase
-        .from("organization_project_assets")
-        .delete()
-        .in("id", assetIds)
-    } catch {
-      // Rollback errors must not mask the original request failure.
-    }
-  }
-}
 
 export function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -175,27 +144,21 @@ export async function isPlatformAdmin({
 }
 
 export async function canAccessProjectOrg({
-  projectId,
   orgId,
   requireEdit,
   supabase,
   userId,
 }: {
-  projectId: string
   orgId: string
   requireEdit: boolean
   supabase: ProjectAssetsRouteClient
   userId: string
 }) {
-  if (!(await isOrdinaryWorkspaceProject({ supabase, userId, projectId }))) return false
   const { data: staff, error: staffError } = await supabase
     .from("platform_staff_members")
-    .select("access_level,can_access_unassigned_organizations")
+    .select("access_level")
     .eq("user_id", userId)
-    .maybeSingle<{
-      access_level: string
-      can_access_unassigned_organizations: boolean
-    }>()
+    .maybeSingle<{ access_level: string }>()
 
   const staffTableMissing =
     staffError?.code === "42P01" || staffError?.code === "PGRST205"
@@ -220,16 +183,7 @@ export async function canAccessProjectOrg({
       .eq("coach_user_id", userId)
       .maybeSingle<{ organization_id: string }>()
 
-    if (assignmentError) return false
-    if (assignment) return true
-    if (!staff.can_access_unassigned_organizations) return false
-    const { data: anyAssignment, error: anyAssignmentError } = await supabase
-      .from("organization_coach_assignments")
-      .select("organization_id")
-      .eq("organization_id", orgId)
-      .limit(1)
-      .maybeSingle<{ organization_id: string }>()
-    return !anyAssignmentError && !anyAssignment
+    return !assignmentError && !!assignment
   }
 
   if (staff?.access_level === "developer") {

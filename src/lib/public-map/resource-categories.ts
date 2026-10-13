@@ -1,9 +1,4 @@
-import { PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS } from "./resource-category-topics"
 import { PUBLIC_MAP_RESOURCE_SUBCATEGORY_DEFINITION_OVERRIDES } from "./resource-category-subcategory-overrides"
-import {
-  createPublicMapCategoryAliasMatcher,
-  PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEYS,
-} from "./resource-category-alias-matching"
 
 export const PUBLIC_MAP_RESOURCE_CATEGORY_ORDER = [
   "health",
@@ -21,10 +16,6 @@ export const PUBLIC_MAP_RESOURCE_CATEGORY_ORDER = [
   "organizations",
   "international",
   "animals",
-  "arts",
-  "faith",
-  "recreation",
-  "philanthropy",
 ] as const
 
 export type PublicMapResourceTopLevelCategoryKey =
@@ -43,7 +34,7 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Reproductive Health"],
+    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],
@@ -144,18 +135,22 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["family_seniors", "Seniors"],
     ["family_veterans", "Veterans"],
     ["family_lgbtq", "LGBTQ+"],
-    ["family_domestic_violence", "Domestic Violence Support"],
+    ["family_domestic_violence", "Domestic Violence"],
     ["family_foster_care", "Foster Care"],
     ["family_adoption", "Adoption"],
     ["family_family_support", "Family Support"],
     ["family_caregivers", "Caregivers"],
   ],
   community: [
+    ["community_faith_organizations", "Faith Organizations"],
     ["community_volunteer_opportunities", "Volunteer Opportunities"],
     ["community_community_organizing", "Community Organizing"],
     ["community_civic_engagement", "Civic Engagement"],
     ["community_voter_services", "Voter Services"],
     ["community_events", "Events"],
+    ["community_recreation", "Recreation"],
+    ["community_sports", "Sports"],
+    ["community_arts_culture", "Arts & Culture"],
     ["community_libraries", "Libraries"],
     ["community_community_centers", "Community Centers"],
     ["community_transportation", "Transportation"],
@@ -163,13 +158,6 @@ export const PUBLIC_MAP_RESOURCE_SUBCATEGORY_GROUPS = {
     ["community_device_access", "Device Access"],
     ["community_neighborhood_associations", "Neighborhood Associations"],
   ],
-  arts: [["community_arts_culture", "Arts & Culture"]],
-  faith: [["community_faith_organizations", "Faith Organizations"]],
-  recreation: [
-    ["community_sports", "Sports"],
-    ["community_recreation", "Recreation"],
-  ],
-  philanthropy: [],
   emergency: [
     ["emergency_disaster_relief", "Disaster Relief"],
     ["emergency_crisis_response", "Crisis Response"],
@@ -273,9 +261,9 @@ export const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS = [
     key: "food",
     label: "Food",
     parentKey: null,
-    markerColor: "#2563eb",
-    tailwindToken: "blue-600",
-    iconName: "shopping-cart",
+    markerColor: "#e11d48",
+    tailwindToken: "rose-600",
+    iconName: "bread",
     aliases: ["food", "meal", "meals", "pantry", "groceries", "nutrition"],
     description: "Food access, groceries, meals, nutrition, and water support.",
   },
@@ -424,7 +412,6 @@ export const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS = [
     description:
       "Animal welfare, pet support, veterinary assistance, rescue, and wildlife.",
   },
-  ...PUBLIC_MAP_ADDITIONAL_TOPIC_DEFINITIONS,
 ] as const satisfies readonly PublicMapResourceCategoryDefinition[]
 
 const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_BY_KEY = Object.fromEntries(
@@ -440,7 +427,7 @@ const PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_BY_KEY = Object.fromEntries(
 const PUBLIC_MAP_RESOURCE_SUBCATEGORY_ICON_OVERRIDES: Partial<
   Record<PublicMapResourceSubcategoryKey, string>
 > = {
-  food_community_fridges: "shopping-basket",
+  food_community_fridges: "bread",
   community_libraries: "book-open",
   community_community_centers: "building-2",
   community_transportation: "bus",
@@ -542,7 +529,21 @@ const PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY = Object.fromEntries(
 const PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEY_MAP: Record<
   string,
   PublicMapResourceCategoryKey
-> = PUBLIC_MAP_RESOURCE_LEGACY_CATEGORY_KEYS
+> = {
+  community_resource: "community",
+  dental: "health_dental",
+  education_resource: "education",
+  funding: "finance",
+  jobs: "employment",
+  legal_benefits: "legal",
+  medical: "health",
+  mental_health: "health_mental_health",
+  online_media: "community_internet_access",
+  shelter: "housing_emergency_shelter",
+  transportation: "community_transportation",
+  water: "food_water",
+  womens_health: "health_womens_health",
+}
 
 function normalizeCategoryToken(value: string) {
   return value
@@ -595,9 +596,9 @@ export function resolvePublicMapResourceCategoryInputKey(
   )
   if (exactLabelMatch) return exactLabelMatch.key
 
-  const matchesAlias = createPublicMapCategoryAliasMatcher(raw)
+  const words = raw.toLowerCase()
   const aliasMatch = PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS.find((category) =>
-    category.aliases.some(matchesAlias)
+    category.aliases.some((alias) => words.includes(alias))
   )
   return aliasMatch?.key ?? null
 }
@@ -605,10 +606,11 @@ export function resolvePublicMapResourceCategoryInputKey(
 export function resolvePublicMapResourceTopLevelCategory(
   key: PublicMapResourceCategoryKey
 ): PublicMapResourceTopLevelCategoryKey {
-  return (
-    PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key] ??
-    (key as PublicMapResourceTopLevelCategoryKey)
-  )
+  const parentKey = PUBLIC_MAP_RESOURCE_CATEGORY_PARENT_BY_KEY[key]
+  if (parentKey) return parentKey
+  if (isPublicMapResourceTopLevelCategoryKey(key)) return key
+
+  return "community"
 }
 
 export function publicMapResourceCategoryMatchesTopLevel({

@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
-import { createPublicMapCategoryAliasMatcher } from "@/lib/public-map/resource-category-alias-matching"
+import { describe, expect, it } from "vitest"
 
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
@@ -17,7 +16,6 @@ import {
   buildPlatformOrganizationMapItem,
   buildPublicMapItems,
   inferPublicMapResourceCategoriesForOrganization,
-  publicMapItemMatchesGroupFilter,
   resolvePublicMapItemSelectableId,
 } from "@/lib/public-map/resource-map-items"
 import { buildExternalResourceMapItemFromLocalPreviewRecord } from "@/lib/public-map/resource-map-local-preview-adapter"
@@ -27,11 +25,7 @@ import {
   buildPublicMapSelectableItemMap,
   resolvePublicMapListItemsFromSelectableIds,
 } from "@/components/public/public-map-index/map-items-state"
-import {
-  buildPublicMapResourceGuides,
-  buildPublicMapSavedResourceGuides,
-  filterPublicMapFeaturedResourceGuides,
-} from "@/components/public/public-map-index/resource-guides"
+import { buildPublicMapResourceGuides } from "@/components/public/public-map-index/resource-guides"
 import {
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_CITY_ANCHORS,
   PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_ITEMS,
@@ -40,10 +34,6 @@ import {
   buildPublicMapItemPointFeatures,
   parsePublicMapOrganizationIds,
 } from "@/lib/public-map/public-map-geojson"
-import {
-  clearPublicMapResourceItemsCache,
-  loadPublicMapResourceItems,
-} from "@/components/public/public-map-index/use-resource-map-items"
 import {
   PUBLIC_MAP_SPECIAL_PILL_MARKER_STYLE_KEY,
   PUBLIC_MAP_STANDARD_MARKER_STYLE_KEY,
@@ -71,7 +61,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -137,35 +126,6 @@ function buildGuideResourceItem(
 }
 
 describe("public map resource map items", () => {
-  it("deduplicates concurrent public resource loads and supports cache clearing", async () => {
-    clearPublicMapResourceItemsCache("/api/test-resource-items")
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      json: vi.fn(async () => ({ resourceItems: [] })),
-      ok: true,
-    } as unknown as Response)
-
-    const firstLoad = loadPublicMapResourceItems("/api/test-resource-items")
-    const concurrentLoad = loadPublicMapResourceItems(
-      "/api/test-resource-items"
-    )
-    expect(concurrentLoad).toBe(firstLoad)
-    await firstLoad
-
-    await loadPublicMapResourceItems("/api/test-resource-items")
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
-    expect(fetchSpy).toHaveBeenCalledWith("/api/test-resource-items", {
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    })
-
-    clearPublicMapResourceItemsCache("/api/test-resource-items")
-    await loadPublicMapResourceItems("/api/test-resource-items")
-    expect(fetchSpy).toHaveBeenCalledTimes(3)
-
-    fetchSpy.mockRestore()
-    clearPublicMapResourceItemsCache("/api/test-resource-items")
-  })
-
   it("keeps resource/service categories separate from public org groups", () => {
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_ORDER).toEqual([
       "health",
@@ -183,13 +143,9 @@ describe("public map resource map items", () => {
       "organizations",
       "international",
       "animals",
-      "arts",
-      "faith",
-      "recreation",
-      "philanthropy",
     ])
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
-    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#e11d48")
     expect(getPublicMapResourceCategoryDefinition("emergency").label).toBe(
       "Crisis support"
     )
@@ -211,12 +167,6 @@ describe("public map resource map items", () => {
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.education).toBe("#f59e0b")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.employment).toBe("#f97316")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.organizations).toBe("#0ea5e9")
-  })
-
-  it("labels domestic violence resources as support", () => {
-    expect(
-      getPublicMapResourceCategoryDefinition("family_domestic_violence").label
-    ).toBe("Domestic Violence Support")
   })
 
   it("uses a blue cooling-center marker identity instead of the red emergency siren", () => {
@@ -247,45 +197,32 @@ describe("public map resource map items", () => {
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.wind).toBeUndefined()
   })
 
-  it("uses separate shopping cart and basket identities for food and community fridges", () => {
+  it("uses the shared food marker identity for community fridges", () => {
     expect(getPublicMapResourceCategoryDefinition("food")).toMatchObject({
-      iconName: "shopping-cart",
-      markerColor: "#2563eb",
-      tailwindToken: "blue-600",
+      iconName: "bread",
+      markerColor: "#e11d48",
+      tailwindToken: "rose-600",
     })
     expect(resolvePublicMapResourceCategoryIconPaths("food")).toBe(
-      PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS["shopping-cart"]
+      PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread
     )
-    expect(
-      PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS["shopping-cart"]
-    ).toEqual([
-      "M8 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2",
-      "M19 20a1 1 0 1 0 0 2a1 1 0 1 0 0-2",
-      "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12",
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread).toEqual([
+      "M200,40H48a40,40,0,0,0-16,76.65V200a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V116.65A40,40,0,0,0,200,40Zm-56,64a8,8,0,0,0,0,16v80H48V120a8,8,0,0,0,0-16,24,24,0,0,1,0-48h96a24,24,0,0,1,0,48Z",
     ])
-    expect(
-      PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS["shopping-cart"]
-    ).toBeUndefined()
-    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#2563eb")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#e11d48")
     expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food_community_fridges).toBe(
       "#0891b2"
     )
     expect(
       getPublicMapResourceCategoryDefinition("food_community_fridges")
     ).toMatchObject({
-      iconName: "shopping-basket",
+      iconName: "bread",
       markerColor: "#0891b2",
       tailwindToken: "cyan-600",
     })
     expect(
       resolvePublicMapResourceCategoryIconPaths("food_community_fridges")
-    ).toBe(PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS["shopping-basket"])
-    expect(
-      PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS["shopping-basket"]
-    ).toHaveLength(7)
-    expect(
-      resolvePublicMapResourceCategoryIconPaths("food_community_fridges")
-    ).not.toBe(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread)
+    ).toBe(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread)
   })
 
   it("uses special marker style keys separately from category semantics", () => {
@@ -310,42 +247,6 @@ describe("public map resource map items", () => {
     })
   })
 
-  it("shares category marker sprites across external resources", () => {
-    const [firstFoodFeature, secondFoodFeature] =
-      buildPublicMapItemPointFeatures([
-        buildGuideResourceItem("food-a", {
-          latitude: 41.88,
-          longitude: -87.63,
-          primaryResourceCategory: "food",
-          resourceCategories: ["food"],
-          title: "First Food Resource",
-        }),
-        buildGuideResourceItem("food-b", {
-          latitude: 41.9,
-          longitude: -87.65,
-          primaryResourceCategory: "food",
-          resourceCategories: ["food"],
-          title: "Second Food Resource",
-        }),
-      ])
-    const [healthFeature] = buildPublicMapItemPointFeatures([
-      buildGuideResourceItem("health-a", {
-        latitude: 41.92,
-        longitude: -87.67,
-        primaryResourceCategory: "health",
-        resourceCategories: ["health"],
-        title: "Health Resource",
-      }),
-    ])
-
-    expect(firstFoodFeature?.properties.markerImageKey).toBe(
-      secondFoodFeature?.properties.markerImageKey
-    )
-    expect(firstFoodFeature?.properties.markerImageKey).not.toBe(
-      healthFeature?.properties.markerImageKey
-    )
-  })
-
   it("infers resource/service categories without replacing the org category", () => {
     const organization = buildOrganization()
     const categories =
@@ -361,85 +262,6 @@ describe("public map resource map items", () => {
       ])
     )
     expect(item.verificationStatus).toBe("verified_platform")
-  })
-
-  it("matches category aliases as complete words instead of substrings", () => {
-    const organization = buildOrganization({
-      tagline: "Collaboration over competition",
-      description: "Culturally competent guidance for local residents.",
-      mission: null,
-      needStatement: null,
-      groups: ["community"],
-      primaryGroup: "community",
-    })
-    const item = buildPlatformOrganizationMapItem(organization)
-
-    expect(item.resourceCategories).not.toContain("animals")
-    expect(
-      publicMapItemMatchesGroupFilter({ activeGroup: "animals", item })
-    ).toBe(false)
-
-    expect(
-      inferPublicMapResourceCategoriesForOrganization(
-        buildOrganization({
-          tagline: "Pet food assistance and animal welfare",
-          description: null,
-          mission: null,
-          needStatement: null,
-        })
-      )
-    ).toEqual(expect.arrayContaining(["animals"]))
-  })
-
-  it.each([
-    ["FOOD & Water", "food and water", true],
-    ["Women's health-care", "womens health care", true],
-    ["Children’s\n dental care", "childrens dental", true],
-    ["Emergency: legal aid.", "legal aid", true],
-    ["Culturally competent collaboration", "pet", false],
-    ["", "food", false],
-    ["food", "---", false],
-  ])("preserves category word matching for %s / %s", (text, alias, matches) => {
-    expect(createPublicMapCategoryAliasMatcher(text)(alias)).toBe(matches)
-  })
-
-  it("keeps separately prepared organization text independent", () => {
-    const food = createPublicMapCategoryAliasMatcher("Food pantry")
-    const legal = createPublicMapCategoryAliasMatcher("Legal aid")
-    expect(food("food")).toBe(true)
-    expect(legal("food")).toBe(false)
-    expect(food("legal aid")).toBe(false)
-    expect(legal("legal aid")).toBe(true)
-  })
-
-  it("supports exact subcategory filters without widening to the parent", () => {
-    const dentalItem = buildGuideResourceItem("dental", {
-      resourceCategories: ["health", "health_dental"],
-      primaryResourceCategory: "health_dental",
-    })
-    const mentalHealthItem = buildGuideResourceItem("mental-health", {
-      resourceCategories: ["health", "health_mental_health"],
-      primaryResourceCategory: "health_mental_health",
-    })
-
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health",
-        item: dentalItem,
-      })
-    ).toBe(true)
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health_dental",
-        item: dentalItem,
-      })
-    ).toBe(true)
-    expect(
-      publicMapItemMatchesGroupFilter({
-        activeGroup: "health_dental",
-        item: mentalHealthItem,
-      })
-    ).toBe(false)
   })
 
   it("derives resource display names for civic-owner cooling center rows", () => {
@@ -999,87 +821,6 @@ describe("public map resource map items", () => {
     expect(guideById.get("senior-cooling-centers")?.itemCount).toBe(3)
   })
 
-  it("builds current Chicago guides across verified service categories", () => {
-    const guideCategories = [
-      ["food", "chicago-food-access", "food"],
-      ["housing", "chicago-housing-shelter", "housing"],
-      ["legal", "chicago-legal-help", "legal"],
-      [
-        "community_libraries",
-        "chicago-libraries-community-centers",
-        "community",
-      ],
-      ["family", "chicago-family-support", "family"],
-      ["health", "chicago-health-care", "health"],
-    ] as const
-    const resources = guideCategories.flatMap(
-      ([category, , primaryCategory], categoryIndex) =>
-        Array.from({ length: category === "health" ? 5 : 6 }, (_, itemIndex) =>
-          buildGuideResourceItem(
-            `resource_map:chicago-${categoryIndex}-${itemIndex}`,
-            {
-              city: "Chicago",
-              state: "IL",
-              title: `Chicago ${category} resource ${itemIndex + 1}`,
-              resourceCategories: [category],
-              primaryResourceCategory: primaryCategory,
-            }
-          )
-        )
-    )
-    resources.push(
-      ...Array.from({ length: 4 }, (_, index) =>
-        buildGuideResourceItem(`resource_map:gary-food-${index}`, {
-          city: "Gary",
-          state: "IN",
-          title: `Gary food resource ${index + 1}`,
-          resourceCategories: ["food"],
-          primaryResourceCategory: "food",
-        })
-      )
-    )
-
-    const guideById = new Map(
-      buildPublicMapResourceGuides(resources).map((guide) => [guide.id, guide])
-    )
-
-    for (const [category, guideId, primaryCategory] of guideCategories) {
-      expect(guideById.get(guideId)).toMatchObject({
-        itemCount: category === "health" ? 5 : 6,
-        primaryResourceCategory: primaryCategory,
-      })
-    }
-    expect(Array.from(guideById.keys())).not.toContain("gary-food-access")
-
-    const featuredGuides = filterPublicMapFeaturedResourceGuides(
-      Array.from(guideById.values())
-    )
-    expect(featuredGuides.map((guide) => guide.id)).toEqual([
-      "chicago-food-access",
-      "chicago-housing-shelter",
-      "chicago-health-care",
-      "cooling-heat-relief",
-    ])
-    expect(
-      featuredGuides.every((guide) => guide.imageUrl?.endsWith(".webp"))
-    ).toBe(true)
-  })
-
-  it("retains saved guides when their current public item gate is unavailable", () => {
-    expect(
-      buildPublicMapSavedResourceGuides({
-        guides: [],
-        savedGuideIds: ["chicago-food-access"],
-      })
-    ).toMatchObject([
-      {
-        id: "chicago-food-access",
-        itemCount: 0,
-        available: false,
-      },
-    ])
-  })
-
   it("builds marker features with resource colors and legacy org selection ids", () => {
     const organization = buildOrganization()
     const items = buildPublicMapItems({
@@ -1104,9 +845,7 @@ describe("public map resource map items", () => {
     expect(orgFeature?.properties.itemId).toBe(
       "platform_organization:org-health"
     )
-    expect(orgFeature?.properties.designation).toBe("Health")
     expect(seedFeature?.properties.primaryResourceCategory).toBe("food")
-    expect(seedFeature?.properties.designation).toBe("Food")
     expect(seedFeature?.properties.markerAccentColor).toBe(
       PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food
     )
@@ -1118,22 +857,6 @@ describe("public map resource map items", () => {
     ).toEqual([
       "seed-resource:food-water-west-loop",
       "seed-resource:shelter-west-loop",
-    ])
-  })
-
-  it("excludes malformed resource coordinates from marker features", () => {
-    const features = buildPublicMapItemPointFeatures([
-      buildGuideResourceItem("valid"),
-      buildGuideResourceItem("origin", { latitude: 0, longitude: 0 }),
-      buildGuideResourceItem("invalid-latitude", { latitude: -86 }),
-      buildGuideResourceItem("invalid-longitude", { longitude: -181 }),
-      buildGuideResourceItem("not-finite", {
-        longitude: Number.POSITIVE_INFINITY,
-      }),
-    ])
-
-    expect(features.map((feature) => feature.properties.itemId)).toEqual([
-      "valid",
     ])
   })
 

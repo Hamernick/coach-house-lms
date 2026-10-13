@@ -8,8 +8,6 @@ const mocks = vi.hoisted(() => ({
   notifyFiscalDocumentReviewed: vi.fn(),
   resolveProjectAndContext: vi.fn(),
   revalidateFiscalApplicationRoutes: vi.fn(),
-  transitionFiscalApplicationReview: vi.fn(),
-  transitionFiscalDocumentReview: vi.fn(),
   updateFiscalApplicationStatus: vi.fn(),
 }))
 
@@ -26,17 +24,6 @@ vi.mock(
     resolveProjectAndContext: mocks.resolveProjectAndContext,
     revalidateFiscalApplicationRoutes: mocks.revalidateFiscalApplicationRoutes,
     updateFiscalApplicationStatus: mocks.updateFiscalApplicationStatus,
-  })
-)
-
-vi.mock(
-  "@/features/fiscal-sponsorship/server/workflow-transition-support",
-  async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import("@/features/fiscal-sponsorship/server/workflow-transition-support")
-    >()),
-    transitionFiscalApplicationReview: mocks.transitionFiscalApplicationReview,
-    transitionFiscalDocumentReview: mocks.transitionFiscalDocumentReview,
   })
 )
 
@@ -63,7 +50,6 @@ const application = {
   project_id: "project-1",
   project_name: "Community kitchen",
   status: "submitted",
-  updated_at: "2026-08-08T00:00:00.000Z",
 }
 
 function buildReviewContext(supabase: { from: ReturnType<typeof vi.fn> }) {
@@ -84,15 +70,6 @@ describe("fiscal sponsorship review actions", () => {
     mocks.loadFiscalApplicationForProject.mockResolvedValue({ application })
     mocks.notifyFiscalApplicationReviewed.mockResolvedValue(undefined)
     mocks.notifyFiscalDocumentReviewed.mockResolvedValue(undefined)
-    mocks.transitionFiscalApplicationReview.mockResolvedValue({
-      ok: true,
-      transitioned: true,
-    })
-    mocks.transitionFiscalDocumentReview.mockResolvedValue({
-      documentId: "document-1",
-      ok: true,
-      transitioned: true,
-    })
     mocks.updateFiscalApplicationStatus.mockResolvedValue({ ok: true })
   })
 
@@ -103,7 +80,15 @@ describe("fiscal sponsorship review actions", () => {
   ] as const)(
     "persists and notifies an application %s decision",
     async (decision, notes) => {
-      const supabase = { from: vi.fn() }
+      const insertReview = vi.fn().mockResolvedValue({ error: null })
+      const supabase = {
+        from: vi.fn((table: string) => {
+          if (table !== "fiscal_sponsorship_reviews") {
+            throw new Error(`Unexpected table: ${table}`)
+          }
+          return { insert: insertReview }
+        }),
+      }
       mocks.resolveProjectAndContext.mockResolvedValue(
         buildReviewContext(supabase)
       )
@@ -116,13 +101,25 @@ describe("fiscal sponsorship review actions", () => {
         })
       ).resolves.toEqual({ ok: true, applicationId: "application-1" })
 
-      expect(mocks.transitionFiscalApplicationReview).toHaveBeenCalledWith({
-        actorId: "coach-1",
-        applicationId: "application-1",
-        decision,
-        expectedUpdatedAt: "2026-08-08T00:00:00.000Z",
-        notes,
-      })
+      expect(insertReview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          application_id: "application-1",
+          decision,
+          notes,
+          org_id: "org-1",
+          project_id: "project-1",
+          reviewed_by: "coach-1",
+        })
+      )
+      expect(mocks.updateFiscalApplicationStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          applicationId: "application-1",
+          patch: expect.objectContaining({
+            review_notes: notes,
+            status: decision,
+          }),
+        })
+      )
       expect(mocks.notifyFiscalApplicationReviewed).toHaveBeenCalledWith({
         actorId: "coach-1",
         application,
@@ -167,22 +164,12 @@ describe("fiscal sponsorship review actions", () => {
     async (decision, notes) => {
       const documentQuery = {
         eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValue({
-          data: {
-            asset_id: "asset-1",
-            document_key: "budget_support",
-            id: "document-1",
-            kind: "budget_support",
-            mime: "application/pdf",
-            review_notes: null,
-            review_status: "pending",
-            status: "uploaded",
-            title: "Budget support",
-            updated_at: "2026-08-08T00:00:00.000Z",
-          },
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { document_key: "budget_support", id: "document-1" },
           error: null,
         }),
-        select: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
       }
       const supabase = {
         from: vi.fn((table: string) => {
@@ -205,14 +192,13 @@ describe("fiscal sponsorship review actions", () => {
         })
       ).resolves.toEqual({ ok: true, documentId: "document-1" })
 
-      expect(mocks.transitionFiscalDocumentReview).toHaveBeenCalledWith({
-        actorId: "coach-1",
-        applicationId: "application-1",
-        decision,
-        documentId: "document-1",
-        expectedUpdatedAt: "2026-08-08T00:00:00.000Z",
-        notes,
-      })
+      expect(documentQuery.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          review_notes: notes,
+          review_status: decision,
+          reviewed_by: "coach-1",
+        })
+      )
       expect(mocks.notifyFiscalDocumentReviewed).toHaveBeenCalledWith({
         actorId: "coach-1",
         application,

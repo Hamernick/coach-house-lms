@@ -2,12 +2,9 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
-import type { SupabaseClient } from "@supabase/supabase-js"
-import type { Database } from "@/lib/supabase"
 
 import {
   commitPeopleProfileMutation,
-  mutateOrganizationPeopleProfile,
   PEOPLE_PROFILE_WRITE_CONFLICT_ERROR,
 } from "@/lib/people/profile-write"
 
@@ -109,41 +106,6 @@ describe("People profile write concurrency", () => {
     expect(writeCount).toBe(3)
   })
 
-  it("atomically retries role creation alongside concurrent role and profile edits", async () => {
-    let stored = { mission: "Original", org_people: [{ id: "a", customRole: null as string | null }], people_roles: [] as string[] }
-    let attempted: typeof stored | null = null
-    let writes = 0
-    const query = {
-      select: () => query,
-      eq: () => query,
-      update: ({ profile }: { profile: typeof stored }) => { attempted = profile; return query },
-      maybeSingle: async () => {
-        if (!attempted) return { data: { profile: structuredClone(stored), updated_at: String(writes) }, error: null }
-        writes += 1
-        if (writes === 1) {
-          stored = { ...stored, mission: "Concurrent edit", people_roles: ["Mentor"] }
-          attempted = null
-          return { data: null, error: null }
-        }
-        stored = attempted
-        attempted = null
-        return { data: { updated_at: String(writes) }, error: null }
-      },
-    }
-    const result = await mutateOrganizationPeopleProfile<{ id: string; customRole: string | null }, null>({
-      supabase: { from: () => query } as unknown as SupabaseClient<Database>,
-      orgId: "org-a",
-      mutate: (people, profile) => ({
-        ok: true, changed: true, value: null,
-        people: people.map((person) => ({ ...person, customRole: "Partner" })),
-        peopleRoles: [...(profile.people_roles as string[]), "Partner"],
-      }),
-    })
-    expect(result).toEqual({ ok: true, value: null })
-    expect(writes).toBe(2)
-    expect(stored).toEqual({ mission: "Concurrent edit", org_people: [{ id: "a", customRole: "Partner" }], people_roles: ["Mentor", "Partner"] })
-  })
-
   it("skips the database write for an unchanged mutation", async () => {
     let writeCount = 0
     const result = await commitPeopleProfileMutation({
@@ -185,7 +147,7 @@ describe("People profile write concurrency", () => {
     expect(writer).toContain("MAX_PROFILE_WRITE_ATTEMPTS = 4")
   })
 
-  it("guards automatic onboarding writes and keeps directory reads read-only", () => {
+  it("guards automatic onboarding and directory synchronization writers", () => {
     const onboarding = readSource("src/app/(dashboard)/onboarding/actions.ts")
     const onboardingWriter = readSource(
       "src/lib/onboarding/organization-profile-write.ts"
@@ -193,10 +155,6 @@ describe("People profile write concurrency", () => {
     const invites = readSource(
       "src/app/actions/organization-access/invites-helpers.ts"
     )
-    const memberDirectory = readSource(
-      "src/features/member-workspace/server/loaders.ts"
-    )
-
     expect(onboarding).toContain("writeOnboardingOrganizationProfile({")
     expect(onboardingWriter).toContain("commitPeopleProfileMutation({")
     expect(onboardingWriter).toContain('.eq("updated_at", snapshot.revision)')
@@ -204,11 +162,5 @@ describe("People profile write concurrency", () => {
       ".upsert(\n        {\n          user_id: targetOrgId"
     )
     expect(invites).toContain("mutateOrganizationPeopleProfile<")
-    expect(memberDirectory).not.toContain("mutateOrganizationPeopleProfile<")
-    expect(memberDirectory).toContain("...selfExisting")
-    expect(memberDirectory).toContain("const sync = synchronizeSelf(peopleRaw)")
-    expect(memberDirectory).not.toContain(
-      ".upsert({ user_id: orgId, profile: nextProfile }"
-    )
   })
 })

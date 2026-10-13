@@ -1,12 +1,11 @@
 import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import type { PlatformAccessLevel } from "@/features/platform-access"
+import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
-import { canReadGuestFiscalProject } from "../lib/authorization"
 import type {
   FiscalSponsorshipApplicationRecord,
   FiscalSponsorshipApplicationStatus,
@@ -46,8 +45,6 @@ export type FiscalApplicantSigner = {
   id: string
   name: string
 }
-
-export { canManageFiscalSponsorshipForOrganization } from "../lib/authorization"
 
 export function isMissingFiscalWorkflowTableError(error: unknown) {
   if (!error || typeof error !== "object") return false
@@ -95,6 +92,38 @@ async function resolveFiscalProject({
   }
 
   return { ok: true, project: data }
+}
+
+export async function canManageFiscalSponsorshipForOrganization({
+  accessLevel,
+  organizationId,
+  supabase,
+  userId,
+}: {
+  accessLevel: PlatformAccessLevel | null
+  organizationId: string
+  supabase: Pick<FiscalWorkflowClient, "from">
+  userId: string
+}) {
+  if (accessLevel === "developer") return true
+  if (accessLevel !== "coach") return false
+
+  const { data, error } = await supabase
+    .from("organization_coach_assignments")
+    .select("coach_user_id")
+    .eq("organization_id", organizationId)
+    .eq("coach_user_id", userId)
+    .maybeSingle<{ coach_user_id: string }>()
+
+  if (error) {
+    console.error(
+      "[fiscal-sponsorship] Unable to verify coach assignment.",
+      error
+    )
+    return false
+  }
+
+  return Boolean(data)
 }
 
 export function canEditFiscalProject({
@@ -385,12 +414,12 @@ export async function loadLatestAgreementDocument({
   if (error) {
     return isMissingFiscalWorkflowTableError(error)
       ? buildWorkflowTableError()
-      : { error: "Unable to load the generated agreement." }
+      : { error: "Unable to load the prepared agreement." }
   }
 
   if (!data) {
     return {
-      error: "Generate the fiscal sponsorship agreement before sending.",
+      error: "Prepare the fiscal sponsorship agreement before sending it.",
     }
   }
 
@@ -413,10 +442,6 @@ export async function resolveProjectAndContext(
     supabase,
   })
   if (!projectResult.ok) return { error: projectResult.error }
-
-  if (!(await canReadGuestFiscalProject({
-    projectId: projectResult.project.id, userId: context.user.id, supabase,
-  }))) return { error: "Unable to find that organization project." }
 
   return {
     ...context,

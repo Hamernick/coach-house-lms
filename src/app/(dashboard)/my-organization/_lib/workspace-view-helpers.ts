@@ -6,9 +6,7 @@ import type {
   WorkspaceTrackerTicketStatus,
 } from "../_components/workspace-board/workspace-board-types"
 
-export function normalizeMembershipRole(
-  role: string | null | undefined
-): OrganizationMemberRole {
+export function normalizeMembershipRole(role: string | null | undefined): OrganizationMemberRole {
   if (role === "owner") return "owner"
   if (role === "admin") return "admin"
   if (role === "staff") return "staff"
@@ -32,10 +30,7 @@ function isMissingWorkspaceTableError(error: unknown, tableName: string) {
 }
 
 export function isMissingWorkspaceCommunicationsTableError(error: unknown) {
-  return isMissingWorkspaceTableError(
-    error,
-    "organization_workspace_communications"
-  )
+  return isMissingWorkspaceTableError(error, "organization_workspace_communications")
 }
 
 export function isMissingWorkspaceBoardsTableError(error: unknown) {
@@ -46,43 +41,27 @@ export function isMissingWorkspaceInvitesTableError(error: unknown) {
   return isMissingWorkspaceTableError(error, "organization_workspace_invites")
 }
 
-export function isMissingWorkspaceCommunicationChannelsTableError(
-  error: unknown
-) {
-  return isMissingWorkspaceTableError(
-    error,
-    "organization_workspace_communication_channels"
-  )
+export function isMissingWorkspaceCommunicationChannelsTableError(error: unknown) {
+  return isMissingWorkspaceTableError(error, "organization_workspace_communication_channels")
 }
 
 export function isMissingWorkspaceObjectiveGroupsTableError(error: unknown) {
-  return isMissingWorkspaceTableError(
-    error,
-    "organization_workspace_objective_groups"
-  )
+  return isMissingWorkspaceTableError(error, "organization_workspace_objective_groups")
 }
 
 export function isMissingWorkspaceObjectivesTableError(error: unknown) {
-  return isMissingWorkspaceTableError(
-    error,
-    "organization_workspace_objectives"
-  )
+  return isMissingWorkspaceTableError(error, "organization_workspace_objectives")
 }
 
 export function isMissingWorkspaceObjectiveAssigneesTableError(error: unknown) {
-  return isMissingWorkspaceTableError(
-    error,
-    "organization_workspace_objective_assignees"
-  )
+  return isMissingWorkspaceTableError(error, "organization_workspace_objective_assignees")
 }
 
 export function isMissingModuleProgressTableError(error: unknown) {
   return isMissingWorkspaceTableError(error, "module_progress")
 }
 
-export function isMissingRoadmapCalendarInternalEventsTableError(
-  error: unknown
-) {
+export function isMissingRoadmapCalendarInternalEventsTableError(error: unknown) {
   return isMissingWorkspaceTableError(error, "roadmap_calendar_internal_events")
 }
 
@@ -142,9 +121,7 @@ export function mapObjectiveRowsToTrackerState({
           },
         ]
 
-  const categoryArchivedById = new Map(
-    categories.map((category) => [category.id, category.archived])
-  )
+  const categoryArchivedById = new Map(categories.map((category) => [category.id, category.archived]))
   const defaultCategoryId = categories[0]?.id ?? "general"
   const assigneeMap = new Map<string, string[]>()
   for (const assignee of assignees) {

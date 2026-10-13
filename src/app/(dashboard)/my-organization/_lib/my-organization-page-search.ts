@@ -71,32 +71,11 @@ export async function resolveMyOrganizationPageSearchState(
   }
 }
 
-type LegacyMyOrganizationTabRequest = {
-  tabParam: string
-  focusParam: string
-  roadmapSectionParam: string | null
-}
-
-export function getLegacyMyOrganizationTabDestination({
-  tabParam,
-  focusParam,
-  roadmapSectionParam,
-}: LegacyMyOrganizationTabRequest) {
+export function redirectLegacyMyOrganizationTab(tabParam: string) {
   if (tabParam === "roadmap") {
-    return getWorkspaceDrawerPath({
-      tab: "roadmap",
-      section: roadmapSectionParam,
-    })
+    redirect(getWorkspaceDrawerPath({ tab: "roadmap" }))
   }
   if (tabParam === "documents") {
-    return getWorkspaceDrawerPath({ tab: "documents", focus: focusParam })
+    redirect(getWorkspaceDrawerPath({ tab: "documents" }))
   }
-  return null
-}
-
-export function redirectLegacyMyOrganizationTab(
-  request: LegacyMyOrganizationTabRequest
-) {
-  const destination = getLegacyMyOrganizationTabDestination(request)
-  if (destination) redirect(destination)
 }

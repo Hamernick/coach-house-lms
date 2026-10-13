@@ -7,6 +7,8 @@ const ROOT = process.cwd()
 const SOURCE_ROOT = join(ROOT, "src")
 const ALLOWED_PRODUCTION_IMPORTERS = [
   "src/app/(admin)/admin/platform/prototypes/page.tsx",
+  "src/components/app-sidebar/nav-data.ts",
+  "src/components/nav-main.tsx",
 ]
 
 function listSourceFiles(directory: string): string[] {
@@ -22,7 +24,7 @@ function readSource(relativePath: string) {
 }
 
 describe("Prototype Lab production boundary", () => {
-  it("keeps the feature bundle exclusive to the admin prototype route", () => {
+  it("allows only the admin route and its owned sidebar navigation to import the lab", () => {
     const importers = listSourceFiles(SOURCE_ROOT)
       .filter((path) => !path.includes("/src/features/prototype-lab/"))
       .filter((path) =>

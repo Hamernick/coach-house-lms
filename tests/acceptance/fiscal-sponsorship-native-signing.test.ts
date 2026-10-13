@@ -7,7 +7,6 @@ import {
   validateFiscalSponsorshipFormBFields,
 } from "@/features/fiscal-sponsorship/lib/form-b-field-manifest"
 import { buildFiscalSponsorshipFormBPdf } from "@/features/fiscal-sponsorship/lib/form-b-pdf"
-import { buildWorkflowPhases } from "@/features/fiscal-sponsorship/lib/project-workbench-data-helpers"
 
 const fields = {
   applicationDate: "2026-07-16",
@@ -51,14 +50,6 @@ describe("native fiscal sponsorship signing", () => {
       "src/features/fiscal-sponsorship/server/native-signing-actions.ts",
       "utf8"
     )
-    const workbenchData = readFileSync(
-      "src/features/fiscal-sponsorship/lib/project-workbench-data.ts",
-      "utf8"
-    )
-    const drawerSections = readFileSync(
-      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workflow-drawer-sections.tsx",
-      "utf8"
-    )
 
     expect(page).toContain("saveFiscalSponsorshipSigningDraft")
     expect(page).toContain("beforeunload")
@@ -75,66 +66,6 @@ describe("native fiscal sponsorship signing", () => {
     expect(actions).toContain("notifyFiscalApplicantSigned")
     expect(actions).toContain("source_document_sha256")
     expect(summary).toContain("/fiscal-sponsorship/sign/${signaturePacket.id}")
-    expect(workbenchData).toContain(
-      'actionLabel: coachCanSign ? "Countersign" : "Preview"'
-    )
-    expect(workbenchData).toContain("href: signaturePacket.coachSigningHref")
-    expect(drawerSections).toContain("complete={action.complete}")
-    expect(drawerSections).not.toContain("complete={!action.href}")
-  })
-
-  it("routes the agreement action to the assigned applicant signing page", () => {
-    const agreement = {
-      assetId: null,
-      documentKey: null,
-      downloadHref: "/api/fiscal-sponsorship/documents/agreement-1?download=1",
-      generatedAt: "2026-07-30T18:00:00.000Z",
-      id: "agreement-1",
-      kind: "agreement" as const,
-      reviewNotes: null,
-      reviewedAt: null,
-      reviewStatus: "pending" as const,
-      status: "sent_for_signature" as const,
-      storagePath: "org/project/agreement.pdf",
-      title: "Form B Fiscal Sponsorship Agreement",
-      uploadedAt: null,
-      version: 1,
-      viewHref: "/api/fiscal-sponsorship/documents/agreement-1",
-    }
-    const phases = buildWorkflowPhases({
-      agreementDocument: agreement,
-      applicationStatus: "agreement_ready",
-      executedAgreementDocument: null,
-      hasCloseoutReport: false,
-      hasFundraisingMaterialsSupport: true,
-      hasGrantRequestSupport: false,
-      hasReportSupport: false,
-      hasRequiredDocumentSupport: true,
-      signaturePacket: {
-        applicantSignerEmail: "applicant@example.org",
-        applicantSigningHref: "/fiscal-sponsorship/sign/packet-1",
-        coachSignerEmail: null,
-        coachSigningHref: null,
-        completedAt: null,
-        id: "packet-1",
-        provider: "native",
-        providerSubmissionId: null,
-        sentAt: "2026-07-30T18:05:00.000Z",
-        status: "sent",
-      },
-      signaturePacketStatus: "sent",
-    })
-
-    expect(phases.find((phase) => phase.id === "agreement")).toMatchObject({
-      actionLabel: "Review and sign",
-      actionType: "signature",
-      href: "/fiscal-sponsorship/sign/packet-1",
-    })
-    expect(phases.find((phase) => phase.id === "signatures")).toMatchObject({
-      actionLabel: "Review and sign",
-      actionType: "signature",
-      href: "/fiscal-sponsorship/sign/packet-1",
-    })
   })
 
   it("finalizes each signer step through a service-only transaction", () => {
@@ -166,10 +97,6 @@ describe("native fiscal sponsorship signing", () => {
       "supabase/migrations/20260727130000_complete_fiscal_sponsorship_signing.sql",
       "utf8"
     )
-    const sendTransition = readFileSync(
-      "supabase/migrations/20260806002000_atomic_form_b_signature_packet_sends.sql",
-      "utf8"
-    )
     const downloadRoute = readFileSync(
       "src/app/api/fiscal-sponsorship/documents/[documentId]/route.ts",
       "utf8"
@@ -177,10 +104,8 @@ describe("native fiscal sponsorship signing", () => {
 
     expect(agreementActions).toContain("resolveFiscalApplicantSigner")
     expect(agreementActions).toContain(
-      "applicantSignerId: signerResult.signer.id"
+      "applicant_signer_id: signerResult.signer.id"
     )
-    expect(sendTransition).toContain("p_applicant_signer_id")
-    expect(sendTransition).toContain("'native'")
     expect(notifications).toContain("sendResendEmail")
     expect(notifications).toContain("`/fiscal-sponsorship/sign/${packetId}`")
     expect(notifications).toContain("recipientIds: [applicantSignerId]")
@@ -188,7 +113,9 @@ describe("native fiscal sponsorship signing", () => {
     expect(migration).toContain("staff.access_level in ('developer', 'coach')")
     expect(downloadRoute).toContain("profileAudience.isPlatformStaff")
     expect(downloadRoute).toContain("createSupabaseAdminClient()")
-    expect(downloadRoute).toContain("canManageFiscalSponsorshipForOrganization")
+    expect(downloadRoute).toContain("organization_coach_assignments")
+    expect(downloadRoute).toContain("canPlatformStaffAccessFiscalDocument")
+    expect(downloadRoute).toContain("profileAudience.platformAccessLevel")
   })
 
   it("keeps the versioned Form B manifest within all four pages", () => {

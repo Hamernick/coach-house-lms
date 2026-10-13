@@ -1,4 +1,3 @@
-import { resolveOrganizationCardImage } from "../lib/organization-card-image"
 import { addDays } from "date-fns"
 
 import { fetchAcceleratorProgressTotalsByUserId } from "@/lib/accelerator/progress"
@@ -11,7 +10,7 @@ import type {
 } from "@/features/member-workspace/types"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { computeAdminOrganizationSetupSummary } from "./admin-organization-setup"
-import { buildAdminMemberCompleteness } from "./admin-member-completeness"
+import { buildAdminMemberCompleteness as buildMemberCompleteness } from "./admin-member-completeness"
 import {
   resolveAdminOrganizationProjectPriority,
   resolveAdminOrganizationProjectStatus,
@@ -186,7 +185,8 @@ function buildOrganizationMembers({
   if (memberships.length === 0 && orgPeople.length > 0) {
     return orgPeople
       .map((person, index) => {
-        const name = toTrimmedString(person.name) || "Unknown member"
+        const fullName = toTrimmedString(person.name) || null
+        const name = fullName || "Unknown member"
         const email = toTrimmedString(person.email) || null
         const avatarUrl = toTrimmedString(person.image) || null
         const headline = toTrimmedString(person.title) || null
@@ -202,7 +202,7 @@ function buildOrganizationMembers({
           organizationRole: toTrimmedString(person.category) || "member",
           platformRole: null,
           isOwner: toTrimmedString(person.id) === organization.user_id,
-          ...buildAdminMemberCompleteness({ avatarUrl, email, headline, name }),
+          ...buildMemberCompleteness({ avatarUrl, email, fullName, headline }),
         }
       })
       .sort((left, right) => {
@@ -216,10 +216,9 @@ function buildOrganizationMembers({
 
   const membershipMembers = memberships.map((membership) => {
     const profileRow = profilesById.get(membership.member_id) ?? null
+    const fullName = toTrimmedString(profileRow?.full_name) || null
     const name =
-      toTrimmedString(profileRow?.full_name) ||
-      toTrimmedString(membership.member_email) ||
-      "Unknown member"
+      fullName || toTrimmedString(membership.member_email) || "Unknown member"
 
     const email =
       toTrimmedString(profileRow?.email) ||
@@ -237,16 +236,15 @@ function buildOrganizationMembers({
       organizationRole: membership.role,
       platformRole: profileRow?.role ?? null,
       isOwner: membership.member_id === organization.user_id,
-      ...buildAdminMemberCompleteness({ avatarUrl, email, headline, name }),
+      ...buildMemberCompleteness({ avatarUrl, email, fullName, headline }),
     }
   })
 
   if (!membershipMembers.some((member) => member.isOwner)) {
     const ownerProfile = profilesById.get(organization.user_id) ?? null
+    const fullName = toTrimmedString(ownerProfile?.full_name) || null
     const name =
-      toTrimmedString(ownerProfile?.full_name) ||
-      toTrimmedString(ownerProfile?.email) ||
-      "Organization owner"
+      fullName || toTrimmedString(ownerProfile?.email) || "Organization owner"
     const email = toTrimmedString(ownerProfile?.email) || null
     const avatarUrl = toTrimmedString(ownerProfile?.avatar_url) || null
     const headline = toTrimmedString(ownerProfile?.headline) || null
@@ -260,7 +258,7 @@ function buildOrganizationMembers({
       organizationRole: "owner",
       platformRole: ownerProfile?.role ?? null,
       isOwner: true,
-      ...buildAdminMemberCompleteness({ avatarUrl, email, headline, name }),
+      ...buildMemberCompleteness({ avatarUrl, email, fullName, headline }),
     })
   }
 
@@ -588,18 +586,19 @@ export function mapAdminOrganizationSummaryToProject(
     members: organization.members.slice(0, 4).map((member) => member.name),
     primaryPersonName: organization.ownerName,
     primaryPersonAvatarUrl: organization.ownerAvatarUrl,
-    organizationImageUrl: resolveOrganizationCardImage(organization),
-    client: organization.isPublic ? "Public" : "Private",
+    client:
+      organization.publicSlug && organization.publicSlug.length > 0
+        ? `/${organization.publicSlug}`
+        : organization.isPublic
+          ? "Public profile enabled"
+          : "Private organization",
     typeLabel:
       organization.organizationStatus === "approved"
         ? "Approved nonprofit"
         : organization.organizationStatus === "pending"
           ? "Pending setup"
           : "Organization account",
-    durationLabel: [
-      `${organization.memberCount} member${organization.memberCount === 1 ? "" : "s"}`,
-      `${organization.programs?.length ?? 0} program${organization.programs?.length === 1 ? "" : "s"}`,
-    ].join(" • "),
+    durationLabel: `${organization.memberCount} member${organization.memberCount === 1 ? "" : "s"}`,
     taskSummaryLabel: "Setup items",
     tasks: organization.setupItems.map((item) => ({
       id: `${organization.orgId}-${item.id}`,
@@ -628,8 +627,8 @@ export function mapAdminOrganizationSummaryToProjectRecord(
     status: project.status,
     priority: project.priority,
     progress: project.progress,
-    start_date: project.startDate?.toISOString().slice(0, 10) ?? null,
-    end_date: project.endDate?.toISOString().slice(0, 10) ?? null,
+    start_date: project.startDate.toISOString().slice(0, 10),
+    end_date: project.endDate.toISOString().slice(0, 10),
     client_name: project.client ?? null,
     type_label: project.typeLabel ?? null,
     duration_label: project.durationLabel ?? null,

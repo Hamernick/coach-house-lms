@@ -1,14 +1,6 @@
-"use client"
-
-import {
-  forwardRef,
-  useCallback,
-  type ComponentPropsWithoutRef,
-  type ForwardedRef,
-} from "react"
+import { forwardRef, type ComponentPropsWithoutRef } from "react"
 
 import { cn } from "@/lib/utils"
-import { useScrollFadeEffect } from "@/lib/scroll-fade-effect"
 
 export type ScrollFadeEffectProps = ComponentPropsWithoutRef<"div"> & {
   /**
@@ -23,44 +15,25 @@ export type ScrollFadeEffectProps = ComponentPropsWithoutRef<"div"> & {
   orientation?: "horizontal" | "vertical"
 }
 
-function assignRef<T>(ref: ForwardedRef<T>, value: T | null) {
-  if (typeof ref === "function") {
-    ref(value)
-    return
-  }
-
-  if (ref) ref.current = value
-}
-
-export const ScrollFadeEffect = forwardRef<
-  HTMLDivElement,
-  ScrollFadeEffectProps
->(function ScrollFadeEffect(
-  { className, enabled = true, orientation = "vertical", ...props },
-  forwardedRef
+export const ScrollFadeEffect = forwardRef<HTMLDivElement, ScrollFadeEffectProps>(function ScrollFadeEffect(
+  {
+    className,
+    enabled = true,
+    orientation = "vertical",
+    ...props
+  },
+  ref,
 ) {
-  const scrollFadeRef = useScrollFadeEffect(enabled, orientation)
-  const mergedRef = useCallback(
-    (element: HTMLDivElement | null) => {
-      scrollFadeRef(element)
-      assignRef(forwardedRef, element)
-    },
-    [forwardedRef, scrollFadeRef]
-  )
-
   return (
     <div
-      ref={mergedRef}
+      ref={ref}
       data-orientation={orientation}
-      data-scroll-fade-managed={enabled ? "true" : undefined}
-      data-scroll-fade-start={enabled ? "hidden" : undefined}
-      data-scroll-fade-end={enabled ? "hidden" : undefined}
       className={cn(
         enabled &&
-          (orientation === "horizontal"
-            ? "scroll-fade-effect-x overflow-x-auto"
-            : "scroll-fade-effect-y overflow-y-auto"),
-        className
+          "data-[orientation=horizontal]:overflow-x-auto data-[orientation=vertical]:overflow-y-auto",
+        enabled &&
+          "data-[orientation=horizontal]:scroll-fade-effect-x data-[orientation=vertical]:scroll-fade-effect-y",
+        className,
       )}
       {...props}
     />

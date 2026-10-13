@@ -24,7 +24,6 @@ function buildOrganization(
     brandMarkUrl: null,
     headerUrl: null,
     website: null,
-    donateUrl: null,
     email: null,
     phone: null,
     twitter: null,
@@ -77,7 +76,7 @@ describe("buildStoryFields", () => {
 
     expect(fields.map((field) => field.label)).toEqual([
       "Origin story",
-      "Need",
+      "Need statement",
       "Mission",
       "Vision",
       "Values",
@@ -93,27 +92,17 @@ describe("buildStoryFields", () => {
     ])
   })
 
-  it("omits empty story fields", () => {
+  it("normalizes empty values to empty strings while preserving label order", () => {
     const fields = buildStoryFields(buildOrganization())
 
-    expect(fields).toEqual([])
-  })
-
-  it("keeps image-only story fields while omitting empty markup", () => {
-    const fields = buildStoryFields(
-      buildOrganization({
-        originStory: "<p><br></p>",
-        needStatement:
-          '<img src="https://example.org/need.png" alt="Community need map">',
-      })
-    )
-
-    expect(fields).toEqual([
-      {
-        label: "Need",
-        value:
-          '<img src="https://example.org/need.png" alt="Community need map">',
-      },
+    expect(fields.map((field) => field.label)).toEqual([
+      "Origin story",
+      "Need statement",
+      "Mission",
+      "Vision",
+      "Values",
+      "Theory of change",
     ])
+    expect(fields.every((field) => field.value === "")).toBe(true)
   })
 })

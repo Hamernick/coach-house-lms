@@ -1,22 +1,12 @@
-import { resolveOrganizationDocumentStorageAccess } from "@/lib/organization/document-storage-access"
-import { FeatureUpgradeNotice } from "@/components/paywall/feature-upgrade-notice"
-
 import { redirect } from "next/navigation"
 
 import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import {
-  cleanupRoadmapTestSections,
-  resolveRoadmapHeroUrl,
-  resolveRoadmapSections,
-} from "@/lib/roadmap"
+import { cleanupRoadmapTestSections, resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
 import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
-import {
-  canEditOrganization,
-  resolveActiveOrganization,
-} from "@/lib/organization/active-org"
-import { createSupabaseServerClient } from "@/lib/supabase"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 
@@ -41,8 +31,7 @@ export async function StrategicRoadmapEditorPage({
   if (!user) redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
-  const storageAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
-  const canEdit = canEditOrganization(role) && "hasStorageAccess" in storageAccess && storageAccess.hasStorageAccess
+  const canEdit = canEditOrganization(role)
 
   const { data: orgRow } = await supabase
     .from("organizations")
@@ -53,8 +42,33 @@ export async function StrategicRoadmapEditorPage({
       public_slug: string | null
     }>()
 
-  const htmlCleanup = cleanupOrgProfileHtml(orgRow?.profile ?? {})
-  const profile = cleanupRoadmapTestSections(htmlCleanup.nextProfile).nextProfile
+  let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+
+  if (orgRow?.profile) {
+    let nextProfile = profile
+    let changed = false
+
+    const htmlCleanup = cleanupOrgProfileHtml(nextProfile)
+    if (htmlCleanup.changed) {
+      nextProfile = htmlCleanup.nextProfile
+      changed = true
+    }
+
+    const roadmapCleanup = cleanupRoadmapTestSections(nextProfile)
+    if (roadmapCleanup.changed) {
+      nextProfile = roadmapCleanup.nextProfile
+      changed = true
+    }
+
+    if (changed) {
+      const { error: cleanupError } = await supabase
+        .from("organizations")
+        .upsert({ user_id: orgId, profile: nextProfile as Json }, { onConflict: "user_id" })
+      if (!cleanupError) {
+        profile = nextProfile
+      }
+    }
+  }
 
   const roadmapHomework = await resolveRoadmapHomework(orgId, supabase)
   const roadmapSections = resolveRoadmapSections(profile).map((section) => {
@@ -62,16 +76,11 @@ export async function StrategicRoadmapEditorPage({
       ...section,
       homework: roadmapHomework[section.id] ?? null,
     }
-    return publicSharingEnabled
-      ? withHomework
-      : { ...withHomework, isPublic: false }
+    return publicSharingEnabled ? withHomework : { ...withHomework, isPublic: false }
   })
   const normalizedSlug = initialSectionSlug?.trim() ?? ""
   const initialSectionId = normalizedSlug.length
-    ? (roadmapSections.find(
-        (section) =>
-          section.slug === normalizedSlug || section.id === normalizedSlug
-      )?.id ?? null)
+    ? roadmapSections.find((section) => section.slug === normalizedSlug || section.id === normalizedSlug)?.id ?? null
     : null
 
   const roadmapPublicSlug = orgRow?.public_slug ?? null
@@ -79,9 +88,7 @@ export async function StrategicRoadmapEditorPage({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {!("hasStorageAccess" in storageAccess && storageAccess.hasStorageAccess) ? <FeatureUpgradeNotice title="Read here. Build more with an upgrade.">Your existing roadmap stays readable. Upgrade to edit and create documents in Coach House, or link Google Drive files from Documents.</FeatureUpgradeNotice> : null}
       <RoadmapShell
-        sourceScope={{ userId: user.id, organizationId: orgId }}
         sections={roadmapSections}
         publicSlug={roadmapPublicSlug}
         heroUrl={roadmapHeroUrl ?? null}

@@ -8,7 +8,6 @@ export const USER_JOURNEY_EVENT_NAMES = [
   "checkout_completed",
   "onboarding_completed",
   "member_onboarding_completed",
-  "workspace_onboarding_started",
   "workspace_viewed",
   "homework_submitted",
   "module_note_saved",
@@ -33,8 +32,7 @@ export const USER_ACTIVATION_CHECKPOINTS = [
   "first_invite_accepted",
 ] as const
 
-export type UserActivationCheckpoint =
-  (typeof USER_ACTIVATION_CHECKPOINTS)[number]
+export type UserActivationCheckpoint = (typeof USER_ACTIVATION_CHECKPOINTS)[number]
 
 type TelemetryClient = SupabaseClient<Database, "public">
 
@@ -64,11 +62,7 @@ type TrackUserJourneyMilestoneInput = TrackUserJourneyEventInput & {
 
 type TelemetryResult =
   | { ok: true; eventId: string | null }
-  | {
-      ok: false
-      eventId: null
-      reason: "unavailable" | "insert_failed" | "checkpoint_failed"
-    }
+  | { ok: false; eventId: null; reason: "unavailable" | "insert_failed" | "checkpoint_failed" }
 
 const SENSITIVE_METADATA_KEYS = new Set([
   "email",
@@ -94,11 +88,7 @@ function normalizeMetadataKey(key: string) {
 function sanitizeTelemetryValue(value: unknown, depth = 0): Json | undefined {
   if (depth > 4) return null
   if (value == null) return null
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value
   }
   if (value instanceof Date) return value.toISOString()
@@ -120,14 +110,10 @@ function sanitizeTelemetryValue(value: unknown, depth = 0): Json | undefined {
   return undefined
 }
 
-function sanitizeTelemetryMetadata(
-  metadata: Record<string, unknown> | null | undefined
-): Json {
+function sanitizeTelemetryMetadata(metadata: Record<string, unknown> | null | undefined): Json {
   if (!metadata) return {}
   const sanitized = sanitizeTelemetryValue(metadata)
-  return sanitized && typeof sanitized === "object" && !Array.isArray(sanitized)
-    ? sanitized
-    : {}
+  return sanitized && typeof sanitized === "object" && !Array.isArray(sanitized) ? sanitized : {}
 }
 
 function createTelemetryClient(): TelemetryClient | null {
@@ -146,13 +132,8 @@ function createTelemetryClient(): TelemetryClient | null {
 }
 
 function isTelemetrySchemaUnavailableError(error: unknown) {
-  const maybeError = error as {
-    code?: string
-    message?: string
-    details?: string
-  } | null
-  const message =
-    `${maybeError?.message ?? ""} ${maybeError?.details ?? ""}`.toLowerCase()
+  const maybeError = error as { code?: string; message?: string; details?: string } | null
+  const message = `${maybeError?.message ?? ""} ${maybeError?.details ?? ""}`.toLowerCase()
 
   return (
     maybeError?.code === "PGRST205" ||
@@ -219,7 +200,7 @@ export async function completeActivationCheckpoint({
       metadata: sanitizeTelemetryMetadata(metadata),
       completed_at: new Date().toISOString(),
     },
-    { onConflict: "user_id,org_id,checkpoint", ignoreDuplicates: true }
+    { onConflict: "user_id,org_id,checkpoint", ignoreDuplicates: true },
   )
 
   if (error) {
@@ -239,8 +220,7 @@ export async function trackUserJourneyMilestone({
   const eventResult = await trackUserJourneyEvent(event)
 
   if (!checkpoint) return eventResult
-  if (!eventResult.ok && eventResult.reason === "unavailable")
-    return eventResult
+  if (!eventResult.ok && eventResult.reason === "unavailable") return eventResult
 
   const checkpointResult = await completeActivationCheckpoint({
     userId: event.userId,

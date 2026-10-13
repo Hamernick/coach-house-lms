@@ -274,7 +274,7 @@ function buildLinks(
       id: `${id}:website`,
       label: "Website",
       url: websiteUrl,
-      type: "website",
+      type: "website" as const,
       domain: readDomain(websiteUrl),
       isPrimary: true,
     },
@@ -282,7 +282,11 @@ function buildLinks(
   ]
 }
 
-function buildContacts(fields: JsonRecord, record: JsonRecord, id: string) {
+function buildContacts(
+  fields: JsonRecord,
+  record: JsonRecord,
+  id: string
+): PublicMapResourceContact[] {
   const explicitContacts = [
     ...readArray(fields["contacts"]),
     ...readArray(fields["public_contacts"]),
@@ -303,7 +307,9 @@ function buildContacts(fields: JsonRecord, record: JsonRecord, id: string) {
     return [
       {
         id: readFirstString(contact["id"], `${id}:contact:${index}`)!,
-        label: readFirstString(contact["label"], contact["name"]),
+        label:
+          readFirstString(contact["label"], contact["name"]) ??
+          (type === "email" ? "Email" : type === "phone" ? "Phone" : "Contact"),
         value,
         type,
         url: normalizeUrl(contact["url"]),
@@ -512,13 +518,6 @@ export function buildExternalResourceMapItemFromLocalPreviewRecord(
   return {
     id,
     itemType: "external_resource",
-    resourceOrganizationId:
-      readFirstString(
-        fields["organizationId"],
-        fields["organization_id"],
-        record["organizationId"],
-        record["organization_id"]
-      ) ?? null,
     title: displayTitle,
     subtitle,
     description,

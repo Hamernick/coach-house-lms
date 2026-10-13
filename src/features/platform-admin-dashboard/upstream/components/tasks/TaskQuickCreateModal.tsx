@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import { format, parse, isValid } from 'date-fns'
+import React, { useEffect, useMemo, useState, useTransition } from 'react'
+import { format } from 'date-fns'
 import {
   CalendarBlank,
   ChartBar,
@@ -21,7 +21,6 @@ import { GenericPicker, DatePicker } from '@/features/platform-admin-dashboard/u
 import { ProjectDescriptionEditor } from '@/features/platform-admin-dashboard/upstream/components/project-wizard/ProjectDescriptionEditor'
 import { QuickCreateModalLayout } from '@/features/platform-admin-dashboard/upstream/components/QuickCreateModalLayout'
 import { toast } from 'sonner'
-import { withSaveFeedback } from '@/lib/with-save-feedback'
 
 export type CreateTaskContext = {
   projectId?: string
@@ -54,7 +53,7 @@ type TaskQuickCreateModalProps = {
   ) => Promise<{ ok: true; taskId?: string } | { error: string }>
 }
 
-type TaskStatusId = 'todo' | 'in-progress' | 'waiting' | 'done'
+type TaskStatusId = 'todo' | 'in-progress' | 'done'
 
 type StatusOption = {
   id: TaskStatusId
@@ -83,19 +82,17 @@ export type TaskQuickCreateSubmitValue = {
   workstreamName?: string
   title: string
   description?: string
-  assigneeId?: string | null
+  assigneeId?: string
   status: TaskStatusId
   startDate?: Date
   targetDate?: Date
   priorityId?: PriorityOption['id']
-  tagLabel?: string
   tagId?: string
 }
 
 const STATUS_OPTIONS: StatusOption[] = [
   { id: 'todo', label: 'To do' },
   { id: 'in-progress', label: 'In progress' },
-  { id: 'waiting', label: 'Waiting' },
   { id: 'done', label: 'Done' },
 ]
 
@@ -104,18 +101,16 @@ const PRIORITY_OPTIONS: PriorityOption[] = [
   { id: 'low', label: 'Low' },
   { id: 'medium', label: 'Medium' },
   { id: 'high', label: 'High' },
-  { id: 'urgent', label: 'Urgent' },
 ]
 
 export const TAG_OPTIONS: TagOption[] = [
-  ...['Admin', 'Dev', 'Prg', 'Biz Dev', 'Coms', 'HR', 'Governance'].map(label => ({ id: label, label })),
   { id: 'feature', label: 'Feature' },
   { id: 'bug', label: 'Bug' },
   { id: 'internal', label: 'Internal' },
 ]
 
 function toUser(option: AssigneeOption | undefined): User | undefined {
-  if (!option || option.id === '__unassigned') return undefined
+  if (!option) return undefined
   return {
     id: option.id,
     name: option.name,
@@ -143,7 +138,6 @@ export function TaskQuickCreateModal({
   assigneeOptions = [],
   onSubmitTask,
 }: TaskQuickCreateModalProps) {
-  const initializedDraft = useRef<string | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState<string | undefined>(undefined)
   const [createMore, setCreateMore] = useState(false)
@@ -156,16 +150,13 @@ export function TaskQuickCreateModal({
 
   const [assignee, setAssignee] = useState<AssigneeOption | undefined>(assigneeOptions[0])
   const [status, setStatus] = useState<StatusOption>(STATUS_OPTIONS[0])
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date())
   const [targetDate, setTargetDate] = useState<Date | undefined>(undefined)
   const [priority, setPriority] = useState<PriorityOption | undefined>(PRIORITY_OPTIONS[0])
   const [selectedTag, setSelectedTag] = useState<TagOption | undefined>(undefined)
 
   useEffect(() => {
-    if (!open) { initializedDraft.current = null; return }
-    const key = editingTask?.id ?? `new:${context?.projectId ?? ''}:${context?.workstreamId ?? ''}:${context?.workstreamName ?? ''}`
-    if (initializedDraft.current === key) return
-    initializedDraft.current = key
+    if (!open) return
 
     if (editingTask) {
       setProjectId(editingTask.projectId)
@@ -182,16 +173,15 @@ export function TaskQuickCreateModal({
             option.id === editingTask.assignee?.id ||
             option.name === editingTask.assignee?.name,
         )
-        setAssignee(assigneeOption ?? editingTask.assignee)
+        setAssignee(assigneeOption ?? assigneeOptions[0])
       } else {
-        setAssignee(undefined)
+        setAssignee(assigneeOptions[0])
       }
 
       const statusOption = STATUS_OPTIONS.find((option) => option.id === editingTask.status)
       setStatus(statusOption ?? STATUS_OPTIONS[0])
-      setStartDate(editingTask.startDate)
-      const dueDate = editingTask.endDate ?? (editingTask.dueLabel ? parse(editingTask.dueLabel, "dd/MM/yyyy", new Date()) : undefined)
-      setTargetDate(dueDate && isValid(dueDate) ? dueDate : undefined)
+      setStartDate(editingTask.startDate ?? new Date())
+      setTargetDate(undefined)
 
       const priorityOption = editingTask.priority
         ? PRIORITY_OPTIONS.find((option) => option.id === editingTask.priority)
@@ -199,7 +189,7 @@ export function TaskQuickCreateModal({
       setPriority(priorityOption ?? PRIORITY_OPTIONS[0])
 
       const tagOption = editingTask.tag
-        ? TAG_OPTIONS.find((option) => option.label.toLowerCase() === editingTask.tag?.toLowerCase()) ?? { id: editingTask.tag, label: editingTask.tag }
+        ? TAG_OPTIONS.find((option) => option.label === editingTask.tag)
         : undefined
       setSelectedTag(tagOption)
 
@@ -221,7 +211,7 @@ export function TaskQuickCreateModal({
     setIsDescriptionExpanded(false)
     setAssignee(assigneeOptions[0])
     setStatus(STATUS_OPTIONS[0])
-    setStartDate(undefined)
+    setStartDate(new Date())
     setTargetDate(undefined)
     setPriority(PRIORITY_OPTIONS[0])
     setSelectedTag(undefined)
@@ -261,7 +251,6 @@ export function TaskQuickCreateModal({
   }, [projectId, workstreamOptions, workstreamId, workstreamName])
 
   const handleSubmit = () => {
-    if (isSubmitting) return
     const effectiveProjectId = projectId ?? editingTask?.projectId ?? projectOptions[0]?.id
     if (!effectiveProjectId) return
 
@@ -271,22 +260,22 @@ export function TaskQuickCreateModal({
       workstreamName,
       title: title.trim() || 'Untitled task',
       description,
-      assigneeId: assignee?.id === '__unassigned' ? null : assignee?.id ?? (editingTask ? null : undefined),
+      assigneeId: assignee?.id,
       status: status.id,
       startDate,
       targetDate,
       priorityId: priority?.id,
       tagId: selectedTag?.id,
-      tagLabel: selectedTag?.label,
     }
 
     if (onSubmitTask) {
       startSubmitTransition(async () => {
-        const result = await withSaveFeedback(() => onSubmitTask(submitValue), {
-          pending: editingTask ? 'Saving task…' : 'Creating task…',
-          success: editingTask ? 'Task updated' : 'Task created',
-        })
-        if ('error' in result) return
+        const result = await onSubmitTask(submitValue)
+
+        if ('error' in result) {
+          toast.error(result.error)
+          return
+        }
 
         if (createMore && !editingTask) {
           setTitle('')
@@ -365,8 +354,7 @@ export function TaskQuickCreateModal({
   return (
     <QuickCreateModalLayout
       open={open}
-      title={editingTask ? 'Edit task' : 'Create task'}
-      onClose={() => { if (!isSubmitting) onClose() }}
+      onClose={onClose}
       isDescriptionExpanded={isDescriptionExpanded}
       onSubmitShortcut={handleSubmit}
     >
@@ -428,8 +416,7 @@ export function TaskQuickCreateModal({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Close task editor"
-          onClick={() => { if (!isSubmitting) onClose() }}
+          onClick={onClose}
           className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
         >
           <X className="h-4 w-4 text-muted-foreground" />
@@ -460,7 +447,7 @@ export function TaskQuickCreateModal({
 
       <div className="flex flex-wrap gap-2.5 items-start w-full shrink-0">
         <GenericPicker
-          items={[{ id: '__unassigned', name: 'Unassigned', avatarUrl: null }, ...assigneeOptions]}
+          items={assigneeOptions}
           onSelect={setAssignee}
           selectedId={assignee?.id}
           placeholder="Assign owner..."
@@ -567,13 +554,10 @@ export function TaskQuickCreateModal({
         />
 
         <GenericPicker
-          items={selectedTag && !TAG_OPTIONS.some((tag) => tag.id === selectedTag.id)
-            ? [...TAG_OPTIONS, selectedTag]
-            : TAG_OPTIONS}
+          items={TAG_OPTIONS}
           onSelect={setSelectedTag}
           selectedId={selectedTag?.id}
-          placeholder="Search or create tag..."
-          onCreate={(label) => setSelectedTag({ id: label, label })}
+          placeholder="Add tag..."
           renderItem={(item) => (
             <div className="flex items-center gap-2 w-full">
               <span className="flex-1">{item.label}</span>
@@ -611,7 +595,7 @@ export function TaskQuickCreateModal({
             </div>
           )}
 
-          <Button type="button" disabled={isSubmitting} aria-busy={isSubmitting} onClick={handleSubmit} className="h-10 px-4 rounded-xl">
+          <Button type="button" onClick={handleSubmit} className="h-10 px-4 rounded-xl">
             {isSubmitting ? (editingTask ? 'Saving...' : 'Creating...') : editingTask ? 'Save changes' : 'Create Task'}
           </Button>
         </div>

@@ -1,9 +1,7 @@
-import { readTaskTrackerDetails } from "@/lib/task-tracker"
-import { loadPersonalTaskScope } from "./personal-task-scope"
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceTaskItem } from "../types"
 
-import { actorCanAccessOrganization, actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { loadTaskAssigneeMap, type TaskAssigneeProfile } from "./task-assignees"
@@ -70,7 +68,6 @@ function mapTaskAssignmentRowsToItems(
       return [
         {
           id: task.id,
-          tracker: readTaskTrackerDetails(task.tracker_metadata),
           projectId: task.project_id,
           projectName: project?.name ?? "Unassigned Project",
           projectClient: project?.client_name ?? null,
@@ -84,14 +81,14 @@ function mapTaskAssignmentRowsToItems(
           projectMembers: project?.member_labels ?? [],
           projectTypeLabel: project?.type_label ?? null,
           projectDurationLabel: project?.duration_label ?? null,
-          projectStartDate: project?.start_date ?? task.start_date ?? "",
-          projectEndDate: project?.end_date ?? task.end_date ?? "",
+          projectStartDate: project?.start_date ?? task.start_date,
+          projectEndDate: project?.end_date ?? task.end_date,
           title: task.title,
           description: task.description ?? undefined,
           taskType: task.task_type as MemberWorkspaceTaskItem["taskType"],
           status: task.status as MemberWorkspaceTaskItem["status"],
-          startDate: task.start_date ?? "",
-          endDate: task.end_date ?? "",
+          startDate: task.start_date,
+          endDate: task.end_date,
           priority:
             (task.priority as MemberWorkspaceTaskItem["priority"]) ??
             "no-priority",
@@ -121,8 +118,6 @@ type AdminTaskQueryRow = Pick<
   | "workstream_name"
   | "sort_order"
   | "created_source"
-  | "created_by"
-  | "tracker_metadata"
 > & {
   organization_projects: {
     id: string
@@ -142,16 +137,13 @@ type AdminTaskQueryRow = Pick<
 function mapAdminTaskRowsToItems(
   rows: AdminTaskQueryRow[],
   assigneeByTaskId: Map<string, TaskAssigneeProfile>,
-  canUpdate: boolean,
-  organizationNames = new Map<string, string>()
+  canUpdate: boolean
 ): MemberWorkspaceTaskItem[] {
   return rows
     .map((task) => {
       const project = task.organization_projects
       return {
         id: task.id,
-        tracker: readTaskTrackerDetails(task.tracker_metadata),
-        organizationName: organizationNames.get(task.org_id),
         projectId: task.project_id,
         projectName: project?.name ?? "Organization project",
         projectClient: project?.client_name ?? null,
@@ -165,14 +157,14 @@ function mapAdminTaskRowsToItems(
         projectMembers: project?.member_labels ?? [],
         projectTypeLabel: project?.type_label ?? null,
         projectDurationLabel: project?.duration_label ?? null,
-        projectStartDate: project?.start_date ?? task.start_date ?? "",
-        projectEndDate: project?.end_date ?? task.end_date ?? "",
+        projectStartDate: project?.start_date ?? task.start_date,
+        projectEndDate: project?.end_date ?? task.end_date,
         title: task.title,
         description: task.description ?? undefined,
         taskType: task.task_type as MemberWorkspaceTaskItem["taskType"],
         status: task.status as MemberWorkspaceTaskItem["status"],
-        startDate: task.start_date ?? "",
-        endDate: task.end_date ?? "",
+        startDate: task.start_date,
+        endDate: task.end_date,
         priority:
           (task.priority as MemberWorkspaceTaskItem["priority"]) ??
           "no-priority",
@@ -189,18 +181,6 @@ export async function loadMemberWorkspaceTasksPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
   if (actorCanAccessOrganizations(actor)) {
-    const { data: myAssignments, error: myAssignmentsError } = await actor.supabase
-      .from("organization_task_assignees").select("task_id").eq("user_id", actor.userId)
-      .returns<Array<{ task_id: string }>>()
-    if (myAssignmentsError) throw toMemberWorkspaceDataError(myAssignmentsError, "Unable to load your assigned tasks.")
-    const assignedIds = (myAssignments ?? []).map((row) => row.task_id)
-    const assignedTaskIds = new Set(assignedIds)
-    const personalFilter = [
-      `created_by.eq.${actor.userId}`,
-      ...(assignedIds.length ? [`id.in.(${assignedIds.join(",")})`] : []),
-      `tracker_metadata->>proposedUserId.eq.${actor.userId}`,
-      `tracker_metadata->collaboratorUserIds.cs.["${actor.userId}"]`,
-    ].join(",")
     const [
       { data: orgRows, error: orgRowsError },
       { data: detailRows, error: detailError },
@@ -208,14 +188,13 @@ export async function loadMemberWorkspaceTasksPage() {
     ] = await Promise.all([
       actor.supabase
         .from("organization_projects")
-        .select("id, org_id")
-        .returns<Array<Pick<OrganizationTaskRecord, "id" | "org_id">>>(),
+        .select("org_id")
+        .returns<Array<Pick<OrganizationTaskRecord, "org_id">>>(),
       actor.supabase
         .from("organization_tasks")
         .select(
-          "id, org_id, project_id, tracker_metadata, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, created_by, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date)"
+          "id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date)"
         )
-        .or(personalFilter)
         .order("start_date", { ascending: true })
         .order("sort_order", { ascending: true })
         .returns<AdminTaskQueryRow[]>(),
@@ -258,17 +237,13 @@ export async function loadMemberWorkspaceTasksPage() {
       )
     }
 
-    const rows = (detailRows ?? []).filter((task) => {
-      const tracker = readTaskTrackerDetails(task.tracker_metadata)
-      const related = tracker?.collaboratorUserIds.includes(actor.userId) ||
-        (tracker?.assignmentStatus === "Proposed" && tracker.proposedUserId === actor.userId && task.status !== "done")
-      return taskProjectScope.projectIds.has(task.project_id) &&
-        (assignedTaskIds.has(task.id) || related || actorCanAccessOrganization(actor, task.org_id))
-    })
-    const accessibleProjects = (orgRows ?? []).filter((row) => actorCanAccessOrganization(actor, row.org_id))
-    const accessibleProjectIds = new Set(accessibleProjects.map((row) => row.id))
-    const adminOrgIds = [...new Set(accessibleProjects.map((row) => row.org_id))]
-    const [assigneeOptions, assigneeByTaskId, personalScope] = await Promise.all([
+    const rows = (detailRows ?? []).filter((task) =>
+      taskProjectScope.projectIds.has(task.project_id)
+    )
+    const adminOrgIds = Array.from(
+      new Set((orgRows ?? []).map((row) => row.org_id))
+    )
+    const [assigneeOptions, assigneeByTaskId] = await Promise.all([
       loadMemberWorkspacePersonOptionsForOrganizations({
         orgIds: adminOrgIds,
         supabase: actor.supabase,
@@ -278,13 +253,11 @@ export async function loadMemberWorkspaceTasksPage() {
         supabase: actor.supabase,
         taskIds: rows.map((task) => task.id),
       }),
-      loadPersonalTaskScope({ tasks: rows, userId: actor.userId, supabase: actor.supabase }),
     ])
 
     return {
       taskGroups: mapTaskRowsToGroups(
-        mapAdminTaskRowsToItems(rows.filter((task) => personalScope.taskIds.has(task.id)), assigneeByTaskId, true, personalScope.organizationNames)
-          .map((task) => ({ ...task, canUpdate: accessibleProjectIds.has(task.projectId) }))
+        mapAdminTaskRowsToItems(rows, assigneeByTaskId, true)
       ),
       storageMode: resolveMemberWorkspaceStorageMode(rows),
       starterTaskCount: rows.filter(
@@ -294,8 +267,8 @@ export async function loadMemberWorkspaceTasksPage() {
       canResetStarterData: false,
       canManageTasks: true,
       scope: "platform-admin" as const,
-      assigneeOptions: [actor.currentUser, ...assigneeOptions.filter((person) => person.id !== actor.userId)],
-      projectOptions: taskProjectScope.projectOptions.filter((project) => accessibleProjectIds.has(project.id)),
+      assigneeOptions,
+      projectOptions: taskProjectScope.projectOptions,
     }
   }
 
@@ -349,7 +322,7 @@ export async function loadMemberWorkspaceTasksPage() {
     actor.supabase
       .from("organization_task_assignees")
       .select(
-        "task_id, user_id, organization_tasks!inner(id, org_id, project_id, tracker_metadata, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, starter_seed_key, starter_seed_version, created_by, updated_by, created_at, updated_at, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date))"
+        "task_id, user_id, organization_tasks!inner(id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, starter_seed_key, starter_seed_version, created_by, updated_by, created_at, updated_at, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date))"
       )
       .eq("org_id", actor.activeOrg.orgId)
       .eq("user_id", actor.userId)
@@ -412,19 +385,11 @@ export async function loadMemberWorkspaceTasksPage() {
       .filter((id): id is string => Boolean(id))
       .map((taskId) => [taskId, actor.currentUser] as const)
   )
-  const organizationScope = await loadPersonalTaskScope({
-    tasks: scopedAssignedRows.flatMap((row) => row.organization_tasks ? [row.organization_tasks] : []),
-    userId: actor.userId,
-    supabase: actor.supabase,
-  })
   const taskItems = mapTaskAssignmentRowsToItems(
     scopedAssignedRows,
     assigneeByTaskId,
     actor.canEdit
-  ).map((task) => ({
-    ...task,
-    organizationName: organizationScope.organizationNames.get(actor.activeOrg.orgId),
-  }))
+  )
   const starterTaskCount = taskRows.filter(
     (task) => task.created_source === "starter_seed"
   ).length

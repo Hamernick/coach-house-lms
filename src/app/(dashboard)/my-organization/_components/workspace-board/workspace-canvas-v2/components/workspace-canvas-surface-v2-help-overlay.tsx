@@ -35,7 +35,8 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: FocusIcon,
     label: "Focus a card",
-    description: "Double-click a card to center it and fit it in the workspace.",
+    description:
+      "Double-click a card to center it and fit it in the workspace.",
   },
   {
     icon: GripIcon,
@@ -51,8 +52,7 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: ZoomInIcon,
     label: "Zoom",
-    description:
-      "Pinch to zoom, or hold Meta or Control while scrolling.",
+    description: "Pinch to zoom, or hold Meta or Control while scrolling.",
   },
   {
     icon: PanelLeftOpenIcon,
@@ -153,11 +153,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
               variant="ghost"
               size="icon"
               aria-label="Workspace canvas help"
-              className={
-                integrated
-                  ? "pointer-events-auto relative h-8 w-11 touch-manipulation rounded-lg after:absolute after:inset-x-0 after:-inset-y-1.5 md:w-8 md:after:hidden"
-                  : "pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"
-              }
+              className="pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"
               onClick={dismissTip}
             >
               <InfoIcon className="h-4 w-4" aria-hidden />

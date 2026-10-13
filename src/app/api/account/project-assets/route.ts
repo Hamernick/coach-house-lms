@@ -7,20 +7,20 @@ import {
   sanitizeProjectAssetFilename,
 } from "@/features/member-workspace"
 import type { Database } from "@/lib/supabase"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import {
   assetResponse,
   canAccessProjectOrg,
-  cleanupProjectAssetCreation,
   getProjectAssetFileError,
   getProjectAssetLinkError,
   loadAsset,
   loadProject,
   toTrimmedString,
   type AssetRow,
-  PROJECT_ASSET_BUCKET as BUCKET,
 } from "./route-support"
 
+const BUCKET = "project-assets"
 const SIGNED_URL_TTL_SECONDS = 60 * 15
 const MAX_BYTES = 50 * 1024 * 1024
 
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       { status: 401 }
     )
   }
+  const admin = createSupabaseAdminClient()
 
   const { searchParams } = new URL(request.url)
   const projectId = toTrimmedString(searchParams.get("projectId"))
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
     const asset = await loadAsset({
       assetId,
       projectId,
-      supabase,
+      supabase: admin,
     })
 
     if (!asset) {
@@ -63,7 +64,6 @@ export async function GET(request: NextRequest) {
     }
 
     const canRead = await canAccessProjectOrg({
-      projectId,
       orgId: asset.org_id,
       requireEdit: false,
       supabase,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: signed, error: signedError } = await supabase.storage
+    const { data: signed, error: signedError } = await admin.storage
       .from(BUCKET)
       .createSignedUrl(
         asset.storage_path,
@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     )
   }
+  const admin = createSupabaseAdminClient()
 
   const form = await request.formData()
   const projectId = toTrimmedString(form.get("projectId"))
@@ -153,26 +154,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: linkError }, { status: 400 })
   }
 
-  for (const file of files) {
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: `${file.name} is too large. Max size is 50 MB.` },
-        { status: 400 }
-      )
-    }
-    const fileTypeError = getProjectAssetFileError(file)
-    if (fileTypeError) {
-      return NextResponse.json({ error: fileTypeError }, { status: 400 })
-    }
-  }
-
-  const insertedAssets: AssetRow[] = []
-  const uploadedPaths: string[] = []
-
   try {
     const project = await loadProject({
       projectId,
-      supabase,
+      supabase: admin,
     })
 
     if (!project) {
@@ -180,7 +165,6 @@ export async function POST(request: NextRequest) {
     }
 
     const canEdit = await canAccessProjectOrg({
-      projectId,
       orgId: project.org_id,
       requireEdit: true,
       supabase,
@@ -190,9 +174,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    const insertedAssets: AssetRow[] = []
+    const uploadedPaths: string[] = []
+
     if (link) {
       const assetName = title || link
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await admin
         .from("organization_project_assets")
         .insert({
           org_id: project.org_id,
@@ -220,20 +207,27 @@ export async function POST(request: NextRequest) {
     }
 
     for (const file of files) {
+      if (file.size > MAX_BYTES) {
+        return NextResponse.json(
+          { error: `${file.name} is too large. Max size is 50 MB.` },
+          { status: 400 }
+        )
+      }
+
+      const fileTypeError = getProjectAssetFileError(file)
+      if (fileTypeError) {
+        return NextResponse.json({ error: fileTypeError }, { status: 400 })
+      }
+
       const objectName = `${project.org_id}/${project.id}/${Date.now()}-${sanitizeProjectAssetFilename(file.name)}`
       const buffer = Buffer.from(await file.arrayBuffer())
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await admin.storage
         .from(BUCKET)
         .upload(objectName, buffer, {
           contentType: file.type || undefined,
         })
 
       if (uploadError) {
-        await cleanupProjectAssetCreation({
-          assetIds: insertedAssets.map((asset) => asset.id),
-          storagePaths: uploadedPaths,
-          supabase,
-        })
         return NextResponse.json(
           { error: uploadError.message },
           { status: 500 }
@@ -243,7 +237,7 @@ export async function POST(request: NextRequest) {
       uploadedPaths.push(objectName)
 
       const assetName = files.length === 1 && title ? title : file.name
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await admin
         .from("organization_project_assets")
         .insert({
           org_id: project.org_id,
@@ -263,11 +257,10 @@ export async function POST(request: NextRequest) {
         .returns<AssetRow[]>()
 
       if (insertError) {
-        await cleanupProjectAssetCreation({
-          assetIds: insertedAssets.map((asset) => asset.id),
-          storagePaths: uploadedPaths,
-          supabase,
-        })
+        await admin.storage
+          .from(BUCKET)
+          .remove([objectName])
+          .catch(() => undefined)
         return NextResponse.json(
           { error: insertError.message },
           { status: 500 }
@@ -284,11 +277,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (routeError: unknown) {
-    await cleanupProjectAssetCreation({
-      assetIds: insertedAssets.map((asset) => asset.id),
-      storagePaths: uploadedPaths,
-      supabase,
-    })
     return NextResponse.json(
       {
         error:
@@ -315,6 +303,7 @@ export async function PATCH(request: NextRequest) {
       { status: 401 }
     )
   }
+  const admin = createSupabaseAdminClient()
 
   const payload = await request.json().catch(() => null)
   const projectId = toTrimmedString(payload?.projectId)
@@ -339,7 +328,7 @@ export async function PATCH(request: NextRequest) {
     const asset = await loadAsset({
       assetId,
       projectId,
-      supabase,
+      supabase: admin,
     })
 
     if (!asset) {
@@ -347,7 +336,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const canEdit = await canAccessProjectOrg({
-      projectId,
       orgId: asset.org_id,
       requireEdit: true,
       supabase,
@@ -370,7 +358,7 @@ export async function PATCH(request: NextRequest) {
       updatePayload.asset_type = detectProjectAssetTypeFromUrl(nextLink)
     }
 
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await admin
       .from("organization_project_assets")
       .update(updatePayload)
       .eq("id", asset.id)
@@ -415,6 +403,7 @@ export async function DELETE(request: NextRequest) {
       { status: 401 }
     )
   }
+  const admin = createSupabaseAdminClient()
 
   const payload = await request.json().catch(() => null)
   const projectId = toTrimmedString(payload?.projectId)
@@ -431,7 +420,7 @@ export async function DELETE(request: NextRequest) {
     const asset = await loadAsset({
       assetId,
       projectId,
-      supabase,
+      supabase: admin,
     })
 
     if (!asset) {
@@ -439,7 +428,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     const canEdit = await canAccessProjectOrg({
-      projectId,
       orgId: asset.org_id,
       requireEdit: true,
       supabase,
@@ -449,7 +437,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await admin
       .from("organization_project_assets")
       .delete()
       .eq("id", asset.id)
@@ -460,7 +448,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (asset.storage_path) {
-      await supabase.storage
+      await admin.storage
         .from(BUCKET)
         .remove([asset.storage_path])
         .catch(() => undefined)

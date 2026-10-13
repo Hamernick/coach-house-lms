@@ -16,8 +16,6 @@ import {
   getWorkspaceRoadmapSectionPath,
   normalizeWorkspaceDrawerTab,
 } from "@/lib/workspace/routes"
-import { getLegacyMyOrganizationTabDestination } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-search"
-
 
 const ROOT = process.cwd()
 
@@ -28,28 +26,19 @@ describe("workspace routes", () => {
     expect(WORKSPACE_ACCELERATOR_PATH).toBe("/workspace/accelerator")
     expect(WORKSPACE_DRAWER_TABS).toEqual([
       "organization",
-      "finance",
       "people",
       "documents",
-      "tools",
       "accelerator",
       "roadmap",
     ])
     expect(normalizeWorkspaceDrawerTab(" accelerator ")).toBe("accelerator")
     expect(normalizeWorkspaceDrawerTab("finance")).toBeNull()
-    expect(normalizeWorkspaceDrawerTab("tools")).toBe("tools")
     expect(normalizeWorkspaceDrawerTab(null)).toBeNull()
   })
 
   it("builds editor and roadmap detail links", () => {
     expect(getWorkspaceDrawerPath({ tab: "accelerator" })).toBe(
       "/workspace?drawer=accelerator"
-    )
-    expect(getWorkspaceDrawerPath({ tab: "finance" })).toBe(
-      "/workspace?drawer=finance"
-    )
-    expect(getWorkspaceDrawerPath({ tab: "tools" })).toBe(
-      "/workspace?drawer=tools"
     )
     expect(
       getWorkspaceDrawerPath({
@@ -86,44 +75,21 @@ describe("workspace routes", () => {
     )
   })
 
-  it("preserves legacy document and roadmap deep-link parameters", () => {
-    expect(
-      getLegacyMyOrganizationTabDestination({
-        tabParam: "documents",
-        focusParam: "w9",
-        roadmapSectionParam: null,
-      })
-    ).toBe("/workspace?drawer=documents&focus=w9")
-    expect(
-      getLegacyMyOrganizationTabDestination({
-        tabParam: "roadmap",
-        focusParam: "",
-        roadmapSectionParam: "origin-story",
-      })
-    ).toBe("/workspace?drawer=roadmap&section=origin-story")
-    expect(
-      getLegacyMyOrganizationTabDestination({
-        tabParam: "company",
-        focusParam: "mission",
-        roadmapSectionParam: null,
-      })
-    ).toBeNull()
-  })
-
   it("builds the accelerator paywall link with a source", () => {
     expect(getWorkspaceAcceleratorPaywallPath("guide")).toBe(
       "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=guide"
     )
   })
 
-  it("retires every legacy accelerator page behind the workspace route", () => {
+  it("keeps the legacy accelerator shell behind the private workspace rollout", () => {
     const source = readFileSync(
       join(ROOT, "src/app/(accelerator)/layout.tsx"),
       "utf8"
     )
 
+    expect(source).toContain("isWorkspaceFoundationRolloutEnabled")
     expect(source).toContain("redirect(WORKSPACE_ACCELERATOR_PATH)")
-    expect(source).not.toContain("<AppShell")
+    expect(source).toContain("<AppShell")
   })
 
   it("uses the shared drawer-tab contract in server route state", () => {
@@ -156,11 +122,23 @@ describe("workspace routes", () => {
     )
   })
 
-  it("does not gate the workspace entry route on a paid subscription or intent", () => {
-    const source = readFileSync(join(ROOT, "src/app/(dashboard)/workspace/page.tsx"), "utf8")
-    expect(source).not.toContain("resolveWorkspaceEntryRedirect")
-    expect(source).not.toContain("redirect(")
-    expect(source).toContain("MyOrganizationPageContent({")
+  it("keeps self-only free users from landing on the workspace canvas", () => {
+    const source = readFileSync(
+      join(ROOT, "src/app/(dashboard)/workspace/page.tsx"),
+      "utf8"
+    )
+
+    expect(source).toContain("resolveDashboardLayoutState")
+    expect(source).toContain("!state.showMemberWorkspace")
+    expect(source).toContain("member_onboarding=1")
+    expect(source).toContain("redirect(FIND_PATH)")
+  })
+
+  it("allows preview builds to render existing production-hosted workspace images", () => {
+    const source = readFileSync(join(ROOT, "next.config.ts"), "utf8")
+
+    expect(source).toContain('"vswzhuwjtgzrkxknrmxu.supabase.co"')
+    expect(source).toContain("supabaseImageHosts.map")
   })
 
   it("preserves document focus through authentication", () => {

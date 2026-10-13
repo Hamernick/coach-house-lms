@@ -27,8 +27,10 @@ import {
   FISCAL_SPONSORSHIP_SIGNING_BUCKET,
 } from "./native-signing-context"
 import { notifyFiscalDocumentConnected } from "./workflow-notifications"
-import { getApplicationOrganizationName } from "./workflow-support"
-import { transitionFiscalW9Completion } from "./w9-transition-support"
+import {
+  getApplicationOrganizationName,
+  insertFiscalEvent,
+} from "./workflow-support"
 import {
   buildW9Prefill,
   loadW9Context,
@@ -146,11 +148,18 @@ export async function completeFiscalSponsorshipW9(
       .upload(storagePath, pdf.bytes, { contentType: "application/pdf" })
     if (uploadError) throw new Error("Unable to store the signed W-9.")
 
+    const { data: previousDocument } = await admin
+      .from("fiscal_sponsorship_documents")
+      .select("version")
+      .eq("application_id", loaded.application.id)
+      .eq("kind", "tax_form")
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ version: number }>()
     const requestHeaders = await headers()
-    const transition = await transitionFiscalW9Completion({
-      actorId: loaded.signer.id,
-      applicationId: loaded.application.id,
-      document: {
+    const { data: document, error: documentError } = await admin
+      .from("fiscal_sponsorship_documents")
+      .insert({
         application_id: loaded.application.id,
         asset_id: null,
         confirmed_at: signedAt,
@@ -197,34 +206,48 @@ export async function completeFiscalSponsorshipW9(
         title: "Signed IRS Form W-9",
         uploaded_at: signedAt,
         uploaded_by: loaded.signer.id,
-      },
-      expectedUpdatedAt: loaded.application.updated_at,
-    })
-    if ("error" in transition) {
+        version: (previousDocument?.version ?? 0) + 1,
+      })
+      .select("id")
+      .single<{ id: string }>()
+    if (documentError) {
       await admin.storage
         .from(FISCAL_SPONSORSHIP_SIGNING_BUCKET)
         .remove([storagePath])
       uploadedPath = null
-      return {
-        error: transition.error ?? "Unable to save the signed W-9 record.",
-      }
+      throw new Error("Unable to save the signed W-9 record.")
     }
 
+    await insertFiscalEvent({
+      applicationId: loaded.application.id,
+      eventType: "w9_completed",
+      metadata: {
+        documentId: document.id,
+        fileSha256: pdf.sha256,
+        signatureSha256,
+        templateSha256: FISCAL_SPONSORSHIP_W9_TEMPLATE.sha256,
+      },
+      orgId: loaded.application.org_id,
+      projectId: loaded.application.project_id,
+      summary: "Applicant completed and signed IRS Form W-9.",
+      supabase: admin,
+      userId: loaded.signer.id,
+    })
     await notifyFiscalDocumentConnected({
       actorId: loaded.signer.id,
       application: loaded.application,
-      documentId: transition.documentId,
+      documentId: document.id,
       documentKey: "tax_id_confirmation",
     })
 
     revalidatePath("/workspace")
     revalidatePath("/my-organization")
-    revalidatePath(`/organizations/${loaded.application.org_id}`)
+    revalidatePath(`/organizations/${loaded.application.project_id}`)
     revalidatePath(`/fiscal-sponsorship/w9/${loaded.application.project_id}`)
     return {
       ok: true,
-      documentHref: `/api/fiscal-sponsorship/documents/${transition.documentId}`,
-      documentId: transition.documentId,
+      documentHref: `/api/fiscal-sponsorship/documents/${document.id}`,
+      documentId: document.id,
       redactedFields,
     }
   } catch (error) {

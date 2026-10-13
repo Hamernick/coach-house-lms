@@ -16,7 +16,9 @@ export type WorkspaceOnboardingStageDefinition = {
 }
 
 export const WORKSPACE_ONBOARDING_STAGE_ORDER: WorkspaceOnboardingStage[] = [
-  2, 3, 4,
+  2,
+  3,
+  4,
 ]
 
 export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
@@ -25,7 +27,7 @@ export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
 > = {
   2: {
     stage: 2,
-    title: "Finish your organization foundation",
+    title: "Build your organization foundation",
     description:
       "Set up the essentials so your workspace and collaborators have clear context.",
     checklist: [
@@ -68,7 +70,7 @@ export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
 }
 
 export function isOnboardingStage(
-  value: unknown
+  value: unknown,
 ): value is WorkspaceOnboardingStage {
   return value === 2 || value === 3 || value === 4
 }
@@ -84,7 +86,7 @@ export function normalizeCompletedFromStage(stage: WorkspaceOnboardingStage) {
 }
 
 export function resolveWorkspaceOnboardingStageFromSearchParam(
-  value: string | null | undefined
+  value: string | null | undefined,
 ): WorkspaceOnboardingStage | null {
   if (!value) return null
   const numeric = Number.parseInt(value, 10)
@@ -93,14 +95,14 @@ export function resolveWorkspaceOnboardingStageFromSearchParam(
 }
 
 export function getNextOnboardingStage(
-  stage: WorkspaceOnboardingStage
+  stage: WorkspaceOnboardingStage,
 ): WorkspaceOnboardingStage | null {
   const nextIndex = stageRank(stage) + 1
   return WORKSPACE_ONBOARDING_STAGE_ORDER[nextIndex] ?? null
 }
 
 export function getPreviousOnboardingStage(
-  stage: WorkspaceOnboardingStage
+  stage: WorkspaceOnboardingStage,
 ): WorkspaceOnboardingStage | null {
   const previousIndex = stageRank(stage) - 1
   return WORKSPACE_ONBOARDING_STAGE_ORDER[previousIndex] ?? null

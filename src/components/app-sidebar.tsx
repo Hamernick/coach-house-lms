@@ -1,6 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo } from "react"
+import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
 import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
@@ -12,6 +14,7 @@ import type { PlatformAccessLevel } from "@/features/platform-access"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
+import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
 import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
 
@@ -73,11 +76,11 @@ export function AppSidebar({
       email: user?.email ?? null,
       avatar: user?.avatar ?? null,
     }),
-    [user?.avatar, user?.email, user?.name, user?.title]
+    [user?.avatar, user?.email, user?.name, user?.title],
   )
 
   return (
-    <aside className="border-border/70 bg-sidebar hidden h-full w-72 shrink-0 border-r px-3 pt-0 pb-0 md:flex md:flex-col md:gap-6">
+    <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-0 pt-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
         platformAccessLevel={platformAccessLevel}
@@ -159,8 +162,7 @@ export function SidebarBody({
   showMemberWorkspace,
 }: SidebarBodyProps) {
   const isCoach = platformAccessLevel === "coach"
-  const shouldShowAccelerator =
-    !onboardingLocked && Boolean(isAdmin || showAccelerator)
+  const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const showMemberWorkspaceNav =
     !onboardingLocked &&
@@ -174,7 +176,7 @@ export function SidebarBody({
   const showAccountUpgradeCta =
     !platformAccessLevel &&
     hasUser &&
-    !hasActiveSubscription
+    (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
   const mainNavItems = buildMainNav({
     isAdmin,
     platformAccessLevel,
@@ -212,12 +214,15 @@ export function SidebarBody({
                 <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
                   <CoachSchedulingCard />
                 </div>
-                <div className="[@media(min-height:56rem)]:hidden group-data-[collapsible=icon]:!block">
+                <div className="[@media(min-height:56rem)]:hidden">
                   <CoachSchedulingSidebarItem />
                 </div>
               </>
             ) : null}
-            <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
+            {isCoach ? null : (
+              <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            )}
           </div>
         )}
         {hasUser ? (
@@ -228,12 +233,26 @@ export function SidebarBody({
             showOrgAdmin={showOrgAdmin}
             canAccessOrgAdmin={canAccessOrgAdmin}
             showDivider={false}
-            showUpgrade={showAccountUpgradeCta && !onboardingLocked}
-            planLabel={hasActiveSubscription ? "Paid plan" : "Free"}
             hasActiveSubscription={hasBillingCancellationRisk}
           />
         ) : null}
       </SidebarFooter>
     </>
+  )
+}
+
+function FreeAccountUpgradeCta() {
+  return (
+    <div className="group-data-[collapsible=icon]:hidden">
+      <Button asChild size="sm" className="w-full justify-between px-3">
+        <Link
+          href="/find?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2Ffind&paywall_preview=1"
+          prefetch={false}
+        >
+          <span className="truncate">Upgrade account</span>
+          <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
+        </Link>
+      </Button>
+    </div>
   )
 }

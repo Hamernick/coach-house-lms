@@ -38,13 +38,6 @@ export const GEOCODING_ACCURACY = new Set([
 ])
 
 export const RESOURCE_CATEGORY_GROUPS = {
-  arts: [["community_arts_culture", "Arts & Culture"]],
-  faith: [["community_faith_organizations", "Faith Organizations"]],
-  recreation: [
-    ["community_sports", "Sports"],
-    ["community_recreation", "Recreation"],
-  ],
-  philanthropy: [],
   health: [
     ["health_primary_care", "Primary Care"],
     ["health_dental", "Dental"],
@@ -57,7 +50,7 @@ export const RESOURCE_CATEGORY_GROUPS = {
     ["health_mens_health", "Men's Health"],
     ["health_childrens_health", "Children's Health"],
     ["health_senior_health", "Senior Health"],
-    ["health_sexual_reproductive_health", "Reproductive Health"],
+    ["health_sexual_reproductive_health", "Sexual & Reproductive Health"],
     ["health_chronic_illness", "Chronic Illness"],
     ["health_preventive_care", "Preventive Care"],
     ["health_insurance", "Health Insurance"],
@@ -164,11 +157,15 @@ export const RESOURCE_CATEGORY_GROUPS = {
     ["family_caregivers", "Caregivers"],
   ],
   community: [
+    ["community_faith_organizations", "Faith Organizations"],
     ["community_volunteer_opportunities", "Volunteer Opportunities"],
     ["community_community_organizing", "Community Organizing"],
     ["community_civic_engagement", "Civic Engagement"],
     ["community_voter_services", "Voter Services"],
     ["community_events", "Events"],
+    ["community_recreation", "Recreation"],
+    ["community_sports", "Sports"],
+    ["community_arts_culture", "Arts & Culture"],
     ["community_libraries", "Libraries"],
     ["community_community_centers", "Community Centers"],
     ["community_transportation", "Transportation"],
@@ -310,18 +307,14 @@ const RESOURCE_CATEGORY_LEGACY_KEY_MAP = new Map(
   })
 )
 
-const RESOURCE_CATEGORY_LABEL_MAP = new Map([
-  ...Object.entries(RESOURCE_CATEGORY_GROUPS).flatMap(
+const RESOURCE_CATEGORY_LABEL_MAP = new Map(
+  Object.entries(RESOURCE_CATEGORY_GROUPS).flatMap(
     ([topLevelCategory, subcategories]) => [
       [normalizeToken(topLevelCategory), topLevelCategory],
       ...subcategories.map(([key, label]) => [normalizeToken(label), key]),
     ]
-  ),
-  ["arts_and_culture", "arts"],
-  ["faith_and_religion", "faith"],
-  ["sports_and_recreation", "recreation"],
-  ["philanthropy_and_grantmaking", "philanthropy"],
-])
+  )
+)
 
 export function resolveResourceCategoryKey(value) {
   const normalized = normalizeToken(value)

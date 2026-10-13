@@ -1,11 +1,9 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type { PublicMapResourceAvailability } from "./resource-availability"
-import { createPublicMapCategoryAliasMatcher } from "./resource-category-alias-matching"
 import type { PublicMapGroupKey } from "./groups"
 import {
   PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS,
-  isPublicMapResourceTopLevelCategoryKey,
   publicMapResourceCategoryMatchesTopLevel,
   resolvePublicMapResourceCategoryColor,
   resolvePublicMapResourceTopLevelCategory,
@@ -62,7 +60,7 @@ export type PublicMapResourceLink = {
 
 export type PublicMapResourceContact = {
   id: string
-  label: string | null
+  label: string
   value: string
   type: PublicMapResourceContactType
   url: string | null
@@ -109,8 +107,7 @@ type PublicMapBaseItem = {
   sourceUrl: string | null
   lastVerifiedAt: string | null
   visibility: PublicMapItemVisibility
-  weatherEligible?: boolean
-  markerImageUrl?: string | null
+  markerImageUrl: string | null
   logoUrl?: string | null
   faviconUrl?: string | null
   mission?: string | null
@@ -138,15 +135,6 @@ export type ExternalResourceMapItem = PublicMapBaseItem & {
   itemType: "external_resource"
   organization?: never
   orgCategory: null
-  nonprofit?: {
-    ein: string
-    websiteSourcePeriod: string | null
-    phoneSourcePeriod: string | null
-    descriptionSourcePeriod: string | null
-    websiteBasis: "source_reported" | "provider_confirmed" | null
-    phoneBasis: "source_reported" | "provider_confirmed" | null
-  }
-  resourceOrganizationId?: string | null
   verificationStatus: PublicMapVerificationStatus
 }
 
@@ -154,7 +142,7 @@ export type PublicMapItem =
   | PlatformOrganizationMapItem
   | ExternalResourceMapItem
 
-type PublicMapGroupFilterKey = PublicMapResourceCategoryKey | "all"
+type PublicMapGroupFilterKey = PublicMapResourceTopLevelCategoryKey | "all"
 
 const GROUP_RESOURCE_CATEGORY_FALLBACKS: Record<
   PublicMapGroupKey,
@@ -204,10 +192,9 @@ export function inferPublicMapResourceCategoriesForOrganization(
 ): PublicMapResourceCategoryKey[] {
   const detected = new Set<PublicMapResourceCategoryKey>()
   const corpus = buildOrganizationResourceCorpus(organization)
-  const matchesAlias = createPublicMapCategoryAliasMatcher(corpus)
 
   for (const category of PUBLIC_MAP_RESOURCE_CATEGORY_DEFINITIONS) {
-    if (category.aliases.some(matchesAlias)) {
+    if (category.aliases.some((alias) => corpus.includes(alias))) {
       detected.add(category.key)
       detected.add(resolvePublicMapResourceTopLevelCategory(category.key))
     }
@@ -246,7 +233,7 @@ export function buildPlatformOrganizationMapItem(
     verificationStatus: "verified_platform",
     sourceLabel: "Coach House organization profile",
     sourceUrl: organization.publicSlug
-      ? `/${encodeURIComponent(organization.publicSlug)}`
+      ? `/find/${encodeURIComponent(organization.publicSlug)}`
       : null,
     lastVerifiedAt: null,
     visibility: "published",
@@ -285,16 +272,12 @@ export function publicMapItemMatchesGroupFilter({
 }) {
   if (activeGroup === "all") return true
 
-  if (isPublicMapResourceTopLevelCategoryKey(activeGroup)) {
-    return item.resourceCategories.some((category) =>
-      publicMapResourceCategoryMatchesTopLevel({
-        category,
-        topLevelCategory: activeGroup,
-      })
-    )
-  }
-
-  return item.resourceCategories.includes(activeGroup)
+  return item.resourceCategories.some((category) =>
+    publicMapResourceCategoryMatchesTopLevel({
+      category,
+      topLevelCategory: activeGroup,
+    })
+  )
 }
 
 export function resolvePublicMapItemMarkerColor(item: PublicMapItem) {

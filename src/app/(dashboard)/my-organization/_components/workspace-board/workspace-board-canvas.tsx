@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
 
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
 import {
@@ -19,6 +18,7 @@ import {
 } from "./workspace-board-debug"
 import { useWorkspaceNodePositionPersistence } from "./workspace-board-canvas-node-position-persistence"
 import {
+  applyWorkspaceTutorialSnapshot,
   areWorkspaceOnboardingFlowStatesEqual,
 } from "./workspace-board-onboarding-flow"
 import { WorkspaceBoardCanvasBody } from "./workspace-board-canvas-body"
@@ -47,21 +47,25 @@ export function WorkspaceBoardCanvas({
   seed,
   onInitialOnboardingSubmit,
   organizationEditorData,
-  financeInput,
+  workspaceFoundationEnabled,
 }: {
   initialFocusCardId?: WorkspaceCardId | null
   seed: WorkspaceSeedData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
-  financeInput: WorkspaceFinanceInput
+  workspaceFoundationEnabled: boolean
 }) {
   const presentationMode = seed.presentationMode
   const hydratedSeedBoardState = useMemo(() => {
     const reducedBoardState = reduceWorkspaceBoardVisibility(seed.boardState, {
       type: "hydrate_legacy_visibility",
     })
-    // The action guide uses real editors and leaves authored canvas positions intact.
-    const resolvedBoardState = reducedBoardState
+    const resolvedBoardState = reducedBoardState.onboardingFlow.active
+      ? applyWorkspaceTutorialSnapshot(
+          reducedBoardState,
+          reducedBoardState.onboardingFlow
+        )
+      : reducedBoardState
 
     return initialFocusCardId
       ? {
@@ -357,7 +361,7 @@ export function WorkspaceBoardCanvas({
         tutorialCompletionExitRequest={tutorialCompletionExitRequest}
         journeyGuideState={journeyGuideState}
         organizationEditorData={organizationEditorData}
-        financeInput={financeInput}
+        workspaceFoundationEnabled={workspaceFoundationEnabled}
         onInitialOnboardingSubmit={onInitialOnboardingSubmit}
         onInvitesChange={setInvites}
         onSizeChange={handleSizeChange}

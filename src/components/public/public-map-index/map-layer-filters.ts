@@ -1,5 +1,4 @@
 import type mapboxgl from "mapbox-gl"
-import type { PublicMapMarkerRelevanceTier } from "@/lib/public-map/public-map-marker-relevance"
 
 const PUBLIC_MAP_NO_SELECTION_FILTER_ID = "__public-map-no-selection__"
 
@@ -46,55 +45,6 @@ export function resolveUnselectedPointFilter({
         selectedOrganizationId,
       }),
     ],
-  ] as mapboxgl.FilterSpecification
-}
-
-export function resolveRelevantUnselectedPointFilter({
-  activeSameLocationGroupKey,
-  maxRelevanceTier,
-  selectedOrganizationId,
-}: {
-  activeSameLocationGroupKey?: string | null
-  maxRelevanceTier: PublicMapMarkerRelevanceTier
-  selectedOrganizationId: string | null
-}) {
-  const unselectedFilter = resolveUnselectedPointFilter({
-    activeSameLocationGroupKey,
-    selectedOrganizationId,
-  })
-  const unselectedPredicates =
-    unselectedFilter[0] === "all"
-      ? unselectedFilter.slice(1)
-      : [unselectedFilter]
-
-  return [
-    "all",
-    ...unselectedPredicates,
-    ["<=", ["get", "markerRelevanceTier"], maxRelevanceTier],
-    ["!=", ["get", "isSaved"], true],
-  ] as mapboxgl.FilterSpecification
-}
-
-export function resolveSavedPointFilter({
-  activeSameLocationGroupKey,
-  selectedOrganizationId,
-}: {
-  activeSameLocationGroupKey?: string | null
-  selectedOrganizationId: string | null
-}) {
-  const unselectedFilter = resolveUnselectedPointFilter({
-    activeSameLocationGroupKey,
-    selectedOrganizationId,
-  })
-  const unselectedPredicates =
-    unselectedFilter[0] === "all"
-      ? unselectedFilter.slice(1)
-      : [unselectedFilter]
-
-  return [
-    "all",
-    ...unselectedPredicates,
-    ["==", ["get", "isSaved"], true],
   ] as mapboxgl.FilterSpecification
 }
 

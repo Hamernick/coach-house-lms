@@ -1,9 +1,13 @@
-import { parseScheduleDay } from "../lib/project-schedule"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+
 import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspaceTaskStatus,
 } from "../types"
-import { actorCanAccessOrganization, actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 
@@ -14,7 +18,6 @@ type MemberWorkspaceTaskActionActor = Awaited<
 export const VALID_TASK_STATUSES = new Set<MemberWorkspaceTaskStatus>([
   "todo",
   "in-progress",
-  "waiting",
   "done",
 ])
 
@@ -23,7 +26,7 @@ export const VALID_TASK_PRIORITIES = new Set<
 >(["no-priority", "low", "medium", "high", "urgent"])
 
 export function toDateOnly(input: string) {
-  return new Date(parseScheduleDay(input) ?? Number.NaN)
+  return new Date(`${input}T00:00:00.000Z`)
 }
 
 export function formatTaskType(tagLabel?: string) {
@@ -36,11 +39,9 @@ export function formatTaskType(tagLabel?: string) {
 export async function resolveTaskTargetProject({
   actor,
   projectId,
-  assignedTaskId,
 }: {
   actor: MemberWorkspaceTaskActionActor
   projectId: string
-  assignedTaskId?: string
 }): Promise<
   | {
       project: {
@@ -70,13 +71,9 @@ export async function resolveTaskTargetProject({
   }
 
   if (!actorCanAccessOrganization(actor, project.org_id)) {
-    const assignment = assignedTaskId ? await actor.supabase
-      .from("organization_task_assignees").select("task_id")
-      .eq("task_id", assignedTaskId).eq("user_id", actor.userId)
-      .eq("org_id", project.org_id).maybeSingle() : null
-    if (!assignment?.data || assignment.error) {
-      return { error: "You do not have access to manage tasks for that project." } as const
-    }
+    return {
+      error: "You do not have access to manage tasks for that project.",
+    } as const
   }
 
   const isStandardUserProject =
@@ -99,9 +96,8 @@ export async function resolveAssignableUserId({
 }: {
   actor: MemberWorkspaceTaskActionActor
   orgId: string
-  requestedUserId?: string | null
+  requestedUserId?: string
 }): Promise<{ userId: string | null } | { error: string }> {
-  if (requestedUserId === null) return { userId: null } as const
   const candidateUserId = requestedUserId?.trim() || actor.userId
   if (!candidateUserId) {
     return { userId: null } as const
@@ -126,4 +122,77 @@ export async function resolveAssignableUserId({
   }
 
   return { userId: candidateUserId } as const
+}
+
+export async function replaceTaskAssignee({
+  admin,
+  actorUserId,
+  orgId,
+  taskId,
+  userId,
+}: {
+  admin: ReturnType<typeof createSupabaseAdminClient>
+  actorUserId: string
+  orgId: string
+  taskId: string
+  userId: string | null
+}): Promise<{ ok: true } | { error: string }> {
+  const { error: deleteError } = await admin
+    .from("organization_task_assignees")
+    .delete()
+    .eq("task_id", taskId)
+
+  if (deleteError) {
+    return { error: "Unable to update task assignees." } as const
+  }
+
+  if (!userId) {
+    return { ok: true } as const
+  }
+
+  const { error: insertError } = await admin
+    .from("organization_task_assignees")
+    .insert({
+      org_id: orgId,
+      task_id: taskId,
+      user_id: userId,
+      created_by: actorUserId,
+    })
+
+  if (insertError) {
+    return { error: "Unable to update task assignees." } as const
+  }
+
+  return { ok: true } as const
+}
+
+export async function adjustProjectTaskCount({
+  admin,
+  projectId,
+  delta,
+  updatedBy,
+}: {
+  admin: ReturnType<typeof createSupabaseAdminClient>
+  projectId: string
+  delta: number
+  updatedBy: string
+}) {
+  const { data: project, error: projectError } = await admin
+    .from("organization_projects")
+    .select("id, org_id, task_count")
+    .eq("id", projectId)
+    .maybeSingle<{ id: string; org_id: string; task_count: number }>()
+
+  if (projectError || !project) {
+    return
+  }
+
+  await admin
+    .from("organization_projects")
+    .update({
+      task_count: Math.max((project.task_count ?? 0) + delta, 0),
+      updated_by: updatedBy,
+    })
+    .eq("id", project.id)
+    .eq("org_id", project.org_id)
 }

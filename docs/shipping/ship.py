@@ -117,7 +117,7 @@ def main():
                     require(active['claim']['owner'] == args.owner, 'Not the active owner')
                     require(not dead(active['claim']), 'Owner stopped; use resume with process evidence')
                 if current['head'] != active['head']:
-                    require(args.operation == 'checkpoint', 'Checkpoint changed head before proceeding')
+                    require(args.operation in ('checkpoint', 'resume'), 'Checkpoint changed head before proceeding')
                     require(row['status'] not in ('merged', 'deployed', 'production_verified'), 'Do not change released revision')
                     active['head'] = current['head']
                     active['evidence'] = {}

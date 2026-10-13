@@ -187,6 +187,18 @@ class CommandTests(unittest.TestCase):
         with patch('ship.local', return_value=dict(worktree='/other', branch='chore/fixture', head='head')):
             with self.assertRaises(ValueError): self.call('checkpoint', '--owner', 'chat', '--revision', '1', '--head', 'head')
 
+    def test_resume_after_commit_before_checkpoint(self):
+        self.claim()
+        receipt = self.directory / 'resume.json'
+        receipt.write_text(json.dumps({'owner_evidence': 'Old process stopped after commit', 'next_action': 'Revalidate new head'}))
+        with patch('ship.dead', return_value=True), patch('ship.local', return_value=dict(worktree='/fixture', branch='chore/fixture', head='new')):
+            self.call('resume', '--owner', 'new-chat', '--pid', str(os.getpid()), '--revision', '1', '--head', 'head', '--receipt', str(receipt))
+        state = self.store.read()
+        self.assertEqual(state['active']['claim']['owner'], 'new-chat')
+        self.assertEqual(state['active']['head'], 'new')
+        self.assertEqual(state['queue'][0]['status'], 'in_progress')
+        self.assertNotIn('approval', state['active']['evidence'])
+
     def test_reconcile_persists_new_failure_as_blocked(self):
         self.claim()
         state = self.store.read()

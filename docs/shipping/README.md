@@ -28,7 +28,8 @@ python3 docs/shipping/ship.py validate
 
 Use the live operator's persistent process PID, not a one-shot CLI process.
 Claims record host/PID/process start identity and UTC time. Same owner may continue
-while that process lives. `resume` requires an evidence receipt with
+while that process lives. Resume also handles a crash after commit but before
+checkpoint: it records the new head and invalidates previous approvals/tests. `resume` requires an evidence receipt with
 `owner_evidence` and `next_action`; it checks the original process has stopped or
 its PID has been reused before recording the new owner/PID. A foreign-host claim
 fails closed: resolve it on the original host. No automatic takeover, cleanup,

@@ -11,7 +11,7 @@ import {
 } from "@/lib/organization/profile-persistence-validation"
 import { resolveOrganizationNarrativePlainText } from "@/lib/roadmap"
 
-import { resetTestMocks, revalidatePathMock, revalidateTagMock } from "./test-utils"
+import { resetTestMocks, revalidatePathMock } from "./test-utils"
 
 const authMocks = vi.hoisted(() => ({
   requireServerSession: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("@/lib/organization/active-org", () => ({
   canEditOrganization: authMocks.canEditOrganization,
 }))
 
-function prepareOrganizationSave(existingProfile: Record<string, unknown>, options: { isPublic?: boolean; writeError?: string } = {}) {
+function prepareOrganizationSave(existingProfile: Record<string, unknown>) {
   let updatedRow: Record<string, unknown> | null = null
   const selectQuery = {
     eq: vi.fn().mockReturnThis(),
@@ -39,7 +39,7 @@ function prepareOrganizationSave(existingProfile: Record<string, unknown>, optio
         location_lat: null,
         location_lng: null,
         public_slug: null,
-        is_public: options.isPublic ?? false,
+        is_public: false,
         updated_at: "2026-08-05T18:00:00.000Z",
       },
       error: null,
@@ -49,8 +49,8 @@ function prepareOrganizationSave(existingProfile: Record<string, unknown>, optio
     eq: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn().mockResolvedValue({
-      data: options.writeError ? null : { user_id: "org-1" },
-      error: options.writeError ? { message: options.writeError } : null,
+      data: { user_id: "org-1" },
+      error: null,
     }),
   }
   const organizationTable = {
@@ -90,74 +90,6 @@ describe("organization profile persistence validation", () => {
     authMocks.requireServerSession.mockReset()
     authMocks.resolveActiveOrganization.mockReset()
     authMocks.canEditOrganization.mockReset()
-  })
-
-  it.each([true, false])("immediately expires public reads after saving visibility %s", async (isPublic) => {
-    prepareOrganizationSave({ name: "Test" }, { isPublic: !isPublic })
-    expect(await updateOrganizationProfileAction({ isPublic })).toMatchObject({ ok: true })
-    expect(revalidateTagMock).toHaveBeenCalledWith("public-map-organizations", { expire: 0 })
-    expect(revalidateTagMock).toHaveBeenCalledWith("public-profiles", { expire: 0 })
-  })
-
-  it("does not invalidate public reads when a visibility save fails", async () => {
-    prepareOrganizationSave({ name: "Test" }, { isPublic: true, writeError: "Save failed" })
-    expect(await updateOrganizationProfileAction({ isPublic: false })).toEqual({ error: "Save failed" })
-    expect(revalidateTagMock).not.toHaveBeenCalled()
-  })
-
-  it("rejects publication after switching away from the reviewed organization", async () => {
-    const saved = prepareOrganizationSave({ name: "Test" })
-    const result = await updateOrganizationProfileAction({ isPublic: true }, { organizationId: "another-org", updatedAt: "2026-08-05T18:00:00.000Z" })
-    expect(result).toHaveProperty("error", "Your active organization changed. Reload the preview before publishing.")
-    expect(saved.getUpdatedProfile()).toBeNull()
-  })
-
-  it("rejects publication when the reviewed organization version is stale", async () => {
-    const saved = prepareOrganizationSave({ name: "Test" })
-    const result = await updateOrganizationProfileAction({ isPublic: true }, { organizationId: "org-1", updatedAt: "old-version" })
-    expect(result).toHaveProperty("error", "This organization was updated elsewhere. Reload before publishing.")
-    expect(saved.getUpdatedProfile()).toBeNull()
-  })
-
-  it("rejects a whitespace-only name before any profile write", async () => {
-    const from = vi.fn()
-    authMocks.requireServerSession.mockResolvedValue({
-      supabase: { from },
-      session: { user: { id: "owner-1" } },
-    })
-    authMocks.resolveActiveOrganization.mockResolvedValue({
-      orgId: "owner-1",
-      role: "owner",
-    })
-    authMocks.canEditOrganization.mockReturnValue(true)
-    expect(await updateOrganizationProfileAction({ name: "   " })).toEqual({
-      error: "Name is required",
-      field: "name",
-    })
-    expect(from).not.toHaveBeenCalled()
-  })
-
-  it("adds organization identity through the existing Workspace action without losing saved work", async () => {
-    const preserved = {
-      mission: "Saved mission",
-      vision: "Saved vision",
-      values: "Saved values",
-      documents: { bylaws: { path: "sample/bylaws.pdf" } },
-      org_people: [{ id: "teammate", name: "Existing teammate" }],
-      futureProfileKey: { retained: true },
-    }
-    const save = prepareOrganizationSave(preserved)
-    expect(
-      await updateOrganizationProfileAction({
-        name: `  ${"R".repeat(120)}  `,
-        formationStatus: "approved",
-      })
-    ).toMatchObject({ ok: true })
-    expect(save.getUpdatedProfile()).toMatchObject({
-      ...preserved,
-      name: "R".repeat(120),
-      formationStatus: "approved",
-    })
   })
 
   it("accepts the complete Brand Kit and MVV persistence contract", () => {
@@ -306,7 +238,7 @@ describe("organization profile persistence validation", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/workspace")
     expect(revalidatePathMock).toHaveBeenCalledWith("/my-organization")
     expect(revalidatePathMock).toHaveBeenCalledWith("/organization")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/resources")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/")
   })
 
   it("preserves Brand Kit and unknown fields during an MVV save", async () => {

@@ -449,7 +449,6 @@ function buildOrganizationView(
 ): PublicOrganizationProfileView {
   return {
     kind: "organization",
-    organization,
     handle,
     organizationId: organization.id,
     displayName: organization.name,
@@ -490,18 +489,7 @@ async function fetchPublicProfileUncached(
     .eq("handle", handle)
     .maybeSingle<PublicHandleRow>()
 
-  if (error) return null
-  // Legacy public slugs get a real page too. A claimed handle always wins,
-  // including private person profiles; never fall back around their visibility.
-  if (!handleRow) {
-    const organizations = await fetchPublicMapOrganizations()
-    const organization = organizations.find(
-      (candidate) => normalizePublicHandle(candidate.publicSlug || candidate.id) === handle
-    )
-    if (!organization) return null
-    const people = await fetchPublicOrganizationPeople(organization.id)
-    return buildOrganizationView(handle, organization, people)
-  }
+  if (error || !handleRow) return null
 
   if (handleRow.owner_type === "person" && handleRow.profile_id) {
     const { data: person } = await supabase
@@ -557,7 +545,7 @@ async function fetchPublicProfileUncached(
 
 const fetchPublicProfileCached = unstable_cache(
   fetchPublicProfileUncached,
-  ["public-profile-by-handle-v3"],
+  ["public-profile-by-handle-v1"],
   {
     revalidate: 300,
     tags: ["public-profiles", "public-map-organizations"],

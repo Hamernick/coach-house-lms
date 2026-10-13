@@ -246,7 +246,7 @@ export function resolveDraftFieldValue(
   draftValue: unknown
 ) {
   const value = typeof draftValue === "string" ? draftValue : ""
-  if (typeof draftValue === "string") return value
+  if (value.trim().length > 0) return value
   return defaults[key] ?? value
 }
 
@@ -273,7 +273,6 @@ export function validateOnboardingStep({
   personHandleHint: string | null
   builderPlanTier: PricingPlanTier
 }) {
-  const simpleProfile = form.get("onboardingVersion") === "workspace_profile" && form.get("onboardingMode") === "post_signup_access"
   const nextErrors: Record<string, string> = {}
   const active =
     stepId ??
@@ -288,13 +287,12 @@ export function validateOnboardingStep({
     }
   }
 
-  const includesOrganizationBasics = active === "intent" && intentFocus === "build" && form.get("onboardingMode") === "post_signup_access"
-  if (active === "org" || includesOrganizationBasics) {
+  if (active === "org") {
     const orgName = String(form.get("orgName") ?? "").trim()
     const orgSlug = slugify(String(form.get("orgSlug") ?? "").trim())
     if (!orgName) nextErrors.orgName = "Organization name is required"
     if (!orgSlug) nextErrors.orgSlug = "Organization URL is required"
-    if (!formationStatus && !simpleProfile) {
+    if (!formationStatus) {
       nextErrors.formationStatus = "Choose your formation status"
     }
     if (slugStatus !== "available") {
@@ -306,10 +304,10 @@ export function validateOnboardingStep({
     const firstName = String(form.get("firstName") ?? "").trim()
     const lastName = String(form.get("lastName") ?? "").trim()
     const personHandle = String(form.get("personHandle") ?? "").trim()
-    if (!simpleProfile && !firstName) nextErrors.firstName = "First name is required"
-    if (!simpleProfile && !lastName) nextErrors.lastName = "Last name is required"
+    if (!firstName) nextErrors.firstName = "First name is required"
+    if (!lastName) nextErrors.lastName = "Last name is required"
     if (!personHandle) nextErrors.personHandle = "Username is required"
-    else if (personHandleStatus !== "available") {
+    if (personHandleStatus !== "available") {
       nextErrors.personHandle =
         personHandleHint ?? "Choose an available username"
     }

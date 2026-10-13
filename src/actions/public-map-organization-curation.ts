@@ -53,8 +53,7 @@ function buildOrganizationAuditState(organization: {
 
 function revalidatePublicMapOrganizationPaths(publicSlug: string | null) {
   revalidateTag("public-map-organizations", "max")
-  revalidatePath("/map")
-  revalidatePath("/resources")
+  revalidatePath("/")
 
   if (publicSlug) {
     revalidatePath(`/${publicSlug}`)

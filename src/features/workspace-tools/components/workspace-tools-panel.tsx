@@ -24,9 +24,6 @@ type WorkspaceToolsPanelProps = {
 }
 
 export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
-  const [googleCalendarConnected, setGoogleCalendarConnected] = useState<
-    boolean | null
-  >(null)
   const [googleDriveConnected, setGoogleDriveConnected] = useState<
     boolean | null
   >(null)
@@ -41,11 +38,7 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
     query,
     setQuery,
     stripeConnection,
-  } = useWorkspaceToolsController(
-    input,
-    googleDriveConnected,
-    googleCalendarConnected
-  )
+  } = useWorkspaceToolsController(input, googleDriveConnected)
   const hasResults = installedTools.length > 0 || availableTools.length > 0
 
   return (
@@ -85,7 +78,6 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
               key={tool.id}
               tool={tool}
               onGoogleDriveConnectionChange={handleGoogleDriveConnectionChange}
-              onGoogleCalendarConnectionChange={setGoogleCalendarConnected}
               stripeConnection={stripeConnection}
             />
           ))}
@@ -99,7 +91,6 @@ export function WorkspaceToolsPanel({ input }: WorkspaceToolsPanelProps) {
               key={tool.id}
               tool={tool}
               onGoogleDriveConnectionChange={handleGoogleDriveConnectionChange}
-              onGoogleCalendarConnectionChange={setGoogleCalendarConnected}
               stripeConnection={stripeConnection}
             />
           ))}

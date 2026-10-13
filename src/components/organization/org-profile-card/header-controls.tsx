@@ -236,10 +236,8 @@ export function OrgProfileHeaderActions({
   onCancelEdit,
   onSave,
 }: OrgProfileHeaderActionsProps) {
-  if (!canEdit && (!publicLink || editMode)) return null
-
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
+    <div className="absolute top-6 right-6 flex gap-2">
       {publicLink && !editMode ? (
         <Button asChild size="sm" variant="secondary">
           <Link href={publicLink}>View map profile</Link>

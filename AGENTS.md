@@ -5,7 +5,6 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 ## Non-Negotiables
 
 - Source of truth: this file + linked `docs/agent/**` documents.
-- Continuation protocol: follow the [Agent protocol](docs/RUNLOG.md#agent-protocol), including the current monthly entries and `docs/agent/open-work-index.md`, before the worktree checkpoint and lane selection. `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, then `docs/agent/open-work-index.md`, and inspect the current git worktree before selecting a work lane; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - New-chat branch checkpoint: before writing files in the first turn of every chat, follow the mandatory worktree report and branch-choice protocol in `docs/agent/workflow-quality.md` unless the user's prompt already chose the branch strategy.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
@@ -24,17 +23,6 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - For public resource-map work, prioritize current provider directories and real service diversity; use deterministic source-specific extraction by default, never require a model key or add an admin surface unless explicitly requested, keep raw API links private, expose provider websites, and report exact field-complete and verified/publishable counts. Never mix synthetic seeds or the raw candidate intake queue into `/find`, including admin sessions; local review requires an explicit curated preview file. Treat Wikidata/entity catalogs as discovery evidence, not public resources, until provider evidence establishes a specific actionable service.
 - Ship only after the required GitHub `quality` check passes for the current PR revision with branch-protection requirements satisfied. During development, run focused checks covering the changed behavior. Run the complete local `pnpm check:quality` suite only when explicitly requested or needed to diagnose a specific CI failure.
 - If visuals intentionally changed, update visual baselines with `pnpm test:visual:update` and include the rationale in the current monthly log linked from `docs/RUNLOG.md`.
-
-## Product Review And Browser Testing
-
-- The user is the primary tester for appearance and interactive product behavior. Present the working app early: reuse the correct preview, provide direct route links, and give a short list of changed behaviors to try. Open the preview when browser access is authorized.
-- Treat the user's explicit review results as validation evidence. Do not repeat passed manual checks unless later changes invalidate them or concrete contradictory evidence appears.
-- Use Playwright purposefully: reproduce reported bugs, inspect behavior the user cannot readily observe, and protect important regressions. Before running it, identify the specific question it will answer.
-- Do not automatically run broad browser journeys, viewport matrices, screenshot collections, or repeated click-throughs for a small change. Use the smallest check that resolves the remaining uncertainty.
-- Reuse existing fixtures and tests. Add coverage for meaningful uncovered risks; do not expand testing infrastructure as incidental feature work.
-- Complete user appearance review before updating affected visual references. Batch changes before required CI; reuse valid prior results.
-- Human review does not replace required security tests, authorization/RLS checks, secret scanning, required CI, or branch protection.
-- While waiting for user review, complete independent scoped work. Report decisions and blockers briefly; avoid repetitive polling updates.
 
 ## Quick Commands
 

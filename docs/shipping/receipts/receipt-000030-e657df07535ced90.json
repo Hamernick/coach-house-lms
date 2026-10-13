@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-13T20:00:38.417672+00:00",
+  "operation": "resume",
+  "owner": "ship-menu-fix-20261013",
+  "previous_revision": 29,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-checkout-pr295-20261013",
+        "pid": 60438,
+        "started": "Tue Oct 13 15:54:15 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T19:54:16.013988+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T20:00:38.207797+00:00"
+    },
+    "next_action": "Review PR295 at0dc47128 including account-menu screenshot; require current-head quality/code-owner review then gated deployment/live retest. Preserve other appearance/Collect blockers; no map work.",
+    "checkout_activation_repair": {
+      "status": "PR295 updated: checkout return and user-reported account-menu overflow; fresh CI and review pending",
+      "source": "User production test failed at Finishing your upgrade; packet03 stages2/4/6, LIVE01",
+      "branch": "fix/checkout-activation-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+      "base": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+      "evidence": "Read-only exact-account Stripe checkout complete, USD0, subscription active; matching app subscription active. Stored success URL contains encoded CHECKOUT_SESSION_ID; production logs show repeated checkout_session_not_found_in_available_stripe_modes. No new purchase or provider mutation.",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/295",
+      "head": "0dc4712858f8ecca52e8ba81df1480e2196726e9",
+      "validation": "Three tests failed before fix; all21 checkout-route/activation-return tests, changed-file lint, acceptance manifest and pre-push pass; remote head verified. Vercel request parameters directly confirm literal placeholder; Stripe returns404.",
+      "release_boundary": "Not deployed; no gate bypass. Existing malformed URLs remain malformed; existing active subscription needs no repeat purchase.",
+      "menu_fix": "Shared identity flex column now min-w-0/flex-1; actual browser reproduction overflow corrected on desktop and390px; full DOM text retained. Three existing menu tests/lint/pre-push passed. Synthetic screenshot in docs/reviews/2026-10-13-account-menu-long-email.jpg and Desktop/Coach House Account Menu Review. Temporary fixture removed; own3120 server stopped. Appearance review pending."
+    }
+  },
+  "remote": null
+}

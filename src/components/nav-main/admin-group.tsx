@@ -16,14 +16,12 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { resolvePrototypeLabSidebarOpenFolderIds } from "@/lib/prototype-lab-sidebar-tree"
 import { cn } from "@/lib/utils"
 import { buildMainNavItemReactGrabProps, type NavMainItem } from "./item"
 import { PrototypeTreeEntry } from "./prototype-tree-entry"
 import { PrototypeTreeFolder } from "./prototype-tree-folder"
-import { CollapsedNavGroupMenu } from "./collapsed-group-menu"
 
 function NavMainTreeSubItem({
   activeEntryId,
@@ -125,7 +123,6 @@ export function NavMainGroupItem({
   item: NavMainItem
   onPrefetch?: (href: string | null | undefined) => void
 }) {
-  const { state, isMobile } = useSidebar()
   const isActive =
     item.href === activeHref ||
     (item.children?.some((child) => child.href === activeHref) ?? false)
@@ -135,17 +132,6 @@ export function NavMainGroupItem({
   useEffect(() => {
     if (isActive) setOpen(true)
   }, [isActive])
-
-  if (state === "collapsed" && !isMobile) {
-    return (
-      <CollapsedNavGroupMenu
-        item={item}
-        activeHref={activeHref}
-        isActive={isActive}
-        onPrefetch={onPrefetch}
-      />
-    )
-  }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>

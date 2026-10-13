@@ -13,7 +13,6 @@ import { PolicyEditorDialogFields } from "./policy-editor-dialog-fields"
 import type { PolicyEditorDialogProps } from "./policy-editor-dialog-types"
 
 export function PolicyEditorDialog({
-  readOnly = false,
   open,
   onOpenChange,
   draft,
@@ -38,15 +37,13 @@ export function PolicyEditorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{readOnly ? draft.title : draft.id ? "Edit policy" : "New policy"}</DialogTitle>
+          <DialogTitle>{draft.id ? "Edit policy" : "New policy"}</DialogTitle>
           <DialogDescription>
-            {readOnly ? "View your saved policy. Upgrade to make changes." : "Add a policy with categories, associations, and a supporting PDF file."}
+            Add a policy with categories, associations, and a supporting PDF file.
           </DialogDescription>
         </DialogHeader>
 
-        {readOnly ? (
-          <p className="max-h-[60dvh] overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground">{draft.summary || "No summary added."}</p>
-        ) : <PolicyEditorDialogFields
+        <PolicyEditorDialogFields
           open={open}
           draft={draft}
           categoryOptions={categoryOptions}
@@ -63,15 +60,15 @@ export function PolicyEditorDialog({
           onClearPendingDocument={onClearPendingDocument}
           onRemoveExistingDocument={onRemoveExistingDocument}
           onViewDocument={onViewDocument}
-        />}
+        />
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            {readOnly ? "Close" : "Cancel"}
+            Cancel
           </Button>
-          {!readOnly ? <Button type="button" onClick={onSave} disabled={pending || pendingDocumentUpload}>
+          <Button type="button" onClick={onSave} disabled={pending || pendingDocumentUpload}>
             {pending || pendingDocumentUpload ? "Saving…" : "Save policy"}
-          </Button> : null}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

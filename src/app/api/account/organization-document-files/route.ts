@@ -1,4 +1,3 @@
-import { requireOrganizationDocumentStorage, resolveOrganizationDocumentStorageAccess } from "@/lib/organization/document-storage-access"
 import { purgeExpiredFiles } from "./file-cleanup"
 import { resolveOrganizationDocumentAccess } from "@/lib/organization/document-access"
 import { randomUUID } from "node:crypto"
@@ -15,10 +14,34 @@ import {
 import { canEditOrganization } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
-import { fileResponse, loadFile, sanitizeFilename, type FileRow } from "./file-record"
+import { fileResponse, sanitizeFilename, type FileRow } from "./file-record"
 
 const BUCKET = "org-documents"
 const SIGNED_URL_TTL_SECONDS = 60 * 15
+
+async function loadFile(
+  supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
+  orgId: string,
+  fileId: string
+) {
+  const result = await supabase
+    .from("organization_document_files")
+    .select(
+      "id, name, mime_type, size_bytes, storage_path, deleted_at, created_at, updated_at"
+    )
+    .eq("id", fileId)
+    .eq("org_id", orgId)
+    .is("document_kind", null)
+    .maybeSingle<FileRow>()
+  if (
+    result.data &&
+    (!result.data.storage_path.startsWith(`${orgId}/library/`) ||
+      result.data.storage_path.split("/").includes(".."))
+  ) {
+    return { ...result, data: null }
+  }
+  return result
+}
 
 export async function GET(request: NextRequest) {
   const response = NextResponse.next()
@@ -83,11 +106,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ url: signed.signedUrl }, { status: 200 })
     }
 
-    const storageAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 503 })
-    }
-    if (canEditOrganization(role) && storageAccess.hasStorageAccess) {
+    if (canEditOrganization(role)) {
       await purgeExpiredFiles(supabase, orgId)
     }
 
@@ -125,14 +144,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        hasStorageAccess: storageAccess.hasStorageAccess,
         files: (files ?? []).map(fileResponse),
         quota: {
           usedBytes: (usage ?? []).reduce(
             (total, file) => total + file.size_bytes,
             0
           ),
-          limitBytes: storageAccess.hasStorageAccess ? QUOTA_BYTES : 0,
+          limitBytes: QUOTA_BYTES,
         },
       },
       { status: 200 }
@@ -209,10 +227,6 @@ export async function POST(request: NextRequest) {
     const { orgId, role } = access
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     await purgeExpiredFiles(supabase, orgId)
@@ -336,10 +350,6 @@ export async function PATCH(request: NextRequest) {
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
-    }
 
     const { data: current, error: fileError } = await loadFile(
       supabase,
@@ -422,10 +432,6 @@ export async function DELETE(request: NextRequest) {
     const { orgId, role } = access
     if (!canEditOrganization(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const storageAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
-    if ("error" in storageAccess) {
-      return NextResponse.json({ error: storageAccess.error }, { status: 403 })
     }
 
     const { data: current, error: fileError } = await loadFile(

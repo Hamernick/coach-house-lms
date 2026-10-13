@@ -82,18 +82,12 @@ export function usePublicMapOrganizationFilterState({
     [discoveryItems]
   )
   const countItems = useMemo(
-    () => [
-      ...rankPublicMapListItems({
+    () =>
+      rankPublicMapListItems({
         favorites,
-        items: discoveryItems.filter(
-          (item) => item.itemType !== "external_resource" || !item.nonprofit
-        ),
+        items: discoveryItems,
         query: deferredQuery,
       }),
-      ...discoveryItems.filter(
-        (item) => item.itemType === "external_resource" && item.nonprofit
-      ),
-    ],
     [deferredQuery, discoveryItems, favorites]
   )
   const groupCounts = useMemo(

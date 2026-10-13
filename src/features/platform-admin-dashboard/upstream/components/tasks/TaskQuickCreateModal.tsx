@@ -365,7 +365,6 @@ export function TaskQuickCreateModal({
   return (
     <QuickCreateModalLayout
       open={open}
-      title={editingTask ? 'Edit task' : 'Create task'}
       onClose={() => { if (!isSubmitting) onClose() }}
       isDescriptionExpanded={isDescriptionExpanded}
       onSubmitShortcut={handleSubmit}
@@ -428,7 +427,6 @@ export function TaskQuickCreateModal({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Close task editor"
           onClick={() => { if (!isSubmitting) onClose() }}
           className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
         >

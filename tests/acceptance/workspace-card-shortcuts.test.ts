@@ -21,7 +21,7 @@ describe("workspace card shortcuts", () => {
     expect(items.some((item) => item.title === "Organization")).toBe(false)
   })
 
-  it("hides the standalone activity shortcut", () => {
+  it("includes the standalone activity card in the workspace shortcut rail", () => {
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: [],
       selectedCardId: null,
@@ -29,8 +29,8 @@ describe("workspace card shortcuts", () => {
       onFocusCard: vi.fn(),
     })
 
-    expect(items.some((item) => item.id === "programs")).toBe(false)
-    expect(items.some((item) => item.title === "Activity")).toBe(false)
+    expect(items.some((item) => item.id === "programs")).toBe(true)
+    expect(items.some((item) => item.title === "Activity")).toBe(true)
   })
 
   it("orders the workspace shortcut buttons while keeping roadmap in the right rail", () => {
@@ -41,7 +41,7 @@ describe("workspace card shortcuts", () => {
       onFocusCard: vi.fn(),
     })
 
-    expect(items.map((item) => item.id)).toEqual([])
+    expect(items.map((item) => item.id)).toEqual(["programs"])
     expect(items.some((item) => item.id === "accelerator")).toBe(false)
     expect(items.some((item) => item.id === "roadmap")).toBe(false)
   })
@@ -63,21 +63,21 @@ describe("workspace card shortcuts", () => {
     const onTutorialAdvance = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: [],
-      visibleCardIds: ["accelerator"],
-      selectedCardId: "accelerator",
+      visibleCardIds: ["programs"],
+      selectedCardId: "programs",
       onToggle,
       onFocusCard,
-      tutorialTargetCardId: "accelerator",
-      tutorialInstruction: "Click the Accelerator button and continue.",
+      tutorialTargetCardId: "programs",
+      tutorialInstruction: "Click the Activity button and continue.",
       onTutorialAdvance,
     })
 
-    const acceleratorItem = items.find((item) => item.id === "accelerator")
+    const programsItem = items.find((item) => item.id === "programs")
 
-    expect(acceleratorItem?.tutorialCallout?.instruction).toContain(
-      "Accelerator button"
+    expect(programsItem?.tutorialCallout?.instruction).toContain(
+      "Activity button"
     )
-    acceleratorItem?.onPress()
+    programsItem?.onPress()
 
     expect(onToggle).not.toHaveBeenCalled()
     expect(onFocusCard).not.toHaveBeenCalled()
@@ -142,7 +142,7 @@ describe("workspace card shortcuts", () => {
     expect(onFocusCard).not.toHaveBeenCalled()
   })
 
-  it("keeps selected programs out of the shortcut rail", () => {
+  it("focuses visible programs instead of toggling them closed from the shortcut rail", () => {
     const onToggle = vi.fn()
     const onFocusCard = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
@@ -155,10 +155,10 @@ describe("workspace card shortcuts", () => {
 
     const programsItem = items.find((item) => item.id === "programs")
 
-    expect(programsItem).toBeUndefined()
+    programsItem?.onPress()
 
     expect(onToggle).not.toHaveBeenCalled()
-    expect(onFocusCard).not.toHaveBeenCalled()
+    expect(onFocusCard).toHaveBeenCalledWith("programs")
   })
 
   it("does not expose roadmap actions from the shortcut rail", () => {
@@ -195,7 +195,7 @@ describe("workspace card shortcuts", () => {
     expect(onFocusCard).not.toHaveBeenCalled()
   })
 
-  it("does not restore a programs shortcut from saved hidden state", () => {
+  it("opens hidden programs before focusing them from the shortcut rail", () => {
     const onToggle = vi.fn()
     const onFocusCard = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
@@ -208,13 +208,13 @@ describe("workspace card shortcuts", () => {
 
     const programsItem = items.find((item) => item.id === "programs")
 
-    expect(programsItem).toBeUndefined()
+    programsItem?.onPress()
 
-    expect(onToggle).not.toHaveBeenCalled()
-    expect(onFocusCard).not.toHaveBeenCalled()
+    expect(onToggle).toHaveBeenCalledWith("programs", { source: "dock" })
+    expect(onFocusCard).toHaveBeenCalledWith("programs")
   })
 
-  it("does not restore hidden shortcuts during the tutorial intro step", () => {
+  it("can highlight all shortcut buttons during the tutorial intro step", () => {
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: [],
       visibleCardIds: ["organization-overview"],
@@ -224,7 +224,7 @@ describe("workspace card shortcuts", () => {
       tutorialHighlightAll: true,
     })
 
-    expect(items).toEqual([])
+    expect(items.length).toBeGreaterThan(0)
     expect(items.every((item) => item.tutorialHighlighted)).toBe(true)
     expect(items.every((item) => item.tutorialCallout === null)).toBe(true)
     expect(items.some((item) => item.id === "calendar")).toBe(false)

@@ -87,6 +87,17 @@ describe("accelerator progress rail", () => {
     expect(state.segments.map((segment) => segment.fillPercent)).toEqual([
       100, 100, 100,
     ])
+
+    const markup = renderToStaticMarkup(
+      React.createElement(AcceleratorProgressRail, {
+        progressPercent: 100,
+      })
+    )
+
+    expect(markup).toContain('style="flex-grow:70"')
+    expect(markup).toContain('style="flex-grow:20"')
+    expect(markup).toContain('style="flex-grow:10"')
+    expect(markup).not.toContain('style="width:70%"')
   })
 
   it("keeps every segment measurable when checkpoints are invalid", () => {
@@ -151,6 +162,8 @@ describe("accelerator progress rail", () => {
     expect(source).toContain('className="px-2.5 py-1.5"')
     expect(source).not.toContain('data-slot="accelerator-progress-milestone"')
     expect(source).toContain('className="bg-border/40 flex h-3')
+    expect(source.match(/style={{ flexGrow: segment.width }}/g)).toHaveLength(2)
+    expect(source).not.toContain("style={{ width: `${segment.width}%` }}")
     expect(source).toContain('from "lucide-react/dist/esm/icons/dollar-sign"')
     expect(source).toContain('from "lucide-react/dist/esm/icons/badge-check"')
     expect(source).toContain("MILESTONE_VISUALS")

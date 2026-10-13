@@ -6,13 +6,13 @@ import { BillingCheckoutButton } from "@/app/(dashboard)/billing/billing-checkou
 
 describe("billing checkout button", () => {
   it("renders a real checkout link when enabled", () => {
-    const cardProps = {
-          plan: "organization",
-          className: "w-full rounded-xl",
-        children: "Upgrade to Organization",
-    } satisfies React.ComponentProps<typeof BillingCheckoutButton>
+    const props: React.ComponentProps<typeof BillingCheckoutButton> = {
+      plan: "organization",
+      className: "w-full rounded-xl",
+      children: "Upgrade to Organization",
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(BillingCheckoutButton, cardProps),
+      React.createElement(BillingCheckoutButton, props),
     )
 
     expect(markup.startsWith("<a ")).toBe(true)
@@ -22,14 +22,14 @@ describe("billing checkout button", () => {
   })
 
   it("renders a disabled button when checkout is unavailable", () => {
-    const cardProps = {
-          plan: "operations_support",
-          disabled: true,
-          variant: "secondary",
-        children: "Operations plan unavailable",
-    } satisfies React.ComponentProps<typeof BillingCheckoutButton>
+    const props: React.ComponentProps<typeof BillingCheckoutButton> = {
+      plan: "operations_support",
+      disabled: true,
+      variant: "secondary",
+      children: "Operations plan unavailable",
+    }
     const markup = renderToStaticMarkup(
-      React.createElement(BillingCheckoutButton, cardProps),
+      React.createElement(BillingCheckoutButton, props),
     )
 
     expect(markup).toContain("disabled")

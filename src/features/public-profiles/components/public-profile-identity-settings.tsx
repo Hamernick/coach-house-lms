@@ -1,12 +1,17 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import type { ReactNode } from "react"
+import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  useAccountSettingsDraft,
+  useSharedAccountDraft,
+} from "@/components/account-settings/account-settings-drafts"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import {
   Field,
@@ -22,7 +27,9 @@ import {
 } from "@/components/ui/input-group"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { toast } from "@/lib/toast"
-import { savePublicPersonProfileAction } from "@/actions/public-profile-actions"
+import { setPublicProfileVisibilityAction } from "@/actions/public-profile-settings"
+import { ProfileIdentityPreview } from "./public-profile-identity-preview"
+import { PublicProfileDetailsFields } from "./public-profile-details-fields"
 import { normalizePublicHandle } from "../lib"
 import type { PublicHandleResult } from "../types"
 import { usePublicHandleAvailability } from "../hooks/use-public-handle-availability"
@@ -32,6 +39,9 @@ type PublicProfileIdentitySettingsProps = {
   displayName: string
   headline: string
   idPrefix: string
+  isUploadingAvatar: boolean
+  onAvatarFileSelected: (file?: File | null) => void
+  profileDetails: ReactNode
 }
 
 type PersonHandleRow = {
@@ -51,26 +61,37 @@ type PersonPublicProfileRow = {
   show_saved_locations: boolean
 }
 
-function initialsFor(displayName: string) {
-  const parts = displayName.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return "CH"
-  return `${parts[0]?.charAt(0) ?? ""}${parts.at(-1)?.charAt(0) ?? ""}`.toUpperCase()
-}
-
 export function PublicProfileIdentitySettings({
   avatarUrl,
   displayName,
   headline,
   idPrefix,
+  isUploadingAvatar,
+  onAvatarFileSelected,
+  profileDetails,
 }: PublicProfileIdentitySettingsProps) {
   const supabase = useSupabaseClient()
-  const [currentHandle, setCurrentHandle] = React.useState("")
-  const [handleValue, setHandleValue] = React.useState("")
+  const [currentHandle, setCurrentHandle] = useSharedAccountDraft(
+    "public-current-handle",
+    ""
+  )
+  const [handleValue, setHandleValue] = useSharedAccountDraft(
+    "public-handle-draft",
+    ""
+  )
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [savingVisibility, setSavingVisibility] = React.useState(false)
-  const [isPublic, setIsPublic] = React.useState(false)
-  const [savedIsPublic, setSavedIsPublic] = React.useState(false)
+  const [isPublic, setIsPublic] = useSharedAccountDraft(
+    "public-visibility",
+    false
+  )
+  const [savedIsPublic, setSavedIsPublic] = useSharedAccountDraft(
+    "public-saved-visibility",
+    false
+  )
+  const [loadError, setLoadError] = React.useState<string | null>(null)
+  const [retry, setRetry] = React.useState(0)
   const [publicProfile, setPublicProfile] =
     React.useState<PersonPublicProfileRow | null>(null)
   const { status, hint } = usePublicHandleAvailability({
@@ -84,48 +105,77 @@ export function PublicProfileIdentitySettings({
 
     async function loadPublicIdentity() {
       setLoading(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        if (mounted) setLoading(false)
-        return
-      }
+      setLoadError(null)
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) throw new Error("Sign in to load your public profile.")
 
-      const [{ data: handleData }, { data: profileData }] = await Promise.all([
-        supabase
-          .from("public_handles")
-          .select("handle")
-          .eq("owner_type", "person")
-          .eq("profile_id", user.id)
-          .maybeSingle<PersonHandleRow>(),
-        supabase
-          .from("public_person_profiles")
-          .select(
-            "display_name, headline, bio, location_label, website_url, avatar_url, is_public, show_organizations, show_program_activity, show_saved_locations"
+        const [
+          { data: handleData, error: handleError },
+          { data: profileData, error: profileError },
+        ] = await Promise.all([
+          supabase
+            .from("public_handles")
+            .select("handle")
+            .eq("owner_type", "person")
+            .eq("profile_id", user.id)
+            .maybeSingle<PersonHandleRow>(),
+          supabase
+            .from("public_person_profiles")
+            .select(
+              "display_name, headline, bio, location_label, website_url, avatar_url, is_public, show_organizations, show_program_activity, show_saved_locations"
+            )
+            .eq("profile_id", user.id)
+            .maybeSingle<PersonPublicProfileRow>(),
+        ])
+
+        if (handleError || profileError)
+          throw new Error("Unable to load your public profile. Try again.")
+        if (!mounted) return
+        const handle = handleData?.handle ?? ""
+        setCurrentHandle(handle)
+        setHandleValue(handle)
+        setPublicProfile(profileData ?? null)
+        setIsPublic(profileData?.is_public ?? false)
+        setSavedIsPublic(profileData?.is_public ?? false)
+      } catch (error) {
+        if (mounted)
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load your public profile."
           )
-          .eq("profile_id", user.id)
-          .maybeSingle<PersonPublicProfileRow>(),
-      ])
-
-      if (!mounted) return
-      const handle = handleData?.handle ?? ""
-      setCurrentHandle(handle)
-      setHandleValue(handle)
-      setPublicProfile(profileData ?? null)
-      setIsPublic(profileData?.is_public ?? false)
-      setSavedIsPublic(profileData?.is_public ?? false)
-      setLoading(false)
+      } finally {
+        if (mounted) setLoading(false)
+      }
     }
 
     void loadPublicIdentity()
     return () => {
       mounted = false
     }
-  }, [supabase])
+  }, [
+    supabase,
+    retry,
+    setCurrentHandle,
+    setHandleValue,
+    setIsPublic,
+    setSavedIsPublic,
+  ])
 
   const normalizedHandle = normalizePublicHandle(handleValue)
   const unchanged = normalizedHandle === currentHandle
+  useAccountSettingsDraft(
+    !loading && !loadError && !unchanged,
+    async () => {
+      throw new Error(
+        "Save your username using the button beside it, then save your other changes."
+      )
+    },
+    "public-username"
+  )
   const statusText =
     status === "checking"
       ? "Checking…"
@@ -166,47 +216,24 @@ export function PublicProfileIdentitySettings({
     }
   }
 
-  async function saveVisibility() {
-    if (!currentHandle || isPublic === savedIsPublic) return
+  async function saveVisibility(nextIsPublic: boolean) {
+    if (!currentHandle || nextIsPublic === savedIsPublic) return
+    setIsPublic(nextIsPublic)
     setSavingVisibility(true)
     try {
-      const result = await savePublicPersonProfileAction({
-        displayName:
-          displayName.trim() || publicProfile?.display_name || currentHandle,
-        headline: headline.trim() || publicProfile?.headline || null,
-        bio: publicProfile?.bio ?? null,
-        locationLabel: publicProfile?.location_label ?? null,
-        websiteUrl: publicProfile?.website_url ?? null,
-        avatarUrl: avatarUrl ?? publicProfile?.avatar_url ?? null,
-        isPublic,
-        showOrganizations: publicProfile?.show_organizations ?? true,
-        showProgramActivity: publicProfile?.show_program_activity ?? true,
-        showSavedLocations: publicProfile?.show_saved_locations ?? false,
-      })
+      const result = await setPublicProfileVisibilityAction(nextIsPublic)
       if (!result.ok) {
         toast.error(result.error)
+        setIsPublic(savedIsPublic)
         return
       }
 
-      setSavedIsPublic(isPublic)
-      setPublicProfile((current) =>
-        current
-          ? { ...current, is_public: isPublic }
-          : {
-              display_name: resolvedDisplayName,
-              headline: headline.trim() || null,
-              bio: null,
-              location_label: null,
-              website_url: null,
-              avatar_url: avatarUrl,
-              is_public: isPublic,
-              show_organizations: true,
-              show_program_activity: true,
-              show_saved_locations: false,
-            }
+      setSavedIsPublic(nextIsPublic)
+      toast.success(
+        nextIsPublic ? "Profile published." : "Profile unpublished."
       )
-      toast.success(isPublic ? "Profile published." : "Profile unpublished.")
     } catch {
+      setIsPublic(savedIsPublic)
       toast.error("Unable to update profile visibility.")
     } finally {
       setSavingVisibility(false)
@@ -214,149 +241,170 @@ export function PublicProfileIdentitySettings({
   }
 
   const resolvedDisplayName = displayName.trim() || "Your profile"
-
+  if (loadError)
+    return (
+      <section role="alert" className="space-y-4 rounded-xl border p-4">
+        <p>{loadError}</p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setRetry((value) => value + 1)}
+        >
+          Try again
+        </Button>
+      </section>
+    )
   return (
-    <section className="border-border/70 flex flex-col gap-5 rounded-2xl border p-4 sm:p-5">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h4 className="font-medium">Public profile</h4>
-          <Badge variant={savedIsPublic ? "default" : "secondary"}>
-            {savedIsPublic ? "Published" : "Private"}
-          </Badge>
-          {savedIsPublic && currentHandle ? (
-            <Button asChild size="sm" variant="outline" className="ml-auto">
-              <Link href={`/${currentHandle}`}>View profile</Link>
-            </Button>
-          ) : null}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Reserve your profile URL now. Nothing becomes public until you
-          publish.
-        </p>
-      </div>
+    <section
+      aria-label="Profile identity and publication"
+      className="space-y-10"
+    >
+      <ProfileIdentityPreview
+        avatarUrl={avatarUrl}
+        currentHandle={currentHandle}
+        displayName={resolvedDisplayName}
+        headline={headline}
+        idPrefix={idPrefix}
+        isLoading={loading}
+        isPublic={savedIsPublic}
+        isUploadingAvatar={isUploadingAvatar}
+        normalizedHandle={normalizedHandle}
+        onAvatarFileSelected={onAvatarFileSelected}
+      />
 
-      <Field
-        data-invalid={status === "unavailable" || undefined}
-        data-disabled={loading || saving || undefined}
-        className="gap-2"
+      <Separator />
+
+      {profileDetails}
+
+      <Separator />
+
+      <section
+        aria-labelledby={`${idPrefix}-public-page-heading`}
+        className="space-y-6"
       >
-        <FieldLabel htmlFor={`${idPrefix}-username`}>Username</FieldLabel>
-        <FieldControl className="col-span-1">
-          <InputGroup className="min-w-0 flex-wrap items-center">
-            <InputGroupText>coachhouse.app/</InputGroupText>
-            <InputGroupInput
-              id={`${idPrefix}-username`}
-              value={handleValue}
-              autoCapitalize="none"
-              autoComplete="username"
-              spellCheck={false}
-              disabled={loading || saving}
-              placeholder={loading ? "Loading…" : "your-name"}
-              className="min-w-36 text-base sm:text-sm"
-              aria-invalid={status === "unavailable"}
-              aria-describedby={describedBy}
-              onChange={(event) => {
-                setHandleValue(normalizePublicHandle(event.currentTarget.value))
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter") return
-                event.preventDefault()
-                void saveHandle()
-              }}
-            />
-            {statusText ? (
-              <Badge
-                id={`${idPrefix}-username-status`}
-                variant="outline"
-                role="status"
-                aria-live="polite"
-              >
-                {statusText}
-              </Badge>
-            ) : null}
-          </InputGroup>
-        </FieldControl>
-        {status === "unavailable" ? (
-          <FieldMessage id={`${idPrefix}-username-hint`}>
-            {hint ?? "That username is not available."}
-          </FieldMessage>
-        ) : (
-          <FieldDescription id={`${idPrefix}-username-hint`}>
-            {hint ?? "Use 2–48 lowercase letters, numbers, or single hyphens."}
-          </FieldDescription>
-        )}
-        <div>
-          <Button
-            type="button"
-            size="sm"
-            disabled={loading || saving || unchanged || status !== "available"}
-            onClick={() => void saveHandle()}
-          >
-            {saving
-              ? "Saving…"
-              : currentHandle
-                ? "Update username"
-                : "Claim username"}
-          </Button>
-        </div>
-      </Field>
-
-      <div className="border-border/70 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <label
+          <h3
+            id={`${idPrefix}-public-page-heading`}
+            className="text-lg font-medium tracking-tight"
+          >
+            Public page
+          </h3>
+          <p className="text-muted-foreground max-w-xl text-sm leading-6 text-pretty">
+            Choose your Coach House address and decide when people can view it.
+          </p>
+        </div>
+        <Field
+          data-invalid={status === "unavailable" || undefined}
+          data-disabled={loading || saving || undefined}
+          className="gap-2"
+        >
+          <FieldLabel htmlFor={`${idPrefix}-username`}>Username</FieldLabel>
+          <FieldControl className="col-span-1">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <InputGroup className="min-w-0 flex-wrap items-center">
+                <InputGroupText>coachhouse.app/</InputGroupText>
+                <InputGroupInput
+                  id={`${idPrefix}-username`}
+                  name="username"
+                  value={handleValue}
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  spellCheck={false}
+                  disabled={loading || saving}
+                  placeholder={loading ? "Loading…" : "your-name"}
+                  className="min-w-36 text-base sm:text-sm"
+                  aria-invalid={status === "unavailable"}
+                  aria-describedby={describedBy}
+                  onChange={(event) => {
+                    setHandleValue(
+                      normalizePublicHandle(event.currentTarget.value)
+                    )
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return
+                    event.preventDefault()
+                    void saveHandle()
+                  }}
+                />
+                {statusText ? (
+                  <Badge
+                    id={`${idPrefix}-username-status`}
+                    variant="outline"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {statusText}
+                  </Badge>
+                ) : null}
+              </InputGroup>
+              <Button
+                type="button"
+                size="sm"
+                className="h-11 sm:h-9"
+                disabled={
+                  loading || saving || unchanged || status !== "available"
+                }
+                aria-busy={saving}
+                onClick={() => void saveHandle()}
+              >
+                {saving ? (
+                  <Loader2Icon className="animate-spin" aria-hidden="true" />
+                ) : null}
+                {currentHandle ? "Update username" : "Claim username"}
+              </Button>
+            </div>
+          </FieldControl>
+          {status === "unavailable" ? (
+            <FieldMessage id={`${idPrefix}-username-hint`}>
+              {hint ?? "That username is not available."}
+            </FieldMessage>
+          ) : (
+            <FieldDescription id={`${idPrefix}-username-hint`}>
+              {hint ??
+                "Use 2–48 lowercase letters, numbers, or single hyphens."}
+            </FieldDescription>
+          )}
+        </Field>
+        <PublicProfileDetailsFields
+          profile={publicProfile}
+          disabled={loading || !currentHandle}
+          idPrefix={idPrefix}
+        />
+        <div className="flex min-h-16 items-center justify-between gap-4 border-t pt-5">
+          <Label
             htmlFor={`${idPrefix}-visibility`}
-            className="text-sm font-medium"
+            className="min-w-0 cursor-pointer space-y-1 py-2"
           >
-            Publish profile
-          </label>
-          <p className="text-muted-foreground max-w-md text-sm">
-            Public profiles can be viewed at coachhouse.app/
-            {currentHandle || "your-name"}. Turn this off anytime to remove the
-            page.
-          </p>
+            <span className="block text-sm font-medium">Visibility</span>
+            <span className="text-muted-foreground block text-xs leading-5 font-normal">
+              {currentHandle ? (
+                <>
+                  {isPublic ? "Published" : "Private"} at coachhouse.app/
+                  <span className="break-all">{currentHandle}</span>
+                </>
+              ) : (
+                "Claim a username before publishing."
+              )}
+            </span>
+          </Label>
+          <div className="flex shrink-0 items-center gap-2">
+            {savingVisibility ? (
+              <Loader2Icon
+                className="text-muted-foreground size-4 animate-spin"
+                aria-hidden="true"
+              />
+            ) : null}
+            <Switch
+              id={`${idPrefix}-visibility`}
+              checked={isPublic}
+              disabled={loading || savingVisibility || !currentHandle}
+              aria-label="Publish profile"
+              aria-busy={savingVisibility}
+              onCheckedChange={(checked) => void saveVisibility(checked)}
+            />
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <Switch
-            id={`${idPrefix}-visibility`}
-            checked={isPublic}
-            disabled={loading || savingVisibility || !currentHandle}
-            aria-label="Publish public profile"
-            onCheckedChange={setIsPublic}
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant={isPublic ? "default" : "outline"}
-            disabled={
-              loading ||
-              savingVisibility ||
-              !currentHandle ||
-              isPublic === savedIsPublic
-            }
-            onClick={() => void saveVisibility()}
-          >
-            {savingVisibility ? "Saving…" : isPublic ? "Publish" : "Unpublish"}
-          </Button>
-        </div>
-      </div>
-
-      <Card className="bg-muted/35 mx-auto w-full max-w-md">
-        <CardContent className="flex flex-col items-center px-5 py-6 text-center">
-          <Avatar className="size-16 border">
-            <AvatarImage src={avatarUrl ?? undefined} alt="" />
-            <AvatarFallback>{initialsFor(resolvedDisplayName)}</AvatarFallback>
-          </Avatar>
-          <p className="mt-3 font-medium">{resolvedDisplayName}</p>
-          <p className="text-muted-foreground text-sm">
-            {normalizedHandle ? `@${normalizedHandle}` : "@your-name"}
-          </p>
-          {headline.trim() ? (
-            <p className="text-muted-foreground mt-2 max-w-sm text-sm">
-              {headline.trim()}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+      </section>
     </section>
   )
 }

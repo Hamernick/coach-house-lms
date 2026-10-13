@@ -1,8 +1,13 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
 import {
   CommunicationsSection,
   DangerSection,
@@ -11,7 +16,11 @@ import {
   SecuritySection,
 } from "./sections/desktop-sections"
 import { SideLink } from "./sections/section-helpers"
-import { MobileMenu, MobileSubpage, TAB_LABELS } from "./sections/mobile-sections"
+import {
+  MobileMenu,
+  MobileSubpage,
+  TAB_LABELS,
+} from "./sections/mobile-sections"
 import type {
   AccountSettingsErrorKey,
   AccountSettingsMobilePage,
@@ -29,6 +38,9 @@ type AccountSettingsDialogShellProps = {
   isDirty: boolean
   isSaving: boolean
   justSaved: boolean
+  preferencesError: string | null
+  preferencesLoading: boolean
+  retryPreferences: () => void
   marketingOptIn: boolean
   newsletterOptIn: boolean
   newPassword: string
@@ -74,6 +86,9 @@ export function AccountSettingsDialogShell({
   isDirty,
   isSaving,
   justSaved,
+  preferencesError,
+  preferencesLoading,
+  retryPreferences,
   marketingOptIn,
   newsletterOptIn,
   newPassword,
@@ -120,10 +135,10 @@ export function AccountSettingsDialogShell({
     >
       <DialogContent
         className={cn(
-          "h-[92vh] w-full max-w-none overflow-hidden p-0 top-auto bottom-0 left-1/2 translate-x-[-50%] translate-y-0 rounded-t-2xl sm:w-[min(1120px,96%)] sm:max-w-[1120px] sm:rounded-lg sm:top-1/2 sm:bottom-auto sm:translate-y-[-50%]",
+          "top-auto bottom-0 left-1/2 h-[92vh] w-full max-w-none translate-x-[-50%] translate-y-0 overflow-hidden rounded-t-2xl p-0 sm:top-1/2 sm:bottom-auto sm:w-[min(1120px,96%)] sm:max-w-[1120px] sm:translate-y-[-50%] sm:rounded-lg",
           mobilePage !== "menu"
             ? "[&_[data-slot=dialog-close]]:hidden md:[&_[data-slot=dialog-close]]:block"
-            : undefined,
+            : undefined
         )}
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -146,7 +161,7 @@ export function AccountSettingsDialogShell({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto px-1 text-sm text-muted-foreground"
+                  className="text-muted-foreground h-auto px-1 text-sm"
                   onClick={() => onMobilePageChange("menu")}
                 >
                   Cancel
@@ -158,38 +173,23 @@ export function AccountSettingsDialogShell({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto px-1 text-sm text-primary disabled:opacity-50"
-                  onClick={
-                    mobilePage === "public-profile" ? requestClose : onSave
-                  }
-                  disabled={
-                    mobilePage === "public-profile"
-                      ? false
-                      : !isDirty || isSaving
-                  }
+                  className="text-primary h-auto px-1 text-sm disabled:opacity-50"
+                  onClick={onSave}
+                  disabled={!isDirty || isSaving}
                 >
-                  {mobilePage === "public-profile"
-                    ? "Done"
-                    : isSaving
-                      ? "Saving…"
-                      : "Save"}
+                  {isSaving ? "Saving…" : "Save"}
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="hidden grow min-h-0 md:flex">
+          <div className="hidden min-h-0 grow md:flex">
             <aside className="w-[240px] shrink-0 border-r p-4 md:p-6">
               <nav className="grid gap-1">
                 <SideLink
                   label="Profile"
                   active={tab === "profile"}
                   onClick={() => onTabChange("profile")}
-                />
-                <SideLink
-                  label="Public profile"
-                  active={tab === "public-profile"}
-                  onClick={() => onTabChange("public-profile")}
                 />
                 <SideLink
                   label="Communications"
@@ -210,9 +210,9 @@ export function AccountSettingsDialogShell({
                 />
               </nav>
             </aside>
-            <div className="flex grow min-h-0">
-              <section className="w-full min-h-0 overflow-y-auto p-4 md:p-6">
-                {tab === "profile" && (
+            <div className="flex min-h-0 grow">
+              <section className="min-h-0 w-full overflow-y-auto p-4 md:p-6">
+                <div hidden={tab !== "profile"}>
                   <ProfileSection
                     avatarUrl={avatarUrl}
                     firstName={firstName}
@@ -225,6 +225,7 @@ export function AccountSettingsDialogShell({
                     email={email}
                     errors={errors}
                     isUploadingAvatar={isUploadingAvatar}
+                    idPrefix="desktop-profile"
                     onAvatarFileSelected={onAvatarFileSelected}
                     onFirstNameChange={onFirstNameChange}
                     onLastNameChange={onLastNameChange}
@@ -234,19 +235,13 @@ export function AccountSettingsDialogShell({
                     onAboutChange={onAboutChange}
                     onPhoneChange={onPhoneChange}
                   />
-                )}
-
-                {tab === "public-profile" && (
-                  <PublicProfileSettings
-                    avatarUrl={avatarUrl}
-                    displayName={[firstName, lastName].filter(Boolean).join(" ")}
-                    headline={title}
-                    idPrefix="desktop-public-profile"
-                  />
-                )}
+                </div>
 
                 {tab === "communications" && (
                   <CommunicationsSection
+                    preferencesError={preferencesError}
+                    preferencesLoading={preferencesLoading}
+                    retryPreferences={retryPreferences}
                     marketingOptIn={marketingOptIn}
                     newsletterOptIn={newsletterOptIn}
                     onMarketingOptInChange={onMarketingOptInChange}
@@ -278,19 +273,18 @@ export function AccountSettingsDialogShell({
 
           <DesktopFooter
             justSaved={justSaved}
-            selfManaged={tab === "public-profile"}
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}
             onDone={requestClose}
           />
 
-      <MobileMenu
-        activeTab={tab}
-        hidden={mobilePage !== "menu"}
-        onMobilePageChange={onMobilePageChange}
-        onTabChange={onTabChange}
-      />
+          <MobileMenu
+            activeTab={tab}
+            hidden={mobilePage !== "menu"}
+            onMobilePageChange={onMobilePageChange}
+            onTabChange={onTabChange}
+          />
 
           <MobileSubpage
             tab={tab}
@@ -306,6 +300,9 @@ export function AccountSettingsDialogShell({
             email={email}
             hasActiveSubscription={hasActiveSubscription}
             errors={errors}
+            preferencesError={preferencesError}
+            preferencesLoading={preferencesLoading}
+            retryPreferences={retryPreferences}
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}
             newPassword={newPassword}

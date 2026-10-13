@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, type ReactNode } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
@@ -32,7 +32,6 @@ export function DocumentationToolFlow({
 }) {
   const params = useSearchParams()
   const pathname = usePathname()
-  const router = useRouter()
   const requested = params.get("step")
   const current = Math.max(
     0,
@@ -64,16 +63,17 @@ export function DocumentationToolFlow({
   const title =
     getDocumentationToolMetadata(pathname.replace("/documentation/", ""))
       ?.title ?? "Your plan"
-  const changeStep = useCallback(
-    (id: string | null) => {
-      const url = new URL(window.location.href)
-      if (id) url.searchParams.set("step", id)
-      else url.searchParams.delete("step")
-      url.hash = "sandbox"
-      router.push(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
-    },
-    [router]
-  )
+  const changeStep = useCallback((id: string | null) => {
+    const url = new URL(window.location.href)
+    if (id) url.searchParams.set("step", id)
+    else url.searchParams.delete("step")
+    url.hash = "sandbox"
+    window.history.pushState(
+      null,
+      "",
+      `${url.pathname}${url.search}${url.hash}`
+    )
+  }, [])
 
   return (
     <>

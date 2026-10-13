@@ -1,6 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import Link from "next/link"
+import { type ReactNode, useMemo } from "react"
+import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
 import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
@@ -12,6 +14,7 @@ import type { PlatformAccessLevel } from "@/features/platform-access"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
+import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
 import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
 
@@ -42,6 +45,7 @@ export type AppSidebarProps = {
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  contextualNavigation?: ReactNode
 }
 
 export function AppSidebar({
@@ -65,6 +69,7 @@ export function AppSidebar({
   showCoachScheduling = false,
   showWorkspaceHome = true,
   showMemberWorkspace,
+  contextualNavigation,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -99,6 +104,7 @@ export function AppSidebar({
         showCoachScheduling={showCoachScheduling}
         showWorkspaceHome={showWorkspaceHome}
         showMemberWorkspace={showMemberWorkspace}
+        contextualNavigation={contextualNavigation}
       />
     </aside>
   )
@@ -132,6 +138,7 @@ type SidebarBodyProps = {
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
   showMemberWorkspace?: boolean
+  contextualNavigation?: ReactNode
 }
 
 export function SidebarBody({
@@ -157,6 +164,7 @@ export function SidebarBody({
   showCoachScheduling = false,
   showWorkspaceHome = true,
   showMemberWorkspace,
+  contextualNavigation,
 }: SidebarBodyProps) {
   const isCoach = platformAccessLevel === "coach"
   const shouldShowAccelerator =
@@ -174,7 +182,7 @@ export function SidebarBody({
   const showAccountUpgradeCta =
     !platformAccessLevel &&
     hasUser &&
-    !hasActiveSubscription
+    (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
   const mainNavItems = buildMainNav({
     isAdmin,
     platformAccessLevel,
@@ -191,6 +199,7 @@ export function SidebarBody({
         {onboardingLocked ? null : (
           <NavMain items={mainNavItems} className="py-0" />
         )}
+        {contextualNavigation}
         {shouldShowAccelerator && showClasses ? (
           <ClassesSection
             classes={classes}
@@ -217,7 +226,10 @@ export function SidebarBody({
                 </div>
               </>
             ) : null}
-            <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
+            {isCoach ? null : (
+              <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            )}
           </div>
         )}
         {hasUser ? (
@@ -228,12 +240,26 @@ export function SidebarBody({
             showOrgAdmin={showOrgAdmin}
             canAccessOrgAdmin={canAccessOrgAdmin}
             showDivider={false}
-            showUpgrade={showAccountUpgradeCta && !onboardingLocked}
-            planLabel={hasActiveSubscription ? "Paid plan" : "Free"}
             hasActiveSubscription={hasBillingCancellationRisk}
           />
         ) : null}
       </SidebarFooter>
     </>
+  )
+}
+
+function FreeAccountUpgradeCta() {
+  return (
+    <div className="group-data-[collapsible=icon]:hidden">
+      <Button asChild size="sm" className="w-full justify-between px-3">
+        <Link
+          href="/?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2F&paywall_preview=1"
+          prefetch={false}
+        >
+          <span className="truncate">Upgrade account</span>
+          <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
+        </Link>
+      </Button>
+    </div>
   )
 }

@@ -138,14 +138,7 @@ export type ExternalResourceMapItem = PublicMapBaseItem & {
   itemType: "external_resource"
   organization?: never
   orgCategory: null
-  nonprofit?: {
-    ein: string
-    websiteSourcePeriod: string | null
-    phoneSourcePeriod: string | null
-    descriptionSourcePeriod: string | null
-    websiteBasis: "source_reported" | "provider_confirmed" | null
-    phoneBasis: "source_reported" | "provider_confirmed" | null
-  }
+  seasonalPresentation?: "normal"
   resourceOrganizationId?: string | null
   verificationStatus: PublicMapVerificationStatus
 }

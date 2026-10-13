@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
@@ -14,10 +15,10 @@ import { HomeCanvasLoginButton } from "@/components/public/home-canvas-login-but
 import type { CanvasSectionId } from "@/components/public/home-canvas-preview-config"
 import { Button } from "@/components/ui/button"
 import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
-import { BuildCollectPublicHeader } from "@/features/build-collect-navigation/client"
+import { BuildCollectPublicHeader } from "@/features/build-collect-navigation"
 import { cn } from "@/lib/utils"
 
-function HomeCanvasMobileSidebarTrigger() {
+function HomeCanvasMobileSidebarTrigger({ label }: { label: string }) {
   const { isMobile, openMobile, toggleSidebar } = useSidebar()
 
   if (!isMobile) return null
@@ -25,14 +26,10 @@ function HomeCanvasMobileSidebarTrigger() {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon"
-      className="size-11 touch-manipulation rounded-full shadow-none md:hidden"
-      aria-label={
-        openMobile
-          ? "Close sidebar"
-          : "Open sidebar"
-      }
+      className="text-muted-foreground hover:bg-foreground/5 hover:text-foreground size-11 touch-manipulation rounded-md border-[color:var(--shell-border)] bg-transparent shadow-none md:hidden"
+      aria-label={openMobile ? `Close ${label}` : `Open ${label}`}
       aria-expanded={openMobile}
       onClick={toggleSidebar}
     >
@@ -133,10 +130,11 @@ type HomeCanvasPreviewHeaderProps = {
   railToggleClassName: string
   rightOpen: boolean
   showAuthActions?: boolean
-  showPublicSearch?: boolean
-  showPublicNavigation?: boolean
   showShellSidebar: boolean
   showRightRailToggle: boolean
+  sidebarLabel?: string
+  showResourceSearch?: boolean
+  headerSearch?: ReactNode
 }
 
 export function HomeCanvasPreviewHeader({
@@ -146,10 +144,11 @@ export function HomeCanvasPreviewHeader({
   railToggleClassName,
   rightOpen,
   showAuthActions = true,
-  showPublicSearch = true,
-  showPublicNavigation = true,
   showShellSidebar,
   showRightRailToggle,
+  sidebarLabel = "Find, Guides, and Saved",
+  showResourceSearch = true,
+  headerSearch,
 }: HomeCanvasPreviewHeaderProps) {
   const rightRailLabel =
     activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
@@ -158,8 +157,8 @@ export function HomeCanvasPreviewHeader({
     <BuildCollectPublicHeader
       activeArea={activeSection === "find" ? "collect" : "build"}
       hideBrandOnDesktop={showShellSidebar}
-      showPublicSearch={showPublicSearch}
-      showPublicNavigation={showPublicNavigation}
+      showResourceSearch={showResourceSearch}
+      searchAction={headerSearch}
       authAction={
         showAuthActions ? (
           <HomeCanvasLoginButton
@@ -172,12 +171,17 @@ export function HomeCanvasPreviewHeader({
         <PublicThemeToggle
           variant="outline"
           size="icon"
-          className="relative size-8 shrink-0 touch-manipulation shadow-none after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-1/2"
+          className={cn(
+            "size-9 shrink-0 sm:size-10",
+            showShellSidebar && "hidden md:inline-flex"
+          )}
         />
       }
       shellActions={
         <>
-          {showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null}
+          {showShellSidebar ? (
+            <HomeCanvasMobileSidebarTrigger label={sidebarLabel} />
+          ) : null}
           {showRightRailToggle ? (
             <Button
               variant="ghost"

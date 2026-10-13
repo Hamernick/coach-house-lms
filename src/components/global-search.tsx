@@ -1,13 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { SidebarClass } from "@/lib/academy"
 import type { SearchResult } from "@/lib/search/types"
 import { GlobalSearchCommandDialog } from "@/components/global-search/global-search-command-dialog"
 import {
   buildBaseSearchItems,
+  SEARCH_MIN_WIDTH,
   formatClassTitle,
   groupSearchResults,
   resolveGlobalSearchResultHref,
@@ -16,13 +18,14 @@ import { platformLabEnabled } from "@/lib/feature-flags"
 import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
 import { GlobalSearchTriggers } from "@/components/global-search/global-search-triggers"
 
-type GlobalSearchProps = {
+export type GlobalSearchProps = {
   isAdmin?: boolean
   showOrgAdmin?: boolean
   context?: "platform" | "accelerator"
   classes?: SidebarClass[]
   showAccelerator?: boolean
   showMemberWorkspace?: boolean
+  renderTrigger?: (onOpen: () => void) => ReactNode
 }
 
 export function GlobalSearch({
@@ -32,15 +35,47 @@ export function GlobalSearch({
   classes = [],
   showAccelerator = false,
   showMemberWorkspace = false,
+  renderTrigger,
 }: GlobalSearchProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [remoteItems, setRemoteItems] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [compact, setCompact] = useState(false)
   const enableAccelerator = Boolean(isAdmin || showAccelerator)
   const showPlatformLab = isAdmin && platformLabEnabled
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const node = document.getElementById("site-header-actions-center")
+    if (!node) return
+
+    const update = () => {
+      const width = node.getBoundingClientRect().width
+      const next = width < SEARCH_MIN_WIDTH
+      setCompact((prev) => (prev === next ? prev : next))
+    }
+
+    update()
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(update)
+      observer.observe(node)
+    } else {
+      window.addEventListener("resize", update)
+    }
+
+    return () => {
+      observer?.disconnect()
+      if (!observer) {
+        window.removeEventListener("resize", update)
+      }
+    }
+  }, [])
 
   const logEvent = useCallback(
     (payload: {
@@ -223,9 +258,16 @@ export function GlobalSearch({
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
+  const showCompact = isMobile || compact
+  const showCenterCompact = showCompact && !isMobile
+
   return (
     <>
-      <GlobalSearchTriggers onOpen={() => setOpen(true)} />
+      {renderTrigger ? renderTrigger(() => setOpen(true)) : <GlobalSearchTriggers
+        showCompact={showCompact}
+        showCenterCompact={showCenterCompact}
+        onOpen={() => setOpen(true)}
+      />}
 
       <GlobalSearchCommandDialog
         open={open}

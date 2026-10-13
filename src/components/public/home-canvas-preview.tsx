@@ -1,7 +1,5 @@
 "use client"
 
-import { FIND_PATH } from "@/lib/find/routes"
-
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
@@ -112,12 +110,12 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
       setIsFindRoutePending(false)
       return
     }
-    router.prefetch(FIND_PATH)
+    router.prefetch("/")
   }, [activeSection, router])
 
   function primeFindRoute() {
     if (activeSection === "find") return
-    router.prefetch(FIND_PATH)
+    router.prefetch("/")
   }
 
   function handleFindRouteClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -223,7 +221,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                             Pricing is currently unavailable in this preview.
                           </p>
                           <Button asChild className="mt-4 rounded-xl">
-                            <Link href="/pricing">
+                            <Link href="/home-canvas?section=pricing">
                               Open pricing
                             </Link>
                           </Button>
@@ -239,7 +237,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                           </p>
                           <Button asChild className="mt-4 rounded-xl">
                             <Link
-                              href={FIND_PATH}
+                              href="/"
                               prefetch
                               aria-busy={isFindRoutePending || undefined}
                               onClick={handleFindRouteClick}

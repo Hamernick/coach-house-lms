@@ -16,14 +16,12 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { resolvePrototypeLabSidebarOpenFolderIds } from "@/lib/prototype-lab-sidebar-tree"
 import { cn } from "@/lib/utils"
 import { buildMainNavItemReactGrabProps, type NavMainItem } from "./item"
 import { PrototypeTreeEntry } from "./prototype-tree-entry"
 import { PrototypeTreeFolder } from "./prototype-tree-folder"
-import { CollapsedNavGroupMenu } from "./collapsed-group-menu"
 
 function NavMainTreeSubItem({
   activeEntryId,
@@ -125,10 +123,8 @@ export function NavMainGroupItem({
   item: NavMainItem
   onPrefetch?: (href: string | null | undefined) => void
 }) {
-  const { state, isMobile } = useSidebar()
   const isActive =
-    item.href === activeHref ||
-    (item.children?.some((child) => child.href === activeHref) ?? false)
+    item.children?.some((child) => child.href === activeHref) ?? false
   const [open, setOpen] = useState(isActive)
   const reactGrabProps = buildMainNavItemReactGrabProps(item)
 
@@ -136,60 +132,33 @@ export function NavMainGroupItem({
     if (isActive) setOpen(true)
   }, [isActive])
 
-  if (state === "collapsed" && !isMobile) {
-    return (
-      <CollapsedNavGroupMenu
-        item={item}
-        activeHref={activeHref}
-        isActive={isActive}
-        onPrefetch={onPrefetch}
-      />
-    )
-  }
-
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
-        <div className="relative">
+        <CollapsibleTrigger asChild>
           <SidebarMenuButton
-            asChild
+            type="button"
             isActive={isActive}
             tooltip={reactGrabProps.tooltipProps}
-            className="justify-start gap-2 pr-11 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 md:pr-8"
+            aria-label={
+              open ? `Collapse ${item.title}` : `Expand ${item.title}`
+            }
+            className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
             {...reactGrabProps.ownerProps}
           >
-            <Link
-              href={item.href ?? "#"}
-              prefetch
-              onFocus={() => onPrefetch?.(item.href)}
-              onPointerEnter={() => onPrefetch?.(item.href)}
-            >
-              {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
-              <span className="min-w-0 flex-1 truncate leading-snug whitespace-nowrap group-data-[collapsible=icon]:hidden">
-                {item.title}
-              </span>
-            </Link>
+            {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
+            <span className="min-w-0 flex-1 truncate leading-snug whitespace-nowrap group-data-[collapsible=icon]:hidden">
+              {item.title}
+            </span>
+            <ChevronRightIcon
+              className={cn(
+                "ml-auto size-3.5 shrink-0 transition-transform group-data-[collapsible=icon]:hidden",
+                open && "rotate-90"
+              )}
+              aria-hidden
+            />
           </SidebarMenuButton>
-          <CollapsibleTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={
-                open ? `Collapse ${item.title}` : `Expand ${item.title}`
-              }
-              className="absolute top-0 right-0 size-11 rounded-md group-data-[collapsible=icon]:hidden md:size-8"
-            >
-              <ChevronRightIcon
-                className={cn(
-                  "size-3.5 transition-transform motion-reduce:transition-none",
-                  open && "rotate-90"
-                )}
-                aria-hidden
-              />
-            </Button>
-          </CollapsibleTrigger>
-        </div>
+        </CollapsibleTrigger>
         <CollapsibleContent className="overflow-hidden group-data-[collapsible=icon]:hidden data-[state=closed]:animate-[accordion-up_140ms_ease-out] data-[state=open]:animate-[accordion-down_160ms_ease-out] motion-reduce:data-[state=closed]:animate-none motion-reduce:data-[state=open]:animate-none">
           <SidebarMenuSub className="mt-1">
             {item.children?.map((child) => {

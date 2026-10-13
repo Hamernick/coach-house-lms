@@ -1,7 +1,6 @@
 import Link from "next/link"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import { Button } from "@/components/ui/button"
-import { DocumentationFundingBanner } from "./documentation-funding-banner"
 import { cn } from "@/lib/utils"
 import density from "./documentation-density.module.css"
 import { DOCUMENTATION_TOOL_METADATA } from "../lib/documentation-tools"
@@ -27,8 +26,8 @@ const tasks = [
   },
   {
     variant: "marketplace" as const,
-    title: "Find nonprofit tools",
-    description: "Explore source-backed offers and practical resources.",
+    title: "Find tools and people",
+    description: "Explore offers, resources, and coaches.",
     href: "/documentation/marketplace",
   },
 ]
@@ -76,7 +75,6 @@ export function DocumentationHome() {
             Practical guides and working tools for nonprofit founders and teams.
           </p>
         </header>
-        <DocumentationFundingBanner />
         <section
           id="quickstart"
           aria-labelledby="quickstart-title"
@@ -203,6 +201,21 @@ export function DocumentationHome() {
             ))}
           </div>
         </section>
+        <footer className="bg-muted/40 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4">
+          <div>
+            <h2 className="font-semibold">Work through it with someone.</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Meet Joel, Paula, and Franklin, and find the right conversation
+              for your next step.
+            </p>
+          </div>
+          <Button asChild variant="outline" className="min-h-11 rounded-full">
+            <Link href="/documentation/marketplace?view=people">
+              Meet the coaches
+              <ArrowRightIcon aria-hidden />
+            </Link>
+          </Button>
+        </footer>
       </main>
     </DocumentationSurface>
   )

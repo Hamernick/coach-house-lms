@@ -266,6 +266,14 @@ function buildProgramTitle(programName, agencyName) {
     : `${agencyName} - ${programName}`
 }
 
+/**
+ * @param {object} options
+ * @param {string | null} [options.cityName]
+ * @param {string} options.fetchedAt
+ * @param {Record<string, unknown>} options.program Raw directory program, normalized below.
+ * @param {string} options.rawApiUrl
+ * @param {number} options.requestedCategoryId
+ */
 export function buildMetroChicagoShelterRecord({
   cityName = null,
   fetchedAt,

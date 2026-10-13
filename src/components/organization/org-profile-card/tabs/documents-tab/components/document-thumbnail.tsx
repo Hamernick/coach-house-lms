@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { IconCloudUpload } from "@tabler/icons-react"
-import { GoogleDriveMark } from "@/components/roadmap/core-document-source/google-drive-mark"
 import { cn } from "@/lib/utils"
 import { useDocumentPreviewUrl } from "../hooks/use-document-preview-url"
 import { DocumentsLibraryTypeIcon } from "./documents-library-type-icon"
@@ -59,12 +58,7 @@ export function DocumentThumbnail({
         compact && "size-9 p-0"
       )}
     >
-      {item.coreDriveSource ? (
-        <div className="text-muted-foreground flex flex-col items-center gap-2 px-2 text-center text-sm">
-          <GoogleDriveMark />
-          <span className="line-clamp-2">{item.coreDriveSource.name}</span>
-        </div>
-      ) : item.contentPreview ? (
+      {item.contentPreview ? (
         <div
           className="text-muted-foreground line-clamp-7 w-full text-left text-xs leading-relaxed break-words whitespace-pre-line"
           aria-label={`${item.name} text preview`}

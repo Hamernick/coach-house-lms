@@ -1,4 +1,3 @@
-import { FIND_PATH } from "@/lib/find/routes"
 import Link from "next/link"
 import { Building2Icon, ExternalLinkIcon, MapPinIcon } from "lucide-react"
 
@@ -7,8 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { WorkspaceActivityCard } from "@/components/workspace/workspace-activity-card"
-import { PublicMapOrganizationDetail } from "@/components/public/public-map-index/organization-detail"
-import { PublicProfileCollectionButton } from "@/components/public/public-map-index/profile-collection-button"
 import type {
   PublicOrganizationProfileView,
   PublicPersonProfileView,
@@ -348,23 +345,7 @@ function PersonPublicImpact({ profile }: { profile: PublicPersonProfileView }) {
   )
 }
 
-export function PublicProfilePage({ profile, viewer = null }: { profile: PublicProfileView; viewer?: { id: string; email: string | null } | null }) {
-  if (profile.kind === "organization" && profile.organization) {
-    return (
-      <main data-public-profile-page className="bg-background min-h-svh px-3 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-          <nav aria-label="Profile navigation" className="flex items-center justify-between gap-3 px-4">
-            <Button asChild variant="ghost" className="rounded-full">
-              <Link href={FIND_PATH}>Explore resources</Link>
-            </Button>
-            <PublicProfileCollectionButton id={profile.organizationId} kind="organization" viewer={viewer} />
-          </nav>
-          <PublicMapOrganizationDetail organization={profile.organization} standalone />
-          <OrganizationPeople profile={profile} />
-        </div>
-      </main>
-    )
-  }
+export function PublicProfilePage({ profile }: { profile: PublicProfileView }) {
   return (
     <main
       data-public-profile-page
@@ -378,12 +359,12 @@ export function PublicProfilePage({ profile, viewer = null }: { profile: PublicP
               {profileInitials(profile.displayName)}
             </AvatarFallback>
           </Avatar>
-          <Badge variant="outline" className="mt-5">
-            {profile.kind === "organization" ? (
+          {profile.kind === "organization" ? (
+            <Badge variant="outline" className="mt-5">
               <Building2Icon aria-hidden="true" />
-            ) : null}
-            {profile.kind === "organization" ? "Organization" : "Person"}
-          </Badge>
+              Organization
+            </Badge>
+          ) : null}
           <h1 className="mt-4 text-3xl font-medium tracking-tight sm:text-4xl">
             {profile.displayName}
           </h1>
@@ -439,8 +420,8 @@ export function PublicProfilePage({ profile, viewer = null }: { profile: PublicP
         ((profile.people?.length ?? 0) > 0 || profile.programs.length > 0) ? (
           <>
             <Separator />
-            <OrganizationActivity profile={profile} />
             <OrganizationPeople profile={profile} />
+            <OrganizationActivity profile={profile} />
           </>
         ) : null}
 

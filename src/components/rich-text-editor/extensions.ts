@@ -8,13 +8,20 @@ import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import Subscript from "@tiptap/extension-subscript"
 import Superscript from "@tiptap/extension-superscript"
-import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table"
 import TextAlign from "@tiptap/extension-text-align"
+import { TextStyleKit } from "@tiptap/extension-text-style"
 import Typography from "@tiptap/extension-typography"
 import Underline from "@tiptap/extension-underline"
 import StarterKit from "@tiptap/starter-kit"
 
 import { ImageExtension } from "@/components/tiptap/extensions/image"
+import { ThemeTextColor, ThemeHighlightColor } from "./theme-color-extensions"
 
 type BuildRichTextExtensionsParams = {
   placeholderRef: MutableRefObject<string>
@@ -50,6 +57,9 @@ export function buildRichTextExtensions({
       horizontalRule: false,
       codeBlock: false,
     }),
+    TextStyleKit.configure({ color: false, backgroundColor: false }),
+    ThemeTextColor,
+    ThemeHighlightColor,
     TextAlign.configure({
       types: ["heading", "paragraph"],
     }),

@@ -2,14 +2,15 @@
 
 import {
   AddressDisplay,
+  BrandLink,
   FieldText,
   FormRow,
   LinkText,
   ProfileField,
 } from "@/components/organization/org-profile-card/shared"
+import { ProfileFieldTabs } from "../../profile-field-tabs"
 import { OrganizationNarrativeContent } from "@/components/organization/org-profile-card/organization-narrative-content"
 import type { CompanyViewProps } from "./types"
-import { stripHtml } from "@/lib/markdown/convert"
 import { cn } from "@/lib/utils"
 import {
   hasWorkspaceBrandKitProfileContent,
@@ -110,19 +111,28 @@ export function AddressPreview({ addressLines }: CompanyViewProps) {
   )
 }
 
+const socialFields: Array<{
+  key: keyof CompanyViewProps["company"]
+  label: string
+}> = [
+  { key: "twitter", label: "Twitter / X" },
+  { key: "facebook", label: "Facebook" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "instagram", label: "Instagram" },
+  { key: "youtube", label: "YouTube" },
+  { key: "tiktok", label: "TikTok" },
+  { key: "github", label: "GitHub" },
+]
+
 export function StoryPreview({ company }: CompanyViewProps) {
   const originStory =
-    typeof company.originStory === "string"
-      ? stripHtml(company.originStory)
-      : ""
+    typeof company.originStory === "string" ? company.originStory : ""
   const vision = typeof company.vision === "string" ? company.vision : ""
-  const need = typeof company.need === "string" ? stripHtml(company.need) : ""
+  const need = typeof company.need === "string" ? company.need : ""
   const mission = typeof company.mission === "string" ? company.mission : ""
   const values = typeof company.values === "string" ? company.values : ""
   const theoryOfChange =
-    typeof company.theoryOfChange === "string"
-      ? stripHtml(company.theoryOfChange)
-      : ""
+    typeof company.theoryOfChange === "string" ? company.theoryOfChange : ""
 
   if (
     ![originStory, vision, need, mission, values, theoryOfChange].some(
@@ -134,37 +144,94 @@ export function StoryPreview({ company }: CompanyViewProps) {
 
   return (
     <FormRow title="About us">
-      <div className="grid gap-4 md:grid-cols-2 md:items-start">
+      <ProfileFieldTabs group="story" label="About us fields">
         {originStory.trim().length > 0 ? (
-          <ProfileField label="Origin story">
-            <FieldText text={originStory} multiline />
+          <ProfileField label="Origin story" focusKey="originStory">
+            <OrganizationNarrativeContent value={originStory} />
           </ProfileField>
         ) : null}
         {need.trim().length > 0 ? (
-          <ProfileField label="Need">
-            <FieldText text={need} multiline />
+          <ProfileField label="Need" focusKey="need">
+            <OrganizationNarrativeContent value={need} />
           </ProfileField>
         ) : null}
         {mission.trim().length > 0 ? (
-          <ProfileField label="Mission">
+          <ProfileField label="Mission" focusKey="mission">
             <OrganizationNarrativeContent value={mission} />
           </ProfileField>
         ) : null}
         {vision.trim().length > 0 ? (
-          <ProfileField label="Vision">
+          <ProfileField label="Vision" focusKey="vision">
             <OrganizationNarrativeContent value={vision} />
           </ProfileField>
         ) : null}
         {values.trim().length > 0 ? (
-          <ProfileField label="Values">
+          <ProfileField label="Values" focusKey="values">
             <OrganizationNarrativeContent value={values} />
           </ProfileField>
         ) : null}
         {theoryOfChange.trim().length > 0 ? (
-          <ProfileField label="Theory of change">
-            <FieldText text={theoryOfChange} multiline />
+          <ProfileField label="Theory of change" focusKey="theoryOfChange">
+            <OrganizationNarrativeContent value={theoryOfChange} />
           </ProfileField>
         ) : null}
+      </ProfileFieldTabs>
+    </FormRow>
+  )
+}
+
+export function WebsitePreview({ company }: CompanyViewProps) {
+  if (!(typeof company.publicUrl === "string" && company.publicUrl.trim())) {
+    return null
+  }
+  return (
+    <FormRow title="Website">
+      <BrandLink href={company.publicUrl} />
+    </FormRow>
+  )
+}
+
+export function NewsletterPreview({ company }: CompanyViewProps) {
+  if (!(typeof company.newsletter === "string" && company.newsletter.trim())) {
+    return null
+  }
+  return (
+    <FormRow title="Newsletter">
+      <BrandLink href={company.newsletter} />
+    </FormRow>
+  )
+}
+
+export function DonationPreview({ company }: CompanyViewProps) {
+  if (!(typeof company.donateUrl === "string" && company.donateUrl.trim())) {
+    return null
+  }
+  return (
+    <FormRow title="Donation page">
+      <BrandLink href={company.donateUrl} />
+    </FormRow>
+  )
+}
+
+export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
+  if (!hasAnyBrandLink) {
+    return null
+  }
+
+  return (
+    <FormRow title="Social">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
+        {socialFields.map(({ key, label }) => {
+          const value = company[key]
+          if (typeof value === "string" && value.trim()) {
+            return (
+              <ProfileField key={String(key)} label={label}>
+                <BrandLink href={value} />
+              </ProfileField>
+            )
+          }
+          return null
+        })}
       </div>
     </FormRow>
   )
@@ -188,6 +255,10 @@ export function ViewModeSections(props: CompanyViewProps) {
     { id: "contact", node: ContactPreview(props) },
     { id: "address", node: AddressPreview(props) },
     { id: "story", node: StoryPreview(props) },
+    { id: "website", node: WebsitePreview(props) },
+    { id: "newsletter", node: NewsletterPreview(props) },
+    { id: "donation", node: DonationPreview(props) },
+    { id: "social", node: SocialPreview(props) },
     { id: "brand-kit", node: BrandKitPreview(props) },
   ].filter((section) => Boolean(section.node))
 

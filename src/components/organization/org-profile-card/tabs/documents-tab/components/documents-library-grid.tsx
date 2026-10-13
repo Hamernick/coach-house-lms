@@ -1,16 +1,9 @@
 "use client"
 
-import { getDocumentEditorHref } from "@/lib/workspace/editor-navigation"
-
 import { useMemo, useRef, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { IconWorld } from "@tabler/icons-react"
 
-import { CoreDocumentChoices } from "@/components/roadmap/core-document-source/core-document-choices"
-import { CoreDocumentMenu } from "@/components/roadmap/core-document-source/core-document-menu"
-import type { useCoreDocumentSource } from "@/components/roadmap/core-document-source/use-core-document-source"
-import { Dialog, DialogContent,
-  DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { DocumentsLibraryCard } from "./documents-library-card"
@@ -48,8 +41,6 @@ const DocumentPreviewDialog = dynamic(
 )
 
 type DocumentsLibraryGridProps = {
-  hasStorageAccess: boolean
-  coreSource: ReturnType<typeof useCoreDocumentSource>
   viewMode?: "grid" | "list"
   renderRowActions?: (row: DocumentIndexRow) => ReactNode
   rows: DocumentIndexRow[]
@@ -97,8 +88,6 @@ type DocumentsLibraryGridProps = {
 }
 
 export function DocumentsLibraryGrid({
-  coreSource,
-  hasStorageAccess,
   viewMode = "grid",
   renderRowActions,
   rows,
@@ -132,7 +121,6 @@ export function DocumentsLibraryGrid({
   onPermanentlyDeleteUploadedFile,
   onReset,
 }: DocumentsLibraryGridProps) {
-  const [coreChoice, setCoreChoice] = useState<LibraryItem | null>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
   const uploadTargetRef = useRef<LibraryItem | null>(null)
   const [previewItem, setPreviewItem] = useState<LibraryItem | null>(null)
@@ -168,7 +156,6 @@ export function DocumentsLibraryGrid({
   const selection = useDocumentsLibrarySelection({
     items,
     canEdit,
-    canEditNative: hasStorageAccess,
     editMode,
     actions: {
       onDeleteUpload,
@@ -183,7 +170,6 @@ export function DocumentsLibraryGrid({
   })
 
   const canUpload =
-    hasStorageAccess &&
     canEdit &&
     editMode &&
     !uploadingKind &&
@@ -199,18 +185,6 @@ export function DocumentsLibraryGrid({
   }
 
   function openItem(item: LibraryItem, trigger: HTMLButtonElement) {
-    if (item.coreDriveSource) {
-      window.open(
-        item.coreDriveSource.webViewLink,
-        "_blank",
-        "noopener,noreferrer"
-      )
-      return
-    }
-    if (item.row?.source === "roadmap" && isEmptyDocumentSlot(item)) {
-      setCoreChoice(item)
-      return
-    }
     if (isEmptyDocumentSlot(item)) {
       if (!canUpload || !uploadInputRef.current) return
       uploadTargetRef.current = item
@@ -247,7 +221,7 @@ export function DocumentsLibraryGrid({
     if (item.row.source === "policy") {
       if (item.row.policy.document?.path) {
         void onViewPolicyDocument(item.row.policy)
-      } else {
+      } else if (canEdit && editMode) {
         onEditPolicy(item.row.policy)
       }
     }
@@ -288,39 +262,6 @@ export function DocumentsLibraryGrid({
 
   return (
     <>
-      <Dialog
-        open={Boolean(coreChoice)}
-        onOpenChange={(open) => {
-          if (!open && !coreSource.pending) setCoreChoice(null)
-        }}
-      >
-        <DialogContent>
-          <DialogTitle className="sr-only">
-            Choose a source for {coreChoice?.name}
-          </DialogTitle>
-          <DialogDescription className="sr-only">Start a draft in Coach House or link a file from Google Drive.</DialogDescription>
-          {coreChoice?.row?.source === "roadmap" ? (
-            <CoreDocumentChoices
-              title={coreChoice.name}
-              canWrite={hasStorageAccess}
-              pending={coreSource.pending}
-              error={coreSource.error}
-              onWrite={() => {
-                window.location.assign(
-                  getDocumentEditorHref(coreChoice.row!.source === "roadmap" ? coreChoice.row!.section.slug : "", true)
-                )
-              }}
-              onDrive={() => {
-                if (coreChoice.row?.source === "roadmap") {
-                  const section = coreChoice.row.section
-                  setCoreChoice(null)
-                  void coreSource.change(section, "drive")
-                }
-              }}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
       <input
         ref={uploadInputRef}
         type="file"
@@ -365,41 +306,6 @@ export function DocumentsLibraryGrid({
             <DocumentsLibraryCard
               key={item.id}
               item={item}
-              actions={
-                item.row?.source === "roadmap" &&
-                canEdit &&
-                editMode &&
-                !selection.selectedIds.length ? (
-                  <CoreDocumentMenu
-                    title={item.name}
-                    canEditContent={hasStorageAccess || Boolean(item.coreDriveSource)}
-                    pending={coreSource.pending}
-                    className="absolute top-1 right-1 z-20 size-11 sm:size-8"
-                    onEdit={() => {
-                      window.open(
-                        item.coreDriveSource?.webViewLink ??
-                          getDocumentEditorHref(item.row?.source === "roadmap" ? item.row.section.slug : "", true),
-                        item.coreDriveSource ? "_blank" : "_self",
-                        "noopener,noreferrer"
-                      )
-                    }}
-                    onReplace={() => {
-                      if (item.row?.source === "roadmap")
-                        void coreSource.change(item.row.section, "drive")
-                    }}
-                    onRemove={() => {
-                      if (
-                        item.row?.source === "roadmap" &&
-                        window.confirm(
-                          `Remove ${item.name}'s content or link? Its title stays. No Google Drive file is deleted.`
-                        )
-                      ) {
-                        void coreSource.change(item.row.section, "remove")
-                      }
-                    }}
-                  />
-                ) : undefined
-              }
               viewMode={viewMode}
               selected={selected}
               selecting={selection.selectedIds.length > 0}
@@ -410,7 +316,7 @@ export function DocumentsLibraryGrid({
                 (item.row?.source === "roadmap" &&
                   uploadingCoreSectionId === item.row.section.id)
               }
-              canEdit={canEdit && (hasStorageAccess || Boolean(item.driveDocument) || item.row?.source === "roadmap")}
+              canEdit={canEdit}
               editMode={editMode}
               onOpen={(trigger) => openItem(item, trigger)}
               onDropFile={

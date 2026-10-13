@@ -5,14 +5,11 @@ import { type ReactFlowInstance } from "reactflow"
 import "reactflow/dist/style.css"
 import { useWorkspaceAcceleratorDrawer } from "./use-workspace-accelerator-drawer"
 import { useWorkspaceOntologyActionRequest } from "./use-workspace-ontology-action-request"
+import { useWorkspaceParticleSources } from "./use-workspace-particle-sources"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
-import { WorkspaceCanvasSurfaceV2View } from "./workspace-canvas-surface-v2-view"
-import {
-  WORKSPACE_CANVAS_V2_VAULT_MODE,
-  type WorkspaceCanvasV2CardId,
-} from "./workspace-canvas-surface-v2-helpers"
+import { WorkspaceCanvasParticlesSurface } from "./workspace-canvas-particles-surface"
+import { WORKSPACE_CANVAS_V2_VAULT_MODE } from "./workspace-canvas-surface-v2-helpers"
 import * as Runtime from "./workspace-canvas-surface-v2-runtime"
-const WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED = false
 // eslint-disable-next-line max-lines-per-function
 export function WorkspaceCanvasSurfaceV2({
   boardState,
@@ -40,6 +37,7 @@ export function WorkspaceCanvasSurfaceV2({
   onTutorialRestart,
   onTutorialShortcutOpened,
   onFocusCard,
+  onParticlesChange,
   onPersistNodePosition,
   onConnectCards,
   onDisconnectConnection,
@@ -63,9 +61,9 @@ export function WorkspaceCanvasSurfaceV2({
     onAcceleratorStateChange,
     onInitialOnboardingSubmit,
   })
-  const orgNodePositionFromBoard = useMemo(
-    () => Runtime.resolveWorkspaceCanvasOrgNodePosition(boardState.nodes),
-    [boardState.nodes]
+  const particles = useWorkspaceParticleSources({ boardState, seed })
+  const orgNodePositionFromBoard = Runtime.useWorkspaceCanvasOrgNodePosition(
+    boardState.nodes
   )
   const tutorialActiveFromBoard = boardState.onboardingFlow.active
   const {
@@ -188,7 +186,7 @@ export function WorkspaceCanvasSurfaceV2({
     visibleCardIds,
     personPlacements: workspacePersonPlacements,
     cardMeasuredHeights: tutorialCardMeasuredHeights,
-    enabled: WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED && !tutorialActiveFromBoard,
+    enabled: false,
     zoom: viewportZoom,
     onFocusRoot: onFocusCard,
     onOpenAction: handleOpenOntologyAction,
@@ -373,7 +371,7 @@ export function WorkspaceCanvasSurfaceV2({
     isFlowReady,
     layoutFitRequestKey,
     nodeRelationshipEdges: personRelationshipEdges,
-    ontologyEdges: WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED ? ontology.edges : [],
+    ontologyEdges: [],
     onConnectCards,
     onDisconnectAllConnections,
     onDisconnectConnection,
@@ -391,6 +389,11 @@ export function WorkspaceCanvasSurfaceV2({
     visibleNodeIds: ontologyInteractions.visibleNodeIds,
   })
   const viewProps = {
+    particleState: boardState.particles,
+    particleOrganization: particles.organization,
+    particleActivities: particles.activities,
+    onParticlesChange,
+    onPersistWorkspaceCardPosition: onPersistNodePosition,
     nodes: ontologyInteractions.nodes,
     edges: flowState.renderEdges,
     allowEditing,
@@ -442,5 +445,5 @@ export function WorkspaceCanvasSurfaceV2({
     onDisconnectToTarget: flowState.handleContextDisconnectToTarget,
     onDisconnectAll: flowState.handleContextDisconnectAll,
   }
-  return <WorkspaceCanvasSurfaceV2View {...viewProps} />
+  return <WorkspaceCanvasParticlesSurface key={seed.orgId} {...viewProps} />
 }

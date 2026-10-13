@@ -43,6 +43,8 @@ import {
 } from "@/components/roadmap/roadmap-calendar/components"
 import { ROADMAP_CALENDAR_EVENT_TYPE_ORDER } from "@/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-style"
 
+const calendarType: RoadmapCalendarType = "internal"
+
 type RoadmapCalendarProps = {
   compactHeaderControls?: boolean
   hideHeaderCopy?: boolean
@@ -70,7 +72,6 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
     initialView,
     onViewChange,
   } = props
-  const calendarType: RoadmapCalendarType = "internal"
   const [month, setMonth] = useState(() => initialView?.month ?? new Date())
   const personalEvents = usePersonalCalendarEvents(month)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(() =>
@@ -170,7 +171,7 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
       setCanManageCalendar(result.canManageCalendar)
       setIsLoading(false)
     })
-  }, [calendarType, month, startTransition])
+  }, [month, startTransition])
 
   useEffect(() => {
     if (isLoading || selectedDate || events.length === 0) return
@@ -283,7 +284,7 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
       }
       setDrawerOpen(false)
     })
-  }, [calendarType, draft, editingEvent, startTransition])
+  }, [draft, editingEvent, startTransition])
 
   const handleDelete = useCallback(() => {
     if (!editingEvent) return
@@ -300,7 +301,7 @@ export function RoadmapCalendar(props: RoadmapCalendarProps) {
       toast.success("Event removed")
       setDrawerOpen(false)
     })
-  }, [calendarType, editingEvent, startTransition])
+  }, [editingEvent, startTransition])
 
   const handleGoToToday = useCallback(() => {
     const today = new Date()

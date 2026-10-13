@@ -130,6 +130,7 @@ describe("roadmap calendar month agenda", () => {
       agendaPanelParts.match(/overflow-y-auto/g) ?? []
 
     expect(calendarAction).toContain("bg-background/95")
+    expect(calendarAction).toContain("w-[min(26rem,calc(100vw-1rem))]")
     expect(calendarAction).toContain("p-0 shadow-none backdrop-blur-xl")
     expect(calendarAction).not.toContain("bg-transparent")
     expect(calendarAction).not.toContain("backdrop-blur-0")
@@ -276,7 +277,10 @@ describe("roadmap calendar month agenda", () => {
     expect(agendaPanel).toContain('weeks: "w-full"')
     expect(agendaPanel).toContain('week: "w-full"')
     expect(agendaPanel).toContain('day: "w-[14.285714%] min-w-0')
-    expect(dayButton).toContain("min-h-10 min-w-0")
+    expect(dayButton).toContain("mx-auto size-(--cell-size) min-h-10 min-w-0")
+    expect(dayButton).toContain("getReactGrabOwnerProps")
+    expect(dayButton).toContain('ownerId: "roadmap-calendar-month-agenda:day"')
+    expect(dayButton).toContain('component: "RoadmapCalendarDayWithEventDots"')
   })
 
   it("attributes the shared shadcn calendar root back to the roadmap month-grid owner", () => {
@@ -314,7 +318,10 @@ describe("roadmap calendar month agenda", () => {
       "mt-3 flex max-h-[clamp(6.5rem,30dvh,15rem)] min-h-0 flex-col"
     )
     expect(agendaPanel).toContain(
-      'className="bg-background flex min-h-0 flex-col rounded-[24px]'
+      '"border-border/60 bg-muted/45 mx-auto flex max-h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full max-w-3xl flex-col'
+    )
+    expect(agendaPanel).toContain(
+      'className="bg-background flex min-h-0 w-full flex-col rounded-[24px]'
     )
     expect(agendaPanel).not.toContain(
       'className="flex min-h-0 flex-1 flex-col rounded-[24px]'
@@ -390,10 +397,18 @@ describe("roadmap calendar month agenda", () => {
       "flex min-w-0 shrink-0 items-center gap-1.5 justify-self-end"
     )
     expect(agendaPanel).toContain(
-      "const showTodayButton = !isSameCalendarMonth(month, today ?? new Date())"
+      "const showTodayButton = !isSameCalendarMonth(month, new Date())"
     )
     expect(agendaPanel).toContain("{showTodayButton ? (")
     expect(agendaPanel).toContain(") : null}")
+    const previousMonthIndex = agendaPanel.indexOf(
+      'aria-label="Show previous month"'
+    )
+    const todayIndex = agendaPanel.indexOf("onClick={onGoToToday}")
+    const nextMonthIndex = agendaPanel.indexOf('aria-label="Show next month"')
+    expect(previousMonthIndex).toBeGreaterThan(-1)
+    expect(todayIndex).toBeGreaterThan(previousMonthIndex)
+    expect(nextMonthIndex).toBeGreaterThan(todayIndex)
     expect(agendaPanel).not.toContain("RoadmapCalendarCoachingTab")
     expect(agendaPanel).not.toContain("Add hold")
     expect(agendaPanel).not.toContain("CardContent")

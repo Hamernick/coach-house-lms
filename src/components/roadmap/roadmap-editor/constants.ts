@@ -1,5 +1,5 @@
 export const DEFAULT_PLACEHOLDER = "Start writing..."
-export const ROADMAP_DRAFT_STORAGE_VERSION = 1
+export const ROADMAP_DRAFT_STORAGE_VERSION = 2
 export const ROADMAP_TOOLBAR_ID = "roadmap-editor-toolbar"
 
 const FUNDRAISING_CHILD_IDS = [

@@ -56,13 +56,12 @@ const EXAMPLE_HR_PLAN: HrPlanDraft = {
 
 export function useHrPlan() {
   const [draft, setDraft] = useState(DEFAULT_HR_PLAN)
-  const { storageReady, storageStatus, authorizeResetAfterReadFailure } =
-    useDocumentationDraftPersistence(
-      HR_PLAN_STORAGE_KEY,
-      draft,
-      setDraft,
-      sanitizeHrPlan
-    )
+  const { storageReady, storageStatus } = useDocumentationDraftPersistence(
+    HR_PLAN_STORAGE_KEY,
+    draft,
+    setDraft,
+    sanitizeHrPlan
+  )
 
   const updateDraft = useCallback(
     <Key extends keyof HrPlanDraft>(key: Key, value: HrPlanDraft[Key]) =>
@@ -76,9 +75,6 @@ export function useHrPlan() {
     storageStatus,
     updateDraft,
     loadExample: useCallback(() => setDraft(EXAMPLE_HR_PLAN), []),
-    reset: useCallback(() => {
-      authorizeResetAfterReadFailure()
-      setDraft(DEFAULT_HR_PLAN)
-    }, [authorizeResetAfterReadFailure]),
+    reset: useCallback(() => setDraft(DEFAULT_HR_PLAN), []),
   }
 }

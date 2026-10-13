@@ -16,7 +16,7 @@ import {
   type TimelineEditDialogState,
   type TimelineViewMode,
 } from "./member-workspace-project-timeline-parts"
-import { withSaveFeedback } from "@/lib/with-save-feedback"
+import { toast } from "@/lib/toast"
 
 function getViewStartForToday() {
   return startOfWeek(addWeeks(FIXED_TODAY, -1), { weekStartsOn: 1 })
@@ -59,7 +59,7 @@ function shiftProjectStartWithTasks(
   newStart: Date,
 ) {
   return projects.map((project) => {
-    if (project.id !== projectId || !project.startDate || !project.endDate) return project
+    if (project.id !== projectId) return project
     const durationDays = differenceInCalendarDays(project.endDate, project.startDate) + 1
     const newEnd = addDays(newStart, durationDays - 1)
     const diff = differenceInCalendarDays(newStart, project.startDate)
@@ -221,13 +221,14 @@ export function MemberWorkspaceProjectTimelineView({
     }
 
     startScheduleTransition(async () => {
-      const result = await withSaveFeedback(() => updateProjectScheduleAction(
+      const result = await updateProjectScheduleAction(
         projectId,
         formatDateOnly(newStart),
         formatDateOnly(newEnd),
-      ), { pending: "Saving dates…", success: "Project dates updated" })
+      )
 
       if ("error" in result) {
+        toast.error(result.error)
         setProjects(previousProjects)
         return
       }
@@ -261,7 +262,7 @@ export function MemberWorkspaceProjectTimelineView({
 
   const updateProjectStart = (projectId: string, newStart: Date, confirmed = false) => {
     const project = projects.find((item) => item.id === projectId)
-    if (!project?.startDate || !project.endDate) return
+    if (!project) return
 
     const durationDays = differenceInCalendarDays(project.endDate, project.startDate) + 1
     const newEnd = addDays(newStart, durationDays - 1)
@@ -293,7 +294,7 @@ export function MemberWorkspaceProjectTimelineView({
         const taskDuration = differenceInCalendarDays(task.endDate, task.startDate) + 1
         const newEnd = addDays(newStart, taskDuration - 1)
 
-        if ((project.startDate && newStart < project.startDate) || (project.endDate && newEnd > project.endDate)) {
+        if (newStart < project.startDate || newEnd > project.endDate) {
           showConfirmDialog(
             "This task is outside the project range. Expand project to fit?",
             () => {
@@ -302,8 +303,8 @@ export function MemberWorkspaceProjectTimelineView({
                   if (item.id !== project.id) return item
                   return {
                     ...item,
-                    startDate: !item.startDate || newStart < item.startDate ? newStart : item.startDate,
-                    endDate: !item.endDate || newEnd > item.endDate ? newEnd : item.endDate,
+                    startDate: newStart < item.startDate ? newStart : item.startDate,
+                    endDate: newEnd > item.endDate ? newEnd : item.endDate,
                     tasks: item.tasks.map((entry) =>
                       entry.id === taskId ? { ...entry, startDate: newStart, endDate: newEnd } : entry,
                     ),
@@ -344,8 +345,8 @@ export function MemberWorkspaceProjectTimelineView({
   const openProjectEditor = (projectId: string) => {
     const project = projects.find((item) => item.id === projectId)
     if (!project) return
-    setEditStartDate(project.startDate ? format(project.startDate, "yyyy-MM-dd") : "")
-    setEditEndDate(project.endDate ? format(project.endDate, "yyyy-MM-dd") : "")
+    setEditStartDate(format(project.startDate, "yyyy-MM-dd"))
+    setEditEndDate(format(project.endDate, "yyyy-MM-dd"))
     setEditDialog({ isOpen: true, type: "project", projectId, taskId: null })
   }
 

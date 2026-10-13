@@ -5,7 +5,6 @@ import { type useRouter, type useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 
 import { buildMapHref, removeAuthParams, resolveBounds } from "./map-view-helpers"
-import { resolvePublicMapScreenPadding } from "./screen-camera"
 
 type PublicMapResizeSyncOptions = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -43,8 +42,6 @@ export function observePublicMapContainer({
     resizeFrame = requestAnimationFrame(() => {
       if (mapRef.current !== map) return
       map.resize()
-      const screenPadding = resolvePublicMapScreenPadding(containerRef.current)
-      if (screenPadding) map.setPadding(screenPadding)
       if (mapLoadedRef.current) {
         onViewportChange(map)
       }

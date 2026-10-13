@@ -1,7 +1,5 @@
 "use server"
 
-import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
-
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 
@@ -239,10 +237,6 @@ export async function createWorkspaceCollaborationInviteAction({
       error: "You do not have permission to invite workspace collaborators.",
     }
   }
-
-  const paidAccess = await resolvePaidTeamAccessForOrgSubscription({ supabase, orgId: activeOrg.orgId })
-  if (paidAccess.error) return { error: paidAccess.error }
-  if (!paidAccess.hasPaidTeamAccess) return { error: "Upgrade to invite collaborators and manage team access." }
 
   const normalizedUserId = userId.trim()
   if (!normalizedUserId) {

@@ -13,7 +13,6 @@ export type DocumentsToolbarProps = {
   source: DocumentsLibrarySource
   fileType: DocumentsLibraryFileType
   showDeleted: boolean
-  canUpload: boolean
   canEdit: boolean
   editMode: boolean
   driveConnected: boolean

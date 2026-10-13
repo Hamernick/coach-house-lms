@@ -6,17 +6,15 @@ test("public Build landing and hover navigation", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Workspace for nonprofits.",
+      name: "Build the organization your community needs.",
     })
   ).toBeVisible()
 
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
-  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
-  const menu = page.locator('[data-slot="navigation-menu-content"][data-state="open"]')
-  await expect(menu.getByRole("link", { name: /Workspace/ })).toBeVisible()
-  await expect(menu.getByRole("link", { name: /Accelerator/ })).toBeVisible()
-  await expect(menu.getByRole("link", { name: /Pricing/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Workspace/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Accelerator/ })).toBeVisible()
+  await expect(page.getByRole("link", { name: /Pricing/ })).toBeVisible()
   await page.mouse.move(20, 300)
   await expect(buildMenu).toHaveAttribute("data-state", "closed")
 
@@ -35,7 +33,6 @@ test("public navigation menu layers above Documentation content", async ({
   await page.goto("/documentation?react-grab=0")
 
   const buildMenu = page.getByRole("button", { name: "Build", exact: true })
-  await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
   await buildMenu.hover()
   const menuLayer = page.locator(
     '[data-slot="navigation-menu-content"][data-state="open"]'
@@ -90,7 +87,7 @@ test("public navigation menu opens and closes with the keyboard", async ({
   await expect(trigger).toHaveAttribute("data-state", "open")
   await expect(
     page.locator(
-      '[data-slot="navigation-menu-content"][data-state="open"] a[href="/build#workspace"]'
+      '[data-slot="navigation-menu-content"][data-state="open"] a[href="/workspace"]'
     )
   ).toBeVisible()
   await page.keyboard.press("Escape")
@@ -108,12 +105,11 @@ for (const route of ["/", "/documentation"] as const) {
       const trigger = page
         .locator('[data-slot="navigation-menu-trigger"]')
         .filter({ hasText: menuName })
-      await expect(page.getByRole("button", { name: /Toggle theme \(currently/ })).toBeVisible()
       await trigger.hover()
       const link = page.locator(
         menuName === "Collect"
-          ? 'a[href="/login?redirect=%2Fresources"]'
-          : 'a[href="/build#pricing"]'
+          ? 'a[href="/login?redirect=%2F"]'
+          : 'a[href="/pricing"]'
       )
       await expect(link).toBeVisible()
       await link.hover()
@@ -121,13 +117,13 @@ for (const route of ["/", "/documentation"] as const) {
       await link.click()
       await expect(page).toHaveURL(
         menuName === "Collect"
-          ? /\/login\?redirect=%2Fresources$/
-          : /\/build#pricing$/
+          ? /\/login\?redirect=%2F$/
+          : /\/home-canvas\?section=pricing$/
       )
       if (menuName === "Build") {
         await expect(
           page.getByRole("region", {
-            name: "Choose how you build.",
+            name: "Simple pricing for nonprofit builders",
           })
         ).toBeVisible()
       }
@@ -135,11 +131,18 @@ for (const route of ["/", "/documentation"] as const) {
   }
 }
 
-test("public Build header stays minimal", async ({ page }) => {
+test("public header search submits to the Collect root", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/build?react-grab=0")
-  await expect(page.getByRole("heading", { name: "Workspace for nonprofits." })).toBeVisible()
-  await expect(page.getByPlaceholder("Start searching")).toHaveCount(0)
-  await expect(page.getByRole("link", { name: "See plans", exact: true })).toHaveAttribute("href", "/build#pricing")
+
+  const search = page.getByPlaceholder("Start searching")
+  await search.fill("food")
+  await search.press("Enter")
+
+  await expect(page).toHaveURL(/\?q=food/)
+  await expect(
+    page.getByRole("searchbox", { name: "Find organizations and resources" })
+  ).toHaveValue("food")
 })
 
 test("public Build landing stays within a mobile viewport", async ({
@@ -148,10 +151,10 @@ test("public Build landing stays within a mobile viewport", async ({
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/build?react-grab=0")
 
-  await expect(page.getByRole("button", { name: "Collect", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Collect" })).toBeVisible()
   await expect(
-    page.getByRole("button", { name: "Build", exact: true })
-  ).toHaveAttribute("data-active", "true")
+    page.getByRole("link", { name: "Build", exact: true })
+  ).toHaveAttribute("aria-current", "page")
   await page.addStyleTag({
     content: "nextjs-portal { visibility: hidden !important; }",
   })

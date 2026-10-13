@@ -290,6 +290,9 @@ export function AcceleratorProgressRail({
                       />
                     )}
                     <span className="font-medium">{segment.label}</span>
+                    <span className="text-muted-foreground tabular-nums">
+                      {segment.rangeLabel}
+                    </span>
                     <span className="text-muted-foreground">
                       {segmentStatusLabels[segment.id]}
                     </span>

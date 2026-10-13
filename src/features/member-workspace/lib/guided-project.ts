@@ -6,15 +6,13 @@ const date = z
   .refine((value) => parseScheduleDay(value) !== null, "Enter a valid date.")
 export const guidedProjectSchema = z
   .object({
-    fiscalSponsorshipEnabled: z.boolean().optional(),
-    recurrence: z.enum(["none", "monthly"]).optional(),
     requestId: z.string().uuid(),
-    organizationId: z.union([z.string().uuid(), z.literal("")]),
+    organizationId: z.string().uuid(),
     name: z.string().trim().min(1).max(180),
     description: z.string().trim().max(10000),
     outcomes: z.string().trim().max(10000),
-    startDate: z.union([date, z.literal("")]),
-    endDate: z.union([date, z.literal("")]),
+    startDate: date,
+    endDate: date,
     ownerId: z.string().uuid("Choose a project owner."),
     contributorIds: z.array(z.string().uuid()).max(30),
     tasks: z
@@ -38,13 +36,7 @@ export const guidedProjectSchema = z
       .max(30),
   })
   .superRefine((value, context) => {
-    if (value.recurrence === "monthly" && (!value.startDate || !value.endDate))
-      context.addIssue({
-        code: "custom",
-        message: "Monthly projects require a start date and an end date.",
-        path: [!value.startDate ? "startDate" : "endDate"],
-      })
-    if (value.startDate && value.endDate && value.endDate < value.startDate)
+    if (value.endDate < value.startDate)
       context.addIssue({
         code: "custom",
         message: "Due date must follow the start date.",
@@ -53,8 +45,8 @@ export const guidedProjectSchema = z
     value.tasks.forEach((task, index) => {
       if (
         task.endDate < task.startDate ||
-        (value.startDate && task.startDate < value.startDate) ||
-        (value.endDate && task.endDate > value.endDate)
+        task.startDate < value.startDate ||
+        task.endDate > value.endDate
       )
         context.addIssue({
           code: "custom",

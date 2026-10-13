@@ -1,6 +1,5 @@
 import type { User } from "@supabase/supabase-js"
 import { cache } from "react"
-import { getServerUser } from "@/server/auth/server-user"
 
 import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import { readActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
@@ -22,7 +21,7 @@ const resolveOptionalAuthenticatedAppContextCached = cache(
     const {
       data: { user },
       error: userError,
-    } = await getServerUser(supabase)
+    } = await supabase.auth.getUser()
 
     if (userError && !isSupabaseAuthSessionMissingError(userError)) {
       throw supabaseErrorToError(userError, "Unable to load user.")

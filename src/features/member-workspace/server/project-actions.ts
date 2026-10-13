@@ -1,7 +1,5 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
-
 import { mergeProjectOptions } from "../lib/project-fiscal-sponsorship"
 
 import { resolveProjectCreateOrgId } from "./project-organization"
@@ -147,7 +145,6 @@ export async function updateMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -241,7 +238,6 @@ export async function updateMemberWorkspaceProjectStatusAction(
   status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"]
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -299,7 +295,6 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   endDate: string
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })
@@ -375,7 +370,6 @@ export async function deleteMemberWorkspaceProjectAction(
   projectId: string
 ): Promise<MemberWorkspaceDeleteProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) return { error: "Use the fiscal application review for this project." }
   const mutationAccessResult = ensureProjectMutationAllowed(actor, {
     allowPlatformAdmin: true,
   })

@@ -1,34 +1,7 @@
 "use client"
 
 import { useEffect, type MutableRefObject } from "react"
-import { getRectOfNodes, getViewportForBounds, type Node, type ReactFlowInstance } from "reactflow"
-import {
-  resolveWorkspaceCanvasCameraDuration,
-  resolveWorkspaceCanvasFocusViewportSize,
-  type WorkspaceCanvasFocusViewportSize,
-} from "../runtime/workspace-canvas-viewport-command"
-import { WORKSPACE_CANVAS_PERSON_NODE_SIZE } from "./workspace-canvas-person-node-model"
-
-export function focusWorkspaceCanvasPeople(
-  flowInstance: ReactFlowInstance,
-  nodes: Node[],
-  viewportSize: WorkspaceCanvasFocusViewportSize | null
-) {
-  const measuredNodes = nodes.map((node) => ({
-    ...node,
-    width: node.width ?? WORKSPACE_CANVAS_PERSON_NODE_SIZE.width,
-    height: node.height ?? WORKSPACE_CANVAS_PERSON_NODE_SIZE.height,
-  }))
-  const duration = resolveWorkspaceCanvasCameraDuration(260)
-  if (viewportSize) {
-    const viewport = getViewportForBounds(
-      getRectOfNodes(measuredNodes), viewportSize.width, viewportSize.height, 0.24, 0.78, 0.22
-    )
-    void flowInstance.setViewport(viewport, { duration })
-  } else {
-    void flowInstance.fitView({ nodes, padding: 0.22, minZoom: 0.24, maxZoom: 0.78, duration })
-  }
-}
+import type { Node, ReactFlowInstance } from "reactflow"
 
 export type WorkspaceCanvasPersonFitRequest = {
   nodeIds: string[]
@@ -53,30 +26,22 @@ export function useWorkspaceCanvasPersonFitRequest({
     const flowInstance = flowInstanceRef.current
     if (!flowInstance) return
 
-    let frame = 0
-    let attempts = 0
-    const focusWhenReady = () => {
+    const frame = window.requestAnimationFrame(() => {
       const nodeIdSet = new Set(fitRequest.nodeIds)
       const nodesToFit = flowInstance
         .getNodes()
         .filter((node) => nodeIdSet.has(node.id))
-      if (nodesToFit.length !== nodeIdSet.size) {
-        if (++attempts < 120) frame = window.requestAnimationFrame(focusWhenReady)
-        return
-      }
-      const frameRect = document.querySelector<HTMLElement>(
-        '[data-workspace-canvas-flow-frame="true"]'
-      )?.getBoundingClientRect()
-      focusWorkspaceCanvasPeople(
-        flowInstance,
-        nodesToFit,
-        resolveWorkspaceCanvasFocusViewportSize() ?? (frameRect
-          ? { width: frameRect.width, height: frameRect.height }
-          : null)
-      )
+      if (nodesToFit.length === 0) return
+
+      void flowInstance.fitView({
+        nodes: nodesToFit,
+        padding: 0.22,
+        minZoom: 0.24,
+        maxZoom: 0.78,
+        duration: 260,
+      })
       onFitRequestHandled()
-    }
-    frame = window.requestAnimationFrame(focusWhenReady)
+    })
 
     return () => window.cancelAnimationFrame(frame)
   }, [

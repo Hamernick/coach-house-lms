@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-13T20:13:44.952494+00:00",
+  "operation": "resume",
+  "owner": "ship-profile-save-20261013",
+  "previous_revision": 30,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-menu-fix-20261013",
+        "pid": 63131,
+        "started": "Tue Oct 13 16:00:37 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T20:00:38.417102+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T20:13:44.755048+00:00"
+    },
+    "checkout_activation_repair": {
+      "status": "Externally merged; production deployment and retest not yet verified",
+      "source": "User production test failed at Finishing your upgrade; packet03 stages2/4/6, LIVE01",
+      "branch": "fix/checkout-activation-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+      "base": "c8f410859bba73b5fc1c7a94c3a1bdbd0c62a59a",
+      "evidence": "Read-only exact-account Stripe checkout complete, USD0, subscription active; matching app subscription active. Stored success URL contains encoded CHECKOUT_SESSION_ID; production logs show repeated checkout_session_not_found_in_available_stripe_modes. No new purchase or provider mutation.",
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/295",
+      "head": "0dc4712858f8ecca52e8ba81df1480e2196726e9",
+      "validation": "Three tests failed before fix; all21 checkout-route/activation-return tests, changed-file lint, acceptance manifest and pre-push pass; remote head verified. Vercel request parameters directly confirm literal placeholder; Stripe returns404.",
+      "release_boundary": "External merge is not evidence of passed quality/review gates or production verification; preserve prior observations. Worktree now carries separate PR296 branch.",
+      "menu_fix": "Shared identity flex column now min-w-0/flex-1; actual browser reproduction overflow corrected on desktop and390px; full DOM text retained. Three existing menu tests/lint/pre-push passed. Synthetic screenshot in docs/reviews/2026-10-13-account-menu-long-email.jpg and Desktop/Coach House Account Menu Review. Temporary fixture removed; own3120 server stopped. Appearance review pending.",
+      "merge_observation": {
+        "sha": "368709ce032e630ec7fa966ed856f14c9d90a76f",
+        "at": "2026-10-13T20:05:13Z"
+      }
+    },
+    "profile_save_repair": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/296",
+      "head": "f6d9a17d6eb9a99719dd5b76197524388b708a5e",
+      "branch": "fix/onboarding-profile-save-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-checkout-activation-20261013",
+      "base": "368709ce032e630ec7fa966ed856f14c9d90a76f",
+      "source": "LIVE01; packet03 onboarding. User confirmed personal username and workspace address were identical.",
+      "diagnosis": "Read-only production logs and exact-account checks: name/avatar/person handle saved, organization absent. Shared public handle collision misclassified as People concurrency error.",
+      "fix": "Validate matching handles before writes; return recoverable error for public slug collisions; preserve primary-key concurrency retry.",
+      "validation": "49 focused tests passed including five regressions that failed before fix; changed-file lint, boundaries, normal prepush and Graphify update passed. Remote head verified.",
+      "production_retest": "User reports changing username worked. Workaround confirmed; validation fix not deployed.",
+      "release": "Current-head CI in progress, code-owner review required. No production/provider writes or previews."
+    },
+    "next_action": "Review PR296 at f6d9a17d; require current-head quality/code-owner review then gated deployment and validation retest. User username-change workaround succeeded. Preserve checkout-return/menu deployment checks, appearance/Collect blockers; no map work."
+  },
+  "remote": null
+}

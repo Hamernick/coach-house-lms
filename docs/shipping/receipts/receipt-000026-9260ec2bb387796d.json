@@ -1,0 +1,89 @@
+{
+  "at": "2026-10-13T18:36:08.892014+00:00",
+  "operation": "resume",
+  "owner": "ship-review-main-20261013",
+  "previous_revision": 25,
+  "head": "066ee9e40c8f5a8443a59acec3cc87f33048f541",
+  "evidence": {
+    "owner_evidence": {
+      "previous": {
+        "owner": "ship-review-fixes-20261013",
+        "pid": 52787,
+        "started": "Tue Oct 13 14:32:39 2026",
+        "host": "Calebs-MacBook-Pro-2.local",
+        "at": "2026-10-13T18:32:39.707871+00:00"
+      },
+      "verified_stopped": true,
+      "at": "2026-10-13T18:36:08.737621+00:00"
+    },
+    "next_action": "Review corrected PR292 9ba3eb33 and PR294 43eff617 after current-main reconciliation; fresh CI, appearance and code-owner review pending. PR293 externally merged; no deployment verification inferred.",
+    "plan_linkage_followup": {
+      "pr": "https://github.com/Hamernick/CoachHouse/pull/292",
+      "head": "9ba3eb33082bab25a9ea3959258faba4ab742f47",
+      "branch": "chore/ship-plan-links-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-ship-plans-20261013",
+      "tests": "3 continuation checks passed for startup changes; prior38 runner checks applicable, runner unchanged",
+      "recovery": "origin/chore/ship-plan-links-20261013 verified",
+      "status": "Ready for review; latest bot findings fixed; fresh quality and review pending",
+      "validation": "42 Python runner tests and 3 continuation tests pass; bind unclaimed restored queues and portable original-plan roots covered"
+    },
+    "live_site_candidate": {
+      "pr": 294,
+      "url": "https://github.com/Hamernick/CoachHouse/pull/294",
+      "head": "43eff6171244552b81accadee67c352439dfb3ea",
+      "branch": "fix/live-site-pricing-donate-20261013",
+      "worktree": "/Users/calebhamernick/Development/coach-house-platform-live-site-20261013",
+      "source": "Original packet09 stages1,2 and Donate-only4; LIVE01/LIVE02",
+      "status": "Ready for review; reviewed collection redirect finding fixed; fresh hosted quality and code-owner review pending",
+      "validation": "47 focused signup/confirmation tests pass plus ESLint and normal pre-push; seven new collection regressions reproduced before fix. Prior Donate/menu/browser evidence remains applicable.",
+      "review": "Appearance pending; user tested real confirmation and found home redirect; local correction included.",
+      "provider_observation": "Read-only production auth config: localhost3000 allowed,3119 absent,Site URL coachhouse.app,email confirm page production. No provider writes or preview branches.",
+      "server": "localhost3119 in this worktree retained for user testing; unrelated localhost3000 preserved",
+      "gallery": "Desktop/Coach House Pricing Donate Review/START-HERE.html",
+      "recovery": "origin/fix/live-site-pricing-donate-20261013 verified at 43eff6171244552b81accadee67c352439dfb3ea",
+      "release": "CI/review/approval/deployment/live confirmation and payment verification pending",
+      "button_family": "Both pricing and Build use shared PricingTierCardsSection; primary/secondary styles do not affect routing. No additional runtime changes needed."
+    },
+    "readiness_triage": {
+      "at": "2026-10-13T18:36:08.737621+00:00",
+      "pr292": {
+        "head": "9ba3eb33082bab25a9ea3959258faba4ab742f47",
+        "draft": false,
+        "ci": "Fresh final-head checks pending; previous-head results are historical",
+        "review": "REVIEW_REQUIRED",
+        "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed",
+        "main_reconciliation": "Merged d3913f23; only appended runlog entries conflicted; both histories retained"
+      },
+      "pr293": {
+        "head": "d82d3f150f6d4280b8c0aee8639ee670f53d93a9",
+        "draft": false,
+        "passed": [
+          "static",
+          "acceptance",
+          "rls",
+          "build"
+        ],
+        "failed": [
+          "visual",
+          "quality"
+        ],
+        "details": "Three Tools baseline mismatches; Find detail case flaky.",
+        "state": "MERGED",
+        "merge_sha": "d3913f2379a9366a0a89e9d0bddccb5e9d7385dd",
+        "merged_at": "2026-10-13T18:23:54Z",
+        "release_evidence": "External merge observed; historical failed quality and missing review not rewritten; production not independently verified"
+      },
+      "pr294": {
+        "head": "43eff6171244552b81accadee67c352439dfb3ea",
+        "draft": false,
+        "ci": "Fresh final-head checks pending; previous-head results are historical",
+        "review": "REVIEW_REQUIRED",
+        "findings": "User-supplied automated review findings fixed and regression-tested; no review-thread resolution claimed",
+        "main_reconciliation": "Merged d3913f23; only appended runlog entries conflicted; both histories retained"
+      },
+      "boundary": "Ready-for-review is not merge approval. No bypass, reference replacement, deployment, provider or preview changes."
+    },
+    "public_indexing_candidate_status": "PR293 externally merged d3913f23 at 2026-10-13T18:23:54Z; historical failed quality and missing review preserved; production unverified"
+  },
+  "remote": null
+}

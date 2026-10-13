@@ -135,8 +135,8 @@ unique conflict. Shared person/organization address collisions were being retrie
 as concurrent People edits. The fix rejects a username matching its pending
 workspace URL and turns known address conflicts into recoverable form errors.
 Primary-key race retries and revision checks remain intact. Five regressions
-reproduced the defect; 49 focused tests and lint pass. Exact submitted organization
-slug was not captured; do not claim the user's unseen fields were confirmed.
+reproduced the defect; 49 focused tests and lint pass. User confirmed the workspace address and personal username were identical; the
+shared-namespace collision is confirmed. Follow-up: PR296.
 
 Next: follow-up PR, hosted quality/code-owner review and production retest.
 No account/provider mutation or new checkout; user can retain current entries.

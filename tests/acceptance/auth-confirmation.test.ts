@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest"
+import "./test-utils"
+import { describe, expect, it, vi } from "vitest"
+
+import { captureRedirect, createSupabaseServerClientServerMock, headersMock } from "./test-utils"
 
 import { buildSupabaseAuthEmailPreviews } from "@/features/organization-access"
 import {
@@ -6,9 +9,58 @@ import {
   getSafeEmailOtpType,
   resolvePostAuthConfirmationRedirect,
   resolveAuthConfirmationDestination,
+  resolveConfirmedSignupDestination,
 } from "@/lib/supabase/auth-confirmation"
 
 describe("auth confirmation", () => {
+  it.each([false, true])("only resumes the selected plan after successful human confirmation (OTP error: %s)", async (otpError) => {
+    headersMock.mockResolvedValue({ get: (name: string) => name === "host" ? "coachhouse.app" : undefined })
+    const verifyOtp = vi.fn().mockResolvedValue({
+      data: { user: { user_metadata: { onboarding_intent_focus: "build", onboarding_selected_builder_plan_tier: "organization" } } },
+      error: otpError ? { message: "Expired token" } : null,
+    })
+    createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp } })
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const page = await ConfirmEmailPage({ searchParams: Promise.resolve({ token_hash: "test-token", type: "email", next: "https://coachhouse.app" }) })
+    const form = page.props.children.props.children
+    expect(form.type).toBe("form")
+    expect(verifyOtp).not.toHaveBeenCalled()
+    const formData = new FormData()
+    for (const input of form.props.children.filter((child: { type: string }) => child.type === "input")) {
+      formData.set(input.props.name, input.props.value)
+    }
+    const result = new URL(await captureRedirect(() => form.props.action(formData)), "https://coachhouse.app")
+    expect(verifyOtp).toHaveBeenCalledWith({ token_hash: "test-token", type: "email" })
+    expect(result.pathname).toBe(otpError ? "/login" : "/api/stripe/checkout")
+    if (otpError) expect(result.searchParams.get("error")).toContain("invalid or expired")
+    else expect(result.searchParams.get("plan")).toBe("organization")
+  })
+
+  it.each(["organization", "operations_support", "free"])("recovers the %s signup when the provider replaces the callback with its Site URL", (plan) => {
+    const destination = resolveAuthConfirmationDestination("https://coachhouse.app", "https://coachhouse.app")
+    const result = new URL(resolveConfirmedSignupDestination({
+      destination,
+      type: "email",
+      userMetadata: { onboarding_intent_focus: "build", onboarding_selected_builder_plan_tier: plan },
+    }))
+    expect(result.origin).toBe("https://coachhouse.app")
+    expect(result.pathname).toBe(plan === "free" ? "/onboarding" : "/api/stripe/checkout")
+    expect(result.searchParams.get("plan")).toBe(plan)
+    if (plan !== "free") {
+      expect(result.searchParams.get("redirect")).toBe("/onboarding?source=onboarding_pricing")
+      expect(result.searchParams.get("context")).toBe("onboarding_builder")
+    }
+  })
+
+  it("recovers missing signup destinations without replacing explicit application or recovery destinations", () => {
+    expect(resolveConfirmedSignupDestination({ destination: "/workspace", type: "signup" })).toBe("/onboarding?source=signup")
+    for (const destination of ["/documentation/fiscal-sponsorship#application", "/find", "/onboarding?source=signup"]) {
+      expect(resolveConfirmedSignupDestination({ destination, type: "email" })).toBe(destination)
+    }
+    expect(resolveConfirmedSignupDestination({ destination: "/", type: "recovery" })).toBe("/")
+    expect(resolveConfirmedSignupDestination({ destination: "/", type: "email", userMetadata: { onboarding_completed: true } })).toBe("/")
+  })
+
   it("routes signup confirmation emails through the human-confirm page", () => {
     const preview = buildSupabaseAuthEmailPreviews("https://coachhouse.app").find(
       (item) => item.id === "supabase-confirm-sign-up",

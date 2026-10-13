@@ -24,6 +24,20 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
+Live-site pricing/Donate preparation: `fix/live-site-pricing-donate-20261013`,
+checkout `coach-house-platform-live-site-20261013`, localhost:3119. Original
+Desktop packet 09 stages 1, 2 and Donate-only stage 4; LIVE-01/LIVE-02. Header/footer
+Donate and full-page Pricing/Documentation navigation are locally validated
+(35 acceptance tests, three browser behavior tests). User appearance review,
+affected Ubuntu visual references and current-head release gates remain open.
+No Supabase/provider preview setup. [Scope and continuation](../plans/2026-10-13-live-site-pricing-donate.md).
+Preserve the unrelated port 3000 server and existing SHIP blocked history.
+User signup test exposed production email confirmation falling back home when
+localhost:3119 is rejected by the provider redirect allowlist. Local fix restores
+the selected plan after successful OTP verification; 25 auth regression tests
+pass. Production confirmation still uses unpatched deployed code; live retest
+and exact-revision release gates remain outstanding. No provider config changed.
+
 [Shared entry point](../SHIP.md): `SHIP-000`, branch `chore/ship-harness-20261013`,
 worktree `coach-house-platform-ship-20261013`. Phase 0 locally implemented;
 human approval, current-head quality, code-owner review and merge remain open.

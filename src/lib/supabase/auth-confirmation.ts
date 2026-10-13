@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js"
 
 import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import { buildPostSignupBuilderRedirect, resolveSignupBuilderPlanTier } from "@/lib/onboarding/signup-plan"
 
 const AUTH_CALLBACK_PATH = "/auth/callback"
 const ALLOWED_CONFIRMATION_DESTINATION_ORIGINS = new Set([
@@ -21,6 +22,34 @@ export function getSafeEmailOtpType(value: unknown): EmailOtpType | null {
     default:
       return null
   }
+}
+
+/** Recover signup intent when the provider substitutes its Site URL for a callback. */
+export function resolveConfirmedSignupDestination({
+  destination,
+  type,
+  userMetadata,
+}: {
+  destination: string
+  type: EmailOtpType
+  userMetadata?: Record<string, unknown>
+}) {
+  if (type !== "email" && type !== "signup") return destination
+  if (userMetadata?.onboarding_completed === true) return destination
+
+  const destinationUrl = new URL(destination, "https://coachhouse.app")
+  if (destinationUrl.pathname !== "/" && destination !== DEFAULT_POST_AUTH_REDIRECT) {
+    return destination
+  }
+
+  const path = userMetadata?.onboarding_intent_focus === "build"
+    ? buildPostSignupBuilderRedirect({
+        planTier: resolveSignupBuilderPlanTier(userMetadata.onboarding_selected_builder_plan_tier),
+        source: "signup",
+      })
+    : "/onboarding?source=signup"
+
+  return destination.startsWith("/") ? path : new URL(path, destinationUrl.origin).toString()
 }
 
 function unwrapAuthCallbackRedirect(path: string): string | null {

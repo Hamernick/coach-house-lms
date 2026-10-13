@@ -106,6 +106,19 @@ def main():
                 require(current['head'] == args.head, 'Working head changed')
                 validate_refs(row)
                 state['queue'].append(row)
+            elif args.operation == 'bind-plan':
+                require(not args.to and not args.pr and set(receipt) == {'plan_refs'},
+                        'bind-plan only accepts plan_refs and no transition or PR')
+                require(current['head'] == args.head, 'Working head changed')
+                if active:
+                    require(current['worktree'] == active['worktree'] and current['branch'] == active['branch'],
+                            'Use the recorded worktree/branch')
+                    require(active['claim']['owner'] == args.owner, 'Not the active owner')
+                    require(not dead(active['claim']), 'Owner stopped; use resume with process evidence')
+                queued = next(r for r in state['queue'] if r['id'] == args.slice)
+                require(queued['status'] == 'queued', 'Only queued slices can be rebound')
+                queued['plan_refs'] = receipt['plan_refs']
+                bind_plan(queued, args.plans_root)
             elif args.operation == 'claim':
                 require(not active, 'An unfinished slice already owns SHIP; resume it')
                 row = next(r for r in state['queue'] if r['id'] == args.slice)
@@ -141,13 +154,6 @@ def main():
                     active['evidence'] = {}
                     row['status'] = 'in_progress'
                     row.pop('resume_state', None)
-                if args.operation == 'bind-plan':
-                    require(not args.to and not args.pr and set(receipt) == {'plan_refs'},
-                            'bind-plan only accepts plan_refs and no transition or PR')
-                    queued = next(r for r in state['queue'] if r['id'] == args.slice)
-                    require(queued['status'] == 'queued', 'Only queued slices can be rebound')
-                    queued['plan_refs'] = receipt['plan_refs']
-                    bind_plan(queued, args.plans_root)
                 if remote is not None:
                     require(remote is not None and remote['github']['head'] == active['head'], 'PR head differs from active head')
                     # Retain pre-merge CLEAN evidence only for the same reviewed head.
@@ -157,8 +163,7 @@ def main():
                         remote['github']['premerge_observation'] = prior
                     active['evidence'].update(remote)
                 require(not any(k in receipt for k in ('github', 'merge', 'plan_binding')), 'GitHub and plan bindings must come from the runner')
-                if args.operation != 'bind-plan':
-                    active['evidence'].update(receipt)
+                active['evidence'].update(receipt)
                 if row.get('plan_refs') and args.operation in ('checkpoint', 'resume'):
                     binding = bind_plan(row, args.plans_root)
                     prior = active['evidence'].get('plan_binding')

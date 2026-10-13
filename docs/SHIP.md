@@ -4,7 +4,9 @@ One release at a time. Read this after the current runlog and open-work index,
 before choosing work. Phase 0 merged externally with unresolved release gates; this is an operator-run tool,
 not a background service. Never treat a queued source reference as unfinished work.
 
-Original plans: `/Users/calebhamernick/Desktop/Coach House Codex Workstreams/`.
+Original plans: the restored directory supplied through `--plans-root`, otherwise
+`~/Desktop/Coach House Codex Workstreams/` under the current user's home, as defined
+by `shipping/plans.json`. Use the same selected root for reading and runner commands.
 Read `WORKSTREAMS.md`, then the relevant numbered packet in full, including original
 requests, decisions and continuation checkpoints. These are the files linked from
 Apple Notes. If missing, restore the private backup identified in `shipping/plans.json`;

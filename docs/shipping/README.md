@@ -38,9 +38,11 @@ can locate a restored private folder; it never relocates shared release state.
 The private recovery snapshot is identified in `plans.json`. Apple Notes links
 continue to open the same originals; there is no automatic Notes synchronization.
 
-Existing queues are never overwritten from the seed. The current owner can attach
+Existing queues are never overwritten from the seed. An operator can attach
 references to a **queued** legacy slice with `bind-plan --slice ID --owner CHAT_ID
 --revision REV --head HEAD --receipt FILE`; the receipt contains only `plan_refs`.
+Without an active claim, use the current working HEAD. With an active claim, only
+its running owner in the recorded worktree/branch may bind, at the recorded HEAD.
 This validates the original files while preserving active/released evidence and
 queue status. Active/released slices cannot be rebound retroactively. Historical
 snapshots remain readable; all future claims require the original plan references.

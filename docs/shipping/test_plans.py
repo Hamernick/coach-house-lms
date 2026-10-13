@@ -66,6 +66,11 @@ class PlanTests(unittest.TestCase):
         (self.root / 'packet.md').write_text(self.original + '\nNew decision\n')
         self.assertNotEqual(before, plans.bind_plan(self.row, self.root))
 
+    def test_restored_root_overrides_current_user_default(self):
+        with patch('plans.catalog', return_value={'private_root': 'Desktop/Coach House Codex Workstreams'}), patch('plans.Path.home', return_value=Path('/home/operator')):
+            self.assertEqual(plans.packet_root(), Path('/home/operator/Desktop/Coach House Codex Workstreams'))
+            self.assertEqual(plans.packet_root(self.root), self.root)
+
     def test_preview_does_not_access_shared_state(self):
         with patch('ship.canonical', side_effect=AssertionError('State accessed')):
             with patch('sys.argv', ['ship.py', 'prompt', '--workstream', '06', '--stage', '2', '--plans-root', str(self.root)]), contextlib.redirect_stdout(io.StringIO()):
@@ -102,7 +107,7 @@ class PlanCommandTests(unittest.TestCase):
         self.call('bind-plan', '--slice', 'B', '--owner', 'chat', '--revision', '1', '--head', 'head', '--receipt', str(receipt))
         result = self.store.read()
         self.assertEqual(result['queue'][1]['status'], 'queued')
-        self.assertEqual(result['active']['evidence'], state['active']['evidence'])
+        self.assertEqual(result['active'], state['active'])
         self.assertEqual(result['queue'][0], state['queue'][0])
         for stage in ['in_progress', 'merged', 'blocked', 'closed']:
             state = self.store.read(); state['queue'][0]['status'] = stage
@@ -110,6 +115,49 @@ class PlanCommandTests(unittest.TestCase):
             atomic(self.store.path, state)
             with self.assertRaisesRegex(ValueError, 'Only queued'):
                 self.call('bind-plan', '--slice', 'A', '--owner', 'chat', '--revision', '2', '--head', 'head', '--receipt', str(receipt))
+
+    def test_restored_unclaimed_legacy_queue_can_bind_then_claim(self):
+        self.call('export')
+        exported = next((self.here / 'receipts').glob('000000-*.json'))
+        restored = fixtures.Store(self.directory / 'restored')
+        refs = [dict(workstream='06', stages=[1])]
+        receipt = self.directory / 'refs.json'
+        receipt.write_text(json.dumps({'plan_refs': refs}))
+        with patch('ship.canonical', return_value=restored):
+            self.call('init', '--receipt', str(exported))
+            before = restored.read()
+            with patch('ship.bind_plan', side_effect=lambda row, root: plans.validate_refs(row) or {'fixture': True}):
+                with self.assertRaises(ValueError): self.claim()
+                self.assertEqual(restored.read(), before)
+                self.call('bind-plan', '--slice', 'A', '--owner', 'chat', '--revision', '0', '--head', 'head', '--receipt', str(receipt))
+                bound = restored.read()
+                self.assertIsNone(bound['active'])
+                self.assertEqual(bound['queue'][0]['status'], 'queued')
+                self.assertEqual(bound['queue'][0]['plan_refs'], refs)
+                self.call('claim', '--slice', 'A', '--owner', 'chat', '--pid', str(os.getpid()), '--revision', '1', '--head', 'head')
+                self.assertEqual(restored.read()['active']['slice'], 'A')
+
+    def test_unclaimed_bind_rejects_invalid_refs_and_stale_head_or_revision(self):
+        before = self.store.read()
+        receipt = self.directory / 'refs.json'
+        for refs, revision, head in [([], '0', 'head'), ([dict(workstream='06', stages=[1])], '1', 'head'),
+                                     ([dict(workstream='06', stages=[1])], '0', 'stale')]:
+            receipt.write_text(json.dumps({'plan_refs': refs}))
+            with patch('ship.bind_plan', side_effect=lambda row, root: plans.validate_refs(row)):
+                with self.assertRaises(ValueError):
+                    self.call('bind-plan', '--slice', 'A', '--owner', 'chat', '--revision', revision, '--head', head, '--receipt', str(receipt))
+            self.assertEqual(self.store.read(), before)
+
+    def test_bind_preserves_active_owner_and_worktree_guards(self):
+        self.claim()
+        before = self.store.read()
+        receipt = self.directory / 'refs.json'
+        receipt.write_text(json.dumps({'plan_refs': [dict(workstream='06', stages=[1])]}))
+        for owner, worktree, stopped in [('other', '/fixture', False), ('chat', '/other', False), ('chat', '/fixture', True)]:
+            with patch('ship.local', return_value=dict(worktree=worktree, branch='chore/fixture', head='head')), patch('ship.dead', return_value=stopped):
+                with self.assertRaises(ValueError):
+                    self.call('bind-plan', '--slice', 'A', '--owner', owner, '--revision', '1', '--head', 'head', '--receipt', str(receipt))
+            self.assertEqual(self.store.read(), before)
 
     def test_external_merge_is_immutable_before_release_gates_pass(self):
         self.claim()

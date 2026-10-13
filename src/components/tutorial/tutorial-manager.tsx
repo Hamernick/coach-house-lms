@@ -21,14 +21,6 @@ type TutorialStartEventDetail = {
   tutorial?: TutorialKey
 }
 
-function dispatchTutorialLifecycleEvent(
-  name: "coachhouse:tutorial:completed" | "coachhouse:tutorial:dismissed",
-  tutorial: TutorialKey,
-) {
-  if (typeof window === "undefined") return
-  window.dispatchEvent(new CustomEvent(name, { detail: { tutorial } }))
-}
-
 function normalizeTutorialKey(value: unknown): TutorialKey | null {
   if (
     value === "platform" ||
@@ -46,19 +38,41 @@ function normalizeTutorialKey(value: unknown): TutorialKey | null {
   return null
 }
 
-export function resolveHighlightTourTutorial(value: unknown): TutorialKey | null {
-  const tutorial = normalizeTutorialKey(value)
-  if (tutorial === "platform") return null
-  return tutorial
-}
-
 function getLocalStorageKey(prefix: string, tutorial: TutorialKey) {
   return `coachhouse_${prefix}_${tutorial}`
 }
 
-const DEFAULT_HIGHLIGHT_TOUR: TutorialKey = "dashboard"
-
-const TOUR_STEPS: Partial<Record<TutorialKey, HighlightTourStep[]>> = {
+const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
+  platform: [
+    {
+      id: "nav-organization",
+      selector: '[data-tour="nav-organization"]',
+      title: "Organization",
+      description: "This is your home base. Update your profile, programs, and documents here.",
+      icon: <Building2Icon className="h-5 w-5" aria-hidden />,
+    },
+    {
+      id: "nav-accelerator",
+      selector: '[data-tour="nav-accelerator"], [data-tour="nav-documents"]',
+      title: "Workspace navigation",
+      description: "Use the left rail to move across Organization, People, Documents, and Accelerator.",
+      icon: <RouteIcon className="h-5 w-5" aria-hidden />,
+    },
+    {
+      id: "global-search",
+      selector: '[data-tour="global-search-button"]',
+      title: "Search",
+      description: "Press CMD+K to jump anywhere — people, roadmap sections, documents, and more.",
+      icon: <SearchIcon className="h-5 w-5" aria-hidden />,
+    },
+    {
+      id: "account-menu",
+      selector: '[data-tour="account-menu"]',
+      title: "Account settings",
+      description: "Update your profile, preferences, and billing from here. You can replay tutorials anytime.",
+      icon: <CircleUserIcon className="h-5 w-5" aria-hidden />,
+    },
+  ],
   dashboard: [
     {
       id: "dashboard-overview",
@@ -205,20 +219,14 @@ const TOUR_STEPS: Partial<Record<TutorialKey, HighlightTourStep[]>> = {
 
 export function TutorialManager() {
   const [open, setOpen] = useState(false)
-  const [activeTutorial, setActiveTutorial] = useState<TutorialKey>(
-    DEFAULT_HIGHLIGHT_TOUR,
-  )
+  const [activeTutorial, setActiveTutorial] = useState<TutorialKey>("platform")
 
-  const steps = useMemo<HighlightTourStep[]>(
-    () => TOUR_STEPS[activeTutorial] ?? TOUR_STEPS[DEFAULT_HIGHLIGHT_TOUR] ?? [],
-    [activeTutorial],
-  )
+  const steps = useMemo<HighlightTourStep[]>(() => TOUR_STEPS[activeTutorial] ?? TOUR_STEPS.platform, [activeTutorial])
 
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<TutorialStartEventDetail>).detail
-      const nextTutorial = resolveHighlightTourTutorial(detail?.tutorial)
-      if (!nextTutorial) return
+      const nextTutorial = normalizeTutorialKey(detail?.tutorial) ?? "platform"
       setActiveTutorial(nextTutorial)
       setOpen(true)
     }
@@ -234,7 +242,6 @@ export function TutorialManager() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(getLocalStorageKey("tutorial_dismissed", tutorial), "1")
       }
-      dispatchTutorialLifecycleEvent("coachhouse:tutorial:dismissed", tutorial)
       void dismissTutorialAction(tutorial)
     },
     [],
@@ -248,7 +255,6 @@ export function TutorialManager() {
           window.localStorage.setItem("coachhouse_tour_completed", "1")
         }
       }
-      dispatchTutorialLifecycleEvent("coachhouse:tutorial:completed", tutorial)
       void markTutorialCompletedAction(tutorial)
     },
     [],

@@ -1,83 +1,128 @@
 import {
-  buildDefaultWorkspaceOntologyState,
-  normalizeWorkspaceOntologyState,
-} from "@/features/workspace-ontology"
-import {
   WORKSPACE_CARD_IDS,
-  type WorkspaceAutoLayoutMode,
   type WorkspaceBoardState,
-  type WorkspaceBoardAcceleratorState,
-  type WorkspaceBoardVisibilityState,
   type WorkspaceCardId,
   type WorkspaceConnectionState,
+  type WorkspaceCardSize,
   type WorkspaceLayoutPreset,
   type WorkspaceNodeState,
 } from "./workspace-board-types"
-import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
-import { arrangeInitialWorkspaceNodes } from "./workspace-board-initial-layout"
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
-import { DEFAULT_HIDDEN_CARD_IDS } from "./workspace-board-layout-config"
 import {
-  buildPresetNodes,
-  normalizeNodeCardSize,
-} from "./workspace-board-preset-layout"
-import { normalizeWorkspaceCardId } from "./workspace-board-card-id"
-import { resolveWorkspaceBoardForwardCompatibleInput } from "./workspace-board-forward-compatibility"
-import { normalizeWorkspaceBoardHiddenCardIdsForPayload } from "./workspace-board-hidden-card-normalization"
-import {
-  sanitizeWorkspaceBoardHiddenState,
-  toggleWorkspaceBoardCardVisibility,
-} from "./workspace-board-hidden-cards"
+  DASHBOARD_GRID_GAP_X,
+  DASHBOARD_GRID_GAP_Y,
+  DASHBOARD_GRID_MARGIN_X,
+  DASHBOARD_GRID_MARGIN_Y,
+  DASHBOARD_GRID_ROWS,
+  DEFAULT_CARD_SIZES,
+  DEFAULT_HIDDEN_CARD_IDS,
+  PRESET_NODE_LAYOUTS,
+  resolveCardDimensions,
+  roundToSnap,
+} from "./workspace-board-layout-config"
+import { applyElkAutoLayout } from "./workspace-board-layout-elk"
 import {
   buildDefaultWorkspaceCommunicationsState,
   normalizeWorkspaceCommunicationsState,
 } from "./workspace-board-layout-communications-state"
 import {
-  buildDefaultWorkspaceOnboardingFlowState,
-  normalizeWorkspaceOnboardingFlowState,
-} from "./workspace-board-onboarding-flow"
-import {
   buildDefaultWorkspaceTrackerState,
   normalizeWorkspaceTrackerState,
 } from "./workspace-board-layout-tracker-state"
-import { normalizeWorkspaceBoardAcceleratorUiState } from "./workspace-board-visibility-reducer"
 
 export { buildDefaultWorkspaceCommunicationsState } from "./workspace-board-layout-communications-state"
 export { buildDefaultWorkspaceTrackerState } from "./workspace-board-layout-tracker-state"
-export {
-  buildPresetNodes,
-  normalizeNodeCardSize,
-} from "./workspace-board-preset-layout"
-export {
-  isWorkspaceCardAutoHeight,
-  resolveCardDimensions,
-  resolveWorkspaceCardCanvasShellClassName,
-  resolveWorkspaceCardCanvasShellStyle,
-  resolveWorkspaceCardHeightModeClassName,
-  resolveWorkspaceCardNodeStyle,
-} from "./workspace-board-layout-config"
-export {
-  sanitizeWorkspaceBoardHiddenState,
-  toggleWorkspaceBoardCardVisibility,
-} from "./workspace-board-hidden-cards"
+export { resolveCardDimensions } from "./workspace-board-layout-config"
 
 function normalizeNumber(value: unknown, fallback: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback
   return Math.round(value)
 }
 
-function isWorkspaceAutoLayoutMode(
-  value: unknown
-): value is WorkspaceAutoLayoutMode {
-  return value === "dagre-tree" || value === "timeline"
+function normalizeSize(value: unknown, fallback: WorkspaceCardSize): WorkspaceCardSize {
+  if (value === "sm" || value === "md") return value
+  return fallback
 }
 
-function normalizeWorkspaceAutoLayoutMode(
-  value: unknown
-): WorkspaceAutoLayoutMode {
-  if (value === "hub" || value === "dagre-tree") return "dagre-tree"
-  if (value === "timeline") return "timeline"
-  return "timeline"
+function resolveSizeLookup(nodes?: WorkspaceNodeState[]) {
+  const lookup = new Map<WorkspaceCardId, WorkspaceCardSize>()
+  if (Array.isArray(nodes)) {
+    for (const node of nodes) {
+      if (!WORKSPACE_CARD_IDS.includes(node.id)) continue
+      lookup.set(node.id, normalizeSize(node.size, DEFAULT_CARD_SIZES[node.id]))
+    }
+  }
+  return lookup
+}
+
+function buildDashboardGridLayout(sizeLookup: Map<WorkspaceCardId, WorkspaceCardSize>) {
+  const columnCount = Math.max(...DASHBOARD_GRID_ROWS.map((row) => row.length))
+  const rowCount = DASHBOARD_GRID_ROWS.length
+
+  const columnWidths = Array.from({ length: columnCount }, (_, columnIndex) => {
+    let maxWidth = 0
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+      const cardId = DASHBOARD_GRID_ROWS[rowIndex]?.[columnIndex]
+      if (!cardId) continue
+      const size = sizeLookup.get(cardId) ?? DEFAULT_CARD_SIZES[cardId]
+      maxWidth = Math.max(maxWidth, resolveCardDimensions(size, cardId).width)
+    }
+    return maxWidth
+  })
+
+  const rowHeights = DASHBOARD_GRID_ROWS.map((row) => {
+    let maxHeight = 0
+    for (const cardId of row) {
+      const size = sizeLookup.get(cardId) ?? DEFAULT_CARD_SIZES[cardId]
+      maxHeight = Math.max(maxHeight, resolveCardDimensions(size, cardId).height)
+    }
+    return maxHeight
+  })
+
+  const positions = {} as Record<WorkspaceCardId, { x: number; y: number }>
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+    const row = DASHBOARD_GRID_ROWS[rowIndex] ?? []
+    const rowStartY =
+      DASHBOARD_GRID_MARGIN_Y +
+      rowHeights.slice(0, rowIndex).reduce((sum, height) => sum + height, 0) +
+      DASHBOARD_GRID_GAP_Y * rowIndex
+
+    for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
+      const cardId = row[columnIndex]!
+      const size = sizeLookup.get(cardId) ?? DEFAULT_CARD_SIZES[cardId]
+      const dimensions = resolveCardDimensions(size, cardId)
+      const columnStartX =
+        DASHBOARD_GRID_MARGIN_X +
+        columnWidths.slice(0, columnIndex).reduce((sum, width) => sum + width, 0) +
+        DASHBOARD_GRID_GAP_X * columnIndex
+
+      positions[cardId] = {
+        x: roundToSnap(columnStartX + Math.max(0, (columnWidths[columnIndex]! - dimensions.width) / 2)),
+        y: roundToSnap(rowStartY),
+      }
+    }
+  }
+
+  return positions
+}
+
+export function buildPresetNodes(
+  preset: WorkspaceLayoutPreset,
+  existingNodes?: WorkspaceNodeState[],
+): WorkspaceNodeState[] {
+  const sizeLookup = resolveSizeLookup(existingNodes)
+  const layout = preset === "balanced" ? buildDashboardGridLayout(sizeLookup) : PRESET_NODE_LAYOUTS[preset]
+
+  return WORKSPACE_CARD_IDS.map((id) => {
+    const position = layout[id]
+    return {
+      id,
+      x: position.x,
+      y: position.y,
+      size: sizeLookup.get(id) ?? DEFAULT_CARD_SIZES[id],
+    }
+  })
 }
 
 export function buildDefaultWorkspaceConnections(): WorkspaceConnectionState[] {
@@ -88,161 +133,42 @@ export function buildDefaultWorkspaceConnections(): WorkspaceConnectionState[] {
   }))
 }
 
-const ORGANIZATION_ACCELERATOR_CONNECTION: WorkspaceConnectionState = {
-  id: "edge-organization-to-accelerator",
-  source: "organization-overview",
-  target: "accelerator",
-}
-
-const ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION: WorkspaceConnectionState = {
-  id: "edge-activity-to-fiscal-sponsorship",
-  source: "programs",
-  target: "fiscal-sponsorship",
-}
-
-const LEGACY_ROADMAP_ACCELERATOR_CONNECTION_KEY = "roadmap->accelerator"
-const LEGACY_ORGANIZATION_FISCAL_SPONSORSHIP_CONNECTION_KEY =
-  "organization-overview->fiscal-sponsorship"
-
-function getWorkspaceConnectionKey({
-  source,
-  target,
-}: Pick<WorkspaceConnectionState, "source" | "target">) {
-  return `${source}->${target}`
-}
-
-export function buildDefaultBoardState(
-  preset: WorkspaceLayoutPreset = "balanced"
-): WorkspaceBoardState {
-  const autoLayoutMode: WorkspaceAutoLayoutMode = "timeline"
-  const hiddenCardIds = [...DEFAULT_HIDDEN_CARD_IDS]
-  const connections = buildDefaultWorkspaceConnections()
+export function buildDefaultBoardState(preset: WorkspaceLayoutPreset = "balanced"): WorkspaceBoardState {
   return {
     version: 1,
     preset,
-    autoLayoutMode,
-    nodes: arrangeInitialWorkspaceNodes(buildAutoLayoutNodesForMode({
-      mode: autoLayoutMode,
-      hiddenCardIds,
-      connections,
-    })),
-    connections,
+    nodes: buildPresetNodes(preset),
+    connections: buildDefaultWorkspaceConnections(),
     communications: buildDefaultWorkspaceCommunicationsState(),
     tracker: buildDefaultWorkspaceTrackerState(),
-    accelerator: buildDefaultWorkspaceAcceleratorState(),
-    acceleratorUi: {
-      stepOpen: false,
-      lastStepId: null,
-    },
-    onboardingFlow: buildDefaultWorkspaceOnboardingFlowState(),
-    hiddenCardIds,
-    visibility: buildDefaultWorkspaceVisibilityState(),
-    ontology: buildDefaultWorkspaceOntologyState(),
+    hiddenCardIds: [...DEFAULT_HIDDEN_CARD_IDS],
     updatedAt: new Date().toISOString(),
   }
 }
 
-function buildDefaultWorkspaceAcceleratorState(): WorkspaceBoardAcceleratorState {
-  return {
-    activeStepId: null,
-    completedStepIds: [],
-  }
+function normalizeHiddenCardIds(value: unknown): WorkspaceCardId[] {
+  if (!Array.isArray(value)) return [...DEFAULT_HIDDEN_CARD_IDS]
+  return WORKSPACE_CARD_IDS.filter((cardId) => value.includes(cardId))
 }
 
-function buildDefaultWorkspaceVisibilityState(): WorkspaceBoardVisibilityState {
-  return {
-    allCardsHiddenExplicitly: false,
-  }
-}
-
-function normalizeWorkspaceAcceleratorState(
-  value: unknown
-): WorkspaceBoardAcceleratorState {
-  if (!value || typeof value !== "object") {
-    return buildDefaultWorkspaceAcceleratorState()
-  }
-
-  const record = value as Partial<WorkspaceBoardAcceleratorState>
-  const activeStepId =
-    typeof record.activeStepId === "string" &&
-    record.activeStepId.trim().length > 0
-      ? record.activeStepId
-      : null
-  const completedStepIds = Array.isArray(record.completedStepIds)
-    ? record.completedStepIds.filter(
-        (stepId): stepId is string =>
-          typeof stepId === "string" && stepId.trim().length > 0
-      )
-    : []
-
-  return {
-    activeStepId,
-    completedStepIds,
-  }
-}
-
-function normalizeWorkspaceVisibilityState(
-  value: unknown
-): WorkspaceBoardVisibilityState {
-  if (!value || typeof value !== "object") {
-    return buildDefaultWorkspaceVisibilityState()
-  }
-
-  const record = value as Partial<WorkspaceBoardVisibilityState>
-  return {
-    allCardsHiddenExplicitly: record.allCardsHiddenExplicitly === true,
-  }
-}
-
-function normalizeNodeState(
-  value: unknown,
-  fallbackMode: WorkspaceAutoLayoutMode,
-  hiddenCardIds?: WorkspaceCardId[],
-  connections?: WorkspaceConnectionState[]
-): WorkspaceNodeState[] {
-  const fallbackMap = new Map(
-    buildAutoLayoutNodesForMode({
-      mode: fallbackMode,
-      hiddenCardIds,
-      connections,
-    }).map((node) => [node.id, node])
-  )
+function normalizeNodeState(value: unknown, fallbackPreset: WorkspaceLayoutPreset): WorkspaceNodeState[] {
+  const fallbackMap = new Map(buildPresetNodes(fallbackPreset).map((node) => [node.id, node]))
   if (!Array.isArray(value)) {
-    return buildAutoLayoutNodesForMode({
-      mode: fallbackMode,
-      hiddenCardIds,
-      connections,
-    })
+    return buildPresetNodes(fallbackPreset)
   }
 
   const next: WorkspaceNodeState[] = []
-  const seenNodeIds = new Set<WorkspaceCardId>()
   for (const rawNode of value) {
     if (!rawNode || typeof rawNode !== "object") continue
     const nodeRecord = rawNode as Partial<WorkspaceNodeState>
-    const normalizedNodeId = normalizeWorkspaceCardId(nodeRecord.id)
-    if (!normalizedNodeId || seenNodeIds.has(normalizedNodeId)) continue
-    const fallback = fallbackMap.get(normalizedNodeId)
+    if (!nodeRecord.id || !WORKSPACE_CARD_IDS.includes(nodeRecord.id)) continue
+    const fallback = fallbackMap.get(nodeRecord.id)
     if (!fallback) continue
-    const normalizedX = normalizeNumber(nodeRecord.x, fallback.x)
-    const normalizedY = normalizeNumber(nodeRecord.y, fallback.y)
-    seenNodeIds.add(normalizedNodeId)
     next.push({
-      id: normalizedNodeId,
-      x: normalizedX,
-      y: normalizedY,
-      size: normalizeNodeCardSize(
-        normalizedNodeId,
-        nodeRecord.size,
-        fallback.size
-      ),
-      positionMode:
-        nodeRecord.positionMode === "managed" ||
-        nodeRecord.positionMode === "manual"
-          ? nodeRecord.positionMode
-          : normalizedX === fallback.x && normalizedY === fallback.y
-            ? "managed"
-            : "manual",
+      id: nodeRecord.id,
+      x: normalizeNumber(nodeRecord.x, fallback.x),
+      y: normalizeNumber(nodeRecord.y, fallback.y),
+      size: normalizeSize(nodeRecord.size, fallback.size),
     })
   }
 
@@ -265,66 +191,32 @@ function normalizeConnectionState(value: unknown): WorkspaceConnectionState[] {
 
   const dedupe = new Set<string>()
   const next: WorkspaceConnectionState[] = []
-  let sawLegacyRoadmapAcceleratorConnection = false
-  let sawLegacyOrganizationFiscalSponsorshipConnection = false
 
   for (const rawConnection of value) {
     if (!rawConnection || typeof rawConnection !== "object") continue
     const connectionRecord = rawConnection as Partial<WorkspaceConnectionState>
-    const normalizedSource = normalizeWorkspaceCardId(connectionRecord.source)
-    const normalizedTarget = normalizeWorkspaceCardId(connectionRecord.target)
-    if (!normalizedSource || !normalizedTarget) continue
-    if (normalizedSource === normalizedTarget) continue
+    if (!connectionRecord.source || !WORKSPACE_CARD_IDS.includes(connectionRecord.source)) continue
+    if (!connectionRecord.target || !WORKSPACE_CARD_IDS.includes(connectionRecord.target)) continue
+    if (connectionRecord.source === connectionRecord.target) continue
 
-    const key = getWorkspaceConnectionKey({
-      source: normalizedSource,
-      target: normalizedTarget,
-    })
-    if (key === LEGACY_ROADMAP_ACCELERATOR_CONNECTION_KEY) {
-      sawLegacyRoadmapAcceleratorConnection = true
-      continue
-    }
-    if (key === LEGACY_ORGANIZATION_FISCAL_SPONSORSHIP_CONNECTION_KEY) {
-      sawLegacyOrganizationFiscalSponsorshipConnection = true
-      continue
-    }
+    const key = `${connectionRecord.source}->${connectionRecord.target}`
     if (dedupe.has(key)) continue
     dedupe.add(key)
 
     next.push({
       id:
-        typeof connectionRecord.id === "string" &&
-        connectionRecord.id.trim().length > 0
+        typeof connectionRecord.id === "string" && connectionRecord.id.trim().length > 0
           ? connectionRecord.id
-          : `edge-${normalizedSource}-to-${normalizedTarget}`,
-      source: normalizedSource,
-      target: normalizedTarget,
+          : `edge-${connectionRecord.source}-to-${connectionRecord.target}`,
+      source: connectionRecord.source,
+      target: connectionRecord.target,
     })
-  }
-
-  if (sawLegacyRoadmapAcceleratorConnection) {
-    const organizationAcceleratorKey = getWorkspaceConnectionKey(
-      ORGANIZATION_ACCELERATOR_CONNECTION
-    )
-    if (!dedupe.has(organizationAcceleratorKey)) {
-      next.push(ORGANIZATION_ACCELERATOR_CONNECTION)
-    }
-  }
-  if (sawLegacyOrganizationFiscalSponsorshipConnection) {
-    const activityFiscalSponsorshipKey = getWorkspaceConnectionKey(
-      ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION
-    )
-    if (!dedupe.has(activityFiscalSponsorshipKey)) {
-      next.push(ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION)
-    }
   }
 
   return next.length > 0 ? next : fallback
 }
 
-export function normalizeWorkspaceBoardState(
-  value: unknown
-): WorkspaceBoardState {
+export function normalizeWorkspaceBoardState(value: unknown): WorkspaceBoardState {
   if (!value || typeof value !== "object") {
     return buildDefaultBoardState()
   }
@@ -336,56 +228,15 @@ export function normalizeWorkspaceBoardState(
     record.preset === "balanced"
       ? record.preset
       : "balanced"
-  const autoLayoutMode = normalizeWorkspaceAutoLayoutMode(record.autoLayoutMode)
-  const forwardCompatibleInput = resolveWorkspaceBoardForwardCompatibleInput({
-    connections: record.connections,
-    forwardCompatibility: record.forwardCompatibility,
-    hiddenCardIds: record.hiddenCardIds,
-    nodes: record.nodes,
-  })
-  const normalizedAccelerator = normalizeWorkspaceAcceleratorState(
-    record.accelerator
-  )
-  const normalizedHiddenCardIds =
-    normalizeWorkspaceBoardHiddenCardIdsForPayload(
-      forwardCompatibleInput.hiddenCardIds,
-      forwardCompatibleInput.nodes
-    )
-  const normalizedConnections = normalizeConnectionState(
-    forwardCompatibleInput.connections
-  )
 
   return {
     version: 1,
     preset,
-    autoLayoutMode,
-    nodes: normalizeNodeState(
-      forwardCompatibleInput.nodes,
-      autoLayoutMode,
-      normalizedHiddenCardIds,
-      normalizedConnections
-    ),
-    connections: normalizedConnections,
-    communications: normalizeWorkspaceCommunicationsState(
-      record.communications
-    ),
+    nodes: normalizeNodeState(record.nodes, preset),
+    connections: normalizeConnectionState(record.connections),
+    communications: normalizeWorkspaceCommunicationsState(record.communications),
     tracker: normalizeWorkspaceTrackerState(record.tracker),
-    accelerator: normalizedAccelerator,
-    acceleratorUi: normalizeWorkspaceBoardAcceleratorUiState(
-      record.acceleratorUi,
-      normalizedAccelerator.activeStepId
-    ),
-    onboardingFlow: normalizeWorkspaceOnboardingFlowState(
-      record.onboardingFlow
-    ),
-    hiddenCardIds: normalizedHiddenCardIds,
-    visibility: normalizeWorkspaceVisibilityState(record.visibility),
-    ontology: record.ontology
-      ? normalizeWorkspaceOntologyState(record.ontology)
-      : undefined,
-    ...(forwardCompatibleInput.forwardCompatibility
-      ? { forwardCompatibility: forwardCompatibleInput.forwardCompatibility }
-      : {}),
+    hiddenCardIds: normalizeHiddenCardIds(record.hiddenCardIds),
     updatedAt:
       typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0
         ? record.updatedAt
@@ -395,24 +246,11 @@ export function normalizeWorkspaceBoardState(
 
 export function applyAutoLayout(
   nodes: WorkspaceNodeState[],
-  modeOrPreset: WorkspaceLayoutPreset | WorkspaceAutoLayoutMode,
-  {
-    hiddenCardIds,
-    connections,
-  }: {
-    hiddenCardIds?: WorkspaceCardId[]
-    connections?: WorkspaceConnectionState[]
-  } = {}
+  preset: WorkspaceLayoutPreset,
 ): Promise<WorkspaceNodeState[]> {
-  if (isWorkspaceAutoLayoutMode(modeOrPreset)) {
-    return Promise.resolve(
-      buildAutoLayoutNodesForMode({
-        mode: modeOrPreset,
-        existingNodes: nodes,
-        hiddenCardIds,
-        connections,
-      })
-    )
+  const fallbackNodes = buildPresetNodes(preset, nodes)
+  if (preset === "balanced") {
+    return Promise.resolve(fallbackNodes)
   }
-  return Promise.resolve(buildPresetNodes(modeOrPreset, nodes))
+  return applyElkAutoLayout({ nodes, preset, fallbackNodes })
 }

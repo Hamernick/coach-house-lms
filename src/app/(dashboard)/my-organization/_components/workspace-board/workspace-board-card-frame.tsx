@@ -1,31 +1,21 @@
 "use client"
 
-import {
-  Frame,
-  FrameBody,
-  FrameFooter,
-  FramePanel,
-} from "@/components/ui/frame"
+import Link from "next/link"
+import ExpandIcon from "lucide-react/dist/esm/icons/expand"
+import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
+import XIcon from "lucide-react/dist/esm/icons/x"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-import { WORKSPACE_CARD_LAYOUT_SYSTEM } from "./workspace-board-card-layout-system"
-import { WorkspaceBoardCardHeader } from "./workspace-board-card-header"
-import {
-  resolveWorkspaceCardCanvasShellClassName,
-  resolveWorkspaceCardCanvasShellStyle,
-} from "./workspace-board-layout-config"
 import type { WorkspaceCardFrameProps } from "./workspace-board-types"
 
 export function WorkspaceBoardCardFrame({
   cardId,
   title,
   subtitle,
-  tone = "default",
-  titleIcon,
-  titleBadge,
-  headerDetails,
-  headerMeta,
-  headerAction,
   hideTitle = false,
   hideSubtitle = false,
   size,
@@ -34,96 +24,128 @@ export function WorkspaceBoardCardFrame({
   fullHref,
   canEdit,
   editorHref = null,
-  menuActions = [],
-  contentClassName,
-  footer,
   isCanvasFullscreen = false,
   onToggleCanvasFullscreen,
-  fullscreenControlMode = "overflow",
   children,
 }: WorkspaceCardFrameProps) {
-  const canvasShellStyle = resolveWorkspaceCardCanvasShellStyle({
-    size,
-    cardId,
-    isCanvasFullscreen,
-  })
-  const showHeader =
-    cardId !== "accelerator" ||
-    !hideTitle ||
-    !hideSubtitle ||
-    Boolean(headerDetails) ||
-    Boolean(headerMeta) ||
-    Boolean(headerAction) ||
-    Boolean(editorHref) ||
-    menuActions.length > 0 ||
-    Boolean(onToggleCanvasFullscreen)
-  const contentCanDrag = canEdit && !presentationMode && !isCanvasFullscreen
+  const showCanvasFullscreenAction = Boolean(onToggleCanvasFullscreen)
+  const showEditorAction = Boolean(editorHref)
+  const showOverflowMenu = !isCanvasFullscreen && (showCanvasFullscreenAction || showEditorAction)
+  const showTitle = !hideTitle
+  const showSubtitle = !hideSubtitle && subtitle.trim().length > 0
+  const showHeaderCopy = showTitle || showSubtitle
 
   return (
-    <Frame
+    <Card
       data-workspace-card={cardId}
-      style={canvasShellStyle}
-      className={resolveWorkspaceCardCanvasShellClassName({
-        size,
-        cardId,
-        isCanvasFullscreen,
-      })}
+      className={cn(
+        "flex min-h-0 min-w-0 flex-col overflow-hidden bg-card/95",
+        isCanvasFullscreen
+          ? "h-full rounded-none border-0 bg-card shadow-none"
+          : ["h-full border border-border/70 shadow-none", size === "sm" ? "rounded-[20px]" : "rounded-[24px]"],
+      )}
     >
-      <FramePanel
+      <CardHeader
         className={cn(
-          "border-border/70 bg-card flex min-h-0 min-w-0 flex-1 flex-col overflow-visible p-0",
-          tone === "accelerator" &&
-            "shadow-[0_14px_36px_-30px_rgba(15,23,42,0.18)]"
+          "px-4 pb-2 pt-3",
+          presentationMode ? "space-y-1.5 px-3.5 pb-1.5 pt-2.5" : "space-y-2",
+          !showHeaderCopy && (presentationMode ? "pb-1 pt-2" : "pb-1 pt-2.5"),
+          canEdit &&
+            !presentationMode &&
+            !isCanvasFullscreen &&
+            "workspace-card-drag-handle cursor-grab select-none active:cursor-grabbing",
         )}
       >
-        {showHeader ? (
-          <WorkspaceBoardCardHeader
-            title={title}
-            subtitle={subtitle}
-            tone={tone}
-            titleIcon={titleIcon}
-            titleBadge={titleBadge}
-            headerDetails={headerDetails}
-            headerMeta={headerMeta}
-            headerAction={headerAction}
-            hideTitle={hideTitle}
-            hideSubtitle={hideSubtitle}
-            presentationMode={presentationMode}
-            fullHref={fullHref}
-            canEdit={canEdit}
-            editorHref={editorHref}
-            menuActions={menuActions}
-            isCanvasFullscreen={isCanvasFullscreen}
-            onToggleCanvasFullscreen={onToggleCanvasFullscreen}
-            fullscreenControlMode={fullscreenControlMode}
-            compactTitleBottomGap={cardId === "roadmap"}
-          />
-        ) : null}
-        <FrameBody
-          className={cn(
-            "flex flex-col overflow-hidden px-4",
-            contentCanDrag
-              ? "workspace-card-drag-handle cursor-grab touch-manipulation active:cursor-grabbing"
-              : "nodrag nopan",
-            WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
-            cardId === "organization-overview" ? "pt-0" : "pt-1",
-            cardId === "calendar" ? "pb-3" : "pb-4",
-            presentationMode && "px-3.5 pt-0.5 pb-3",
-            isCanvasFullscreen &&
-              (cardId === "roadmap" || cardId === "deck"
-                ? "overflow-hidden px-0 pt-0 pb-0"
-                : "overflow-y-auto px-5 pt-2 pb-5"),
-            contentClassName
+        <div className="flex items-start justify-between gap-2">
+          {showHeaderCopy ? (
+            <div className={cn("min-w-0 flex-1 space-y-0.5", presentationMode && "space-y-0")}>
+              {showTitle ? (
+                <CardTitle className={cn("truncate text-sm font-semibold tracking-tight", presentationMode && "text-[13px]")}>
+                  {title}
+                </CardTitle>
+              ) : null}
+              {showSubtitle ? (
+                <p className={cn("line-clamp-1 text-[11px] text-muted-foreground", presentationMode && "text-[10px]")}>
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="min-w-0 flex-1" aria-hidden />
           )}
-        >
-          {children}
-        </FrameBody>
-        {footer ? (
-          <FrameFooter className="nodrag nopan mt-auto px-4 pt-3 pb-4">
-            {footer}
-          </FrameFooter>
-        ) : null}
-      </FramePanel>
-    </Frame>
+          <div className="nodrag nopan flex items-center gap-1">
+            {showOverflowMenu ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="nodrag nopan h-7 w-7"
+                    aria-label="Card options"
+                  >
+                    <MoreVerticalIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="nodrag nopan w-44 p-2">
+                  <div className="grid gap-1">
+                    {showCanvasFullscreenAction ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="nodrag nopan h-8 justify-start"
+                        onClick={onToggleCanvasFullscreen}
+                      >
+                        <ExpandIcon className="h-3.5 w-3.5" aria-hidden />
+                        Open fullscreen
+                      </Button>
+                    ) : null}
+                    {showEditorAction ? (
+                      <Button asChild variant="ghost" size="sm" className="nodrag nopan h-8 justify-start">
+                        <Link href={editorHref as string}>
+                          <ExpandIcon className="h-3.5 w-3.5" aria-hidden />
+                          Open editor
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : null}
+
+            {onToggleCanvasFullscreen && isCanvasFullscreen ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="nodrag nopan h-7 px-2 text-[11px]"
+                onClick={onToggleCanvasFullscreen}
+                aria-label="Close full screen card"
+              >
+                <XIcon className="h-3.5 w-3.5" aria-hidden />
+                Close
+              </Button>
+            ) : !showOverflowMenu ? (
+              <Button asChild type="button" variant="ghost" size="icon" className="nodrag nopan h-7 w-7" aria-label="Open full page">
+                <Link href={fullHref}>
+                  <ExpandIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent
+        className={cn(
+          "nodrag nopan flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-1",
+          cardId === "calendar" ? "pb-3" : cardId === "communications" ? "pb-2" : "pb-4",
+          presentationMode && "px-3.5 pb-3 pt-0.5",
+          isCanvasFullscreen && "overflow-y-auto px-5 pb-5 pt-2",
+        )}
+      >
+        {children}
+      </CardContent>
+    </Card>
   )
 }

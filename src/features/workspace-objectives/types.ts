@@ -18,7 +18,7 @@ export type WorkspaceObjectiveSourceType = (typeof WORKSPACE_OBJECTIVE_SOURCE_TY
 
 export const WORKSPACE_OBJECTIVE_CARD_ID = [
   "organization-overview",
-  "accelerator",
+  "formation-status",
   "brand-kit",
   "economic-engine",
   "calendar",

@@ -1,314 +1,358 @@
 "use client"
 
-import * as React from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import Bell from "lucide-react/dist/esm/icons/bell"
-import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
+import MessageCircle from "lucide-react/dist/esm/icons/message-circle"
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle"
+import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 
-import { NotificationPreview } from "@/components/notifications/notification-preview"
-import { NotificationsList } from "@/components/notifications/notifications-list"
-import { useNotificationsMenuState } from "@/components/notifications/hooks/use-notifications-menu-state"
-import { type NotificationItem } from "@/components/notifications/types"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { Badge } from "@/components/ui/badge"
+import {
+  listNotificationsAction,
+  markNotificationReadAction,
+  type AppNotification,
+  type NotificationTone,
+} from "@/app/actions/notifications"
 import { Button } from "@/components/ui/button"
-import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
-const NOTIFICATIONS_MOBILE_SNAP_POINTS = [0.62, 0.92]
-const NOTIFICATIONS_MOBILE_INITIAL_SNAP_POINT =
-  NOTIFICATIONS_MOBILE_SNAP_POINTS[0]
+type NotificationItem = {
+  id: string
+  title: string
+  description: string
+  time: string
+  tone?: NotificationTone
+  unread?: boolean
+  href?: string | null
+}
 
-const NotificationsBellButton = React.forwardRef<
-  React.ElementRef<typeof Button>,
-  React.ComponentProps<typeof Button> & {
-    showBellUnreadCue: boolean
-  }
->(function NotificationsBellButton(
-  { showBellUnreadCue, className, ...props },
-  ref,
-) {
-  return (
-    <Button
-      ref={ref}
-      variant="ghost"
-      size="icon"
-      className={cn("relative", className)}
-      aria-label="Notifications"
-      {...props}
-    >
-      <Bell className="h-4 w-4" />
-      {showBellUnreadCue ? (
-        <span
-          className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
-          aria-hidden
-        />
-      ) : null}
-    </Button>
+function formatNotificationTime(createdAt: string) {
+  const date = new Date(createdAt)
+  const diffMs = Date.now() - date.getTime()
+
+  if (Number.isFinite(diffMs) && diffMs >= 0 && diffMs < 60_000)
+    return "Just now"
+
+  const now = new Date()
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime()
+  const startOfDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  ).getTime()
+  const dayDiff = Math.round(
+    (startOfToday - startOfDate) / (24 * 60 * 60 * 1000)
   )
-})
+
+  if (dayDiff === 0) return "Today"
+  if (dayDiff === 1) return "Yesterday"
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: date.getFullYear() === now.getFullYear() ? undefined : "numeric",
+  })
+}
+
+function toNotificationItem(item: AppNotification): NotificationItem {
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    href: item.href,
+    tone: item.tone ?? "info",
+    time: formatNotificationTime(item.createdAt),
+    unread: item.readAt == null,
+  }
+}
 
 export function NotificationsMenu() {
-  const isMobile = useIsMobile()
-  const [mobileSnapPoint, setMobileSnapPoint] = React.useState<
-    number | string | null
-  >(NOTIFICATIONS_MOBILE_INITIAL_SNAP_POINT)
-  const [mobileDetailItemId, setMobileDetailItemId] = React.useState<
-    string | null
-  >(null)
-  const {
-    open,
-    tab,
-    mounted,
-    loading,
-    inboxItems,
-    filteredItems,
-    selectedId,
-    selectedItem,
-    loadError,
-    bulkUpdating,
-    selectedUpdating,
-    requestUpdating,
-    unreadCount,
-    showBellUnreadCue,
-    refreshNotifications,
-    setTab,
-    handleSelect,
-    handleOpenSelected,
-    handleToggleRead,
-    handleRespondToOrganizationAccessRequest,
-    handleMarkAllRead,
-    handleOpenChange,
-  } = useNotificationsMenuState()
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [inboxItems, setInboxItems] = useState<NotificationItem[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [hideBellUnreadCue, setHideBellUnreadCue] = useState(false)
 
-  const mobileDetailItem = React.useMemo(
-    () =>
-      mobileDetailItemId
-        ? inboxItems.find((item) => item.id === mobileDetailItemId) ?? null
-        : null,
-    [inboxItems, mobileDetailItemId],
+  const unreadCount = useMemo(
+    () => inboxItems.filter((item) => item.unread).length,
+    [inboxItems]
   )
+  const showBellUnreadCue = unreadCount > 0 && !hideBellUnreadCue
 
-  React.useEffect(() => {
-    if (!mobileDetailItemId) return
-    if (inboxItems.some((item) => item.id === mobileDetailItemId)) return
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-    setMobileDetailItemId(null)
-  }, [inboxItems, mobileDetailItemId])
+  const refreshNotifications = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
+    const result = await listNotificationsAction()
+    if ("error" in result) {
+      setLoadError(result.error)
+      toast.error(result.error)
+      setLoading(false)
+      return
+    }
 
-  const handleMobileOpenChange = React.useCallback(
-    (nextOpen: boolean) => {
-      handleOpenChange(nextOpen)
+    const nextUnreadCount = result.inbox.reduce(
+      (count, item) => count + (item.readAt == null ? 1 : 0),
+      0
+    )
+    if (!open && nextUnreadCount > 0) {
+      setHideBellUnreadCue(false)
+    }
 
-      if (nextOpen) {
-        setMobileSnapPoint(NOTIFICATIONS_MOBILE_INITIAL_SNAP_POINT)
-        return
-      }
+    setInboxItems(result.inbox.map(toNotificationItem))
+    setLoading(false)
+  }, [open])
 
-      setMobileDetailItemId(null)
-    },
-    [handleOpenChange],
-  )
+  useEffect(() => {
+    if (!mounted) return
+    void refreshNotifications()
+  }, [mounted, refreshNotifications])
 
-  const handleMobileSelect = React.useCallback(
-    (item: NotificationItem) => {
-      handleSelect(item)
-      setMobileDetailItemId(item.id)
-      setMobileSnapPoint(NOTIFICATIONS_MOBILE_SNAP_POINTS[1])
-    },
-    [handleSelect],
-  )
+  useEffect(() => {
+    if (!open) return
+    void refreshNotifications()
+  }, [open, refreshNotifications])
 
   if (!mounted) {
-    return <NotificationsBellButton showBellUnreadCue={showBellUnreadCue} />
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative"
+        aria-label="Notifications"
+      >
+        <Bell className="h-4 w-4" />
+        {showBellUnreadCue ? (
+          <span
+            className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
+            aria-hidden
+          />
+        ) : null}
+      </Button>
+    )
   }
 
-  const notificationsHeader = (
-    <div className="border-border/60 flex items-center justify-between border-b px-4 py-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <p className="text-foreground truncate text-sm font-semibold">Notifications</p>
-        <Badge variant="secondary" className="rounded-full">
-          {inboxItems.length}
-        </Badge>
-        {unreadCount > 0 ? (
-          <Badge variant="secondary" className="rounded-full">
-            {unreadCount} unread
-          </Badge>
-        ) : null}
-      </div>
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        onClick={() => handleMarkAllRead()}
-        disabled={bulkUpdating || unreadCount === 0}
-        className="shrink-0"
-      >
-        {bulkUpdating ? (
-          <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
-        ) : null}
-        <span className="hidden sm:inline">Mark all read</span>
-        <span className="sm:hidden">Mark read</span>
-      </Button>
-    </div>
-  )
+  function markReadOptimistic(notificationId: string) {
+    setInboxItems((prev) =>
+      prev.map((item) =>
+        item.id === notificationId ? { ...item, unread: false } : item
+      )
+    )
+  }
 
-  const notificationsTabs = (
-    <div className="border-border/60 border-b px-4 py-2">
-      <Tabs
-        value={tab}
-        onValueChange={(value) => setTab(value as typeof tab)}
-        className="w-fit"
-      >
-        <TabsList className="inline-flex h-8 w-fit max-w-full items-center self-start rounded-full border border-border/50 bg-muted px-1 py-0.5">
-          <TabsTrigger
-            value="all"
-            className="h-7 rounded-full px-3 text-xs data-[state=active]:bg-background"
-          >
-            All
-          </TabsTrigger>
-          <TabsTrigger
-            value="unread"
-            className="h-7 rounded-full px-3 text-xs data-[state=active]:bg-background"
-          >
-            Unread
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
-  )
+  function handleOpenItem(item: NotificationItem) {
+    if (item.unread) {
+      markReadOptimistic(item.id)
+      void markNotificationReadAction(item.id).then((result) => {
+        if ("error" in result) {
+          toast.error(result.error)
+          void refreshNotifications()
+        }
+      })
+    }
 
-  const desktopNotificationsBody = (
-    <>
-      {notificationsHeader}
-      {notificationsTabs}
+    if (item.href) {
+      setOpen(false)
+      router.push(item.href)
+    }
+  }
 
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="min-h-0 flex-1 md:max-w-[20rem] md:basis-[20rem]">
-          <NotificationsList
-            items={filteredItems}
-            selectedId={selectedId}
-            loading={loading}
-            error={loadError}
-            className="h-full min-h-0 max-h-none"
-            viewportClassName="h-full overscroll-contain touch-pan-y"
-            onRetry={() => void refreshNotifications()}
-            emptyLabel={
-              tab === "unread" ? "No unread notifications." : "Inbox is empty."
-            }
-            onSelect={handleSelect}
-          />
-        </div>
-        <NotificationPreview
-          item={selectedItem}
-          loading={loading}
-          updating={selectedUpdating}
-          requestUpdating={requestUpdating}
-          onOpen={handleOpenSelected}
-          onToggleRead={handleToggleRead}
-          onRespondToOrganizationAccessRequest={
-            handleRespondToOrganizationAccessRequest
-          }
-        />
-      </div>
-    </>
-  )
-
-  const mobileNotificationsBody = (
-    <>
-      {notificationsHeader}
-      {mobileDetailItem ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="border-border/60 flex shrink-0 items-center border-b px-4 py-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="-ml-2 h-8 px-2"
-              onClick={() => setMobileDetailItemId(null)}
-            >
-              Back
-            </Button>
-          </div>
-          <NotificationPreview
-            item={mobileDetailItem}
-            loading={loading}
-            updating={selectedUpdating}
-            requestUpdating={requestUpdating}
-            className="min-h-0 max-h-none flex-1 border-t-0 md:border-l-0"
-            onOpen={handleOpenSelected}
-            onToggleRead={handleToggleRead}
-            onRespondToOrganizationAccessRequest={
-              handleRespondToOrganizationAccessRequest
-            }
-          />
-        </div>
-      ) : (
-        <>
-          {notificationsTabs}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <NotificationsList
-              items={filteredItems}
-              selectedId={selectedId}
-              loading={loading}
-              error={loadError}
-              className="h-full min-h-0 max-h-none"
-              viewportClassName="h-full overscroll-contain touch-pan-y"
-              onRetry={() => void refreshNotifications()}
-              emptyLabel={
-                tab === "unread" ? "No unread notifications." : "Inbox is empty."
-              }
-              onSelect={handleMobileSelect}
-            />
-          </div>
-        </>
-      )}
-    </>
-  )
-
-  if (isMobile) {
-    return (
-      <Drawer
-        open={open}
-        onOpenChange={handleMobileOpenChange}
-        snapPoints={NOTIFICATIONS_MOBILE_SNAP_POINTS}
-        activeSnapPoint={mobileSnapPoint}
-        setActiveSnapPoint={setMobileSnapPoint}
-        snapToSequentialPoint
-        handleOnly
-      >
-        <DrawerTrigger asChild>
-          <NotificationsBellButton showBellUnreadCue={showBellUnreadCue} />
-        </DrawerTrigger>
-        <DrawerContent
-          className={cn(
-            "h-[92dvh] max-h-[92dvh] rounded-t-3xl p-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
-            "overscroll-contain touch-pan-y data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[92dvh]",
-          )}
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setHideBellUnreadCue(true)
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="Notifications"
         >
-          <DrawerTitle className="sr-only">Notifications</DrawerTitle>
-          <div className="flex min-h-0 flex-1 touch-pan-y flex-col overflow-hidden">
-            {mobileNotificationsBody}
-          </div>
-        </DrawerContent>
-      </Drawer>
+          <Bell className="h-4 w-4" />
+          {showBellUnreadCue ? (
+            <span
+              className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
+              aria-hidden
+            />
+          ) : null}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[360px] p-0">
+        <div className="border-border/60 flex items-center justify-between border-b px-4 py-3">
+          <p className="text-foreground text-sm font-semibold">Notifications</p>
+          {unreadCount > 0 ? (
+            <Badge variant="secondary" className="rounded-full">
+              {unreadCount} new
+            </Badge>
+          ) : null}
+        </div>
+
+        <div className="border-border/60 flex items-center justify-between border-b px-4 py-2">
+          <p className="text-xs font-medium text-muted-foreground">Inbox</p>
+          <Badge variant="secondary" className="rounded-full">
+            {inboxItems.length}
+          </Badge>
+        </div>
+        <NotificationsList
+          items={inboxItems}
+          loading={loading}
+          error={loadError}
+          onRetry={() => void refreshNotifications()}
+          onPrimaryAction={handleOpenItem}
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function NotificationsList({
+  items,
+  loading,
+  error,
+  onRetry,
+  emptyLabel = "Inbox is empty",
+  onPrimaryAction,
+}: {
+  items: NotificationItem[]
+  loading: boolean
+  error: string | null
+  onRetry?: () => void
+  emptyLabel?: string
+  onPrimaryAction: (item: NotificationItem) => void
+}) {
+  if (loading) {
+    return (
+      <ScrollArea className="h-[360px]">
+        <div className="space-y-2 px-4 py-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="border-border/60 bg-background/60 flex items-start gap-3 rounded-lg border px-3 py-3"
+            >
+              <Skeleton className="mt-1 h-8 w-8 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-muted-foreground px-4 py-6 text-center text-xs">
+        Unable to load notifications.
+        <div className="mt-3">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onRetry ?? (() => window.location.reload())}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="text-muted-foreground px-4 py-6 text-center text-xs">
+        {emptyLabel}
+      </div>
     )
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <NotificationsBellButton showBellUnreadCue={showBellUnreadCue} />
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-[min(92vw,42rem)] p-0"
-      >
-        <div className="flex max-h-[min(72vh,34rem)] min-h-[24rem] flex-col overflow-hidden">
-          {desktopNotificationsBody}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <ScrollArea className="h-[360px]">
+      <div className="divide-border/60 divide-y">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="group hover:bg-accent/40 flex items-start gap-3 px-4 py-3 transition"
+          >
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-start gap-3 text-left"
+              onClick={() => onPrimaryAction(item)}
+            >
+              <span
+                className={cn(
+                  "mt-1 flex h-8 w-8 items-center justify-center rounded-full border text-xs",
+                  toneStyles(item.tone)
+                )}
+              >
+                {item.tone === "warning" ? (
+                  <AlertTriangle className="h-4 w-4" />
+                ) : null}
+                {item.tone === "info" ? <Sparkles className="h-4 w-4" /> : null}
+                {item.tone === "success" ? (
+                  <MessageCircle className="h-4 w-4" />
+                ) : null}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-foreground text-sm font-medium">
+                    {item.title}
+                  </p>
+                  {item.unread ? (
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full bg-sky-500 dark:bg-sky-400"
+                      aria-hidden
+                    />
+                  ) : null}
+                </div>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {item.description}
+                </p>
+                <p className="text-muted-foreground mt-2 text-[11px]">
+                  {item.time}
+                </p>
+              </div>
+            </button>
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
   )
+}
+
+function toneStyles(tone?: NotificationItem["tone"]) {
+  switch (tone) {
+    case "warning":
+      return "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+    case "success":
+      return "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+    default:
+      return "border-sky-500/40 bg-sky-500/15 text-sky-600 dark:text-sky-400"
+  }
 }

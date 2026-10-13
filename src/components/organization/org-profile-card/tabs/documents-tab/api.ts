@@ -34,12 +34,8 @@ export async function uploadOrgDocument(kind: string, file: File) {
   return document
 }
 
-export async function getOrgDocumentUrl(kind: string, options?: { download?: boolean }) {
-  const search = new URLSearchParams({ kind })
-  if (options?.download) {
-    search.set("download", "1")
-  }
-  const res = await fetch(`/api/account/org-documents?${search.toString()}`)
+export async function getOrgDocumentUrl(kind: string) {
+  const res = await fetch(`/api/account/org-documents?kind=${encodeURIComponent(kind)}`)
   if (!res.ok) {
     throw new Error(await getErrorMessage(res, "Unable to open document"))
   }
@@ -127,12 +123,10 @@ export async function removePolicyDocument(policyId: string) {
   return policy
 }
 
-export async function getPolicyDocumentUrl(policyId: string, options?: { download?: boolean }) {
-  const search = new URLSearchParams({ id: policyId })
-  if (options?.download) {
-    search.set("download", "1")
-  }
-  const res = await fetch(`/api/account/org-policies/document?${search.toString()}`)
+export async function getPolicyDocumentUrl(policyId: string) {
+  const res = await fetch(
+    `/api/account/org-policies/document?id=${encodeURIComponent(policyId)}`,
+  )
 
   if (!res.ok) {
     throw new Error(await getErrorMessage(res, "Unable to open policy file"))

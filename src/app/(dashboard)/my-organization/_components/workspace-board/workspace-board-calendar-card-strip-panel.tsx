@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 
@@ -11,12 +11,14 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
 import type { MyOrganizationCalendarView } from "../../_lib/types"
-import { WORKSPACE_CARD_LAYOUT_SYSTEM } from "./workspace-board-card-layout-system"
-import { buildCalendarStripEventPreview } from "./workspace-board-calendar-card-strip-data"
-import { WorkspaceBoardCalendarCardStripEventDetailsSheet } from "./workspace-board-calendar-card-strip-event-details-sheet"
+import {
+  buildCalendarStripEventPreview,
+  CALENDAR_STRIP_OBJECTIVE_PREVIEW_ITEMS,
+} from "./workspace-board-calendar-card-strip-data"
 import {
   buildCalendarDayKey,
   isSameCalendarDay,
@@ -24,25 +26,6 @@ import {
 } from "./workspace-board-calendar-card-strip-utils"
 
 const FULLSCREEN_STRIP_PAGE_SIZE = 7
-
-function useCalendarEventActionRequest({
-  request,
-  eventIds,
-  onSelect,
-}: {
-  request?: { id: number; eventId: string } | null
-  eventIds: string[]
-  onSelect: (eventId: string) => void
-}) {
-  const handledRequestIdRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!request || handledRequestIdRef.current === request.id) return
-    if (!eventIds.includes(request.eventId)) return
-    handledRequestIdRef.current = request.id
-    onSelect(request.eventId)
-  }, [eventIds, onSelect, request])
-}
 
 function formatCalendarStripMonth(date: Date) {
   return new Intl.DateTimeFormat(undefined, { month: "short" }).format(date)
@@ -61,7 +44,6 @@ function formatCalendarStripHeading(date: Date) {
 }
 
 export function CalendarDateStripEventsPanel({
-  eventActionRequest,
   calendar,
   compactCanvasCard,
   showTopDivider = true,
@@ -71,10 +53,10 @@ export function CalendarDateStripEventsPanel({
   eventDayKeys,
   selectedDayEvents,
   visibleEvents,
+  recommendedIntervalMonths,
   onSelectStripDate,
   onShiftStripDays,
 }: {
-  eventActionRequest?: { id: number; eventId: string } | null
   calendar: MyOrganizationCalendarView
   compactCanvasCard: boolean
   showTopDivider?: boolean
@@ -84,28 +66,19 @@ export function CalendarDateStripEventsPanel({
   eventDayKeys: Set<string>
   selectedDayEvents: MyOrganizationCalendarView["upcomingEvents"]
   visibleEvents: MyOrganizationCalendarView["upcomingEvents"]
+  recommendedIntervalMonths: number
   onSelectStripDate: (date: Date) => void
   onShiftStripDays: (deltaDays: number) => void
 }) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [canScrollPrev, setCanScrollPrev] = useState(false)
   const [canScrollNext, setCanScrollNext] = useState(false)
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
-  const [eventDetailsOpen, setEventDetailsOpen] = useState(false)
-  const { eventItems, selectedDayEventCount } = buildCalendarStripEventPreview({
+  const objectiveItems = CALENDAR_STRIP_OBJECTIVE_PREVIEW_ITEMS
+  const objectiveCount = objectiveItems.length
+  const { eventItems, notificationItems, selectedDayEventCount } = buildCalendarStripEventPreview({
     visibleEvents,
     selectedDayEvents,
-  })
-  const selectedEventItem =
-    eventItems.find((event) => event.id === selectedEventId) ?? null
-
-  useCalendarEventActionRequest({
-    request: eventActionRequest,
-    eventIds: eventItems.map((event) => event.id),
-    onSelect: (eventId) => {
-      setSelectedEventId(eventId)
-      setEventDetailsOpen(true)
-    },
+    recommendedIntervalMonths,
   })
 
   useEffect(() => {
@@ -134,11 +107,6 @@ export function CalendarDateStripEventsPanel({
     onSelectStripDate(todayDate)
   }
 
-  const handleEventSelect = (eventId: string) => {
-    setSelectedEventId(eventId)
-    setEventDetailsOpen(true)
-  }
-
   const handlePrev = () => {
     if (compactCanvasCard || !carouselApi) {
       onShiftStripDays(-1)
@@ -156,10 +124,7 @@ export function CalendarDateStripEventsPanel({
     }
     const currentIndex = carouselApi.selectedScrollSnap()
     const maxIndex = Math.max(0, carouselApi.scrollSnapList().length - 1)
-    const nextIndex = Math.min(
-      maxIndex,
-      currentIndex + FULLSCREEN_STRIP_PAGE_SIZE
-    )
+    const nextIndex = Math.min(maxIndex, currentIndex + FULLSCREEN_STRIP_PAGE_SIZE)
     carouselApi.scrollTo(nextIndex)
   }
 
@@ -176,11 +141,11 @@ export function CalendarDateStripEventsPanel({
         size="icon"
         onClick={() => onSelectStripDate(date)}
         className={cn(
-          "group relative grid aspect-square h-auto w-full min-w-0 place-items-center p-0 text-center transition-colors",
+          "group relative grid h-auto w-full aspect-square min-w-0 place-items-center p-0 text-center transition-colors",
           compactCanvasCard ? "rounded-md" : "rounded-lg",
           isActive
             ? "bg-foreground text-background"
-            : "text-foreground hover:bg-background/70 bg-transparent"
+            : "bg-transparent text-foreground hover:bg-background/70",
         )}
         aria-pressed={isActive}
         aria-label={formatCalendarStripHeading(date)}
@@ -190,7 +155,7 @@ export function CalendarDateStripEventsPanel({
             className={cn(
               compactCanvasCard ? "text-[8px]" : "text-[10px]",
               "leading-none",
-              isActive ? "text-background/75" : "text-muted-foreground"
+              isActive ? "text-background/75" : "text-muted-foreground",
             )}
           >
             {formatCalendarStripMonth(date)}
@@ -198,7 +163,7 @@ export function CalendarDateStripEventsPanel({
           <span
             className={cn(
               compactCanvasCard ? "text-sm" : "text-lg",
-              "leading-none font-semibold tabular-nums"
+              "font-semibold leading-none tabular-nums",
             )}
           >
             {formatCalendarStripDay(date)}
@@ -207,13 +172,13 @@ export function CalendarDateStripEventsPanel({
         <span
           className={cn(
             compactCanvasCard
-              ? "absolute top-1 right-1 h-1 w-1 rounded-full"
-              : "absolute top-1.5 right-1.5 h-1 w-1 rounded-full",
+              ? "absolute right-1 top-1 h-1 w-1 rounded-full"
+              : "absolute right-1.5 top-1.5 h-1 w-1 rounded-full",
             isToday
               ? isActive
                 ? "bg-background/85"
                 : "bg-foreground/70"
-              : "bg-transparent"
+              : "bg-transparent",
           )}
           aria-hidden
         />
@@ -226,7 +191,7 @@ export function CalendarDateStripEventsPanel({
               ? isActive
                 ? "bg-background/80"
                 : "bg-foreground/70"
-              : "bg-transparent"
+              : "bg-transparent",
           )}
           aria-hidden
         />
@@ -235,35 +200,17 @@ export function CalendarDateStripEventsPanel({
   }
 
   return (
-    <div
-      className={cn(
-        WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
-        !compactCanvasCard && WORKSPACE_CARD_LAYOUT_SYSTEM.flexFill,
-        "overflow-hidden",
-        showTopDivider && "border-border/50 border-t pt-3"
-      )}
-    >
-      <div
-        className={cn(
-          WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
-          !compactCanvasCard && WORKSPACE_CARD_LAYOUT_SYSTEM.flexFill,
-          "px-0.5"
-        )}
-      >
+    <div className={cn("flex min-h-0 flex-col", showTopDivider && "border-t border-border/50 pt-3")}>
+      <div className="flex flex-col px-0.5">
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className={cn(
-              "shrink-0 rounded-full",
-              compactCanvasCard ? "h-[28px] w-[28px]" : "h-8 w-8"
-            )}
+            className={cn("shrink-0 rounded-full", compactCanvasCard ? "h-[28px] w-[28px]" : "h-8 w-8")}
             onClick={handlePrev}
             disabled={!compactCanvasCard && !canScrollPrev}
-            aria-label={
-              compactCanvasCard ? "Show previous date" : "Scroll dates left"
-            }
+            aria-label={compactCanvasCard ? "Show previous date" : "Scroll dates left"}
           >
             <ChevronLeftIcon className="h-4 w-4" aria-hidden />
           </Button>
@@ -274,11 +221,7 @@ export function CalendarDateStripEventsPanel({
           ) : (
             <Carousel
               className="min-w-0 flex-1"
-              opts={{
-                align: "start",
-                containScroll: "trimSnaps",
-                dragFree: true,
-              }}
+              opts={{ align: "start", containScroll: "trimSnaps", dragFree: true }}
               setApi={setCarouselApi}
             >
               <CarouselContent className="-ml-1.5">
@@ -297,32 +240,22 @@ export function CalendarDateStripEventsPanel({
             type="button"
             variant="ghost"
             size="icon"
-            className={cn(
-              "shrink-0 rounded-full",
-              compactCanvasCard ? "h-[28px] w-[28px]" : "h-8 w-8"
-            )}
+            className={cn("shrink-0 rounded-full", compactCanvasCard ? "h-[28px] w-[28px]" : "h-8 w-8")}
             onClick={handleNext}
             disabled={!compactCanvasCard && !canScrollNext}
-            aria-label={
-              compactCanvasCard ? "Show next date" : "Scroll dates right"
-            }
+            aria-label={compactCanvasCard ? "Show next date" : "Scroll dates right"}
           >
             <ChevronRightIcon className="h-4 w-4" aria-hidden />
           </Button>
         </div>
 
-        <div
-          className={cn(
-            "border-border/35 mt-3 flex flex-col border-t pt-3",
-            !compactCanvasCard && "min-h-0 flex-1"
-          )}
-        >
+        <div className="mt-3 flex flex-col border-t border-border/35 pt-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-foreground truncate text-sm font-semibold">
+              <p className="truncate text-sm font-semibold text-foreground">
                 {formatCalendarStripHeading(stripSelectedDate)}
               </p>
-              <p className="text-muted-foreground text-[11px]">
+              <p className="text-[11px] text-muted-foreground">
                 {selectedDayEventCount > 0
                   ? `${selectedDayEventCount} event${selectedDayEventCount === 1 ? "" : "s"} on this day`
                   : "No events on this day"}
@@ -338,88 +271,86 @@ export function CalendarDateStripEventsPanel({
               >
                 Today
               </Button>
-              {headerAction ? (
-                <div className="shrink-0">{headerAction}</div>
-              ) : null}
+              {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
             </div>
           </div>
 
-          <div
-            className={cn(
-              "mt-2 flex flex-col gap-2",
-              !compactCanvasCard && "min-h-0 flex-1"
-            )}
-          >
-            <div
-              className={cn(
-                "nowheel pr-1 pb-2",
-                !compactCanvasCard && "min-h-0 flex-1 overflow-y-auto"
-              )}
-            >
+          <Tabs defaultValue="events" className="mt-2 flex flex-col gap-2">
+            <TabsList className="h-8 w-fit max-w-full self-start gap-0 overflow-hidden rounded-full border border-border/50 bg-background/70 p-0.5">
+              <TabsTrigger
+                value="events"
+                className="h-6 shrink-0 rounded-full px-2 text-[11px] font-medium text-muted-foreground data-[state=active]:bg-foreground data-[state=active]:text-background"
+              >
+                Events
+                <span className="ml-1 tabular-nums opacity-80">{eventItems.length}</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="objectives"
+                className="h-6 shrink-0 rounded-full px-2 text-[11px] font-medium text-muted-foreground data-[state=active]:bg-foreground data-[state=active]:text-background"
+              >
+                Objectives
+                <span className="ml-1 tabular-nums opacity-80">{objectiveCount}</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="events" className="pb-0">
+              <div className="mb-2 space-y-1">
+                <div className="space-y-1">
+                  {notificationItems.map((item) => (
+                    <div key={item.id} className="rounded-md border border-border/50 bg-background/60 px-2 py-1.5">
+                      <p className="line-clamp-1 text-[11px] font-medium text-foreground">{item.label}</p>
+                      <p className="line-clamp-1 text-[11px] text-muted-foreground">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {eventItems.length > 0 ? (
-                <div className="space-y-2">
+                <div className="divide-y divide-border/35">
                   {eventItems.map((event) => (
-                    <Button
-                      key={event.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEventSelect(event.id)}
-                      className={cn(
-                        "bg-muted/55 border-border/50 hover:bg-muted/75 focus-visible:ring-primary/40 relative flex h-auto w-full flex-col items-start gap-0.5 rounded-md border px-2 py-1.5 pl-6 text-left whitespace-normal before:absolute before:inset-y-1.5 before:left-2 before:w-1 before:rounded-full focus-visible:ring-2",
-                        event.accentClassName
-                      )}
-                      aria-label={`Open details for ${event.title}`}
-                    >
-                      <p
-                        className={cn(
-                          WORKSPACE_CARD_LAYOUT_SYSTEM.textWrap,
-                          "text-foreground line-clamp-1 text-xs leading-tight font-medium"
-                        )}
-                      >
-                        {event.title}
-                      </p>
-                      <p
-                        className={cn(
-                          WORKSPACE_CARD_LAYOUT_SYSTEM.textWrap,
-                          "text-muted-foreground line-clamp-1 text-[10px] leading-tight"
-                        )}
-                      >
-                        {event.timeLabel}
-                      </p>
-                      {event.invitesLabel ? (
-                        <p
-                          className={cn(
-                            WORKSPACE_CARD_LAYOUT_SYSTEM.textWrap,
-                            "text-muted-foreground line-clamp-1 text-[10px] leading-tight"
-                          )}
-                        >
-                          {event.invitesLabel}
-                        </p>
-                      ) : null}
-                    </Button>
+                    <div key={event.id} className="flex items-start justify-between gap-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="line-clamp-1 text-sm font-medium text-foreground">{event.title}</p>
+                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{event.timeLabel}</p>
+                        {event.invitesLabel ? <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{event.invitesLabel}</p> : null}
+                      </div>
+                      <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        Notified
+                      </span>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-xs">
-                  Add milestones in the full calendar to keep board rhythm
-                  visible.
+                <p className="text-xs text-muted-foreground">
+                  Add milestones in the full calendar to keep board rhythm visible.
                 </p>
               )}
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="objectives" className="pb-0">
+              <div className="space-y-1.5">
+                {objectiveItems.map((objective) => (
+                  <div key={objective.id} className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-background/60 px-2 py-1.5">
+                    <p className="line-clamp-1 text-xs text-foreground">{objective.title}</p>
+                    <span
+                      className={cn(
+                        "inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                        objective.status === "done"
+                          ? "border-foreground/25 bg-foreground text-background"
+                          : objective.status === "active"
+                            ? "border-foreground/30 bg-background text-foreground"
+                            : "border-border/60 bg-background text-muted-foreground",
+                      )}
+                    >
+                      {objective.status === "done" ? "Done" : objective.status === "active" ? "Active" : "To do"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-      <WorkspaceBoardCalendarCardStripEventDetailsSheet
-        item={selectedEventItem}
-        open={eventDetailsOpen}
-        onOpenChange={(open) => {
-          setEventDetailsOpen(open)
-          if (!open) {
-            setSelectedEventId(null)
-          }
-        }}
-      />
     </div>
   )
 }

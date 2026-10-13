@@ -1,28 +1,6 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-import type { OrganizationNarrativeRevisions } from "@/lib/roadmap"
 
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
-
-export type BrandTypographyTracking =
-  | "tighter"
-  | "tight"
-  | "normal"
-  | "wide"
-  | "wider"
-
-export type BrandTypographySlot = {
-  family: string
-  weight: string
-  tracking: BrandTypographyTracking
-}
-
-export type BrandTypographyConfig = {
-  headings: BrandTypographySlot
-  body: BrandTypographySlot
-  code: {
-    family: string
-  }
-}
 
 export type OrgProfile = {
   name?: string | null
@@ -39,13 +17,9 @@ export type OrgProfile = {
   addressState?: string | null
   addressPostal?: string | null
   addressCountry?: string | null
-  locationType?: "in_person" | "online" | null
-  locationUrl?: string | null
   logoUrl?: string | null
-  brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
-  donateUrl?: string | null
   twitter?: string | null
   facebook?: string | null
   linkedin?: string | null
@@ -58,26 +32,13 @@ export type OrgProfile = {
   mission?: string | null
   need?: string | null
   values?: string | null
-  originStory?: string | null
-  theoryOfChange?: string | null
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
-  brandVoiceAudience?: string | null
-  brandVoiceTone?: string | null
-  brandVoiceStyle?: string | null
-  brandVoicePersonality?: string | null
-  brandVoiceGuidelines?: string | null
-  brandVoiceAvoid?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
-  brandThemePresetId?: string | null
-  brandAccentPresetId?: string | null
-  brandTypographyPresetId?: string | null
-  brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
-  narrativeRevisions?: OrganizationNarrativeRevisions
 }
 
 export type OrgDocument = {
@@ -150,7 +111,4 @@ export interface OrgProfileCardProps {
   canEdit?: boolean
   initialTab?: ProfileTab
   initialProgramId?: string | null
-  initialProgramStep?: number | null
-  initialFocus?: string | null
-  initialEditMode?: boolean
 }

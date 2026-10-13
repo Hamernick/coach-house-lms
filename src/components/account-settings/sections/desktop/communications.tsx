@@ -3,13 +3,17 @@ import { CommunicationsPreferencesFields } from "@/components/account-settings/s
 export function CommunicationsSection({
   marketingOptIn,
   newsletterOptIn,
+  acceleratorOverlayEnabled,
   onMarketingOptInChange,
   onNewsletterOptInChange,
+  onAcceleratorOverlayEnabledChange,
 }: {
   marketingOptIn: boolean
   newsletterOptIn: boolean
+  acceleratorOverlayEnabled: boolean
   onMarketingOptInChange: (value: boolean) => void
   onNewsletterOptInChange: (value: boolean) => void
+  onAcceleratorOverlayEnabledChange: (value: boolean) => void
 }) {
   return (
     <div className="space-y-6">
@@ -21,8 +25,10 @@ export function CommunicationsSection({
         idPrefix="desktop-communications"
         marketingOptIn={marketingOptIn}
         newsletterOptIn={newsletterOptIn}
+        acceleratorOverlayEnabled={acceleratorOverlayEnabled}
         onMarketingOptInChange={onMarketingOptInChange}
         onNewsletterOptInChange={onNewsletterOptInChange}
+        onAcceleratorOverlayEnabledChange={onAcceleratorOverlayEnabledChange}
       />
     </div>
   )

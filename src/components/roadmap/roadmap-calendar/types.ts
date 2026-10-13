@@ -1,18 +1,11 @@
 import type {
   RoadmapCalendarAssignedRole,
-  RoadmapCalendarEventType,
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
-
-export type RoadmapCalendarView = {
-  month: Date
-  selectedDate: Date | undefined
-}
 
 export type EventDraft = {
   title: string
   description: string
-  eventType: RoadmapCalendarEventType
   startsAt: string
   endsAt: string
   allDay: boolean

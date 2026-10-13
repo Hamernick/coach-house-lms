@@ -11,6 +11,7 @@ export type UseAccountSettingsDialogStateArgs = {
   defaultEmail?: string | null
   defaultMarketingOptIn: boolean
   defaultNewsletterOptIn: boolean
+  defaultAcceleratorOverlayEnabled: boolean
   onOpenChange: (next: boolean) => void
 }
 
@@ -21,13 +22,10 @@ export type UseAccountSettingsDialogStateResult = {
   handleMobilePageChange: (page: AccountSettingsMobilePage) => void
   firstName: string
   lastName: string
-  title: string
-  company: string
-  contact: string
-  about: string
   phone: string
   marketingOptIn: boolean
   newsletterOptIn: boolean
+  acceleratorOverlayEnabled: boolean
   newPassword: string
   confirmPassword: string
   isSaving: boolean
@@ -46,12 +44,9 @@ export type UseAccountSettingsDialogStateResult = {
   requestClose: () => void
   handleMarketingOptInChange: (value: boolean) => void
   handleNewsletterOptInChange: (value: boolean) => void
+  handleAcceleratorOverlayEnabledChange: (value: boolean) => void
   handleFirstNameChange: (value: string) => void
   handleLastNameChange: (value: string) => void
-  handleTitleChange: (value: string) => void
-  handleCompanyChange: (value: string) => void
-  handleContactChange: (value: string) => void
-  handleAboutChange: (value: string) => void
   handlePhoneChange: (value: string) => void
   handleNewPasswordChange: (value: string) => void
   handleConfirmPasswordChange: (value: string) => void

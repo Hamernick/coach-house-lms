@@ -7,46 +7,6 @@ import type {
   WorkspaceAcceleratorStepStatus,
   WorkspaceAcceleratorTimelineModuleSeed,
 } from "../types"
-import {
-  buildAssignmentSections,
-  type AssignmentSection,
-} from "@/lib/modules/assignment-sections"
-import { WORKSPACE_ACCELERATOR_PATH } from "@/lib/workspace/routes"
-
-export {
-  buildWorkspaceAcceleratorChecklistModules,
-  buildWorkspaceAcceleratorLessonGroupKey,
-  buildWorkspaceAcceleratorLessonGroupOptions,
-  calculateWorkspaceAcceleratorChecklistProgressPercent,
-  formatWorkspaceAcceleratorModuleCompletionLabel,
-  isWorkspaceAcceleratorChecklistModuleComplete,
-  resolveWorkspaceAcceleratorOpenModuleId,
-  resolveWorkspaceAcceleratorLessonGroupTitle,
-  resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
-  isWorkspaceAcceleratorOrganizationSetupStep,
-  shouldHideWorkspaceAcceleratorFormationAddOnStep,
-} from "./checklist"
-export {
-  areWorkspaceAcceleratorRuntimeSnapshotsEqual,
-  buildWorkspaceAcceleratorRuntimeStepSignature,
-} from "./runtime-snapshot"
-export type {
-  WorkspaceAcceleratorChecklistModule,
-  WorkspaceAcceleratorLessonGroupOption,
-} from "./checklist"
-
-const EMPTY_ACCELERATOR_STEPS: WorkspaceAcceleratorCardStep[] = []
-const EMPTY_COMPLETED_STEP_IDS: string[] = []
-
-export function isWorkspaceAcceleratorControllerStepVisible(
-  step: WorkspaceAcceleratorCardStep
-) {
-  return (
-    (step.stepKind !== "lesson" ||
-      Boolean(step.moduleContext?.workspaceOnboarding)) &&
-    step.stepKind !== "complete"
-  )
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
@@ -59,7 +19,7 @@ function normalizeStepStatus(value: unknown): WorkspaceAcceleratorStepStatus {
 
 function resolveDerivedStepStatus(
   moduleStatus: WorkspaceAcceleratorStepStatus,
-  stepKind: WorkspaceAcceleratorStepKind
+  stepKind: WorkspaceAcceleratorStepKind,
 ): WorkspaceAcceleratorStepStatus {
   if (moduleStatus === "completed") return "completed"
   if (moduleStatus === "not_started") return "not_started"
@@ -67,35 +27,20 @@ function resolveDerivedStepStatus(
   return "not_started"
 }
 
-function buildModuleStepKinds(
-  module: WorkspaceAcceleratorTimelineModuleSeed
-): WorkspaceAcceleratorStepKind[] {
-  if (module.moduleContext?.workspaceOnboarding) {
-    return ["lesson"]
-  }
-
-  const hasAssignmentOverview = buildAssignmentStepSections(module).some(
-    (section) => section.id === "assignment-overview"
-  )
+function buildModuleStepKinds(module: WorkspaceAcceleratorTimelineModuleSeed): WorkspaceAcceleratorStepKind[] {
   const next: WorkspaceAcceleratorStepKind[] = ["lesson"]
   if (module.videoUrl) next.push("video")
-  if (
-    !hasAssignmentOverview &&
-    (module.resources.length > 0 || module.hasDeck)
-  ) {
-    next.push("resources")
-  }
+  if (module.resources.length > 0) next.push("resources")
   if (module.hasAssignment) next.push("assignment")
-  next.push("complete")
+  if (module.hasDeck) next.push("deck")
   return next
 }
 
 function resolveStepTitle(stepKind: WorkspaceAcceleratorStepKind) {
-  if (stepKind === "lesson") return "Class"
+  if (stepKind === "lesson") return "Lesson"
   if (stepKind === "video") return "Video"
   if (stepKind === "resources") return "Resources"
   if (stepKind === "assignment") return "Assignment"
-  if (stepKind === "complete") return "Complete"
   return "Deck"
 }
 
@@ -111,32 +56,11 @@ function resolveStepDescription({
   hasDeck: boolean
 }) {
   if (stepKind === "lesson") return moduleDescription
-  if (stepKind === "video") return "Watch the core walkthrough for this class."
-  if (stepKind === "resources") {
-    if (resourceCount > 0 && hasDeck)
-      return `${resourceCount} linked resources and deck materials`
-    if (resourceCount > 0) return `${resourceCount} linked resources`
-    if (hasDeck) return "Deck materials available."
-    return "No resources attached yet."
-  }
-  if (stepKind === "assignment")
-    return "Complete the assignment to move this lesson forward."
-  if (stepKind === "complete")
-    return "Mark this lesson complete and continue to the next lesson."
+  if (stepKind === "video") return "Watch the core walkthrough for this lesson."
+  if (stepKind === "resources") return resourceCount > 0 ? `${resourceCount} linked resources` : "No resources attached yet."
+  if (stepKind === "assignment") return "Complete the assignment to advance this lesson."
   if (hasDeck) return "Review supporting deck materials."
   return null
-}
-
-function buildAssignmentStepSections(
-  module: WorkspaceAcceleratorTimelineModuleSeed
-): AssignmentSection[] {
-  const fields = module.moduleContext?.assignmentFields ?? []
-  if (fields.length === 0) return []
-  return buildAssignmentSections(fields).tabSections.filter(
-    (section) =>
-      section.fields.length > 0 ||
-      Boolean(section.title?.trim() || section.description?.trim())
-  )
 }
 
 function normalizeResourceKind(value: unknown) {
@@ -146,11 +70,7 @@ function normalizeResourceKind(value: unknown) {
   return normalized
 }
 
-function normalizeResourceTitle(
-  record: Record<string, unknown>,
-  index: number,
-  fallbackUrl: string
-) {
+function normalizeResourceTitle(record: Record<string, unknown>, index: number, fallbackUrl: string) {
   const candidate =
     typeof record.title === "string"
       ? record.title
@@ -170,7 +90,7 @@ function normalizeResourceTitle(
 }
 
 export function normalizeWorkspaceAcceleratorResources(
-  value: unknown
+  value: unknown,
 ): WorkspaceAcceleratorCardStepResource[] {
   if (!Array.isArray(value)) return []
 
@@ -194,10 +114,7 @@ export function normalizeWorkspaceAcceleratorResources(
 
     const title = normalizeResourceTitle(entry, index, url)
     const kind = normalizeResourceKind(entry.kind ?? entry.type)
-    const id =
-      typeof entry.id === "string" && entry.id.trim()
-        ? entry.id.trim()
-        : `resource-${index + 1}-${url}`
+    const id = typeof entry.id === "string" && entry.id.trim() ? entry.id.trim() : `resource-${index + 1}-${url}`
 
     next.push({
       id,
@@ -211,95 +128,30 @@ export function normalizeWorkspaceAcceleratorResources(
 }
 
 export function buildWorkspaceAcceleratorCardSteps(
-  modules: WorkspaceAcceleratorTimelineModuleSeed[]
+  modules: WorkspaceAcceleratorTimelineModuleSeed[],
 ): WorkspaceAcceleratorCardStep[] {
-  const safeModules = modules.filter(
-    (timelineModule) =>
-      timelineModule.id && timelineModule.title && timelineModule.href
-  )
+  const safeModules = modules.filter((timelineModule) => timelineModule.id && timelineModule.title && timelineModule.href)
   const moduleTotal = safeModules.length
 
   const flattened: WorkspaceAcceleratorCardStep[] = []
-  for (
-    let moduleIndex = 0;
-    moduleIndex < safeModules.length;
-    moduleIndex += 1
-  ) {
+  for (let moduleIndex = 0; moduleIndex < safeModules.length; moduleIndex += 1) {
     const timelineModule = safeModules[moduleIndex]!
     const moduleStatus = normalizeStepStatus(timelineModule.status)
     const moduleStepKinds = buildModuleStepKinds(timelineModule)
 
     for (const stepKind of moduleStepKinds) {
-      const assignmentSections =
-        stepKind === "assignment"
-          ? buildAssignmentStepSections(timelineModule)
-          : []
-      if (stepKind === "assignment" && assignmentSections.length > 1) {
-        assignmentSections.forEach((section, sectionIndex) => {
-          flattened.push({
-            id: `${timelineModule.id}:assignment:${section.id}`,
-            moduleId: timelineModule.id,
-            published: timelineModule.published,
-            moduleSlug: timelineModule.slug ?? null,
-            moduleTitle: timelineModule.title,
-            stepKind,
-            stepTitle: section.title ?? `Assignment ${sectionIndex + 1}`,
-            stepDescription:
-              section.description ??
-              resolveStepDescription({
-                stepKind,
-                moduleDescription: timelineModule.description,
-                resourceCount: timelineModule.resources.length,
-                hasDeck: timelineModule.hasDeck,
-              }),
-            assignmentSectionId: section.id,
-            href: timelineModule.href,
-            status: resolveDerivedStepStatus(moduleStatus, stepKind),
-            stepSequenceIndex: 0,
-            stepSequenceTotal: 0,
-            moduleSequenceIndex: moduleIndex + 1,
-            moduleSequenceTotal: moduleTotal,
-            groupTitle: timelineModule.groupTitle || "Accelerator",
-            groupOrder: timelineModule.groupOrder ?? null,
-            videoUrl: timelineModule.videoUrl,
-            durationMinutes:
-              typeof timelineModule.durationMinutes === "number"
-                ? timelineModule.durationMinutes
-                : null,
-            resources: timelineModule.resources,
-            hasAssignment: Boolean(timelineModule.hasAssignment),
-            hasDeck: Boolean(timelineModule.hasDeck),
-            moduleContext: timelineModule.moduleContext ?? null,
-          })
-        })
-        continue
-      }
-
-      const workspaceOnboarding =
-        timelineModule.moduleContext?.workspaceOnboarding ?? null
-      const stepTitle =
-        workspaceOnboarding && stepKind === "lesson"
-          ? timelineModule.title
-          : resolveStepTitle(stepKind)
-
       flattened.push({
         id: `${timelineModule.id}:${stepKind}`,
         moduleId: timelineModule.id,
-        published: timelineModule.published,
-        moduleSlug: timelineModule.slug ?? null,
         moduleTitle: timelineModule.title,
         stepKind,
-        stepTitle,
+        stepTitle: resolveStepTitle(stepKind),
         stepDescription: resolveStepDescription({
           stepKind,
           moduleDescription: timelineModule.description,
           resourceCount: timelineModule.resources.length,
           hasDeck: timelineModule.hasDeck,
         }),
-        assignmentSectionId:
-          stepKind === "assignment"
-            ? (assignmentSections[0]?.id ?? null)
-            : null,
         href: timelineModule.href,
         status: resolveDerivedStepStatus(moduleStatus, stepKind),
         stepSequenceIndex: 0,
@@ -307,16 +159,11 @@ export function buildWorkspaceAcceleratorCardSteps(
         moduleSequenceIndex: moduleIndex + 1,
         moduleSequenceTotal: moduleTotal,
         groupTitle: timelineModule.groupTitle || "Accelerator",
-        groupOrder: timelineModule.groupOrder ?? null,
         videoUrl: timelineModule.videoUrl,
-        durationMinutes:
-          typeof timelineModule.durationMinutes === "number"
-            ? timelineModule.durationMinutes
-            : null,
+        durationMinutes: typeof timelineModule.durationMinutes === "number" ? timelineModule.durationMinutes : null,
         resources: timelineModule.resources,
         hasAssignment: Boolean(timelineModule.hasAssignment),
         hasDeck: Boolean(timelineModule.hasDeck),
-        moduleContext: timelineModule.moduleContext ?? null,
       })
     }
   }
@@ -330,139 +177,31 @@ export function buildWorkspaceAcceleratorCardSteps(
 }
 
 export function resolveWorkspaceAcceleratorCardTargetSize(
-  _step: WorkspaceAcceleratorCardStep | null
+  step: WorkspaceAcceleratorCardStep | null,
 ): WorkspaceAcceleratorCardSize {
+  if (!step) return "sm"
+  if (step.stepKind === "video" || step.stepKind === "resources") return "md"
+  const hasLongDescription = (step.stepDescription?.length ?? 0) > 140
+  const hasHeavyMeta = step.hasAssignment || step.hasDeck || step.resources.length > 2 || Boolean(step.videoUrl)
+  if (hasLongDescription || hasHeavyMeta) {
+    return "md"
+  }
+
   return "sm"
 }
 
 export function normalizeWorkspaceAcceleratorCardInput(
-  input: WorkspaceAcceleratorCardInput
+  input: WorkspaceAcceleratorCardInput,
 ): WorkspaceAcceleratorCardInput {
-  const normalizedSteps = Array.isArray(input.steps)
-    ? input.steps
-    : EMPTY_ACCELERATOR_STEPS
-  const resolveInitialCurrentStepId = (value: unknown): string | null => {
-    if (typeof value !== "string" || value.trim().length === 0) return null
-    const trimmed = value.trim()
-    if (normalizedSteps.some((step) => step.id === trimmed)) return trimmed
-    if (trimmed.endsWith(":assignment")) {
-      return (
-        normalizedSteps.find((step) => step.id.startsWith(`${trimmed}:`))?.id ??
-        null
-      )
-    }
-    return trimmed
-  }
-  const normalizeInitialCompletedStepIds = (value: unknown): string[] => {
-    if (!Array.isArray(value)) return EMPTY_COMPLETED_STEP_IDS
-    if (value.length === 0) return EMPTY_COMPLETED_STEP_IDS
-
-    let needsFilteredCopy = false
-    for (const entry of value) {
-      if (typeof entry !== "string" || entry.trim().length === 0) {
-        needsFilteredCopy = true
-        break
-      }
-    }
-
-    if (!needsFilteredCopy) return value as string[]
-
-    const next: string[] = []
-    for (const entry of value) {
-      if (typeof entry !== "string") continue
-      if (entry.trim().length === 0) continue
-      next.push(entry)
-    }
-    return next
-  }
-
-  const explicitCompletedStepIds = normalizeInitialCompletedStepIds(
-    input.initialCompletedStepIds
-  )
-  const completedStepIdsFromStatuses = normalizedSteps
-    .filter((step) => step.status === "completed")
-    .map((step) => step.id)
-  const initialCompletedStepIds = Array.from(
-    new Set([...explicitCompletedStepIds, ...completedStepIdsFromStatuses])
-  )
-
   return {
-    steps: normalizedSteps,
-    size: input.size === "md" || input.size === "lg" ? input.size : "sm",
-    readinessSummary: input.readinessSummary ?? null,
-    linkHrefOverride:
-      typeof input.linkHrefOverride === "string" &&
-      input.linkHrefOverride.trim().length > 0
-        ? input.linkHrefOverride
-        : null,
+    steps: Array.isArray(input.steps) ? input.steps : [],
+    size: input.size === "md" ? "md" : "sm",
+    mode: input.mode === "tasks" ? "tasks" : "setup",
+    tasks: Array.isArray(input.tasks) ? input.tasks : [],
+    allowTaskUpdates: Boolean(input.allowTaskUpdates),
     allowAutoResize: Boolean(input.allowAutoResize),
-    storageKey:
-      typeof input.storageKey === "string" ? input.storageKey : undefined,
+    storageKey: typeof input.storageKey === "string" ? input.storageKey : undefined,
     onSizeChange: input.onSizeChange,
-    initialCurrentStepId: resolveInitialCurrentStepId(
-      input.initialCurrentStepId
-    ),
-    initialCompletedStepIds,
-    onModuleComplete: input.onModuleComplete,
-    onProgressChange: input.onProgressChange,
-    onWorkspaceOnboardingSubmit: input.onWorkspaceOnboardingSubmit,
+    onTaskStatusToggle: input.onTaskStatusToggle,
   }
-}
-
-export function buildWorkspaceAcceleratorRuntimeActionsSignature({
-  currentStepId,
-  canGoPrevious,
-  canGoNext,
-  isCurrentStepCompleted,
-  totalSteps,
-  selectedLessonGroupKey,
-  lessonGroupCount,
-}: {
-  currentStepId: string | null
-  canGoPrevious: boolean
-  canGoNext: boolean
-  isCurrentStepCompleted: boolean
-  totalSteps: number
-  selectedLessonGroupKey?: string | null
-  lessonGroupCount?: number
-}) {
-  return JSON.stringify({
-    currentStepId,
-    canGoPrevious,
-    canGoNext,
-    isCurrentStepCompleted,
-    totalSteps,
-    selectedLessonGroupKey: selectedLessonGroupKey ?? null,
-    lessonGroupCount: lessonGroupCount ?? 0,
-  })
-}
-
-export function buildWorkspaceAcceleratorFullscreenHref({
-  stepId,
-  moduleId,
-  lessonGroupKey,
-  basePath = WORKSPACE_ACCELERATOR_PATH,
-}: {
-  stepId?: string | null
-  moduleId?: string | null
-  lessonGroupKey?: string | null
-  basePath?: string
-}) {
-  const nextParams = new URLSearchParams()
-  if (stepId) {
-    nextParams.set("step", stepId)
-  }
-  if (moduleId) {
-    nextParams.set("module", moduleId)
-  }
-  if (lessonGroupKey) {
-    nextParams.set("group", lessonGroupKey)
-  }
-
-  const query = nextParams.toString()
-  if (!query) {
-    return basePath
-  }
-
-  return `${basePath}?${query}`
 }

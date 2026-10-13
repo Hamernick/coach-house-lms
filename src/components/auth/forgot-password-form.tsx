@@ -29,16 +29,7 @@ type ForgotPasswordFormProps = {
   redirectTo?: string
 }
 
-export function buildForgotPasswordCallbackRedirect(redirectTo?: string) {
-  if (!redirectTo) return "/update-password"
-  if (redirectTo.startsWith("/update-password")) return redirectTo
-
-  const updatePasswordUrl = new URL("/update-password", "https://coachhouse.local")
-  updatePasswordUrl.searchParams.set("redirect", redirectTo)
-  return `${updatePasswordUrl.pathname}${updatePasswordUrl.search}`
-}
-
-export function ForgotPasswordForm({ redirectTo }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ redirectTo = "/update-password" }: ForgotPasswordFormProps) {
   const supabase = useSupabaseClient()
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
@@ -55,9 +46,7 @@ export function ForgotPasswordForm({ redirectTo }: ForgotPasswordFormProps) {
     setStatus("idle")
     setMessage("")
     startTransition(async () => {
-      const emailRedirectTo = resolveAuthCallbackUrl(
-        buildForgotPasswordCallbackRedirect(redirectTo),
-      )
+      const emailRedirectTo = resolveAuthCallbackUrl(redirectTo)
 
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
         redirectTo: emailRedirectTo,

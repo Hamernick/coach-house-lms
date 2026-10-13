@@ -3,12 +3,11 @@ import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import type { RoadmapCalendarEventType } from "@/lib/roadmap/calendar"
 import { ROADMAP_CALENDAR_PRESETS } from "@/lib/roadmap/calendar"
 
 type RoadmapCalendarHeaderProps = {
   canManageCalendar: boolean
-  onOpenCreate: (preset?: { title?: string; eventType?: RoadmapCalendarEventType }) => void
+  onOpenCreate: (presetTitle?: string) => void
   onGoToToday: () => void
   isTodaySelected?: boolean
   hideCopy?: boolean
@@ -51,15 +50,12 @@ export function RoadmapCalendarHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {ROADMAP_CALENDAR_PRESETS.map((preset) => (
-              <DropdownMenuItem
-                key={preset.id}
-                onSelect={() => onOpenCreate({ title: preset.title, eventType: preset.eventType })}
-              >
+              <DropdownMenuItem key={preset.id} onSelect={() => onOpenCreate(preset.title)}>
                 {preset.label}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onOpenCreate({})}>Custom event…</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onOpenCreate()}>Custom event…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

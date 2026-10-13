@@ -1,5 +1,4 @@
 export type PublicEnums = {
-  public_handle_owner_type: "person" | "organization"
   user_role: "member" | "admin"
   module_progress_status: "not_started" | "in_progress" | "completed"
   subscription_status:

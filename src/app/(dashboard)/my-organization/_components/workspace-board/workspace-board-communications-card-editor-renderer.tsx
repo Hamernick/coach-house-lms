@@ -14,17 +14,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
 import type {
-  WorkspaceActivityRecord,
   WorkspaceCommunicationChannel,
   WorkspaceCommunicationMediaMode,
   WorkspaceCardSize,
   WorkspaceCommunicationsState,
 } from "./workspace-board-types"
-import { toIsoFromLocalInputValue } from "./workspace-board-communications-card-helpers"
-import { WorkspaceBoardActivityHeatmap } from "./workspace-board-activity-heatmap"
+import {
+  buildHeatmapRows,
+  heatmapCellClass,
+  toIsoFromLocalInputValue,
+  type ActivityState,
+} from "./workspace-board-communications-card-helpers"
 import {
   CHANNEL_OPTIONS,
+  formatCommunicationDateTime,
   MEDIA_OPTIONS,
+  resolveActivityIcon,
 } from "./workspace-board-communications-card-renderers-shared"
 
 export function renderCommunicationsEditorCard({
@@ -35,7 +40,8 @@ export function renderCommunicationsEditorCard({
   scheduledForInput,
   isQueueSyncing,
   isUpdatingConnections,
-  activityFeed,
+  recentActivity,
+  visibleHeatmapRows,
   isPublishing,
   setChannelConnected,
   updateMediaMode,
@@ -49,7 +55,8 @@ export function renderCommunicationsEditorCard({
   scheduledForInput: string
   isQueueSyncing: boolean
   isUpdatingConnections: boolean
-  activityFeed: WorkspaceActivityRecord[]
+  recentActivity: WorkspaceCommunicationsState["activityByDay"][string] | null
+  visibleHeatmapRows: ReturnType<typeof buildHeatmapRows>
   isPublishing: boolean
   setChannelConnected: (channel: WorkspaceCommunicationChannel, checked: boolean) => void
   updateMediaMode: (mediaMode: WorkspaceCommunicationMediaMode) => void
@@ -194,16 +201,57 @@ export function renderCommunicationsEditorCard({
       <div className="border-t border-border/50 pt-3">
         <div className={cn("flex items-center justify-between gap-2", compactCanvasCard ? "mb-1.5" : "mb-2")}>
           <p className={cn("text-muted-foreground", compactCanvasCard ? "text-[11px]" : "text-xs")}>
-            Workspace activity
+            Publishing activity
             {isQueueSyncing ? " · Syncing queue…" : isUpdatingConnections ? " · Updating channels…" : ""}
           </p>
+          {recentActivity ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              {(() => {
+                const Icon = resolveActivityIcon(recentActivity.channel)
+                return <Icon className="h-3 w-3 opacity-70" aria-hidden />
+              })()}
+              Latest {recentActivity.status}
+            </span>
+          ) : null}
         </div>
 
         <div className={cn("rounded-lg bg-muted/20 ring-1 ring-border/40", compactCanvasCard ? "p-2.5" : "p-3")}>
-          <WorkspaceBoardActivityHeatmap records={activityFeed} compact={compactCanvasCard} />
+          <div className={cn(compactCanvasCard ? "space-y-0.5" : "space-y-1")}>
+            {visibleHeatmapRows.map((row, rowIndex) => (
+              <div key={`heatmap-row-${rowIndex}`} className="grid grid-cols-7 gap-1">
+                {row.map((cell) => {
+                  const state: ActivityState = cell.entry?.status ?? "none"
+                  return (
+                    <span
+                      key={cell.key}
+                      className={cn(
+                        compactCanvasCard ? "grid h-2.5 place-items-center rounded-[3px]" : "grid h-3 place-items-center rounded-sm",
+                        heatmapCellClass(state),
+                      )}
+                    >
+                      {cell.entry ? (
+                        (() => {
+                          const Icon = resolveActivityIcon(cell.entry.channel)
+                          return <Icon className="h-2.5 w-2.5 text-foreground/65" aria-hidden />
+                        })()
+                      ) : null}
+                    </span>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
           {!compactCanvasCard ? (
-            <div className="mt-2 border-t border-border/35 pt-2 text-[11px] text-muted-foreground">
-              Darker cells mean heavier activity. Hover a day to see the breakdown.
+            <div className="mt-2 flex flex-wrap items-center gap-3 border-t border-border/35 pt-2 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-[3px] bg-sky-500/60" /> Scheduled
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-[3px] bg-emerald-500/80" /> Posted
+              </span>
+              <span className="inline-flex min-w-0 items-center rounded-full bg-background/70 px-2 py-1 ring-1 ring-border/35">
+                <span className="truncate">Next: {formatCommunicationDateTime(communications.scheduledFor)}</span>
+              </span>
             </div>
           ) : null}
         </div>

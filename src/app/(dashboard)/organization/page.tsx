@@ -1,13 +1,13 @@
-import { redirect } from "next/navigation"
+import MyOrganizationPageContent from "../my-organization/_lib/my-organization-page-content"
 
 import type { MyOrganizationSearchParams } from "../my-organization/_lib/types"
-import { buildWorkspaceAliasRedirectDestination } from "../_lib/workspace-route-aliases"
 
-export default async function LegacyOrganizationPage({
+export default async function OrganizationPage({
   searchParams,
 }: {
   searchParams?: Promise<MyOrganizationSearchParams>
 }) {
-  const resolvedSearchParams = searchParams ? await searchParams : undefined
-  redirect(buildWorkspaceAliasRedirectDestination(resolvedSearchParams))
+  return MyOrganizationPageContent({
+    searchParams,
+  })
 }

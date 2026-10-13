@@ -83,7 +83,7 @@ export const Dropzone = ({
     >
       <Button
         className={cn(
-          'relative h-auto w-full flex-col overflow-hidden p-8 whitespace-normal text-left',
+          'relative h-auto w-full flex-col overflow-hidden p-8',
           isDragActive && 'outline-none ring-1 ring-ring',
           className
         )}
@@ -135,7 +135,7 @@ export const DropzoneContent = ({
       <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <UploadIcon size={16} />
       </div>
-      <p className="my-2 w-full text-wrap font-medium text-sm">
+      <p className="my-2 w-full truncate font-medium text-sm">
         {src.length > maxLabelItems
           ? `${new Intl.ListFormat('en').format(
               src.slice(0, maxLabelItems).map((file) => file.name)
@@ -165,11 +165,7 @@ export const DropzoneEmptyState = ({
   }
 
   if (children) {
-    return (
-      <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', className)}>
-        {children}
-      </div>
-    );
+    return children;
   }
 
   let caption = '';
@@ -192,10 +188,10 @@ export const DropzoneEmptyState = ({
       <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <UploadIcon size={16} />
       </div>
-      <p className="my-2 w-full text-wrap font-medium text-sm">
+      <p className="my-2 w-full truncate text-wrap font-medium text-sm">
         Upload {maxFiles === 1 ? 'a file' : 'files'}
       </p>
-      <p className="w-full text-wrap text-muted-foreground text-xs">
+      <p className="w-full truncate text-wrap text-muted-foreground text-xs">
         Drag and drop or click to upload
       </p>
       {caption && (

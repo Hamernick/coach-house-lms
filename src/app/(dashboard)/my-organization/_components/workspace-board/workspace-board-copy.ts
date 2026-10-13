@@ -1,13 +1,4 @@
-import type {
-  WorkspaceCardId,
-  WorkspaceConnectionState,
-} from "./workspace-board-types"
-import {
-  WORKSPACE_ACCELERATOR_PATH,
-  WORKSPACE_PATH,
-  WORKSPACE_ROADMAP_PATH,
-  getWorkspaceEditorPath,
-} from "@/lib/workspace/routes"
+import type { WorkspaceCardId, WorkspaceConnectionState } from "./workspace-board-types"
 
 export type WorkspaceCardMeta = {
   title: string
@@ -19,109 +10,79 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   "organization-overview": {
     title: "Organization",
     subtitle: "Identity and operating baseline",
-    fullHref: WORKSPACE_PATH,
+    fullHref: "/organization",
   },
-  programs: {
-    title: "Activity",
-    subtitle: "Projects, programs, events, services, and grant requests",
-    fullHref: "",
-  },
-  accelerator: {
+  "formation-status": {
     title: "Accelerator",
-    subtitle: "Class tracks, lessons, and resources",
-    fullHref: WORKSPACE_ACCELERATOR_PATH,
-  },
-  roadmap: {
-    title: "Roadmap",
-    subtitle: "Strategic priorities, sequencing, and operating focus",
-    fullHref: WORKSPACE_ROADMAP_PATH,
+    subtitle: "Lesson sequence, media, and resources",
+    fullHref: "/accelerator",
   },
   "brand-kit": {
     title: "Brand Kit",
-    subtitle: "Logos, palette, and a reusable export pack",
-    fullHref: "",
+    subtitle: "Narrative assets and public voice",
+    fullHref: "/organization?view=editor&tab=company",
   },
   "economic-engine": {
-    title: "Fundraising",
+    title: "Economic Engine",
     subtitle: "Funding architecture and pipeline health",
-    fullHref: getWorkspaceEditorPath({ tab: "programs" }),
+    fullHref: "/organization?view=editor&tab=programs",
   },
   calendar: {
     title: "Calendar",
     subtitle: "Milestones, board cadence, and invites",
-    fullHref: WORKSPACE_ROADMAP_PATH,
+    fullHref: "/roadmap",
   },
   communications: {
     title: "Communications",
-    subtitle: "Brand basics, heat map, and publishing readiness",
-    fullHref: "",
+    subtitle: "Campaign cadence and publishing queue",
+    fullHref: "/organization?view=editor&tab=company",
   },
   deck: {
-    title: "Tasks",
-    subtitle: "Roadmap priorities and accelerator classes in one surface",
-    fullHref: WORKSPACE_ACCELERATOR_PATH,
+    title: "Deck",
+    subtitle: "Single PDF or PPT canvas",
+    fullHref: "/organization/documents",
+  },
+  vault: {
+    title: "Documents",
+    subtitle: "Upload, review, and share key files",
+    fullHref: "/organization/documents",
   },
   atlas: {
-    title: "Map",
-    subtitle: "Public place, checklist, and launch readiness",
-    fullHref: getWorkspaceEditorPath({ tab: "company" }),
-  },
-  "fiscal-sponsorship": {
-    title: "Fiscal Sponsorship",
-    subtitle: "Model C eligibility, agreements, and grant requests",
-    fullHref: "",
+    title: "Atlas",
+    subtitle: "Locations and online footprint",
+    fullHref: "/organization?view=editor&tab=company",
   },
 }
 
 export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
   {
-    id: "edge-organization-to-programs",
+    id: "edge-organization-to-formation",
     source: "organization-overview",
-    target: "programs",
+    target: "formation-status",
   },
   {
-    id: "edge-organization-to-roadmap",
+    id: "edge-organization-to-brand",
     source: "organization-overview",
-    target: "roadmap",
+    target: "brand-kit",
   },
   {
-    id: "edge-roadmap-to-deck",
-    source: "roadmap",
-    target: "deck",
-  },
-  {
-    id: "edge-organization-to-atlas",
-    source: "organization-overview",
-    target: "atlas",
-  },
-  {
-    id: "edge-activity-to-fiscal-sponsorship",
-    source: "programs",
-    target: "fiscal-sponsorship",
-  },
-  {
-    id: "edge-organization-to-accelerator",
-    source: "organization-overview",
-    target: "accelerator",
-  },
-  {
-    id: "edge-deck-to-accelerator",
-    source: "deck",
-    target: "accelerator",
-  },
-  {
-    id: "edge-accelerator-to-economic",
-    source: "accelerator",
+    id: "edge-formation-to-economic",
+    source: "formation-status",
     target: "economic-engine",
   },
   {
-    id: "edge-accelerator-to-calendar",
-    source: "accelerator",
+    id: "edge-organization-to-calendar",
+    source: "organization-overview",
     target: "calendar",
   },
   {
-    id: "edge-accelerator-to-comms",
-    source: "accelerator",
+    id: "edge-organization-to-comms",
+    source: "organization-overview",
     target: "communications",
+  },
+  {
+    id: "edge-comms-to-economic",
+    source: "communications",
+    target: "economic-engine",
   },
 ]

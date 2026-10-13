@@ -17,16 +17,11 @@ type DeckAsset = {
 const DECK_ACCEPT = {
   "application/pdf": [".pdf"],
   "application/vnd.ms-powerpoint": [".ppt"],
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-    ".pptx",
-  ],
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
 } as const
 
 function isPdfFile(file: File) {
-  return (
-    file.type === "application/pdf" ||
-    file.name.toLowerCase().endsWith(".pdf")
-  )
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
 }
 
 export function WorkspaceBoardDeckCard({
@@ -80,17 +75,9 @@ export function WorkspaceBoardDeckCard({
           ) : (
             <div className="grid h-full place-items-center px-4 text-center">
               <div className="space-y-1.5">
-                <FileType2Icon
-                  className="mx-auto h-5 w-5 text-muted-foreground"
-                  aria-hidden
-                />
-                <p className="line-clamp-1 text-sm font-medium">
-                  {asset.file.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PPT preview keeps the file staged for fullscreen editor
-                  rendering.
-                </p>
+                <FileType2Icon className="mx-auto h-5 w-5 text-muted-foreground" aria-hidden />
+                <p className="line-clamp-1 text-sm font-medium">{asset.file.name}</p>
+                <p className="text-xs text-muted-foreground">PPT preview keeps the file staged for fullscreen editor rendering.</p>
               </div>
             </div>
           )
@@ -98,9 +85,7 @@ export function WorkspaceBoardDeckCard({
           <div className="grid h-full place-items-center px-4 text-center">
             <div className="space-y-1.5">
               <p className="text-sm font-medium">Drop one deck file</p>
-              <p className="text-xs text-muted-foreground">
-                PDF, PPT, or PPTX
-              </p>
+              <p className="text-xs text-muted-foreground">PDF, PPT, or PPTX</p>
             </div>
           </div>
         )}
@@ -120,22 +105,14 @@ export function WorkspaceBoardDeckCard({
       >
         <DropzoneEmptyState className="gap-1 text-center">
           <p className="text-xs font-medium">Drop or click to stage</p>
-          <p className="text-[11px] text-muted-foreground">
-            One file at a time
-          </p>
+          <p className="text-[11px] text-muted-foreground">One file at a time</p>
         </DropzoneEmptyState>
       </Dropzone>
 
       {asset ? (
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <span className="min-w-0 flex-1 truncate">{asset.file.name}</span>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2"
-            onClick={clearAsset}
-          >
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-2" onClick={clearAsset}>
             <Trash2Icon className="h-3.5 w-3.5" aria-hidden />
             Clear
           </Button>
@@ -143,10 +120,7 @@ export function WorkspaceBoardDeckCard({
       ) : null}
 
       {size === "md" ? (
-        <p className="text-[11px] text-muted-foreground">
-          Fullscreen uses the deck editor surface for focused review and
-          iteration.
-        </p>
+        <p className="text-[11px] text-muted-foreground">Fullscreen uses the deck editor surface for focused review and iteration.</p>
       ) : null}
     </div>
   )

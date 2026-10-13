@@ -2,11 +2,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
 import {
   CommunicationsSection,
   DangerSection,
   DesktopFooter,
+  OrganizationSection,
   ProfileSection,
   SecuritySection,
 } from "./sections/desktop-sections"
@@ -31,18 +31,15 @@ type AccountSettingsDialogShellProps = {
   justSaved: boolean
   marketingOptIn: boolean
   newsletterOptIn: boolean
+  acceleratorOverlayEnabled: boolean
   newPassword: string
   confirmPassword: string
   isUpdatingPassword: boolean
   firstName: string
   lastName: string
-  title: string
-  company: string
-  contact: string
-  about: string
   phone: string
   email: string
-  hasActiveSubscription: boolean
+  orgName: string
   avatarUrl: string | null
   isUploadingAvatar: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
@@ -52,12 +49,9 @@ type AccountSettingsDialogShellProps = {
   onAvatarFileSelected: (file?: File | null) => void
   onMarketingOptInChange: (value: boolean) => void
   onNewsletterOptInChange: (value: boolean) => void
+  onAcceleratorOverlayEnabledChange: (value: boolean) => void
   onFirstNameChange: (value: string) => void
   onLastNameChange: (value: string) => void
-  onTitleChange: (value: string) => void
-  onCompanyChange: (value: string) => void
-  onContactChange: (value: string) => void
-  onAboutChange: (value: string) => void
   onPhoneChange: (value: string) => void
   onNewPasswordChange: (value: string) => void
   onConfirmPasswordChange: (value: string) => void
@@ -76,18 +70,15 @@ export function AccountSettingsDialogShell({
   justSaved,
   marketingOptIn,
   newsletterOptIn,
+  acceleratorOverlayEnabled,
   newPassword,
   confirmPassword,
   isUpdatingPassword,
   firstName,
   lastName,
-  title,
-  company,
-  contact,
-  about,
   phone,
   email,
-  hasActiveSubscription,
+  orgName,
   avatarUrl,
   isUploadingAvatar,
   errors,
@@ -97,12 +88,9 @@ export function AccountSettingsDialogShell({
   onAvatarFileSelected,
   onMarketingOptInChange,
   onNewsletterOptInChange,
+  onAcceleratorOverlayEnabledChange,
   onFirstNameChange,
   onLastNameChange,
-  onTitleChange,
-  onCompanyChange,
-  onContactChange,
-  onAboutChange,
   onPhoneChange,
   onNewPasswordChange,
   onConfirmPasswordChange,
@@ -159,20 +147,10 @@ export function AccountSettingsDialogShell({
                   variant="ghost"
                   size="sm"
                   className="h-auto px-1 text-sm text-primary disabled:opacity-50"
-                  onClick={
-                    mobilePage === "public-profile" ? requestClose : onSave
-                  }
-                  disabled={
-                    mobilePage === "public-profile"
-                      ? false
-                      : !isDirty || isSaving
-                  }
+                  onClick={onSave}
+                  disabled={!isDirty || isSaving}
                 >
-                  {mobilePage === "public-profile"
-                    ? "Done"
-                    : isSaving
-                      ? "Saving…"
-                      : "Save"}
+                  {isSaving ? "Saving…" : "Save"}
                 </Button>
               </div>
             )}
@@ -187,9 +165,9 @@ export function AccountSettingsDialogShell({
                   onClick={() => onTabChange("profile")}
                 />
                 <SideLink
-                  label="Public profile"
-                  active={tab === "public-profile"}
-                  onClick={() => onTabChange("public-profile")}
+                  label="Organization"
+                  active={tab === "organization"}
+                  onClick={() => onTabChange("organization")}
                 />
                 <SideLink
                   label="Communications"
@@ -217,10 +195,6 @@ export function AccountSettingsDialogShell({
                     avatarUrl={avatarUrl}
                     firstName={firstName}
                     lastName={lastName}
-                    title={title}
-                    company={company}
-                    contact={contact}
-                    about={about}
                     phone={phone}
                     email={email}
                     errors={errors}
@@ -228,20 +202,13 @@ export function AccountSettingsDialogShell({
                     onAvatarFileSelected={onAvatarFileSelected}
                     onFirstNameChange={onFirstNameChange}
                     onLastNameChange={onLastNameChange}
-                    onTitleChange={onTitleChange}
-                    onCompanyChange={onCompanyChange}
-                    onContactChange={onContactChange}
-                    onAboutChange={onAboutChange}
                     onPhoneChange={onPhoneChange}
                   />
                 )}
 
-                {tab === "public-profile" && (
-                  <PublicProfileSettings
-                    avatarUrl={avatarUrl}
-                    displayName={[firstName, lastName].filter(Boolean).join(" ")}
-                    headline={title}
-                    idPrefix="desktop-public-profile"
+                {tab === "organization" && (
+                  <OrganizationSection
+                    orgName={orgName}
                   />
                 )}
 
@@ -249,8 +216,10 @@ export function AccountSettingsDialogShell({
                   <CommunicationsSection
                     marketingOptIn={marketingOptIn}
                     newsletterOptIn={newsletterOptIn}
+                    acceleratorOverlayEnabled={acceleratorOverlayEnabled}
                     onMarketingOptInChange={onMarketingOptInChange}
                     onNewsletterOptInChange={onNewsletterOptInChange}
+                    onAcceleratorOverlayEnabledChange={onAcceleratorOverlayEnabledChange}
                   />
                 )}
 
@@ -258,7 +227,6 @@ export function AccountSettingsDialogShell({
                   <SecuritySection
                     newPassword={newPassword}
                     confirmPassword={confirmPassword}
-                    email={email}
                     isUpdatingPassword={isUpdatingPassword}
                     onNewPasswordChange={onNewPasswordChange}
                     onConfirmPasswordChange={onConfirmPasswordChange}
@@ -267,10 +235,7 @@ export function AccountSettingsDialogShell({
                 )}
 
                 {tab === "danger" && (
-                  <DangerSection
-                    onDeleteAccount={onDeleteAccount}
-                    hasActiveSubscription={hasActiveSubscription}
-                  />
+                  <DangerSection onDeleteAccount={onDeleteAccount} />
                 )}
               </section>
             </div>
@@ -278,11 +243,11 @@ export function AccountSettingsDialogShell({
 
           <DesktopFooter
             justSaved={justSaved}
-            selfManaged={tab === "public-profile"}
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}
-            onDone={requestClose}
+            onClose={requestClose}
+            onDone={() => onOpenChange(false)}
           />
 
       <MobileMenu
@@ -298,29 +263,22 @@ export function AccountSettingsDialogShell({
             avatarUrl={avatarUrl}
             firstName={firstName}
             lastName={lastName}
-            title={title}
-            company={company}
-            contact={contact}
-            about={about}
             phone={phone}
             email={email}
-            hasActiveSubscription={hasActiveSubscription}
-            errors={errors}
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}
+            acceleratorOverlayEnabled={acceleratorOverlayEnabled}
             newPassword={newPassword}
             confirmPassword={confirmPassword}
+            orgName={orgName}
             isUploadingAvatar={isUploadingAvatar}
             onAvatarFileSelected={onAvatarFileSelected}
             onFirstNameChange={onFirstNameChange}
             onLastNameChange={onLastNameChange}
-            onTitleChange={onTitleChange}
-            onCompanyChange={onCompanyChange}
-            onContactChange={onContactChange}
-            onAboutChange={onAboutChange}
             onPhoneChange={onPhoneChange}
             onMarketingOptInChange={onMarketingOptInChange}
             onNewsletterOptInChange={onNewsletterOptInChange}
+            onAcceleratorOverlayEnabledChange={onAcceleratorOverlayEnabledChange}
             onNewPasswordChange={onNewPasswordChange}
             onConfirmPasswordChange={onConfirmPasswordChange}
             onDeleteAccount={onDeleteAccount}

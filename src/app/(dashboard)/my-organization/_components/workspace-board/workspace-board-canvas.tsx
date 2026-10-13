@@ -1,37 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { WorkspaceFinanceInput } from "@/features/workspace-finance"
+import { useCallback, useMemo, useRef, useState } from "react"
 
 import { WORKSPACE_EDGE_SPECS } from "./workspace-board-copy"
-import {
-  areOrderedStringListsEqual,
-  buildToggleCardVisibilityHandler,
-  type WorkspaceCardFocusRequest,
-  type WorkspaceTutorialCompletionExitRequest,
-  useWorkspaceJourneyAutoFocus,
-  useWorkspaceTutorialCompletion,
-} from "./workspace-board-canvas-helpers"
-import { saveWorkspaceBoardStateAction } from "../../_lib/workspace-actions"
-import {
-  logWorkspaceBoardDebug,
-  summarizeWorkspaceBoardVisibility,
-} from "./workspace-board-debug"
-import { useWorkspaceNodePositionPersistence } from "./workspace-board-canvas-node-position-persistence"
-import {
-  areWorkspaceOnboardingFlowStatesEqual,
-} from "./workspace-board-onboarding-flow"
-import { WorkspaceBoardCanvasBody } from "./workspace-board-canvas-body"
-import {
-  usePersistWorkspaceBoardState,
-  useWorkspaceBoardJourneyGuideState,
-  useWorkspaceBoardTutorialNavigation,
-  useWorkspaceRightRailCurrentUser,
-} from "./workspace-board-canvas-state"
-import { reduceWorkspaceBoardVisibility } from "./workspace-board-visibility-reducer"
+import { applyAutoLayout } from "./workspace-board-layout"
+import { WorkspaceBoardFlowSurface } from "./workspace-board-flow-surface"
+import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
 import type {
-  WorkspaceBoardAcceleratorState,
-  WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
   WorkspaceCardId,
   WorkspaceCardSize,
@@ -42,103 +17,45 @@ import type {
   WorkspaceTrackerState,
 } from "./workspace-board-types"
 
+const WORKSPACE_ALWAYS_HIDDEN_CARD_IDS: WorkspaceCardId[] = ["deck", "atlas"]
+
 export function WorkspaceBoardCanvas({
-  initialFocusCardId = null,
   seed,
-  onInitialOnboardingSubmit,
   organizationEditorData,
-  financeInput,
 }: {
-  initialFocusCardId?: WorkspaceCardId | null
   seed: WorkspaceSeedData
-  onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
-  financeInput: WorkspaceFinanceInput
 }) {
   const presentationMode = seed.presentationMode
-  const hydratedSeedBoardState = useMemo(() => {
-    const reducedBoardState = reduceWorkspaceBoardVisibility(seed.boardState, {
-      type: "hydrate_legacy_visibility",
-    })
-    // The action guide uses real editors and leaves authored canvas positions intact.
-    const resolvedBoardState = reducedBoardState
-
-    return initialFocusCardId
-      ? {
-          ...resolvedBoardState,
-          hiddenCardIds: resolvedBoardState.hiddenCardIds.filter(
-            (cardId) => cardId !== initialFocusCardId
-          ),
-        }
-      : resolvedBoardState
-  }, [initialFocusCardId, seed.boardState])
-  const [boardState, setBoardState] = useState<WorkspaceBoardState>(
-    hydratedSeedBoardState
+  const allowEditing = seed.canEdit && !presentationMode
+  const workspaceRoomName = `org:${seed.orgId}:workspace`
+  const [boardState, setBoardState] = useState<WorkspaceBoardState>(seed.boardState)
+  const [invites, setInvites] = useState<WorkspaceCollaborationInvite[]>(seed.collaborationInvites)
+  const [cursorConnectionState, setCursorConnectionState] = useState<"connecting" | "live" | "degraded">(
+    "connecting",
   )
-  const initialOnboardingActive =
-    seed.initialOnboarding.required && !boardState.onboardingFlow.active
-  const allowEditing =
-    seed.canEdit && !presentationMode && !initialOnboardingActive
-  const [invites, setInvites] = useState<WorkspaceCollaborationInvite[]>(
-    seed.collaborationInvites
-  )
-  const [cursorConnectionState, setCursorConnectionState] = useState<
-    "connecting" | "live" | "degraded"
-  >("connecting")
   const [layoutFitRequestKey, setLayoutFitRequestKey] = useState(0)
-  const [acceleratorFocusRequestKey, setAcceleratorFocusRequestKey] =
-    useState(0)
-  const [tutorialRestartRequestKey, setTutorialRestartRequestKey] = useState(0)
-  const [focusCardRequest, setFocusCardRequest] =
-    useState<WorkspaceCardFocusRequest>(
-      initialFocusCardId ? { cardId: initialFocusCardId, requestKey: 1 } : null
-    )
-  const [tutorialCompletionExitRequest, setTutorialCompletionExitRequest] =
-    useState<WorkspaceTutorialCompletionExitRequest>(null)
-  const lastPersistedBoardContentRef = useRef<WorkspaceBoardState>(
-    hydratedSeedBoardState
+  const layoutRequestIdRef = useRef(0)
+  const forcedHiddenCardIdSet = useMemo(
+    () =>
+      new Set<WorkspaceCardId>([
+        ...WORKSPACE_ALWAYS_HIDDEN_CARD_IDS,
+        ...(seed.acceleratorOverlayEnabled ? [] : (["formation-status"] as WorkspaceCardId[])),
+      ]),
+    [seed.acceleratorOverlayEnabled],
   )
-  const persistRequestIdRef = useRef(0)
-  const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
-  const tutorialActive = boardState.onboardingFlow.active
-  const journeyGuideState = useWorkspaceBoardJourneyGuideState({
-    seed,
-    acceleratorState: boardState.accelerator,
-    acceleratorStepNodeVisible,
-  })
-  useEffect(() => {
-    if (!initialFocusCardId) return
 
-    setBoardState((previous) => ({
-      ...previous,
-      hiddenCardIds: previous.hiddenCardIds.filter(
-        (cardId) => cardId !== initialFocusCardId
-      ),
-    }))
-    setFocusCardRequest((previous) => ({
-      cardId: initialFocusCardId,
-      requestKey: (previous?.requestKey ?? 0) + 1,
-    }))
-  }, [initialFocusCardId])
-  useEffect(() => {
-    logWorkspaceBoardDebug("board_seed_loaded", {
-      orgId: seed.orgId,
-      viewerId: seed.viewerId,
-      ...summarizeWorkspaceBoardVisibility(hydratedSeedBoardState),
-    })
-  }, [hydratedSeedBoardState, seed.orgId, seed.viewerId])
   const handleSizeChange = useCallback(
     (cardId: WorkspaceCardId, size: WorkspaceCardSize) => {
       if (!allowEditing) return
       setBoardState((previous) => ({
         ...previous,
-        nodes: previous.nodes.map((node) =>
-          node.id === cardId && node.size !== size ? { ...node, size } : node
-        ),
+        nodes: previous.nodes.map((node) => (node.id === cardId ? { ...node, size } : node)),
       }))
     },
-    [allowEditing]
+    [allowEditing],
   )
+
   const handleCommunicationsChange = useCallback(
     (next: WorkspaceCommunicationsState) => {
       if (!allowEditing) return
@@ -147,123 +64,85 @@ export function WorkspaceBoardCanvas({
         communications: next,
       }))
     },
-    [allowEditing]
+    [allowEditing],
   )
-  const handleTrackerChange = useCallback((next: WorkspaceTrackerState) => {
+
+  const handleTrackerChange = useCallback(
+    (next: WorkspaceTrackerState) => {
+      if (!allowEditing) return
+      setBoardState((previous) => ({
+        ...previous,
+        tracker: next,
+      }))
+    },
+    [allowEditing],
+  )
+
+  const handlePersistNodePosition = useCallback((cardId: WorkspaceCardId, x: number, y: number) => {
     setBoardState((previous) => ({
       ...previous,
-      tracker: next,
+      nodes: previous.nodes.map((entry) =>
+        entry.id === cardId
+          ? {
+              ...entry,
+              x,
+              y,
+            }
+          : entry,
+      ),
     }))
   }, [])
-  const handleAcceleratorStateChange = useCallback(
-    (next: WorkspaceBoardAcceleratorState) => {
-      setBoardState((previous) => {
-        const sameActiveStep =
-          previous.accelerator.activeStepId === next.activeStepId
-        const sameCompletedItems = areOrderedStringListsEqual(
-          previous.accelerator.completedStepIds,
-          next.completedStepIds
-        )
-        if (sameActiveStep && sameCompletedItems) {
-          return previous
-        }
 
-        const nextState: WorkspaceBoardState = {
+  const handlePresetChange = useCallback(
+    (preset: WorkspaceBoardState["preset"]) => {
+      if (!allowEditing) return
+      const sourceNodes = boardState.nodes
+      const requestId = layoutRequestIdRef.current + 1
+      layoutRequestIdRef.current = requestId
+
+      setBoardState((previous) => ({
+        ...previous,
+        preset,
+      }))
+      void (async () => {
+        const nextNodes = await applyAutoLayout(sourceNodes, preset)
+        if (layoutRequestIdRef.current !== requestId) return
+        setBoardState((previous) => ({
           ...previous,
-          accelerator: next,
+          preset,
+          nodes: nextNodes,
+        }))
+        setLayoutFitRequestKey((previous) => previous + 1)
+      })()
+    },
+    [allowEditing, boardState.nodes],
+  )
+
+  const handleToggleCardVisibility = useCallback(
+    (cardId: WorkspaceCardId) => {
+      if (!allowEditing) return
+      if (forcedHiddenCardIdSet.has(cardId)) return
+      setBoardState((previous) => {
+        const isCurrentlyHidden = previous.hiddenCardIds.includes(cardId)
+        if (isCurrentlyHidden) {
+          return {
+            ...previous,
+            hiddenCardIds: previous.hiddenCardIds.filter((entry) => entry !== cardId),
+          }
         }
 
-        return reduceWorkspaceBoardVisibility(nextState, {
-          type: "accelerator_step_sync",
-          stepId: next.activeStepId,
-        })
-      })
-    },
-    []
-  )
-  const handleOnboardingFlowChange = useCallback(
-    (next: WorkspaceBoardOnboardingFlowState) => {
-      setBoardState((previous) => {
-        const previousFlow = previous.onboardingFlow
-        if (areWorkspaceOnboardingFlowStatesEqual(previousFlow, next)) {
-          return previous
-        }
+        const hiddenSet = new Set<WorkspaceCardId>([...previous.hiddenCardIds, ...forcedHiddenCardIdSet])
+        const visibleCount = previous.nodes.length - hiddenSet.size
+        if (visibleCount <= 1) return previous
 
         return {
           ...previous,
-          onboardingFlow: next,
+          hiddenCardIds: [...previous.hiddenCardIds, cardId],
         }
       })
+      setLayoutFitRequestKey((previous) => previous + 1)
     },
-    []
-  )
-  const handleCompleteTutorial = useWorkspaceTutorialCompletion({
-    allowEditing,
-    boardState,
-    journeyGuideState,
-    setBoardState,
-    setTutorialCompletionExitRequest,
-  })
-  const {
-    handleTutorialPrevious,
-    handleTutorialNext,
-    handleTutorialRestart,
-    handleTutorialShortcutOpened,
-  } = useWorkspaceBoardTutorialNavigation({
-    currentTutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
-    setBoardState,
-    onCompleteTutorial: handleCompleteTutorial,
-    onRestart: () => {
-      setFocusCardRequest(null)
-      setTutorialCompletionExitRequest(null)
-      setTutorialRestartRequestKey((previous) => previous + 1)
-    },
-  })
-  const handlePersistNodePosition = useWorkspaceNodePositionPersistence({
-    allowEditing,
-    boardState,
-    lastPersistedBoardContentRef,
-    setBoardState,
-  })
-  const handleFocusCard = useCallback((cardId: WorkspaceCardId) => {
-    setFocusCardRequest((previous) => ({
-      cardId,
-      requestKey: (previous?.requestKey ?? 0) + 1,
-    }))
-  }, [])
-  const handleToggleCardVisibility = useMemo(
-    () =>
-      buildToggleCardVisibilityHandler({
-        setBoardState,
-        setAcceleratorFocusRequestKey,
-      }),
-    []
-  )
-  const handleOpenAcceleratorStepNode = useCallback(
-    (stepId: string | null) => {
-      setBoardState((previous) =>
-        reduceWorkspaceBoardVisibility(previous, {
-          type: "accelerator_step_open",
-          stepId,
-        })
-      )
-      if (boardState.autoLayoutMode === "timeline") {
-        setAcceleratorFocusRequestKey((previous) => previous + 1)
-      }
-    },
-    [boardState.autoLayoutMode]
-  )
-
-  const handleCloseAcceleratorStepNode = useCallback(
-    (source: "dock" | "card" | "unknown" = "unknown") => {
-      setBoardState((previous) =>
-        reduceWorkspaceBoardVisibility(previous, {
-          type: "accelerator_step_close",
-          source,
-        })
-      )
-    },
-    []
+    [allowEditing, forcedHiddenCardIdSet],
   )
 
   const handleConnectCards = useCallback(
@@ -273,8 +152,7 @@ export function WorkspaceBoardCanvas({
 
       setBoardState((previous) => {
         const hasConnection = previous.connections.some(
-          (connection) =>
-            connection.source === source && connection.target === target
+          (connection) => connection.source === source && connection.target === target,
         )
         if (hasConnection) return previous
 
@@ -291,21 +169,16 @@ export function WorkspaceBoardCanvas({
         }
       })
     },
-    [allowEditing]
+    [allowEditing],
   )
 
-  const handleDisconnectConnection = useCallback(
-    (connectionId: string) => {
-      if (!allowEditing) return
-      setBoardState((previous) => ({
-        ...previous,
-        connections: previous.connections.filter(
-          (connection) => connection.id !== connectionId
-        ),
-      }))
-    },
-    [allowEditing]
-  )
+  const handleDisconnectConnection = useCallback((connectionId: string) => {
+    if (!allowEditing) return
+    setBoardState((previous) => ({
+      ...previous,
+      connections: previous.connections.filter((connection) => connection.id !== connectionId),
+    }))
+  }, [allowEditing])
 
   const handleDisconnectAllConnections = useCallback(() => {
     if (!allowEditing) return
@@ -323,55 +196,40 @@ export function WorkspaceBoardCanvas({
     }))
   }, [allowEditing])
 
-  const rightRailCurrentUser = useWorkspaceRightRailCurrentUser(seed)
-
-  useWorkspaceJourneyAutoFocus({
-    autoLayoutMode: boardState.autoLayoutMode,
-    journeyGuideState,
-    setFocusCardRequest,
-    disabled: tutorialActive || tutorialCompletionExitRequest !== null,
-    preserveFocusKeyWhenDisabled: tutorialCompletionExitRequest !== null,
-  })
-  usePersistWorkspaceBoardState({
-    allowEditing,
-    boardState,
-    lastPersistedBoardContentRef,
-    persistRequestIdRef,
-    setBoardState,
-  })
+  const rightRailCurrentUser = useMemo(
+    () => ({
+      id: seed.viewerId,
+      name: seed.viewerName,
+      avatarUrl: seed.viewerAvatarUrl,
+    }),
+    [seed.viewerAvatarUrl, seed.viewerId, seed.viewerName],
+  )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <WorkspaceBoardCanvasBody
-        initialOnboardingActive={initialOnboardingActive}
-        seed={seed}
-        allowEditing={allowEditing}
-        boardState={boardState}
+      <WorkspaceBoardRightRail
+        preset={boardState.preset}
+        canEdit={allowEditing}
+        canInvite={seed.canInviteCollaborators}
+        members={seed.members}
         invites={invites}
-        cursorConnectionState={cursorConnectionState}
-        rightRailCurrentUser={rightRailCurrentUser}
-        layoutFitRequestKey={layoutFitRequestKey}
-        acceleratorFocusRequestKey={acceleratorFocusRequestKey}
-        tutorialRestartRequestKey={tutorialRestartRequestKey}
-        focusCardRequest={focusCardRequest}
-        tutorialCompletionExitRequest={tutorialCompletionExitRequest}
-        journeyGuideState={journeyGuideState}
-        organizationEditorData={organizationEditorData}
-        financeInput={financeInput}
-        onInitialOnboardingSubmit={onInitialOnboardingSubmit}
+        realtimeState={cursorConnectionState}
+        currentUser={rightRailCurrentUser}
+        onPresetChange={handlePresetChange}
         onInvitesChange={setInvites}
+      />
+
+      <WorkspaceBoardFlowSurface
+        seed={seed}
+        organizationEditorData={organizationEditorData}
+        boardState={boardState}
+        allowEditing={allowEditing}
+        presentationMode={presentationMode}
+        workspaceRoomName={workspaceRoomName}
+        layoutFitRequestKey={layoutFitRequestKey}
         onSizeChange={handleSizeChange}
         onCommunicationsChange={handleCommunicationsChange}
         onTrackerChange={handleTrackerChange}
-        onAcceleratorStateChange={handleAcceleratorStateChange}
-        onOpenAcceleratorStepNode={handleOpenAcceleratorStepNode}
-        onCloseAcceleratorStepNode={handleCloseAcceleratorStepNode}
-        onTutorialPrevious={handleTutorialPrevious}
-        onTutorialNext={handleTutorialNext}
-        onTutorialRestart={handleTutorialRestart}
-        onTutorialShortcutOpened={handleTutorialShortcutOpened}
-        onFocusCard={handleFocusCard}
-        onOnboardingFlowChange={handleOnboardingFlowChange}
         onPersistNodePosition={handlePersistNodePosition}
         onToggleCardVisibility={handleToggleCardVisibility}
         onConnectCards={handleConnectCards}
@@ -379,9 +237,6 @@ export function WorkspaceBoardCanvas({
         onDisconnectAllConnections={handleDisconnectAllConnections}
         onResetDefaultConnections={handleResetDefaultConnections}
         onCursorConnectionStateChange={setCursorConnectionState}
-        onTutorialCompletionExitHandled={() =>
-          setTutorialCompletionExitRequest(null)
-        }
       />
     </div>
   )

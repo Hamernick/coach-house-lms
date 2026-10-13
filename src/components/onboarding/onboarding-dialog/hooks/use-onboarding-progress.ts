@@ -30,22 +30,14 @@ export function useOnboardingProgress({
     }
 
     const data = new FormData(form)
-    const isMemberFlow =
-      intentFocus === "find" || intentFocus === "fund" || intentFocus === "support"
-    const checks = isMemberFlow
-      ? [
-          Boolean(intentFocus),
-          String(data.get("firstName") ?? "").trim().length > 0,
-          String(data.get("lastName") ?? "").trim().length > 0,
-        ]
-      : [
-          Boolean(intentFocus),
-          String(data.get("orgName") ?? "").trim().length > 0,
-          slugStatus === "available",
-          Boolean(formationStatus),
-          String(data.get("firstName") ?? "").trim().length > 0,
-          String(data.get("lastName") ?? "").trim().length > 0,
-        ]
+    const checks = [
+      Boolean(intentFocus),
+      String(data.get("orgName") ?? "").trim().length > 0,
+      slugStatus === "available",
+      Boolean(formationStatus),
+      String(data.get("firstName") ?? "").trim().length > 0,
+      String(data.get("lastName") ?? "").trim().length > 0,
+    ]
     const completed = checks.filter(Boolean).length
     setProgressTarget(Math.round((completed / checks.length) * 100))
   }, [formationStatus, formRef, intentFocus, slugStatus])

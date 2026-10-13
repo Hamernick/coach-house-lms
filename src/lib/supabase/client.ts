@@ -17,5 +17,7 @@ export function createSupabaseBrowserClient(): SupabaseClient<Database, "public"
   return browserClient
 }
 
-// Compatibility alias for generated shadcn/supabase registry hooks.
-export const createClient = createSupabaseBrowserClient
+// Backwards-compatible alias used by legacy hooks/components.
+export function createClient(): SupabaseClient<Database, "public"> {
+  return createSupabaseBrowserClient()
+}

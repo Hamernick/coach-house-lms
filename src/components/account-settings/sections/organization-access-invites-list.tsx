@@ -5,10 +5,7 @@ import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
 
 import { Button } from "@/components/ui/button"
 import type { OrganizationAccessInvite } from "@/app/actions/organization-access"
-import {
-  formatDate,
-  formatInviteRoleLabel,
-} from "./organization-access-manager-helpers"
+import { formatDate, ROLE_LABELS } from "./organization-access-manager-helpers"
 
 type OrganizationAccessInvitesListProps = {
   invites: OrganizationAccessInvite[]
@@ -38,7 +35,7 @@ export function OrganizationAccessInvitesList({
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{invite.email}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {formatInviteRoleLabel(invite)} • Expires {formatDate(invite.expiresAt)}
+                {ROLE_LABELS[invite.role]} • Expires {formatDate(invite.expiresAt)}
                 {expired ? <span className="ml-2 text-destructive">Expired</span> : null}
               </p>
             </div>

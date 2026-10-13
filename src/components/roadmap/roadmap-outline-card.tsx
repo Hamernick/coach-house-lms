@@ -2,7 +2,6 @@
 
 import type { RoadmapSection } from "@/lib/roadmap"
 import { RoadmapRailCard, type RoadmapTimelineModule } from "@/components/roadmap/roadmap-rail-card"
-import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
 type RoadmapOutlineCardProps = {
   sections: RoadmapSection[]
@@ -13,9 +12,9 @@ export function RoadmapOutlineCard({ sections, modules = [] }: RoadmapOutlineCar
   return (
     <RoadmapRailCard
       sections={sections}
-      title="The Accelerator"
-      subtitle="Track classes and deliverables as you move through the accelerator."
-      hrefBase={WORKSPACE_ROADMAP_PATH}
+      title="The Framework"
+      subtitle="Track lessons and deliverables as you move through the accelerator."
+      hrefBase="/accelerator/roadmap"
       layout="snake-grid"
       modules={modules}
     />

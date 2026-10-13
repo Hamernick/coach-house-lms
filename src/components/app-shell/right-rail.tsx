@@ -137,25 +137,29 @@ export function RightRailProvider({ children }: { children: ReactNode }) {
   return <RightRailContext.Provider value={storeRef.current}>{children}</RightRailContext.Provider>
 }
 
-function useOptionalRightRailStore() {
-  return useContext(RightRailContext)
+function useRightRailStore() {
+  const context = useContext(RightRailContext)
+  if (!context) {
+    throw new Error("useRightRail must be used within RightRailProvider.")
+  }
+  return context
 }
 
 export function useRightRailContent() {
-  const store = useOptionalRightRailStore()
+  const store = useRightRailStore()
   return useSyncExternalStore(
-    store?.subscribeContent ?? (() => () => undefined),
-    store?.getContentSnapshot ?? (() => null),
-    store?.getContentSnapshot ?? (() => null),
+    store.subscribeContent,
+    store.getContentSnapshot,
+    store.getContentSnapshot,
   )
 }
 
 export function useRightRailPresence() {
-  const store = useOptionalRightRailStore()
+  const store = useRightRailStore()
   return useSyncExternalStore(
-    store?.subscribePresence ?? (() => () => undefined),
-    store?.getPresenceSnapshot ?? (() => false),
-    store?.getPresenceSnapshot ?? (() => false),
+    store.subscribePresence,
+    store.getPresenceSnapshot,
+    store.getPresenceSnapshot,
   )
 }
 
@@ -168,11 +172,10 @@ export function RightRailSlot({
   priority?: number
   align?: "top" | "bottom"
 }) {
-  const store = useOptionalRightRailStore()
+  const store = useRightRailStore()
   const slotId = useId()
 
   useEffect(() => {
-    if (!store) return
     store.setSlot(slotId, children ?? null, priority, align)
     return () => store.removeSlot(slotId)
   }, [align, children, priority, slotId, store])

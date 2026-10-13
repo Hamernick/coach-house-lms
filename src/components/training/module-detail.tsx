@@ -21,7 +21,6 @@ export function ModuleDetail({
   nextLocked = false,
   roadmapStatusBySectionId,
   completedModuleIds = [],
-  returnHref = null,
 }: {
   c: ClassDef
   m: Module
@@ -29,7 +28,6 @@ export function ModuleDetail({
   nextLocked?: boolean
   roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
   completedModuleIds?: string[]
-  returnHref?: string | null
 }) {
   const assignmentFields = useMemo(() => m.assignment?.fields ?? [], [m.assignment?.fields])
   const completeOnSubmit = Boolean(m.assignment?.completeOnSubmit)
@@ -51,9 +49,7 @@ export function ModuleDetail({
 
   const pathname = usePathname()
   const basePath = pathname?.startsWith("/accelerator") ? "/accelerator" : ""
-  const defaultBreakHref = basePath ? "/accelerator" : "/organization"
-  const breakHref = returnHref ?? defaultBreakHref
-  const breakLabel = returnHref ? "Return" : "Return home"
+  const breakHref = basePath ? "/accelerator" : "/organization"
   const completedModuleIdSet = useMemo(() => new Set(completedModuleIds), [completedModuleIds])
 
   const embedUrl = getVideoEmbedUrl(m.videoUrl)
@@ -69,11 +65,7 @@ export function ModuleDetail({
     typeof nextModule?.idx === "number" && Number.isFinite(nextModule.idx)
       ? nextModule.idx
       : currentModuleIndex + 2
-  const nextHrefBase = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${nextRouteIndex}` : null
-  const nextHref =
-    returnHref === "/organization/documents" && nextHrefBase
-      ? `${nextHrefBase}?from=documents`
-      : nextHrefBase
+  const nextHref = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${nextRouteIndex}` : null
   useEffect(() => {
     if (typeof window === "undefined") return
     completedModuleIds.forEach((id) => {
@@ -86,17 +78,16 @@ export function ModuleDetail({
   }, [completedModuleIds])
 
   return (
-    <div className="flex min-h-full w-full flex-col gap-4 sm:gap-5">
+    <div className="space-y-5">
       <RightRailSlot priority={5} align="bottom">
-        <ModuleRightRail
-          moduleId={m.id}
-          resources={resources}
-          breakHref={breakHref}
-          breakLabel={breakLabel}
-          hasDeck={Boolean(m.hasDeck)}
-        />
-      </RightRailSlot>
-      <ModuleHeader title={m.title} subtitle={undefined} titlePlacement="header" showMobileBody />
+      <ModuleRightRail
+        moduleId={m.id}
+        resources={resources}
+        breakHref={breakHref}
+        hasDeck={Boolean(m.hasDeck)}
+      />
+    </RightRailSlot>
+      <ModuleHeader title={m.title} subtitle={undefined} titlePlacement="header" showMobileBody={false} />
 
       {isAdmin && lockedForLearners ? (
         <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-100">

@@ -32,7 +32,6 @@ async function main() {
     data: { user },
     error,
   } = await adminClient.auth.admin.createUser({
-    app_metadata: { legal_consent_exempt: "service_provisioned" },
     email,
     password,
     email_confirm: true,
@@ -43,25 +42,12 @@ async function main() {
     process.exit(1)
   }
 
-  const { error: upsertErr } = await adminClient
-    .from("profiles")
-    .upsert(
-      { id: user.id, role: "admin", full_name: fullName, email },
-      { onConflict: "id" }
-    )
+  const { error: upsertErr } = await adminClient.from("profiles").upsert(
+    { id: user.id, role: "admin", full_name: fullName, email },
+    { onConflict: "id" }
+  )
   if (upsertErr) {
     console.error("Error promoting profile to admin:", upsertErr.message)
-    process.exit(1)
-  }
-
-  const { error: accessErr } = await adminClient
-    .from("platform_staff_members")
-    .upsert(
-      { user_id: user.id, access_level: "developer" },
-      { onConflict: "user_id" }
-    )
-  if (accessErr) {
-    console.error("Error setting developer access:", accessErr.message)
     process.exit(1)
   }
 
@@ -75,3 +61,4 @@ main().catch((e) => {
   console.error("Unexpected error:", e)
   process.exit(1)
 })
+

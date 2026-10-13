@@ -30,9 +30,7 @@ export function useDocumentsTabActions({
 }: UseDocumentsTabActionsArgs) {
   const {
     deletingKind,
-    downloadingKind,
     handleDelete,
-    handleDownload,
     handleUpload,
     handleView,
     uploadingKind,
@@ -44,12 +42,9 @@ export function useDocumentsTabActions({
 
   const {
     deletingPolicyId,
-    downloadingPolicyDocumentId,
-    downloadPolicyDocument,
     handleDeletePolicy,
     handleSavePolicy,
     policySavePending,
-    removePolicyDocumentFile,
     viewingPolicyDocumentId,
     viewPolicyDocument,
     viewPolicyDraftDocument,
@@ -66,17 +61,12 @@ export function useDocumentsTabActions({
   return {
     deletingKind,
     deletingPolicyId,
-    downloadingKind,
-    downloadingPolicyDocumentId,
-    downloadPolicyDocument,
     handleDelete,
-    handleDownload,
     handleDeletePolicy,
     handleSavePolicy,
     handleUpload,
     handleView,
     policySavePending,
-    removePolicyDocumentFile,
     uploadingKind,
     viewingKind,
     viewingPolicyDocumentId,

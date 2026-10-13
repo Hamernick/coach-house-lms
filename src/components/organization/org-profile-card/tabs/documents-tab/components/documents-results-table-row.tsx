@@ -1,21 +1,13 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
 import { TableCell, TableRow } from "@/components/ui/table"
-import {
-  getOrganizationFocusTargetProps,
-  ORGANIZATION_FOCUS_TARGET_CLASSNAME,
-} from "../../../organization-deep-link-focus"
 
+import { SOURCE_LABEL } from "../constants"
 import { formatBytes, formatUpdatedAt } from "../helpers"
 import type { DocumentIndexRow } from "../types"
-import type { DocumentsResultsTableColumnWidths } from "./documents-results-table-columns"
-import {
-  CategoryBadges,
-  DocumentMetaPill,
-  StatusBadge,
-} from "./document-row-meta"
+import { CategoryBadges, StatusBadge } from "./document-row-meta"
 import { DocumentRowActions } from "./document-row-actions"
-import { getDocumentRowFocusKey } from "./document-row-focus"
 import type { DocumentsResultsTableProps } from "./documents-results-table-types"
 
 type DocumentsResultsTableRowProps = Pick<
@@ -23,13 +15,9 @@ type DocumentsResultsTableRowProps = Pick<
   | "canEdit"
   | "deletingKind"
   | "deletingPolicyId"
-  | "downloadingKind"
-  | "downloadingPolicyDocumentId"
   | "editMode"
   | "onDeletePolicy"
   | "onDeleteUpload"
-  | "onDownloadPolicyDocument"
-  | "onDownloadUpload"
   | "onEditPolicy"
   | "onUpload"
   | "onViewPolicyDocument"
@@ -40,12 +28,10 @@ type DocumentsResultsTableRowProps = Pick<
   | "viewingPolicyDocumentId"
 > & {
   row: DocumentIndexRow
-  columnWidths: DocumentsResultsTableColumnWidths
 }
 
 function tourIdForRow(row: DocumentIndexRow) {
-  return row.source === "upload" &&
-    row.definition.kind === "verification-letter"
+  return row.source === "upload" && row.definition.kind === "verification-letter"
     ? "document-verification-letter"
     : undefined
 }
@@ -68,79 +54,38 @@ function rowDocumentDetails(row: DocumentIndexRow) {
 
 export function DocumentsResultsTableRow({
   row,
-  columnWidths,
   canEdit,
   editMode,
   publicSlug,
   uploadingKind,
   deletingKind,
   viewingKind,
-  downloadingKind,
   deletingPolicyId,
   viewingPolicyDocumentId,
-  downloadingPolicyDocumentId,
   onUpload,
   onDeleteUpload,
   onViewUpload,
-  onDownloadUpload,
   onEditPolicy,
   onDeletePolicy,
   onViewPolicyDocument,
-  onDownloadPolicyDocument,
 }: DocumentsResultsTableRowProps) {
   const details = rowDocumentDetails(row)
 
   return (
-    <TableRow
-      key={row.id}
-      {...getOrganizationFocusTargetProps(getDocumentRowFocusKey(row))}
-      data-tour={tourIdForRow(row)}
-      className={ORGANIZATION_FOCUS_TARGET_CLASSNAME}
-    >
-      <TableCell
-        className="overflow-hidden"
-        style={{ width: columnWidths.status }}
-      >
+    <TableRow key={row.id} data-tour={tourIdForRow(row)}>
+      <TableCell>
         <StatusBadge status={row.status} />
       </TableCell>
-      <TableCell
-        className="overflow-hidden whitespace-normal"
-        style={{ width: columnWidths.name }}
-      >
+      <TableCell className="whitespace-normal">
         <div className="min-w-0 space-y-0.5">
-          <p className="text-foreground truncate font-medium">{row.name}</p>
-          <p className="text-muted-foreground line-clamp-2 text-xs whitespace-pre-line">
+          <p className="truncate font-medium text-foreground">{row.name}</p>
+          <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">
             {row.description || "-"}
           </p>
-          {details ? (
-            <p className="text-muted-foreground text-xs">{details}</p>
-          ) : null}
+          {details ? <p className="text-xs text-muted-foreground">{details}</p> : null}
         </div>
       </TableCell>
-      <TableCell
-        className="overflow-hidden"
-        style={{ width: columnWidths.category }}
-      >
-        <CategoryBadges categories={row.categories} />
-      </TableCell>
-      <TableCell
-        className="text-muted-foreground overflow-hidden"
-        style={{ width: columnWidths.updatedAt }}
-      >
-        {formatUpdatedAt(row.updatedAt)}
-      </TableCell>
-      <TableCell
-        className="overflow-hidden"
-        style={{ width: columnWidths.visibility }}
-      >
-        <DocumentMetaPill className="capitalize">
-          {row.visibility}
-        </DocumentMetaPill>
-      </TableCell>
-      <TableCell
-        className="whitespace-normal"
-        style={{ width: columnWidths.actions }}
-      >
+      <TableCell className="whitespace-normal text-right">
         <DocumentRowActions
           row={row}
           canEdit={canEdit}
@@ -149,19 +94,31 @@ export function DocumentsResultsTableRow({
           uploadingKind={uploadingKind}
           deletingKind={deletingKind}
           viewingKind={viewingKind}
-          downloadingKind={downloadingKind}
           deletingPolicyId={deletingPolicyId}
           viewingPolicyDocumentId={viewingPolicyDocumentId}
-          downloadingPolicyDocumentId={downloadingPolicyDocumentId}
           onUpload={onUpload}
           onDeleteUpload={onDeleteUpload}
           onViewUpload={onViewUpload}
-          onDownloadUpload={onDownloadUpload}
           onEditPolicy={onEditPolicy}
           onDeletePolicy={onDeletePolicy}
           onViewPolicyDocument={onViewPolicyDocument}
-          onDownloadPolicyDocument={onDownloadPolicyDocument}
         />
+      </TableCell>
+      <TableCell>
+        <CategoryBadges categories={row.categories} />
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="capitalize">
+          {SOURCE_LABEL[row.source]}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="capitalize">
+          {row.visibility}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatUpdatedAt(row.updatedAt)}
       </TableCell>
     </TableRow>
   )

@@ -1,15 +1,16 @@
+import Loader2 from "lucide-react/dist/esm/icons/loader-2"
+import Image from "next/image"
+
 import { CommunicationsPreferencesFields } from "@/components/account-settings/sections/communications-preferences-fields"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { GoogleAccountConnection } from "@/features/google-auth"
-import { PublicProfileSettings } from "@/features/public-profiles/client"
-import type { AccountSettingsErrorKey, AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
-import { ProfileFields } from "./profile-fields"
+import type { AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
+import { OrganizationAccessManager } from "./organization-access-manager"
 
 export const TAB_LABELS: Record<AccountSettingsTabKey, string> = {
   profile: "Profile",
-  "public-profile": "Public profile",
+  organization: "Organization",
   communications: "Communications",
   security: "Security",
   danger: "Danger zone",
@@ -20,9 +21,9 @@ export const MOBILE_LINKS: Array<{
   description?: string
 }> = [
   { key: "profile", description: "Personal details, photo" },
-  { key: "public-profile", description: "Username, visibility, collections" },
+  { key: "organization", description: "Team access & permissions" },
   { key: "communications", description: "Emails & notifications" },
-  { key: "security", description: "Sign-in methods, password" },
+  { key: "security", description: "Password" },
   { key: "danger", description: "Delete account" },
 ]
 
@@ -83,29 +84,22 @@ export function MobileSubpage({
   avatarUrl,
   firstName,
   lastName,
-  title,
-  company,
-  contact,
-  about,
   phone,
   email,
-  hasActiveSubscription,
-  errors,
   marketingOptIn,
   newsletterOptIn,
+  acceleratorOverlayEnabled,
   newPassword,
   confirmPassword,
+  orgName,
   isUploadingAvatar,
   onAvatarFileSelected,
   onFirstNameChange,
   onLastNameChange,
-  onTitleChange,
-  onCompanyChange,
-  onContactChange,
-  onAboutChange,
   onPhoneChange,
   onMarketingOptInChange,
   onNewsletterOptInChange,
+  onAcceleratorOverlayEnabledChange,
   onNewPasswordChange,
   onConfirmPasswordChange,
   onDeleteAccount,
@@ -115,29 +109,22 @@ export function MobileSubpage({
   avatarUrl: string | null
   firstName: string
   lastName: string
-  title: string
-  company: string
-  contact: string
-  about: string
   phone: string
   email: string
-  hasActiveSubscription: boolean
-  errors: Partial<Record<AccountSettingsErrorKey, string>>
   marketingOptIn: boolean
   newsletterOptIn: boolean
+  acceleratorOverlayEnabled: boolean
   newPassword: string
   confirmPassword: string
+  orgName: string
   isUploadingAvatar: boolean
   onAvatarFileSelected: (file?: File | null) => void
   onFirstNameChange: (value: string) => void
   onLastNameChange: (value: string) => void
-  onTitleChange: (value: string) => void
-  onCompanyChange: (value: string) => void
-  onContactChange: (value: string) => void
-  onAboutChange: (value: string) => void
   onPhoneChange: (value: string) => void
   onMarketingOptInChange: (value: boolean) => void
   onNewsletterOptInChange: (value: boolean) => void
+  onAcceleratorOverlayEnabledChange: (value: boolean) => void
   onNewPasswordChange: (value: string) => void
   onConfirmPasswordChange: (value: string) => void
   onDeleteAccount: () => void
@@ -145,42 +132,88 @@ export function MobileSubpage({
   return (
     <div className="min-h-0 grow overflow-y-auto p-4 md:hidden" hidden={mobilePage === "menu"}>
       {tab === "profile" && (
-        <div className="flex flex-col gap-6">
+        <div className="space-y-6">
           <header>
             <h3 className="text-sm font-semibold text-muted-foreground">Profile</h3>
           </header>
-          <ProfileFields
-            avatarUrl={avatarUrl}
-            firstName={firstName}
-            lastName={lastName}
-            title={title}
-            company={company}
-            contact={contact}
-            about={about}
-            phone={phone}
-            email={email}
-            errors={errors}
-            isUploadingAvatar={isUploadingAvatar}
-            idPrefix="mobile-profile"
-            onAvatarFileSelected={onAvatarFileSelected}
-            onFirstNameChange={onFirstNameChange}
-            onLastNameChange={onLastNameChange}
-            onTitleChange={onTitleChange}
-            onCompanyChange={onCompanyChange}
-            onContactChange={onContactChange}
-            onAboutChange={onAboutChange}
-            onPhoneChange={onPhoneChange}
-          />
+          <div className="max-w-xl space-y-6">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-background/60 p-4">
+              <div
+                className="relative size-16 overflow-hidden rounded-full border border-border bg-card"
+                aria-busy={isUploadingAvatar}
+              >
+                {avatarUrl ? (
+                  <Image key={avatarUrl} src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="64px" unoptimized />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
+                    {`${(firstName.charAt(0) || "A").toUpperCase()}${(lastName.charAt(0) || "A").toUpperCase()}`}
+                  </div>
+                )}
+                {isUploadingAvatar ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                    <Loader2 className="size-6 animate-spin" aria-hidden />
+                  </div>
+                ) : null}
+              </div>
+              <Label htmlFor="avatarUploadMobile" className="text-xs text-muted-foreground">
+                Upload a profile picture (optional)
+              </Label>
+              <Input
+                id="avatarUploadMobile"
+                type="file"
+                accept="image/*"
+                className="max-w-xs"
+                disabled={isUploadingAvatar}
+                onChange={(event) => onAvatarFileSelected(event.currentTarget.files?.[0] ?? null)}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="m-first">First name</Label>
+                <Input
+                  id="m-first"
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(event) => onFirstNameChange(event.currentTarget.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m-last">Last name</Label>
+                <Input
+                  id="m-last"
+                  placeholder="Last name"
+                  value={lastName}
+                  onChange={(event) => onLastNameChange(event.currentTarget.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="m-phone">Phone</Label>
+                <Input
+                  id="m-phone"
+                  value={phone}
+                  onChange={(event) => onPhoneChange(event.currentTarget.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m-email">Email</Label>
+                <Input id="m-email" value={email} disabled />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {tab === "public-profile" && (
-        <PublicProfileSettings
-          avatarUrl={avatarUrl}
-          displayName={[firstName, lastName].filter(Boolean).join(" ")}
-          headline={title}
-          idPrefix="mobile-public-profile"
-        />
+      {tab === "organization" && (
+        <div className="space-y-6">
+          <header>
+            <h3 className="text-sm font-semibold text-muted-foreground">Organization</h3>
+          </header>
+          <OrganizationAccessManager organizationName={orgName} />
+        </div>
       )}
 
       {tab === "communications" && (
@@ -192,8 +225,10 @@ export function MobileSubpage({
             idPrefix="mobile-communications"
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}
+            acceleratorOverlayEnabled={acceleratorOverlayEnabled}
             onMarketingOptInChange={onMarketingOptInChange}
             onNewsletterOptInChange={onNewsletterOptInChange}
+            onAcceleratorOverlayEnabledChange={onAcceleratorOverlayEnabledChange}
           />
         </div>
       )}
@@ -203,9 +238,7 @@ export function MobileSubpage({
           <header>
             <h3 className="text-sm font-semibold text-muted-foreground">Security</h3>
           </header>
-          <GoogleAccountConnection email={email} viewport="mobile" />
           <div className="grid max-w-xl gap-4">
-            <h4 className="font-medium">Password</h4>
             <div className="grid gap-2">
               <Label htmlFor="m-newPassword">New password</Label>
               <Input
@@ -237,11 +270,6 @@ export function MobileSubpage({
           </header>
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
             <p className="text-sm">This action is permanent and cannot be undone.</p>
-            {hasActiveSubscription ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Deleting your account does not cancel Stripe billing. Cancel in the billing portal first, or continue after cancellation if your access remains active through the paid period.
-              </p>
-            ) : null}
             <div className="mt-3">
               <Button variant="destructive" onClick={onDeleteAccount}>
                 Delete my account

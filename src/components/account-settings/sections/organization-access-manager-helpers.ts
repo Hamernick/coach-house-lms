@@ -1,7 +1,4 @@
-import type {
-  OrganizationAccessInvite,
-  OrganizationMemberRole,
-} from "@/app/actions/organization-access"
+import type { OrganizationMemberRole } from "@/app/actions/organization-access"
 
 export const ROLE_LABELS: Record<OrganizationMemberRole, string> = {
   owner: "Owner",
@@ -11,40 +8,19 @@ export const ROLE_LABELS: Record<OrganizationMemberRole, string> = {
   member: "Member",
 }
 
-export type OrganizationInviteRoleOption = OrganizationMemberRole | "funder"
-
-export const INVITE_ROLE_LABELS: Record<OrganizationInviteRoleOption, string> = {
-  ...ROLE_LABELS,
-  funder: "Funder",
-}
-
-export const ROLE_HELP: Partial<Record<OrganizationInviteRoleOption, string>> = {
+export const ROLE_HELP: Partial<Record<OrganizationMemberRole, string>> = {
   admin: "Can manage access.",
   staff: "Can edit org settings.",
   board: "View-only access.",
   member: "Basic access.",
-  funder: "Supporter/funder access.",
 }
 
-export const INVITEABLE_ROLES: OrganizationInviteRoleOption[] = [
-  "staff",
-  "board",
-  "admin",
-  "member",
-  "funder",
-]
-
-export const MEMBER_EDITABLE_ROLES: OrganizationMemberRole[] = [
+export const INVITEABLE_ROLES: OrganizationMemberRole[] = [
   "staff",
   "board",
   "admin",
   "member",
 ]
-
-export function formatInviteRoleLabel(invite: Pick<OrganizationAccessInvite, "role" | "inviteKind">) {
-  if (invite.inviteKind === "funder") return INVITE_ROLE_LABELS.funder
-  return ROLE_LABELS[invite.role]
-}
 
 export function formatDate(value: string) {
   try {

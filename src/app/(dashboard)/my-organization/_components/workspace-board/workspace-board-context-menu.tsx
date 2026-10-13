@@ -5,7 +5,6 @@ import { useMemo } from "react"
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
 import type { WorkspaceCardId, WorkspaceConnectionState } from "./workspace-board-types"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 export type WorkspaceFlowContextMenuState =
   | {
@@ -113,9 +112,8 @@ export function WorkspaceBoardContextMenu({
         {state.kind === "canvas" ? (
           <div className="space-y-1">
             {menuSectionTitle("Canvas")}
-            <Button
+            <button
               type="button"
-              variant="ghost"
               className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
               onClick={() => {
                 onRepairCanvas()
@@ -123,10 +121,9 @@ export function WorkspaceBoardContextMenu({
               }}
             >
               Repair rails + recenter
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="ghost"
               className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
               onClick={() => {
                 onResetDefaultConnections()
@@ -134,10 +131,9 @@ export function WorkspaceBoardContextMenu({
               }}
             >
               Reset rails to default
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="ghost"
               className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
               onClick={() => {
                 onDisconnectAll()
@@ -145,7 +141,7 @@ export function WorkspaceBoardContextMenu({
               }}
             >
               Disconnect all rails
-            </Button>
+            </button>
           </div>
         ) : null}
 
@@ -157,9 +153,8 @@ export function WorkspaceBoardContextMenu({
               {" -> "}
               {WORKSPACE_CARD_META[state.target].title}
             </p>
-            <Button
+            <button
               type="button"
-              variant="ghost"
               className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
               onClick={() => {
                 onDisconnect(state.edgeId)
@@ -167,7 +162,7 @@ export function WorkspaceBoardContextMenu({
               }}
             >
               Disconnect rail
-            </Button>
+            </button>
           </div>
         ) : null}
 
@@ -185,9 +180,8 @@ export function WorkspaceBoardContextMenu({
               {WORKSPACE_CARD_META[nodeDetails.nodeId].title}
             </p>
 
-            <Button
+            <button
               type="button"
-              variant="ghost"
               className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
               onClick={() => {
                 onHideCard(nodeDetails.nodeId)
@@ -195,7 +189,7 @@ export function WorkspaceBoardContextMenu({
               }}
             >
               Hide card
-            </Button>
+            </button>
 
             {state.handleKind !== "target" ? (
               <div className="space-y-1">
@@ -204,10 +198,9 @@ export function WorkspaceBoardContextMenu({
                   <p className="px-1 text-[11px] text-muted-foreground">No available targets.</p>
                 ) : (
                   nodeDetails.connectToTargets.map((targetId) => (
-                    <Button
+                    <button
                       key={`connect-to-${targetId}`}
                       type="button"
-                      variant="ghost"
                       className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
                       onClick={() => {
                         onConnect(nodeDetails.nodeId, targetId)
@@ -215,7 +208,7 @@ export function WorkspaceBoardContextMenu({
                       }}
                     >
                       {WORKSPACE_CARD_META[targetId].title}
-                    </Button>
+                    </button>
                   ))
                 )}
               </div>
@@ -228,10 +221,9 @@ export function WorkspaceBoardContextMenu({
                   <p className="px-1 text-[11px] text-muted-foreground">No available sources.</p>
                 ) : (
                   nodeDetails.connectFromSources.map((sourceId) => (
-                    <Button
+                    <button
                       key={`connect-from-${sourceId}`}
                       type="button"
-                      variant="ghost"
                       className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
                       onClick={() => {
                         onConnect(sourceId, nodeDetails.nodeId)
@@ -239,7 +231,7 @@ export function WorkspaceBoardContextMenu({
                       }}
                     >
                       {WORKSPACE_CARD_META[sourceId].title}
-                    </Button>
+                    </button>
                   ))
                 )}
               </div>
@@ -252,10 +244,9 @@ export function WorkspaceBoardContextMenu({
               ) : (
                 <>
                   {nodeDetails.outgoingConnections.map((connection) => (
-                    <Button
+                    <button
                       key={`disconnect-out-${connection.id}`}
                       type="button"
-                      variant="ghost"
                       className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
                       onClick={() => {
                         onDisconnect(connection.id)
@@ -265,13 +256,12 @@ export function WorkspaceBoardContextMenu({
                       {WORKSPACE_CARD_META[nodeDetails.nodeId].title}
                       {" -> "}
                       {WORKSPACE_CARD_META[connection.target].title}
-                    </Button>
+                    </button>
                   ))}
                   {nodeDetails.incomingConnections.map((connection) => (
-                    <Button
+                    <button
                       key={`disconnect-in-${connection.id}`}
                       type="button"
-                      variant="ghost"
                       className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/60"
                       onClick={() => {
                         onDisconnect(connection.id)
@@ -281,7 +271,7 @@ export function WorkspaceBoardContextMenu({
                       {WORKSPACE_CARD_META[connection.source].title}
                       {" -> "}
                       {WORKSPACE_CARD_META[nodeDetails.nodeId].title}
-                    </Button>
+                    </button>
                   ))}
                 </>
               )}

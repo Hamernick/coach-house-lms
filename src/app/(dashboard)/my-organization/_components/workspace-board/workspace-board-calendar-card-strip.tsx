@@ -1,7 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
-
 import type { MyOrganizationCalendarView } from "../../_lib/types"
 import { CalendarDateStripEventsPanel } from "./workspace-board-calendar-card-strip-panel"
 import {
@@ -21,40 +19,37 @@ export {
 }
 
 export function renderCalendarCanvasPreviewCard({
-  eventActionRequest,
   calendar,
+  recommendedIntervalMonths,
   stripSelectedDate,
   stripDays,
   eventDayKeys,
   selectedDayEvents,
   visibleEvents,
-  headerAction,
   onSelectStripDate,
   onShiftStripDays,
 }: {
-  eventActionRequest?: { id: number; eventId: string } | null
   calendar: MyOrganizationCalendarView
+  recommendedIntervalMonths: number
   stripSelectedDate: Date
   stripDays: Date[]
   eventDayKeys: Set<string>
   selectedDayEvents: MyOrganizationCalendarView["upcomingEvents"]
   visibleEvents: MyOrganizationCalendarView["upcomingEvents"]
-  headerAction?: ReactNode
   onSelectStripDate: (date: Date) => void
   onShiftStripDays: (deltaDays: number) => void
 }) {
   return (
     <CalendarDateStripEventsPanel
-      eventActionRequest={eventActionRequest}
       calendar={calendar}
       compactCanvasCard
       showTopDivider={false}
-      headerAction={headerAction}
       stripSelectedDate={stripSelectedDate}
       stripDays={stripDays}
       eventDayKeys={eventDayKeys}
       selectedDayEvents={selectedDayEvents}
       visibleEvents={visibleEvents}
+      recommendedIntervalMonths={recommendedIntervalMonths}
       onSelectStripDate={onSelectStripDate}
       onShiftStripDays={onShiftStripDays}
     />

@@ -9,22 +9,6 @@ import {
   resetTestMocks,
 } from "./test-utils"
 
-vi.mock("@/lib/env", () => ({
-  env: {
-    STRIPE_SECRET_KEY: undefined,
-    STRIPE_TEST_SECRET_KEY: undefined,
-    STRIPE_WEBHOOK_SECRET: undefined,
-    STRIPE_TEST_WEBHOOK_SECRET: undefined,
-    STRIPE_ORGANIZATION_PRICE_ID: undefined,
-    STRIPE_TEST_ORGANIZATION_PRICE_ID: undefined,
-    STRIPE_OPERATIONS_SUPPORT_PRICE_ID: undefined,
-    STRIPE_TEST_OPERATIONS_SUPPORT_PRICE_ID: undefined,
-    NEXT_PUBLIC_MEETING_FREE_URL: undefined,
-    NEXT_PUBLIC_MEETING_DISCOUNTED_URL: undefined,
-    NEXT_PUBLIC_MEETING_FULL_URL: undefined,
-  },
-}))
-
 function createSupabaseStub() {
   const upsert = vi.fn().mockResolvedValue({ data: null, error: null })
   const supabase = {
@@ -53,7 +37,7 @@ describe("pricing acceptance", () => {
     })
   })
 
-  it("redirects to the paywall error state when Stripe is unavailable", async () => {
+  it("redirects trialing users to Organization when checkout cannot reach Stripe", async () => {
     const { supabase, upsert } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -63,13 +47,17 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe(
-      "/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing",
+    expect(destination).toBe("/organization?subscription=trialing")
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-123",
+        status: "trialing",
+      }),
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" })
     )
-    expect(upsert).not.toHaveBeenCalled()
   })
 
-  it("treats legacy accelerator checkout mode as organization checkout", async () => {
+  it("treats legacy accelerator checkout mode as organization fallback", async () => {
     const { supabase } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -78,12 +66,10 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe(
-      "/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing",
-    )
+    expect(destination).toBe("/organization?subscription=trialing")
   })
 
-  it("treats legacy elective checkout mode as organization checkout", async () => {
+  it("treats legacy elective checkout mode as organization fallback", async () => {
     const { supabase } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -93,12 +79,10 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe(
-      "/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing",
-    )
+    expect(destination).toBe("/organization?subscription=trialing")
   })
 
-  it("redirects to paywall error when Stripe is unavailable on success callback", async () => {
+  it("records subscription state on checkout success callback", async () => {
     const { supabase, upsert } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -106,9 +90,13 @@ describe("pricing acceptance", () => {
       PricingSuccessPage({ searchParams: Promise.resolve({}) })
     )
 
-    expect(destination).toBe(
-      "/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing",
-    )
-    expect(upsert).not.toHaveBeenCalled()
+    expect(destination).toBe("/organization?subscription=trialing")
+    expect(upsert).toHaveBeenCalledTimes(1)
+    const [payload] = upsert.mock.calls[0]
+    expect(payload).toMatchObject({
+      user_id: "user-123",
+      status: "trialing",
+    })
+    expect(payload.stripe_subscription_id).toMatch(/^stub_/)
   })
 })

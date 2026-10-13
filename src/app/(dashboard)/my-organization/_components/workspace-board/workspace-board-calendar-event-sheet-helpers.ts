@@ -1,6 +1,5 @@
 import type {
   RoadmapCalendarAssignedRole,
-  RoadmapCalendarEventType,
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
 
@@ -9,7 +8,6 @@ import type { UpcomingEvent } from "../../_lib/types"
 export type CalendarEventDraft = {
   title: string
   description: string
-  eventType: RoadmapCalendarEventType
   startsAt: string
   endsAt: string
   allDay: boolean
@@ -36,7 +34,6 @@ export function buildDefaultCalendarEventDraft(event?: UpcomingEvent | null): Ca
     return {
       title: event.title,
       description: event.description ?? "",
-      eventType: event.event_type,
       startsAt: toDatetimeLocal(event.starts_at),
       endsAt: event.ends_at ? toDatetimeLocal(event.ends_at) : "",
       allDay: event.all_day,
@@ -55,7 +52,6 @@ export function buildDefaultCalendarEventDraft(event?: UpcomingEvent | null): Ca
   return {
     title: "",
     description: "",
-    eventType: "meeting",
     startsAt: toDatetimeLocal(start.toISOString()),
     endsAt: toDatetimeLocal(end.toISOString()),
     allDay: false,

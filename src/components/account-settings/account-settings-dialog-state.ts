@@ -28,6 +28,7 @@ export function useAccountSettingsDialogState({
   defaultEmail = "",
   defaultMarketingOptIn,
   defaultNewsletterOptIn,
+  defaultAcceleratorOverlayEnabled,
   onOpenChange,
 }: UseAccountSettingsDialogStateArgs): UseAccountSettingsDialogStateResult {
   const supabase = useSupabaseClient()
@@ -36,13 +37,10 @@ export function useAccountSettingsDialogState({
   const [tab, _setTab] = useState<AccountSettingsTabKey>(initialTab)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
-  const [title, setTitle] = useState("")
-  const [company, setCompany] = useState("")
-  const [contact, setContact] = useState("")
-  const [about, setAbout] = useState("")
   const [phone, setPhone] = useState("")
   const [marketingOptIn, setMarketingOptIn] = useState(defaultMarketingOptIn)
   const [newsletterOptIn, setNewsletterOptIn] = useState(defaultNewsletterOptIn)
+  const [acceleratorOverlayEnabled, setAcceleratorOverlayEnabled] = useState(defaultAcceleratorOverlayEnabled)
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -60,13 +58,10 @@ export function useAccountSettingsDialogState({
   const email = defaultEmail ?? ""
   const initialFirstRef = useRef("")
   const initialLastRef = useRef("")
-  const initialTitleRef = useRef("")
-  const initialCompanyRef = useRef("")
-  const initialContactRef = useRef("")
-  const initialAboutRef = useRef("")
   const initialPhoneRef = useRef("")
   const initialMarketingRef = useRef(defaultMarketingOptIn)
   const initialNewsletterRef = useRef(defaultNewsletterOptIn)
+  const initialAcceleratorOverlayRef = useRef(defaultAcceleratorOverlayEnabled)
 
   const markDirty = () => {
     dirtyRef.current = true
@@ -99,28 +94,16 @@ export function useAccountSettingsDialogState({
     markDirty()
     clearError("phone")
   }
-  const handleTitleChange = (value: string) => {
-    setTitle(value)
-    markDirty()
-  }
-  const handleCompanyChange = (value: string) => {
-    setCompany(value)
-    markDirty()
-  }
-  const handleContactChange = (value: string) => {
-    setContact(value)
-    markDirty()
-  }
-  const handleAboutChange = (value: string) => {
-    setAbout(value)
-    markDirty()
-  }
   const handleMarketingOptInChange = (value: boolean) => {
     setMarketingOptIn(value)
     markDirty()
   }
   const handleNewsletterOptInChange = (value: boolean) => {
     setNewsletterOptIn(value)
+    markDirty()
+  }
+  const handleAcceleratorOverlayEnabledChange = (value: boolean) => {
+    setAcceleratorOverlayEnabled(value)
     markDirty()
   }
   const handleNewPasswordChange = (value: string) => {
@@ -147,14 +130,9 @@ export function useAccountSettingsDialogState({
   useEffect(() => {
     dirtyRef.current = false
     setDirty(false)
+    setMobilePage("menu")
     setJustSaved(false)
-    if (open) {
-      _setTab(initialTab)
-      setMobilePage(initialTab === "profile" ? "menu" : initialTab)
-    } else {
-      setMobilePage("menu")
-    }
-  }, [initialTab, open])
+  }, [open])
 
   useAccountSettingsProfileLoader({
     open,
@@ -162,26 +140,21 @@ export function useAccountSettingsDialogState({
     defaultName,
     defaultMarketingOptIn,
     defaultNewsletterOptIn,
+    defaultAcceleratorOverlayEnabled,
     setMarketingOptIn,
     setNewsletterOptIn,
+    setAcceleratorOverlayEnabled,
     setPhone,
     setAvatarUrl,
     setFirstName,
     setLastName,
-    setTitle,
-    setCompany,
-    setContact,
-    setAbout,
     setOrgName,
     initialFirstRef,
     initialLastRef,
-    initialTitleRef,
-    initialCompanyRef,
-    initialContactRef,
-    initialAboutRef,
     initialPhoneRef,
     initialMarketingRef,
     initialNewsletterRef,
+    initialAcceleratorOverlayRef,
   })
 
   const isDirty = useMemo(() => dirty || dirtyRef.current, [dirty])
@@ -210,26 +183,14 @@ export function useAccountSettingsDialogState({
           userId,
           firstName,
           lastName,
-          title,
-          company,
-          contact,
-          about,
           phone,
           initialFirstName: initialFirstRef.current,
           initialLastName: initialLastRef.current,
-          initialTitle: initialTitleRef.current,
-          initialCompany: initialCompanyRef.current,
-          initialContact: initialContactRef.current,
-          initialAbout: initialAboutRef.current,
           initialPhone: initialPhoneRef.current,
         })
 
         initialFirstRef.current = result.initialFirstName
         initialLastRef.current = result.initialLastName
-        initialTitleRef.current = result.initialTitle
-        initialCompanyRef.current = result.initialCompany
-        initialContactRef.current = result.initialContact
-        initialAboutRef.current = result.initialAbout
         initialPhoneRef.current = result.initialPhone
 
         if (result.firstName !== firstName) {
@@ -238,28 +199,19 @@ export function useAccountSettingsDialogState({
         if (result.lastName !== lastName) {
           setLastName(result.lastName)
         }
-        if (result.title !== title) {
-          setTitle(result.title)
-        }
-        if (result.company !== company) {
-          setCompany(result.company)
-        }
-        if (result.contact !== contact) {
-          setContact(result.contact)
-        }
-        if (result.about !== about) {
-          setAbout(result.about)
-        }
       } else if (tab === "communications") {
         const result = await saveCommunicationPreferences({
           supabase,
           marketingOptIn,
           newsletterOptIn,
+          acceleratorOverlayEnabled,
           initialMarketingOptIn: initialMarketingRef.current,
           initialNewsletterOptIn: initialNewsletterRef.current,
+          initialAcceleratorOverlayEnabled: initialAcceleratorOverlayRef.current,
         })
         initialMarketingRef.current = result.initialMarketingOptIn
         initialNewsletterRef.current = result.initialNewsletterOptIn
+        initialAcceleratorOverlayRef.current = result.initialAcceleratorOverlayEnabled
       }
 
       dirtyRef.current = false
@@ -305,7 +257,7 @@ export function useAccountSettingsDialogState({
       toast.error(result.message)
       if (result.sessionExpired) {
         await supabase.auth.signOut().catch(() => undefined)
-        router.replace("/login")
+        router.replace("/?section=login")
         router.refresh()
       }
       return false
@@ -341,13 +293,10 @@ export function useAccountSettingsDialogState({
     handleMobilePageChange,
     firstName,
     lastName,
-    title,
-    company,
-    contact,
-    about,
     phone,
     marketingOptIn,
     newsletterOptIn,
+    acceleratorOverlayEnabled,
     newPassword,
     confirmPassword,
     isSaving,
@@ -366,12 +315,9 @@ export function useAccountSettingsDialogState({
     requestClose,
     handleMarketingOptInChange,
     handleNewsletterOptInChange,
+    handleAcceleratorOverlayEnabledChange,
     handleFirstNameChange,
     handleLastNameChange,
-    handleTitleChange,
-    handleCompanyChange,
-    handleContactChange,
-    handleAboutChange,
     handlePhoneChange,
     handleNewPasswordChange,
     handleConfirmPasswordChange,

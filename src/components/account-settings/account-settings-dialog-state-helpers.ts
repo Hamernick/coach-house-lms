@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import type { AccountDeletionPreflight } from "@/lib/account-deletion/types"
 import type { Database } from "@/lib/supabase"
 
 type AccountSettingsSupabaseClient = SupabaseClient<Database, "public">
@@ -10,33 +9,17 @@ type SaveProfileSettingsArgs = {
   userId: string
   firstName: string
   lastName: string
-  title: string
-  company: string
-  contact: string
-  about: string
   phone: string
   initialFirstName: string
   initialLastName: string
-  initialTitle: string
-  initialCompany: string
-  initialContact: string
-  initialAbout: string
   initialPhone: string
 }
 
 type SaveProfileSettingsResult = {
   firstName: string
   lastName: string
-  title: string
-  company: string
-  contact: string
-  about: string
   initialFirstName: string
   initialLastName: string
-  initialTitle: string
-  initialCompany: string
-  initialContact: string
-  initialAbout: string
   initialPhone: string
 }
 
@@ -44,25 +27,20 @@ type SaveCommunicationPreferencesArgs = {
   supabase: AccountSettingsSupabaseClient
   marketingOptIn: boolean
   newsletterOptIn: boolean
+  acceleratorOverlayEnabled: boolean
   initialMarketingOptIn: boolean
   initialNewsletterOptIn: boolean
+  initialAcceleratorOverlayEnabled: boolean
 }
 
 type SaveCommunicationPreferencesResult = {
   initialMarketingOptIn: boolean
   initialNewsletterOptIn: boolean
+  initialAcceleratorOverlayEnabled: boolean
 }
 
 type DeleteAccountResult =
   | { ok: true }
-  | {
-      ok: false
-      sessionExpired: boolean
-      message: string
-    }
-
-type DeleteAccountPreflightResult =
-  | { ok: true; preflight: AccountDeletionPreflight }
   | {
       ok: false
       sessionExpired: boolean
@@ -99,83 +77,32 @@ export async function saveProfileSettings({
   userId,
   firstName,
   lastName,
-  title,
-  company,
-  contact,
-  about,
   phone,
   initialFirstName,
   initialLastName,
-  initialTitle,
-  initialCompany,
-  initialContact,
-  initialAbout,
   initialPhone,
 }: SaveProfileSettingsArgs): Promise<SaveProfileSettingsResult> {
   const trimmedFirstName = firstName.trim()
   const trimmedLastName = lastName.trim()
-  const trimmedTitle = title.trim()
-  const trimmedCompany = company.trim()
-  const trimmedContact = contact.trim()
-  const trimmedAbout = about.trim()
   const initialFullName = [initialFirstName, initialLastName].filter(Boolean).join(" ")
   const nextFullName = [trimmedFirstName, trimmedLastName].filter(Boolean).join(" ")
 
   let nextFirstName = firstName
   let nextLastName = lastName
-  let nextTitle = title
-  let nextCompany = company
-  let nextContact = contact
-  let nextAbout = about
   let nextInitialFirstName = initialFirstName
   let nextInitialLastName = initialLastName
-  let nextInitialTitle = initialTitle
-  let nextInitialCompany = initialCompany
-  let nextInitialContact = initialContact
-  let nextInitialAbout = initialAbout
   let nextInitialPhone = initialPhone
 
-  if (
-    initialFullName !== nextFullName ||
-    initialTitle !== trimmedTitle ||
-    initialCompany !== trimmedCompany ||
-    initialContact !== trimmedContact ||
-    initialAbout !== trimmedAbout
-  ) {
+  if (initialFullName !== nextFullName) {
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert(
-        {
-          id: userId,
-          full_name: nextFullName || null,
-          headline: trimmedTitle || null,
-          company: trimmedCompany || null,
-          contact: trimmedContact || null,
-          about: trimmedAbout || null,
-        },
-        { onConflict: "id" },
-      )
+      .upsert({ id: userId, full_name: nextFullName || null }, { onConflict: "id" })
     if (profileError) {
       throw profileError
     }
 
-    nextTitle = trimmedTitle
-    nextCompany = trimmedCompany
-    nextContact = trimmedContact
-    nextAbout = trimmedAbout
-    nextInitialTitle = trimmedTitle
-    nextInitialCompany = trimmedCompany
-    nextInitialContact = trimmedContact
-    nextInitialAbout = trimmedAbout
-  }
-
-  if (initialFullName !== nextFullName) {
     const { error: fullNameMetadataError } = await supabase.auth.updateUser({
-      data: {
-        full_name: nextFullName || null,
-        first_name: trimmedFirstName || null,
-        last_name: trimmedLastName || null,
-      },
+      data: { full_name: nextFullName || null },
     })
     if (fullNameMetadataError) {
       throw fullNameMetadataError
@@ -198,16 +125,8 @@ export async function saveProfileSettings({
   return {
     firstName: nextFirstName,
     lastName: nextLastName,
-    title: nextTitle,
-    company: nextCompany,
-    contact: nextContact,
-    about: nextAbout,
     initialFirstName: nextInitialFirstName,
     initialLastName: nextInitialLastName,
-    initialTitle: nextInitialTitle,
-    initialCompany: nextInitialCompany,
-    initialContact: nextInitialContact,
-    initialAbout: nextInitialAbout,
     initialPhone: nextInitialPhone,
   }
 }
@@ -216,8 +135,10 @@ export async function saveCommunicationPreferences({
   supabase,
   marketingOptIn,
   newsletterOptIn,
+  acceleratorOverlayEnabled,
   initialMarketingOptIn,
   initialNewsletterOptIn,
+  initialAcceleratorOverlayEnabled,
 }: SaveCommunicationPreferencesArgs): Promise<SaveCommunicationPreferencesResult> {
   const metadata: Record<string, boolean> = {}
   if (marketingOptIn !== initialMarketingOptIn) {
@@ -226,11 +147,15 @@ export async function saveCommunicationPreferences({
   if (newsletterOptIn !== initialNewsletterOptIn) {
     metadata.newsletter_opt_in = newsletterOptIn
   }
+  if (acceleratorOverlayEnabled !== initialAcceleratorOverlayEnabled) {
+    metadata.accelerator_overlay_enabled = acceleratorOverlayEnabled
+  }
 
   if (Object.keys(metadata).length === 0) {
     return {
       initialMarketingOptIn,
       initialNewsletterOptIn,
+      initialAcceleratorOverlayEnabled,
     }
   }
 
@@ -242,6 +167,7 @@ export async function saveCommunicationPreferences({
   return {
     initialMarketingOptIn: marketingOptIn,
     initialNewsletterOptIn: newsletterOptIn,
+    initialAcceleratorOverlayEnabled: acceleratorOverlayEnabled,
   }
 }
 
@@ -280,48 +206,6 @@ export async function requestDeleteAccount(): Promise<DeleteAccountResult> {
       ok: false,
       sessionExpired: false,
       message: DEFAULT_DELETE_ACCOUNT_ERROR,
-    }
-  }
-}
-
-export async function requestDeleteAccountPreflight(): Promise<DeleteAccountPreflightResult> {
-  try {
-    const response = await fetch("/api/account/delete/preflight", {
-      method: "GET",
-      cache: "no-store",
-    })
-    const payload = await response.json().catch(() => ({}))
-    if (response.ok && payload?.preflight) {
-      return { ok: true, preflight: payload.preflight as AccountDeletionPreflight }
-    }
-
-    const message =
-      typeof payload?.error === "string" && payload.error.length > 0
-        ? payload.error
-        : "Unable to check account deletion status."
-    const normalizedMessage = message.toLowerCase()
-    const sessionExpired =
-      response.status === 401 ||
-      SESSION_ERROR_FRAGMENTS.some((fragment) => normalizedMessage.includes(fragment))
-
-    if (sessionExpired) {
-      return {
-        ok: false,
-        sessionExpired: true,
-        message: SESSION_EXPIRED_DELETE_ACCOUNT_ERROR,
-      }
-    }
-
-    return {
-      ok: false,
-      sessionExpired: false,
-      message,
-    }
-  } catch {
-    return {
-      ok: false,
-      sessionExpired: false,
-      message: "Unable to check account deletion status.",
     }
   }
 }

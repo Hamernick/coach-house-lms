@@ -1,56 +1,63 @@
 "use client"
 
-import type { DragEvent, ReactNode } from "react"
-import { IconLock } from "@tabler/icons-react"
+import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
+import Lock from "lucide-react/dist/esm/icons/lock"
+import XIcon from "lucide-react/dist/esm/icons/x"
 
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-
-const DOCUMENTS_BANNER_SOURCE =
-  "src/components/organization/org-profile-card/tabs/documents-tab/components/documents-banner.tsx"
-
-const DOCUMENTS_BANNER_OWNER_PROPS = getReactGrabOwnerProps({
-  ownerId: "organization-documents:banner",
-  component: "DocumentsBanner",
-  source: DOCUMENTS_BANNER_SOURCE,
-  slot: "root",
-  canonicalOwnerSource: DOCUMENTS_BANNER_SOURCE,
-  canonicalOwnerReason:
-    "DocumentsBanner owns the complete Documents library surface and presentation.",
-})
+import { Button } from "@/components/ui/button"
 
 type DocumentsBannerProps = {
+  hasRoadmapDocuments: boolean
   canEdit: boolean
-  uploading?: boolean
-  children: ReactNode
+  onDismiss: () => void
 }
 
 export function DocumentsBanner({
+  hasRoadmapDocuments,
   canEdit,
-  uploading = false,
-  children,
+  onDismiss,
 }: DocumentsBannerProps) {
-  const preventFileNavigation = (event: DragEvent<HTMLElement>) => {
-    if (Array.from(event.dataTransfer.types).includes("Files")) {
-      event.preventDefault()
-      event.dataTransfer.dropEffect = "none"
-    }
-  }
-
   return (
-    <section
-      {...DOCUMENTS_BANNER_OWNER_PROPS}
-      className="relative mx-auto w-full max-w-xl rounded-2xl bg-transparent p-3"
-      aria-busy={uploading || undefined}
-      onDragOver={preventFileNavigation}
-      onDrop={preventFileNavigation}
-    >
-      {children}
-      {!canEdit ? (
-        <p className="text-muted-foreground mt-5 flex items-center gap-2 text-xs">
-          <IconLock className="size-3.5" aria-hidden />
-          View-only access. Organization admins can add and manage files.
-        </p>
-      ) : null}
+    <section className="rounded-2xl border border-border/70 bg-zinc-100/80 px-4 py-4 dark:bg-zinc-900/30 sm:px-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground">
+              <FolderOpen className="h-5 w-5" aria-hidden />
+            </span>
+            <h2
+              id="documents-title"
+              className="text-balance text-xl font-semibold text-foreground sm:text-2xl"
+            >
+              Store, track, and act on every key document in one place.
+            </h2>
+          </div>
+          <div className="mt-3 max-w-[68ch] space-y-2 text-sm leading-relaxed text-muted-foreground">
+            <p>
+              {hasRoadmapDocuments
+                ? "This filing system combines roadmap sections, policies, and organization files in one index so your team can find what matters and keep documentation current."
+                : "Keep your organization's policies and core files in one secure index so your team can quickly find, update, and manage required documents."}
+            </p>
+          </div>
+          {!canEdit ? (
+            <div className="mt-3 inline-flex w-fit items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5 text-xs text-muted-foreground">
+              <Lock className="h-3.5 w-3.5" aria-hidden />
+              You have view-only access. Organization admins can upload files and
+              manage policies.
+            </div>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 rounded-lg border border-border/70 bg-background/80 hover:bg-background"
+          onClick={onDismiss}
+          aria-label="Dismiss documents banner"
+        >
+          <XIcon className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
     </section>
   )
 }

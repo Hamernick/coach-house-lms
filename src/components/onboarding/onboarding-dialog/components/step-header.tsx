@@ -4,13 +4,9 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
-import { cn } from "@/lib/utils"
-import { Progress } from "@/components/ui/progress"
 import type { Step } from "../types"
 
 type StepHeaderProps = {
-  compact?: boolean
   stepLabel: string
   currentStep: Step
   isInline: boolean
@@ -18,52 +14,52 @@ type StepHeaderProps = {
 }
 
 export function StepHeader({
-  compact = false,
   stepLabel,
   currentStep,
   isInline,
   progress,
 }: StepHeaderProps) {
   return (
-    <div data-onboarding-motion className={cn("border-border/65 shrink-0 border-b px-4 py-4 md:px-6", compact && "md:px-4")}>
-      <div className={cn("mx-auto w-full max-w-[640px]", compact && "max-w-none")}>
-        <div className="min-w-0">
+    <div className="border-border/70 border-b px-4 py-5 md:px-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-muted-foreground text-xs font-medium">
+            {stepLabel}
+          </p>
           {isInline ? (
-            <h2 className="text-foreground text-xl leading-tight font-semibold tracking-tight">
+            <h2 className="text-foreground mt-1 text-2xl font-semibold">
               {currentStep.title}
             </h2>
           ) : (
             <DialogTitle asChild>
-              <h2 className="text-foreground text-xl leading-tight font-semibold tracking-tight">
+              <h2 className="text-foreground mt-1 text-2xl font-semibold">
                 {currentStep.title}
               </h2>
             </DialogTitle>
           )}
           {isInline ? (
-            <p className="text-muted-foreground mt-0.5 max-w-2xl text-sm leading-5">
+            <p className="text-muted-foreground mt-1 text-sm">
               {currentStep.description}
             </p>
           ) : (
             <DialogDescription asChild>
-              <p className="text-muted-foreground mt-0.5 max-w-2xl text-sm leading-5">
+              <p className="text-muted-foreground mt-1 text-sm">
                 {currentStep.description}
               </p>
             </DialogDescription>
           )}
         </div>
-        <Progress
-          {...getReactGrabOwnerProps({
-            ownerId: "onboarding:progress",
-            component: "StepHeader",
-            source: "src/components/onboarding/onboarding-dialog/components/step-header.tsx",
-            slot: "progress",
-          })}
-          value={progress}
-          aria-label="Setup progress"
-          aria-valuenow={progress}
-          aria-valuetext={stepLabel}
-          className="mt-3 h-1 bg-muted [&_[data-slot=progress-indicator]]:transition-transform motion-reduce:[&_[data-slot=progress-indicator]]:transition-none"
-        />
+        <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+          <div className="bg-muted h-1.5 w-44 overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {progress}%
+          </span>
+        </div>
       </div>
     </div>
   )

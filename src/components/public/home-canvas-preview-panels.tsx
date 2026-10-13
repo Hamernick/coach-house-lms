@@ -5,30 +5,16 @@ import type { ReactNode } from "react"
 import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 import {
+  LegacyHomeAcceleratorOverviewSection,
+  LegacyHomeHeroSection,
+  LegacyHomeImpactSection,
+  LegacyHomeOfferingsSection,
   LegacyHomeProcessSection,
   LegacyHomeTeamSection,
   type LegacyHomeSectionId,
 } from "@/components/public/legacy-home-sections"
-import {
-  HomeCanvasBuildPanel,
-  HomeCanvasFundPanel,
-  HomeCanvasMapHeroPanel,
-} from "@/components/public/home-canvas-product-panels"
-import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
-import { FIND_PATH } from "@/lib/find/routes"
-import {
-  buildPostSignupBuilderRedirect,
-  type SignupBuilderPlanTier,
-  type SignupIntentFocus,
-} from "@/lib/onboarding/signup-plan"
 
-function CanvasPanelShell({
-  children,
-  centered = false,
-}: {
-  children: ReactNode
-  centered?: boolean
-}) {
+function CanvasPanelShell({ children, centered = false }: { children: ReactNode; centered?: boolean }) {
   return (
     <div
       className={
@@ -42,71 +28,29 @@ function CanvasPanelShell({
   )
 }
 
-function getPlanLabel(planTier: SignupBuilderPlanTier | null) {
-  if (planTier === "organization") return "Organization"
-  if (planTier === "operations_support") return "Operations Support"
-  if (planTier === "free") return "Individual"
-  return null
-}
-
-function buildSignupDescription(planTier: SignupBuilderPlanTier | null) {
-  const planLabel = getPlanLabel(planTier)
-  if (planTier === "organization" || planTier === "operations_support") {
-    return `Create your account to continue with ${planLabel}. After email verification, you will go to secure checkout and then workspace onboarding.`
-  }
-  if (planTier === "free") {
-    return "Create your Individual account. After email verification, you will choose your onboarding path and can continue with the free builder workspace."
-  }
-  return "Create a free account. After email verification, you will choose whether you are building, finding, funding, or supporting nonprofit work."
-}
-
-export function CanvasAuthPanel({
-  loginRedirectTo,
-  mode,
-  signupIntentFocus,
-  signupPlanTier = null,
-}: {
-  loginRedirectTo?: string
-  mode: "login" | "signup"
-  signupIntentFocus?: SignupIntentFocus | null
-  signupPlanTier?: SignupBuilderPlanTier | null
-}) {
+export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
   const isLogin = mode === "login"
   const heading = "Create account"
-  const description = buildSignupDescription(signupPlanTier)
-  const builderRedirectTo = buildPostSignupBuilderRedirect({
-    planTier: signupPlanTier,
-    source: "home_signup",
-  })
-  const builderLoginHref = "/home-canvas?section=login"
-  const shouldLockBuilderIntent = signupPlanTier !== null
-  const defaultIntentFocus = signupIntentFocus ?? "build"
+  const description = "Join Coach House and start building your organization workspace."
 
   return (
     <CanvasPanelShell centered>
-      <div className="border-border/60 bg-card/60 w-full max-w-md rounded-2xl border p-5 sm:p-6">
+      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
         {isLogin ? (
           <LoginPanel
-            redirectTo={loginRedirectTo ?? DEFAULT_POST_AUTH_REDIRECT}
+            redirectTo="/organization"
             className="max-w-none space-y-5"
-            signUpHref="/home-canvas?section=signup"
+            signUpHref="/?section=signup"
           />
         ) : (
           <>
-            <div className="mb-3 space-y-1">
-              <h2 className="text-foreground text-2xl font-semibold tracking-tight">
-                {heading}
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {description}
-              </p>
+            <div className="mb-5 space-y-1">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
+              <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <SignUpForm
-              defaultIntentFocus={defaultIntentFocus}
-              lockedIntentFocus={shouldLockBuilderIntent ? "build" : null}
-              builderRedirectTo={builderRedirectTo}
-              memberRedirectTo="/onboarding?source=home_signup"
-              loginHref={builderLoginHref}
+              redirectTo="/organization"
+              loginHref="/?section=login"
             />
           </>
         )}
@@ -115,25 +59,41 @@ export function CanvasAuthPanel({
   )
 }
 
-export function HomeSectionPanel({
-  sectionId,
-  mapboxToken,
-  pricingPanel,
-}: {
-  sectionId: LegacyHomeSectionId
-  mapboxToken?: string
-  pricingPanel?: ReactNode
-}) {
+export function HomeSectionPanel({ sectionId }: { sectionId: LegacyHomeSectionId }) {
   if (sectionId === "hero") {
-    return <HomeCanvasMapHeroPanel mapboxToken={mapboxToken} />
+    return (
+      <CanvasPanelShell centered>
+        <LegacyHomeHeroSection />
+      </CanvasPanelShell>
+    )
+  }
+
+  if (sectionId === "impact") {
+    return (
+      <CanvasPanelShell>
+        <LegacyHomeImpactSection staticText />
+      </CanvasPanelShell>
+    )
   }
 
   if (sectionId === "platform") {
-    return <HomeCanvasBuildPanel pricingPanel={pricingPanel} />
+    return (
+      <CanvasPanelShell>
+        <div className="mx-auto flex w-full justify-center">
+          <LegacyHomeOfferingsSection layout="stacked" />
+        </div>
+      </CanvasPanelShell>
+    )
   }
 
   if (sectionId === "accelerator") {
-    return <HomeCanvasFundPanel />
+    return (
+      <CanvasPanelShell>
+        <div className="mx-auto flex w-full justify-center">
+          <LegacyHomeAcceleratorOverviewSection />
+        </div>
+      </CanvasPanelShell>
+    )
   }
 
   if (sectionId === "process") {
@@ -156,5 +116,9 @@ export function HomeSectionPanel({
     )
   }
 
-  return <HomeCanvasMapHeroPanel mapboxToken={mapboxToken} />
+  return (
+    <CanvasPanelShell centered>
+      <LegacyHomeHeroSection />
+    </CanvasPanelShell>
+  )
 }

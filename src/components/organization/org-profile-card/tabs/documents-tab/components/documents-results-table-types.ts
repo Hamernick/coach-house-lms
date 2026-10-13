@@ -17,16 +17,12 @@ export type DocumentsResultsTableProps = {
   uploadingKind: string | null
   deletingKind: string | null
   viewingKind: string | null
-  downloadingKind: string | null
   deletingPolicyId: string | null
   viewingPolicyDocumentId: string | null
-  downloadingPolicyDocumentId: string | null
   onUpload: (definition: DocumentDefinition, file: File) => Promise<void>
   onDeleteUpload: (definition: DocumentDefinition) => Promise<void>
   onViewUpload: (definition: DocumentDefinition) => Promise<void>
-  onDownloadUpload: (definition: DocumentDefinition) => Promise<void>
   onEditPolicy: (policy: DocumentsPolicyEntry) => void
   onDeletePolicy: (policy: DocumentsPolicyEntry) => Promise<void>
   onViewPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
-  onDownloadPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
 }

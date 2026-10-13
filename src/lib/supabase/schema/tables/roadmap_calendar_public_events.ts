@@ -6,7 +6,6 @@ export type RoadmapCalendarPublicEventsTable = {
     org_id: string
     title: string
     description: string | null
-    event_type: string
     starts_at: string
     ends_at: string | null
     all_day: boolean
@@ -21,7 +20,6 @@ export type RoadmapCalendarPublicEventsTable = {
     org_id: string
     title: string
     description?: string | null
-    event_type?: string
     starts_at: string
     ends_at?: string | null
     all_day?: boolean
@@ -36,7 +34,6 @@ export type RoadmapCalendarPublicEventsTable = {
     org_id?: string
     title?: string
     description?: string | null
-    event_type?: string
     starts_at?: string
     ends_at?: string | null
     all_day?: boolean

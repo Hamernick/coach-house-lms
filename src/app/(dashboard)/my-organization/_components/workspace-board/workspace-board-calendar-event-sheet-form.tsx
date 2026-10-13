@@ -13,11 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SheetFooter } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import {
-  getRoadmapCalendarEventTypeLabel,
-  ROADMAP_CALENDAR_EVENT_TYPES,
-  type RoadmapCalendarRecurrence,
-} from "@/lib/roadmap/calendar"
+import type { RoadmapCalendarRecurrence } from "@/lib/roadmap/calendar"
 
 import type { CalendarEventDraft } from "./workspace-board-calendar-event-sheet-helpers"
 
@@ -61,30 +57,6 @@ export function WorkspaceBoardCalendarEventSheetFormFields({
           }
           placeholder="Agenda, prep notes, or meeting link."
         />
-      </div>
-
-      <div className="grid gap-2">
-        <Label>Type</Label>
-        <Select
-          value={draft.eventType}
-          onValueChange={(nextType) =>
-            setDraft((previous) => ({
-              ...previous,
-              eventType: nextType as CalendarEventDraft["eventType"],
-            }))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROADMAP_CALENDAR_EVENT_TYPES.map((eventType) => (
-              <SelectItem key={eventType} value={eventType}>
-                {getRoadmapCalendarEventTypeLabel(eventType)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid gap-2">

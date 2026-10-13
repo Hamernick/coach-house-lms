@@ -4,11 +4,9 @@ import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 import CalendarIcon from "lucide-react/dist/esm/icons/calendar"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import CompassIcon from "lucide-react/dist/esm/icons/compass"
-import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
-import EyeIcon from "lucide-react/dist/esm/icons/eye"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
+import HandCoinsIcon from "lucide-react/dist/esm/icons/hand-coins"
 import HandIcon from "lucide-react/dist/esm/icons/hand"
-import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
 import LineChartIcon from "lucide-react/dist/esm/icons/line-chart"
 import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
 import MapIcon from "lucide-react/dist/esm/icons/map"
@@ -21,14 +19,12 @@ export const ROADMAP_SECTION_ICONS: Record<string, ComponentType<{ className?: s
   origin_story: BookOpenIcon,
   need: HandIcon,
   mission_vision_values: CompassIcon,
-  vision: EyeIcon,
-  values: HeartHandshakeIcon,
   theory_of_change: SparklesIcon,
   program: RocketIcon,
   evaluation: LineChartIcon,
   people: UsersIcon,
-  budget: DollarSignIcon,
-  fundraising: DollarSignIcon,
+  budget: HandCoinsIcon,
+  fundraising: HandCoinsIcon,
   fundraising_strategy: TargetIcon,
   fundraising_presentation: FileTextIcon,
   fundraising_crm_plan: MapIcon,

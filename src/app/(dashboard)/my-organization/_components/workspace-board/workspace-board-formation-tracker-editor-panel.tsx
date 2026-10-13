@@ -46,10 +46,6 @@ export function WorkspaceBoardFormationTrackerEditorPanel({
   onCancel: () => void
   onSave: () => void
 }) {
-  const normalizedEditCategoryId = activeCategories.some((category) => category.id === editCategoryId)
-    ? editCategoryId
-    : undefined
-
   return (
     <div className="mb-2 space-y-2 rounded-lg border border-border/70 bg-background/60 p-2.5">
       <div className="flex items-center justify-between gap-2">
@@ -98,7 +94,7 @@ export function WorkspaceBoardFormationTrackerEditorPanel({
           className="h-8 text-xs"
           aria-label="Edit objective due date"
         />
-        <Select value={normalizedEditCategoryId} onValueChange={onEditCategoryIdChange}>
+        <Select value={editCategoryId} onValueChange={onEditCategoryIdChange}>
           <SelectTrigger className="h-8 w-full text-xs">
             <SelectValue placeholder="Category" />
           </SelectTrigger>

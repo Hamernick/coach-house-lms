@@ -49,16 +49,12 @@ export type ModuleAssignmentField = {
   orgKey?: string
   roadmapSectionId?: string
   assistContext?: string
-  screen?: "intro" | "question"
   rows?: BudgetTableRow[]
 }
-
-export type ModuleAssignmentCompletionMode = "on_submit" | "all_answered"
 
 export type ModuleAssignment = {
   fields: ModuleAssignmentField[]
   completeOnSubmit: boolean
-  completionMode: ModuleAssignmentCompletionMode
 }
 
 export type ModuleAssignmentSubmission = {
@@ -95,19 +91,6 @@ export type ClassModuleResult = {
   classResources?: ModuleResource[]
   modules: ModuleRecord[]
   progressMap: Record<string, ModuleProgressStatus>
-}
-
-export type ClassModulePageResult = {
-  classId: string
-  classTitle: string
-  classDescription: string | null
-  classSubtitle?: string | null
-  classPublished: boolean
-  classVideoUrl?: string | null
-  classResources?: ModuleResource[]
-  modules: ModuleRecord[]
-  progressMap: Record<string, ModuleProgressStatus>
-  currentModuleId: string | null
 }
 
 export type ModuleProgressInsert = Database["public"]["Tables"]["module_progress"]["Insert"]

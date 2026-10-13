@@ -1,146 +1,102 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
-import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
-import DatabaseIcon from "lucide-react/dist/esm/icons/database"
-import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
-import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
+import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
+import CircleDollarSignIcon from "lucide-react/dist/esm/icons/circle-dollar-sign"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
-import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
-import MailIcon from "lucide-react/dist/esm/icons/mail"
+import LockIcon from "lucide-react/dist/esm/icons/lock"
+import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
-import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
-import ShieldCheckIcon from "lucide-react/dist/esm/icons/shield-check"
+import ShieldIcon from "lucide-react/dist/esm/icons/shield"
+import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
 
-import {
-  listPrototypeLabSidebarTree,
-  type PrototypeLabSidebarTreeNode,
-} from "@/lib/prototype-lab-sidebar-tree"
 import type { SidebarClass } from "@/lib/academy"
-import {
-  hasPlatformCapability,
-  type PlatformAccessLevel,
-} from "@/features/platform-access"
-import { platformLabEnabled } from "@/lib/feature-flags"
 
-type MainNavItem = {
+export function buildMainNav({
+  isAdmin,
+  showOrgAdmin,
+  canAccessOrgAdmin,
+  organizationName,
+}: {
+  isAdmin: boolean
+  showOrgAdmin: boolean
+  canAccessOrgAdmin: boolean
+  organizationName?: string | null
+}): Array<{
   title: string
   href?: string
   icon?: LucideIcon
-  children?: MainNavItem[]
-  tree?: PrototypeLabSidebarTreeNode[]
   locked?: boolean
   badge?: string
   upgradeHref?: string
   upgradeLabel?: string
-}
+}> {
+  const organizationLabel =
+    typeof organizationName === "string" && organizationName.trim().length > 0
+      ? organizationName.trim()
+      : "Organization"
 
-export function buildMainNav({
-  isAdmin,
-  platformAccessLevel = null,
-  showMemberWorkspace = false,
-  hasMemberWorkspaceAccess = true,
-  showWorkspaceHome = true,
-  showPlatformLab = platformLabEnabled,
-}: {
-  isAdmin: boolean
-  platformAccessLevel?: PlatformAccessLevel | null
-  showOrgAdmin: boolean
-  canAccessOrgAdmin: boolean
-  showMemberWorkspace?: boolean
-  hasMemberWorkspaceAccess?: boolean
-  showWorkspaceHome?: boolean
-  showPlatformLab?: boolean
-}): MainNavItem[] {
-  const workspaceHomeItem = showWorkspaceHome
-    ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
-    : []
-  const resolvedPlatformAccessLevel =
-    platformAccessLevel ?? (isAdmin ? "developer" : null)
-  const canAccessOrganizations = hasPlatformCapability(
-    resolvedPlatformAccessLevel,
-    "organizations"
-  )
-  const memberWorkspaceItems: MainNavItem[] = canAccessOrganizations
-    ? [
-        {
-          title: "Organizations",
-          href: "/organizations",
-          icon: FolderKanbanIcon,
-        },
-        { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
-        { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
-        ...(isAdmin
-          ? [{ title: "Email", href: "/email", icon: MailIcon }]
-          : []),
-      ]
-    : []
-  const items: MainNavItem[] = [
-    ...workspaceHomeItem,
-    ...(showMemberWorkspace
-      ? [
-          ...(canAccessOrganizations ? [] : memberWorkspaceItems),
-        ]
-      : []),
+  const items: Array<{
+    title: string
+    href?: string
+    icon?: LucideIcon
+    locked?: boolean
+    badge?: string
+    upgradeHref?: string
+    upgradeLabel?: string
+  }> = [
+    { title: organizationLabel, href: "/organization", icon: BuildingIcon },
+    { title: "People", href: "/people", icon: UsersIcon },
+    { title: "Documents", href: "/organization/documents", icon: LockIcon },
+    { title: "Fundraising", icon: CircleDollarSignIcon, locked: true, badge: "Coming soon" },
   ]
 
-  if (canAccessOrganizations) {
-    items.push({
-      title: "Admin Dashboard",
-      href: "/admin/dashboard",
-      icon: ShieldCheckIcon,
-      children: [
-        ...(showMemberWorkspace ? memberWorkspaceItems : []),
-        ...(isAdmin
-          ? [
-              {
-                title: "Platform",
-                href: "/admin/platform",
-                icon: DatabaseIcon,
-              },
-              ...(showPlatformLab
-                ? [
-                    {
-                      title: "Platform Lab",
-                      href: "/internal/platform-lab",
-                      icon: PanelTopIcon,
-                    },
-                  ]
-                : []),
-              {
-                title: "Prototypes",
-                href: "/admin/platform/prototypes",
-                icon: FlaskConicalIcon,
-                tree: listPrototypeLabSidebarTree(),
-              },
-            ]
-          : []),
-      ],
-    })
+  if (showOrgAdmin) {
+    if (canAccessOrgAdmin) {
+      items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
+    } else {
+      items.push({
+        title: "Admin",
+        icon: ShieldIcon,
+        locked: true,
+        badge: "Upgrade",
+        upgradeLabel: "Upgrade",
+        upgradeHref: "?paywall=organization&plan=organization&upgrade=admin-access&source=nav-admin",
+      })
+    }
   }
   return items
 }
 
 export const RESOURCE_NAV = [
   {
-    name: "Documentation",
-    url: "/documentation",
+    name: "Knowledge base",
+    url: "https://coach-house.gitbook.io/coach-house",
     icon: NotebookIcon,
+    external: true,
+  },
+  {
+    name: "Community",
+    url: "/community",
+    icon: MessageCircleIcon,
+  },
+  {
+    name: "Marketplace",
+    url: "/marketplace",
+    icon: ShoppingBagIcon,
   },
 ]
 
 export const SECONDARY_NAV = [
   {
     title: "Support",
-    url: "mailto:joel@coachhousesolutions.org",
+    url: "mailto:contact@coachhousesolutions.org",
     icon: HelpCircleIcon,
   },
 ]
 
-export function computeActiveOpenMap(
-  pathname: string,
-  classes?: SidebarClass[] | null
-): Record<string, boolean> {
+export function computeActiveOpenMap(pathname: string, classes?: SidebarClass[] | null): Record<string, boolean> {
   const map: Record<string, boolean> = {}
   if (!classes) return map
   const basePath = pathname.startsWith("/accelerator/") ? "/accelerator" : ""
@@ -149,8 +105,7 @@ export function computeActiveOpenMap(
     const classHref = `${basePath}/class/${klass.slug}`
     const isClassActive = pathname === classHref
     const moduleActive = klass.modules.some(
-      (module) =>
-        pathname === `${basePath}/class/${klass.slug}/module/${module.index}`
+      (module) => pathname === `${basePath}/class/${klass.slug}/module/${module.index}`,
     )
     if (isClassActive || moduleActive) {
       map[klass.slug] = true

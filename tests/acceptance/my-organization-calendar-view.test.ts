@@ -8,14 +8,12 @@ function buildEvent(overrides: Partial<UpcomingEvent>): UpcomingEvent {
     id: "event-1",
     title: "Board meeting",
     description: "Monthly board sync",
-    event_type: "board_meeting",
     starts_at: "2026-02-10T15:00:00.000Z",
     ends_at: "2026-02-10T16:00:00.000Z",
     all_day: false,
     recurrence: null,
     status: "active",
     assigned_roles: ["admin", "board"],
-    updated_at: "2026-02-01T12:00:00.000Z",
     ...overrides,
   }
 }

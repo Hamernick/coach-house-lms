@@ -1,629 +1,433 @@
 "use client"
 
-import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
+import Link from "next/link"
+import { useMemo } from "react"
+import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
+import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
+import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
+import CircleIcon from "lucide-react/dist/esm/icons/circle"
+import Clock3Icon from "lucide-react/dist/esm/icons/clock-3"
+import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
+import FileStackIcon from "lucide-react/dist/esm/icons/file-stack"
+import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
+import PlayIcon from "lucide-react/dist/esm/icons/play"
 
-import { useWorkspaceAcceleratorPrefetch } from "../hooks/use-workspace-accelerator-prefetch"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentProps,
-} from "react"
-import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import {
-  buildWorkspaceAcceleratorRuntimeActionsSignature,
-  resolveWorkspaceAcceleratorOpenModuleId,
-} from "../lib"
-import { useWorkspaceAcceleratorCompletion } from "../hooks/use-workspace-accelerator-completion"
 import { useWorkspaceAcceleratorCardController } from "../hooks/use-workspace-accelerator-card-controller"
 import type {
   WorkspaceAcceleratorCardInput,
-  WorkspaceAcceleratorCardRuntimeActions,
-  WorkspaceAcceleratorCardRuntimeSnapshot,
-  WorkspaceAcceleratorCardStep,
-  WorkspaceAcceleratorOpenStepRequest,
-  WorkspaceAcceleratorTutorialCallout,
-  WorkspaceAcceleratorTutorialInteractionPolicy,
+  WorkspaceAcceleratorStepKind,
+  WorkspaceAcceleratorTask,
+  WorkspaceAcceleratorTaskStatus,
 } from "../types"
-import {
-  completeWorkspaceAcceleratorTutorialPreview,
-  shouldWorkspaceAcceleratorTutorialAdvanceAfterStepOpen,
-  shouldWorkspaceAcceleratorSyncModuleViewerSize,
-  shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue,
-  useWorkspaceAcceleratorTutorialViewerState,
-  WorkspaceAcceleratorCardEmptyState,
-  WorkspaceAcceleratorCardFullscreenRail,
-  WorkspaceAcceleratorCardInlinePicker,
-  WorkspaceAcceleratorCardSidebar,
-  WorkspaceAcceleratorDrawerHeaderControls,
-  useModuleViewerSizeSync,
-} from "./workspace-accelerator-card-panel-support"
-import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
-import type { WorkspaceAcceleratorCardPanelProps } from "./workspace-accelerator-card-panel-types"
-import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
-import { WorkspaceAcceleratorStepViewerTransition } from "./workspace-accelerator-step-viewer-transition"
-import {
-  resolveWorkspaceAcceleratorModuleStepNavigation,
-  resolveWorkspaceAcceleratorPlaceholderVideoUrl,
-} from "./workspace-accelerator-module-navigation"
-import {
-  buildAcceleratorRuntimeSnapshot,
-  buildAcceleratorRuntimeSnapshotSignature,
-  buildWorkspaceAcceleratorControllerInput,
-  isWorkspaceAcceleratorOpenStepRequestFulfilled,
-  useWorkspaceAcceleratorRuntimeSync,
-} from "./workspace-accelerator-card-panel-runtime"
-import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
-import { useWorkspaceAcceleratorDrawerScroll } from "./use-workspace-accelerator-drawer-scroll"
 
-// eslint-disable-next-line max-lines-per-function
-export function WorkspaceAcceleratorCardPanel({
-  input,
-  overviewOnly = false,
-  workspaceOverviewNotice = null,
-  roadmapSections = [],
-  roadmapBasePath = "/workspace/roadmap",
-  presentationMode = "embedded",
-  initialModuleViewerOpen = false,
-  initialOpenModuleId = null,
-  openStepRequest = null,
-  onOpenStepRequestHandled,
-  onRuntimeChange,
-  onRuntimeActionsChange,
-  onRequestOpenStep,
-  onModuleViewerClose,
-  tutorialCallout = null,
-  tutorialInteractionPolicy = null,
-  tutorialMode = null,
-  showEmbeddedClassPicker = true,
-  workspaceDrawerHeader = null,
-  drawerContainer = null,
-  onTutorialActionComplete,
-}: WorkspaceAcceleratorCardPanelProps) {
-  const controllerInput = useMemo<WorkspaceAcceleratorCardInput>(
-    () => buildWorkspaceAcceleratorControllerInput(input),
-    [input]
-  )
-  const controller = useWorkspaceAcceleratorCardController(controllerInput)
-  const currentStep = controller.currentStep
-  const stepHrefOverride =
-    typeof controllerInput.linkHrefOverride === "string" &&
-    controllerInput.linkHrefOverride.trim().length > 0
-      ? controllerInput.linkHrefOverride
-      : null
-  const fallbackAcceleratorHref =
-    stepHrefOverride ??
-    (presentationMode === "fullscreen-route"
-      ? "/workspace"
-      : presentationMode === "workspace-drawer"
-        ? "/workspace/accelerator"
-        : "/accelerator")
-  const runtimeStep = useMemo(
-    () =>
-      currentStep
-        ? {
-            ...currentStep,
-            href: stepHrefOverride ?? currentStep.href,
-          }
-        : null,
-    [currentStep, stepHrefOverride]
+type WorkspaceAcceleratorCardPanelProps = {
+  input: WorkspaceAcceleratorCardInput
+}
+
+const TASK_COLUMNS: Array<{ id: WorkspaceAcceleratorTaskStatus; label: string }> = [
+  { id: "todo", label: "To do" },
+  { id: "in_progress", label: "In progress" },
+  { id: "done", label: "Done" },
+]
+
+function resolveStepKindLabel(kind: WorkspaceAcceleratorStepKind) {
+  if (kind === "lesson") return "Lesson"
+  if (kind === "video") return "Video"
+  if (kind === "resources") return "Resources"
+  if (kind === "assignment") return "Assignment"
+  return "Deck"
+}
+
+function formatDueDate(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(parsed)
+}
+
+function TaskCard({
+  task,
+  onToggle,
+  canToggle,
+}: {
+  task: WorkspaceAcceleratorTask
+  onToggle: (taskId: string) => void
+  canToggle: boolean
+}) {
+  const dueLabel = formatDueDate(task.dueAt ?? null)
+  const isDone = task.status === "done"
+  const isInProgress = task.status === "in_progress"
+
+  const content = (
+    <div className="space-y-1">
+      <p className={cn("line-clamp-2 text-[11px] font-medium leading-snug", isDone && "text-muted-foreground line-through")}>
+        {task.title}
+      </p>
+      <div className="flex flex-wrap items-center gap-1">
+        {dueLabel ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            <Clock3Icon className="h-3 w-3" aria-hidden />
+            {dueLabel}
+          </span>
+        ) : null}
+        {task.priority && task.priority !== "normal" ? (
+          <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            {task.priority}
+          </span>
+        ) : null}
+      </div>
+      <span className={cn(
+        "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px]",
+        isDone
+          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          : isInProgress
+            ? "border-blue-500/35 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+            : "border-border/70 bg-background/70 text-muted-foreground",
+      )}>
+        {task.status === "todo" ? "Not started" : task.status === "in_progress" ? "In progress" : "Completed"}
+      </span>
+    </div>
   )
 
-  useWorkspaceAcceleratorPrefetch(fallbackAcceleratorHref, runtimeStep?.href, !overviewOnly)
-
-  const [openModuleId, setOpenModuleId] = useState<string | null>(
-    initialOpenModuleId
-  )
-  const [moduleViewerOpen, setIsModuleViewerOpen] = useState(
-    presentationMode === "fullscreen-route" || initialModuleViewerOpen
-  )
-  const isModuleViewerOpen = !overviewOnly && moduleViewerOpen
-  const workspaceDrawerEmbedded = presentationMode === "workspace-drawer"
-  const {
-    hasScrollableOverflow: workspaceDrawerHasScrollableOverflow,
-    viewportRef: workspaceDrawerScrollRef,
-  } = useWorkspaceAcceleratorDrawerScroll(
-    workspaceDrawerEmbedded && !isModuleViewerOpen
-  )
-  useEffect(() => {
-    if (overviewOnly || !initialOpenModuleId || openStepRequest) return
-    setOpenModuleId(initialOpenModuleId)
-    setIsModuleViewerOpen(true)
-  }, [initialOpenModuleId, openStepRequest, overviewOnly])
-  const previousCurrentModuleIdRef = useRef<string | null>(null)
-  const previousTutorialManagedViewerOpenRef = useRef(false)
-  const pendingFirstModuleTutorialAdvanceRef = useRef(false)
-  const handledOpenStepRequestIdRef = useRef<number | null>(null)
-  const acknowledgedOpenStepRequestIdRef = useRef<number | null>(null)
-  const {
-    selectedLessonGroup,
-    selectedLessonGroupKey,
-    lessonGroupSummaries,
-    checklistModules,
-    filteredSteps,
-    filteredProgressPercent,
-    firstVisibleChecklistStepId,
-    handleLessonGroupChange,
-  } = useWorkspaceAcceleratorLessonGroupState({
-    controller,
-    currentStep,
-    tutorialInteractionPolicy,
-    setOpenModuleId,
-  })
-  useEffect(() => {
-    if (
-      overviewOnly || !openStepRequest ||
-      handledOpenStepRequestIdRef.current === openStepRequest.id
-    ) {
-      return
-    }
-
-    handledOpenStepRequestIdRef.current = openStepRequest.id
-    const requestedStep = controller.steps.find(
-      (step) =>
-        step.id === openStepRequest.stepId &&
-        step.moduleId === openStepRequest.moduleId
+  if (!canToggle) {
+    return (
+      <div className="rounded-md border border-border/60 bg-background/65 px-2 py-1.5">
+        {content}
+      </div>
     )
-    if (requestedStep) {
-      controller.goToStep(requestedStep.id)
-      setOpenModuleId(requestedStep.moduleId)
-      setIsModuleViewerOpen(true)
-    }
-  }, [controller, openStepRequest, setOpenModuleId, overviewOnly])
-  useEffect(() => {
-    if (
-      !openStepRequest ||
-      acknowledgedOpenStepRequestIdRef.current === openStepRequest.id ||
-      !isWorkspaceAcceleratorOpenStepRequestFulfilled({
-        request: openStepRequest,
-        currentStep,
-        isModuleViewerOpen,
-      })
-    ) {
-      return
-    }
-
-    acknowledgedOpenStepRequestIdRef.current = openStepRequest.id
-    onOpenStepRequestHandled?.(openStepRequest.id)
-  }, [
-    currentStep,
-    isModuleViewerOpen,
-    onOpenStepRequestHandled,
-    openStepRequest,
-  ])
-  const placeholderVideoUrl = useMemo(
-    () =>
-      resolveWorkspaceAcceleratorPlaceholderVideoUrl({
-        steps: controller.steps,
-        currentStepId: currentStep?.id,
-      }),
-    [controller.steps, currentStep?.id]
-  )
-  const moduleStepNavigation = useMemo(
-    () =>
-      resolveWorkspaceAcceleratorModuleStepNavigation({
-        steps: controller.steps,
-        currentModuleSteps: controller.currentModuleSteps,
-        currentStepId: currentStep?.id,
-      }),
-    [controller.currentModuleSteps, controller.steps, currentStep?.id]
-  )
-  const { completeModule, completeVideo } = useWorkspaceAcceleratorCompletion({
-    controller, onModuleComplete: input.onModuleComplete,
-  })
-  const goPreviousWithinModule = useCallback(() => {
-    if (!moduleStepNavigation.previousStepId) return
-    controller.goToStep(moduleStepNavigation.previousStepId)
-  }, [controller, moduleStepNavigation.previousStepId])
-  const goNextWithinModule = useCallback(() => {
-    if (!moduleStepNavigation.nextStepId) return
-    controller.markCurrentStepComplete()
-    controller.goToStep(moduleStepNavigation.nextStepId)
-  }, [controller, moduleStepNavigation.nextStepId])
-  const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
-    () => ({
-      goPrevious: goPreviousWithinModule,
-      goNext: goNextWithinModule,
-      markCurrentStepComplete: controller.markCurrentStepComplete,
-      selectLessonGroup: handleLessonGroupChange,
-    }),
-    [
-      handleLessonGroupChange,
-      goNextWithinModule,
-      goPreviousWithinModule,
-      controller.markCurrentStepComplete,
-    ]
-  )
-  const runtimeSnapshot = useMemo<WorkspaceAcceleratorCardRuntimeSnapshot>(
-    () =>
-      buildAcceleratorRuntimeSnapshot({
-        controller,
-        runtimeStep,
-        selectedLessonGroupKey,
-        selectedLessonGroupLabel: selectedLessonGroup?.label ?? null,
-        lessonGroupOptions: lessonGroupSummaries,
-        firstVisibleChecklistStepId,
-        isModuleViewerOpen,
-        openModuleId,
-        placeholderVideoUrl,
-        readinessSummary: controllerInput.readinessSummary,
-        checklistModuleCount: checklistModules.length,
-        filteredStepCount: filteredSteps.length,
-        filteredProgressPercent,
-        canGoPrevious: moduleStepNavigation.canGoPrevious,
-        canGoNext: moduleStepNavigation.canGoNext,
-      }),
-    [
-      controller,
-      controllerInput.readinessSummary,
-      firstVisibleChecklistStepId,
-      filteredProgressPercent,
-      filteredSteps.length,
-      isModuleViewerOpen,
-      lessonGroupSummaries,
-      checklistModules.length,
-      moduleStepNavigation.canGoNext,
-      moduleStepNavigation.canGoPrevious,
-      openModuleId,
-      placeholderVideoUrl,
-      runtimeStep,
-      selectedLessonGroup?.label,
-      selectedLessonGroupKey,
-    ]
-  )
-  const runtimeSnapshotSignature = useMemo(
-    () => buildAcceleratorRuntimeSnapshotSignature(runtimeSnapshot),
-    [runtimeSnapshot]
-  )
-  const runtimeActionsSignature = useMemo(
-    () =>
-      buildWorkspaceAcceleratorRuntimeActionsSignature({
-        currentStepId: runtimeSnapshot.currentStep?.id ?? null,
-        canGoPrevious: runtimeSnapshot.canGoPrevious,
-        canGoNext: runtimeSnapshot.canGoNext,
-        isCurrentStepCompleted: runtimeSnapshot.isCurrentStepCompleted,
-        totalSteps: runtimeSnapshot.totalSteps,
-        selectedLessonGroupKey,
-        lessonGroupCount: lessonGroupSummaries.length,
-      }),
-    [
-      runtimeSnapshot.canGoNext,
-      runtimeSnapshot.canGoPrevious,
-      runtimeSnapshot.currentStep?.id,
-      runtimeSnapshot.isCurrentStepCompleted,
-      runtimeSnapshot.totalSteps,
-      lessonGroupSummaries.length,
-      selectedLessonGroupKey,
-    ]
-  )
-  const checklistModuleIds = useMemo(
-    () => checklistModules.map((module) => module.id),
-    [checklistModules]
-  )
-  const checklistModuleIdsSignature = useMemo(
-    () => checklistModuleIds.join("|"),
-    [checklistModuleIds]
-  )
-  const { onSizeChange, size, readinessSummary } = controllerInput
-  const shouldSyncModuleViewerSize =
-    shouldWorkspaceAcceleratorSyncModuleViewerSize({
-      tutorialCallout,
-      tutorialMode,
-    })
-  const showMilestoneTooltips = tutorialInteractionPolicy === null
-
-  useModuleViewerSizeSync({
-    size,
-    onSizeChange,
-    isModuleViewerOpen,
-    enabled: shouldSyncModuleViewerSize,
-  })
-
-  useEffect(() => {
-    const currentModuleId = currentStep?.moduleId ?? null
-    const previousCurrentModuleId = previousCurrentModuleIdRef.current
-    previousCurrentModuleIdRef.current = currentModuleId
-
-    if (checklistModuleIds.length === 0) {
-      setOpenModuleId((previous) => (previous === null ? previous : null))
-      return
-    }
-
-    const hasCurrentModuleChanged =
-      previousCurrentModuleId !== null &&
-      previousCurrentModuleId !== currentModuleId
-    const shouldForceCurrentModuleOpen =
-      previousCurrentModuleId === null || hasCurrentModuleChanged
-
-    setOpenModuleId((previous) => {
-      const next = resolveWorkspaceAcceleratorOpenModuleId({
-        previousOpenModuleId: previous,
-        visibleModuleIds: checklistModuleIds,
-        currentModuleId,
-        forceCurrentModuleOpen: shouldForceCurrentModuleOpen,
-      })
-      return previous === next ? previous : next
-    })
-  }, [checklistModuleIds, checklistModuleIdsSignature, currentStep?.moduleId])
-
-  useEffect(() => {
-    if (tutorialCallout?.focus !== "first-module") return
-    const nextModuleId =
-      checklistModules
-        .flatMap((module) => module.steps)
-        .find((step) => step.id === firstVisibleChecklistStepId)?.moduleId ??
-      checklistModules[0]?.id ??
-      null
-    if (!nextModuleId) return
-    setOpenModuleId((previous) =>
-      previous === nextModuleId ? previous : nextModuleId
-    )
-  }, [checklistModules, firstVisibleChecklistStepId, tutorialCallout?.focus])
-
-  useWorkspaceAcceleratorTutorialViewerState({
-    currentModuleId: currentStep?.moduleId ?? null,
-    tutorialCallout,
-    tutorialMode,
-    setIsModuleViewerOpen,
-    setOpenModuleId,
-    previousTutorialManagedViewerOpenRef,
-  })
-
-  useWorkspaceAcceleratorRuntimeSync({
-    runtimeSnapshot,
-    runtimeSnapshotSignature,
-    runtimeActions,
-    runtimeActionsSignature,
-    onRuntimeChange,
-    onRuntimeActionsChange,
-  })
-
-  useEffect(() => {
-    if (
-      !shouldWorkspaceAcceleratorTutorialAdvanceAfterStepOpen({
-        tutorialCallout,
-        pendingAdvance: pendingFirstModuleTutorialAdvanceRef.current,
-        isModuleViewerOpen,
-        currentStepId: currentStep?.id ?? null,
-        tutorialTargetStepId: firstVisibleChecklistStepId,
-      })
-    ) {
-      if (tutorialCallout?.focus !== "first-module") {
-        pendingFirstModuleTutorialAdvanceRef.current = false
-      }
-      return
-    }
-
-    pendingFirstModuleTutorialAdvanceRef.current = false
-    onTutorialActionComplete?.("complete-and-advance")
-  }, [
-    currentStep?.id,
-    firstVisibleChecklistStepId,
-    isModuleViewerOpen,
-    onTutorialActionComplete,
-    tutorialCallout,
-  ])
-
-  const handleCloseModuleViewer = () => {
-    if (onModuleViewerClose) {
-      onModuleViewerClose()
-      return
-    }
-    setIsModuleViewerOpen(false)
-    if (tutorialCallout?.focus === "close-module") {
-      onTutorialActionComplete?.("complete-and-advance")
-    }
   }
-
-  const handleCompleteModuleStep = async () => {
-    if (
-      shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(tutorialMode)
-    ) {
-      completeWorkspaceAcceleratorTutorialPreview({
-        setIsModuleViewerOpen,
-        previousTutorialManagedViewerOpenRef,
-        onTutorialActionComplete,
-      })
-      return
-    }
-    if (!(await completeModule())) return
-    if (moduleStepNavigation.nextStepId) {
-      controller.goToStep(moduleStepNavigation.nextStepId)
-    }
-    handleCloseModuleViewer()
-  }
-
-  const handleStepSelect = (step: WorkspaceAcceleratorCardStep) => {
-    if (overviewOnly) return
-    if (
-      !canWorkspaceAcceleratorTutorialActivateStep({
-        tutorialInteractionPolicy,
-        stepId: step.id,
-        moduleId: step.moduleId,
-      })
-    ) {
-      return
-    }
-
-    const canRequestExternalOpen =
-      Boolean(onRequestOpenStep) &&
-      (presentationMode === "fullscreen-route" ||
-        tutorialInteractionPolicy === null)
-    const openRequestResult = canRequestExternalOpen
-      ? onRequestOpenStep?.({
-          step,
-          selectedLessonGroupKey: selectedLessonGroupKey || null,
-        })
-      : undefined
-
-    if (
-      presentationMode === "embedded" &&
-      tutorialInteractionPolicy === null &&
-      onRequestOpenStep &&
-      openRequestResult !== false
-    ) {
-      return
-    }
-
-    controller.goToStep(step.id)
-    setOpenModuleId(step.moduleId)
-    setIsModuleViewerOpen(true)
-    if (
-      tutorialCallout?.focus === "first-module" &&
-      step.id === firstVisibleChecklistStepId
-    ) {
-      pendingFirstModuleTutorialAdvanceRef.current = true
-    }
-  }
-
-  if (!currentStep) {
-    return <WorkspaceAcceleratorCardEmptyState href={fallbackAcceleratorHref} />
-  }
-
-  const fullscreenEmbedded = presentationMode === "fullscreen-route"
-  const sidebarProps = {
-    selectedLessonGroup,
-    tutorialCallout,
-    tutorialInteractionPolicy,
-    filteredProgressPercent,
-    readinessSummary,
-    showMilestoneTooltips,
-    checklistModules,
-    currentStepId: currentStep.id,
-    completedStepIds: controller.completedStepIds,
-    openModuleId,
-    onOpenModuleIdChange: setOpenModuleId,
-    onStepSelect: handleStepSelect,
-    tutorialTargetStepId:
-      tutorialCallout?.focus === "first-module"
-        ? firstVisibleChecklistStepId
-        : null,
-  } satisfies ComponentProps<typeof WorkspaceAcceleratorCardSidebar>
 
   return (
-    <div
-      data-workspace-accelerator-current-step={currentStep.id}
-      data-workspace-accelerator-open-module={openModuleId ?? undefined}
-      className={cn("relative flex h-full min-h-0 flex-1 flex-col overflow-hidden", workspaceDrawerEmbedded && "@container/accelerator-overview")}
+    <button
+      type="button"
+      className="w-full rounded-md border border-border/60 bg-background/65 px-2 py-1.5 text-left transition-colors hover:bg-muted/35"
+      onClick={() => onToggle(task.id)}
+      aria-label={`Advance task: ${task.title}`}
     >
-      {fullscreenEmbedded ? (
-        <WorkspaceAcceleratorCardFullscreenRail
-          {...sidebarProps}
-          lessonGroupOptions={lessonGroupSummaries}
-          selectedLessonGroupKey={selectedLessonGroupKey}
-          viewerOpen={isModuleViewerOpen}
-          onLessonGroupChange={handleLessonGroupChange}
-          roadmapSections={roadmapSections}
-          roadmapBasePath={roadmapBasePath}
-        />
-      ) : null}
-      <div
-        className={cn(
-          "grid min-h-0 flex-1",
-          fullscreenEmbedded ? "gap-0" : "gap-3",
-          !fullscreenEmbedded && isModuleViewerOpen
-            ? workspaceDrawerEmbedded
-              ? "grid-cols-1"
-              : "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
-            : "grid-cols-1"
-        )}
-      >
-        {!fullscreenEmbedded && !(workspaceDrawerEmbedded && isModuleViewerOpen) ? (
-          <ScrollFadeEffect
-            ref={workspaceDrawerScrollRef}
-            enabled={workspaceDrawerHasScrollableOverflow && !workspaceDrawerEmbedded}
-            data-scrollable={
-              workspaceDrawerHasScrollableOverflow ? "true" : undefined
-            }
-            data-workspace-accelerator-drawer-scroll={
-              workspaceDrawerEmbedded ? "true" : undefined
-            }
+      {content}
+    </button>
+  )
+}
+
+export function WorkspaceAcceleratorCardPanel({ input }: WorkspaceAcceleratorCardPanelProps) {
+  const controller = useWorkspaceAcceleratorCardController(input)
+  const currentStep = controller.currentStep
+  const currentModuleStepDisplayIndex = controller.currentModuleStepIndex + 1
+
+  const completedSetupSteps = useMemo(
+    () => controller.steps.filter((step) => step.status === "completed").length,
+    [controller.steps],
+  )
+  const setupProgressPercent =
+    controller.steps.length > 0 ? Math.round((completedSetupSteps / controller.steps.length) * 100) : 0
+
+  const tasksByStatus = useMemo(() => {
+    const groups: Record<WorkspaceAcceleratorTaskStatus, WorkspaceAcceleratorTask[]> = {
+      todo: [],
+      in_progress: [],
+      done: [],
+    }
+    for (const task of controller.tasks) {
+      groups[task.status].push(task)
+    }
+    return groups
+  }, [controller.tasks])
+
+  const todoCount = tasksByStatus.todo.length
+  const inProgressCount = tasksByStatus.in_progress.length
+  const doneCount = tasksByStatus.done.length
+  const totalTaskCount = controller.tasks.length
+  const completedTaskPercent = totalTaskCount > 0 ? Math.round((doneCount / totalTaskCount) * 100) : 0
+
+  const handleTaskToggle = (taskId: string) => {
+    if (!controller.allowTaskUpdates || !controller.onTaskStatusToggle) return
+    controller.onTaskStatusToggle(taskId)
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="inline-flex items-center rounded-full border border-border/70 bg-background/60 p-0.5">
+          <button
+            type="button"
             className={cn(
-              "flex min-h-0 flex-col gap-2",
-              workspaceDrawerEmbedded &&
-                "mx-auto grid w-full min-w-0 max-w-[1200px] auto-rows-max grid-cols-1 content-start items-start gap-6 pt-6 pb-2 sm:pb-3 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]",
-              workspaceDrawerEmbedded && workspaceDrawerHeader && "@min-[900px]/accelerator-overview:grid-cols-[420px_minmax(0,1fr)]"
+              "h-6 rounded-full px-2.5 text-[10px] font-medium transition-colors",
+              controller.mode === "setup"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground",
             )}
+            onClick={() => controller.setMode("setup")}
           >
-            {workspaceDrawerEmbedded ? workspaceDrawerHeader : null}
-            <div className={cn("flex min-w-0 flex-col gap-3", workspaceDrawerEmbedded && "mx-auto w-full max-w-3xl")}>
-              {workspaceOverviewNotice}
-              <div inert={overviewOnly || undefined} aria-label={overviewOnly ? "Accelerator preview — upgrade to access" : undefined}>
-                <WorkspaceAcceleratorCardSidebar
-                  {...sidebarProps}
-                  className={
-                    workspaceDrawerEmbedded ? "mx-auto w-full max-w-3xl" : undefined
-                  }
-                  showProgressSummary={false}
-                  fillAvailableHeight={!workspaceDrawerEmbedded}
-                  headerControls={
-                    workspaceDrawerEmbedded ? (
-                      <WorkspaceAcceleratorDrawerHeaderControls
-                        roadmapReturnTo={getWorkspaceDrawerPath({ tab: "accelerator", group: selectedLessonGroupKey, ...(isModuleViewerOpen ? { moduleId: currentStep.moduleId, stepId: currentStep.id } : {}) })}
-                        roadmapSections={roadmapSections}
-                        roadmapBasePath={roadmapBasePath}
-                        filteredProgressPercent={filteredProgressPercent}
-                        lessonGroupOptions={lessonGroupSummaries}
-                        onLessonGroupChange={handleLessonGroupChange}
-                        readinessSummary={readinessSummary}
-                        selectedLessonGroupKey={selectedLessonGroupKey}
-                        showMilestoneTooltips={showMilestoneTooltips}
-                        showPicker={showEmbeddedClassPicker}
-                        tutorialCallout={tutorialCallout}
-                        tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
-                        viewerOpen={isModuleViewerOpen}
-                      />
-                    ) : null
-                  }
-                  checklistHeaderControls={
-                    !workspaceDrawerEmbedded && showEmbeddedClassPicker ? (
-                      <WorkspaceAcceleratorCardInlinePicker
-                        lessonGroupOptions={lessonGroupSummaries}
-                        selectedLessonGroupKey={selectedLessonGroupKey}
-                        tutorialCallout={tutorialCallout}
-                        tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
-                        viewerOpen={isModuleViewerOpen}
-                        layout="badge"
-                        onLessonGroupChange={handleLessonGroupChange}
-                      />
-                    ) : null
-                  }
-                />
+            Setup
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-6 rounded-full px-2.5 text-[10px] font-medium transition-colors",
+              controller.mode === "tasks"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => controller.setMode("tasks")}
+          >
+            Tasks
+          </button>
+        </div>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {controller.mode === "setup"
+            ? `${completedSetupSteps}/${controller.steps.length || 0} complete`
+            : `${doneCount}/${totalTaskCount || 0} done`}
+        </span>
+      </div>
+
+      {controller.mode === "tasks" ? (
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
+          {totalTaskCount === 0 ? (
+            <div className="flex h-full min-h-0 flex-col justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Team tasks will appear here as you create objectives in the workspace.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="self-start rounded-full text-xs"
+                onClick={() => controller.setMode("setup")}
+              >
+                Open setup
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-lg border border-border/60 bg-background/55 px-2.5 py-2">
+                <p className="text-[11px] font-medium text-foreground">Accelerator tasks</p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span className="rounded-full border border-border/70 px-1.5 py-0.5 tabular-nums">{todoCount} to do</span>
+                  <span className="rounded-full border border-border/70 px-1.5 py-0.5 tabular-nums">{inProgressCount} in progress</span>
+                  <span className="rounded-full border border-border/70 px-1.5 py-0.5 tabular-nums">{doneCount} done</span>
+                  <span className="rounded-full border border-border/70 px-1.5 py-0.5 tabular-nums">{completedTaskPercent}% complete</span>
+                </div>
+              </div>
+
+              <div className="grid min-h-0 flex-1 grid-cols-3 gap-2">
+                {TASK_COLUMNS.map((column) => (
+                  <section
+                    key={column.id}
+                    className="flex min-h-0 flex-col rounded-lg border border-border/60 bg-background/45 p-1.5"
+                    aria-label={`${column.label} tasks`}
+                  >
+                    <p className="px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {column.label}
+                      <span className="ml-1 tabular-nums">
+                        ({tasksByStatus[column.id].length})
+                      </span>
+                    </p>
+                    <div className="mt-1 min-h-0 flex-1 overflow-auto space-y-1 pr-0.5">
+                      {tasksByStatus[column.id].map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onToggle={handleTaskToggle}
+                          canToggle={controller.allowTaskUpdates}
+                        />
+                      ))}
+                      {tasksByStatus[column.id].length === 0 ? (
+                        <div className="rounded-md border border-dashed border-border/60 px-2 py-2 text-[10px] text-muted-foreground">
+                          No tasks
+                        </div>
+                      ) : null}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      ) : !currentStep ? (
+        <div className="flex h-full min-h-0 flex-col justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Accelerator lessons will appear here once your roadmap is available.
+          </p>
+          <Button asChild size="sm" variant="outline" className="self-start rounded-full text-xs">
+            <Link href="/accelerator">
+              Open accelerator
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-[11px] text-muted-foreground">
+                {currentStep.groupTitle} · Module {currentStep.moduleSequenceIndex}/{currentStep.moduleSequenceTotal}
+              </p>
+              <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">{currentStep.moduleTitle}</p>
+            </div>
+            <div className="nodrag nopan flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-full"
+                onClick={controller.goPrevious}
+                disabled={!controller.canGoPrevious}
+                aria-label="Previous accelerator lesson"
+              >
+                <ChevronLeftIcon className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-full"
+                onClick={controller.goNext}
+                disabled={!controller.canGoNext}
+                aria-label="Next accelerator lesson"
+              >
+                <ChevronRightIcon className="h-4 w-4" aria-hidden />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
+              {resolveStepKindLabel(currentStep.stepKind)}
+            </span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              Step {currentModuleStepDisplayIndex}/{Math.max(controller.currentModuleSteps.length, 1)}
+            </span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              ({currentStep.stepSequenceIndex}/{currentStep.stepSequenceTotal})
+            </span>
+          </div>
+
+          {currentStep.stepDescription ? (
+            <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">{currentStep.stepDescription}</p>
+          ) : null}
+
+          {currentStep.stepKind === "lesson" && !currentStep.stepDescription ? (
+            <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-2 text-[11px] text-muted-foreground">
+              Work through this lesson in sequence, then continue to the next step.
+            </div>
+          ) : null}
+
+          {currentStep.stepKind === "video" && currentStep.videoUrl ? (
+            <div className="overflow-hidden rounded-lg border border-border/60 bg-muted/25">
+              <video
+                src={currentStep.videoUrl}
+                className="h-24 w-full object-cover"
+                controls
+                playsInline
+                preload="metadata"
+              />
+            </div>
+          ) : currentStep.stepKind === "video" ? (
+            <div className="grid h-20 place-items-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
+              <PlayIcon className="h-4 w-4" aria-hidden />
+            </div>
+          ) : null}
+
+          {currentStep.stepKind === "resources" && currentStep.resources.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium text-muted-foreground">Resources</p>
+              <div className="space-y-1">
+                {currentStep.resources.slice(0, 3).map((resource) => (
+                  <a
+                    key={resource.id}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 rounded-md border border-border/55 bg-background/70 px-2 py-1 text-[11px] transition-colors hover:bg-muted/25"
+                  >
+                    <FileStackIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate">{resource.title}</span>
+                    <ExternalLinkIcon className="h-3 w-3 text-muted-foreground" aria-hidden />
+                  </a>
+                ))}
+                {currentStep.resources.length > 3 ? (
+                  <p className="px-0.5 text-[10px] text-muted-foreground tabular-nums">
+                    +{currentStep.resources.length - 3} more resources
+                  </p>
+                ) : null}
               </div>
             </div>
-          </ScrollFadeEffect>
-        ) : null}
+          ) : null}
 
-        <WorkspaceAcceleratorStepViewerTransition open={!overviewOnly && isModuleViewerOpen} immediate={workspaceDrawerEmbedded && Boolean(drawerContainer)}>
-          <WorkspaceAcceleratorStepNodeCard
-            variant="embedded"
-            drawerContainer={workspaceDrawerEmbedded ? drawerContainer : null}
-            step={currentStep}
-            placeholderVideoUrl={placeholderVideoUrl}
-            stepIndex={controller.currentModuleStepIndex}
-            stepTotal={Math.max(controller.currentModuleSteps.length, 1)}
-            canGoPrevious={moduleStepNavigation.canGoPrevious}
-            canGoNext={moduleStepNavigation.canGoNext}
-            completed={controller.isCurrentStepCompleted}
-            moduleCompleted={controller.isCurrentModuleCompleted}
-            onPrevious={goPreviousWithinModule}
-            onNext={goNextWithinModule}
-            onVideoComplete={tutorialMode ? undefined : () => void completeVideo()}
-            onComplete={handleCompleteModuleStep}
-            onClose={handleCloseModuleViewer}
-            tutorialCallout={
-              tutorialCallout?.focus === "close-module" ? tutorialCallout : null
-            }
-            tutorialInteractionPolicy={tutorialInteractionPolicy}
-            onWorkspaceOnboardingSubmit={input.onWorkspaceOnboardingSubmit}
-            immersive={fullscreenEmbedded}
-          />
-        </WorkspaceAcceleratorStepViewerTransition>
-      </div>
+          {currentStep.stepKind === "resources" && currentStep.resources.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border/60 bg-background/40 px-2 py-2 text-[11px] text-muted-foreground">
+              No resources attached to this lesson yet.
+            </div>
+          ) : null}
+
+          {currentStep.stepKind === "assignment" ? (
+            <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-2 text-[11px] text-muted-foreground">
+              Submit this lesson assignment to advance progression and unlock next modules.
+            </div>
+          ) : null}
+
+          {currentStep.stepKind === "deck" ? (
+            <div className="rounded-lg border border-border/60 bg-background/60 px-2 py-2 text-[11px] text-muted-foreground">
+              Supporting deck materials are available for this lesson.
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {controller.currentModuleSteps.map((moduleStep, index) => {
+              const active = moduleStep.id === currentStep.id
+              const completed = moduleStep.status === "completed"
+              return (
+                <span
+                  key={moduleStep.id}
+                  className={cn(
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full border px-1.5 text-[10px]",
+                    active
+                      ? "border-foreground/30 bg-foreground/10 text-foreground"
+                      : completed
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-border/70 text-muted-foreground",
+                  )}
+                >
+                  {completed ? (
+                    <CheckCircle2Icon className="h-3.5 w-3.5" aria-hidden />
+                  ) : active ? (
+                    <CircleIcon className="h-3.5 w-3.5 fill-current" aria-hidden />
+                  ) : (
+                    index + 1
+                  )}
+                </span>
+              )
+            })}
+          </div>
+
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              {currentStep.durationMinutes ? (
+                <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground tabular-nums">
+                  {currentStep.durationMinutes} min
+                </span>
+              ) : null}
+              {currentStep.hasAssignment ? (
+                <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <ListChecksIcon className="mr-1 h-3 w-3" aria-hidden />
+                  Assignment
+                </span>
+              ) : null}
+              {currentStep.hasDeck ? (
+                <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  Deck
+                </span>
+              ) : null}
+            </div>
+            <span className="text-[10px] text-muted-foreground tabular-nums">{setupProgressPercent}% setup complete</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

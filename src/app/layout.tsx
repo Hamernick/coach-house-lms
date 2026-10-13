@@ -1,13 +1,24 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import "@fontsource-variable/inter/wght.css"
-import "@fontsource-variable/jetbrains-mono/wght.css"
 import "./globals.css"
+
+import { Inter, JetBrains_Mono } from "next/font/google"
 
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
 import { AppProviders } from "@/components/providers/app-providers"
-import { AppTelemetry } from "@/components/providers/app-telemetry"
 import { getLocale } from "@/lib/locale.server"
+
+const geistSans = Inter({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+  display: "swap",
+})
+
+const geistMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: {
@@ -18,20 +29,10 @@ export const metadata: Metadata = {
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      {
-        url: "/coach-house-logo-dark.png",
-        type: "image/png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/coach-house-logo-light.png",
-        type: "image/png",
-        media: "(prefers-color-scheme: dark)",
-      },
+      { url: "/favicon-light.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-dark.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/coach-house-logo-dark.png",
+    shortcut: "/favicon-light.svg",
   },
 }
 
@@ -46,10 +47,9 @@ export default async function RootLayout({
   return (
     <html lang={language} suppressHydrationWarning>
       <head />
-      <body className="bg-background min-h-screen font-sans antialiased">
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}>
         <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
-        <AppTelemetry />
       </body>
     </html>
   )

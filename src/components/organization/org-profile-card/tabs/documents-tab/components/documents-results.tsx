@@ -26,18 +26,14 @@ type DocumentsResultsProps = {
   uploadingKind: string | null
   deletingKind: string | null
   viewingKind: string | null
-  downloadingKind: string | null
   deletingPolicyId: string | null
   viewingPolicyDocumentId: string | null
-  downloadingPolicyDocumentId: string | null
   onUpload: (definition: DocumentDefinition, file: File) => Promise<void>
   onDeleteUpload: (definition: DocumentDefinition) => Promise<void>
   onViewUpload: (definition: DocumentDefinition) => Promise<void>
-  onDownloadUpload: (definition: DocumentDefinition) => Promise<void>
   onEditPolicy: (policy: DocumentsPolicyEntry) => void
   onDeletePolicy: (policy: DocumentsPolicyEntry) => Promise<void>
   onViewPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
-  onDownloadPolicyDocument: (policy: DocumentsPolicyEntry) => Promise<void>
 }
 
 export function DocumentsResults({
@@ -52,18 +48,14 @@ export function DocumentsResults({
   uploadingKind,
   deletingKind,
   viewingKind,
-  downloadingKind,
   deletingPolicyId,
   viewingPolicyDocumentId,
-  downloadingPolicyDocumentId,
   onUpload,
   onDeleteUpload,
   onViewUpload,
-  onDownloadUpload,
   onEditPolicy,
   onDeletePolicy,
   onViewPolicyDocument,
-  onDownloadPolicyDocument,
 }: DocumentsResultsProps) {
   if (filteredRows.length === 0) {
     return (
@@ -97,18 +89,14 @@ export function DocumentsResults({
         uploadingKind={uploadingKind}
         deletingKind={deletingKind}
         viewingKind={viewingKind}
-        downloadingKind={downloadingKind}
         deletingPolicyId={deletingPolicyId}
         viewingPolicyDocumentId={viewingPolicyDocumentId}
-        downloadingPolicyDocumentId={downloadingPolicyDocumentId}
         onUpload={onUpload}
         onDeleteUpload={onDeleteUpload}
         onViewUpload={onViewUpload}
-        onDownloadUpload={onDownloadUpload}
         onEditPolicy={onEditPolicy}
         onDeletePolicy={onDeletePolicy}
         onViewPolicyDocument={onViewPolicyDocument}
-        onDownloadPolicyDocument={onDownloadPolicyDocument}
       />
       <div className="p-4 sm:p-5 md:hidden">
         <DocumentsResultsMobile
@@ -119,18 +107,14 @@ export function DocumentsResults({
           uploadingKind={uploadingKind}
           deletingKind={deletingKind}
           viewingKind={viewingKind}
-          downloadingKind={downloadingKind}
           deletingPolicyId={deletingPolicyId}
           viewingPolicyDocumentId={viewingPolicyDocumentId}
-          downloadingPolicyDocumentId={downloadingPolicyDocumentId}
           onUpload={onUpload}
           onDeleteUpload={onDeleteUpload}
           onViewUpload={onViewUpload}
-          onDownloadUpload={onDownloadUpload}
           onEditPolicy={onEditPolicy}
           onDeletePolicy={onDeletePolicy}
           onViewPolicyDocument={onViewPolicyDocument}
-          onDownloadPolicyDocument={onDownloadPolicyDocument}
         />
       </div>
     </>

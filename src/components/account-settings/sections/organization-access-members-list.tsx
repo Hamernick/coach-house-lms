@@ -15,11 +15,7 @@ import type {
   OrganizationAccessMember,
   OrganizationMemberRole,
 } from "@/app/actions/organization-access"
-import {
-  formatDate,
-  MEMBER_EDITABLE_ROLES,
-  ROLE_LABELS,
-} from "./organization-access-manager-helpers"
+import { formatDate, INVITEABLE_ROLES, ROLE_LABELS } from "./organization-access-manager-helpers"
 
 type OrganizationAccessMembersListProps = {
   members: OrganizationAccessMember[]
@@ -79,7 +75,7 @@ export function OrganizationAccessMembersList({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEMBER_EDITABLE_ROLES.map((role) => (
+                    {INVITEABLE_ROLES.map((role) => (
                       <SelectItem key={role} value={role}>
                         {ROLE_LABELS[role]}
                       </SelectItem>

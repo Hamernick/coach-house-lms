@@ -4,19 +4,16 @@ import type { CSSProperties, RefObject } from "react"
 
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
-import IdCardIcon from "lucide-react/dist/esm/icons/id-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import { UpgradeButton } from "./upgrade-button"
-import ShieldIcon from "lucide-react/dist/esm/icons/shield"
+import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
+import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 
-import type { AppShellAccountMenuAction } from "@/components/app-shell/account-menu-actions-context"
+import { NavUserTestingSection } from "@/components/nav-user-testing-section"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import type { AccountSettingsTabKey } from "@/components/account-settings/types"
+import type { resolveDevtoolsAccess } from "@/lib/devtools/access"
 
 type NavUserMenuContentProps = {
-  showUpgrade?: boolean
-  planLabel?: string
   open: boolean
   menuRef: RefObject<HTMLDivElement | null>
   menuStyle: CSSProperties | null
@@ -27,19 +24,21 @@ type NavUserMenuContentProps = {
   displayEmail: string
   avatarFallback: string
   isAdmin: boolean
-  showOrgAdmin: boolean
-  canAccessOrgAdmin: boolean
-  accountMenuActions?: AppShellAccountMenuAction[]
+  devtools: ReturnType<typeof resolveDevtoolsAccess>
+  adminPending: boolean
   signOutPending: boolean
-  onOpenUpgrade: () => void
   onCloseMenu: () => void
-  onOpenSettings: (tab?: AccountSettingsTabKey) => void
+  onReplayTutorial: () => void
+  onOpenSettings: () => void
+  onOpenOnboarding: () => void
+  onStartTutorial: (tutorial: "platform" | "accelerator") => void
+  onResetTutorials: () => void
+  onResetOnboarding: () => void
+  onSeedNotifications: () => void
   onSignOut: () => void
 }
 
 export function NavUserMenuContent({
-  showUpgrade = false,
-  planLabel,
   open,
   menuRef,
   menuStyle,
@@ -48,13 +47,17 @@ export function NavUserMenuContent({
   displayEmail,
   avatarFallback,
   isAdmin,
-  showOrgAdmin,
-  canAccessOrgAdmin,
-  accountMenuActions = [],
+  devtools,
+  adminPending,
   signOutPending,
-  onOpenUpgrade,
   onCloseMenu,
+  onReplayTutorial,
   onOpenSettings,
+  onOpenOnboarding,
+  onStartTutorial,
+  onResetTutorials,
+  onResetOnboarding,
+  onSeedNotifications,
   onSignOut,
 }: NavUserMenuContentProps) {
   if (!open || typeof document === "undefined") {
@@ -82,63 +85,37 @@ export function NavUserMenuContent({
             {displayName}
           </span>
           <span className="text-muted-foreground truncate text-xs">
-            {planLabel ?? displayEmail}
+            {displayEmail}
           </span>
         </div>
       </div>
       <div className="bg-border/60 my-2 h-px" />
-      {showUpgrade ? (
-        <UpgradeButton className="mb-1" onClick={() => { onCloseMenu(); onOpenUpgrade() }} />
-      ) : null}
       <Button
         type="button"
         variant="ghost"
         className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-        onClick={() => onOpenSettings("public-profile")}
+        onClick={onReplayTutorial}
       >
-        <IdCardIcon className="size-4" />
-        Public profile
+        <SparklesIcon className="size-4" />
+        Replay tutorial
       </Button>
       <Button
         type="button"
         variant="ghost"
         className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-        onClick={() => onOpenSettings("profile")}
+        onClick={onOpenSettings}
       >
         <CircleUserIcon className="size-4" />
         Account settings
       </Button>
-      {showOrgAdmin && canAccessOrgAdmin ? (
-        <Link
-          href="/admin"
-          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-          onClick={onCloseMenu}
-        >
-          <ShieldIcon className="size-4" />
-          Admin
-        </Link>
-      ) : null}
-      {accountMenuActions.map((action) => {
-        const ActionIcon = action.icon
-
-        return (
-          <Button
-            key={action.id}
-            type="button"
-            variant="ghost"
-            className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
-            onClick={() => {
-              onCloseMenu()
-              action.onSelect()
-            }}
-          >
-            {ActionIcon ? (
-              <ActionIcon className="size-4" aria-hidden />
-            ) : null}
-            {action.label}
-          </Button>
-        )
-      })}
+      <a
+        href="mailto:joel@coachhousesolutions.org?subject=Coach%20House%20Feedback"
+        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+        onClick={onCloseMenu}
+      >
+        <MessageSquareIcon className="size-4" />
+        Submit feedback
+      </a>
       {!isAdmin ? (
         <Link
           href="/billing"
@@ -149,6 +126,16 @@ export function NavUserMenuContent({
           Billing
         </Link>
       ) : null}
+      <NavUserTestingSection
+        devtools={devtools}
+        adminPending={adminPending}
+        onCloseMenu={onCloseMenu}
+        onOpenOnboarding={onOpenOnboarding}
+        onStartTutorial={onStartTutorial}
+        onResetTutorials={onResetTutorials}
+        onResetOnboarding={onResetOnboarding}
+        onSeedNotifications={onSeedNotifications}
+      />
       <div className="bg-border/60 my-2 h-px" />
       <Button
         type="button"

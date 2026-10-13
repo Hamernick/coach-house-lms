@@ -1,15 +1,11 @@
 import { useEffect, type MutableRefObject } from "react"
 
-import { loadActiveOrganizationNameAction } from "@/actions/account-settings"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { useSupabaseClient } from "@/hooks/use-supabase-client"
 
 type ProfileIdentityRow = {
   full_name: string | null
   avatar_url: string | null
-  headline: string | null
-  company: string | null
-  contact: string | null
-  about: string | null
 }
 
 type UseAccountSettingsProfileLoaderArgs = {
@@ -18,30 +14,21 @@ type UseAccountSettingsProfileLoaderArgs = {
   defaultName: string | null
   defaultMarketingOptIn: boolean
   defaultNewsletterOptIn: boolean
+  defaultAcceleratorOverlayEnabled: boolean
   setMarketingOptIn: (value: boolean) => void
   setNewsletterOptIn: (value: boolean) => void
+  setAcceleratorOverlayEnabled: (value: boolean) => void
   setPhone: (value: string) => void
   setAvatarUrl: (value: string | null) => void
   setFirstName: (value: string) => void
   setLastName: (value: string) => void
-  setTitle: (value: string) => void
-  setCompany: (value: string) => void
-  setContact: (value: string) => void
-  setAbout: (value: string) => void
   setOrgName: (value: string) => void
   initialFirstRef: MutableRefObject<string>
   initialLastRef: MutableRefObject<string>
-  initialTitleRef: MutableRefObject<string>
-  initialCompanyRef: MutableRefObject<string>
-  initialContactRef: MutableRefObject<string>
-  initialAboutRef: MutableRefObject<string>
   initialPhoneRef: MutableRefObject<string>
   initialMarketingRef: MutableRefObject<boolean>
   initialNewsletterRef: MutableRefObject<boolean>
-}
-
-function normalizeProfileText(value: string | null | undefined) {
-  return typeof value === "string" ? value.trim() : ""
+  initialAcceleratorOverlayRef: MutableRefObject<boolean>
 }
 
 function splitName(value: string) {
@@ -59,26 +46,21 @@ export function useAccountSettingsProfileLoader({
   defaultName,
   defaultMarketingOptIn,
   defaultNewsletterOptIn,
+  defaultAcceleratorOverlayEnabled,
   setMarketingOptIn,
   setNewsletterOptIn,
+  setAcceleratorOverlayEnabled,
   setPhone,
   setAvatarUrl,
   setFirstName,
   setLastName,
-  setTitle,
-  setCompany,
-  setContact,
-  setAbout,
   setOrgName,
   initialFirstRef,
   initialLastRef,
-  initialTitleRef,
-  initialCompanyRef,
-  initialContactRef,
-  initialAboutRef,
   initialPhoneRef,
   initialMarketingRef,
   initialNewsletterRef,
+  initialAcceleratorOverlayRef,
 }: UseAccountSettingsProfileLoaderArgs) {
   useEffect(() => {
     async function loadMeta() {
@@ -91,12 +73,14 @@ export function useAccountSettingsProfileLoader({
       if (typeof meta.newsletter_opt_in === "boolean") {
         setNewsletterOptIn(meta.newsletter_opt_in)
       }
+      if (typeof meta.accelerator_overlay_enabled === "boolean") {
+        setAcceleratorOverlayEnabled(meta.accelerator_overlay_enabled)
+      }
       if (typeof meta.phone === "string") {
         setPhone(String(meta.phone))
       }
 
-      initialPhoneRef.current =
-        typeof meta.phone === "string" ? String(meta.phone) : ""
+      initialPhoneRef.current = typeof meta.phone === "string" ? String(meta.phone) : ""
       initialMarketingRef.current =
         typeof meta.marketing_opt_in === "boolean"
           ? (meta.marketing_opt_in as boolean)
@@ -105,47 +89,38 @@ export function useAccountSettingsProfileLoader({
         typeof meta.newsletter_opt_in === "boolean"
           ? (meta.newsletter_opt_in as boolean)
           : defaultNewsletterOptIn
+      initialAcceleratorOverlayRef.current =
+        typeof meta.accelerator_overlay_enabled === "boolean"
+          ? (meta.accelerator_overlay_enabled as boolean)
+          : defaultAcceleratorOverlayEnabled
 
       if (data?.user?.id) {
+        const { orgId: activeOrgId } = await resolveActiveOrganization(supabase, data.user.id)
+
         const { data: profileRow } = await supabase
           .from("profiles")
-          .select("full_name, avatar_url, headline, company, contact, about")
+          .select("full_name, avatar_url")
           .eq("id", data.user.id)
           .maybeSingle<ProfileIdentityRow>()
         setAvatarUrl(profileRow?.avatar_url ?? null)
 
-        const profileFullName =
-          typeof profileRow?.full_name === "string"
-            ? profileRow.full_name.trim()
-            : ""
+        const profileFullName = typeof profileRow?.full_name === "string" ? profileRow.full_name.trim() : ""
         const defaultFullName = (defaultName ?? "").trim()
-        const metadataFullName =
-          typeof meta.full_name === "string"
-            ? String(meta.full_name).trim()
-            : ""
-        const resolvedFullName =
-          profileFullName || defaultFullName || metadataFullName
+        const metadataFullName = typeof meta.full_name === "string" ? String(meta.full_name).trim() : ""
+        const resolvedFullName = profileFullName || defaultFullName || metadataFullName
         const { first, last } = splitName(resolvedFullName)
         setFirstName(first)
         setLastName(last)
-        const title = normalizeProfileText(profileRow?.headline)
-        const company = normalizeProfileText(profileRow?.company)
-        const contact = normalizeProfileText(profileRow?.contact)
-        const about = normalizeProfileText(profileRow?.about)
-        setTitle(title)
-        setCompany(company)
-        setContact(contact)
-        setAbout(about)
         initialFirstRef.current = first
         initialLastRef.current = last
-        initialTitleRef.current = title
-        initialCompanyRef.current = company
-        initialContactRef.current = contact
-        initialAboutRef.current = about
 
-        const activeOrganizationName =
-          await loadActiveOrganizationNameAction().catch(() => null)
-        setOrgName(activeOrganizationName ?? "")
+        const { data: orgRow } = await supabase
+          .from("organizations")
+          .select("profile")
+          .eq("user_id", activeOrgId)
+          .maybeSingle<{ profile: Record<string, unknown> | null }>()
+        const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+        setOrgName(String(profile.name ?? ""))
       }
     }
 
@@ -155,26 +130,21 @@ export function useAccountSettingsProfileLoader({
     defaultName,
     defaultMarketingOptIn,
     defaultNewsletterOptIn,
+    defaultAcceleratorOverlayEnabled,
     initialFirstRef,
     initialLastRef,
-    initialTitleRef,
-    initialCompanyRef,
-    initialContactRef,
-    initialAboutRef,
+    initialAcceleratorOverlayRef,
     initialMarketingRef,
     initialNewsletterRef,
     initialPhoneRef,
+    setAcceleratorOverlayEnabled,
     setAvatarUrl,
-    setAbout,
-    setCompany,
-    setContact,
     setFirstName,
     setLastName,
     setMarketingOptIn,
     setNewsletterOptIn,
     setOrgName,
     setPhone,
-    setTitle,
     supabase,
   ])
 }

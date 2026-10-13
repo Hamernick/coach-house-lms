@@ -122,10 +122,10 @@ export function MyOrganizationOverviewCard({
             <Link href="/organization?view=editor">Edit organization</Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="h-9 w-full">
-            <Link href="/workspace">Open workspace</Link>
+            <Link href="/organization/workspace">Open workspace</Link>
           </Button>
           <Button asChild size="sm" variant="ghost" className="h-9 w-full">
-            <Link href="/workspace/present">Open shared workspace</Link>
+            <Link href="/organization/workspace/present">Open shared workspace</Link>
           </Button>
         </div>
       </CardContent>

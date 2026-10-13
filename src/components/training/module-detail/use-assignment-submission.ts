@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { deriveAssignmentInitialValues } from "./assignment-form"
@@ -9,11 +9,7 @@ import {
   buildAssignmentValues,
   type AssignmentValues,
 } from "./utils"
-import type {
-  ModuleAssignmentField,
-  ModuleAssignmentSubmission,
-} from "@/lib/modules"
-import { submitAssignmentWithRecovery } from "./assignment-submission-request"
+import type { ModuleAssignmentField, ModuleAssignmentSubmission } from "@/lib/modules"
 
 interface UseAssignmentSubmissionProps {
   assignmentFields: ModuleAssignmentField[]
@@ -34,19 +30,17 @@ export function useAssignmentSubmission({
   const [formSeed, setFormSeed] = useState<AssignmentValues>(initialFormValues)
   useEffect(() => {
     setFormSeed((prev) =>
-      assignmentValuesEqual(prev, initialFormValues) ? prev : initialFormValues
+      assignmentValuesEqual(prev, initialFormValues) ? prev : initialFormValues,
     )
   }, [initialFormValues])
 
   const [submissionStatus, setSubmissionStatus] = useState<string | null>(
-    submission?.status ?? null
+    submission?.status ?? null,
   )
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(
-    submission?.updatedAt ?? null
-  )
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(submission?.updatedAt ?? null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, startTransition] = useTransition()
 
   useEffect(() => {
     setSubmissionStatus(submission?.status ?? null)
@@ -56,68 +50,77 @@ export function useAssignmentSubmission({
   }, [submission?.status, submission?.updatedAt, moduleId])
 
   const handleSubmit = useCallback(
-    async (values: AssignmentValues, options?: { silent?: boolean }) => {
+    (values: AssignmentValues, options?: { silent?: boolean }) => {
       if (assignmentFields.length === 0) return
       const fieldsSnapshot = assignmentFields
       setMessage(null)
       setError(null)
-      setIsSubmitting(true)
 
-      try {
-        const result = await submitAssignmentWithRecovery({
-          assignmentFields: fieldsSnapshot,
-          moduleId,
-          values,
-        })
+      startTransition(() => {
+        ;(async () => {
+          try {
+            const response = await fetch(`/api/modules/${moduleId}/assignment-submission`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ answers: values }),
+            })
 
-        if (!result.saved) {
-          setError(result.error)
-          return false
-        }
+            if (!response.ok) {
+              let friendly = "Failed to submit assignment."
+              try {
+                const payload = await response.json()
+                if (Array.isArray(payload?.missing) && payload.missing.length > 0) {
+                  friendly = `Please complete: ${payload.missing.join(", ")}`
+                } else if (typeof payload?.error === "string") {
+                  friendly = payload.error
+                }
+              } catch {
+                // ignore parse errors
+              }
+              setError(friendly)
+              return
+            }
 
-        const normalizedAnswers = buildAssignmentValues(
-          fieldsSnapshot,
-          result.answers
-        )
-        setFormSeed(normalizedAnswers)
+            const data = (await response.json()) as {
+              answers?: Record<string, unknown>
+              status?: string | null
+              updatedAt?: string | null
+              completeOnSubmit?: boolean
+            }
 
-        const nextStatus = result.status
-        setSubmissionStatus(nextStatus)
+            const normalizedAnswers = buildAssignmentValues(
+              fieldsSnapshot,
+              data.answers ?? null,
+            )
+            setFormSeed(normalizedAnswers)
 
-        const savedAt = result.updatedAt ?? new Date().toISOString()
-        setLastSavedAt(savedAt)
+            const nextStatus = (data.status ?? "submitted") as string
+            setSubmissionStatus(nextStatus)
 
-        const autoComplete = result.completeOnSubmit
-        if (result.message !== "Saved.") {
-          setMessage(result.message)
-        } else if (!options?.silent) {
-          setMessage(
-            autoComplete
-              ? "Submission saved — this module is now marked complete."
-              : "Submission saved."
-          )
-        } else {
-          setMessage("Saved.")
-        }
-        setError(null)
+            const savedAt = data.updatedAt ?? new Date().toISOString()
+            setLastSavedAt(savedAt)
 
-        const shouldRefresh =
-          autoComplete || (!options?.silent && submissionStatus !== nextStatus)
-        if (shouldRefresh) {
-          router.refresh()
-        }
-        return true
-      } catch (err) {
-        console.error("Assignment submission failed", err)
-        setError(
-          "Unable to save. Your answers remain on this device; try again."
-        )
-        return false
-      } finally {
-        setIsSubmitting(false)
-      }
+            const autoComplete = Boolean(data.completeOnSubmit)
+            if (!options?.silent) {
+              setMessage(
+                autoComplete
+                  ? "Submission saved — this module is now marked complete."
+                  : "Submission saved.",
+              )
+            } else {
+              setMessage(null)
+            }
+            setError(null)
+
+            router.refresh()
+          } catch (err) {
+            console.error("Assignment submission failed", err)
+            setError("Unable to submit assignment. Please try again.")
+          }
+        })()
+      })
     },
-    [assignmentFields, moduleId, router, submissionStatus]
+    [assignmentFields, moduleId, router],
   )
 
   const statusMeta = useMemo(() => {

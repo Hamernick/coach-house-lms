@@ -2,9 +2,6 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 
 export function InputGroup({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex w-full items-stretch gap-2", className)} {...props} />
@@ -16,14 +13,7 @@ export function InputGroupAddon({ className, align = "inline", ...props }: React
 }
 
 export function InputGroupButton({ className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <Button
-      type={props.type ?? "button"}
-      variant="secondary"
-      className={cn("h-9 border px-3", className)}
-      {...props}
-    />
-  )
+  return <button className={cn("inline-flex h-9 items-center rounded-md px-3 text-sm border bg-secondary hover:bg-secondary/80", className)} {...props} />
 }
 
 export function InputGroupText({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
@@ -39,9 +29,9 @@ export function InputGroupText({ className, ...props }: React.HTMLAttributes<HTM
 }
 
 export function InputGroupInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <Input className={cn("flex-1", className)} {...props} />
+  return <input className={cn("flex-1 h-9 rounded-md border bg-background px-3 text-sm", className)} {...props} />
 }
 
 export function InputGroupTextarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <Textarea className={cn("w-full", className)} {...props} />
+  return <textarea className={cn("w-full rounded-md border bg-background p-3 text-sm", className)} {...props} />
 }

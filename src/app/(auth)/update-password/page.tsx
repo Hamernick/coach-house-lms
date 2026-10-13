@@ -1,12 +1,6 @@
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
-import {
-  UpdatePasswordForm,
-  type UpdatePasswordFormStatus,
-  type UpdatePasswordRecoveryError,
-} from "@/components/auth/update-password-form"
-import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { UpdatePasswordForm } from "@/components/auth/update-password-form"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -14,47 +8,16 @@ type UpdatePasswordPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
-function getFirstSearchParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
-function getSafeRecoveryError(value: unknown): UpdatePasswordRecoveryError | null {
-  return value === "invalid_or_expired" || value === "missing_code" ? value : null
-}
-
-export function resolveUpdatePasswordPageState(
-  searchParams: SearchParams,
-  options: { hasServerUser: boolean },
-) {
-  const redirect = getSafeRedirectPath(getFirstSearchParam(searchParams.redirect))
-  const recoveryError = getSafeRecoveryError(getFirstSearchParam(searchParams.recovery_error))
-
-  let initialStatus: UpdatePasswordFormStatus = "checking"
-  if (recoveryError) {
-    initialStatus = "retry"
-  } else if (options.hasServerUser) {
-    initialStatus = "ready"
-  }
-
-  return {
-    redirect,
-    recoveryError,
-    initialStatus,
-  }
+function getSafeRedirect(value: unknown) {
+  if (typeof value !== "string") return undefined
+  if (!value.startsWith("/")) return undefined
+  if (value.startsWith("//")) return undefined
+  return value
 }
 
 export default async function UpdatePasswordPage({ searchParams }: UpdatePasswordPageProps) {
   const resolved = searchParams ? await searchParams : {}
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const pageState = resolveUpdatePasswordPageState(resolved, {
-    hasServerUser: Boolean(user),
-  })
-  const retryHref = pageState.redirect
-    ? `/forgot-password?redirect=${encodeURIComponent(pageState.redirect)}`
-    : "/forgot-password"
+  const redirect = getSafeRedirect(resolved.redirect)
 
   return (
     <AuthScreenShell>
@@ -62,12 +25,7 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
         title="Choose a new password"
         description="Passwords must be at least 8 characters."
       >
-        <UpdatePasswordForm
-          redirectTo={pageState.redirect ?? DEFAULT_POST_AUTH_REDIRECT}
-          initialStatus={pageState.initialStatus}
-          recoveryError={pageState.recoveryError}
-          retryHref={retryHref}
-        />
+        <UpdatePasswordForm redirectTo={redirect ?? "/organization"} />
       </AuthCard>
     </AuthScreenShell>
   )

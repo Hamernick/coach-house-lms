@@ -1,12 +1,8 @@
-import type { OrganizationMemberRole } from "@/app/actions/organization-access"
 import type {
   WorkspaceCollaborationInvite,
   WorkspaceCollaborationInviteStatus,
   WorkspaceDurationUnit,
 } from "./workspace-board-types"
-
-export type WorkspaceInviteAudience = "team" | "temporary"
-export type WorkspaceInviteAccessLevel = "viewer" | "editor"
 
 export function formatDuration(value: number, unit: WorkspaceDurationUnit) {
   const label = value === 1 ? unit.slice(0, -1) : unit
@@ -63,44 +59,4 @@ export function statusLabel(status: WorkspaceCollaborationInviteStatus) {
   if (status === "active") return "Active"
   if (status === "expired") return "Expired"
   return "Revoked"
-}
-
-export function resolveWorkspaceTeamInviteRole(
-  level: WorkspaceInviteAccessLevel,
-): OrganizationMemberRole {
-  return level === "viewer" ? "board" : "staff"
-}
-
-export function isWorkspaceInviteAccessAvailable(
-  audience: WorkspaceInviteAudience,
-  level: WorkspaceInviteAccessLevel,
-) {
-  return audience === "team" || level === "editor"
-}
-
-export function resolveWorkspaceInviteAccessCopy(
-  audience: WorkspaceInviteAudience,
-  level: WorkspaceInviteAccessLevel,
-) {
-  if (audience === "team") {
-    return level === "viewer"
-      ? {
-          title: "Viewer access",
-          description: "Read-only organization access. Invites map to the Board role.",
-        }
-      : {
-          title: "Editor access",
-          description: "Can update workspace and organization details. Invites map to the Staff role.",
-        }
-  }
-
-  return level === "viewer"
-    ? {
-        title: "Temporary viewer access unavailable",
-        description: "Use Team and choose Viewer for read-only access. Temporary invites currently grant editor collaboration only.",
-      }
-    : {
-        title: "Temporary editor access",
-        description: "Grant timed live workspace collaboration to an existing teammate.",
-      }
 }

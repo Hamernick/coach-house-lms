@@ -4,78 +4,43 @@ import HammerIcon from "lucide-react/dist/esm/icons/hammer"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
-import { FORMATION_STATUS_OPTIONS } from "@/lib/organization/formation-status"
-import { RESERVED_PUBLIC_ORGANIZATION_SLUGS } from "@/lib/organization/reserved-public-slugs"
 import type { FormationStatus, IntentFocus, Step } from "./types"
 
 export const FORMATION_OPTIONS: Array<{
   value: FormationStatus
   label: string
   description: string
-}> = FORMATION_STATUS_OPTIONS
+}> = [
+  {
+    value: "pre_501c3",
+    label: "Pre-501(c)(3)",
+    description: "Just getting started.",
+  },
+  {
+    value: "in_progress",
+    label: "In progress",
+    description: "Formation is underway.",
+  },
+  {
+    value: "approved",
+    label: "Approved",
+    description: "We have a determination letter.",
+  },
+]
 
-export const BUILDER_STEPS: Step[] = [
-  {
-    id: "intent",
-    title: "What would you like to do?",
-    description:
-      "Build your organization or connect with nonprofits doing work you care about.",
-  },
-  {
-    id: "pricing",
-    title: "Choose your starting point",
-    description:
-      "Start free with Individual, or choose a plan with team access and guided Accelerator lessons.",
-  },
+export const STEPS: Step[] = [
   {
     id: "org",
-    title: "Name your organization",
+    title: "Create your organization",
     description:
-      "Add your organization’s name, link, and formation status. You can update these later.",
+      "This is your nonprofit’s workspace. You can change this later.",
   },
   {
     id: "account",
     title: "Set up your account",
-    description: "Add your name and choose a username. Everything else is optional.",
-  },
-  {
-    id: "community",
-    title: "Connect with the community",
-    description:
-      "Ask questions and meet other nonprofit builders. Join now or continue without joining.",
+    description: "A few details so we can personalize your workspace.",
   },
 ]
-
-export const MEMBER_STEPS: Step[] = [
-  {
-    id: "intent",
-    title: "What would you like to do?",
-    description:
-      "Build your organization or connect with nonprofits doing work you care about.",
-  },
-  {
-    id: "account",
-    title: "Set up your account",
-    description:
-      "Add your name and choose a username. Everything else is optional.",
-  },
-  {
-    id: "community",
-    title: "Connect with the community",
-    description:
-      "Meet people working with nonprofits. Join now or continue without joining.",
-  },
-]
-
-export const STEPS = BUILDER_STEPS
-
-export function resolveOnboardingSteps(intentFocus: IntentFocus | "") {
-  return intentFocus === "find" ||
-    intentFocus === "fund" ||
-    intentFocus === "support"
-    ? MEMBER_STEPS
-    : BUILDER_STEPS
-}
 
 export type IntentOption = {
   value: IntentFocus
@@ -88,7 +53,7 @@ export type IntentOption = {
 export const INTENT_OPTIONS: IntentOption[] = [
   {
     value: "build",
-    label: "Build a nonprofit",
+    label: "Build nonprofits",
     description: "Set up your organization, roadmap, and operating foundation.",
     available: true,
     icon: HammerIcon,
@@ -97,26 +62,42 @@ export const INTENT_OPTIONS: IntentOption[] = [
     value: "find",
     label: "Find nonprofits",
     description: "Discover organizations, initiatives, and partners.",
-    available: true,
+    available: false,
     icon: SearchIcon,
   },
   {
     value: "fund",
     label: "Fund nonprofits",
-    description: "Connect with nonprofits you want to support.",
-    available: true,
+    description: "Support organizations and track funded outcomes.",
+    available: false,
     icon: CircleDollarSignIcon,
   },
   {
     value: "support",
     label: "Support teams",
-    description: "Connect with nonprofit teams and share your expertise.",
-    available: true,
+    description: "Help operators and teams execute mission-critical work.",
+    available: false,
     icon: UsersIcon,
   },
 ]
 
-export const RESERVED_SLUGS = RESERVED_PUBLIC_ORGANIZATION_SLUGS
+export const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "login",
+  "signup",
+  "pricing",
+  "billing",
+  "class",
+  "dashboard",
+  "people",
+  "organization",
+  "my-organization",
+  "_next",
+  "public",
+  "favicon",
+  "assets",
+])
 
 export const DRAFT_VALUE_KEYS = [
   "intentFocus",
@@ -125,7 +106,6 @@ export const DRAFT_VALUE_KEYS = [
   "orgSlug",
   "firstName",
   "lastName",
-  "personHandle",
   "phone",
   "publicEmail",
   "title",

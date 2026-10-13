@@ -2,7 +2,6 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import type { Json } from "@/lib/supabase"
 import type { NotificationTone } from "@/lib/notifications"
 
 export type { NotificationTone } from "@/lib/notifications"
@@ -16,8 +15,6 @@ export type AppNotification = {
   createdAt: string
   readAt: string | null
   archivedAt: string | null
-  type: string | null
-  metadata: Json | null
 }
 
 type NotificationsListResult =
@@ -55,8 +52,6 @@ function normalizeNotificationRow(row: {
   created_at: string
   read_at: string | null
   archived_at: string | null
-  type: string | null
-  metadata: Json | null
 }): AppNotification {
   return {
     id: row.id,
@@ -67,8 +62,6 @@ function normalizeNotificationRow(row: {
     createdAt: row.created_at,
     readAt: row.read_at,
     archivedAt: row.archived_at,
-    type: row.type,
-    metadata: row.metadata,
   }
 }
 
@@ -84,7 +77,7 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
   if (!user) return { error: "Not authenticated." }
 
   const selectColumns =
-    "id,title,description,href,tone,created_at,read_at,archived_at,type,metadata" as const
+    "id,title,description,href,tone,created_at,read_at,archived_at" as const
 
   const inboxResult = await supabase
     .from("notifications")
@@ -103,8 +96,6 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
         created_at: string
         read_at: string | null
         archived_at: string | null
-        type: string | null
-        metadata: Json | null
       }>
     >()
 
@@ -134,30 +125,6 @@ export async function markNotificationReadAction(
     .update({ read_at: new Date().toISOString() })
     .eq("id", notificationId)
     .eq("user_id", user.id)
-
-  if (updateError) return { error: "Unable to update notification." }
-  return { ok: true }
-}
-
-export async function markNotificationUnreadAction(
-  notificationId: string
-): Promise<NotificationActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error && !isSupabaseAuthSessionMissingError(error))
-    return { error: "Unable to load user." }
-  if (!user) return { error: "Not authenticated." }
-
-  const { error: updateError } = await supabase
-    .from("notifications")
-    .update({ read_at: null })
-    .eq("id", notificationId)
-    .eq("user_id", user.id)
-    .is("archived_at", null)
 
   if (updateError) return { error: "Unable to update notification." }
   return { ok: true }
@@ -227,35 +194,6 @@ export async function archiveAllNotificationsAction(): Promise<NotificationActio
     .is("archived_at", null)
 
   if (updateError) return { error: "Unable to archive notifications." }
-  return { ok: true }
-}
-
-export async function markAllNotificationsReadAction(
-  notificationIds: string[]
-): Promise<NotificationActionResult> {
-  if (!Array.isArray(notificationIds) || notificationIds.length > 50) {
-    return { error: "Invalid notification selection." }
-  }
-  if (notificationIds.length === 0) return { ok: true }
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error && !isSupabaseAuthSessionMissingError(error))
-    return { error: "Unable to load user." }
-  if (!user) return { error: "Not authenticated." }
-
-  const { error: updateError } = await supabase
-    .from("notifications")
-    .update({ read_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .in("id", notificationIds)
-    .is("archived_at", null)
-    .is("read_at", null)
-
-  if (updateError) return { error: "Unable to update notifications." }
   return { ok: true }
 }
 

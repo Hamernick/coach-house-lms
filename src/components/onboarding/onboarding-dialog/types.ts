@@ -1,15 +1,12 @@
-import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
 export type IntentFocus = "build" | "find" | "fund" | "support"
-export type RoleInterest = "staff" | "operator" | "volunteer" | "board_member"
+export type RoleInterest =
+  | "staff"
+  | "operator"
+  | "volunteer"
+  | "board_member"
 
-export type OnboardingStepId =
-  | "intent"
-  | "pricing"
-  | "org"
-  | "account"
-  | "community"
+export type OnboardingStepId = "org" | "account"
 export type OnboardingSlugStatus =
   | "idle"
   | "checking"
@@ -30,9 +27,7 @@ export type OnboardingDraftFlags = {
 }
 
 export type OnboardingDraft = {
-  savedAt?: number
   step?: number
-  stepId?: OnboardingStepId
   formationStatus?: FormationStatus | ""
   intentFocus?: IntentFocus | ""
   roleInterest?: RoleInterest | ""
@@ -42,8 +37,8 @@ export type OnboardingDraft = {
   flags?: OnboardingDraftFlags
 }
 
-export type OnboardingFlowDefaults = {
-  draftScope?: string | null
+export type OnboardingDialogProps = {
+  open: boolean
   defaultEmail?: string | null
   defaultOrgName?: string | null
   defaultOrgSlug?: string | null
@@ -52,7 +47,6 @@ export type OnboardingFlowDefaults = {
   defaultRoleInterest?: RoleInterest | null
   defaultFirstName?: string | null
   defaultLastName?: string | null
-  defaultPersonHandle?: string | null
   defaultPhone?: string | null
   defaultPublicEmail?: string | null
   defaultTitle?: string | null
@@ -60,17 +54,6 @@ export type OnboardingFlowDefaults = {
   defaultAvatarUrl?: string | null
   defaultOptInUpdates?: boolean | null
   defaultNewsletterOptIn?: boolean | null
-  defaultBuilderPlanTier?: PricingPlanTier | null
-}
-
-export type OnboardingFlowVisibleStepId = OnboardingStepId
-export type OnboardingFlowMode =
-  | "full"
-  | "post_signup_access"
-  | "workspace_setup"
-
-export type OnboardingDialogProps = OnboardingFlowDefaults & {
-  open: boolean
   onSubmit: (form: FormData) => Promise<void>
   presentation?: "dialog" | "inline"
 }

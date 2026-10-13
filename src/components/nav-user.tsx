@@ -1,28 +1,21 @@
 "use client"
 
-import { useRef, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 
-import {
-  resolveAppShellAccountMenuActionsForUser,
-  useAppShellAccountMenuActions,
-} from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
-
-import { UpgradeButton } from "./nav-user/upgrade-button"
+import { resetOnboardingCompletionAction } from "@/app/actions/admin-testing"
+import { seedTestNotificationsAction } from "@/app/actions/notifications"
+import { resetAllTutorialsAction } from "@/app/actions/tutorial"
+import { resolveDevtoolsAccess } from "@/lib/devtools/access"
+import { toast } from "@/lib/toast"
 
 import { useNavUserMenu } from "./nav-user/hooks/use-nav-user-menu"
 import { NavUserMenuContent } from "./nav-user/nav-user-menu-content"
-import type { AccountSettingsTabKey } from "./account-settings/types"
-
-const PaywallOverlay = dynamic(
-  () => import("@/components/paywall/paywall-overlay").then((mod) => mod.PaywallOverlay),
-  { ssr: false },
-)
 
 const AccountSettingsDialog = dynamic(
   () =>
@@ -35,8 +28,6 @@ const AccountSettingsDialog = dynamic(
 )
 
 type NavUserProps = {
-  showUpgrade?: boolean
-  planLabel?: string
   user: {
     name: string | null
     title?: string | null
@@ -45,30 +36,19 @@ type NavUserProps = {
   }
   isAdmin?: boolean
   isTester?: boolean
-  showOrgAdmin?: boolean
-  canAccessOrgAdmin?: boolean
   showDivider?: boolean
-  hasActiveSubscription?: boolean
 }
 
 export function NavUser({
-  showUpgrade = false,
-  planLabel,
   user,
   isAdmin = false,
-  showOrgAdmin = false,
-  canAccessOrgAdmin = true,
+  isTester = false,
   showDivider = true,
-  hasActiveSubscription = false,
 }: NavUserProps) {
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
+  const [adminPending, startAdminTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
-  const upgradeTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const [settingsInitialTab, setSettingsInitialTab] =
-    useState<AccountSettingsTabKey>("profile")
-  const registeredAccountMenuActions = useAppShellAccountMenuActions()
   const {
     menuOpen,
     setMenuOpen,
@@ -77,6 +57,26 @@ export function NavUser({
     menuRef,
     menuStyle,
   } = useNavUserMenu()
+
+  function dispatchTutorialStart(tutorial?: "platform" | "accelerator") {
+    if (typeof window === "undefined") return
+    window.dispatchEvent(
+      new CustomEvent(
+        "coachhouse:tutorial:start",
+        tutorial ? { detail: { tutorial } } : undefined
+      )
+    )
+  }
+
+  function dispatchOnboardingStart() {
+    if (typeof window === "undefined") return
+    window.dispatchEvent(new CustomEvent("coachhouse:onboarding:start"))
+  }
+
+  function handleReplayTutorial() {
+    setMenuOpen(false)
+    dispatchTutorialStart("platform")
+  }
 
   function handleSignOut() {
     setMenuOpen(false)
@@ -97,22 +97,12 @@ export function NavUser({
     (normalizedEmail && normalizedEmail.toLowerCase() !== displayName.toLowerCase() ? normalizedEmail : "")
   const displayAvatar = user.avatar ?? null
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
-  const accountMenuActions = resolveAppShellAccountMenuActionsForUser({
-    actions: registeredAccountMenuActions,
-    isAdmin,
-  })
+  const devtools = resolveDevtoolsAccess({ isAdmin, isTester })
 
   return (
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
       <div ref={containerRef} className="relative">
         <SidebarMenu>
-          {showUpgrade ? (
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Upgrade" aria-label="Upgrade" aria-haspopup="dialog">
-                <UpgradeButton ref={upgradeTriggerRef} onClick={() => setUpgradeOpen(true)} />
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ) : null}
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
@@ -160,20 +150,79 @@ export function NavUser({
           user={user}
           displayName={displayName}
           displayEmail={displayEmail}
-          showUpgrade={showUpgrade}
-          planLabel={planLabel}
           avatarFallback={avatarFallback}
           isAdmin={isAdmin}
-          showOrgAdmin={showOrgAdmin}
-          canAccessOrgAdmin={canAccessOrgAdmin}
-          accountMenuActions={accountMenuActions}
+          devtools={devtools}
+          adminPending={adminPending}
           signOutPending={signOutPending}
-          onOpenUpgrade={() => setUpgradeOpen(true)}
           onCloseMenu={() => setMenuOpen(false)}
-          onOpenSettings={(tab = "profile") => {
+          onReplayTutorial={handleReplayTutorial}
+          onOpenSettings={() => {
             setMenuOpen(false)
-            setSettingsInitialTab(tab)
             setSettingsOpen(true)
+          }}
+          onOpenOnboarding={dispatchOnboardingStart}
+          onStartTutorial={dispatchTutorialStart}
+          onResetTutorials={() => {
+            if (adminPending) return
+            setMenuOpen(false)
+            startAdminTransition(async () => {
+              const result = await resetAllTutorialsAction()
+              if ("error" in result) {
+                toast.error(result.error)
+                return
+              }
+
+              if (typeof window !== "undefined") {
+                const tutorials = [
+                  "platform",
+                  "dashboard",
+                  "my-organization",
+                  "roadmap",
+                  "documents",
+                  "billing",
+                  "accelerator",
+                  "people",
+                  "marketplace",
+                ]
+                for (const tutorial of tutorials) {
+                  window.localStorage.removeItem(`coachhouse_tutorial_completed_${tutorial}`)
+                  window.localStorage.removeItem(`coachhouse_tutorial_dismissed_${tutorial}`)
+                }
+                window.localStorage.removeItem("coachhouse_tour_completed")
+              }
+              router.refresh()
+            })
+          }}
+          onResetOnboarding={() => {
+            if (adminPending) return
+            setMenuOpen(false)
+            startAdminTransition(async () => {
+              const result = await resetOnboardingCompletionAction()
+              if ("error" in result) {
+                toast.error(result.error)
+                return
+              }
+
+              if (typeof window !== "undefined") {
+                window.localStorage.removeItem("onboardingDraftV2")
+              }
+              dispatchOnboardingStart()
+              router.refresh()
+            })
+          }}
+          onSeedNotifications={() => {
+            if (adminPending) return
+            setMenuOpen(false)
+            startAdminTransition(async () => {
+              const result = await seedTestNotificationsAction()
+              if ("error" in result) {
+                toast.error(result.error)
+                return
+              }
+              toast.success("Test notifications created.")
+              router.refresh()
+            })
           }}
           onSignOut={() => {
             if (!signOutPending) {
@@ -182,22 +231,14 @@ export function NavUser({
           }}
         />
       </div>
-      {showUpgrade ? (
-        <PaywallOverlay
-          open={upgradeOpen}
-          onOpenChange={setUpgradeOpen}
-          restoreFocus={() => (upgradeTriggerRef.current ?? triggerRef.current)?.focus()}
-        />
-      ) : null}
       <AccountSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        initialTab={settingsInitialTab}
         defaultName={displayName}
         defaultEmail={displayEmail}
         defaultMarketingOptIn={true}
         defaultNewsletterOptIn={true}
-        hasActiveSubscription={hasActiveSubscription}
+        defaultAcceleratorOverlayEnabled={true}
       />
     </div>
   )

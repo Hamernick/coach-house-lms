@@ -9,27 +9,20 @@ import {
   createWorkspaceObjectiveGroupAction,
   loadWorkspaceObjectivesAction,
   setWorkspaceObjectiveAssigneesAction,
+  setWorkspaceObjectiveDetailsAction,
   setWorkspaceObjectiveGroupArchivedAction,
   setWorkspaceObjectiveStatusAction,
 } from "../../_lib/workspace-objectives-actions"
 import {
+  createLocalCategoryState,
+  createLocalTicketState,
   isLegacyOrRuntimeTrackerId,
+  sortTrackerTickets,
   toggleLocalCategoryArchiveState,
   toggleLocalTicketStatusState,
   trimToSingleLine,
+  updateLocalTicketState,
 } from "./workspace-board-formation-tracker-card-helpers"
-import {
-  buildAcceleratorGroups,
-  buildTicketsByCategory,
-  splitTrackerCategories,
-  summarizeTrackerTicketCounts,
-  type AcceleratorGroup,
-} from "./workspace-board-formation-tracker-card-derived"
-import {
-  applyCreateCategoryLocal,
-  applyCreateTicketLocal,
-} from "./workspace-board-formation-tracker-card-local-mutations"
-import { useWorkspaceObjectiveEditorState } from "./workspace-board-formation-tracker-card-editor-state"
 import { resolveNextTicketStatus } from "./workspace-board-formation-tracker-card-ui"
 import {
   mapObjectiveCollectionToTrackerState,
@@ -38,8 +31,238 @@ import {
 import type {
   WorkspaceSeedData,
   WorkspaceTrackerState,
+  WorkspaceTrackerTicket,
   WorkspaceTrackerTicketPriority,
 } from "./workspace-board-types"
+
+export type AcceleratorGroup = {
+  id: string
+  title: string
+  modules: WorkspaceSeedData["formationSummary"]["visibleModules"]
+}
+
+function toDateInputValue(value: string | null) {
+  if (!value) return ""
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ""
+  return parsed.toISOString().slice(0, 10)
+}
+
+function applyCreateCategoryLocal({
+  tracker,
+  title,
+  commitTracker,
+  setDraftTicketCategoryId,
+  setDraftCategoryTitle,
+}: {
+  tracker: WorkspaceTrackerState
+  title: string
+  commitTracker: (next: WorkspaceTrackerState) => void
+  setDraftTicketCategoryId: (value: string) => void
+  setDraftCategoryTitle: (value: string) => void
+}) {
+  const { nextState, nextCategoryId } = createLocalCategoryState({ tracker, title })
+  commitTracker(nextState)
+  setDraftTicketCategoryId(nextCategoryId)
+  setDraftCategoryTitle("")
+}
+
+function applyCreateTicketLocal({
+  tracker,
+  categoryId,
+  title,
+  description,
+  priority,
+  dueAt,
+  assigneeUserIds,
+  commitTracker,
+  setDraftTicketTitle,
+  setDraftTicketDescription,
+  setDraftTicketPriority,
+  setDraftTicketDueDate,
+  setDraftTicketAssigneeId,
+}: {
+  tracker: WorkspaceTrackerState
+  categoryId: string
+  title: string
+  description: string | null
+  priority: WorkspaceTrackerTicketPriority
+  dueAt: string | null
+  assigneeUserIds: string[]
+  commitTracker: (next: WorkspaceTrackerState) => void
+  setDraftTicketTitle: (value: string) => void
+  setDraftTicketDescription: (value: string) => void
+  setDraftTicketPriority: (value: WorkspaceTrackerTicketPriority) => void
+  setDraftTicketDueDate: (value: string) => void
+  setDraftTicketAssigneeId: (value: string) => void
+}) {
+  commitTracker(
+    createLocalTicketState({
+      tracker,
+      categoryId,
+      title,
+      description,
+      priority,
+      dueAt,
+      assigneeUserIds,
+    }),
+  )
+  setDraftTicketTitle("")
+  setDraftTicketDescription("")
+  setDraftTicketPriority("normal")
+  setDraftTicketDueDate("")
+  setDraftTicketAssigneeId("")
+}
+
+function useWorkspaceObjectiveEditorState({
+  members,
+  activeCategories,
+  tracker,
+  canManageObjectives,
+  objectivesMode,
+  commitTracker,
+  refreshObjectives,
+  startObjectivesSync,
+}: {
+  members: WorkspaceSeedData["members"]
+  activeCategories: WorkspaceTrackerState["categories"]
+  tracker: WorkspaceTrackerState
+  canManageObjectives: boolean
+  objectivesMode: "unknown" | "normalized" | "legacy"
+  commitTracker: (next: WorkspaceTrackerState) => void
+  refreshObjectives: (tab: WorkspaceTrackerState["tab"]) => void
+  startObjectivesSync: (action: () => Promise<void>) => void
+}) {
+  const [editingTicketId, setEditingTicketId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editPriority, setEditPriority] = useState<WorkspaceTrackerTicketPriority>("normal")
+  const [editDueDate, setEditDueDate] = useState("")
+  const [editCategoryId, setEditCategoryId] = useState("")
+  const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([])
+
+  const openTicketEditor = (ticketId: string) => {
+    const ticket = tracker.tickets.find((entry) => entry.id === ticketId)
+    if (!ticket) return
+    setEditingTicketId(ticket.id)
+    setEditTitle(ticket.title)
+    setEditDescription(ticket.description ?? "")
+    setEditPriority(ticket.priority)
+    setEditDueDate(toDateInputValue(ticket.dueAt))
+    setEditCategoryId(ticket.categoryId)
+    setEditAssigneeIds(ticket.assigneeUserIds)
+  }
+
+  const closeTicketEditor = () => {
+    setEditingTicketId(null)
+    setEditTitle("")
+    setEditDescription("")
+    setEditPriority("normal")
+    setEditDueDate("")
+    setEditCategoryId("")
+    setEditAssigneeIds([])
+  }
+
+  const toggleEditAssignee = (userId: string) => {
+    setEditAssigneeIds((previous) =>
+      previous.includes(userId) ? previous.filter((entry) => entry !== userId) : [...previous, userId],
+    )
+  }
+
+  const saveTicketEdits = () => {
+    if (!editingTicketId) return
+    const normalizedTitle = trimToSingleLine(editTitle)
+    if (!normalizedTitle) return
+
+    const normalizedDescription = editDescription.trim() || null
+    const normalizedDueAt = editDueDate ? new Date(`${editDueDate}T12:00:00.000Z`).toISOString() : null
+    const normalizedCategoryId = editCategoryId || activeCategories[0]?.id || "general"
+
+    if (
+      !canManageObjectives ||
+      objectivesMode !== "normalized" ||
+      isLegacyOrRuntimeTrackerId(editingTicketId)
+    ) {
+      commitTracker(
+        updateLocalTicketState({
+          tracker,
+          ticketId: editingTicketId,
+          updates: {
+            title: normalizedTitle,
+            description: normalizedDescription,
+            priority: editPriority,
+            dueAt: normalizedDueAt,
+            categoryId: normalizedCategoryId,
+            assigneeUserIds: editAssigneeIds,
+          },
+        }),
+      )
+      closeTicketEditor()
+      return
+    }
+
+    startObjectivesSync(async () => {
+      const detailsResult = await setWorkspaceObjectiveDetailsAction({
+        objectiveId: editingTicketId,
+        title: normalizedTitle,
+        description: normalizedDescription,
+        priority: editPriority,
+        dueAt: normalizedDueAt,
+        groupId: normalizedCategoryId,
+      })
+      if (!detailsResult.ok) {
+        toast.error(detailsResult.error)
+        return
+      }
+
+      const assigneesResult = await setWorkspaceObjectiveAssigneesAction({
+        objectiveId: editingTicketId,
+        userIds: editAssigneeIds,
+      })
+      if (!assigneesResult.ok) {
+        toast.error(assigneesResult.error)
+        return
+      }
+
+      closeTicketEditor()
+      refreshObjectives("objectives")
+    })
+  }
+
+  useEffect(() => {
+    if (!editingTicketId) return
+    const ticket = tracker.tickets.find((entry) => entry.id === editingTicketId)
+    if (!ticket) {
+      closeTicketEditor()
+      return
+    }
+    const allowedCategoryIds = new Set(activeCategories.map((category) => category.id))
+    if (!allowedCategoryIds.has(editCategoryId)) {
+      setEditCategoryId(ticket.categoryId)
+    }
+    const allowedMemberIds = new Set(members.map((member) => member.userId))
+    setEditAssigneeIds((previous) => previous.filter((userId) => allowedMemberIds.has(userId)))
+  }, [activeCategories, editCategoryId, editingTicketId, members, tracker.tickets])
+
+  return {
+    editingTicketId,
+    editTitle,
+    editDescription,
+    editPriority,
+    editDueDate,
+    editCategoryId,
+    editAssigneeIds,
+    setEditTitle,
+    setEditDescription,
+    setEditPriority,
+    setEditDueDate,
+    setEditCategoryId,
+    openTicketEditor,
+    closeTicketEditor,
+    toggleEditAssignee,
+    saveTicketEdits,
+  }
+}
 
 export function useWorkspaceBoardFormationTrackerController({
   seed,
@@ -67,15 +290,19 @@ export function useWorkspaceBoardFormationTrackerController({
   const [isSyncingObjectives, startObjectivesSync] = useTransition()
   const didHydrateObjectivesRef = useRef(false)
 
-  const acceleratorGroups = useMemo<AcceleratorGroup[]>(
-    () => buildAcceleratorGroups(seed),
-    [seed],
-  )
+  const acceleratorGroups = useMemo<AcceleratorGroup[]>(() => {
+    const next: AcceleratorGroup[] = []
+    if (seed.formationSummary.visibleModules.length > 0) {
+      next.push({ id: "formation", title: "Formation", modules: seed.formationSummary.visibleModules })
+    }
+    if (seed.formationSummary.acceleratorModules.length > 0) {
+      next.push({ id: "electives", title: "Electives", modules: seed.formationSummary.acceleratorModules })
+    }
+    return next
+  }, [seed.formationSummary.acceleratorModules, seed.formationSummary.visibleModules])
 
-  const { activeCategories, archivedCategories } = useMemo(
-    () => splitTrackerCategories(tracker),
-    [tracker],
-  )
+  const activeCategories = tracker.categories.filter((category) => !category.archived)
+  const archivedCategories = tracker.categories.filter((category) => category.archived)
 
   useEffect(() => {
     if (draftTicketCategoryId && activeCategories.some((category) => category.id === draftTicketCategoryId)) {
@@ -90,37 +317,42 @@ export function useWorkspaceBoardFormationTrackerController({
     if (!exists) setDraftTicketAssigneeId("")
   }, [draftTicketAssigneeId, seed.members])
 
-  const ticketsByCategory = useMemo(
-    () => buildTicketsByCategory(tracker.tickets),
-    [tracker.tickets],
+  const ticketsByCategory = useMemo(() => {
+    const map = new Map<string, WorkspaceTrackerTicket[]>()
+    const sortedTickets = sortTrackerTickets(tracker.tickets)
+    for (const ticket of sortedTickets) {
+      if (ticket.archived) continue
+      const list = map.get(ticket.categoryId) ?? []
+      list.push(ticket)
+      map.set(ticket.categoryId, list)
+    }
+    return map
+  }, [tracker.tickets])
+
+  const openTicketCount = tracker.tickets.filter((ticket) => !ticket.archived && ticket.status !== "done").length
+  const doneTicketCount = tracker.tickets.filter((ticket) => !ticket.archived && ticket.status === "done").length
+
+  const commitTracker = useCallback(
+    (next: WorkspaceTrackerState) => onTrackerChange(next),
+    [onTrackerChange],
   )
 
-  const { openTicketCount, doneTicketCount } = useMemo(
-    () => summarizeTrackerTicketCounts(tracker.tickets),
-    [tracker.tickets],
-  )
+  const refreshObjectives = useCallback((tabOverride: WorkspaceTrackerState["tab"]) => {
+    startObjectivesSync(async () => {
+      const result = await loadWorkspaceObjectivesAction()
+      if (!result.ok) return
 
-  const commitTracker = useCallback((next: WorkspaceTrackerState) => onTrackerChange(next), [onTrackerChange])
+      if (result.data.loadedFrom === "normalized") setObjectivesMode("normalized")
+      else setObjectivesMode("legacy")
 
-  const refreshObjectives = useCallback(
-    (tabOverride: WorkspaceTrackerState["tab"]) => {
-      startObjectivesSync(async () => {
-        const result = await loadWorkspaceObjectivesAction()
-        if (!result.ok) return
-
-        if (result.data.loadedFrom === "normalized") setObjectivesMode("normalized")
-        else setObjectivesMode("legacy")
-
-        commitTracker(
-          mapObjectiveCollectionToTrackerState({
-            collection: result.data,
-            tab: tabOverride,
-          }),
-        )
-      })
-    },
-    [commitTracker],
-  )
+      commitTracker(
+        mapObjectiveCollectionToTrackerState({
+          collection: result.data,
+          tab: tabOverride,
+        }),
+      )
+    })
+  }, [commitTracker])
 
   useEffect(() => {
     if (didHydrateObjectivesRef.current) return
@@ -186,7 +418,11 @@ export function useWorkspaceBoardFormationTrackerController({
     const category = tracker.categories.find((entry) => entry.id === categoryId)
     if (!category) return
 
-    if (!canManageObjectives || objectivesMode !== "normalized" || isLegacyOrRuntimeTrackerId(categoryId)) {
+    if (
+      !canManageObjectives ||
+      objectivesMode !== "normalized" ||
+      isLegacyOrRuntimeTrackerId(categoryId)
+    ) {
       commitTracker(toggleLocalCategoryArchiveState({ tracker, categoryId }))
       return
     }
@@ -270,7 +506,11 @@ export function useWorkspaceBoardFormationTrackerController({
     const ticket = tracker.tickets.find((entry) => entry.id === ticketId)
     if (!ticket) return
 
-    if (!canManageObjectives || objectivesMode !== "normalized" || isLegacyOrRuntimeTrackerId(ticketId)) {
+    if (
+      !canManageObjectives ||
+      objectivesMode !== "normalized" ||
+      isLegacyOrRuntimeTrackerId(ticketId)
+    ) {
       commitTracker(
         toggleLocalTicketStatusState({
           tracker,

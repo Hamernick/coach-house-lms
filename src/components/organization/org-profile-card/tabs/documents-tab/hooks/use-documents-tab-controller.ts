@@ -23,11 +23,15 @@ export function useDocumentsTabController({
   policyPeopleOptions,
   roadmapSections,
 }: UseDocumentsTabControllerArgs) {
-  const { documentsState, setDocumentsState, policiesState, setPoliciesState } =
-    useDocumentsTabState({
-      documents,
-      policyEntries,
-    })
+  const {
+    documentsState,
+    setDocumentsState,
+    policiesState,
+    setPoliciesState,
+  } = useDocumentsTabState({
+    documents,
+    policyEntries,
+  })
 
   const {
     clearPendingPolicyDocument,
@@ -50,7 +54,7 @@ export function useDocumentsTabController({
     togglePolicyCategory,
   } = usePolicyDraftState()
 
-  const { isBannerVisible } = useDocumentsBannerState({ userId })
+  const { isBannerVisible, handleDismissBanner } = useDocumentsBannerState({ userId })
 
   const {
     activeFilters,
@@ -78,17 +82,12 @@ export function useDocumentsTabController({
   const {
     deletingKind,
     deletingPolicyId,
-    downloadingKind,
-    downloadingPolicyDocumentId,
-    downloadPolicyDocument,
     handleDelete,
-    handleDownload,
     handleDeletePolicy,
     handleSavePolicy,
     handleUpload,
     handleView,
     policySavePending,
-    removePolicyDocumentFile,
     uploadingKind,
     viewingKind,
     viewingPolicyDocumentId,
@@ -114,14 +113,10 @@ export function useDocumentsTabController({
     deletingKind,
     deletingPolicyId,
     documentsState,
-    policiesState,
-    downloadingKind,
-    downloadingPolicyDocumentId,
-    downloadPolicyDocument,
     filteredRows,
     handleDelete,
-    handleDownload,
     handleDeletePolicy,
+    handleDismissBanner,
     handlePolicyDialogOpenChange,
     handleSavePolicy,
     handleSortColumnChange,
@@ -140,7 +135,6 @@ export function useDocumentsTabController({
     policyDraft,
     policySavePending,
     removePolicyCategory,
-    removePolicyDocumentFile,
     searchQuery,
     selectPolicyDocument,
     setPolicyDraft,

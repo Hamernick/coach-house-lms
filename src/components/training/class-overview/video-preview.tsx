@@ -4,7 +4,6 @@ import { useState } from "react"
 import Image from "next/image"
 
 import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { Button } from "@/components/ui/button"
 
 export function getYouTubeId(raw: string | null | undefined): string | null {
   if (!raw) return null
@@ -44,11 +43,10 @@ export function LazyYouTube({ id }: { id: string }) {
             className="h-full w-full"
           />
         ) : (
-          <Button
+          <button
             type="button"
-            variant="ghost"
             onClick={() => setPlay(true)}
-            className="group relative h-full w-full rounded-none p-0 hover:bg-transparent"
+            className="group relative h-full w-full"
             aria-label="Play video"
           >
             <Image
@@ -66,7 +64,7 @@ export function LazyYouTube({ id }: { id: string }) {
                 </svg>
               </span>
             </span>
-          </Button>
+          </button>
         )}
       </AspectRatio>
     </div>

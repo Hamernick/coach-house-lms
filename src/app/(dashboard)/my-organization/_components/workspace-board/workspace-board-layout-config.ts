@@ -1,4 +1,3 @@
-import { resolveWorkspaceDefaultHiddenCardIds } from "@/lib/workspace-card-policy"
 import type {
   WorkspaceCardId,
   WorkspaceCardSize,
@@ -10,142 +9,117 @@ export type CardDimensions = {
   height: number
 }
 
-export type WorkspaceCardNodeStyle = {
-  width: number
-  height?: number
-  minHeight?: number
-}
-
-const AUTO_HEIGHT_CARD_IDS = new Set<WorkspaceCardId>([
-  "accelerator",
-  "fiscal-sponsorship",
-  "organization-overview",
-  "programs",
-  "roadmap",
-  "deck",
-  "calendar",
-  "communications",
-])
-
 export const CARD_DIMENSIONS: Record<WorkspaceCardSize, CardDimensions> = {
   sm: { width: 320, height: 300 },
   md: { width: 440, height: 400 },
-  lg: { width: 560, height: 500 },
 }
 
-const FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS = {
-  width: 440,
-  height: 456,
-} satisfies CardDimensions
-
 export const CARD_DIMENSION_OVERRIDES: Partial<
-  Record<
-    WorkspaceCardId,
-    Partial<Record<WorkspaceCardSize, Partial<CardDimensions>>>
-  >
+  Record<WorkspaceCardId, Partial<Record<WorkspaceCardSize, Partial<CardDimensions>>>>
 > = {
   "organization-overview": {
-    md: { width: 552, height: 452 },
+    md: { height: 296 },
   },
-  programs: {
-    md: { height: 620 },
-    lg: { width: 560, height: 700 },
-  },
-  accelerator: {
-    sm: { width: 520, height: 252 },
-    md: { width: 640, height: 520 },
-    lg: { width: 1180, height: 720 },
-  },
-  roadmap: {
-    sm: { height: 560 },
-    md: { height: 600 },
-    lg: { height: 680 },
+  "formation-status": {
+    sm: { height: 252 },
+    md: { height: 340 },
   },
   "brand-kit": {
-    sm: { height: 360 },
-    md: { height: 396 },
+    sm: { height: 264 },
+    md: { height: 292 },
   },
   "economic-engine": {
     md: { height: 216 },
   },
   calendar: {
-    sm: { height: 432 },
-    md: { height: 500 },
+    sm: { height: 320 },
   },
   communications: {
-    sm: { width: 440, height: 456 },
-    md: { width: 560, height: 620 },
-    lg: { width: 640, height: 720 },
+    sm: { height: 228 },
+    md: { height: 236 },
   },
   deck: {
-    md: { width: 552, height: 708 },
-    lg: { width: 560, height: 780 },
+    sm: { height: 332 },
+  },
+  vault: {
+    sm: { height: 344 },
+    md: { height: 392 },
   },
   atlas: {
-    sm: { width: 400, height: 372 },
-    md: { width: 520, height: 428 },
-  },
-  "fiscal-sponsorship": {
-    sm: FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS,
-    md: FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS,
+    sm: { height: 252 },
+    md: { height: 304 },
   },
 }
 
 export const DASHBOARD_GRID_ROWS: WorkspaceCardId[][] = [
-  ["organization-overview", "programs", "roadmap", "calendar"],
-  ["accelerator", "deck", "brand-kit", "economic-engine"],
-  ["communications", "atlas", "fiscal-sponsorship"],
+  ["formation-status", "organization-overview", "calendar"],
+  ["brand-kit", "economic-engine", "communications"],
+  ["deck", "vault", "atlas"],
 ]
-
-const CALENDAR_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
-  ["organization-overview", "programs", "calendar", "accelerator"],
-  ["roadmap", "deck", "communications", "economic-engine"],
-  ["brand-kit", "atlas", "fiscal-sponsorship"],
-]
-
-const COMMUNICATIONS_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
-  ["organization-overview", "programs", "communications", "accelerator"],
-  ["roadmap", "deck", "calendar", "economic-engine"],
-  ["brand-kit", "atlas", "fiscal-sponsorship"],
-]
-
-export const PRESET_GRID_ROWS: Record<
-  WorkspaceLayoutPreset,
-  WorkspaceCardId[][]
-> = {
-  balanced: DASHBOARD_GRID_ROWS,
-  "calendar-focused": CALENDAR_FOCUSED_GRID_ROWS,
-  "communications-focused": COMMUNICATIONS_FOCUSED_GRID_ROWS,
-}
 
 export const DASHBOARD_GRID_GAP_X = 32
 export const DASHBOARD_GRID_GAP_Y = 32
 export const DASHBOARD_GRID_MARGIN_X = 72
 export const DASHBOARD_GRID_MARGIN_Y = 72
 
+export const PRESET_NODE_LAYOUTS: Record<
+  WorkspaceLayoutPreset,
+  Record<WorkspaceCardId, { x: number; y: number }>
+> = {
+  balanced: {
+    "organization-overview": { x: 96, y: 96 },
+    "formation-status": { x: 584, y: 96 },
+    calendar: { x: 1072, y: 146 },
+    "brand-kit": { x: 156, y: 544 },
+    "economic-engine": { x: 584, y: 496 },
+    communications: { x: 952, y: 496 },
+    deck: { x: 148, y: 968 },
+    vault: { x: 552, y: 952 },
+    atlas: { x: 1032, y: 1008 },
+  },
+  "calendar-focused": {
+    "organization-overview": { x: 760, y: 250 },
+    "formation-status": { x: 120, y: 80 },
+    "brand-kit": { x: 180, y: 520 },
+    "economic-engine": { x: 1540, y: 350 },
+    calendar: { x: 1010, y: 40 },
+    communications: { x: 1010, y: 420 },
+    deck: { x: 1480, y: 760 },
+    vault: { x: 940, y: 830 },
+    atlas: { x: 360, y: 940 },
+  },
+  "communications-focused": {
+    "organization-overview": { x: 760, y: 250 },
+    "formation-status": { x: 120, y: 80 },
+    "brand-kit": { x: 180, y: 520 },
+    "economic-engine": { x: 1540, y: 330 },
+    calendar: { x: 1110, y: 40 },
+    communications: { x: 960, y: 300 },
+    deck: { x: 1510, y: 740 },
+    vault: { x: 126, y: 930 },
+    atlas: { x: 660, y: 930 },
+  },
+}
+
 export const DEFAULT_CARD_SIZES: Record<WorkspaceCardId, WorkspaceCardSize> = {
   "organization-overview": "md",
-  programs: "md",
-  accelerator: "sm",
-  roadmap: "sm",
+  "formation-status": "sm",
   "brand-kit": "sm",
   "economic-engine": "md",
   calendar: "sm",
   communications: "md",
   deck: "md",
+  vault: "sm",
   atlas: "md",
-  "fiscal-sponsorship": "sm",
 }
 
-export const DEFAULT_HIDDEN_CARD_IDS: WorkspaceCardId[] = [
-  ...resolveWorkspaceDefaultHiddenCardIds(),
-]
+export const DEFAULT_HIDDEN_CARD_IDS: WorkspaceCardId[] = ["deck", "atlas"]
 
 export const AUTO_LAYOUT_SNAP = 8
 
 export function resolveCardDimensions(
   size: WorkspaceCardSize,
-  cardId?: WorkspaceCardId
+  cardId?: WorkspaceCardId,
 ): CardDimensions {
   const base = CARD_DIMENSIONS[size]
   if (!cardId) return base
@@ -157,71 +131,6 @@ export function resolveCardDimensions(
     width: override.width ?? base.width,
     height: override.height ?? base.height,
   }
-}
-
-export function resolveWorkspaceCardNodeStyle(
-  size: WorkspaceCardSize,
-  cardId?: WorkspaceCardId
-): WorkspaceCardNodeStyle {
-  const dimensions = resolveCardDimensions(size, cardId)
-
-  if (isWorkspaceCardAutoHeight(cardId)) {
-    return {
-      width: dimensions.width,
-    }
-  }
-
-  return {
-    width: dimensions.width,
-    height: dimensions.height,
-    minHeight: dimensions.height,
-  }
-}
-
-export function isWorkspaceCardAutoHeight(cardId?: WorkspaceCardId) {
-  return cardId ? AUTO_HEIGHT_CARD_IDS.has(cardId) : false
-}
-
-export function resolveWorkspaceCardHeightModeClassName(
-  cardId?: WorkspaceCardId
-) {
-  return isWorkspaceCardAutoHeight(cardId) ? "h-auto" : "h-full"
-}
-
-export function resolveWorkspaceCardCanvasShellStyle({
-  size,
-  cardId,
-  isCanvasFullscreen = false,
-}: {
-  size: WorkspaceCardSize
-  cardId?: WorkspaceCardId
-  isCanvasFullscreen?: boolean
-}) {
-  const canvasNodeStyle = resolveWorkspaceCardNodeStyle(size, cardId)
-
-  if (isCanvasFullscreen || isWorkspaceCardAutoHeight(cardId)) {
-    return undefined
-  }
-
-  return {
-    minHeight: canvasNodeStyle.minHeight,
-    height: canvasNodeStyle.height,
-  }
-}
-
-export function resolveWorkspaceCardCanvasShellClassName({
-  cardId,
-  isCanvasFullscreen = false,
-}: {
-  size: WorkspaceCardSize
-  cardId?: WorkspaceCardId
-  isCanvasFullscreen?: boolean
-}) {
-  if (isCanvasFullscreen) {
-    return "h-full w-full max-w-none rounded-none border-0 shadow-none"
-  }
-
-  return resolveWorkspaceCardHeightModeClassName(cardId)
 }
 
 export function roundToSnap(value: number) {

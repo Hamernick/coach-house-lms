@@ -1,27 +1,21 @@
 import type { ModuleCard } from "@/lib/accelerator/progress"
 import type {
   RoadmapCalendarAssignedRole,
-  RoadmapCalendarEventType,
   RoadmapCalendarRecurrence,
 } from "@/lib/roadmap/calendar"
 
-export type MyOrganizationSearchParams = Record<
-  string,
-  string | string[] | undefined
->
+export type MyOrganizationSearchParams = Record<string, string | string[] | undefined>
 
 export type UpcomingEvent = {
   id: string
   title: string
   description: string | null
-  event_type: RoadmapCalendarEventType
   starts_at: string
   ends_at: string | null
   all_day: boolean
   recurrence: RoadmapCalendarRecurrence | null
   status: "active" | "canceled"
   assigned_roles: RoadmapCalendarAssignedRole[]
-  updated_at: string
 }
 
 export type FormationStepState = "completed" | "active" | "pending"

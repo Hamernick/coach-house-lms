@@ -1,14 +1,12 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -32,40 +30,14 @@ const schema = z
 
 type UpdatePasswordValues = z.infer<typeof schema>
 
-export type UpdatePasswordFormStatus = "checking" | "ready" | "retry"
-export type UpdatePasswordRecoveryError = "invalid_or_expired" | "missing_code"
-
-export function getUpdatePasswordRetryMessage(
-  recoveryError?: UpdatePasswordRecoveryError | null,
-) {
-  switch (recoveryError) {
-    case "missing_code":
-      return "This reset link is incomplete. Request a new reset email and try again."
-    case "invalid_or_expired":
-      return "This reset link is invalid or expired. Request a new reset email to continue."
-    default:
-      return "Reset links are single-use. Request a new reset email to update your password."
-  }
-}
-
 type UpdatePasswordFormProps = {
   redirectTo?: string
-  initialStatus?: UpdatePasswordFormStatus
-  recoveryError?: UpdatePasswordRecoveryError | null
-  retryHref?: string
 }
 
-export function UpdatePasswordForm({
-  redirectTo = DEFAULT_POST_AUTH_REDIRECT,
-  initialStatus = "checking",
-  recoveryError = null,
-  retryHref = "/forgot-password",
-}: UpdatePasswordFormProps) {
+export function UpdatePasswordForm({ redirectTo = "/organization" }: UpdatePasswordFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
-  const [status, setStatus] = useState<UpdatePasswordFormStatus>(
-    recoveryError ? "retry" : initialStatus,
-  )
+  const [status, setStatus] = useState<"checking" | "ready" | "no-session">("checking")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -78,21 +50,19 @@ export function UpdatePasswordForm({
   })
 
   useEffect(() => {
-    if (recoveryError || initialStatus !== "checking") return
-
     let cancelled = false
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return
-      if (data.user) {
+      if (data.session) {
         setStatus("ready")
       } else {
-        setStatus("retry")
+        setStatus("no-session")
       }
     })
     return () => {
       cancelled = true
     }
-  }, [initialStatus, recoveryError, supabase])
+  }, [supabase])
 
   async function onSubmit(values: UpdatePasswordValues) {
     setErrorMessage(null)
@@ -112,19 +82,11 @@ export function UpdatePasswordForm({
     return <p className="text-sm text-muted-foreground">Verifying session...</p>
   }
 
-  if (status === "retry") {
+  if (status === "no-session") {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground" role="alert">
-          {getUpdatePasswordRetryMessage(recoveryError)}
-        </p>
-        <Button asChild className="w-full">
-          <Link href={retryHref}>Request a new reset link</Link>
-        </Button>
-        <Button asChild className="w-full" variant="ghost">
-          <Link href="/login">Back to sign in</Link>
-        </Button>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Reset links are single-use. Request a new reset email to update your password.
+      </p>
     )
   }
 

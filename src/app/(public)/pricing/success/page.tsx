@@ -1,41 +1,93 @@
-import { isRedirectError } from "next/dist/client/components/redirect-error"
 import { redirect } from "next/navigation"
-import type Stripe from "stripe"
+import Stripe from "stripe"
 
 import { requireServerSession } from "@/lib/auth"
 import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
-import { persistCheckoutSubscription } from "./_lib/subscription-persistence"
-import { maybeStartOrganizationTrialFromAccelerator } from "./_lib/success-helpers"
-import {
-  trackSuccessfulSubscriptionCheckout,
-} from "./_lib/telemetry"
-import {
-  appendSuccessfulPricingReturn,
-  getSafeRedirect,
-  resolveCheckoutSubscription,
-} from "./_lib/onboarding-return"
 import type { Database } from "@/lib/supabase"
-import { CheckoutActivationStatus } from "./_components/checkout-activation-status"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
-function isNextRedirectError(error: unknown) {
-  if (isRedirectError(error)) return true
-  if (error instanceof Error && error.message.startsWith("redirect:")) return true
-  if (typeof error === "object" && error && "digest" in error) {
-    const digest = String((error as { digest?: unknown }).digest ?? "")
-    if (digest.startsWith("NEXT_REDIRECT")) return true
+async function maybeStartOrganizationTrialFromAccelerator({
+  stripeClient,
+  organizationPriceId,
+  admin,
+  userId,
+  checkoutSessionId,
+  customerId,
+}: {
+  stripeClient: Stripe
+  organizationPriceId: string | null
+  admin: ReturnType<typeof createSupabaseAdminClient>
+  userId: string
+  checkoutSessionId: string
+  customerId: string
+}) {
+  if (!organizationPriceId) return
+
+  const { data: existing } = await admin
+    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+    .select("id, status")
+    .eq("user_id", userId)
+    .in("status", ["active", "trialing"])
+    .limit(1)
+    .maybeSingle<{ id: string; status: string }>()
+
+  if (existing) return
+
+  const subscription = await stripeClient.subscriptions.create(
+    {
+      customer: customerId,
+      items: [{ price: organizationPriceId }],
+      trial_period_days: 30,
+      metadata: {
+        user_id: userId,
+        planName: "Organization",
+        context: "accelerator_bundle",
+      },
+    },
+    { idempotencyKey: `accelerator_bundle_${checkoutSessionId}` },
+  )
+
+  const currentPeriodEndUnix =
+    (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+  const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
+
+  const allowed: Database["public"]["Enums"]["subscription_status"][] = [
+    "trialing",
+    "active",
+    "past_due",
+    "canceled",
+    "incomplete",
+    "incomplete_expired",
+  ]
+  const status = allowed.includes(subscription.status as Database["public"]["Enums"]["subscription_status"])
+    ? (subscription.status as Database["public"]["Enums"]["subscription_status"])
+    : "trialing"
+
+  const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
+    user_id: userId,
+    stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : customerId,
+    stripe_subscription_id: subscription.id,
+    status,
+    current_period_end: currentPeriodEnd,
+    metadata: { planName: "Organization", context: "accelerator_bundle" },
   }
-  return false
+
+  await admin
+    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+    .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
 }
 
-export default async function PricingSuccessPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function PricingSuccessPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
-  const redirectTarget = getSafeRedirect(params?.redirect)
 
   const { supabase, session } = await requireServerSession("/pricing/success")
   const user = session.user
@@ -53,7 +105,6 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
   }
 
   if (sessionId) {
-    let paymentRequired = false
     try {
       let checkout: Stripe.Checkout.Session | null = null
       let checkoutStripeConfig = stripeConfigs[0]
@@ -80,8 +131,9 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
       const shouldShowWelcome = checkout.metadata?.context === "onboarding"
       const welcomeQuery = shouldShowWelcome ? "&welcome=1" : ""
 
+      const admin = createSupabaseAdminClient()
+
       if (checkout.mode === "payment" && checkout.metadata?.kind === "accelerator") {
-        const admin = createSupabaseAdminClient()
         const variant =
           checkout.metadata?.accelerator_variant === "without_coaching"
             ? "without_coaching"
@@ -119,7 +171,6 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
       }
 
       if (checkout.mode === "payment" && checkout.metadata?.kind === "elective") {
-        const admin = createSupabaseAdminClient()
         const moduleSlugCandidate = checkout.metadata?.elective_module_slug ?? ""
         if (!isElectiveAddOnModuleSlug(moduleSlugCandidate)) {
           redirect("/pricing?plan=electives&cancelled=true")
@@ -142,66 +193,76 @@ export default async function PricingSuccessPage({ searchParams }: { searchParam
       }
 
       if (checkout.mode === "subscription") {
-        const subscription = await resolveCheckoutSubscription({
-          checkout,
-          stripeClient: checkoutStripeConfig.client,
-        })
+        const subscription = checkout.subscription as Stripe.Subscription | null
         if (subscription) {
-          const {
+          type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
+
+          const allowed: SubscriptionStatus[] = [
+            "trialing",
+            "active",
+            "past_due",
+            "canceled",
+            "incomplete",
+            "incomplete_expired",
+          ]
+          const status = allowed.includes(subscription.status as SubscriptionStatus)
+            ? (subscription.status as SubscriptionStatus)
+            : "trialing"
+
+          const currentPeriodEndUnix =
+            (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+          const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
+
+          const metadataSource =
+            subscription.metadata && Object.keys(subscription.metadata).length > 0
+              ? subscription.metadata
+              : checkout.metadata ?? null
+          const metadataWithMode: Record<string, string> | null = metadataSource
+            ? {
+                ...(metadataSource as Record<string, string>),
+                stripe_mode:
+                  typeof (metadataSource as Record<string, string>).stripe_mode === "string"
+                    ? (metadataSource as Record<string, string>).stripe_mode
+                    : checkoutStripeConfig.mode,
+              }
+            : null
+          const subscriptionOwnerId =
+            typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
+              ? metadataWithMode.org_user_id
+              : userId
+          const planName =
+            typeof metadataWithMode?.planName === "string" ? metadataWithMode.planName : null
+          const kind = typeof metadataWithMode?.kind === "string" ? metadataWithMode.kind : null
+
+          const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
+            user_id: subscriptionOwnerId,
+            stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
+            stripe_subscription_id: subscription.id,
             status,
-            subscriptionOwnerId,
-            resolvedPlanTier,
-            kind,
-          } = await persistCheckoutSubscription({
-            checkout,
-            subscription,
-            stripeMode: checkoutStripeConfig.mode,
-            userId,
-            redirectTarget,
-          })
-
-          const isSuccessfulSubscriptionState =
-            status === "trialing" || status === "active"
-
-          if (isSuccessfulSubscriptionState) {
-            await trackSuccessfulSubscriptionCheckout({
-              userId,
-              orgId: subscriptionOwnerId,
-              checkout,
-              subscriptionId: subscription.id,
-              subscriptionStatus: status,
-              planTier: resolvedPlanTier,
-              stripeMode: checkoutStripeConfig.mode,
-              kind,
-              redirectTarget,
-            })
+            current_period_end: currentPeriodEnd,
+            metadata:
+              metadataWithMode && Object.keys(metadataWithMode).length > 0
+                ? metadataWithMode
+                : planName
+                  ? { planName, stripe_mode: checkoutStripeConfig.mode }
+                  : null,
           }
 
-          if (!isSuccessfulSubscriptionState) {
-            paymentRequired = true
-          } else {
-            if (kind === "accelerator") {
-              redirect(`/organization?purchase=accelerator${welcomeQuery}`)
-            }
-            if (redirectTarget) {
-              redirect(appendSuccessfulPricingReturn(redirectTarget, resolvedPlanTier))
-            }
-            redirect(`/organization?subscription=${status}${welcomeQuery}`)
+          await admin
+            .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+            .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+
+          if (kind === "accelerator") {
+            redirect(`/organization?purchase=accelerator${welcomeQuery}`)
           }
+
+          redirect(`/organization?subscription=${status}${welcomeQuery}`)
         }
       }
     } catch (error) {
-      if (isNextRedirectError(error)) {
-        throw error
-      }
       console.warn("Unable to read Stripe checkout session", error)
     }
-    return <CheckoutActivationStatus returnHref={redirectTarget ?? "/workspace"} paymentRequired={paymentRequired} />
   }
 
-  if (redirectTarget) {
-    redirect(redirectTarget)
-  }
-
-  redirect("/workspace")
+  redirect("/organization?checkout=success")
 }

@@ -1,11 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { cache } from "react"
 import Stripe from "stripe"
 
 import type { Database } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { getElectiveAddOnModuleSlugs, isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
-import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
@@ -14,7 +12,6 @@ type AccessOptions = {
   userId: string
   orgUserId?: string
   isAdmin?: boolean
-  forceStripeSync?: boolean
 }
 
 export type LearningEntitlements = {
@@ -61,21 +58,15 @@ function uniqueStrings(values: Array<string | null | undefined>) {
   )
 }
 
-function stripeTimestampToIso(value: number | null | undefined) {
-  return typeof value === "number" ? new Date(value * 1000).toISOString() : null
-}
-
 async function trySyncSubscriptionFromStripe({
   userId,
   orgUserId,
-  forceStripeSync = false,
 }: {
   userId: string
   orgUserId: string
-  forceStripeSync?: boolean
 }) {
   const stripeConfigs = resolveStripeRuntimeConfigsForFallback({ preferTester: false })
-  if ((!ENABLE_STRIPE_ENTITLEMENT_SYNC && !forceStripeSync) || stripeConfigs.length === 0 || process.env.NODE_ENV === "test") {
+  if (!ENABLE_STRIPE_ENTITLEMENT_SYNC || stripeConfigs.length === 0 || process.env.NODE_ENV === "test") {
     return false
   }
 
@@ -148,8 +139,6 @@ async function trySyncSubscriptionFromStripe({
     stripe_subscription_id: latest.id,
     status: normalizeSubscriptionStatus(latest.status),
     current_period_end: currentPeriodEnd,
-    cancel_at: stripeTimestampToIso(latest.cancel_at),
-    canceled_at: stripeTimestampToIso(latest.canceled_at),
     metadata,
   }
 
@@ -164,13 +153,12 @@ async function trySyncSubscriptionFromStripe({
   return true
 }
 
-const fetchLearningEntitlementsCached = cache(async ({
+export async function fetchLearningEntitlements({
   supabase,
   userId,
   orgUserId,
   isAdmin = false,
-  forceStripeSync = false,
-}: AccessOptions): Promise<LearningEntitlements> => {
+}: AccessOptions): Promise<LearningEntitlements> {
   if (isAdmin) {
     return {
       hasAcceleratorPurchase: true,
@@ -184,7 +172,7 @@ const fetchLearningEntitlementsCached = cache(async ({
   async function hasActiveOrgSubscription(targetUserId: string): Promise<boolean> {
     const subscriptionsBaseQuery = supabase
       .from("subscriptions")
-      .select("id, status, metadata")
+      .select("id")
       .eq("user_id", targetUserId)
       .in("status", ["active", "trialing"])
       .not("stripe_subscription_id", "ilike", "stub_%")
@@ -202,16 +190,13 @@ const fetchLearningEntitlementsCached = cache(async ({
       }
     })
       .limit(1)
-      .maybeSingle<{ id: string; status: string | null; metadata: Database["public"]["Tables"]["subscriptions"]["Row"]["metadata"] }>()
+      .maybeSingle<{ id: string }>()
 
     if (result.error) {
-      if (isMissingRelationError(result.error)) {
-        return false
-      }
       throw supabaseErrorToError(result.error, "Unable to load subscription entitlements.")
     }
 
-    return hasPaidTeamAccessFromSubscription(result.data ?? null)
+    return Boolean(result.data?.id)
   }
 
   const [acceleratorResult, electivesResult] = await Promise.all([
@@ -231,9 +216,7 @@ const fetchLearningEntitlementsCached = cache(async ({
   ])
 
   if (acceleratorResult.error) {
-    if (!isMissingRelationError(acceleratorResult.error)) {
-      throw supabaseErrorToError(acceleratorResult.error, "Unable to load accelerator entitlements.")
-    }
+    throw supabaseErrorToError(acceleratorResult.error, "Unable to load accelerator entitlements.")
   }
 
   const primarySubscriptionOwnerId = orgUserId ?? userId
@@ -249,7 +232,6 @@ const fetchLearningEntitlementsCached = cache(async ({
       const synced = await trySyncSubscriptionFromStripe({
         userId,
         orgUserId: primarySubscriptionOwnerId,
-        forceStripeSync,
       })
       if (synced) {
         hasActiveSubscription = await hasActiveOrgSubscription(primarySubscriptionOwnerId)
@@ -289,15 +271,4 @@ const fetchLearningEntitlementsCached = cache(async ({
     hasElectiveAccess: hasAcceleratorAccess || ownedElectiveModuleSlugs.length > 0,
     ownedElectiveModuleSlugs,
   }
-})
-
-export async function fetchLearningEntitlements(
-  options: AccessOptions,
-): Promise<LearningEntitlements> {
-  return fetchLearningEntitlementsCached({
-    ...options,
-    orgUserId: options.orgUserId,
-    isAdmin: options.isAdmin ?? false,
-    forceStripeSync: options.forceStripeSync ?? false,
-  })
 }

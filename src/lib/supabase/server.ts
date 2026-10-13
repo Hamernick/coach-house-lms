@@ -1,54 +1,34 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { cache } from "react"
 import { cookies } from "next/headers"
 
 import { env } from "@/lib/env"
 import type { Database } from "./types"
 
-type NextCookieStore = {
-  get: (name: string) => { value: string } | undefined
-  getAll: () => Array<{ name: string; value: string }>
-  set?: (options: { name: string; value: string } & CookieOptions) => void
-}
-
-function isReadOnlyCookiesError(error: unknown) {
-  return (
-    error instanceof Error &&
-    error.message.includes("Cookies can only be modified in a Server Action or Route Handler")
-  )
-}
-
-async function createSupabaseServerClientInternal(): Promise<
+export async function createSupabaseServerClient(): Promise<
   SupabaseClient<Database, "public">
 > {
-  const cookieStore = (await cookies()) as unknown as NextCookieStore
+  const cookieStore = (await cookies()) as unknown as {
+    get: (name: string) => { value: string } | undefined
+    set?: (options: { name: string; value: string } & CookieOptions) => void
+    delete?: (name: string) => void
+  }
 
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll().map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-          }))
+        get(name) {
+          return cookieStore.get(name)?.value
         },
-        setAll(cookieValues) {
-          try {
-            for (const { name, value, options } of cookieValues) {
-              cookieStore.set?.({ name, value, ...options })
-            }
-          } catch (error) {
-            if (!isReadOnlyCookiesError(error)) {
-              throw error
-            }
-          }
+        set(name, value, options) {
+          cookieStore.set?.({ name, value, ...options })
+        },
+        remove(name) {
+          cookieStore.delete?.(name)
         },
       },
     }
   )
 }
-
-export const createSupabaseServerClient = cache(createSupabaseServerClientInternal)

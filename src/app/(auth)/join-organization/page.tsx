@@ -3,8 +3,6 @@ import { redirect } from "next/navigation"
 
 import { acceptOrganizationInviteAction } from "@/app/actions/organization-access"
 import { Button } from "@/components/ui/button"
-import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
-import { writeActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -58,14 +56,12 @@ export default async function JoinOrganizationPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href={DEFAULT_POST_AUTH_REDIRECT}>Go to Workspace</Link>
+            <Link href="/organization">Go to Organization</Link>
           </Button>
         </div>
       </div>
     )
   }
 
-  const joinedRole = result.inviteKind === "funder" ? "funder" : result.role
-  await writeActiveOrganizationCookie(result.orgId)
-  redirect(`${DEFAULT_POST_AUTH_REDIRECT}?joined=1&role=${encodeURIComponent(joinedRole)}`)
+  redirect("/organization?joined=1")
 }

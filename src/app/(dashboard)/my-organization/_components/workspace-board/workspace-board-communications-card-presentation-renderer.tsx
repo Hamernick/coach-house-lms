@@ -4,34 +4,37 @@ import PlayIcon from "lucide-react/dist/esm/icons/play"
 
 import { cn } from "@/lib/utils"
 
-import { WORKSPACE_CARD_LAYOUT_SYSTEM } from "./workspace-board-card-layout-system"
-import type {
-  WorkspaceActivityRecord,
-  WorkspaceCommunicationsState,
-} from "./workspace-board-types"
-import { WorkspaceBoardActivityHeatmap } from "./workspace-board-activity-heatmap"
+import type { WorkspaceCommunicationsState } from "./workspace-board-types"
+import {
+  buildHeatmapRows,
+  heatmapCellClass,
+  type ActivityState,
+} from "./workspace-board-communications-card-helpers"
 import {
   CHANNEL_OPTIONS,
   formatCommunicationDateTime,
+  resolveActivityIcon,
   titleCaseLabel,
 } from "./workspace-board-communications-card-renderers-shared"
 
 export function renderCommunicationsPresentationCard({
   communications,
   connectedChannelsCount,
-  activityFeed,
+  heatmapRows,
+  recentActivity,
   compactCanvasPreview = false,
 }: {
   communications: WorkspaceCommunicationsState
   connectedChannelsCount: number
-  activityFeed: WorkspaceActivityRecord[]
+  heatmapRows: ReturnType<typeof buildHeatmapRows>
+  recentActivity: WorkspaceCommunicationsState["activityByDay"][string] | null
   compactCanvasPreview?: boolean
 }) {
   const activeChannelConnection = communications.channelConnections[communications.channel]
 
   if (compactCanvasPreview) {
     return (
-      <div className={cn(WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn, "h-full gap-1.5")}>
+      <div className="flex h-full min-h-0 flex-col gap-1.5">
         {communications.mediaMode === "image" ? (
           <div className="h-14 rounded-lg bg-muted/35 ring-1 ring-border/40" aria-hidden />
         ) : null}
@@ -41,21 +44,50 @@ export function renderCommunicationsPresentationCard({
           </div>
         ) : null}
 
-        <div
-          className={cn(
-            WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
-            "rounded-lg border border-border/50 bg-background/25 p-2",
-          )}
-        >
-          <p className="mb-1 text-[11px] text-muted-foreground">Activity</p>
-          <WorkspaceBoardActivityHeatmap records={activityFeed} compact />
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <p className="text-[11px] text-muted-foreground">Activity:</p>
+            {recentActivity ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                {(() => {
+                  const Icon = resolveActivityIcon(recentActivity.channel)
+                  return <Icon className="h-3 w-3 opacity-70" aria-hidden />
+                })()}
+                Latest {recentActivity.status}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="space-y-0.5">
+            {heatmapRows.map((row, rowIndex) => (
+              <div key={`present-heatmap-row-${rowIndex}`} className="grid grid-cols-7 gap-1">
+                {row.map((cell) => {
+                  const state: ActivityState = cell.entry?.status ?? "none"
+                  return (
+                    <span
+                      key={`present-${cell.key}`}
+                      className={cn("grid h-3 place-items-center rounded-[3px]", heatmapCellClass(state))}
+                    >
+                      {cell.entry ? (
+                        (() => {
+                          const Icon = resolveActivityIcon(cell.entry.channel)
+                          return <Icon className="h-2.5 w-2.5 text-foreground/65" aria-hidden />
+                        })()
+                      ) : null}
+                    </span>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     )
   }
 
   return (
-    <div className={cn(WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn, "h-full", compactCanvasPreview ? "gap-2" : "gap-3")}>
+    <div className={cn("flex h-full min-h-0 flex-col", compactCanvasPreview ? "gap-2" : "gap-3")}>
       <div className={cn("rounded-xl border border-border/60 bg-background/25", compactCanvasPreview ? "p-2.5" : "p-3")}>
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
@@ -79,13 +111,7 @@ export function renderCommunicationsPresentationCard({
             compactCanvasPreview && communications.mediaMode === "image" && "min-h-[84px]",
           )}
         >
-          <p
-            className={cn(
-              WORKSPACE_CARD_LAYOUT_SYSTEM.textWrap,
-              "leading-relaxed text-foreground",
-              compactCanvasPreview ? "line-clamp-2 text-xs" : "text-sm",
-            )}
-          >
+          <p className={cn("leading-relaxed text-foreground", compactCanvasPreview ? "line-clamp-2 text-xs" : "text-sm")}>
             {communications.copy.trim() || "No draft copy yet"}
           </p>
           {communications.mediaMode === "image" ? (
@@ -128,9 +154,52 @@ export function renderCommunicationsPresentationCard({
 
       <div className={cn("rounded-xl border border-border/60 bg-background/20", compactCanvasPreview ? "p-2.5" : "p-3")}>
         <div className={cn("flex items-center justify-between gap-2", compactCanvasPreview ? "mb-1.5" : "mb-2")}>
-          <p className={cn("text-muted-foreground", compactCanvasPreview ? "text-[11px]" : "text-xs")}>Workspace activity</p>
+          <p className={cn("text-muted-foreground", compactCanvasPreview ? "text-[11px]" : "text-xs")}>Publishing heatmap</p>
+          {recentActivity ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              {(() => {
+                const Icon = resolveActivityIcon(recentActivity.channel)
+                return <Icon className="h-3 w-3 opacity-70" aria-hidden />
+              })()}
+              Latest {recentActivity.status}
+            </span>
+          ) : null}
         </div>
-        <WorkspaceBoardActivityHeatmap records={activityFeed} compact={compactCanvasPreview} />
+        <div className={cn(compactCanvasPreview ? "space-y-0.5" : "space-y-1")}>
+          {heatmapRows.map((row, rowIndex) => (
+            <div key={`present-heatmap-row-${rowIndex}`} className="grid grid-cols-7 gap-1">
+              {row.map((cell) => {
+                const state: ActivityState = cell.entry?.status ?? "none"
+                return (
+                  <span
+                    key={`present-${cell.key}`}
+                    className={cn(
+                      compactCanvasPreview ? "grid h-2.5 place-items-center rounded-[3px]" : "grid h-3 place-items-center rounded-sm",
+                      heatmapCellClass(state),
+                    )}
+                  >
+                    {cell.entry ? (
+                      (() => {
+                        const Icon = resolveActivityIcon(cell.entry.channel)
+                        return <Icon className="h-2.5 w-2.5 text-foreground/65" aria-hidden />
+                      })()
+                    ) : null}
+                  </span>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+        {!compactCanvasPreview ? (
+          <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-[3px] bg-sky-500/60" /> Scheduled
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-[3px] bg-emerald-500/80" /> Posted
+            </span>
+          </div>
+        ) : null}
         <div className={cn("mt-2 grid gap-2 text-[11px] text-muted-foreground", compactCanvasPreview ? "grid-cols-1" : "grid-cols-2")}>
           <div className="rounded-md border border-border/50 bg-background/60 px-2 py-1.5">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Next schedule</p>

@@ -9,7 +9,6 @@ import {
   resetTestMocks,
   stripeBillingPortalCreateMock,
   stripeConstructorMock,
-  stripeSubscriptionRetrieveMock,
 } from "./test-utils"
 
 import { env } from "@/lib/env"
@@ -81,57 +80,9 @@ describe("billing portal flow", () => {
       apiVersion: "2025-08-27.basil",
     })
     expect(result).toEqual({ url: "https://billing.example/session" })
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      "billing_portal_session_created",
-      expect.objectContaining({
-        userId: "user-123",
-      }),
-    )
-    expect(loggerErrorMock).not.toHaveBeenCalled()
-  })
-
-  it("falls back to the Stripe subscription when the local customer id is missing", async () => {
-    env.STRIPE_SECRET_KEY = "sk_test_acceptance"
-
-    const subscriptionsTable = {
-      select: () => subscriptionsTable,
-      eq: () => subscriptionsTable,
-      order: () => subscriptionsTable,
-      limit: () => subscriptionsTable,
-      maybeSingle: () =>
-        Promise.resolve({
-          data: {
-            stripe_customer_id: null,
-            stripe_subscription_id: "sub_123",
-            metadata: { stripe_mode: "test" },
-          },
-          error: null,
-        }),
-    }
-
-    const supabase = {
-      auth: {
-        getSession: () =>
-          Promise.resolve({ data: { session: { user: { id: "user-123" } } } }),
-      },
-      from: () => subscriptionsTable,
-    }
-
-    createSupabaseServerClientServerMock.mockReturnValue(supabase)
-    headersMock.mockResolvedValue({
-      get: (name: string) => (name === "origin" ? "https://app.test" : undefined),
+    expect(loggerInfoMock).toHaveBeenCalledWith("billing_portal_session_created", {
+      userId: "user-123",
     })
-    stripeSubscriptionRetrieveMock.mockResolvedValue({ customer: "cus_from_sub" })
-    stripeBillingPortalCreateMock.mockResolvedValue({ url: "https://billing.example/session" })
-
-    const result = await createBillingPortalSession()
-
-    expect(stripeSubscriptionRetrieveMock).toHaveBeenCalledWith("sub_123")
-    expect(stripeBillingPortalCreateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        customer: "cus_from_sub",
-      }),
-    )
-    expect(result).toEqual({ url: "https://billing.example/session" })
+    expect(loggerErrorMock).not.toHaveBeenCalled()
   })
 })

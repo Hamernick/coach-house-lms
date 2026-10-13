@@ -1,38 +1,24 @@
 "use client"
-
 import { useEffect, useMemo, useTransition } from "react"
-import DownloadIcon from "lucide-react/dist/esm/icons/download"
-import PencilLineIcon from "lucide-react/dist/esm/icons/pencil-line"
-
-import type { OrgProfile } from "@/components/organization/org-profile-card/types"
-import {
-  useWorkspaceBrandKitController,
-  WorkspaceBrandKitSheet,
-} from "@/features/workspace-brand-kit"
-import { toast } from "@/lib/toast"
-import {
-  buildWorkspaceActivityFeedFromCommunicationsOverlay,
-  mergeWorkspaceActivityFeeds,
-} from "../../_lib/workspace-activity"
-import type {
-  WorkspaceActivityRecord,
-  WorkspaceCommunicationChannel,
-  WorkspaceCommunicationMediaMode,
-  WorkspaceCardOverflowAction,
-  WorkspaceCardSize,
-  WorkspaceCommunicationsState,
-} from "./workspace-board-types"
 import {
   createWorkspaceCommunicationPostAction,
   processWorkspaceCommunicationDeliveryQueueAction,
 } from "../../_lib/workspace-communications-actions"
 import { setWorkspaceCommunicationChannelConnectionAction } from "../../_lib/workspace-communications-channel-connections-actions"
+import { toast } from "@/lib/toast"
+import type {
+  WorkspaceCommunicationChannel,
+  WorkspaceCommunicationMediaMode,
+  WorkspaceCardSize,
+  WorkspaceCommunicationsState,
+} from "./workspace-board-types"
 import {
   buildHeatmapKeyFromDate,
+  buildHeatmapRows,
   pruneActivityByDay,
+  sortActivityEntriesByDay,
   toLocalDateTimeInputValue,
 } from "./workspace-board-communications-card-helpers"
-import { WorkspaceBoardCommunicationsCompactCard } from "./workspace-board-communications-card-compact-renderer"
 import {
   renderCommunicationsEditorCard,
   renderCommunicationsPresentationCard,
@@ -44,20 +30,14 @@ export function WorkspaceBoardCommunicationsCard({
   cardSize = "md",
   isCanvasFullscreen = false,
   communications,
-  activityFeed,
-  profile,
   onChange,
-  onMenuActionsChange,
 }: {
   canEdit: boolean
   presentationMode?: boolean
   cardSize?: WorkspaceCardSize
   isCanvasFullscreen?: boolean
   communications: WorkspaceCommunicationsState
-  activityFeed: WorkspaceActivityRecord[]
-  profile: OrgProfile
   onChange: (next: WorkspaceCommunicationsState) => void
-  onMenuActionsChange?: (actions: WorkspaceCardOverflowAction[]) => void
 }) {
   const scheduledForInput = useMemo(
     () => toLocalDateTimeInputValue(communications.scheduledFor),
@@ -66,13 +46,6 @@ export function WorkspaceBoardCommunicationsCard({
   const [isPublishing, startPublishTransition] = useTransition()
   const [isQueueSyncing, startQueueSyncTransition] = useTransition()
   const [isUpdatingConnections, startConnectionTransition] = useTransition()
-  const brandController = useWorkspaceBrandKitController({
-    profile,
-    canEdit,
-    presentationMode,
-  })
-  const { setIsSheetOpen } = brandController
-  const brandReadinessCount = brandController.readiness.completedCount
 
   useEffect(() => {
     if (!canEdit) return
@@ -88,51 +61,21 @@ export function WorkspaceBoardCommunicationsCard({
     return () => window.clearInterval(interval)
   }, [canEdit, startQueueSyncTransition])
 
-  const mergedActivityFeed = useMemo(
-    () =>
-      mergeWorkspaceActivityFeeds(
-        activityFeed,
-        buildWorkspaceActivityFeedFromCommunicationsOverlay(communications.activityByDay),
-      ),
-    [activityFeed, communications.activityByDay],
+  const heatmapRows = useMemo(() => {
+    return buildHeatmapRows(communications.activityByDay)
+  }, [communications.activityByDay])
+
+  const recentActivity = useMemo(() => {
+    const [latest] = sortActivityEntriesByDay(communications.activityByDay)
+    if (!latest) return null
+    return latest[1]
+  }, [communications.activityByDay])
+  const connectedChannelsCount = useMemo(
+    () => Object.values(communications.channelConnections).filter((connection) => connection.connected).length,
+    [communications.channelConnections],
   )
   const compactCanvasCard = !presentationMode && !isCanvasFullscreen
-  const connectedChannelsCount = useMemo(
-    () => Object.values(communications.connectedChannels).filter(Boolean).length,
-    [communications.connectedChannels],
-  )
-
-  const menuActions = useMemo<WorkspaceCardOverflowAction[]>(() => {
-    if (presentationMode) return []
-    return [
-      {
-        id: "communications-edit-brand-kit",
-        kind: "callback",
-        label: canEdit ? "Edit brand kit" : "View brand kit",
-        icon: <PencilLineIcon className="h-3.5 w-3.5" aria-hidden />,
-        onSelect: () => setIsSheetOpen(true),
-      },
-      {
-        id: "communications-download-brand-kit",
-        kind: "link",
-        label: "Download brand kit",
-        icon: <DownloadIcon className="h-3.5 w-3.5" aria-hidden />,
-        href: "/api/account/org-brand-kit/download",
-        target: "_blank",
-        disabled: brandReadinessCount === 0,
-      },
-    ]
-  }, [
-    brandReadinessCount,
-    canEdit,
-    presentationMode,
-    setIsSheetOpen,
-  ])
-
-  useEffect(() => {
-    onMenuActionsChange?.(menuActions)
-    return () => onMenuActionsChange?.([])
-  }, [menuActions, onMenuActionsChange])
+  const visibleHeatmapRows = compactCanvasCard ? heatmapRows.slice(-4) : heatmapRows
 
   const setChannelConnected = (channel: WorkspaceCommunicationChannel, checked: boolean) => {
     if (!canEdit) return
@@ -225,39 +168,30 @@ export function WorkspaceBoardCommunicationsCard({
     })
   }
 
-  return (
-    <>
-      {presentationMode ? (
-        renderCommunicationsPresentationCard({
-          communications,
-          connectedChannelsCount,
-          activityFeed: mergedActivityFeed,
-        })
-      ) : compactCanvasCard ? (
-        <WorkspaceBoardCommunicationsCompactCard
-          communications={communications}
-          brandController={brandController}
-          activityFeed={mergedActivityFeed}
-          compactCanvasPreview={compactCanvasCard}
-          onOpenBrandKit={() => setIsSheetOpen(true)}
-          canEdit={canEdit}
-        />
-      ) : renderCommunicationsEditorCard({
-          canEdit,
-          cardSize,
-          compactCanvasCard,
-          communications,
-          scheduledForInput,
-          isQueueSyncing,
-          isUpdatingConnections,
-          activityFeed: mergedActivityFeed,
-          isPublishing,
-          setChannelConnected,
-          updateMediaMode,
-          emulatePublish,
-          onChange,
-        })}
-      <WorkspaceBrandKitSheet controller={brandController} canEdit={canEdit} />
-    </>
-  )
+  if (presentationMode || compactCanvasCard) {
+    return renderCommunicationsPresentationCard({
+      communications,
+      connectedChannelsCount,
+      heatmapRows: compactCanvasCard ? visibleHeatmapRows : heatmapRows,
+      recentActivity,
+      compactCanvasPreview: compactCanvasCard,
+    })
+  }
+
+  return renderCommunicationsEditorCard({
+    canEdit,
+    cardSize,
+    compactCanvasCard,
+    communications,
+    scheduledForInput,
+    isQueueSyncing,
+    isUpdatingConnections,
+    recentActivity,
+    visibleHeatmapRows,
+    isPublishing,
+    setChannelConnected,
+    updateMediaMode,
+    emulatePublish,
+    onChange,
+  })
 }

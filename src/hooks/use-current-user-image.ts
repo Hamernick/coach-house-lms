@@ -7,12 +7,12 @@ export const useCurrentUserImage = () => {
 
   useEffect(() => {
     const fetchUserImage = async () => {
-      const { data, error } = await createClient().auth.getUser()
+      const { data, error } = await createClient().auth.getSession()
       if (error) {
         console.error(error)
       }
 
-      const meta = data.user?.user_metadata as Record<string, unknown> | undefined
+      const meta = data.session?.user.user_metadata as Record<string, unknown> | undefined
       const nextImage =
         (typeof meta?.avatar_url === "string" && meta.avatar_url.trim().length > 0 ? meta.avatar_url : null) ??
         (typeof meta?.picture === "string" && meta.picture.trim().length > 0 ? meta.picture : null) ??

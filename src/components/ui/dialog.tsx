@@ -4,30 +4,12 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
-import {
-  scheduleInteractionLockGuard,
-  scheduleInteractionLockGuardOnClose,
-} from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 
 function Dialog({
-  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  const handleOpenChange = React.useCallback(
-    (open: boolean) => {
-      scheduleInteractionLockGuardOnClose({ open, onOpenChange })
-    },
-    [onOpenChange]
-  )
-
-  return (
-    <DialogPrimitive.Root
-      data-slot="dialog"
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  )
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({
@@ -67,27 +49,14 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
-  overlayClassName,
-  portalContainer,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  overlayClassName?: string
-  portalContainer?: React.ComponentProps<
-    typeof DialogPrimitive.Portal
-  >["container"]
   showCloseButton?: boolean
 }) {
-  React.useEffect(
-    () => () => {
-      scheduleInteractionLockGuard()
-    },
-    []
-  )
-
   return (
-    <DialogPortal data-slot="dialog-portal" container={portalContainer}>
-      <DialogOverlay className={overlayClassName} />
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
@@ -100,7 +69,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus-visible:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
             <span className="sr-only">Close</span>

@@ -2,12 +2,14 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import type { EmailOtpType } from "@supabase/supabase-js"
 
-import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
-export type RecoveryCallbackError = "invalid_or_expired" | "missing_code"
-
-const UPDATE_PASSWORD_PATH = "/update-password"
+function getSafeRedirect(path?: string | null) {
+  if (!path) return null
+  if (!path.startsWith("/")) return null
+  if (path.startsWith("//")) return null
+  return path
+}
 
 function getSafeType(type?: string | null): EmailOtpType | null {
   if (!type) return null
@@ -42,7 +44,8 @@ function toLoginUrl(
     notice?: string | null
   } = {},
 ) {
-  const loginUrl = new URL("/login", requestUrl.origin)
+  const loginUrl = new URL("/", requestUrl.origin)
+  loginUrl.searchParams.set("section", "login")
   if (options.redirect) {
     loginUrl.searchParams.set("redirect", options.redirect)
   }
@@ -55,53 +58,14 @@ function toLoginUrl(
   return loginUrl
 }
 
-export function isRecoveryAuthFlow(options: {
-  type?: EmailOtpType | null
-  redirect?: string | null
-}) {
-  return (
-    options.type === "recovery" ||
-    options.redirect?.startsWith(UPDATE_PASSWORD_PATH) ||
-    false
-  )
-}
-
-export function toUpdatePasswordUrl(
-  requestUrl: URL,
-  options: {
-    destination?: string | null
-    recoveryError?: RecoveryCallbackError | null
-  } = {},
-) {
-  const destination =
-    options.destination && options.destination.startsWith(UPDATE_PASSWORD_PATH)
-      ? options.destination
-      : UPDATE_PASSWORD_PATH
-  const updatePasswordUrl = new URL(destination, requestUrl.origin)
-
-  if (
-    options.destination &&
-    !options.destination.startsWith(UPDATE_PASSWORD_PATH) &&
-    getSafeRedirectPath(options.destination)
-  ) {
-    updatePasswordUrl.searchParams.set("redirect", options.destination)
-  }
-  if (options.recoveryError) {
-    updatePasswordUrl.searchParams.set("recovery_error", options.recoveryError)
-  }
-
-  return updatePasswordUrl
-}
-
 export async function handleSupabaseAuthCallback(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
   const tokenHash = requestUrl.searchParams.get("token_hash")
   const type = getSafeType(requestUrl.searchParams.get("type"))
-  const redirectParam = getSafeRedirectPath(requestUrl.searchParams.get("redirect"))
-  const isRecoveryFlow = isRecoveryAuthFlow({ type, redirect: redirectParam })
+  const redirectParam = getSafeRedirect(requestUrl.searchParams.get("redirect"))
 
-  const fallback = isRecoveryFlow ? UPDATE_PASSWORD_PATH : DEFAULT_POST_AUTH_REDIRECT
+  const fallback = type === "recovery" ? "/update-password" : "/organization"
   const destination = new URL(redirectParam ?? fallback, requestUrl.origin)
   const response = NextResponse.redirect(destination)
   const supabase = createSupabaseRouteHandlerClient(request, response)
@@ -110,15 +74,6 @@ export async function handleSupabaseAuthCallback(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
     if (!error) {
       return response
-    }
-
-    if (isRecoveryFlow) {
-      return NextResponse.redirect(
-        toUpdatePasswordUrl(requestUrl, {
-          destination: redirectParam,
-          recoveryError: "invalid_or_expired",
-        }),
-      )
     }
 
     const message =
@@ -133,25 +88,7 @@ export async function handleSupabaseAuthCallback(request: NextRequest) {
     )
   }
 
-  if (tokenHash && !type && isRecoveryFlow) {
-    return NextResponse.redirect(
-      toUpdatePasswordUrl(requestUrl, {
-        destination: redirectParam,
-        recoveryError: "invalid_or_expired",
-      }),
-    )
-  }
-
   if (!code) {
-    if (isRecoveryFlow) {
-      return NextResponse.redirect(
-        toUpdatePasswordUrl(requestUrl, {
-          destination: redirectParam,
-          recoveryError: "missing_code",
-        }),
-      )
-    }
-
     return NextResponse.redirect(
       toLoginUrl(requestUrl, {
         redirect: redirectParam,
@@ -163,16 +100,7 @@ export async function handleSupabaseAuthCallback(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    if (isRecoveryFlow) {
-      return NextResponse.redirect(
-        toUpdatePasswordUrl(requestUrl, {
-          destination: redirectParam,
-          recoveryError: "invalid_or_expired",
-        }),
-      )
-    }
-
-    if (isPkceVerifierMissingError(error.message)) {
+    if (type === "signup" && isPkceVerifierMissingError(error.message)) {
       return NextResponse.redirect(
         toLoginUrl(requestUrl, {
           redirect: redirectParam,

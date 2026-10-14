@@ -21,3 +21,14 @@ Direct-entry embedded profile Back to search now uses Next router replacement to
 - Shared SHIP revision40 ownership-host mismatch remains; do not mutate canonical state or bypass it. Private original sources: packet05 and05a/05b; this is a user-reported regression follow-up, not coordinate run05C.
 
 Stop after this repair's review/release handoff. No automatic move to coordinates or Calendar.
+
+
+## Follow-up: remove the shared outer frame
+
+User confirmed PR302 merged and reported the unwanted parent still present after refresh. Accept that merge report; do not recheck it. The earlier repair addressed only navigation, while directly loaded organization/resource profiles still selected framed mode by default.
+
+The shared PublicHomeResourceExplorer now always uses `frameCanvas={false}` and the unframed scrolling/dock surface; remove its framed/unframed option and the now-redundant `/resources` prop. Keep profile header navigation and the EIN/badge. Map-specific chrome and internal profile sections remain unchanged. No route can opt this explorer back into the unwanted outer frame.
+
+Branch `fix/resources-unframed-shell-20261014`, base1376e12d, same isolated `coach-house-platform-resources-return-20261014` checkout and localhost3122 (warm server/cache preserved).36 focused public-home/route/navigation tests and changed-file lint pass. Browser verifies direct organization load has zero outer-frame elements with badge present; Back to search has zero frames and the unframed marker. First browser request briefly used the previous dev compilation; reloaded after the updated server HTML was confirmed.
+
+Direct IRS profile response and scoped checks are recorded in the final PR/checkpoint. User review and current-head hosted quality/code-owner review remain required. No production mutation or Supabase previews; SHIP revision40 host reconciliation remains unresolved. This supersedes the earlier repair's sufficiency claim; coordinate work remains separate.

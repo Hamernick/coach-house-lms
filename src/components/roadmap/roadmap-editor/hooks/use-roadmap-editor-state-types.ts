@@ -17,6 +17,7 @@ export type UseRoadmapEditorStateArgs = Pick<
 >
 
 export type UseRoadmapEditorStateResult = {
+  handleSavedSection: (section: RoadmapSection) => void
   activeSection: RoadmapSection | undefined
   activeDraft: RoadmapDraft | null
   drafts: Record<string, RoadmapDraft>

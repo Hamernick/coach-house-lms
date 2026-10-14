@@ -14,6 +14,9 @@ export type MemberWorkspaceAccessibleOrganization = {
   name: string
   publicSlug: string | null
   imageUrl: string | null
+  supportAccess?: boolean
+  contactName?: string | null
+  contactEmail?: string | null
 }
 
 export type MemberWorkspaceProjectOrganizationOption = {
@@ -32,12 +35,13 @@ export type MemberWorkspacePersonOption = {
 }
 
 export type MemberWorkspaceHeaderState = {
+  canSearchSupport?: boolean
   activeOrganization: MemberWorkspaceAccessibleOrganization
   accessibleOrganizations: MemberWorkspaceAccessibleOrganization[]
 }
 
 export type MemberWorkspaceSetActiveOrganizationResult =
-  | { ok: true; orgId: string }
+  | { ok: true; orgId: string; supportAccess?: boolean }
   | { error: string }
 
 export type MemberWorkspaceStorageMode =

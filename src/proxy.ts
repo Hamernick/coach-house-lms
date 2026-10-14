@@ -27,7 +27,9 @@ const PROTECTED_PREFIXES = [
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next()
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-coach-house-request-method", request.method)
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
   const pathname = request.nextUrl.pathname
   // Public documentation has no account-specific content; mutations still verify auth.
   if ((request.method === "GET" || request.method === "HEAD") &&

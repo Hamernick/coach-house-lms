@@ -34,7 +34,7 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
   const isPlatformStaff =
     profileAudience.isPlatformStaff || profileAudience.isAdmin
   const adminSupabase = createSupabaseAdminClient({ actorId: user.id })
-  const dataSupabase = isPlatformStaff ? adminSupabase : supabase
+  const dataSupabase = isPlatformStaff && !activeOrg.supportAccess ? adminSupabase : supabase
   const paidAccess = isPlatformStaff
     ? { hasPaidTeamAccess: true }
     : await resolvePaidTeamAccessForOrgSubscription({
@@ -50,10 +50,10 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
   return {
     supabase: dataSupabase,
     userId: user.id,
-    isAdmin: profileAudience.isAdmin,
-    isPlatformStaff,
+    isAdmin: profileAudience.isAdmin && !activeOrg.supportAccess,
+    isPlatformStaff: isPlatformStaff && !activeOrg.supportAccess,
     platformAccessLevel: profileAudience.platformAccessLevel,
-    canAccessOrganizations: hasPlatformCapability(
+    canAccessOrganizations: !activeOrg.supportAccess && hasPlatformCapability(
       profileAudience.platformAccessLevel,
       "organizations"
     ),

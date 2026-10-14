@@ -263,6 +263,7 @@ export async function GET(request: NextRequest) {
   let orgId: string
   try {
     const resolved = await resolveActiveOrganization(supabase, userId)
+    if (resolved.supportAccess) throw new Error("Exit support mode before purchasing.")
     orgId = resolved.orgId
   } catch {
     return buildErrorRedirect({ request, supabaseResponse, returnTarget: cancelTarget ?? redirectTarget,

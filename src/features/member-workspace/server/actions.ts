@@ -1,11 +1,15 @@
 "use server"
 
+import { mapSupportOrganization, type WorkspaceSupportSearchRow } from "@/features/organization-workspace-support"
+
 import { revalidatePath } from "next/cache"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { writeActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
 import type { MemberWorkspaceSetActiveOrganizationResult } from "../types"
 import { loadAccessibleOrganizations } from "./load-accessible-organizations"
+import { cookies } from "next/headers"
+import { hasWorkspaceSupportAccess, SUPPORT_ORGANIZATION_COOKIE } from "@/lib/organization/support-access"
 
 export async function setActiveOrganizationAction(
   orgId: string
@@ -28,15 +32,34 @@ export async function setActiveOrganizationAction(
     supabase,
     user.id
   )
-  const organization = accessibleOrganizations.find(
+  let organization = accessibleOrganizations.find(
     (entry) => entry.orgId === normalizedOrgId
   )
+
+  if (!organization && await hasWorkspaceSupportAccess(supabase)) {
+    const { data, error } = await supabase.rpc("search_workspace_support_organizations_v2" as never,
+      { p_query: "", p_org: normalizedOrgId } as never)
+    if (error) return { error: "Unable to verify workspace support access." }
+    const row = (data as unknown as WorkspaceSupportSearchRow[] | null)?.[0]
+    if (row) organization = mapSupportOrganization(row)
+  }
 
   if (!organization) {
     return { error: "You do not have access to that organization." }
   }
 
+  if (organization.orgId !== user.id && await hasWorkspaceSupportAccess(supabase)) organization.supportAccess = true
+
+  if (organization.supportAccess) {
+    const { error } = await supabase.rpc("record_workspace_support_entry" as never, { p_org: organization.orgId } as never)
+    if (error) return { error: "Unable to record support access. Please try again." }
+  }
   await writeActiveOrganizationCookie(organization.orgId)
+  const cookieStore = await cookies()
+  cookieStore.set(SUPPORT_ORGANIZATION_COOKIE, organization.supportAccess ? organization.orgId : "", {
+    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/",
+    maxAge: organization.supportAccess ? 60 * 60 * 8 : 0,
+  })
   revalidatePath("/admin")
   revalidatePath("/my-organization")
   revalidatePath("/organization")
@@ -45,5 +68,5 @@ export async function setActiveOrganizationAction(
   revalidatePath("/organizations")
   revalidatePath("/tasks")
   revalidatePath("/people")
-  return { ok: true, orgId: organization.orgId }
+  return { ok: true, orgId: organization.orgId, supportAccess: organization.supportAccess }
 }

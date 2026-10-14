@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 
 import { ROADMAP_SECTION_ICONS } from "@/components/roadmap/roadmap-icons"
@@ -10,6 +11,10 @@ import type { RoadmapEditorProps } from "@/components/roadmap/roadmap-editor/typ
 export type { RoadmapEditorLayout } from "@/components/roadmap/roadmap-editor/types"
 
 export function RoadmapEditor(props: RoadmapEditorProps) {
+  const { onDirtyChange } = props
+  const [legacyPending, setLegacyPending] = useState(false)
+  const [collaborationPending, setCollaborationPending] = useState(false)
+  useEffect(() => { onDirtyChange?.(legacyPending || collaborationPending) }, [onDirtyChange, legacyPending, collaborationPending])
   const {
     activeSection,
     activeDraft,
@@ -34,7 +39,8 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     isDirty,
     savingId,
     handleStatusChange,
-  } = useRoadmapEditorState(props)
+    handleSavedSection,
+  } = useRoadmapEditorState({ ...props, onDirtyChange: setLegacyPending })
 
   if (!activeSection || !activeDraft) {
     return null
@@ -60,6 +66,8 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       status={status}
       canEdit={props.canEdit ?? true}
       onStatusChange={handleStatusChange}
+      onSavedSection={handleSavedSection}
+      onCollaborationPending={setCollaborationPending}
       statusSelectDisabled={statusSelectDisabled}
       isHydrated={isHydrated}
       isCalendarSection={isCalendarSection}

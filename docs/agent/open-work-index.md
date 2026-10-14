@@ -24,6 +24,8 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
+Run05A public profile EIN display — active local review. Branch `feat/profile-ein-display-20261013`, isolated `coach-house-platform-profile-ein-20261013`, base f54a5fe0, [localhost3121 preview](http://localhost:3121/visual-regression/profile-ein). [Scope/evidence](../plans/2026-10-13-profile-ein-display.md). Existing EINs display once, canonically formatted, across IRS/platform/eligible curated profiles. 70 focused tests and scoped guardrails pass; full tsc has54 errors in11 unchanged acceptance files. User appearance review, current-head hosted quality/code-owner review, and release remain pending. Shared revision40 claim hostname mismatch is unchanged; no guard bypass or database write. User approved EIN display and requested the blue check in the current component/PR; preserve centered alignment with the check on the left. User approved final badge appearance and requested release. Cache-version acceptance contract repaired;20 focused tests pass. Current-head hosted quality/code-owner approval remain required;05C coordinates stays separate.
+
 LIVE-04 Documents follow-up: production user review found verbose copy and
 toolbar crowding after the shared banner change (PR298, main32e5199e). Continue
 `fix/documents-upgrade-notice-20261013` in the existing banner checkout on

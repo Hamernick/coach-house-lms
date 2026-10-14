@@ -15,7 +15,7 @@ Shared identity components cover standalone profiles and detail panels. Individu
 - Localhost: http://localhost:3121/visual-regression/profile-ein (guarded development preview using actual public records and the actual shared identity components).
 - Full profiles: http://localhost:3121/coachhousesolutionsgroup and http://localhost:3121/find/resources/146024895.
 - Node22; isolated .next. Shared env is read-only; raw resource preview/discovery explicitly disabled at launch.
-- User approved EIN placement/formatting, then requested a blue check immediately left of the centered EIN. The inline badge/text group inherits the existing alignment. Badge hover/keyboard-focus explanation: “EIN on file”; it confers no tax-status, formation, access or service-verification status. Badge appearance review remains pending. No visual baselines changed. No broad browser/screenshot sweep.
+- User approved EIN placement/formatting, then requested a blue check immediately left of the centered EIN. The inline badge/text group inherits the existing alignment. Badge hover/keyboard-focus explanation: “EIN on file”; it confers no tax-status, formation, access or service-verification status. User approved the final centered badge and requested public release. No visual baselines changed. No broad browser/screenshot sweep.
 
 ## Validation
 
@@ -30,3 +30,7 @@ Full TypeScript check remains failed:54 errors in11 unchanged acceptance test fi
 Canonical shared claim remains revision40 with an old-host ownership mismatch (`Calebs-MacBook-Pro-2.local` versus `Calebs-MBP-2`). Do not edit canonical state or bypass ownership guards. Local implementation is explicitly user-authorized; shared runner reconciliation remains required before recording a new release claim. Preserve released SHIP000 history, PR299 coordinate-repair hold and historical PR300 quality/review gaps.
 
 Stop at the user-requested EIN/check review and handoff. Coordinate coverage and broader formation/access policy changes remain separate.
+
+## Release preparation follow-up
+
+User approved final appearance and public release. PR301 head0dabc8ac passed hosted static/RLS/build; acceptance failed only an unchanged curation contract expecting old cachev8 instead of intentionalv9. Updated that expectation;20 focused EIN/curation tests pass. Final-head hosted quality and required code-owner review remain mandatory. Shared SHIP revision40 ownership blocker is unchanged. No merge/deployment is claimed.

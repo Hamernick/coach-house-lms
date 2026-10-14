@@ -32,9 +32,9 @@ or unlocking paid features for members.
 
 ## Presence
 
-Database RPCs bind names and actor IDs to authenticated users. The sidebar shows
-staff viewers/editors; same-page normalized cursor coordinates use the existing
-Cursor component. Hidden/presentation tabs retain viewing presence without cursor
+Database RPCs bind names and actor IDs to authenticated users. Same-page normalized
+cursor coordinates use the existing Cursor component. Presence stays active without
+adding support-session banners or a textual viewer/editor roster to the sidebar. Hidden/presentation tabs retain viewing presence without cursor
 movement. Polling runs once per second, one in-flight request per tab; stale sessions
 expire after15seconds and revocation filters them immediately. Legacy cursor
 publishing is suppressed for the support actor to avoid duplicate cursors.

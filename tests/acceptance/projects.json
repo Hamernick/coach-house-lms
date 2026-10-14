@@ -107,6 +107,7 @@
       "tests/acceptance/public-map-filter-url-state.test.ts",
       "tests/acceptance/public-map-index-query.test.ts",
       "tests/acceptance/public-map-preferences.test.ts",
+      "tests/acceptance/public-map-profile-return.test.ts",
       "tests/acceptance/public-map-same-location-groups.test.ts",
       "tests/acceptance/public-map-surface-helpers.test.ts",
       "tests/acceptance/public-pricing-surface-data.test.ts",

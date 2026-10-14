@@ -169,3 +169,8 @@ PR304 resumes on its existing isolated map-coverage branch before Calendar. Curr
 ### Run05C loading follow-up — October14
 
 PR304 now includes the reported globe-loading repair: stable overview query below zoom5 and bounded/coalesced count retries, with existing individual pins/layout unchanged.42focused tests and scoped checks pass. Direct Casa provider HTTP200/address/hash evidence replaces search-only proof; production application still requires fresh authoritative verification and data approval. CI has an inherited /admin bundle budget failure plus visuals; no bypass. Actual Bandto browser is disconnected, user localhost3123 review pending. No production data, env/provider changes or Calendar work.
+
+
+### Planned full coordinate coverage — October14
+
+User requested planning only: after PR304, denser individual pins at wider zooms, then source verification/publication for all4904coordinate rows (2751NYC-area), normal venue/provider categories with seasonal services retained. [Two-run plan](../plans/2026-10-14-full-coordinate-map-coverage.md). No numbered clustering, duplicate normal/cooling places, new geocoding or blanket candidate exposure. These refine LIVE03/B036 and precede Calendar. Current coverage870listings/826pin locations; raw row count is not unique publishable pins. No05D/05Eimplementation or publication started.

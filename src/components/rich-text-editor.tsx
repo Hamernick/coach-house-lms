@@ -18,6 +18,8 @@ import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
 
 export function RichTextEditor({
   value,
+  onReady,
+  applyExternalValue = true,
   onChange,
   ariaLabel,
   readOnly = false,
@@ -129,6 +131,9 @@ export function RichTextEditor({
     },
     immediatelyRender: false,
   })
+  useEffect(() => {
+    if (editor) onReady?.(editor)
+  }, [editor, onReady])
   const linkMeta = useLinkPreviews(links)
 
   useEffect(() => {
@@ -146,7 +151,7 @@ export function RichTextEditor({
   }, [toolbarPortalId])
 
   useEffect(() => {
-    if (!editor || typeof value !== "string") return
+    if (!applyExternalValue || !editor || typeof value !== "string") return
     const current = editor.getHTML()
     if (current !== value) {
       applyingRef.current = true
@@ -173,7 +178,7 @@ export function RichTextEditor({
         cancelled = true
       }
     }
-  }, [editor, value])
+  }, [applyExternalValue, editor, value])
 
   useEffect(() => {
     if (!editor) return

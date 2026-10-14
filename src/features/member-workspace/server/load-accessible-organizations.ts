@@ -4,6 +4,9 @@ import { cache } from "react"
 import type { Database } from "@/lib/supabase"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
 import type { MemberWorkspaceAccessibleOrganization } from "../types"
+import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
+import { readOrganizationRequestScope } from "@/server/organization/request-scope"
+import { readActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
 
 function readProfileString(
   profile: Record<string, unknown> | null | undefined,
@@ -86,6 +89,20 @@ const loadAccessibleOrganizationsCached = cache(async (
       imageUrl,
     }
   })
+
+  if (await hasWorkspaceSupportAccess(supabase)) {
+    const requestScope = await readOrganizationRequestScope()
+    const target = requestScope?.explicit ?? await readActiveOrganizationCookie()
+    // Memberships remain the default list. Only the current temporary target is added.
+    if (target && !organizationIds.includes(target)) {
+      const { data, error } = await supabase.rpc("search_workspace_support_organizations" as never,
+        { p_query: "", p_org: target } as never)
+      if (error) throw new Error("Unable to load the support workspace.")
+      const row = (data as unknown as Array<{ org_id: string; name: string; image_url: string | null; public_slug: string | null }> | null)?.[0]
+      if (row) accessibleOrganizations.push({ orgId: row.org_id, role: "admin", supportAccess: true,
+        name: row.name, imageUrl: row.image_url, publicSlug: row.public_slug })
+    }
+  }
 
   return accessibleOrganizations.sort((left, right) => {
     const roleDiff = rolePriority(left.role) - rolePriority(right.role)

@@ -1,3 +1,4 @@
+import type { Editor } from "@tiptap/core"
 import type { ReactNode } from "react"
 
 export type LinkPreviewMeta = {
@@ -9,6 +10,8 @@ export type LinkPreviewMeta = {
 export type LinkPreviewMetaMap = Record<string, LinkPreviewMeta>
 
 export type RichTextEditorProps = {
+  onReady?: (editor: Editor) => void
+  applyExternalValue?: boolean
   value: string
   onChange: (value: string) => void
   ariaLabel?: string

@@ -114,6 +114,14 @@ try {
   runSql("supabase/migrations/20260921002000_preserve_document_activity_actor.sql")
   runSql("supabase/tests/organization-document-activity.assertions.sql")
   runSql("supabase/tests/organization-document-activity-actor.assertions.sql")
+  runSql("supabase/tests/core-document-collaboration.bootstrap.sql")
+  runSql("supabase/migrations/20261014160000_core_document_collaboration.sql")
+  runSql("supabase/tests/core-document-collaboration.assertions.sql")
+  runSql("supabase/tests/workspace-support.bootstrap.sql")
+  runSql("supabase/migrations/20261014190000_workspace_support_access.sql")
+  runSql("supabase/tests/workspace-support.assertions.sql")
+  console.log("[workspace-support] Explicit grants, search, selected-tenant RLS, presence, audit, storage and revocation passed.")
+  console.log("[core-document-collaboration] Recovery, atomic revisions and private-table restrictions passed.")
   console.log("[organization-document-activity] Document/file triggers, tenant scope and write restrictions passed.")
 } finally {
   if (started) {

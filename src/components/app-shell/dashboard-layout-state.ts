@@ -1,4 +1,5 @@
 import { cache } from "react"
+import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 
 import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
 import {
@@ -133,7 +134,7 @@ const resolveDashboardLayoutStateCached = cache(
     }
 
     const accessibleOrganizationsPromise =
-      metadataIntentFocus !== "fund"
+      (metadataIntentFocus !== "fund" || isPlatformStaff)
         ? loadAccessibleOrganizations(supabase, user.id)
         : Promise.resolve([])
     const appPricingFeedbackPromptPromise = loadAppPricingFeedbackPrompt({
@@ -258,7 +259,7 @@ const resolveDashboardLayoutStateCached = cache(
       isPlatformStaff || hasActiveSubscription || orgId !== user.id
     canAccessOrgAdmin = showOrgAdmin && showMemberWorkspace
 
-    if (metadataIntentFocus !== "fund" && showMemberWorkspace) {
+    if ((metadataIntentFocus !== "fund" || isPlatformStaff) && showMemberWorkspace) {
       const resolvedActiveOrganization =
         accessibleOrganizations.find(
           (organization) => organization.orgId === orgId
@@ -268,7 +269,8 @@ const resolveDashboardLayoutStateCached = cache(
 
       if (resolvedActiveOrganization) {
         memberWorkspaceHeader = {
-          activeOrganization: resolvedActiveOrganization,
+          activeOrganization: { ...resolvedActiveOrganization, supportAccess: activeOrg.supportAccess },
+          canSearchSupport: await hasWorkspaceSupportAccess(supabase),
           accessibleOrganizations,
         }
       }
@@ -366,6 +368,7 @@ const resolveDashboardLayoutStateCached = cache(
           ? metadataIntentFocus
           : null,
       formationStatus,
+      organizationScope: { orgId, supportAccess: activeOrg.supportAccess },
       memberWorkspaceHeader,
       memberMapOnboarding: {
         hasOrganizationSwitcher: accessibleOrganizations.length > 1,

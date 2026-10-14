@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { OrganizationWorkspaceSupportPanel, WorkspaceOrganizationScope } from "@/features/organization-workspace-support"
 
 import { redirect } from "next/navigation"
 
@@ -24,6 +25,7 @@ export default async function AdminLayout({
   }
 
   return (
+    <WorkspaceOrganizationScope organizationId={state.organizationScope?.orgId} supportAccess={state.organizationScope?.supportAccess}>
     <AppShell
       breadcrumbs={breadcrumbs}
       sidebarHeaderContent={
@@ -53,7 +55,9 @@ export default async function AdminLayout({
       defaultSidebarOpen={defaultSidebarOpen}
       context="admin"
     >
-      {children}
+      {!state.memberWorkspaceHeader && state.organizationScope ? <OrganizationWorkspaceSupportPanel organizationId={state.organizationScope.orgId} supportAccess={state.organizationScope.supportAccess} /> : null}
+        {children}
     </AppShell>
+    </WorkspaceOrganizationScope>
   )
 }

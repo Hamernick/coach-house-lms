@@ -8,6 +8,8 @@ import {
   useState,
   useTransition,
 } from "react"
+import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
+import { useRoadmapSavedSection } from "./use-roadmap-saved-section"
 import { usePathname } from "next/navigation"
 
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
@@ -67,9 +69,7 @@ export function useRoadmapEditorState({
       ? initialSectionId
       : ""
   }, [initialSections, initialSectionId])
-  const [sections, setSections] = useState<RoadmapSection[]>(
-    () => initialSections
-  )
+  const [sections, setSections] = useState<RoadmapSection[]>(() => initialSections)
   const [drafts, setDrafts] = useState<Record<string, RoadmapDraft>>(() =>
     createDraftMap(initialSections)
   )
@@ -250,9 +250,9 @@ export function useRoadmapEditorState({
 
   const flushActiveSectionDraft = useCallback(() => {
     const sectionId = activeIdRef.current
-    if (!sectionId) return
+    if (!sectionId || (organizationDocumentCollaborationEnabled && sourceScope)) return
     saveSectionById({ sectionId, showToast: false })
-  }, [saveSectionById])
+  }, [saveSectionById, sourceScope])
 
   useEffect(() => {
     if (!initialSectionId || initialSectionId === activeIdRef.current) return
@@ -323,7 +323,7 @@ export function useRoadmapEditorState({
   }, [activeSection, canEdit, saveSectionById])
 
   useRoadmapEditorAutosave({
-    canEdit,
+    canEdit: canEdit && !(organizationDocumentCollaborationEnabled && sourceScope),
     activeSection,
     activeDraft,
     isDirty,
@@ -400,7 +400,10 @@ export function useRoadmapEditorState({
     [activeSection, canEdit, isPending, savingId, sourceScope]
   )
 
+  const handleSavedSection = useRoadmapSavedSection(setSections, setDrafts)
+
   return {
+    handleSavedSection,
     activeSection,
     activeDraft,
     drafts,

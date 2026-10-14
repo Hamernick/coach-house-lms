@@ -1,5 +1,6 @@
 "use server"
 
+import { canRemoveCoreDocumentImage } from "@/server/organization/core-document-asset-retention"
 import { revalidatePath, revalidateTag } from "next/cache"
 
 import { requireOrganizationDocumentStorage, resolveOrganizationDocumentStorageAccess, DOCUMENT_STORAGE_UPGRADE_MESSAGE } from "@/lib/organization/document-storage-access"
@@ -135,7 +136,7 @@ export async function saveRoadmapSectionAction({
   supabase = access.supabase
   const { orgId, role } = access
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
+  const documentAccess = "supportAccess" in access && access.supportAccess ? { hasStorageAccess: true } : await resolveOrganizationDocumentStorageAccess({ supabase, orgId })
   if ("error" in documentAccess) return { error: documentAccess.error }
   const driveOnly = driveFileId !== undefined && Boolean(sectionId) &&
     [title, subtitle, content, budgetRows, imageUrl, isPublic, layout, status, ctaLabel, ctaUrl].every((value) => value === undefined)
@@ -284,7 +285,7 @@ export async function saveRoadmapSectionAction({
     if (insertError) return { error: insertError.message }
   }
 
-  if (cleanupPath) {
+  if (cleanupPath && await canRemoveCoreDocumentImage(orgId, previousSection?.imageUrl)) {
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
@@ -395,7 +396,7 @@ export async function deleteRoadmapSectionAction(
     userId: orgId,
   })
 
-  if (cleanupPath) {
+  if (cleanupPath && await canRemoveCoreDocumentImage(orgId, previousSection?.imageUrl)) {
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 

@@ -1,5 +1,7 @@
 "use client"
 
+import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
+import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration"
 import { useEffect, useState } from "react"
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
 import { RichTextEditor } from "@/components/rich-text-editor"
@@ -28,6 +30,7 @@ export function OrganizationCoreDocumentEditor({
   onClose: () => void
   onSaved: () => void
 }) {
+  const [livePending, setLivePending] = useState(false)
   const [content, setContent] = useState(section.content)
   const [rows, setRows] = useState(section.budgetRows ?? [])
   const [saving, setSaving] = useState(false)
@@ -76,6 +79,23 @@ export function OrganizationCoreDocumentEditor({
     } finally {
       setSaving(false)
     }
+  }
+  if (organizationDocumentCollaborationEnabled) {
+    const closeLive = () => {
+      if (!livePending || window.confirm("Some changes may not be saved. Keep this editor open to finish syncing, or close anyway?")) { onSaved(); onClose() }
+    }
+    return <Dialog open onOpenChange={open => { if (!open) closeLive() }}>
+      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden sm:max-w-4xl">
+        <DialogHeader className="shrink-0"><DialogTitle>{section.title}</DialogTitle>
+          <DialogDescription>Changes save automatically and appear for everyone editing this document.</DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <OrganizationDocumentCollaborationPanel key={`${organizationId}:${section.id}`} section={section}
+            organizationId={organizationId} userId={userId} onPendingChange={setLivePending} />
+        </div>
+        <div className="flex shrink-0 justify-end gap-2"><Button variant="outline" onClick={closeLive}>Close</Button></div>
+      </DialogContent>
+    </Dialog>
   }
   return (
     <Dialog

@@ -81,6 +81,8 @@ release record; this candidate still requires hosted quality and review.
 
 ## Open lanes
 
+Next after Run05C: [coach/admin co-editing, durable recovery and organization switching](../plans/2026-10-14-coach-admin-coediting.md), then Calendar → formation verification → fiscal flow/notifications. Implementation WIP on `feat/coach-document-collaboration-20261014`, base`af110563`, isolated coediting-plan checkout; actual-app localhost3124, Bandto Chrome only. Synthetic review route removed at user direction; keep existing editor layout. Snapshot conflict handling and missing live dialog sync confirmed in source; incident not reproduced. Local undo exists; durable core-document restore not found. Save/history implementation is in review; local SQL and focused concurrency/access checks pass. Collaboration migration20261014160000 is applied/verified; localhost3124 enables it for user review. The existing switcher now supports search-only temporary admin access; support migration20261014190000 and four explicit grants are applied. User-led Southside Community Table testing and release gates remain outstanding. Preserve separate PR304 and SHIP ownership gate.
+
 Vercel CPU optimization: `fix/vercel-cpu-optimization-20261011` in
 `/Users/calebhamernick/Development/coach-house-platform-vercel-cpu-20261011`, based
 on `0819df5f`. User approved an isolated optimization branch and reported upgrading
@@ -140,3 +142,13 @@ All 61 valid registered worktrees were clean after cleanup. Closed S02 notes wer
 The root mixed recovery branch remains local. Four scoped backup branches passed staged and complete outgoing-commit secret scans and diff hygiene. No new application or hosted release tests ran in this organization pass. No open lane is marked release-ready.
 
 Before shipping any lane: inspect branch/upstream/dirt and compare with current main; resolve shared-file ownership; run focused checks and browser review for affected UI; append the current monthly runlog; pass the current PR's hosted `quality`, code-owner review, and branch protection. Provider setup, live data, deployment, and production verification have separate gates. Particles and Calendar own only their respective additions to `tests/acceptance/projects.json`; current-main entries must remain. Work one lane at a time.
+
+
+### Run04A checkpoint — migration applied October14
+
+PR305 remains draft. Required collaboration migration20261014160000 is now applied/verified in production; actual localhost3124 enables collaboration for user-led Southside Community Table testing. Production application flag unchanged/off. Static/acceptance/RLS/build pass at86f8e1fc; five Resources/Tools visual failures block quality. Explicit admin support switching/full-workspace authorization and organization-level verified presence are still owed; all four intended accounts were found, but generic staff status also includes test accounts and must not be the new grant boundary. See existing [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md) for implementation and release boundaries. No staff grants/data edits or browser walkthroughs.
+
+
+### Run04A checkpoint — support search implemented
+
+PR305 now includes the existing switcher's global admin search, membership/current-temporary default list, selected-org authorization and authenticated staff presence. Migration20261014190000 and the four verified account grants are applied; no memberships/staff roles changed. Both features are enabled on localhost3124; production application flags remain off.57focused cases plus local PostgreSQL/RLS checks pass. User-led UI/co-editing/restore testing and current-head quality/code-owner review remain. See existing [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md) for scope and deployment/rollback receipts.

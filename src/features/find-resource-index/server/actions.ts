@@ -19,7 +19,7 @@ const fetchFindResourceIndexItemsCached = unstable_cache(
     const items = await fetchPublicResourceMapItems()
     return items.map(serializeFindResourceIndexItem)
   },
-  ["find-resource-index-v2"],
+  ["find-resource-index-v4"],
   { revalidate: 300 }
 )
 
@@ -35,7 +35,7 @@ const fetchFindResourceDetailItemCached = unstable_cache(
     const group = groupResourcePlaces(candidates).find((members) => members.some((member) => member.id === id))!
     return resolveFindResourceDetailItem([mergeResourcePlace(group, id)], id)
   },
-  ["find-resource-detail-v3"],
+  ["find-resource-detail-v5"],
   { revalidate: 300 }
 )
 

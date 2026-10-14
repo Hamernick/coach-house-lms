@@ -33,6 +33,18 @@ User owns appearance checks; hosted current-head quality/code-owner review and
 deployment remain required. Preserve separate PR299 map audit work and its
 unapplied coordinate corrections; no provider changes or Supabase previews.
 
+LIVE-03 map changes and claim/cache review fixes merged through [PR299](https://github.com/Hamernick/CoachHouse/pull/299) as `164c640b`.
+[Audit and repair boundary](../plans/2026-10-13-resource-map-audit.md): all 877 published resources,
+877 underlying location rows and 21 public organizations audited; 875 real service records become 871 places.
+Shared pins open a choice list first; all viewport pages load beyond 500; confirmed aliases preserve IDs/schedules.
+Branch `fix/public-resource-test-records-20261013` in the map checkout, base e49a31bd, localhost3115.
+Four verified public contact-coordinate corrections are prepared as guarded SQL, not applied.
+Claim search/submission now share fixture visibility, and public profile cache advances tov2 after bot review.
+30 focused review-regression/claim/directory tests pass. Preserve historical CI/review evidence;
+deliberate data step, deployment and user map check are not confirmed by the merge.
+No Supabase preview, production mutation or agent visual sweep. PR297 merged per user; do not recheck.
+
+
 PR297 merged per Caleb; do not spend time rechecking his merge confirmation.
 He is checking the map himself. [Map repair evidence](../plans/2026-10-13-live-map-markers.md):
 57 focused tests, lint/prepush and Graphify passed. Preserve the separate visual,

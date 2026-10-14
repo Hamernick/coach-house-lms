@@ -5,7 +5,8 @@ import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 import { readOrganizationRequestScope } from "@/server/organization/request-scope"
 import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
 import type { MemberWorkspaceAccessibleOrganization } from "@/features/member-workspace"
-import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput } from "../types"
+import { mapSupportOrganization } from "../lib"
+import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportSearchRow } from "../types"
 
 async function context() {
   if (!organizationWorkspaceSupportEnabled) throw new Error("Workspace support is not enabled.")
@@ -15,17 +16,19 @@ async function context() {
   return client
 }
 
-export async function searchSupportOrganizations(query: string): Promise<{ organizations: MemberWorkspaceAccessibleOrganization[]; error?: string }> {
-  if (typeof query !== "string" || query.trim().length < 2) return { organizations: [] }
+export async function searchSupportOrganizations(query: string, offset = 0): Promise<{ organizations: MemberWorkspaceAccessibleOrganization[]; total: number; hasMore: boolean; error?: string }> {
+  const empty = { organizations: [], total: 0, hasMore: false }
+  if (typeof query !== "string" || query.trim().length < 2) return empty
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) return { ...empty, error: "Invalid search page." }
   try {
     const client = await context()
-    const { data, error } = await client.rpc("search_workspace_support_organizations" as never, { p_query: query.trim().slice(0, 100) } as never)
-    if (error) return { organizations: [], error: "Unable to search support workspaces." }
-    return { organizations: ((data ?? []) as Array<{ org_id: string; name: string; image_url: string | null; public_slug: string | null }>).map((row) => ({
-      orgId: row.org_id, name: row.name, role: "admin", imageUrl: row.image_url, publicSlug: row.public_slug, supportAccess: true,
-    })) }
+    const { data, error } = await client.rpc("search_workspace_support_organizations_v2" as never, { p_query: query.trim().slice(0, 100), p_offset: offset } as never)
+    if (error) return { ...empty, error: "Unable to search support workspaces." }
+    const rows = (data ?? []) as WorkspaceSupportSearchRow[]
+    const total = Number(rows[0]?.total_count ?? 0)
+    return { organizations: rows.map(mapSupportOrganization), total, hasMore: offset + rows.length < total }
   } catch {
-    return { organizations: [], error: "Workspace support access is unavailable." }
+    return { ...empty, error: "Workspace support access is unavailable." }
   }
 }
 

@@ -15,6 +15,8 @@ export type MemberWorkspaceAccessibleOrganization = {
   publicSlug: string | null
   imageUrl: string | null
   supportAccess?: boolean
+  contactName?: string | null
+  contactEmail?: string | null
 }
 
 export type MemberWorkspaceProjectOrganizationOption = {

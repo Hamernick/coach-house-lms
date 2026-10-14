@@ -1,19 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
+import { useMemo, useState, useTransition } from "react"
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
 import {
   Drawer,
   DrawerContent,
@@ -23,7 +14,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { mergeSupportSearchResults, searchSupportOrganizations } from "@/features/organization-workspace-support"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -32,23 +22,8 @@ import type {
   MemberWorkspaceSetActiveOrganizationResult,
 } from "../../types"
 
-function formatRole(role: MemberWorkspaceAccessibleOrganization["role"]) {
-  if (role === "owner") return "Owner"
-  if (role === "admin") return "Admin"
-  if (role === "staff") return "Staff"
-  if (role === "board") return "Board"
-  return "Member"
-}
-
-function getOrganizationInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
-}
+import { OrganizationList } from "./member-workspace-org-switcher-list"
+import { formatRole, getOrganizationInitials } from "./member-workspace-org-switcher-utils"
 
 type MemberWorkspaceOrgSwitcherProps = {
   canSearchSupport?: boolean
@@ -57,105 +32,6 @@ type MemberWorkspaceOrgSwitcherProps = {
   setActiveOrganizationAction: (
     orgId: string,
   ) => Promise<MemberWorkspaceSetActiveOrganizationResult>
-}
-
-function OrganizationList({
-  canSearchSupport = false,
-  activeOrganization,
-  organizations,
-  onSelect,
-}: {
-  canSearchSupport?: boolean
-  activeOrganization: MemberWorkspaceAccessibleOrganization
-  organizations: MemberWorkspaceAccessibleOrganization[]
-  onSelect: (organization: MemberWorkspaceAccessibleOrganization) => void
-}) {
-  const [query, setQuery] = useState("")
-  const [matches, setMatches] = useState<MemberWorkspaceAccessibleOrganization[]>([])
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const [searching, setSearching] = useState(false)
-  useEffect(() => {
-    setMatches([])
-    setSearchError(null)
-    if (!canSearchSupport || query.trim().length < 2) { setSearching(false); return }
-    let canceled = false
-    setSearching(true)
-    const timeout = setTimeout(() => {
-      void searchSupportOrganizations(query).then((result) => {
-        if (canceled) return
-        setMatches(result.organizations); setSearchError(result.error ?? null); setSearching(false)
-      }).catch(() => { if (!canceled) { setSearchError("Search unavailable. Try again."); setSearching(false) } })
-    }, 250)
-    return () => { canceled = true; clearTimeout(timeout) }
-  }, [canSearchSupport, query])
-  const visible = mergeSupportSearchResults(organizations, matches, query)
-  return (
-    <Command
-      shouldFilter={false}
-      key={activeOrganization.orgId}
-      defaultValue={activeOrganization.orgId}
-      className="rounded-2xl border border-border/60 bg-background"
-    >
-      <CommandInput value={query} onValueChange={setQuery} placeholder={canSearchSupport ? "Search all organizations" : "Search organizations"} />
-      <CommandList className="max-h-[18rem]">
-        <CommandEmpty>{searching ? "Searching…" : searchError ?? "No organizations found."}</CommandEmpty>
-        <CommandGroup
-          heading="Organizations"
-          className="[&_[cmdk-group-items]]:space-y-1"
-        >
-          {visible.map((organization) => {
-            const isActive = organization.orgId === activeOrganization.orgId
-            return (
-              <CommandItem
-                key={organization.orgId}
-                value={organization.orgId}
-                keywords={[organization.name, organization.role]}
-                onSelect={() => onSelect(organization)}
-                aria-current={isActive ? "true" : undefined}
-                className={cn(
-                  "gap-3 rounded-xl px-3 py-2",
-                  isActive && "bg-accent text-accent-foreground",
-                )}
-              >
-                <Avatar className="size-8 rounded-xl border border-border/70">
-                  <AvatarImage alt={organization.name} src={organization.imageUrl ?? undefined} />
-                  <AvatarFallback className="rounded-xl text-[10px] font-semibold">
-                    {getOrganizationInitials(organization.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={cn(
-                      "truncate text-sm font-medium",
-                      isActive ? "text-accent-foreground" : "text-foreground",
-                    )}
-                  >
-                    {organization.name}
-                  </p>
-                  <p
-                    className={cn(
-                      "truncate text-xs",
-                      isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                    )}
-                  >
-                    {organization.supportAccess ? "Coach House support" : formatRole(organization.role)}
-                  </p>
-                </div>
-                <CheckIcon
-                  className={cn(
-                    "size-4 transition-opacity",
-                    isActive ? "text-accent-foreground" : "text-primary",
-                    isActive ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden
-                />
-              </CommandItem>
-            )
-          })}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  )
 }
 
 export function MemberWorkspaceOrgSwitcher({

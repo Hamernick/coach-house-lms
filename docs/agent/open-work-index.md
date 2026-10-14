@@ -152,3 +152,8 @@ PR305 remains draft. Required collaboration migration20261014160000 is now appli
 ### Run04A checkpoint — support search implemented
 
 PR305 now includes the existing switcher's global admin search, membership/current-temporary default list, selected-org authorization and authenticated staff presence. Migration20261014190000 and the four verified account grants are applied; no memberships/staff roles changed. Both features are enabled on localhost3124; production application flags remain off.57focused cases plus local PostgreSQL/RLS checks pass. User-led UI/co-editing/restore testing and current-head quality/code-owner review remain. See existing [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md) for scope and deployment/rollback receipts.
+
+
+### Run04A search follow-up — October14
+
+User reports PR305 merged. Follow-up `fix/workspace-support-search-20261014` reuses localhost3124: owner/member emails and names, unnamed organizations, exact ranking, compact/spaced terms, matching contact identity and20-result paging. Migration20261014203000 applied/verified with compatible old RPC; no account/grant changes.22focused cases plus SQL/RLS pass. New UI/user review and follow-up PR release remain. See [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md); retain Vercel API403/production-flag and canonical SHIP ownership gaps.

@@ -120,6 +120,8 @@ try {
   runSql("supabase/tests/workspace-support.bootstrap.sql")
   runSql("supabase/migrations/20261014190000_workspace_support_access.sql")
   runSql("supabase/tests/workspace-support.assertions.sql")
+  runSql("supabase/migrations/20261014203000_workspace_support_search_identity.sql")
+  runSql("supabase/tests/workspace-support-search.assertions.sql")
   console.log("[workspace-support] Explicit grants, search, selected-tenant RLS, presence, audit, storage and revocation passed.")
   console.log("[core-document-collaboration] Recovery, atomic revisions and private-table restrictions passed.")
   console.log("[organization-document-activity] Document/file triggers, tenant scope and write restrictions passed.")

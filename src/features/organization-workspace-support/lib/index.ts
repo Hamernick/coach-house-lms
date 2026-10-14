@@ -1,7 +1,22 @@
-export function mergeSupportSearchResults<T extends { orgId: string; name: string }>(memberships: T[], matches: T[], query: string) {
+import type { WorkspaceSupportSearchRow } from "../types"
+
+function searchKey(value: string) { return value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "") }
+
+export function mapSupportOrganization(row: WorkspaceSupportSearchRow) {
+  return { orgId: row.org_id, name: row.name, role: "admin" as const, imageUrl: row.image_url,
+    publicSlug: row.public_slug, supportAccess: true, contactName: row.contact_name ?? row.owner_name,
+    contactEmail: row.contact_email ?? row.owner_email }
+}
+
+export function mergeSupportSearchResults<T extends { orgId: string; name: string; publicSlug?: string | null; contactName?: string | null; contactEmail?: string | null }>(memberships: T[], matches: T[], query: string) {
   const search = query.trim().toLowerCase()
-  const result = new Map(memberships.filter((entry) => !search || entry.name.toLowerCase().includes(search)).map((entry) => [entry.orgId, entry]))
-  if (search.length >= 2) for (const entry of matches) if (!result.has(entry.orgId)) result.set(entry.orgId, entry)
+  const key = searchKey(search)
+  const tokens = search.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+  const result = new Map(memberships.filter((entry) => {
+    const text = [entry.name, entry.publicSlug, entry.contactName, entry.contactEmail].filter(Boolean).join(" ").toLowerCase()
+    return !key || searchKey(text).includes(key) || tokens.every((token) => text.includes(token))
+  }).map((entry) => [entry.orgId, entry]))
+  if (key.length >= 2) for (const entry of matches) result.set(entry.orgId, { ...entry, ...result.get(entry.orgId), contactName: entry.contactName, contactEmail: entry.contactEmail })
   return [...result.values()]
 }
 

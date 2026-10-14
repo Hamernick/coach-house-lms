@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down"
 
@@ -23,6 +23,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { mergeSupportSearchResults, searchSupportOrganizations } from "@/features/organization-workspace-support"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -50,6 +51,7 @@ function getOrganizationInitials(name: string) {
 }
 
 type MemberWorkspaceOrgSwitcherProps = {
+  canSearchSupport?: boolean
   activeOrganization: MemberWorkspaceAccessibleOrganization
   organizations: MemberWorkspaceAccessibleOrganization[]
   setActiveOrganizationAction: (
@@ -58,28 +60,50 @@ type MemberWorkspaceOrgSwitcherProps = {
 }
 
 function OrganizationList({
+  canSearchSupport = false,
   activeOrganization,
   organizations,
   onSelect,
 }: {
+  canSearchSupport?: boolean
   activeOrganization: MemberWorkspaceAccessibleOrganization
   organizations: MemberWorkspaceAccessibleOrganization[]
   onSelect: (organization: MemberWorkspaceAccessibleOrganization) => void
 }) {
+  const [query, setQuery] = useState("")
+  const [matches, setMatches] = useState<MemberWorkspaceAccessibleOrganization[]>([])
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [searching, setSearching] = useState(false)
+  useEffect(() => {
+    setMatches([])
+    setSearchError(null)
+    if (!canSearchSupport || query.trim().length < 2) { setSearching(false); return }
+    let canceled = false
+    setSearching(true)
+    const timeout = setTimeout(() => {
+      void searchSupportOrganizations(query).then((result) => {
+        if (canceled) return
+        setMatches(result.organizations); setSearchError(result.error ?? null); setSearching(false)
+      }).catch(() => { if (!canceled) { setSearchError("Search unavailable. Try again."); setSearching(false) } })
+    }, 250)
+    return () => { canceled = true; clearTimeout(timeout) }
+  }, [canSearchSupport, query])
+  const visible = mergeSupportSearchResults(organizations, matches, query)
   return (
     <Command
+      shouldFilter={false}
       key={activeOrganization.orgId}
       defaultValue={activeOrganization.orgId}
       className="rounded-2xl border border-border/60 bg-background"
     >
-      <CommandInput placeholder="Search organizations" />
+      <CommandInput value={query} onValueChange={setQuery} placeholder={canSearchSupport ? "Search all organizations" : "Search organizations"} />
       <CommandList className="max-h-[18rem]">
-        <CommandEmpty>No organizations found.</CommandEmpty>
+        <CommandEmpty>{searching ? "Searching…" : searchError ?? "No organizations found."}</CommandEmpty>
         <CommandGroup
           heading="Organizations"
           className="[&_[cmdk-group-items]]:space-y-1"
         >
-          {organizations.map((organization) => {
+          {visible.map((organization) => {
             const isActive = organization.orgId === activeOrganization.orgId
             return (
               <CommandItem
@@ -114,7 +138,7 @@ function OrganizationList({
                       isActive ? "text-accent-foreground/80" : "text-muted-foreground",
                     )}
                   >
-                    {formatRole(organization.role)}
+                    {organization.supportAccess ? "Coach House support" : formatRole(organization.role)}
                   </p>
                 </div>
                 <CheckIcon
@@ -135,6 +159,7 @@ function OrganizationList({
 }
 
 export function MemberWorkspaceOrgSwitcher({
+  canSearchSupport = false,
   activeOrganization,
   organizations,
   setActiveOrganizationAction,
@@ -156,6 +181,12 @@ export function MemberWorkspaceOrgSwitcher({
       return
     }
 
+    // Existing document editors register beforeunload when work is pending.
+    // Check before changing the shared selection cookie, not after a reload starts.
+    if (!window.dispatchEvent(new Event("beforeunload", { cancelable: true }))) {
+      toast.error("Wait for your changes to save before switching organizations.")
+      return
+    }
     startTransition(async () => {
       const result = await setActiveOrganizationAction(organization.orgId)
       if ("error" in result) {
@@ -164,7 +195,8 @@ export function MemberWorkspaceOrgSwitcher({
       }
 
       setOpen(false)
-      window.location.reload()
+      if (result.supportAccess) window.location.assign("/workspace")
+      else window.location.reload()
     })
   }
 
@@ -207,6 +239,7 @@ export function MemberWorkspaceOrgSwitcher({
           </DrawerHeader>
           <div className="px-4 pb-4">
             <OrganizationList
+              canSearchSupport={canSearchSupport}
               activeOrganization={activeOrganization}
               organizations={organizations}
               onSelect={handleSelect}
@@ -224,11 +257,12 @@ export function MemberWorkspaceOrgSwitcher({
         <div className="border-b border-border/60 px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Switch organization</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Change the active organization for Workspace, Admin, and Documents.
+            {canSearchSupport ? "Your organizations are listed below. Search to help another organization temporarily." : "Change the active organization for Workspace, Admin, and Documents."}
           </p>
         </div>
         <div className="p-3">
           <OrganizationList
+              canSearchSupport={canSearchSupport}
             activeOrganization={activeOrganization}
             organizations={organizations}
             onSelect={handleSelect}

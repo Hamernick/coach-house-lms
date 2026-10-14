@@ -52,6 +52,7 @@ async function context(request: NextRequest, response: NextResponse) {
   } = await supabase.auth.getUser()
   if (error || !user) throw new CalendarError("unauthorized", 401)
   const org = await resolveActiveOrganization(supabase, user.id)
+  if (org.supportAccess) throw new CalendarError("forbidden", 403)
   return { userId: user.id, orgId: org.orgId }
 }
 export function calendarHandler(operation: Operation) {

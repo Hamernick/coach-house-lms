@@ -18,7 +18,7 @@ export async function documentContext(scope: DocumentScope, write = false) {
   if ("error" in access) throw new Error(access.error || "Document access denied.")
   if (write) {
     if (!canEditOrganization(access.role)) throw new Error("This document is read-only.")
-    const storage = await requireOrganizationDocumentStorage({ supabase: access.supabase, orgId: scope.organizationId })
+    const storage = "supportAccess" in access && access.supportAccess ? { ok: true } : await requireOrganizationDocumentStorage({ supabase: access.supabase, orgId: scope.organizationId })
     if ("error" in storage) throw new Error(storage.error)
   }
   return { user, client, admin: createSupabaseAdminClient({ actorId: user.id }) as SupabaseClient, role: "staffAccessLevel" in access ? access.staffAccessLevel === "coach" ? "Coach" : "Coach House admin" : access.role }

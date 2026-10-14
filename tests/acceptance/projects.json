@@ -387,6 +387,7 @@
       "tests/acceptance/organization-publication-review.test.ts",
       "tests/acceptance/organization-setup-progress.test.ts",
       "tests/acceptance/organization-workspace-deep-links.test.ts",
+      "tests/acceptance/organization-workspace-support.test.ts",
       "tests/acceptance/origin-story-assignment-flow.test.ts",
       "tests/acceptance/page-health-monitor.test.ts",
       "tests/acceptance/paywall-overlay-config.test.ts",

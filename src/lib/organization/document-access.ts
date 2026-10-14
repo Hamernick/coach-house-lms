@@ -1,4 +1,6 @@
 import "server-only"
+import { hasWorkspaceSupportAccess } from "./support-access"
+import { readOrganizationRequestScope } from "@/server/organization/request-scope"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase"
@@ -23,6 +25,15 @@ export async function resolveOrganizationDocumentAccess(
   }
   if (organizationId === userId) {
     return { supabase, orgId: organizationId, role: "owner" as const }
+  }
+  const supportAccess = await hasWorkspaceSupportAccess(supabase)
+  const requestScope = await readOrganizationRequestScope()
+  if (requestScope?.supportRequested && !supportAccess) return { error: "Workspace support access was revoked." }
+  if (supportAccess) {
+    const admin = createSupabaseAdminClient({ actorId: userId })
+    const { data, error } = await admin.from("organizations").select("user_id").eq("user_id", organizationId).maybeSingle()
+    if (error || !data) return { error: "Organization not found." }
+    return { supabase: admin, orgId: organizationId, role: "admin" as const, supportAccess: true, staffAccessLevel: "coach" as const }
   }
   const membership = await supabase.from("organization_memberships")
     .select("role").eq("org_id", organizationId).eq("member_id", userId).maybeSingle()

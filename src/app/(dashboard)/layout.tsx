@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { OrganizationWorkspaceSupportPanel, WorkspaceOrganizationScope } from "@/features/organization-workspace-support"
 
 import { AppShell } from "@/components/app-shell"
 import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
@@ -25,7 +26,7 @@ export default async function DashboardLayout({
   ])
 
   return (
-    <>
+    <WorkspaceOrganizationScope organizationId={state.organizationScope?.orgId} supportAccess={state.organizationScope?.supportAccess}>
       <FrameEscape />
       <AppShell
         sidebarHeaderContent={
@@ -55,6 +56,7 @@ export default async function DashboardLayout({
         defaultSidebarOpen={defaultSidebarOpen}
         context="platform"
       >
+        {!state.memberWorkspaceHeader && state.organizationScope ? <OrganizationWorkspaceSupportPanel organizationId={state.organizationScope.orgId} supportAccess={state.organizationScope.supportAccess} /> : null}
         {children}
       </AppShell>
       {state.user?.email && !state.onboardingLocked ? (
@@ -64,6 +66,6 @@ export default async function DashboardLayout({
           tutorialPending={state.tutorialWelcome.platform}
         />
       ) : null}
-    </>
+    </WorkspaceOrganizationScope>
   )
 }

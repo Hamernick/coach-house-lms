@@ -88,6 +88,7 @@ describe("organization switching", () => {
     const switcherSource = readSource(
       "src/features/member-workspace/components/shell/member-workspace-org-switcher.tsx",
     )
+    const switcherListSource = readSource("src/features/member-workspace/components/shell/member-workspace-org-switcher-list.tsx")
     const workspaceViewSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-workspace-view.tsx",
     )
@@ -100,11 +101,11 @@ describe("organization switching", () => {
     expect(adminLayoutSource).toContain("MemberWorkspaceSidebarHeader")
     expect(adminLayoutSource).toContain("showMemberWorkspace={state.showMemberWorkspace}")
     expect(appShellSource).not.toContain("(!isAdminContext || isAdmin)")
-    expect(switcherSource).toContain("defaultValue={activeOrganization.orgId}")
-    expect(switcherSource).toContain("value={organization.orgId}")
-    expect(switcherSource).toContain("keywords={[organization.name, organization.role]}")
-    expect(switcherSource).toContain('aria-current={isActive ? "true" : undefined}')
-    expect(switcherSource).toContain(
+    expect(switcherListSource).toContain("defaultValue={activeOrganization.orgId}")
+    expect(switcherListSource).toContain("value={organization.orgId}")
+    expect(switcherListSource).toContain("keywords={[organization.name, organization.role,")
+    expect(switcherListSource).toContain('aria-current={isActive ? "true" : undefined}')
+    expect(switcherListSource).toContain(
       'className="[&_[cmdk-group-items]]:space-y-1"',
     )
     expect(switcherSource).toContain("Workspace, Admin, and Documents")

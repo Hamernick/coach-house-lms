@@ -1,8 +1,10 @@
 # Workspace support
 
 The existing organization switcher lists memberships and the current temporary
-workspace. Explicitly granted staff can search all organizations (at least two
-characters, twenty matches) and select one without creating a membership.
+workspace. Explicitly granted staff can search by organization name/slug, owner or
+member name/email, including unnamed workspaces. Search uses at least two characters,
+ranked twenty-result pages, contact identity and visible totals/errors/retry. Empty
+search stays local; selecting an organization creates no membership.
 
 ## Authorization
 
@@ -39,7 +41,7 @@ publishing is suppressed for the support actor to avoid duplicate cursors.
 
 ## Rollout and tests
 
-Apply20261014190000 only after local SQL/RLS checks. Provision exact verified Auth
+Apply20261014190000 and search follow-up20261014203000 only after local SQL/RLS checks. Provision exact verified Auth
 IDs through a guarded operator transaction; no accounts are seeded by the migration.
 Enable `NEXT_PUBLIC_WORKSPACE_SUPPORT_ENABLED` together with the document collaboration
 flag after their migrations. Default is off. Test on actual localhost3124; user owns

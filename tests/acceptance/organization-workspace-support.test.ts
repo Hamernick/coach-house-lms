@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { createOrganizationScopedFetch, mergeSupportSearchResults } from "@/features/organization-workspace-support/lib"
+import { createOrganizationScopedFetch, mergeSupportSearchResults, mapSupportOrganization } from "@/features/organization-workspace-support/lib"
 
-const mocks = vi.hoisted(() => ({ scope: vi.fn(), cookie: vi.fn(), rpc: vi.fn() }))
+const mocks = vi.hoisted(() => ({ scope: vi.fn(), cookie: vi.fn(), rpc: vi.fn(), auth: vi.fn() }))
 vi.mock("@/lib/feature-flags", () => ({ organizationWorkspaceSupportEnabled: true }))
 vi.mock("@/server/organization/request-scope", () => ({ readOrganizationRequestScope: mocks.scope }))
 vi.mock("@/lib/organization/active-org-cookie", () => ({ readActiveOrganizationCookie: mocks.cookie }))
+vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => client() }))
+import { searchSupportOrganizations } from "@/features/organization-workspace-support/server/actions"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 function client(memberships: Array<{ org_id: string; role: string }> = []) {
-  return { rpc: mocks.rpc, from: (table: string) => ({ select: () => ({ eq: () => ({
+  return { auth: { getUser: mocks.auth }, rpc: mocks.rpc, from: (table: string) => ({ select: () => ({ eq: () => ({
     returns: async () => ({ data: memberships }),
     maybeSingle: async () => ({ data: table === "organizations" ? { user_id: "support-org" } : null }),
   }) }) }) }
@@ -19,6 +21,7 @@ describe("workspace support search and scope", () => {
     vi.resetAllMocks()
     mocks.scope.mockResolvedValue({ explicit: null, support: null })
     mocks.cookie.mockResolvedValue("member-org")
+    mocks.auth.mockResolvedValue({ data: { user: { id: "actor" } }, error: null })
     mocks.rpc.mockResolvedValue({ data: false, error: null })
   })
   it("keeps the default membership list small and does not retain old search results", () => {
@@ -31,6 +34,51 @@ describe("workspace support search and scope", () => {
   it("deduplicates membership and admin search results", () => {
     const member = { orgId: "one", name: "One" }
     expect(mergeSupportSearchResults([member], [{ ...member }], "One")).toEqual([member])
+  })
+  it("matches an unnamed workspace by the displayed contact email and name", () => {
+    const organization = { orgId: "unnamed", name: "Unnamed organization", contactName: "Karen Jones", contactEmail: "karen@offshootz.example" }
+    expect(mergeSupportSearchResults([organization], [], "KAREN@Offshootz")).toEqual([organization])
+    expect(mergeSupportSearchResults([organization], [], "Jones Karen")).toEqual([organization])
+  })
+  it("matches punctuation-free and spaced organization names", () => {
+    const organization = { orgId: "one", name: "CalebsOrganization" }
+    expect(mergeSupportSearchResults([organization], [], "calebs organization")).toEqual([organization])
+  })
+  it("retains membership permissions while enriching a duplicate remote result", () => {
+    const member = { orgId: "one", name: "One", role: "board", contactEmail: null }
+    const remote = { ...member, role: "admin", contactEmail: "person@example.org" }
+    expect(mergeSupportSearchResults([member], [remote], "One")).toEqual([{ ...member, contactName: undefined, contactEmail: "person@example.org" }])
+  })
+  it("includes the matching member identity when mapping a server search result", () => {
+    expect(mapSupportOrganization({ org_id: "org", name: "Org", image_url: null, public_slug: null,
+      owner_name: "Owner", owner_email: "owner@example.org", contact_name: "Karen", contact_email: "karen@example.org", total_count: 1 }))
+      .toMatchObject({ orgId: "org", contactName: "Karen", contactEmail: "karen@example.org" })
+  })
+  it("requests a bounded ranked page and exposes owner contact identity", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ org_id: "org", name: "Unnamed organization", image_url: null, public_slug: null,
+      owner_name: null, owner_email: "karen@offshootz.example", contact_name: null, contact_email: "karen@offshootz.example", total_count: 76 }], error: null })
+    const result = await searchSupportOrganizations("  karen@offshootz  ", 20)
+    expect(mocks.rpc).toHaveBeenCalledWith("search_workspace_support_organizations_v2", { p_query: "karen@offshootz", p_offset: 20 })
+    expect(result).toMatchObject({ total: 76, hasMore: true, organizations: [{ contactEmail: "karen@offshootz.example" }] })
+  })
+  it("does not expose returned identity when the RPC denies authorization", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ owner_email: "private@example.org" }], error: { code: "42501" } })
+    const result = await searchSupportOrganizations("Karen")
+    expect(result.organizations).toEqual([])
+    expect(result.error).toBeTruthy()
+  })
+  it("rejects an invalid page before accessing the directory", async () => {
+    expect((await searchSupportOrganizations("Karen", -1)).error).toBeTruthy()
+    expect((await searchSupportOrganizations("Karen", Number.NaN)).error).toBeTruthy()
+    expect(mocks.auth).not.toHaveBeenCalled()
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+  it("requires authenticated identity search and keeps an empty query local", async () => {
+    expect((await searchSupportOrganizations("")).organizations).toEqual([])
+    expect(mocks.auth).not.toHaveBeenCalled()
+    mocks.auth.mockResolvedValue({ data: { user: null }, error: null })
+    expect((await searchSupportOrganizations("Karen")).error).toBeTruthy()
+    expect(mocks.rpc).not.toHaveBeenCalled()
   })
   it("allows only a live explicit grant to resolve a support workspace", async () => {
     mocks.cookie.mockResolvedValue("support-org")

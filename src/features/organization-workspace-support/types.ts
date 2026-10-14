@@ -14,3 +14,15 @@ export type WorkspaceSupportPresenceInput = {
   position: { x: number; y: number } | null
   editing: boolean
 }
+
+export type WorkspaceSupportSearchRow = {
+  org_id: string
+  name: string
+  image_url: string | null
+  public_slug: string | null
+  owner_name: string | null
+  owner_email: string | null
+  contact_name: string | null
+  contact_email: string | null
+  total_count: number | string
+}

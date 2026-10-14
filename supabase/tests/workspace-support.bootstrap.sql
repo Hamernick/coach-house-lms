@@ -1,4 +1,6 @@
 alter table auth.users add column banned_until timestamptz;
+alter table auth.users add column email text;
+alter table auth.users add column raw_user_meta_data jsonb;
 alter table public.organizations add column public_slug text;
 create table public.profiles(id uuid primary key,full_name text);
 create table public.platform_staff_members(user_id uuid primary key references auth.users(id),access_level text);

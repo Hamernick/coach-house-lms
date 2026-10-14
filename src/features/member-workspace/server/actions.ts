@@ -1,5 +1,7 @@
 "use server"
 
+import { mapSupportOrganization, type WorkspaceSupportSearchRow } from "@/features/organization-workspace-support"
+
 import { revalidatePath } from "next/cache"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -35,12 +37,11 @@ export async function setActiveOrganizationAction(
   )
 
   if (!organization && await hasWorkspaceSupportAccess(supabase)) {
-    const { data, error } = await supabase.rpc("search_workspace_support_organizations" as never,
+    const { data, error } = await supabase.rpc("search_workspace_support_organizations_v2" as never,
       { p_query: "", p_org: normalizedOrgId } as never)
     if (error) return { error: "Unable to verify workspace support access." }
-    const row = (data as unknown as Array<{ org_id: string; name: string; image_url: string | null; public_slug: string | null }> | null)?.[0]
-    if (row) organization = { orgId: row.org_id, role: "admin", supportAccess: true,
-      name: row.name, imageUrl: row.image_url, publicSlug: row.public_slug }
+    const row = (data as unknown as WorkspaceSupportSearchRow[] | null)?.[0]
+    if (row) organization = mapSupportOrganization(row)
   }
 
   if (!organization) {

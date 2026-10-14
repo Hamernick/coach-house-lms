@@ -24,22 +24,26 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
-LIVE-03 full published-data audit and map follow-up is active in [PR299](https://github.com/Hamernick/CoachHouse/pull/299).
+LIVE-04 Documents follow-up: production user review found verbose copy and
+toolbar crowding after the shared banner change (PR298, main32e5199e). Continue
+`fix/documents-upgrade-notice-20261013` in the existing banner checkout on
+localhost:3116. Shorter Documents copy and explicit24px toolbar separation;
+[scope and user review](../plans/2026-10-13-upgrade-banner-layout.md).
+User owns appearance checks; hosted current-head quality/code-owner review and
+deployment remain required. Preserve separate PR299 map audit work and its
+unapplied coordinate corrections; no provider changes or Supabase previews.
+
+LIVE-03 map changes and claim/cache review fixes merged through [PR299](https://github.com/Hamernick/CoachHouse/pull/299) as `164c640b`.
 [Audit and repair boundary](../plans/2026-10-13-resource-map-audit.md): all 877 published resources,
 877 underlying location rows and 21 public organizations audited; 875 real service records become 871 places.
 Shared pins open a choice list first; all viewport pages load beyond 500; confirmed aliases preserve IDs/schedules.
 Branch `fix/public-resource-test-records-20261013` in the map checkout, base e49a31bd, localhost3115.
 Four verified public contact-coordinate corrections are prepared as guarded SQL, not applied.
 Claim search/submission now share fixture visibility, and public profile cache advances tov2 after bot review.
-30 focused review-regression/claim/directory tests pass; current-head CI/code-owner review,
-deliberate data step, deployment and user map check remain open.
+30 focused review-regression/claim/directory tests pass. Preserve historical CI/review evidence;
+deliberate data step, deployment and user map check are not confirmed by the merge.
 No Supabase preview, production mutation or agent visual sweep. PR297 merged per user; do not recheck.
 
-LIVE-04 compact banners landed on current main as `32e5199e` through [PR298](https://github.com/Hamernick/CoachHouse/pull/298),
-Documents production correction is in PR300 at527557a1 on `fix/documents-upgrade-notice-20261013`,
-worktree `coach-house-platform-upgrade-banners-20261013`,
-localhost:3116/visual-regression/upgrade-banners. User appearance review and
-deployment/appearance confirmation remain unverified here. Preserve that lane and localhost:3119.
 
 PR297 merged per Caleb; do not spend time rechecking his merge confirmation.
 He is checking the map himself. [Map repair evidence](../plans/2026-10-13-live-map-markers.md):

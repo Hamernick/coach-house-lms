@@ -32,3 +32,10 @@ The shared PublicHomeResourceExplorer now always uses `frameCanvas={false}` and 
 Branch `fix/resources-unframed-shell-20261014`, base1376e12d, same isolated `coach-house-platform-resources-return-20261014` checkout and localhost3122 (warm server/cache preserved).36 focused public-home/route/navigation tests and changed-file lint pass. Browser verifies direct organization load has zero outer-frame elements with badge present; Back to search has zero frames and the unframed marker. First browser request briefly used the previous dev compilation; reloaded after the updated server HTML was confirmed.
 
 Direct IRS profile response and scoped checks are recorded in the final PR/checkpoint. User review and current-head hosted quality/code-owner review remain required. No production mutation or Supabase previews; SHIP revision40 host reconciliation remains unresolved. This supersedes the earlier repair's sufficiency claim; coordinate work remains separate.
+
+
+## PR303 review: mobile profile header clearance
+
+The unframed profile header has two rows below md, so the fixed48px content inset overlapped Back to search. Direct organization/resource profiles now opt into a normal-flow header and use4px content padding; the flex scroll area automatically starts below the header's actual height. Resources list keeps its existing absolute header and48px inset. Shared shell defaults are unchanged; no outer frame is restored.
+
+Verified at390×844: both `/coachhousesolutionsgroup` and `/find/resources/146024895` have header bottom94px and Back to search top106px, with zero outer-frame wrappers and EIN badges present. Resource Back to search reaches `/resources`, header bottom48px, zero frames and scrollTop0. Temporary viewport override reset.36 focused tests, changed-file lint, structure and diff checks pass. Required current-head hosted quality/code-owner review and user appearance review remain separate; no deployment.

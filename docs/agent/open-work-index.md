@@ -24,6 +24,8 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
+Run05C active: `fix/existing-coordinate-map-coverage-20261014`, base`af110563`, isolated map-coverage checkout. Progressive individual pins; no numbered geographic groups.854 curated +16 platform listings reach826 markers. Four guarded coordinate corrections/rollback rehearsed, NOT committed. [Audit and gates](../plans/2026-10-14-existing-coordinate-map-coverage.md). Localhost3123 stopped due repeated disk exhaustion. User map review, exact data application authorization, hosted gates and canonical SHIP ownership remain; no Calendar/geocoding.
+
 Public resource/profile frame removal — active follow-up. User reports PR302 merged but unwanted parent remains on refresh; do not recheck that merge. Branch `fix/resources-unframed-shell-20261014`, base1376e12d, existing isolated `coach-house-platform-resources-return-20261014`, localhost3122. Shared resource/profile explorer now always unframed; remove its framing option instead of relying only on back-navigation. Badge and profile navigation retained. PR303 mobile review fix keeps direct-profile headers in normal flow;390px browser checks confirm12px clearance above Back to search for both profile types.36 focused tests pass; browser verifies zero outer frames on direct organization load and return to Resources. [Scope and continuation](../plans/2026-10-14-resources-return-layout.md). User/hosted release gates pending; no production write. Preserve PR301 history, SHIP ownership blocker and separate coordinate run05C.
 
 LIVE-04 Documents follow-up: production user review found verbose copy and
@@ -157,3 +159,13 @@ PR305 now includes the existing switcher's global admin search, membership/curre
 ### Run04A search follow-up — October14
 
 User reports PR305 merged. Follow-up `fix/workspace-support-search-20261014` reuses localhost3124: owner/member emails and names, unnamed organizations, exact ranking, compact/spaced terms, matching contact identity and20-result paging. Migration20261014203000 applied/verified with compatible old RPC; no account/grant changes.22focused cases plus SQL/RLS pass. New UI/user review and follow-up PR release remain. See [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md); retain Vercel API403/production-flag and canonical SHIP ownership gaps.
+
+
+### Run05C resumed — October14
+
+PR304 resumes on its existing isolated map-coverage branch before Calendar. Current main integrated; actual localhost3123/resources returns200.55focused cases and fresh854-ID source/API comparison pass; four-row rollback rehearsal passes without committed data. User map check, exact data application approval, current-head quality/code-owner and post-application recount remain. PR305/306 merge reports accepted; both Production flags true, #305 deployment Ready, user production testing pending. See Run05C plan and receipts; no Calendar/source/cache cleanup or UI/baseline change.
+
+
+### Run05C loading follow-up — October14
+
+PR304 now includes the reported globe-loading repair: stable overview query below zoom5 and bounded/coalesced count retries, with existing individual pins/layout unchanged.42focused tests and scoped checks pass. Direct Casa provider HTTP200/address/hash evidence replaces search-only proof; production application still requires fresh authoritative verification and data approval. CI has an inherited /admin bundle budget failure plus visuals; no bypass. Actual Bandto browser is disconnected, user localhost3123 review pending. No production data, env/provider changes or Calendar work.

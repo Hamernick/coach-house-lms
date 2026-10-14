@@ -1,3 +1,5 @@
+import { PUBLIC_MAP_GLOBE_MAX_SPIN_ZOOM } from "@/lib/public-map/globe-settings"
+
 type Coordinate = { lng: number; lat: number }
 type ScreenRectangle = { left: number; top: number; right: number; bottom: number }
 
@@ -51,8 +53,14 @@ export function serializeResourceMapBounds([westEdge, southEdge, eastEdge, north
 export function resolveResourceMapQueryBounds(
   projection: string,
   viewport: readonly number[],
-  screen: (() => readonly number[]) | null
+  screen: (() => readonly number[]) | null,
+  zoom = Infinity
 ) {
+  // The overview rotates every second. Keep its paginated query stable so slow
+  // responses can finish; Mapbox still clips pins to the visible hemisphere.
+  if (projection === "globe" && zoom < PUBLIC_MAP_GLOBE_MAX_SPIN_ZOOM) {
+    return "-180.000,-90.000,180.000,90.000"
+  }
   return serializeResourceMapBounds(projection === "mercator" && screen ? screen() : viewport)
     ?? serializeResourceMapBounds(viewport)
 }

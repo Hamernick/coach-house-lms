@@ -4,6 +4,15 @@ import { buildFindResourceCatalog, queryFindResourceCatalog, parseFindResourceCa
 import type { FindResourceIndexItem } from "@/features/find-resource-index/types"
 
 describe("resource map viewport queries", () => {
+  it("keeps rotating overview queries stable while retaining all eligible coordinates", () => {
+    const first = resolveResourceMapQueryBounds("globe", [156, -7, 2, 78], null, 1.5)
+    expect(resolveResourceMapQueryBounds("globe", [144, -7, -10, 78], null, 1.5)).toBe(first)
+    const bounds = parseFindResourceCatalogQuery(new URLSearchParams(`mode=map&bounds=${first}`))!.bounds!
+    expect(resourceIndexItemInBounds({ latitude: 41.879, longitude: -87.725 } as FindResourceIndexItem, bounds)).toBe(true)
+    expect(resourceIndexItemInBounds({ latitude: -33.8, longitude: 151.2 } as FindResourceIndexItem, bounds)).toBe(true)
+    expect(resolveResourceMapQueryBounds("globe", [-88, 41, -87, 42], null, 5)).toBe("-88.000,41.000,-87.000,42.000")
+    expect(resolveResourceMapQueryBounds("mercator", [-88, 41, -87, 42], null, 1.5)).toBe("-88.000,41.000,-87.000,42.000")
+  })
   it("contains all four geographic corners after rotation, including reversed diagonals", () => {
     const screen = { left: 100, top: 200, right: 300, bottom: 400 }
     const project = ([x, y]: [number, number]) => ({ lng: -88 + (x + y) / 1000, lat: 42 + (x - y) / 1000 })

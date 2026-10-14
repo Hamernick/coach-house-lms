@@ -18,7 +18,8 @@ export function useResourceMapBounds(mapRef: RefObject<mapboxgl.Map | null>, map
       const value = resolveResourceMapQueryBounds(
         map.getProjection().name,
         [box.getWest(), box.getSouth(), box.getEast(), box.getNorth()],
-        screen ? () => resourceMapScreenBounds(screen.getBoundingClientRect(), container.getBoundingClientRect(), (point) => map.unproject(point)) : null
+        screen ? () => resourceMapScreenBounds(screen.getBoundingClientRect(), container.getBoundingClientRect(), (point) => map.unproject(point)) : null,
+        map.getZoom()
       )
       setBounds((current) => current === value ? current : value)
     }

@@ -1,3 +1,4 @@
+import { withPublicResourceEins } from "./public-resource-ein"
 import { existsSync } from "node:fs"
 import { readFile, stat } from "node:fs/promises"
 import { isAbsolute, resolve } from "node:path"
@@ -356,7 +357,8 @@ export async function fetchPublicResourceMapItemById(
   }
 
   const item = buildExternalResourceMapItemFromPublicRow(data)
-  return item && shouldShowPublicMapResourceItem(item) ? item : null
+  if (!item || !shouldShowPublicMapResourceItem(item)) return null
+  return (await withPublicResourceEins([item]))[0] ?? null
 }
 
 export async function fetchPublicResourceMapItemsByIds(
@@ -419,10 +421,10 @@ export async function fetchPublicResourceMapItemsByIds(
         : []
     })
   )
-  return normalizedIds.flatMap((id) => {
+  return withPublicResourceEins(normalizedIds.flatMap((id) => {
     const item = itemById.get(id)
     return item ? [item] : []
-  })
+  }))
 }
 
 export async function fetchPublicResourceMapItemsPageById({

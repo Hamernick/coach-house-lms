@@ -35,7 +35,7 @@ const fetchFindResourceDetailItemCached = unstable_cache(
     const group = groupResourcePlaces(candidates).find((members) => members.some((member) => member.id === id))!
     return resolveFindResourceDetailItem([mergeResourcePlace(group, id)], id)
   },
-  ["find-resource-detail-v5"],
+  ["find-resource-detail-v6"],
   { revalidate: 300 }
 )
 

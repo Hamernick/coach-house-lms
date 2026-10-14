@@ -21,6 +21,19 @@ export async function resolveOrganizationDocumentAccess(
   if (!organizationId) {
     return { ...(await resolveActiveOrganization(supabase, userId)), supabase }
   }
+  if (organizationId === userId) {
+    return { supabase, orgId: organizationId, role: "owner" as const }
+  }
+  const membership = await supabase.from("organization_memberships")
+    .select("role").eq("org_id", organizationId).eq("member_id", userId).maybeSingle()
+  if (membership.error) return { error: "Unable to verify document membership." }
+  if (membership.data) {
+    const role = membership.data.role
+    if (["owner", "admin", "staff", "board", "member"].includes(role)) {
+      return { supabase, orgId: organizationId, role: role as import("./active-org").OrganizationMemberRole }
+    }
+    return { error: "Forbidden" }
+  }
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
@@ -47,5 +60,5 @@ export async function resolveOrganizationDocumentAccess(
     .maybeSingle()
   if (organizationError || !organization)
     return { error: "Organization not found." }
-  return { supabase: admin, orgId: organizationId, role: "admin" as const }
+  return { supabase: admin, orgId: organizationId, role: "admin" as const, staffAccessLevel: accessLevel }
 }

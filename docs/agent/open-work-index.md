@@ -81,7 +81,7 @@ release record; this candidate still requires hosted quality and review.
 
 ## Open lanes
 
-Next after Run05C: [coach/admin co-editing, durable recovery and organization switching](../plans/2026-10-14-coach-admin-coediting.md), then Calendar → formation verification → fiscal flow/notifications. Planning only on `chore/coach-coediting-plan-20261014`, base`af110563`, isolated coediting-plan checkout. Snapshot conflict handling and missing live dialog sync confirmed in source; incident not reproduced. Local undo exists; durable core-document restore not found. No access grants or application changes. Preserve separate PR304 and SHIP ownership gate.
+Next after Run05C: [coach/admin co-editing, durable recovery and organization switching](../plans/2026-10-14-coach-admin-coediting.md), then Calendar → formation verification → fiscal flow/notifications. Implementation WIP on `feat/coach-document-collaboration-20261014`, base`af110563`, isolated coediting-plan checkout; actual-app localhost3124, Bandto Chrome only. Synthetic review route removed at user direction; keep existing editor layout. Snapshot conflict handling and missing live dialog sync confirmed in source; incident not reproduced. Local undo exists; durable core-document restore not found. Save/history implementation is in review; local SQL and focused concurrency/access checks pass. Production migration, user-led Southside Community Table test and staff switching remain outstanding; no production schema or access grants changed. Preserve separate PR304 and SHIP ownership gate.
 
 Vercel CPU optimization: `fix/vercel-cpu-optimization-20261011` in
 `/Users/calebhamernick/Development/coach-house-platform-vercel-cpu-20261011`, based

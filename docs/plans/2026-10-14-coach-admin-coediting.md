@@ -4,7 +4,7 @@
 
 User priority: finish Run05C, then reliable coach/admin co-editing and recovery, then Google Calendar, formation verification prerequisite removal, and fiscal sponsorship flow/notifications. This is an investigation/planning checkpoint, not an implemented feature or access grant. Original private owner: packet04 stage4, new sibling04a; coordinate authorization with packet02 and entitlement policy with03. Keep this work out of PR304.
 
-Read-only investigation base: main `af110563`. Planning branch `chore/coach-coediting-plan-20261014`, isolated `coach-house-platform-coediting-plan-20261014`; no server or production writes. Root and other task lanes are preserved. Specific failing organization/document/error has been requested but not supplied; do not claim the coach's incident is reproduced.
+Read-only investigation base: main `af110563`. Planning branch `chore/coach-coediting-plan-20261014`, isolated `coach-house-platform-coediting-plan-20261014`; no server or production writes. Root and other task lanes are preserved. User clarified that the report came from a coach who has not tested for one or two weeks; organization/document/error are unknown. Treat it as unverified historical feedback, not proof of a current production save defect. Start with a current two-session test; lack of incident details does not block requirements validation.
 
 ## Findings from current source
 

@@ -114,12 +114,18 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     const pending = sendableSteps(editor.state)
     if (pending || budgetDraft.current) { dirty.current = true; setStatus("Saving…") }
     const sentBudget = budgetDraft.current
+    let { anchor, head } = editor.state.selection
+    // Report cursor coordinates in the acknowledged document, before local steps.
+    for (const step of [...(pending?.steps ?? [])].reverse()) {
+      const inverse = step.getMap().invert()
+      anchor = inverse.map(anchor); head = inverse.map(head)
+    }
     try {
       const result = await transport.sync({ ...scopeRef.current, clientId,
         generation: generation.current, version: getVersion(editor.state),
         budget: sentBudget ?? undefined,
         steps: pending?.steps.slice(0, 200).map(step => step.toJSON()),
-        selection: { anchor: editor.state.selection.anchor, head: editor.state.selection.head, version: getVersion(editor.state) },
+        selection: { anchor, head, version: getVersion(editor.state) },
       })
       if (!mounted.current || editor.isDestroyed) return
       if ("error" in result) {

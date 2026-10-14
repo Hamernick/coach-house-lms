@@ -110,7 +110,10 @@ export async function syncOrganizationDocument(input: DocumentSyncInput): Promis
       // Expired rows carry no content. Bound storage without a separate scheduled job.
       await admin.from("organization_core_document_presence").delete().eq("org_id", input.organizationId)
         .lt("seen_at", new Date(Date.now() - 60_000).toISOString())
-      return { section: nextSection, session, participants: participants ?? [], userId: user.id }
+      const responseSession = session && input.generation === session.generation
+        ? { ...session, steps: session.steps.slice(Math.max(0, input.version - (session.version - session.steps.length))) }
+        : session
+      return { section: nextSection, session: responseSession, participants: participants ?? [], userId: user.id }
     }
     return { error: "Another update is still saving. Your edits are retained; retry shortly." }
   } catch (error) { return { error: message(error) } }

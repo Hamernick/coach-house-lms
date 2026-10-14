@@ -64,6 +64,16 @@ describe("durable collaboration action", () => {
     expect(await syncOrganizationDocument(input())).toMatchObject({ code: "external_change" })
     expect(rpc).not.toHaveBeenCalled()
   })
+  it("sends no old steps when a viewer has already acknowledged them", async () => {
+    await syncOrganizationDocument(input())
+    const result = await syncOrganizationDocument({ ...input(), version: 1, steps: undefined })
+    expect(result).toMatchObject({ session: { version: 1, steps: [] } })
+  })
+  it("refuses an expired journal without applying unmergeable edits", async () => {
+    session = { ...session, version: 2001, steps: [] }
+    expect(await syncOrganizationDocument(input())).toMatchObject({ code: "expired" })
+    expect(rpc).not.toHaveBeenCalled()
+  })
   it("rejects another user's client identity", async () => {
     expect(await syncOrganizationDocument({ ...input(), clientId: "other:tab" })).toMatchObject({ error: "Invalid editing session." })
     expect(rpc).not.toHaveBeenCalled()

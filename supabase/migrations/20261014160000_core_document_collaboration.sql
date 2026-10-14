@@ -25,7 +25,7 @@ language sql immutable set search_path = '' as $$
   select value || jsonb_build_object('id',key) from jsonb_each(case when jsonb_typeof(profile#>'{roadmap,sections}')='object'
    then profile#>'{roadmap,sections}' else '{}'::jsonb end) where jsonb_typeof(value)='object'
  ) entries
- where nullif(item->>'id','') is not null and item->>'id' not in ('program','people','board_calendar','next_actions');
+ where length(item->>'id') between 1 and 160 and item->>'id' not in ('program','people','board_calendar','next_actions');
 $$;
 revoke all on function public.core_document_history_entries(jsonb) from public,anon,authenticated;
 

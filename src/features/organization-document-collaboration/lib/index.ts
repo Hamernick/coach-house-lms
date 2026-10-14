@@ -13,6 +13,11 @@ export function applyDocumentSteps(session: DocumentSession, steps: Record<strin
   }
   validateDocument(document)
   if (document.content.size > 250_000) throw new Error("Document is too large.")
+  const journal = [...session.steps, ...steps.map(step => ({ step, clientId }))].slice(-2000)
+  let journalBytes = journal.reduce((total, entry) => total + JSON.stringify(entry).length, 0)
+  while (journal.length > steps.length && journalBytes > 2_000_000) {
+    journalBytes -= JSON.stringify(journal.shift()).length
+  }
   return { ...session, document: document.toJSON(), version: session.version + steps.length,
-    steps: [...session.steps, ...steps.map(step => ({ step, clientId }))].slice(-2000) }
+    steps: journal }
 }

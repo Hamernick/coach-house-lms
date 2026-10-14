@@ -47,7 +47,8 @@ describe("public profile EIN display", () => {
   it("shows an IRS EIN once across the complete profile", () => {
     const nonprofit = { ein: "012345678", websiteSourcePeriod: null, phoneSourcePeriod: null, descriptionSourcePeriod: null, websiteBasis: null, phoneBasis: null }
     const html = renderToStaticMarkup(React.createElement(PublicMapResourceDetail, { item: { ...item(), nonprofit }, standalone: true, onBack: () => {} }))
-    expect(html.match(/EIN /g)).toHaveLength(1)
+    expect(html.match(/EIN 01-2345678/g)).toHaveLength(1)
+    expect(html.match(/aria-label="EIN on file"/g)).toHaveLength(1)
     expect(html).toContain("01-2345678")
   })
   it("reads only the EIN for the exact public organization and retains publication gates", async () => {

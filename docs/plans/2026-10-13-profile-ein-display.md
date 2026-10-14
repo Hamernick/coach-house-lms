@@ -6,7 +6,7 @@ Requirement U20261013-02; original Desktop packet `05a-profile-ein-display.md`, 
 
 Show each public organization's existing valid EIN once as `XX-XXXXXXX`. Preserve leading zeroes; omit missing/malformed values. IRS directory EIN moves from Record details to the identity section. Platform profiles project the canonical organizations.ein column. Curated resource details retrieve only id/ein by exact organization ID after public visibility checks, retaining published/reviewed/approved/not-hidden/not-suppressed/not-deleted gates. No name matching, private profile dump or new data collection. Refresh affected profile/detail cache versions.
 
-Shared identity components cover standalone profiles and detail panels. Individual-person profiles are unchanged. No addresses, blue badges, geocoding, database writes/migrations or Supabase preview branches. Runs05B and05C remain separate.
+Shared identity components cover standalone profiles and detail panels. Individual-person profiles are unchanged. No addresses, geocoding, database writes/migrations or Supabase preview branches. User subsequently approved EIN placement and explicitly requested the blue EIN check in this component; that scoped05B presentation is included in this PR. Coordinate run05C remains separate.
 
 ## Lane and review
 
@@ -15,7 +15,7 @@ Shared identity components cover standalone profiles and detail panels. Individu
 - Localhost: http://localhost:3121/visual-regression/profile-ein (guarded development preview using actual public records and the actual shared identity components).
 - Full profiles: http://localhost:3121/coachhousesolutionsgroup and http://localhost:3121/find/resources/146024895.
 - Node22; isolated .next. Shared env is read-only; raw resource preview/discovery explicitly disabled at launch.
-- User appearance review requested and pending. No visual baselines changed. No broad browser/screenshot sweep.
+- User approved EIN placement/formatting, then requested a blue check immediately left of the centered EIN. The inline badge/text group inherits the existing alignment. Badge hover/keyboard-focus explanation: “EIN on file”; it confers no tax-status, formation, access or service-verification status. Badge appearance review remains pending. No visual baselines changed. No broad browser/screenshot sweep.
 
 ## Validation
 
@@ -29,4 +29,4 @@ Full TypeScript check remains failed:54 errors in11 unchanged acceptance test fi
 
 Canonical shared claim remains revision40 with an old-host ownership mismatch (`Calebs-MacBook-Pro-2.local` versus `Calebs-MBP-2`). Do not edit canonical state or bypass ownership guards. Local implementation is explicitly user-authorized; shared runner reconciliation remains required before recording a new release claim. Preserve released SHIP000 history, PR299 coordinate-repair hold and historical PR300 quality/review gaps.
 
-Stop at05A review/handoff. Do not start blue badge or coordinate coverage from this checkpoint automatically.
+Stop at the user-requested EIN/check review and handoff. Coordinate coverage and broader formation/access policy changes remain separate.

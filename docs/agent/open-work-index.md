@@ -164,3 +164,8 @@ User reports PR305 merged. Follow-up `fix/workspace-support-search-20261014` reu
 ### Run05C resumed — October14
 
 PR304 resumes on its existing isolated map-coverage branch before Calendar. Current main integrated; actual localhost3123/resources returns200.55focused cases and fresh854-ID source/API comparison pass; four-row rollback rehearsal passes without committed data. User map check, exact data application approval, current-head quality/code-owner and post-application recount remain. PR305/306 merge reports accepted; both Production flags true, #305 deployment Ready, user production testing pending. See Run05C plan and receipts; no Calendar/source/cache cleanup or UI/baseline change.
+
+
+### Run05C loading follow-up — October14
+
+PR304 now includes the reported globe-loading repair: stable overview query below zoom5 and bounded/coalesced count retries, with existing individual pins/layout unchanged.42focused tests and scoped checks pass. Direct Casa provider HTTP200/address/hash evidence replaces search-only proof; production application still requires fresh authoritative verification and data approval. CI has an inherited /admin bundle budget failure plus visuals; no bypass. Actual Bandto browser is disconnected, user localhost3123 review pending. No production data, env/provider changes or Calendar work.

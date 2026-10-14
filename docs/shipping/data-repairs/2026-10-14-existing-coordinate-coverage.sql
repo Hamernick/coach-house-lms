@@ -1,5 +1,8 @@
 -- Run05C: exact four public contact-location corrections, revalidated 2026-10-14.
 -- Coordinates are already preserved in the October13 audit; no new geocoding.
+-- Application prerequisite: successfully fetch the current Casa provider contact page
+-- and match its address; search snippets alone are insufficient. See Run05C plan.
+-- If verification fails, stop; prepare/review a separate batch excluding Casa.
 -- Default is ROLLBACK. Change only the final statement to COMMIT after review.
 -- A partial match aborts the entire update. A repeat safely fails the four-row guard.
 begin;

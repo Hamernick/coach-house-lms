@@ -4,7 +4,7 @@
 
 Continue LIVE03/B036 and the original private packet05/05c. User started this run October14 and explicitly requested individual pins revealed progressively as users zoom in, with **no numbered geographic clusters**. Preserve existing pin artwork, same-address choices, deduplication aliases and unframed Resources layout. No new geocoding, address display, IRS bulk publication, Supabase preview branch or Calendar work.
 
-Isolated branch `fix/existing-coordinate-map-coverage-20261014`, base `af110563`, worktree `coach-house-platform-map-coverage-20261014`, localhost3123. The base contains the previous shared-frame/mobile repair. No new application changes remain: the rejected local numbered-cluster experiment was fully removed.
+Isolated branch `fix/existing-coordinate-map-coverage-20261014`, base `af110563`, worktree `coach-house-platform-map-coverage-20261014`, localhost3123. The base contains the previous shared-frame/mobile repair. The rejected local numbered-cluster experiment was fully removed. The subsequent reported loading stall has a scoped overview-query/count-retry repair; see the latest checkpoint below.
 
 ## Source-to-map evidence — October14
 
@@ -30,7 +30,7 @@ Seventeen curated places lack usable coordinates: four prepared contact-location
 
 The existing October13 coordinate evidence targets Casa Esperanza Project, MYSI Corporation, La Casa Norte and Fellowship Housing. Revalidated exact location/service IDs, public status, physical/primary flags, unchanged street addresses, null coordinates/city and unknown accuracy. Current provider contact sources:
 
-- <https://casaesperanzachicago.org/contact/> (search-index confirmation; direct fetch timed out).
+- <https://casaesperanzachicago.org/contact/> (direct authoritative response returned HTTP200 and confirmed8801 S Saginaw Avenue, Chicago, IL60617-2427 on2026-10-14; prior search-only verification is superseded).
 - <https://www.myschicago.org/programs/>
 - <https://www.lacasanorte.org/contact>
 - <https://www.fhcmoms.org/how-it-works>
@@ -63,3 +63,17 @@ Local preview checkpoint: localhost3123 is stopped after repeated ENOSPC during 
 - Resumed clean fix/existing-coordinate-map-coverage-20261014 and merged current main1aa443c5; resolved only the runlog append conflict by preserving both histories. No application/layout changes. Node22 localhost3123 is restored; /resources returns200, listener cwd verified. About76GB was available before rebuilding. User owns map appearance review; no fixture preview or browser walkthrough.
 -55focused map cases pass. Fresh public-source/live API audit again matches854eligible curated IDs exactly across500+354 pages;16platform listings yield826markers/33shared locations. Four-row update/rollback rehearsal returns all four original null-coordinate/city rows with unknown accuracy and ends ROLLBACK. Production data remains unchanged. Provider contact addresses rechecked; Casa direct fetch still times out but official contact search index matches. Immutable resumed receipts: ~/Desktop/Coach House Map Audit/2026-10-14-run05c/resume-20261014/.
 - Previous PR304 static/acceptance/RLS/build passed; visual/quality failed on2Resources detail tests and3Tools Drive snapshots. No baseline/tolerance changes. Current-head hosted checks/code-owner, user map check and exact production data approval remain; then apply/recount expected858curated listings. Canonical SHIP ownership blocker remains preserved. Stop after304handoff; Calendar follows separately.
+
+
+## Casa authoritative-source gate
+
+Before any production application, fetch the current Casa provider contact page successfully and match its published location to the exact saved target address. Search results alone do not satisfy this gate. If the provider cannot be fetched or its address differs, stop the four-row batch; revise/review a three-row batch excluding Casa instead of bypassing the guard. At the current review checkpoint the direct HTTPS contact response returned200 and matched the address. Private response/verification receipt are in the existing resumed audit directory; SHA256`823a2f5b605d02f0aa3a05a3a2741788f0d4f690ef981110dbb69e27b7b3a66e`. No production data was committed.
+
+
+### 2026-10-14T20:43:00+00:00 — Run05C loading repair and authoritative Casa evidence
+
+- User reported /resources endlessly loading with two markers. Mapbox public token exists, and the actual Standard style returns200 for localhost3123 and coachhouse.app referers. Local directory/map/IRS count/search APIs return200. Browser console access timed out and Bandto browser then disconnected; actual UI verification remains user-owned/pending. No credential/env/provider changes.
+- Server/browser logs show rotating globe viewport requests changing everysecond. Each change supersedes all-page loading; requests during cold compilation/proxy delays can finish after the next viewport generation and be discarded. Overview globe now uses stable whole-world bounds below the shared spin threshold5; detail/flat views retain viewport bounds. Mapbox still clips the hemisphere and existing relevance/collision rules progressively reveal individual pins; no numbered clusters/layout/art changes.
+- Count fetch had a five-second deadline while local cold compilation took15seconds, then left the count unresolved without retry. Shared count client now performs at most3bounded attempts with backoff, coalesces callers, caches only validated success and clears failed promises for later recovery.42focused tests pass (overview/detail/antimeridian/pagination, count timeout/retry/cache and location behavior), as do changed-file lint, features, boundaries and structure. Graphify AST update started.
+- Addressed Codex Casa review with direct successful HTTPS provider-contact fetch, HTTP200 and exact address match. Private HTML/receipt saved; SHA256823a2f5b605d02f0aa3a05a3a2741788f0d4f690ef981110dbb69e27b7b3a66e. Plan/SQL instructions require fresh successful authoritative address verification before applying; search snippets alone are insufficient. Failure stops the four-row batch pending a separately reviewed Casa-excluded batch. No production corrections applied; prior data approval question remains pending.
+- CI atba06fedf passes static/acceptance/RLS and compiles/types successfully, but fails /admin performance budget1003.3KB versus1000KB plus visual failures. No budget/baseline weakening or unrelated admin edits in304. Fresh-head quality/code-owner and user actual-map verification remain required. Stop after304; Calendar remains separate.

@@ -159,3 +159,8 @@ PR305 now includes the existing switcher's global admin search, membership/curre
 ### Run04A search follow-up — October14
 
 User reports PR305 merged. Follow-up `fix/workspace-support-search-20261014` reuses localhost3124: owner/member emails and names, unnamed organizations, exact ranking, compact/spaced terms, matching contact identity and20-result paging. Migration20261014203000 applied/verified with compatible old RPC; no account/grant changes.22focused cases plus SQL/RLS pass. New UI/user review and follow-up PR release remain. See [Run04A plan](../plans/2026-10-14-coach-admin-coediting.md); retain Vercel API403/production-flag and canonical SHIP ownership gaps.
+
+
+### Run05C resumed — October14
+
+PR304 resumes on its existing isolated map-coverage branch before Calendar. Current main integrated; actual localhost3123/resources returns200.55focused cases and fresh854-ID source/API comparison pass; four-row rollback rehearsal passes without committed data. User map check, exact data application approval, current-head quality/code-owner and post-application recount remain. PR305/306 merge reports accepted; both Production flags true, #305 deployment Ready, user production testing pending. See Run05C plan and receipts; no Calendar/source/cache cleanup or UI/baseline change.

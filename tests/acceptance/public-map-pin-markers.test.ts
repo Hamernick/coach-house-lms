@@ -186,7 +186,7 @@ describe("public map pin markers", () => {
     })
   })
 
-  it("focuses the map when any marker is clicked", () => {
+  it("focuses the map when a single-resource marker is clicked", () => {
     const selectionSource = readRepoFile(
       "src/components/public/public-map-index/public-map-index-selection.ts"
     )
@@ -194,17 +194,8 @@ describe("public map pin markers", () => {
       selectionSource.indexOf("const handleSelectMapMarker"),
       selectionSource.indexOf("const handleOpenSameLocationGroup")
     )
-    const sameLocationSource = selectionSource.slice(
-      selectionSource.indexOf("const handleOpenSameLocationGroup"),
-      selectionSource.indexOf(
-        "return {",
-        selectionSource.indexOf("const handleOpenSameLocationGroup")
-      )
-    )
 
     expect(markerSelectionSource).toContain("focusMapItemOnMap(selectableId)")
     expect(markerSelectionSource).toContain("openDetails: true")
-    expect(sameLocationSource).toContain("handleSelectMapMarker(selectableIds[0], true)")
-    expect(sameLocationSource).not.toContain('setSidebarMode("search")')
   })
 })

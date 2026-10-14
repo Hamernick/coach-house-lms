@@ -1,3 +1,4 @@
+import { hasPublicMapCoordinates } from "@/lib/public-map/map-coordinates"
 import { buildPublicMapGroupFilterCounts } from "@/lib/public-map/resource-map-counts"
 import { publicMapItemMatchesGroupFilter } from "@/lib/public-map/resource-map-items"
 import { isPublicMapResourceCategoryKey } from "@/lib/public-map/resource-categories"
@@ -50,7 +51,7 @@ export function parseFindResourceCatalogQuery(params: URLSearchParams): FindReso
 }
 
 export function resourceIndexItemInBounds(item: FindResourceIndexItem, [west, south, east, north]: FindResourceBounds) {
-  if (item.latitude === null || item.longitude === null) return false
+  if (!hasPublicMapCoordinates(item)) return false
   const lng = ((item.longitude + 180) % 360 + 360) % 360 - 180
   return item.latitude >= south && item.latitude <= north &&
     (west <= east ? lng >= west && lng <= east : lng >= west || lng <= east)

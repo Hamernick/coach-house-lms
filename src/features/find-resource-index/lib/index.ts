@@ -175,6 +175,7 @@ export function serializeFindResourceIndexItem(
     subtitle: item.subtitle,
     latitude: item.latitude,
     longitude: item.longitude,
+    addressStreet: item.addressStreet,
     city: item.city,
     state: item.state,
     country: item.country,

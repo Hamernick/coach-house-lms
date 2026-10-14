@@ -996,17 +996,17 @@ describe("public map WebGL data", () => {
       const spriteCache = createPublicMapClusterSpriteCache()
       const organizations = [
         buildOrganization({
-          id: "org-a",
+          id: "org-a", addressStreet: "101 Main Street",
           longitude: -87.6298,
           latitude: 41.8781,
         }),
         buildOrganization({
-          id: "org-b",
+          id: "org-b", addressStreet: "103 Main Street",
           longitude: -87.6299,
           latitude: 41.8782,
         }),
         buildOrganization({
-          id: "org-c",
+          id: "org-c", addressStreet: "105 Main Street",
           longitude: -87.63,
           latitude: 41.8783,
         }),
@@ -1875,16 +1875,16 @@ describe("public map WebGL data", () => {
     const client = createPublicMapClusterClient()
     const organizations = [
       buildOrganization({
-        id: "org-a",
+        id: "org-a", addressStreet: "101 Main Street",
         longitude: -87.6298,
         latitude: 41.8781,
       }),
       buildOrganization({
-        id: "org-b",
+        id: "org-b", addressStreet: "103 Main Street",
         longitude: -87.6299,
         latitude: 41.8782,
       }),
-      buildOrganization({ id: "org-c", longitude: -87.63, latitude: 41.8783 }),
+      buildOrganization({ id: "org-c", addressStreet: "105 Main Street", longitude: -87.63, latitude: 41.8783 }),
     ]
     const dataVersion = buildPublicMapDataVersion(organizations)
     const features = buildPublicMapPointFeatures(organizations)

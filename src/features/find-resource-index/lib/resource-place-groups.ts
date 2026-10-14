@@ -1,30 +1,9 @@
+import { resourceStreetKey } from "@/lib/public-map/resource-street-key"
+import { auditedResourcePlaceIdentity } from "./resource-place-aliases"
 import { getPublicMapResourceCategoryDefinition } from "@/lib/public-map/resource-categories"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 
-const STREET_WORDS: Record<string, string> = {
-  north: "n", south: "s", east: "e", west: "w", street: "st", road: "rd",
-  avenue: "ave", boulevard: "blvd", drive: "dr", lane: "ln", court: "ct",
-  place: "pl", parkway: "pkwy",
-}
 const normalize = (value: string | null) => (value ?? "").toLowerCase().replace(/[.,]/g, " ").replace(/\s+/g, " ").trim()
-
-function placeKey(item: ExternalResourceMapItem) {
-  const city = normalize(item.city)
-  let street = normalize(item.addressStreet)
-  if (!city || !street || !normalize(item.state) || !/\d/.test(street)) return null
-  // Some providers append the locality to address_line1. Keep unit/suite text.
-  const citySuffix = street.indexOf(` ${city} `)
-  if (citySuffix >= 0) {
-    const suffix = street.slice(citySuffix + city.length + 2).split(" ")
-    if (suffix[0] === normalize(item.state)) suffix.shift()
-    if (/^\d{5}(?:-\d{4})?$/.test(suffix[0] ?? "")) suffix.shift()
-    street = [street.slice(0, citySuffix), ...suffix].join(" ").trim()
-  }
-  street = street.split(" ").map((word) => STREET_WORDS[word] ?? word).join(" ")
-  const country = normalize(item.country).replace(/^(us|usa|united states of america)$/, "united states")
-  if (!country) return null
-  return [normalize(item.title), street, city, normalize(item.state), country].join("|")
-}
 
 function nearby(first: ExternalResourceMapItem, second: ExternalResourceMapItem) {
   if (first.verificationStatus !== second.verificationStatus) return false
@@ -32,8 +11,10 @@ function nearby(first: ExternalResourceMapItem, second: ExternalResourceMapItem)
   if (![first.latitude, first.longitude, second.latitude, second.longitude].every((n) => typeof n === "number" && Number.isFinite(n))) return false
   const latitude = (first.latitude! + second.latitude!) * Math.PI / 360
   const dy = (first.latitude! - second.latitude!) * 111_320
-  const dx = (first.longitude! - second.longitude!) * 111_320 * Math.cos(latitude)
-  return Math.hypot(dx, dy) <= 60
+  const dx = (((first.longitude! - second.longitude! + 540) % 360) - 180) * 111_320 * Math.cos(latitude)
+  const identity = auditedResourcePlaceIdentity(first)
+  const maxDistance = identity && identity === auditedResourcePlaceIdentity(second) ? 250 : 60
+  return Math.hypot(dx, dy) <= maxDistance
 }
 
 // Only published records with the same name, street/locality and nearby coordinates.
@@ -45,7 +26,8 @@ export function groupResourcePlaces(items: ExternalResourceMapItem[]) {
   for (const item of [...items].sort((a, b) => a.id.localeCompare(b.id))) {
     if (seen.has(item.id)) continue
     seen.add(item.id)
-    const key = item.visibility === "published" ? placeKey(item) : null
+    const street = resourceStreetKey(item)
+    const key = item.visibility === "published" && street ? `${auditedResourcePlaceIdentity(item) ?? normalize(item.title)}|${street}` : null
     const candidates = key ? byKey.get(key) ?? [] : []
     const existing = candidates.find((group) => group.every((other) => nearby(item, other)))
     if (existing) existing.push(item)

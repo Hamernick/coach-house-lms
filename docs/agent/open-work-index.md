@@ -24,6 +24,8 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## SHIP orchestration
 
+Run05C active: `fix/existing-coordinate-map-coverage-20261014`, base`af110563`, isolated map-coverage checkout. Progressive individual pins; no numbered geographic groups.854 curated +16 platform listings reach826 markers. Four guarded coordinate corrections/rollback rehearsed, NOT committed. [Audit and gates](../plans/2026-10-14-existing-coordinate-map-coverage.md). Localhost3123 stopped due repeated disk exhaustion. User map review, exact data application authorization, hosted gates and canonical SHIP ownership remain; no Calendar/geocoding.
+
 Public resource/profile frame removal — active follow-up. User reports PR302 merged but unwanted parent remains on refresh; do not recheck that merge. Branch `fix/resources-unframed-shell-20261014`, base1376e12d, existing isolated `coach-house-platform-resources-return-20261014`, localhost3122. Shared resource/profile explorer now always unframed; remove its framing option instead of relying only on back-navigation. Badge and profile navigation retained. PR303 mobile review fix keeps direct-profile headers in normal flow;390px browser checks confirm12px clearance above Back to search for both profile types.36 focused tests pass; browser verifies zero outer frames on direct organization load and return to Resources. [Scope and continuation](../plans/2026-10-14-resources-return-layout.md). User/hosted release gates pending; no production write. Preserve PR301 history, SHIP ownership blocker and separate coordinate run05C.
 
 LIVE-04 Documents follow-up: production user review found verbose copy and

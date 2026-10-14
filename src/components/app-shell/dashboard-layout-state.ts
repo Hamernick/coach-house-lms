@@ -1,4 +1,5 @@
 import { cache } from "react"
+import { hasCoachCoachingAccess } from "@/features/platform-access"
 import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 
 import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
@@ -335,6 +336,7 @@ const resolveDashboardLayoutStateCached = cache(
       },
       isAdmin,
       platformAccessLevel,
+      hasCoachingAccess: hasCoachCoachingAccess(user.app_metadata),
       isTester,
       showOrgAdmin,
       canAccessOrgAdmin,

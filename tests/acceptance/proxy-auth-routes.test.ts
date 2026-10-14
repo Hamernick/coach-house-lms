@@ -113,6 +113,32 @@ describe("proxy auth route redirects", () => {
     expect(getUserMock).toHaveBeenCalledOnce()
   })
 
+  it.each([
+    ["/coaching", { coaching_access: true }, {}, null],
+    ["/coaching/booking", { coaching_access: true }, {}, null],
+    ["/coaching", {}, {}, "/organizations"],
+    ["/coaching", {}, { coaching_access: true }, "/organizations"],
+    ["/coaching", { coaching_access: false }, {}, "/organizations"],
+    ["/coaching", { coaching_access: "true" }, {}, "/organizations"],
+    ["/admin/platform", { coaching_access: true }, {}, "/organizations"],
+    ["/billing", { coaching_access: true }, {}, "/organizations"],
+  ])("applies verified coach grants at %s with app metadata %j and user metadata %j", async (path, appMetadata, userMetadata, expectedRedirect) => {
+    getUserMock.mockResolvedValue({ data: { user: {
+      id: "coach-user", app_metadata: appMetadata, user_metadata: userMetadata,
+    } } })
+    createServerClientMock.mockImplementation(() => ({
+      auth: { getUser: getUserMock },
+      from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({
+          data: { access_level: "coach" }, error: null,
+        }) }),
+      }) }),
+    }))
+    const response = await proxy(new NextRequest(`https://coachhouse.test${path}`))
+    expect(response.headers.get("location")).toBe(expectedRedirect ? `https://coachhouse.test${expectedRedirect}` : null)
+    expect(getUserMock).toHaveBeenCalledOnce()
+  })
+
   it("sends already-authenticated auth routes through the post-auth landing guard", () => {
     const source = readFileSync(join(ROOT, "src/proxy.ts"), "utf8")
 

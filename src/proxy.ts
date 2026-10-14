@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr"
 
 import { env } from "@/lib/env"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
-import { isCoachRestrictedPath } from "@/features/platform-access"
+import { hasCoachCoachingAccess, isCoachRestrictedPath } from "@/features/platform-access"
 import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = [
@@ -93,7 +93,11 @@ export async function proxy(request: NextRequest) {
     return redirectResponse
   }
 
-  if (user && isCoachRestricted) {
+  if (
+    user &&
+    isCoachRestricted &&
+    isCoachRestrictedPath(pathname, hasCoachCoachingAccess(user.app_metadata))
+  ) {
     const { data: platformStaff } = await supabase
       .from("platform_staff_members")
       .select("access_level")

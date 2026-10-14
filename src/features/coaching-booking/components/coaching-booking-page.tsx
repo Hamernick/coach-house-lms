@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { hasCoachCoachingAccess } from "@/features/platform-access"
 
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { COACHING_PATH } from "../lib"
@@ -24,6 +25,13 @@ export async function CoachingBookingPage({ searchParams }: CoachingBookingPageP
 
   if (!context) {
     redirect("/login?redirect=/coaching")
+  }
+
+  if (
+    context.profileAudience.platformAccessLevel === "coach" &&
+    !hasCoachCoachingAccess(context.user.app_metadata)
+  ) {
+    redirect("/organizations")
   }
 
   if (checkout === "cancelled" && bookingId) {

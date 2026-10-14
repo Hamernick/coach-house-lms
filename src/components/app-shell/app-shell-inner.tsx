@@ -99,6 +99,7 @@ export function AppShellInner({
   user,
   isAdmin,
   platformAccessLevel = null,
+  hasCoachingAccess = false,
   isTester = false,
   showOrgAdmin = false,
   canAccessOrgAdmin = true,
@@ -303,6 +304,7 @@ export function AppShellInner({
                 <SidebarBody
                   isAdmin={isAdmin}
                   platformAccessLevel={platformAccessLevel}
+                  hasCoachingAccess={hasCoachingAccess}
                   isTester={isTester}
                   showOrgAdmin={showOrgAdmin}
                   canAccessOrgAdmin={canAccessOrgAdmin}

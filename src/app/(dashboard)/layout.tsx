@@ -36,6 +36,7 @@ export default async function DashboardLayout({
         user={state.user}
         isAdmin={state.isAdmin}
         platformAccessLevel={state.platformAccessLevel}
+        hasCoachingAccess={state.hasCoachingAccess}
         showOrgAdmin={state.showOrgAdmin}
         canAccessOrgAdmin={state.canAccessOrgAdmin}
         acceleratorProgress={state.acceleratorProgress}

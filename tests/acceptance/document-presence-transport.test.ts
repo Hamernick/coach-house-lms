@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { workspacePresenceOverHttp } from "@/features/organization-workspace-support/lib/presence-transport"
-import { documentFailurePolicy } from "@/features/organization-document-collaboration/lib/editor-state"
+import { documentFailurePolicy, documentFailureStatus } from "@/features/organization-document-collaboration/lib/editor-state"
 import { loggerWarnMock } from "./test-utils"
 import { documentTrace, DocumentOperationError } from "@/features/organization-document-collaboration/server/diagnostics"
 const input = { organizationId: "org", sessionId: "session", path: "/workspace", position: null, editing: false }
@@ -31,6 +31,9 @@ describe("presence and persistence failure isolation", () => {
     expect(vi.getTimerCount()).toBe(0)
   })
   it("retries network failures but locks editing on revocation and preserves conflicts", () => {
+    expect(documentFailureStatus("denied", false)).toBe("View only")
+    expect(documentFailureStatus("denied", true)).toBe("Not saved")
+    expect(documentFailureStatus("timeout", false)).toBe("Not connected")
     expect(documentFailurePolicy("timeout")).toMatchObject({ blocked: false, retryable: true })
     expect(documentFailurePolicy("denied")).toMatchObject({ blocked: true, accessDenied: true })
     expect(documentFailurePolicy("external_change")).toMatchObject({ blocked: true, reopenIfClean: true })

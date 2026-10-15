@@ -5,14 +5,14 @@ Delivery boundary: local implementation and PR; Caleb owns hosted checks, merge,
 ## Baseline
 
 - Lane: `fix/support-roadmap-edit-access-20261015`, checkout `coach-house-platform-tiptap-hotfix-20261015`; HEAD `0fd6b05d3c1c833bc9105d1de515ef29ee90c791`.
-- Fetched main includes unrelated resource-preview PR317 at `7a984bfd`. Its runtime file is outside this repair; reconcile shared documentation before PR.
+- Rebased onto main `c77b219d` (PR317 resource tracing and PR318 sitemap deadline). Preserved both unrelated runlog additions; no runtime overlap. Baseline before implementation remains `0fd6b05d`.
 - Existing drawer override and two access regressions retained. Inherited evidence: three failing drawer cases before repair, 45 passing cases across five focused files afterward. Not integrated proof.
 - Owned dev listener: PID11639, port3128, cwd verified as this checkout; inherited production env symlink and shared dependency symlink left unchanged. No fixture writes against that environment.
 - SHIP shared revision40 retains historical SHIP000 claim; unchanged under the explicit incident priority.
 
 | Step | Status | Evidence | Remaining work |
 | --- | --- | --- | --- |
-| 00 | passed | Git status/base/fetch, listener cwd, dependency/env links inspected | Reconcile main documentation at closeout |
+| 00 | passed | Git status/base/fetch, listener cwd, dependency/env links inspected | Main documentation reconciled without dropping either lane |
 | 01 | blocked | `supabase status`: Docker daemon unavailable; Docker/Colima executables absent from inspected locations | Actual authenticated app acceptance needs disposable local Auth/PostgREST stack. Independent unit/SQL work continues. |
 | 02 | passed | `server/diagnostics.ts`, typed failure policy; safe stage/request-ID/commit evidence tests | Production stage remains unknown; no production request inspected |
 | 03 | in progress | Shared `document-capabilities.ts`, standalone/drawer/asset consumers, explicit-target fetch allowlist and asset document loader; access and panel tests pass | Authenticated three-entrypoint matrix authored but unrun |
@@ -61,3 +61,5 @@ Run `pnpm exec playwright test --config playwright.workspace-support-auth.config
 The authored cases cover four support identities × two plan tiers × three entrypoints, actual typing/save/reopen and saved actor audit, plus presence outage, a lost post-commit response, two staff sessions/undo, cross-tab scope, live revocation with pending work and ordinary-role restrictions. They are **unrun**. Remaining plan matrix: execute all authored cases, then cover all sections/formatted images/budget/history recovery, explicit external-change/journal races, responsive appearance and performance distributions. Existing unit/SQL tests are not substitutes for those journeys.
 
 No visual baseline was changed without user review. No migration, live grant, provider flag, customer document, deployment or hosted check was changed/polled.
+
+- Final lifecycle review corrected status semantics: revocation with no pending edit says View only, not Not saved. Only genuinely unacknowledged work gets Not saved. Covered in failure-policy regression.

@@ -7,7 +7,7 @@ import type { Editor } from "@tiptap/core"
 import { collab, getVersion, receiveTransaction, sendableSteps } from "@tiptap/pm/collab"
 import { documentCursorsPlugin, documentCursorsKey } from "../lib/cursors"
 import { syncDocumentOverHttp, documentPresenceOverHttp } from "../lib/transport"
-import { documentFailurePolicy, type DocumentPersistenceStatus } from "../lib/editor-state"
+import { documentFailurePolicy, documentFailureStatus, type DocumentPersistenceStatus } from "../lib/editor-state"
 import { readDocumentDraft, storeDocumentDraft, removeDocumentDraft, type StoredDocumentDraft } from "../lib/draft-storage"
 import { Step } from "@tiptap/pm/transform"
 import { loadOrganizationDocumentVersions } from "../server/actions"
@@ -182,7 +182,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
           return
         }
         setError(result.error)
-        setStatus("Not saved")
+        setStatus(documentFailureStatus(result.code, Boolean(sendableSteps(editor.state) || budgetDraft.current)))
         if (policy.blocked) blocked.current = true
         if (policy.accessDenied) setAccessDenied(true)
         if (result.code === "budget_conflict") setBudgetConflict(result.savedBudgetRows ?? [])
@@ -229,7 +229,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       setStatus(dirty.current ? "Saving…" : "Saved")
     } catch {
       if (mounted.current && !signal?.aborted && sequence === openSequence.current) {
-        setStatus("Offline · edits retained")
+        setStatus(sendableSteps(editor.state) || budgetDraft.current ? "Offline · edits retained" : "Not connected")
         setError("Connection interrupted. Keep this editor open; syncing will retry automatically.")
       }
     } finally { busy.current = false }

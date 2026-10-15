@@ -97,3 +97,12 @@ Record release, deployment, config, application/retry/correction/account and del
 Rollback intake incidents by pausing relevant intake/UI/sending flags and redeploying. Keep retention and verified tracking active; preserve records, receipts, secrets and uncertain provider IDs. Never reset/replay uncertain mail blindly.
 
 Production is not activated/functionally verified. No new migration is needed for this route fix. SHIP revision40 owner-host blocker remains; canonical claim was not forced/rewritten. Current-head quality/code-owner/protection remain mandatory. Private packets/ignored config are not GitHub backups.
+
+
+## Provider/review checkpoint — October15
+
+PR310 runtime headdd07d240 is pushed/remote verified and non-draft. Hosted static/acceptance/RLS passed; build compilation and TypeScript passed, then the unchanged /admin1003KB versus1000KB budget failed. No weakening or unrelated admin change. Visual/independent review and final aggregate quality are not asserted.184local focused cases and required default fiscal RLS/connected suite remain valid. Local full tsc reports unchanged-file diagnostics, no changed-file diagnostic; not a local typecheck pass.
+
+Read-only Auth config revealed port3127 was missing from redirects. Added only http://localhost:3127/auth/callback and its query-preserving http://localhost:3127/auth/callback** pattern, then independently verified the preserved production Site URL, existing entries and CAPTCHA setting. This allows fiscal email-confirmation returns to the actual localhost; real Google-origin/provider interaction and email delivery remain user checks. Private auth-callback before/verified receipts share the existing private fiscal receipt folder. See Supabase redirect guidance: https://supabase.com/docs/guides/auth/redirect-urls . Retire only these two temporary local entries when this lane's testing/listener is closed; preserve concurrent and production URLs.
+
+No Vercel flags, sending or webhook config changed; access still403/no browser. No real application/account/email created. Actual3127returns200, own listener94080. Next action remains restored Vercel access plus required quality/review, then Caleb's controlled production application/email/account/correction verification.

@@ -7,7 +7,7 @@ import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 import { readOrganizationRequestScope } from "@/server/organization/request-scope"
 import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
 import { mapSupportOrganization } from "../lib"
-import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportSearchResult, WorkspaceSupportSearchRow } from "../types"
+import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportPresenceResult, WorkspaceSupportSearchResult, WorkspaceSupportSearchRow } from "../types"
 
 async function context() {
   if (!organizationWorkspaceSupportEnabled) throw new Error("Workspace support is not enabled.")
@@ -33,7 +33,7 @@ export async function searchSupportOrganizations(query: string, offset = 0): Pro
   }
 }
 
-export async function syncWorkspaceSupportPresence(input: WorkspaceSupportPresenceInput) {
+export async function syncWorkspaceSupportPresence(input: WorkspaceSupportPresenceInput): Promise<WorkspaceSupportPresenceResult> {
   const requestId = randomUUID()
   const started = performance.now()
   try {
@@ -43,6 +43,10 @@ export async function syncWorkspaceSupportPresence(input: WorkspaceSupportPresen
       p_org: input.organizationId, p_session: input.sessionId, p_path: input.path,
       p_position: input.position, p_editing: input.editing,
     } as never)
+    if (error?.code === "PT404") {
+      logger.warn("workspace_presence_target_unavailable", { requestId, organizationId: input.organizationId })
+      return { error: "This workspace is unavailable. Choose another organization.", code: "organization_unavailable", retryable: false, requestId }
+    }
     if (error) throw error
     return { participants: data as unknown as WorkspaceSupportParticipant[] }
   } catch {

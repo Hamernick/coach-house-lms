@@ -271,6 +271,7 @@ const resolveDashboardLayoutStateCached = cache(
       if (resolvedActiveOrganization) {
         memberWorkspaceHeader = {
           activeOrganization: { ...resolvedActiveOrganization, supportAccess: activeOrg.supportAccess },
+          presenceOrganizationId: orgRowResult.data ? orgId : undefined,
           canSearchSupport: await hasWorkspaceSupportAccess(supabase),
           accessibleOrganizations,
         }
@@ -370,7 +371,7 @@ const resolveDashboardLayoutStateCached = cache(
           ? metadataIntentFocus
           : null,
       formationStatus,
-      organizationScope: { orgId, supportAccess: activeOrg.supportAccess },
+      organizationScope: { orgId, supportAccess: activeOrg.supportAccess, presenceOrganizationId: orgRowResult.data ? orgId : undefined },
       memberWorkspaceHeader,
       memberMapOnboarding: {
         hasOrganizationSwitcher: accessibleOrganizations.length > 1,

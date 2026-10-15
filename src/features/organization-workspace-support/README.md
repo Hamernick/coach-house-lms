@@ -58,3 +58,10 @@ document-activity PostgreSQL runner covers actual support RLS/storage/audit/pres
 permissions and ordinary-coach, suspended-user and revoked-staff denials.
 
 The exact presence POST route authenticates and refreshes session cookies in its handler; Proxy does not repeat that Auth request. Cross-origin and anonymous requests still fail before data access. The 5s baseline leaves room for the 5s deadline within the existing 15s authorization lease; that lease and all revocation/RLS checks are unchanged. Focus and reconnect resume polling without overlapping requests or bypassing error backoff. `workspace-presence-budget.test.ts` executes the actual controller effect and verifies at most181 heartbeats in15minutes including its initial request.
+
+Presence is mounted only for `presenceOrganizationId`, derived from the existing
+organization-row lookup. An account's onboarding/owner fallback is not proof of
+an organization. The heartbeat RPC locks an existing parent key before writing;
+`PT404` maps to a terminal unavailable-target response and stops that mounted
+client's polling. Switching to another workspace starts a new lifetime. Migration
+`20261015190000_workspace_presence_existing_target.sql` must precede deployment.

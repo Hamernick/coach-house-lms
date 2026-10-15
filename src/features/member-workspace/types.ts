@@ -35,6 +35,7 @@ export type MemberWorkspacePersonOption = {
 }
 
 export type MemberWorkspaceHeaderState = {
+  presenceOrganizationId?: string
   canSearchSupport?: boolean
   activeOrganization: MemberWorkspaceAccessibleOrganization
   accessibleOrganizations: MemberWorkspaceAccessibleOrganization[]

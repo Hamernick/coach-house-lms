@@ -18,6 +18,7 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
     const lifetime = new AbortController()
     const sessionId = session.current
     let stopped = false
+    let targetUnavailable = false
     let position: { x: number; y: number } | null = null
     let editedAt = 0
     const pointer = (event: PointerEvent) => {
@@ -31,7 +32,10 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
           path, position: document.visibilityState === "visible" ? position : null,
           editing: supportAccess && Date.now() - editedAt < 3000 }, lifetime.signal)
         if (stopped) return
-        if ("error" in result) { setError(result.error ?? "Live support presence is unavailable."); setParticipants([]); return false }
+        if ("error" in result) {
+          targetUnavailable = result.code === "organization_unavailable" && result.retryable === false
+          setError(result.error ?? "Live support presence is unavailable."); setParticipants([]); return false
+        }
         setError(null); setParticipants(result.participants ?? [])
         return true
       } catch { if (!stopped) { setError("Live support presence is reconnecting."); setParticipants([]) }; return false }
@@ -43,7 +47,7 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
     // The existing support authorization lease is 15s. A 5s heartbeat plus its
     // 5s HTTP deadline stays within that lease; hidden support tabs retain it.
     const stopPolling = startBackgroundPolling({ run: tick, intervalMs: () => 5000,
-      enabled: () => supportAccess || document.visibilityState === "visible" })
+      enabled: () => !targetUnavailable && (supportAccess || document.visibilityState === "visible") })
     return () => {
       stopped = true
       stopPolling()

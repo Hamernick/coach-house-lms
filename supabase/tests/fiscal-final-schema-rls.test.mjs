@@ -127,8 +127,11 @@ try {
 
   if (process.argv.includes("--guest")) {
     runSql("supabase/tests/guest-fiscal-submission.bootstrap.sql")
+    runSql("supabase/migrations/20260920150000_project_option_settings.sql")
     runSql("supabase/migrations/20260609154000_add_fiscal_sponsorship_applications.sql")
     runSql("supabase/migrations/20261010100000_guest_fiscal_submission.sql")
+    runSql("supabase/migrations/20261015200000_fix_fiscal_project_options.sql")
+    runSql("supabase/migrations/20261015200000_fix_fiscal_project_options.sql") // Retry must be a no-op.
     runSql("supabase/migrations/20261010120000_fiscal_staff_event_notifications.sql")
     runSql("supabase/migrations/20261012160000_guest_fiscal_submission_notifications.sql")
     runSql("supabase/tests/guest-fiscal-submission.assertions.sql")
@@ -177,8 +180,11 @@ try {
   runSql("supabase/tests/fiscal-final-schema-rls.assertions.sql")
 
   runSql("supabase/tests/public-fiscal-intake.bootstrap.sql")
+  runSql("supabase/migrations/20260920150000_project_option_settings.sql")
   runSql("supabase/migrations/20260505120000_gate_member_workspace_paid_access.sql")
   runSql("supabase/migrations/20261010090000_public_fiscal_intake.sql")
+  runSql("supabase/migrations/20261015200000_fix_fiscal_project_options.sql")
+  runSql("supabase/migrations/20261015200000_fix_fiscal_project_options.sql")
   runSql("supabase/tests/public-fiscal-intake.assertions.sql")
 
   console.log("[fiscal-intake] Anonymous denial, owner isolation, profile preservation and idempotent start passed.")

@@ -91,3 +91,8 @@ No agent-created synthetic production application or test email. No broad browse
 For an intake incident, Caleb pauses relevant submission/intake/sending flags and redeploys. Keep retention and configured tracking active for existing records/in-flight receipts. Preserve stable secrets, applications, proofs, outbox records, idempotency keys and uncertain provider IDs; never reset/replay uncertain mail blindly. A disabled profile-import flag also hides linked-account application entry, so use it deliberately.
 
 Codex's stop point is this checklist PR. Fiscal remains **implemented, pending Caleb's activation and real journey**, not functionally verified in production. After Caleb confirms the journey, reconcile the original 03 packet/log/index; then continue Calendar → formation verification. Shared SHIP revision 40 owner-host blocker is preserved; this handoff does not force a new claim or waive release gates.
+
+
+## October 15 — production outage and reload recovery follow-up
+
+Caleb identified a database overload in another chat while testing draft persistence. That incident remains separate. New user requirement: a page refresh must preserve unconfirmed form answers. [Bounded same-tab recovery plan](2026-10-15-fiscal-draft-reload-recovery.md) changes the earlier memory-only fallback for the enabled public form, preserves server version/idempotency/conflict checks, and leaves activation/data/provider work untouched. The current old-client tab still needs an online Saved acknowledgement or a manual copy before refreshing. Codex hands off a focused fix PR; Caleb owns deployment and retest.

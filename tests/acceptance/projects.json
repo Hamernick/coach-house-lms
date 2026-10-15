@@ -310,6 +310,7 @@
       "tests/acceptance/fiscal-sponsorship-coach-milestones.test.ts",
       "tests/acceptance/fiscal-sponsorship-email-delivery.test.ts",
       "tests/acceptance/fiscal-sponsorship-email-proof.test.ts",
+      "tests/acceptance/fiscal-sponsorship-guest-draft-recovery.test.ts",
       "tests/acceptance/fiscal-sponsorship-guest-draft.test.ts",
       "tests/acceptance/fiscal-sponsorship-guest-followup.test.ts",
       "tests/acceptance/fiscal-sponsorship-guest-profile.test.ts",

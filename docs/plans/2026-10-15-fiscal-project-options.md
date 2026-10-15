@@ -42,8 +42,10 @@ checks and normal prepush also run before handoff.
 This is a database-function fix. A web merge/build alone does not apply it.
 Apply only20261015200000 after production migration authorization; do not run a
 bulk database push that could apply other workstreams' pending migrations.
-The PR-only delivery contract leaves production application pending approval.
-No production schema, settings, application data or email changed in this run.
+Caleb explicitly authorized application after the PR handoff. Migration20261015200000
+is now applied in production and independently verified. Only the two function
+definitions and this migration ledger entry changed; no application or email was
+created by the operation.
 
 Original production definitions/owners/ACL/config and relevant catalog evidence
 are saved privately at
@@ -56,3 +58,21 @@ constraint. A controlled actual application/mail test remains Caleb-owned.
 
 Keep actual localhost3127, other lanes and shared SHIP40 hold. Do not bring back
 CAPTCHA or resume key troubleshooting. Stop at the open PR/production approval.
+
+## Applied and verified — October15
+
+Authorized exact migration applied atomically with live definition/owner/ACL/security
+and constraint preconditions, a migration-ledger absence check and postconditions.
+Management API acknowledgment201; independent read confirms both definitions differ
+only by the reviewed options literal, owners/grants/security are unchanged, the
+validated constraint is intact, and the ledger has exactly the authorized version,
+matching SQL hash and saved rollback. No other pending migration was applied.
+
+Private receipts: project-options-apply-preflight.json, project-options-apply.sql,
+project-options-apply-response.json, project-options-verified.json,
+project-options-verification-summary.json and project-options-rollback.sql in the
+existing fiscal-completion/2026-10-15 directory. No credentials are in the receipts.
+
+Caleb can use Retry confirmation in the existing filled form now; this database
+correction needs no additional web build. Real submission/receipt/staff mail
+verification remains Caleb-owned. Do not reapply or restore the old functions.

@@ -58,7 +58,11 @@ export function isResourceMapLocalDiscoveryPreviewEnabled(
 function normalizeLocalPreviewFile(value: string | null | undefined) {
   const filePath = value?.trim()
   if (!filePath) return null
-  return isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath)
+  // Curated preview files exist only on the operator's local filesystem.
+  // Do not trace the checkout or bundle its files into deployed routes.
+  return isAbsolute(filePath)
+    ? filePath
+    : resolve(/* turbopackIgnore: true */ process.cwd(), filePath)
 }
 
 function parseLocalPreviewRows(raw: string): unknown[] {
@@ -120,22 +124,23 @@ export function clearResourceMapLocalPreviewCache() {
 }
 
 async function loadLocalResourceMapPreviewItems(filePath: string) {
-  const fileMetadata = await stat(filePath)
+  const fileMetadata = await stat(/* turbopackIgnore: true */ filePath)
   const signature = `${fileMetadata.mtimeMs}:${fileMetadata.size}`
   const cached = localResourceMapPreviewCache.get(filePath)
   if (cached?.signature === signature) return cached.itemsPromise
 
-  const itemsPromise = readFile(filePath, "utf8").then((raw) =>
-    parseLocalPreviewRows(raw)
-      .map((row, index) =>
-        row && typeof row === "object"
-          ? buildExternalResourceMapItemFromLocalPreviewRecord(
-              row as Record<string, unknown>,
-              index
-            )
-          : null
-      )
-      .filter((item): item is ExternalResourceMapItem => item !== null)
+  const itemsPromise = readFile(/* turbopackIgnore: true */ filePath, "utf8").then(
+    (raw) =>
+      parseLocalPreviewRows(raw)
+        .map((row, index) =>
+          row && typeof row === "object"
+            ? buildExternalResourceMapItemFromLocalPreviewRecord(
+                row as Record<string, unknown>,
+                index
+              )
+            : null
+        )
+        .filter((item): item is ExternalResourceMapItem => item !== null)
   )
   const entry = { signature, itemsPromise }
   localResourceMapPreviewCache.set(filePath, entry)
@@ -286,7 +291,10 @@ export async function fetchPublicResourceMapItems(
   const localEnginePreviewFile = normalizeLocalPreviewFile(
     options.localEnginePreviewFile
   )
-  if (localEnginePreviewFile && existsSync(localEnginePreviewFile)) {
+  if (
+    localEnginePreviewFile &&
+    existsSync(/* turbopackIgnore: true */ localEnginePreviewFile)
+  ) {
     try {
       const items = await fetchLocalResourceMapPreviewItems({
         filePath: localEnginePreviewFile,
@@ -325,7 +333,8 @@ export async function fetchPublicResourceMapItemById(
   )
   if (
     localPreviewFile ||
-    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+    (localEnginePreviewFile &&
+      existsSync(/* turbopackIgnore: true */ localEnginePreviewFile))
   ) {
     const items = await fetchPublicResourceMapItems(options)
     return items.find((item) => item.id === normalizedId) ?? null
@@ -378,7 +387,8 @@ export async function fetchPublicResourceMapItemsByIds(
   )
   if (
     localPreviewFile ||
-    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+    (localEnginePreviewFile &&
+      existsSync(/* turbopackIgnore: true */ localEnginePreviewFile))
   ) {
     const requestedIds = new Set(normalizedIds)
     return (await fetchPublicResourceMapItems(options)).filter((item) =>
@@ -444,7 +454,8 @@ export async function fetchPublicResourceMapItemsPageById({
   )
   if (
     localPreviewFile ||
-    (localEnginePreviewFile && existsSync(localEnginePreviewFile))
+    (localEnginePreviewFile &&
+      existsSync(/* turbopackIgnore: true */ localEnginePreviewFile))
   ) {
     const items = (await fetchPublicResourceMapItems(options)).sort(
       (left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)

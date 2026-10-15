@@ -1,7 +1,7 @@
 "use client"
 
 import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
-import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration"
+import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration/client"
 import { useEffect, useState } from "react"
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
 import { RichTextEditor } from "@/components/rich-text-editor"

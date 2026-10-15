@@ -380,6 +380,7 @@
       "tests/acceptance/organization-document-collaboration-access.test.ts",
       "tests/acceptance/organization-document-collaboration-server.test.ts",
       "tests/acceptance/organization-document-files-route.test.ts",
+      "tests/acceptance/organization-document-transport.test.ts",
       "tests/acceptance/organization-geocoding.test.ts",
       "tests/acceptance/organization-launch.test.ts",
       "tests/acceptance/organization-primary-objects.test.ts",

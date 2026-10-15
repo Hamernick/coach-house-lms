@@ -8,7 +8,6 @@ import { Step } from "@tiptap/pm/transform"
 import { applyDocumentSteps } from "@/features/organization-document-collaboration/lib"
 import { documentSchema, serializeDocument } from "@/features/organization-document-collaboration/lib/schema"
 import type { DocumentSession } from "@/features/organization-document-collaboration/types"
-import { defaultDocumentTransport } from "@/features/organization-document-collaboration/hooks/use-organization-document-collaboration-controller"
 import { syncOrganizationDocument } from "@/features/organization-document-collaboration/server/actions"
 import { toPlainDocumentJson } from "@/features/organization-document-collaboration/lib/serialization"
 
@@ -64,8 +63,8 @@ describe("core document simultaneous editing", () => {
       expect(await throughServerAction(input)).toEqual(JSON.parse(JSON.stringify(input)))
       return { error: "transport verified" }
     })
-    await expect(defaultDocumentTransport.sync(initial)).resolves.toEqual({ error: "transport verified" })
-    await expect(defaultDocumentTransport.sync(update)).resolves.toEqual({ error: "transport verified" })
+    await expect(syncOrganizationDocument(toPlainDocumentJson(initial))).resolves.toEqual({ error: "transport verified" })
+    await expect(syncOrganizationDocument(toPlainDocumentJson(update))).resolves.toEqual({ error: "transport verified" })
     expect(Object.getPrototypeOf(initialDocument.content[0].attrs)).toBeNull()
     const saved = applyDocumentSteps({ ...state(), document: toPlainDocumentJson(initialDocument) }, toPlainDocumentJson(steps), "coach")
     expect(saved.document.content?.[0].attrs?.textAlign).toBe("right")

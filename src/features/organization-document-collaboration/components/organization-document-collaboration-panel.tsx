@@ -37,7 +37,7 @@ export function OrganizationDocumentCollaborationPanel({ section, organizationId
       toolbarTrailingActions={canEdit ? <Button type="button" size="sm" variant="ghost"
         onClick={() => void sync()} disabled={!ready || status === "Saved"}
         className="text-muted-foreground hover:text-foreground gap-2">{status}</Button> : null}
-      applyExternalValue={false} readOnly={!ready || !canEdit || Boolean(recoveredDraft)} preserveImages minHeight={300} ariaLabel={section.title} /> : <p className="text-sm">Opening document…</p>}
+      applyExternalValue={false} readOnly={!ready || !canEdit || Boolean(recoveredDraft)} preserveImages minHeight={300} ariaLabel={section.title} /> : !error ? <p className="text-sm">Opening document…</p> : null}
     {loaded && section.id === "budget" ? <RoadmapBudgetTableEditor rows={controller.budgetRows}
       canEdit={ready && canEdit && !recoveredDraft} isDirty={status !== "Saved"} isSaving={status === "Saving…"}
       onRowsChange={controller.changeBudgetRows} onSave={() => void sync()} /> : null}

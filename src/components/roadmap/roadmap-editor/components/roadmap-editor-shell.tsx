@@ -1,7 +1,7 @@
 "use client"
 
 import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
-import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration"
+import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration/client"
 import { useState, type ComponentType, type RefObject } from "react"
 import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
 import { useSearchParams } from "next/navigation"

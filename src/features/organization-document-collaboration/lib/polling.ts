@@ -1,5 +1,7 @@
 // Preserve responsive co-editing while avoiding full document reads in idle tabs.
-export function documentPollingInterval(pending: boolean, collaborating: boolean) {
+export function documentPollingInterval(pending: boolean, collaborating: boolean, retryAt = 0) {
+  const retryDelay = retryAt - Date.now()
+  if (retryDelay > 0) return retryDelay
   return pending || collaborating ? 2000 : 15_000
 }
 

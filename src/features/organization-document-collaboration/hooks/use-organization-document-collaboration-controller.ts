@@ -24,6 +24,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   const openSequence = useRef(0)
   const opening = useRef<AbortController | null>(null)
   const [accessDenied, setAccessDenied] = useState(false)
+  const [accessRevoked, setAccessRevoked] = useState(false)
   const [draftWarning, setDraftWarning] = useState<string | null>(null)
   const [recovery, setRecovery] = useState<StoredDocumentDraft | null>(null)
   const [presenceUnavailable, setPresenceUnavailable] = useState(false)
@@ -89,8 +90,9 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       const result = await transport.sync({ ...scopeRef.current, clientId, version: 0 }, signal)
       if (!mounted.current || signal?.aborted || sequence !== openSequence.current) return
       if ("error" in result) { setError(result.error); setStatus("Not connected"); return }
-      if (result.userId !== userId) { setAccessDenied(true); setError("Your account changed. Reopen this document."); return }
+      if (result.userId !== userId) { setAccessDenied(true); setAccessRevoked(true); setError("Your account changed. Reopen this document."); return }
       setAccessDenied(result.capabilities?.canEdit === false)
+      setAccessRevoked(false)
       setBudgetRows(result.section.budgetRows ?? [])
       setLoaded(result)
       acceptSection(result)
@@ -150,7 +152,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   const sync = useCallback(async (force = false) => {
     const editor = editorRef.current
     if (!editor || editor.isDestroyed || busy.current || blocked.current) return
-    if (!force && Date.now() < retryAt.current) return false
+    if (!force && Date.now() < retryAt.current) return
     if (!generation.current) {
       if (!canEdit) await open()
       return
@@ -191,12 +193,13 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
         setError(result.error)
         setStatus(documentFailureStatus(result.code, Boolean(sendableSteps(editor.state) || budgetDraft.current)))
         if (policy.blocked) blocked.current = true
-        if (policy.accessDenied) setAccessDenied(true)
+        if (policy.accessDenied) { setAccessDenied(true); setAccessRevoked(true) }
         if (result.code === "budget_conflict") setBudgetConflict(result.savedBudgetRows ?? [])
         return false
       }
-      if (result.userId !== userId) { setAccessDenied(true); blocked.current = true; setError("Your account changed. Your local copy is retained."); return }
+      if (result.userId !== userId) { setAccessDenied(true); setAccessRevoked(true); blocked.current = true; setError("Your account changed. Your local copy is retained."); return }
       setAccessDenied(result.capabilities?.canEdit === false)
+      setAccessRevoked(false)
       const session = result.session
       if (!session || session.generation !== generation.current) {
         blocked.current = true
@@ -266,8 +269,10 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     }
     editor.on("transaction", changed)
     window.addEventListener("beforeunload", warn)
-    const stopPolling = startBackgroundPolling({ run: () => sync(), immediate: false,
-      intervalMs: () => documentPollingInterval(dirty.current, participantsRef.current.some(person => person.session_id !== clientId)),
+    // Sync owns backoff for both foreground saves and background retries.
+    // Do not feed its failures into a second exponential backoff.
+    const stopPolling = startBackgroundPolling({ run: async () => { await sync() }, immediate: false,
+      intervalMs: () => documentPollingInterval(dirty.current, participantsRef.current.some(person => person.session_id !== clientId), retryAt.current),
       enabled: () => !blocked.current && (document.visibilityState === "visible" || dirty.current) })
     return () => {
       clearTimeout(saveTimer.current); stopPolling()
@@ -277,14 +282,14 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   }, [clientId, ready, sync, persistDraft, scheduleSave])
 
   useEffect(() => {
-    if (!ready || !transport.presence || accessDenied) return
+    if (!ready || !transport.presence || accessRevoked) return
     const controller = new AbortController()
     const poll = async () => {
       if (controller.signal.aborted) return
       try {
         if (document.visibilityState === "visible") {
           const editor = editorRef.current
-          const selection = editor && generation.current && !sendableSteps(editor.state)
+          const selection = canEdit && !accessDenied && editor && generation.current && !sendableSteps(editor.state)
             ? { anchor: editor.state.selection.anchor, head: editor.state.selection.head, version: getVersion(editor.state) } : null
           const result = await transport.presence!({ ...scopeRef.current, clientId, version: 0, selection }, controller.signal)
           if (controller.signal.aborted) return
@@ -297,7 +302,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     const stopPolling = startBackgroundPolling({ run: poll,
       intervalMs: () => documentPresenceInterval(participantsRef.current.some(person => person.session_id !== clientId)) })
     return () => { controller.abort(); stopPolling() }
-  }, [accessDenied, clientId, ready, transport])
+  }, [accessDenied, accessRevoked, canEdit, clientId, ready, transport])
 
   const retry = useCallback(async () => {
     if (blocked.current) return

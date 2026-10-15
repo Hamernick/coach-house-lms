@@ -10,6 +10,8 @@ import { syncDocumentOverHttp, documentPresenceOverHttp } from "../lib/transport
 import { documentFailurePolicy, documentFailureStatus, type DocumentPersistenceStatus } from "../lib/editor-state"
 import { readDocumentDraft, storeDocumentDraft, removeDocumentDraft, type StoredDocumentDraft } from "../lib/draft-storage"
 import { Step } from "@tiptap/pm/transform"
+import { backgroundRetryDelay, startBackgroundPolling } from "@/lib/background-polling"
+import { documentPollingInterval, documentPresenceInterval } from "../lib/polling"
 import { loadOrganizationDocumentVersions } from "../server/actions"
 import type { DocumentScope, DocumentSyncResult, DocumentParticipant, DocumentTransport } from "../types"
 
@@ -22,6 +24,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   const openSequence = useRef(0)
   const opening = useRef<AbortController | null>(null)
   const [accessDenied, setAccessDenied] = useState(false)
+  const [accessRevoked, setAccessRevoked] = useState(false)
   const [draftWarning, setDraftWarning] = useState<string | null>(null)
   const [recovery, setRecovery] = useState<StoredDocumentDraft | null>(null)
   const [presenceUnavailable, setPresenceUnavailable] = useState(false)
@@ -37,6 +40,9 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   const editorRef = useRef<Editor | null>(null)
   const generation = useRef<string | null>(null)
   const busy = useRef(false)
+  const failures = useRef(0)
+  const retryAt = useRef(0)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const mounted = useRef(true)
   const lastSaved = useRef<Loaded | null>(null)
   const blocked = useRef(false)
@@ -84,8 +90,9 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       const result = await transport.sync({ ...scopeRef.current, clientId, version: 0 }, signal)
       if (!mounted.current || signal?.aborted || sequence !== openSequence.current) return
       if ("error" in result) { setError(result.error); setStatus("Not connected"); return }
-      if (result.userId !== userId) { setAccessDenied(true); setError("Your account changed. Reopen this document."); return }
+      if (result.userId !== userId) { setAccessDenied(true); setAccessRevoked(true); setError("Your account changed. Reopen this document."); return }
       setAccessDenied(result.capabilities?.canEdit === false)
+      setAccessRevoked(false)
       setBudgetRows(result.section.budgetRows ?? [])
       setLoaded(result)
       acceptSection(result)
@@ -142,9 +149,10 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     } finally { initializing.current = false }
   }, [acceptSection, loaded, clientId, transport, canEdit])
 
-  const sync = useCallback(async () => {
+  const sync = useCallback(async (force = false) => {
     const editor = editorRef.current
     if (!editor || editor.isDestroyed || busy.current || blocked.current) return
+    if (!force && Date.now() < retryAt.current) return
     if (!generation.current) {
       if (!canEdit) await open()
       return
@@ -175,6 +183,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       }, signal)
       if (!mounted.current || signal?.aborted || sequence !== openSequence.current || editor.isDestroyed) return
       if ("error" in result) {
+        retryAt.current = Date.now() + backgroundRetryDelay(5000, ++failures.current)
         const policy = documentFailurePolicy(result.code)
         if (policy.reopenIfClean && !sendableSteps(editor.state) && !budgetDraft.current) {
           setReady(false); setLoaded(null); editorRef.current = null; generation.current = null
@@ -184,12 +193,13 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
         setError(result.error)
         setStatus(documentFailureStatus(result.code, Boolean(sendableSteps(editor.state) || budgetDraft.current)))
         if (policy.blocked) blocked.current = true
-        if (policy.accessDenied) setAccessDenied(true)
+        if (policy.accessDenied) { setAccessDenied(true); setAccessRevoked(true) }
         if (result.code === "budget_conflict") setBudgetConflict(result.savedBudgetRows ?? [])
-        return
+        return false
       }
-      if (result.userId !== userId) { setAccessDenied(true); blocked.current = true; setError("Your account changed. Your local copy is retained."); return }
+      if (result.userId !== userId) { setAccessDenied(true); setAccessRevoked(true); blocked.current = true; setError("Your account changed. Your local copy is retained."); return }
       setAccessDenied(result.capabilities?.canEdit === false)
+      setAccessRevoked(false)
       const session = result.session
       if (!session || session.generation !== generation.current) {
         blocked.current = true
@@ -226,63 +236,73 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
         setDraftWarning(null)
       } else persistDraft()
       setError(null)
+      failures.current = 0; retryAt.current = 0
       setStatus(dirty.current ? "Saving…" : "Saved")
+      return true
     } catch {
+      retryAt.current = Date.now() + backgroundRetryDelay(5000, ++failures.current)
       if (mounted.current && !signal?.aborted && sequence === openSequence.current) {
         setStatus(sendableSteps(editor.state) || budgetDraft.current ? "Offline · edits retained" : "Not connected")
         setError("Connection interrupted. Keep this editor open; syncing will retry automatically.")
       }
+      return false
     } finally { busy.current = false }
   }, [acceptSection, canEdit, clientId, open, transport, persistDraft, userId])
+
+  const scheduleSave = useCallback(() => {
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => void sync(), 400)
+  }, [sync])
 
   useEffect(() => {
     const editor = editorRef.current
     if (!ready || !editor) return
-    let timer: ReturnType<typeof setTimeout> | undefined
     const changed = () => {
       if (!generation.current || !sendableSteps(editor.state)) return
       dirty.current = true
       persistDraft()
       setStatus("Saving…")
-      clearTimeout(timer)
-      timer = setTimeout(() => void sync(), 400)
+      scheduleSave()
     }
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty.current || sendableSteps(editor.state) || budgetDraft.current) { event.preventDefault(); event.returnValue = "" }
     }
     editor.on("transaction", changed)
     window.addEventListener("beforeunload", warn)
-    const poll = setInterval(() => void sync(), 2000)
+    // Sync owns backoff for both foreground saves and background retries.
+    // Do not feed its failures into a second exponential backoff.
+    const stopPolling = startBackgroundPolling({ run: async () => { await sync() }, immediate: false,
+      intervalMs: () => documentPollingInterval(dirty.current, participantsRef.current.some(person => person.session_id !== clientId), retryAt.current),
+      enabled: () => !blocked.current && (document.visibilityState === "visible" || dirty.current) })
     return () => {
-      clearTimeout(timer); clearInterval(poll)
+      clearTimeout(saveTimer.current); stopPolling()
       editor.off("transaction", changed)
       window.removeEventListener("beforeunload", warn)
     }
-  }, [ready, sync, persistDraft])
+  }, [clientId, ready, sync, persistDraft, scheduleSave])
 
   useEffect(() => {
-    if (!ready || !transport.presence) return
+    if (!ready || !transport.presence || accessRevoked) return
     const controller = new AbortController()
-    let timer: ReturnType<typeof setTimeout>
-    let failures = 0
     const poll = async () => {
       if (controller.signal.aborted) return
       try {
         if (document.visibilityState === "visible") {
           const editor = editorRef.current
-          const selection = editor && generation.current && !sendableSteps(editor.state)
+          const selection = canEdit && !accessDenied && editor && generation.current && !sendableSteps(editor.state)
             ? { anchor: editor.state.selection.anchor, head: editor.state.selection.head, version: getVersion(editor.state) } : null
           const result = await transport.presence!({ ...scopeRef.current, clientId, version: 0, selection }, controller.signal)
           if (controller.signal.aborted) return
-          if ("error" in result) { failures++; setPresenceUnavailable(true); setParticipants([]) }
-          else { failures = 0; setPresenceUnavailable(false); setParticipants(result.participants) }
+          if ("error" in result) { setPresenceUnavailable(true); setParticipants([]); return false }
+          setPresenceUnavailable(false); setParticipants(result.participants)
+          return true
         }
-      } catch { failures++; if (!controller.signal.aborted) { setPresenceUnavailable(true); setParticipants([]) } }
-      finally { if (!controller.signal.aborted) timer = setTimeout(() => void poll(), Math.min(8000, 2000 * 2 ** failures) + Math.random() * 250) }
+      } catch { if (!controller.signal.aborted) { setPresenceUnavailable(true); setParticipants([]) }; return false }
     }
-    void poll()
-    return () => { controller.abort(); clearTimeout(timer) }
-  }, [clientId, ready, transport])
+    const stopPolling = startBackgroundPolling({ run: poll,
+      intervalMs: () => documentPresenceInterval(participantsRef.current.some(person => person.session_id !== clientId)) })
+    return () => { controller.abort(); stopPolling() }
+  }, [accessDenied, accessRevoked, canEdit, clientId, ready, transport])
 
   const retry = useCallback(async () => {
     if (blocked.current) return
@@ -292,20 +312,20 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       editorRef.current = null
       generation.current = null
       await open()
-    } else await sync()
+    } else await sync(true)
   }, [open, ready, sync])
 
   const changeBudgetRows = (rows: BudgetTableRow[]) => {
     rows = normalizeRoadmapBudgetRows(rows)
     budgetDraft.current = { base: budgetDraft.current?.base ?? lastSaved.current?.section.budgetRows ?? [], next: rows }
-    setBudgetRows(rows); dirty.current = true; persistDraft(); setStatus("Saving…")
+    setBudgetRows(rows); dirty.current = true; persistDraft(); setStatus("Saving…"); scheduleSave()
   }
   const resolveBudgetConflict = (keepMine: boolean) => {
     if (!budgetConflict) return
     if (keepMine && budgetDraft.current) budgetDraft.current = { base: budgetConflict, next: budgetDraft.current.next }
     else { budgetDraft.current = null; setBudgetRows(budgetConflict) }
     setBudgetConflict(null); blocked.current = false; setError(null)
-    void sync()
+    void sync(true)
   }
   return { recovery, discardRecovery, persistDraft, draftWarning, presenceUnavailable, accessDenied, budgetConflict, resolveBudgetConflict, loaded, ready, error, status, participants, onReady, sync, retry, blocked: blocked.current, editorRef, dirty, savedSection, budgetRows, changeBudgetRows }
 }

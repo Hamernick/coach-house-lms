@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { guestEmailProofSecret } from "./guest-email-proof-token"
-import { guestIntakeConfiguration, guestRequestIdentity, guestRiskKey, readGuestJson, verifyGuestCaptcha } from "./guest-request-security"
+import { guestIntakeConfiguration, guestRequestIdentity, guestRiskKey, readGuestJson, verifyGuestCaptcha, guestCaptchaFailure } from "./guest-request-security"
 
 const schema = z.object({
   reference: z.string().uuid(), email: z.string().trim().toLowerCase().email().max(254),
@@ -36,7 +36,11 @@ export async function handleGuestFiscalRecovery(request: Request) {
     })
     if (ipLimit.error) throw new Error("limit_unavailable")
     if (ipLimit.data !== true) return reply({ error: "Please wait before requesting another link." }, 429)
-    if (!await verifyGuestCaptcha(config, parsed.data.captchaToken, ip)) return reply({ error: "Please complete the verification again." }, 400)
+    const captcha = await verifyGuestCaptcha(config, parsed.data.captchaToken, ip)
+    if (captcha !== "verified") {
+      const failure = guestCaptchaFailure(captcha)
+      return reply(failure.body, failure.status)
+    }
     const emailLimit = await admin.rpc("consume_fiscal_guest_limit", {
       p_key_hash: guestRiskKey(config.riskSecret, "recovery-email", parsed.data.email), p_limit: 3, p_window_seconds: 86400,
     })

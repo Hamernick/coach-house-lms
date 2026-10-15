@@ -322,6 +322,7 @@
       "tests/acceptance/fiscal-sponsorship-guest-review.test.ts",
       "tests/acceptance/fiscal-sponsorship-guest-submission.test.ts",
       "tests/acceptance/fiscal-sponsorship-native-signing.test.ts",
+      "tests/acceptance/fiscal-sponsorship-submission-retry.test.ts",
       "tests/acceptance/fiscal-sponsorship-w9.test.ts",
       "tests/acceptance/fiscal-sponsorship-workspace-isolation.test.ts",
       "tests/acceptance/free-document-access.test.ts",

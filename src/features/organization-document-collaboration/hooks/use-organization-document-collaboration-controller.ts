@@ -6,11 +6,12 @@ import { normalizeRoadmapBudgetRows, roadmapBudgetRowsEqual } from "@/lib/roadma
 import type { Editor } from "@tiptap/core"
 import { collab, getVersion, receiveTransaction, sendableSteps } from "@tiptap/pm/collab"
 import { documentCursorsPlugin, documentCursorsKey } from "../lib/cursors"
+import { toPlainDocumentJson } from "../lib/serialization"
 import { Step } from "@tiptap/pm/transform"
 import { syncOrganizationDocument, leaveOrganizationDocument, loadOrganizationDocumentVersions } from "../server/actions"
 import type { DocumentScope, DocumentSyncResult, DocumentParticipant, DocumentTransport } from "../types"
 
-export const defaultDocumentTransport: DocumentTransport = { sync: syncOrganizationDocument, leave: leaveOrganizationDocument, versions: loadOrganizationDocumentVersions }
+export const defaultDocumentTransport: DocumentTransport = { sync: input => syncOrganizationDocument(toPlainDocumentJson(input)), leave: leaveOrganizationDocument, versions: loadOrganizationDocumentVersions }
 
 type Loaded = Exclude<DocumentSyncResult, { error: string }>
 export function useOrganizationDocumentCollaborationController(scope: DocumentScope, userId: string, transport = defaultDocumentTransport, canEdit = true) {

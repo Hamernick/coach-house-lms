@@ -38,6 +38,16 @@ describe("durable collaboration action", () => {
     const admin = { from: (table: string) => query(table), rpc }
     mocks.context.mockResolvedValue({ user: { id: "actor" }, role: "Coach", admin, client: admin })
   })
+  it("returns plain document attributes when opening a new collaboration session", async () => {
+    session = { ...session, section_revision: "stale", section_content: "<p>Previous content</p>" }
+    const result = await syncOrganizationDocument({ ...input(), generation: undefined, steps: undefined,
+      initialDocument: initialDoc.toJSON(), expectedRevision: "2026-10-14T00:00:00Z" })
+    expect(result).not.toHaveProperty("error")
+    if ("error" in result) throw new Error(result.error)
+    expect(Object.getPrototypeOf(result.session?.document.content?.[0].attrs)).toBe(Object.prototype)
+    expect(documentSchema.nodeFromJSON(result.session!.document).textContent).toBe("Hello")
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
   it("retries an unrelated profile race without losing either write", async () => {
     rpc.mockImplementationOnce(async () => {
       organization = { ...organization, updated_at: "2026-10-14T00:00:01Z", profile: { ...organization.profile, name: "Concurrent name" } }

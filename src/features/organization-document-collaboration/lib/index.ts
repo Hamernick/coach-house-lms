@@ -1,5 +1,6 @@
 import { Step } from "@tiptap/pm/transform"
 import { documentSchema, validateDocument } from "./schema"
+import { toPlainDocumentJson } from "./serialization"
 import type { DocumentSession } from "../types"
 
 export function applyDocumentSteps(session: DocumentSession, steps: Record<string, unknown>[], clientId: string) {
@@ -18,6 +19,6 @@ export function applyDocumentSteps(session: DocumentSession, steps: Record<strin
   while (journal.length > steps.length && journalBytes > 2_000_000) {
     journalBytes -= JSON.stringify(journal.shift()).length
   }
-  return { ...session, document: document.toJSON(), version: session.version + steps.length,
+  return { ...session, document: toPlainDocumentJson(document.toJSON()), version: session.version + steps.length,
     steps: journal }
 }

@@ -33,3 +33,12 @@ After patch 1 is released:
 ## Checkpoint
 
 Patch 1 code is implemented locally: five runtime lines removed; README reflects the updated presentation. All 18 existing support acceptance cases, changed-source ESLint, feature and import-boundary checks pass. Actual user review, PR/hosted release evidence and production rollout remain distinct. Patch 2 has not been implemented or claimed fixed.
+
+
+## October 15 — urgent editor hotfix
+
+User reported the same error blocking a coach/customer call and authorized immediate fix and rollout. Patch 1 is on fetched main `84d9d09b` (#309). Hotfix branch `fix/tiptap-server-reference-20261015`, isolated worktree `coach-house-platform-tiptap-hotfix-20261015`, starts there and preserves unrelated work.
+
+Reproduced the exact reported exception with actual ProseMirror paragraph JSON and Next's React Flight encoder/decoder: null-prototype `attrs` become `$T` temporary references. The server then throws when reading `attrs.textAlign`. Default collaboration transport now deep-normalizes its JSON payload before invoking the action, covering initialization, step slices and mark attributes. Newly generated server document JSON is also normalized before returning to clients. Existing authorization, revisions, validation, history, stored content and formatting remain intact; no migration or content rewrite.
+
+44 focused tests pass, including the original failure, real Flight transport with aligned/link-formatted text, plain bootstrap responses, concurrent editing/undo, server persistence and access/roadmap regressions. Changed-file ESLint, import boundaries and diff hygiene pass. Actual authenticated product review and current-head hosted quality/code-owner/protection remain release gates. Preserve the shared SHIP revision40 ownership blocker; this urgent user-selected patch does not rewrite its historical claim.

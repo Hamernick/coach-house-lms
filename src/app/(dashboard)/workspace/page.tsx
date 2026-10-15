@@ -11,11 +11,18 @@ export default async function WorkspacePage({
 }: {
   searchParams?: Promise<MyOrganizationSearchParams>
 }) {
-  const state = await measureServerStep(
-    "workspace.page.resolve_layout_state",
-    () => resolveDashboardLayoutState(),
-    { thresholdMs: 250 }
-  )
+  const [state, content] = await Promise.all([
+    measureServerStep(
+      "workspace.page.resolve_layout_state",
+      () => resolveDashboardLayoutState(),
+      { thresholdMs: 250 }
+    ),
+    measureServerStep(
+      "workspace.page.render_organization_content",
+      () => MyOrganizationPageContent({ searchParams }),
+      { thresholdMs: 1_000 }
+    ),
+  ])
 
   if (state.userPresent && !state.isAdmin) {
     const context = await resolveOptionalAuthenticatedAppContext()
@@ -46,12 +53,5 @@ export default async function WorkspacePage({
     }
   }
 
-  return measureServerStep(
-    "workspace.page.render_organization_content",
-    () =>
-      MyOrganizationPageContent({
-        searchParams,
-      }),
-    { thresholdMs: 1_000 }
-  )
+  return content
 }

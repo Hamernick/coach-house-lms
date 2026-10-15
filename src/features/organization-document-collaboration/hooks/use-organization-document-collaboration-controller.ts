@@ -195,7 +195,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       timer = setTimeout(() => void sync(), 400)
     }
     const warn = (event: BeforeUnloadEvent) => {
-      if (dirty.current || busy.current) { event.preventDefault(); event.returnValue = "" }
+      if (dirty.current || sendableSteps(editor.state) || budgetDraft.current) { event.preventDefault(); event.returnValue = "" }
     }
     editor.on("transaction", changed)
     window.addEventListener("beforeunload", warn)

@@ -213,18 +213,38 @@ export default async function MyOrganizationPage({
   const moduleGroupMetaById = buildModuleGroupMetaById(
     acceleratorProgressSummary.groups
   )
-  const acceleratorTimelineModules = await measureServerStep(
-    "workspace.content.build_accelerator_timeline",
-    () =>
-      buildAcceleratorTimelineModules({
+  const [acceleratorTimelineModules, fiscalWorkflow, financeInput] = await Promise.all([
+    measureServerStep(
+      "workspace.content.build_accelerator_timeline",
+      () => buildAcceleratorTimelineModules({
         supabase,
         userId: user.id,
         sortedRoadmapModules,
         groupMetaById: moduleGroupMetaById,
         onboardingDefaults,
       }),
-    { thresholdMs: 750 }
-  )
+      { thresholdMs: 750 }
+    ),
+    acceleratorViewRequested
+      ? Promise.resolve({ fiscalSponsorshipProjectId: null, fiscalSponsorshipWorkflowSummary: null })
+      : measureServerStep(
+          "workspace.content.load_fiscal_workflow",
+          () => loadMyOrganizationFiscalSponsorshipWorkflow({ orgId, supabase }),
+          { thresholdMs: 750 }
+        ),
+    acceleratorViewRequested
+      ? Promise.resolve(null)
+      : measureServerStep(
+          "workspace.content.load_finance_input",
+          () => loadOrganizationWorkspaceFinanceInput({
+            canManageAccess: role === "owner" && orgId === user.id,
+            orgId,
+            programs: programsResult ?? [],
+            supabase,
+          }),
+          { thresholdMs: 750 }
+        ),
+  ])
   const acceleratorTimeline = buildWorkspaceAcceleratorCardSteps(
     acceleratorTimelineModules
   )
@@ -291,49 +311,40 @@ export default async function MyOrganizationPage({
     )
   }
 
-  const [
-    workspaceSeed,
-    { fiscalSponsorshipProjectId, fiscalSponsorshipWorkflowSummary },
-  ] = await Promise.all([
-    measureServerStep(
-      "workspace.content.build_workspace_seed",
-      () =>
-        buildWorkspaceViewSeed({
-          supabase,
-          orgId,
-          role,
-          canEdit,
-          isPlatformAdmin: isAdmin,
-          hasAcceleratorAccess: hasWorkspaceAcceleratorAccess,
-          presentationMode,
-          viewer,
-          organizationTitle,
-          organizationSubtitle,
-          fundingGoalCents,
-          raisedCents,
-          programsCount,
-          peopleCount,
-          teammateCount,
-          organizationProfileComplete,
-          workspaceDocumentCount,
-          initialProfile,
-          roadmapSections,
-          formationSummary,
-          acceleratorTimeline,
-          calendar: calendarView,
-          initialOnboarding: {
-            required: needsInitialOnboarding,
-            defaults: onboardingDefaults,
-          },
-        }),
-      { thresholdMs: 1_000 }
-    ),
-    measureServerStep(
-      "workspace.content.load_fiscal_workflow",
-      () => loadMyOrganizationFiscalSponsorshipWorkflow({ orgId, supabase }),
-      { thresholdMs: 750 }
-    ),
-  ])
+  const { fiscalSponsorshipProjectId, fiscalSponsorshipWorkflowSummary } = fiscalWorkflow
+  const workspaceSeed = await measureServerStep(
+    "workspace.content.build_workspace_seed",
+    () =>
+      buildWorkspaceViewSeed({
+        supabase,
+        orgId,
+        role,
+        canEdit,
+        isPlatformAdmin: isAdmin,
+        hasAcceleratorAccess: hasWorkspaceAcceleratorAccess,
+        presentationMode,
+        viewer,
+        organizationTitle,
+        organizationSubtitle,
+        fundingGoalCents,
+        raisedCents,
+        programsCount,
+        peopleCount,
+        teammateCount,
+        organizationProfileComplete,
+        workspaceDocumentCount,
+        initialProfile,
+        roadmapSections,
+        formationSummary,
+        acceleratorTimeline,
+        calendar: calendarView,
+        initialOnboarding: {
+          required: needsInitialOnboarding,
+          defaults: onboardingDefaults,
+        },
+      }),
+    { thresholdMs: 1_000 }
+  )
 
   const hydratedWorkspaceSeed = hydrateWorkspaceSeedAcceleratorState(
     workspaceSeed,
@@ -358,41 +369,28 @@ export default async function MyOrganizationPage({
     }
   )
 
-  const [organizationEditorData, financeInput] = await Promise.all([
-    measureServerStep(
-      "workspace.content.build_organization_editor_data",
-      () =>
-        buildWorkspaceOrganizationEditorData({
-          ...resolveFiscalApplicantPrefillIdentity({ profileAudience, user }),
-          canAccessRoadmapDocuments: entitlements.hasAcceleratorAccess,
-          canEdit,
-          fiscalSponsorshipProjectId,
-          fiscalSponsorshipWorkflowSummary,
-          initialProfile,
-          ...initialDrawerData,
-          organizationLocation: { latitude: orgRow?.location_lat ?? null, longitude: orgRow?.location_lng ?? null },
-          peopleNormalized,
-          peopleSegments,
-          peopleTags,
-          profile,
-          programs: programsResult,
-          publicSlug: orgRow?.public_slug ?? null,
-          roadmapSections,
-        }),
-      { thresholdMs: 1_000 }
-    ),
-    measureServerStep(
-      "workspace.content.load_finance_input",
-      () =>
-        loadOrganizationWorkspaceFinanceInput({
-          canManageAccess: role === "owner" && orgId === user.id,
-          orgId,
-          programs: programsResult ?? [],
-          supabase,
-        }),
-      { thresholdMs: 750 }
-    ),
-  ])
+  const organizationEditorData = await measureServerStep(
+    "workspace.content.build_organization_editor_data",
+    () =>
+      buildWorkspaceOrganizationEditorData({
+        ...resolveFiscalApplicantPrefillIdentity({ profileAudience, user }),
+        canAccessRoadmapDocuments: entitlements.hasAcceleratorAccess,
+        canEdit,
+        fiscalSponsorshipProjectId,
+        fiscalSponsorshipWorkflowSummary,
+        initialProfile,
+        ...initialDrawerData,
+        organizationLocation: { latitude: orgRow?.location_lat ?? null, longitude: orgRow?.location_lng ?? null },
+        peopleNormalized,
+        peopleSegments,
+        peopleTags,
+        profile,
+        programs: programsResult,
+        publicSlug: orgRow?.public_slug ?? null,
+        roadmapSections,
+      }),
+    { thresholdMs: 1_000 }
+  )
   const { MyOrganizationWorkspaceView } =
     await import("../_components/workspace-board/my-organization-workspace-view")
 
@@ -402,7 +400,7 @@ export default async function MyOrganizationPage({
       seed={workspaceSeedWithTutorial}
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}
-      financeInput={financeInput}
+      financeInput={financeInput!}
     />
   )
 }

@@ -19,6 +19,7 @@ export {
   sanitizeProjectAssetFilename,
 } from "./lib"
 export { setActiveOrganizationAction } from "./actions"
+export { handleOrganizationSwitchPost } from "./routes"
 export {
   loadAccessibleOrganizations,
   loadOrganizationPrograms,

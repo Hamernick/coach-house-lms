@@ -6,6 +6,11 @@ member name/email, including unnamed workspaces. Search uses at least two charac
 ranked twenty-result pages, contact identity and visible totals/errors/retry. Empty
 search stays local; selecting an organization creates no membership.
 
+Search uses a same-origin, no-store JSON request outside the server-action queue.
+After ten seconds it aborts and shows Retry; changing query/page or closing the
+switcher cancels the obsolete request. The endpoint reuses the existing authenticated
+search and live support-grant RPC.
+
 ## Authorization
 
 `workspace_support_grants` is operator-managed and private. A grant requires an

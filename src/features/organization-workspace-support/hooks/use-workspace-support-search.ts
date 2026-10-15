@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { MemberWorkspaceAccessibleOrganization } from "@/features/member-workspace"
-import { searchSupportOrganizations } from "../actions"
+import { searchSupportOrganizationsOverHttp } from "../lib/search-transport"
 
 type SearchState = {
   query: string
@@ -26,9 +26,10 @@ export function useWorkspaceSupportSearch(enabled: boolean) {
   useEffect(() => {
     if (!active) return
     let canceled = false
+    const controller = new AbortController()
     setState({ query, offset, matches: [], total: 0, hasMore: false, searching: true, error: null })
     const timeout = setTimeout(() => {
-      void searchSupportOrganizations(query, offset).then((result) => {
+      void searchSupportOrganizationsOverHttp(query, offset, controller.signal).then((result) => {
         if (!canceled) setState({ query, offset, matches: result.organizations, total: result.total,
           hasMore: result.hasMore, searching: false, error: result.error ?? null })
       }).catch(() => {
@@ -36,7 +37,7 @@ export function useWorkspaceSupportSearch(enabled: boolean) {
           searching: false, error: "Search unavailable. Try again." })
       })
     }, 250)
-    return () => { canceled = true; clearTimeout(timeout) }
+    return () => { canceled = true; clearTimeout(timeout); controller.abort() }
   }, [active, query, offset, refresh])
 
   return {

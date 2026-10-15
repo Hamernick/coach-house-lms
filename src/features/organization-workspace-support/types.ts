@@ -1,3 +1,5 @@
+import type { MemberWorkspaceAccessibleOrganization } from "@/features/member-workspace"
+
 export type WorkspaceSupportParticipant = {
   session_id: string
   actor_id: string
@@ -25,4 +27,11 @@ export type WorkspaceSupportSearchRow = {
   contact_name: string | null
   contact_email: string | null
   total_count: number | string
+}
+
+export type WorkspaceSupportSearchResult = {
+  organizations: MemberWorkspaceAccessibleOrganization[]
+  total: number
+  hasMore: boolean
+  error?: string
 }

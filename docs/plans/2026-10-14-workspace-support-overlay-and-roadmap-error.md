@@ -74,3 +74,12 @@ Workspace content and layout resolve concurrently. Independent timeline/fiscal/f
 Actual local UI showed immediate switching feedback, switched into Southside Community Table, loaded its saved Need document, and returned to the original Coach House Solutions Group. No document body edited. One switch endpoint took 655ms application time plus 12.6s dev compilation. Local workspace content timing fell from one 13.2s sample to one 5.3s sample, but dev compilation/cache/network differ: this is not a controlled benchmark or production speed claim. A later local document remained in retryable timeout during development recompilation; full end-to-end production latency/edit/save verification remains outstanding.
 
 Hosted current-head quality/code-owner/protection and deployment remain required. Historical /admin bundle-budget failure and shared SHIP revision40 ownership blocker remain recorded; this patch does not bypass them. No schema, grant, provider configuration or customer content changes.
+
+
+### October 15 — Bound organization search and remove action-queue dependency
+
+User reports the admin organization switcher stays Searching without results. Current clean main9784757b includes PR314; new fix/workspace-org-search-20261015 reuses the isolated hotfix checkout and preserves unrelated lanes. The search hook still awaited a server action without a deadline; its existing rejection handler cannot settle a request that never resolves. Production triggering request was not inspected or claimed proven.
+
+Search now uses same-origin/no-store POST /api/account/workspace-support-search, delegating to the unchanged authenticated search and live-grant-enforcing RPC. The client aborts after10seconds and exposes the existing Retry UI; hook cleanup aborts superseded searches and retains stale-result suppression, debounce and pagination. No schema, grant, customer content, presence or selection changes.
+
+35focused tests across4files pass: independent HTTP dispatch, timeout/retry, cancellation, failed/invalid responses, origin/input rejection, existing search authorization/identity/paging, switch authorization and member-workspace behavior. Feature/boundary/route/structure and normal prepush checks are recorded with the PR. User owns actual UI and production verification; agent scope ends at open PR, without hosted polling/merge/deployment.

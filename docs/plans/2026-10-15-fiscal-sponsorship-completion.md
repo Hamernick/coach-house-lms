@@ -30,6 +30,50 @@ Optional profile opening used removed route `/organization/profile`. Server resp
 
 Regression failed on the old destination before repair.132focused fiscal cases across11files pass; the ephemeral PostgreSQL guest/RLS suite plus connected real-handler journey pass. External Captcha/Auth/email are simulated there; no production writes or mail. Changed-file ESLint, features/boundaries/routes and diff hygiene pass. Hosted quality, independent review and user UI remain separate.
 
+## Execution plan — requested October15
+
+This increment is planning only. Resume the existing fiscal lane/PR310; do not start another workstream, enable flags, create applications or send emails while writing this plan.
+
+### 1. Finish the release candidate — Codex
+
+Reconcile current PR310 review/quality results and fix scoped defects. Audit guest submission → application-email verification → optional signup/login → selected-field save → organization drawer against merged onboarding. Preserve existing free/paid access and unfinished onboarding; importing must not mark onboarding complete. Caleb reviews the actual app and merges after current-head quality, code-owner and branch-protection gates pass. Accept user-reported merges without redundant checks.
+
+### 2. Complete account saving and later return — Codex; Caleb tests
+
+- Keep applying account/payment-free and "Not now" available. Skipping signup must preserve the application and email-based status/corrections.
+- Cover new email signup/confirmation, Google signup/login and existing accounts. Preserve the application reference through every auth return; confirm accounts are not duplicated by onboarding/import races.
+- Link only a matching confirmed account with verified application identity. Wrong email, expired proof, another browser and an already-linked application need clear denial/recovery without revealing answers.
+- Copy only explicitly selected name, description, email and phone. Preserve unselected existing data; support link-only and already-public profiles. Budget, mailing/legal answers, review notes and attachments stay private. Internal review project ownership, paid access and public visibility do not change.
+- **Audit later account access:** storing a claim does not establish that users can find their application after leaving. Confirm the signed-in applicant can return to linked private status/corrections without depending indefinitely on the original seven-day guest cookie. If absent, implement the smallest account-authorized entry/return path using existing surfaces and isolation tests; never add applicant membership to the staff host organization.
+- Cover uncertain-save retries, concurrent edits, cross-tab confirmation and local/production callback origins. Local and production verification secrets are distinct.
+
+Exit: Caleb can skip signup or create/sign into the matching account, choose data to save, open the correct organization and later return to the same private application; no duplicate org, unintended overwrite or publication. Later account entry is an audit requirement, not a currently verified feature.
+
+### 3. Activate production — Codex after access/release gates
+
+Restore existing Vercel access: current saved credential403/no connected browser is the blocker. Re-read config, deployment, migrations, stable secrets, real CAPTCHA, Resend sender and scheduler authentication. Follow the activation sequence below. Optional import waits for stage2 and the released route repair; tracking waits for a verified signed webhook. No Supabase preview branch.
+
+Exit: intended deployment Ready; real public form/CAPTCHA available; retention and authorized mail workers configured. Enabled flags alone do not prove the journey works.
+
+### 4. Controlled application — Caleb operates UI/inbox; Codex verifies records
+
+| Check | Required result |
+| --- | --- |
+| Guest application | Draft resumes; submission creates one private application/project without account/payment |
+| Internal management | Fiscal/Overview populated, fs/Joel assigned, two initial in-app notifications |
+| Email | Applicant receipt/verification link, fs milestone email and Joel application alert |
+| Retry | No duplicate project or message after submission/worker retries |
+| Correction | Reviewer requests information; applicant corrects the same application; staff notified |
+| Optional account | Email/Google new/existing-account return, skip, selected-only save and later private access pass stage2 |
+| Isolation | Other applicants, unassigned staff and forged references/orgs cannot access the application |
+| Delivery | Signed callbacks stored once; staff status accurate; provider acceptance and inbox receipt distinguished |
+
+Caleb submits one controlled real application and reports UI/inbox results. Codex verifies only necessary records, with references/provider IDs kept private. No fake production application, agent email test or broad browser sweep. Do not infer delivery from green tests or enabled flags.
+
+### 5. Close this run — Codex
+
+Record release, deployment, config, application/retry/correction/account and delivery evidence separately in the original03 packet and repo log/index. Fiscal is complete only when the real application → internal review → notifications/email → optional account save/return journey passes. Preserve receipts/rollback, explicit deferrals and the independent SHIP owner-host blocker. Calendar, formation and map evidence holds remain separate.
+
 ## Activation sequence
 
 1. Restore authenticated access to the existing Coach House Vercel project. User was asked to reconnect Bandto Chrome or refresh CLI authentication. Do not print or replace existing signing secrets.

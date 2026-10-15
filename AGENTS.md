@@ -19,6 +19,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 
 ## Default Codex Mode (UI/Feature/Product)
 
+- Default delivery ends at an open PR: implement the requested scope, run focused local checks and normal pre-push hooks, then commit, push and open the PR. Caleb owns hosted CI/check review, required review coordination, merge, deployment and production verification. Do not monitor or poll those stages, merge, deploy, or run production verification unless explicitly asked. Report the PR link, local evidence and known blockers, then stop; this handoff does not waive required merge gates.
 - Treat UI, feature, and product-development requests as implementation tasks by default (not brainstorming-only) unless the user explicitly asks for planning only.
 - For new feature work, start from `pnpm scaffold:feature <kebab-name>` and implement inside `src/features/**`; keep `src/app/**` route files composition-only.
 - For UI changes, use existing shadcn/ui primitives and shared patterns; avoid one-off controls where system primitives already exist.

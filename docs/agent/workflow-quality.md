@@ -134,6 +134,7 @@ On the first turn of every new chat, before changing files:
 
 ## Git And PR Workflow
 
+- Default handoff is an open PR. Codex owns implementation, focused local validation, normal pre-push hooks, commit, push and PR creation. Caleb owns hosted CI/check review, independent review coordination, merging, deployment and production verification. Stop after reporting the PR link, local results and known blockers. Do not poll CI, chase unrelated failures, coordinate review, merge, deploy, or verify production unless Caleb explicitly delegates that work. Required merge checks and branch protection remain in force; opening a PR does not claim they passed.
 - Branch format: `feat/<slug>`, `fix/<slug>`, or `chore/<slug>`.
 - Commit messages use present tense.
 - PR title format: `[STEP SNN] <title>`.

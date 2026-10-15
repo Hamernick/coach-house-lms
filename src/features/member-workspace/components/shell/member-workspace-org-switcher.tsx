@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useMemo, useRef, useState } from "react"
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down"
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { toast } from "@/lib/toast"
-import { cn } from "@/lib/utils"
+import { switchOrganization } from "../../lib/switch-organization"
 import type {
   MemberWorkspaceAccessibleOrganization,
   MemberWorkspaceSetActiveOrganizationResult,
@@ -29,7 +30,7 @@ type MemberWorkspaceOrgSwitcherProps = {
   canSearchSupport?: boolean
   activeOrganization: MemberWorkspaceAccessibleOrganization
   organizations: MemberWorkspaceAccessibleOrganization[]
-  setActiveOrganizationAction: (
+  setActiveOrganizationAction?: (
     orgId: string,
   ) => Promise<MemberWorkspaceSetActiveOrganizationResult>
 }
@@ -38,11 +39,13 @@ export function MemberWorkspaceOrgSwitcher({
   canSearchSupport = false,
   activeOrganization,
   organizations,
-  setActiveOrganizationAction,
+  setActiveOrganizationAction = switchOrganization,
 }: MemberWorkspaceOrgSwitcherProps) {
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
+  const switching = useRef(false)
+  const isPending = switchingTo !== null
 
   const subtitle = useMemo(() => {
     if (organizations.length <= 1) {
@@ -51,7 +54,8 @@ export function MemberWorkspaceOrgSwitcher({
     return `${organizations.length} organizations`
   }, [activeOrganization.role, organizations.length])
 
-  const handleSelect = (organization: MemberWorkspaceAccessibleOrganization) => {
+  const handleSelect = async (organization: MemberWorkspaceAccessibleOrganization) => {
+    if (switching.current) return
     if (organization.orgId === activeOrganization.orgId) {
       setOpen(false)
       return
@@ -63,17 +67,24 @@ export function MemberWorkspaceOrgSwitcher({
       toast.error("Wait for your changes to save before switching organizations.")
       return
     }
-    startTransition(async () => {
+    switching.current = true
+    setSwitchingTo(organization.name)
+    setOpen(false)
+    try {
       const result = await setActiveOrganizationAction(organization.orgId)
       if ("error" in result) {
         toast.error(result.error)
+        switching.current = false
+        setSwitchingTo(null)
         return
       }
-
-      setOpen(false)
       if (result.supportAccess) window.location.assign("/workspace")
       else window.location.reload()
-    })
+    } catch {
+      toast.error("Unable to switch organizations. Please try again.")
+      switching.current = false
+      setSwitchingTo(null)
+    }
   }
 
   const trigger = (
@@ -83,6 +94,7 @@ export function MemberWorkspaceOrgSwitcher({
       aria-label="Switch organization"
       className="h-auto w-full justify-between gap-2 rounded-xl border border-transparent bg-transparent px-1 py-2 text-left md:py-px has-[>svg]:px-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0 group-data-[collapsible=icon]:has-[>svg]:px-0"
       disabled={isPending}
+      aria-busy={isPending}
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 group-data-[collapsible=icon]:min-w-auto group-data-[collapsible=icon]:gap-0">
         <Avatar className="size-9 rounded-xl border border-transparent md:self-start group-data-[collapsible=icon]:size-10">
@@ -95,10 +107,10 @@ export function MemberWorkspaceOrgSwitcher({
           <p className="line-clamp-2 whitespace-normal break-words text-sm font-semibold text-foreground" title={activeOrganization.name}>
             {activeOrganization.name}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          <p className="truncate text-xs text-muted-foreground" role="status">{switchingTo ? `Switching to ${switchingTo}…` : subtitle}</p>
         </div>
       </div>
-      <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden />
+      {isPending ? <LoaderCircleIcon className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden /> : <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden />}
     </Button>
   )
 

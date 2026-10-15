@@ -509,6 +509,7 @@
       "tests/acceptance/workspace-routes.test.ts",
       "tests/acceptance/workspace-setup-guide.test.ts",
       "tests/acceptance/workspace-storage-adapters.test.ts",
+      "tests/acceptance/workspace-support-search-transport.test.ts",
       "tests/acceptance/workspace-tools.test.ts",
       "tests/acceptance/workspace-tutorial-callout.test.ts"
     ]

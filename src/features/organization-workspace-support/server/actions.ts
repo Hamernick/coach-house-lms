@@ -4,9 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 import { readOrganizationRequestScope } from "@/server/organization/request-scope"
 import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
-import type { MemberWorkspaceAccessibleOrganization } from "@/features/member-workspace"
 import { mapSupportOrganization } from "../lib"
-import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportSearchRow } from "../types"
+import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportSearchResult, WorkspaceSupportSearchRow } from "../types"
 
 async function context() {
   if (!organizationWorkspaceSupportEnabled) throw new Error("Workspace support is not enabled.")
@@ -16,7 +15,7 @@ async function context() {
   return client
 }
 
-export async function searchSupportOrganizations(query: string, offset = 0): Promise<{ organizations: MemberWorkspaceAccessibleOrganization[]; total: number; hasMore: boolean; error?: string }> {
+export async function searchSupportOrganizations(query: string, offset = 0): Promise<WorkspaceSupportSearchResult> {
   const empty = { organizations: [], total: 0, hasMore: false }
   if (typeof query !== "string" || query.trim().length < 2) return empty
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000) return { ...empty, error: "Invalid search page." }

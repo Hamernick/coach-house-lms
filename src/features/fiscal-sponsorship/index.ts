@@ -32,7 +32,7 @@ export {
   FiscalGuestRecovery,
   FiscalGuestApplication,
   FiscalOptionalProfile,
-  FiscalGuestProjectReview,
+  FiscalGuestProjectWorkbench,
   FiscalSponsorshipApplicationDrawer,
   FiscalSponsorshipApplicationEditor,
   FiscalSponsorshipActivityAction,

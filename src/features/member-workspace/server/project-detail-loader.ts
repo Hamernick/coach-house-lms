@@ -1,4 +1,6 @@
 import { loadGuidedProjectMembers } from "./guided-project-members"
+import { loadGuestFiscalProjectReview } from "@/features/fiscal-sponsorship"
+import { fiscalGuestProjectSummary } from "./fiscal-guest-project-summary"
 import type { User } from "@/features/platform-admin-dashboard"
 import type { Database } from "@/lib/supabase"
 import type {
@@ -37,24 +39,8 @@ import type {
   MemberWorkspaceProjectAssetRecord,
   MemberWorkspaceProjectNoteRecord,
   MemberWorkspaceProjectQuickLinkRecord,
+  MemberWorkspaceProjectTaskRecord,
 } from "./project-detail-view-model"
-
-type OrganizationTaskDetailRecord = Pick<
-  Database["public"]["Tables"]["organization_tasks"]["Row"],
-  | "id"
-  | "project_id"
-  | "title"
-  | "description"
-  | "tracker_metadata"
-  | "task_type"
-  | "status"
-  | "start_date"
-  | "end_date"
-  | "priority"
-  | "tag_label"
-  | "workstream_name"
-  | "sort_order"
->
 
 type OrganizationProjectNoteRow = Pick<
   Database["public"]["Tables"]["organization_project_notes"]["Row"],
@@ -102,12 +88,13 @@ function isNonEmptyString(value: string | null | undefined): value is string {
 }
 
 export type MemberWorkspaceProjectDetailLoadResult =
-  | { state: "fiscal-intake"; projectId: string }
   | { state: "schema-unavailable" }
   | { state: "not-found" }
+  | { state: "fiscal-review-unavailable"; message: string }
   | {
       state: "ready"
-      scope: "organization" | "platform-admin"
+      scope: "organization" | "platform-admin" | "fiscal-intake"
+      fiscalReview?: Exclude<NonNullable<Awaited<ReturnType<typeof loadGuestFiscalProjectReview>>>, { error: string }>
       assigneeOptions: MemberWorkspacePersonOption[]
       currentUser: User
       organizationSummary: MemberWorkspaceAdminOrganizationSummary
@@ -144,7 +131,7 @@ async function loadProjectTaskRows({
     .eq("project_id", projectId)
     .order("sort_order", { ascending: true })
     .order("start_date", { ascending: true })
-    .returns<OrganizationTaskDetailRecord[]>()
+    .returns<MemberWorkspaceProjectTaskRecord[]>()
 
   if (taskError) {
     if (isMissingOrganizationTasksTableError(taskError)) {
@@ -369,10 +356,12 @@ async function buildReadyProjectDetailResult({
   actor,
   organizationSummary,
   project,
+  projectOnly = false,
 }: {
   actor: MemberWorkspaceProjectDetailActor
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
   project: OrganizationProjectRecord
+  projectOnly?: boolean
 }): Promise<
   Extract<MemberWorkspaceProjectDetailLoadResult, { state: "ready" }>
 > {
@@ -388,7 +377,7 @@ async function buildReadyProjectDetailResult({
     scheduleResult,
     projectMembers,
   ] = await Promise.all([
-    loadMemberWorkspacePersonOptionsForOrganizations({
+    projectOnly ? Promise.resolve([]) : loadMemberWorkspacePersonOptionsForOrganizations({
       orgIds: [project.org_id],
       supabase: actor.supabase,
       includePlatformAdmins: actor.isAdmin,
@@ -426,13 +415,14 @@ async function buildReadyProjectDetailResult({
       orgId: project.org_id,
       projectId: project.id,
       supabase: actor.supabase,
+      projectOnly,
     }),
     // Isolated query keeps older schemas readable before the migration is applied.
     actor.supabase.from("organization_projects")
       .select("schedule_confirmed")
       .eq("id", project.id).eq("org_id", project.org_id)
       .maybeSingle<{ schedule_confirmed: boolean }>(),
-    loadGuidedProjectMembers({ projectId: project.id, organizationId: project.org_id, supabase: actor.supabase }),
+    projectOnly ? Promise.resolve([]) : loadGuidedProjectMembers({ projectId: project.id, organizationId: project.org_id, supabase: actor.supabase }),
   ])
 
   return {
@@ -502,8 +492,19 @@ async function loadPlatformAdminProjectDetailPage({
       p_project_id: projectRow.id, p_user_id: actor.userId,
     })
     if (guestScope.error) return { state: "schema-unavailable" }
-    if (guestScope.data === false) return { state: "not-found" }
-    if (guestScope.data === true) return { state: "fiscal-intake", projectId: projectRow.id }
+    if (guestScope.data !== null && guestScope.data !== true) return { state: "not-found" }
+    if (guestScope.data === true) {
+      const review = await loadGuestFiscalProjectReview(projectRow.id)
+      if (!review) return { state: "not-found" }
+      if ("error" in review) return { state: "fiscal-review-unavailable", message: review.error ?? "The application could not be loaded. Refresh to try again." }
+      const detail = await buildReadyProjectDetailResult({
+        actor,
+        project: { ...projectRow, description: review.application.projectDescription },
+        organizationSummary: fiscalGuestProjectSummary(projectRow, review.application),
+        projectOnly: true,
+      })
+      return { ...detail, scope: "fiscal-intake", fiscalReview: review }
+    }
     if (!actorCanAccessOrganization(actor, projectRow.org_id)) {
       return { state: "not-found" }
     }

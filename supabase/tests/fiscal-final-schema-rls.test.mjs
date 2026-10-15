@@ -159,6 +159,9 @@ try {
     runSql("supabase/tests/guest-fiscal-related-records.bootstrap.sql")
     runSql("supabase/migrations/20261011130000_guest_fiscal_related_records.sql")
     runSql("supabase/tests/guest-fiscal-related-records.assertions.sql")
+    runSql("supabase/migrations/20261015040000_fiscal_linked_applicant_access.sql")
+    runSql("supabase/migrations/20261015041000_index_linked_fiscal_applications.sql")
+    if (!process.argv.includes("--release-mvp")) runSql("supabase/tests/fiscal-linked-applicant.assertions.sql")
     if (process.argv.includes("--connected")) {
       const connected = spawnSync("pnpm", ["exec", "vitest", "run", "tests/acceptance/fiscal-sponsorship-connected-storage.test.ts", "--maxWorkers=1", "--config", "vitest.config.ts"], {
         cwd: root, encoding: "utf8", timeout: 90000,
@@ -182,6 +185,13 @@ try {
   console.log(
     "[fiscal-rls] Final-schema role matrix passed for owner, staff, board, sponsor operator, assigned coach, unassigned coach, and unrelated user."
   )
+  // The required fiscal RLS command also covers the existing guest harness and
+  // real handlers; a default green check must not silently skip applicant grants.
+  const guest = spawnSync(process.execPath, [join(root, "supabase/tests/fiscal-final-schema-rls.test.mjs"), "--guest", "--connected"], {
+    cwd: root, encoding: "utf8", timeout: 120000, env: process.env,
+  })
+  if (guest.status !== 0) throw new Error(`Guest fiscal RLS failed:\n${guest.stdout}\n${guest.stderr}`)
+  console.log(guest.stdout)
   }
 } finally {
   if (started) {

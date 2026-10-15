@@ -1,5 +1,8 @@
 "use server"
 
+import { loadLinkedFiscalApplications as loadLinkedFiscalApplicationsImpl } from "./server/linked-applications"
+export async function loadLinkedFiscalApplications() { return loadLinkedFiscalApplicationsImpl() }
+
 import { handleGuestFiscalRecovery as guestRecovery, guestFiscalRecoveryAvailable } from "./server/guest-recovery"
 export async function handleGuestFiscalRecovery(request: Request) { return guestRecovery(request) }
 export async function loadGuestFiscalRecoveryAvailability() { return guestFiscalRecoveryAvailable() }

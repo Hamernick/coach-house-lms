@@ -2,6 +2,9 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  list_linked_fiscal_applications: { Args: Record<string, never>; Returns: Json }
+  read_linked_fiscal_application: { Args: { p_reference: string }; Returns: Json }
+  resubmit_linked_fiscal_application: { Args: { p_reference: string; p_request_id: string; p_version: string; p_application: Json }; Returns: Json }
   record_fiscal_email_delivery: { Args: { p_event_id: string; p_message_id: string; p_event_type: string; p_occurred_at: string }; Returns: undefined }
   get_fiscal_guest_email_status: { Args: { p_project_id: string; p_user_id: string }; Returns: Json }
   purge_fiscal_email_delivery_events: { Args: Record<string, never>; Returns: number }

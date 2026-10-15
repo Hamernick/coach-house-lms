@@ -2,10 +2,20 @@
 
 User selected fiscal sponsorship ahead of Calendar and formation verification. Source: original Desktop workstream03, stages3–6, and LIVE-07. Preserve completed credits, public UI, maps and other worktrees.
 
+## Latest implementation — October15
+
+Stage2 gap confirmed and implemented: existing profile claims alone did not grant durable application access. A compact recent-applications list now appears for linked applicants inside the existing workspace Fiscal Sponsorship card and on the public fiscal page. It is absent for guests/unlinked accounts. Existing status/correction routes accept either their original verified guest capability or the claimed, confirmed matching account. Profile reopen works after guest expiry without recopying answers. Internal host membership, review ownership and paid/public state remain unchanged.
+
+Two exact compatible migrations20261015040000/20261015041000 were transactionally preflighted with rollback, then applied/recorded and independently verified. They add authenticated own-claim-only list/read/resubmit RPCs and a partial owner/recent index. No new raw-table grants; anonymous/base-function denial and RLS preserved. No applications, accounts, email jobs or real emails created. Private before/apply/verification/rollback receipts: ~/.local/share/coach-house/fiscal-completion/2026-10-15/.
+
+184focused cases across16files pass, plus the connected real-handler/ephemeral SQL/RLS journey. The required default fiscal RLS command now also runs the existing guest/connected harness, covering these grants in CI instead of silently skipping them. SQL tests deny another account with the same email, host staff, unknown references, unconfirmed/changed email and revoked claims; expired guest proof, owner corrections and retry deduplication pass. User UI/email/Google/production testing remains pending.
+
+PR310 remains the existing release unit. At prior head5e990f6b, hosted build compiled/types passed but failed the existing /admin bundle1003KB versus1000KB; static/acceptance/RLS passed, visual/review remain distinct. Do not weaken the budget or change unrelated admin UI. New-head hosted gates remain required. Vercel saved credentials403/no connected browser still block activation. App flags/sending/provider webhook settings are unchanged.
+
 ## Lane and boundaries
 
 - Branch `feat/fiscal-sponsorship-completion-20261015`, current-main base `84d9d09b`; isolated `coach-house-platform-fiscal-completion-20261015` checkout.
-- Actual app: <http://localhost:3127/documentation/fiscal-sponsorship>. Listener PID75397/cwd verified; recheck before process actions.
+- Actual app: <http://localhost:3127/documentation/fiscal-sponsorship>. Listener PID94080/cwd verified; recheck before process actions.
 - Existing feature owns implementation. No duplicate form, redesign, visual fixture or new feature scaffold.
 - Localhost uses production Supabase. User owns interactive testing and controlled submission. No application/account/email/schema/provider mutation performed during audit.
 - Ignored mode0600 task-local config enables intake/submission/profile; local sending/tracking remain off. Shared env files unchanged. Local signing secrets differ from production; production verification links cannot establish localhost proof sessions.

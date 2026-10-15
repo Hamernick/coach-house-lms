@@ -14,7 +14,7 @@ Bandto Chrome and authenticated Vercel dashboard access were confirmed October 1
 
 ## Implemented
 
-- Account/payment-free guest intake, resumable drafts, CAPTCHA, rate limits and idempotent submission; optional signup and “Not now.”
+- Account/payment-free guest intake, resumable drafts, rate limits and idempotent submission; optional signup and “Not now.”
 - One private staff project/application with Fiscal/Overview, fs/Joel assignments and initial in-app notifications.
 - Applicant receipt/proof/recovery, Joel submission/correction mail and fs milestone mail; durable jobs, leases, idempotency keys and retry records.
 - Verified guest status/corrections and confirmed explicitly linked account return after guest-cookie expiry. Same email alone grants no access.
@@ -33,7 +33,6 @@ In the existing Vercel `coachhouse` project, open Settings → Environment Varia
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | `https://coachhouse.app` |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Existing production project credentials |
-| `NEXT_PUBLIC_HCAPTCHA_SITE_KEY`, `HCAPTCHA_SECRET_KEY` | Matching real production pair; preserve existing settings; test keys are rejected |
 | `FISCAL_GUEST_RISK_SECRET` | Stable private secret, at least 32 characters; preserve existing value |
 | `FISCAL_GUEST_LINK_SECRET` | Stable private proof-signing secret, at least 32 characters; preserve existing value |
 | `RESEND_API_KEY` | Existing authorized sending key; shared sender falls back to `RESEND_AUTH_EMAIL_API_KEY` when absent |
@@ -64,7 +63,7 @@ Existing schedules in `vercel.json`:
 ## Activation order — Caleb operates
 
 1. Review the intended revision's required checks/reviews; confirm the production database is the already-migrated project and the private host plus fs/Joel reviewers remain configured. Do not infer this from old zero-submission counts.
-2. Confirm canonical origin, real CAPTCHA, stable secrets, verified sender and matching scheduler bearer. Keep submission/mail paused until these are ready.
+2. Confirm canonical origin, stable secrets, verified sender and matching scheduler bearer. Keep submission/mail paused until these are ready.
 3. Configure the signed Resend endpoint `https://coachhouse.app/api/webhooks/resend` with its matching secret and fiscal events: `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, `email.suppressed`. Preserve other existing consumers. Enable tracking before fiscal sending: `fiscal-delivery.ts` returns an error for a recognized fiscal event while tracking is disabled. Record a genuine signed event from the controlled journey; configuration alone is not delivery proof.
 4. Apply the intended flags above and redeploy the selected main revision to Production. Confirm the deployment is Ready and assigned to `coachhouse.app`; saved variables alone do not update an existing deployment. Codex does not trigger or poll this stage by default.
 5. Run the controlled journey below. Keep private references/provider IDs outside Git. Stop and report any defect; Codex can prepare a focused fix PR.

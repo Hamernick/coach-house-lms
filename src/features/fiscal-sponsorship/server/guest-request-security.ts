@@ -7,14 +7,11 @@ export const hashGuestCapability = (value: string) => createHash("sha256").updat
 export function guestIntakeConfiguration() {
   const site = process.env.NEXT_PUBLIC_SITE_URL
   const riskSecret = process.env.FISCAL_GUEST_RISK_SECRET
-  const captchaSecret = process.env.HCAPTCHA_SECRET_KEY
-  const siteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY
-  if (process.env.FISCAL_GUEST_INTAKE_ENABLED !== "true" || !site || !riskSecret || riskSecret.length < 32 || !captchaSecret || !siteKey) return null
-  if (process.env.NODE_ENV === "production" && (captchaSecret === "0x0000000000000000000000000000000000000000" || siteKey.includes("ffff-ffff"))) return null
+  if (process.env.FISCAL_GUEST_INTAKE_ENABLED !== "true" || !site || !riskSecret || riskSecret.length < 32) return null
   try {
     const url = new URL(site)
     if (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))) return null
-    return { origin: url.origin, riskSecret, captchaSecret, siteKey }
+    return { origin: url.origin, riskSecret }
   } catch { return null }
 }
 
@@ -62,47 +59,4 @@ export async function readGuestJson(request: Request) {
     }
   } finally { reader.releaseLock() }
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown
-}
-
-const captchaChallengeErrors = new Set([
-  "missing-input-response", "invalid-input-response", "expired-input-response",
-  "already-seen-response", "invalid-or-already-seen-response",
-])
-const captchaConfigurationErrors = new Set([
-  "missing-input-secret", "invalid-input-secret", "sitekey-secret-mismatch",
-  "not-using-dummy-passcode", "not-using-dummy-secret", "bad-request", "missing-remoteip", "invalid-remoteip",
-])
-type GuestCaptchaResult = "verified" | "rejected" | "unavailable"
-
-function captchaFailure(reason: "challenge" | "configuration" | "provider", codes: string[] = []): GuestCaptchaResult {
-  // Never log tokens, secrets, IPs, answers or arbitrary provider messages.
-  console.warn("[fiscal-captcha] verification failed", { reason, codes })
-  return reason === "challenge" ? "rejected" : "unavailable"
-}
-
-export function guestCaptchaFailure(result: Exclude<GuestCaptchaResult, "verified">) {
-  return result === "rejected"
-    ? { status: 400, body: { error: "Please complete the verification again.", code: "captcha_rejected", captchaRequired: true } }
-    : { status: 503, body: { error: "Verification is unavailable because of a problem on our side. Your answers are preserved. Please try again later.", code: "captcha_unavailable", captchaRequired: true } }
-}
-
-export async function verifyGuestCaptcha(config: NonNullable<ReturnType<typeof guestIntakeConfiguration>>, token: string, ip: string): Promise<GuestCaptchaResult> {
-  try {
-    const response = await fetch("https://api.hcaptcha.com/siteverify", {
-      method: "POST", cache: "no-store", signal: AbortSignal.timeout(8000),
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret: config.captchaSecret, sitekey: config.siteKey, response: token, remoteip: ip }),
-    })
-    if (!response.ok) return captchaFailure("provider")
-    const result: unknown = await response.json()
-    if (!result || typeof result !== "object" || !("success" in result)) return captchaFailure("provider")
-    if (result.success === true) return "verified"
-    if (result.success !== false) return captchaFailure("provider")
-    const rawCodes = "error-codes" in result ? result["error-codes"] : []
-    const codes = Array.isArray(rawCodes) ? [...new Set(rawCodes.filter((code): code is string =>
-      typeof code === "string" && (captchaChallengeErrors.has(code) || captchaConfigurationErrors.has(code))))] : []
-    if (codes.some((code) => captchaConfigurationErrors.has(code))) return captchaFailure("configuration", codes)
-    if (codes.length && Array.isArray(rawCodes) && codes.length === new Set(rawCodes).size) return captchaFailure("challenge", codes)
-    return captchaFailure("provider", codes)
-  } catch { return captchaFailure("provider") }
 }

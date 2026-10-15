@@ -5,13 +5,12 @@ vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc
 import { handleGuestFiscalRecovery } from "@/features/fiscal-sponsorship/server/guest-recovery"
 import { filterPrivateTelemetry } from "@/lib/telemetry-privacy"
 const reference = "20000000-0000-4000-8000-000000000001"
-const body = { reference, requestId: "20000000-0000-4000-8000-000000000002", email: "Guest@example.test", captchaToken: "proof" }
+const body = { reference, requestId: "20000000-0000-4000-8000-000000000002", email: "Guest@example.test" }
 const request = (value: unknown = body, origin = "https://coach.test") => new Request("https://coach.test/api/public/fiscal-sponsorship/recover", {
   method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(value),
 })
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.spyOn(console, "warn").mockImplementation(() => {})
   for (const flag of ["FISCAL_GUEST_INTAKE_ENABLED", "FISCAL_GUEST_EMAILS_ENABLED"]) vi.stubEnv(flag, "true")
   for (const key of ["FISCAL_GUEST_RISK_SECRET", "FISCAL_GUEST_LINK_SECRET"]) vi.stubEnv(key, "private-test-secret-with-more-than-32-characters")
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coach.test"); vi.stubEnv("VERCEL", "")
@@ -47,20 +46,22 @@ describe("private application recovery", () => {
     expect(mocks.rpc).not.toHaveBeenCalled()
     expect(mocks.fetch).not.toHaveBeenCalled()
   })
-  it("checks IP limits before captcha and rejects failed verification", async () => {
+  it("checks IP limits before requesting a recovery link", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: false, error: null })
     expect((await handleGuestFiscalRecovery(request())).status).toBe(429)
+    expect(mocks.rpc.mock.calls.some(([name]) => name === "request_fiscal_guest_recovery")).toBe(false)
     expect(mocks.fetch).not.toHaveBeenCalled()
-    mocks.fetch.mockResolvedValue(new Response('{"success":false,"error-codes":["expired-input-response"]}'))
-    expect((await handleGuestFiscalRecovery(request())).status).toBe(400)
-    expect(mocks.rpc.mock.calls.some(([name]) => name === "request_fiscal_guest_recovery")).toBe(false)
   })
-  it("reports verification configuration failure without issuing a recovery email", async () => {
-    mocks.fetch.mockResolvedValue(Response.json({ success: false, "error-codes": ["sitekey-secret-mismatch"] }))
-    const response = await handleGuestFiscalRecovery(request())
-    expect(response.status).toBe(503)
-    expect(await response.json()).toMatchObject({ code: "captcha_unavailable" })
-    expect(mocks.rpc.mock.calls.some(([name]) => name === "request_fiscal_guest_recovery")).toBe(false)
+  it("requests recovery without CAPTCHA keys, token or provider calls", async () => {
+    vi.stubEnv("HCAPTCHA_SECRET_KEY", ""); vi.stubEnv("NEXT_PUBLIC_HCAPTCHA_SITE_KEY", "")
+    expect((await handleGuestFiscalRecovery(request())).status).toBe(202)
+    expect(mocks.rpc).toHaveBeenCalledWith("request_fiscal_guest_recovery", expect.objectContaining({ p_reference: reference }))
+    expect(mocks.fetch).not.toHaveBeenCalled()
+  })
+  it("accepts ignored legacy CAPTCHA fields without forwarding them to recovery", async () => {
+    expect((await handleGuestFiscalRecovery(request({ ...body, captchaToken: "old-form-token" }))).status).toBe(202)
+    expect(mocks.rpc).toHaveBeenCalledWith("request_fiscal_guest_recovery", { p_reference: reference, p_email: "guest@example.test", p_request_id: body.requestId })
+    expect(mocks.fetch).not.toHaveBeenCalled()
   })
   it("fails closed on limit or queue failures without exposing provider errors", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "private detail" } })

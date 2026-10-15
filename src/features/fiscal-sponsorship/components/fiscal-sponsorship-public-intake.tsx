@@ -5,7 +5,6 @@ import Link from "next/link"
 import { guestFollowupHref } from "../lib/guest-followup"
 import { guestProfileHref } from "../lib/guest-profile"
 import { Button } from "@/components/ui/button"
-import { HCaptchaWidget } from "@/components/auth/hcaptcha-widget"
 import type { DraftFieldChange } from "./fiscal-sponsorship-application-editor-controls"
 import { FiscalSponsorshipApplicationEditorFields } from "./fiscal-sponsorship-application-editor-fields"
 import { FiscalPublicDraftStatus, FiscalPublicLeaveDialog } from "./fiscal-public-draft-status"
@@ -77,7 +76,6 @@ export function FiscalSponsorshipPublicIntake({ draftPersistenceEnabled = false,
         </fieldset>
         </FiscalFieldErrors.Provider>
         <div className="mt-5 flex flex-col items-start gap-2 px-1 sm:px-2">
-          {submissionEnabled && !submission.uncertain && <HCaptchaWidget captchaRef={submission.captchaRef} onVerify={submission.setCaptchaToken} onExpire={() => submission.setCaptchaToken("")} onError={submission.setMessage} />}
           <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{submission.message}</p>
           <Button type="submit" disabled={!submissionEnabled || submission.working || state.phase === "loading"} aria-describedby="application-preview-note" className="h-11 rounded-full px-5 shadow-none">
             {submission.working ? "Submitting…" : submission.uncertain ? "Retry confirmation" : "Submit application"}

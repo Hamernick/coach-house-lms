@@ -49,13 +49,10 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   vi.stubEnv("FISCAL_GUEST_RISK_SECRET", "test-risk-".repeat(4))
   vi.stubEnv("FISCAL_GUEST_LINK_SECRET", "ephemeral-link-secret-at-least-32-characters")
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coach.test")
-  vi.stubEnv("HCAPTCHA_SECRET_KEY", "fixture-secret")
-  vi.stubEnv("NEXT_PUBLIC_HCAPTCHA_SITE_KEY", "fixture-key")
+  vi.stubEnv("HCAPTCHA_SECRET_KEY", "")
+  vi.stubEnv("NEXT_PUBLIC_HCAPTCHA_SITE_KEY", "")
   vi.stubEnv("VERCEL", "")
-  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-    if (url !== "https://api.hcaptcha.com/siteverify") throw new Error("Unexpected network attempt")
-    return Response.json({ success: true })
-  }))
+  vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("Unexpected network attempt") }))
   mocks.rpc.mockImplementation(async (name: string, args: Record<string, unknown> = {}) => {
     if (!/^[a-z_]+$/.test(name) || Object.keys(args).some((key) => !/^p_[a-z_]+$/.test(key))) throw new Error("Invalid fixture RPC")
     try {
@@ -96,7 +93,7 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   const saved = await handleGuestFiscalDraft(request({ operation: "save", version: initialState.version, requestId: randomUUID(), draft: pickGuestFiscalDraft(draft) }))
   expect(saved.status).toBe(200)
   expect(await (await handleGuestFiscalDraft(request({ operation: "read" }))).json()).toMatchObject({ state: "draft", draft: { projectName: "Connected garden" } })
-  const payload = guestSubmissionInput(draft,"captured-captcha")
+  const payload = guestSubmissionInput(draft)
   expect(payload.success).toBe(true)
   if (!payload.success) return
   const sent = await handleGuestFiscalSubmission(request(payload.data))
@@ -155,7 +152,7 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   expect((await handleGuestFiscalFollowup(request({ operation: "read", reference }))).status).toBe(403)
   const recoveredSession = await handleGuestFiscalSession(request({}))
   cookie = recoveredSession.headers.get("set-cookie")!.split(";")[0]
-  expect((await handleGuestFiscalRecovery(request({ reference, email: "connected@example.test", requestId: randomUUID(), captchaToken: "captured-captcha" }))).status).toBe(202)
+  expect((await handleGuestFiscalRecovery(request({ reference, email: "connected@example.test", requestId: randomUUID() }))).status).toBe(202)
   await dispatchFiscalGuestEmails(); await dispatchFiscalGuestEmails()
   const recovery = mocks.send.mock.calls.map(([mail]) => mail).find((mail) => mail.subject === "Your application access link")
   expect(recovery).toBeDefined()

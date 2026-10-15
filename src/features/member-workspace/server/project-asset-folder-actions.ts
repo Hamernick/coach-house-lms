@@ -1,6 +1,6 @@
 "use server"
 
-import { isOrdinaryWorkspaceProject } from "@/lib/workspace/ordinary-project-access"
+import { resolveWorkspaceProjectScope } from "@/lib/workspace/ordinary-project-access"
 
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
@@ -14,24 +14,25 @@ import { loadOrganizationDocuments } from "./organization-documents"
 import { mergeProjectOptions } from "../lib/project-fiscal-sponsorship"
 import { buildProjectAssetOpenPath } from "../lib/project-assets"
 
-async function context(projectId: string) {
+async function context(projectId: string, allowFiscalRead = false) {
   if (!z.string().uuid().safeParse(projectId).success) throw new Error("Choose a valid project.")
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!(await isOrdinaryWorkspaceProject({ supabase: actor.supabase, userId: actor.userId, projectId }))) throw new Error("Use the fiscal application review for this project.")
+  const scope = await resolveWorkspaceProjectScope({ supabase: actor.supabase, userId: actor.userId, projectId })
+  if (scope === "denied" || (scope === "fiscal" && !allowFiscalRead)) throw new Error("Use the fiscal application review for this project.")
   const access = ensureMemberWorkspaceFeatureAccess(actor)
   if (access) throw new Error(access.error)
   const result = await actor.supabase.from("organization_projects")
     .select("id, org_id, project_kind, updated_at, option_settings").eq("id", projectId).maybeSingle()
-  if (result.error || !result.data || !actorCanAccessOrganization(actor, result.data.org_id)) {
+  if (result.error || !result.data || (scope !== "fiscal" && !actorCanAccessOrganization(actor, result.data.org_id))) {
     throw new Error("Unable to access that project.")
   }
-  return { actor, project: result.data, canEdit: actorCanAccessOrganizations(actor) || actor.canEdit }
+  return { actor, project: result.data, fiscal: scope === "fiscal", canEdit: scope !== "fiscal" && (actorCanAccessOrganizations(actor) || actor.canEdit) }
 }
 
 export async function loadProjectAssetFolders(projectId: string) {
   try {
-    const { actor, project, canEdit } = await context(projectId)
-    const isOrganization = project.project_kind === "organization_admin"
+    const { actor, project, canEdit, fiscal } = await context(projectId, true)
+    const isOrganization = !fiscal && project.project_kind === "organization_admin"
     const [assets, documents, organizationDocuments] = await Promise.all([
       actor.supabase.from("organization_project_assets").select("id, name")
         .eq("project_id", projectId).eq("org_id", project.org_id).order("created_at", { ascending: false }),

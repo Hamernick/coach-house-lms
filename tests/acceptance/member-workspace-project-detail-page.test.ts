@@ -110,6 +110,16 @@ function renderProjectDetailPage(
 }
 
 describe("MemberWorkspaceProjectDetailPage", () => {
+  it("renders the authorized applicant workbench inside the existing Fiscal Sponsorship tab", () => {
+    const markup = renderProjectDetailPage({
+      project: { ...project, source: { ...project.source!, fiscalSponsorshipEnabled: true } },
+      fiscalSponsorshipWorkbench: React.createElement("div", { "data-applicant-review": true }, "Submitted applicant details"),
+    }, "fiscal-sponsorship")
+    expect(markup).toContain("Fiscal Sponsorship")
+    expect(markup).toContain("Submitted applicant details")
+    expect(markup).toContain("data-applicant-review")
+    expect(markup).not.toContain("guest-project-title")
+  })
   it.each([
     ["/projects/project-1", false],
     ["/organizations/project-1", true],

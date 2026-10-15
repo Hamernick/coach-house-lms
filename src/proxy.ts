@@ -31,6 +31,13 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-coach-house-request-method", request.method)
   const response = NextResponse.next({ request: { headers: requestHeaders } })
   const pathname = request.nextUrl.pathname
+  // These same-origin JSON handlers authenticate, refresh cookies and authorize
+  // their explicit organization themselves. Avoid a second Auth request per poll.
+  if (request.method === "POST" && [
+    "/api/account/workspace-support-presence",
+    "/api/account/document-presence",
+    "/api/account/document-collaboration",
+  ].includes(pathname)) return response
   // Public documentation has no account-specific content; mutations still verify auth.
   if ((request.method === "GET" || request.method === "HEAD") &&
       (pathname === "/documentation" || pathname.startsWith("/documentation/"))) {

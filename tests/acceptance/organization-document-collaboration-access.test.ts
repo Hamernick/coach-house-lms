@@ -25,6 +25,17 @@ describe("collaboration authorization before elevated storage", () => {
     await expect(documentContext(scope)).rejects.toThrow("Sign in")
     expect(mocks.admin).not.toHaveBeenCalled()
   })
+  it.each([0, 429, 500, 504])("keeps temporary Auth failure %s retryable without allowing data access", async (status) => {
+    mocks.auth.mockResolvedValue({ data: { user: null }, error: { status } })
+    await expect(documentContext(scope)).rejects.toMatchObject({ code: "unavailable" })
+    expect(mocks.access).not.toHaveBeenCalled()
+    expect(mocks.admin).not.toHaveBeenCalled()
+  })
+  it.each([400, 401, 403])("continues denying invalid authentication %s", async (status) => {
+    mocks.auth.mockResolvedValue({ data: { user: null }, error: { status } })
+    await expect(documentContext(scope)).rejects.toMatchObject({ code: "unauthenticated" })
+    expect(mocks.admin).not.toHaveBeenCalled()
+  })
   it("rechecks the explicit organization and preserves the verified actor", async () => {
     await documentContext(scope, true)
     expect(mocks.access).toHaveBeenCalledWith(session, "actor", scope.organizationId)

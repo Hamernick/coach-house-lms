@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
 import { workspacePresenceOverHttp } from "../lib/presence-transport"
+import { startBackgroundPolling } from "@/lib/background-polling"
 import type { WorkspaceSupportParticipant } from "../types"
 
 export function useOrganizationWorkspaceSupportController(organizationId: string, supportAccess: boolean) {
@@ -15,11 +16,8 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
     if (!organizationWorkspaceSupportEnabled) return
     session.current = crypto.randomUUID()
     const lifetime = new AbortController()
-    let interval: ReturnType<typeof setTimeout>
-    let failures = 0
     const sessionId = session.current
     let stopped = false
-    let busy = false
     let position: { x: number; y: number } | null = null
     let editedAt = 0
     const pointer = (event: PointerEvent) => {
@@ -27,29 +25,28 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
     }
     const editing = () => { editedAt = Date.now() }
     const tick = async () => {
-      if (busy || stopped) return
-      busy = true
+      if (stopped) return
       try {
         const result = await workspacePresenceOverHttp({ organizationId, sessionId,
           path, position: document.visibilityState === "visible" ? position : null,
           editing: supportAccess && Date.now() - editedAt < 3000 }, lifetime.signal)
         if (stopped) return
-        if ("error" in result) { failures++; setError(result.error ?? "Live support presence is unavailable."); setParticipants([]) }
-        else { failures = 0; setError(null); setParticipants(result.participants ?? []) }
-      } catch { if (!stopped) { setError("Live support presence is reconnecting."); setParticipants([]) } }
-      finally {
-        busy = false
-        if (!stopped) interval = setTimeout(() => void tick(), Math.min(8000, 2000 * 2 ** failures) + Math.random() * 250)
-      }
+        if ("error" in result) { setError(result.error ?? "Live support presence is unavailable."); setParticipants([]); return false }
+        setError(null); setParticipants(result.participants ?? [])
+        return true
+      } catch { if (!stopped) { setError("Live support presence is reconnecting."); setParticipants([]) }; return false }
     }
     if (supportAccess) {
       window.addEventListener("pointermove", pointer, { passive: true })
       window.addEventListener("input", editing, true)
     }
-    void tick()
+    // The existing support authorization lease is 15s. A 5s heartbeat plus its
+    // 5s HTTP deadline stays within that lease; hidden support tabs retain it.
+    const stopPolling = startBackgroundPolling({ run: tick, intervalMs: () => 5000,
+      enabled: () => supportAccess || document.visibilityState === "visible" })
     return () => {
       stopped = true
-      clearTimeout(interval)
+      stopPolling()
       lifetime.abort()
       window.removeEventListener("pointermove", pointer)
       window.removeEventListener("input", editing, true)

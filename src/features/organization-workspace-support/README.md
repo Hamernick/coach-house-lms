@@ -39,8 +39,7 @@ or unlocking paid features for members.
 
 Database RPCs bind names and actor IDs to authenticated users. Same-page normalized
 cursor coordinates use the existing Cursor component. Presence stays active without
-adding support-session banners or a textual viewer/editor roster to the sidebar. Hidden/presentation tabs retain viewing presence without cursor
-movement. Polling uses same-origin HTTP outside the action queue, a five-second deadline, one in-flight request per tab, a two-second baseline and capped eight-second backoff with jitter; stale sessions
+adding support-session banners or a textual viewer/editor roster to the sidebar. Hidden support tabs retain the authorization heartbeat without cursor movement; hidden ordinary-member tabs stop decorative roster reads. Polling uses same-origin HTTP outside the action queue, a five-second deadline, one in-flight request per tab, a five-second baseline and capped thirty-second error backoff with jitter; stale sessions
 expire after15seconds and revocation filters them immediately. Presence errors no longer inject a paragraph into navigation. Document cursor availability appears in the document status region without changing persistence or edit access. Legacy cursor
 publishing is suppressed for the support actor to avoid duplicate cursors.
 
@@ -57,3 +56,5 @@ membership access remains intact. The focused acceptance tests cover search-list
 behavior, cross-tab scoping, denial/revocation and request preservation. The existing
 document-activity PostgreSQL runner covers actual support RLS/storage/audit/presence
 permissions and ordinary-coach, suspended-user and revoked-staff denials.
+
+The exact presence POST route authenticates and refreshes session cookies in its handler; Proxy does not repeat that Auth request. Cross-origin and anonymous requests still fail before data access. The 5s baseline leaves room for the 5s deadline within the existing 15s authorization lease; that lease and all revocation/RLS checks are unchanged. Focus and reconnect resume polling without overlapping requests or bypassing error backoff. `workspace-presence-budget.test.ts` executes the actual controller effect and verifies at most181 heartbeats in15minutes including its initial request.

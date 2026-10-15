@@ -54,7 +54,7 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   vi.stubEnv("VERCEL", "")
   vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("Unexpected network attempt") }))
   mocks.rpc.mockImplementation(async (name: string, args: Record<string, unknown> = {}) => {
-    if (!/^[a-z_]+$/.test(name) || Object.keys(args).some((key) => !/^p_[a-z_]+$/.test(key))) throw new Error("Invalid fixture RPC")
+    if (!/^[a-z_][a-z0-9_]*$/.test(name) || Object.keys(args).some((key) => !/^p_[a-z_]+$/.test(key))) throw new Error("Invalid fixture RPC")
     try {
       const result = sql(`set role service_role; select to_jsonb(public.${name}(${Object.entries(args).map(([key, value]) => `${key} => ${quote(value)}`).join(",")}));`)
       return { data: result ? JSON.parse(result) : null, error: null }
@@ -109,9 +109,22 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   await dispatchFiscalGuestEmails()
   const receipt = mocks.send.mock.calls.map(([mail]) => mail).find((mail) => mail.to === "connected@example.test")
   expect(receipt).toBeDefined()
+  expect(receipt.text).toContain("COPY OF YOUR SUBMITTED ANSWERS")
+  expect(receipt.text).toContain("Connected garden")
+  expect(receipt.text).toContain("No account or email confirmation is needed to submit")
   const token = receipt.text.match(/#verify=([^\s]+)/)[1]
+  const originalCookie = cookie
+  const phoneSession = await handleGuestFiscalSession(new Request("https://coach.test/api/public/fiscal-sponsorship/session", { method: "POST", headers: { origin: "https://coach.test", "content-type": "application/json" }, body: "{}" }))
+  cookie = phoneSession.headers.get("set-cookie")!.split(";")[0]
   expect((await handleGuestFiscalEmailVerification(request({ token }))).status).toBe(200)
+  expect((await handleGuestFiscalFollowup(request({ operation: "read", reference }))).status).toBe(200)
+  cookie = originalCookie
   expect(await (await handleGuestFiscalFollowup(request({ operation: "read", reference }))).json()).toMatchObject({ status: "submitted", application: null })
+  const unrelatedSession = await handleGuestFiscalSession(new Request("https://coach.test/api/public/fiscal-sponsorship/session", { method: "POST", headers: { origin: "https://coach.test", "content-type": "application/json" }, body: "{}" }))
+  cookie = unrelatedSession.headers.get("set-cookie")!.split(";")[0]
+  expect((await handleGuestFiscalFollowup(request({ operation: "read", reference }))).status).toBe(403)
+  expect((await handleGuestFiscalEmailVerification(request({ token }))).status).toBe(400)
+  cookie = originalCookie
   // Reviewer transition fixtures are exercised separately by the workflow suite.
   sql(`update public.fiscal_sponsorship_applications set status='needs_info',review_notes='Describe the donors.' where project_id=${quote(projectId)};
     insert into public.fiscal_sponsorship_events(org_id,project_id,application_id,event_type,summary)
@@ -129,8 +142,14 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   expect(sql(`select count(*) from public.fiscal_guest_submissions where contact_email='connected@example.test';`)).toBe("1")
   // Account-free submission remains valid before optional profile saving.
   expect((await handleGuestFiscalProfile(request({ operation: "preview", reference }))).status).toBe(401)
+  const wrongAccountId = randomUUID()
+  sql(`insert into auth.users values(${quote(wrongAccountId)},'different@example.test',now()); insert into public.profiles(id,email) values(${quote(wrongAccountId)},'different@example.test');`)
+  mocks.user.mockResolvedValue({ data: { user: { id: wrongAccountId, email_confirmed_at: new Date().toISOString() } }, error: null })
+  expect((await handleGuestFiscalProfile(request({ operation: "preview", reference }))).status).toBe(403)
   const userId = randomUUID()
   sql(`insert into auth.users values(${quote(userId)},'connected@example.test',now()); insert into public.profiles(id,email) values(${quote(userId)},'connected@example.test');`)
+  mocks.user.mockResolvedValue({ data: { user: { id: userId } }, error: null })
+  expect((await handleGuestFiscalProfile(request({ operation: "preview", reference }))).status).toBe(403)
   mocks.user.mockResolvedValue({ data: { user: { id: userId, email_confirmed_at: new Date().toISOString() } }, error: null })
   const preview = await handleGuestFiscalProfile(request({ operation: "preview", reference }))
   expect(preview.status).toBe(200)

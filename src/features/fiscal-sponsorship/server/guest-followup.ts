@@ -16,7 +16,7 @@ export async function handleGuestFiscalFollowup(request: Request) {
   const ip = guestRequestIdentity(request, config.origin)
   if (!ip) return reply({ error: "Request not allowed." }, 403)
   const capability = readGuestCapability(request, config.riskSecret)
-  const denied = () => reply({ error: "Open and verify the latest application email in this browser to continue.", code: "verification_required" }, 403)
+  const denied = () => reply({ error: "Verify your application email, then check again here. If you verified on your phone, use the original browser where you applied. In another browser, request a new access link.", code: "verification_required" }, 403)
   if (!capability && process.env.FISCAL_GUEST_PROFILE_IMPORT_ENABLED !== "true") return denied()
   let body: unknown
   try { body = await readGuestJson(request) } catch { return reply({ error: "Invalid request." }, 400) }

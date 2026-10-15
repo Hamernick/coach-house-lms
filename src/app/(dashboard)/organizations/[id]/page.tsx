@@ -86,6 +86,14 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     )
   }
 
+  if (result.state === "fiscal-review-unavailable") {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-10">
+        <Empty title="Application unavailable" description={result.message} variant="subtle" />
+      </div>
+    )
+  }
+
   const isFiscalIntake = result.scope === "fiscal-intake"
   const canManageProject =
     result.scope === "organization" || result.scope === "platform-admin"

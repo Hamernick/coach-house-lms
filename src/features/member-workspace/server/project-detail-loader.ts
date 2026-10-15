@@ -90,6 +90,7 @@ function isNonEmptyString(value: string | null | undefined): value is string {
 export type MemberWorkspaceProjectDetailLoadResult =
   | { state: "schema-unavailable" }
   | { state: "not-found" }
+  | { state: "fiscal-review-unavailable"; message: string }
   | {
       state: "ready"
       scope: "organization" | "platform-admin" | "fiscal-intake"
@@ -495,7 +496,7 @@ async function loadPlatformAdminProjectDetailPage({
     if (guestScope.data === true) {
       const review = await loadGuestFiscalProjectReview(projectRow.id)
       if (!review) return { state: "not-found" }
-      if ("error" in review) throw new Error(review.error)
+      if ("error" in review) return { state: "fiscal-review-unavailable", message: review.error ?? "The application could not be loaded. Refresh to try again." }
       const detail = await buildReadyProjectDetailResult({
         actor,
         project: { ...projectRow, description: review.application.projectDescription },

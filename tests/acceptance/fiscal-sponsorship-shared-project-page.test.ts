@@ -71,9 +71,10 @@ describe("fiscal applications use the existing project detail data contract", ()
     expect(await loadPlatformAdminOrganizationProjectDetailPage({ projectId: id, userId: "another-person" })).toEqual({ state: "not-found" })
     expect(from).not.toHaveBeenCalled()
   })
-  it("does not render an incomplete application", async () => {
+  it("returns a recoverable state without reading host or child data for an incomplete application", async () => {
     mocks.review.mockResolvedValue({ error: "Unavailable" })
-    await expect(loadPlatformAdminOrganizationProjectDetailPage({ projectId: id, userId: "reviewer" })).rejects.toThrow("Unavailable")
+    await expect(loadPlatformAdminOrganizationProjectDetailPage({ projectId: id, userId: "reviewer" })).resolves.toEqual({ state: "fiscal-review-unavailable", message: "Unavailable" })
+    expect(tables.has("organization_tasks")).toBe(false)
     expect(mocks.host).not.toHaveBeenCalled()
   })
   it("allows authorized fiscal asset reads while retaining write denial", async () => {

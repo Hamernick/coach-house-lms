@@ -10,6 +10,6 @@ Next16.2.6itself uses `/* turbopackIgnore: true */` on runtime path and bare fil
 
 ## Checks and handoff
 
-Existing resource-map query and fixture-isolation acceptance:32cases pass. Changed-file ESLint and diff hygiene pass; normal prepush remains the outgoing check. Local tests validate unchanged preview/public query behavior; the actual Vercel/Turbopack build remains Caleb's verification, not inferred from unit tests. No full quality suite or deployment polling. No server needed for annotation-only changes. Codex stops at an open PR.
+Existing resource-map query and fixture-isolation acceptance: 32 cases pass. Changed-file ESLint, diff hygiene and normal prepush checks pass. Parsed syntax and literal values match main exactly; only comments and whitespace differ. Graphify refreshed (21,228 nodes, 61,112 edges). Local tests validate unchanged preview/public query behavior; the actual Vercel/Turbopack build remains Caleb's verification, not inferred from unit tests. No full quality suite or deployment polling. No server needed for annotation-only changes. Codex stops at an open PR.
 
 Source: https://github.com/vercel/next.js/issues/95125 (bare filesystem argument placement); confirm against the pinned installed Next source rather than assuming all nested expressions honor the annotation. Preserve the shared SHIP ownership blocker and fiscal3127lane.

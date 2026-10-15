@@ -35,3 +35,10 @@ export type WorkspaceSupportSearchResult = {
   hasMore: boolean
   error?: string
 }
+
+export type WorkspaceSupportPresenceResult = { participants: WorkspaceSupportParticipant[] } | {
+  error: string
+  code?: "organization_unavailable"
+  retryable?: boolean
+  requestId?: string
+}

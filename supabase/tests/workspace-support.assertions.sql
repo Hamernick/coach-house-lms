@@ -4,6 +4,31 @@ insert into public.profiles values ('77000000-0000-0000-0000-000000000001','Veri
 insert into public.platform_staff_members values ('77000000-0000-0000-0000-000000000001','coach'),('77000000-0000-0000-0000-000000000002','coach');
 insert into public.workspace_support_grants(user_id) values('77000000-0000-0000-0000-000000000001');
 insert into public.organizations(user_id,profile) values ('77000000-0000-0000-0000-000000000003','{"name":"Support alpha"}'),('77000000-0000-0000-0000-000000000002','{"name":"Support beta"}');
+-- A granted coach can have an account but no personal organization.
+set request.jwt.claim.role='authenticated';
+set request.jwt.claim.sub='77000000-0000-0000-0000-000000000001';
+set request.headers='{"x-coach-house-organization-id":"77000000-0000-0000-0000-000000000001"}';
+set role authenticated;
+do $$ begin
+ begin
+  perform public.sync_workspace_support_presence('77000000-0000-0000-0000-000000000001','78000000-0000-0000-0000-000000000001','/workspace',null,false);
+  raise exception 'unpersisted owner target accepted';
+ exception when sqlstate 'PT404' then null; end;
+end $$;
+reset role;
+set request.headers='{"x-coach-house-organization-id":"77000000-0000-0000-0000-000000000099"}';
+set role authenticated;
+do $$ begin
+ begin
+  perform public.sync_workspace_support_presence('77000000-0000-0000-0000-000000000099','78000000-0000-0000-0000-000000000001','/workspace',null,false);
+  raise exception 'missing support target accepted';
+ exception when sqlstate 'PT404' then null; end;
+end $$;
+reset role;
+do $$ begin
+ if exists(select 1 from public.workspace_support_presence) then raise exception 'missing target created presence'; end if;
+ if exists(select 1 from public.organizations where user_id='77000000-0000-0000-0000-000000000001') then raise exception 'presence created organization'; end if;
+end $$;
 set request.jwt.claim.role='authenticated';
 set request.jwt.claim.sub='77000000-0000-0000-0000-000000000001';
 set request.headers='{"x-coach-house-organization-id":"77000000-0000-0000-0000-000000000003"}';
@@ -53,6 +78,27 @@ do $$ declare result jsonb; begin
  if jsonb_array_length(result)<>1 or result->0->>'name'<>'Verified coach' then raise exception 'verified presence missing'; end if;
 end $$;
 reset role;
+-- A target deleted after the page opened cannot leave a retrying orphan session.
+insert into auth.users(id) values('77000000-0000-0000-0000-000000000099');
+insert into public.organizations(user_id,profile) values('77000000-0000-0000-0000-000000000099','{}');
+set request.jwt.claim.sub='77000000-0000-0000-0000-000000000001';
+set request.headers='{"x-coach-house-organization-id":"77000000-0000-0000-0000-000000000099"}';
+set role authenticated;
+select public.sync_workspace_support_presence('77000000-0000-0000-0000-000000000099','78000000-0000-0000-0000-000000000099','/workspace',null,false);
+reset role;
+delete from public.organizations where user_id='77000000-0000-0000-0000-000000000099';
+set role authenticated;
+do $$ begin
+ begin
+  perform public.sync_workspace_support_presence('77000000-0000-0000-0000-000000000099','78000000-0000-0000-0000-000000000099','/workspace',null,false);
+  raise exception 'deleted target accepted';
+ exception when sqlstate 'PT404' then null; end;
+end $$;
+reset role;
+do $$ begin
+ if exists(select 1 from public.workspace_support_presence where org_id='77000000-0000-0000-0000-000000000099') then raise exception 'deleted target retained presence'; end if;
+end $$;
+set request.headers='{"x-coach-house-organization-id":"77000000-0000-0000-0000-000000000003"}';
 update public.workspace_support_grants set revoked_at=now() where user_id='77000000-0000-0000-0000-000000000001';
 set request.jwt.claim.sub='77000000-0000-0000-0000-000000000001';
 set role authenticated;

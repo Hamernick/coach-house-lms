@@ -1,6 +1,6 @@
-import type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput } from "../types"
+import type { WorkspaceSupportPresenceResult, WorkspaceSupportPresenceInput } from "../types"
 
-export async function workspacePresenceOverHttp(input: WorkspaceSupportPresenceInput & { leave?: boolean }, signal?: AbortSignal): Promise<{ participants: WorkspaceSupportParticipant[] } | { error: string }> {
+export async function workspacePresenceOverHttp(input: WorkspaceSupportPresenceInput & { leave?: boolean }, signal?: AbortSignal): Promise<WorkspaceSupportPresenceResult> {
   const controller = new AbortController()
   const abort = () => controller.abort()
   if (signal?.aborted) controller.abort()

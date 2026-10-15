@@ -79,7 +79,7 @@ describe("guest applicant follow-up", () => {
   const parsed = parseGuestFollowup(state)
   const draft = guestCorrectionDraft(parsed.application!)
   expect(draft.fundraisingGoalDollars).toBe("123.45")
-  const input = guestSubmissionInput(draft, "verified-session")
+  const input = guestSubmissionInput(draft)
   expect(input.success).toBe(true)
   if (input.success) expect(input.data.application).toEqual(answers)
  })

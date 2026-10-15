@@ -515,6 +515,7 @@
       "tests/acceptance/workspace-ontology-transition-wave.test.ts",
       "tests/acceptance/workspace-ontology.test.ts",
       "tests/acceptance/workspace-organization-overview-programs.test.ts",
+      "tests/acceptance/workspace-presence-target.test.ts",
       "tests/acceptance/workspace-roadmap-support-editing.test.ts",
       "tests/acceptance/workspace-route-aliases.test.ts",
       "tests/acceptance/workspace-routes.test.ts",

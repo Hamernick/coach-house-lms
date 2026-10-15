@@ -16,7 +16,7 @@ export function MemberWorkspaceSidebarHeader({
       activeOrganization={state.activeOrganization}
       organizations={state.accessibleOrganizations}
     />
-    <OrganizationWorkspaceSupportPanel organizationId={state.activeOrganization.orgId} supportAccess={state.activeOrganization.supportAccess} />
+    {state.presenceOrganizationId ? <OrganizationWorkspaceSupportPanel organizationId={state.presenceOrganizationId} supportAccess={state.activeOrganization.supportAccess} /> : null}
     </>
   )
 }

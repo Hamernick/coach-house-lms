@@ -56,7 +56,7 @@ export default async function AdminLayout({
       defaultSidebarOpen={defaultSidebarOpen}
       context="admin"
     >
-      {!state.memberWorkspaceHeader && state.organizationScope ? <OrganizationWorkspaceSupportPanel organizationId={state.organizationScope.orgId} supportAccess={state.organizationScope.supportAccess} /> : null}
+      {!state.memberWorkspaceHeader && state.organizationScope?.presenceOrganizationId ? <OrganizationWorkspaceSupportPanel organizationId={state.organizationScope.presenceOrganizationId} supportAccess={state.organizationScope.supportAccess} /> : null}
         {children}
     </AppShell>
     </WorkspaceOrganizationScope>

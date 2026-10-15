@@ -6,7 +6,7 @@ vi.mock("@/lib/feature-flags", () => ({ organizationWorkspaceSupportEnabled: tru
 vi.mock("@/server/organization/request-scope", () => ({ readOrganizationRequestScope: mocks.scope }))
 vi.mock("@/lib/organization/active-org-cookie", () => ({ readActiveOrganizationCookie: mocks.cookie }))
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => client() }))
-import { searchSupportOrganizations } from "@/features/organization-workspace-support/server/actions"
+import { searchSupportOrganizations, syncWorkspaceSupportPresence } from "@/features/organization-workspace-support/server/actions"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 function client(memberships: Array<{ org_id: string; role: string }> = []) {
@@ -140,4 +140,20 @@ describe("workspace support search and scope", () => {
     expect(fetcher.mock.calls[0][1].headers.get("content-type")).toBe("application/json")
     expect(fetcher.mock.calls[0][1].headers.get("x-coach-house-organization-id")).toBe("current")
   })
+  it("marks a missing presence target terminal without exposing database details", async () => {
+    mocks.scope.mockResolvedValue(null)
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "PT404", message: "PRIVATE database detail" } })
+    const result = await syncWorkspaceSupportPresence({ organizationId: "missing", sessionId: "session", path: "/workspace", position: null, editing: false })
+    expect(result).toMatchObject({ code: "organization_unavailable", retryable: false })
+    expect(JSON.stringify(result)).not.toContain("PRIVATE")
+    expect(mocks.rpc).toHaveBeenCalledOnce()
+  })
+  it("keeps transient database errors retryable", async () => {
+    mocks.scope.mockResolvedValue(null)
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "57014" } })
+    const result = await syncWorkspaceSupportPresence({ organizationId: "existing", sessionId: "session", path: "/workspace", position: null, editing: false })
+    expect(result).toHaveProperty("error")
+    expect(result).not.toHaveProperty("retryable", false)
+  })
+
 })

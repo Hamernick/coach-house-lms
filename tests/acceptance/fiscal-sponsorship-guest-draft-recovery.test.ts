@@ -249,6 +249,31 @@ describe("same-tab fiscal draft recovery", () => {
     expect(client.getSnapshot().error).toContain("Keep this page open")
   })
 
+  it.each(["quota", "oversize", "validation"])("removes stale recovery after a later %s failure", async (failure) => {
+    const first = setup()
+    await first.client.start()
+    first.client.edit("projectName", "Earlier answer")
+    expect(first.store.values.has(GUEST_DRAFT_RECOVERY_KEY)).toBe(true)
+    if (failure === "quota") {
+      first.store.setItem.mockImplementation(() => { throw new Error("quota exceeded") })
+      first.client.edit("projectName", "Latest answer")
+    } else if (failure === "oversize") {
+      for (const field of ["projectDescription", "expenseSummary", "prospectiveFundingSources", "publicBenefit", "leadershipBackground"] as const) {
+        first.client.edit(field, "x".repeat(60000))
+      }
+    } else {
+      first.client.edit("projectName", "x".repeat(65537))
+    }
+    expect(first.client.getSnapshot()).toMatchObject({ localBackup: false, dirty: true })
+    expect(first.store.values.has(GUEST_DRAFT_RECOVERY_KEY)).toBe(false)
+    first.client.stop()
+    const reloaded = setup(first.store)
+    await reloaded.client.start()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(reloaded.client.getSnapshot().draft.projectName).toBe("")
+    expect(reloaded.saves()).toHaveLength(0)
+  })
+
   it("still works online when reading browser storage throws", async () => {
     const store = storage()
     store.getItem.mockImplementation(() => { throw new Error("access denied") })

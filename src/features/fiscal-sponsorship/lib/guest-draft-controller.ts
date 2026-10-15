@@ -48,7 +48,7 @@ export class GuestDraftController {
             draft: pickGuestRecoveryDraft(this.state.draft), version: this.version,
             baseline: this.baseline, pending: this.pending, expiresAt: this.state.expiresAt,
           })
-        } catch { this.state.localBackup = false }
+        } catch { this.recovery.clear(); this.state.localBackup = false }
       } else {
         this.recovery.clear()
         this.state.localBackup = false

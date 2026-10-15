@@ -71,10 +71,10 @@ export class GuestDraftRecovery {
       if (this.deadline <= Date.now()) { this.clear(); return false }
       const draft = parseRecoveryDraft(snapshot.draft)
       const raw = JSON.stringify({ ...snapshot, draft, format: 1, recoveryExpiresAt: this.deadline })
-      if (raw.length > MAX_RECOVERY_LENGTH) return false
+      if (raw.length > MAX_RECOVERY_LENGTH) { this.clear(); return false }
       this.storage().setItem(GUEST_DRAFT_RECOVERY_KEY, raw)
       return true
-    } catch { return false }
+    } catch { this.clear(); return false }
   }
 
   clear() {

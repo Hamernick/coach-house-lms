@@ -255,6 +255,7 @@
     ],
     "cli": [
       "tests/acceptance/fiscal-sponsorship-connected-storage.test.ts",
+      "tests/acceptance/organization-document-collaboration.test.ts",
       "tests/acceptance/resource-map-admin.test.ts",
       "tests/acceptance/resource-map-data-engine.test.ts",
       "tests/acceptance/resource-map-enrichment-quality.test.ts",
@@ -378,7 +379,6 @@
       "tests/acceptance/organization-document-access.test.ts",
       "tests/acceptance/organization-document-collaboration-access.test.ts",
       "tests/acceptance/organization-document-collaboration-server.test.ts",
-      "tests/acceptance/organization-document-collaboration.test.ts",
       "tests/acceptance/organization-document-files-route.test.ts",
       "tests/acceptance/organization-geocoding.test.ts",
       "tests/acceptance/organization-launch.test.ts",

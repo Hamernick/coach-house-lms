@@ -5,11 +5,10 @@ import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
 import { useOrganizationWorkspaceSupportController } from "../hooks/use-organization-workspace-support-controller"
 
 export function OrganizationWorkspaceSupportPanel({ organizationId, supportAccess = false }: { organizationId: string; supportAccess?: boolean }) {
-  const { participants, error, sessionId, path } = useOrganizationWorkspaceSupportController(organizationId, supportAccess)
+  const { participants, sessionId, path } = useOrganizationWorkspaceSupportController(organizationId, supportAccess)
   if (!organizationWorkspaceSupportEnabled) return null
   const others = participants.filter((participant) => participant.session_id !== sessionId)
   return <>
-    {error && supportAccess ? <p className="px-1 text-xs text-destructive" role="alert">{error}</p> : null}
     {others.filter((participant) => participant.path === path && participant.position).map((participant) => <Cursor
       key={participant.session_id} name={`${participant.name} · Support`} color="#2563eb"
       className="pointer-events-none fixed z-50"

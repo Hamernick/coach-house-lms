@@ -24,3 +24,5 @@ export async function handleWorkspaceSupportSearchPost(request: Request) {
     return respond({ error: "Search unavailable. Try again." }, 400)
   }
 }
+
+export { handleWorkspaceSupportPresencePost } from "./server/presence-route"

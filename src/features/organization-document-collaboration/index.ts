@@ -1,4 +1,4 @@
 import "server-only"
 
-export { handleDocumentCollaborationPost } from "./routes"
+export { handleDocumentCollaborationPost, handleDocumentPresencePost, handleDocumentCapabilitiesGet } from "./routes"
 export type { DocumentScope, DocumentVersion } from "./types"

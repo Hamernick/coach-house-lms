@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { defaultDocumentTransport } from "@/features/organization-document-collaboration/hooks/use-organization-document-collaboration-controller"
 import { documentSchema } from "@/features/organization-document-collaboration/lib/schema"
 import { handleDocumentCollaborationPost } from "@/features/organization-document-collaboration/server/route"
-import { syncOrganizationDocument } from "@/features/organization-document-collaboration/server/actions"
+import { syncOrganizationDocument } from "@/features/organization-document-collaboration/server/sync-document"
+vi.mock("@/features/organization-document-collaboration/server/sync-document", () => ({ syncOrganizationDocument: vi.fn() }))
 
 vi.mock("@/features/organization-document-collaboration/server/actions", () => ({
   syncOrganizationDocument: vi.fn(), leaveOrganizationDocument: vi.fn(), loadOrganizationDocumentVersions: vi.fn(),

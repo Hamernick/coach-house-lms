@@ -24,7 +24,7 @@ Personal coaching credits and the bundled Resources/Documentation fixes are clos
 
 ## Roadmap editor — urgent textAlign hotfix
 
-PR311–314 are on current main9784757b. New `fix/workspace-org-search-20261015` in isolated `coach-house-platform-tiptap-hotfix-20261015` addresses the user-reported endless organization search: independent JSON search,10-second abort/retry, obsolete-request cancellation, existing authenticated directory/RPC authorization retained.35focused cases pass; local guard/prepush results accompany the PR. Caleb owns hosted checks/review, merge, deployment and actual production verification; agent stops at open PR. No data/grant/schema changes. Historical admin bundle budget and SHIP40 ownership blockers preserved. [Plan and evidence](../plans/2026-10-14-workspace-support-overlay-and-roadmap-error.md).
+Execution authorized: [worker contract](../plans/2026-10-15-workspace-support-editing-execution.md), [design](../plans/2026-10-15-workspace-support-editing-design.md), [evidence](../plans/2026-10-15-workspace-support-editing-evidence.md). Isolated `fix/support-roadmap-edit-access-20261015` now unifies document capabilities, separates durable sync from bounded presence, scopes recovery copies and removes the raw navigation error. Focused/SQL checks underway. Actual authenticated local acceptance and p50/p95 remain blocked by missing Docker/Auth/PostgREST stack; authored fixtures reject hosted targets. No production write/grant change or production-success claim. Caleb owns hosted CI/review/merge/deployment/production verification. SHIP40 and other lanes unchanged.
 
 ## Workspace support text — first patch
 

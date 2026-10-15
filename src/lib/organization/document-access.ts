@@ -32,12 +32,13 @@ export async function resolveOrganizationDocumentAccess(
   if (supportAccess) {
     const admin = createSupabaseAdminClient({ actorId: userId })
     const { data, error } = await admin.from("organizations").select("user_id").eq("user_id", organizationId).maybeSingle()
-    if (error || !data) return { error: "Organization not found." }
+    if (error) return { error: "Unable to verify document access.", code: "unavailable" as const }
+    if (!data) return { error: "Organization not found." }
     return { supabase: admin, orgId: organizationId, role: "admin" as const, supportAccess: true, staffAccessLevel: "coach" as const }
   }
   const membership = await supabase.from("organization_memberships")
     .select("role").eq("org_id", organizationId).eq("member_id", userId).maybeSingle()
-  if (membership.error) return { error: "Unable to verify document membership." }
+  if (membership.error) return { error: "Unable to verify document membership.", code: "unavailable" as const }
   if (membership.data) {
     const role = membership.data.role
     if (["owner", "admin", "staff", "board", "member"].includes(role)) {
@@ -50,7 +51,7 @@ export async function resolveOrganizationDocumentAccess(
     .select("role")
     .eq("id", userId)
     .maybeSingle()
-  if (error) return { error: "Unable to verify document access." }
+  if (error) return { error: "Unable to verify document access.", code: "unavailable" as const }
   const accessLevel =
     (await loadPlatformAccessLevel({ supabase, userId })) ??
     resolveLegacyPlatformAccessLevel(profile?.role)
@@ -69,7 +70,7 @@ export async function resolveOrganizationDocumentAccess(
     .select("user_id")
     .eq("user_id", organizationId)
     .maybeSingle()
-  if (organizationError || !organization)
-    return { error: "Organization not found." }
+  if (organizationError) return { error: "Unable to verify document access.", code: "unavailable" as const }
+  if (!organization) return { error: "Organization not found." }
   return { supabase: admin, orgId: organizationId, role: "admin" as const, staffAccessLevel: accessLevel }
 }

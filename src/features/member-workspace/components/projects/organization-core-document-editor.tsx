@@ -1,7 +1,7 @@
 "use client"
 
 import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
-import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration/client"
+import { OrganizationDocumentCollaborationPanel, useDocumentCapabilities } from "@/features/organization-document-collaboration/client"
 import { useEffect, useState } from "react"
 import { saveRoadmapSectionAction } from "@/actions/roadmap"
 import { RichTextEditor } from "@/components/rich-text-editor"
@@ -30,6 +30,8 @@ export function OrganizationCoreDocumentEditor({
   onClose: () => void
   onSaved: () => void
 }) {
+  const access = useDocumentCapabilities(organizationId)
+  const canEdit = Boolean(access.capabilities?.canEdit)
   const [livePending, setLivePending] = useState(false)
   const [content, setContent] = useState(section.content)
   const [rows, setRows] = useState(section.budgetRows ?? [])
@@ -55,6 +57,7 @@ export function OrganizationCoreDocumentEditor({
       onClose()
   }
   const save = async () => {
+    if (!canEdit) return
     setSaving(true)
     setError(null)
     try {
@@ -89,9 +92,10 @@ export function OrganizationCoreDocumentEditor({
         <DialogHeader className="shrink-0"><DialogTitle>{section.title}</DialogTitle>
           <DialogDescription>Changes save automatically and appear for everyone editing this document.</DialogDescription>
         </DialogHeader>
+        {access.error ? <div role="alert" className="text-sm"><p>{access.error}</p><Button variant="outline" size="sm" onClick={access.retry}>Retry access check</Button></div> : null}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <OrganizationDocumentCollaborationPanel key={`${organizationId}:${section.id}`} section={section}
-            organizationId={organizationId} userId={userId} onPendingChange={setLivePending} />
+            organizationId={organizationId} userId={userId} canEdit={canEdit} onPendingChange={setLivePending} />
         </div>
         <div className="flex shrink-0 justify-end gap-2"><Button variant="outline" onClick={closeLive}>Close</Button></div>
       </DialogContent>
@@ -111,19 +115,20 @@ export function OrganizationCoreDocumentEditor({
             Edit this organization’s core document.
           </DialogDescription>
         </DialogHeader>
+        {access.error ? <div role="alert" className="text-sm"><p>{access.error}</p><Button variant="outline" size="sm" onClick={access.retry}>Retry access check</Button></div> : null}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <RichTextEditor
             value={content}
             onChange={setContent}
             ariaLabel={section.title}
             preserveImages
-            readOnly={saving}
+            readOnly={saving || !canEdit}
             minHeight={300}
           />
           {section.id === "budget" ? (
             <RoadmapBudgetTableEditor
               rows={rows}
-              canEdit={!saving}
+              canEdit={!saving && canEdit}
               isDirty={dirty}
               isSaving={saving}
               onRowsChange={setRows}
@@ -140,7 +145,7 @@ export function OrganizationCoreDocumentEditor({
           <Button variant="outline" onClick={close} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={() => void save()} disabled={saving || !dirty}>
+          <Button onClick={() => void save()} disabled={saving || !dirty || !canEdit}>
             {saving ? "Saving…" : "Save document"}
           </Button>
         </div>

@@ -124,6 +124,13 @@ describe("workspace support search and scope", () => {
     await scoped("https://provider.example/upload", { method: "POST" })
     expect(fetcher.mock.calls[1][1]).toEqual({ method: "POST" })
   })
+  it("preserves explicitly authorized document targets inside another workspace", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response())
+    const scoped = createOrganizationScopedFetch(fetcher, "workspace-A", "https://coachhouse.app/workspace", true)
+    await scoped("/api/account/document-collaboration", { method: "POST", headers: { "x-coach-house-organization-id": "document-B" } })
+    expect(fetcher.mock.calls[0][1].headers.get("x-coach-house-organization-id")).toBe("document-B")
+    expect(fetcher.mock.calls[0][1].headers.get("x-coach-house-support-mode")).toBe("1")
+  })
   it("preserves Request headers and uses the tab target over a stale supplied scope", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response())
     const scoped = createOrganizationScopedFetch(fetcher, "current", "https://coachhouse.app/workspace")

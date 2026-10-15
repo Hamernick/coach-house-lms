@@ -1,7 +1,8 @@
-import { syncOrganizationDocument } from "./actions"
+import { syncOrganizationDocument } from "./sync-document"
+import { syncDocumentPresence } from "./presence"
 import type { DocumentSyncInput } from "../types"
 
-export async function handleDocumentCollaborationPost(request: Request) {
+async function documentPost(request: Request, operation: (input: DocumentSyncInput) => Promise<unknown>) {
   const respond = (body: unknown, status = 200) => Response.json(body, {
     status, headers: { "Cache-Control": "no-store" },
   })
@@ -22,8 +23,11 @@ export async function handleDocumentCollaborationPost(request: Request) {
       return respond({ error: "Invalid document request." }, 400)
     }
     // Reuse the existing authenticated, organization-scoped authorization and CAS writes.
-    return respond(await syncOrganizationDocument(input))
+    return respond(await operation(input))
   } catch {
     return respond({ error: "Unable to read the document request." }, 400)
   }
 }
+
+export async function handleDocumentCollaborationPost(request: Request) { return documentPost(request, syncOrganizationDocument) }
+export async function handleDocumentPresencePost(request: Request) { return documentPost(request, syncDocumentPresence) }

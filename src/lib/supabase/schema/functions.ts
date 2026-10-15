@@ -23,6 +23,7 @@ export type PublicFunctions = {
   consume_fiscal_guest_limit: { Args: { p_key_hash: string; p_limit: number; p_window_seconds: number }; Returns: boolean }
   get_fiscal_guest_receipt: { Args: { p_key_hash: string }; Returns: Json }
   claim_fiscal_guest_emails: { Args: Record<string, never>; Returns: Json }
+  claim_fiscal_guest_emails_v3: { Args: Record<string, never>; Returns: Json }
   finish_fiscal_guest_email: { Args: { p_id: string; p_lease_token: string; p_message_id: string | null; p_success: boolean }; Returns: boolean }
 
   get_fiscal_guest_notification_recipients: {

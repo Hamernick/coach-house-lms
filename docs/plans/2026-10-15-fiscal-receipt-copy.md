@@ -73,11 +73,16 @@ key. Do not drop receipt snapshots or broadly delete verified sessions. Revertin
 the access policy requires reviewed saved definitions and exact grant changes.
 No production migration or release is performed by this PR implementation.
 
-## Separate Google sign-in configuration
+## Google sign-in origin handling
 
-The reported GSI_LOGGER origin rejection is not caused by fiscal email proof.
-Shared GoogleAuthPanel uses Identity Services; provider settings were not changed.
-To resolve it in the intended Web OAuth client:
+The fiscal optional-profile page used no-referrer, which can prevent Google
+Identity from receiving its required origin signal. Change only that page to
+strict-origin: the public origin is sent, never the private application path or
+query. Shared GoogleAuthPanel and provider settings remain unchanged. A focused
+real-localhost browser probe intercepted the Google script request and confirmed
+HTTP200, strict-origin metadata and only http://localhost:3127/ as its referrer.
+This verifies privacy behavior, not actual Google authentication. If the reported
+origin rejection persists, check the matching Web OAuth client:
 
 1. In Vercel Production, identify the configured NEXT_PUBLIC_GOOGLE_CLIENT_ID.
 2. Google Cloud Console → Google Auth Platform → Clients. Open that matching Web
@@ -88,6 +93,8 @@ To resolve it in the intended Web OAuth client:
    deployed client ID instead requires correcting that variable and rebuilding.
 
 [Official Google setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
-Google sign-in remains a separate provider configuration blocker; receipt copies
-and account-free submission do not depend on it. Keep Calendar/formation queue
+Actual Google sign-in remains unverified; provider origin configuration may still
+need correction. Receipt copies and account-free submission do not depend on it. Keep Calendar/formation queue
 and shared SHIP40 hold unchanged.
+
+PR327: https://github.com/Hamernick/CoachHouse/pull/327, stacked on PR326.

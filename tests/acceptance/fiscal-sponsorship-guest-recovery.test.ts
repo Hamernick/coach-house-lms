@@ -11,6 +11,7 @@ const request = (value: unknown = body, origin = "https://coach.test") => new Re
 })
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.spyOn(console, "warn").mockImplementation(() => {})
   for (const flag of ["FISCAL_GUEST_INTAKE_ENABLED", "FISCAL_GUEST_EMAILS_ENABLED"]) vi.stubEnv(flag, "true")
   for (const key of ["FISCAL_GUEST_RISK_SECRET", "FISCAL_GUEST_LINK_SECRET"]) vi.stubEnv(key, "private-test-secret-with-more-than-32-characters")
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coach.test"); vi.stubEnv("VERCEL", "")
@@ -19,7 +20,7 @@ beforeEach(() => {
   mocks.fetch.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }))
   mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "consume_fiscal_guest_limit" ? true : null, error: null }))
 })
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe("private application recovery", () => {
   it("requires no existing account or cookie and only queues a scoped request", async () => {
@@ -50,8 +51,15 @@ describe("private application recovery", () => {
     mocks.rpc.mockResolvedValueOnce({ data: false, error: null })
     expect((await handleGuestFiscalRecovery(request())).status).toBe(429)
     expect(mocks.fetch).not.toHaveBeenCalled()
-    mocks.fetch.mockResolvedValue(new Response('{"success":false}'))
+    mocks.fetch.mockResolvedValue(new Response('{"success":false,"error-codes":["expired-input-response"]}'))
     expect((await handleGuestFiscalRecovery(request())).status).toBe(400)
+    expect(mocks.rpc.mock.calls.some(([name]) => name === "request_fiscal_guest_recovery")).toBe(false)
+  })
+  it("reports verification configuration failure without issuing a recovery email", async () => {
+    mocks.fetch.mockResolvedValue(Response.json({ success: false, "error-codes": ["sitekey-secret-mismatch"] }))
+    const response = await handleGuestFiscalRecovery(request())
+    expect(response.status).toBe(503)
+    expect(await response.json()).toMatchObject({ code: "captcha_unavailable" })
     expect(mocks.rpc.mock.calls.some(([name]) => name === "request_fiscal_guest_recovery")).toBe(false)
   })
   it("fails closed on limit or queue failures without exposing provider errors", async () => {

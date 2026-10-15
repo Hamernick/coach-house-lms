@@ -9,7 +9,9 @@ import type { guestSubmissionSchema } from "../lib/guest-submission-schema"
 
 export function usePublicFiscalSubmission(controller: GuestDraftController) {
   const captchaRef = useRef<HCaptcha | null>(null)
-  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaToken, updateCaptchaToken] = useState("")
+  const latestCaptchaToken = useRef("")
+  const setCaptchaToken = (token: string) => { latestCaptchaToken.current = token; updateCaptchaToken(token) }
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [working, setWorking] = useState(false)
@@ -34,6 +36,12 @@ export function usePublicFiscalSubmission(controller: GuestDraftController) {
       if (!uncertain && !(await controller.flush())) {
         pending.current = null; setMessage("Your draft needs attention before submitting. Resolve the save message above and try again."); return
       }
+      if (!uncertain) {
+        if (!latestCaptchaToken.current) {
+          pending.current = null; setErrors({ captchaToken: "Please complete the verification again." }); return
+        }
+        pending.current!.captchaToken = latestCaptchaToken.current
+      }
       const response = await fetch("/api/public/fiscal-sponsorship/applications", {
         method: "POST", credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15000),
         headers: { "Content-Type": "application/json" }, body: JSON.stringify(pending.current),
@@ -43,7 +51,10 @@ export function usePublicFiscalSubmission(controller: GuestDraftController) {
         const receipt = z.object({ ok: z.literal(true), reference: z.string().uuid() }).strict().parse(result)
         controller.acceptSubmission(receipt.reference); pending.current = null; setUncertain(false); return
       }
-      if (response.status >= 500) throw new Error("uncertain_submission")
+      // This explicit rejection happens before any submission write. Other 5xx
+      // responses still require the original receipt/idempotency check on retry.
+      const captchaUnavailable = response.status === 503 && z.object({ code: z.literal("captcha_unavailable") }).passthrough().safeParse(result).success
+      if (response.status >= 500 && !captchaUnavailable) throw new Error("uncertain_submission")
       // Definite rejection: retain answers, release editing and require fresh captcha.
       pending.current = null; setUncertain(false); setCaptchaToken(""); captchaRef.current?.resetCaptcha()
       if (response.status === 401) controller.expireSession()

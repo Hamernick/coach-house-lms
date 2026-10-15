@@ -27,6 +27,7 @@ function request(options: { body?: unknown; origin?: string; cookie?: string } =
 }
 beforeEach(() => {
  vi.resetAllMocks()
+ vi.spyOn(console, "warn").mockImplementation(() => {})
  vi.stubEnv("FISCAL_GUEST_INTAKE_ENABLED", "true")
  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coach.test")
  vi.stubEnv("FISCAL_GUEST_RISK_SECRET", secret)
@@ -37,7 +38,7 @@ beforeEach(() => {
  mocks.fetch.mockImplementation(async () => Response.json({ success: true }))
  mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "get_fiscal_guest_receipt" ? null : name === "submit_guest_fiscal_application" ? { submissionId: reference, projectId: "private-project", applicationId: "private-application" } : true, error: null }))
 })
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers() })
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks() })
 
 describe("guest fiscal submission boundary", () => {
  it("maps the shared editor to a minimal guest payload without internal fields", () => {
@@ -117,13 +118,13 @@ describe("guest fiscal submission boundary", () => {
   expect(result.headers.get("retry-after")).toBe("900")
   expect(mocks.fetch).not.toHaveBeenCalled()
  })
- it.each([false, "true"])("does not accept failed/malformed captcha success %s", async (success) => {
+ it.each([false, "true"])("fails closed on unclassified/malformed captcha success %s", async (success) => {
   mocks.fetch.mockResolvedValue(Response.json({ success }))
-  expect((await handleGuestFiscalSubmission(request())).status).toBe(400)
+  expect((await handleGuestFiscalSubmission(request())).status).toBe(503)
   expect(mocks.rpc.mock.calls.some(([name]) => name === "submit_guest_fiscal_application")).toBe(false)
  })
  it("uses form encoding and verifies the configured sitekey", async () => {
-  expect(await verifyGuestCaptcha(guestIntakeConfiguration()!, "token+data", "127.0.0.1")).toBe(true)
+  expect(await verifyGuestCaptcha(guestIntakeConfiguration()!, "token+data", "127.0.0.1")).toBe("verified")
   const [url, init] = mocks.fetch.mock.calls[0]
   expect(url).toBe("https://api.hcaptcha.com/siteverify")
   expect(init.body.get("sitekey")).toBe("test-site-key")
@@ -132,8 +133,41 @@ describe("guest fiscal submission boundary", () => {
  it("rejects provider errors without exposing secrets", async () => {
   mocks.fetch.mockRejectedValue(new Error("sensitive provider detail"))
   const result = await handleGuestFiscalSubmission(request())
-  expect(result.status).toBe(400)
+  expect(result.status).toBe(503)
   expect(await result.text()).not.toContain("sensitive")
+  expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain("sensitive")
+ })
+ it.each(["expired-input-response", "already-seen-response", "invalid-input-response"])("only requests another challenge for token rejection %s", async (code) => {
+  mocks.fetch.mockResolvedValue(Response.json({ success: false, "error-codes": [code] }))
+  const result = await handleGuestFiscalSubmission(request())
+  expect(result.status).toBe(400)
+  expect(await result.json()).toMatchObject({ code: "captcha_rejected", captchaRequired: true })
+  expect(console.warn).toHaveBeenCalledWith("[fiscal-captcha] verification failed", { reason: "challenge", codes: [code] })
+  expect(mocks.rpc.mock.calls.some(([name]) => name === "submit_guest_fiscal_application")).toBe(false)
+ })
+ it.each(["invalid-input-secret", "sitekey-secret-mismatch", "invalid-remoteip"])("does not blame the applicant for configuration error %s", async (code) => {
+  mocks.fetch.mockResolvedValue(Response.json({ success: false, "error-codes": ["expired-input-response", code] }))
+  const result = await handleGuestFiscalSubmission(request())
+  expect(result.status).toBe(503)
+  expect(await result.json()).toMatchObject({ code: "captcha_unavailable", error: expect.stringContaining("our side") })
+  expect(console.warn).toHaveBeenCalledWith("[fiscal-captcha] verification failed", { reason: "configuration", codes: ["expired-input-response", code] })
+  expect(mocks.rpc.mock.calls.some(([name]) => name === "submit_guest_fiscal_application")).toBe(false)
+ })
+ it.each([
+  { success: false, "error-codes": ["expired-input-response", "private provider content"] },
+  { success: "true" }, null,
+ ])("keeps unknown provider output private and unavailable: %j", async (body) => {
+  mocks.fetch.mockResolvedValue(Response.json(body))
+  const result = await handleGuestFiscalSubmission(request())
+  expect(result.status).toBe(503)
+  expect(await result.text()).not.toContain("private provider content")
+  expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain("private provider content")
+ })
+ it.each([429, 500])("handles provider HTTP %i without asking the applicant to fix a challenge", async (status) => {
+  mocks.fetch.mockResolvedValue(new Response("private provider detail", { status }))
+  const result = await handleGuestFiscalSubmission(request())
+  expect(result.status).toBe(503)
+  expect(await result.json()).toMatchObject({ code: "captcha_unavailable" })
  })
  it("does not falsely claim a failed acknowledgement means no submission occurred", async () => {
   mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "get_fiscal_guest_receipt" ? null : true, error: name === "submit_guest_fiscal_application" ? { message: "network timeout" } : null }))

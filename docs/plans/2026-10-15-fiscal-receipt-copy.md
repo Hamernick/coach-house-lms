@@ -98,3 +98,10 @@ need correction. Receipt copies and account-free submission do not depend on it.
 and shared SHIP40 hold unchanged.
 
 PR327: https://github.com/Hamernick/CoachHouse/pull/327, stacked on PR326.
+
+
+### 2026-10-15 — Authorized receipt-copy/browser-return production migration applied
+
+Caleb explicitly requested “apply the migration.” Applied only20261015210000 to the existing production project in one transaction with5s lock/20s statement deadlines. Live claim/verification bodies matched the reviewed repository originals; prior20261015200000 ledger present and new version absent. Saved private before definitions/permissions/table security/original-grant candidates, exact apply SQL, bounded access-only recovery SQL and response. Exact pre/post definition hashes, permissions, RLS, immutable receipt constraint/trigger, service-only v3 claim and backfill were checked atomically. HTTP201 acknowledgment426ms.
+
+Independent reads confirm exact migration content/ledger/recovery entry, expected legacy fence and v3/verification definitions, unchanged existing permissions/table RLS, snapshot column/constraint/trigger and service-only access. One recent original submission browser repaired; no synthetic application or email/resend. Evidence: ~/.local/share/coach-house/fiscal-completion/2026-10-15/receipt-copy-*. Original laptop can select Check again now. New full-copy emails require updated code deployment; existing delivered receipts are not resent. No provider/env/deployment/hosted gate changes or polling. Caleb owns merge/deployment and actual UI/mail/Google testing; shared SHIP40 and other lanes preserved.

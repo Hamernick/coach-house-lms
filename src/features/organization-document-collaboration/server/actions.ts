@@ -8,6 +8,7 @@ import { resolveRoadmapSections, updateRoadmapSection, getRoadmapWorkspaceRevali
 import { documentContext } from "./context"
 import { applyDocumentSteps } from "../lib"
 import { documentSchema, serializeDocument, validateDocument } from "../lib/schema"
+import { toPlainDocumentJson } from "../lib/serialization"
 import type { DocumentScope, DocumentSession, DocumentSyncInput, DocumentSyncResult, DocumentVersion } from "../types"
 
 function message(error: unknown) {
@@ -45,7 +46,7 @@ export async function syncOrganizationDocument(input: DocumentSyncInput): Promis
         const doc = documentSchema.nodeFromJSON(input.initialDocument)
         validateDocument(doc)
         if (doc.content.size > 250_000) throw new Error("Document is too large.")
-        next = { generation: randomUUID(), version: 0, document: doc.toJSON(), steps: [], section_revision: section.lastUpdated, section_content: section.content }
+        next = { generation: randomUUID(), version: 0, document: toPlainDocumentJson(doc.toJSON()), steps: [], section_revision: section.lastUpdated, section_content: section.content }
       } else if (next && input.generation && input.version === next.version && input.steps?.length) {
         next = applyDocumentSteps(next, input.steps, input.clientId)
         const content = sanitizeHtml(serializeDocument(documentSchema.nodeFromJSON(next.document)))

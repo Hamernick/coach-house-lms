@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { execFileSync } from "node:child_process"
+import { createRequire } from "node:module"
+import { describe, expect, it, vi } from "vitest"
 import { EditorState } from "@tiptap/pm/state"
 import { collab, getVersion, receiveTransaction, sendableSteps } from "@tiptap/pm/collab"
 import { history, undo } from "@tiptap/pm/history"
@@ -6,6 +8,33 @@ import { Step } from "@tiptap/pm/transform"
 import { applyDocumentSteps } from "@/features/organization-document-collaboration/lib"
 import { documentSchema, serializeDocument } from "@/features/organization-document-collaboration/lib/schema"
 import type { DocumentSession } from "@/features/organization-document-collaboration/types"
+import { defaultDocumentTransport } from "@/features/organization-document-collaboration/hooks/use-organization-document-collaboration-controller"
+import { syncOrganizationDocument } from "@/features/organization-document-collaboration/server/actions"
+import { toPlainDocumentJson } from "@/features/organization-document-collaboration/lib/serialization"
+
+vi.mock("@/features/organization-document-collaboration/server/actions", () => ({
+  syncOrganizationDocument: vi.fn(), leaveOrganizationDocument: vi.fn(), loadOrganizationDocumentVersions: vi.fn(),
+}))
+
+const require = createRequire(import.meta.url)
+const flightClient = require("next/dist/compiled/react-server-dom-webpack/client.node") as {
+  encodeReply: (input: unknown, options: { temporaryReferences: unknown }) => Promise<string>
+  createTemporaryReferenceSet: () => unknown
+}
+async function throughServerAction(input: unknown) {
+  const body = await flightClient.encodeReply([input], { temporaryReferences: flightClient.createTemporaryReferenceSet() })
+  // Use Next's actual Flight decoder under React's server condition, not a JSON-only mock.
+  const decoded = execFileSync(process.execPath, ["--conditions=react-server", "-e", `
+    const { decodeReply, createTemporaryReferenceSet } = require(${JSON.stringify(require.resolve("next/dist/compiled/react-server-dom-webpack/server.node"))});
+    Promise.resolve(decodeReply(require('node:fs').readFileSync(0, 'utf8'), {}, {
+      temporaryReferences: createTemporaryReferenceSet()
+    })).then(([input]) => {
+      if (input.initialDocument) input.initialDocument.content[0].attrs.textAlign;
+      process.stdout.write(JSON.stringify(input));
+    }).catch(error => { process.stderr.write(error.message); process.exitCode = 1; });
+  `], { input: body, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] })
+  return JSON.parse(decoded)
+}
 
 const paragraph = (text: string) => documentSchema.node("doc", null, [documentSchema.node("paragraph", null, text ? documentSchema.text(text) : undefined)])
 const client = (id: string) => EditorState.create({ doc: paragraph("Hello"), plugins: [history(), collab({ clientID: id })] })
@@ -18,6 +47,31 @@ function receive(local: EditorState, remote: DocumentSession) {
 }
 
 describe("core document simultaneous editing", () => {
+  it("reproduces the reported textAlign error for raw ProseMirror attributes", async () => {
+    const initialDocument = paragraph("Hello").toJSON()
+    expect(Object.getPrototypeOf(initialDocument.content[0].attrs)).toBeNull()
+    await expect(throughServerAction({ initialDocument })).rejects.toThrow("Cannot access textAlign on the server")
+  })
+  it("sends initialization and edit steps through the real React action boundary", async () => {
+    const link = documentSchema.marks.link.create({ href: "https://example.org/help" })
+    const doc = documentSchema.node("doc", null, [documentSchema.node("paragraph", { textAlign: "center" }, documentSchema.text("Hello", [link]))])
+    const initialDocument = doc.toJSON()
+    const initial = { organizationId: "org", sectionId: "fundraising-strategy", clientId: "coach:tab", version: 0, initialDocument, expectedRevision: null }
+    const local = EditorState.create({ doc })
+    const steps = local.tr.setNodeMarkup(0, undefined, { textAlign: "right" }).addMark(1, 6, documentSchema.marks.link.create({ href: "https://example.org/new" })).steps.map(step => step.toJSON())
+    const update = { ...initial, initialDocument: undefined, generation: "session", steps, selection: { anchor: 1, head: 6, version: 0 } }
+    vi.mocked(syncOrganizationDocument).mockImplementation(async input => {
+      expect(await throughServerAction(input)).toEqual(JSON.parse(JSON.stringify(input)))
+      return { error: "transport verified" }
+    })
+    await expect(defaultDocumentTransport.sync(initial)).resolves.toEqual({ error: "transport verified" })
+    await expect(defaultDocumentTransport.sync(update)).resolves.toEqual({ error: "transport verified" })
+    expect(Object.getPrototypeOf(initialDocument.content[0].attrs)).toBeNull()
+    const saved = applyDocumentSteps({ ...state(), document: toPlainDocumentJson(initialDocument) }, toPlainDocumentJson(steps), "coach")
+    expect(saved.document.content?.[0].attrs?.textAlign).toBe("right")
+    expect(Object.getPrototypeOf(saved.document.content?.[0].attrs)).toBe(Object.prototype)
+    expect(serializeDocument(documentSchema.nodeFromJSON(saved.document))).toContain('href="https://example.org/new"')
+  })
   it("rebases two same-position edits without losing either contribution", () => {
     let a = client("coach"), b = client("member"), server = state()
     a = a.apply(a.tr.insertText(" coach", 6))

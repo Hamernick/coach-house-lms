@@ -5,7 +5,7 @@ vi.mock("@/lib/feature-flags", () => ({ organizationDocumentCollaborationEnabled
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: mocks.session }))
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: mocks.admin }))
 vi.mock("@/lib/organization/document-access", () => ({ resolveOrganizationDocumentAccess: mocks.access }))
-vi.mock("@/lib/organization/document-storage-access", () => ({ requireOrganizationDocumentStorage: mocks.storage }))
+vi.mock("@/lib/organization/document-storage-access", () => ({ resolveOrganizationDocumentStorageAccess: mocks.storage, DOCUMENT_STORAGE_UPGRADE_MESSAGE: "Upgrade required" }))
 import { documentContext } from "@/features/organization-document-collaboration/server/context"
 import { canRemoveCoreDocumentImage } from "@/server/organization/core-document-asset-retention"
 
@@ -17,7 +17,7 @@ describe("collaboration authorization before elevated storage", () => {
     mocks.session.mockResolvedValue(session)
     mocks.auth.mockResolvedValue({ data: { user: { id: "actor" } }, error: null })
     mocks.access.mockResolvedValue({ orgId: scope.organizationId, role: "staff", supabase: session })
-    mocks.storage.mockResolvedValue({ allowed: true })
+    mocks.storage.mockResolvedValue({ hasStorageAccess: true })
     mocks.admin.mockReturnValue({})
   })
   it("rejects unauthenticated users before any elevated data access", async () => {
@@ -33,7 +33,7 @@ describe("collaboration authorization before elevated storage", () => {
   })
   it("denies revoked or cross-organization access before storage", async () => {
     mocks.access.mockResolvedValue({ error: "Forbidden" })
-    await expect(documentContext(scope, true)).rejects.toThrow("Forbidden")
+    await expect(documentContext(scope, true)).rejects.toThrow("no longer have access")
     expect(mocks.admin).not.toHaveBeenCalled()
   })
   it("permits a read-only member to view but never write", async () => {
@@ -45,8 +45,22 @@ describe("collaboration authorization before elevated storage", () => {
   })
   it("does not silently bypass document entitlement for coaches", async () => {
     mocks.access.mockResolvedValue({ role: "admin", staffAccessLevel: "coach", supabase: session })
-    mocks.storage.mockResolvedValue({ error: "Upgrade required" })
+    mocks.storage.mockResolvedValue({ hasStorageAccess: false })
     await expect(documentContext(scope, true)).rejects.toThrow("Upgrade required")
+    expect(mocks.admin).not.toHaveBeenCalled()
+  })
+  it("allows verified workspace support to write Origin without a paid subscription", async () => {
+    mocks.access.mockResolvedValue({ role: "admin", supportAccess: true, staffAccessLevel: "coach", supabase: session })
+    mocks.storage.mockResolvedValue({ hasStorageAccess: false })
+    await expect(documentContext({ ...scope, sectionId: "origin_story" }, true)).resolves.toMatchObject({ role: "Coach" })
+    expect(mocks.storage).not.toHaveBeenCalled()
+    expect(mocks.access).toHaveBeenCalledWith(session, "actor", scope.organizationId)
+    expect(mocks.admin).toHaveBeenCalledWith({ actorId: "actor" })
+  })
+  it("rejects revoked support before creating elevated document storage", async () => {
+    mocks.access.mockResolvedValue({ error: "Workspace support access was revoked." })
+    await expect(documentContext({ ...scope, sectionId: "origin_story" }, true)).rejects.toThrow("no longer have access")
+    expect(mocks.storage).not.toHaveBeenCalled()
     expect(mocks.admin).not.toHaveBeenCalled()
   })
   it("rejects malformed document scopes", async () => {

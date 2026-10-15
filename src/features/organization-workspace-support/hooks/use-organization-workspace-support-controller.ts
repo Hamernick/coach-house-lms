@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { organizationWorkspaceSupportEnabled } from "@/lib/feature-flags"
-import { leaveWorkspaceSupportPresence, syncWorkspaceSupportPresence } from "../actions"
+import { workspacePresenceOverHttp } from "../lib/presence-transport"
 import type { WorkspaceSupportParticipant } from "../types"
 
 export function useOrganizationWorkspaceSupportController(organizationId: string, supportAccess: boolean) {
@@ -14,6 +14,10 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
   useEffect(() => {
     if (!organizationWorkspaceSupportEnabled) return
     session.current = crypto.randomUUID()
+    const lifetime = new AbortController()
+    let interval: ReturnType<typeof setTimeout>
+    let failures = 0
+    const sessionId = session.current
     let stopped = false
     let busy = false
     let position: { x: number; y: number } | null = null
@@ -26,27 +30,30 @@ export function useOrganizationWorkspaceSupportController(organizationId: string
       if (busy || stopped) return
       busy = true
       try {
-        const result = await syncWorkspaceSupportPresence({ organizationId, sessionId: session.current,
+        const result = await workspacePresenceOverHttp({ organizationId, sessionId,
           path, position: document.visibilityState === "visible" ? position : null,
-          editing: supportAccess && Date.now() - editedAt < 3000 })
+          editing: supportAccess && Date.now() - editedAt < 3000 }, lifetime.signal)
         if (stopped) return
-        if ("error" in result) { setError(result.error ?? "Live support presence is unavailable."); setParticipants([]) }
-        else { setError(null); setParticipants(result.participants ?? []) }
+        if ("error" in result) { failures++; setError(result.error ?? "Live support presence is unavailable."); setParticipants([]) }
+        else { failures = 0; setError(null); setParticipants(result.participants ?? []) }
       } catch { if (!stopped) { setError("Live support presence is reconnecting."); setParticipants([]) } }
-      finally { busy = false }
+      finally {
+        busy = false
+        if (!stopped) interval = setTimeout(() => void tick(), Math.min(8000, 2000 * 2 ** failures) + Math.random() * 250)
+      }
     }
     if (supportAccess) {
       window.addEventListener("pointermove", pointer, { passive: true })
       window.addEventListener("input", editing, true)
     }
     void tick()
-    const interval = window.setInterval(() => void tick(), 1000)
     return () => {
       stopped = true
-      window.clearInterval(interval)
+      clearTimeout(interval)
+      lifetime.abort()
       window.removeEventListener("pointermove", pointer)
       window.removeEventListener("input", editing, true)
-      void leaveWorkspaceSupportPresence(organizationId, session.current).catch(() => undefined)
+      void workspacePresenceOverHttp({ organizationId, sessionId, path, position: null, editing: false, leave: true })
     }
   }, [organizationId, supportAccess, path])
   return { participants, error, sessionId: session.current, path }

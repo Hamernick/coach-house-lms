@@ -2,4 +2,4 @@ export { OrganizationWorkspaceSupportPanel, WorkspaceOrganizationScope } from ".
 export { mergeSupportSearchResults, mapSupportOrganization } from "./lib"
 export type { WorkspaceSupportParticipant, WorkspaceSupportPresenceInput, WorkspaceSupportSearchRow } from "./types"
 export { searchSupportOrganizations } from "./actions"
-export { handleWorkspaceSupportSearchPost } from "./routes"
+export { handleWorkspaceSupportSearchPost, handleWorkspaceSupportPresencePost } from "./routes"

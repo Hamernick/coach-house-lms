@@ -1,5 +1,7 @@
 "use server"
 
+import { randomUUID } from "node:crypto"
+import { logger } from "@/lib/logger"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { hasWorkspaceSupportAccess } from "@/lib/organization/support-access"
 import { readOrganizationRequestScope } from "@/server/organization/request-scope"
@@ -32,6 +34,8 @@ export async function searchSupportOrganizations(query: string, offset = 0): Pro
 }
 
 export async function syncWorkspaceSupportPresence(input: WorkspaceSupportPresenceInput) {
+  const requestId = randomUUID()
+  const started = performance.now()
   try {
     const client = await context()
     if ((await readOrganizationRequestScope())?.supportRequested && !await hasWorkspaceSupportAccess(client)) throw new Error("Support access revoked")
@@ -42,7 +46,8 @@ export async function syncWorkspaceSupportPresence(input: WorkspaceSupportPresen
     if (error) throw error
     return { participants: data as unknown as WorkspaceSupportParticipant[] }
   } catch {
-    return { error: "Live support presence is unavailable. Reopen the workspace before editing." }
+    if (Math.random() < 0.1) logger.warn("workspace_presence_unavailable", { requestId, organizationId: input.organizationId, durationMs: Math.round(performance.now() - started) })
+    return { error: "Live presence is temporarily unavailable.", requestId }
   }
 }
 

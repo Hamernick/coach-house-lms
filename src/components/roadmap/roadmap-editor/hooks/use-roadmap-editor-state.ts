@@ -339,8 +339,8 @@ export function useRoadmapEditorState({
     if (error) {
       throw new Error(error)
     }
-    return uploadOrgMedia({ file, kind: "roadmap-inline" })
-  }, [])
+    return uploadOrgMedia({ file, kind: "roadmap-inline", organizationId: sourceScope?.organizationId })
+  }, [sourceScope?.organizationId])
 
   const handleStatusChange = useCallback(
     (nextStatus: RoadmapSectionStatus) => {

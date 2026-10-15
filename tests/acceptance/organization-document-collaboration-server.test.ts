@@ -38,6 +38,29 @@ describe("durable collaboration action", () => {
     const admin = { from: (table: string) => query(table), rpc }
     mocks.context.mockResolvedValue({ user: { id: "actor" }, role: "Coach", admin, client: admin })
   })
+  it("acknowledges a committed save without waiting on any presence or actor lookup", async () => {
+    const from = vi.fn((table: string) => {
+      if (!["organizations", "organization_core_document_sessions"].includes(table)) throw new Error("Presence is offline")
+      return query(table)
+    })
+    mocks.context.mockResolvedValue({ user: { id: "actor" }, role: "Coach", admin: { from, rpc }, client: { from } })
+    const result = await syncOrganizationDocument(input())
+    expect(result).toMatchObject({ session: { version: 1 }, participants: [] })
+    expect(rpc).toHaveBeenCalledOnce()
+    expect(from.mock.calls.map(([table]) => table)).toEqual(["organizations", "organization_core_document_sessions"])
+  })
+  it("does not report a failed save when cache revalidation fails after commit", async () => {
+    mocks.path.mockImplementationOnce(() => { throw new Error("cache unavailable") })
+    expect(await syncOrganizationDocument(input())).toMatchObject({ session: { version: 1 } })
+    expect(rpc).toHaveBeenCalledOnce()
+  })
+  it("returns a retryable safe outcome for database failures", async () => {
+    rpc.mockResolvedValueOnce({ data: false, error: { message: "secret provider text", code: "XX000" } })
+    const result = await syncOrganizationDocument(input())
+    expect(result).toMatchObject({ code: "unavailable", retryable: true, requestId: expect.any(String) })
+    expect(JSON.stringify(result)).not.toContain("secret provider text")
+    expect(session.version).toBe(0)
+  })
   it("returns plain document attributes when opening a new collaboration session", async () => {
     session = { ...session, section_revision: "stale", section_content: "<p>Previous content</p>" }
     const result = await syncOrganizationDocument({ ...input(), generation: undefined, steps: undefined,
@@ -59,7 +82,7 @@ describe("durable collaboration action", () => {
     expect(organization.profile.name).toBe("Concurrent name")
     expect(session.version).toBe(1)
     expect(documentSchema.nodeFromJSON(session.document).textContent).toBe("Hello world")
-    expect(mocks.context).toHaveBeenCalledWith(input(), true)
+    expect(mocks.context).toHaveBeenCalledWith(input(), true, expect.any(Object))
   })
   it("acknowledges a duplicate delivery without applying the edit twice", async () => {
     await syncOrganizationDocument(input())

@@ -125,13 +125,16 @@ export async function saveRoadmapSectionAction({
     return { error: "Unauthorized" }
   }
 
+  const selected = targetOrganizationId ? null : await resolveActiveOrganization(supabase, user.id)
   const access = targetOrganizationId
     ? await resolveOrganizationDocumentAccess(
         supabase,
         user.id,
         targetOrganizationId
       )
-    : { ...(await resolveActiveOrganization(supabase, user.id)), supabase }
+    : selected?.supportAccess
+      ? await resolveOrganizationDocumentAccess(supabase, user.id, selected.orgId)
+      : { ...selected!, supabase }
   if ("error" in access) return { error: access.error ?? "Forbidden" }
   supabase = access.supabase
   const { orgId, role } = access
@@ -319,7 +322,7 @@ export async function saveRoadmapSectionAction({
 export async function deleteRoadmapSectionAction(
   sectionId: string | null | undefined
 ): Promise<DeleteResult> {
-  const supabase = await createSupabaseServerClient()
+  let supabase = await createSupabaseServerClient()
   const {
     data: { user },
     error: userError,
@@ -333,9 +336,15 @@ export async function deleteRoadmapSectionAction(
     return { error: "Unauthorized" }
   }
 
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const selected = await resolveActiveOrganization(supabase, user.id)
+  const access = selected.supportAccess
+    ? await resolveOrganizationDocumentAccess(supabase, user.id, selected.orgId)
+    : { ...selected, supabase }
+  if ("error" in access) return { error: access.error || "Forbidden" }
+  supabase = access.supabase
+  const { orgId, role } = access
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
+  const documentAccess = "supportAccess" in access && access.supportAccess ? { ok: true } : await requireOrganizationDocumentStorage({ supabase, orgId })
   if ("error" in documentAccess) return { error: documentAccess.error }
 
 
@@ -485,7 +494,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export async function setRoadmapHeroImageAction(
   heroUrl: string | null
 ): Promise<HeroResult> {
-  const supabase = await createSupabaseServerClient()
+  let supabase = await createSupabaseServerClient()
   const {
     data: { user },
     error: userError,
@@ -499,9 +508,15 @@ export async function setRoadmapHeroImageAction(
     return { error: "Unauthorized" }
   }
 
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const selected = await resolveActiveOrganization(supabase, user.id)
+  const access = selected.supportAccess
+    ? await resolveOrganizationDocumentAccess(supabase, user.id, selected.orgId)
+    : { ...selected, supabase }
+  if ("error" in access) return { error: access.error || "Forbidden" }
+  supabase = access.supabase
+  const { orgId, role } = access
   if (!canEditOrganization(role)) return { error: "Forbidden" }
-  const documentAccess = await requireOrganizationDocumentStorage({ supabase, orgId })
+  const documentAccess = "supportAccess" in access && access.supportAccess ? { ok: true } : await requireOrganizationDocumentStorage({ supabase, orgId })
   if ("error" in documentAccess) return { error: documentAccess.error }
 
 

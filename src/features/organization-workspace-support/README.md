@@ -18,11 +18,11 @@ existing active staff/Auth account. Neither a coach/developer role nor client
 metadata automatically grants this feature. Search, selection, reads, writes and
 presence recheck the current grant. Policies scope support access to the request's
 organization ID; ordinary membership permissions remain unchanged. Fresh verified
-staff presence is required by the new workspace write policies.
+staff presence is required by the existing general workspace write policies. Native document text, metadata, hero images, inline images and history use separately authorized server operations with the verified actor; they do not weaken the shared RLS helper or depend on decorative presence.
 
 `WorkspaceOrganizationScope` adds the page's immutable organization ID to
 same-origin fetches, including Next server actions, preserving bodies/options and
-never sending the scope to external providers. The scope header is not a credential.
+never sending the scope to external providers. Allowlisted native-document endpoints preserve their explicit organization header so an admin asset dialog can target a different organization; all other calls remain pinned to the tab. The scope header is not a credential.
 The proxy overwrites request-method metadata. Unscoped support mutations fail;
 revoked explicit targets never silently fall back to another writable workspace.
 The existing document pending-change guards run before selection changes the cookie.
@@ -40,8 +40,8 @@ or unlocking paid features for members.
 Database RPCs bind names and actor IDs to authenticated users. Same-page normalized
 cursor coordinates use the existing Cursor component. Presence stays active without
 adding support-session banners or a textual viewer/editor roster to the sidebar. Hidden/presentation tabs retain viewing presence without cursor
-movement. Polling runs once per second, one in-flight request per tab; stale sessions
-expire after15seconds and revocation filters them immediately. Legacy cursor
+movement. Polling uses same-origin HTTP outside the action queue, a five-second deadline, one in-flight request per tab, a two-second baseline and capped eight-second backoff with jitter; stale sessions
+expire after15seconds and revocation filters them immediately. Presence errors no longer inject a paragraph into navigation. Document cursor availability appears in the document status region without changing persistence or edit access. Legacy cursor
 publishing is suppressed for the support actor to avoid duplicate cursors.
 
 ## Rollout and tests

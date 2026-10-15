@@ -6,23 +6,34 @@ import { normalizeRoadmapBudgetRows, roadmapBudgetRowsEqual } from "@/lib/roadma
 import type { Editor } from "@tiptap/core"
 import { collab, getVersion, receiveTransaction, sendableSteps } from "@tiptap/pm/collab"
 import { documentCursorsPlugin, documentCursorsKey } from "../lib/cursors"
-import { syncDocumentOverHttp } from "../lib/transport"
+import { syncDocumentOverHttp, documentPresenceOverHttp } from "../lib/transport"
+import { documentFailurePolicy, type DocumentPersistenceStatus } from "../lib/editor-state"
+import { readDocumentDraft, storeDocumentDraft, removeDocumentDraft, type StoredDocumentDraft } from "../lib/draft-storage"
 import { Step } from "@tiptap/pm/transform"
-import { leaveOrganizationDocument, loadOrganizationDocumentVersions } from "../server/actions"
+import { loadOrganizationDocumentVersions } from "../server/actions"
 import type { DocumentScope, DocumentSyncResult, DocumentParticipant, DocumentTransport } from "../types"
 
-export const defaultDocumentTransport: DocumentTransport = { sync: syncDocumentOverHttp, leave: leaveOrganizationDocument, versions: loadOrganizationDocumentVersions }
+export const defaultDocumentTransport: DocumentTransport = { sync: syncDocumentOverHttp, presence: documentPresenceOverHttp, leave: async (scope, clientId) => { await documentPresenceOverHttp({ ...scope, clientId, version: 0, leave: true }) }, versions: loadOrganizationDocumentVersions }
 
 type Loaded = Exclude<DocumentSyncResult, { error: string }>
 export function useOrganizationDocumentCollaborationController(scope: DocumentScope, userId: string, transport = defaultDocumentTransport, canEdit = true) {
   const [clientId] = useState(() => `${userId}:${crypto.randomUUID()}`)
+  const lifetime = useRef<AbortController | null>(null)
+  const openSequence = useRef(0)
+  const opening = useRef<AbortController | null>(null)
+  const [accessDenied, setAccessDenied] = useState(false)
+  const [draftWarning, setDraftWarning] = useState<string | null>(null)
+  const [recovery, setRecovery] = useState<StoredDocumentDraft | null>(null)
+  const [presenceUnavailable, setPresenceUnavailable] = useState(false)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [savedSection, setSavedSection] = useState<Loaded["section"] | null>(null)
   const initializing = useRef(false)
   const [ready, setReady] = useState(false)
-  const [status, setStatus] = useState("Connecting…")
+  const [status, setStatus] = useState<DocumentPersistenceStatus>("Connecting…")
   const [error, setError] = useState<string | null>(null)
   const [participants, setParticipants] = useState<DocumentParticipant[]>([])
+  const participantsRef = useRef(participants)
+  participantsRef.current = participants
   const editorRef = useRef<Editor | null>(null)
   const generation = useRef<string | null>(null)
   const busy = useRef(false)
@@ -43,50 +54,82 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       && roadmapBudgetRowsEqual(previous?.budgetRows ?? [], result.section.budgetRows ?? []) ? previous : result.section)
   }, [])
 
+  const persistDraft = useCallback(() => {
+    const editor = editorRef.current
+    if (!editor || editor.isDestroyed) return
+    const draft: StoredDocumentDraft = { schema: 1, actorId: userId, ...scopeRef.current, clientId,
+      generation: generation.current, version: generation.current ? getVersion(editor.state) : 0,
+      savedAt: Date.now(), content: editor.getHTML(), budgetRows: budgetDraft.current?.next ?? lastSaved.current?.section.budgetRows ?? [] }
+    let stored = false
+    try { stored = storeDocumentDraft(window.localStorage, draft) } catch { /* Storage may be disabled. */ }
+    let uploading = false
+    editor.state.doc.descendants(node => { if (node.type.name === "image" && (node.attrs.uploading || String(node.attrs.src).startsWith("blob:"))) uploading = true })
+    setDraftWarning(!stored ? "This browser cannot keep a recovery copy. Keep this editor open or download your changes."
+      : uploading ? "Keep this editor open until the image upload finishes. Unfinished uploads cannot be recovered after closing." : null)
+  }, [clientId, userId])
+
+  const discardRecovery = useCallback(() => {
+    if (recovery) { try { removeDocumentDraft(window.localStorage, recovery) } catch { /* Explicit discard only. */ } }
+    setRecovery(null)
+  }, [recovery])
+
   const open = useCallback(async () => {
+    const sequence = ++openSequence.current
+    opening.current?.abort()
+    opening.current = new AbortController()
+    const signal = lifetime.current ? AbortSignal.any([lifetime.current.signal, opening.current.signal]) : opening.current.signal
     setError(null)
     setStatus("Connecting…")
     try {
-      const result = await transport.sync({ ...scopeRef.current, clientId, version: 0 })
-      if (!mounted.current) return
+      const result = await transport.sync({ ...scopeRef.current, clientId, version: 0 }, signal)
+      if (!mounted.current || signal?.aborted || sequence !== openSequence.current) return
       if ("error" in result) { setError(result.error); setStatus("Not connected"); return }
+      if (result.userId !== userId) { setAccessDenied(true); setError("Your account changed. Reopen this document."); return }
+      setAccessDenied(result.capabilities?.canEdit === false)
       setBudgetRows(result.section.budgetRows ?? [])
       setLoaded(result)
       acceptSection(result)
     } catch {
-      if (mounted.current) { setError("Unable to open the live document. Try again."); setStatus("Not connected") }
+      if (mounted.current && !signal?.aborted && sequence === openSequence.current) { setError("Unable to open the live document. Try again."); setStatus("Not connected") }
     }
-  }, [acceptSection, clientId, transport])
+  }, [acceptSection, clientId, transport, userId])
 
   useEffect(() => {
     mounted.current = true
+    const controller = new AbortController()
+    lifetime.current = controller
+    try { setRecovery(readDocumentDraft(window.localStorage, userId, scopeRef.current, clientId)) } catch { /* Recovery is optional. */ }
+    const openedScope = scopeRef.current
     void open()
     return () => {
       mounted.current = false
-      void transport.leave(scopeRef.current, clientId).catch(() => {})
+      controller.abort()
+      void transport.leave(openedScope, clientId).catch(() => {})
     }
-  }, [clientId, open, transport])
+  }, [clientId, open, transport, userId])
 
   const onReady = useCallback(async (editor: Editor) => {
     if (!loaded || initializing.current || (editorRef.current === editor && generation.current)) return
     initializing.current = true
+    const signal = lifetime.current?.signal
+    const sequence = openSequence.current
     editorRef.current = editor
     try {
       let result = loaded
-      if (!result.session && canEdit) {
+      if (!result.session && canEdit && result.capabilities?.canEdit !== false) {
         const initialized = await transport.sync({ ...scopeRef.current, clientId, version: 0,
-          initialDocument: editor.getJSON(), expectedRevision: loaded.section.lastUpdated })
-        if (!mounted.current || editor.isDestroyed) return
+          initialDocument: editor.getJSON(), expectedRevision: loaded.section.lastUpdated }, signal)
+        if (!mounted.current || signal?.aborted || sequence !== openSequence.current || editor.isDestroyed) return
         if ("error" in initialized) { setError(initialized.error); setStatus("Not connected"); return }
         result = initialized
       }
-      if (!mounted.current || editor.isDestroyed) return
+      if (!mounted.current || signal?.aborted || sequence !== openSequence.current || editor.isDestroyed) return
       if (result.session) {
         editor.chain().setContent(result.session.document).setMeta("addToHistory", false).run()
         editor.registerPlugin(collab({ version: result.session.version, clientID: clientId }))
         editor.registerPlugin(documentCursorsPlugin())
         generation.current = result.session.generation
-      } else if (!canEdit) {
+      } else if (!canEdit || result.capabilities?.canEdit === false) {
         editor.chain().setContent(result.section.content).setMeta("addToHistory", false).run()
       } else if (canEdit) { setError("Unable to start editing safely."); setStatus("Not connected"); return }
       acceptSection(result)
@@ -95,7 +138,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       setReady(true)
       setStatus("Saved")
     } catch {
-      if (mounted.current) { setError("Unable to connect the editor. Try again."); setStatus("Not connected") }
+      if (mounted.current && !signal?.aborted && sequence === openSequence.current) { setError("Unable to connect the editor. Try again."); setStatus("Not connected") }
     } finally { initializing.current = false }
   }, [acceptSection, loaded, clientId, transport, canEdit])
 
@@ -111,6 +154,8 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       if (node.type.name === "image" && (node.attrs.uploading || String(node.attrs.src).startsWith("blob:"))) uploading = true
     })
     if (uploading) { dirty.current = true; setStatus("Waiting for image upload…"); return }
+    const signal = lifetime.current?.signal
+    const sequence = openSequence.current
     busy.current = true
     const pending = sendableSteps(editor.state)
     if (pending || budgetDraft.current) { dirty.current = true; setStatus("Saving…") }
@@ -127,20 +172,24 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
         budget: sentBudget ?? undefined,
         steps: pending?.steps.slice(0, 200).map(step => step.toJSON()),
         selection: { anchor, head, version: getVersion(editor.state) },
-      })
-      if (!mounted.current || editor.isDestroyed) return
+      }, signal)
+      if (!mounted.current || signal?.aborted || sequence !== openSequence.current || editor.isDestroyed) return
       if ("error" in result) {
-        if ((result.code === "external_change" || result.code === "expired") && !sendableSteps(editor.state) && !budgetDraft.current) {
+        const policy = documentFailurePolicy(result.code)
+        if (policy.reopenIfClean && !sendableSteps(editor.state) && !budgetDraft.current) {
           setReady(false); setLoaded(null); editorRef.current = null; generation.current = null
           await open()
           return
         }
         setError(result.error)
         setStatus("Not saved")
-        if (result.code) blocked.current = true
+        if (policy.blocked) blocked.current = true
+        if (policy.accessDenied) setAccessDenied(true)
         if (result.code === "budget_conflict") setBudgetConflict(result.savedBudgetRows ?? [])
         return
       }
+      if (result.userId !== userId) { setAccessDenied(true); blocked.current = true; setError("Your account changed. Your local copy is retained."); return }
+      setAccessDenied(result.capabilities?.canEdit === false)
       const session = result.session
       if (!session || session.generation !== generation.current) {
         blocked.current = true
@@ -155,7 +204,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
           incoming.map(item => Step.fromJSON(editor.schema, item.step)),
           incoming.map(item => item.clientId)))
       }
-      const cursors = result.participants.filter(person => person.session_id !== clientId).map(person => {
+      const cursors = participantsRef.current.filter(person => person.session_id !== clientId).map(person => {
         if (!person.selection || person.selection.version > session.version || person.selection.version < session.version - session.steps.length) return { ...person, selection: null }
         let { anchor, head } = person.selection
         const maps = session.steps.slice(person.selection.version - (session.version - session.steps.length))
@@ -172,16 +221,19 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       if (!budgetDraft.current) setBudgetRows(result.section.budgetRows ?? [])
       acceptSection(result)
       dirty.current = Boolean(sendableSteps(editor.state) || budgetDraft.current)
-      setParticipants(result.participants)
+      if (!dirty.current) {
+        try { removeDocumentDraft(window.localStorage, { actorId: userId, ...scopeRef.current, clientId }) } catch { /* Keep acknowledged content if removal fails. */ }
+        setDraftWarning(null)
+      } else persistDraft()
       setError(null)
       setStatus(dirty.current ? "Saving…" : "Saved")
     } catch {
-      if (mounted.current) {
+      if (mounted.current && !signal?.aborted && sequence === openSequence.current) {
         setStatus("Offline · edits retained")
         setError("Connection interrupted. Keep this editor open; syncing will retry automatically.")
       }
     } finally { busy.current = false }
-  }, [acceptSection, canEdit, clientId, open, transport])
+  }, [acceptSection, canEdit, clientId, open, transport, persistDraft, userId])
 
   useEffect(() => {
     const editor = editorRef.current
@@ -190,6 +242,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     const changed = () => {
       if (!generation.current || !sendableSteps(editor.state)) return
       dirty.current = true
+      persistDraft()
       setStatus("Saving…")
       clearTimeout(timer)
       timer = setTimeout(() => void sync(), 400)
@@ -205,7 +258,31 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
       editor.off("transaction", changed)
       window.removeEventListener("beforeunload", warn)
     }
-  }, [ready, sync])
+  }, [ready, sync, persistDraft])
+
+  useEffect(() => {
+    if (!ready || !transport.presence) return
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout>
+    let failures = 0
+    const poll = async () => {
+      if (controller.signal.aborted) return
+      try {
+        if (document.visibilityState === "visible") {
+          const editor = editorRef.current
+          const selection = editor && generation.current && !sendableSteps(editor.state)
+            ? { anchor: editor.state.selection.anchor, head: editor.state.selection.head, version: getVersion(editor.state) } : null
+          const result = await transport.presence!({ ...scopeRef.current, clientId, version: 0, selection }, controller.signal)
+          if (controller.signal.aborted) return
+          if ("error" in result) { failures++; setPresenceUnavailable(true); setParticipants([]) }
+          else { failures = 0; setPresenceUnavailable(false); setParticipants(result.participants) }
+        }
+      } catch { failures++; if (!controller.signal.aborted) { setPresenceUnavailable(true); setParticipants([]) } }
+      finally { if (!controller.signal.aborted) timer = setTimeout(() => void poll(), Math.min(8000, 2000 * 2 ** failures) + Math.random() * 250) }
+    }
+    void poll()
+    return () => { controller.abort(); clearTimeout(timer) }
+  }, [clientId, ready, transport])
 
   const retry = useCallback(async () => {
     if (blocked.current) return
@@ -221,7 +298,7 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
   const changeBudgetRows = (rows: BudgetTableRow[]) => {
     rows = normalizeRoadmapBudgetRows(rows)
     budgetDraft.current = { base: budgetDraft.current?.base ?? lastSaved.current?.section.budgetRows ?? [], next: rows }
-    setBudgetRows(rows); dirty.current = true; setStatus("Saving…")
+    setBudgetRows(rows); dirty.current = true; persistDraft(); setStatus("Saving…")
   }
   const resolveBudgetConflict = (keepMine: boolean) => {
     if (!budgetConflict) return
@@ -230,5 +307,5 @@ export function useOrganizationDocumentCollaborationController(scope: DocumentSc
     setBudgetConflict(null); blocked.current = false; setError(null)
     void sync()
   }
-  return { budgetConflict, resolveBudgetConflict, loaded, ready, error, status, participants, onReady, sync, retry, blocked: blocked.current, editorRef, dirty, savedSection, budgetRows, changeBudgetRows }
+  return { recovery, discardRecovery, persistDraft, draftWarning, presenceUnavailable, accessDenied, budgetConflict, resolveBudgetConflict, loaded, ready, error, status, participants, onReady, sync, retry, blocked: blocked.current, editorRef, dirty, savedSection, budgetRows, changeBudgetRows }
 }

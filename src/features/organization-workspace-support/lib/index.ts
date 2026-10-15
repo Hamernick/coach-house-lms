@@ -26,7 +26,12 @@ export function createOrganizationScopedFetch(baseFetch: typeof fetch, organizat
     if (url.origin !== new URL(baseHref).origin) return baseFetch(input, init)
     const headers = new Headers(input instanceof Request ? input.headers : undefined)
     new Headers(init?.headers).forEach((value, key) => headers.set(key, value))
-    headers.set("x-coach-house-organization-id", organizationId)
+    // Explicit document targets may differ from the surrounding admin workspace.
+    // The server independently authorizes the target; ambient cookies must not retarget it.
+    const explicitDocumentTarget = ["/api/account/document-collaboration", "/api/account/document-capabilities",
+      "/api/account/document-presence"].includes(url.pathname)
+      || (url.pathname === "/api/account/org-media" && ["roadmap", "roadmap-inline"].includes(url.searchParams.get("kind") ?? ""))
+    if (!explicitDocumentTarget || !headers.has("x-coach-house-organization-id")) headers.set("x-coach-house-organization-id", organizationId)
     headers.set("x-coach-house-support-mode", supportAccess ? "1" : "0")
     return baseFetch(input, { ...init, headers })
   }

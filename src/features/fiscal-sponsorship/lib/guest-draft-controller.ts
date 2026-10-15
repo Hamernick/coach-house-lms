@@ -78,7 +78,9 @@ export class GuestDraftController {
     await this.load(false)
   }
   private async post(path: string, body: object, signal: AbortSignal) {
-    const response = await this.transport(`/api/public/fiscal-sponsorship/${path}`, {
+    // Native browser fetch rejects a controller instance as its receiver.
+    const transport = this.transport
+    const response = await transport(`/api/public/fiscal-sponsorship/${path}`, {
       method: "POST", credentials: "same-origin", cache: "no-store", signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
       headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     })

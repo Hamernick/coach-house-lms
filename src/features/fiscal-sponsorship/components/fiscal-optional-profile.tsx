@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { guestProfileFieldsSchema, guestProfilePreviewSchema, type GuestProfileFields, type GuestProfilePreview } from "../lib/guest-profile"
+import { GUEST_ORGANIZATION_PROFILE_HREF, guestProfileFieldsSchema, guestProfilePreviewSchema, type GuestProfileFields, type GuestProfilePreview } from "../lib/guest-profile"
 import { FiscalOptionalProfileAuth } from "./fiscal-optional-profile-auth"
 import { FiscalProfileSelection } from "./fiscal-profile-selection"
 import { usePublicFiscalNavigation } from "./use-public-fiscal-navigation"
@@ -75,7 +75,7 @@ export function FiscalOptionalProfile({ reference }: { reference: string }) {
     try {
       const { response, data } = await post({ operation: "open", reference })
       if (!response.ok || data.state !== "opened") { setMessage(data.error ?? "Couldn’t open your profile. Try again."); return }
-      router.push("/organization/profile")
+      router.push(GUEST_ORGANIZATION_PROFILE_HREF)
     } catch { setMessage("Couldn’t open your profile. Your saved details are unchanged.") }
     finally { setWorking(false) }
   }

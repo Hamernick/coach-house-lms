@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { writeActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
-import { guestProfilePreviewSchema, guestProfileRequestSchema } from "../lib/guest-profile"
+import { GUEST_ORGANIZATION_PROFILE_HREF, guestProfilePreviewSchema, guestProfileRequestSchema } from "../lib/guest-profile"
 import { guestIntakeConfiguration, guestRequestIdentity, guestRiskKey, hashGuestCapability, readGuestCapability, readGuestJson } from "./guest-request-security"
 
 const reply = (body: object, status = 200) => NextResponse.json(body, { status, headers: {
@@ -41,7 +41,7 @@ export async function handleGuestFiscalProfile(request: Request) {
     if (parsed.data.operation === "open") {
       if (state !== "linked") return reply({ error: "Link your application first." }, 403)
       await writeActiveOrganizationCookie(user.id)
-      return reply({ state: "opened", href: "/organization/profile" })
+      return reply({ state: "opened", href: GUEST_ORGANIZATION_PROFILE_HREF })
     }
     if (state === "linked" || state === "already_linked") return reply({ state: "linked" })
     if (state === "conflict" || state === "public_profile") return reply({ error: "Your profile changed. Reload the preview before choosing what to save.", code: "conflict" }, 409)

@@ -73,7 +73,7 @@ describe("optional verified fiscal profile reuse", () => {
     mocks.rpc.mockImplementation(async (name: string) => ({ data: name === "consume_fiscal_guest_limit" ? true : { state: "linked" }, error: null }))
     expect(await (await handleGuestFiscalProfile(request())).json()).toEqual({ state: "linked" })
     expect(mocks.activeOrg).not.toHaveBeenCalled()
-    expect(await (await handleGuestFiscalProfile(request({ operation: "open", reference }))).json()).toEqual({ state: "opened", href: "/organization/profile" })
+    expect(await (await handleGuestFiscalProfile(request({ operation: "open", reference }))).json()).toEqual({ state: "opened", href: "/workspace?drawer=organization" })
     expect(mocks.activeOrg).toHaveBeenCalledWith(actor)
   })
   it("denies invalid, expired, mismatched or already claimed proof without revealing data", async () => {

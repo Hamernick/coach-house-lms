@@ -98,3 +98,12 @@ need correction. Receipt copies and account-free submission do not depend on it.
 and shared SHIP40 hold unchanged.
 
 PR327: https://github.com/Hamernick/CoachHouse/pull/327, stacked on PR326.
+
+
+## Production migration and build follow-up
+
+Caleb authorized migration20261015210000. It was applied atomically in production and independently verified: exact ledger/content hash, immutable receipt column/constraint/trigger, service-only v3 claim, unchanged existing function permissions/table RLS, and one original-browser grant repaired. Private before/apply/verified/recovery receipts remain in ~/.local/share/coach-house/fiscal-completion/2026-10-15/receipt-copy-*. No resend or synthetic application. Do not reapply it.
+
+Vercel main db768a1b compiled successfully but failed TypeScript because PublicFunctions omitted claim_fiscal_guest_emails_v3. New fix/fiscal-mail-rpc-type-20261015 reuses the actual fiscal checkout/3127 from that main revision. Add only the zero-argument JSON-returning RPC declaration beside its legacy equivalent; no cast, runtime fallback, migration or UI change. Verify the complete TypeScript program and existing guest-mail tests before PR handoff. The presenter-audio tracing warning is nonfatal and remains separate. Caleb owns hosted review/merge/deployment and actual UI/mail testing.
+
+Validation: exact installed Next.js production type checker passes (3,922 input/10,410 total files, zero warnings), plus14guest-mail cases, focused ESLint and diff hygiene. Raw tsc exposes unrelated test-fixture diagnostics that Next.js excludes; no full tsc success or complete production-build success claimed. Graphify refreshed.

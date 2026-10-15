@@ -1,4 +1,5 @@
 import Image from "next/image"
+import type { ReactNode } from "react"
 import Link from "next/link"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
@@ -147,6 +148,7 @@ function resolveWorkflowItemActionLabel(
 }
 
 type FiscalSponsorshipWorkspaceCardSurfaceProps = {
+  applicationLinks?: ReactNode
   className?: string
   draggable?: boolean
   onOpenFlow?: (phaseId?: string) => void
@@ -160,6 +162,7 @@ type FiscalSponsorshipWorkspaceCardSurfaceProps = {
 }
 
 export function FiscalSponsorshipWorkspaceCardSurface({
+  applicationLinks,
   className,
   draggable = false,
   onOpenFlow,
@@ -380,6 +383,7 @@ export function FiscalSponsorshipWorkspaceCardSurface({
             })}
           </div>
         </div>
+        {applicationLinks}
       </CardContent>
       <CardFooter className="flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-1">
         <Button asChild variant="ghost" size="sm" className="rounded-full">

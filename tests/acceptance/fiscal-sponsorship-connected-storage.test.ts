@@ -2,11 +2,12 @@ import { execFileSync } from "node:child_process"
 import { randomUUID } from "node:crypto"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), send: vi.fn(), user: vi.fn() }))
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), accountRpc: vi.fn(), send: vi.fn(), user: vi.fn() }))
 vi.mock("server-only", () => ({}))
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({ rpc: mocks.rpc }) }))
 vi.mock("@/lib/email/resend", () => ({ canSendResendEmail: () => true, sendResendEmail: mocks.send }))
-vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ auth: { getUser: mocks.user } }) }))
+vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => ({ rpc: mocks.accountRpc, auth: { getUser: mocks.user } }) }))
+import { loadLinkedFiscalApplications } from "@/features/fiscal-sponsorship/server/linked-applications"
 vi.mock("@/lib/organization/active-org-cookie", () => ({ writeActiveOrganizationCookie: vi.fn() }))
 import { handleGuestFiscalProfile } from "@/features/fiscal-sponsorship/server/guest-profile"
 import { handleGuestFiscalRecovery } from "@/features/fiscal-sponsorship/server/guest-recovery"
@@ -43,6 +44,7 @@ function request(body: unknown) {
 describe.skipIf(!enabled)("connected fiscal application storage", () => {
  beforeAll(() => {
   vi.stubEnv("FISCAL_GUEST_INTAKE_ENABLED", "true")
+  vi.stubEnv("FISCAL_GUEST_PROFILE_IMPORT_ENABLED", "true")
   vi.stubEnv("FISCAL_GUEST_EMAILS_ENABLED", "true")
   vi.stubEnv("FISCAL_GUEST_RISK_SECRET", "test-risk-".repeat(4))
   vi.stubEnv("FISCAL_GUEST_LINK_SECRET", "ephemeral-link-secret-at-least-32-characters")
@@ -62,6 +64,14 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
     } catch { return { data: null, error: { message: "fixture_rpc_failed" } } }
   })
   mocks.send.mockImplementation(async () => ({ ok: true, id: randomUUID() }))
+  mocks.accountRpc.mockImplementation(async (name: string, args: Record<string, unknown> = {}) => {
+    if (!["list_linked_fiscal_applications", "read_linked_fiscal_application", "resubmit_linked_fiscal_application"].includes(name)) throw new Error("Unexpected account RPC")
+    const { data: { user } } = await mocks.user()
+    try {
+      const result = sql(`set role authenticated; set request.jwt.claim.sub = ${quote(user?.id ?? "")}; select to_jsonb(public.${name}(${Object.entries(args).map(([key, value]) => `${key} => ${quote(value)}`).join(",")}));`)
+      return { data: result ? JSON.parse(result) : null, error: null }
+    } catch { return { data: null, error: { message: "fixture_account_rpc_failed" } } }
+  })
   mocks.user.mockResolvedValue({ data: { user: null }, error: null })
   sql(`insert into public.platform_staff_members(user_id,access_level) values('10000000-0000-0000-0000-000000000002','coach') on conflict do nothing;
     update public.fiscal_guest_email_outbox set status='failed'; update public.fiscal_staff_email_outbox set status='failed';`)
@@ -134,8 +144,14 @@ describe.skipIf(!enabled)("connected fiscal application storage", () => {
   expect(JSON.parse(sql(`select profile from public.organizations where user_id=${quote(userId)};`))).toEqual({ name: "My garden" })
   expect(sql(`select is_public from public.organizations where user_id=${quote(userId)};`)).toBe("f")
   expect(sql(`select org_id from public.organization_projects where id=${quote(projectId)};`)).toBe("10000000-0000-0000-0000-000000000001")
-  // A new browser recovers through a fresh email, without changing its account claim.
+  // The linked account works after both guest cookie and proof expire.
   cookie = ""
+  sql(`update public.fiscal_guest_verified_sessions set expires_at=now()-interval '1 day' where submission_id=${quote(reference)};`)
+  expect((await handleGuestFiscalFollowup(request({ operation: "read", reference }))).status).toBe(200)
+  expect((await loadLinkedFiscalApplications()).applications).toEqual([expect.objectContaining({ reference, projectName: "Connected garden" })])
+  expect(await (await handleGuestFiscalProfile(request({ operation: "open", reference }))).json()).toEqual({ state: "opened", href: "/workspace?drawer=organization" })
+  // Guests still recover through a fresh email without changing the claim.
+  mocks.user.mockResolvedValue({ data: { user: null }, error: null })
   expect((await handleGuestFiscalFollowup(request({ operation: "read", reference }))).status).toBe(403)
   const recoveredSession = await handleGuestFiscalSession(request({}))
   cookie = recoveredSession.headers.get("set-cookie")!.split(";")[0]

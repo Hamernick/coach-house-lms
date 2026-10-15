@@ -41,6 +41,25 @@ describe("proxy auth route redirects", () => {
     expect(getUserMock).toHaveBeenCalledTimes(2)
   })
 
+  it.each(["workspace-support-presence", "document-presence", "document-collaboration"])("delegates POST %s authentication to its guarded handler", async (route) => {
+    const response = await proxy(new NextRequest(`https://coachhouse.test/api/account/${route}`, {
+      method: "POST", headers: { cookie: "sb-test-auth-token=session" },
+    }))
+    expect(response.headers.get("x-middleware-next")).toBe("1")
+    expect(createServerClientMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["/api/account/document-collaboration", "GET"],
+    ["/api/account/document-presence", "DELETE"],
+    ["/api/account/workspace-support-presence/other", "POST"],
+    ["/api/account/document-presence-extra", "POST"],
+    ["/api/account/org-media", "POST"],
+  ])("retains proxy authentication for %s %s", async (path, method) => {
+    await proxy(new NextRequest(`https://coachhouse.test${path}`, { method }))
+    expect(getUserMock).toHaveBeenCalledOnce()
+  })
+
   it.each([
     ["/api/internal/cron/coaching-calendar", false],
     ["/api/internal/cron/coaching-calendar/", false],

@@ -190,6 +190,7 @@
       "tests/acceptance/workspace-ontology-root-layout.test.ts",
       "tests/acceptance/workspace-people-optimistic-mutations.test.ts",
       "tests/acceptance/workspace-people-table-preferences.test.ts",
+      "tests/acceptance/workspace-presence-budget.test.ts",
       "tests/acceptance/workspace-view-helpers.test.ts",
       "tests/acceptance/workspace-view-seed.test.ts"
     ],
@@ -284,6 +285,7 @@
       "tests/acceptance/assignment-submission-resilience.test.ts",
       "tests/acceptance/auth-confirmation.test.ts",
       "tests/acceptance/auth-recovery.test.ts",
+      "tests/acceptance/background-polling.test.ts",
       "tests/acceptance/billing-portal-card.test.ts",
       "tests/acceptance/billing.test.ts",
       "tests/acceptance/board-notifications.test.ts",
@@ -292,6 +294,7 @@
       "tests/acceptance/coach-dashboard.test.ts",
       "tests/acceptance/coaching-booking.test.ts",
       "tests/acceptance/coaching-calendar-cron.test.ts",
+      "tests/acceptance/collaboration-poll-auth.test.ts",
       "tests/acceptance/community-indexing.test.ts",
       "tests/acceptance/core-document-drive-source.test.ts",
       "tests/acceptance/document-presence-transport.test.ts",

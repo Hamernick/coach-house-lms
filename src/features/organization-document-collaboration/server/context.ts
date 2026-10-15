@@ -14,6 +14,9 @@ export async function documentContext(scope: DocumentScope, write = false, trace
   const client = await createSupabaseServerClient()
   const authenticate = () => client.auth.getUser()
   const { data: { user }, error } = await (trace ? trace.measure("authenticate", authenticate) : authenticate())
+  if (error && (!error.status || error.status === 429 || error.status >= 500)) {
+    throw new DocumentOperationError("unavailable", "Sign-in verification is temporarily unavailable. Your edits are retained; try again shortly.")
+  }
   if (error || !user) throw new DocumentOperationError("unauthenticated", "Sign in again to access this document.")
   const authorize = () => resolveDocumentCapabilities(client, user.id, scope.organizationId)
   const resolved = await (trace ? trace.measure("capabilities", authorize) : authorize())

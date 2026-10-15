@@ -45,3 +45,10 @@ Reproduced the exact reported exception with actual ProseMirror paragraph JSON a
 
 
 Release receipt: PR311 merged externally as1c97b269; intended Vercel deployment dpl_CqSMAv6jyCXZsb3qAKoQwLBKad96 is Ready and assigned coachhouse.app (October15,10:18EDT). Actual authenticated local editor opens, initializes and shows Saved; user production edit/save confirmation requested.44focused cases, lint, structure/features/boundaries/prepush/secret scan and Graphify pass. The external merge occurred before quality/code-owner gates passed. Existing admin bundle budget failure remains; the new codec test required an omitted manifest reclassification, corrected in follow-up fix/tiptap-test-manifest-20261015. No runtime change in that follow-up.
+
+
+### October15 — Paula admin organization asset dialog follow-up
+
+Paula can open but cannot type after PR311. The reported dialog resolves to OrganizationCoreDocumentEditor in member-workspace, composed by MemberWorkspaceProjectDetailPage from organizations/[id]/page.tsx; DialogContent owns the portal/chrome and globals.css owns background/border tokens. No style change. The collaboration panel starts RichTextEditor readOnly until ready. Installed Tiptap preserves the current editable value across useEditor option changes, so the toolbar becomes enabled while the text DOM remains contenteditable=false. Reproduced on actual authenticated localhost3128.
+
+PR312 now synchronizes live editor.setEditable when readOnly changes, suppressing update events. A disposable browser fixture using the actual shared component verifies typing after unlocking, later locking, unlocking without content loss, and no false onChange events. A committed Playwright regression covers that same flow; hosted execution remains pending. Seven serialization regressions and manifest check pass. Actual local connected editor now has contenteditable=true. No production document text or authorization changes. Paula production save, current-revision CI and review remain pending. Slow Connecting has not been diagnosed or claimed fixed.

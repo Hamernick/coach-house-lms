@@ -132,6 +132,13 @@ export function RichTextEditor({
     immediatelyRender: false,
   })
   useEffect(() => {
+    if (!editor || editor.isDestroyed) return
+    // Tiptap preserves editable across option updates; connection and permission
+    // changes must update the live editor without emitting a content change.
+    editor.setEditable(!isReadOnly, false)
+  }, [editor, isReadOnly])
+
+  useEffect(() => {
     if (editor) onReady?.(editor)
   }, [editor, onReady])
   const linkMeta = useLinkPreviews(links)

@@ -35,10 +35,10 @@ export function FiscalSponsorshipPublicIntake({ draftPersistenceEnabled = false,
     <section id="application" aria-labelledby="application-title" className="mx-auto w-full max-w-2xl scroll-mt-6 rounded-3xl border border-border/60 bg-muted/20 p-5">
       <h2 id="application-title" className="text-xl font-normal tracking-tight">Application received</h2>
       <p className="mt-1 text-sm text-muted-foreground">Your application is submitted for review. No account is required.</p>
-      <p className="mt-2 text-sm text-muted-foreground">We’ll email your confirmation and a private verification link. Receiving this confirmation doesn’t mean the project is approved.</p>
+      <p className="mt-2 text-sm text-muted-foreground">We’ll email a copy of your answers. You’re done—no account or email confirmation is needed to submit. The email also includes optional access to application updates. Submission doesn’t mean the project is approved.</p>
       <p className="mt-3 break-all text-xs text-muted-foreground">Reference: {state.reference}</p>
       {state.reference && <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button asChild className="min-h-11 rounded-full shadow-none"><Link href={guestFollowupHref(state.reference)}>View application</Link></Button>
+        <Button asChild variant="outline" className="min-h-11 rounded-full shadow-none"><Link href={guestFollowupHref(state.reference)}>Check status (optional)</Link></Button>
         {profileImportEnabled && <Button asChild variant="outline" className="min-h-11 rounded-full shadow-none"><Link href={guestProfileHref(state.reference)}>Create your organization profile</Link></Button>}
         <Button asChild variant="link" className="min-h-11"><Link href="/documentation">Not now</Link></Button>
       </div>}

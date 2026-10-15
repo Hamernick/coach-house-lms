@@ -165,6 +165,9 @@ try {
     runSql("supabase/migrations/20261015040000_fiscal_linked_applicant_access.sql")
     runSql("supabase/migrations/20261015041000_index_linked_fiscal_applications.sql")
     if (!process.argv.includes("--release-mvp")) runSql("supabase/tests/fiscal-linked-applicant.assertions.sql")
+    runSql("supabase/tests/guest-fiscal-browser-return.bootstrap.sql")
+    runSql("supabase/migrations/20261015210000_fiscal_receipt_copy_and_browser_return.sql")
+    runSql("supabase/tests/guest-fiscal-receipt-copy.assertions.sql")
     if (process.argv.includes("--connected")) {
       const connected = spawnSync("pnpm", ["exec", "vitest", "run", "tests/acceptance/fiscal-sponsorship-connected-storage.test.ts", "--maxWorkers=1", "--config", "vitest.config.ts"], {
         cwd: root, encoding: "utf8", timeout: 90000,

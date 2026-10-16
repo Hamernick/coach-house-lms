@@ -1,6 +1,6 @@
 # Fiscal email diagnosis and reviewer filter
 
-Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
+Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Open [PR331](https://github.com/Hamernick/CoachHouse/pull/331), implementation `c6f68d8a`, pushed. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
 
 ## FS email: confirmed configuration blocker
 
@@ -21,7 +21,7 @@ No host memberships, role grants, writes, duplicate projects, new UI, migration 
 - 68focused cases pass across directory/filter/canonical-project, fiscal workspace-isolation/shared-project and optional-profile suites.
 - Two new regression cases fail against the original loader and pass with the correction; denied authorization performs no reviewer lookup.
 - Changed-file ESLint, feature/import/threshold checks and acceptance-manifest synchronization pass. No full local quality/build or hosted CI claim.
-- Exact installed Next.js production type check passes:3,927input/10,415total files; no warning messages returned. Structure and acceptance-manifest checks pass. Graphify refresh remains in progress for the final checkpoint.
+- Exact installed Next.js production type check passes:3,927input/10,415total files; no warning messages returned. Structure and acceptance-manifest checks pass. Graphify refresh completed:21,387nodes/61,482edges. Outgoing commit secret scan and normal pre-push passed.
 
 ## User acceptance and continuation
 

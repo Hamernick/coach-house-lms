@@ -1,14 +1,14 @@
 # Fiscal email diagnosis and reviewer filter
 
-Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Open [PR331](https://github.com/Hamernick/CoachHouse/pull/331), implementation `c6f68d8a`, pushed. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
+Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Merged [PR331](https://github.com/Hamernick/CoachHouse/pull/331), main `72ed37e3`. PR330 is also merged. Current acceptance follow-up: `fix/fiscal-acceptance-20261016` in the same checkout. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
 
 ## FS email: confirmed configuration blocker
 
 Read-only October16 checks found Production `FISCAL_STAFF_EMAILS_ENABLED=false` in the authenticated Vercel `coachhouse` dashboard (added October12). Vercel logs show scheduled `/api/internal/cron/fiscal-notifications` calls returning503 at18:59:39Z and19:00:39Z on the current production deployment. The handler returns401 for denied cron authorization; these calls reached its dispatch/error path. `CRON_SECRET` exists in Production; no project-level `INTERNAL_CRON_SECRET` appeared in that search. Secret values were not revealed or changed.
 
-The existing application's FS outbox job remains pending with0attempts and no provider ID/sent timestamp. Applicant and Joel jobs are each sent with1attempt. Provider acceptance is not signed delivery or inbox evidence. The false flag prevents claiming FS jobs, consistent with these observations; additional sender/provider issues cannot be excluded until activation.
+The October16read-only trace found the existing application's FS outbox job pending with0attempts and no provider ID/sent timestamp. Applicant and Joel jobs are each sent with1attempt. Provider acceptance is not signed delivery or inbox evidence. The false flag prevents claiming FS jobs, consistent with these observations; additional sender/provider issues cannot be excluded until activation.
 
-**Updated setting:** Caleb reports saving Production `FISCAL_STAFF_EMAILS_ENABLED=true` on October16. The remaining release step is deploying the intended revision after the sender/tracking prerequisites in the [completion checklist](2026-10-15-fiscal-sponsorship-completion.md). Saved configuration is not runtime or delivery verification. Let the normal scheduler process the existing pending job. Do not reset/resend it or manually invoke a cron as a read-only check. Verify the FS inbox and signed delivery events separately. No code change is needed to bypass the flag. Codex changed no settings, jobs, production data, schema or email.
+**Updated setting:** Caleb reports saving Production `FISCAL_STAFF_EMAILS_ENABLED=true` on October16. Caleb reports the new deployment is building. Retain the sender/tracking prerequisites in the [completion checklist](2026-10-15-fiscal-sponsorship-completion.md). Saved configuration is not runtime or delivery verification. Let the normal scheduler process the existing pending job. Do not reset/resend it or manually invoke a cron as a read-only check. Verify the FS inbox and signed delivery events separately. No code change is needed to bypass the flag. Codex changed no settings, jobs, production data, schema or email.
 
 ## Reviewer Members filter
 
@@ -32,3 +32,9 @@ No host memberships, role grants, writes, duplicate projects, new UI, migration 
 5. Preserve491map source-evidence holds and four05Ccoordinate edits; resume their original packets for evidence review, never replay publication or infer data approval.
 
 Port3127 was idle and no server was started. No synthetic application, UI sweep, deployment, hosted polling, cleanup or SHIP state mutation. Shared revision40 ownership hold remains unchanged.
+
+## October16 automated account/corrections verification
+
+Reused the clean fiscal checkout from main `72ed37e3`, preserving both prior branches. The nine focused fiscal suites initially passed106of107tests. The remaining authenticated-route contract expected Playwright `testIgnore` to be a string, but the config now correctly excludes both fiscal and workspace-support privileged specs using an array. The test now imports the config and checks the exclusion value, accepting either representation. Only the platform-specific visual baseline assertion is mocked; no browser, web server or seed is started. Removing the fiscal exclusion still fails the assertion. Production configuration and application code are unchanged. Final rerun passes all107cases across the nine suites; focused ESLint, manifest and diff checks pass.
+
+The ephemeral local fiscal SQL suite passes the final-schema role matrix, guest transaction/denial checks, and connected HTTP-handler test covering account linking, corrections, receipt proof and cross-device access. These local results do not establish real browser, Google signup, FS inbox or signed-delivery success. Caleb owns those remaining outcomes before Calendar, formation verification and recorded map holds. No production submission, mail, cron, migration, account or provider mutation.

@@ -5,14 +5,15 @@ import {
   MemberWorkspaceTasksPage,
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskAction,
-  updateMemberWorkspaceTaskStatusAction,
+  updateDirectoryTaskStatusAction,
 } from "@/features/member-workspace"
+import { hasPlatformCapability } from "@/features/platform-access"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { requireMemberWorkspacePageAccess } from "@/lib/workspace/member-workspace-access"
 
 export default async function TasksPage() {
   await requireMemberWorkspacePageAccess("tasks")
-  const { user } = await resolveAuthenticatedAppContext()
+  const { user, profileAudience } = await resolveAuthenticatedAppContext()
 
   const {
     taskGroups,
@@ -24,7 +25,7 @@ export default async function TasksPage() {
     scope,
     assigneeOptions,
     projectOptions,
-  } = await loadMemberWorkspaceTasksPage()
+  } = await loadMemberWorkspaceTasksPage(hasPlatformCapability(profileAudience.platformAccessLevel, "organizations") ? "platform" : "workspace")
 
   return (
     <MemberWorkspaceTasksPage
@@ -37,7 +38,7 @@ export default async function TasksPage() {
       canManageTasks={canManageTasks}
       clearStarterDataAction={clearMemberWorkspaceStarterDataAction}
       updateTaskStatusAction={
-        canManageTasks ? updateMemberWorkspaceTaskStatusAction : undefined
+        canManageTasks ? updateDirectoryTaskStatusAction : undefined
       }
       createTaskAction={canManageTasks ? createMemberWorkspaceTaskAction : undefined}
       updateTaskAction={canManageTasks ? updateMemberWorkspaceTaskAction : undefined}

@@ -67,3 +67,5 @@ export type {
   MemberWorkspaceHeaderState,
   MemberWorkspaceWorkstreamCategory,
 } from "./types"
+
+export { updateDirectoryTaskStatusAction } from "./task-actions"

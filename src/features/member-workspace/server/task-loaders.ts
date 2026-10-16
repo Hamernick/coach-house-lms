@@ -1,3 +1,4 @@
+import { loadFiscalReviewTasks } from "./fiscal-review-tasks"
 import { readTaskTrackerDetails } from "@/lib/task-tracker"
 import { loadPersonalTaskScope } from "./personal-task-scope"
 import type { Database } from "@/lib/supabase"
@@ -185,8 +186,9 @@ function mapAdminTaskRowsToItems(
     .sort(compareTaskItems)
 }
 
-export async function loadMemberWorkspaceTasksPage() {
-  const actor = await resolveMemberWorkspaceActorContext()
+export async function loadMemberWorkspaceTasksPage(actorScope: "workspace" | "platform" = "workspace") {
+  const actor = await resolveMemberWorkspaceActorContext(actorScope)
+  const fiscalTasks = actorScope === "platform" ? await loadFiscalReviewTasks(actor.currentUser) : []
 
   if (actorCanAccessOrganizations(actor)) {
     const { data: myAssignments, error: myAssignmentsError } = await actor.supabase
@@ -282,15 +284,16 @@ export async function loadMemberWorkspaceTasksPage() {
     ])
 
     return {
-      taskGroups: mapTaskRowsToGroups(
-        mapAdminTaskRowsToItems(rows.filter((task) => personalScope.taskIds.has(task.id)), assigneeByTaskId, true, personalScope.organizationNames)
+      taskGroups: mapTaskRowsToGroups([
+        ...fiscalTasks,
+        ...mapAdminTaskRowsToItems(rows.filter((task) => personalScope.taskIds.has(task.id)), assigneeByTaskId, true, personalScope.organizationNames)
           .map((task) => ({ ...task, canUpdate: accessibleProjectIds.has(task.projectId) }))
-      ),
-      storageMode: resolveMemberWorkspaceStorageMode(rows),
+      ]),
+      storageMode: fiscalTasks.length ? "custom" as const : resolveMemberWorkspaceStorageMode(rows),
       starterTaskCount: rows.filter(
         (task) => task.created_source === "starter_seed"
       ).length,
-      hasAnyOrgTasks: rows.length > 0,
+      hasAnyOrgTasks: rows.length > 0 || fiscalTasks.length > 0,
       canResetStarterData: false,
       canManageTasks: true,
       scope: "platform-admin" as const,

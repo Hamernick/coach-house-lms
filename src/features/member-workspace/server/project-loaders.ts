@@ -30,6 +30,7 @@ import {
   toMemberWorkspaceDataError,
 } from "./table-errors"
 import { loadPlatformAdminWorkstreamConfiguration } from "./admin-workstreams"
+import { attachFiscalProjectReviewerLabels } from "./fiscal-project-reviewer-labels"
 
 async function loadAdminStandardOrganizationProjects({
   orgIds,
@@ -103,7 +104,11 @@ export async function loadMemberWorkspaceProjectsPage({ directory = "organizatio
       ])
 
     if (guestResult.error) throw toMemberWorkspaceDataError(guestResult.error, "Unable to load assigned fiscal projects.")
-    const guestProjects = (guestResult.data ?? []) as unknown as OrganizationProjectRecord[]
+    const guestProjects = await attachFiscalProjectReviewerLabels({
+      projects: (guestResult.data ?? []) as unknown as OrganizationProjectRecord[],
+      people: assigneeOptions,
+      supabase: actor.supabase,
+    })
 
     if (!canonicalProjects || !standardProjects) {
       return {

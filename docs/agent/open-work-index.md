@@ -1,6 +1,6 @@
 # Open Work Index
 
-**Production patch preview — October16:** Compact roadmap editor and private linked Drive reading on `fix/production-patches-20261016`, localhost3130. [Task checkpoint](../plans/2026-10-16-roadmap-editor-compact.md). Focused checks pass; user review and PR handoff remain.
+**Production patch preview — October16:** Compact roadmap editor and private linked Drive reading on `fix/production-patches-20261016`, localhost3130. [Task checkpoint](../plans/2026-10-16-roadmap-editor-compact.md). [PR333](https://github.com/Hamernick/CoachHouse/pull/333) is open;81focused cases, production type check and normal prepush pass. User appearance/real Drive access and hosted release gates remain.
 
 **Immediate follow-up in open332:** Organizations regression reproduced; selected support workspace incorrectly supplied internal projects. Staff directory/detail scope fix and fiscal delivery receipt: [current checkpoint](../plans/2026-10-16-checklist-continuation.md#organizations-regression--october16-follow-up-in-pr332).
 

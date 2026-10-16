@@ -1,5 +1,11 @@
 # Compact roadmap editor and linked Drive content
 
+## Bottom spacing follow-up
+
+Caleb requested less space beneath the RichTextEditor. Live DOM ownership trace showed no bottom padding/margin in the editor’s scroll surface; ShellMainContent owns24px of shell-content-pad beneath the whole roadmap. Added an optional compactEditorBottomPadding prop, enabled only on canonical /workspace/roadmap routes, to reduce that inset to8px. Other pages retain the default; full-bleed and mobile navigation clearance remain unchanged. No document content/state/persistence changes.
+
+Authenticated desktop measurement: editor bottom983/frame bottom991, exactly8px (previous editor bottom967,24px inset). At390px, computed padding is8px and editor bottom748in844px viewport; default viewport restored. Changed-file ESLint/diff and3existing shell-header layout cases pass. Graphify refresh running exec3118; final push/refresh receipt follows. PR333remains draft for the separate unresolved starter-text decision.
+
 ## Current follow-up — direct editor access
 
 Caleb requested removal of Start writing/source selection after deleting text and reloading. Removed the source-choice branch and temporary writingId/write-query bypass from RoadmapEditorShell. Unlinked roadmap documents now enter the existing native or collaborative editor directly, including exact empty strings and cleared <p></p> bodies. Existing Drive selection stays in the toolbar; linked-source display, permissions, save/recovery and existing content remain unchanged. Drive errors still render as accessible alerts. The separate free-tier Documents-library chooser remains available because its Drive link path cannot rely on a writable editor toolbar.

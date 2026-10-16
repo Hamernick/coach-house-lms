@@ -248,6 +248,7 @@ export function AppShellInner({
       useFlushContentBody={useFullBleedContent}
       useFullBleedContent={useFullBleedContent}
       useMobileSingleGutterContent={useMobileSingleGutterContent}
+      compactEditorBottomPadding={pathname === "/workspace/roadmap" || Boolean(pathname?.startsWith("/workspace/roadmap/"))}
     >
       {children}
     </ShellMainContent>

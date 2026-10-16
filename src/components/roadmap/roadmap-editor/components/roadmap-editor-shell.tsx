@@ -4,11 +4,7 @@ import { organizationDocumentCollaborationEnabled } from "@/lib/feature-flags"
 import { OrganizationDocumentCollaborationPanel } from "@/features/organization-document-collaboration/client"
 import { useState, type ComponentType, type RefObject } from "react"
 import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
-import { useSearchParams } from "next/navigation"
 import LoaderCircle from "lucide-react/dist/esm/icons/loader-circle"
-import { hasMeaningfulRoadmapBudgetRows } from "@/lib/roadmap/budget"
-import { stripHtml } from "@/lib/markdown/convert"
-import { CoreDocumentChoices } from "@/components/roadmap/core-document-source/core-document-choices"
 import { GoogleDriveMark } from "@/components/roadmap/core-document-source/google-drive-mark"
 import { LinkedDriveDocumentEditor } from "@/components/roadmap/core-document-source/linked-drive-document-editor"
 import {
@@ -94,9 +90,7 @@ export function RoadmapEditorShell({
   savingId,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
-  const searchParams = useSearchParams()
   const [livePending, setLivePending] = useState(false)
-  const [writingId, setWritingId] = useState<string | null>(null)
   const [sourceOverride, setSourceOverride] = useState<RoadmapSection | null>(
     null
   )
@@ -107,18 +101,6 @@ export function RoadmapEditorShell({
       ? sourceOverride
       : activeSection
   const linked = sourceSection.driveSource
-  const hasContent = Boolean(
-    stripHtml(activeDraft.content).trim() ||
-    /<(img|table|iframe)\b/i.test(activeDraft.content) ||
-    hasMeaningfulRoadmapBudgetRows(activeDraft.budgetRows ?? [])
-  )
-  const showSourceChoice =
-    canEdit &&
-    sourceScope &&
-    !linked &&
-    !hasContent &&
-    writingId !== activeSection.id &&
-    searchParams.get("write") !== "1"
   function chooseDrive() {
     if (
       (isDirty || livePending) &&
@@ -207,7 +189,7 @@ export function RoadmapEditorShell({
       ) : null}
       <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
         <RoadmapEditorBreadcrumb title={headerTitle || activeSection.title} className={contentMaxWidth} />
-        {source.error && !showSourceChoice ? <p role="alert" className="text-destructive text-sm">{source.error}</p> : null}
+        {source.error ? <p role="alert" className="text-destructive text-sm">{source.error}</p> : null}
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}
@@ -241,14 +223,6 @@ export function RoadmapEditorShell({
                 onReplace={canEdit ? chooseDrive : undefined}
                 replacing={source.pending}
               /> : <a href={linked.webViewLink} target="_blank" rel="noopener noreferrer">Open {linked.name} in Google Drive</a>
-            ) : showSourceChoice ? (
-              <CoreDocumentChoices
-                title={activeSection.title}
-                pending={source.pending}
-                error={source.error}
-                onWrite={() => setWritingId(activeSection.id)}
-                onDrive={chooseDrive}
-              />
             ) : organizationDocumentCollaborationEnabled && sourceScope ? (
               !isHydrated ? <p className="text-muted-foreground text-sm">Opening document…</p> : <OrganizationDocumentCollaborationPanel key={`${sourceScope.organizationId}:${activeSection.id}`}
                 organizationId={sourceScope.organizationId} userId={sourceScope.userId} section={sourceSection} canEdit={canEdit} hideTextEditor={isBudgetSection} initialDraft={isDirty ? activeDraft : undefined}

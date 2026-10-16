@@ -1,5 +1,11 @@
 # Compact roadmap editor and linked Drive content
 
+## Current follow-up — direct editor access
+
+Caleb requested removal of Start writing/source selection after deleting text and reloading. Removed the source-choice branch and temporary writingId/write-query bypass from RoadmapEditorShell. Unlinked roadmap documents now enter the existing native or collaborative editor directly, including exact empty strings and cleared <p></p> bodies. Existing Drive selection stays in the toolbar; linked-source display, permissions, save/recovery and existing content remain unchanged. Drive errors still render as accessible alerts. The separate free-tier Documents-library chooser remains available because its Drive link path cannot rely on a writable editor toolbar.
+
+Twenty-one focused rendered/access cases pass, including empty and cleared reload paths, live collaboration routing, no mount-time draft/save calls and free-tier mutation denial. Changed-file ESLint/diff pass. Browser still shows the existing50word/380character document and toolbar; no content was deleted or inserted by Codex. No starter initialization is implemented: the earlier first-use provenance question remains separate and unresolved. Continue PR333draft; final push/graph receipt follows.
+
 ## Current correction — starter text decision pending
 
 Caleb clarified that the question/title/subtitle belong in the actual typing area as first-use starter text, not an always-visible header. Removed the entire text-section header and the unused headerInsideContent option. Existing body values, callbacks, draft loading, autosave, collaboration bootstrap, recovery and Drive reads are unchanged. Actual3130Communications remains50words/380characters. Ten focused rendered preservation cases plus changed-file ESLint/diff pass; prior81case Drive/source evidence remains valid for unchanged paths.

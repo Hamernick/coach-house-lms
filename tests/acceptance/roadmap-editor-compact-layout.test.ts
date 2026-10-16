@@ -7,16 +7,17 @@ const mocks = vi.hoisted(() => ({
     content: string
     onUpdate: (input: { editor: unknown }) => void
   },
+  collaborationEnabled: false,
   source: { pending: false, error: null as string | null, change: vi.fn() },
 }))
 
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }))
-vi.mock("@/lib/feature-flags", () => ({ organizationDocumentCollaborationEnabled: false }))
+vi.mock("@/lib/feature-flags", () => ({ get organizationDocumentCollaborationEnabled() { return mocks.collaborationEnabled } }))
 vi.mock("@/components/roadmap/core-document-source/use-core-document-source", () => ({
   useCoreDocumentSource: () => mocks.source,
 }))
 vi.mock("@/features/organization-document-collaboration/client", () => ({
-  OrganizationDocumentCollaborationPanel: () => null,
+  OrganizationDocumentCollaborationPanel: ({ section }: { section: { content: string } }) => createElement("article", { "data-live-editor": true }, section.content),
 }))
 vi.mock("@/components/roadmap/core-document-source/linked-drive-document-editor", () => ({
   LinkedDriveDocumentEditor: () => null,
@@ -73,6 +74,7 @@ function shellProps(overrides: Partial<ComponentProps<typeof RoadmapEditorShell>
 describe("compact roadmap editor layout", () => {
   beforeEach(() => {
     mocks.editorOptions = null
+    mocks.collaborationEnabled = false
     mocks.source.pending = false
     mocks.source.error = null
   })
@@ -138,19 +140,37 @@ describe("compact roadmap editor layout", () => {
     expect(markup.slice(markup.indexOf("<section"))).toContain('id="training-toolbar"')
   })
 
-  it("retains empty-document source choices and an accessible connection error", () => {
+  it.each(["", "<p></p>"])("opens cleared content %s directly in the editor after reload and retains connection errors", content => {
     mocks.source.error = "Connect Google Drive in Tools, then return to choose a document."
     const props = shellProps()
     const markup = renderToStaticMarkup(createElement(RoadmapEditorShell, {
       ...props, sourceScope: { userId: "user-a", organizationId: "org-a" },
-      activeDraft: { ...props.activeDraft, content: "" },
+      activeSection: { ...props.activeSection, content, lastUpdated: "2026-10-16T20:50:00.000Z" },
+      activeDraft: { ...props.activeDraft, content },
     }))
-    expect(markup).toContain("Start writing")
-    expect(markup).toContain("Choose from Google Drive")
+    expect(markup).not.toContain("Start writing")
+    expect(markup).not.toContain("Write a draft here, or link a document")
     expect(markup).toContain('role="alert"')
     expect(markup).toContain(mocks.source.error)
-    expect(markup).not.toContain("data-editor-content")
+    expect(markup).toContain("data-editor-content")
+    expect(mocks.editorOptions?.content).toBe(content)
+    expect(props.onDraftChange).not.toHaveBeenCalled()
+    expect(props.onSave).not.toHaveBeenCalled()
+  })
+
+  it("opens a cleared live document directly without a source choice or native draft write", () => {
+    mocks.collaborationEnabled = true
+    const props = shellProps()
+    const markup = renderToStaticMarkup(createElement(RoadmapEditorShell, {
+      ...props, sourceScope: { userId: "user-a", organizationId: "org-a" },
+      activeSection: { ...props.activeSection, content: "<p></p>" },
+      activeDraft: { ...props.activeDraft, content: "<p></p>" },
+    }))
+    expect(markup).toContain('data-live-editor="true"')
+    expect(markup).not.toContain("Start writing")
     expect(mocks.editorOptions).toBeNull()
+    expect(props.onDraftChange).not.toHaveBeenCalled()
+    expect(props.onSave).not.toHaveBeenCalled()
   })
 
   it.each(["calendar", "budget"] as const)("preserves the %s shell body and outer section heading", kind => {

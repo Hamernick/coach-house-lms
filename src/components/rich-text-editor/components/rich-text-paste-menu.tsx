@@ -41,6 +41,7 @@ export function RichTextPasteMenu({ editor }: { editor: Editor }) {
           type="button"
           variant="ghost"
           size="sm"
+          data-toolbar-menu-trigger=""
           className="text-muted-foreground hover:text-foreground h-7 gap-1 px-1 sm:h-8 sm:px-1.5"
           aria-label="Paste options"
           title="Paste options"

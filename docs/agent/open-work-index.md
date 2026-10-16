@@ -1,5 +1,7 @@
 # Open Work Index
 
+**Production patch preview — October16:** Compact roadmap editor, private linked Drive reading and full-inbox notification counts on `fix/production-patches-20261016`, localhost3130. [Task checkpoint](../plans/2026-10-16-roadmap-editor-compact.md). [PR333](https://github.com/Hamernick/CoachHouse/pull/333) remains draft for the separate starter-text decision. Notification follow-up:38focused cases pass; authenticated preview shows86total/6unread without changing read state. Final handoff receipts are in the checkpoint. Password reset routing repaired with 120 focused cases; production needs application deployment followed by the recovery-only email template update and a fresh real reset test. Existing documents remain unchanged; user appearance/real Drive access and hosted release gates remain.
+
 **Immediate follow-up in open332:** Organizations regression reproduced; selected support workspace incorrectly supplied internal projects. Staff directory/detail scope fix and fiscal delivery receipt: [current checkpoint](../plans/2026-10-16-checklist-continuation.md#organizations-regression--october16-follow-up-in-pr332).
 
 Updated October 16, 2026. Read after `AGENTS.md` and the current monthly log linked from `docs/RUNLOG.md`. Read the original Desktop workstream packet before resuming its scope. [Checklist evidence](../plans/2026-10-16-checklist-continuation.md) records the closeout; this index gives each lane's current disposition and next action.

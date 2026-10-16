@@ -93,6 +93,7 @@ function ToolbarMenuTrigger({
   return (
     <DropdownMenuTrigger
       type="button"
+      data-toolbar-menu-trigger=""
       aria-label={valueLabel ? `${label} (${valueLabel})` : label}
       className={cn(
         buttonVariants({ variant: "ghost", size: "sm" }),

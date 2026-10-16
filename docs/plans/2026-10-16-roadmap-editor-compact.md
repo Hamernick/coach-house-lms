@@ -4,7 +4,7 @@
 
 Caleb requested less space beneath the RichTextEditor. Live DOM ownership trace showed no bottom padding/margin in the editor’s scroll surface; ShellMainContent owns24px of shell-content-pad beneath the whole roadmap. Added an optional compactEditorBottomPadding prop, enabled only on canonical /workspace/roadmap routes, to reduce that inset to8px. Other pages retain the default; full-bleed and mobile navigation clearance remain unchanged. No document content/state/persistence changes.
 
-Authenticated desktop measurement: editor bottom983/frame bottom991, exactly8px (previous editor bottom967,24px inset). At390px, computed padding is8px and editor bottom748in844px viewport; default viewport restored. Changed-file ESLint/diff and3existing shell-header layout cases pass. Graphify refresh running exec3118; final push/refresh receipt follows. PR333remains draft for the separate unresolved starter-text decision.
+Authenticated desktop measurement: editor bottom983/frame bottom991, exactly8px (previous editor bottom967,24px inset). At390px, computed padding is8px and editor bottom748in844px viewport; default viewport restored. Changed-file ESLint/diff and3existing shell-header layout cases pass. Implementationb2cbedc3is pushed/remote-verified; staged secret scan and normal prepush pass. Graphify exec3118completed21,403nodes/61,565edges; local artifacts ignored. PR333remains draft for the separate unresolved starter-text decision.
 
 ## Current follow-up — direct editor access
 

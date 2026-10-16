@@ -38,7 +38,6 @@ export type RichTextEditorProps = {
   toolbarClassName?: string
   editorClassName?: string
   header?: ReactNode
-  headerInsideContent?: boolean
   headerClassName?: string
   countClassName?: string
   contentClassName?: string

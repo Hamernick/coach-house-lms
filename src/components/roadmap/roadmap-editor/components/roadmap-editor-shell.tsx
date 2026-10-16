@@ -25,7 +25,7 @@ import { RoadmapSectionPanel } from "@/components/roadmap/roadmap-section-panel"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 import { PUBLIC_ORGANIZATION_PROFILE_SECTION_IDS } from "@/lib/roadmap/public-organization-profile-sections"
 
-import { DEFAULT_PLACEHOLDER, ROADMAP_TOOLBAR_ID } from "../constants"
+import { ROADMAP_TOOLBAR_ID } from "../constants"
 import type { RoadmapDraft } from "../types"
 import { RoadmapEditorBreadcrumb } from "./roadmap-editor-breadcrumb"
 
@@ -158,18 +158,6 @@ export function RoadmapEditorShell({
                   onChange: (value) => onDraftChange({ content: value }),
                   readOnly: !canEdit,
                   placeholder: editorPlaceholder,
-                  header: (
-                    <div className="flex flex-col gap-1">
-                      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                        {headerTitle || activeSection.title}
-                      </h1>
-                      {headerSubtitle ? <p>{headerSubtitle}</p> : null}
-                      <p className="text-xs">{activeDraft.placeholder ?? DEFAULT_PLACEHOLDER}</p>
-                    </div>
-                  ),
-                  headerInsideContent: true,
-                  headerClassName:
-                    "bg-[#f4f4f5] px-4 pt-4 pb-3 text-sm text-muted-foreground dark:bg-[#1f1f1f]",
                   countClassName:
                     "bg-[#e6e6e6] px-4 py-2 text-xs text-muted-foreground dark:bg-[#1c1c1c]",
                   contentClassName:

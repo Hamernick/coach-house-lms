@@ -42,7 +42,6 @@ export function RichTextEditor({
   toolbarClassName,
   editorClassName,
   header,
-  headerInsideContent = false,
   headerClassName,
   countClassName,
   contentClassName,
@@ -272,7 +271,7 @@ export function RichTextEditor({
           className="flex min-h-0 flex-1 flex-col"
           onMouseDown={handleWrapperMouseDown}
         >
-          {headerInsideContent ? null : editorHeader}
+          {editorHeader}
           <div
             className={cn(
               "bg-muted/30 text-muted-foreground flex items-center justify-end gap-2 px-3 py-2 text-xs",
@@ -285,7 +284,6 @@ export function RichTextEditor({
             </span>
           </div>
           <div className={cn("flex min-h-0 flex-1 flex-col", contentClassName)}>
-            {headerInsideContent ? editorHeader : null}
             <EditorContent editor={editor} />
           </div>
           {linkPreviews && links.length > 0 ? (

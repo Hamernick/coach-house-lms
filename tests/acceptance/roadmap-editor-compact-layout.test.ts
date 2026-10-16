@@ -77,15 +77,14 @@ describe("compact roadmap editor layout", () => {
     mocks.source.error = null
   })
 
-  it("places title and subtitle inside the editor content surface, outside saved HTML", () => {
+  it("preserves saved HTML without adding an instruction header", () => {
     const onChange = vi.fn()
     const markup = renderToStaticMarkup(createElement(RichTextEditor, {
       value: body, onChange, readOnly: true,
-      header: createElement("header", null,
-        createElement("h1", null, "Document title"), createElement("p", null, "Document subtitle")),
-      headerInsideContent: true, contentClassName: "editor-scroll-surface",
+      contentClassName: "editor-scroll-surface",
     }))
-    expect(markup).toMatch(/editor-scroll-surface[^>]*><div[^>]*><header><h1>Document title<\/h1><p>Document subtitle<\/p><\/header><\/div><article data-editor-content="true"><p>Saved body only<\/p><\/article>/)
+    expect(markup).toContain('<article data-editor-content="true"><p>Saved body only</p></article>')
+    expect(markup).not.toContain("Document title")
     expect(mocks.editorOptions?.content).toBe(body)
 
     // The editor serialization callback must emit body HTML, not the surrounding heading.
@@ -97,20 +96,29 @@ describe("compact roadmap editor layout", () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith("<p>Edited body only</p>")
   })
 
-  it("renders the native shell heading only in the editor and keeps one accessible status and toolbar slot", () => {
+  it("removes the separate instruction header and keeps one accessible status and toolbar slot", () => {
     const markup = renderToStaticMarkup(createElement(RoadmapEditorShell, shellProps()))
     const beforeEditor = markup.slice(0, markup.indexOf("<section"))
     const editor = markup.slice(markup.indexOf("<section"))
     expect(beforeEditor).not.toContain("<h1")
     expect(markup).not.toContain("data-section-icon")
-    expect(editor).toContain(">Canonical document title</h1>")
-    expect(editor).toContain("<p>Canonical document subtitle</p>")
-    expect(editor.indexOf("0 words")).toBeLessThan(editor.indexOf("<h1"))
-    expect(editor.indexOf("<h1")).toBeLessThan(editor.indexOf("data-editor-content"))
+    expect(editor).not.toContain("Canonical document title")
+    expect(editor).not.toContain("Canonical document subtitle")
+    expect(editor).not.toContain("bg-[#f4f4f5]")
     expect(markup.match(new RegExp(`id="${ROADMAP_TOOLBAR_ID}"`, "g"))).toHaveLength(1)
     expect(beforeEditor).toContain('role="combobox"')
     expect(beforeEditor).toContain('aria-label="Core document publication status"')
     expect(mocks.editorOptions?.content).toBe(body)
+  })
+
+  it.each(["", "<p></p>", "<h1>My own heading</h1><p>My own answer</p>"])("never inserts template text into existing content %s", content => {
+    const props = shellProps()
+    props.activeSection = { ...props.activeSection, content, lastUpdated: "2026-10-15T12:00:00.000Z" }
+    props.activeDraft = { ...props.activeDraft, content }
+    renderToStaticMarkup(createElement(RoadmapEditorShell, props))
+    expect(mocks.editorOptions?.content).toBe(content)
+    expect(props.onDraftChange).not.toHaveBeenCalled()
+    expect(props.onSave).not.toHaveBeenCalled()
   })
 
   it("preserves the default training panel heading, icon, controls, and toolbar location", () => {

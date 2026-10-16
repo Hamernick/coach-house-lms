@@ -1,5 +1,11 @@
 # Compact roadmap editor and linked Drive content
 
+## Current correction — starter text decision pending
+
+Caleb clarified that the question/title/subtitle belong in the actual typing area as first-use starter text, not an always-visible header. Removed the entire text-section header and the unused headerInsideContent option. Existing body values, callbacks, draft loading, autosave, collaboration bootstrap, recovery and Drive reads are unchanged. Actual3130Communications remains50words/380characters. Ten focused rendered preservation cases plus changed-file ESLint/diff pass; prior81case Drive/source evidence remains valid for unchanged paths.
+
+Do not infer never-opened from empty HTML, null lastUpdated, stored-section presence or collaboration version0. No reliable first-open provenance exists: legacy autosave would persist an inserted value, and live bootstrap would store initialDocument. No starter content has been inserted or written. A required clarification is pending: editable starter content only for future-created documents (requires explicit new-document provenance), versus purely visual placeholders that never enter saved HTML. Existing content, intentionally cleared documents and recovery drafts must remain untouched. The implementation below records the earlier slice and is superseded where it describes the removed header. Do not describe starter insertion as complete or release it by guessing empty means new.
+
 ## Scope and source
 
 Caleb supplied React Grab controls from the new production-patch preview and requested: icon-only Google Drive selection with a matching spinner; tighter toolbar/status/paste spacing; remove the oversized section icon; move title/subtitle into the editor; show linked Drive text there. This is a bounded follow-up to workstream04 B066/stages3 and5, not a new document-storage or Drive-writeback system. Original packet read in full. Existing shared SHIP revision40 and its recorded owner-host hold remain unchanged; this task ends at an open PR.

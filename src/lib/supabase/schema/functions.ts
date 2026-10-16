@@ -2,6 +2,11 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  fiscal_guest_email_send_allowed: { Args: { p_id: string; p_lease_token: string }; Returns: boolean }
+  fiscal_staff_email_send_allowed: { Args: { p_event_id: string; p_lease_token: string }; Returns: boolean }
+  list_fiscal_review_tasks: { Args: { p_user_id: string }; Returns: Json }
+  update_fiscal_review_task_status: { Args: { p_task_id: string; p_user_id: string; p_status: string }; Returns: Json }
+  claim_fiscal_guest_emails_v4: { Args: Record<string, never>; Returns: Json }
   list_linked_fiscal_applications: { Args: Record<string, never>; Returns: Json }
   read_linked_fiscal_application: { Args: { p_reference: string }; Returns: Json }
   resubmit_linked_fiscal_application: { Args: { p_reference: string; p_request_id: string; p_version: string; p_application: Json }; Returns: Json }
@@ -36,6 +41,7 @@ export type PublicFunctions = {
     Args: { p_project_id: string; p_user_id: string }
     Returns: boolean | null
   }
+  claim_fiscal_staff_emails_v2: { Args: Record<string, never>; Returns: Json }
   claim_fiscal_staff_emails: { Args: Record<string, never>; Returns: Json }
   finish_fiscal_staff_email: {
     Args: { p_event_id: string; p_lease_token: string; p_message_id: string | null; p_success: boolean }

@@ -752,6 +752,7 @@ describe("coaching booking feature", () => {
       "src/features/coaching-booking/server/booking-finalizer.ts"
     )
     const email = readSource("src/features/coaching-booking/server/email.ts")
+    const emailTemplate = readSource("src/features/coaching-booking/lib/email-templates.ts")
     const actions = readSource(
       "src/features/coaching-booking/server/actions.ts"
     )
@@ -843,12 +844,12 @@ describe("coaching booking feature", () => {
     expect(finalizer).toContain("attendeeNotes: booking.attendee_notes")
     expect(finalizer).toContain('"confirm_coaching_credit_booking"')
     expect(email).toContain("sendResendEmail")
-    expect(email).toContain("Your Coach House coaching meeting is confirmed")
-    expect(email).toContain("New Coach House coaching meeting booked")
-    expect(email).toContain("attendeeNotes?: string | null")
-    expect(email).toContain("Notes: ${normalizedAttendeeNotes}")
-    expect(email).toContain(
-      "getValidGoogleCalendarEventUrl(googleEventHtmlLink)"
+    expect(emailTemplate).toContain("Your Coach House coaching meeting is confirmed")
+    expect(emailTemplate).toContain("New Coach House coaching meeting booked")
+    expect(emailTemplate).toContain("attendeeNotes?: string | null")
+    expect(emailTemplate).toContain('sections: notes ? [{ title: "Notes", body: [notes] }]')
+    expect(emailTemplate).toContain(
+      "getValidGoogleCalendarEventUrl(input.googleEventHtmlLink)"
     )
     expect(icsRoute).toContain("COACHING_JOINT_COACH_LABEL")
     expect(icsRoute).toContain(

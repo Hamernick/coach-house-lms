@@ -168,6 +168,9 @@ try {
     runSql("supabase/tests/guest-fiscal-browser-return.bootstrap.sql")
     runSql("supabase/migrations/20261015210000_fiscal_receipt_copy_and_browser_return.sql")
     runSql("supabase/tests/guest-fiscal-receipt-copy.assertions.sql")
+    runSql("supabase/tests/fiscal-review-task.bootstrap.sql")
+    runSql("supabase/migrations/20261016200000_fiscal_review_tasks_and_cc.sql")
+    runSql("supabase/tests/fiscal-review-task.assertions.sql")
     if (process.argv.includes("--connected")) {
       const connected = spawnSync("pnpm", ["exec", "vitest", "run", "tests/acceptance/fiscal-sponsorship-connected-storage.test.ts", "--maxWorkers=1", "--config", "vitest.config.ts"], {
         cwd: root, encoding: "utf8", timeout: 90000,

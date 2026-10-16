@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+const { loadFiscalReviewTasksMock } = vi.hoisted(() => ({ loadFiscalReviewTasksMock: vi.fn() }))
+vi.mock("@/features/member-workspace/server/fiscal-review-tasks", () => ({ loadFiscalReviewTasks: loadFiscalReviewTasksMock }))
+
 const { resolveMemberWorkspaceActorContextMock } = vi.hoisted(() => ({
   resolveMemberWorkspaceActorContextMock: vi.fn(),
 }))
@@ -258,6 +261,7 @@ function createTasksMissingTableSupabase() {
 
 describe("member workspace loaders", () => {
   beforeEach(() => {
+    loadFiscalReviewTasksMock.mockReset().mockResolvedValue([])
     resolveMemberWorkspaceActorContextMock.mockReset()
     loadAdminOrganizationSummariesMock.mockReset()
     ensureCanonicalAdminProjectsMock.mockReset()
@@ -581,6 +585,22 @@ describe("member workspace loaders", () => {
     expect(result.taskGroups.flatMap((group) => group.tasks).map((item) => item.id)).toEqual(["assigned-task"])
     expect(result.taskGroups[0].tasks[0]).toMatchObject({ canUpdate: false, assignee: { id: "coach-1" } })
     expect(result.projectOptions).toEqual([])
+  })
+
+  it("includes assigned fiscal tasks in the platform task page without loading host profiles", async () => {
+    const user = { id: "coach-1", name: "Karissa" }
+    const task = { id: "fiscal-task", projectId: "fiscal-project", projectName: "Garden", projectStatus: "active", projectPriority: "medium", projectTags: [], projectMembers: ["Joel", "Caleb", "Karissa"], projectStartDate: "", projectEndDate: "", title: "Review fiscal sponsorship application", taskType: "task", status: "todo", startDate: "", endDate: "", assignee: user, canUpdate: false }
+    const query = () => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), in: vi.fn().mockReturnThis(), neq: vi.fn().mockReturnThis(), or: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), returns: vi.fn().mockResolvedValue({ data: [], error: null }) })
+    const supabase = { from: vi.fn(() => query()) }
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({ supabase, userId: user.id, currentUser: user, isAdmin: false, canAccessOrganizations: true, canEdit: false, organizationCoachScope: { mode: "assigned", organizationIds: new Set() } })
+    loadFiscalReviewTasksMock.mockResolvedValue([task])
+    const result = await loadMemberWorkspaceTasksPage("platform")
+    expect(resolveMemberWorkspaceActorContextMock).toHaveBeenCalledWith("platform")
+    expect(loadFiscalReviewTasksMock).toHaveBeenCalledWith(user)
+    expect(result.taskGroups.flatMap((group) => group.tasks)).toMatchObject([task])
+    expect(result).toMatchObject({ canManageTasks: true, hasAnyOrgTasks: true, storageMode: "custom", projectOptions: [] })
+    expect(supabase.from).not.toHaveBeenCalledWith("organizations")
+    expect(supabase.from).not.toHaveBeenCalledWith("profiles")
   })
 
   it("returns an empty tasks state when member workspace task tables are missing", async () => {

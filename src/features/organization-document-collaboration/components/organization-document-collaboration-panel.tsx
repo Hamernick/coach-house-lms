@@ -23,13 +23,17 @@ function DocumentPanel({ section, organizationId, userId, onPendingChange, onSav
   const editable = canEdit && !controller.accessDenied && !controller.blocked
   const discardDraft = () => { setLegacyDraft(null); controller.discardRecovery() }
   const { loaded, ready, error, status, onReady, sync, editorRef } = controller
+  const statusInToolbar = Boolean(editorProps?.toolbarPortalId) && !hideTextEditor && ready && editable && !recoveredDraft
+  const statusContent = <>
+    <span>{ready && !editable && !error ? "View only" : status}</span>
+    {controller.presenceUnavailable ? <span className="text-xs text-muted-foreground">Live cursors unavailable</span> : null}
+  </>
   useEffect(() => { onPendingChange?.(controller.dirty.current) }, [status, onPendingChange, controller.dirty])
   useEffect(() => { if (controller.savedSection && !recoveredDraft) onSavedSection?.(controller.savedSection) }, [controller.savedSection, onSavedSection, recoveredDraft])
   return <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-    <div className="flex min-h-8 flex-wrap items-center justify-between gap-2 text-sm" role="status" aria-live="polite">
-      <span>{ready && !editable && !error ? "View only" : status}</span>
-      {controller.presenceUnavailable ? <span className="text-xs text-muted-foreground">Live cursors unavailable</span> : null}
-    </div>
+    {!statusInToolbar ? <div className="flex min-h-8 flex-wrap items-center justify-between gap-2 text-sm" role="status" aria-live="polite">
+      {statusContent}
+    </div> : null}
     {recoveredDraft ? <DocumentDraftRecovery draft={recoveredDraft} disabled={!ready || !editable}
       discard={discardDraft} restore={() => {
         editorRef.current?.commands.setContent(recoveredDraft.content)
@@ -39,6 +43,7 @@ function DocumentPanel({ section, organizationId, userId, onPendingChange, onSav
         void sync()
       }} /> : null}
     {loaded ? <RichTextEditor {...editorProps} className={hideTextEditor ? "hidden" : editorProps?.className} value={loaded.section.content} onChange={() => {}} onReady={onReady}
+      toolbarTrailingActions={statusInToolbar ? <div className="flex shrink-0 items-center gap-2 px-2 text-sm text-muted-foreground" role="status" aria-live="polite">{statusContent}</div> : editorProps?.toolbarTrailingActions}
       onImageUpload={editorProps?.onImageUpload ?? (file => uploadOrgMedia({ file, kind: "roadmap-inline", organizationId }))}
       applyExternalValue={false} readOnly={!ready || !editable || Boolean(recoveredDraft)} preserveImages minHeight={300} ariaLabel={section.title} /> : !error ? <p className="text-sm">Opening document…</p> : null}
     {loaded && section.id === "budget" ? <RoadmapBudgetTableEditor rows={controller.budgetRows}

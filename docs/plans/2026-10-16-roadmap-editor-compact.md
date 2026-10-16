@@ -1,5 +1,15 @@
 # Compact roadmap editor and linked Drive content
 
+## Duplicate Saved row follow-up
+
+Caleb's production Mission screenshot shows a Saved label inside the toolbar plus a second standalone collaboration status row, pushing the editor down. Source ownership: OrganizationDocumentCollaborationPanel assembles the standalone row; RoadmapEditorShell supplies the legacy toolbar Save/Saved action. On collaborative text editors that legacy action does not represent the controller's live save state.
+
+New branch `fix/roadmap-save-status-20261016` starts from current main `122a386b` (merged333/334). Editable collaborative editors with an existing toolbar portal now render the authoritative controller status once in that toolbar, replacing the legacy action and removing the standalone row. View-only, connecting, recovery, budget and non-portal editors retain their standalone status. Live-cursor notices and actionable errors remain visible; content, transport, permissions, recovery and persistence logic are unchanged.
+
+Validation: 22 focused cases across the new panel rendering suite and existing compact-roadmap suite pass. Coverage includes Saved/Saving/unsaved/offline/image-upload states, one status without an extra row, preserved answer HTML, cursor notices, read-only/budget/default layout and connection errors. Changed-file ESLint, acceptance manifest (532 files), structure, thresholds, React Grab and diff hygiene pass. Graphify AST refresh completed:21,539nodes/61,909edges; outputs remain ignored. The existing lifecycle/authenticated editor browser suites have functional assertions, with no affected screenshot baseline. No production data or configuration changes.
+
+Local preview3130 had stopped; restarted only this worktree's server under Node22 with webpack. Native mode loaded Communications with its unchanged50word/380character body and one toolbar status. Restarted the same owned process with NEXT_PUBLIC_CORE_DOCUMENT_COLLABORATION_ENABLED=true to check the reported live path; compilation/CDP timeouts prevent confirming the collaborative browser layout. Do not present the native preview as proof of the live correction. Tests cover the actual panel with a controlled collaboration state; browser appearance remains user-owned. Current server session18032/PID26573, local URL /workspace/roadmap/mission-vision-values?returnTo=%2Fworkspace%3Fdrawer%3Ddocuments. Normal push/open-PR handoff follows; no hosted polling or release.
+
 ## Password recovery routing follow-up
 
 Caleb reports reset emails returning to workspace without the password form. Read-only provider configuration confirms the recovery template uses `{{ .ConfirmationURL }}`, Site URL `https://coachhouse.app`, and an exact production callback allowlist entry. A provider Site URL fallback removes the reset destination; the homepage forwards its code to the callback, which previously discarded the SDK's recovery redirect type and defaulted to workspace. Explicit recovery callbacks also incorrectly honored `/workspace` as their immediate destination.

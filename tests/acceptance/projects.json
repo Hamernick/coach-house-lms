@@ -400,6 +400,7 @@
       "tests/acceptance/organization-coach-assignments.test.ts",
       "tests/acceptance/organization-document-access.test.ts",
       "tests/acceptance/organization-document-collaboration-access.test.ts",
+      "tests/acceptance/organization-document-collaboration-panel.test.ts",
       "tests/acceptance/organization-document-collaboration-server.test.ts",
       "tests/acceptance/organization-document-files-route.test.ts",
       "tests/acceptance/organization-document-transport.test.ts",

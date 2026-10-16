@@ -577,7 +577,7 @@ export async function loadPlatformAdminOrganizationProjectDetailPage({
   projectId: string
   userId: string
 }): Promise<MemberWorkspaceProjectDetailLoadResult> {
-  const actor = await resolveMemberWorkspaceActorContext()
+  const actor = await resolveMemberWorkspaceActorContext("platform")
   if (actor.userId !== userId || !actorCanAccessOrganizations(actor)) {
     return { state: "not-found" }
   }

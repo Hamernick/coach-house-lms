@@ -342,6 +342,7 @@
       "tests/acceptance/member-workspace-admin-operations.test.ts",
       "tests/acceptance/member-workspace-admin-projects.test.ts",
       "tests/acceptance/member-workspace-admin-workstreams.test.ts",
+      "tests/acceptance/member-workspace-directory-scope.test.ts",
       "tests/acceptance/member-workspace-fiscal-sponsorship-status.test.ts",
       "tests/acceptance/member-workspace-guided-project.test.ts",
       "tests/acceptance/member-workspace-loaders.test.ts",

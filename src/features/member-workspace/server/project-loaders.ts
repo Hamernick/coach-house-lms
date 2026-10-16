@@ -68,8 +68,10 @@ async function loadAdminStandardOrganizationProjects({
   return data ?? []
 }
 
-export async function loadMemberWorkspaceProjectsPage({ directory = "organizations" }: { directory?: "organizations" | "projects" } = {}) {
-  const actor = await resolveMemberWorkspaceActorContext()
+export async function loadMemberWorkspaceProjectsPage({
+  directory = "organizations", actorScope = "workspace",
+}: { directory?: "organizations" | "projects"; actorScope?: "workspace" | "platform" } = {}) {
+  const actor = await resolveMemberWorkspaceActorContext(actorScope)
 
   if (actorCanAccessOrganizations(actor)) {
     const organizations = filterOrganizationsForActor(

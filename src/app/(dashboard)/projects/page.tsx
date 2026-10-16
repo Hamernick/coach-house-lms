@@ -12,7 +12,7 @@ import { requirePlatformCapability } from "@/lib/admin/auth"
 
 export default async function ProjectsPage() {
   await requirePlatformCapability("organizations", { loginRedirect: "/projects" })
-  const data = await loadMemberWorkspaceProjectsPage({ directory: "projects" })
+  const data = await loadMemberWorkspaceProjectsPage({ directory: "projects", actorScope: "platform" })
   return <MemberWorkspaceProjectsPage
     {...data}
     directory="projects"

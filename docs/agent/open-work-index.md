@@ -1,5 +1,7 @@
 # Open Work Index
 
+**Immediate follow-up in open332:** Organizations regression reproduced; selected support workspace incorrectly supplied internal projects. Staff directory/detail scope fix and fiscal delivery receipt: [current checkpoint](../plans/2026-10-16-checklist-continuation.md#organizations-regression--october16-follow-up-in-pr332).
+
 Updated October 16, 2026. Read after `AGENTS.md` and the current monthly log linked from `docs/RUNLOG.md`. Read the original Desktop workstream packet before resuming its scope. [Checklist evidence](../plans/2026-10-16-checklist-continuation.md) records the closeout; this index gives each lane's current disposition and next action.
 
 Caleb requested batching remaining scoped changes into open [PR332](https://github.com/Hamernick/CoachHouse/pull/332) to reduce production deployments; its [batch checkpoint](../plans/2026-10-16-checklist-continuation.md#current-continuation--pr332-consolidated-batch) records code and acceptance separately.

@@ -8,7 +8,7 @@ Read-only October16 checks found Production `FISCAL_STAFF_EMAILS_ENABLED=false` 
 
 The existing application's FS outbox job remains pending with0attempts and no provider ID/sent timestamp. Applicant and Joel jobs are each sent with1attempt. Provider acceptance is not signed delivery or inbox evidence. The false flag prevents claiming FS jobs, consistent with these observations; additional sender/provider issues cannot be excluded until activation.
 
-**Caleb's release step:** in the existing `coachhouse` project, set Production `FISCAL_STAFF_EMAILS_ENABLED=true` after the sender/tracking prerequisites in the [completion checklist](2026-10-15-fiscal-sponsorship-completion.md), then deploy the intended revision. Let the normal scheduler process the existing pending job. Do not reset/resend it or manually invoke a cron as a read-only check. Verify the FS inbox and signed delivery events separately. No code change is needed to bypass the flag. No settings, jobs, production data, schema or email were changed here.
+**Updated setting:** Caleb reports saving Production `FISCAL_STAFF_EMAILS_ENABLED=true` on October16. The remaining release step is deploying the intended revision after the sender/tracking prerequisites in the [completion checklist](2026-10-15-fiscal-sponsorship-completion.md). Saved configuration is not runtime or delivery verification. Let the normal scheduler process the existing pending job. Do not reset/resend it or manually invoke a cron as a read-only check. Verify the FS inbox and signed delivery events separately. No code change is needed to bypass the flag. Codex changed no settings, jobs, production data, schema or email.
 
 ## Reviewer Members filter
 

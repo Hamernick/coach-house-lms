@@ -1,5 +1,8 @@
 # Fiscal sponsorship completion and release handoff
 
+**Current continuation:** [October16 checklist closeout](2026-10-16-checklist-continuation.md) supersedes older current-status paragraphs below. Runtime PRs291–329 are merged; coachhouse deployment reports success for82a88202. Fiscal staff email, reviewer filtering and remaining user acceptance stay open; then Calendar and formation verification. See the handoff for preserved branches, data holds and testing gaps.
+
+
 Current lane: original Desktop workstream03, stages3–6 / LIVE-07. Fiscal stays ahead of Calendar and formation verification. Preserve completed credit corrections, public-map work and other lanes.
 
 ## Current boundary — October 15

@@ -1,5 +1,8 @@
 # Open Work Index
 
+**Current continuation:** [October16 checklist closeout](../plans/2026-10-16-checklist-continuation.md) supersedes older current-status paragraphs below. Runtime PRs291–329 are merged; coachhouse deployment reports success for82a88202. Fiscal staff email, reviewer filtering and remaining user acceptance stay open; then Calendar and formation verification. See the handoff for preserved branches, data holds and testing gaps.
+
+
 Internal rapid-UI closure updated 2026-10-12; other entries retain their recorded reconciliation dates. Read after `AGENTS.md`, `docs/RUNLOG.md`, and its latest monthly entries. Previously recorded release base (October 5): `origin/main` `c8b411df`; refresh before starting release work.
 
 Maintain one active entry per lane or preservation hold. Update entries in place:

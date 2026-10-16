@@ -1,5 +1,11 @@
 # Compact roadmap editor and linked Drive content
 
+## Version history toolbar follow-up
+
+Caleb requested moving Version history into the tools row as an icon matching neighboring buttons. On editable portal editors, DocumentVersionHistory now portals its existing trigger into a callback-ref slot immediately before the live save status. It uses the same ghost Button treatment as Bold/Undo/Redo, a History icon, accessible name/title/expanded/loading state and matching responsive sizes. The closed history component leaves no empty footer wrapper. The existing inline history list, version previews, restore confirmation and restore permissions remain unchanged; standalone/read-only/budget views retain the text trigger and its natural width.
+
+Authenticated localhost3130 Mission confirms exactly one history trigger inside #roadmap-editor-toolbar, with32x32px dimensions matching Bold and no footer button. Open/close through the actual toolbar trigger loads the existing history view and closes it again. No version was restored and no text was edited; Mission remains51words/388characters and Communications50words/380characters. Screenshot: /tmp/coach-house-toolbar-version-history.jpg.26focused cases across three suites pass, plus the final four-case trigger rerun, scoped lint, manifest(533files), structure/threshold and diff checks. Manifest classification corrected to behavior after its guard rejected integration. Graphify AST refresh completed21,542nodes/61,916edges; final wrapper-preservation refresh completed with no topology changes. Same open PR335/branch; normal push and final PR receipt follow. No production/provider/data change, hosted polling or deployment.
+
 ## Duplicate Saved row follow-up
 
 Caleb's production Mission screenshot shows a Saved label inside the toolbar plus a second standalone collaboration status row, pushing the editor down. Source ownership: OrganizationDocumentCollaborationPanel assembles the standalone row; RoadmapEditorShell supplies the legacy toolbar Save/Saved action. On collaborative text editors that legacy action does not represent the controller's live save state.

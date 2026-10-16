@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   presenceUnavailable: false,
   error: null as string | null,
   sync: vi.fn(),
+  historyToolbar: false,
 }))
 
 vi.mock("@/features/organization-document-collaboration/hooks/use-organization-document-collaboration-controller", () => ({
@@ -30,7 +31,7 @@ vi.mock("@/components/roadmap/roadmap-budget-table-editor", () => ({
   RoadmapBudgetTableEditor: () => createElement("div", { "data-budget": true }),
 }))
 vi.mock("@/features/organization-document-collaboration/components/document-version-history", () => ({
-  DocumentVersionHistory: () => null,
+  DocumentVersionHistory: ({ toolbar }: { toolbar?: boolean }) => { mocks.historyToolbar = Boolean(toolbar); return null },
 }))
 vi.mock("@/lib/organization/org-media", () => ({ uploadOrgMedia: vi.fn() }))
 
@@ -67,6 +68,7 @@ describe("collaborative document save status placement", () => {
     expect(markup).not.toContain("Legacy saved indicator")
     expect(markup).toContain('<article><p>Existing user answer</p></article>')
     expect(mocks.sync).not.toHaveBeenCalled()
+    expect(mocks.historyToolbar).toBe(true)
   })
 
   it("keeps the live-cursor availability notice with the toolbar status", () => {
@@ -86,6 +88,7 @@ describe("collaborative document save status placement", () => {
     expect(markup.slice(0, markup.indexOf("<section"))).toContain('role="status"')
     if (overrides.canEdit === false) expect(markup).toContain("View only")
     if (overrides.hideTextEditor) expect(markup).toContain('data-budget="true"')
+    expect(mocks.historyToolbar).toBe(false)
   })
 
   it("keeps connection status and actionable failures visible before the toolbar is available", () => {

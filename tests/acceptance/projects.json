@@ -25,6 +25,7 @@
       "tests/acceptance/devtools-audience.test.ts",
       "tests/acceptance/document-draft-storage.test.ts",
       "tests/acceptance/document-image-support-access.test.ts",
+      "tests/acceptance/document-version-history.test.ts",
       "tests/acceptance/documentation-decision-canvas.test.ts",
       "tests/acceptance/documents-banner.test.ts",
       "tests/acceptance/documents-index-sort-state.test.ts",

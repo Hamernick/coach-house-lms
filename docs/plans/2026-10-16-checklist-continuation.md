@@ -4,7 +4,7 @@ This is the current handoff for the long live-site/fiscal checklist chat. The op
 
 ## Current continuation — October16
 
-PR330 and PR331 are merged; current main is `72ed37e3`. Caleb reports the new deployment is building and the Production staff-mail flag is saved true. Delivery and user acceptance remain unverified. Current checkout branch is `fix/fiscal-acceptance-20261016` for the automated account/corrections follow-up; see the [fiscal evidence](2026-10-16-fiscal-reviewer-filter.md#october16-automated-accountcorrections-verification). Preserve earlier branches as historical sources.
+PR330 and PR331 are merged; current main is `72ed37e3`. Caleb reports the new deployment is building and the Production staff-mail flag is saved true. Delivery and user acceptance remain unverified. Open [PR332](https://github.com/Hamernick/CoachHouse/pull/332) uses checkout branch `fix/fiscal-acceptance-20261016` for the automated account/corrections follow-up; see the [fiscal evidence](2026-10-16-fiscal-reviewer-filter.md#october16-automated-accountcorrections-verification). Preserve earlier branches as historical sources.
 
 ## Release state at original closeout
 

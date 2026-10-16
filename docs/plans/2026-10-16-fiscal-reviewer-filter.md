@@ -1,6 +1,6 @@
 # Fiscal email diagnosis and reviewer filter
 
-Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Merged [PR331](https://github.com/Hamernick/CoachHouse/pull/331), main `72ed37e3`. PR330 is also merged. Current acceptance follow-up: `fix/fiscal-acceptance-20261016` in the same checkout. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
+Original workstream03 stages5–6 / LIVE-07. Branch `fix/fiscal-reviewer-filter-20261016` reuses `coach-house-platform-fiscal-completion-20261015`, based on main `82a88202`. Merged [PR331](https://github.com/Hamernick/CoachHouse/pull/331), main `72ed37e3`. PR330 is also merged. Current acceptance follow-up: open [PR332](https://github.com/Hamernick/CoachHouse/pull/332), `fix/fiscal-acceptance-20261016` in the same checkout. Historical handoff PR330 and other worktrees remain preserved. Caleb owns UI testing and release; delivery ends at an open PR.
 
 ## FS email: confirmed configuration blocker
 

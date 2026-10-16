@@ -50,3 +50,7 @@ Last verified publication receipt:4573eligible listings,4448marker locations,111
 - Seven historical draft PRs remain open:229,231,235,237,238,239,240. Their supersession/relevance is unverified. Do not merge them wholesale; reconcile against current main when their workstream resumes.
 - Shared SHIP revision40 owner/host blocker remains unresolved. Do not fabricate a new shared authority, clear it, or infer a fresh release claim from this handoff.
 - Default delivery ends at a scoped open PR with focused tests and normal prepush. Caleb owns CI/review/merge/deployment and product testing. Read-only release inspection here was explicitly requested for closeout; it does not authorize future polling/deployments.
+
+## Cleanup follow-up
+
+[Per-item cleanup assessment](2026-10-16-worktree-cleanup-assessment.md) explains all seven drafts, ten dirty worktrees and two stashes. Seven dirty trees have all changed paths in main or matching recovery snapshots; this does not cover ignored/private data. Current Particle work, root instruction delta and Tiptap migration receipt need preservation. No cleanup was executed.

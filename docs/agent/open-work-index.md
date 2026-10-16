@@ -1,6 +1,6 @@
 # Open Work Index
 
-**Current continuation:** Minimal platform-email implementation on `fix/fiscal-team-digest-20261016`;35variants prepared in one preview gallery; Caleb questioned the email batch, so keep it unsent. PR332 merged (`5f886915`); [PR334](https://github.com/Hamernick/CoachHouse/pull/334) is open. [Authoritative plan](../plans/2026-10-16-checklist-continuation.md#full-implementation-plan--minimal-platform-emails).
+**Current continuation:** Minimal platform-email implementation on `fix/fiscal-team-digest-20261016`; 35 variants refreshed with compact type/spacing, 36px logo and pill actions in one preview gallery; Caleb questioned the email batch, so keep it unsent. PR332 merged (`5f886915`); [PR334](https://github.com/Hamernick/CoachHouse/pull/334) is open. [Authoritative plan](../plans/2026-10-16-checklist-continuation.md#full-implementation-plan--minimal-platform-emails).
 
 Updated October 16, 2026. Read after `AGENTS.md` and the current monthly log linked from `docs/RUNLOG.md`. Read the original Desktop workstream packet before resuming its scope. [Checklist evidence](../plans/2026-10-16-checklist-continuation.md) records the closeout; this index gives each lane's current disposition and next action.
 

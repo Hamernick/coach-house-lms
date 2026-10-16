@@ -1,5 +1,5 @@
 import { renderMinimalEmail } from "@/lib/email/minimal-template"
-import { guestReceiptCopy } from "./guest-receipt-copy"
+import { guestReceiptDetails } from "./guest-receipt-copy"
 
 type ApplicantEmailInput = {
   kind: "applicant_receipt" | "applicant_update" | "applicant_recovery"
@@ -26,7 +26,7 @@ export function fiscalApplicantEmail(input: ApplicantEmailInput) {
   const intro = receipt
     ? "Your fiscal sponsorship application is submitted. No account or email confirmation is needed to submit. Coach House will review it and contact you. This receipt does not mean your project has been approved."
     : recovery ? "You requested access to your fiscal sponsorship application. Your application has not changed." : update.intro
-  const answers = receipt && input.receiptSnapshot ? guestReceiptCopy(input.receiptSnapshot) : null
+  const answers = receipt && input.receiptSnapshot ? guestReceiptDetails(input.receiptSnapshot) : null
   const subject = `${title}: ${project.replace(/[\r\n]+/g, " ").slice(0, 150)}`
   return { subject, ...renderMinimalEmail({
     siteUrl: new URL(input.verificationUrl).origin,
@@ -34,7 +34,7 @@ export function fiscalApplicantEmail(input: ApplicantEmailInput) {
     title,
     intro,
     details: [{ label: "Project", value: project }],
-    sections: answers ? [{ title: "COPY OF YOUR SUBMITTED ANSWERS", body: [answers] }] : [],
+    sections: answers ? [{ title: "COPY OF YOUR SUBMITTED ANSWERS", details: answers }] : [],
     action: { label: "Verify email", href: input.verificationUrl },
     body: receipt ? ["Optional: use your private link to check status, respond to requested corrections or save selected details to a profile. You can read and keep this receipt without opening the link."] : [],
     helpText: "No account is required. This private link expires in seven days. Opening it does not verify your email; choose Verify email on the page. You can verify on your phone and return to the original browser where you applied.",

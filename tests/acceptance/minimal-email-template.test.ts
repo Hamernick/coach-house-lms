@@ -37,9 +37,9 @@ describe("minimal platform email", () => {
   it("uses the existing dark logo, responsive rows, and one uncluttered action", () => {
     const { html } = renderMinimalEmail({ title: "Application ready", action: { label: "Review application", href: "https://coachhouse.app/projects/sample" } })
     expect(html).toContain('src="https://coachhouse.app/coach-house-logo-dark.png"')
-    expect(html).toContain('alt="Coach House" width="120" height="120"')
+    expect(html).toContain('alt="Coach House" width="36" height="36"')
     expect(html).toContain("max-width:600px")
-    expect(html).toContain(".email-label,.email-value{display:block!important")
+    expect(html).toContain(".email-label{width:38%!important")
     expect(html).toContain("background:#ffffff")
     expect(html).not.toContain("background:#f4f4f1")
     expect(html).not.toContain("border-radius:22px")

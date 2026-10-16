@@ -14,7 +14,7 @@ const fields: [keyof GuestApplicationAnswers, string][] = [
   ["hasLegalComplianceFinancialConcerns", "Legal, compliance or financial concerns"], ["concernsExplanation", "Explanation"],
 ]
 
-export function guestReceiptCopy(snapshot: Record<string, unknown>) {
+export function guestReceiptDetails(snapshot: Record<string, unknown>) {
   const answers = parseGuestApplicationAnswers(snapshot)
   const format = (key: keyof GuestApplicationAnswers) => {
     const value = answers[key]
@@ -23,5 +23,9 @@ export function guestReceiptCopy(snapshot: Record<string, unknown>) {
     if (typeof value === "object") return `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value.amountCents / 100)} (${value.period})`
     return key === "legalEntityType" || key === "projectDurationType" ? String(value).replaceAll("_", " ") : String(value)
   }
-  return fields.map(([key, label]) => `${label}:\n${format(key)}`).join("\n\n")
+  return fields.map(([key, label]) => ({ label, value: format(key) }))
+}
+
+export function guestReceiptCopy(snapshot: Record<string, unknown>) {
+  return guestReceiptDetails(snapshot).map(({ label, value }) => `${label}:\n${value}`).join("\n\n")
 }

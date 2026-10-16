@@ -380,6 +380,7 @@
       "tests/acceptance/nonprofit-documentation.test.ts",
       "tests/acceptance/notification-item-mapper.test.ts",
       "tests/acceptance/notifications-menu-state-helpers.test.ts",
+      "tests/acceptance/notifications-menu-state.test.ts",
       "tests/acceptance/onboarding-defaults.test.ts",
       "tests/acceptance/onboarding-organization-step.test.ts",
       "tests/acceptance/onboarding-pricing-return.test.ts",

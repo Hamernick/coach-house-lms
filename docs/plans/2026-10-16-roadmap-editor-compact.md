@@ -1,5 +1,13 @@
 # Compact roadmap editor and linked Drive content
 
+## Notification count follow-up
+
+Caleb clarified that the Notifications badge was stuck at50. Its concrete owner is NotificationsMenu, not shared Badge/Popover primitives: both badges counted the newest50 fetched rows. listNotificationsAction now returns exact total and unread counts for the authenticated user's nonarchived inbox. The list remains bounded to50 per tab; Unread queries unread rows on the server so older unread items are reachable. Two scoped queries fetch the page/count and complementary head-only count. Errors preserve the prior snapshot and show the existing load error; no guessed zero/page totals appear before successful loading.
+
+Client inbox rows and aggregates update together. Request sequencing discards older responses and requests started before writes; refresh pauses during writes and reconciles after success/failure. Existing open/focus/visible30second/workspace-save refresh remains. Mark all read now covers the full authenticated, nonarchived unread inbox; explicit ID selections retain their prior max50/empty-selection semantics. Bulk and preview controls prevent overlapping user writes. Shared UI primitives are unchanged.
+
+Thirty-eight focused cases pass across five suites: counts above50, older unread retrieval, user/archive isolation, count failure, whole-inbox/selected mark-read, optimistic aggregate preservation, stale responses, tab switches during writes, failed/thrown write reconciliation, and visible refresh. Changed-file ESLint, structure, thresholds, React Grab, acceptance manifest and staged secret/diff checks pass. Installed Next.js production type checker passes (3,934 input / 10,422 total files; returned warnings empty). Graphify AST refresh completed:21,416 nodes/61,585 edges; local artifacts ignored. Normal push/draft PR handoff is the next delivery step. Authenticated localhost3130shows86total/6unread and six Unread results; no notification was created, read, archived or deleted during browser verification. Screenshot: /tmp/coach-house-notifications-counts.jpg. Same branch/draftPR333; starter-text provenance remains blocked separately. No deployment or production data mutation.
+
 ## Bottom spacing follow-up
 
 Caleb requested less space beneath the RichTextEditor. Live DOM ownership trace showed no bottom padding/margin in the editor’s scroll surface; ShellMainContent owns24px of shell-content-pad beneath the whole roadmap. Added an optional compactEditorBottomPadding prop, enabled only on canonical /workspace/roadmap routes, to reduce that inset to8px. Other pages retain the default; full-bleed and mobile navigation clearance remain unchanged. No document content/state/persistence changes.

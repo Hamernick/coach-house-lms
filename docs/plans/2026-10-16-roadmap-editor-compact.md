@@ -1,5 +1,9 @@
 # Compact roadmap editor and linked Drive content
 
+## Rounded document image previews
+
+Caleb requested rounded image previews inside Documents cards. Actual owner: DocumentThumbnail; the pasted DocumentsBanner button is the card overlay. Changed preview images from a full-size object-contain box to intrinsic auto dimensions bounded by the thumbnail area, with rounded-lg. Rounding now follows the visible image edges instead of the letterbox box; entire images remain visible. Authenticated3130confirms eight loaded thumbnails with10px computed corner radii. Screenshot: /tmp/coach-house-rounded-previews.jpg. Changed-file ESLint/diff pass; no data or interaction changes. Existing Documents visual fixture contains no image previews, so its baselines are unaffected; local macOS capture is review-only under the Ubuntu baseline contract. Graphify AST refresh completed with no topology changes. Normal push/draft PR handoff follows.
+
 ## Notification count follow-up
 
 Caleb clarified that the Notifications badge was stuck at50. Its concrete owner is NotificationsMenu, not shared Badge/Popover primitives: both badges counted the newest50 fetched rows. listNotificationsAction now returns exact total and unread counts for the authenticated user's nonarchived inbox. The list remains bounded to50 per tab; Unread queries unread rows on the server so older unread items are reachable. Two scoped queries fetch the page/count and complementary head-only count. Errors preserve the prior snapshot and show the existing load error; no guessed zero/page totals appear before successful loading.

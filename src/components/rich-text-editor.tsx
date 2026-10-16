@@ -36,11 +36,13 @@ export function RichTextEditor({
   onImageUploaded,
   insertUploadedImage = true,
   preserveImages = false,
+  linkPreviews = true,
   onImagePickerReady,
   toolbarPortalId,
   toolbarClassName,
   editorClassName,
   header,
+  headerInsideContent = false,
   headerClassName,
   countClassName,
   contentClassName,
@@ -141,7 +143,7 @@ export function RichTextEditor({
   useEffect(() => {
     if (editor) onReady?.(editor)
   }, [editor, onReady])
-  const linkMeta = useLinkPreviews(links)
+  const linkMeta = useLinkPreviews(linkPreviews ? links : [])
 
   useEffect(() => {
     if (!editor) return
@@ -242,6 +244,12 @@ export function RichTextEditor({
     editor.chain().focus().run()
   }
 
+  const editorHeader = header ? (
+    <div className={cn("text-muted-foreground px-3 pt-3 text-sm", headerClassName)}>
+      {header}
+    </div>
+  ) : null
+
   return (
     <>
       <div
@@ -264,16 +272,7 @@ export function RichTextEditor({
           className="flex min-h-0 flex-1 flex-col"
           onMouseDown={handleWrapperMouseDown}
         >
-          {header ? (
-            <div
-              className={cn(
-                "text-muted-foreground px-3 pt-3 text-sm",
-                headerClassName
-              )}
-            >
-              {header}
-            </div>
-          ) : null}
+          {headerInsideContent ? null : editorHeader}
           <div
             className={cn(
               "bg-muted/30 text-muted-foreground flex items-center justify-end gap-2 px-3 py-2 text-xs",
@@ -286,9 +285,10 @@ export function RichTextEditor({
             </span>
           </div>
           <div className={cn("flex min-h-0 flex-1 flex-col", contentClassName)}>
+            {headerInsideContent ? editorHeader : null}
             <EditorContent editor={editor} />
           </div>
-          {links.length > 0 ? (
+          {linkPreviews && links.length > 0 ? (
             <div className="bg-muted/20 flex flex-wrap items-center gap-2 rounded-b-md border-t px-3 py-2">
               {links.map((href) => (
                 <LinkPreviewCard key={href} href={href} meta={linkMeta[href]} />

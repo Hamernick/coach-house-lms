@@ -1,0 +1,24 @@
+# Compact roadmap editor and linked Drive content
+
+## Scope and source
+
+Caleb supplied React Grab controls from the new production-patch preview and requested: icon-only Google Drive selection with a matching spinner; tighter toolbar/status/paste spacing; remove the oversized section icon; move title/subtitle into the editor; show linked Drive text there. This is a bounded follow-up to workstream04 B066/stages3 and5, not a new document-storage or Drive-writeback system. Original packet read in full. Existing shared SHIP revision40 and its recorded owner-host hold remain unchanged; this task ends at an open PR.
+
+Expert framing: inspect raw live DOM, source ownership, saved section HTML and Drive authorization/export responses. Use Graphify, React Grab owner tracing, existing shadcn primitives, official Google export formats, rendered tests and authenticated local review. Independent acceptance is preserved stored content, denied wrong-user/organization/file reads, sanitized provider content, and usable editor space/controls in the actual browser.
+
+Rewritten task: Compact the existing roadmap editor: use an accessible icon-only Drive button with a same-size loading spinner, tighten toolbar spacing, remove the large section icon, and place the section title/subtitle inside the editor. Display supported Drive content there while preserving saved answers and making its save destination clear.
+
+## Implementation
+
+- Actual owners: roadmap-editor-shell.tsx assembles Drive and editor props; roadmap-section-panel.tsx owns header/status/toolbar layout; RichTextEditor owns header/content scrolling; toolbar/paste files own triggers. Shared Button/Select/global tokens remain intact. Existing semantic focus/color tokens and docs/design.md Geist typography/compact control guidance are retained.
+- Text sections use one compact toolbar/status row; on small screens controls scroll horizontally with44px targets. The title/subtitle/prompt live inside the scrolling editor chrome, outside ProseMirror and persisted body HTML. Default RichTextEditor, training, Calendar and Budget rendering retain their header mode.
+- Drive content GET checks signed-in actor, current organization and exact saved section/file before using that actor’s existing Drive connection. Response is private/no-store. Native Google Docs exports sanitized HTML; text and Markdown use bounded reads. Existing15MB application bound applies; provider export limits may be lower. Original source link and replacement remain available. Unsupported files retain original access and show guidance.
+- Linked content is view-only and does not overwrite native drafts or sync edits to Drive. Automatic image rendering and link previews are disabled for private imported content. Revoked access/provider failure is recoverable. Requests abort on unmount and stale source responses are ignored.
+- Three agents worked independently on toolbar UI, Drive reader and owner/contract review, each with a dedicated goal; root integrated header/layout and validation.
+
+## Validation and handoff
+
+- Node22.13, five focused suites:81cases pass (Google Drive, source action/model, free-document access, compact editor). Seven rendered cases verify heading/body separation and preserved special panels. Drive cases cover scope mismatch, arbitrary/stale file denial, provider failures, unsupported/oversized data and sanitization.
+- Authenticated localhost3130 Communications route reviewed at normal desktop and390px. Existing body remains50words/380characters. Desktop shows the compact row/title in editor; mobile check found wrapping and final implementation uses one horizontally scrolling row. Default viewport restored. No content entered, saved or linked by the browser check.
+- User appearance review and actual connected Drive-file check remain separate. No visual baseline replacement before user review; no roadmap-specific screenshot baseline was found. No full production build, hosted CI/review, merge, deployment, provider configuration or production data mutation claimed.
+- Exact installed Next.js production type checker passes:3,933input/10,421total files; zero warning messages returned. Standalone full tsc/full build not run. Changed-file ESLint, structure, features, import boundaries, thresholds, React Grab ownership, manifest/diff and staged gitleaks pass. The feature guard caught a direct server re-export; routed it through the existing actions entrypoint, then the guard and final type checker pass. Graphify and final PR receipts follow here.

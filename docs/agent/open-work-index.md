@@ -1,5 +1,7 @@
 # Open Work Index
 
+**Production patch preview — October16:** Compact roadmap editor and private linked Drive reading on `fix/production-patches-20261016`, localhost3130. [Task checkpoint](../plans/2026-10-16-roadmap-editor-compact.md). Focused checks pass; user review and PR handoff remain.
+
 **Immediate follow-up in open332:** Organizations regression reproduced; selected support workspace incorrectly supplied internal projects. Staff directory/detail scope fix and fiscal delivery receipt: [current checkpoint](../plans/2026-10-16-checklist-continuation.md#organizations-regression--october16-follow-up-in-pr332).
 
 Updated October 16, 2026. Read after `AGENTS.md` and the current monthly log linked from `docs/RUNLOG.md`. Read the original Desktop workstream packet before resuming its scope. [Checklist evidence](../plans/2026-10-16-checklist-continuation.md) records the closeout; this index gives each lane's current disposition and next action.

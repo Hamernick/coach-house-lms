@@ -5,10 +5,12 @@ import { OrganizationDocumentCollaborationPanel } from "@/features/organization-
 import { useState, type ComponentType, type RefObject } from "react"
 import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
 import { useSearchParams } from "next/navigation"
+import LoaderCircle from "lucide-react/dist/esm/icons/loader-circle"
 import { hasMeaningfulRoadmapBudgetRows } from "@/lib/roadmap/budget"
 import { stripHtml } from "@/lib/markdown/convert"
 import { CoreDocumentChoices } from "@/components/roadmap/core-document-source/core-document-choices"
 import { GoogleDriveMark } from "@/components/roadmap/core-document-source/google-drive-mark"
+import { LinkedDriveDocumentEditor } from "@/components/roadmap/core-document-source/linked-drive-document-editor"
 import {
   useCoreDocumentSource,
   type CoreDocumentScope,
@@ -139,22 +141,33 @@ export function RoadmapEditorShell({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="min-h-11 sm:min-h-8"
+                        size="icon"
+                        className="size-11 sm:size-8"
                         onClick={chooseDrive}
                         disabled={source.pending}
+                        aria-label="Choose from Google Drive"
+                        aria-busy={source.pending}
+                        title="Choose from Google Drive"
                       >
-                        <GoogleDriveMark />
                         {source.pending
-                          ? "Connecting…"
-                          : "Choose from Google Drive"}
+                          ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                          : <GoogleDriveMark />}
                       </Button>
                     ) : undefined,
                   value: activeDraft.content,
                   onChange: (value) => onDraftChange({ content: value }),
                   readOnly: !canEdit,
                   placeholder: editorPlaceholder,
-                  header: activeDraft.placeholder ?? DEFAULT_PLACEHOLDER,
+                  header: (
+                    <div className="flex flex-col gap-1">
+                      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                        {headerTitle || activeSection.title}
+                      </h1>
+                      {headerSubtitle ? <p>{headerSubtitle}</p> : null}
+                      <p className="text-xs">{activeDraft.placeholder ?? DEFAULT_PLACEHOLDER}</p>
+                    </div>
+                  ),
+                  headerInsideContent: true,
                   headerClassName:
                     "bg-[#f4f4f5] px-4 pt-4 pb-3 text-sm text-muted-foreground dark:bg-[#1f1f1f]",
                   countClassName:
@@ -182,7 +195,7 @@ export function RoadmapEditorShell({
                   ) : null,
                   toolbarPortalId: ROADMAP_TOOLBAR_ID,
                   toolbarClassName:
-                    "rounded-xl border border-border/60 bg-background/80 shadow-[0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_1px_rgba(0,0,0,0.24)]",
+                    "flex-nowrap gap-0.5 overflow-x-auto overscroll-x-contain rounded-xl border border-border/60 bg-background/80 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.06)] sm:gap-0.5 dark:shadow-[0_1px_1px_rgba(0,0,0,0.24)] [&>div]:shrink-0 [&_button]:min-h-11 [&_button]:min-w-11 sm:[&_button]:min-h-8 sm:[&_button]:min-w-8 [&_[data-toolbar-menu-trigger]]:gap-0.5 [&_[data-toolbar-menu-trigger]]:has-[>svg]:px-1 sm:[&_[data-toolbar-menu-trigger]]:has-[>svg]:px-1.5",
                   className:
                     "flex h-full min-h-0 flex-1 flex-col bg-card dark:bg-[#1f1f1f]",
                   editorClassName:
@@ -206,6 +219,7 @@ export function RoadmapEditorShell({
       ) : null}
       <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-2 overflow-hidden">
         <RoadmapEditorBreadcrumb title={headerTitle || activeSection.title} className={contentMaxWidth} />
+        {source.error && !showSourceChoice ? <p role="alert" className="text-destructive text-sm">{source.error}</p> : null}
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}
@@ -217,6 +231,7 @@ export function RoadmapEditorShell({
           statusSelectDisabled={statusSelectDisabled || livePending || (organizationDocumentCollaborationEnabled && isDirty)}
           isHydrated={isHydrated}
           showHeader={showSectionHeader}
+          compactHeader={!isCalendarSection && !isBudgetSection}
           headerVariant={isCalendarSection ? "calendar" : "default"}
           headerIconSize={headerIconSize}
           headerTextRef={headerTextRef}
@@ -230,39 +245,14 @@ export function RoadmapEditorShell({
             isCalendarSection ? (
               <RoadmapCalendar />
             ) : linked ? (
-              <div className="bg-card mx-auto w-full max-w-lg space-y-4 rounded-xl border p-6">
-                <h2 className="text-lg font-semibold">{activeSection.title}</h2>
-                <p className="text-muted-foreground text-sm">
-                  Linked to {linked.name}. Edit this document in Google Drive.
-                </p>
-                <Button asChild variant="outline" className="min-h-11">
-                  <a
-                    href={linked.webViewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <GoogleDriveMark />
-                    Open in Google Drive
-                  </a>
-                </Button>
-                {canEdit && sourceScope ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="min-h-11"
-                    onClick={chooseDrive}
-                    disabled={source.pending}
-                  >
-                    <GoogleDriveMark />
-                    Replace with Google Drive
-                  </Button>
-                ) : null}
-                {source.error ? (
-                  <p role="alert" className="text-destructive text-sm">
-                    {source.error}
-                  </p>
-                ) : null}
-              </div>
+              sourceScope ? <LinkedDriveDocumentEditor
+                key={`${sourceScope.userId}:${sourceScope.organizationId}:${sourceSection.id}:${linked.fileId}`}
+                scope={sourceScope}
+                section={sourceSection}
+                editorProps={editorProps}
+                onReplace={canEdit ? chooseDrive : undefined}
+                replacing={source.pending}
+              /> : <a href={linked.webViewLink} target="_blank" rel="noopener noreferrer">Open {linked.name} in Google Drive</a>
             ) : showSourceChoice ? (
               <CoreDocumentChoices
                 title={activeSection.title}

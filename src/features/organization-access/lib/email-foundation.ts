@@ -383,7 +383,8 @@ export function buildSupabaseAuthEmailPreviews(
       description: "Supabase recovery email template.",
       eyebrow: "Reset password",
       ctaLabel: "Reset password",
-      ctaHref: "{{ .ConfirmationURL }}",
+      ctaHref:
+        `${normalizedSiteUrl}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}`,
       intro:
         "Use the secure link below to choose a new password for your Coach House account.",
       body: [

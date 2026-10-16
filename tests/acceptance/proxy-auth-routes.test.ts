@@ -101,6 +101,16 @@ describe("proxy auth route redirects", () => {
     expect(response.cookies.get("sb-test-auth-token")?.value).toBe("refreshed")
   })
 
+  it.each(["/forgot-password", "/update-password", "/update-password?recovery_error=invalid_or_expired"])("keeps password recovery accessible with an existing session at %s", async (path) => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "member" } } })
+    const response = await proxy(new NextRequest(`https://coachhouse.test${path}`, {
+      headers: { cookie: "sb-test-auth-token=session" },
+    }))
+    expect(response.headers.get("location")).toBeNull()
+    expect(response.cookies.get("sb-test-auth-token")?.value).toBe("refreshed")
+    expect(getUserMock).toHaveBeenCalledOnce()
+  })
+
   it("still refreshes browser sessions on public pages", async () => {
     const response = await proxy(new NextRequest("https://coachhouse.test/", {
       headers: { cookie: "sb-test-auth-token=session" },

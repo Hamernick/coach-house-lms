@@ -24,7 +24,8 @@ const PROTECTED_PREFIXES = [
   "/internal",
   "/onboarding",
 ]
-const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
+// Password recovery and retry must remain accessible with an existing session.
+const AUTH_ROUTES = new Set(["/login", "/sign-up"])
 
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)

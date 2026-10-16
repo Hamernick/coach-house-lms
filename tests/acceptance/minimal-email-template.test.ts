@@ -70,8 +70,8 @@ describe("minimal platform email", () => {
     expect(confirmation.html).toContain("token_hash={{ .TokenHash }}&amp;type=email&amp;next={{ .RedirectTo }}")
     expect(confirmation.text).toContain("token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}")
     const recovery = previews.find((preview) => preview.id === "supabase-reset-password")!
-    expect(recovery.html).toContain('href="{{ .ConfirmationURL }}"')
-    expect(recovery.text).toContain("Reset password: {{ .ConfirmationURL }}")
+    expect(recovery.html).toContain("token_hash={{ .TokenHash }}&amp;type=recovery&amp;next={{ .RedirectTo }}")
+    expect(recovery.text).toContain("Reset password: https://coachhouse.app/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}")
     expect(recovery.text).toContain("If you didn’t request a password reset")
   })
 

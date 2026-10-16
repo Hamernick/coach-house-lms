@@ -1,5 +1,5 @@
 import "./test-utils"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { captureRedirect, createSupabaseServerClientServerMock, headersMock } from "./test-utils"
 
@@ -202,5 +202,116 @@ describe("auth confirmation", () => {
     expect(resolvePostAuthConfirmationRedirect("/onboarding", "http://localhost:3000")).toBe(
       "/onboarding",
     )
+  })
+})
+
+describe("human password recovery confirmation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    headersMock.mockResolvedValue({ get: (name: string) => name === "host" ? "coachhouse.app" : undefined })
+  })
+
+  it("renders recovery email links with an explicit recovery type, independent of the provider redirect", () => {
+    const preview = buildSupabaseAuthEmailPreviews("https://coachhouse.app").find(
+      (item) => item.id === "supabase-reset-password",
+    )!
+    expect(preview.html).toContain("https://coachhouse.app/auth/confirm?token_hash={{ .TokenHash }}")
+    expect(preview.html).toContain("type=recovery")
+    expect(preview.html).not.toContain("{{ .ConfirmationURL }}")
+
+    const rendered = preview.html
+      .replaceAll("{{ .TokenHash }}", "test-token")
+      .replaceAll("{{ .RedirectTo }}", encodeURIComponent("https://coachhouse.app"))
+    const emailLink = new URL(rendered.match(/href="([^"]*\/auth\/confirm[^"]*)"/)![1].replaceAll("&amp;", "&"))
+    expect(emailLink.searchParams.get("type")).toBe("recovery")
+    expect(emailLink.searchParams.get("token_hash")).toBe("test-token")
+    expect(emailLink.searchParams.get("next")).toBe("https://coachhouse.app")
+  })
+
+  it.each([
+    { label: "missing", next: undefined, postReset: "/workspace" },
+    { label: "bare provider SiteURL", next: "https://coachhouse.app", postReset: null },
+    {
+      label: "nested callback",
+      next: `https://coachhouse.app/auth/callback?redirect=${encodeURIComponent("/update-password?redirect=%2Fworkspace%3Fview%3Ddocuments")}`,
+      postReset: "/workspace?view=documents",
+    },
+    { label: "external", next: "https://example.com/workspace", postReset: "/workspace" },
+    { label: "explicit workspace", next: "/workspace", postReset: "/workspace" },
+    { label: "reset path lookalike", next: "/update-password-other", postReset: "/update-password-other" },
+  ])("verifies only on human submission and opens the reset form for $label destinations", async ({ next, postReset }) => {
+    const verifyOtp = vi.fn().mockResolvedValue({
+      data: { user: { user_metadata: { onboarding_completed: true } } }, error: null,
+    })
+    createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp } })
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const page = await ConfirmEmailPage({ searchParams: Promise.resolve({ token_hash: "test-token", type: "recovery", next }) })
+    const form = page.props.children.props.children
+    expect(page.props.children.props.title).toBe("Reset your password")
+    expect(verifyOtp).not.toHaveBeenCalled()
+    const formData = new FormData()
+    for (const input of form.props.children.filter((child: { type: string }) => child.type === "input")) {
+      formData.set(input.props.name, input.props.value)
+    }
+
+    const destination = new URL(await captureRedirect(() => form.props.action(formData)), "https://coachhouse.app")
+    expect(destination.origin).toBe("https://coachhouse.app")
+    expect(destination.pathname).toBe("/update-password")
+    expect(destination.searchParams.get("redirect")).toBe(postReset)
+    expect(verifyOtp).toHaveBeenCalledOnce()
+    expect(verifyOtp).toHaveBeenCalledWith({ token_hash: "test-token", type: "recovery" })
+  })
+
+  it.each(["expired", "missing"])("shows reset retry after a %s token even when a user is already signed in", async (tokenState) => {
+    const verifyOtp = vi.fn().mockResolvedValue({
+      data: { user: { id: "already-signed-in" } }, error: { message: "Token expired" },
+    })
+    createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp } })
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const page = await ConfirmEmailPage({ searchParams: Promise.resolve({ token_hash: "test-token", type: "recovery", next: "/workspace" }) })
+    const form = page.props.children.props.children
+    const formData = new FormData()
+    for (const input of form.props.children.filter((child: { type: string }) => child.type === "input")) {
+      formData.set(input.props.name, input.props.value)
+    }
+    if (tokenState === "missing") formData.delete("token_hash")
+
+    const destination = new URL(await captureRedirect(() => form.props.action(formData)), "https://coachhouse.app")
+    const recoveryError = tokenState === "missing" ? "missing_code" : "invalid_or_expired"
+    expect(destination.pathname).toBe("/update-password")
+    expect(destination.searchParams.get("recovery_error")).toBe(recoveryError)
+    expect(verifyOtp).toHaveBeenCalledTimes(tokenState === "missing" ? 0 : 1)
+    const { resolveUpdatePasswordPageState } = await import("@/app/(auth)/update-password/page")
+    expect(resolveUpdatePasswordPageState(Object.fromEntries(destination.searchParams), { hasServerUser: true }))
+      .toMatchObject({ initialStatus: "retry", recoveryError })
+  })
+
+  it("routes a recovery email missing its token directly to reset retry without verifying", async () => {
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const destination = new URL(await captureRedirect(() => ConfirmEmailPage({
+      searchParams: Promise.resolve({ type: "recovery", next: "https://coachhouse.app" }),
+    })), "https://coachhouse.app")
+    expect(destination.pathname).toBe("/update-password")
+    expect(destination.searchParams.get("recovery_error")).toBe("missing_code")
+    expect(createSupabaseServerClientServerMock).not.toHaveBeenCalled()
+  })
+
+  it("does not trust a forged form origin to authorize an external reset destination", async () => {
+    const verifyOtp = vi.fn().mockResolvedValue({ data: { user: { id: "recovery-user" } }, error: null })
+    createSupabaseServerClientServerMock.mockResolvedValue({ auth: { verifyOtp } })
+    const { default: ConfirmEmailPage } = await import("@/app/auth/confirm/page")
+    const page = await ConfirmEmailPage({ searchParams: Promise.resolve({ token_hash: "test-token", type: "recovery", next: "/workspace" }) })
+    const form = page.props.children.props.children
+    const formData = new FormData()
+    for (const input of form.props.children.filter((child: { type: string }) => child.type === "input")) {
+      formData.set(input.props.name, input.props.value)
+    }
+    formData.set("request_origin", "https://example.com")
+    formData.set("destination", "https://example.com/update-password")
+
+    const destination = new URL(await captureRedirect(() => form.props.action(formData)), "https://coachhouse.app")
+    expect(destination.origin).toBe("https://coachhouse.app")
+    expect(destination.pathname).toBe("/update-password")
+    expect(destination.searchParams.get("redirect")).toBe("/workspace")
   })
 })

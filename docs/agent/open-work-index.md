@@ -37,6 +37,7 @@ These are not lane-selection candidates. Historical failed checks and missing li
 
 | Work | Current disposition / remaining boundary |
 | --- | --- |
+| Roadmap/Drive, notifications, image previews and password recovery333 | Merged into main as `3b6bd55d`; preserve the existing production-patches worktree and [checkpoint](../plans/2026-10-16-roadmap-editor-compact.md). Password-reset email links must retain `token_hash`, `type=recovery` and the redirect placeholder; application deployment precedes recovery-template sync and a fresh real reset test. User appearance/real Drive access remain open. The separate roadmap starter-text decision remains unanswered; never seed existing documents. |
 | Paula Coaching access308 | Merged into main as `dc95147a`. Dedicated server-verified grant and87focused cases are recorded in the [plan](../plans/2026-10-14-paula-coaching-access.md). Preserve the grant; any further real-user acceptance is separate from code release. |
 | Fiscal project page329, RPC type328, receipt327 and project settings326 | Merged; both October15production migrations are applied/verified. One original-browser grant was repaired. Remaining acceptance belongs to the single fiscal row above. |
 | Resource/profile frame302/303, EIN301, upgrade banners298/300 | Merged; user layout feedback is recorded. No active unframed-shell or Documents-banner implementation branch. [Frame evidence](../plans/2026-10-14-resources-return-layout.md), [banner evidence](../plans/2026-10-13-upgrade-banner-layout.md). |

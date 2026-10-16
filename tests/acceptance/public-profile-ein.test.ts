@@ -39,6 +39,17 @@ describe("public profile EIN display", () => {
     expect(normalizeEin(value)).toBeNull()
     expect(renderToStaticMarkup(React.createElement(PublicProfileEin, { value }))).toBe("")
   })
+  it.each([undefined, "pre_501c3", "in_progress"])("shows the EIN without implying 501(c)(3) verification for %s", (formationStatus) => {
+    const html = renderToStaticMarkup(React.createElement(PublicProfileEin, { value: "01-2345678", formationStatus }))
+    expect(html).toContain("EIN 01-2345678")
+    expect(html).not.toContain('aria-label="Verified"')
+  })
+  it("shows the existing blue Verified badge only with approved status and an EIN", () => {
+    const html = renderToStaticMarkup(React.createElement(PublicProfileEin, { value: "01-2345678", formationStatus: "approved" }))
+    expect(html).toContain('aria-label="Verified"')
+    expect(html).toContain("text-blue-600")
+    expect(renderToStaticMarkup(React.createElement(PublicProfileEin, { value: null, formationStatus: "approved" }))).toBe("")
+  })
   it("uses the canonical organization EIN, without reviving stale profile data", () => {
     const base = { user_id: "org", profile: { name: "Community Group", ein: "98-7654321" }, location_lat: null, location_lng: null, public_slug: "community-group" }
     expect(projectPublicMapOrganizations([{ ...base, ein: "01-2345678" }], [])[0].ein).toBe("012345678")
@@ -48,7 +59,7 @@ describe("public profile EIN display", () => {
     const nonprofit = { ein: "012345678", websiteSourcePeriod: null, phoneSourcePeriod: null, descriptionSourcePeriod: null, websiteBasis: null, phoneBasis: null }
     const html = renderToStaticMarkup(React.createElement(PublicMapResourceDetail, { item: { ...item(), nonprofit }, standalone: true, onBack: () => {} }))
     expect(html.match(/EIN 01-2345678/g)).toHaveLength(1)
-    expect(html.match(/aria-label="EIN on file"/g)).toHaveLength(1)
+    expect(html).not.toContain('aria-label="Verified"')
     expect(html).toContain("01-2345678")
   })
   it("reads only the EIN for the exact public organization and retains publication gates", async () => {

@@ -275,7 +275,7 @@ export function OrganizationDetailIdentitySection({
             </span>
           </div>
         ) : null}
-        <PublicProfileEin value={organization.ein} />
+        <PublicProfileEin value={organization.ein} formationStatus={organization.formationStatus} />
         <OrganizationDetailIdentityLinks organization={organization} />
       </div>
     </div>

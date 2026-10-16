@@ -124,6 +124,7 @@
       "tests/acceptance/resource-map-cooling-center-enrichment.test.ts",
       "tests/acceptance/resource-map-enrichment-coverage.test.ts",
       "tests/acceptance/resource-map-feeding-illinois.test.ts",
+      "tests/acceptance/resource-map-import-refresh.test.ts",
       "tests/acceptance/resource-map-metro-chicago-shelters.test.ts",
       "tests/acceptance/resource-map-provider-page-comparison.test.ts",
       "tests/acceptance/resource-map-source-family-enrichment.test.ts",

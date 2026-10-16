@@ -2,9 +2,20 @@
 
 This is the current handoff for the long live-site/fiscal checklist chat. The open-work index now reconciles each lane in place; dated implementation history remains in the runlog and prior plans. Read AGENTS.md, this handoff, and the original Desktop WORKSTREAMS.md plus the relevant numbered packet before choosing work. Do not infer unfinished implementation from old checkboxes or historical draft PRs.
 
-## Current continuation — October16
+## Current continuation — PR332 consolidated batch
 
-PR330 and PR331 are merged; current main is `72ed37e3`. Caleb reports the new deployment is building and the Production staff-mail flag is saved true. Delivery and user acceptance remain unverified. Open [PR332](https://github.com/Hamernick/CoachHouse/pull/332) uses checkout branch `fix/fiscal-acceptance-20261016` for the automated account/corrections follow-up; see the [fiscal evidence](2026-10-16-fiscal-reviewer-filter.md#october16-automated-accountcorrections-verification). Preserve earlier branches as historical sources.
+Caleb requested adding the remaining scoped work to open [PR332](https://github.com/Hamernick/CoachHouse/pull/332) to avoid a production deployment per small PR. Continue `fix/fiscal-acceptance-20261016` in the existing fiscal-completion checkout, based on main `72ed37e3` (PR330/331 merged). Keep this PR open for the batch; Caleb owns UI, hosted review, merge and release. This section is the authoritative batch checkpoint.
+
+| Scope | Result | Remaining boundary |
+| --- | --- | --- |
+| Fiscal application/account/corrections | Corrected the stale visual-exclusion assertion. 107 focused cases and ephemeral SQL/RLS/connected handler checks pass; prior filter evidence remains valid. | Saved staff flag true per Caleb. Actual FS inbox/signed delivery, reviewer filters and the same application's correction/account/import/cross-device journey remain user-owned. |
+| Calendar | 35 focused tests pass. October16 read-only Vercel inspection confirms Production `GOOGLE_CALENDAR_ENABLED=false`, all seven expected variables present, and callback `https://coachhouse.app/api/integrations/google-calendar/callback`. Secret values were not revealed. | Provider activation/canary remains open. Repository Vercel cron configuration contains fiscal jobs only; external scheduling is unverified. No credentials, flag, scheduler, event or connection changed. |
+| Verification badges — original05 B043 / LIVE-06 | Caleb defined blue Verified as approved501(c)(3)status plus an EIN, green Fundable using existing qualification rules, and explicitly skipped badge3. Verification now uses those two fields, with no course, roadmap, funding-goal or document-upload prerequisites. Existing profile/header controls show the blue/green check styles. Public platform profiles require both fields; imported EIN-only records retain the number without a Verified claim. Canonical EIN removal cannot fall back to stale profile EIN.89focused tests across8suites pass. | Fundable requirements and actual lesson completion remain unchanged. No stored evidence/grant/data migration. Appearance review remains Caleb-owned; no new public Fundable projection is inferred from missing private readiness data. |
+| Map refresh safety — original05E recorded importer hazards | Refresh lookup now drains source-scoped, stable-ID pages to an empty page even when the server caps below500. Page errors/nonadvancing cursors fail. URL reconciliation requires one incoming and one existing match and cannot consume a row reserved by an exact source-ID match. Duplicate input source IDs fail. 30 importer tests pass; five regressions reproduced on prior code. | No importer or publication ran against production. URL fallback remains a staging convenience, not independent identity/publication evidence. All491source evidence holds and four05Ccoordinate corrections remain; zero new records were verified or published in this batch. |
+
+Exact Next.js production type check passes (3928input/10416total files; no warnings returned). Changed-file ESLint, acceptance manifest, structure and threshold checks pass (structure reports existing near-budget warnings). The fiscal107, Calendar35, badge89 and map30 results are separate scopes, not release approval. No full local quality/build or hosted-check polling. Final Graphify, outgoing secret scan and normal prepush receipts are recorded in the monthly log.
+
+Resume user acceptance from the fiscal row while keeping independent approved code work in332. Preserve all other worktrees, historical branches, private map/fiscal receipts and shared SHIP40. Local preview runs from this checkout at http://localhost:3127/workspace using webpack; the unauthenticated route returns307. Caleb resolved the badge definitions during this batch: Verified/blue and Fundable/green only; badge3 is skipped. No verification is inferred merely from an EIN-shaped value.
 
 ## Release state at original closeout
 
@@ -24,9 +35,9 @@ PR330 and PR331 are merged; current main is `72ed37e3`. Caleb reports the new de
 | EIN display/blue badge and Resources outer-container removal | Implemented/merged301–303; user accepted layout correction. No new outer wrapper. |
 | Coach/admin co-editing, workspace support switching/search | Implemented/merged305/306 and subsequent311–315/319/320/322 fixes. Real two-user saving/live presence/history/support journey still needs a concise user acceptance result. |
 | Coaching credit roster correction | Previously production-verified; do not repeat/reset grants. |
-| Fiscal sponsorship | Core flow live enough for one real submission and receipt. NOT complete: staff email, admin Members filtering and remaining applicant/reviewer journey below. |
+| Fiscal sponsorship | Core flow and reviewer Members filter are merged. Actual staff delivery and applicant/reviewer acceptance remain open. |
 | Google Calendar | Remaining production/provider connection and sync validation. Earlier implementation/CI PRs257/268 are merged; do not rebuild from old draft237. |
-| Formation prerequisite for verified status | Still pending. EIN badge implementation does not complete this broader verification rule. |
+| Verification badges | Open332implements Caleb’s definition: blue Verified requires approved501(c)(3)status+EIN; green Fundable keeps existing qualification. No third badge. User appearance review remains open. |
 
 Original grouped scope is180requirements, not180unfinished tasks. These rows summarize the selected live-site work; they do not replace the original176requirement intake or other workstreams.
 

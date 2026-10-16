@@ -31,7 +31,7 @@ export default async function OrganizationsPage() {
     organizationOptions,
     assigneeOptions,
     workstreamCategories,
-  } = await loadMemberWorkspaceProjectsPage()
+  } = await loadMemberWorkspaceProjectsPage({ directory: "organizations", actorScope: "platform" })
 
   const assignments = await loadOrganizationCoachAssignmentData({
     organizationIds: organizationOptions.map((organization) => organization.orgId),
@@ -61,6 +61,7 @@ export default async function OrganizationsPage() {
 
   return (
     <MemberWorkspaceProjectsPage
+      directory="organizations"
       viewerUserId={staff.userId}
       projects={assignedProjects}
       showPlatformRevenue

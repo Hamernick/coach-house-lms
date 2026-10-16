@@ -3,7 +3,11 @@
 Calendar is the selected next lane. Caleb authorized production shipping after release
 gates. Current effective status appears first; older dated checkpoints below are history.
 
-## Current effective status — 2026-09-28 02:25 EDT
+## Current effective status — October16
+
+PR257/268 are merged. Read-only Production settings inspection confirms flag false, all seven expected variables present and the expected coachhouse.app callback.35focused Calendar/service/Tools/access/concurrency tests pass. No provider values changed or canary run. Activation, external scheduling and actual connection/sync remain open; see the [consolidated332checkpoint](2026-10-16-checklist-continuation.md#current-continuation--pr332-consolidated-batch). Preserve the older release branches; do not restart their implementation or Google approval.
+
+## Historical status — 2026-09-28 02:25 EDT
 
 - Candidate: [PR #257](https://github.com/Hamernick/coach-house-lms/pull/257), branch `feat/google-calendar-release-20260928`; never ship the mixed root. Integration and focused tests are complete.
 - Single localhost: `http://localhost:3012/workspace?drawer=tools`, matching the registered callback. Earlier 3011 instructions below are superseded. Chrome awaits user login and appearance review.

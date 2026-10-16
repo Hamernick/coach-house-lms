@@ -1,5 +1,11 @@
 # Compact roadmap editor and linked Drive content
 
+## Editor shadows and light background
+
+Caleb requested no drop shadows on the editor controls and an almost-white typing area in light mode. The pasted ghost Paste button already has no box/filter shadow; actual decorative shadows came from the roadmap toolbar, RichTextEditor frame and editor dropdown surfaces. Removed the route toolbar's light/dark shadow classes, override the roadmap editor frame with shadow-none, and remove shadows from Paste/Text style/Blocks/Table/Align menu panels at their concrete owners. Shared Button and DropdownMenu primitives remain unchanged, and keyboard focus rings are preserved.
+
+Light typing surface changes #ededed→#fafafa; the count strip changes #e6e6e6→#f5f5f5. Existing dark background colors remain unchanged. Authenticated collaboration-enabled localhost3130 Mission confirms rgb(250,250,250) on the typing container, zero visible shadows on toolbar/frame/Paste menu, and no shadow/filter on every toolbar button. Paste menu opens/closes normally. Existing51words/388characters retained; no text/paste action executed. Screenshot /tmp/coach-house-light-editor-no-shadows.jpg.12existing compact-editor cases, changed-file ESLint, React Grab and diff checks pass; no new tests for this class-only change. Existing editor interaction/lifecycle suites use functional assertions; no affected screenshot baseline was found. Graphify AST refresh completed with no topology changes. Normal push/PR handoff follows. Same open PR335/branch; no production changes or hosted polling.
+
 ## Version history toolbar follow-up
 
 Caleb requested moving Version history into the tools row as an icon matching neighboring buttons. On editable portal editors, DocumentVersionHistory now portals its existing trigger into a callback-ref slot immediately before the live save status. It uses the same ghost Button treatment as Bold/Undo/Redo, a History icon, accessible name/title/expanded/loading state and matching responsive sizes. The closed history component leaves no empty footer wrapper. The existing inline history list, version previews, restore confirmation and restore permissions remain unchanged; standalone/read-only/budget views retain the text trigger and its natural width.
